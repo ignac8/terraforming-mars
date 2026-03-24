@@ -81,6 +81,8 @@ import {hazardSeverity} from '../common/AresTileType';
 import {IStandardProjectCard} from './cards/IStandardProjectCard';
 import {BoardName} from '../common/boards/BoardName';
 import {SpaceType} from '../common/boards/SpaceType';
+import {AutomaGameHooks} from './automa/AutomaGameHooks';
+import {AutomaGameSetup} from './automa/AutomaGameSetup';
 
 // Can be overridden by tests
 
@@ -180,6 +182,11 @@ export class Game implements IGame, Logger {
   public readonly tags: ReadonlyArray<Tag>;
 
   public underworldDraftEnabled = true;
+
+  public automaHooks: AutomaGameHooks | undefined;
+
+  // Backward compat — marsBot accessor for ServerModel and tests
+  public get marsBot() { return this.automaHooks?.marsBot; }
 
   private constructor(
     id: GameId,
@@ -297,13 +304,11 @@ export class Game implements IGame, Logger {
       }
     }
 
-    if (players.length === 1) {
+    if (players.length === 1 && !gameOptions.automaOption) {
       gameOptions.draftVariant = false;
       gameOptions.initialDraftVariant = false;
       gameOptions.preludeDraftVariant = false;
       gameOptions.randomMA = RandomMAOptionType.NONE;
-
-      // Single player game player starts with 14TR
       players[0].setTerraformRating(14);
     }
 
@@ -338,9 +343,9 @@ export class Game implements IGame, Logger {
       game.underworldData = UnderworldExpansion.initialize(rng);
     }
 
-    // and 2 neutral cities and forests on board
-    if (players.length === 1) {
-      //  Setup solo player's starting tiles
+    if (players.length === 1 && gameOptions.automaOption) {
+      game.automaHooks = AutomaGameSetup.setup(game, players[0], gameOptions, game.rng);
+    } else if (players.length === 1) {
       GameSetup.setupNeutralPlayer(game);
     }
 
@@ -500,10 +505,14 @@ export class Game implements IGame, Logger {
     if (this.turmoil !== undefined) {
       result.turmoil = this.turmoil.serialize();
     }
+    if (this.automaHooks !== undefined) {
+      result.automaState = this.automaHooks.serialize();
+    }
     return result;
   }
 
   public isSoloMode() :boolean {
+    if (this.automaHooks !== undefined) return false;
     return this.players.length === 1;
   }
 
@@ -559,6 +568,7 @@ export class Game implements IGame, Logger {
   }
 
   public lastSoloGeneration(): number {
+    if (this.automaHooks !== undefined) return this.automaHooks.lastSoloGeneration();
     let lastGeneration = 14;
     const options = this.gameOptions;
     if (options.preludeExtension) {
@@ -629,15 +639,13 @@ export class Game implements IGame, Logger {
   }
 
   public allAwardsFunded(): boolean {
-    // Awards are disabled for 1 player games
-    if (this.players.length === 1) return true;
+    if (this.players.length === 1 && this.automaHooks === undefined) return true;
 
     return this.fundedAwards.length >= constants.MAX_AWARDS;
   }
 
   public allMilestonesClaimed(): boolean {
-    // Milestones are disabled for 1 player games
-    if (this.players.length === 1) return true;
+    if (this.players.length === 1 && this.automaHooks === undefined) return true;
 
     return this.claimedMilestones.length >= constants.MAX_MILESTONES;
   }
@@ -718,9 +726,12 @@ export class Game implements IGame, Logger {
     this.phase = Phase.RESEARCH;
     this.researchedPlayers.clear();
     this.save();
-    this.players.forEach((player) => {
-      player.runResearchPhase();
-    });
+    const automaDraftHandled = this.automaHooks?.handleResearchPhase() ?? false;
+    if (!automaDraftHandled) {
+      this.players.forEach((player) => {
+        player.runResearchPhase();
+      });
+    }
   }
 
   private gotoDraftPhase(): void {
@@ -730,6 +741,7 @@ export class Game implements IGame, Logger {
   }
 
   public gameIsOver(): boolean {
+    if (this.automaHooks !== undefined) return this.automaHooks.isGameOver();
     if (this.isSoloMode()) {
       // Solo games continue until the designated generation end even if Mars is already terraformed
       return this.generation === this.lastSoloGeneration();
@@ -746,6 +758,7 @@ export class Game implements IGame, Logger {
     this.passedPlayers.clear();
     this.someoneHasRemovedOtherPlayersPlants = false;
     this.players.forEach((player) => {
+      if (this.automaHooks?.handleProductionPhase(player)) return;
       player.colonies.cardDiscount = 0; // Iapetus reset hook
       player.runProductionPhase();
     });
@@ -870,7 +883,7 @@ export class Game implements IGame, Logger {
       }
     });
 
-    if (this.gameOptions.draftVariant) {
+    if (this.gameOptions.draftVariant && this.automaHooks === undefined) {
       this.gotoDraftPhase();
     } else {
       this.gotoResearchPhase();
@@ -980,6 +993,7 @@ export class Game implements IGame, Logger {
   }
 
   private allPlayersHavePassed(): boolean {
+    if (this.automaHooks?.allPlayersHavePassed() === false) return false;
     for (const player of this.players) {
       if (!this.hasPassedThisActionPhase(player)) {
         return false;
@@ -1005,7 +1019,8 @@ export class Game implements IGame, Logger {
         this.passedPlayers.clear();
         this.potentiallyChangeFirstPlayer();
 
-        this.startActionsForPlayer(this.first);
+        const firstPlayer = this.automaHooks?.getFirstPlayerForActionPhase() ?? this.first;
+        this.startActionsForPlayer(firstPlayer);
       }
     });
   }
@@ -1038,6 +1053,17 @@ export class Game implements IGame, Logger {
     }
 
     this.inputsThisRound = 0;
+
+    // Automa turn alternation
+    if (this.automaHooks !== undefined) {
+      const next = this.automaHooks.getNextPlayer();
+      if (next !== undefined) {
+        this.startActionsForPlayer(next);
+      } else {
+        this.gotoProductionPhase();
+      }
+      return;
+    }
 
     // This next section can be done more simply.
     if (this.allPlayersHavePassed()) {
@@ -1099,6 +1125,7 @@ export class Game implements IGame, Logger {
    * If nobody can add a greenery, end the game.
    */
   public /* for testing */ takeNextFinalGreeneryAction(): void {
+    this.automaHooks?.handleFinalGreenery(this.donePlayers);
     for (const player of this.playersInGenerationOrder) {
       if (this.donePlayers.has(player.id)) {
         continue;
@@ -1127,11 +1154,12 @@ export class Game implements IGame, Logger {
     this.gotoEndGame();
   }
 
-  private startActionsForPlayer(player: IPlayer) {
+  public startActionsForPlayer(player: IPlayer) {
     this.activePlayer = player;
     player.actionsTakenThisGame++;
     player.actionsTakenThisRound = 0;
 
+    if (this.automaHooks?.handleStartActions(player)) return;
     player.takeAction();
   }
 
@@ -1248,11 +1276,15 @@ export class Game implements IGame, Logger {
       // BONUS FOR HEAT PRODUCTION AT -20 and -24
       if (this.temperature < constants.TEMPERATURE_BONUS_FOR_HEAT_1 &&
         this.temperature + steps * 2 >= constants.TEMPERATURE_BONUS_FOR_HEAT_1) {
-        player.production.add(Resource.HEAT, 1, {log: true});
+        if (!this.automaHooks?.handleTemperatureHeatBonus(player)) {
+          player.production.add(Resource.HEAT, 1, {log: true});
+        }
       }
       if (this.temperature < constants.TEMPERATURE_BONUS_FOR_HEAT_2 &&
         this.temperature + steps * 2 >= constants.TEMPERATURE_BONUS_FOR_HEAT_2) {
-        player.production.add(Resource.HEAT, 1, {log: true});
+        if (!this.automaHooks?.handleTemperatureHeatBonus(player)) {
+          player.production.add(Resource.HEAT, 1, {log: true});
+        }
       }
 
       for (const card of player.playedCards) {
@@ -1287,8 +1319,13 @@ export class Game implements IGame, Logger {
 
   public getPassedPlayers():Array<Color> {
     const passedPlayersColors: Array<Color> = [];
-    this.passedPlayers.forEach((player) => {
-      passedPlayersColors.push(this.getPlayerById(player).color);
+    this.passedPlayers.forEach((playerId) => {
+      const automaColor = this.automaHooks?.getPassedPlayerColor(playerId);
+      if (automaColor !== undefined) {
+        passedPlayersColors.push(automaColor);
+      } else {
+        passedPlayersColors.push(this.getPlayerById(playerId).color);
+      }
     });
     return passedPlayersColors;
   }
@@ -1348,7 +1385,7 @@ export class Game implements IGame, Logger {
     this.simpleAddTile(player, space, tile);
 
     // Part 5. Collect the bonuses
-    if (this.phase !== Phase.SOLAR) {
+    if (this.phase !== Phase.SOLAR && (this.automaHooks?.shouldGrantPlacementBonuses(player) ?? true)) {
       this.grantPlacementBonuses(player, space, coveringExistingTile, arcadianCommunityBonus);
 
       AresHandler.ifAres(this, (aresData) => {
@@ -1762,6 +1799,13 @@ export class Game implements IGame, Logger {
     game.globalsPerGeneration = d.globalsPerGeneration;
     game.verminInEffect = d.verminInEffect;
     game.exploitationOfVenusInEffect = d.exploitationOfVenusInEffect;
+
+    // Restore automa state
+    if (d.automaState !== undefined && gameOptions.automaOption) {
+      game.automaHooks = AutomaGameSetup.setup(game, players[0], gameOptions, rng);
+      game.automaHooks.restoreState(d.automaState);
+    }
+
     // Still in Draft or Research of generation 1
     if (game.generation === 1 && players.some((p) => p.playedCards.filter(isICorporationCard).length === 0)) {
       if (game.phase === Phase.INITIALDRAFTING) {

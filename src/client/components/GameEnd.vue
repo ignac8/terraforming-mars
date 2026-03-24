@@ -2,7 +2,21 @@
   <div id="game-end" class="game_end_cont">
       <h1 v-i18n>{{ constants.APP_NAME }} - Game finished!</h1>
       <div class="game_end">
-          <div v-if="isSoloGame">
+          <div v-if="isAutomaGame && game.marsBot">
+              <div v-if="game.marsBot.instantWin" class="game_end_fail">
+                  <h2>MarsBot wins! (Generation {{game.generation}} reached)</h2>
+              </div>
+              <div v-else-if="automaHumanWins" class="game_end_success">
+                  <h2>You beat MarsBot! ({{players[0].victoryPointsBreakdown.total}} vs {{game.marsBot.vpBreakdown?.total || 0}})</h2>
+              </div>
+              <div v-else class="game_end_fail">
+                  <h2>MarsBot wins! ({{game.marsBot.vpBreakdown?.total || 0}} vs {{players[0].victoryPointsBreakdown.total}})</h2>
+                  <div class="game_end_notice" v-if="game.marsBot.vpBreakdown?.total === players[0].victoryPointsBreakdown.total">
+                    <span v-i18n>Tie goes to MarsBot!</span>
+                  </div>
+              </div>
+          </div>
+          <div v-else-if="isSoloGame">
               <div v-if="game.isSoloModeWin">
                   <div class="game_end_success">
                       <h2 v-i18n>You win!</h2>
@@ -48,7 +62,7 @@
               </a>
             </div>
           </div>
-          <div v-if="!isSoloGame || game.isSoloModeWin" class="game-end-winer-announcement">
+          <div v-if="(!isSoloGame && !isAutomaGame) || game.isSoloModeWin" class="game-end-winer-announcement">
               <span v-for="p in winners" :key="p.color"><span :class="'log-player ' + getEndGamePlayerRowColorClass(p.color)">{{ p.name }}</span></span> <span v-i18n>won!</span>
           </div>
           <div class="game_end_victory_points">
@@ -100,8 +114,42 @@
                           <td v-if="game.gameOptions.showTimers"><div class="game-end-timer">{{ getTimer(p) }}</div></td>
                           <td><div class="game-end-timer">{{ p.actionsTakenThisGame }}</div></td>
                       </tr>
+                      <tr v-if="isAutomaGame && game.marsBot?.vpBreakdown" class="game-end-marsbot-row">
+                          <td>MarsBot ({{game.marsBot.difficulty}})</td>
+                          <td>{{game.marsBot.vpBreakdown.terraformRating}}</td>
+                          <td>{{game.marsBot.vpBreakdown.milestones}}</td>
+                          <td>{{game.marsBot.vpBreakdown.awards}}</td>
+                          <td>{{game.marsBot.vpBreakdown.greenery}}</td>
+                          <td>{{game.marsBot.vpBreakdown.cityAdjacentGreenery}}</td>
+                          <td v-if="game.moon !== undefined">-</td>
+                          <td v-if="game.moon !== undefined">-</td>
+                          <td v-if="game.moon !== undefined">-</td>
+                          <td v-if="game.pathfinders !== undefined">-</td>
+                          <td>{{game.marsBot.vpBreakdown.neuralInstance + game.marsBot.vpBreakdown.mcToVP}}</td>
+                          <td v-if="game.gameOptions.escapeVelocity">-</td>
+                          <td class="game-end-total">{{game.marsBot.vpBreakdown.total}}</td>
+                          <td class="game-end-mc">{{game.marsBot.mcSupply}}</td>
+                          <td v-if="game.gameOptions.showTimers">-</td>
+                          <td>-</td>
+                      </tr>
                   </tbody>
               </table>
+              <div v-if="isAutomaGame && game.marsBot?.vpBreakdown" class="marsbot-vp-detail">
+                <h3>MarsBot VP Detail</h3>
+                <table class="table game_end_table marsbot-detail-table">
+                  <tbody>
+                    <tr><td>Terraform Rating</td><td>{{game.marsBot.vpBreakdown.terraformRating}}</td></tr>
+                    <tr><td>Milestones (5 VP each)</td><td>{{game.marsBot.vpBreakdown.milestones}}</td></tr>
+                    <tr><td>Awards (track-based)</td><td>{{game.marsBot.vpBreakdown.awards}}</td></tr>
+                    <tr><td>Greenery tiles</td><td>{{game.marsBot.vpBreakdown.greenery}}</td></tr>
+                    <tr><td>Cities (adjacent greenery)</td><td>{{game.marsBot.vpBreakdown.cityAdjacentGreenery}}</td></tr>
+                    <tr><td>Neural Instance</td><td>{{game.marsBot.vpBreakdown.neuralInstance}}</td></tr>
+                    <tr><td>MC → VP (gen {{game.generation}})</td><td>{{game.marsBot.vpBreakdown.mcToVP}} (from {{game.marsBot.mcSupply}} MC)</td></tr>
+                    <tr v-if="game.marsBot.vpBreakdown.cardVP > 0"><td>Card VP (hard mode)</td><td>{{game.marsBot.vpBreakdown.cardVP}}</td></tr>
+                    <tr class="marsbot-total-row"><td><b>Total</b></td><td><b>{{game.marsBot.vpBreakdown.total}}</b></td></tr>
+                  </tbody>
+                </table>
+              </div>
               <br/>
               <h2 v-i18n>Victory points details</h2>
               <victory-point-chart
@@ -300,7 +348,17 @@ export default defineComponent({
       return winners;
     },
     isSoloGame(): boolean {
+      if (this.isAutomaGame) return false;
       return this.players.length === 1;
+    },
+    isAutomaGame(): boolean {
+      return this.game.marsBot !== undefined;
+    },
+    automaHumanWins(): boolean {
+      if (!this.game.marsBot?.vpBreakdown) return false;
+      if (this.game.marsBot.instantWin) return false;
+      // Tie = MarsBot wins
+      return this.players[0].victoryPointsBreakdown.total > this.game.marsBot.vpBreakdown.total;
     },
     vpDataset(): ReadonlyArray<DataSet> {
       return this.players.map((player) => {

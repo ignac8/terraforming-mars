@@ -71,4 +71,22 @@ export type SerializedGame = {
     underworldData: UnderworldData;
     venusScaleLevel: number;
     verminInEffect: boolean;
+
+    // Automa
+    automaState?: SerializedAutomaState;
+}
+
+export type SerializedAutomaState = {
+    trackPositions: Array<number>;
+    trackRegressedPositions: Array<Array<number>>;
+    mcSupply: number;
+    goesFirst: boolean;
+    difficulty: 'easy' | 'normal' | 'hard' | 'brutal';
+    actionDeckCardNames: Array<string>;
+    bonusDeckDrawPile: Array<string>;
+    bonusDeckDiscardPile: Array<string>;
+    destroyedBonusCards: Array<string>;
+    neuralInstanceSpaceId: string | undefined;
+    playedProjectCardNames: Array<string>;
+    marsBotPlayerId: string;
 }

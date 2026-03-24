@@ -163,6 +163,8 @@ export class ApiCreateGame extends Handler {
             underworldExpansion: gameReq.expansions.underworld,
             undoOption: gameReq.undoOption,
             venusNextExtension: gameReq.expansions.venus,
+            automaOption: gameReq.automaOption ?? false,
+            automaDifficulty: gameReq.automaDifficulty ?? 'normal',
           };
 
           let game: IGame;

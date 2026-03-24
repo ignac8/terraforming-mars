@@ -60,7 +60,11 @@
           <PlanetaryTracks :tracks="game.pathfinders" :gameOptions="game.gameOptions"/>
         </template>
 
-        <div v-if="playerView.players.length > 1" class="player_home_block--milestones-and-awards">
+        <template v-if="game.marsBot">
+          <MarsBotPanel :model="game.marsBot"/>
+        </template>
+
+        <div v-if="playerView.players.length > 1 || game.marsBot" class="player_home_block--milestones-and-awards">
           <a class="hotkey-target"></a>
           <Milestones :milestones="game.milestones" />
           <Awards :awards="game.awards" />
@@ -290,6 +294,7 @@ import DynamicTitle from '@/client/components/common/DynamicTitle.vue';
 import SortableCards from '@/client/components/SortableCards.vue';
 import TopBar from '@/client/components/TopBar.vue';
 import MoonBoard from '@/client/components/moon/MoonBoard.vue';
+import MarsBotPanel from '@/client/components/automa/MarsBotPanel.vue';
 import StackedCards from '@/client/components/StackedCards.vue';
 import PurgeWarning from '@/client/components/common/PurgeWarning.vue';
 import UndergroundTokens from '@/client/components/underworld/UndergroundTokens.vue';
@@ -400,6 +405,7 @@ export default defineComponent({
     'sortable-cards': SortableCards,
     'top-bar': TopBar,
     MoonBoard,
+    MarsBotPanel,
     PlanetaryTracks,
     'stacked-cards': StackedCards,
     PurgeWarning,

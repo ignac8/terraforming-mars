@@ -16,9 +16,8 @@
           />
           <p
             :class="getClass(score)"
-            v-text="score.score"
             data-test="player-score"
-          />
+          >{{ score.score }}{{ score.claimable ? '✓' : '✗' }}</p>
       </template>
     </div>
     </div>
