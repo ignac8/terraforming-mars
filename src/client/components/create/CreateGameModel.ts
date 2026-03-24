@@ -61,4 +61,6 @@ export type CreateGameModel = {
   startingPreludes: number;
   twoCorpsVariant: boolean;
   undoOption: boolean;
+  automaOption: boolean;
+  automaDifficulty: 'easy' | 'normal' | 'hard' | 'brutal';
 }

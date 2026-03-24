@@ -73,6 +73,10 @@ export type GameOptions = {
   altVenusBoard: boolean;
   escapeVelocity?: EscapeVelocityOptions;
   twoCorpsVariant: boolean;
+
+  // Automa (MarsBot solo variant)
+  automaOption: boolean;
+  automaDifficulty: 'easy' | 'normal' | 'hard' | 'brutal';
 }
 
 export const DEFAULT_GAME_OPTIONS: GameOptions = {
@@ -142,4 +146,6 @@ export const DEFAULT_GAME_OPTIONS: GameOptions = {
   undoOption: false,
   venusNextExtension: false,
   twoCorpsVariant: false,
+  automaOption: false,
+  automaDifficulty: 'normal',
 };

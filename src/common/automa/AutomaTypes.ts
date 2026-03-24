@@ -1,0 +1,77 @@
+import {Tag} from '../cards/Tag';
+
+/** Actions that can appear on MarsBot board track positions. */
+export type TrackAction =
+  | 'advance'       // Move cube 1 more space (may chain)
+  | 'tr1' | 'tr2' | 'tr3' | 'tr4' | 'tr5' | 'tr6' | 'tr7' | 'tr8'
+  | 'milestone'
+  | 'award'
+  | 'temperature' | 'temperature2'
+  | 'greenery'
+  | 'ocean'
+  | 'city'
+  | 'venus' | 'venus2'
+  | `tag_${number}`; // Advance another track by its 1-based index
+
+/** A single track on the MarsBot board (19 positions: 0–18). */
+export type TrackLayout = ReadonlyArray<TrackAction | null>;
+
+/** Definition of one MarsBot track: which tags and production types map to it. */
+export interface TrackDefinition {
+  readonly num: number; // 1-based track index
+  readonly tags: ReadonlyArray<Tag>;
+  readonly productions: ReadonlyArray<string>; // e.g. 'Steel', 'Titanium'
+  readonly layout: TrackLayout;
+}
+
+/** Complete MarsBot board data for a specific map. */
+export interface MarsBotBoardData {
+  readonly trackDefs: ReadonlyArray<TrackDefinition>;
+  readonly awardFormulas: Record<string, string>;
+  readonly milestoneCriteria: Record<string, string>;
+}
+
+export type DifficultyLevel = 'easy' | 'normal' | 'hard' | 'brutal';
+
+export enum BonusCardId {
+  B01_METEOR_SHOWER = 'B01',
+  B02_INVASIVE_SPECIES = 'B02',
+  B03_RESEARCH_AND_DEVELOPMENT = 'B03',
+  B04_OVERACHIEVEMENT = 'B04',
+  B05_EXPEDITED_CONSTRUCTION = 'B05',
+  B06_LOBBYISTS = 'B06',
+  B07_LOCAL_NEURAL_INSTANCE = 'B07',
+  B08_CORPORATE_COMPETITION = 'B08',
+}
+
+/** The set of bonus cards used in the base game (no expansions). */
+export const BASE_BONUS_CARDS: ReadonlyArray<BonusCardId> = [
+  BonusCardId.B01_METEOR_SHOWER,
+  BonusCardId.B02_INVASIVE_SPECIES,
+  BonusCardId.B03_RESEARCH_AND_DEVELOPMENT,
+  BonusCardId.B04_OVERACHIEVEMENT,
+  BonusCardId.B05_EXPEDITED_CONSTRUCTION,
+  BonusCardId.B06_LOBBYISTS,
+  BonusCardId.B07_LOCAL_NEURAL_INSTANCE,
+  BonusCardId.B08_CORPORATE_COMPETITION,
+];
+
+/** MC gained when MarsBot takes a failed action. */
+export const FAILED_ACTION_MC = 5;
+export const FAILED_ACTION_MC_EASY = 3;
+
+export const MARSBOT_MAX_TRACK_POSITION = 18;
+export const MARSBOT_STARTING_TR = 20;
+export const MARSBOT_MAX_GENERATION = 20;
+
+/** MC-to-VP conversion table by generation number at game end. */
+export const MC_TO_VP_TABLE: ReadonlyArray<{maxGeneration: number, mcPerVP: number}> = [
+  {maxGeneration: 12, mcPerVP: 8},
+  {maxGeneration: 13, mcPerVP: 7},
+  {maxGeneration: 14, mcPerVP: 6},
+  {maxGeneration: 15, mcPerVP: 5},
+  {maxGeneration: 16, mcPerVP: 4},
+  {maxGeneration: 17, mcPerVP: 3},
+  {maxGeneration: 18, mcPerVP: 2},
+  {maxGeneration: 19, mcPerVP: 1},
+];

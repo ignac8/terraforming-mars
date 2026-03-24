@@ -13,6 +13,7 @@ import {SpectatorId} from '../Types';
 import {ColonyName} from '../colonies/ColonyName';
 import {GlobalParameter} from '../GlobalParameter';
 import {Tag} from '../cards/Tag';
+import {MarsBotModel} from '../automa/MarsBotModel';
 
 // Common data about a game not assocaited with a player (eg the temperature.)
 export type GameModel = {
@@ -46,4 +47,5 @@ export type GameModel = {
   turmoil: TurmoilModel | undefined;
   undoCount: number;
   venusScaleLevel: number;
+  marsBot: MarsBotModel | undefined;
 }

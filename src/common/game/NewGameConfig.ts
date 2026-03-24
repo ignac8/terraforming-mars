@@ -81,4 +81,6 @@ export interface NewGameConfig {
   customCeos: Array<CardName>;
   startingCeos: number;
   startingPreludes: number;
+  automaOption?: boolean;
+  automaDifficulty?: 'easy' | 'normal' | 'hard' | 'brutal';
 }
