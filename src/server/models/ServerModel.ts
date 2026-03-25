@@ -464,6 +464,7 @@ export class Server {
       undoOption: options.undoOption,
       automaOption: options.automaOption,
       automaDifficulty: options.automaDifficulty,
+      automaCorpOption: options.automaCorpOption,
     };
   }
 

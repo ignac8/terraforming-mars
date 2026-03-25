@@ -165,6 +165,7 @@ export class ApiCreateGame extends Handler {
             venusNextExtension: gameReq.expansions.venus,
             automaOption: gameReq.automaOption ?? false,
             automaDifficulty: gameReq.automaDifficulty ?? 'normal',
+            automaCorpOption: gameReq.automaCorpOption ?? false,
           };
 
           let game: IGame;

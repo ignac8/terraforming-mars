@@ -50,6 +50,22 @@ export class MarsBotBonusDeck {
     }
   }
 
+  /** Find and remove a bonus card by ID from the draw pile. Returns the card or undefined. */
+  public findAndRemove(bonusCardId: string): MarsBotBonusCard | undefined {
+    const idx = this.drawPile.findIndex((c) => c.id === bonusCardId);
+    if (idx >= 0) return this.drawPile.splice(idx, 1)[0];
+    // Also check discard pile
+    const discardIdx = this.discardPile.findIndex((c) => c.id === bonusCardId);
+    if (discardIdx >= 0) return this.discardPile.splice(discardIdx, 1)[0];
+    return undefined;
+  }
+
+  /** Remove a bonus card from the deck entirely by ID (does not return it). */
+  public removeById(bonusCardId: string): void {
+    this.drawPile = this.drawPile.filter((c) => c.id !== bonusCardId);
+    this.discardPile = this.discardPile.filter((c) => c.id !== bonusCardId);
+  }
+
   /** Shuffle the discard pile back into the draw pile (excluding destroyed cards). */
   private reshuffleDiscard(): void {
     const nonDestroyed = this.discardPile.filter((c) => !c.destroyed);

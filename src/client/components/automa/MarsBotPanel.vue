@@ -1,6 +1,7 @@
 <template>
   <div class="marsbot-panel">
     <h2 class="marsbot-title">MarsBot <span class="marsbot-difficulty">({{ model.difficulty }})</span></h2>
+    <div v-if="model.corpName" class="marsbot-corp">Corp: <b>{{ model.corpName }}</b></div>
     <div class="marsbot-stats">
       <span class="marsbot-stat">MC: <b>{{ model.mcSupply }}</b></span>
       <span class="marsbot-stat">Action Deck: <b>{{ model.actionDeckSize }}</b></span>
@@ -17,7 +18,12 @@
             v-for="i in track.maxPosition"
             :key="i"
             class="marsbot-square"
-            :class="{ filled: i <= track.position }"
+            :class="{
+              filled: i <= track.position,
+              'cube-white': hasCube(track.num, i, 'white'),
+              'cube-black': hasCube(track.num, i, 'black'),
+              'cube-credit': hasCube(track.num, i, 'credit'),
+            }"
           ></div>
         </div>
         <span class="marsbot-track-pos">{{ track.position }}</span>
@@ -35,6 +41,15 @@ export default defineComponent({
     model: {
       type: Object,
       required: true,
+    },
+  },
+  methods: {
+    hasCube(trackNum: number, position: number, cubeType: string): boolean {
+      if (!this.model.trackCubes) return false;
+      return this.model.trackCubes.some(
+        (c: {trackNum: number, position: number, cubeType: string}) =>
+          c.trackNum === trackNum && c.position === position && c.cubeType === cubeType,
+      );
     },
   },
 });
@@ -121,5 +136,37 @@ export default defineComponent({
   color: #aaa;
   min-width: 16px;
   text-align: right;
+}
+.marsbot-corp {
+  font-size: 13px;
+  margin-bottom: 6px;
+  color: #ccc;
+}
+.marsbot-corp b {
+  color: #ffd700;
+}
+.marsbot-square.cube-white {
+  border-color: #fff;
+  box-shadow: inset 0 0 0 2px #fff;
+}
+.marsbot-square.cube-black {
+  border-color: #666;
+  box-shadow: inset 0 0 0 2px #333;
+}
+.marsbot-square.cube-credit {
+  border-color: #ffd700;
+  box-shadow: inset 0 0 0 2px #ffd700;
+}
+.marsbot-square.filled.cube-white {
+  background: #ff6b8a;
+  border-color: #fff;
+}
+.marsbot-square.filled.cube-black {
+  background: #c0392b;
+  border-color: #666;
+}
+.marsbot-square.filled.cube-credit {
+  background: #f39c12;
+  border-color: #ffd700;
 }
 </style>

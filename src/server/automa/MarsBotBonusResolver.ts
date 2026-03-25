@@ -58,6 +58,41 @@ export class MarsBotBonusResolver {
     case BonusCardId.B08_CORPORATE_COMPETITION:
       this.resolveCorporateCompetition(card);
       break;
+
+    // Corp-specific bonus cards (B22-B32)
+    case BonusCardId.B22_SETTLERS:
+      this.resolveSettlers();
+      break;
+    case BonusCardId.B23_RAPID_SPROUTING:
+      this.resolveRapidSprouting();
+      break;
+    case BonusCardId.B24_SUPPLY_AND_DEMAND:
+      this.resolveSupplyAndDemand();
+      break;
+    case BonusCardId.B25_DO_IT_RIGHT:
+      this.resolveDoItRight();
+      break;
+    case BonusCardId.B26_VENUSIAN_LOBBY:
+      this.resolveVenusianLobby();
+      break;
+    case BonusCardId.B27_BUILD_BUILD_BUILD:
+      this.resolveBuildBuildBuild();
+      break;
+    case BonusCardId.B28_DIVERSIFICATION:
+      this.resolveDiversification();
+      break;
+    case BonusCardId.B29_GRAY_EMINENCE:
+      this.resolveGrayEminence();
+      break;
+    case BonusCardId.B30_INTERFACE_HYPERLINK:
+      this.resolveInterfaceHyperlink();
+      break;
+    case BonusCardId.B31_GOVERNMENT_SUBSIDY:
+      this.resolveGovernmentSubsidy();
+      break;
+    case BonusCardId.B32_INVESTORS:
+      this.resolveInvestors();
+      break;
     }
 
     this.bonusDeck.discard(card);
@@ -370,5 +405,101 @@ export class MarsBotBonusResolver {
         return;
       }
     }
+  }
+
+  // ---- Corp-Specific Bonus Cards (B22-B32) ----
+
+  private resolvePlaceGreeneryCard(cardName: string): void {
+    this.turnResolver.placeGreenery();
+    this.game.log(`MarsBot resolves ${cardName}: placed greenery`);
+  }
+
+  private resolveSettlers(): void {
+    this.resolvePlaceGreeneryCard('Settlers');
+  }
+
+  private resolveRapidSprouting(): void {
+    this.resolvePlaceGreeneryCard('Rapid Sprouting');
+  }
+
+  private resolveSupplyAndDemand(): void {
+    // Factorum: advance building track (index 0)
+    this.turnResolver.advanceTrackPublic(0);
+    this.game.log('MarsBot resolves Supply & Demand: advance building track');
+  }
+
+  private resolveDoItRight(): void {
+    // Inventrix: advance science track (index 3)
+    this.turnResolver.advanceTrackPublic(3);
+    this.game.log('MarsBot resolves Do It Right: advance science track');
+  }
+
+  private resolveVenusianLobby(): void {
+    if (this.game.gameOptions.venusNextExtension) {
+      // Venus track is track 8 (index 7) when Venus expansion is enabled
+      // If Venus track exists on the board, advance it
+      if (this.turnResolver.board.tracks.length > 7) {
+        this.turnResolver.advanceTrackPublic(7);
+        this.game.log('MarsBot resolves Venusian Lobby: advance Venus track');
+      } else {
+        this.game.log('MarsBot resolves Venusian Lobby: no Venus track available');
+      }
+    } else {
+      // Without Venus, advance least-advanced track
+      const leastIdx = this.turnResolver.board.getLeastAdvancedTrackIndex();
+      this.turnResolver.advanceTrackPublic(leastIdx);
+      this.game.log('MarsBot resolves Venusian Lobby: advance least-advanced track (no Venus)');
+    }
+  }
+
+  private resolveBuildBuildBuild(): void {
+    // Philares: place city tile
+    this.turnResolver.placeCity();
+    this.game.log('MarsBot resolves Build Build Build: placed city');
+  }
+
+  private resolveDiversification(): void {
+    // Robinson Industries: advance least-advanced track
+    const board = this.turnResolver.board;
+    const leastIndex = board.getLeastAdvancedTrackIndex();
+    this.turnResolver.advanceTrackPublic(leastIndex);
+    this.game.log('MarsBot resolves Diversification: advance least-advanced track');
+  }
+
+  private resolveGrayEminence(): void {
+    // Septem Tribus: place delegate (Turmoil)
+    // Turmoil not yet supported — gain 5 MC as placeholder
+    this.turnResolver.mcSupply += 5;
+    this.game.log('MarsBot resolves Gray Eminence: +5 M€ (Turmoil delegate placement not yet implemented)');
+  }
+
+  private resolveInterfaceHyperlink(): void {
+    // Tyco Magnetics: advance energy (index 4) or science (index 3) track — whichever is least advanced
+    const board = this.turnResolver.board;
+    const energyPos = board.getTrack(5).position; // Energy = track 5
+    const sciencePos = board.getTrack(4).position; // Science = track 4
+    if (energyPos <= sciencePos) {
+      this.turnResolver.advanceTrackPublic(4); // Energy track = index 4
+      this.game.log('MarsBot resolves Interface Hyperlink: advance energy track');
+    } else {
+      this.turnResolver.advanceTrackPublic(3); // Science track = index 3
+      this.game.log('MarsBot resolves Interface Hyperlink: advance science track');
+    }
+  }
+
+  private resolveGovernmentSubsidy(): void {
+    // UNMI: gain 5 MC and advance any track (least-advanced)
+    this.turnResolver.mcSupply += 5;
+    const board = this.turnResolver.board;
+    const leastIndex = board.getLeastAdvancedTrackIndex();
+    this.turnResolver.advanceTrackPublic(leastIndex);
+    this.game.log('MarsBot resolves Government Subsidy: +5 M€, advance least-advanced track');
+  }
+
+  private resolveInvestors(): void {
+    // Utopia Invest: advance building (index 0) and space (index 1) tracks
+    this.turnResolver.advanceTrackPublic(0);
+    this.turnResolver.advanceTrackPublic(1);
+    this.game.log('MarsBot resolves Investors: advance building + space tracks');
   }
 }

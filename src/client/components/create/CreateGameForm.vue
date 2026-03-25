@@ -232,6 +232,11 @@
                                   <option value="brutal">Brutal</option>
                                 </select>
                               </label>
+                              <br>
+                              <input type="checkbox" v-model="automaCorpOption" id="automa-corp-checkbox">
+                              <label for="automa-corp-checkbox" style="margin-left: 20px;">
+                                <span v-i18n>MarsBot Corporation</span>
+                              </label>
                             </template>
 
                             <template v-if="!automaOption">
@@ -1226,6 +1231,7 @@ export default defineComponent({
         startingPreludes,
         automaOption: this.automaOption,
         automaDifficulty: this.automaDifficulty,
+        automaCorpOption: this.automaCorpOption,
       };
       return JSON.stringify(dataToSend, undefined, 4);
     },

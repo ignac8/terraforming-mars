@@ -14,6 +14,16 @@ import {MarsBotTags} from './MarsBotTags';
 import {MarsBotStock, MarsBotProduction} from './MarsBotStock';
 import {CardName} from '../../common/cards/CardName';
 import {ICard} from '../cards/ICard';
+import {registerBaseGameCorps} from './corps/BaseGameCorps';
+import {registerExpansionCorps} from './corps/ExpansionCorps';
+
+// Register all MarsBot corporations at module load (once)
+let corpsRegistered = false;
+if (!corpsRegistered) {
+  registerBaseGameCorps();
+  registerExpansionCorps();
+  corpsRegistered = true;
+}
 
 /**
  * Handles automa-specific game setup and provides hooks into the game lifecycle.
@@ -85,6 +95,9 @@ export class AutomaGameSetup {
 
     // Add MarsBot to human's opponents so cards that target opponents can see MarsBot
     (humanPlayer.opponents as Array<IPlayer>).push(marsBotPlayer);
+
+    // Wire MarsBot manager ref into turn resolver (for corp cube triggers)
+    marsBot.turnResolver.marsBotManager = marsBot;
 
     marsBot.buildInitialActionDeck();
 

@@ -1,11 +1,11 @@
 import {IGame} from '../IGame';
 import {IPlayer} from '../IPlayer';
 import {IProjectCard} from '../cards/IProjectCard';
-import {DifficultyLevel, MARSBOT_MAX_TRACK_POSITION, isAutomaPreludeGame, getAutomaMaxGeneration} from '../../common/automa/AutomaTypes';
+import {DifficultyLevel, BonusCardId, MARSBOT_MAX_TRACK_POSITION, isAutomaPreludeGame, getAutomaMaxGeneration} from '../../common/automa/AutomaTypes';
 import {MarsBotBoard} from './MarsBotBoard';
 import {MarsBotBoardData} from '../../common/automa/AutomaTypes';
 import {MarsBotModel} from '../../common/automa/MarsBotModel';
-import {MarsBotBonusCard} from './MarsBotBonusCard';
+import {MarsBotBonusCard, createCorpBonusCard} from './MarsBotBonusCard';
 import {MarsBotBonusDeck} from './MarsBotBonusDeck';
 import {MarsBotBonusResolver} from './MarsBotBonusResolver';
 import {MarsBotTilePlacer} from './MarsBotTilePlacer';
@@ -14,6 +14,9 @@ import {MarsBotScoring, MarsBotVPBreakdown} from './MarsBotScoring';
 import {Space} from '../boards/Space';
 import {Random} from '../../common/utils/Random';
 import {inplaceShuffle} from '../utils/shuffle';
+import {IMarsBotCorp, MarsBotTrackCube, MarsBotCorpContext, trackCubeKey} from '../../common/automa/MarsBotCorpTypes';
+import {MarsBotCorpResolver} from './corps/MarsBotCorpResolver';
+import {getMarsBotCorp} from './corps/MarsBotCorpRegistry';
 
 /**
  * MarsBot: the automa manager. Owns the board, decks, and coordinates turns.
@@ -40,6 +43,24 @@ export class MarsBot {
 
   /** Cards MarsBot has played (for Hard mode VP scoring). */
   public playedProjectCards: Array<IProjectCard> = [];
+
+  /** Corporation card (Rulebook B). */
+  public corp: IMarsBotCorp | undefined;
+
+  /** Track cube positions placed by the corporation. Key: "trackNum:position". */
+  public trackCubePositions: Map<string, MarsBotTrackCube> = new Map();
+
+  /** Cube positions that have already been triggered (won't re-trigger after regression). */
+  public triggeredCubePositions: Set<string> = new Set();
+
+  /** Corp-specific state (M€ on card, resources, cubes, etc.). */
+  public corpSpecificState: Map<string, number> = new Map();
+
+  /** Cached corp context (reused across calls within the same game). */
+  private cachedCorpContext: MarsBotCorpContext | undefined;
+
+  /** Floater resources (Venus Next corps). */
+  public floaterCount: number = 0;
 
   constructor(
     public readonly game: IGame,
@@ -131,7 +152,8 @@ export class MarsBot {
       return;
     }
 
-    const card = this.actionDeck.shift()!;
+    const card = this.actionDeck.shift();
+    if (card === undefined) return;
 
     if (this.isProjectCard(card)) {
       const projectCard = card as IProjectCard;
@@ -202,14 +224,141 @@ export class MarsBot {
     }
   }
 
+  // ---- Corporation ----
+
+  /** Set the corporation and run its setup. */
+  public setCorpAndSetup(corp: IMarsBotCorp): void {
+    this.corp = corp;
+    MarsBotCorpResolver.setupCorp(corp, this);
+    this.game.log('MarsBot selects corporation: ${0}', (b) => b.rawString(corp.name));
+  }
+
+  /** Build the context object for corp callbacks. Cached for reuse since all dynamic fields are getters. */
+  public getCorpContext(): MarsBotCorpContext {
+    if (this.cachedCorpContext !== undefined) return this.cachedCorpContext;
+    const mb = this;
+    this.cachedCorpContext = {
+      gameLog: (msg: string) => mb.game.log(msg),
+      advanceTrack: (trackIndex: number) => mb.turnResolver.advanceTrackPublic(trackIndex),
+      get mcSupply() { return mb.turnResolver.mcSupply; },
+      setMcSupply: (mc: number) => { mb.turnResolver.mcSupply = mc; },
+      get trackPositions() { return mb.board.tracks.map((t) => t.position); },
+      get humanPlayerTR() { return mb.humanPlayer.getTerraformRating(); },
+      get marsBotTR() { return mb.player.getTerraformRating(); },
+      get generation() { return mb.game.generation; },
+      get leastAdvancedTrackIndex() { return mb.board.getLeastAdvancedTrackIndex(); },
+      get mostAdvancedTrackIndex() { return mb.board.getMostAdvancedTrackIndex(); },
+      drawAndResolveProjectCard: () => {
+        const cards = mb.game.projectDeck.drawN(mb.game, 1);
+        if (cards.length === 0) return false;
+        mb.turnResolver.resolveProjectCard(cards[0]);
+        return true;
+      },
+      drawAndResolveProjectCardIgnoringFirstNTags: (n: number) => {
+        const cards = mb.game.projectDeck.drawN(mb.game, 1);
+        if (cards.length === 0) return false;
+        const card = cards[0];
+        // Use Object.create to preserve prototype (methods like getVictoryPoints)
+        const mockCard = Object.create(card, {tags: {value: card.tags.slice(n)}}) as IProjectCard;
+        mb.turnResolver.resolveProjectCard(mockCard);
+        return true;
+      },
+      drawAndResolveBonusCard: () => {
+        const bonusCard = mb.bonusDeck.draw();
+        if (bonusCard === undefined) return false;
+        mb.bonusResolver.resolve(bonusCard);
+        return true;
+      },
+      raiseTemperature: (steps: number) => {
+        mb.game.increaseTemperature(mb.player, steps as 1 | 2 | 3);
+      },
+      placeOcean: () => {
+        mb.turnResolver.placeOcean();
+      },
+      placeCity: () => {
+        mb.turnResolver.placeCity();
+      },
+      placeGreenery: () => {
+        mb.turnResolver.placeGreenery();
+      },
+      addProjectCardToActionDeck: (count: number) => {
+        const cards = mb.game.projectDeck.drawN(mb.game, count);
+        mb.actionDeck.push(...cards);
+      },
+      addBonusCardToActionDeck: (bonusCardId: string) => {
+        // Try to find existing card in deck first, otherwise create a new one
+        let card = mb.bonusDeck.findAndRemove(bonusCardId);
+        if (card === undefined) {
+          card = createCorpBonusCard(bonusCardId as BonusCardId);
+        }
+        mb.actionDeck.push(card);
+      },
+      removeBonusCardFromDeck: (bonusCardId: string) => {
+        mb.bonusDeck.removeById(bonusCardId);
+      },
+      addBonusCardToBonusDeck: (bonusCardId: string) => {
+        const card = createCorpBonusCard(bonusCardId as BonusCardId);
+        mb.bonusDeck.drawPile.push(card);
+      },
+      getCorpState: (key: string) => mb.corpSpecificState.get(key) ?? 0,
+      setCorpState: (key: string, value: number) => { mb.corpSpecificState.set(key, value); },
+      raiseTR: (steps: number) => {
+        if (steps > 0) {
+          mb.player.increaseTerraformRating(steps);
+        } else if (steps < 0) {
+          mb.player.decreaseTerraformRating(-steps);
+        }
+      },
+      get floaterCount() { return mb.floaterCount; },
+      addFloaters: (count: number) => { mb.floaterCount += count; },
+      spendFloaters: (count: number) => { mb.floaterCount = Math.max(0, mb.floaterCount - count); },
+      gainMc: (amount: number) => { mb.turnResolver.mcSupply += amount; },
+      discardFewestTagsFromActionDeck: () => {
+        if (mb.actionDeck.length === 0) return;
+        let fewestTags = Infinity;
+        let fewestIdx = 0;
+        for (let i = 0; i < mb.actionDeck.length; i++) {
+          const card = mb.actionDeck[i];
+          const tagCount = mb.isProjectCard(card) ? (card as IProjectCard).tags.length : 0;
+          if (tagCount < fewestTags) {
+            fewestTags = tagCount;
+            fewestIdx = i;
+          }
+        }
+        const discarded = mb.actionDeck.splice(fewestIdx, 1)[0];
+        if (mb.isProjectCard(discarded)) {
+          mb.game.projectDeck.discardPile.push(discarded as IProjectCard);
+        }
+        mb.game.log('MarsBot (Polyphemos): discarded card with fewest tags from action deck');
+      },
+    };
+    return this.cachedCorpContext;
+  }
+
+  /** Check if a cube exists at a given track position. */
+  public hasCubeAt(trackNum: number, position: number): MarsBotTrackCube | undefined {
+    return this.trackCubePositions.get(trackCubeKey(trackNum, position));
+  }
+
+  /** Check if a cube at this position has already been triggered. */
+  public isCubeTriggered(trackNum: number, position: number): boolean {
+    return this.triggeredCubePositions.has(trackCubeKey(trackNum, position));
+  }
+
+  /** Mark a cube position as triggered. */
+  public markCubeTriggered(trackNum: number, position: number): void {
+    this.triggeredCubePositions.add(trackCubeKey(trackNum, position));
+  }
+
   // ---- Scoring ----
 
   /** Calculate MarsBot's final VP. */
   public getVictoryPoints(): MarsBotVPBreakdown {
+    const corpVpBonus = this.corp?.effect?.vpBonus?.(this.getCorpContext()) ?? 0;
     const scoring = new MarsBotScoring(
       this.game, this.player, this.humanPlayer,
       this.turnResolver, this.difficulty, this.neuralInstanceSpace,
-      this.playedProjectCards,
+      this.playedProjectCards, corpVpBonus,
     );
     return scoring.calculate();
   }
@@ -241,7 +390,7 @@ export class MarsBot {
   public toModel(): MarsBotModel {
     const isEnd = this.game.phase === 'end';
     const vp = isEnd ? this.getVictoryPoints() : undefined;
-    return {
+    const model: MarsBotModel = {
       difficulty: this.difficulty,
       tracks: this.board.tracks.map((track) => ({
         num: track.definition.num,
@@ -255,12 +404,18 @@ export class MarsBot {
       vpBreakdown: vp,
       instantWin: this.isInstantWin(),
     };
+    if (this.corp !== undefined) {
+      model.corpId = this.corp.id;
+      model.corpName = this.corp.name;
+      model.trackCubes = Array.from(this.trackCubePositions.values());
+    }
+    return model;
   }
 
   // ---- Serialization ----
 
   public serialize(): import('../SerializedGame').SerializedAutomaState {
-    return {
+    const state: import('../SerializedGame').SerializedAutomaState = {
       trackPositions: this.board.tracks.map((t) => t.position),
       trackRegressedPositions: this.board.tracks.map((t) => Array.from(t.regressedPositions)),
       mcSupply: this.turnResolver.mcSupply,
@@ -275,6 +430,18 @@ export class MarsBot {
       playedProjectCardNames: this.playedProjectCards.map((c) => c.name),
       marsBotPlayerId: this.player.id,
     };
+    if (this.corp !== undefined) {
+      state.corpId = this.corp.id;
+      state.trackCubePositions = Array.from(this.trackCubePositions.values());
+      state.triggeredCubePositions = Array.from(this.triggeredCubePositions);
+    }
+    if (this.corpSpecificState.size > 0) {
+      state.corpSpecificState = Object.fromEntries(this.corpSpecificState);
+    }
+    if (this.floaterCount > 0) {
+      state.floaterCount = this.floaterCount;
+    }
+    return state;
   }
 
   public restoreState(state: import('../SerializedGame').SerializedAutomaState): void {
@@ -297,6 +464,29 @@ export class MarsBot {
     // Restore neural instance
     if (state.neuralInstanceSpaceId) {
       this.neuralInstanceSpace = this.game.board.spaces.find((s) => s.id === state.neuralInstanceSpaceId);
+    }
+
+    // Restore corporation state
+    if (state.corpId !== undefined) {
+      const corp = getMarsBotCorp(state.corpId);
+      if (corp !== undefined) {
+        this.corp = corp;
+      }
+    }
+    if (state.trackCubePositions !== undefined) {
+      this.trackCubePositions.clear();
+      for (const cube of state.trackCubePositions) {
+        this.trackCubePositions.set(trackCubeKey(cube.trackNum, cube.position), cube);
+      }
+    }
+    if (state.triggeredCubePositions !== undefined) {
+      this.triggeredCubePositions = new Set(state.triggeredCubePositions);
+    }
+    if (state.corpSpecificState !== undefined) {
+      this.corpSpecificState = new Map(Object.entries(state.corpSpecificState).map(([k, v]) => [k, v as number]));
+    }
+    if (state.floaterCount !== undefined) {
+      this.floaterCount = state.floaterCount;
     }
   }
 

@@ -30,6 +30,7 @@ export class MarsBotScoring {
     private readonly difficulty: DifficultyLevel,
     private readonly neuralInstanceSpace: Space | undefined,
     private readonly playedProjectCards: ReadonlyArray<IProjectCard> = [],
+    private readonly corpVpBonus: number = 0,
   ) {}
 
   private getMaxGeneration(): number {
@@ -62,7 +63,7 @@ export class MarsBotScoring {
       neuralInstance,
       mcToVP,
       cardVP,
-      total: tr + milestones + awards + greenery + cityAdjacentGreenery + neuralInstance + mcToVP + cardVP,
+      total: tr + milestones + awards + greenery + cityAdjacentGreenery + neuralInstance + mcToVP + cardVP + this.corpVpBonus,
     };
   }
 

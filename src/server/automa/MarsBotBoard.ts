@@ -89,4 +89,30 @@ export class MarsBotBoard {
     }
     return minIndex;
   }
+
+  /** Get the index of the most-advanced track (highest position, topmost/lowest index if tied). */
+  public getMostAdvancedTrackIndex(): number {
+    let maxPos = this.tracks[0].position;
+    let maxIndex = 0;
+    for (let i = 1; i < this.tracks.length; i++) {
+      if (this.tracks[i].position > maxPos) {
+        maxPos = this.tracks[i].position;
+        maxIndex = i;
+      }
+    }
+    return maxIndex;
+  }
+
+  /** Get the index of the most-advanced track that hasn't reached max position. */
+  public getMostAdvancedNonMaxedTrackIndex(): number | undefined {
+    let maxPos = -1;
+    let maxIndex: number | undefined;
+    for (let i = 0; i < this.tracks.length; i++) {
+      if (this.tracks[i].position > maxPos && this.tracks[i].canAdvance()) {
+        maxPos = this.tracks[i].position;
+        maxIndex = i;
+      }
+    }
+    return maxIndex;
+  }
 }

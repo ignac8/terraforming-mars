@@ -7,6 +7,10 @@ import {MarsBotModel} from '../../common/automa/MarsBotModel';
 import {getAutomaMaxGeneration} from '../../common/automa/AutomaTypes';
 import {SelectCard} from '../inputs/SelectCard';
 import {IProjectCard} from '../cards/IProjectCard';
+import {toCorpCardRef} from '../../common/automa/MarsBotCorpTypes';
+import {inplaceRemove} from '../../common/utils/utils';
+import {MarsBotCorpResolver} from './corps/MarsBotCorpResolver';
+import {MarsBotDraftResolver} from './corps/MarsBotDraftResolver';
 
 /**
  * All automa (MarsBot) hooks into the Game lifecycle.
@@ -115,6 +119,13 @@ export class AutomaGameHooks {
     if (this.game.generation > 1) {
       this.marsBot.goesFirst = !this.marsBot.goesFirst;
     }
+
+    // Resolve roundStart per-gen effects
+    const corp = this.marsBot.corp;
+    if (corp?.perGeneration?.timing === 'roundStart') {
+      MarsBotCorpResolver.resolvePerGenEffect(corp, this.marsBot);
+    }
+
     if (this.game.gameOptions.draftVariant) {
       this.handleDraftResearchPhase();
       return true; // Draft handled — don't call runResearchPhase for human
@@ -141,22 +152,40 @@ export class AutomaGameHooks {
     let marsBotPile = [...pileB];
     const humanKept: Array<IProjectCard> = [];
     const marsBotKept: Array<IProjectCard> = [];
+    const draftPriority = this.marsBot.corp?.draftPriority;
 
     // Run all 4 draft rounds synchronously with human input chaining
     const runDraftRound = (round: number) => {
       if (round > 4) {
-        // Draft complete — build MarsBot deck
-        this.marsBot.buildResearchActionDeckFromDraft(marsBotKept);
+        // Draft complete — apply post-draft discard if corp has draft priority
+        let finalMarsBotCards = marsBotKept;
+        if (draftPriority !== undefined) {
+          const result = MarsBotDraftResolver.postDraftDiscard(marsBotKept, draftPriority, this.game.rng);
+          finalMarsBotCards = result.kept;
+          for (const discarded of result.discarded) {
+            this.game.projectDeck.discardPile.push(discarded);
+          }
+        }
+        // Build MarsBot deck
+        this.marsBot.buildResearchActionDeckFromDraft(finalMarsBotCards);
         // Human gets their 4 drafted cards → buy phase
         humanPlayer.draftedCards = humanKept;
         humanPlayer.runResearchPhase();
         return;
       }
 
-      // MarsBot picks 1 random from its pile
+      // MarsBot picks 1 from its pile (priority-based if corp has draft priority, else random)
       if (marsBotPile.length > 0) {
-        const randomIndex = Math.floor(this.game.rng.next() * marsBotPile.length);
-        marsBotKept.push(marsBotPile.splice(randomIndex, 1)[0]);
+        let picked: IProjectCard;
+        if (draftPriority !== undefined) {
+          picked = MarsBotDraftResolver.pickCardForMarsBot(
+            marsBotPile, draftPriority, this.game.rng, this.marsBot.board,
+          );
+        } else {
+          picked = marsBotPile[this.game.rng.nextInt(marsBotPile.length)];
+        }
+        inplaceRemove(marsBotPile, picked);
+        marsBotKept.push(picked);
       }
 
       // Human picks 1 from their pile
@@ -167,8 +196,7 @@ export class AutomaGameHooks {
         {min: 1, max: 1},
       ).andThen((selected) => {
         humanKept.push(selected[0]);
-        const idx = humanPile.indexOf(selected[0]);
-        if (idx >= 0) humanPile.splice(idx, 1);
+        inplaceRemove(humanPile, selected[0]);
 
         // Swap piles
         const temp = humanPile;
@@ -184,6 +212,43 @@ export class AutomaGameHooks {
     };
 
     runDraftRound(1);
+  }
+
+  /**
+   * Called after the human picks their corporation in generation 1.
+   * Selects and sets up MarsBot's corporation if the corp option is enabled.
+   */
+  public handlePostCorporationSetup(): void {
+    if (!this.game.gameOptions.automaCorpOption) return;
+
+    const humanCorpName = this.game.players[0]?.pickedCorporationCard?.name;
+    if (humanCorpName === undefined) return;
+
+    const corp = MarsBotCorpResolver.selectCorp(humanCorpName, this.game.rng);
+    if (corp === undefined) {
+      this.game.log('No MarsBot corporations available');
+      return;
+    }
+
+    this.marsBot.setCorpAndSetup(corp);
+
+    // If corp has beforeActionPhase per-gen effect, resolve it now (gen 1)
+    if (corp.perGeneration?.timing === 'beforeActionPhase') {
+      MarsBotCorpResolver.resolvePerGenEffect(corp, this.marsBot);
+    }
+  }
+
+  /**
+   * Called before the action phase each generation.
+   * Resolves beforeActionPhase per-gen effects (gen 2+ only).
+   */
+  public handleBeforeActionPhase(): void {
+    if (this.game.generation <= 1) return;
+    const corp = this.marsBot.corp;
+    if (corp === undefined) return;
+    if (corp.perGeneration?.timing === 'beforeActionPhase') {
+      MarsBotCorpResolver.resolvePerGenEffect(corp, this.marsBot);
+    }
   }
 
   /** Returns true if this player's production should be skipped (MarsBot). */
@@ -268,5 +333,37 @@ export class AutomaGameHooks {
   /** Build the model sent to the client. */
   public toModel(): MarsBotModel {
     return this.marsBot.toModel();
+  }
+
+  // ---- Corp effect hooks ----
+
+  /** Called when the human player plays a project card. Notifies MarsBot's corp. */
+  public handleHumanCardPlayed(card: IProjectCard): void {
+    const corp = this.marsBot.corp;
+    if (corp?.effect?.onHumanCardPlayed === undefined) return;
+    corp.effect.onHumanCardPlayed(this.marsBot.getCorpContext(),
+      toCorpCardRef(card.name, card.tags, card.cost, card.requirements !== undefined, card.getVictoryPoints(this.game.players[0])),
+    );
+  }
+
+  /** Called when any player places a tile. Notifies MarsBot's corp. */
+  public handleTilePlaced(player: IPlayer, tileType: number): void {
+    const corp = this.marsBot.corp;
+    if (corp?.effect?.onTilePlaced === undefined) return;
+    corp.effect.onTilePlaced(this.marsBot.getCorpContext(), player === this.marsBot.player, tileType);
+  }
+
+  /** Called when Venus scale is raised. Notifies MarsBot's corp. */
+  public handleVenusRaised(): void {
+    const corp = this.marsBot.corp;
+    if (corp?.effect?.onVenusRaised === undefined) return;
+    corp.effect.onVenusRaised(this.marsBot.getCorpContext());
+  }
+
+  /** Called when a global parameter is raised. Returns true to SKIP the raise (Pristar). */
+  public handleGlobalParameterRaised(parameter: string): boolean {
+    const corp = this.marsBot.corp;
+    if (corp?.effect?.onGlobalParameterRaised === undefined) return false;
+    return corp.effect.onGlobalParameterRaised(this.marsBot.getCorpContext(), parameter) ?? false;
   }
 }

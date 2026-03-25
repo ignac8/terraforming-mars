@@ -667,6 +667,7 @@ export class Game implements IGame, Logger {
         }
         somePlayer.playCorporationCard(somePlayer.pickedCorporationCard);
       }
+      this.automaHooks?.handlePostCorporationSetup();
     }
   }
 
@@ -1026,6 +1027,8 @@ export class Game implements IGame, Logger {
         this.passedPlayers.clear();
         this.potentiallyChangeFirstPlayer();
 
+        this.automaHooks?.handleBeforeActionPhase();
+
         const firstPlayer = this.automaHooks?.getFirstPlayerForActionPhase() ?? this.first;
         this.startActionsForPlayer(firstPlayer);
       }
@@ -1259,6 +1262,8 @@ export class Game implements IGame, Logger {
 
     this.venusScaleLevel += steps * 2;
 
+    this.automaHooks?.handleVenusRaised();
+
     return steps;
   }
 
@@ -1416,6 +1421,8 @@ export class Game implements IGame, Logger {
         playedCard.onTilePlaced?.(p, player, space, BoardType.MARS);
       }
     }
+
+    this.automaHooks?.handleTilePlaced(player, tile.tileType);
 
     if (initialTileType !== undefined) {
       AresHandler.ifAres(this, () => {

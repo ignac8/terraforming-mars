@@ -921,6 +921,9 @@ export class Player implements IPlayer {
     }
 
     PathfindersExpansion.onCardPlayed(this, card);
+
+    // Notify MarsBot corp of human card play (Saturn Systems, Pharmacy Union, Splice, etc.)
+    this.game.automaHooks?.handleHumanCardPlayed(card as IProjectCard);
   }
 
   /* Visible for testing */
