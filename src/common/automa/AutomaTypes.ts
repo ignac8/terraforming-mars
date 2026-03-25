@@ -63,15 +63,31 @@ export const FAILED_ACTION_MC_EASY = 3;
 export const MARSBOT_MAX_TRACK_POSITION = 18;
 export const MARSBOT_STARTING_TR = 20;
 export const MARSBOT_MAX_GENERATION = 20;
+export const MARSBOT_MAX_GENERATION_PRELUDE = 18;
 
-/** MC-to-VP conversion table by generation number at game end. */
-export const MC_TO_VP_TABLE: ReadonlyArray<{maxGeneration: number, mcPerVP: number}> = [
-  {maxGeneration: 12, mcPerVP: 8},
-  {maxGeneration: 13, mcPerVP: 7},
-  {maxGeneration: 14, mcPerVP: 6},
-  {maxGeneration: 15, mcPerVP: 5},
-  {maxGeneration: 16, mcPerVP: 4},
-  {maxGeneration: 17, mcPerVP: 3},
-  {maxGeneration: 18, mcPerVP: 2},
-  {maxGeneration: 19, mcPerVP: 1},
-];
+/** Whether this automa game uses Prelude rules (shorter game, wild tags, etc.). */
+export function isAutomaPreludeGame(preludeExtension: boolean, prelude2Expansion: boolean): boolean {
+  return preludeExtension || prelude2Expansion;
+}
+
+/** Get the max generation for an automa game. */
+export function getAutomaMaxGeneration(preludeExtension: boolean, prelude2Expansion: boolean): number {
+  return isAutomaPreludeGame(preludeExtension, prelude2Expansion)
+    ? MARSBOT_MAX_GENERATION_PRELUDE
+    : MARSBOT_MAX_GENERATION;
+}
+
+/** Build MC-to-VP table for a given max generation. mcPerVP goes 8→1 over the last 8 generations. */
+function buildMcToVpTable(maxGen: number): ReadonlyArray<{maxGeneration: number, mcPerVP: number}> {
+  const table: Array<{maxGeneration: number, mcPerVP: number}> = [];
+  for (let mcPerVP = 8; mcPerVP >= 1; mcPerVP--) {
+    table.push({maxGeneration: maxGen - mcPerVP, mcPerVP});
+  }
+  return table;
+}
+
+/** MC-to-VP conversion table by generation number at game end (base game, no Prelude). */
+export const MC_TO_VP_TABLE = buildMcToVpTable(MARSBOT_MAX_GENERATION);
+
+/** MC-to-VP conversion table when playing with Prelude (shorter game). */
+export const MC_TO_VP_TABLE_PRELUDE = buildMcToVpTable(MARSBOT_MAX_GENERATION_PRELUDE);

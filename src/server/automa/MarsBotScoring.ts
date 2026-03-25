@@ -1,6 +1,6 @@
 import {IGame} from '../IGame';
 import {IPlayer} from '../IPlayer';
-import {MC_TO_VP_TABLE, MARSBOT_MAX_GENERATION, DifficultyLevel} from '../../common/automa/AutomaTypes';
+import {MC_TO_VP_TABLE, MC_TO_VP_TABLE_PRELUDE, DifficultyLevel, getAutomaMaxGeneration, isAutomaPreludeGame} from '../../common/automa/AutomaTypes';
 import {MarsBotTurnResolver} from './MarsBotTurnResolver';
 import {IProjectCard} from '../cards/IProjectCard';
 import {Space} from '../boards/Space';
@@ -32,9 +32,14 @@ export class MarsBotScoring {
     private readonly playedProjectCards: ReadonlyArray<IProjectCard> = [],
   ) {}
 
-  /** Check if MarsBot instantly wins because generation reached 20. */
+  private getMaxGeneration(): number {
+    const opts = this.game.gameOptions;
+    return getAutomaMaxGeneration(opts.preludeExtension, opts.prelude2Expansion);
+  }
+
+  /** Check if MarsBot instantly wins because max generation reached. */
   public isInstantWin(): boolean {
-    return this.game.generation >= MARSBOT_MAX_GENERATION;
+    return this.game.generation >= this.getMaxGeneration();
   }
 
   /** Calculate MarsBot's complete VP breakdown. */
@@ -109,9 +114,12 @@ export class MarsBotScoring {
 
   private calculateMCtoVP(): number {
     const gen = this.game.generation;
-    if (gen >= MARSBOT_MAX_GENERATION) return 0; // MarsBot wins instantly at gen 20
+    if (gen >= this.getMaxGeneration()) return 0; // MarsBot wins instantly
 
-    const entry = MC_TO_VP_TABLE.find((e) => gen <= e.maxGeneration);
+    const opts = this.game.gameOptions;
+    const table = isAutomaPreludeGame(opts.preludeExtension, opts.prelude2Expansion)
+      ? MC_TO_VP_TABLE_PRELUDE : MC_TO_VP_TABLE;
+    const entry = table.find((e) => gen <= e.maxGeneration);
     if (entry === undefined) return 0;
 
     const mc = this.turnResolver.mcSupply;

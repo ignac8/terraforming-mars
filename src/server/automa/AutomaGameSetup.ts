@@ -12,12 +12,37 @@ import {MARSBOT_STARTING_TR} from '../../common/automa/AutomaTypes';
 import {AutomaGameHooks} from './AutomaGameHooks';
 import {MarsBotTags} from './MarsBotTags';
 import {MarsBotStock, MarsBotProduction} from './MarsBotStock';
+import {CardName} from '../../common/cards/CardName';
+import {ICard} from '../cards/ICard';
 
 /**
  * Handles automa-specific game setup and provides hooks into the game lifecycle.
  * This is the ONLY automa class that Game.ts needs to know about.
  */
 export class AutomaGameSetup {
+  /** Force-disable unsupported expansions for automa games. Mutates gameOptions in place. */
+  public static sanitizeGameOptions(gameOptions: GameOptions): void {
+    gameOptions.venusNextExtension = false;
+    gameOptions.coloniesExtension = false;
+    gameOptions.turmoilExtension = false;
+    gameOptions.aresExtension = false;
+    gameOptions.moonExpansion = false;
+    gameOptions.pathfindersExpansion = false;
+    gameOptions.ceoExtension = false;
+    gameOptions.starWarsExpansion = false;
+    gameOptions.underworldExpansion = false;
+    gameOptions.communityCardsOption = false;
+    gameOptions.boardName = BoardName.THARSIS;
+  }
+
+  /** Filter out cards not supported against MarsBot (e.g., Recession). */
+  public static filterPreludeCards<T extends ICard>(cards: Array<T>, gameOptions: GameOptions): Array<T> {
+    if (gameOptions.prelude2Expansion) {
+      return cards.filter((c) => c.name !== CardName.RECESSION);
+    }
+    return cards;
+  }
+
   /** Create the MarsBot player instance for the game engine. */
   public static createMarsBotPlayer(gameId: GameId): IPlayer {
     const playerId = safeCast('p-' + gameId + '-marsbot', isPlayerId);
