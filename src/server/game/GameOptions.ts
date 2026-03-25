@@ -77,6 +77,7 @@ export type GameOptions = {
   // Automa (MarsBot solo variant)
   automaOption: boolean;
   automaDifficulty: 'easy' | 'normal' | 'hard' | 'brutal';
+  automaCorpOption: boolean;
 }
 
 export const DEFAULT_GAME_OPTIONS: GameOptions = {
@@ -148,4 +149,5 @@ export const DEFAULT_GAME_OPTIONS: GameOptions = {
   twoCorpsVariant: false,
   automaOption: false,
   automaDifficulty: 'normal',
+  automaCorpOption: false,
 };

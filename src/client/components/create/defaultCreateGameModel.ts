@@ -71,5 +71,6 @@ export function defaultCreateGameModel(): CreateGameModel {
     ceosDraftVariant: undefined,
     automaOption: true,
     automaDifficulty: 'normal',
+    automaCorpOption: false,
   };
 }

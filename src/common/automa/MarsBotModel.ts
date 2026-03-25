@@ -1,4 +1,5 @@
 import {DifficultyLevel} from './AutomaTypes';
+import {CubeType} from './MarsBotCorpTypes';
 
 /** Track state sent to the client for display. */
 export interface MarsBotTrackModel {
@@ -32,4 +33,10 @@ export interface MarsBotModel {
   vpBreakdown?: MarsBotVPModel;
   /** Whether MarsBot wins by generation limit. */
   instantWin?: boolean;
+  /** Corporation ID if playing with corp rules. */
+  corpId?: string;
+  /** Corporation display name. */
+  corpName?: string;
+  /** Track cubes placed by the corporation. */
+  trackCubes?: ReadonlyArray<{trackNum: number, position: number, cubeType: CubeType}>;
 }

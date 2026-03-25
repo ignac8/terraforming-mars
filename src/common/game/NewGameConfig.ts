@@ -83,4 +83,5 @@ export interface NewGameConfig {
   startingPreludes: number;
   automaOption?: boolean;
   automaDifficulty?: 'easy' | 'normal' | 'hard' | 'brutal';
+  automaCorpOption?: boolean;
 }

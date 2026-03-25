@@ -2,6 +2,7 @@ import {IGame} from '../IGame';
 import {IPlayer} from '../IPlayer';
 import {IProjectCard} from '../cards/IProjectCard';
 import {Tag} from '../../common/cards/Tag';
+import {toCorpCardRef} from '../../common/automa/MarsBotCorpTypes';
 import {CardType} from '../../common/cards/CardType';
 import {TileType, CITY_TILES, GREENERY_TILES} from '../../common/TileType';
 import {Board} from '../boards/Board';
@@ -17,6 +18,8 @@ import {IMilestone} from '../milestones/IMilestone';
 import {IAward} from '../awards/IAward';
 import {Resource} from '../../common/Resource';
 import * as constants from '../../common/constants';
+import {MarsBotCorpResolver} from './corps/MarsBotCorpResolver';
+import type {MarsBot} from './MarsBot';
 
 /**
  * Resolves MarsBot turns: flips cards from the action deck, advances tracks,
@@ -24,6 +27,9 @@ import * as constants from '../../common/constants';
  */
 export class MarsBotTurnResolver {
   public readonly tilePlacer: MarsBotTilePlacer;
+
+  /** Reference to the MarsBot manager (set after construction for corp cube triggers). */
+  public marsBotManager: MarsBot | undefined;
 
   constructor(
     private readonly game: IGame,
@@ -87,6 +93,12 @@ export class MarsBotTurnResolver {
       this.game.log('MarsBot: no tracks advanced');
     }
 
+    // Notify corp of card resolution
+    this.marsBotManager?.corp?.effect?.onProjectCardResolved?.(
+      this.marsBotManager.getCorpContext(),
+      toCorpCardRef(card.name, card.tags, card.cost, card.requirements !== undefined, card.getVictoryPoints(this.marsBot)),
+    );
+
     // Card goes to MarsBot's played pile (for Hard mode scoring)
     this.game.projectDeck.discardPile.push(card);
   }
@@ -105,6 +117,12 @@ export class MarsBotTurnResolver {
     }
 
     const action = track.advance();
+
+    // Corp cube trigger — fires BEFORE track icon resolution
+    if (this.marsBotManager?.corp !== undefined) {
+      MarsBotCorpResolver.onTrackAdvanced(this.marsBotManager, trackNum, track.position);
+    }
+
     if (action !== null) {
       this.game.log('MarsBot: Track ${0} → ${1}, action: ${2}',
         (b) => b.number(trackNum).number(track.position).rawString(action));
@@ -195,7 +213,7 @@ export class MarsBotTurnResolver {
     // Since MarsBot doesn't use production, we grant 2 MC for each heat bonus step hit.
   }
 
-  private placeGreenery(): void {
+  public placeGreenery(): void {
     const space = this.tilePlacer.findGreenerySpace();
     if (space === undefined) {
       this.failedAction();
@@ -210,7 +228,7 @@ export class MarsBotTurnResolver {
     this.game.log('MarsBot places greenery');
   }
 
-  private placeOcean(): void {
+  public placeOcean(): void {
     if (!this.game.canAddOcean()) {
       this.failedAction();
       return;
@@ -228,7 +246,7 @@ export class MarsBotTurnResolver {
     this.game.log('MarsBot places ocean');
   }
 
-  private placeCity(): void {
+  public placeCity(): void {
     const space = this.tilePlacer.findCitySpace();
     if (space === undefined) {
       this.failedAction();
@@ -354,7 +372,7 @@ export class MarsBotTurnResolver {
     }
 
     this.game.fundAward(this.marsBot, bestAward);
-    this.game.log('MarsBot funds award ${0}', (b) => b.rawString(bestAward!.name));
+    this.game.log('MarsBot funds award ${0}', (b) => b.rawString(bestAward.name));
   }
 
   /** Get MarsBot's value for an award using track-based evaluation. */

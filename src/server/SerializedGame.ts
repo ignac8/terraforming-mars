@@ -89,4 +89,10 @@ export type SerializedAutomaState = {
     neuralInstanceSpaceId: string | undefined;
     playedProjectCardNames: Array<string>;
     marsBotPlayerId: string;
+    // Corporation framework
+    corpId?: string;
+    trackCubePositions?: Array<{trackNum: number, position: number, cubeType: import('../common/automa/MarsBotCorpTypes').CubeType}>;
+    triggeredCubePositions?: Array<string>;
+    corpSpecificState?: Record<string, unknown>;
+    floaterCount?: number;
 }

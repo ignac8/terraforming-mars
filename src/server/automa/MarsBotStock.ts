@@ -39,14 +39,23 @@ export class MarsBotStock extends Stock {
     }
 
     if (amount < 0) {
-      // Resources being removed/stolen → deduct from MC supply
+      // Ecoline/Ecotec FAQ: plants on corp card can be targeted. Excess is lost, NOT from MC supply.
+      if (resource === Resource.PLANTS && this.marsBotRef.corpSpecificState.has('plantResources')) {
+        const plantResources = this.marsBotRef.corpSpecificState.get('plantResources') ?? 0;
+        if (plantResources > 0) {
+          const removed = Math.min(-amount, plantResources);
+          this.marsBotRef.corpSpecificState.set('plantResources', plantResources - removed);
+          if (options?.log) {
+            this.player.game.log('MarsBot loses ${0} plant resources from corp card',
+              (b) => b.number(removed));
+          }
+          return; // Plants from corp card — excess is lost, NOT from MC supply
+        }
+      }
+
+      // All other resources → deduct from MC supply
       const mc = Math.min(-amount, this.marsBotRef.turnResolver.mcSupply);
       this.marsBotRef.turnResolver.mcSupply -= mc;
-
-      if (options?.stealing && options.from !== undefined) {
-        // Thief gets MC as if it were the resource type
-        // The steal() method in Stock will call thief.stock.add() separately
-      }
 
       if (options?.log) {
         this.player.game.log('MarsBot loses ${0} MC (${1} removed)',

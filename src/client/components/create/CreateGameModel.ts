@@ -63,4 +63,5 @@ export type CreateGameModel = {
   undoOption: boolean;
   automaOption: boolean;
   automaDifficulty: 'easy' | 'normal' | 'hard' | 'brutal';
+  automaCorpOption: boolean;
 }
