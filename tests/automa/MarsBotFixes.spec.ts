@@ -400,8 +400,8 @@ describe('MarsBot Fixes', () => {
     });
   });
 
-  describe('Wild tags ignored', () => {
-    it('wild tag does not advance any track', () => {
+  describe('Wild tags advance least-advanced track', () => {
+    it('wild tag advances the least-advanced track (topmost if tied)', () => {
       const {marsBot} = createAutomaGame();
       const mockCard = {
         cost: 5, tags: [Tag.WILD], type: 'automated' as any,
@@ -409,8 +409,9 @@ describe('MarsBot Fixes', () => {
       } as any;
       marsBot.turnResolver.resolveProjectCard(mockCard);
 
-      // No tracks should advance
-      for (let t = 1; t <= 7; t++) {
+      // Wild tag advances the least-advanced track (all at 0, so track 1 = topmost)
+      expect(marsBot.board.getTrack(1).position).to.eq(1);
+      for (let t = 2; t <= 7; t++) {
         expect(marsBot.board.getTrack(t).position).to.eq(0);
       }
     });

@@ -76,4 +76,17 @@ export class MarsBotBoard {
   public hasTrackForTag(tag: Tag): boolean {
     return this.tagToTrack.has(tag);
   }
+
+  /** Get the index of the least-advanced track (lowest position, topmost/lowest index if tied). */
+  public getLeastAdvancedTrackIndex(): number {
+    let minPos = this.tracks[0].position;
+    let minIndex = 0;
+    for (let i = 1; i < this.tracks.length; i++) {
+      if (this.tracks[i].position < minPos) {
+        minPos = this.tracks[i].position;
+        minIndex = i;
+      }
+    }
+    return minIndex;
+  }
 }

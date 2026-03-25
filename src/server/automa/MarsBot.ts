@@ -1,7 +1,7 @@
 import {IGame} from '../IGame';
 import {IPlayer} from '../IPlayer';
 import {IProjectCard} from '../cards/IProjectCard';
-import {DifficultyLevel, MARSBOT_MAX_TRACK_POSITION, MARSBOT_MAX_GENERATION} from '../../common/automa/AutomaTypes';
+import {DifficultyLevel, MARSBOT_MAX_TRACK_POSITION, isAutomaPreludeGame, getAutomaMaxGeneration} from '../../common/automa/AutomaTypes';
 import {MarsBotBoard} from './MarsBotBoard';
 import {MarsBotBoardData} from '../../common/automa/AutomaTypes';
 import {MarsBotModel} from '../../common/automa/MarsBotModel';
@@ -67,9 +67,12 @@ export class MarsBot {
 
   // ---- Setup ----
 
-  /** Build MarsBot's initial action deck: 3 project cards + 1 bonus card. */
+  /** Build MarsBot's initial action deck: 3 project cards + 1 bonus card (+ 3 extra with Prelude). */
   public buildInitialActionDeck(): void {
-    const projectCards = this.game.projectDeck.drawN(this.game, 3);
+    const opts = this.game.gameOptions;
+    // Prelude: MarsBot gets 3 extra project cards instead of Prelude cards
+    const numProjectCards = isAutomaPreludeGame(opts.preludeExtension, opts.prelude2Expansion) ? 6 : 3;
+    const projectCards = this.game.projectDeck.drawN(this.game, numProjectCards);
     const bonusCard = this.bonusDeck.draw();
     const deck: Array<IProjectCard | MarsBotBonusCard> = [...projectCards];
     if (bonusCard) deck.push(bonusCard);
@@ -211,9 +214,10 @@ export class MarsBot {
     return scoring.calculate();
   }
 
-  /** Check if MarsBot instantly wins (generation 20). */
+  /** Check if MarsBot instantly wins (gen 20, or gen 18 with Prelude). */
   public isInstantWin(): boolean {
-    return this.game.generation >= MARSBOT_MAX_GENERATION;
+    const opts = this.game.gameOptions;
+    return this.game.generation >= getAutomaMaxGeneration(opts.preludeExtension, opts.prelude2Expansion);
   }
 
   // ---- Track Regression (human effects) ----

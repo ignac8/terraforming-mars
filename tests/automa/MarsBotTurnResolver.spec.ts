@@ -106,13 +106,15 @@ describe('MarsBotTurnResolver', () => {
       expect(emptyBoard.getTrack(2).position).to.eq(1);
     });
 
-    it('Wild tags are ignored', () => {
+    it('Wild tags advance least-advanced track', () => {
       const emptyBoardData = makeEmptyBoard();
       const emptyBoard = new MarsBotBoard(emptyBoardData);
       const r = new MarsBotTurnResolver(game, marsBot, human, emptyBoard, 'normal');
       const mockCard = {cost: 5, tags: [Tag.WILD], type: 'automated' as any, name: 'T' as any, metadata: {} as any} as any;
       r.resolveProjectCard(mockCard);
-      for (let t = 1; t <= 7; t++) {
+      // Wild tag advances the least-advanced track (all at 0, so track 0 = topmost)
+      expect(emptyBoard.getTrack(1).position).to.eq(1);
+      for (let t = 2; t <= 7; t++) {
         expect(emptyBoard.getTrack(t).position).to.eq(0);
       }
     });

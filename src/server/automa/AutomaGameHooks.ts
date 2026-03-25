@@ -4,7 +4,7 @@ import {Color} from '../../common/Color';
 import {PlayerId} from '../../common/Types';
 import {MarsBot} from './MarsBot';
 import {MarsBotModel} from '../../common/automa/MarsBotModel';
-import {MARSBOT_MAX_GENERATION} from '../../common/automa/AutomaTypes';
+import {getAutomaMaxGeneration} from '../../common/automa/AutomaTypes';
 import {SelectCard} from '../inputs/SelectCard';
 import {IProjectCard} from '../cards/IProjectCard';
 
@@ -34,14 +34,20 @@ export class AutomaGameHooks {
     return false;
   }
 
-  /** Automa: game goes up to generation 20. */
+  /** Automa: game goes up to generation 20 (or 18 with Prelude). */
   public lastSoloGeneration(): number {
-    return 20;
+    return this.getMaxGeneration();
   }
 
-  /** Automa: game ends when Mars is terraformed or gen 20. */
+  /** Get the max generation for this automa game. */
+  public getMaxGeneration(): number {
+    const opts = this.game.gameOptions;
+    return getAutomaMaxGeneration(opts.preludeExtension, opts.prelude2Expansion);
+  }
+
+  /** Automa: game ends when Mars is terraformed or max generation reached. */
   public isGameOver(): boolean {
-    if (this.game.generation >= MARSBOT_MAX_GENERATION) return true;
+    if (this.game.generation >= this.getMaxGeneration()) return true;
     return this.game.marsIsTerraformed();
   }
 

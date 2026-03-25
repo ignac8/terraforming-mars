@@ -65,7 +65,14 @@ export class MarsBotTurnResolver {
     // Resolve each tag left-to-right
     let advancedAny = false;
     for (const tag of tags) {
-      if (tag === Tag.WILD) continue; // Wild tags are ignored in base game without expansions
+      if (tag === Tag.WILD) {
+        // Prelude rule: advance the least-advanced track, topmost if tied
+        const leastIndex = this.board.getLeastAdvancedTrackIndex();
+        this.game.log('MarsBot: wild tag advances least-advanced track ${0}', (b) => b.number(leastIndex + 1));
+        this.advanceTrack(leastIndex);
+        advancedAny = true;
+        continue;
+      }
 
       const trackIndex = this.board.getTrackIndexForTag(tag);
       if (trackIndex === undefined) {

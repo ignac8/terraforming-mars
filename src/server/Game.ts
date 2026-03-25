@@ -274,6 +274,9 @@ export class Game implements IGame, Logger {
       };
     }
     const gameOptions = {...DEFAULT_GAME_OPTIONS, ...options};
+    if (gameOptions.automaOption) {
+      AutomaGameSetup.sanitizeGameOptions(gameOptions);
+    }
     if (gameOptions.clonedGamedId !== undefined) {
       throw new Error('Cloning should not come through this execution path.');
     }
@@ -287,7 +290,11 @@ export class Game implements IGame, Logger {
     const corporationDeck = new CorporationDeck(gameCards.getCorporationCards(), [], rng);
     corporationDeck.shuffle(gameOptions.customCorporationsList);
 
-    const preludeDeck = new PreludeDeck(gameCards.getPreludeCards(), [], rng);
+    let preludeCards = gameCards.getPreludeCards();
+    if (gameOptions.automaOption) {
+      preludeCards = AutomaGameSetup.filterPreludeCards(preludeCards, gameOptions);
+    }
+    const preludeDeck = new PreludeDeck(preludeCards, [], rng);
     preludeDeck.shuffle(gameOptions.customPreludes);
 
     const ceoDeck = new CeoDeck(gameCards.getCeoCards(), [], rng);
