@@ -24,6 +24,7 @@
 
     <div v-if="showDescription" class="ma-description">
       <span v-i18n>{{ description }}</span>
+      <div v-if="isAutoma && automaRule" class="ma-automa-hint">MarsBot: {{ automaRule }}</div>
     </div>
   </div>
 </template>
@@ -35,6 +36,14 @@ import {ClaimedMilestoneModel, MilestoneScore} from '@/common/models/ClaimedMile
 import {getMilestone} from '@/client/MilestoneAwardManifest';
 import {playerSymbol} from '@/client/utils/playerSymbol';
 import {Color} from '@/common/Color';
+
+const AUTOMA_MILESTONE_RULES: Record<string, string> = {
+  'Terraformer': 'TR \u2265 35',
+  'Mayor': '3+ city tiles on board',
+  'Gardener': '3+ greenery tiles on board',
+  'Builder': 'Building track \u2265 8',
+  'Planner': 'All 5 tracks \u2265 position 4',
+};
 
 export default defineComponent({
   name: 'Milestone',
@@ -49,6 +58,10 @@ export default defineComponent({
     },
     showDescription: {
       type: Boolean,
+    },
+    isAutoma: {
+      type: Boolean,
+      default: false,
     },
   },
   methods: {
@@ -78,6 +91,9 @@ export default defineComponent({
     },
     description(): string {
       return getMilestone(this.milestone.name).description;
+    },
+    automaRule(): string | undefined {
+      return AUTOMA_MILESTONE_RULES[this.milestone.name];
     },
   },
 });
