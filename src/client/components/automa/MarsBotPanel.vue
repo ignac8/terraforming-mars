@@ -1,9 +1,15 @@
 <template>
   <div class="marsbot-panel">
     <h2 class="marsbot-title">MarsBot <span class="marsbot-difficulty">({{ model.difficulty }})</span></h2>
-    <div v-if="model.corpName" class="marsbot-corp">Corp: <b>{{ model.corpName }}</b></div>
+    <div v-if="model.corpName" class="marsbot-corp">
+      Corp: <b>{{ model.corpName }}</b>
+      <div v-if="model.corpDescription" class="marsbot-corp-desc">{{ model.corpDescription }}</div>
+    </div>
     <div class="marsbot-stats">
+      <span class="marsbot-stat">VP: <b>{{ model.currentVP }}</b></span>
       <span class="marsbot-stat">MC: <b>{{ model.mcSupply }}</b></span>
+      <span class="marsbot-stat" v-if="model.mcPerVP">{{ model.mcPerVP }} MC/VP = <b>{{ model.mcVP }} VP</b></span>
+      <span class="marsbot-stat" v-else>MC/VP: <b>n/a</b></span>
       <span class="marsbot-stat">Action Deck: <b>{{ model.actionDeckSize }}</b></span>
       <span class="marsbot-stat">Bonus Deck: <b>{{ model.bonusDeckSize }}</b></span>
     </div>
@@ -23,8 +29,12 @@
               'cube-white': hasCube(track.num, i, 'white'),
               'cube-black': hasCube(track.num, i, 'black'),
               'cube-credit': hasCube(track.num, i, 'credit'),
+              'has-action': getAction(track, i) !== null,
             }"
-          ></div>
+            :title="getActionTooltip(track, i)"
+          >
+            <span v-if="getAction(track, i)" class="marsbot-action-icon">{{ getActionIcon(track, i) }}</span>
+          </div>
         </div>
         <span class="marsbot-track-pos">{{ track.position }}</span>
       </div>
@@ -34,6 +44,37 @@
 
 <script lang="ts">
 import {defineComponent} from 'vue';
+import {TrackAction} from '@/common/automa/AutomaTypes';
+
+const ACTION_ICONS: Partial<Record<TrackAction, string>> = {
+  'greenery': 'G',
+  'ocean': 'O',
+  'city': 'C',
+  'temperature': 'T',
+  'temperature2': 'T2',
+  'milestone': 'M',
+  'award': 'A',
+  'advance': '+',
+  'venus': 'V',
+  'venus2': 'V2',
+  'tr1': '1', 'tr2': '2', 'tr3': '3', 'tr4': '4',
+  'tr5': '5', 'tr6': '6', 'tr7': '7', 'tr8': '8',
+};
+
+const ACTION_LABELS: Partial<Record<TrackAction, string>> = {
+  'greenery': 'Place greenery',
+  'ocean': 'Place ocean',
+  'city': 'Place city',
+  'temperature': 'Raise temperature',
+  'temperature2': 'Raise temperature 2 steps',
+  'milestone': 'Claim milestone',
+  'award': 'Fund award',
+  'advance': 'Advance 1 more',
+  'venus': 'Raise Venus',
+  'venus2': 'Raise Venus 2 steps',
+  'tr1': 'Raise TR +1', 'tr2': 'Raise TR +2', 'tr3': 'Raise TR +3', 'tr4': 'Raise TR +4',
+  'tr5': 'Raise TR +5', 'tr6': 'Raise TR +6', 'tr7': 'Raise TR +7', 'tr8': 'Raise TR +8',
+};
 
 export default defineComponent({
   name: 'MarsBotPanel',
@@ -51,6 +92,22 @@ export default defineComponent({
           c.trackNum === trackNum && c.position === position && c.cubeType === cubeType,
       );
     },
+    getAction(track: {layout?: ReadonlyArray<TrackAction | null>}, position: number): TrackAction | null {
+      if (!track.layout) return null;
+      return track.layout[position] ?? null;
+    },
+    getActionIcon(track: {layout?: ReadonlyArray<TrackAction | null>}, position: number): string {
+      const action = this.getAction(track, position);
+      if (!action) return '';
+      if (action.startsWith('tag_')) return 'T' + action.slice(4);
+      return ACTION_ICONS[action] ?? '?';
+    },
+    getActionTooltip(track: {layout?: ReadonlyArray<TrackAction | null>}, position: number): string {
+      const action = this.getAction(track, position);
+      if (!action) return `Position ${position}`;
+      if (action.startsWith('tag_')) return `Advance track ${action.slice(4)}`;
+      return ACTION_LABELS[action] ?? action;
+    },
   },
 });
 </script>
@@ -67,11 +124,11 @@ export default defineComponent({
 }
 .marsbot-title {
   margin: 0 0 8px 0;
-  font-size: 16px;
+  font-size: 20px;
   color: #e94560;
 }
 .marsbot-difficulty {
-  font-size: 12px;
+  font-size: 14px;
   color: #aaa;
   font-weight: normal;
 }
@@ -79,7 +136,8 @@ export default defineComponent({
   display: flex;
   gap: 16px;
   margin-bottom: 10px;
-  font-size: 13px;
+  font-size: 15px;
+  flex-wrap: wrap;
 }
 .marsbot-stat b {
   color: #e94560;
@@ -95,20 +153,20 @@ export default defineComponent({
   gap: 6px;
 }
 .marsbot-track-label {
-  width: 130px;
-  min-width: 130px;
+  width: 150px;
+  min-width: 150px;
   display: flex;
   gap: 4px;
   align-items: center;
 }
 .marsbot-track-num {
   font-weight: bold;
-  font-size: 13px;
+  font-size: 15px;
   color: #e94560;
   min-width: 24px;
 }
 .marsbot-track-tags {
-  font-size: 11px;
+  font-size: 13px;
   color: #aaa;
   white-space: nowrap;
   overflow: hidden;
@@ -120,30 +178,52 @@ export default defineComponent({
   flex-shrink: 0;
 }
 .marsbot-square {
-  width: 14px;
-  height: 14px;
+  width: 18px;
+  height: 18px;
   border: 1px solid #444;
   border-radius: 2px;
   background: #0d0d1a;
   flex-shrink: 0;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 .marsbot-square.filled {
   background: #e94560;
   border-color: #e94560;
 }
+.marsbot-square.has-action {
+  border-color: #666;
+}
+.marsbot-action-icon {
+  font-size: 10px;
+  color: #888;
+  line-height: 1;
+  font-weight: bold;
+}
+.marsbot-square.filled .marsbot-action-icon {
+  color: #fff;
+}
 .marsbot-track-pos {
-  font-size: 11px;
+  font-size: 13px;
   color: #aaa;
   min-width: 16px;
   text-align: right;
 }
 .marsbot-corp {
-  font-size: 13px;
+  font-size: 15px;
   margin-bottom: 6px;
   color: #ccc;
 }
 .marsbot-corp b {
   color: #ffd700;
+}
+.marsbot-corp-desc {
+  font-size: 13px;
+  color: #aaa;
+  margin-top: 2px;
+  font-style: italic;
 }
 .marsbot-square.cube-white {
   border-color: #fff;

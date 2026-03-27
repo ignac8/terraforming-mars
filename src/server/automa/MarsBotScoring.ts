@@ -1,6 +1,6 @@
 import {IGame} from '../IGame';
 import {IPlayer} from '../IPlayer';
-import {MC_TO_VP_TABLE, MC_TO_VP_TABLE_PRELUDE, DifficultyLevel, getAutomaMaxGeneration, isAutomaPreludeGame} from '../../common/automa/AutomaTypes';
+import {DifficultyLevel, getAutomaMaxGeneration, getMcPerVP} from '../../common/automa/AutomaTypes';
 import {MarsBotTurnResolver} from './MarsBotTurnResolver';
 import {IProjectCard} from '../cards/IProjectCard';
 import {Space} from '../boards/Space';
@@ -114,17 +114,11 @@ export class MarsBotScoring {
   }
 
   private calculateMCtoVP(): number {
-    const gen = this.game.generation;
-    if (gen >= this.getMaxGeneration()) return 0; // MarsBot wins instantly
-
+    if (this.game.generation >= this.getMaxGeneration()) return 0;
     const opts = this.game.gameOptions;
-    const table = isAutomaPreludeGame(opts.preludeExtension, opts.prelude2Expansion)
-      ? MC_TO_VP_TABLE_PRELUDE : MC_TO_VP_TABLE;
-    const entry = table.find((e) => gen <= e.maxGeneration);
-    if (entry === undefined) return 0;
-
-    const mc = this.turnResolver.mcSupply;
-    return Math.floor(mc / entry.mcPerVP);
+    const mcPerVP = getMcPerVP(this.game.generation, opts.preludeExtension, opts.prelude2Expansion);
+    if (mcPerVP === undefined) return 0;
+    return Math.floor(this.turnResolver.mcSupply / mcPerVP);
   }
 
   /** Hard/Brutal mode: 1 VP per card with non-negative VP icon in MarsBot's played pile. */

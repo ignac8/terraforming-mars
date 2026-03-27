@@ -30,6 +30,7 @@ export function bonusCardPerGen(bonusCardId: BonusCardId, corpName: string): {ti
 const CREDICOR: IMarsBotCorp = {
   id: 'C01_CREDICOR' as MarsBotCorpId,
   name: CardName.CREDICOR,
+  description: 'Draft: most expensive card. Effect: card cost 20+ gives 4 MC.',
   startingTags: [],
   draftPriority: {type: 'mostExpensive'},
   effect: {
@@ -47,6 +48,7 @@ const CREDICOR: IMarsBotCorp = {
 const ECO_LINE: IMarsBotCorp = {
   id: 'C02_ECO_LINE' as MarsBotCorpId,
   name: CardName.ECOLINE,
+  description: 'Each generation: add Rapid Sprouting bonus card to action deck.',
   startingTags: [],
   perGeneration: bonusCardPerGen(BonusCardId.B23_RAPID_SPROUTING, 'Eco Line'),
   associatedBonusCards: [BonusCardId.B23_RAPID_SPROUTING],
@@ -58,6 +60,7 @@ const ECO_LINE: IMarsBotCorp = {
 const HELION: IMarsBotCorp = {
   id: 'C03_HELION' as MarsBotCorpId,
   name: CardName.HELION,
+  description: 'White cubes: draw and resolve a card instead of raising temperature. Black cubes: temperature +1.',
   startingTags: [],
   trackCubes: [
     {trackNum: 1, position: 6, cubeType: 'white'},
@@ -92,6 +95,7 @@ const HELION: IMarsBotCorp = {
 const INTERPLANETARY_CINEMATICS: IMarsBotCorp = {
   id: 'C04_INTERPLANETARY_CINEMATICS' as MarsBotCorpId,
   name: CardName.INTERPLANETARY_CINEMATICS,
+  description: 'Tags: 2 Events. White cubes on building and event tracks. Each advance on those tracks earns 2 MC.',
   startingTags: [Tag.EVENT, Tag.EVENT],
   trackCubes: [...whiteTrackCubes(1), ...whiteTrackCubes(3)],
   effect: {
@@ -110,6 +114,7 @@ const INTERPLANETARY_CINEMATICS: IMarsBotCorp = {
 const INVENTRIX: IMarsBotCorp = {
   id: 'C05_INVENTRIX' as MarsBotCorpId,
   name: CardName.INVENTRIX,
+  description: 'Setup: remove Lobbyists. Effect: card with requirements gives 2 MC. Each generation: add Do It Right to action deck.',
   startingTags: [],
   setup: {
     resolve(ctx) {
@@ -136,6 +141,7 @@ const INVENTRIX: IMarsBotCorp = {
 const MINING_GUILD: IMarsBotCorp = {
   id: 'C06_MINING_GUILD' as MarsBotCorpId,
   name: CardName.MINING_GUILD,
+  description: 'Tags: 2 Building. Setup: 10 MC on card. MC earned goes to card first; when empty, refill 10 MC and advance building track.',
   startingTags: [Tag.BUILDING, Tag.BUILDING],
   setup: {
     resolve(ctx) {
@@ -168,6 +174,7 @@ const MINING_GUILD: IMarsBotCorp = {
 const PHOBOLOG: IMarsBotCorp = {
   id: 'C07_PHOBOLOG' as MarsBotCorpId,
   name: CardName.PHOBOLOG,
+  description: 'Tag: Space. Setup: draw 2 space cards to bonus deck. White cubes on space track: resolve 1 bonus card each.',
   startingTags: [Tag.SPACE],
   trackCubes: [
     {trackNum: 2, position: 7, cubeType: 'white'},
@@ -198,6 +205,7 @@ const PHOBOLOG: IMarsBotCorp = {
 const SATURN_SYSTEMS: IMarsBotCorp = {
   id: 'C08_SATURN_SYSTEMS' as MarsBotCorpId,
   name: CardName.SATURN_SYSTEMS,
+  description: 'Tags: Jovian, 3 Space. Draft: Jovian > Space. When anyone plays a Jovian tag, advance event track.',
   startingTags: [Tag.JOVIAN, Tag.SPACE, Tag.SPACE, Tag.SPACE],
   draftPriority: {type: 'tags', tags: [Tag.JOVIAN, Tag.SPACE]},
   effect: {
@@ -222,6 +230,7 @@ const SATURN_SYSTEMS: IMarsBotCorp = {
 const TERACTOR: IMarsBotCorp = {
   id: 'C09_TERACTOR' as MarsBotCorpId,
   name: CardName.TERACTOR,
+  description: 'Draft: Earth. Setup: +25 MC, white cubes on Earth track. Each Earth track advance earns 2 MC.',
   startingTags: [],
   draftPriority: {type: 'tags', tags: [Tag.EARTH]},
   trackCubes: whiteTrackCubes(6),
@@ -246,6 +255,7 @@ const TERACTOR: IMarsBotCorp = {
 const THARSIS_REPUBLIC: IMarsBotCorp = {
   id: 'C10_THARSIS_REPUBLIC' as MarsBotCorpId,
   name: CardName.THARSIS_REPUBLIC,
+  description: 'Draft: City. Setup: place 1 city. Any city placement gives 2 MC; MarsBot city also advances event track.',
   startingTags: [],
   draftPriority: {type: 'tags', tags: [Tag.CITY]},
   setup: {
@@ -274,6 +284,7 @@ const THARSIS_REPUBLIC: IMarsBotCorp = {
 const THORGATE: IMarsBotCorp = {
   id: 'C11_THORGATE' as MarsBotCorpId,
   name: CardName.THORGATE,
+  description: 'Tag: Power. Draft: Power. Setup: +10 MC, white cubes on energy track. White cube: resolve card (ignore first tag) then temperature +1.',
   startingTags: [Tag.POWER],
   draftPriority: {type: 'tags', tags: [Tag.POWER]},
   trackCubes: [
@@ -305,6 +316,7 @@ const THORGATE: IMarsBotCorp = {
 const UNMI: IMarsBotCorp = {
   id: 'C12_UNMI' as MarsBotCorpId,
   name: CardName.UNITED_NATIONS_MARS_INITIATIVE,
+  description: 'Setup: add Government Subsidy to bonus deck. From generation 2 onward, resolve 1 bonus card each generation.',
   startingTags: [],
   setup: {
     resolve(ctx) {

@@ -95,4 +95,5 @@ export type SerializedAutomaState = {
     triggeredCubePositions?: Array<string>;
     corpSpecificState?: Record<string, unknown>;
     floaterCount?: number;
+    vpByGeneration?: Array<number>;
 }

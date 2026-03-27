@@ -40,6 +40,18 @@
             :showScores="showScores"
             :showDescription="showDescription"
           />
+          <div v-if="isAutoma" class="ma-automa-rules">
+            <b v-i18n>MarsBot award rules:</b>
+            <ul>
+              <li><b>Landlord</b>: Total tiles on board</li>
+              <li><b>Banker</b>: Building track + Finance track</li>
+              <li><b>Scientist</b>: Science track</li>
+              <li><b>Thermalist</b>: Energy track + 5</li>
+              <li><b>Miner</b>: Mining track + 5</li>
+            </ul>
+            <span v-i18n>MarsBot funds the award where it leads you by the largest margin.</span><br>
+            <span v-i18n>For Thermalist/Miner, MarsBot counts your resources + production.</span>
+          </div>
         </div>
       </span>
     </div>
@@ -64,6 +76,10 @@ export default defineComponent({
     showScores: {
       type: Boolean,
       default: true,
+    },
+    isAutoma: {
+      type: Boolean,
+      default: false,
     },
     preferences: {
       type: Object as () => Readonly<Preferences>,

@@ -1,5 +1,6 @@
-import {DifficultyLevel} from './AutomaTypes';
+import {DifficultyLevel, TrackAction} from './AutomaTypes';
 import {CubeType} from './MarsBotCorpTypes';
+import {GlobalParameter} from '../GlobalParameter';
 
 /** Track state sent to the client for display. */
 export interface MarsBotTrackModel {
@@ -7,6 +8,8 @@ export interface MarsBotTrackModel {
   tagNames: ReadonlyArray<string>;
   position: number;
   maxPosition: number;
+  /** Action at each position (null = no action). */
+  layout?: ReadonlyArray<TrackAction | null>;
 }
 
 /** MarsBot VP breakdown sent to client at game end. */
@@ -37,6 +40,18 @@ export interface MarsBotModel {
   corpId?: string;
   /** Corporation display name. */
   corpName?: string;
+  /** Corporation effect description for the player. */
+  corpDescription?: string;
   /** Track cubes placed by the corporation. */
   trackCubes?: ReadonlyArray<{trackNum: number, position: number, cubeType: CubeType}>;
+  /** Current MC-per-VP ratio (undefined if before conversion window). */
+  mcPerVP?: number;
+  /** Current VP from MC at this ratio. */
+  mcVP?: number;
+  /** Current estimated VP total (during game). */
+  currentVP?: number;
+  /** Global parameter contributions (temp steps, oxygen steps, oceans placed, etc.). */
+  globalParameterSteps?: Partial<Record<GlobalParameter, number>>;
+  /** VP total per generation (for chart). */
+  vpByGeneration?: ReadonlyArray<number>;
 }

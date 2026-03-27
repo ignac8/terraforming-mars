@@ -93,6 +93,11 @@ export class AutomaGameHooks {
     return undefined;
   }
 
+  /** Whether MarsBot has passed (used by Player.allOtherPlayersHavePassed). */
+  public allOtherPlayersHavePassed(): boolean {
+    return this.game.hasPassedThisActionPhase(this.marsBot.player);
+  }
+
   /** Check if all players (including MarsBot) have passed. */
   public allPlayersHavePassed(): boolean | undefined {
     if (!this.game.hasPassedThisActionPhase(this.marsBot.player)) {
@@ -328,6 +333,12 @@ export class AutomaGameHooks {
   /** Check if MarsBot can claim a specific milestone. */
   public canMarsBotClaimMilestone(milestone: import('../milestones/IMilestone').IMilestone): boolean {
     return this.marsBot.turnResolver.marsBotMeetsMilestone(milestone);
+  }
+
+  /** Track MarsBot VP at end of each generation (for chart). */
+  public updateVPForGeneration(): void {
+    const vp = this.marsBot.getVictoryPoints();
+    this.marsBot.vpByGeneration.push(vp.total);
   }
 
   /** Build the model sent to the client. */

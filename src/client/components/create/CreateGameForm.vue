@@ -23,8 +23,8 @@
                         <div class="create-game-page-column">
                             <h4 v-i18n>Expansions</h4>
 
-                            <input type="checkbox" name="allOfficialExpansions" id="allOfficialExpansions-checkbox" v-model="allOfficialExpansions" :disabled="automaOption">
-                            <label for="allOfficialExpansions-checkbox" :class="{'automa-disabled': automaOption}">
+                            <input type="checkbox" name="allOfficialExpansions" id="allOfficialExpansions-checkbox" v-model="allOfficialExpansions">
+                            <label for="allOfficialExpansions-checkbox">
                                 <span v-i18n>All</span>
                             </label>
 
@@ -651,12 +651,14 @@ export default defineComponent({
     allOfficialExpansions(value: boolean) {
       this.expansions.corpera = value;
       this.expansions.prelude = value;
-      this.expansions.venus = value;
-      this.expansions.colonies = value;
-      this.expansions.turmoil = value;
       this.expansions.prelude2 = value;
       this.expansions.promo = value;
-      this.solarPhaseOption = value;
+      if (!this.automaOption) {
+        this.expansions.venus = value;
+        this.expansions.colonies = value;
+        this.expansions.turmoil = value;
+      }
+      this.solarPhaseOption = this.expansions.venus;
     },
     'expansions.venus': function(value: boolean) {
       this.solarPhaseOption = value;

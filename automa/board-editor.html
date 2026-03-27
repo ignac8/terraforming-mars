@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>MarsBot Board Track Editor</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: Arial, sans-serif; background: #1a1a2e; color: #eee; padding: 10px; }
+  h1 { text-align: center; margin-bottom: 6px; color: #e94560; font-size: 20px; }
+  h2 { color: #e94560; margin: 15px 0 6px 0; border-bottom: 1px solid #333; padding-bottom: 4px; font-size: 16px; }
+  .instructions { text-align: center; margin-bottom: 10px; color: #aaa; font-size: 12px; }
+
+  /* Track definitions */
+  .track-defs { margin-bottom: 10px; border: 2px solid #e94560; border-radius: 6px; padding: 8px; }
+  .track-defs h3 { color: #e94560; margin-bottom: 6px; font-size: 13px; }
+  .track-def-row {
+    display: flex; align-items: center; gap: 6px; margin-bottom: 3px;
+    padding: 3px 6px; border-radius: 3px; background: #16213e; font-size: 12px;
+  }
+  .track-def-num { font-weight: bold; font-size: 14px; min-width: 50px; }
+  .track-def-label { font-size: 11px; color: #aaa; min-width: 50px; }
+  .track-def-input {
+    background: #0d0d1a; color: #eee; border: 1px solid #444; border-radius: 3px;
+    padding: 3px 6px; font-size: 12px; flex: 1;
+  }
+
+  /* Track grid */
+  .track-container { margin-bottom: 6px; border: 2px solid #333; border-radius: 6px; padding: 4px 6px; }
+  .track-header { display: flex; align-items: center; gap: 6px; margin-bottom: 3px; }
+  .track-num { font-weight: bold; font-size: 14px; min-width: 24px; text-align: center; }
+  .track-tags { font-size: 10px; color: #aaa; }
+
+  .positions { display: flex; gap: 2px; flex-wrap: nowrap; }
+  .position { display: flex; flex-direction: column; align-items: center; min-width: 46px; }
+  .pos-number { font-size: 9px; color: #888; margin-bottom: 1px; }
+  .pos-cell {
+    width: 42px; height: 34px; border: 2px solid #444; border-radius: 5px;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; font-size: 9px; text-align: center; line-height: 1;
+    transition: all 0.1s; user-select: none; padding: 1px;
+  }
+  .pos-cell:hover { border-color: #e94560; transform: scale(1.15); z-index: 10; }
+  .pos-cell.has-action { border-color: #0f3460; background: #16213e; }
+
+  /* Palette */
+  .palette { position: sticky; top: 0; z-index: 100; background: #1a1a2e; padding: 6px 0 8px 0; border-bottom: 2px solid #e94560; margin-bottom: 10px; }
+  .palette h3 { margin-bottom: 4px; color: #e94560; font-size: 13px; }
+  .palette-section { margin-bottom: 4px; display: inline-block; margin-right: 10px; vertical-align: top; }
+  .palette-section-title { font-size: 10px; color: #888; margin-bottom: 2px; }
+  .palette-icons { display: flex; flex-wrap: wrap; gap: 3px; }
+  .palette-btn {
+    min-width: 40px; height: 28px; border: 2px solid #333; border-radius: 4px;
+    background: #16213e; color: #eee; cursor: pointer; font-size: 9px;
+    display: flex; align-items: center; justify-content: center; text-align: center;
+    line-height: 1; transition: all 0.1s; padding: 1px 4px;
+  }
+  .palette-btn:hover { border-color: #e94560; background: #1a1a3e; }
+  .palette-btn.selected { border-color: #e94560; background: #e94560; color: #fff; box-shadow: 0 0 6px #e94560; }
+
+  /* Buttons */
+  .actions-bar { margin-top: 12px; display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; }
+  .action-btn {
+    padding: 8px 16px; border: none; border-radius: 5px; font-size: 13px;
+    cursor: pointer; font-weight: bold; transition: all 0.1s;
+  }
+  .btn-export { background: #0f3460; color: #eee; }
+  .btn-export:hover { background: #1a5276; }
+  .btn-clear { background: #533; color: #eee; }
+  .btn-clear:hover { background: #744; }
+  .btn-import { background: #2d4a3e; color: #eee; }
+  .btn-import:hover { background: #3d5a4e; }
+
+  #json-output {
+    margin-top: 10px; width: 100%; min-height: 150px; background: #0d0d1a;
+    color: #0f0; border: 1px solid #333; border-radius: 5px; padding: 8px;
+    font-family: monospace; font-size: 12px; resize: vertical;
+  }
+
+  /* Mapping section */
+  .mapping-group { margin-bottom: 12px; border: 2px solid #333; border-radius: 6px; padding: 10px; }
+  .mapping-group h3 { color: #e94560; margin-bottom: 6px; font-size: 13px; }
+  .mapping-row {
+    display: flex; align-items: center; gap: 8px; margin-bottom: 4px;
+    padding: 3px 6px; border-radius: 3px; background: #16213e; font-size: 12px;
+  }
+  .mapping-label { min-width: 100px; font-size: 13px; }
+  .mapping-arrow { color: #e94560; font-size: 14px; }
+  .mapping-input {
+    background: #0d0d1a; color: #eee; border: 1px solid #444; border-radius: 3px;
+    padding: 4px 8px; font-size: 12px; min-width: 250px;
+  }
+
+  .track-1 { border-color: #8B6914; }
+  .track-2 { border-color: #707070; }
+  .track-3 { border-color: #C8A600; }
+  .track-4 { border-color: #B0B0B0; }
+  .track-5 { border-color: #8B3A8B; }
+  .track-6 { border-color: #A03030; }
+  .track-7 { border-color: #2E7D32; }
+</style>
+</head>
+<body>
+
+<h1>MarsBot Board Track Editor - Tharsis</h1>
+<p class="instructions">1. Define tracks &nbsp; 2. Select palette icon, click track positions &nbsp; 3. Export JSON</p>
+
+<div class="track-defs">
+  <h3>Track Definitions (card tags &amp; production types per track)</h3>
+  <div id="track-def-rows"></div>
+</div>
+
+<div class="palette" id="palette">
+  <h3>Action Palette</h3>
+  <div class="palette-section">
+    <div class="palette-section-title">Basic</div>
+    <div class="palette-icons">
+      <button class="palette-btn" data-action="empty">EMPTY</button>
+      <button class="palette-btn" data-action="advance">&#9654;Adv</button>
+    </div>
+  </div>
+  <div class="palette-section">
+    <div class="palette-section-title">TR</div>
+    <div class="palette-icons">
+      <button class="palette-btn" data-action="tr1">TR1</button>
+      <button class="palette-btn" data-action="tr2">TR2</button>
+      <button class="palette-btn" data-action="tr3">TR3</button>
+      <button class="palette-btn" data-action="tr4">TR4</button>
+      <button class="palette-btn" data-action="tr5">TR5</button>
+      <button class="palette-btn" data-action="tr6">TR6</button>
+      <button class="palette-btn" data-action="tr7">TR7</button>
+      <button class="palette-btn" data-action="tr8">TR8</button>
+    </div>
+  </div>
+  <div class="palette-section">
+    <div class="palette-section-title">M/A</div>
+    <div class="palette-icons">
+      <button class="palette-btn" data-action="milestone">M</button>
+      <button class="palette-btn" data-action="award">A</button>
+    </div>
+  </div>
+  <div class="palette-section">
+    <div class="palette-section-title">Terraform</div>
+    <div class="palette-icons">
+      <button class="palette-btn" data-action="temperature">Temp</button>
+      <button class="palette-btn" data-action="temperature2">Temp×2</button>
+      <button class="palette-btn" data-action="greenery">Green</button>
+      <button class="palette-btn" data-action="ocean">Ocean</button>
+      <button class="palette-btn" data-action="city">City</button>
+      <button class="palette-btn" data-action="venus">Venus</button>
+      <button class="palette-btn" data-action="venus2">Venus×2</button>
+    </div>
+  </div>
+  <div class="palette-section">
+    <div class="palette-section-title">+Track</div>
+    <div class="palette-icons" id="advance-track-btns"></div>
+  </div>
+</div>
+
+<div id="tracks"></div>
+
+<div class="mappings-section">
+  <h2>Awards &amp; Milestones</h2>
+  <div class="mapping-group">
+    <h3>Award Evaluation</h3>
+    <div id="award-mappings"></div>
+  </div>
+  <div class="mapping-group">
+    <h3>Milestone Requirements</h3>
+    <div id="milestone-mappings"></div>
+  </div>
+</div>
+
+<div class="actions-bar">
+  <button class="action-btn btn-export" onclick="exportJSON()">Export JSON</button>
+  <button class="action-btn btn-import" onclick="importJSON()">Import JSON</button>
+  <button class="action-btn btn-clear" onclick="clearAll()">Clear All</button>
+</div>
+<textarea id="json-output" placeholder="JSON output / paste here to import"></textarea>
+
+<script>
+const MAX_POS = 18;
+const TRACK_COLORS = ['#8B6914','#707070','#C8A600','#B0B0B0','#8B3A8B','#A03030','#2E7D32'];
+
+let trackDefs = [
+  { num:1, tags:'Building', productions:'Steel' },
+  { num:2, tags:'Space', productions:'Titanium' },
+  { num:3, tags:'Event', productions:'MC' },
+  { num:4, tags:'Science', productions:'' },
+  { num:5, tags:'Energy, Jovian', productions:'Electricity' },
+  { num:6, tags:'Earth, City', productions:'Heat' },
+  { num:7, tags:'Plant, Animal, Microbe', productions:'Plants' },
+];
+
+const boardData = {
+  1: [null,null,"ocean",null,null,"tr2","temperature","milestone","greenery","award","city","tag_2","ocean",null,"greenery","city","temperature",null,"tr5"],
+  2: [null,"advance",null,"temperature",null,"ocean","city","venus","milestone","temperature",null,"tr3","ocean",null,"temperature",null,"tr4",null,"tr6"],
+  3: [null,"advance",null,null,null,"advance",null,"advance","ocean",null,null,null,null,null,null,"advance",null,null,"tr5"],
+  4: [null,"advance",null,"advance",null,null,null,null,null,null,null,"ocean",null,null,null,"advance",null,null,"tr7"],
+  5: [null,"advance",null,null,null,null,"advance",null,null,null,null,null,"ocean",null,null,null,null,null,null],
+  6: [null,null,null,null,null,null,null,"advance",null,null,"advance",null,null,null,null,"advance",null,null,"tr7"],
+  7: [null,null,null,null,null,null,null,"advance",null,"ocean",null,null,null,null,null,"ocean",null,null,"tr6"],
+};
+
+let selectedAction = null;
+
+const ACTION_LABELS = {
+  empty:'', advance:'\u25B6', tr1:'TR1', tr2:'TR2', tr3:'TR3', tr4:'TR4',
+  tr5:'TR5', tr6:'TR6', tr7:'TR7', tr8:'TR8', milestone:'M', award:'A',
+  temperature:'Temp', temperature2:'Tmp×2', greenery:'Green', ocean:'Ocean', city:'City',
+  venus:'Venus', venus2:'Vns×2',
+};
+function getActionLabel(a) {
+  if (!a) return '';
+  if (ACTION_LABELS[a] !== undefined) return ACTION_LABELS[a];
+  if (a.startsWith('tag_')) return '+T' + a.replace('tag_','');
+  return a;
+}
+
+let awardFormulas = {
+  'Landlord':'tiles owned on board',
+  'Banker':'track 1 + track 3',
+  'Scientist':'track 4',
+  'Thermalist':'track 5 + 5',
+  'Miner':'track 2 + 5',
+};
+let milestoneCriteria = {
+  'Terraformer':'reached 35 TR',
+  'Mayor':'owns 3+ cities',
+  'Gardener':'owns 3+ greenery',
+  'Builder':'reached space 8 on track 1',
+  'Planner':'reached space 4 on every track',
+};
+
+function renderTrackDefs() {
+  const c = document.getElementById('track-def-rows');
+  c.innerHTML = '';
+  trackDefs.forEach((def,idx) => {
+    const row = document.createElement('div');
+    row.className = 'track-def-row';
+    row.style.borderLeft = `3px solid ${TRACK_COLORS[idx]}`;
+    row.innerHTML = `
+      <span class="track-def-num" style="color:${TRACK_COLORS[idx]}">T${def.num}</span>
+      <span class="track-def-label">Tags:</span>
+      <input class="track-def-input" value="${def.tags}" data-idx="${idx}" data-field="tags">
+      <span class="track-def-label">Prod:</span>
+      <input class="track-def-input" value="${def.productions}" data-idx="${idx}" data-field="productions">
+    `;
+    c.appendChild(row);
+  });
+  c.querySelectorAll('.track-def-input').forEach(inp => {
+    inp.addEventListener('input', () => {
+      trackDefs[parseInt(inp.dataset.idx)][inp.dataset.field] = inp.value;
+    });
+  });
+}
+
+function renderAdvanceTrackBtns() {
+  const c = document.getElementById('advance-track-btns');
+  c.innerHTML = '';
+  for (let t = 1; t <= 7; t++) {
+    const btn = document.createElement('button');
+    btn.className = 'palette-btn';
+    btn.dataset.action = 'tag_' + t;
+    btn.textContent = '+T' + t;
+    btn.style.borderBottomColor = TRACK_COLORS[t-1];
+    btn.style.borderBottomWidth = '3px';
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.palette-btn').forEach(b => b.classList.remove('selected'));
+      btn.classList.add('selected');
+      selectedAction = btn.dataset.action;
+    });
+    c.appendChild(btn);
+  }
+}
+
+function renderTracks() {
+  const c = document.getElementById('tracks');
+  c.innerHTML = '';
+  trackDefs.forEach((def,idx) => {
+    const div = document.createElement('div');
+    div.className = `track-container track-${def.num}`;
+    const tagStr = def.tags ? `Tags: ${def.tags}` : '';
+    const prodStr = def.productions ? `Prod: ${def.productions}` : '';
+    const infoStr = [tagStr, prodStr].filter(Boolean).join(' | ');
+    div.innerHTML = `
+      <div class="track-header">
+        <span class="track-num" style="color:${TRACK_COLORS[idx]}">${def.num}</span>
+        <span class="track-tags">${infoStr}</span>
+      </div>
+      <div class="positions"></div>
+    `;
+    c.appendChild(div);
+    const posC = div.querySelector('.positions');
+    for (let i = 0; i <= MAX_POS; i++) {
+      const posDiv = document.createElement('div');
+      posDiv.className = 'position';
+      const numDiv = document.createElement('div');
+      numDiv.className = 'pos-number';
+      numDiv.textContent = i;
+      const cellDiv = document.createElement('div');
+      cellDiv.className = 'pos-cell';
+      const action = boardData[def.num][i];
+      if (action) {
+        cellDiv.textContent = getActionLabel(action);
+        cellDiv.classList.add('has-action');
+      }
+      cellDiv.addEventListener('click', () => {
+        if (selectedAction !== null) {
+          boardData[def.num][i] = selectedAction === 'empty' ? null : selectedAction;
+          renderTracks();
+        }
+      });
+      posDiv.appendChild(numDiv);
+      posDiv.appendChild(cellDiv);
+      posC.appendChild(posDiv);
+    }
+  });
+}
+
+function renderAwards() {
+  const c = document.getElementById('award-mappings');
+  c.innerHTML = '';
+  Object.keys(awardFormulas).forEach(a => {
+    const row = document.createElement('div');
+    row.className = 'mapping-row';
+    row.innerHTML = `<span class="mapping-label">${a}</span><span class="mapping-arrow">&rarr;</span>`;
+    const inp = document.createElement('input');
+    inp.className = 'mapping-input';
+    inp.value = awardFormulas[a];
+    inp.addEventListener('input', () => { awardFormulas[a] = inp.value; });
+    row.appendChild(inp);
+    c.appendChild(row);
+  });
+}
+
+function renderMilestones() {
+  const c = document.getElementById('milestone-mappings');
+  c.innerHTML = '';
+  Object.keys(milestoneCriteria).forEach(ms => {
+    const row = document.createElement('div');
+    row.className = 'mapping-row';
+    row.innerHTML = `<span class="mapping-label">${ms}</span><span class="mapping-arrow">&rarr;</span>`;
+    const inp = document.createElement('input');
+    inp.className = 'mapping-input';
+    inp.value = milestoneCriteria[ms];
+    inp.addEventListener('input', () => { milestoneCriteria[ms] = inp.value; });
+    row.appendChild(inp);
+    c.appendChild(row);
+  });
+}
+
+document.querySelectorAll('.palette-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.palette-btn').forEach(b => b.classList.remove('selected'));
+    btn.classList.add('selected');
+    selectedAction = btn.dataset.action;
+  });
+});
+
+function exportJSON() {
+  const output = { trackDefs: trackDefs.map(d => ({
+    num:d.num,
+    tags:d.tags.split(',').map(s=>s.trim()).filter(Boolean),
+    productions:d.productions.split(',').map(s=>s.trim()).filter(Boolean),
+  })), tracks:{}, awardFormulas, milestoneCriteria };
+  for (let t = 1; t <= 7; t++) output.tracks[t] = boardData[t].slice();
+  document.getElementById('json-output').value = JSON.stringify(output, null, 2);
+}
+
+function importJSON() {
+  try {
+    const data = JSON.parse(document.getElementById('json-output').value);
+    if (data.trackDefs) data.trackDefs.forEach((d,i) => {
+      if (trackDefs[i]) {
+        trackDefs[i].tags = Array.isArray(d.tags) ? d.tags.join(', ') : (d.tags||'');
+        trackDefs[i].productions = Array.isArray(d.productions) ? d.productions.join(', ') : (d.productions||'');
+      }
+    });
+    if (data.tracks) Object.entries(data.tracks).forEach(([t,pos]) => {
+      const n = parseInt(t);
+      if (boardData[n]) for (let i = 0; i <= MAX_POS; i++) boardData[n][i] = pos[i] || null;
+    });
+    if (data.awardFormulas) Object.assign(awardFormulas, data.awardFormulas);
+    if (data.milestoneCriteria) Object.assign(milestoneCriteria, data.milestoneCriteria);
+    renderAll();
+  } catch(e) { alert('Invalid JSON: '+e.message); }
+}
+
+function clearAll() {
+  if (!confirm('Clear all?')) return;
+  for (let t=1;t<=7;t++) for(let i=0;i<=MAX_POS;i++) boardData[t][i]=null;
+  renderAll();
+}
+
+function renderAll() { renderTrackDefs(); renderAdvanceTrackBtns(); renderTracks(); renderAwards(); renderMilestones(); }
+renderAll();
+</script>
+</body>
+</html>

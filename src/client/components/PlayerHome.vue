@@ -66,8 +66,8 @@
 
         <div v-if="playerView.players.length > 1 || game.marsBot" class="player_home_block--milestones-and-awards">
           <a class="hotkey-target"></a>
-          <Milestones :milestones="game.milestones" />
-          <Awards :awards="game.awards" />
+          <Milestones :milestones="game.milestones" :isAutoma="!!game.marsBot" />
+          <Awards :awards="game.awards" :isAutoma="!!game.marsBot" />
         </div>
       </div>
 

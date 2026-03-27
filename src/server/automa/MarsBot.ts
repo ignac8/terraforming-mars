@@ -1,7 +1,7 @@
 import {IGame} from '../IGame';
 import {IPlayer} from '../IPlayer';
 import {IProjectCard} from '../cards/IProjectCard';
-import {DifficultyLevel, BonusCardId, MARSBOT_MAX_TRACK_POSITION, isAutomaPreludeGame, getAutomaMaxGeneration} from '../../common/automa/AutomaTypes';
+import {DifficultyLevel, BonusCardId, MARSBOT_MAX_TRACK_POSITION, isAutomaPreludeGame, getAutomaMaxGeneration, getMcPerVP} from '../../common/automa/AutomaTypes';
 import {MarsBotBoard} from './MarsBotBoard';
 import {MarsBotBoardData} from '../../common/automa/AutomaTypes';
 import {MarsBotModel} from '../../common/automa/MarsBotModel';
@@ -52,6 +52,9 @@ export class MarsBot {
 
   /** Cube positions that have already been triggered (won't re-trigger after regression). */
   public triggeredCubePositions: Set<string> = new Set();
+
+  /** VP total per generation (for end-game chart). */
+  public vpByGeneration: Array<number> = [];
 
   /** Corp-specific state (M€ on card, resources, cubes, etc.). */
   public corpSpecificState: Map<string, number> = new Map();
@@ -389,7 +392,7 @@ export class MarsBot {
   /** Build the model sent to the client for display. */
   public toModel(): MarsBotModel {
     const isEnd = this.game.phase === 'end';
-    const vp = isEnd ? this.getVictoryPoints() : undefined;
+    const vp = this.getVictoryPoints();
     const model: MarsBotModel = {
       difficulty: this.difficulty,
       tracks: this.board.tracks.map((track) => ({
@@ -397,18 +400,29 @@ export class MarsBot {
         tagNames: track.definition.tags.map((t) => t as string),
         position: track.position,
         maxPosition: MARSBOT_MAX_TRACK_POSITION,
+        layout: track.definition.layout,
       })),
       mcSupply: this.turnResolver.mcSupply,
       actionDeckSize: this.actionDeck.length,
       bonusDeckSize: this.bonusDeck.drawPile.length,
-      vpBreakdown: vp,
+      vpBreakdown: isEnd ? vp : undefined,
+      currentVP: isEnd ? undefined : vp.total,
       instantWin: this.isInstantWin(),
     };
     if (this.corp !== undefined) {
       model.corpId = this.corp.id;
       model.corpName = this.corp.name;
+      model.corpDescription = this.corp.description;
       model.trackCubes = Array.from(this.trackCubePositions.values());
     }
+    const opts = this.game.gameOptions;
+    const mcPerVP = getMcPerVP(this.game.generation, opts.preludeExtension, opts.prelude2Expansion);
+    if (mcPerVP !== undefined) {
+      model.mcPerVP = mcPerVP;
+      model.mcVP = Math.floor(this.turnResolver.mcSupply / mcPerVP);
+    }
+    model.globalParameterSteps = this.player.globalParameterSteps;
+    model.vpByGeneration = this.vpByGeneration;
     return model;
   }
 
@@ -440,6 +454,9 @@ export class MarsBot {
     }
     if (this.floaterCount > 0) {
       state.floaterCount = this.floaterCount;
+    }
+    if (this.vpByGeneration.length > 0) {
+      state.vpByGeneration = this.vpByGeneration;
     }
     return state;
   }
@@ -487,6 +504,9 @@ export class MarsBot {
     }
     if (state.floaterCount !== undefined) {
       this.floaterCount = state.floaterCount;
+    }
+    if (state.vpByGeneration !== undefined) {
+      this.vpByGeneration = [...state.vpByGeneration];
     }
   }
 
