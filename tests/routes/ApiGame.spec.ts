@@ -93,6 +93,9 @@ describe('ApiGame', () => {
           'soloTR': false,
           'twoCorpsVariant': false,
           'undoOption': false,
+          'automaOption': false,
+          'automaDifficulty': 'normal',
+          'automaCorpOption': false,
         },
       },
     );
