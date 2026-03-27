@@ -26,3 +26,9 @@ node_modules/
 # misc
 .gitconfig
 ./logs/
+
+# Automa reference files (copyrighted PDFs)
+automa/*.pdf
+
+# IDE
+*.iml

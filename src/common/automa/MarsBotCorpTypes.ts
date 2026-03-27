@@ -30,6 +30,7 @@ export function trackCubeKey(trackNum: number, position: number): string {
 export interface IMarsBotCorp {
   readonly id: MarsBotCorpId;
   readonly name: string;
+  readonly description: string;
   readonly startingTags: ReadonlyArray<Tag>;
   readonly draftPriority?: MarsBotDraftPriority;
   readonly setup?: { resolve(ctx: MarsBotCorpContext): void };

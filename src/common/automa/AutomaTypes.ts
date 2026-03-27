@@ -121,3 +121,11 @@ export const MC_TO_VP_TABLE = buildMcToVpTable(MARSBOT_MAX_GENERATION);
 
 /** MC-to-VP conversion table when playing with Prelude (shorter game). */
 export const MC_TO_VP_TABLE_PRELUDE = buildMcToVpTable(MARSBOT_MAX_GENERATION_PRELUDE);
+
+/** Get the current MC-per-VP ratio for the given generation. Returns undefined if before conversion window. */
+export function getMcPerVP(generation: number, preludeExtension: boolean, prelude2Expansion: boolean): number | undefined {
+  const table = isAutomaPreludeGame(preludeExtension, prelude2Expansion)
+    ? MC_TO_VP_TABLE_PRELUDE : MC_TO_VP_TABLE;
+  const entry = table.find((e) => generation <= e.maxGeneration);
+  return entry?.mcPerVP;
+}

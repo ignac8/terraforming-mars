@@ -1,0 +1,34 @@
+{
+  "trackDefs": [
+    { "num": 1, "tags": ["Building"], "productions": ["Steel"] },
+    { "num": 2, "tags": ["Space"], "productions": ["Titanium"] },
+    { "num": 3, "tags": ["Event"], "productions": ["MC"] },
+    { "num": 4, "tags": ["Science"], "productions": [] },
+    { "num": 5, "tags": ["Energy", "Jovian"], "productions": ["Electricity"] },
+    { "num": 6, "tags": ["Earth", "City"], "productions": ["Heat"] },
+    { "num": 7, "tags": ["Plant", "Animal", "Microbe"], "productions": ["Plants"] }
+  ],
+  "tracks": {
+    "1": [null,null,"ocean",null,null,"tr2","temperature","milestone","greenery","award","city","tag_2","ocean",null,"greenery","city","temperature",null,"tr5"],
+    "2": [null,"advance",null,"temperature",null,"ocean","city","venus","milestone","temperature",null,"tr3","ocean",null,"temperature",null,"tr4",null,"tr6"],
+    "3": [null,"advance",null,"ocean","greenery","advance","venus2","advance","ocean","tr3","award",null,"tr4","temperature","greenery","advance","temperature2",null,"tr5"],
+    "4": [null,"advance",null,"advance","city",null,"greenery",null,"tr2","milestone","temperature","ocean","tr3","temperature","tr4","advance",null,"temperature","tr7"],
+    "5": [null,"advance","venus","tr3","venus2","temperature","advance","milestone",null,"temperature","greenery","advance","ocean",null,"city","greenery",null,"temperature","tr8"],
+    "6": [null,"city",null,null,"tr3","city",null,"advance","city","award","advance","city","greenery","tr4","greenery","advance",null,"city","tr7"],
+    "7": [null,null,null,"greenery",null,"greenery","greenery","advance",null,"ocean","award","temperature","tr3","greenery","greenery","ocean","greenery",null,"tr6"]
+  },
+  "awardFormulas": {
+    "Landlord": "tiles owned on board",
+    "Banker": "track 1 + track 3",
+    "Scientist": "track 4",
+    "Thermalist": "track 5 + 5",
+    "Miner": "track 2 + 5"
+  },
+  "milestoneCriteria": {
+    "Terraformer": "reached 35 TR",
+    "Mayor": "owns 3+ cities",
+    "Gardener": "owns 3+ greenery",
+    "Builder": "reached space 8 on track 1",
+    "Planner": "reached space 4 on every track"
+  }
+}

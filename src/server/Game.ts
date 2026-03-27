@@ -854,6 +854,7 @@ export class Game implements IGame, Logger {
     this.players.forEach((player) => {
       player.victoryPointsByGeneration.push(player.getVictoryPoints().total);
     });
+    this.automaHooks?.updateVPForGeneration();
   }
 
   private updateGlobalsForTheGeneration(): void {
@@ -1409,9 +1410,11 @@ export class Game implements IGame, Logger {
         const part = partition(spaces, ((space) => space.spaceType === SpaceType.DEFLECTION_ZONE));
         player.withinDeflectionZone = part[0].length > 0 && part[1].length === 0;
       }
-    } else {
+    } else if (this.phase === Phase.SOLAR) {
+      // World government greeneries during solar phase are unowned
       space.player = undefined;
     }
+    // else: MarsBot tiles skip bonuses but keep ownership for display
 
     // Clear out underworld components.
     UnderworldExpansion.onTilePlaced(this, space);

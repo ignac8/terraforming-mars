@@ -1,6 +1,7 @@
 import {Stock} from '../player/Stock';
 import {Production} from '../player/Production';
-import {Resource} from '../../common/Resource';
+import {ALL_RESOURCES, Resource} from '../../common/Resource';
+import {Units} from '../../common/Units';
 import {IPlayer} from '../IPlayer';
 import {From} from '../logs/From';
 import {MarsBot} from './MarsBot';
@@ -25,6 +26,30 @@ export class MarsBotStock extends Stock {
 
   public setMarsBot(marsBot: MarsBot): void {
     this.marsBotRef = marsBot;
+
+    // Per automa rules, all MarsBot resources are its MC supply.
+    // Cards check target.steel > 0 etc. to decide if stealing is possible.
+    const stock = this;
+    const mcProp = {
+      get() { return stock.marsBotRef?.turnResolver.mcSupply ?? 0; },
+      set() { /* no-op: MarsBotStock.add() handles mutations via mcSupply */ },
+      configurable: true,
+    };
+    for (const resource of ALL_RESOURCES) {
+      Object.defineProperty(this, resource, mcProp);
+    }
+  }
+
+  /** MarsBot has mcSupply, not separate resource pools. */
+  public override has(_units: Units): boolean {
+    const total = Units.values(_units).reduce((a, b) => a + b, 0);
+    return (this.marsBotRef?.turnResolver.mcSupply ?? 0) >= total;
+  }
+
+  /** MarsBot can adjust if mcSupply can cover the total cost. */
+  public override canAdjust(units: Units): boolean {
+    const cost = Units.values(units).reduce((sum, v) => sum + Math.min(0, v), 0);
+    return (this.marsBotRef?.turnResolver.mcSupply ?? 0) + cost >= 0;
   }
 
   public override add(

@@ -115,7 +115,9 @@
                           <td><div class="game-end-timer">{{ p.actionsTakenThisGame }}</div></td>
                       </tr>
                       <tr v-if="isAutomaGame && game.marsBot?.vpBreakdown" class="game-end-marsbot-row">
-                          <td>MarsBot ({{game.marsBot.difficulty}})</td>
+                          <td>MarsBot ({{game.marsBot.difficulty}})
+                            <div v-if="game.marsBot.corpName" class="column-corporation"><div v-i18n>{{ game.marsBot.corpName }}</div></div>
+                          </td>
                           <td>{{game.marsBot.vpBreakdown.terraformRating}}</td>
                           <td>{{game.marsBot.vpBreakdown.milestones}}</td>
                           <td>{{game.marsBot.vpBreakdown.awards}}</td>
@@ -134,22 +136,7 @@
                       </tr>
                   </tbody>
               </table>
-              <div v-if="isAutomaGame && game.marsBot?.vpBreakdown" class="marsbot-vp-detail">
-                <h3>MarsBot VP Detail</h3>
-                <table class="table game_end_table marsbot-detail-table">
-                  <tbody>
-                    <tr><td>Terraform Rating</td><td>{{game.marsBot.vpBreakdown.terraformRating}}</td></tr>
-                    <tr><td>Milestones (5 VP each)</td><td>{{game.marsBot.vpBreakdown.milestones}}</td></tr>
-                    <tr><td>Awards (track-based)</td><td>{{game.marsBot.vpBreakdown.awards}}</td></tr>
-                    <tr><td>Greenery tiles</td><td>{{game.marsBot.vpBreakdown.greenery}}</td></tr>
-                    <tr><td>Cities (adjacent greenery)</td><td>{{game.marsBot.vpBreakdown.cityAdjacentGreenery}}</td></tr>
-                    <tr><td>Neural Instance</td><td>{{game.marsBot.vpBreakdown.neuralInstance}}</td></tr>
-                    <tr><td>MC → VP (gen {{game.generation}})</td><td>{{game.marsBot.vpBreakdown.mcToVP}} (from {{game.marsBot.mcSupply}} MC)</td></tr>
-                    <tr v-if="game.marsBot.vpBreakdown.cardVP > 0"><td>Card VP (hard mode)</td><td>{{game.marsBot.vpBreakdown.cardVP}}</td></tr>
-                    <tr class="marsbot-total-row"><td><b>Total</b></td><td><b>{{game.marsBot.vpBreakdown.total}}</b></td></tr>
-                  </tbody>
-                </table>
-              </div>
+              <!-- MarsBot VP detail shown in the column section below -->
               <br/>
               <h2 v-i18n>Victory points details</h2>
               <victory-point-chart
@@ -190,6 +177,43 @@
                           <div class="game-end-column-vp">{{v.points}}</div>
                           <div class="game-end-column-text" v-i18n>Most tags on the {{v.tag}} track</div>
                         </div>
+                      </div>
+                  </div>
+                  <div v-if="isAutomaGame && game.marsBot?.vpBreakdown" class="game-end-column">
+                      <div class="game-end-winer-scorebreak-player-title">
+                          <div class="game-end-player player_bg_color_bronze--bg_transparent">MarsBot</div>
+                      </div>
+                      <div class="game-end-column-row">
+                        <div class="game-end-column-vp">{{game.marsBot.vpBreakdown.terraformRating}}</div>
+                        <div class="game-end-column-text">Terraform Rating</div>
+                      </div>
+                      <div class="game-end-column-row">
+                        <div class="game-end-column-vp">{{game.marsBot.vpBreakdown.milestones}}</div>
+                        <div class="game-end-column-text">Milestones</div>
+                      </div>
+                      <div class="game-end-column-row">
+                        <div class="game-end-column-vp">{{game.marsBot.vpBreakdown.awards}}</div>
+                        <div class="game-end-column-text">Awards</div>
+                      </div>
+                      <div class="game-end-column-row">
+                        <div class="game-end-column-vp">{{game.marsBot.vpBreakdown.greenery}}</div>
+                        <div class="game-end-column-text">Greenery tiles</div>
+                      </div>
+                      <div class="game-end-column-row">
+                        <div class="game-end-column-vp">{{game.marsBot.vpBreakdown.cityAdjacentGreenery}}</div>
+                        <div class="game-end-column-text">Cities (adj. greenery)</div>
+                      </div>
+                      <div class="game-end-column-row">
+                        <div class="game-end-column-vp">{{game.marsBot.vpBreakdown.neuralInstance}}</div>
+                        <div class="game-end-column-text">Neural Instance</div>
+                      </div>
+                      <div class="game-end-column-row">
+                        <div class="game-end-column-vp">{{game.marsBot.vpBreakdown.mcToVP}}</div>
+                        <div class="game-end-column-text">MC → VP ({{game.marsBot.mcPerVP || '?'}} MC/VP)</div>
+                      </div>
+                      <div v-if="game.marsBot.vpBreakdown.cardVP > 0" class="game-end-column-row">
+                        <div class="game-end-column-vp">{{game.marsBot.vpBreakdown.cardVP}}</div>
+                        <div class="game-end-column-text">Card VP (hard mode)</div>
                       </div>
                   </div>
               </div>
@@ -361,13 +385,21 @@ export default defineComponent({
       return this.players[0].victoryPointsBreakdown.total > this.game.marsBot.vpBreakdown.total;
     },
     vpDataset(): ReadonlyArray<DataSet> {
-      return this.players.map((player) => {
+      const datasets = this.players.map((player) => {
         return {
           label: player.name,
           data: player.victoryPointsByGeneration,
           color: player.color,
         };
       });
+      if (this.game.marsBot?.vpByGeneration && this.game.marsBot.vpByGeneration.length > 0) {
+        datasets.push({
+          label: 'MarsBot',
+          data: this.game.marsBot.vpByGeneration,
+          color: 'bronze' as Color,
+        });
+      }
+      return datasets;
     },
     globalsDataset(): ReadonlyArray<DataSet> {
       const dataset: Array<DataSet> = [];
@@ -394,8 +426,7 @@ export default defineComponent({
       return dataset;
     },
     playerContributionsData(): Array<{player: string, color: Color, temp: number, oxygen: number, oceans: number, venus?: number, moonHabitat?: number, moonMining?: number, moonLogistics?: number, total: number}> {
-      return this.players.map((player) => {
-        const steps = player.globalParameterSteps || {};
+      const extract = (name: string, color: Color, steps: Partial<Record<GlobalParameter, number>>) => {
         const temp = steps[GlobalParameter.TEMPERATURE] || 0;
         const oxygen = steps[GlobalParameter.OXYGEN] || 0;
         const oceans = steps[GlobalParameter.OCEANS] || 0;
@@ -403,20 +434,14 @@ export default defineComponent({
         const moonHabitat = steps[GlobalParameter.MOON_HABITAT_RATE] || 0;
         const moonMining = steps[GlobalParameter.MOON_MINING_RATE] || 0;
         const moonLogistics = steps[GlobalParameter.MOON_LOGISTICS_RATE] || 0;
-
-        return {
-          player: player.name,
-          color: player.color,
-          temp,
-          oxygen,
-          oceans,
-          venus,
-          moonHabitat,
-          moonMining,
-          moonLogistics,
-          total: temp + oxygen + oceans + venus + moonHabitat + moonMining + moonLogistics,
-        };
-      });
+        return {player: name, color, temp, oxygen, oceans, venus, moonHabitat, moonMining, moonLogistics,
+          total: temp + oxygen + oceans + venus + moonHabitat + moonMining + moonLogistics};
+      };
+      const data = this.players.map((p) => extract(p.name, p.color, p.globalParameterSteps || {}));
+      if (this.game.marsBot?.globalParameterSteps) {
+        data.push(extract('MarsBot', 'bronze' as Color, this.game.marsBot.globalParameterSteps));
+      }
+      return data;
     },
   },
   data() {
