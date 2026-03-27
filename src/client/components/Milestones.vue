@@ -21,18 +21,8 @@
                     :milestone="milestone"
                     :showScores="showScores"
                     :showDescription="showDescription"
+                    :isAutoma="isAutoma"
                   ></Milestone>
-                  <div v-if="isAutoma" class="ma-automa-rules">
-                    <b v-i18n>MarsBot milestone rules:</b>
-                    <ul>
-                      <li><b>Terraformer</b>: TR &ge; 35</li>
-                      <li><b>Mayor</b>: 3+ city tiles on board</li>
-                      <li><b>Gardener</b>: 3+ greenery tiles on board</li>
-                      <li><b>Builder</b>: Building track &ge; 8</li>
-                      <li><b>Planner</b>: All 5 tracks &ge; position 4</li>
-                    </ul>
-                    <span v-i18n>MarsBot prefers milestones you also qualify for, then ones you're closest to.</span>
-                  </div>
               </div>
             </span>
         </div>
