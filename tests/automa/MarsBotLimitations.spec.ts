@@ -24,7 +24,6 @@ function createAutomaGame(difficulty: 'easy' | 'normal' | 'hard' | 'brutal' = 'n
 }
 
 describe('MarsBot Limitations Fixed', () => {
-
   // ---- Fix 1: Award comparison with resources + production ----
 
   describe('Award comparison uses human resources + production (page 8)', () => {
