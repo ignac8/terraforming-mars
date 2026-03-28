@@ -294,14 +294,14 @@ export class MarsBot {
         if (card === undefined) {
           card = createCorpBonusCard(bonusCardId as BonusCardId);
         }
-        if (card !== undefined) mb.actionDeck.push(card);
+        mb.actionDeck.push(card);
       },
       removeBonusCardFromDeck: (bonusCardId: string) => {
         mb.bonusDeck.removeById(bonusCardId);
       },
       addBonusCardToBonusDeck: (bonusCardId: string) => {
         const card = createCorpBonusCard(bonusCardId as BonusCardId);
-        if (card !== undefined) mb.bonusDeck.drawPile.push(card);
+        mb.bonusDeck.drawPile.push(card);
       },
       getCorpState: (key: string) => mb.corpSpecificState.get(key) ?? 0,
       setCorpState: (key: string, value: number) => { mb.corpSpecificState.set(key, value); },
