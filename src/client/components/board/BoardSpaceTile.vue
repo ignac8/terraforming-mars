@@ -98,6 +98,7 @@ const descriptions: Record<TileType, string> = {
   [TileType.REY_SKYWALKER]: 'Rey... Skywalker?: nothing may be placed here',
 
   [TileType.NEW_HOLLAND]: 'New Holland: counts as an ocean and a city',
+  [TileType.NEURAL_INSTANCE]: 'Neural Instance: MarsBot gains VP for adjacent non-human spaces',
 };
 
 export default defineComponent({
