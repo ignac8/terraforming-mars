@@ -2,24 +2,24 @@
   <div class="marsbot-panel">
     <h2 class="marsbot-title">MarsBot <span class="marsbot-difficulty">({{ model.difficulty }})</span></h2>
     <div v-if="model.corpName" class="marsbot-corp">
-      Corp: <b>{{ model.corpName }}</b>
-      <div v-if="model.corpDescription" class="marsbot-corp-desc">{{ model.corpDescription }}</div>
+      <span v-i18n>Corp</span>: <b>{{ model.corpName }}</b>
+      <div v-if="model.corpDescription" class="marsbot-corp-desc" v-i18n>{{ model.corpDescription }}</div>
     </div>
-    <div v-if="model.instantWin" class="marsbot-instant-win">MarsBot wins! (Generation limit reached)</div>
+    <div v-if="model.instantWin" class="marsbot-instant-win"><span v-i18n>MarsBot wins!</span> (<span v-i18n>Generation limit reached</span>)</div>
     <div class="marsbot-stats">
-      <span class="marsbot-stat" v-if="model.vpBreakdown">VP: <b>{{ model.vpBreakdown.total }}</b></span>
-      <span class="marsbot-stat">TR: <b>{{ model.vpBreakdown?.terraformRating }}</b></span>
-      <span class="marsbot-stat" v-if="model.vpBreakdown?.milestones">Milestones: <b>{{ model.vpBreakdown.milestones }}</b></span>
-      <span class="marsbot-stat" v-if="model.vpBreakdown?.awards">Awards: <b>{{ model.vpBreakdown.awards }}</b></span>
-      <span class="marsbot-stat" v-if="model.vpBreakdown?.greenery">Greenery: <b>{{ model.vpBreakdown.greenery }}</b></span>
-      <span class="marsbot-stat" v-if="model.vpBreakdown?.cityAdjacentGreenery">Cities: <b>{{ model.vpBreakdown.cityAdjacentGreenery }}</b></span>
-      <span class="marsbot-stat" v-if="model.vpBreakdown?.neuralInstance">NI: <b>{{ model.vpBreakdown.neuralInstance }}</b></span>
-      <span class="marsbot-stat" v-if="model.vpBreakdown?.mcToVP">MC to VP: <b>{{ model.vpBreakdown.mcToVP }}</b></span>
-      <span class="marsbot-stat" v-if="model.vpBreakdown?.cardVP">Cards: <b>{{ model.vpBreakdown.cardVP }}</b></span>
-      <span class="marsbot-stat">MC: <b>{{ model.mcSupply }}</b></span>
-      <span class="marsbot-stat" v-if="model.mcPerVP">MC/VP: <b>{{ model.mcPerVP }}</b></span>
-      <span class="marsbot-stat">Action Deck: <b>{{ model.actionDeckSize }}</b></span>
-      <span class="marsbot-stat">Bonus Deck: <b>{{ model.bonusDeckSize }}</b></span>
+      <span class="marsbot-stat" v-if="model.vpBreakdown"><span v-i18n>VP</span>: <b>{{ model.vpBreakdown.total }}</b></span>
+      <span class="marsbot-stat"><span v-i18n>TR</span>: <b>{{ model.vpBreakdown?.terraformRating }}</b></span>
+      <span class="marsbot-stat" v-if="model.vpBreakdown?.milestones"><span v-i18n>Milestones</span>: <b>{{ model.vpBreakdown.milestones }}</b></span>
+      <span class="marsbot-stat" v-if="model.vpBreakdown?.awards"><span v-i18n>Awards</span>: <b>{{ model.vpBreakdown.awards }}</b></span>
+      <span class="marsbot-stat" v-if="model.vpBreakdown?.greenery"><span v-i18n>Greenery</span>: <b>{{ model.vpBreakdown.greenery }}</b></span>
+      <span class="marsbot-stat" v-if="model.vpBreakdown?.cityAdjacentGreenery"><span v-i18n>Cities</span>: <b>{{ model.vpBreakdown.cityAdjacentGreenery }}</b></span>
+      <span class="marsbot-stat" v-if="model.vpBreakdown?.neuralInstance"><span v-i18n>NI</span>: <b>{{ model.vpBreakdown.neuralInstance }}</b></span>
+      <span class="marsbot-stat" v-if="model.vpBreakdown?.mcToVP"><span v-i18n>MC to VP</span>: <b>{{ model.vpBreakdown.mcToVP }}</b></span>
+      <span class="marsbot-stat" v-if="model.vpBreakdown?.cardVP"><span v-i18n>Cards</span>: <b>{{ model.vpBreakdown.cardVP }}</b></span>
+      <span class="marsbot-stat"><span v-i18n>MC</span>: <b>{{ model.mcSupply }}</b></span>
+      <span class="marsbot-stat" v-if="model.mcPerVP"><span v-i18n>MC/VP</span>: <b>{{ model.mcPerVP }}</b></span>
+      <span class="marsbot-stat"><span v-i18n>Action Deck</span>: <b>{{ model.actionDeckSize }}</b></span>
+      <span class="marsbot-stat"><span v-i18n>Bonus Deck</span>: <b>{{ model.bonusDeckSize }}</b></span>
     </div>
     <div class="marsbot-tracks">
       <div v-for="track in model.tracks" :key="track.num" class="marsbot-track">
@@ -112,9 +112,10 @@ export default defineComponent({
     },
     getActionTooltip(track: {layout?: ReadonlyArray<TrackAction | null>}, position: number): string {
       const action = this.getAction(track, position);
-      if (!action) return `Position ${position}`;
-      if (action.startsWith('tag_')) return `Advance track ${action.slice(4)}`;
-      return ACTION_LABELS[action] ?? action;
+      if (!action) return this.$t('Position') + ' ' + position;
+      if (action.startsWith('tag_')) return this.$t('Advance track') + ' ' + action.slice(4);
+      const label = ACTION_LABELS[action];
+      return label ? this.$t(label) : action;
     },
   },
 });
