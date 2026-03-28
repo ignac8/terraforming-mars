@@ -84,6 +84,8 @@ export interface IGame extends Logger {
   pathfindersData: PathfindersData | undefined;
   underworldData: UnderworldData;
 
+  automaHooks: import('./automa/AutomaGameHooks').AutomaGameHooks | undefined;
+
   // Card-specific data
 
   /* An optimization to see if anyone owns Mons Insurance */

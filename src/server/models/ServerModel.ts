@@ -81,6 +81,7 @@ export class Server {
       turmoil: turmoil,
       undoCount: game.undoCount,
       venusScaleLevel: game.getVenusScaleLevel(),
+      marsBot: game.automaHooks?.toModel(),
     };
   }
 
@@ -152,6 +153,13 @@ export class Server {
           score: milestone.getScore(player),
           claimable: milestone.canClaim(player),
         }));
+        if (game.automaHooks !== undefined) {
+          scores.push({
+            color: game.automaHooks.getMarsBotPlayer().color,
+            score: game.automaHooks.getMarsBotMilestoneScore(milestone),
+            claimable: game.automaHooks.canMarsBotClaimMilestone(milestone),
+          });
+        }
       }
 
       milestoneModels.push({
@@ -178,6 +186,12 @@ export class Server {
           color: player.color,
           score: scorer.get(player),
         }));
+        if (game.automaHooks !== undefined) {
+          scores.push({
+            color: game.automaHooks.getMarsBotPlayer().color,
+            score: game.automaHooks.getMarsBotAwardScore(award),
+          });
+        }
       }
 
       awardModels.push({
@@ -448,6 +462,9 @@ export class Server {
       requiresVenusTrackCompletion: options.requiresVenusTrackCompletion,
       twoCorpsVariant: options.twoCorpsVariant,
       undoOption: options.undoOption,
+      automaOption: options.automaOption,
+      automaDifficulty: options.automaDifficulty,
+      automaCorpOption: options.automaCorpOption,
     };
   }
 

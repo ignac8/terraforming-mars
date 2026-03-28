@@ -921,6 +921,9 @@ export class Player implements IPlayer {
     }
 
     PathfindersExpansion.onCardPlayed(this, card);
+
+    // Notify MarsBot corp of human card play (Saturn Systems, Pharmacy Union, Splice, etc.)
+    this.game.automaHooks?.handleHumanCardPlayed(card as IProjectCard);
   }
 
   public playActionCard(): PlayerInput {
@@ -1647,6 +1650,9 @@ export class Player implements IPlayer {
   private allOtherPlayersHavePassed(): boolean {
     const game = this.game;
     if (game.isSoloMode()) return true;
+    if (game.automaHooks !== undefined) {
+      return game.automaHooks.allOtherPlayersHavePassed();
+    }
     const players = game.players;
     const passedPlayers = game.getPassedPlayers();
     return passedPlayers.length === players.length - 1 && passedPlayers.includes(this.color) === false;

@@ -122,6 +122,9 @@ function giveAwards(player: IPlayer, builder: VictoryPointsBreakdownBuilder) {
     const award = fundedAward.award;
     const scorer = new AwardScorer(player.game, award);
     const players: Array<IPlayer> = player.game.players.slice();
+    if (player.game.automaHooks !== undefined) {
+      players.push(player.game.automaHooks.getMarsBotPlayer());
+    }
     players.sort((p1, p2) => scorer.get(p2) - scorer.get(p1));
 
     // There is one rank 1 player
@@ -130,11 +133,9 @@ function giveAwards(player: IPlayer, builder: VictoryPointsBreakdownBuilder) {
       players.shift();
 
       if (players.length > 1) {
-        // There is one rank 2 player
         if (scorer.get(players[0]) > scorer.get(players[1])) {
           maybeSetVP(player, players[0], fundedAward, 2, '2nd', builder);
         } else {
-          // There are at least two rank 2 players
           const score = scorer.get(players[0]);
           while (players.length > 0 && scorer.get(players[0]) === score) {
             maybeSetVP(player, players[0], fundedAward, 2, '2nd', builder);
