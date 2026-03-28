@@ -56,6 +56,12 @@ export class MarsBot {
   /** VP total per generation (for end-game chart). */
   public vpByGeneration: Array<number> = [];
 
+  /** Number of times MarsBot raised temperature (for Thawer milestone). */
+  public temperatureRaises: number = 0;
+
+  /** Whether colony cubes are placed (Pioneer4/Constructor in game). */
+  public hasColonyCubes: boolean = false;
+
   /** Corp-specific state (M€ on card, resources, cubes, etc.). */
   public corpSpecificState: Map<string, number> = new Map();
 
@@ -457,6 +463,9 @@ export class MarsBot {
     if (this.vpByGeneration.length > 0) {
       state.vpByGeneration = this.vpByGeneration;
     }
+    if (this.temperatureRaises > 0) {
+      state.temperatureRaises = this.temperatureRaises;
+    }
     return state;
   }
 
@@ -506,6 +515,9 @@ export class MarsBot {
     }
     if (state.vpByGeneration !== undefined) {
       this.vpByGeneration = [...state.vpByGeneration];
+    }
+    if (state.temperatureRaises !== undefined) {
+      this.temperatureRaises = state.temperatureRaises;
     }
   }
 

@@ -14,6 +14,9 @@ import {MarsBotTags} from './MarsBotTags';
 import {MarsBotStock, MarsBotProduction} from './MarsBotStock';
 import {CardName} from '../../common/cards/CardName';
 import {ICard} from '../cards/ICard';
+import {IMilestone} from '../milestones/IMilestone';
+import {IAward} from '../awards/IAward';
+import {trackCubeKey} from '../../common/automa/MarsBotCorpTypes';
 import {registerBaseGameCorps} from './corps/BaseGameCorps';
 import {registerExpansionCorps} from './corps/ExpansionCorps';
 
@@ -43,6 +46,28 @@ export class AutomaGameSetup {
     gameOptions.underworldExpansion = false;
     gameOptions.communityCardsOption = false;
     gameOptions.boardName = BoardName.THARSIS;
+  }
+
+  /** Filter out milestones not supported against MarsBot (e.g., Terraformer29). */
+  /** Filter milestones unsupported against MarsBot. */
+  public static filterMilestones(milestones: Array<IMilestone>, gameOptions: GameOptions): Array<IMilestone> {
+    const unsupported: Array<string> = ['Terraformer29'];
+    if (!gameOptions.venusNextExtension) {
+      unsupported.push('Planetologist', 'Trader', 'Merchant');
+    }
+    if (!gameOptions.turmoilExtension) {
+      unsupported.push('Lobbyist');
+    }
+    return milestones.filter((m) => !unsupported.includes(m.name));
+  }
+
+  /** Filter awards unsupported against MarsBot. */
+  public static filterAwards(awards: Array<IAward>, gameOptions: GameOptions): Array<IAward> {
+    const unsupported: Array<string> = [];
+    if (!gameOptions.venusNextExtension) {
+      unsupported.push('Venuphile');
+    }
+    return unsupported.length > 0 ? awards.filter((a) => !unsupported.includes(a.name)) : awards;
   }
 
   /** Filter out cards not supported against MarsBot (e.g., Recession). */
@@ -101,8 +126,38 @@ export class AutomaGameSetup {
 
     marsBot.buildInitialActionDeck();
 
+    // Pioneer4/Constructor milestones/awards place colony cubes on tracks
+    AutomaGameSetup.placeColonyCubes(game, marsBot);
+
     game.log('MarsBot is ready with ${0} difficulty', (b) => b.rawString(gameOptions.automaDifficulty));
 
     return new AutomaGameHooks(game, marsBot);
+  }
+
+  /**
+   * Pioneer4 milestone and Constructor award place colony cubes on MarsBot's tracks.
+   * When MarsBot reaches these positions, it loses 5 MC and builds a colony (if Colonies enabled).
+   * Cubes: Space track #7, Space track #10, Energy track #8.
+   */
+  private static placeColonyCubes(game: IGame, marsBot: MarsBot): void {
+    const hasPioneer4 = game.milestones.some((m) => m.name === 'Pioneer4');
+    const hasConstructor = game.awards.some((a) => a.name === 'Constructor');
+    if (!hasPioneer4 && !hasConstructor) return;
+
+    const cubePositions: Array<{trackNum: number, position: number}> = [
+      {trackNum: 2, position: 7},  // Space track #7
+      {trackNum: 2, position: 10}, // Space track #10
+      {trackNum: 5, position: 8},  // Energy track #8
+    ];
+
+    for (const {trackNum, position} of cubePositions) {
+      const key = trackCubeKey(trackNum, position);
+      if (!marsBot.trackCubePositions.has(key)) {
+        marsBot.trackCubePositions.set(key, {trackNum, position, cubeType: 'black'});
+      }
+    }
+
+    marsBot.hasColonyCubes = true;
+    game.log('MarsBot: colony cubes placed on Space track #7, #10 and Energy track #8');
   }
 }

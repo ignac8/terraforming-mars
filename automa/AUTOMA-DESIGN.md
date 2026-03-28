@@ -662,13 +662,21 @@ No 2nd place VP in 2-player automa games (same as standard 2-player TM rules). O
 - [x] Track action layout display with tooltips
 - [x] Corp effect descriptions
 - [x] Serialization/deserialization of all state
-- [x] 7244 tests (15 session fix tests)
+- [x] Milestone/award evaluation registry for all maps + modular MA expansion
+- [x] Corporate Competition helper actions for all awards (pages 12 + 16)
+- [x] Briber milestone MC deduction on claim
+- [x] Pioneer4/Constructor colony cubes on tracks
+- [x] Terraformer29 filtered from automa games
+- [x] Temperature raise tracking (for Thawer milestone)
+- [x] i18n support for all player-visible text
+- [x] 7250+ tests
 
 ### Not Yet Implemented (Official Expansions Only)
 - [ ] Venus Next — Venus track actions already in board layout (silently ignored when off), need: Venus board, Venus cards in project deck, Venus global parameter tracking, Venus-specific milestones/awards
 - [ ] Colonies — Colony tile placement, trade actions, colony bonuses, fleet management for MarsBot
 - [ ] Turmoil — Political parties, delegates, global events, ruling bonus/policy effects on MarsBot
-- [ ] Other official maps — Hellas, Elysium, Utopia Planitia, Terra Cimmeria, Vastitas Borealis (need MarsBot board data for each: track layouts, milestone criteria, award formulas)
+- [x] Milestones & Awards expansion — all modular milestones/awards have MarsBot eval functions (Rulebook C pages 13-16)
+- [ ] Other official maps — Hellas, Elysium, Utopia Planitia, Terra Cimmeria, Vastitas Borealis (milestone/award evals done, but track layouts still needed from physical boards)
 - [ ] Promos — Some promo cards may need special MarsBot interaction handling
 - [ ] Physical card verification — Corp effects from NamuWiki need verification against physical Automa expansion cards
 

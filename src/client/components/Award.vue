@@ -40,11 +40,43 @@ import {playerSymbol} from '@/client/utils/playerSymbol';
 import {Color} from '@/common/Color';
 
 const AUTOMA_AWARD_RULES: Record<string, string> = {
+  // Tharsis
   'Landlord': 'Total tiles on board',
-  'Banker': 'Building track + Finance track',
+  'Banker': 'Building + Event track',
   'Scientist': 'Science track',
   'Thermalist': 'Energy track + 5',
-  'Miner': 'Mining track + 5',
+  'Miner': 'Space track + 5',
+  // Hellas
+  'Cultivator': 'Greenery owned (unchanged)',
+  'Magnate': 'Green cards in played pile',
+  'Space Baron': 'Space track',
+  'Excentric': 'Every 5 MC = 1 resource',
+  'Contractor': 'Building track',
+  // Elysium
+  'Celebrity': 'Cards costing 20+ MC (including events)',
+  'Industrialist': 'Energy track + 5',
+  'Benefactor': 'TR minus 15',
+  // Terra Cimmeria
+  'Electrician': 'Energy track',
+  'Mogul': 'Highest track \u00d7 2',
+  'Zoologist': 'Bio track + 5',
+  'Forecaster': 'Every 7 MC = 1 card with requirement',
+  // Utopia Planitia
+  'Investor': 'Building + Science track',
+  'Botanist': 'Bio track minus 2',
+  'Incorporator': 'Cards costing 10 MC or less (including events)',
+  // Vastitas Borealis Nova
+  'Traveller': 'Building + Science track + 5',
+  'Manufacturer': 'Building + Energy track',
+  'Blacksmith': 'Building OR Space track (higher)',
+  'Promoter': 'Energy track',
+  // Modular
+  'Administrator': 'Cards without tags in played pile + 2',
+  'Collector': 'Tracks at space 3+',
+  'Politician': 'Always 5',
+  'Visionary': 'Lowest track \u00d7 2',
+  'Supplier': 'Energy track + 5',
+  'Biologist': 'Bio track + 5',
 };
 
 export default defineComponent({

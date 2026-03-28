@@ -96,4 +96,5 @@ export type SerializedAutomaState = {
     corpSpecificState?: Record<string, unknown>;
     floaterCount?: number;
     vpByGeneration?: Array<number>;
+    temperatureRaises?: number;
 }
