@@ -145,12 +145,14 @@ describe('MarsBotSessionFixes', () => {
     expect(marsBot.vpByGeneration.length).to.eq(1);
   });
 
-  it('toModel includes currentVP during game', () => {
+  it('toModel includes vpBreakdown during game', () => {
     const {marsBot} = createAutomaGame();
 
     const model = marsBot.toModel();
 
-    expect(model.currentVP).to.be.a('number');
+    expect(model.vpBreakdown).to.not.be.undefined;
+    expect(model.vpBreakdown!.total).to.be.a('number');
+    expect(model.vpBreakdown!.terraformRating).to.eq(20);
   });
 
   it('toModel includes globalParameterSteps', () => {

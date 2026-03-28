@@ -623,7 +623,17 @@ Venus actions on the MarsBot board (`venus`, `venus2`) are silently ignored when
 - Corp name shown in GameEnd VP table
 - Track action layout sent to client — each square shows action icon with tooltip
 
-### 9.6 UI Improvements
+### 9.6 Award 2nd Place Fix
+No 2nd place VP in 2-player automa games (same as standard 2-player TM rules). Only 1st place (5 VP) or 0. Fixed in both `calculateVictoryPoints.ts` and `MarsBotScoring.ts`.
+
+### 9.7 VP Display Improvements
+- VP breakdown always sent (not just at game end) so panel shows live source breakdown
+- "MarsBot wins!" banner shown at generation limit instead of misleading VP drop
+- Track log changed from "Track N → pos" to "Track N to pos" to avoid arrow confusion
+- MC/VP line hidden when no conversion applies
+- Corporate Era not forced on (optional per rules page 3)
+
+### 9.8 UI Improvements
 - MarsBotPanel font sizes scaled up 2-4px across the board (was undersized vs game UI)
 - Track squares enlarged from 14x14 to 18x18
 - Milestone/award MarsBot rules moved below item lists (were above)

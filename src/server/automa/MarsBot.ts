@@ -391,7 +391,6 @@ export class MarsBot {
 
   /** Build the model sent to the client for display. */
   public toModel(): MarsBotModel {
-    const isEnd = this.game.phase === 'end';
     const vp = this.getVictoryPoints();
     const model: MarsBotModel = {
       difficulty: this.difficulty,
@@ -402,11 +401,11 @@ export class MarsBot {
         maxPosition: MARSBOT_MAX_TRACK_POSITION,
         layout: track.definition.layout,
       })),
+      terraformRating: this.player.getTerraformRating(),
       mcSupply: this.turnResolver.mcSupply,
       actionDeckSize: this.actionDeck.length,
       bonusDeckSize: this.bonusDeck.drawPile.length,
-      vpBreakdown: isEnd ? vp : undefined,
-      currentVP: isEnd ? undefined : vp.total,
+      vpBreakdown: vp,
       instantWin: this.isInstantWin(),
     };
     if (this.corp !== undefined) {

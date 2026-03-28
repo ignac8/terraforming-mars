@@ -128,7 +128,7 @@ describe('MarsBot Award Crash Fix', () => {
       expect(vp.awards).to.be.gte(5);
     });
 
-    it('human gets 2 VP for losing a funded award to MarsBot', () => {
+    it('human gets 0 award VP for losing a funded award to MarsBot (no 2nd place in 2-player)', () => {
       const {game, human, marsBot} = createAutomaGame();
       // Fund Scientist (track 4 based)
       const scientist = game.awards.find((a) => a.name === 'Scientist')!;
@@ -138,7 +138,7 @@ describe('MarsBot Award Crash Fix', () => {
       for (let i = 0; i < 10; i++) marsBot.board.getTrack(4).advance();
 
       const vp = calculateVictoryPoints(human);
-      expect(vp.awards).to.eq(2);
+      expect(vp.awards).to.eq(0);
     });
 
     it('human gets 0 award VP with no funded awards', () => {

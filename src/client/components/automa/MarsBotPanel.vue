@@ -5,11 +5,19 @@
       Corp: <b>{{ model.corpName }}</b>
       <div v-if="model.corpDescription" class="marsbot-corp-desc">{{ model.corpDescription }}</div>
     </div>
+    <div v-if="model.instantWin" class="marsbot-instant-win">MarsBot wins! (Generation limit reached)</div>
     <div class="marsbot-stats">
-      <span class="marsbot-stat">VP: <b>{{ model.currentVP }}</b></span>
+      <span class="marsbot-stat" v-if="model.vpBreakdown">VP: <b>{{ model.vpBreakdown.total }}</b></span>
+      <span class="marsbot-stat">TR: <b>{{ model.vpBreakdown?.terraformRating }}</b></span>
+      <span class="marsbot-stat" v-if="model.vpBreakdown?.milestones">Milestones: <b>{{ model.vpBreakdown.milestones }}</b></span>
+      <span class="marsbot-stat" v-if="model.vpBreakdown?.awards">Awards: <b>{{ model.vpBreakdown.awards }}</b></span>
+      <span class="marsbot-stat" v-if="model.vpBreakdown?.greenery">Greenery: <b>{{ model.vpBreakdown.greenery }}</b></span>
+      <span class="marsbot-stat" v-if="model.vpBreakdown?.cityAdjacentGreenery">Cities: <b>{{ model.vpBreakdown.cityAdjacentGreenery }}</b></span>
+      <span class="marsbot-stat" v-if="model.vpBreakdown?.neuralInstance">NI: <b>{{ model.vpBreakdown.neuralInstance }}</b></span>
+      <span class="marsbot-stat" v-if="model.vpBreakdown?.mcToVP">MC to VP: <b>{{ model.vpBreakdown.mcToVP }}</b></span>
+      <span class="marsbot-stat" v-if="model.vpBreakdown?.cardVP">Cards: <b>{{ model.vpBreakdown.cardVP }}</b></span>
       <span class="marsbot-stat">MC: <b>{{ model.mcSupply }}</b></span>
-      <span class="marsbot-stat" v-if="model.mcPerVP">{{ model.mcPerVP }} MC/VP = <b>{{ model.mcVP }} VP</b></span>
-      <span class="marsbot-stat" v-else>MC/VP: <b>n/a</b></span>
+      <span class="marsbot-stat" v-if="model.mcPerVP">MC/VP: <b>{{ model.mcPerVP }}</b></span>
       <span class="marsbot-stat">Action Deck: <b>{{ model.actionDeckSize }}</b></span>
       <span class="marsbot-stat">Bonus Deck: <b>{{ model.bonusDeckSize }}</b></span>
     </div>
@@ -218,6 +226,16 @@ export default defineComponent({
 }
 .marsbot-corp b {
   color: #ffd700;
+}
+.marsbot-instant-win {
+  background: #e94560;
+  color: #fff;
+  font-weight: bold;
+  font-size: 16px;
+  text-align: center;
+  padding: 6px;
+  border-radius: 4px;
+  margin-bottom: 8px;
 }
 .marsbot-corp-desc {
   font-size: 13px;
