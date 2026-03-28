@@ -86,9 +86,8 @@ export class MarsBotScoring {
         vp += 5; // 1st place
       } else if (marsBotScore === humanScore) {
         vp += 5; // Tied for 1st = both get 5 (in 2-player)
-      } else {
-        vp += 2; // 2nd place in 2-player
       }
+      // No 2nd place VP in 2-player game
     }
     return vp;
   }

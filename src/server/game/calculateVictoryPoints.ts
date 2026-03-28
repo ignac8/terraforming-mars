@@ -142,9 +142,6 @@ function giveAwards(player: IPlayer, builder: VictoryPointsBreakdownBuilder) {
             players.shift();
           }
         }
-      } else if (players.length === 1 && player.game.automaHooks !== undefined) {
-        // Automa: 2-player game (human + MarsBot), sole remaining player gets 2nd
-        maybeSetVP(player, players[0], fundedAward, 2, '2nd', builder);
       }
     } else {
       // There are at least two rank 1 players

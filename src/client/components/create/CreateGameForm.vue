@@ -223,7 +223,7 @@
                             </label>
 
                             <template v-if="automaOption">
-                              <label for="automa-difficulty" style="margin-left: 20px;">
+                              <label for="automa-difficulty">
                                 <span v-i18n>Difficulty:</span>&nbsp;
                                 <select v-model="automaDifficulty" id="automa-difficulty">
                                   <option value="easy">Easy</option>
@@ -234,7 +234,7 @@
                               </label>
                               <br>
                               <input type="checkbox" v-model="automaCorpOption" id="automa-corp-checkbox">
-                              <label for="automa-corp-checkbox" style="margin-left: 20px;">
+                              <label for="automa-corp-checkbox">
                                 <span v-i18n>MarsBot Corporation</span>
                               </label>
                             </template>
@@ -1053,7 +1053,7 @@ export default defineComponent({
         }
       }
 
-      if (players.length === 1 && this.expansions.corpera === false) {
+      if (players.length === 1 && this.expansions.corpera === false && !this.automaOption) {
         const confirm = window.confirm(translateText(
           'We do not recommend playing a solo game without the Corporate Era. Press OK if you want to play without it.'));
         if (confirm === false) return;

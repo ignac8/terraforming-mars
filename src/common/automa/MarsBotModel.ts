@@ -29,10 +29,11 @@ export interface MarsBotVPModel {
 export interface MarsBotModel {
   difficulty: DifficultyLevel;
   tracks: ReadonlyArray<MarsBotTrackModel>;
+  terraformRating: number;
   mcSupply: number;
   actionDeckSize: number;
   bonusDeckSize: number;
-  /** Only populated at game end. */
+  /** VP breakdown (always populated). */
   vpBreakdown?: MarsBotVPModel;
   /** Whether MarsBot wins by generation limit. */
   instantWin?: boolean;
@@ -48,8 +49,6 @@ export interface MarsBotModel {
   mcPerVP?: number;
   /** Current VP from MC at this ratio. */
   mcVP?: number;
-  /** Current estimated VP total (during game). */
-  currentVP?: number;
   /** Global parameter contributions (temp steps, oxygen steps, oceans placed, etc.). */
   globalParameterSteps?: Partial<Record<GlobalParameter, number>>;
   /** VP total per generation (for chart). */

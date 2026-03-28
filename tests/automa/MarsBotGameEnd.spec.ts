@@ -6,6 +6,7 @@ import {MarsBot} from '../../src/server/automa/MarsBot';
 import {BoardName} from '../../src/common/boards/BoardName';
 import {TileType} from '../../src/common/TileType';
 import {Phase} from '../../src/common/Phase';
+import {calculateVictoryPoints} from '../../src/server/game/calculateVictoryPoints';
 
 function createAutomaGame(difficulty: 'easy' | 'normal' | 'hard' | 'brutal' = 'normal'): {game: IGame, human: TestPlayer, marsBot: MarsBot} {
   const [game, human] = testGame(1, {automaOption: true, automaDifficulty: difficulty, boardName: BoardName.THARSIS});
@@ -24,20 +25,21 @@ describe('MarsBot Game End Model', () => {
       expect(model.vpBreakdown!.total).to.be.gte(20);
     });
 
-    it('does NOT include vpBreakdown during action phase', () => {
+    it('includes vpBreakdown during action phase', () => {
       const {game, marsBot} = createAutomaGame();
       (game as any).phase = Phase.ACTION;
 
       const model = marsBot.toModel();
-      expect(model.vpBreakdown).to.be.undefined;
+      expect(model.vpBreakdown).to.not.be.undefined;
+      expect(model.vpBreakdown!.terraformRating).to.eq(20);
     });
 
-    it('does NOT include vpBreakdown during research phase', () => {
+    it('includes vpBreakdown during research phase', () => {
       const {game, marsBot} = createAutomaGame();
       (game as any).phase = Phase.RESEARCH;
 
       const model = marsBot.toModel();
-      expect(model.vpBreakdown).to.be.undefined;
+      expect(model.vpBreakdown).to.not.be.undefined;
     });
 
     it('includes instantWin flag', () => {
@@ -210,7 +212,7 @@ describe('MarsBot Game End Model', () => {
       expect(vp.awards).to.eq(5);
     });
 
-    it('MarsBot gets 2 VP for losing a funded award', () => {
+    it('MarsBot gets 0 award VP for losing a funded award (no 2nd place in 2-player)', () => {
       const {game, human, marsBot} = createAutomaGame();
       // Fund Landlord award (tiles owned)
       game.fundedAwards.push({player: human, award: game.awards.find((a) => a.name === 'Landlord')!});
@@ -223,7 +225,54 @@ describe('MarsBot Game End Model', () => {
       (game as any).phase = Phase.END;
 
       const vp = marsBot.getVictoryPoints();
-      expect(vp.awards).to.eq(2); // 2nd place
+      expect(vp.awards).to.eq(0);
+    });
+
+    it('MarsBot gets 5 VP for winning a funded award', () => {
+      const {game, human, marsBot} = createAutomaGame();
+      game.fundedAwards.push({player: human, award: game.awards.find((a) => a.name === 'Landlord')!});
+      // MarsBot has 3 tiles, human has 1
+      const spaces = game.board.getAvailableSpacesOnLand(human);
+      game.simpleAddTile(marsBot.player, spaces[5], {tileType: TileType.GREENERY});
+      game.simpleAddTile(marsBot.player, spaces[10], {tileType: TileType.CITY});
+      game.simpleAddTile(marsBot.player, spaces[15], {tileType: TileType.GREENERY});
+      game.simpleAddTile(human, spaces[20], {tileType: TileType.CITY});
+      (game as any).phase = Phase.END;
+
+      const vp = marsBot.getVictoryPoints();
+      expect(vp.awards).to.eq(5);
+    });
+
+    it('human gets 5 VP for winning a funded award over MarsBot', () => {
+      const {game, human, marsBot} = createAutomaGame();
+      const landlord = game.awards.find((a) => a.name === 'Landlord')!;
+      game.fundAward(human, landlord);
+      // Human has 3 tiles, MarsBot has 1
+      const spaces = game.board.getAvailableSpacesOnLand(human);
+      game.simpleAddTile(human, spaces[5], {tileType: TileType.GREENERY});
+      game.simpleAddTile(human, spaces[10], {tileType: TileType.CITY});
+      game.simpleAddTile(human, spaces[15], {tileType: TileType.GREENERY});
+      game.simpleAddTile(marsBot.player, spaces[20], {tileType: TileType.CITY});
+      (game as any).phase = Phase.END;
+
+      const vp = calculateVictoryPoints(human);
+      expect(vp.awards).to.eq(5);
+    });
+
+    it('human gets 0 award VP for losing a funded award to MarsBot', () => {
+      const {game, human, marsBot} = createAutomaGame();
+      const landlord = game.awards.find((a) => a.name === 'Landlord')!;
+      game.fundAward(human, landlord);
+      // MarsBot has 3 tiles, human has 1
+      const spaces = game.board.getAvailableSpacesOnLand(human);
+      game.simpleAddTile(marsBot.player, spaces[5], {tileType: TileType.GREENERY});
+      game.simpleAddTile(marsBot.player, spaces[10], {tileType: TileType.CITY});
+      game.simpleAddTile(marsBot.player, spaces[15], {tileType: TileType.GREENERY});
+      game.simpleAddTile(human, spaces[20], {tileType: TileType.CITY});
+      (game as any).phase = Phase.END;
+
+      const vp = calculateVictoryPoints(human);
+      expect(vp.awards).to.eq(0);
     });
 
     it('no award VP when no awards funded', () => {

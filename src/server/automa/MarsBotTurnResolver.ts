@@ -124,11 +124,11 @@ export class MarsBotTurnResolver {
     }
 
     if (action !== null) {
-      this.game.log('MarsBot: Track ${0} → ${1}, action: ${2}',
+      this.game.log('MarsBot: Track ${0} to ${1}, action: ${2}',
         (b) => b.number(trackNum).number(track.position).rawString(action));
       this.resolveTrackAction(action, trackIndex);
     } else {
-      this.game.log('MarsBot: Track ${0} → ${1}',
+      this.game.log('MarsBot: Track ${0} to ${1}',
         (b) => b.number(trackNum).number(track.position));
     }
   }

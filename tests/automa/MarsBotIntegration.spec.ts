@@ -215,7 +215,7 @@ describe('MarsBot Integration', () => {
       (game as any).phase = Phase.ACTION;
 
       const model = marsBot.toModel();
-      expect(model.vpBreakdown).to.be.undefined;
+      expect(model.vpBreakdown).to.not.be.undefined;
     });
 
     it('instantWin is true at gen 20', () => {
