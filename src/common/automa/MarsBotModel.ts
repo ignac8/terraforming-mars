@@ -1,7 +1,6 @@
 import {DifficultyLevel, TrackAction} from './AutomaTypes';
+import {CubeType} from './MarsBotCorpTypes';
 import {GlobalParameter} from '../GlobalParameter';
-
-type CubeType = 'white' | 'black' | 'credit';
 
 /** Track state sent to the client for display. */
 export interface MarsBotTrackModel {
