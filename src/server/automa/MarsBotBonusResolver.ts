@@ -126,9 +126,10 @@ export class MarsBotBonusResolver {
       }
     }
     if (bestEntry !== undefined) {
-      bestEntry.card.resourceCount!--;
+      const {card, resource} = bestEntry;
+      if (card.resourceCount !== undefined) card.resourceCount--;
       this.game.log('MarsBot\'s Invasive Species: removed 1 ${0} from ${1}',
-        (b) => b.rawString(bestEntry!.resource).card(bestEntry!.card));
+        (b) => b.rawString(resource).card(card));
     }
     // MarsBot gains 5 MC regardless
     this.turnResolver.mcSupply += 5;
