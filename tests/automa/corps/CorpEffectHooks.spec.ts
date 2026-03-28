@@ -54,7 +54,7 @@ describe('Corp Effect Hooks', () => {
   });
 
   describe('C17 Vitor VP check', () => {
-    it('gains 3 M€ for non-negative VP cards', () => {
+    it('gains 3 M€ for positive VP cards', () => {
       const {marsBot} = createAutomaGame();
       const corp = getMarsBotCorp('C17_VITOR')!;
       marsBot.setCorpAndSetup(corp);
@@ -63,13 +63,13 @@ describe('Corp Effect Hooks', () => {
       expect(marsBot.turnResolver.mcSupply).to.eq(mcBefore + 3);
     });
 
-    it('gains 3 M€ for 0 VP cards (non-negative)', () => {
+    it('does NOT gain M€ for 0 VP cards', () => {
       const {marsBot} = createAutomaGame();
       const corp = getMarsBotCorp('C17_VITOR')!;
       marsBot.setCorpAndSetup(corp);
       const mcBefore = marsBot.turnResolver.mcSupply;
       corp.effect!.onProjectCardResolved!(marsBot.getCorpContext(), {name: 'VP0', tags: [], cost: 10, hasRequirements: false, victoryPoints: 0});
-      expect(marsBot.turnResolver.mcSupply).to.eq(mcBefore + 3);
+      expect(marsBot.turnResolver.mcSupply).to.eq(mcBefore);
     });
 
     it('does NOT gain M€ for negative VP cards', () => {

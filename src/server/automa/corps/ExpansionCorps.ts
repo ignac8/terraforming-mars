@@ -125,7 +125,7 @@ const VITOR: IMarsBotCorp = {
   },
   effect: {
     onProjectCardResolved(ctx, card) {
-      if (card.victoryPoints >= 0) {
+      if (card.victoryPoints > 0) {
         ctx.gainMc(3);
         ctx.gameLog('MarsBot (Vitor): non-negative VP card, +3 M€');
       }

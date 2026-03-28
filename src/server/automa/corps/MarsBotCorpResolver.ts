@@ -58,15 +58,30 @@ export class MarsBotCorpResolver {
    * Called when a track advances to a new position. Checks for cube triggers.
    */
   public static onTrackAdvanced(marsBot: MarsBot, trackNum: number, position: number): void {
-    const corp = marsBot.corp;
-    if (corp === undefined) return;
-
     const cube = marsBot.hasCubeAt(trackNum, position);
     if (cube === undefined) return;
     if (marsBot.isCubeTriggered(trackNum, position)) return;
 
     marsBot.markCubeTriggered(trackNum, position);
-    corp.effect?.onTrackCubeTrigger?.(marsBot.getCorpContext(), trackNum, position, cube.cubeType);
+
+    // Corp cube trigger
+    const corp = marsBot.corp;
+    if (corp !== undefined) {
+      corp.effect?.onTrackCubeTrigger?.(marsBot.getCorpContext(), trackNum, position, cube.cubeType);
+    }
+
+    // Colony cubes (Pioneer4/Constructor): black cubes at Space #7, #10, Energy #8
+    if (marsBot.hasColonyCubes && MarsBotCorpResolver.isColonyCube(trackNum, position)) {
+      const cost = 5;
+      marsBot.turnResolver.mcSupply = Math.max(0, marsBot.turnResolver.mcSupply - cost);
+      marsBot.game.log('MarsBot loses ${0} MC and builds a colony (Pioneer4/Constructor cube)', (b) => b.number(cost));
+    }
+  }
+
+  private static isColonyCube(trackNum: number, position: number): boolean {
+    return (trackNum === 2 && position === 7) ||
+      (trackNum === 2 && position === 10) ||
+      (trackNum === 5 && position === 8);
   }
 
   /**

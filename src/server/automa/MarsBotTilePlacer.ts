@@ -2,6 +2,7 @@ import {IGame} from '../IGame';
 import {IPlayer} from '../IPlayer';
 import {Space} from '../boards/Space';
 import {Board} from '../boards/Board';
+import {SpaceType} from '../../common/boards/SpaceType';
 
 /**
  * Handles MarsBot tile placement with automa-specific rules and tiebreakers.
@@ -81,16 +82,17 @@ export class MarsBotTilePlacer {
   /** Find a space for the Neural Instance tile: not adjacent to any tiles, not on edge, not on/adjacent to reserved spaces. */
   public findNeuralInstanceSpace(): Space | undefined {
     const board = this.game.board;
+    const isReserved = (s: Space) => s.spaceType === SpaceType.OCEAN || s.spaceType === SpaceType.RESTRICTED;
     const spaces = board.getAvailableSpacesOnLand(this.marsBot).filter((space) => {
       const adj = board.getAdjacentSpaces(space);
       // Adjacent to no tiles
       if (adj.some((s) => s.tile !== undefined)) return false;
       // Not on edge (has fewer than 6 adjacent spaces means edge)
       if (adj.length < 6) return false;
-      // Not adjacent to reserved spaces (ocean-reserved)
-      if (adj.some((s) => Board.isOceanSpace(s))) return false;
+      // Not adjacent to reserved spaces (ocean-reserved, restricted, specific cities)
+      if (adj.some(isReserved)) return false;
       // Not on a reserved space itself
-      if (Board.isOceanSpace(space)) return false;
+      if (isReserved(space)) return false;
       return true;
     });
     if (spaces.length === 0) return undefined;
