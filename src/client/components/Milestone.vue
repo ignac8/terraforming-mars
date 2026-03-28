@@ -24,7 +24,7 @@
 
     <div v-if="showDescription" class="ma-description">
       <span v-i18n>{{ description }}</span>
-      <div v-if="isAutoma && automaRule" class="ma-automa-hint">MarsBot: {{ automaRule }}</div>
+      <div v-if="isAutoma && automaRule" class="ma-automa-hint">MarsBot: <span v-i18n>{{ automaRule }}</span></div>
     </div>
   </div>
 </template>

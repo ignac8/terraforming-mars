@@ -4,13 +4,13 @@
       <div class="game_end">
           <div v-if="isAutomaGame && game.marsBot">
               <div v-if="game.marsBot.instantWin" class="game_end_fail">
-                  <h2>MarsBot wins! (Generation {{game.generation}} reached)</h2>
+                  <h2><span v-i18n>MarsBot wins!</span> (<span v-i18n>Generation</span> {{game.generation}} <span v-i18n>reached</span>)</h2>
               </div>
               <div v-else-if="automaHumanWins" class="game_end_success">
-                  <h2>You beat MarsBot! ({{players[0].victoryPointsBreakdown.total}} vs {{game.marsBot.vpBreakdown?.total || 0}})</h2>
+                  <h2><span v-i18n>You beat MarsBot!</span> ({{players[0].victoryPointsBreakdown.total}} vs {{game.marsBot.vpBreakdown?.total || 0}})</h2>
               </div>
               <div v-else class="game_end_fail">
-                  <h2>MarsBot wins! ({{game.marsBot.vpBreakdown?.total || 0}} vs {{players[0].victoryPointsBreakdown.total}})</h2>
+                  <h2><span v-i18n>MarsBot wins!</span> ({{game.marsBot.vpBreakdown?.total || 0}} vs {{players[0].victoryPointsBreakdown.total}})</h2>
                   <div class="game_end_notice" v-if="game.marsBot.vpBreakdown?.total === players[0].victoryPointsBreakdown.total">
                     <span v-i18n>Tie goes to MarsBot!</span>
                   </div>
@@ -185,35 +185,35 @@
                       </div>
                       <div class="game-end-column-row">
                         <div class="game-end-column-vp">{{game.marsBot.vpBreakdown.terraformRating}}</div>
-                        <div class="game-end-column-text">Terraform Rating</div>
+                        <div class="game-end-column-text" v-i18n>Terraform Rating</div>
                       </div>
                       <div class="game-end-column-row">
                         <div class="game-end-column-vp">{{game.marsBot.vpBreakdown.milestones}}</div>
-                        <div class="game-end-column-text">Milestones</div>
+                        <div class="game-end-column-text" v-i18n>Milestones</div>
                       </div>
                       <div class="game-end-column-row">
                         <div class="game-end-column-vp">{{game.marsBot.vpBreakdown.awards}}</div>
-                        <div class="game-end-column-text">Awards</div>
+                        <div class="game-end-column-text" v-i18n>Awards</div>
                       </div>
                       <div class="game-end-column-row">
                         <div class="game-end-column-vp">{{game.marsBot.vpBreakdown.greenery}}</div>
-                        <div class="game-end-column-text">Greenery tiles</div>
+                        <div class="game-end-column-text" v-i18n>Greenery tiles</div>
                       </div>
                       <div class="game-end-column-row">
                         <div class="game-end-column-vp">{{game.marsBot.vpBreakdown.cityAdjacentGreenery}}</div>
-                        <div class="game-end-column-text">Cities (adj. greenery)</div>
+                        <div class="game-end-column-text" v-i18n>Cities (adj. greenery)</div>
                       </div>
                       <div class="game-end-column-row">
                         <div class="game-end-column-vp">{{game.marsBot.vpBreakdown.neuralInstance}}</div>
-                        <div class="game-end-column-text">Neural Instance</div>
+                        <div class="game-end-column-text" v-i18n>Neural Instance</div>
                       </div>
                       <div class="game-end-column-row">
                         <div class="game-end-column-vp">{{game.marsBot.vpBreakdown.mcToVP}}</div>
-                        <div class="game-end-column-text">MC → VP ({{game.marsBot.mcPerVP || '?'}} MC/VP)</div>
+                        <div class="game-end-column-text"><span v-i18n>MC to VP</span> ({{game.marsBot.mcPerVP || '?'}} MC/VP)</div>
                       </div>
                       <div v-if="game.marsBot.vpBreakdown.cardVP > 0" class="game-end-column-row">
                         <div class="game-end-column-vp">{{game.marsBot.vpBreakdown.cardVP}}</div>
-                        <div class="game-end-column-text">Card VP (hard mode)</div>
+                        <div class="game-end-column-text" v-i18n>Card VP (hard mode)</div>
                       </div>
                   </div>
               </div>
