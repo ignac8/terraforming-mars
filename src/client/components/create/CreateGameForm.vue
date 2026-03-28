@@ -226,10 +226,10 @@
                               <label for="automa-difficulty">
                                 <span v-i18n>Difficulty:</span>&nbsp;
                                 <select v-model="automaDifficulty" id="automa-difficulty">
-                                  <option value="easy">Easy</option>
-                                  <option value="normal">Normal</option>
-                                  <option value="hard">Hard</option>
-                                  <option value="brutal">Brutal</option>
+                                  <option value="easy" v-i18n>Easy</option>
+                                  <option value="normal" v-i18n>Normal</option>
+                                  <option value="hard" v-i18n>Hard</option>
+                                  <option value="brutal" v-i18n>Brutal</option>
                                 </select>
                               </label>
                               <br>
