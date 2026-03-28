@@ -46,20 +46,20 @@
                                 <span v-i18n>Prelude 2</span>
                             </label>
 
-                            <input type="checkbox" name="venusNext" id="venusNext-checkbox" v-model="expansions.venus">
-                            <label for="venusNext-checkbox" class="expansion-button">
+                            <input type="checkbox" name="venusNext" id="venusNext-checkbox" v-model="expansions.venus" :disabled="automaOption">
+                            <label for="venusNext-checkbox" class="expansion-button" :class="{'automa-disabled': automaOption}">
                             <div class="create-game-expansion-icon expansion-icon-venus"></div>
                                 <span v-i18n>Venus Next</span>
                             </label>
 
-                            <input type="checkbox" name="colonies" id="colonies-checkbox" v-model="expansions.colonies">
-                            <label for="colonies-checkbox" class="expansion-button">
+                            <input type="checkbox" name="colonies" id="colonies-checkbox" v-model="expansions.colonies" :disabled="automaOption">
+                            <label for="colonies-checkbox" class="expansion-button" :class="{'automa-disabled': automaOption}">
                             <div class="create-game-expansion-icon expansion-icon-colony"></div>
                                 <span v-i18n>Colonies</span>
                             </label>
 
-                            <input type="checkbox" name="turmoil" id="turmoil-checkbox" v-model="expansions.turmoil">
-                            <label for="turmoil-checkbox" class="expansion-button">
+                            <input type="checkbox" name="turmoil" id="turmoil-checkbox" v-model="expansions.turmoil" :disabled="automaOption">
+                            <label for="turmoil-checkbox" class="expansion-button" :class="{'automa-disabled': automaOption}">
                                 <div class="create-game-expansion-icon expansion-icon-turmoil"></div>
                                 <span v-i18n>Turmoil</span>
                             </label>
@@ -72,8 +72,8 @@
 
                             <div class="create-game-subsection-label" v-i18n>Fan-made</div>
 
-                            <input type="checkbox" name="ares" id="ares-checkbox" v-model="expansions.ares">
-                            <label for="ares-checkbox" class="expansion-button">
+                            <input type="checkbox" name="ares" id="ares-checkbox" v-model="expansions.ares" :disabled="automaOption">
+                            <label for="ares-checkbox" class="expansion-button" :class="{'automa-disabled': automaOption}">
                                 <div class="create-game-expansion-icon expansion-icon-ares"></div>
                                 <span v-i18n>Ares</span>&nbsp;<a :href="wikiUrls.ares" class="tooltip" v-i18n data-tooltip="Link opens in a new tab/window" target="_blank">&#9432;</a>
                             </label>
@@ -86,14 +86,14 @@
                                 </label>
                             </template>
 
-                            <input type="checkbox" name="community" id="communityCards-checkbox" v-model="expansions.community">
-                            <label for="communityCards-checkbox" class="expansion-button">
+                            <input type="checkbox" name="community" id="communityCards-checkbox" v-model="expansions.community" :disabled="automaOption">
+                            <label for="communityCards-checkbox" class="expansion-button" :class="{'automa-disabled': automaOption}">
                                 <div class="create-game-expansion-icon expansion-icon-community"></div>
                                 <span v-i18n>Community</span>&nbsp;<a :href="wikiUrls.community" class="tooltip" v-i18n data-tooltip="Link opens in a new tab/window" target="_blank">&#9432;</a>
                             </label>
 
-                            <input type="checkbox" name="themoon" id="themoon-checkbox" v-model="expansions.moon">
-                            <label for="themoon-checkbox" class="expansion-button">
+                            <input type="checkbox" name="themoon" id="themoon-checkbox" v-model="expansions.moon" :disabled="automaOption">
+                            <label for="themoon-checkbox" class="expansion-button" :class="{'automa-disabled': automaOption}">
                                 <div class="create-game-expansion-icon expansion-icon-themoon"></div>
                                 <span v-i18n>The Moon</span>&nbsp;<a :href="wikiUrls.moon" class="tooltip" v-i18n data-tooltip="Link opens in a new tab/window" target="_blank">&#9432;</a>
                             </label>
@@ -139,8 +139,8 @@
                                 </div>
                             </template>
 
-                            <input type="checkbox" name="pathfinders" id="pathfinders-checkbox" v-model="expansions.pathfinders">
-                            <label for="pathfinders-checkbox" class="expansion-button">
+                            <input type="checkbox" name="pathfinders" id="pathfinders-checkbox" v-model="expansions.pathfinders" :disabled="automaOption">
+                            <label for="pathfinders-checkbox" class="expansion-button" :class="{'automa-disabled': automaOption}">
                                 <div class="create-game-expansion-icon expansion-icon-pathfinders"></div>
                                 <span v-i18n>Pathfinders</span>&nbsp;<a :href="wikiUrls.pathfinders" class="tooltip" v-i18n data-tooltip="Link opens in a new tab/window" target="_blank">&#9432;</a>
                             </label>
@@ -152,20 +152,20 @@
                                 </label>
                             </template>
 
-                            <input type="checkbox" name="ceo" id="ceo-checkbox" v-model="expansions.ceo">
-                            <label for="ceo-checkbox" class="expansion-button">
+                            <input type="checkbox" name="ceo" id="ceo-checkbox" v-model="expansions.ceo" :disabled="automaOption">
+                            <label for="ceo-checkbox" class="expansion-button" :class="{'automa-disabled': automaOption}">
                                 <div class="create-game-expansion-icon expansion-icon-ceo"></div>
                                 <span v-i18n>CEOs</span>&nbsp;<a :href="wikiUrls.ceo" class="tooltip" v-i18n data-tooltip="Link opens in a new tab/window" target="_blank">&#9432;</a>
                             </label>
 
-                            <input type="checkbox" name="starwars" id="starwars-checkbox" v-model="expansions.starwars">
-                            <label for="starwars-checkbox" class="expansion-button">
+                            <input type="checkbox" name="starwars" id="starwars-checkbox" v-model="expansions.starwars" :disabled="automaOption">
+                            <label for="starwars-checkbox" class="expansion-button" :class="{'automa-disabled': automaOption}">
                                 <div class="create-game-expansion-icon expansion-icon-starwars"></div>
                                 <span v-i18n>Star Wars</span><span> </span>&nbsp;<a :href="wikiUrls.starwars" class="tooltip" v-i18n data-tooltip="Link opens in a new tab/window" target="_blank">&#9432;</a>
                             </label>
 
-                            <input type="checkbox" name="ceo" id="underworld-checkbox" v-model="expansions.underworld">
-                            <label for="underworld-checkbox" class="expansion-button">
+                            <input type="checkbox" name="ceo" id="underworld-checkbox" v-model="expansions.underworld" :disabled="automaOption">
+                            <label for="underworld-checkbox" class="expansion-button" :class="{'automa-disabled': automaOption}">
                                 <div class="create-game-expansion-icon expansion-icon-underworld"></div>
                                 <span v-i18n>Underworld 2</span><span></span>&nbsp;<a :href="wikiUrls.underworld" class="tooltip" v-i18n data-tooltip="Link opens in a new tab/window" target="_blank">&#9432;</a>
                             </label>
@@ -176,8 +176,8 @@
 
                             <div v-for="boardName in boards" v-bind:key="boardName">
                               <div v-if="boardName==='utopia planitia'" class="create-game-subsection-label" v-i18n>Fan-made</div>
-                              <input type="radio" :value="boardName" name="board" v-model="board" :id="boardName+'-checkbox'">
-                              <label :for="boardName+'-checkbox'" class="expansion-button">
+                              <input type="radio" :value="boardName" name="board" v-model="board" :id="boardName+'-checkbox'" :disabled="automaOption && boardName !== 'tharsis'">
+                              <label :for="boardName+'-checkbox'" class="expansion-button" :class="{'automa-disabled': automaOption && boardName !== 'tharsis'}">
                                   <span :class="getBoardColorClass(boardName)">&#x2B22;</span>
                                   <span class="capitalized" v-i18n>{{ boardName }}</span>
                                   <template v-if="boardName !== RandomBoardOption.OFFICIAL && boardName !== RandomBoardOption.ALL">
@@ -217,10 +217,34 @@
                             </label>
 
                             <template v-if="playersCount === 1">
+                            <input type="checkbox" v-model="automaOption" id="automa-checkbox">
+                            <label for="automa-checkbox">
+                                <span v-i18n>MarsBot (Automa)</span>
+                            </label>
+
+                            <template v-if="automaOption">
+                              <label for="automa-difficulty">
+                                <span v-i18n>Difficulty:</span>&nbsp;
+                                <select v-model="automaDifficulty" id="automa-difficulty">
+                                  <option value="easy">Easy</option>
+                                  <option value="normal">Normal</option>
+                                  <option value="hard">Hard</option>
+                                  <option value="brutal">Brutal</option>
+                                </select>
+                              </label>
+                              <br>
+                              <input type="checkbox" v-model="automaCorpOption" id="automa-corp-checkbox">
+                              <label for="automa-corp-checkbox">
+                                <span v-i18n>MarsBot Corporation</span>
+                              </label>
+                            </template>
+
+                            <template v-if="!automaOption">
                             <input type="checkbox" v-model="soloTR" id="soloTR-checkbox">
                             <label for="soloTR-checkbox">
                                 <span v-i18n>63 TR solo mode</span>&nbsp;<a :href="wikiUrls.trSoloMode" class="tooltip" v-i18n data-tooltip="Link opens in a new tab/window" target="_blank">&#9432;</a>
                             </label>
+                            </template>
                             </template>
 
                             <!-- <input type="checkbox" v-model="beginnerOption" id="beginnerOption-checkbox">
@@ -342,7 +366,7 @@
 
                         </div>
 
-                        <div class="create-game-page-column" v-if="playersCount > 1">
+                        <div class="create-game-page-column" v-if="playersCount > 1 || automaOption">
                             <h4 v-i18n>Multiplayer Options</h4>
 
                             <div class="create-game-page-column-row">
@@ -381,8 +405,8 @@
                                 <span v-i18n>Random first player</span>
                             </label>
 
-                            <input type="checkbox" name="randomMAToggle" id="randomMA-checkbox" v-on:change="randomMAToggle()">
-                            <label for="randomMA-checkbox">
+                            <input type="checkbox" name="randomMAToggle" id="randomMA-checkbox" v-on:change="randomMAToggle()" :disabled="automaOption">
+                            <label for="randomMA-checkbox" :class="{'automa-disabled': automaOption}">
                                 <span v-i18n>Random Milestones/Awards</span>&nbsp;<a :href="wikiUrls.randomMilestonesAndAwards" class="tooltip" v-i18n data-tooltip="Link opens in a new tab/window" target="_blank">&#9432;</a>
                             </label>
 
@@ -627,12 +651,14 @@ export default defineComponent({
     allOfficialExpansions(value: boolean) {
       this.expansions.corpera = value;
       this.expansions.prelude = value;
-      this.expansions.venus = value;
-      this.expansions.colonies = value;
-      this.expansions.turmoil = value;
       this.expansions.prelude2 = value;
       this.expansions.promo = value;
-      this.solarPhaseOption = value;
+      if (!this.automaOption) {
+        this.expansions.venus = value;
+        this.expansions.colonies = value;
+        this.expansions.turmoil = value;
+      }
+      this.solarPhaseOption = this.expansions.venus;
     },
     'expansions.venus': function(value: boolean) {
       this.solarPhaseOption = value;
@@ -664,6 +690,28 @@ export default defineComponent({
     playersCount(value: number) {
       if (value === 1) {
         this.expansions.corpera = true;
+        this.automaOption = true;
+        this.draftVariant = false;
+      } else {
+        this.automaOption = false;
+      }
+    },
+    automaOption(value: boolean) {
+      if (value) {
+        this.draftVariant = false;
+        this.board = 'tharsis' as any;
+        this.randomMA = 'No randomization' as any;
+        // Disable unsupported expansions
+        this.expansions.venus = false;
+        this.expansions.colonies = false;
+        this.expansions.turmoil = false;
+        this.expansions.ares = false;
+        this.expansions.community = false;
+        this.expansions.moon = false;
+        this.expansions.pathfinders = false;
+        this.expansions.ceo = false;
+        this.expansions.starwars = false;
+        this.expansions.underworld = false;
       }
     },
   },
@@ -1005,7 +1053,7 @@ export default defineComponent({
         }
       }
 
-      if (players.length === 1 && this.expansions.corpera === false) {
+      if (players.length === 1 && this.expansions.corpera === false && !this.automaOption) {
         const confirm = window.confirm(translateText(
           'We do not recommend playing a solo game without the Corporate Era. Press OK if you want to play without it.'));
         if (confirm === false) return;
@@ -1183,6 +1231,9 @@ export default defineComponent({
         twoCorpsVariant,
         startingCeos,
         startingPreludes,
+        automaOption: this.automaOption,
+        automaDifficulty: this.automaDifficulty,
+        automaCorpOption: this.automaCorpOption,
       };
       return JSON.stringify(dataToSend, undefined, 4);
     },

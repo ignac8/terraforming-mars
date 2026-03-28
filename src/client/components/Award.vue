@@ -27,6 +27,7 @@
 
     <div v-if="showDescription" class="ma-description">
       <span v-i18n>{{ description }}</span>
+      <div v-if="isAutoma && automaRule" class="ma-automa-hint">MarsBot: {{ automaRule }}</div>
     </div>
   </div>
 </template>
@@ -37,6 +38,14 @@ import {FundedAwardModel, AwardScore} from '@/common/models/FundedAwardModel';
 import {getAward} from '@/client/MilestoneAwardManifest';
 import {playerSymbol} from '@/client/utils/playerSymbol';
 import {Color} from '@/common/Color';
+
+const AUTOMA_AWARD_RULES: Record<string, string> = {
+  'Landlord': 'Total tiles on board',
+  'Banker': 'Building track + Finance track',
+  'Scientist': 'Science track',
+  'Thermalist': 'Energy track + 5',
+  'Miner': 'Mining track + 5',
+};
 
 export default defineComponent({
   name: 'Award',
@@ -51,6 +60,10 @@ export default defineComponent({
     },
     showDescription: {
       type: Boolean,
+    },
+    isAutoma: {
+      type: Boolean,
+      default: false,
     },
   },
   methods: {
@@ -67,6 +80,9 @@ export default defineComponent({
     },
     description(): string {
       return getAward(this.award.name).description;
+    },
+    automaRule(): string | undefined {
+      return AUTOMA_AWARD_RULES[this.award.name];
     },
   },
 });

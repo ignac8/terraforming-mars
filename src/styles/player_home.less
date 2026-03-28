@@ -538,6 +538,30 @@
     vertical-align: top;
 }
 
+.ma-automa-rules {
+    background: #2a2a2a;
+    border: 1px solid #555;
+    border-radius: 5px;
+    padding: 6px 10px;
+    margin: 5px;
+    font-size: 12px;
+    color: #ccc;
+    ul {
+        margin: 3px 0;
+        padding-left: 18px;
+    }
+    li {
+        margin: 1px 0;
+    }
+}
+
+.ma-automa-hint {
+    font-size: 11px;
+    color: #e94560;
+    margin-top: 2px;
+    font-style: italic;
+}
+
 .milestones,
 .awards,
 .tag-overview {
@@ -576,7 +600,9 @@
         }
 
         .ma-score {
-            width: 24px;
+            min-width: 24px;
+            width: auto;
+            padding: 0 3px;
             height: 18px;
             line-height: 18px;
             border-radius: 2px;

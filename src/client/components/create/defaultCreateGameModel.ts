@@ -69,5 +69,8 @@ export function defaultCreateGameModel(): CreateGameModel {
     startingPreludes: 4,
     preludeDraftVariant: undefined,
     ceosDraftVariant: undefined,
+    automaOption: true,
+    automaDifficulty: 'normal',
+    automaCorpOption: false,
   };
 }

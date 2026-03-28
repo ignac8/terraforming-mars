@@ -21,6 +21,7 @@
                     :milestone="milestone"
                     :showScores="showScores"
                     :showDescription="showDescription"
+                    :isAutoma="isAutoma"
                   ></Milestone>
               </div>
             </span>
@@ -46,6 +47,10 @@ export default defineComponent({
     showScores: {
       type: Boolean,
       default: true,
+    },
+    isAutoma: {
+      type: Boolean,
+      default: false,
     },
     preferences: {
       type: Object as () => Readonly<Preferences>,
