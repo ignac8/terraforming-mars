@@ -122,33 +122,41 @@ export default defineComponent({
 
 <style scoped>
 .marsbot-panel {
-  background: #1a1a2e;
-  border: 2px solid #e94560;
-  border-radius: 8px;
+  background: #303030;
+  border: 1px solid rgba(170, 170, 170, 0.6);
+  border-radius: 4px;
   padding: 12px;
   margin: 8px 0;
-  color: #eee;
+  color: #ddd;
   display: inline-block;
+  text-shadow: 1px 1px 1px #222;
 }
 .marsbot-title {
+  font-family: Ubuntu, Sans;
   margin: 0 0 8px 0;
   font-size: 20px;
-  color: #e94560;
+  color: #ffcc64;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  text-shadow: -1px -1px 6px rgba(255, 204, 100, 0.3), 1px 1px 1px #222;
 }
 .marsbot-difficulty {
   font-size: 14px;
   color: #aaa;
   font-weight: normal;
+  text-transform: none;
+  letter-spacing: 0;
 }
 .marsbot-stats {
   display: flex;
-  gap: 16px;
+  gap: 14px;
   margin-bottom: 10px;
-  font-size: 15px;
+  font-size: 14px;
   flex-wrap: wrap;
 }
 .marsbot-stat b {
-  color: #e94560;
+  color: #ffcc64;
+  font-family: Prototype, monospace;
 }
 .marsbot-tracks {
   display: flex;
@@ -168,13 +176,14 @@ export default defineComponent({
   align-items: center;
 }
 .marsbot-track-num {
+  font-family: Prototype, monospace;
   font-weight: bold;
-  font-size: 15px;
-  color: #e94560;
+  font-size: 14px;
+  color: #ffcc64;
   min-width: 24px;
 }
 .marsbot-track-tags {
-  font-size: 13px;
+  font-size: 12px;
   color: #aaa;
   white-space: nowrap;
   overflow: hidden;
@@ -188,9 +197,9 @@ export default defineComponent({
 .marsbot-square {
   width: 18px;
   height: 18px;
-  border: 1px solid #444;
+  border: 1px solid #555;
   border-radius: 2px;
-  background: #0d0d1a;
+  background: #222;
   flex-shrink: 0;
   position: relative;
   display: flex;
@@ -198,15 +207,15 @@ export default defineComponent({
   justify-content: center;
 }
 .marsbot-square.filled {
-  background: #e94560;
-  border-color: #e94560;
+  background: #5755d9;
+  border-color: #4b48d6;
 }
 .marsbot-square.has-action {
-  border-color: #666;
+  border-color: #777;
 }
 .marsbot-action-icon {
   font-size: 10px;
-  color: #888;
+  color: #777;
   line-height: 1;
   font-weight: bold;
 }
@@ -214,31 +223,35 @@ export default defineComponent({
   color: #fff;
 }
 .marsbot-track-pos {
+  font-family: Prototype, monospace;
   font-size: 13px;
-  color: #aaa;
+  color: #ccc;
   min-width: 16px;
   text-align: right;
 }
 .marsbot-corp {
-  font-size: 15px;
-  margin-bottom: 6px;
+  font-size: 14px;
+  margin-bottom: 8px;
   color: #ccc;
 }
 .marsbot-corp b {
-  color: #ffd700;
+  color: #ffcc64;
 }
 .marsbot-instant-win {
-  background: #e94560;
+  background: #5755d9;
   color: #fff;
+  font-family: Ubuntu, Sans;
   font-weight: bold;
   font-size: 16px;
   text-align: center;
-  padding: 6px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  padding: 8px;
   border-radius: 4px;
   margin-bottom: 8px;
 }
 .marsbot-corp-desc {
-  font-size: 13px;
+  font-size: 12px;
   color: #aaa;
   margin-top: 2px;
   font-style: italic;
@@ -252,19 +265,19 @@ export default defineComponent({
   box-shadow: inset 0 0 0 2px #333;
 }
 .marsbot-square.cube-credit {
-  border-color: #ffd700;
-  box-shadow: inset 0 0 0 2px #ffd700;
+  border-color: #ffcc64;
+  box-shadow: inset 0 0 0 2px #ffcc64;
 }
 .marsbot-square.filled.cube-white {
-  background: #ff6b8a;
+  background: #7b79e0;
   border-color: #fff;
 }
 .marsbot-square.filled.cube-black {
-  background: #c0392b;
+  background: #3d3baf;
   border-color: #666;
 }
 .marsbot-square.filled.cube-credit {
-  background: #f39c12;
-  border-color: #ffd700;
+  background: #d4a017;
+  border-color: #ffcc64;
 }
 </style>
