@@ -11,7 +11,7 @@ import {MarsBotTilePlacer} from '../../src/server/automa/MarsBotTilePlacer';
 import {MarsBotBonusResolver} from '../../src/server/automa/MarsBotBonusResolver';
 import {MarsBotScoring} from '../../src/server/automa/MarsBotScoring';
 import {THARSIS_MARSBOT_BOARD} from '../../src/server/automa/boards/TharsisMarsBot';
-import {MarsBotBoardData, TrackDefinition} from '../../src/common/automa/AutomaTypes';
+import {TrackDefinition} from '../../src/common/automa/AutomaTypes';
 import {SeededRandom} from '../../src/common/utils/Random';
 import {TileType} from '../../src/common/TileType';
 import {Tag} from '../../src/common/cards/Tag';
@@ -26,16 +26,13 @@ function createAutomaGame(difficulty: 'easy' | 'normal' | 'hard' | 'brutal' = 'n
   return {game, human, marsBot: game.marsBot!};
 }
 
-function makeBoardWithTrack1Action(pos: number, action: string): MarsBotBoardData {
+function makeBoardWithTrack1Action(pos: number, action: string): ReadonlyArray<TrackDefinition> {
   const layout = new Array(19).fill(undefined);
   layout[pos] = action;
-  return {
-    ...THARSIS_MARSBOT_BOARD,
-    trackDefs: THARSIS_MARSBOT_BOARD.trackDefs.map((def, i) => {
-      if (i === 0) return {...def, layout} as TrackDefinition;
-      return def;
-    }),
-  };
+  return THARSIS_MARSBOT_BOARD.map((def, i) => {
+    if (i === 0) return {...def, layout} as TrackDefinition;
+    return def;
+  });
 }
 
 describe('MarsBot Fixes', () => {
