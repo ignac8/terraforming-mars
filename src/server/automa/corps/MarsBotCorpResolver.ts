@@ -26,7 +26,7 @@ export class MarsBotCorpResolver {
     // 1. Place track cubes
     if (corp.trackCubes !== undefined) {
       for (const cube of corp.trackCubes) {
-        marsBot.trackCubePositions.set(trackCubeKey(cube.trackNum, cube.position), cube);
+        marsBot.trackCubePositions.set(trackCubeKey(cube.trackIndex, cube.position), cube);
       }
     }
 
@@ -57,31 +57,31 @@ export class MarsBotCorpResolver {
   /**
    * Called when a track advances to a new position. Checks for cube triggers.
    */
-  public static onTrackAdvanced(marsBot: MarsBot, trackNum: number, position: number): void {
-    const cube = marsBot.hasCubeAt(trackNum, position);
+  public static onTrackAdvanced(marsBot: MarsBot, trackIndex: number, position: number): void {
+    const cube = marsBot.hasCubeAt(trackIndex, position);
     if (cube === undefined) return;
-    if (marsBot.isCubeTriggered(trackNum, position)) return;
+    if (marsBot.isCubeTriggered(trackIndex, position)) return;
 
-    marsBot.markCubeTriggered(trackNum, position);
+    marsBot.markCubeTriggered(trackIndex, position);
 
     // Corp cube trigger
     const corp = marsBot.corp;
     if (corp !== undefined) {
-      corp.effect?.onTrackCubeTrigger?.(marsBot.getCorpContext(), trackNum, position, cube.cubeType);
+      corp.effect?.onTrackCubeTrigger?.(marsBot.getCorpContext(), trackIndex, position, cube.cubeType);
     }
 
     // Colony cubes (Pioneer4/Constructor): black cubes at Space #7, #10, Energy #8
-    if (marsBot.hasColonyCubes && MarsBotCorpResolver.isColonyCube(trackNum, position)) {
+    if (marsBot.hasColonyCubes && MarsBotCorpResolver.isColonyCube(trackIndex, position)) {
       const cost = 5;
       marsBot.turnResolver.mcSupply = Math.max(0, marsBot.turnResolver.mcSupply - cost);
       marsBot.game.log('MarsBot loses ${0} MC and builds a colony (Pioneer4/Constructor cube)', (b) => b.number(cost));
     }
   }
 
-  private static isColonyCube(trackNum: number, position: number): boolean {
-    return (trackNum === 2 && position === 7) ||
-      (trackNum === 2 && position === 10) ||
-      (trackNum === 5 && position === 8);
+  private static isColonyCube(trackIndex: number, position: number): boolean {
+    return (trackIndex === 2 && position === 7) ||
+      (trackIndex === 2 && position === 10) ||
+      (trackIndex === 5 && position === 8);
   }
 
   /**

@@ -15,7 +15,7 @@ function createAutomaGame(): {game: IGame, human: TestPlayer, marsBot: MarsBot} 
 function mockContext(overrides: Partial<MarsBotMAContext> = {}): MarsBotMAContext {
   const positions = overrides.allTrackPositions?.() ?? [0, 0, 0, 0, 0, 0, 0];
   return {
-    trackPos: (num) => positions[num - 1] ?? 0,
+    trackPos: (index) => positions[index] ?? 0,
     allTrackPositions: () => positions,
     tr: 20,
     mc: 0,

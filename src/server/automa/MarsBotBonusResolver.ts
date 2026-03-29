@@ -319,7 +319,7 @@ export class MarsBotBonusResolver {
   }
 
   private tryHelperAction(awardName: string): boolean {
-    const advance = (trackNum: number) => { this.turnResolver.advanceTrackPublic(trackNum - 1); return true; };
+    const advance = (trackIndex: number) => { this.turnResolver.advanceTrackPublic(trackIndex); return true; };
     const placeGreenery = () => {
       const space = this.tilePlacer.findGreenerySpace();
       if (space) {
@@ -352,58 +352,58 @@ export class MarsBotBonusResolver {
       return false;
     };
     const advanceLeastOf = (t1: number, t2: number) => {
-      const pos1 = this.turnResolver.board.getTrack(t1).position;
-      const pos2 = this.turnResolver.board.getTrack(t2).position;
+      const pos1 = this.turnResolver.board.tracks[t1].position;
+      const pos2 = this.turnResolver.board.tracks[t2].position;
       return advance(pos1 <= pos2 ? t1 : t2);
     };
     const board = this.turnResolver.board;
 
     switch (awardName) {
-    // Tharsis
+    // Tharsis: Building=0, Space=1, Event=2, Science=3, Energy=4, Earth=5, Plant=6
     case 'Landlord': return placeGreenery();
-    case 'Banker': return advanceLeastOf(1, 5);
-    case 'Scientist': return advance(4);
-    case 'Thermalist': return advance(5);
-    case 'Miner': return advance(2);
+    case 'Banker': return advanceLeastOf(0, 4);
+    case 'Scientist': return advance(3);
+    case 'Thermalist': return advance(4);
+    case 'Miner': return advance(1);
     // Hellas
     case 'Cultivator': return placeGreenery();
     case 'Magnate': return revealAndResolveCard((c) => c.type !== CardType.EVENT);
-    case 'Space Baron': return advance(2);
-    case 'Excentric': return false; // Human must remove animal/microbe cube
-    case 'Contractor': return advance(1);
+    case 'Space Baron': return advance(1);
+    case 'Excentric': return false;
+    case 'Contractor': return advance(0);
     // Elysium
     case 'Celebrity': return revealAndResolveCard((c) => c.cost >= 20);
-    case 'Industrialist': return advance(5);
+    case 'Industrialist': return advance(4);
     case 'Desert Settler': return placeGreenery();
     case 'Estate Dealer': return placeGreenery();
     case 'Benefactor': { this.marsBot.increaseTerraformRating(2); return true; }
     // Terra Cimmeria
-    case 'Electrician': return advance(5);
+    case 'Electrician': return advance(4);
     case 'Founder': return placeCity();
-    case 'Mogul': { const idx = board.getMostAdvancedTrackIndex(); return advance(idx + 1); }
-    case 'Zoologist': return advance(7);
+    case 'Mogul': { const idx = board.getMostAdvancedTrackIndex(); return advance(idx); }
+    case 'Zoologist': return advance(6);
     case 'Forecaster': return revealAndResolveCard((c) => c.requirements !== undefined);
     // Utopia Planitia
     case 'Suburbian': return placeGreenery();
-    case 'Investor': return advance(1);
-    case 'Botanist': return advance(7);
+    case 'Investor': return advance(0);
+    case 'Botanist': return advance(6);
     case 'Incorporator': return revealAndResolveCard((c) => c.cost <= 10);
     case 'Metropolist': return placeCity();
     // Vastitas Borealis
-    case 'Traveller': return advance(1);
+    case 'Traveller': return advance(0);
     case 'Landscaper': return placeGreenery();
     case 'Highlander': return placeGreenery();
-    case 'Promoter': return advance(5);
-    case 'Blacksmith': return advanceLeastOf(1, 2);
-    // Modular (page 16) - only entries not already covered above
+    case 'Promoter': return advance(4);
+    case 'Blacksmith': return advanceLeastOf(0, 1);
+    // Modular (page 16)
     case 'Administrator': return revealAndResolveCard((c) => c.tags.length === 0);
-    case 'Biologist': return advance(7);
-    case 'Collector': { const idx = board.getLeastAdvancedTrackIndex(); return advance(idx + 1); }
+    case 'Biologist': return advance(6);
+    case 'Collector': { const idx = board.getLeastAdvancedTrackIndex(); return advance(idx); }
     case 'Constructor': return placeCity();
-    case 'Manufacturer': return advanceLeastOf(1, 5);
-    case 'Politician': return false; // No corresponding competition effect
-    case 'Supplier': return advance(5);
-    case 'Visionary': { const idx2 = board.getLeastAdvancedTrackIndex(); return advance(idx2 + 1); }
+    case 'Manufacturer': return advanceLeastOf(0, 4);
+    case 'Politician': return false;
+    case 'Supplier': return advance(4);
+    case 'Visionary': { const idx2 = board.getLeastAdvancedTrackIndex(); return advance(idx2); }
     default:
       return false;
     }
@@ -535,8 +535,8 @@ export class MarsBotBonusResolver {
   private resolveInterfaceHyperlink(): void {
     // Tyco Magnetics: advance energy (index 4) or science (index 3) track — whichever is least advanced
     const board = this.turnResolver.board;
-    const energyPos = board.getTrack(5).position; // Energy = track 5
-    const sciencePos = board.getTrack(4).position; // Science = track 4
+    const energyPos = board.tracks[4].position; // Energy = track 5
+    const sciencePos = board.tracks[3].position; // Science = track 4
     if (energyPos <= sciencePos) {
       this.turnResolver.advanceTrackPublic(4); // Energy track = index 4
       this.game.log('MarsBot resolves Interface Hyperlink: advance energy track');

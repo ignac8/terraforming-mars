@@ -126,9 +126,9 @@ describe('Corp Effect Hooks', () => {
       const {marsBot} = createAutomaGame();
       const corp = getMarsBotCorp('C10_THARSIS_REPUBLIC')!;
       marsBot.setCorpAndSetup(corp);
-      const eventBefore = marsBot.board.getTrack(3).position;
+      const eventBefore = marsBot.board.tracks[2].position;
       corp.effect!.onTilePlaced!(marsBot.getCorpContext(), true, 2); // CITY = 2
-      expect(marsBot.board.getTrack(3).position).to.be.gte(eventBefore + 1);
+      expect(marsBot.board.tracks[2].position).to.be.gte(eventBefore + 1);
     });
 
     it('does not trigger on greenery placement', () => {
@@ -147,10 +147,10 @@ describe('Corp Effect Hooks', () => {
       const corp = getMarsBotCorp('C35_LAKEFRONT_RESORTS')!;
       marsBot.setCorpAndSetup(corp);
       expect(marsBot.corpSpecificState.get('whiteCubeOnCard')).to.eq(1);
-      const buildingBefore = marsBot.board.getTrack(1).position;
+      const buildingBefore = marsBot.board.tracks[0].position;
       corp.effect!.onTilePlaced!(marsBot.getCorpContext(), false, 1); // OCEAN = 1
       expect(marsBot.corpSpecificState.get('whiteCubeOnCard')).to.eq(0);
-      expect(marsBot.board.getTrack(1).position).to.be.gte(buildingBefore + 1);
+      expect(marsBot.board.tracks[0].position).to.be.gte(buildingBefore + 1);
     });
 
     it('ocean placed without white cube → place white cube', () => {
@@ -231,11 +231,11 @@ describe('Corp Effect Hooks', () => {
       const corp = getMarsBotCorp('C06_MINING_GUILD')!;
       marsBot.setCorpAndSetup(corp);
       marsBot.corpSpecificState.set('mcOnCard', 2);
-      const buildingBefore = marsBot.board.getTrack(1).position;
+      const buildingBefore = marsBot.board.tracks[0].position;
       const actual = corp.effect!.onMcGained!(marsBot.getCorpContext(), 5);
       expect(actual).to.eq(3); // 5 - 2 intercepted = 3 passes through
       expect(marsBot.corpSpecificState.get('mcOnCard')).to.eq(10); // Refilled
-      expect(marsBot.board.getTrack(1).position).to.be.gte(buildingBefore + 1);
+      expect(marsBot.board.tracks[0].position).to.be.gte(buildingBefore + 1);
     });
   });
 
