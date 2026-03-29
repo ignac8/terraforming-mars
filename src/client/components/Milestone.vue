@@ -36,53 +36,7 @@ import {ClaimedMilestoneModel, MilestoneScore} from '@/common/models/ClaimedMile
 import {getMilestone} from '@/client/MilestoneAwardManifest';
 import {playerSymbol} from '@/client/utils/playerSymbol';
 import {Color} from '@/common/Color';
-
-const AUTOMA_MILESTONE_RULES: Record<string, string> = {
-  // Tharsis
-  'Terraformer': 'TR \u2265 35',
-  'Mayor': '3+ city tiles on board',
-  'Gardener': '3+ greenery tiles on board',
-  'Builder': 'Building track \u2265 8',
-  'Planner': 'All tracks \u2265 4 (except Venus)',
-  // Hellas
-  'Diversifier': 'All tracks \u2265 3',
-  'Tactician': '35+ MC',
-  'Energizer': 'Energy track \u2265 6',
-  'Rim Settler': 'Space + Science track \u2265 6',
-  // Elysium
-  'Generalist': 'All tracks \u2265 2 (except Venus)',
-  'Specialist': 'Any track \u2265 10',
-  'Ecologist': 'Bio track \u2265 4',
-  'Tycoon': '15 green/blue cards in played pile',
-  'Legend': '5 red cards in played pile',
-  // Terra Cimmeria Nova
-  'Architect': 'Science track \u2265 6',
-  'Coastguard': '4+ tiles adjacent to ocean',
-  'C. Forester': 'Bio track \u2265 10',
-  // Vastitas Borealis Nova
-  'Agronomist': 'Bio + Science track \u2265 4',
-  'Engineer': 'Energy + Science track \u2265 10',
-  'V. Spacefarer': 'Space track \u2265 5',
-  'Farmer': 'Science + Event \u2265 6 OR Bio + Science \u2265 6',
-  // Modular
-  'Briber': '20+ MC (loses 12 MC on claim)',
-  'Builder7': 'Building track \u2265 7',
-  'Forester': 'Bio track \u2265 6',
-  'Fundraiser': 'Energy track \u2265 8',
-  'Hydrologist': '4 oceans placed',
-  'Landshaper': '1+ city, 1+ greenery, Building track \u2265 5',
-  'Legend4': '4 red cards in played pile',
-  'Merchant': 'All tracks \u2265 2 (except Venus)',
-  'Metallurgist': 'Building + Space tracks \u2265 9',
-  'Philantropist': '5 cards with non-negative VP',
-  'Producer': 'Any 3 tracks (except Venus) \u2265 16',
-  'Researcher': 'Science track \u2265 4',
-  'Spacefarer4': 'Space track \u2265 4',
-  'Tactician4': '30+ MC',
-  'Terran5': 'Earth track \u2265 5',
-  'Thawer': 'Raised temperature 5+ times',
-  'Tycoon10': '10 blue/green cards in played pile',
-};
+import {MARSBOT_MILESTONE_DESCRIPTIONS} from '@/common/automa/MarsBotMADescriptions';
 
 export default defineComponent({
   name: 'Milestone',
@@ -132,7 +86,7 @@ export default defineComponent({
       return getMilestone(this.milestone.name).description;
     },
     automaRule(): string | undefined {
-      return AUTOMA_MILESTONE_RULES[this.milestone.name];
+      return MARSBOT_MILESTONE_DESCRIPTIONS[this.milestone.name];
     },
   },
 });
