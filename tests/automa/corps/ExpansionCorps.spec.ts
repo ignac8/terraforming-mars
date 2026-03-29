@@ -52,8 +52,8 @@ describe('Expansion MarsBot Corporations', () => {
     it('has credit cubes on building track positions 4-18', () => {
       const corp = getMarsBotCorp('C13_CHEUNG_SHING_MARS')!;
       expect(corp.trackCubes!.length).to.eq(15);
-      expect(corp.trackCubes![0]).to.deep.include({trackNum: 1, position: 4, cubeType: 'credit'});
-      expect(corp.trackCubes![14]).to.deep.include({trackNum: 1, position: 18, cubeType: 'credit'});
+      expect(corp.trackCubes![0]).to.deep.include({trackIndex: 0, position: 4, cubeType: 'credit'});
+      expect(corp.trackCubes![14]).to.deep.include({trackIndex: 0, position: 18, cubeType: 'credit'});
     });
 
     it('gains 1 M€ per credit cube reached', () => {
@@ -61,7 +61,7 @@ describe('Expansion MarsBot Corporations', () => {
       const corp = getMarsBotCorp('C13_CHEUNG_SHING_MARS')!;
       marsBot.setCorpAndSetup(corp);
       const mcBefore = marsBot.turnResolver.mcSupply;
-      corp.effect!.onTrackCubeTrigger!(marsBot.getCorpContext(), 1, 4, 'credit');
+      corp.effect!.onTrackCubeTrigger!(marsBot.getCorpContext(), 0, 4, 'credit');
       expect(marsBot.turnResolver.mcSupply).to.eq(mcBefore + 1);
     });
   });
@@ -82,7 +82,7 @@ describe('Expansion MarsBot Corporations', () => {
       // All tracks at some position after starting tags. White cube → least advanced.
       const ctx = marsBot.getCorpContext();
       const leastBefore = marsBot.board.tracks[ctx.leastAdvancedTrackIndex].position;
-      corp.effect!.onTrackCubeTrigger!(marsBot.getCorpContext(), 6, 1, 'white');
+      corp.effect!.onTrackCubeTrigger!(marsBot.getCorpContext(), 5, 1, 'white');
       // Some track should have advanced
       expect(marsBot.board.tracks[ctx.leastAdvancedTrackIndex].position).to.be.gte(leastBefore);
     });
@@ -104,9 +104,9 @@ describe('Expansion MarsBot Corporations', () => {
     it('has black cubes at #5 and #12 on all 7 tracks', () => {
       const corp = getMarsBotCorp('C29_MANUTECH')!;
       expect(corp.trackCubes!.length).to.eq(14); // 7 tracks × 2 positions
-      for (let t = 1; t <= 7; t++) {
-        expect(corp.trackCubes!.some((c) => c.trackNum === t && c.position === 5)).to.be.true;
-        expect(corp.trackCubes!.some((c) => c.trackNum === t && c.position === 12)).to.be.true;
+      for (let t = 0; t < 7; t++) {
+        expect(corp.trackCubes!.some((c) => c.trackIndex === t && c.position === 5)).to.be.true;
+        expect(corp.trackCubes!.some((c) => c.trackIndex === t && c.position === 12)).to.be.true;
       }
     });
 
@@ -114,9 +114,9 @@ describe('Expansion MarsBot Corporations', () => {
       const {marsBot} = createAutomaGame();
       const corp = getMarsBotCorp('C29_MANUTECH')!;
       marsBot.setCorpAndSetup(corp);
-      const track1Before = marsBot.board.getTrack(1).position;
-      corp.effect!.onTrackCubeTrigger!(marsBot.getCorpContext(), 1, 5, 'black');
-      expect(marsBot.board.getTrack(1).position).to.be.gte(track1Before + 1);
+      const track1Before = marsBot.board.tracks[0].position;
+      corp.effect!.onTrackCubeTrigger!(marsBot.getCorpContext(), 0, 5, 'black');
+      expect(marsBot.board.tracks[0].position).to.be.gte(track1Before + 1);
     });
   });
 
@@ -141,10 +141,10 @@ describe('Expansion MarsBot Corporations', () => {
       const corp = getMarsBotCorp('C40_ECOTEC')!;
       marsBot.setCorpAndSetup(corp);
       marsBot.corpSpecificState.set('plantResources', 6);
-      const plantTrackBefore = marsBot.board.getTrack(7).position;
+      const plantTrackBefore = marsBot.board.tracks[6].position;
       corp.perGeneration!.resolve(marsBot.getCorpContext());
       expect(marsBot.corpSpecificState.get('plantResources')).to.eq(1);
-      expect(marsBot.board.getTrack(7).position).to.be.gte(plantTrackBefore + 1);
+      expect(marsBot.board.tracks[6].position).to.be.gte(plantTrackBefore + 1);
     });
   });
 
@@ -163,12 +163,12 @@ describe('Expansion MarsBot Corporations', () => {
       marsBot.setCorpAndSetup(corp);
 
       // Collect 1 white cube
-      corp.effect!.onTrackCubeTrigger!(marsBot.getCorpContext(), 2, 3, 'white');
+      corp.effect!.onTrackCubeTrigger!(marsBot.getCorpContext(), 1, 3, 'white');
       expect(marsBot.corpSpecificState.get('whiteCubesOnCard')).to.eq(1);
 
       // Collect 1 black cube — should pair and raise temp
       const trBefore = marsBot.player.getTerraformRating();
-      corp.effect!.onTrackCubeTrigger!(marsBot.getCorpContext(), 3, 3, 'black');
+      corp.effect!.onTrackCubeTrigger!(marsBot.getCorpContext(), 2, 3, 'black');
       expect(marsBot.corpSpecificState.get('whiteCubesOnCard')).to.eq(0);
       expect(marsBot.corpSpecificState.get('blackCubesOnCard')).to.eq(0);
     });
@@ -252,7 +252,7 @@ describe('Expansion MarsBot Corporations', () => {
       const corp = getMarsBotCorp('C23_RECYCLONE')!;
       expect(corp.trackCubes!.length).to.eq(6);
       for (const cube of corp.trackCubes!) {
-        expect(cube.trackNum).to.eq(1);
+        expect(cube.trackIndex).to.eq(0);
         expect(cube.cubeType).to.eq('white');
       }
     });
@@ -261,9 +261,9 @@ describe('Expansion MarsBot Corporations', () => {
       const {marsBot} = createAutomaGame();
       const corp = getMarsBotCorp('C23_RECYCLONE')!;
       marsBot.setCorpAndSetup(corp);
-      const plantBefore = marsBot.board.getTrack(7).position;
-      corp.effect!.onTrackCubeTrigger!(marsBot.getCorpContext(), 1, 3, 'white');
-      expect(marsBot.board.getTrack(7).position).to.be.gte(plantBefore + 1);
+      const plantBefore = marsBot.board.tracks[6].position;
+      corp.effect!.onTrackCubeTrigger!(marsBot.getCorpContext(), 0, 3, 'white');
+      expect(marsBot.board.tracks[6].position).to.be.gte(plantBefore + 1);
     });
   });
 
@@ -344,9 +344,9 @@ describe('Expansion MarsBot Corporations', () => {
       const {marsBot} = createAutomaGame();
       const corp = getMarsBotCorp('C30_ARIDOR')!;
       marsBot.setCorpAndSetup(corp);
-      const eventBefore = marsBot.board.getTrack(3).position;
+      const eventBefore = marsBot.board.tracks[2].position;
       corp.effect!.onTrackCubeTrigger!(marsBot.getCorpContext(), 1, 3, 'white');
-      expect(marsBot.board.getTrack(3).position).to.be.gte(eventBefore + 1);
+      expect(marsBot.board.tracks[2].position).to.be.gte(eventBefore + 1);
     });
   });
 

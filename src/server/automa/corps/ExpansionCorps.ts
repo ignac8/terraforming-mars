@@ -32,9 +32,9 @@ const CHEUNG_SHING_MARS: IMarsBotCorp = {
   startingTags: [Tag.BUILDING],
   draftPriority: {type: 'tags', tags: [Tag.BUILDING]},
   // Credit cubes at positions 4-18 on building track (track 1)
-  trackCubes: Array.from({length: 15}, (_, i) => ({trackNum: 1, position: i + 4, cubeType: 'credit' as const})),
+  trackCubes: Array.from({length: 15}, (_, i) => ({trackIndex: 0, position: i + 4, cubeType: 'credit' as const})),
   effect: {
-    onTrackCubeTrigger(ctx, _trackNum, _position, cubeType) {
+    onTrackCubeTrigger(ctx, _trackIndex, _position, cubeType) {
       if (cubeType === 'credit') {
         ctx.gainMc(1);
         ctx.gameLog('MarsBot (Cheung Shing): credit cube reached, +1 M€');
@@ -51,18 +51,18 @@ const POINT_LUNA: IMarsBotCorp = {
   startingTags: [Tag.SPACE],
   draftPriority: {type: 'tags', tags: [Tag.EARTH]},
   trackCubes: [
-    {trackNum: 6, position: 1, cubeType: 'white'},
-    {trackNum: 6, position: 5, cubeType: 'white'},
-    {trackNum: 6, position: 9, cubeType: 'white'},
-    {trackNum: 6, position: 13, cubeType: 'white'},
-    {trackNum: 6, position: 17, cubeType: 'white'},
-    {trackNum: 6, position: 3, cubeType: 'black'},
-    {trackNum: 6, position: 7, cubeType: 'black'},
-    {trackNum: 6, position: 11, cubeType: 'black'},
-    {trackNum: 6, position: 15, cubeType: 'black'},
+    {trackIndex: 5, position: 1, cubeType: 'white'},
+    {trackIndex: 5, position: 5, cubeType: 'white'},
+    {trackIndex: 5, position: 9, cubeType: 'white'},
+    {trackIndex: 5, position: 13, cubeType: 'white'},
+    {trackIndex: 5, position: 17, cubeType: 'white'},
+    {trackIndex: 5, position: 3, cubeType: 'black'},
+    {trackIndex: 5, position: 7, cubeType: 'black'},
+    {trackIndex: 5, position: 11, cubeType: 'black'},
+    {trackIndex: 5, position: 15, cubeType: 'black'},
   ],
   effect: {
-    onTrackCubeTrigger(ctx, _trackNum, _position, cubeType) {
+    onTrackCubeTrigger(ctx, _trackIndex, _position, cubeType) {
       whiteLeastBlackSpaceHandler(ctx, cubeType, 'Point Luna');
     },
   },
@@ -98,11 +98,11 @@ const VALLEY_TRUST: IMarsBotCorp = {
     },
   },
   trackCubes: [
-    {trackNum: 4, position: 8, cubeType: 'white'},
-    {trackNum: 4, position: 16, cubeType: 'white'},
+    {trackIndex: 3, position: 8, cubeType: 'white'},
+    {trackIndex: 3, position: 16, cubeType: 'white'},
   ],
   effect: {
-    onTrackCubeTrigger(ctx, _trackNum, _position, cubeType) {
+    onTrackCubeTrigger(ctx, _trackIndex, _position, cubeType) {
       if (cubeType === 'white') {
         ctx.drawAndResolveProjectCard();
         ctx.gameLog('MarsBot (Valley Trust): white cube — drew and resolved 1 card');
@@ -125,7 +125,7 @@ const VITOR: IMarsBotCorp = {
   },
   effect: {
     onProjectCardResolved(ctx, card) {
-      if (card.victoryPoints >= 0) {
+      if (card.victoryPoints > 0) {
         ctx.gainMc(3);
         ctx.gameLog('MarsBot (Vitor): non-negative VP card, +3 M€');
       }
@@ -164,17 +164,17 @@ const ASTRODRILL_ENTERPRISE: IMarsBotCorp = {
   startingTags: [],
   draftPriority: {type: 'tags', tags: [Tag.SPACE]},
   trackCubes: [
-    {trackNum: 2, position: 2, cubeType: 'white'},
-    {trackNum: 2, position: 4, cubeType: 'white'},
-    {trackNum: 2, position: 7, cubeType: 'white'},
-    {trackNum: 2, position: 10, cubeType: 'white'},
-    {trackNum: 2, position: 13, cubeType: 'white'},
-    {trackNum: 2, position: 5, cubeType: 'black'},
-    {trackNum: 2, position: 11, cubeType: 'black'},
-    {trackNum: 2, position: 16, cubeType: 'black'},
+    {trackIndex: 1, position: 2, cubeType: 'white'},
+    {trackIndex: 1, position: 4, cubeType: 'white'},
+    {trackIndex: 1, position: 7, cubeType: 'white'},
+    {trackIndex: 1, position: 10, cubeType: 'white'},
+    {trackIndex: 1, position: 13, cubeType: 'white'},
+    {trackIndex: 1, position: 5, cubeType: 'black'},
+    {trackIndex: 1, position: 11, cubeType: 'black'},
+    {trackIndex: 1, position: 16, cubeType: 'black'},
   ],
   effect: {
-    onTrackCubeTrigger(ctx, _trackNum, _position, cubeType) {
+    onTrackCubeTrigger(ctx, _trackIndex, _position, cubeType) {
       whiteLeastBlackSpaceHandler(ctx, cubeType, 'Astrodrill');
     },
   },
@@ -186,10 +186,10 @@ const FACTORUM: IMarsBotCorp = {
   name: CardName.FACTORUM,
   description: 'Tag: Power. White cubes on building track: each advance stores 1 MC on card. Each generation: add Supply and Demand to action deck.',
   startingTags: [Tag.POWER],
-  trackCubes: whiteTrackCubes(1),
+  trackCubes: whiteTrackCubes(0),
   effect: {
-    onTrackCubeTrigger(ctx, trackNum, _position, cubeType) {
-      if (cubeType === 'white' && trackNum === 1) {
+    onTrackCubeTrigger(ctx, trackIndex, _position, cubeType) {
+      if (cubeType === 'white' && trackIndex === 0) {
         const mc = ctx.getCorpState('mcOnCard') + 1;
         ctx.setCorpState('mcOnCard', mc);
         ctx.gameLog(`MarsBot (Factorum): building track advance, +1 M€ on card (${mc} total)`);
@@ -207,14 +207,14 @@ const MANUTECH: IMarsBotCorp = {
   description: 'Tag: Building. Black cubes at positions 5 and 12 on every track. Hitting a black cube advances that same track 1 extra step.',
   startingTags: [Tag.BUILDING],
   trackCubes: Array.from({length: 7}, (_, i) => [
-    {trackNum: i + 1, position: 5, cubeType: 'black' as const},
-    {trackNum: i + 1, position: 12, cubeType: 'black' as const},
+    {trackIndex: i, position: 5, cubeType: 'black' as const},
+    {trackIndex: i, position: 12, cubeType: 'black' as const},
   ]).flat(),
   effect: {
-    onTrackCubeTrigger(ctx, trackNum, _position, cubeType) {
+    onTrackCubeTrigger(ctx, trackIndex, _position, cubeType) {
       if (cubeType === 'black') {
-        ctx.advanceTrack(trackNum - 1); // Advance same track 1 more
-        ctx.gameLog(`MarsBot (Manutech): black cube on track ${trackNum} — advance 1 more`);
+        ctx.advanceTrack(trackIndex); // Advance same track 1 more
+        ctx.gameLog(`MarsBot (Manutech): black cube on track ${trackIndex} — advance 1 more`);
       }
     },
   },
@@ -227,7 +227,7 @@ const ECOTEC: IMarsBotCorp = {
   description: 'Tag: Plant. Draft: Plant > Microbe > Animal. Setup: 2 plant resources on card. Plant/Microbe/Animal cards add 1 plant resource; spend 5 to advance plant track.',
   startingTags: [Tag.PLANT],
   draftPriority: {type: 'tags', tags: [Tag.PLANT, Tag.MICROBE, Tag.ANIMAL]},
-  trackCubes: whiteTrackCubes(7),
+  trackCubes: whiteTrackCubes(6),
   setup: {
     resolve(ctx) {
       ctx.setCorpState('plantResources', 2);
@@ -263,15 +263,15 @@ const KUIPER_COOPERATIVE: IMarsBotCorp = {
   startingTags: [Tag.SPACE],
   draftPriority: {type: 'tags', tags: [Tag.SPACE]},
   trackCubes: [
-    {trackNum: 2, position: 4, cubeType: 'white'},
-    {trackNum: 2, position: 8, cubeType: 'white'},
-    {trackNum: 2, position: 12, cubeType: 'white'},
-    {trackNum: 2, position: 7, cubeType: 'black'},
-    {trackNum: 2, position: 10, cubeType: 'black'},
-    {trackNum: 2, position: 14, cubeType: 'black'},
+    {trackIndex: 1, position: 4, cubeType: 'white'},
+    {trackIndex: 1, position: 8, cubeType: 'white'},
+    {trackIndex: 1, position: 12, cubeType: 'white'},
+    {trackIndex: 1, position: 7, cubeType: 'black'},
+    {trackIndex: 1, position: 10, cubeType: 'black'},
+    {trackIndex: 1, position: 14, cubeType: 'black'},
   ],
   effect: {
-    onTrackCubeTrigger(ctx, _trackNum, _position, cubeType) {
+    onTrackCubeTrigger(ctx, _trackIndex, _position, cubeType) {
       if (cubeType === 'white') {
         ctx.raiseTemperature(1);
         ctx.gameLog('MarsBot (Kuiper): white cube — temperature +1');
@@ -325,21 +325,21 @@ const PALADIN_SHIPPING: IMarsBotCorp = {
     },
   },
   trackCubes: [
-    {trackNum: 2, position: 3, cubeType: 'white'},
-    {trackNum: 2, position: 4, cubeType: 'white'},
-    {trackNum: 2, position: 6, cubeType: 'white'},
-    {trackNum: 2, position: 8, cubeType: 'white'},
-    {trackNum: 2, position: 10, cubeType: 'white'},
-    {trackNum: 2, position: 11, cubeType: 'white'},
-    {trackNum: 3, position: 3, cubeType: 'black'},
-    {trackNum: 3, position: 4, cubeType: 'black'},
-    {trackNum: 3, position: 6, cubeType: 'black'},
-    {trackNum: 3, position: 8, cubeType: 'black'},
-    {trackNum: 3, position: 10, cubeType: 'black'},
-    {trackNum: 3, position: 11, cubeType: 'black'},
+    {trackIndex: 1, position: 3, cubeType: 'white'},
+    {trackIndex: 1, position: 4, cubeType: 'white'},
+    {trackIndex: 1, position: 6, cubeType: 'white'},
+    {trackIndex: 1, position: 8, cubeType: 'white'},
+    {trackIndex: 1, position: 10, cubeType: 'white'},
+    {trackIndex: 1, position: 11, cubeType: 'white'},
+    {trackIndex: 2, position: 3, cubeType: 'black'},
+    {trackIndex: 2, position: 4, cubeType: 'black'},
+    {trackIndex: 2, position: 6, cubeType: 'black'},
+    {trackIndex: 2, position: 8, cubeType: 'black'},
+    {trackIndex: 2, position: 10, cubeType: 'black'},
+    {trackIndex: 2, position: 11, cubeType: 'black'},
   ],
   effect: {
-    onTrackCubeTrigger(ctx, _trackNum, _position, cubeType) {
+    onTrackCubeTrigger(ctx, _trackIndex, _position, cubeType) {
       // Collect cube onto card. If 2 colors present, remove pair + temp +1
       const key = cubeType === 'white' ? 'whiteCubesOnCard' : 'blackCubesOnCard';
       ctx.setCorpState(key, ctx.getCorpState(key) + 1);
@@ -501,16 +501,16 @@ const RECYCLONE: IMarsBotCorp = {
   startingTags: [Tag.MICROBE],
   draftPriority: {type: 'tags', tags: [Tag.BUILDING]},
   trackCubes: [
-    {trackNum: 1, position: 3, cubeType: 'white'},
-    {trackNum: 1, position: 6, cubeType: 'white'},
-    {trackNum: 1, position: 9, cubeType: 'white'},
-    {trackNum: 1, position: 12, cubeType: 'white'},
-    {trackNum: 1, position: 15, cubeType: 'white'},
-    {trackNum: 1, position: 18, cubeType: 'white'},
+    {trackIndex: 0, position: 3, cubeType: 'white'},
+    {trackIndex: 0, position: 6, cubeType: 'white'},
+    {trackIndex: 0, position: 9, cubeType: 'white'},
+    {trackIndex: 0, position: 12, cubeType: 'white'},
+    {trackIndex: 0, position: 15, cubeType: 'white'},
+    {trackIndex: 0, position: 18, cubeType: 'white'},
   ],
   effect: {
-    onTrackCubeTrigger(ctx, trackNum, _position, cubeType) {
-      if (cubeType === 'white' && trackNum === 1) {
+    onTrackCubeTrigger(ctx, trackIndex, _position, cubeType) {
+      if (cubeType === 'white' && trackIndex === 0) {
         ctx.advanceTrack(6); // Plant track = index 6
         ctx.gameLog('MarsBot (Recyclone): white cube on building track — advance plant track');
       }
@@ -611,7 +611,7 @@ const MORNINGSTAR: IMarsBotCorp = {
   // Venus track is track 8 (index 7) when Venus expansion is enabled
   // These cubes are on the separate Venus board
   effect: {
-    onTrackCubeTrigger(ctx, _trackNum, _position, cubeType) {
+    onTrackCubeTrigger(ctx, _trackIndex, _position, cubeType) {
       if (cubeType === 'credit') {
         ctx.gainMc(1);
         ctx.gameLog('MarsBot (Morningstar): credit cube, +1 M€');
@@ -668,15 +668,15 @@ const ARIDOR: IMarsBotCorp = {
   startingTags: [],
   draftPriority: {type: 'leastAdvancedTrack'},
   trackCubes: [
-    {trackNum: 1, position: 3, cubeType: 'white'},
-    {trackNum: 2, position: 3, cubeType: 'white'},
-    {trackNum: 4, position: 3, cubeType: 'white'},
-    {trackNum: 5, position: 3, cubeType: 'white'},
-    {trackNum: 5, position: 6, cubeType: 'white'},
-    {trackNum: 6, position: 3, cubeType: 'black'},
-    {trackNum: 6, position: 6, cubeType: 'black'},
-    {trackNum: 7, position: 3, cubeType: 'black'},
-    {trackNum: 7, position: 6, cubeType: 'black'},
+    {trackIndex: 0, position: 3, cubeType: 'white'},
+    {trackIndex: 1, position: 3, cubeType: 'white'},
+    {trackIndex: 3, position: 3, cubeType: 'white'},
+    {trackIndex: 4, position: 3, cubeType: 'white'},
+    {trackIndex: 4, position: 6, cubeType: 'white'},
+    {trackIndex: 5, position: 3, cubeType: 'black'},
+    {trackIndex: 5, position: 6, cubeType: 'black'},
+    {trackIndex: 6, position: 3, cubeType: 'black'},
+    {trackIndex: 6, position: 6, cubeType: 'black'},
   ],
   setup: {
     resolve(ctx) {
@@ -685,7 +685,7 @@ const ARIDOR: IMarsBotCorp = {
     },
   },
   effect: {
-    onTrackCubeTrigger(ctx, _trackNum, _position, _cubeType) {
+    onTrackCubeTrigger(ctx, _trackIndex, _position, _cubeType) {
       ctx.advanceTrack(2); // Event track = index 2
       ctx.gameLog('MarsBot (Aridor): cube reached — advance event track');
     },
@@ -699,7 +699,7 @@ const ARCLIGHT: IMarsBotCorp = {
   description: 'Tag: Animal. Draft: Animal > Plant. White cubes on plant track. Plant or Animal cards earn 2 MC.',
   startingTags: [Tag.ANIMAL],
   draftPriority: {type: 'tags', tags: [Tag.ANIMAL, Tag.PLANT]},
-  trackCubes: whiteTrackCubes(7),
+  trackCubes: whiteTrackCubes(6),
   effect: {
     onProjectCardResolved(ctx, card) {
       if (card.tags.some((t) => t === Tag.PLANT || t === Tag.ANIMAL)) {
