@@ -7,16 +7,16 @@ import {MarsBot} from '../../src/server/automa/MarsBot';
 import {BoardName} from '../../src/common/boards/BoardName';
 import {Phase} from '../../src/common/Phase';
 import {Resource} from '../../src/common/Resource';
-import {getMcPerVP} from '../../src/common/automa/AutomaTypes';
+import {getMcPerVP} from '../../src/server/automa/MarsBotScoring';
 import {GlobalParameter} from '../../src/common/GlobalParameter';
 import {Mayor} from '../../src/server/milestones/Mayor';
 import {Gardener} from '../../src/server/milestones/Gardener';
 import {Landlord} from '../../src/server/awards/Landlord';
 
-function createAutomaGame(): {game: IGame, human: TestPlayer, marsBot: MarsBot} {
+function createAutomaGame(difficulty: 'easy' | 'normal' | 'hard' | 'brutal' = 'normal'): {game: IGame, human: TestPlayer, marsBot: MarsBot} {
   const [game, human] = testGame(1, {
     automaOption: true,
-    automaDifficulty: 'normal',
+    automaDifficulty: difficulty,
     boardName: BoardName.THARSIS,
   });
   expect(game.marsBot).to.not.be.undefined;
@@ -191,5 +191,34 @@ describe('MarsBotSessionFixes', () => {
     marsBot.takeTurn(); // This should mark MarsBot as passed
     expect(game.hasPassedThisActionPhase(marsBot.player)).to.be.true;
     expect(game.automaHooks!.allOtherPlayersHavePassed()).to.be.true;
+  });
+
+  it('Neural Instance not placed adjacent to ocean-reserved spaces', () => {
+    const {game, marsBot} = createAutomaGame();
+    const space = marsBot.turnResolver.tilePlacer.findNeuralInstanceSpace();
+    if (space !== undefined) {
+      const adj = game.board.getAdjacentSpaces(space);
+      // No adjacent space should be ocean-reserved
+      for (const a of adj) {
+        expect(a.spaceType).to.not.eq('ocean');
+      }
+      // Not on edge
+      expect(adj.length).to.eq(6);
+      // No adjacent tiles
+      for (const a of adj) {
+        expect(a.tile).to.be.undefined;
+      }
+    }
+  });
+
+  it('award values reduced by 5 in easy mode', () => {
+    const {marsBot} = createAutomaGame('easy');
+    const normalMarsBot = createAutomaGame('normal').marsBot;
+    for (const award of marsBot.game.awards) {
+      const easyVal = marsBot.turnResolver.getMarsBotAwardValue(award);
+      const normalVal = normalMarsBot.turnResolver.getMarsBotAwardValue(
+        normalMarsBot.game.awards.find((a) => a.name === award.name)!);
+      expect(easyVal).to.eq(normalVal - 5, `${award.name} easy offset wrong`);
+    }
   });
 });

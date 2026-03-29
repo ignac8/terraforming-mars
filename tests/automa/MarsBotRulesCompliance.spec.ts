@@ -35,7 +35,7 @@ function makeBoard(track1Layout: Array<string | null>): MarsBotBoardData {
 }
 
 function emptyLayout(): Array<null> {
-  return new Array(19).fill(null);
+  return new Array(19).fill(undefined);
 }
 
 function makeResolver(game: IGame, marsBot: TestPlayer, human: TestPlayer, boardData: MarsBotBoardData, difficulty: 'easy' | 'normal' | 'hard' | 'brutal' = 'normal') {
@@ -318,7 +318,7 @@ describe('MarsBot Rules Compliance', () => {
       // Fund an award so B08 has something to help with
       game.fundAward(human, game.awards.find((a) => a.name === 'Scientist')!);
       // Advance track 4 so MarsBot has a score on Scientist
-      for (let i = 0; i < 5; i++) marsBot.board.getTrack(4).advance();
+      for (let i = 0; i < 5; i++) { marsBot.board.tracks[3].advance(); }
 
       const cards = createBaseBonusCards();
       const b08 = cards.find((c) => c.id === BonusCardId.B08_CORPORATE_COMPETITION)!;
@@ -345,8 +345,8 @@ describe('MarsBot Rules Compliance', () => {
       game.simpleAddTile(marsBot.player, spaces[15], {tileType: TileType.CITY});
 
       // Advance Track 7 to position where next action is greenery (pos 3 = greenery on Track 7)
-      marsBot.board.getTrack(7).advance(); // pos 1
-      marsBot.board.getTrack(7).advance(); // pos 2
+      marsBot.board.tracks[6].advance(); // pos 1
+      marsBot.board.tracks[6].advance(); // pos 2
       // Next action (pos 3) = greenery
 
       const greeneryBefore = game.board.getGreeneries(marsBot.player).length;
