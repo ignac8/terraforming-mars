@@ -144,16 +144,16 @@ export class AutomaGameSetup {
     const hasConstructor = game.awards.some((a) => a.name === 'Constructor');
     if (!hasPioneer4 && !hasConstructor) return;
 
-    const cubePositions: Array<{trackNum: number, position: number}> = [
-      {trackNum: 2, position: 7},  // Space track #7
-      {trackNum: 2, position: 10}, // Space track #10
-      {trackNum: 5, position: 8},  // Energy track #8
+    const cubePositions: Array<{trackIndex: number, position: number}> = [
+      {trackIndex: 2, position: 7},  // Space track #7
+      {trackIndex: 2, position: 10}, // Space track #10
+      {trackIndex: 5, position: 8},  // Energy track #8
     ];
 
-    for (const {trackNum, position} of cubePositions) {
-      const key = trackCubeKey(trackNum, position);
+    for (const {trackIndex, position} of cubePositions) {
+      const key = trackCubeKey(trackIndex, position);
       if (!marsBot.trackCubePositions.has(key)) {
-        marsBot.trackCubePositions.set(key, {trackNum, position, cubeType: 'black'});
+        marsBot.trackCubePositions.set(key, {trackIndex, position, cubeType: 'black'});
       }
     }
 

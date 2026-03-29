@@ -102,10 +102,10 @@ describe('Base Game MarsBot Corporations', () => {
       const corp = getMarsBotCorp('C08_SATURN_SYSTEMS')!;
       marsBot.setCorpAndSetup(corp);
 
-      const eventTrackBefore = marsBot.board.getTrack(3).position; // Event = track 3
+      const eventTrackBefore = marsBot.board.tracks[2].position; // Event = track 3
       corp.effect!.onProjectCardResolved!(marsBot.getCorpContext(), {name: 'JovianCard', tags: [Tag.JOVIAN], cost: 10, hasRequirements: false, victoryPoints: 0});
       // Event track should have advanced (may chain from starting tags advancement)
-      expect(marsBot.board.getTrack(3).position).to.be.gte(eventTrackBefore + 1);
+      expect(marsBot.board.tracks[2].position).to.be.gte(eventTrackBefore + 1);
     });
 
     it('advances event track when human plays Jovian card', () => {
@@ -113,9 +113,9 @@ describe('Base Game MarsBot Corporations', () => {
       const corp = getMarsBotCorp('C08_SATURN_SYSTEMS')!;
       marsBot.setCorpAndSetup(corp);
 
-      const eventTrackBefore = marsBot.board.getTrack(3).position;
+      const eventTrackBefore = marsBot.board.tracks[2].position;
       corp.effect!.onHumanCardPlayed!(marsBot.getCorpContext(), {name: 'HumanJovian', tags: [Tag.JOVIAN], cost: 5, hasRequirements: false, victoryPoints: 0});
-      expect(marsBot.board.getTrack(3).position).to.be.gte(eventTrackBefore + 1);
+      expect(marsBot.board.tracks[2].position).to.be.gte(eventTrackBefore + 1);
     });
 
     it('does NOT advance event track for non-Jovian cards', () => {
@@ -123,9 +123,9 @@ describe('Base Game MarsBot Corporations', () => {
       const corp = getMarsBotCorp('C08_SATURN_SYSTEMS')!;
       marsBot.setCorpAndSetup(corp);
 
-      const eventTrackBefore = marsBot.board.getTrack(3).position;
+      const eventTrackBefore = marsBot.board.tracks[2].position;
       corp.effect!.onProjectCardResolved!(marsBot.getCorpContext(), {name: 'SpaceCard', tags: [Tag.SPACE], cost: 10, hasRequirements: false, victoryPoints: 0});
-      expect(marsBot.board.getTrack(3).position).to.eq(eventTrackBefore);
+      expect(marsBot.board.tracks[2].position).to.eq(eventTrackBefore);
     });
   });
 
@@ -149,8 +149,8 @@ describe('Base Game MarsBot Corporations', () => {
     it('has 4 white cubes on energy track', () => {
       const corp = getMarsBotCorp('C11_THORGATE')!;
       expect(corp.trackCubes).to.have.length(4);
-      expect(corp.trackCubes![0]).to.deep.eq({trackNum: 5, position: 4, cubeType: 'white'});
-      expect(corp.trackCubes![3]).to.deep.eq({trackNum: 5, position: 10, cubeType: 'white'});
+      expect(corp.trackCubes![0]).to.deep.eq({trackIndex: 4, position: 4, cubeType: 'white'});
+      expect(corp.trackCubes![3]).to.deep.eq({trackIndex: 4, position: 10, cubeType: 'white'});
     });
 
     it('gains 10 M€ on setup', () => {
@@ -172,7 +172,7 @@ describe('Base Game MarsBot Corporations', () => {
       const corp = getMarsBotCorp('C11_THORGATE')!;
       marsBot.setCorpAndSetup(corp);
       // Energy = track 5 (Power/Jovian tag)
-      expect(marsBot.board.getTrack(5).position).to.be.gte(1);
+      expect(marsBot.board.tracks[4].position).to.be.gte(1);
     });
   });
 
@@ -190,8 +190,8 @@ describe('Base Game MarsBot Corporations', () => {
       const corp = getMarsBotCorp('C03_HELION')!;
       marsBot.setCorpAndSetup(corp);
       expect(marsBot.trackCubePositions.size).to.eq(12);
-      expect(marsBot.hasCubeAt(1, 6)).to.not.be.undefined;
-      expect(marsBot.hasCubeAt(6, 3)).to.not.be.undefined;
+      expect(marsBot.hasCubeAt(0, 6)).to.not.be.undefined;
+      expect(marsBot.hasCubeAt(5, 3)).to.not.be.undefined;
     });
   });
 
@@ -200,7 +200,7 @@ describe('Base Game MarsBot Corporations', () => {
       const corp = getMarsBotCorp('C07_PHOBOLOG')!;
       expect(corp.trackCubes).to.have.length(4);
       for (const cube of corp.trackCubes!) {
-        expect(cube.trackNum).to.eq(2);
+        expect(cube.trackIndex).to.eq(1);
         expect(cube.cubeType).to.eq('white');
       }
     });

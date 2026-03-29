@@ -94,9 +94,9 @@ describe('MarsBotCorpResolver', () => {
         startingTags: [Tag.BUILDING, Tag.BUILDING], // Track 1 should advance twice
       });
 
-      const track1Before = marsBot.board.getTrack(1).position;
+      const track1Before = marsBot.board.tracks[0].position;
       MarsBotCorpResolver.setupCorp(corp, marsBot);
-      const track1After = marsBot.board.getTrack(1).position;
+      const track1After = marsBot.board.tracks[0].position;
 
       // Track 1 handles Building tag, so should advance at least 2 (may chain)
       expect(track1After).to.be.gte(track1Before + 2);
@@ -106,8 +106,8 @@ describe('MarsBotCorpResolver', () => {
       const {marsBot} = createAutomaGame();
 
       const cubes: MarsBotTrackCube[] = [
-        {trackNum: 1, position: 5, cubeType: 'white'},
-        {trackNum: 3, position: 10, cubeType: 'black'},
+        {trackIndex: 0, position: 5, cubeType: 'white'},
+        {trackIndex: 2, position: 10, cubeType: 'black'},
       ];
 
       const corp = createTestCorp({
@@ -119,10 +119,10 @@ describe('MarsBotCorpResolver', () => {
       MarsBotCorpResolver.setupCorp(corp, marsBot);
 
       expect(marsBot.trackCubePositions.size).to.eq(2);
-      expect(marsBot.hasCubeAt(1, 5)).to.not.be.undefined;
-      expect(marsBot.hasCubeAt(1, 5)!.cubeType).to.eq('white');
-      expect(marsBot.hasCubeAt(3, 10)).to.not.be.undefined;
-      expect(marsBot.hasCubeAt(3, 10)!.cubeType).to.eq('black');
+      expect(marsBot.hasCubeAt(0, 5)).to.not.be.undefined;
+      expect(marsBot.hasCubeAt(0, 5)!.cubeType).to.eq('white');
+      expect(marsBot.hasCubeAt(2, 10)).to.not.be.undefined;
+      expect(marsBot.hasCubeAt(2, 10)!.cubeType).to.eq('black');
     });
 
     it('calls corp setup resolve', () => {
@@ -152,11 +152,11 @@ describe('MarsBotCorpResolver', () => {
       const corp = createTestCorp({
         id: TEST_CORP_ID_A,
         name: 'Trigger Corp',
-        trackCubes: [{trackNum: 1, position: 3, cubeType: 'white'}],
+        trackCubes: [{trackIndex: 1, position: 3, cubeType: 'white'}],
         effect: {
-          onTrackCubeTrigger: (_ctx, trackNum, position, _cubeType) => {
+          onTrackCubeTrigger: (_ctx, trackIndex, position, _cubeType) => {
             triggered = true;
-            triggeredTrackNum = trackNum;
+            triggeredTrackNum = trackIndex;
             triggeredPosition = position;
           },
         },
@@ -164,7 +164,7 @@ describe('MarsBotCorpResolver', () => {
 
       // Setup corp (places cubes)
       marsBot.corp = corp;
-      marsBot.trackCubePositions.set('1:3', {trackNum: 1, position: 3, cubeType: 'white'});
+      marsBot.trackCubePositions.set('1:3', {trackIndex: 1, position: 3, cubeType: 'white'});
 
       // Simulate advancing to position 3
       MarsBotCorpResolver.onTrackAdvanced(marsBot, 1, 3);
@@ -181,14 +181,14 @@ describe('MarsBotCorpResolver', () => {
       const corp = createTestCorp({
         id: TEST_CORP_ID_A,
         name: 'No Re-Trigger',
-        trackCubes: [{trackNum: 1, position: 3, cubeType: 'white'}],
+        trackCubes: [{trackIndex: 1, position: 3, cubeType: 'white'}],
         effect: {
           onTrackCubeTrigger: () => { triggerCount++; },
         },
       });
 
       marsBot.corp = corp;
-      marsBot.trackCubePositions.set('1:3', {trackNum: 1, position: 3, cubeType: 'white'});
+      marsBot.trackCubePositions.set('1:3', {trackIndex: 1, position: 3, cubeType: 'white'});
 
       MarsBotCorpResolver.onTrackAdvanced(marsBot, 1, 3);
       expect(triggerCount).to.eq(1);
@@ -254,19 +254,19 @@ describe('MarsBotCorpResolver', () => {
       const corp = createTestCorp({
         id: TEST_CORP_ID_A,
         name: 'Serial Corp',
-        trackCubes: [{trackNum: 2, position: 7, cubeType: 'credit'}],
+        trackCubes: [{trackIndex: 1, position: 7, cubeType: 'credit'}],
       });
 
       registerMarsBotCorp(corp);
       marsBot.corp = corp;
-      marsBot.trackCubePositions.set('2:7', {trackNum: 2, position: 7, cubeType: 'credit'});
-      marsBot.triggeredCubePositions.add('2:7');
+      marsBot.trackCubePositions.set('1:7', {trackIndex: 1, position: 7, cubeType: 'credit'});
+      marsBot.triggeredCubePositions.add('1:7');
 
       const serialized = marsBot.serialize();
 
       expect(serialized.corpId).to.eq(TEST_CORP_ID_A);
       expect(serialized.trackCubePositions).to.have.length(1);
-      expect(serialized.triggeredCubePositions).to.deep.eq(['2:7']);
+      expect(serialized.triggeredCubePositions).to.deep.eq(['1:7']);
 
       // Create a fresh MarsBot and restore
       const {marsBot: marsBot2} = createAutomaGame();
@@ -275,8 +275,8 @@ describe('MarsBotCorpResolver', () => {
       expect(marsBot2.corp).to.not.be.undefined;
       expect(marsBot2.corp!.name).to.eq('Serial Corp');
       expect(marsBot2.trackCubePositions.size).to.eq(1);
-      expect(marsBot2.hasCubeAt(2, 7)).to.not.be.undefined;
-      expect(marsBot2.triggeredCubePositions.has('2:7')).to.be.true;
+      expect(marsBot2.hasCubeAt(1, 7)).to.not.be.undefined;
+      expect(marsBot2.triggeredCubePositions.has('1:7')).to.be.true;
     });
   });
 

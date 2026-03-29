@@ -7,7 +7,7 @@ import {MarsBot} from '../../src/server/automa/MarsBot';
 import {BoardName} from '../../src/common/boards/BoardName';
 import {Phase} from '../../src/common/Phase';
 import {Resource} from '../../src/common/Resource';
-import {getMcPerVP} from '../../src/common/automa/AutomaTypes';
+import {getMcPerVP} from '../../src/server/automa/MarsBotScoring';
 import {GlobalParameter} from '../../src/common/GlobalParameter';
 import {Mayor} from '../../src/server/milestones/Mayor';
 import {Gardener} from '../../src/server/milestones/Gardener';

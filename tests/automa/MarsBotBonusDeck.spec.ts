@@ -54,8 +54,8 @@ describe('MarsBotBonusDeck', () => {
 
     // Draw and discard remaining 7
     const remaining = [];
-    for (let i = 0; i < 7; i++) remaining.push(deck.draw()!);
-    for (const c of remaining) deck.discard(c);
+    for (let i = 0; i < 7; i++) { remaining.push(deck.draw()!); }
+    for (const c of remaining) { deck.discard(c); }
 
     // Reshuffle and draw all — should get 7, not 8
     const reshuffled = [];

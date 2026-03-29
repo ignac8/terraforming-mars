@@ -3,7 +3,7 @@ import {IPlayer} from '../IPlayer';
 import {Color} from '../../common/Color';
 import {PlayerId} from '../../common/Types';
 import {MarsBot} from './MarsBot';
-import {MarsBotModel} from '../../common/automa/MarsBotModel';
+import {MarsBotModel} from '../../common/models/MarsBotModel';
 import {getAutomaMaxGeneration} from '../../common/automa/AutomaTypes';
 import {SelectCard} from '../inputs/SelectCard';
 import {IProjectCard} from '../cards/IProjectCard';

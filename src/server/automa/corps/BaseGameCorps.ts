@@ -10,8 +10,8 @@ import {TileType} from '../../../common/TileType';
 import {registerMarsBotCorp} from './MarsBotCorpRegistry';
 
 /** Generate white cubes for all 18 positions on a track (replaces transparent cubes). */
-export function whiteTrackCubes(trackNum: number): MarsBotTrackCube[] {
-  return Array.from({length: 18}, (_, i) => ({trackNum, position: i + 1, cubeType: 'white' as const}));
+export function whiteTrackCubes(trackIndex: number): MarsBotTrackCube[] {
+  return Array.from({length: 18}, (_, i) => ({trackIndex, position: i + 1, cubeType: 'white' as const}));
 }
 
 /** Factory for the common "add bonus card to action deck before action phase" per-gen pattern. */
@@ -63,21 +63,21 @@ const HELION: IMarsBotCorp = {
   description: 'White cubes: draw and resolve a card instead of raising temperature. Black cubes: temperature +1.',
   startingTags: [],
   trackCubes: [
-    {trackNum: 1, position: 6, cubeType: 'white'},
-    {trackNum: 2, position: 9, cubeType: 'white'},
-    {trackNum: 4, position: 10, cubeType: 'white'},
-    {trackNum: 5, position: 5, cubeType: 'white'},
-    {trackNum: 5, position: 9, cubeType: 'white'},
-    {trackNum: 7, position: 11, cubeType: 'white'},
-    {trackNum: 6, position: 3, cubeType: 'black'},
-    {trackNum: 6, position: 6, cubeType: 'black'},
-    {trackNum: 6, position: 9, cubeType: 'black'},
-    {trackNum: 6, position: 12, cubeType: 'black'},
-    {trackNum: 6, position: 13, cubeType: 'black'},
-    {trackNum: 6, position: 14, cubeType: 'black'},
+    {trackIndex: 0, position: 6, cubeType: 'white'},
+    {trackIndex: 1, position: 9, cubeType: 'white'},
+    {trackIndex: 3, position: 10, cubeType: 'white'},
+    {trackIndex: 4, position: 5, cubeType: 'white'},
+    {trackIndex: 4, position: 9, cubeType: 'white'},
+    {trackIndex: 6, position: 11, cubeType: 'white'},
+    {trackIndex: 5, position: 3, cubeType: 'black'},
+    {trackIndex: 5, position: 6, cubeType: 'black'},
+    {trackIndex: 5, position: 9, cubeType: 'black'},
+    {trackIndex: 5, position: 12, cubeType: 'black'},
+    {trackIndex: 5, position: 13, cubeType: 'black'},
+    {trackIndex: 5, position: 14, cubeType: 'black'},
   ],
   effect: {
-    onTrackCubeTrigger(ctx, _trackNum, _position, cubeType) {
+    onTrackCubeTrigger(ctx, _trackIndex, _position, cubeType) {
       if (cubeType === 'white') {
         ctx.drawAndResolveProjectCard();
         ctx.gameLog('MarsBot (Helion): white cube — drew and resolved card instead of temp raise');
@@ -97,10 +97,10 @@ const INTERPLANETARY_CINEMATICS: IMarsBotCorp = {
   name: CardName.INTERPLANETARY_CINEMATICS,
   description: 'Tags: 2 Events. White cubes on building and event tracks. Each advance on those tracks earns 2 MC.',
   startingTags: [Tag.EVENT, Tag.EVENT],
-  trackCubes: [...whiteTrackCubes(1), ...whiteTrackCubes(3)],
+  trackCubes: [...whiteTrackCubes(0), ...whiteTrackCubes(2)],
   effect: {
-    onTrackCubeTrigger(ctx, trackNum, _position, cubeType) {
-      if (cubeType === 'white' && (trackNum === 1 || trackNum === 3)) {
+    onTrackCubeTrigger(ctx, trackIndex, _position, cubeType) {
+      if (cubeType === 'white' && (trackIndex === 0 || trackIndex === 2)) {
         ctx.gainMc(2);
         ctx.gameLog('MarsBot (IC): advance on building/event track, +2 M€');
       }
@@ -177,10 +177,10 @@ const PHOBOLOG: IMarsBotCorp = {
   description: 'Tag: Space. Setup: draw 2 space cards to bonus deck. White cubes on space track: resolve 1 bonus card each.',
   startingTags: [Tag.SPACE],
   trackCubes: [
-    {trackNum: 2, position: 7, cubeType: 'white'},
-    {trackNum: 2, position: 10, cubeType: 'white'},
-    {trackNum: 2, position: 13, cubeType: 'white'},
-    {trackNum: 2, position: 15, cubeType: 'white'},
+    {trackIndex: 1, position: 7, cubeType: 'white'},
+    {trackIndex: 1, position: 10, cubeType: 'white'},
+    {trackIndex: 1, position: 13, cubeType: 'white'},
+    {trackIndex: 1, position: 15, cubeType: 'white'},
   ],
   setup: {
     resolve(ctx) {
@@ -190,7 +190,7 @@ const PHOBOLOG: IMarsBotCorp = {
     },
   },
   effect: {
-    onTrackCubeTrigger(ctx, _trackNum, _position, cubeType) {
+    onTrackCubeTrigger(ctx, _trackIndex, _position, cubeType) {
       if (cubeType === 'white') {
         ctx.drawAndResolveBonusCard();
         ctx.gameLog('MarsBot (Phobolog): white cube — resolved 1 bonus card');
@@ -233,7 +233,7 @@ const TERACTOR: IMarsBotCorp = {
   description: 'Draft: Earth. Setup: +25 MC, white cubes on Earth track. Each Earth track advance earns 2 MC.',
   startingTags: [],
   draftPriority: {type: 'tags', tags: [Tag.EARTH]},
-  trackCubes: whiteTrackCubes(6),
+  trackCubes: whiteTrackCubes(5),
   setup: {
     resolve(ctx) {
       ctx.gainMc(25);
@@ -241,8 +241,8 @@ const TERACTOR: IMarsBotCorp = {
     },
   },
   effect: {
-    onTrackCubeTrigger(ctx, trackNum, _position, cubeType) {
-      if (cubeType === 'white' && trackNum === 6) {
+    onTrackCubeTrigger(ctx, trackIndex, _position, cubeType) {
+      if (cubeType === 'white' && trackIndex === 5) {
         ctx.gainMc(2);
         ctx.gameLog('MarsBot (Teractor): Earth track advance, +2 M€');
       }
@@ -288,10 +288,10 @@ const THORGATE: IMarsBotCorp = {
   startingTags: [Tag.POWER],
   draftPriority: {type: 'tags', tags: [Tag.POWER]},
   trackCubes: [
-    {trackNum: 5, position: 4, cubeType: 'white'},
-    {trackNum: 5, position: 6, cubeType: 'white'},
-    {trackNum: 5, position: 8, cubeType: 'white'},
-    {trackNum: 5, position: 10, cubeType: 'white'},
+    {trackIndex: 4, position: 4, cubeType: 'white'},
+    {trackIndex: 4, position: 6, cubeType: 'white'},
+    {trackIndex: 4, position: 8, cubeType: 'white'},
+    {trackIndex: 4, position: 10, cubeType: 'white'},
   ],
   setup: {
     resolve(ctx) {
@@ -300,7 +300,7 @@ const THORGATE: IMarsBotCorp = {
     },
   },
   effect: {
-    onTrackCubeTrigger(ctx, _trackNum, _position, cubeType) {
+    onTrackCubeTrigger(ctx, _trackIndex, _position, cubeType) {
       if (cubeType === 'white') {
         ctx.drawAndResolveProjectCardIgnoringFirstNTags(1);
         ctx.raiseTemperature(1);

@@ -22,22 +22,21 @@
       <span class="marsbot-stat"><span v-i18n>Bonus Deck</span>: <b>{{ model.bonusDeckSize }}</b></span>
     </div>
     <div class="marsbot-tracks">
-      <div v-for="track in model.tracks" :key="track.num" class="marsbot-track">
+      <div v-for="(track, trackIndex) in model.tracks" :key="trackIndex" class="marsbot-track">
         <div class="marsbot-track-label">
-          <span class="marsbot-track-num">T{{ track.num }}</span>
-          <span class="marsbot-track-tags">{{ track.tagNames.join(', ') }}</span>
+          <span class="marsbot-track-num">{{ track.tags[0] }}</span>
         </div>
         <div class="marsbot-track-squares">
           <div
-            v-for="i in track.maxPosition"
+            v-for="i in 18"
             :key="i"
             class="marsbot-square"
             :class="{
               filled: i <= track.position,
-              'cube-white': hasCube(track.num, i, 'white'),
-              'cube-black': hasCube(track.num, i, 'black'),
-              'cube-credit': hasCube(track.num, i, 'credit'),
-              'has-action': getAction(track, i) !== null,
+              'cube-white': hasCube(trackIndex, i, 'white'),
+              'cube-black': hasCube(trackIndex, i, 'black'),
+              'cube-credit': hasCube(trackIndex, i, 'credit'),
+              'has-action': getAction(track, i) !== undefined,
             }"
             :title="getActionTooltip(track, i)"
           >
@@ -93,24 +92,24 @@ export default defineComponent({
     },
   },
   methods: {
-    hasCube(trackNum: number, position: number, cubeType: string): boolean {
+    hasCube(trackIndex: number, position: number, cubeType: string): boolean {
       if (!this.model.trackCubes) return false;
       return this.model.trackCubes.some(
-        (c: {trackNum: number, position: number, cubeType: string}) =>
-          c.trackNum === trackNum && c.position === position && c.cubeType === cubeType,
+        (c: {trackIndex: number, position: number, cubeType: string}) =>
+          c.trackIndex === trackIndex && c.position === position && c.cubeType === cubeType,
       );
     },
-    getAction(track: {layout?: ReadonlyArray<TrackAction | null>}, position: number): TrackAction | null {
-      if (!track.layout) return null;
-      return track.layout[position] ?? null;
+    getAction(track: {layout?: ReadonlyArray<TrackAction | undefined>}, position: number): TrackAction | undefined {
+      if (!track.layout) return undefined;
+      return track.layout[position];
     },
-    getActionIcon(track: {layout?: ReadonlyArray<TrackAction | null>}, position: number): string {
+    getActionIcon(track: {layout?: ReadonlyArray<TrackAction | undefined>}, position: number): string {
       const action = this.getAction(track, position);
       if (!action) return '';
       if (action.startsWith('tag_')) return 'T' + action.slice(4);
       return ACTION_ICONS[action] ?? '?';
     },
-    getActionTooltip(track: {layout?: ReadonlyArray<TrackAction | null>}, position: number): string {
+    getActionTooltip(track: {layout?: ReadonlyArray<TrackAction | undefined>}, position: number): string {
       const action = this.getAction(track, position);
       if (!action) return this.$t('Position') + ' ' + position;
       if (action.startsWith('tag_')) return this.$t('Advance track') + ' ' + action.slice(4);

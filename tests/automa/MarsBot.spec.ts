@@ -1,3 +1,4 @@
+import {Resource} from '../../src/common/Resource';
 import {expect} from 'chai';
 import {Game} from '../../src/server/Game';
 import {testGame} from '../TestGame';
@@ -105,35 +106,35 @@ describe('MarsBot', () => {
     it('regressTrack reduces track position', () => {
       const {marsBot} = createAutomaGame();
       // Advance Track 1 to position 3
-      const track = marsBot.board.getTrack(1);
+      const track = marsBot.board.tracks[0];
       track.advance(); // 1
       track.advance(); // 2
       track.advance(); // 3
       expect(track.position).to.eq(3);
 
-      marsBot.regressTrack('Steel'); // Steel maps to Track 1
+      marsBot.regressTrack(Resource.STEEL); // Steel maps to Track 1
       expect(track.position).to.eq(2);
     });
 
     it('regressTrack maps production types correctly', () => {
       const {marsBot} = createAutomaGame();
       // Advance all tracks to position 1
-      for (let i = 1; i <= 7; i++) marsBot.board.getTrack(i).advance();
+      for (let i = 0; i < 7; i++) { marsBot.board.tracks[i].advance(); }
 
-      marsBot.regressTrack('Titanium'); // → Track 2 (Space)
-      expect(marsBot.board.getTrack(2).position).to.eq(0);
+      marsBot.regressTrack(Resource.TITANIUM); // → Track 2 (Space)
+      expect(marsBot.board.tracks[1].position).to.eq(0);
 
-      marsBot.regressTrack('MC'); // → Track 3 (Event)
-      expect(marsBot.board.getTrack(3).position).to.eq(0);
+      marsBot.regressTrack(Resource.MEGACREDITS); // → Track 3 (Event)
+      expect(marsBot.board.tracks[2].position).to.eq(0);
 
-      marsBot.regressTrack('Electricity'); // → Track 5 (Energy)
-      expect(marsBot.board.getTrack(5).position).to.eq(0);
+      marsBot.regressTrack(Resource.ENERGY); // → Track 5 (Energy)
+      expect(marsBot.board.tracks[4].position).to.eq(0);
 
-      marsBot.regressTrack('Heat'); // → Track 6 (Earth)
-      expect(marsBot.board.getTrack(6).position).to.eq(0);
+      marsBot.regressTrack(Resource.HEAT); // → Track 6 (Earth)
+      expect(marsBot.board.tracks[5].position).to.eq(0);
 
-      marsBot.regressTrack('Plants'); // → Track 7 (Plant)
-      expect(marsBot.board.getTrack(7).position).to.eq(0);
+      marsBot.regressTrack(Resource.PLANTS); // → Track 7 (Plant)
+      expect(marsBot.board.tracks[6].position).to.eq(0);
     });
   });
 

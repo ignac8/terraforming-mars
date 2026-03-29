@@ -120,22 +120,22 @@ describe('MarsBot Integration', () => {
   describe('Tag counting via track positions (opponent card effects)', () => {
     it('Toll Station scenario: opponent Space tags = Track 2 position', () => {
       const {marsBot} = createAutomaGame();
-      for (let i = 0; i < 7; i++) marsBot.board.getTrack(2).advance();
+      for (let i = 0; i < 7; i++) { marsBot.board.tracks[1].advance(); }
       expect(marsBot.player.tags.count(Tag.SPACE, 'raw')).to.eq(7);
     });
 
     it('Galilean Waystation scenario: opponent Jovian tags = Track 5 position', () => {
       const {marsBot} = createAutomaGame();
-      for (let i = 0; i < 4; i++) marsBot.board.getTrack(5).advance();
+      for (let i = 0; i < 4; i++) { marsBot.board.tracks[4].advance(); }
       // Galilean Waystation uses floor(jovianTags / 2) but we just verify the raw count
       expect(marsBot.player.tags.count(Tag.JOVIAN, 'raw')).to.eq(4);
     });
 
     it('counting all tags works for MarsBot', () => {
       const {marsBot} = createAutomaGame();
-      marsBot.board.getTrack(1).advance(); // Building
-      marsBot.board.getTrack(1).advance();
-      marsBot.board.getTrack(3).advance(); // Event
+      marsBot.board.tracks[0].advance(); // Building
+      marsBot.board.tracks[0].advance();
+      marsBot.board.tracks[2].advance(); // Event
 
       const allTags = marsBot.player.tags.countAllTags();
       expect(allTags[Tag.BUILDING]).to.eq(2);
@@ -145,7 +145,7 @@ describe('MarsBot Integration', () => {
 
     it('shared tracks return same value for all mapped tags', () => {
       const {marsBot} = createAutomaGame();
-      for (let i = 0; i < 5; i++) marsBot.board.getTrack(7).advance();
+      for (let i = 0; i < 5; i++) { marsBot.board.tracks[6].advance(); }
       // Track 7 = Plant, Animal, Microbe — all return 5
       expect(marsBot.player.tags.count(Tag.PLANT, 'raw')).to.eq(5);
       expect(marsBot.player.tags.count(Tag.ANIMAL, 'raw')).to.eq(5);
@@ -157,7 +157,7 @@ describe('MarsBot Integration', () => {
     it('award model includes MarsBot score', () => {
       const {game, marsBot} = createAutomaGame();
       // Advance track 4 for Scientist award
-      for (let i = 0; i < 6; i++) marsBot.board.getTrack(4).advance();
+      for (let i = 0; i < 6; i++) { marsBot.board.tracks[3].advance(); }
 
       // Import Server to get the model (indirect test via automaHooks)
       const award = game.awards.find((a) => a.name === 'Scientist');

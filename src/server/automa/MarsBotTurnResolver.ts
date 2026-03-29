@@ -106,31 +106,35 @@ export class MarsBotTurnResolver {
 
   // ---- Track Advancement ----
 
+  private trackName(trackIndex: number): string {
+    return this.board.tracks[trackIndex]?.definition.tags[0] ?? `Track ${trackIndex}`;
+  }
+
   /** Advance a track (0-based index). Handles chain actions. */
   private advanceTrack(trackIndex: number): void {
     const track = this.board.tracks[trackIndex];
-    const trackNum = trackIndex + 1;
+    const name = this.trackName(trackIndex);
 
-    if (!track.canAdvance()) {
-      this.game.log('MarsBot: Track ${0} at max, Failed Action', (b) => b.number(trackNum));
+    const result = track.advance();
+
+    if (result.type === 'maxed') {
+      this.game.log('MarsBot: ${0} track at max, Failed Action', (b) => b.rawString(name));
       this.failedAction();
       return;
     }
 
-    const action = track.advance();
-
     // Corp cube trigger — fires BEFORE track icon resolution
     if (this.marsBotManager?.corp !== undefined) {
-      MarsBotCorpResolver.onTrackAdvanced(this.marsBotManager, trackNum, track.position);
+      MarsBotCorpResolver.onTrackAdvanced(this.marsBotManager, trackIndex, track.position);
     }
 
-    if (action !== null) {
-      this.game.log('MarsBot: Track ${0} to ${1}, action: ${2}',
-        (b) => b.number(trackNum).number(track.position).rawString(action));
-      this.resolveTrackAction(action, trackIndex);
+    if (result.type === 'action') {
+      this.game.log('MarsBot: ${0} track to ${1}, action: ${2}',
+        (b) => b.rawString(name).number(track.position).rawString(result.action));
+      this.resolveTrackAction(result.action, trackIndex);
     } else {
-      this.game.log('MarsBot: Track ${0} to ${1}',
-        (b) => b.number(trackNum).number(track.position));
+      this.game.log('MarsBot: ${0} track to ${1}',
+        (b) => b.rawString(name).number(track.position));
     }
   }
 
@@ -148,7 +152,7 @@ export class MarsBotTurnResolver {
     // Parse tag_N (advance another track)
     const tagMatch = action.match(/^tag_(\d+)$/);
     if (tagMatch) {
-      const targetTrack = parseInt(tagMatch[1], 10) - 1; // Convert 1-based to 0-based
+      const targetTrack = parseInt(tagMatch[1], 10);
       this.advanceTrack(targetTrack);
       return;
     }
@@ -449,7 +453,7 @@ export class MarsBotTurnResolver {
     }
 
     return {
-      trackPos: (num: number) => tracks[num - 1]?.position ?? 0,
+      trackPos: (index: number) => tracks[index]?.position ?? 0,
       allTrackPositions: () => positions,
       tr: this.marsBot.getTerraformRating(),
       mc: this.mcSupply,
