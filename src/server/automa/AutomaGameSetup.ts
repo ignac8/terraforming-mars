@@ -6,9 +6,8 @@ import {GameId, isPlayerId, safeCast} from '../../common/Types';
 import {Random} from '../../common/utils/Random';
 import {MarsBot} from './MarsBot';
 import {THARSIS_MARSBOT_BOARD} from './boards/TharsisMarsBot';
-import {MarsBotBoardData} from '../../common/automa/AutomaTypes';
+import {TrackDefinition, MARSBOT_STARTING_TR} from '../../common/automa/AutomaTypes';
 import {BoardName} from '../../common/boards/BoardName';
-import {MARSBOT_STARTING_TR} from '../../common/automa/AutomaTypes';
 import {AutomaGameHooks} from './AutomaGameHooks';
 import {MarsBotTags} from './MarsBotTags';
 import {MarsBotStock, MarsBotProduction} from './MarsBotStock';
@@ -85,7 +84,7 @@ export class AutomaGameSetup {
   }
 
   /** Get the MarsBot board data for the selected map. */
-  public static getBoardData(boardName: BoardName): MarsBotBoardData {
+  public static getBoardData(boardName: BoardName): ReadonlyArray<TrackDefinition> {
     switch (boardName) {
     case BoardName.THARSIS:
       return THARSIS_MARSBOT_BOARD;

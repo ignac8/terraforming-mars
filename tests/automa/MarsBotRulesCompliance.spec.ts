@@ -10,7 +10,7 @@ import {MarsBotBonusResolver} from '../../src/server/automa/MarsBotBonusResolver
 import {MarsBotTilePlacer} from '../../src/server/automa/MarsBotTilePlacer';
 import {MarsBotBonusCard, createBaseBonusCards} from '../../src/server/automa/MarsBotBonusCard';
 import {THARSIS_MARSBOT_BOARD} from '../../src/server/automa/boards/TharsisMarsBot';
-import {MarsBotBoardData, TrackDefinition, BonusCardId} from '../../src/common/automa/AutomaTypes';
+import {TrackDefinition, BonusCardId} from '../../src/common/automa/AutomaTypes';
 import {SeededRandom} from '../../src/common/utils/Random';
 import {BoardName} from '../../src/common/boards/BoardName';
 import {Tag} from '../../src/common/cards/Tag';
@@ -25,20 +25,17 @@ function createAutomaGame(difficulty: 'easy' | 'normal' | 'hard' | 'brutal' = 'n
   return {game, human, marsBot: game.marsBot!};
 }
 
-function makeBoard(track1Layout: Array<string | null>): MarsBotBoardData {
-  return {
-    ...THARSIS_MARSBOT_BOARD,
-    trackDefs: THARSIS_MARSBOT_BOARD.trackDefs.map((def, i) =>
-      i === 0 ? {...def, layout: track1Layout} as TrackDefinition : def,
-    ),
-  };
+function makeBoard(track1Layout: Array<string | null>): ReadonlyArray<TrackDefinition> {
+  return THARSIS_MARSBOT_BOARD.map((def, i) =>
+    i === 0 ? {...def, layout: track1Layout} as TrackDefinition : def,
+  );
 }
 
 function emptyLayout(): Array<null> {
   return new Array(19).fill(undefined);
 }
 
-function makeResolver(game: IGame, marsBot: TestPlayer, human: TestPlayer, boardData: MarsBotBoardData, difficulty: 'easy' | 'normal' | 'hard' | 'brutal' = 'normal') {
+function makeResolver(game: IGame, marsBot: TestPlayer, human: TestPlayer, boardData: ReadonlyArray<TrackDefinition>, difficulty: 'easy' | 'normal' | 'hard' | 'brutal' = 'normal') {
   const board = new MarsBotBoard(boardData);
   return {board, resolver: new MarsBotTurnResolver(game, marsBot, human, board, difficulty)};
 }

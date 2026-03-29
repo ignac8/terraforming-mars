@@ -7,7 +7,7 @@ import {MarsBotBoard} from '../../src/server/automa/MarsBotBoard';
 import {MarsBotBonusDeck} from '../../src/server/automa/MarsBotBonusDeck';
 import {MarsBotTurnResolver} from '../../src/server/automa/MarsBotTurnResolver';
 import {THARSIS_MARSBOT_BOARD} from '../../src/server/automa/boards/TharsisMarsBot';
-import {MarsBotBoardData, TrackDefinition} from '../../src/common/automa/AutomaTypes';
+import {TrackDefinition} from '../../src/common/automa/AutomaTypes';
 import {SeededRandom} from '../../src/common/utils/Random';
 import {IProjectCard} from '../../src/server/cards/IProjectCard';
 import {Algae} from '../../src/server/cards/base/Algae';
@@ -19,25 +19,19 @@ import {SearchForLife} from '../../src/server/cards/base/SearchForLife';
 import {TundraFarming} from '../../src/server/cards/base/TundraFarming';
 
 /** Helper: create a board where track 1 has a specific action at a given position, rest null. */
-function makeBoardWithTrack1Action(pos: number, action: string): MarsBotBoardData {
+function makeBoardWithTrack1Action(pos: number, action: string): ReadonlyArray<TrackDefinition> {
   const layout = new Array(19).fill(undefined);
   layout[pos] = action;
-  return {
-    ...THARSIS_MARSBOT_BOARD,
-    trackDefs: THARSIS_MARSBOT_BOARD.trackDefs.map((def, i) => {
-      if (i === 0) return {...def, layout} as TrackDefinition;
-      return def;
-    }),
-  };
+  return THARSIS_MARSBOT_BOARD.map((def, i) => {
+    if (i === 0) return {...def, layout} as TrackDefinition;
+    return def;
+  });
 }
 
-/** Helper: create a board with all tracks having only null positions. */
-function makeEmptyBoard(): MarsBotBoardData {
+/** Helper: create a board with all tracks having only empty positions. */
+function makeEmptyBoard(): ReadonlyArray<TrackDefinition> {
   const emptyLayout = new Array(19).fill(undefined);
-  return {
-    ...THARSIS_MARSBOT_BOARD,
-    trackDefs: THARSIS_MARSBOT_BOARD.trackDefs.map((def) => ({...def, layout: emptyLayout} as TrackDefinition)),
-  };
+  return THARSIS_MARSBOT_BOARD.map((def) => ({...def, layout: emptyLayout} as TrackDefinition));
 }
 
 describe('MarsBotTurnResolver', () => {
@@ -302,7 +296,7 @@ describe('MarsBotTurnResolver', () => {
       // Track 1 has advance at pos 17, pos 18 has something
       const layout = new Array(19).fill(undefined);
       layout[18] = 'advance'; // At the very last position
-      const boardData = {...THARSIS_MARSBOT_BOARD, trackDefs: THARSIS_MARSBOT_BOARD.trackDefs.map((def, i) => i === 0 ? {...def, layout} as TrackDefinition : def)};
+      const boardData = THARSIS_MARSBOT_BOARD.map((def, i) => i === 0 ? {...def, layout} as TrackDefinition : def);
       const b = new MarsBotBoard(boardData);
       const r = new MarsBotTurnResolver(game, marsBot, human, b, 'normal');
 
