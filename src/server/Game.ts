@@ -331,6 +331,10 @@ export class Game implements IGame, Logger {
     const {milestones, awards} = chooseMilestonesAndAwards(gameOptions);
     game.milestones = milestones.map(milestoneManifest.createOrThrow);
     game.awards = awards.map(awardManifest.createOrThrow);
+    if (gameOptions.automaOption) {
+      game.milestones = AutomaGameSetup.filterMilestones(game.milestones, gameOptions);
+      game.awards = AutomaGameSetup.filterAwards(game.awards, gameOptions);
+    }
 
     // Add colonies stuff
     if (gameOptions.coloniesExtension) {

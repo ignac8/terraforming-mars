@@ -19,6 +19,7 @@ import {IAward} from '../awards/IAward';
 import {Resource} from '../../common/Resource';
 import * as constants from '../../common/constants';
 import {MarsBotCorpResolver} from './corps/MarsBotCorpResolver';
+import {MILESTONE_EVALS, AWARD_EVALS, MarsBotMAContext} from './MarsBotMilestoneAwardEval';
 import type {MarsBot} from './MarsBot';
 
 /**
@@ -105,31 +106,35 @@ export class MarsBotTurnResolver {
 
   // ---- Track Advancement ----
 
+  private trackName(trackIndex: number): string {
+    return this.board.tracks[trackIndex]?.definition.tags[0] ?? `Track ${trackIndex}`;
+  }
+
   /** Advance a track (0-based index). Handles chain actions. */
   private advanceTrack(trackIndex: number): void {
     const track = this.board.tracks[trackIndex];
-    const trackNum = trackIndex + 1;
+    const name = this.trackName(trackIndex);
 
-    if (!track.canAdvance()) {
-      this.game.log('MarsBot: Track ${0} at max, Failed Action', (b) => b.number(trackNum));
+    const result = track.advance();
+
+    if (result.type === 'maxed') {
+      this.game.log('MarsBot: ${0} track at max, Failed Action', (b) => b.rawString(name));
       this.failedAction();
       return;
     }
 
-    const action = track.advance();
-
     // Corp cube trigger — fires BEFORE track icon resolution
     if (this.marsBotManager?.corp !== undefined) {
-      MarsBotCorpResolver.onTrackAdvanced(this.marsBotManager, trackNum, track.position);
+      MarsBotCorpResolver.onTrackAdvanced(this.marsBotManager, trackIndex, track.position);
     }
 
-    if (action !== null) {
-      this.game.log('MarsBot: Track ${0} to ${1}, action: ${2}',
-        (b) => b.number(trackNum).number(track.position).rawString(action));
-      this.resolveTrackAction(action, trackIndex);
+    if (result.type === 'action') {
+      this.game.log('MarsBot: ${0} track to ${1}, action: ${2}',
+        (b) => b.rawString(name).number(track.position).rawString(result.action));
+      this.resolveTrackAction(result.action, trackIndex);
     } else {
-      this.game.log('MarsBot: Track ${0} to ${1}',
-        (b) => b.number(trackNum).number(track.position));
+      this.game.log('MarsBot: ${0} track to ${1}',
+        (b) => b.rawString(name).number(track.position));
     }
   }
 
@@ -147,7 +152,7 @@ export class MarsBotTurnResolver {
     // Parse tag_N (advance another track)
     const tagMatch = action.match(/^tag_(\d+)$/);
     if (tagMatch) {
-      const targetTrack = parseInt(tagMatch[1], 10) - 1; // Convert 1-based to 0-based
+      const targetTrack = parseInt(tagMatch[1], 10);
       this.advanceTrack(targetTrack);
       return;
     }
@@ -207,6 +212,7 @@ export class MarsBotTurnResolver {
     }
     const increment = steps as 1 | 2;
     this.game.increaseTemperature(this.marsBot, increment);
+    if (this.marsBotManager) this.marsBotManager.temperatureRaises += steps;
     this.game.log('MarsBot raises temperature ${0} step(s)', (b) => b.number(steps));
     // Temperature bonuses at -24C and -20C: MarsBot gains 2 MC instead of heat production
     // This is handled by the game engine granting heat production; we override in MarsBot's production
@@ -300,6 +306,12 @@ export class MarsBotTurnResolver {
 
     this.game.claimedMilestones.push({player: this.marsBot, milestone: best});
     this.game.log('MarsBot claims milestone ${0}', (b) => b.rawString(best.name));
+
+    // Briber milestone: lose 12 MC on claim
+    if (best.name === 'Briber') {
+      this.mcSupply = Math.max(0, this.mcSupply - 12);
+      this.game.log('MarsBot loses 12 MC (Briber)');
+    }
   }
 
   private getClaimableMilestones(): Array<IMilestone> {
@@ -325,22 +337,12 @@ export class MarsBotTurnResolver {
 
   /** Check if MarsBot meets a milestone using track-based criteria. */
   public marsBotMeetsMilestone(milestone: IMilestone): boolean {
-    const name = milestone.name;
-    switch (name) {
-    case 'Terraformer':
-      return this.marsBot.getTerraformRating() >= 35;
-    case 'Mayor':
-      return this.countMarsBotTiles(TileType.CITY) >= 3;
-    case 'Gardener':
-      return this.countMarsBotTiles(TileType.GREENERY) >= 3;
-    case 'Builder':
-      return this.board.getTrack(1).position >= 8;
-    case 'Planner':
-      return this.board.tracks.every((t) => t.position >= 4);
-    default:
-      // For non-Tharsis milestones, fall back to standard check
-      return milestone.canClaim(this.marsBot);
+    const evalFn = MILESTONE_EVALS[milestone.name];
+    if (evalFn !== undefined) {
+      const result = evalFn(this.buildMAContext());
+      if (result !== undefined) return result;
     }
+    return milestone.canClaim(this.marsBot);
   }
 
   private tryFundAward(): void {
@@ -377,23 +379,13 @@ export class MarsBotTurnResolver {
 
   /** Get MarsBot's value for an award using track-based evaluation. */
   public getMarsBotAwardValue(award: IAward): number {
-    const name = award.name;
     const offset = this.difficulty === 'easy' ? -5 : 0;
-    switch (name) {
-    case 'Landlord':
-      return this.countMarsBotTiles() + offset;
-    case 'Banker':
-      return this.board.getTrack(1).position + this.board.getTrack(3).position + offset;
-    case 'Scientist':
-      return this.board.getTrack(4).position + offset;
-    case 'Thermalist':
-      return this.board.getTrack(5).position + 5 + offset;
-    case 'Miner':
-      return this.board.getTrack(2).position + 5 + offset;
-    default:
-      // For non-Tharsis awards, fall back to standard scoring
-      return award.getScore(this.marsBot) + offset;
+    const evalFn = AWARD_EVALS[award.name];
+    if (evalFn !== undefined) {
+      const result = evalFn(this.buildMAContext());
+      if (result !== undefined) return result + offset;
     }
+    return award.getScore(this.marsBot) + offset;
   }
 
   /**
@@ -413,12 +405,121 @@ export class MarsBotTurnResolver {
     }
   }
 
+  // ---- MA Context ----
+
+  private buildMAContext(): MarsBotMAContext {
+    const tracks = this.board.tracks;
+    const positions = tracks.map((t) => t.position);
+    const playedCards = this.marsBotManager?.playedProjectCards ?? [];
+
+    const cityCount = this.countMarsBotTiles(TileType.CITY);
+    const greeneryCount = this.countMarsBotTiles(TileType.GREENERY);
+    const tilesOwned = this.countMarsBotTiles();
+
+    const ownedSpaces = this.game.board.spaces.filter(Board.ownedBy(this.marsBot));
+    const oceanSpaces = this.game.board.getOceanSpaces();
+    const oceanIds = new Set(oceanSpaces.map((s) => s.id));
+
+    let tilesAdjacentToOcean = 0;
+    let tilesNotAdjacentToOcean = 0;
+    let tilesOnEdge = 0;
+    for (const space of ownedSpaces) {
+      const adj = this.game.board.getAdjacentSpaces(space);
+      if (adj.some((a) => oceanIds.has(a.id))) {
+        tilesAdjacentToOcean++;
+      } else {
+        tilesNotAdjacentToOcean++;
+      }
+      if (adj.length < 6) tilesOnEdge++;
+    }
+
+    let greenCards = 0;
+    let blueCards = 0;
+    let redCards = 0;
+    let withoutTags = 0;
+    let costing20Plus = 0;
+    let costing10OrLess = 0;
+    let withNonNegativeVP = 0;
+    let withRequirements = 0;
+    for (const card of playedCards) {
+      if (card.type === CardType.EVENT) redCards++;
+      else if (card.type === CardType.ACTIVE) blueCards++;
+      else greenCards++;
+      if (card.tags.length === 0) withoutTags++;
+      if (card.cost >= 20) costing20Plus++;
+      if (card.cost <= 10) costing10OrLess++;
+      if (card.getVictoryPoints(this.marsBot) >= 0) withNonNegativeVP++;
+      if (card.requirements !== undefined) withRequirements++;
+    }
+
+    return {
+      trackPos: (index: number) => tracks[index]?.position ?? 0,
+      allTrackPositions: () => positions,
+      tr: this.marsBot.getTerraformRating(),
+      mc: this.mcSupply,
+      cityCount,
+      greeneryCount,
+      oceanCount: this.game.board.getOceanSpaces().filter((s) => s.player === this.marsBot).length,
+      tilesOwned,
+      tilesAdjacentToOcean,
+      tilesOnEdge,
+      tilesNotAdjacentToOcean,
+      playedCards: {
+        total: playedCards.length,
+        green: greenCards,
+        blue: blueCards,
+        red: redCards,
+        greenOrBlue: greenCards + blueCards,
+        withoutTags,
+        costing20Plus,
+        costing10OrLess,
+        withNonNegativeVP,
+        withRequirements,
+      },
+      destroyedBonusCards: this.marsBotManager?.bonusDeck.drawPile.filter((c) => c.destroyed).length ?? 0,
+      temperatureRaises: this.marsBotManager?.temperatureRaises ?? 0,
+      highestTrackPos: Math.max(...positions),
+      lowestTrackPos: Math.min(...positions),
+      tracksAtOrAbove: (pos: number) => positions.filter((p) => p >= pos).length,
+      largestConnectedTileGroup: this.calcLargestConnectedTileGroup(),
+      specialTilesOwned: this.marsBotManager?.neuralInstanceSpace !== undefined ? 1 : 0,
+      hasVenus: false, // Venus not yet implemented
+      venusTrackPos: 0,
+    };
+  }
+
   // ---- Utilities ----
 
   private failedAction(): void {
     const mc = this.difficulty === 'easy' ? FAILED_ACTION_MC_EASY : FAILED_ACTION_MC;
     this.mcSupply += mc;
     this.game.log('MarsBot takes a Failed Action, gains ${0} MC', (b) => b.number(mc));
+  }
+
+  private calcLargestConnectedTileGroup(): number {
+    const ownedSpaces = this.game.board.spaces.filter(Board.ownedBy(this.marsBot));
+    if (ownedSpaces.length === 0) return 0;
+    const visited = new Set<string>();
+    let largest = 0;
+    for (const space of ownedSpaces) {
+      if (visited.has(space.id)) continue;
+      let groupSize = 0;
+      const queue = [space];
+      while (queue.length > 0) {
+        const s = queue.pop();
+        if (s === undefined) break;
+        if (visited.has(s.id)) continue;
+        visited.add(s.id);
+        groupSize++;
+        for (const adj of this.game.board.getAdjacentSpaces(s)) {
+          if (!visited.has(adj.id) && adj.player === this.marsBot) {
+            queue.push(adj);
+          }
+        }
+      }
+      if (groupSize > largest) largest = groupSize;
+    }
+    return largest;
   }
 
   private countMarsBotTiles(tileType?: TileType): number {
