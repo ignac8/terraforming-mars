@@ -25,7 +25,7 @@ function createAutomaGame(difficulty: 'easy' | 'normal' | 'hard' | 'brutal' = 'n
 }
 
 function emptyLayout(): Array<null> {
-  return new Array(19).fill(null);
+  return new Array(19).fill(undefined);
 }
 
 function makeBoard(track1Layout: Array<string | null>): MarsBotBoardData {
@@ -58,7 +58,7 @@ describe('MarsBot Deep Rules Tests', () => {
       resolver.resolveProjectCard(mockCard([Tag.BUILDING]));
       // Venus should be ignored, NOT a failed action
       expect(resolver.mcSupply).to.eq(0); // No 5 MC from failed action
-      expect(board.getTrack(1).position).to.eq(1); // Track still advanced
+      expect(board.tracks[0].position).to.eq(1); // Track still advanced
     });
 
     it('venus2 action is ignored when Venus not enabled', () => {
@@ -122,8 +122,8 @@ describe('MarsBot Deep Rules Tests', () => {
       const resolver = new MarsBotTurnResolver(game, bot, human, board, 'normal');
 
       // Max out Track 1 (Building)
-      for (let i = 0; i < 18; i++) board.getTrack(1).advance();
-      expect(board.getTrack(1).position).to.eq(18);
+      for (let i = 0; i < 18; i++) { board.tracks[0].advance(); }
+      expect(board.tracks[0].position).to.eq(18);
 
       // Play card with Building + Space tags
       resolver.resolveProjectCard(mockCard([Tag.BUILDING, Tag.SPACE]));
@@ -131,8 +131,8 @@ describe('MarsBot Deep Rules Tests', () => {
       // Building track maxed → Failed Action (5 MC)
       // Space track should still advance
       expect(resolver.mcSupply).to.eq(5);
-      expect(board.getTrack(2).position).to.eq(1);
-      expect(board.getTrack(1).position).to.eq(18); // Unchanged
+      expect(board.tracks[1].position).to.eq(1);
+      expect(board.tracks[0].position).to.eq(18); // Unchanged
     });
   });
 
@@ -340,7 +340,7 @@ describe('MarsBot Deep Rules Tests', () => {
         const card = marsBot.bonusDeck.draw()!;
         drawn.push(card);
       }
-      for (const c of drawn) marsBot.bonusDeck.discard(c);
+      for (const c of drawn) { marsBot.bonusDeck.discard(c); }
 
       // Now draw pile is 0, discard has all cards
       // Next draw should reshuffle
@@ -421,8 +421,8 @@ describe('MarsBot Deep Rules Tests', () => {
 
       resolver.resolveProjectCard(mockCard([Tag.BUILDING], 'event'));
 
-      expect(board.getTrack(1).position).to.eq(1); // Building
-      expect(board.getTrack(3).position).to.eq(1); // Event (injected)
+      expect(board.tracks[0].position).to.eq(1); // Building
+      expect(board.tracks[2].position).to.eq(1); // Event (injected)
     });
 
     it('event card with NO explicit tags still advances Event track', () => {
@@ -441,7 +441,7 @@ describe('MarsBot Deep Rules Tests', () => {
       // Event card with zero explicit tags — should NOT be a failed action
       resolver.resolveProjectCard(mockCard([], 'event'));
 
-      expect(board.getTrack(3).position).to.eq(1); // Event tag injected
+      expect(board.tracks[2].position).to.eq(1); // Event tag injected
       expect(resolver.mcSupply).to.eq(0); // Not a failed action
     });
   });
