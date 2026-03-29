@@ -1,6 +1,6 @@
 import {IGame} from '../IGame';
 import {IPlayer} from '../IPlayer';
-import {DifficultyLevel, getAutomaMaxGeneration, getMcPerVP} from '../../common/automa/AutomaTypes';
+import {DifficultyLevel, getAutomaMaxGeneration, isAutomaPreludeGame, MARSBOT_MAX_GENERATION, MARSBOT_MAX_GENERATION_PRELUDE} from '../../common/automa/AutomaTypes';
 import {MarsBotTurnResolver} from './MarsBotTurnResolver';
 import {IProjectCard} from '../cards/IProjectCard';
 import {Space} from '../boards/Space';
@@ -128,4 +128,22 @@ export class MarsBotScoring {
       return vp >= 0;
     }).length;
   }
+}
+
+function buildMcToVpTable(maxGen: number): ReadonlyArray<{maxGeneration: number, mcPerVP: number}> {
+  const table: Array<{maxGeneration: number, mcPerVP: number}> = [];
+  for (let mcPerVP = 8; mcPerVP >= 1; mcPerVP--) {
+    table.push({maxGeneration: maxGen - mcPerVP, mcPerVP});
+  }
+  return table;
+}
+
+const MC_TO_VP_TABLE = buildMcToVpTable(MARSBOT_MAX_GENERATION);
+const MC_TO_VP_TABLE_PRELUDE = buildMcToVpTable(MARSBOT_MAX_GENERATION_PRELUDE);
+
+export function getMcPerVP(generation: number, preludeExtension: boolean, prelude2Expansion: boolean): number | undefined {
+  const table = isAutomaPreludeGame(preludeExtension, prelude2Expansion) ?
+    MC_TO_VP_TABLE_PRELUDE : MC_TO_VP_TABLE;
+  const entry = table.find((e) => generation <= e.maxGeneration);
+  return entry?.mcPerVP;
 }

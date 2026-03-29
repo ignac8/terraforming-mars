@@ -205,7 +205,7 @@ describe('MarsBot Game End Model', () => {
       // Fund Scientist award (track 4 based)
       game.fundedAwards.push({player: human, award: game.awards.find((a) => a.name === 'Scientist')!});
       // Advance track 4 to 10 (MarsBot has 10, human has 0 science tags)
-      for (let i = 0; i < 10; i++) marsBot.board.getTrack(4).advance();
+      for (let i = 0; i < 10; i++) { marsBot.board.tracks[3].advance(); }
       (game as any).phase = Phase.END;
 
       const vp = marsBot.getVictoryPoints();

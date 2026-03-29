@@ -13,7 +13,7 @@ import {SpectatorId} from '../Types';
 import {ColonyName} from '../colonies/ColonyName';
 import {GlobalParameter} from '../GlobalParameter';
 import {Tag} from '../cards/Tag';
-import {MarsBotModel} from '../automa/MarsBotModel';
+import {MarsBotModel} from './MarsBotModel';
 
 // Common data about a game not assocaited with a player (eg the temperature.)
 export type GameModel = {

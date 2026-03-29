@@ -53,7 +53,7 @@ describe('MarsBot Award Crash Fix', () => {
   describe('AwardScorer includes MarsBot scores', () => {
     it('AwardScorer has MarsBot score for Scientist (track 4)', () => {
       const {game, marsBot} = createAutomaGame();
-      for (let i = 0; i < 6; i++) marsBot.board.getTrack(4).advance();
+      for (let i = 0; i < 6; i++) { marsBot.board.tracks[3].advance(); }
 
       const award = game.awards.find((a) => a.name === 'Scientist')!;
       const scorer = new AwardScorer(game, award);
@@ -62,8 +62,8 @@ describe('MarsBot Award Crash Fix', () => {
 
     it('AwardScorer has MarsBot score for Banker (track 1 + track 3)', () => {
       const {game, marsBot} = createAutomaGame();
-      for (let i = 0; i < 3; i++) marsBot.board.getTrack(1).advance();
-      for (let i = 0; i < 4; i++) marsBot.board.getTrack(3).advance();
+      for (let i = 0; i < 3; i++) { marsBot.board.tracks[0].advance(); }
+      for (let i = 0; i < 4; i++) { marsBot.board.tracks[2].advance(); }
 
       const award = game.awards.find((a) => a.name === 'Banker')!;
       const scorer = new AwardScorer(game, award);
@@ -72,7 +72,7 @@ describe('MarsBot Award Crash Fix', () => {
 
     it('AwardScorer has MarsBot score for Thermalist (track 5 + 5)', () => {
       const {game, marsBot} = createAutomaGame();
-      for (let i = 0; i < 2; i++) marsBot.board.getTrack(5).advance();
+      for (let i = 0; i < 2; i++) { marsBot.board.tracks[4].advance(); }
 
       const award = game.awards.find((a) => a.name === 'Thermalist')!;
       const scorer = new AwardScorer(game, award);
@@ -81,7 +81,7 @@ describe('MarsBot Award Crash Fix', () => {
 
     it('AwardScorer has MarsBot score for Miner (track 2 + 5)', () => {
       const {game, marsBot} = createAutomaGame();
-      for (let i = 0; i < 8; i++) marsBot.board.getTrack(2).advance();
+      for (let i = 0; i < 8; i++) { marsBot.board.tracks[1].advance(); }
 
       const award = game.awards.find((a) => a.name === 'Miner')!;
       const scorer = new AwardScorer(game, award);
@@ -135,7 +135,7 @@ describe('MarsBot Award Crash Fix', () => {
       game.fundAward(human, scientist);
 
       // MarsBot track 4 at 10, human has 0 science tags
-      for (let i = 0; i < 10; i++) marsBot.board.getTrack(4).advance();
+      for (let i = 0; i < 10; i++) { marsBot.board.tracks[3].advance(); }
 
       const vp = calculateVictoryPoints(human);
       expect(vp.awards).to.eq(0);
