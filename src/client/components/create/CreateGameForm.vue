@@ -378,8 +378,8 @@
                                 </div>
 
                                 <div>
-                                <input type="checkbox" name="initialDraft" v-model="initialDraft" id="initialDraft-checkbox">
-                                <label for="initialDraft-checkbox">
+                                <input type="checkbox" name="initialDraft" v-model="initialDraft" id="initialDraft-checkbox" :disabled="automaOption">
+                                <label for="initialDraft-checkbox" :class="{'automa-disabled': automaOption}">
                                     <span v-i18n>Initial Draft variant</span>&nbsp;<a :href="wikiUrls.initialDraft" class="tooltip" v-i18n data-tooltip="Link opens in a new tab/window" target="_blank">&#9432;</a>
                                 </label>
                                 </div>
@@ -400,13 +400,13 @@
                               </div>
                             </div>
 
-                            <input type="checkbox" v-model="randomFirstPlayer" id="randomFirstPlayer-checkbox">
-                            <label for="randomFirstPlayer-checkbox">
+                            <input type="checkbox" v-model="randomFirstPlayer" id="randomFirstPlayer-checkbox" :disabled="automaOption">
+                            <label for="randomFirstPlayer-checkbox" :class="{'automa-disabled': automaOption}">
                                 <span v-i18n>Random first player</span>
                             </label>
 
-                            <input type="checkbox" name="randomMAToggle" id="randomMA-checkbox" v-on:change="randomMAToggle()" :disabled="automaOption">
-                            <label for="randomMA-checkbox" :class="{'automa-disabled': automaOption}">
+                            <input type="checkbox" name="randomMAToggle" id="randomMA-checkbox" v-on:change="randomMAToggle()">
+                            <label for="randomMA-checkbox">
                                 <span v-i18n>Random Milestones/Awards</span>&nbsp;<a :href="wikiUrls.randomMilestonesAndAwards" class="tooltip" v-i18n data-tooltip="Link opens in a new tab/window" target="_blank">&#9432;</a>
                             </label>
 
@@ -445,8 +445,8 @@
                             </template>
 
                             <template v-if="randomMA !== RandomMAOptionType.NONE">
-                              <input type="checkbox" v-model="includeFanMA" id="fanMA-checkbox">
-                              <label for="fanMA-checkbox">
+                              <input type="checkbox" v-model="includeFanMA" id="fanMA-checkbox" :disabled="automaOption">
+                              <label for="fanMA-checkbox" :class="{'automa-disabled': automaOption}">
                                   <span v-i18n>Include fan Milestones/Awards</span>
                               </label>
                             </template>
@@ -698,9 +698,10 @@ export default defineComponent({
     },
     automaOption(value: boolean) {
       if (value) {
-        this.draftVariant = false;
         this.board = 'tharsis' as any;
-        this.randomMA = 'No randomization' as any;
+        this.initialDraft = false;
+        this.randomFirstPlayer = false;
+        this.includeFanMA = false;
         // Disable unsupported expansions
         this.expansions.venus = false;
         this.expansions.colonies = false;
