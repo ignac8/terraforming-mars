@@ -7,7 +7,7 @@ import {MarsBotBoard} from '../../src/server/automa/MarsBotBoard';
 import {MarsBotTurnResolver} from '../../src/server/automa/MarsBotTurnResolver';
 import {MarsBotScoring} from '../../src/server/automa/MarsBotScoring';
 import {THARSIS_MARSBOT_BOARD} from '../../src/server/automa/boards/TharsisMarsBot';
-import {MarsBotBoardData, TrackDefinition} from '../../src/common/automa/AutomaTypes';
+import {TrackDefinition} from '../../src/common/automa/AutomaTypes';
 import {BoardName} from '../../src/common/boards/BoardName';
 import {Tag} from '../../src/common/cards/Tag';
 import {TileType} from '../../src/common/TileType';
