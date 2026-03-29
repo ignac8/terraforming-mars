@@ -9,7 +9,7 @@ import {MarsBotBonusDeck} from '../../src/server/automa/MarsBotBonusDeck';
 import {MarsBotBonusResolver} from '../../src/server/automa/MarsBotBonusResolver';
 import {MarsBotTilePlacer} from '../../src/server/automa/MarsBotTilePlacer';
 import {THARSIS_MARSBOT_BOARD} from '../../src/server/automa/boards/TharsisMarsBot';
-import {MarsBotBoardData, TrackDefinition, BonusCardId} from '../../src/common/automa/AutomaTypes';
+import {TrackDefinition, BonusCardId} from '../../src/common/automa/AutomaTypes';
 import {createBaseBonusCards} from '../../src/server/automa/MarsBotBonusCard';
 import {SeededRandom} from '../../src/common/utils/Random';
 import {BoardName} from '../../src/common/boards/BoardName';
@@ -28,13 +28,10 @@ function emptyLayout(): Array<null> {
   return new Array(19).fill(undefined);
 }
 
-function makeBoard(track1Layout: Array<string | null>): MarsBotBoardData {
-  return {
-    ...THARSIS_MARSBOT_BOARD,
-    trackDefs: THARSIS_MARSBOT_BOARD.trackDefs.map((def, i) =>
-      i === 0 ? {...def, layout: track1Layout} as TrackDefinition : def,
-    ),
-  };
+function makeBoard(track1Layout: Array<string | null>): ReadonlyArray<TrackDefinition> {
+  return THARSIS_MARSBOT_BOARD.map((def, i) =>
+    i === 0 ? {...def, layout: track1Layout} as TrackDefinition : def,
+  );
 }
 
 function mockCard(tags: Tag[], type: string = 'automated') {
@@ -114,10 +111,7 @@ describe('MarsBot Deep Rules Tests', () => {
       (bot as any).game = game;
 
       const allEmpty = emptyLayout();
-      const boardData: MarsBotBoardData = {
-        ...THARSIS_MARSBOT_BOARD,
-        trackDefs: THARSIS_MARSBOT_BOARD.trackDefs.map((def) => ({...def, layout: allEmpty} as TrackDefinition)),
-      };
+      const boardData = THARSIS_MARSBOT_BOARD.map((def) => ({...def, layout: allEmpty} as TrackDefinition));
       const board = new MarsBotBoard(boardData);
       const resolver = new MarsBotTurnResolver(game, bot, human, board, 'normal');
 
@@ -412,10 +406,7 @@ describe('MarsBot Deep Rules Tests', () => {
       (bot as any).game = game;
 
       const allEmpty = emptyLayout();
-      const boardData: MarsBotBoardData = {
-        ...THARSIS_MARSBOT_BOARD,
-        trackDefs: THARSIS_MARSBOT_BOARD.trackDefs.map((def) => ({...def, layout: allEmpty} as TrackDefinition)),
-      };
+      const boardData = THARSIS_MARSBOT_BOARD.map((def) => ({...def, layout: allEmpty} as TrackDefinition));
       const board = new MarsBotBoard(boardData);
       const resolver = new MarsBotTurnResolver(game, bot, human, board, 'normal');
 
@@ -431,10 +422,7 @@ describe('MarsBot Deep Rules Tests', () => {
       (bot as any).game = game;
 
       const allEmpty = emptyLayout();
-      const boardData: MarsBotBoardData = {
-        ...THARSIS_MARSBOT_BOARD,
-        trackDefs: THARSIS_MARSBOT_BOARD.trackDefs.map((def) => ({...def, layout: allEmpty} as TrackDefinition)),
-      };
+      const boardData = THARSIS_MARSBOT_BOARD.map((def) => ({...def, layout: allEmpty} as TrackDefinition));
       const board = new MarsBotBoard(boardData);
       const resolver = new MarsBotTurnResolver(game, bot, human, board, 'normal');
 
