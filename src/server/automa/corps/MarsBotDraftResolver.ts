@@ -133,7 +133,7 @@ export class MarsBotDraftResolver {
       return hand[rng.nextInt(hand.length)];
     }
     const leastIndex = board.getLeastAdvancedTrackIndex();
-    const trackTags = board.data.trackDefs[leastIndex].tags;
+    const trackTags = board.data[leastIndex].tags;
     return MarsBotDraftResolver.pickByTags(hand, trackTags, rng);
   }
 }
