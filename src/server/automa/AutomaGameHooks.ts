@@ -46,7 +46,7 @@ export class AutomaGameHooks {
   /** Get the max generation for this automa game. */
   public getMaxGeneration(): number {
     const opts = this.game.gameOptions;
-    return getAutomaMaxGeneration(opts.preludeExtension, opts.prelude2Expansion);
+    return getAutomaMaxGeneration(opts.preludeExtension);
   }
 
   /** Automa: game ends when Mars is terraformed or max generation reached. */

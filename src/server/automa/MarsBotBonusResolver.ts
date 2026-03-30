@@ -39,10 +39,10 @@ export class MarsBotBonusResolver {
       this.resolveMeteorShower(card);
       break;
     case BonusCardId.B02_INVASIVE_SPECIES:
-      this.resolveInvasiveSpecies(card);
+      this.resolveInvasiveSpecies();
       break;
     case BonusCardId.B03_RESEARCH_AND_DEVELOPMENT:
-      this.resolveResearchAndDevelopment(card);
+      this.resolveResearchAndDevelopment();
       break;
     case BonusCardId.B04_OVERACHIEVEMENT:
       this.resolveOverachievement(card);
@@ -113,7 +113,7 @@ export class MarsBotBonusResolver {
   }
 
   // B02: Invasive Species
-  private resolveInvasiveSpecies(_card: MarsBotBonusCard): void {
+  private resolveInvasiveSpecies(): void {
     // Find highest-scoring animal/microbe on human's cards
     let bestEntry: {card: IProjectCard, resource: CardResource, vp: number} | undefined;
     for (const played of this.humanPlayer.playedCards) {
@@ -139,7 +139,7 @@ export class MarsBotBonusResolver {
   }
 
   // B03: Research and Development
-  private resolveResearchAndDevelopment(_card: MarsBotBonusCard): void {
+  private resolveResearchAndDevelopment(): void {
     const drawnCard = this.game.projectDeck.draw(this.game);
     if (drawnCard !== undefined) {
       this.game.log('MarsBot draws and resolves ${0} (R&D)', (b) => b.card(drawnCard));
@@ -286,13 +286,13 @@ export class MarsBotBonusResolver {
   private resolveCorporateCompetition(card: MarsBotBonusCard): void {
     if (this.turnResolver.mcSupply < 5) {
       // Not enough MC, draw another bonus card
-      this.drawAndResolveAnotherBonus(card);
+      this.drawAndResolveAnotherBonus();
       return;
     }
 
     const funded = this.game.awards.filter((a) => this.game.hasBeenFunded(a));
     if (funded.length === 0) {
-      this.drawAndResolveAnotherBonus(card);
+      this.drawAndResolveAnotherBonus();
       return;
     }
 
@@ -314,12 +314,12 @@ export class MarsBotBonusResolver {
     }
 
     if (!resolved) {
-      this.drawAndResolveAnotherBonus(card);
+      this.drawAndResolveAnotherBonus();
     }
   }
 
   private tryHelperAction(awardName: string): boolean {
-    const advance = (trackIndex: number) => { this.turnResolver.advanceTrackPublic(trackIndex); return true; };
+    const advance = (trackIndex: number) => { this.turnResolver.advanceTrack(trackIndex); return true; };
     const placeGreenery = () => {
       const space = this.tilePlacer.findGreenerySpace();
       if (space) {
@@ -409,7 +409,7 @@ export class MarsBotBonusResolver {
     }
   }
 
-  private drawAndResolveAnotherBonus(_originalCard: MarsBotBonusCard): void {
+  private drawAndResolveAnotherBonus(): void {
     const nextBonus = this.bonusDeck.draw();
     if (nextBonus !== undefined) {
       this.game.log('MarsBot draws another bonus card: ${0}', (b) => b.rawString(nextBonus.name));
@@ -483,13 +483,13 @@ export class MarsBotBonusResolver {
 
   private resolveSupplyAndDemand(): void {
     // Factorum: advance building track (index 0)
-    this.turnResolver.advanceTrackPublic(0);
+    this.turnResolver.advanceTrack(0);
     this.game.log('MarsBot resolves Supply & Demand: advance building track');
   }
 
   private resolveDoItRight(): void {
     // Inventrix: advance science track (index 3)
-    this.turnResolver.advanceTrackPublic(3);
+    this.turnResolver.advanceTrack(3);
     this.game.log('MarsBot resolves Do It Right: advance science track');
   }
 
@@ -498,7 +498,7 @@ export class MarsBotBonusResolver {
       // Venus track is track 8 (index 7) when Venus expansion is enabled
       // If Venus track exists on the board, advance it
       if (this.turnResolver.board.tracks.length > 7) {
-        this.turnResolver.advanceTrackPublic(7);
+        this.turnResolver.advanceTrack(7);
         this.game.log('MarsBot resolves Venusian Lobby: advance Venus track');
       } else {
         this.game.log('MarsBot resolves Venusian Lobby: no Venus track available');
@@ -506,7 +506,7 @@ export class MarsBotBonusResolver {
     } else {
       // Without Venus, advance least-advanced track
       const leastIdx = this.turnResolver.board.getLeastAdvancedTrackIndex();
-      this.turnResolver.advanceTrackPublic(leastIdx);
+      this.turnResolver.advanceTrack(leastIdx);
       this.game.log('MarsBot resolves Venusian Lobby: advance least-advanced track (no Venus)');
     }
   }
@@ -521,7 +521,7 @@ export class MarsBotBonusResolver {
     // Robinson Industries: advance least-advanced track
     const board = this.turnResolver.board;
     const leastIndex = board.getLeastAdvancedTrackIndex();
-    this.turnResolver.advanceTrackPublic(leastIndex);
+    this.turnResolver.advanceTrack(leastIndex);
     this.game.log('MarsBot resolves Diversification: advance least-advanced track');
   }
 
@@ -538,10 +538,10 @@ export class MarsBotBonusResolver {
     const energyPos = board.tracks[4].position; // Energy = track 5
     const sciencePos = board.tracks[3].position; // Science = track 4
     if (energyPos <= sciencePos) {
-      this.turnResolver.advanceTrackPublic(4); // Energy track = index 4
+      this.turnResolver.advanceTrack(4); // Energy track = index 4
       this.game.log('MarsBot resolves Interface Hyperlink: advance energy track');
     } else {
-      this.turnResolver.advanceTrackPublic(3); // Science track = index 3
+      this.turnResolver.advanceTrack(3); // Science track = index 3
       this.game.log('MarsBot resolves Interface Hyperlink: advance science track');
     }
   }
@@ -551,14 +551,14 @@ export class MarsBotBonusResolver {
     this.turnResolver.mcSupply += 5;
     const board = this.turnResolver.board;
     const leastIndex = board.getLeastAdvancedTrackIndex();
-    this.turnResolver.advanceTrackPublic(leastIndex);
+    this.turnResolver.advanceTrack(leastIndex);
     this.game.log('MarsBot resolves Government Subsidy: +5 M€, advance least-advanced track');
   }
 
   private resolveInvestors(): void {
     // Utopia Invest: advance building (index 0) and space (index 1) tracks
-    this.turnResolver.advanceTrackPublic(0);
-    this.turnResolver.advanceTrackPublic(1);
+    this.turnResolver.advanceTrack(0);
+    this.turnResolver.advanceTrack(1);
     this.game.log('MarsBot resolves Investors: advance building + space tracks');
   }
 }

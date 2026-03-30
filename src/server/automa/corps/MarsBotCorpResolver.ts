@@ -34,7 +34,7 @@ export class MarsBotCorpResolver {
     for (const tag of corp.startingTags) {
       const trackIndex = marsBot.board.getTrackIndexForTag(tag);
       if (trackIndex !== undefined) {
-        marsBot.turnResolver.advanceTrackPublic(trackIndex);
+        marsBot.turnResolver.advanceTrack(trackIndex);
       }
     }
 

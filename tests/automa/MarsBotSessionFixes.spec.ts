@@ -124,16 +124,16 @@ describe('MarsBotSessionFixes', () => {
     // getMcPerVP finds first entry where generation <= maxGeneration
 
     // Generation 12: before conversion window closes → first entry (12, 8) matches
-    expect(getMcPerVP(12, false, false)).to.eq(8);
+    expect(getMcPerVP(12, false)).to.eq(8);
 
     // Generation 5: still within window (5 <= 12) → returns 8
-    expect(getMcPerVP(5, false, false)).to.eq(8);
+    expect(getMcPerVP(5, false)).to.eq(8);
 
     // Generation 19: last entry (19, 1) matches → returns 1
-    expect(getMcPerVP(19, false, false)).to.eq(1);
+    expect(getMcPerVP(19, false)).to.eq(1);
 
     // Generation 20: past all entries (20 > 19) → returns undefined
-    expect(getMcPerVP(20, false, false)).to.eq(undefined);
+    expect(getMcPerVP(20, false)).to.eq(undefined);
   });
 
   it('vpByGeneration populated', () => {

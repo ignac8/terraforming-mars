@@ -57,8 +57,6 @@ export type MarsBotCCContext = {
 
 export type CorporateCompetitionHelper = (ctx: MarsBotCCContext) => void;
 
-// Sentinel value meaning "use the default/fallback evaluation"
-const FALLBACK = undefined;
 
 /**
  * Milestone evaluation functions for MarsBot.
@@ -90,7 +88,7 @@ export const MILESTONE_EVALS: Partial<Record<MilestoneName, (ctx: MarsBotMAConte
     return true;
   },
   'Tactician': (ctx) => ctx.mc >= 35,
-  'Polar Explorer': () => FALLBACK,
+  'Polar Explorer': () => undefined,
   'Energizer': (ctx) => ctx.trackPos(4) >= 6,
   'Rim Settler': (ctx) => ctx.trackPos(1) >= 6 && ctx.trackPos(3) >= 6,
 
@@ -123,7 +121,7 @@ export const MILESTONE_EVALS: Partial<Record<MilestoneName, (ctx: MarsBotMAConte
   'Agronomist': (ctx) => ctx.trackPos(6) >= 4 && ctx.trackPos(3) >= 4,
   'Engineer': (ctx) => ctx.trackPos(4) + ctx.trackPos(3) >= 10,
   'V. Spacefarer': (ctx) => ctx.trackPos(1) >= 5,
-  'Geologist': () => FALLBACK,
+  'Geologist': () => undefined,
   'Farmer': (ctx) =>
     (ctx.trackPos(3) >= 6 && ctx.trackPos(2) >= 6) ||
     (ctx.trackPos(6) >= 6 && ctx.trackPos(3) >= 6),
@@ -146,7 +144,7 @@ export const MILESTONE_EVALS: Partial<Record<MilestoneName, (ctx: MarsBotMAConte
   },
   'Metallurgist': (ctx) => ctx.trackPos(0) + ctx.trackPos(1) >= 9,
   'Philantropist': (ctx) => ctx.playedCards.withNonNegativeVP >= 5,
-  'Pioneer4': () => FALLBACK,
+  'Pioneer4': () => undefined,
   'Planetologist': () => false,
   'Producer': (ctx) => {
     // Any 3 non-Venus tracks combined >= 16
@@ -183,7 +181,7 @@ export const AWARD_EVALS: Partial<Record<AwardName, (ctx: MarsBotMAContext) => n
   'Miner': (ctx) => ctx.trackPos(1) + 5,
 
   // === Hellas ===
-  'Cultivator': () => FALLBACK,
+  'Cultivator': () => undefined,
   'Magnate': (ctx) => ctx.playedCards.green,
   'Space Baron': (ctx) => ctx.trackPos(1),
   'Excentric': (ctx) => Math.floor(ctx.mc / 5),
@@ -192,35 +190,35 @@ export const AWARD_EVALS: Partial<Record<AwardName, (ctx: MarsBotMAContext) => n
   // === Elysium ===
   'Celebrity': (ctx) => ctx.playedCards.costing20Plus,
   'Industrialist': (ctx) => ctx.trackPos(4) + 5,
-  'Desert Settler': () => FALLBACK,
-  'Estate Dealer': () => FALLBACK,
+  'Desert Settler': () => undefined,
+  'Estate Dealer': () => undefined,
   'Benefactor': (ctx) => Math.max(0, ctx.tr - 15),
 
   // === Terra Cimmeria ===
   'Electrician': (ctx) => ctx.trackPos(4),
-  'Founder': () => FALLBACK,
+  'Founder': () => undefined,
   'Mogul': (ctx) => ctx.highestTrackPos * 2,
   'Zoologist': (ctx) => ctx.trackPos(6) + 5,
   'Forecaster': (ctx) => Math.floor(ctx.mc / 7),
 
   // === Utopia Planitia (via modular) ===
-  'Suburbian': () => FALLBACK,
+  'Suburbian': () => undefined,
   'Investor': (ctx) => ctx.trackPos(0) + ctx.trackPos(3),
   'Botanist': (ctx) => Math.max(0, ctx.trackPos(6) - 2),
   'Incorporator': (ctx) => ctx.playedCards.costing10OrLess,
-  'Metropolist': () => FALLBACK,
+  'Metropolist': () => undefined,
 
   // === Vastitas Borealis Nova ===
   'Traveller': (ctx) => ctx.trackPos(0) + ctx.trackPos(3) + 5,
-  'Landscaper': () => FALLBACK,
-  'Highlander': () => FALLBACK,
+  'Landscaper': () => undefined,
+  'Highlander': () => undefined,
   'Manufacturer': (ctx) => ctx.trackPos(0) + ctx.trackPos(4),
   'Blacksmith': (ctx) => Math.max(ctx.trackPos(0), ctx.trackPos(1)),
 
   // === Modular Awards ===
   'Administrator': (ctx) => ctx.playedCards.withoutTags + 2,
   'Collector': (ctx) => ctx.tracksAtOrAbove(3),
-  'Constructor': () => FALLBACK,
+  'Constructor': () => undefined,
   'Politician': () => 5,
   'Visionary': (ctx) => ctx.lowestTrackPos * 2,
   'Promoter': (ctx) => ctx.trackPos(4),
@@ -234,40 +232,40 @@ export const AWARD_EVALS: Partial<Record<AwardName, (ctx: MarsBotMAContext) => n
  * require game state access and will be filled in as the feature is built.
  */
 export const CORPORATE_COMPETITION_HELPERS: Partial<Record<AwardName, CorporateCompetitionHelper>> = {
-  'Landlord': (_ctx) => { console.log('Corporate Competition helper not implemented: Landlord'); },
-  'Banker': (_ctx) => { console.log('Corporate Competition helper not implemented: Banker'); },
-  'Scientist': (_ctx) => { console.log('Corporate Competition helper not implemented: Scientist'); },
-  'Thermalist': (_ctx) => { console.log('Corporate Competition helper not implemented: Thermalist'); },
-  'Miner': (_ctx) => { console.log('Corporate Competition helper not implemented: Miner'); },
-  'Celebrity': (_ctx) => { console.log('Corporate Competition helper not implemented: Celebrity'); },
-  'Industrialist': (_ctx) => { console.log('Corporate Competition helper not implemented: Industrialist'); },
-  'Desert Settler': (_ctx) => { console.log('Corporate Competition helper not implemented: Desert Settler'); },
-  'Estate Dealer': (_ctx) => { console.log('Corporate Competition helper not implemented: Estate Dealer'); },
-  'Benefactor': (_ctx) => { console.log('Corporate Competition helper not implemented: Benefactor'); },
-  'Contractor': (_ctx) => { console.log('Corporate Competition helper not implemented: Contractor'); },
-  'Cultivator': (_ctx) => { console.log('Corporate Competition helper not implemented: Cultivator'); },
-  'Excentric': (_ctx) => { console.log('Corporate Competition helper not implemented: Excentric'); },
-  'Magnate': (_ctx) => { console.log('Corporate Competition helper not implemented: Magnate'); },
-  'Space Baron': (_ctx) => { console.log('Corporate Competition helper not implemented: Space Baron'); },
-  'Electrician': (_ctx) => { console.log('Corporate Competition helper not implemented: Electrician'); },
-  'Founder': (_ctx) => { console.log('Corporate Competition helper not implemented: Founder'); },
-  'Mogul': (_ctx) => { console.log('Corporate Competition helper not implemented: Mogul'); },
-  'Zoologist': (_ctx) => { console.log('Corporate Competition helper not implemented: Zoologist'); },
-  'Forecaster': (_ctx) => { console.log('Corporate Competition helper not implemented: Forecaster'); },
-  'Suburbian': (_ctx) => { console.log('Corporate Competition helper not implemented: Suburbian'); },
-  'Investor': (_ctx) => { console.log('Corporate Competition helper not implemented: Investor'); },
-  'Botanist': (_ctx) => { console.log('Corporate Competition helper not implemented: Botanist'); },
-  'Incorporator': (_ctx) => { console.log('Corporate Competition helper not implemented: Incorporator'); },
-  'Metropolist': (_ctx) => { console.log('Corporate Competition helper not implemented: Metropolist'); },
-  'Traveller': (_ctx) => { console.log('Corporate Competition helper not implemented: Traveller'); },
-  'Landscaper': (_ctx) => { console.log('Corporate Competition helper not implemented: Landscaper'); },
-  'Highlander': (_ctx) => { console.log('Corporate Competition helper not implemented: Highlander'); },
-  'Manufacturer': (_ctx) => { console.log('Corporate Competition helper not implemented: Manufacturer'); },
-  'Blacksmith': (_ctx) => { console.log('Corporate Competition helper not implemented: Blacksmith'); },
-  'Administrator': (_ctx) => { console.log('Corporate Competition helper not implemented: Administrator'); },
-  'Collector': (_ctx) => { console.log('Corporate Competition helper not implemented: Collector'); },
-  'Constructor': (_ctx) => { console.log('Corporate Competition helper not implemented: Constructor'); },
-  'Politician': (_ctx) => { console.log('Corporate Competition helper not implemented: Politician'); },
-  'Visionary': (_ctx) => { console.log('Corporate Competition helper not implemented: Visionary'); },
-  'Promoter': (_ctx) => { console.log('Corporate Competition helper not implemented: Promoter'); },
+  'Landlord': () => { console.log('Corporate Competition helper not implemented: Landlord'); },
+  'Banker': () => { console.log('Corporate Competition helper not implemented: Banker'); },
+  'Scientist': () => { console.log('Corporate Competition helper not implemented: Scientist'); },
+  'Thermalist': () => { console.log('Corporate Competition helper not implemented: Thermalist'); },
+  'Miner': () => { console.log('Corporate Competition helper not implemented: Miner'); },
+  'Celebrity': () => { console.log('Corporate Competition helper not implemented: Celebrity'); },
+  'Industrialist': () => { console.log('Corporate Competition helper not implemented: Industrialist'); },
+  'Desert Settler': () => { console.log('Corporate Competition helper not implemented: Desert Settler'); },
+  'Estate Dealer': () => { console.log('Corporate Competition helper not implemented: Estate Dealer'); },
+  'Benefactor': () => { console.log('Corporate Competition helper not implemented: Benefactor'); },
+  'Contractor': () => { console.log('Corporate Competition helper not implemented: Contractor'); },
+  'Cultivator': () => { console.log('Corporate Competition helper not implemented: Cultivator'); },
+  'Excentric': () => { console.log('Corporate Competition helper not implemented: Excentric'); },
+  'Magnate': () => { console.log('Corporate Competition helper not implemented: Magnate'); },
+  'Space Baron': () => { console.log('Corporate Competition helper not implemented: Space Baron'); },
+  'Electrician': () => { console.log('Corporate Competition helper not implemented: Electrician'); },
+  'Founder': () => { console.log('Corporate Competition helper not implemented: Founder'); },
+  'Mogul': () => { console.log('Corporate Competition helper not implemented: Mogul'); },
+  'Zoologist': () => { console.log('Corporate Competition helper not implemented: Zoologist'); },
+  'Forecaster': () => { console.log('Corporate Competition helper not implemented: Forecaster'); },
+  'Suburbian': () => { console.log('Corporate Competition helper not implemented: Suburbian'); },
+  'Investor': () => { console.log('Corporate Competition helper not implemented: Investor'); },
+  'Botanist': () => { console.log('Corporate Competition helper not implemented: Botanist'); },
+  'Incorporator': () => { console.log('Corporate Competition helper not implemented: Incorporator'); },
+  'Metropolist': () => { console.log('Corporate Competition helper not implemented: Metropolist'); },
+  'Traveller': () => { console.log('Corporate Competition helper not implemented: Traveller'); },
+  'Landscaper': () => { console.log('Corporate Competition helper not implemented: Landscaper'); },
+  'Highlander': () => { console.log('Corporate Competition helper not implemented: Highlander'); },
+  'Manufacturer': () => { console.log('Corporate Competition helper not implemented: Manufacturer'); },
+  'Blacksmith': () => { console.log('Corporate Competition helper not implemented: Blacksmith'); },
+  'Administrator': () => { console.log('Corporate Competition helper not implemented: Administrator'); },
+  'Collector': () => { console.log('Corporate Competition helper not implemented: Collector'); },
+  'Constructor': () => { console.log('Corporate Competition helper not implemented: Constructor'); },
+  'Politician': () => { console.log('Corporate Competition helper not implemented: Politician'); },
+  'Visionary': () => { console.log('Corporate Competition helper not implemented: Visionary'); },
+  'Promoter': () => { console.log('Corporate Competition helper not implemented: Promoter'); },
 };

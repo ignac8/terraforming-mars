@@ -44,11 +44,6 @@ export class MarsBotTurnResolver {
     this.tilePlacer = tilePlacer ?? new MarsBotTilePlacer(game, marsBot, humanPlayer);
   }
 
-  /** Advance a specific track by index (0-based). Public for use by bonus card resolver. */
-  public advanceTrackPublic(trackIndex: number): void {
-    this.advanceTrack(trackIndex);
-  }
-
   // ---- Project Card Resolution ----
 
   /** Resolve a project card: advance tracks based on tags. */
@@ -110,8 +105,8 @@ export class MarsBotTurnResolver {
     return this.board.tracks[trackIndex]?.definition.tags[0] ?? `Track ${trackIndex}`;
   }
 
-  /** Advance a track (0-based index). Handles chain actions. */
-  private advanceTrack(trackIndex: number): void {
+  /** Advance a track by index. Handles chain actions. */
+  public advanceTrack(trackIndex: number): void {
     const track = this.board.tracks[trackIndex];
     const name = this.trackName(trackIndex);
 

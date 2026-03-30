@@ -1,6 +1,6 @@
 import {IGame} from '../IGame';
 import {IPlayer} from '../IPlayer';
-import {DifficultyLevel, getAutomaMaxGeneration, isAutomaPreludeGame, MARSBOT_MAX_GENERATION, MARSBOT_MAX_GENERATION_PRELUDE} from '../../common/automa/AutomaTypes';
+import {DifficultyLevel, getAutomaMaxGeneration, MARSBOT_MAX_GENERATION, MARSBOT_MAX_GENERATION_PRELUDE} from '../../common/automa/AutomaTypes';
 import {MarsBotTurnResolver} from './MarsBotTurnResolver';
 import {IProjectCard} from '../cards/IProjectCard';
 import {Space} from '../boards/Space';
@@ -35,7 +35,7 @@ export class MarsBotScoring {
 
   private getMaxGeneration(): number {
     const opts = this.game.gameOptions;
-    return getAutomaMaxGeneration(opts.preludeExtension, opts.prelude2Expansion);
+    return getAutomaMaxGeneration(opts.preludeExtension);
   }
 
   /** Check if MarsBot instantly wins because max generation reached. */
@@ -115,7 +115,7 @@ export class MarsBotScoring {
   private calculateMCtoVP(): number {
     if (this.game.generation >= this.getMaxGeneration()) return 0;
     const opts = this.game.gameOptions;
-    const mcPerVP = getMcPerVP(this.game.generation, opts.preludeExtension, opts.prelude2Expansion);
+    const mcPerVP = getMcPerVP(this.game.generation, opts.preludeExtension);
     if (mcPerVP === undefined) return 0;
     return Math.floor(this.turnResolver.mcSupply / mcPerVP);
   }
@@ -141,9 +141,8 @@ function buildMcToVpTable(maxGen: number): ReadonlyArray<{maxGeneration: number,
 const MC_TO_VP_TABLE = buildMcToVpTable(MARSBOT_MAX_GENERATION);
 const MC_TO_VP_TABLE_PRELUDE = buildMcToVpTable(MARSBOT_MAX_GENERATION_PRELUDE);
 
-export function getMcPerVP(generation: number, preludeExtension: boolean, prelude2Expansion: boolean): number | undefined {
-  const table = isAutomaPreludeGame(preludeExtension, prelude2Expansion) ?
-    MC_TO_VP_TABLE_PRELUDE : MC_TO_VP_TABLE;
+export function getMcPerVP(generation: number, preludeExtension: boolean): number | undefined {
+  const table = preludeExtension ? MC_TO_VP_TABLE_PRELUDE : MC_TO_VP_TABLE;
   const entry = table.find((e) => generation <= e.maxGeneration);
   return entry?.mcPerVP;
 }
