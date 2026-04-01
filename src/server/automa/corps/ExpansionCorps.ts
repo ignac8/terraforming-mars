@@ -2,12 +2,11 @@
  * Expansion MarsBot corporation definitions (C13-C46).
  * Organized by expansion: Prelude, Prelude2, Promo, Venus, Colonies, Turmoil.
  */
-import {IMarsBotCorp, MarsBotCorpId} from '../../../common/automa/MarsBotCorpTypes';
+import {IMarsBotCorp, MarsBotCorpContext, CubeType} from '../MarsBotCorpTypes';
 import {Tag} from '../../../common/cards/Tag';
 import {CardName} from '../../../common/cards/CardName';
 import {BonusCardId} from '../../../common/automa/AutomaTypes';
 import {TileType} from '../../../common/TileType';
-import {MarsBotCorpContext, CubeType} from '../../../common/automa/MarsBotCorpTypes';
 import {registerMarsBotCorp} from './MarsBotCorpRegistry';
 import {whiteTrackCubes, bonusCardPerGen} from './BaseGameCorps';
 
@@ -26,7 +25,6 @@ function whiteLeastBlackSpaceHandler(ctx: MarsBotCorpContext, cubeType: CubeType
 
 // C13 Cheung Shing MARS — credit cubes on building track from position 4
 const CHEUNG_SHING_MARS: IMarsBotCorp = {
-  id: 'C13_CHEUNG_SHING_MARS' as MarsBotCorpId,
   name: CardName.CHEUNG_SHING_MARS,
   description: 'Tag: Building. Draft: Building. Credit cubes on building track from position 4; each earns 1 MC.',
   startingTags: [Tag.BUILDING],
@@ -45,7 +43,6 @@ const CHEUNG_SHING_MARS: IMarsBotCorp = {
 
 // C14 Point Luna — white+black cubes on Earth track (track 6)
 const POINT_LUNA: IMarsBotCorp = {
-  id: 'C14_POINT_LUNA' as MarsBotCorpId,
   name: CardName.POINT_LUNA,
   description: 'Tag: Space. Draft: Earth. White and black cubes on Earth track. White: advance least-advanced track. Black: advance space track.',
   startingTags: [Tag.SPACE],
@@ -70,7 +67,6 @@ const POINT_LUNA: IMarsBotCorp = {
 
 // C15 Robinson Industries
 const ROBINSON_INDUSTRIES: IMarsBotCorp = {
-  id: 'C15_ROBINSON_INDUSTRIES' as MarsBotCorpId,
   name: CardName.ROBINSON_INDUSTRIES,
   description: 'Setup: +10 MC. Each generation: add Diversification bonus card to action deck.',
   startingTags: [],
@@ -86,7 +82,6 @@ const ROBINSON_INDUSTRIES: IMarsBotCorp = {
 
 // C16 Valley Trust
 const VALLEY_TRUST: IMarsBotCorp = {
-  id: 'C16_VALLEY_TRUST' as MarsBotCorpId,
   name: CardName.VALLEY_TRUST,
   description: 'Draft: Science. Setup: draw 1 card. White cubes on science track: draw and resolve a card each.',
   startingTags: [],
@@ -113,7 +108,6 @@ const VALLEY_TRUST: IMarsBotCorp = {
 
 // C17 Vitor — separates B04, adds it to action deck each gen
 const VITOR: IMarsBotCorp = {
-  id: 'C17_VITOR' as MarsBotCorpId,
   name: CardName.VITOR,
   description: 'Setup: separate Overachievement from bonus deck. Cards with non-negative VP earn 3 MC. Each generation: add Overachievement to action deck.',
   startingTags: [],
@@ -138,8 +132,7 @@ const VITOR: IMarsBotCorp = {
 
 // C18 Acadian Community
 const ACADIAN_COMMUNITY: IMarsBotCorp = {
-  id: 'C18_ACADIAN_COMMUNITY' as MarsBotCorpId,
-  name: 'Acadian Community' as CardName,
+  name: CardName.ARCADIAN_COMMUNITIES,
   description: 'Tag: Building. Setup: resolve Settlers immediately. Each generation: add Settlers to action deck.',
   startingTags: [Tag.BUILDING],
   setup: {
@@ -158,8 +151,7 @@ const ACADIAN_COMMUNITY: IMarsBotCorp = {
 
 // C19 Astrodrill Enterprise — white+black cubes on space track
 const ASTRODRILL_ENTERPRISE: IMarsBotCorp = {
-  id: 'C19_ASTRODRILL_ENTERPRISE' as MarsBotCorpId,
-  name: 'Astrodrill' as CardName,
+  name: CardName.ASTRODRILL,
   description: 'Draft: Space. White and black cubes on space track. White: advance least-advanced track. Black: advance space track.',
   startingTags: [],
   draftPriority: {type: 'tags', tags: [Tag.SPACE]},
@@ -182,7 +174,6 @@ const ASTRODRILL_ENTERPRISE: IMarsBotCorp = {
 
 // C20 Factorum
 const FACTORUM: IMarsBotCorp = {
-  id: 'C20_FACTORUM' as MarsBotCorpId,
   name: CardName.FACTORUM,
   description: 'Tag: Power. White cubes on building track: each advance stores 1 MC on card. Each generation: add Supply and Demand to action deck.',
   startingTags: [Tag.POWER],
@@ -202,7 +193,6 @@ const FACTORUM: IMarsBotCorp = {
 
 // C29 Manutech — black cubes at #5/#12 on each track
 const MANUTECH: IMarsBotCorp = {
-  id: 'C29_MANUTECH' as MarsBotCorpId,
   name: CardName.MANUTECH,
   description: 'Tag: Building. Black cubes at positions 5 and 12 on every track. Hitting a black cube advances that same track 1 extra step.',
   startingTags: [Tag.BUILDING],
@@ -222,8 +212,7 @@ const MANUTECH: IMarsBotCorp = {
 
 // C40 Ecotec
 const ECOTEC: IMarsBotCorp = {
-  id: 'C40_ECOTEC' as MarsBotCorpId,
-  name: 'Ecotec' as CardName,
+  name: CardName.ECOTEC,
   description: 'Tag: Plant. Draft: Plant > Microbe > Animal. Setup: 2 plant resources on card. Plant/Microbe/Animal cards add 1 plant resource; spend 5 to advance plant track.',
   startingTags: [Tag.PLANT],
   draftPriority: {type: 'tags', tags: [Tag.PLANT, Tag.MICROBE, Tag.ANIMAL]},
@@ -257,8 +246,7 @@ const ECOTEC: IMarsBotCorp = {
 
 // C41 Kuiper Cooperative
 const KUIPER_COOPERATIVE: IMarsBotCorp = {
-  id: 'C41_KUIPER_COOPERATIVE' as MarsBotCorpId,
-  name: 'Kuiper Cooperative' as CardName,
+  name: CardName.KUIPER_COOPERATIVE,
   description: 'Tag: Space. Draft: Space. White and black cubes on space track. White: temperature +1. Black: place ocean.',
   startingTags: [Tag.SPACE],
   draftPriority: {type: 'tags', tags: [Tag.SPACE]},
@@ -285,8 +273,7 @@ const KUIPER_COOPERATIVE: IMarsBotCorp = {
 
 // C42 Nirgal Enterprises
 const NIRGAL_ENTERPRISES: IMarsBotCorp = {
-  id: 'C42_NIRGAL_ENTERPRISES' as MarsBotCorpId,
-  name: 'Nirgal Enterprises' as CardName,
+  name: CardName.NIRGAL_ENTERPRISES,
   description: 'Tags: Building, Power, Plant. Setup: remove Overachievement. Generations 2-5 and 10+: claim milestone. Generations 6-9: fund award.',
   startingTags: [Tag.BUILDING, Tag.POWER, Tag.PLANT],
   setup: {
@@ -313,8 +300,7 @@ const NIRGAL_ENTERPRISES: IMarsBotCorp = {
 
 // C43 Paladin Shipping
 const PALADIN_SHIPPING: IMarsBotCorp = {
-  id: 'C43_PALADIN_SHIPPING' as MarsBotCorpId,
-  name: 'Paladin Shipping' as CardName,
+  name: CardName.PALLADIN_SHIPPING,
   description: 'Tags: Space, Event. Draft: Space > Event. Setup: +5 MC. Cubes on space and event tracks are collected; when a white and black pair is collected, temperature +1.',
   startingTags: [Tag.SPACE, Tag.EVENT],
   draftPriority: {type: 'tags', tags: [Tag.SPACE, Tag.EVENT]},
@@ -359,8 +345,7 @@ const PALADIN_SHIPPING: IMarsBotCorp = {
 
 // C44 Sagitta
 const SAGITTA: IMarsBotCorp = {
-  id: 'C44_SAGITTA' as MarsBotCorpId,
-  name: 'Sagitta' as CardName,
+  name: CardName.SAGITTA_FRONTIER_SERVICES,
   description: 'Tags: Power, Event. Setup: +8 MC. Tagless cards earn 10 MC instead of 5. 1-tag cards earn 1 extra MC.',
   startingTags: [Tag.POWER, Tag.EVENT],
   setup: {
@@ -386,8 +371,7 @@ const SAGITTA: IMarsBotCorp = {
 
 // C45 Spire
 const SPIRE: IMarsBotCorp = {
-  id: 'C45_SPIRE' as MarsBotCorpId,
-  name: 'Spire' as CardName,
+  name: CardName.SPIRE,
   description: 'Tag: Earth. Draft: card with most tags. Cards with 2+ tags add 1 science resource. Spend 10 science to place a city and gain 1 TR.',
   startingTags: [Tag.EARTH],
   draftPriority: {type: 'mostTags'},
@@ -416,8 +400,7 @@ const SPIRE: IMarsBotCorp = {
 
 // C46 Tyco Magnetics
 const TYCO_MAGNETICS: IMarsBotCorp = {
-  id: 'C46_TYCO_MAGNETICS' as MarsBotCorpId,
-  name: 'Tyco Magnetics' as CardName,
+  name: CardName.TYCHO_MAGNETICS,
   description: 'Draft: Power > Science. Setup: add Interface Hyperlink to bonus deck.',
   startingTags: [],
   draftPriority: {type: 'tags', tags: [Tag.POWER, Tag.SCIENCE]},
@@ -434,7 +417,6 @@ const TYCO_MAGNETICS: IMarsBotCorp = {
 
 // C21 Pharmacy Union
 const PHARMACY_UNION: IMarsBotCorp = {
-  id: 'C21_PHARMACY_UNION' as MarsBotCorpId,
   name: CardName.PHARMACY_UNION,
   description: 'Tag: Science. Draft: Science. Setup: remove Meteor Shower. Science cards give +1 TR. When human plays a Microbe card, lose 4 MC.',
   startingTags: [Tag.SCIENCE],
@@ -463,7 +445,6 @@ const PHARMACY_UNION: IMarsBotCorp = {
 
 // C22 Philares
 const PHILARES: IMarsBotCorp = {
-  id: 'C22_PHILARES' as MarsBotCorpId,
   name: CardName.PHILARES,
   description: 'Setup: place greenery, +1 science resource, add Build Build Build to bonus deck. Spend 4 science resources to advance most-advanced track.',
   startingTags: [],
@@ -495,8 +476,7 @@ const PHILARES: IMarsBotCorp = {
 
 // C23 Recyclone
 const RECYCLONE: IMarsBotCorp = {
-  id: 'C23_RECYCLONE' as MarsBotCorpId,
-  name: 'Recyclone' as CardName,
+  name: CardName.RECYCLON,
   description: 'Tag: Microbe. Draft: Building. White cubes on building track. Each white cube advances the plant track.',
   startingTags: [Tag.MICROBE],
   draftPriority: {type: 'tags', tags: [Tag.BUILDING]},
@@ -520,7 +500,6 @@ const RECYCLONE: IMarsBotCorp = {
 
 // C24 Splice
 const SPLICE: IMarsBotCorp = {
-  id: 'C24_SPLICE' as MarsBotCorpId,
   name: CardName.SPLICE,
   description: 'Tag: Plant. Draft: Microbe. Setup: +8 MC, remove R&D. Microbe cards earn 4 MC. When human plays a Microbe card, earn 2 MC.',
   startingTags: [Tag.PLANT],
@@ -552,8 +531,7 @@ const SPLICE: IMarsBotCorp = {
 
 // C25 Viron (NamuWiki says "Byron")
 const VIRON: IMarsBotCorp = {
-  id: 'C25_VIRON' as MarsBotCorpId,
-  name: 'Viron' as CardName,
+  name: CardName.VIRON,
   description: 'Tag: Microbe. Each card resolved adds 1 floater. VP bonus equal to total cards resolved.',
   startingTags: [Tag.MICROBE],
   effect: {
@@ -570,7 +548,6 @@ const VIRON: IMarsBotCorp = {
 
 // C26 Celestic
 const CELESTIC: IMarsBotCorp = {
-  id: 'C26_CELESTIC' as MarsBotCorpId,
   name: CardName.CELESTIC,
   description: 'Tag: Venus. Draft: Venus > Jovian. Setup: +1 floater. Each round start: +1 floater.',
   startingTags: [Tag.VENUS],
@@ -596,7 +573,6 @@ const CELESTIC: IMarsBotCorp = {
 
 // C27 Morningstar Inc.
 const MORNINGSTAR: IMarsBotCorp = {
-  id: 'C27_MORNINGSTAR' as MarsBotCorpId,
   name: CardName.MORNING_STAR_INC,
   description: 'Tags: 2 Venus. Setup: remove Lobbyists, add Venusian Lobby. Credit cubes on Venus track earn 1 MC each.',
   startingTags: [Tag.VENUS, Tag.VENUS],
@@ -623,7 +599,6 @@ const MORNINGSTAR: IMarsBotCorp = {
 
 // C28 Aphrodite
 const APHRODITE: IMarsBotCorp = {
-  id: 'C28_APHRODITE' as MarsBotCorpId,
   name: CardName.APHRODITE,
   description: 'Tag: Plant. Draft: Plant > Animal > Venus. Whenever Venus is raised, earn 2 MC.',
   startingTags: [Tag.PLANT],
@@ -638,7 +613,6 @@ const APHRODITE: IMarsBotCorp = {
 
 // C34 Stormcraft
 const STORMCRAFT: IMarsBotCorp = {
-  id: 'C34_STORMCRAFT' as MarsBotCorpId,
   name: CardName.STORMCRAFT_INCORPORATED,
   description: 'Tag: Jovian. Setup: +1 floater. Each round start: +1 floater. Spending floaters for an extra card also raises temperature +1.',
   startingTags: [Tag.JOVIAN],
@@ -662,7 +636,6 @@ const STORMCRAFT: IMarsBotCorp = {
 
 // C30 Aridor
 const ARIDOR: IMarsBotCorp = {
-  id: 'C30_ARIDOR' as MarsBotCorpId,
   name: CardName.ARIDOR,
   description: 'Draft: least-advanced track tag. Setup: place 1 colony. White and black cubes across multiple tracks; each cube advances event track.',
   startingTags: [],
@@ -694,7 +667,6 @@ const ARIDOR: IMarsBotCorp = {
 
 // C31 Arclight
 const ARCLIGHT: IMarsBotCorp = {
-  id: 'C31_ARCLIGHT' as MarsBotCorpId,
   name: CardName.ARKLIGHT,
   description: 'Tag: Animal. Draft: Animal > Plant. White cubes on plant track. Plant or Animal cards earn 2 MC.',
   startingTags: [Tag.ANIMAL],
@@ -712,7 +684,6 @@ const ARCLIGHT: IMarsBotCorp = {
 
 // C32 Polyphemos
 const POLYPHEMOS: IMarsBotCorp = {
-  id: 'C32_POLYPHEMOS' as MarsBotCorpId,
   name: CardName.POLYPHEMOS,
   description: 'Tags: 3 Space, 3 Event. Setup: +25 MC. Each generation: discard the card with fewest tags from the action deck.',
   startingTags: [Tag.SPACE, Tag.SPACE, Tag.SPACE, Tag.EVENT, Tag.EVENT, Tag.EVENT],
@@ -732,7 +703,6 @@ const POLYPHEMOS: IMarsBotCorp = {
 
 // C33 Poseidon
 const POSEIDON: IMarsBotCorp = {
-  id: 'C33_POSEIDON' as MarsBotCorpId,
   name: CardName.POSEIDON,
   description: 'Setup: place 1 colony. Colony placement advances least-advanced track.',
   startingTags: [],
@@ -749,7 +719,6 @@ const POSEIDON: IMarsBotCorp = {
 
 // C35 Lakefront Resorts
 const LAKEFRONT_RESORTS: IMarsBotCorp = {
-  id: 'C35_LAKEFRONT_RESORTS' as MarsBotCorpId,
   name: CardName.LAKEFRONT_RESORTS,
   description: 'Setup: 1 white cube on card. Oceans alternate between removing the cube (advance building track) and placing it back.',
   startingTags: [],
@@ -778,7 +747,6 @@ const LAKEFRONT_RESORTS: IMarsBotCorp = {
 
 // C36 Pristar (NamuWiki says "Freestar")
 const PRISTAR: IMarsBotCorp = {
-  id: 'C36_PRISTAR' as MarsBotCorpId,
   name: CardName.PRISTAR,
   description: 'When a global parameter would be raised and a cube is on card: skip the raise, remove cube, +1 TR, +6 MC. Cube is restored each generation.',
   startingTags: [],
@@ -808,7 +776,6 @@ const PRISTAR: IMarsBotCorp = {
 
 // C37 Septem Tribus
 const SEPTEM_TRIBUS: IMarsBotCorp = {
-  id: 'C37_SEPTEM_TRIBUS' as MarsBotCorpId,
   name: CardName.SEPTUM_TRIBUS,
   description: 'Setup: remove Party Politics, add Gray Eminence to bonus deck. Each generation: add Gray Eminence to action deck.',
   startingTags: [],
@@ -825,7 +792,6 @@ const SEPTEM_TRIBUS: IMarsBotCorp = {
 
 // C38 Terralabs
 const TERRALABS: IMarsBotCorp = {
-  id: 'C38_TERRALABS' as MarsBotCorpId,
   name: CardName.TERRALABS_RESEARCH,
   description: 'Tag: Science. Setup: TR -8. Each generation: draw 1 card to action deck (2 cards from generation 9 onward).',
   startingTags: [Tag.SCIENCE],
@@ -848,8 +814,7 @@ const TERRALABS: IMarsBotCorp = {
 
 // C39 Utopia Invest
 const UTOPIA_INVEST: IMarsBotCorp = {
-  id: 'C39_UTOPIA_INVEST' as MarsBotCorpId,
-  name: 'Utopia Invest' as CardName,
+  name: CardName.UTOPIA_INVEST,
   description: 'Tags: Building, Space. Each generation: add Investors bonus card to action deck.',
   startingTags: [Tag.BUILDING, Tag.SPACE],
   perGeneration: bonusCardPerGen(BonusCardId.B32_INVESTORS, 'Utopia Invest'),

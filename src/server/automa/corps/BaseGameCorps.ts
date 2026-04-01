@@ -2,7 +2,7 @@
  * Base game MarsBot corporation definitions (C01-C12).
  * Each corp implements the IMarsBotCorp interface and is registered in the global registry.
  */
-import {IMarsBotCorp, MarsBotCorpId, MarsBotTrackCube} from '../../../common/automa/MarsBotCorpTypes';
+import {IMarsBotCorp, MarsBotTrackCube} from '../MarsBotCorpTypes';
 import {Tag} from '../../../common/cards/Tag';
 import {CardName} from '../../../common/cards/CardName';
 import {BonusCardId} from '../../../common/automa/AutomaTypes';
@@ -15,7 +15,7 @@ export function whiteTrackCubes(trackIndex: number): MarsBotTrackCube[] {
 }
 
 /** Factory for the common "add bonus card to action deck before action phase" per-gen pattern. */
-export function bonusCardPerGen(bonusCardId: BonusCardId, corpName: string): {timing: 'beforeActionPhase', resolve: (ctx: import('../../../common/automa/MarsBotCorpTypes').MarsBotCorpContext) => void} {
+export function bonusCardPerGen(bonusCardId: BonusCardId, corpName: string): {timing: 'beforeActionPhase', resolve: (ctx: import('../MarsBotCorpTypes').MarsBotCorpContext) => void} {
   return {
     timing: 'beforeActionPhase',
     resolve(ctx) {
@@ -28,7 +28,6 @@ export function bonusCardPerGen(bonusCardId: BonusCardId, corpName: string): {ti
 // ---- C01 Credicor ----
 // Draft: most expensive card. Effect: card cost 20+ → gain 4 M€.
 const CREDICOR: IMarsBotCorp = {
-  id: 'C01_CREDICOR' as MarsBotCorpId,
   name: CardName.CREDICOR,
   description: 'Draft: most expensive card. Effect: card cost 20+ gives 4 MC.',
   startingTags: [],
@@ -46,7 +45,6 @@ const CREDICOR: IMarsBotCorp = {
 // ---- C02 Eco Line ----
 // Gen effect: before action phase, add Rapid Sprouting (B23) to action deck.
 const ECO_LINE: IMarsBotCorp = {
-  id: 'C02_ECO_LINE' as MarsBotCorpId,
   name: CardName.ECOLINE,
   description: 'Each generation: add Rapid Sprouting bonus card to action deck.',
   startingTags: [],
@@ -58,7 +56,6 @@ const ECO_LINE: IMarsBotCorp = {
 // White cubes: instead of raising temp, draw 1 card and resolve it.
 // Black cubes: temperature rises by 1.
 const HELION: IMarsBotCorp = {
-  id: 'C03_HELION' as MarsBotCorpId,
   name: CardName.HELION,
   description: 'White cubes: draw and resolve a card instead of raising temperature. Black cubes: temperature +1.',
   startingTags: [],
@@ -93,7 +90,6 @@ const HELION: IMarsBotCorp = {
 // Tags: Event, Event. Setup: replace transparent cubes on building/event tracks with white cubes.
 // Effect: each advance on building (track 1) or event (track 3), earn 2 M€.
 const INTERPLANETARY_CINEMATICS: IMarsBotCorp = {
-  id: 'C04_INTERPLANETARY_CINEMATICS' as MarsBotCorpId,
   name: CardName.INTERPLANETARY_CINEMATICS,
   description: 'Tags: 2 Events. White cubes on building and event tracks. Each advance on those tracks earns 2 MC.',
   startingTags: [Tag.EVENT, Tag.EVENT],
@@ -112,7 +108,6 @@ const INTERPLANETARY_CINEMATICS: IMarsBotCorp = {
 // Setup: remove Lobbyists (B06). Effect: card with requirements → 2 M€.
 // Gen: before action phase, add Do It Right (B25) to action deck.
 const INVENTRIX: IMarsBotCorp = {
-  id: 'C05_INVENTRIX' as MarsBotCorpId,
   name: CardName.INVENTRIX,
   description: 'Setup: remove Lobbyists. Effect: card with requirements gives 2 MC. Each generation: add Do It Right to action deck.',
   startingTags: [],
@@ -139,7 +134,6 @@ const INVENTRIX: IMarsBotCorp = {
 // Tags: Building×2. Setup: 10 M€ on card.
 // Effect: when earning M€, deduct from card first. When card empty, refill 10 + advance building track.
 const MINING_GUILD: IMarsBotCorp = {
-  id: 'C06_MINING_GUILD' as MarsBotCorpId,
   name: CardName.MINING_GUILD,
   description: 'Tags: 2 Building. Setup: 10 MC on card. MC earned goes to card first; when empty, refill 10 MC and advance building track.',
   startingTags: [Tag.BUILDING, Tag.BUILDING],
@@ -172,7 +166,6 @@ const MINING_GUILD: IMarsBotCorp = {
 // Tag: Space. Setup: draw 2 space cards → bonus deck. White cubes on space track.
 // Effect: white cube → use 1 card from bonus deck.
 const PHOBOLOG: IMarsBotCorp = {
-  id: 'C07_PHOBOLOG' as MarsBotCorpId,
   name: CardName.PHOBOLOG,
   description: 'Tag: Space. Setup: draw 2 space cards to bonus deck. White cubes on space track: resolve 1 bonus card each.',
   startingTags: [Tag.SPACE],
@@ -203,7 +196,6 @@ const PHOBOLOG: IMarsBotCorp = {
 // Tags: Jovian, Space×3. Draft: Jovian > Space.
 // Effect: anyone plays Jovian → advance event track (index 2).
 const SATURN_SYSTEMS: IMarsBotCorp = {
-  id: 'C08_SATURN_SYSTEMS' as MarsBotCorpId,
   name: CardName.SATURN_SYSTEMS,
   description: 'Tags: Jovian, 3 Space. Draft: Jovian > Space. When anyone plays a Jovian tag, advance event track.',
   startingTags: [Tag.JOVIAN, Tag.SPACE, Tag.SPACE, Tag.SPACE],
@@ -228,7 +220,6 @@ const SATURN_SYSTEMS: IMarsBotCorp = {
 // Draft: Earth. Setup: +25 M€, white cubes on Earth track (all positions).
 // Effect: each advance on Earth track → +2 M€.
 const TERACTOR: IMarsBotCorp = {
-  id: 'C09_TERACTOR' as MarsBotCorpId,
   name: CardName.TERACTOR,
   description: 'Draft: Earth. Setup: +25 MC, white cubes on Earth track. Each Earth track advance earns 2 MC.',
   startingTags: [],
@@ -253,7 +244,6 @@ const TERACTOR: IMarsBotCorp = {
 // ---- C10 Tharsis Republic ----
 // Draft: City. Setup: place 1 city. Effect: any city placement → +2 M€; MarsBot city → advance event track.
 const THARSIS_REPUBLIC: IMarsBotCorp = {
-  id: 'C10_THARSIS_REPUBLIC' as MarsBotCorpId,
   name: CardName.THARSIS_REPUBLIC,
   description: 'Draft: City. Setup: place 1 city. Any city placement gives 2 MC; MarsBot city also advances event track.',
   startingTags: [],
@@ -282,7 +272,6 @@ const THARSIS_REPUBLIC: IMarsBotCorp = {
 // Tag: Power. Draft: Power. Setup: +10 M€, white cubes on energy track.
 // Effect: white cube → draw card ignoring first tag, then temperature +1.
 const THORGATE: IMarsBotCorp = {
-  id: 'C11_THORGATE' as MarsBotCorpId,
   name: CardName.THORGATE,
   description: 'Tag: Power. Draft: Power. Setup: +10 MC, white cubes on energy track. White cube: resolve card (ignore first tag) then temperature +1.',
   startingTags: [Tag.POWER],
@@ -314,7 +303,6 @@ const THORGATE: IMarsBotCorp = {
 // Setup: add Government Subsidy (B31) to bonus deck.
 // Gen: from gen 2+, add 1 bonus card to action deck before action phase.
 const UNMI: IMarsBotCorp = {
-  id: 'C12_UNMI' as MarsBotCorpId,
   name: CardName.UNITED_NATIONS_MARS_INITIATIVE,
   description: 'Setup: add Government Subsidy to bonus deck. From generation 2 onward, resolve 1 bonus card each generation.',
   startingTags: [],
