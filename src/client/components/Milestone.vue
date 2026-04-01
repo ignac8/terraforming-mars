@@ -86,7 +86,7 @@ export default defineComponent({
       return getMilestone(this.milestone.name).description;
     },
     automaRule(): string | undefined {
-      return MARSBOT_MILESTONE_DESCRIPTIONS[this.milestone.name];
+      return MARSBOT_MILESTONE_DESCRIPTIONS.get(this.milestone.name);
     },
   },
 });
