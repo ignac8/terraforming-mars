@@ -1,23 +1,23 @@
-import {MarsBotCorpId, IMarsBotCorp} from '../../../common/automa/MarsBotCorpTypes';
+import {CardName} from '../../../common/cards/CardName';
+import {IMarsBotCorp} from '../MarsBotCorpTypes';
 
-const ALL_MARSBOT_CORPS: Map<MarsBotCorpId, IMarsBotCorp> = new Map();
+const ALL_MARSBOT_CORPS: Map<CardName, IMarsBotCorp> = new Map();
 
 export function registerMarsBotCorp(corp: IMarsBotCorp): void {
-  if (ALL_MARSBOT_CORPS.has(corp.id)) {
-    throw new Error(`MarsBot corp ${corp.id} is already registered`);
+  if (ALL_MARSBOT_CORPS.has(corp.name)) {
+    throw new Error(`MarsBot corp ${corp.name} is already registered`);
   }
-  ALL_MARSBOT_CORPS.set(corp.id, corp);
+  ALL_MARSBOT_CORPS.set(corp.name, corp);
 }
 
-export function getMarsBotCorp(id: string): IMarsBotCorp | undefined {
-  return ALL_MARSBOT_CORPS.get(id as MarsBotCorpId);
+export function getMarsBotCorp(name: CardName): IMarsBotCorp | undefined {
+  return ALL_MARSBOT_CORPS.get(name);
 }
 
 export function getAllMarsBotCorps(): ReadonlyArray<IMarsBotCorp> {
   return Array.from(ALL_MARSBOT_CORPS.values());
 }
 
-/** Clear registry (for testing). */
 export function clearMarsBotCorpRegistry(): void {
   ALL_MARSBOT_CORPS.clear();
 }

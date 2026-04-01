@@ -1,6 +1,6 @@
 import {expect} from 'chai';
 import {MarsBotDraftResolver} from '../../../src/server/automa/corps/MarsBotDraftResolver';
-import {MarsBotDraftPriority} from '../../../src/common/automa/MarsBotCorpTypes';
+import {MarsBotDraftPriority} from '../../../src/server/automa/MarsBotCorpTypes';
 import {Tag} from '../../../src/common/cards/Tag';
 import {SeededRandom} from '../../../src/common/utils/Random';
 import {IProjectCard} from '../../../src/server/cards/IProjectCard';

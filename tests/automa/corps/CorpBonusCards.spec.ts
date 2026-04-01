@@ -1,4 +1,5 @@
 import {expect} from 'chai';
+import {CardName} from '../../../src/common/cards/CardName';
 import {testGame} from '../../TestGame';
 import {IGame} from '../../../src/server/IGame';
 import {TestPlayer} from '../../TestPlayer';
@@ -136,7 +137,7 @@ describe('Corp-Specific Bonus Cards (B22-B32)', () => {
   describe('Corp per-gen bonus card flow', () => {
     it('Eco Line adds Rapid Sprouting to action deck each gen', () => {
       const {marsBot, game} = createAutomaGame();
-      const corp = require('../../../src/server/automa/corps/MarsBotCorpRegistry').getMarsBotCorp('C02_ECO_LINE');
+      const corp = require('../../../src/server/automa/corps/MarsBotCorpRegistry').getMarsBotCorp(CardName.ECOLINE);
       marsBot.setCorpAndSetup(corp);
 
       const deckBefore = marsBot.actionDeck.length;
@@ -150,7 +151,7 @@ describe('Corp-Specific Bonus Cards (B22-B32)', () => {
 
   describe('Transparent cube replacement', () => {
     it('C04 IC has 36 white cubes (18 on track 1 + 18 on track 3)', () => {
-      const corp = require('../../../src/server/automa/corps/MarsBotCorpRegistry').getMarsBotCorp('C04_INTERPLANETARY_CINEMATICS');
+      const corp = require('../../../src/server/automa/corps/MarsBotCorpRegistry').getMarsBotCorp(CardName.INTERPLANETARY_CINEMATICS);
       expect(corp.trackCubes.length).to.eq(36);
       const track1 = corp.trackCubes.filter((c: any) => c.trackIndex === 0);
       const track3 = corp.trackCubes.filter((c: any) => c.trackIndex === 2);
@@ -159,14 +160,14 @@ describe('Corp-Specific Bonus Cards (B22-B32)', () => {
     });
 
     it('C09 Teractor has 18 white cubes on track 6', () => {
-      const corp = require('../../../src/server/automa/corps/MarsBotCorpRegistry').getMarsBotCorp('C09_TERACTOR');
+      const corp = require('../../../src/server/automa/corps/MarsBotCorpRegistry').getMarsBotCorp(CardName.TERACTOR);
       expect(corp.trackCubes.length).to.eq(18);
       expect(corp.trackCubes.every((c: any) => c.trackIndex === 5 && c.cubeType === 'white')).to.be.true;
     });
 
     it('C09 Teractor gains 2 M€ per Earth track advance', () => {
       const {marsBot} = createAutomaGame();
-      const corp = require('../../../src/server/automa/corps/MarsBotCorpRegistry').getMarsBotCorp('C09_TERACTOR');
+      const corp = require('../../../src/server/automa/corps/MarsBotCorpRegistry').getMarsBotCorp(CardName.TERACTOR);
       marsBot.setCorpAndSetup(corp);
       const mcBefore = marsBot.turnResolver.mcSupply;
       // Trigger white cube on Earth track (track 6)
@@ -176,7 +177,7 @@ describe('Corp-Specific Bonus Cards (B22-B32)', () => {
 
     it('C04 IC gains 2 M€ per building/event track advance', () => {
       const {marsBot} = createAutomaGame();
-      const corp = require('../../../src/server/automa/corps/MarsBotCorpRegistry').getMarsBotCorp('C04_INTERPLANETARY_CINEMATICS');
+      const corp = require('../../../src/server/automa/corps/MarsBotCorpRegistry').getMarsBotCorp(CardName.INTERPLANETARY_CINEMATICS);
       marsBot.setCorpAndSetup(corp);
       const mcBefore = marsBot.turnResolver.mcSupply;
       corp.effect.onTrackCubeTrigger(marsBot.getCorpContext(), 0, 1, 'white');
