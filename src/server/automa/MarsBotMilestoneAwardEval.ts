@@ -6,266 +6,169 @@ import {AwardName} from '@/common/ma/AwardName';
  */
 export type MarsBotMAContext = {
   trackPos: (trackIndex: number) => number;
-  /** All track positions as array */
   allTrackPositions: () => ReadonlyArray<number>;
   tr: number;
   mc: number;
   cityCount: number;
   greeneryCount: number;
-  oceanCount: number; // oceans placed by MarsBot
+  oceanCount: number;
   tilesOwned: number;
   tilesAdjacentToOcean: number;
   tilesOnEdge: number;
   tilesNotAdjacentToOcean: number;
-  /** Cards in MarsBot's played pile */
   playedCards: {
     total: number;
-    green: number; // green cards (active)
-    blue: number; // blue cards (automated)
-    red: number; // red cards (events)
+    green: number;
+    blue: number;
+    red: number;
     greenOrBlue: number;
     withoutTags: number;
-    costing20Plus: number; // including events
-    costing10OrLess: number; // including events
+    costing20Plus: number;
+    costing10OrLess: number;
     withNonNegativeVP: number;
     withRequirements: number;
   };
   destroyedBonusCards: number;
-  temperatureRaises: number; // times MarsBot raised temperature
-  /** Highest track position (excluding Venus if not enabled) */
+  temperatureRaises: number;
   highestTrackPos: number;
-  /** Lowest track position (excluding Venus if not enabled) */
   lowestTrackPos: number;
-  /** Number of tracks at or above a given position */
   tracksAtOrAbove: (pos: number) => number;
-  /** Connected tile group size (for Landscaper) */
   largestConnectedTileGroup: number;
-  /** Special tiles owned (for Founder) */
   specialTilesOwned: number;
-  /** Has Venus track */
   hasVenus: boolean;
-  /** Venus track position (0 if no Venus) */
   venusTrackPos: number;
 }
 
-/**
- * Context provided to Corporate Competition helper functions.
- */
-export type MarsBotCCContext = {
-  // Placeholder - will be expanded with game state access as needed
+function allTracksAtOrAbove(ctx: MarsBotMAContext, pos: number, includeVenus: boolean): boolean {
+  for (let t = 0; t < 7; t++) {
+    if (ctx.trackPos(t) < pos) return false;
+  }
+  if (includeVenus && ctx.hasVenus && ctx.venusTrackPos < pos) return false;
+  return true;
 }
 
-export type CorporateCompetitionHelper = (ctx: MarsBotCCContext) => void;
+function anyTrackAtOrAbove(ctx: MarsBotMAContext, pos: number): boolean {
+  for (let t = 0; t < 7; t++) {
+    if (ctx.trackPos(t) >= pos) return true;
+  }
+  if (ctx.hasVenus && ctx.venusTrackPos >= pos) return true;
+  return false;
+}
 
+function topThreeTracksSum(ctx: MarsBotMAContext): number {
+  const positions: Array<number> = [];
+  for (let t = 0; t < 7; t++) {
+    positions.push(ctx.trackPos(t));
+  }
+  positions.sort((a, b) => b - a);
+  return positions[0] + positions[1] + positions[2];
+}
 
 /**
  * Milestone evaluation functions for MarsBot.
- *
- * Returns true if MarsBot qualifies for the milestone, false if not,
- * or undefined to indicate fallback to the default game evaluation.
+ * Returns true if MarsBot qualifies, false if not, undefined for fallback to default game evaluation.
  */
-export const MILESTONE_EVALS: Partial<Record<MilestoneName, (ctx: MarsBotMAContext) => boolean | undefined>> = {
-  // === Tharsis ===
-  'Terraformer': (ctx) => ctx.tr >= 35,
-  'Mayor': (ctx) => ctx.cityCount >= 3,
-  'Gardener': (ctx) => ctx.greeneryCount >= 3,
-  'Builder': (ctx) => ctx.trackPos(0) >= 8,
-  'Planner': (ctx) => {
-    // All non-Venus tracks position >= 4
-    for (let t = 0; t < 7; t++) {
-      if (ctx.trackPos(t) < 4) return false;
-    }
-    return true;
-  },
-
-  // === Hellas ===
-  'Diversifier': (ctx) => {
-    // All tracks position >= 3 (including Venus if present)
-    for (let t = 0; t < 7; t++) {
-      if (ctx.trackPos(t) < 3) return false;
-    }
-    if (ctx.hasVenus && ctx.venusTrackPos < 3) return false;
-    return true;
-  },
-  'Tactician': (ctx) => ctx.mc >= 35,
-  'Polar Explorer': () => undefined,
-  'Energizer': (ctx) => ctx.trackPos(4) >= 6,
-  'Rim Settler': (ctx) => ctx.trackPos(1) >= 6 && ctx.trackPos(3) >= 6,
-
-  // === Elysium ===
-  'Generalist': (ctx) => {
-    // All non-Venus tracks position >= 2
-    for (let t = 0; t < 7; t++) {
-      if (ctx.trackPos(t) < 2) return false;
-    }
-    return true;
-  },
-  'Specialist': (ctx) => {
-    // Any one track position >= 10
-    for (let t = 0; t < 7; t++) {
-      if (ctx.trackPos(t) >= 10) return true;
-    }
-    if (ctx.hasVenus && ctx.venusTrackPos >= 10) return true;
-    return false;
-  },
-  'Ecologist': (ctx) => ctx.trackPos(6) >= 4,
-  'Tycoon': (ctx) => ctx.playedCards.greenOrBlue >= 15,
-  'Legend': (ctx) => ctx.playedCards.red >= 5,
-
-  // === Terra Cimmeria Nova ===
-  'Architect': (ctx) => ctx.trackPos(3) >= 6,
-  'Coastguard': (ctx) => ctx.tilesAdjacentToOcean >= 4,
-  'C. Forester': (ctx) => ctx.trackPos(6) >= 10,
-
-  // === Vastitas Borealis Nova ===
-  'Agronomist': (ctx) => ctx.trackPos(6) >= 4 && ctx.trackPos(3) >= 4,
-  'Engineer': (ctx) => ctx.trackPos(4) + ctx.trackPos(3) >= 10,
-  'V. Spacefarer': (ctx) => ctx.trackPos(1) >= 5,
-  'Geologist': () => undefined,
-  'Farmer': (ctx) =>
-    (ctx.trackPos(3) >= 6 && ctx.trackPos(2) >= 6) ||
-    (ctx.trackPos(6) >= 6 && ctx.trackPos(3) >= 6),
-
-  // === Modular Milestones ===
-  'Briber': (ctx) => ctx.mc >= 20,
-  'Builder7': (ctx) => ctx.trackPos(0) >= 7,
-  'Forester': (ctx) => ctx.trackPos(6) >= 6,
-  'Fundraiser': (ctx) => ctx.trackPos(4) >= 8,
-  'Hydrologist': (ctx) => ctx.oceanCount >= 4,
-  'Landshaper': (ctx) => ctx.cityCount >= 1 && ctx.greeneryCount >= 1 && ctx.trackPos(0) >= 5,
-  'Legend4': (ctx) => ctx.playedCards.red >= 4,
-  'Lobbyist': () => false,
-  'Merchant': (ctx) => {
-    // All non-Venus tracks position >= 2
-    for (let t = 0; t < 7; t++) {
-      if (ctx.trackPos(t) < 2) return false;
-    }
-    return true;
-  },
-  'Metallurgist': (ctx) => ctx.trackPos(0) + ctx.trackPos(1) >= 9,
-  'Philantropist': (ctx) => ctx.playedCards.withNonNegativeVP >= 5,
-  'Pioneer4': () => undefined,
-  'Planetologist': () => false,
-  'Producer': (ctx) => {
-    // Any 3 non-Venus tracks combined >= 16
-    const positions: Array<number> = [];
-    for (let t = 0; t < 7; t++) {
-      positions.push(ctx.trackPos(t));
-    }
-    positions.sort((a, b) => b - a);
-    return positions[0] + positions[1] + positions[2] >= 16;
-  },
-  'Researcher': (ctx) => ctx.trackPos(3) >= 4,
-  'Spacefarer4': (ctx) => ctx.trackPos(1) >= 4,
-  'Sponsor': (ctx) => ctx.playedCards.costing20Plus >= 3,
-  'Tactician4': (ctx) => ctx.mc >= 30,
-  'Terraformer29': () => false,
-  'Terran5': (ctx) => ctx.trackPos(5) >= 5,
-  'Thawer': (ctx) => ctx.temperatureRaises >= 5,
-  'Trader': () => false,
-  'Tycoon10': (ctx) => ctx.playedCards.greenOrBlue >= 10,
-};
+export const MILESTONE_EVALS: Map<MilestoneName, (ctx: MarsBotMAContext) => boolean | undefined> = new Map([
+  // Tharsis
+  ['Terraformer', (ctx) => ctx.tr >= 35],
+  ['Mayor', (ctx) => ctx.cityCount >= 3],
+  ['Gardener', (ctx) => ctx.greeneryCount >= 3],
+  ['Builder', (ctx) => ctx.trackPos(0) >= 8],
+  ['Planner', (ctx) => allTracksAtOrAbove(ctx, 4, false)],
+  // Hellas
+  ['Diversifier', (ctx) => allTracksAtOrAbove(ctx, 3, true)],
+  ['Tactician', (ctx) => ctx.mc >= 35],
+  ['Polar Explorer', () => undefined],
+  ['Energizer', (ctx) => ctx.trackPos(4) >= 6],
+  ['Rim Settler', (ctx) => ctx.trackPos(1) >= 6 && ctx.trackPos(3) >= 6],
+  // Elysium
+  ['Generalist', (ctx) => allTracksAtOrAbove(ctx, 2, false)],
+  ['Specialist', (ctx) => anyTrackAtOrAbove(ctx, 10)],
+  ['Ecologist', (ctx) => ctx.trackPos(6) >= 4],
+  ['Tycoon', (ctx) => ctx.playedCards.greenOrBlue >= 15],
+  ['Legend', (ctx) => ctx.playedCards.red >= 5],
+  // Terra Cimmeria Nova
+  ['Architect', (ctx) => ctx.trackPos(3) >= 6],
+  ['Coastguard', (ctx) => ctx.tilesAdjacentToOcean >= 4],
+  ['C. Forester', (ctx) => ctx.trackPos(6) >= 10],
+  // Vastitas Borealis Nova
+  ['Agronomist', (ctx) => ctx.trackPos(6) >= 4 && ctx.trackPos(3) >= 4],
+  ['Engineer', (ctx) => ctx.trackPos(4) + ctx.trackPos(3) >= 10],
+  ['V. Spacefarer', (ctx) => ctx.trackPos(1) >= 5],
+  ['Geologist', () => undefined],
+  ['Farmer', (ctx) => (ctx.trackPos(3) >= 6 && ctx.trackPos(2) >= 6) || (ctx.trackPos(6) >= 6 && ctx.trackPos(3) >= 6)],
+  // Modular
+  ['Briber', (ctx) => ctx.mc >= 20],
+  ['Builder7', (ctx) => ctx.trackPos(0) >= 7],
+  ['Forester', (ctx) => ctx.trackPos(6) >= 6],
+  ['Fundraiser', (ctx) => ctx.trackPos(4) >= 8],
+  ['Hydrologist', (ctx) => ctx.oceanCount >= 4],
+  ['Landshaper', (ctx) => ctx.cityCount >= 1 && ctx.greeneryCount >= 1 && ctx.trackPos(0) >= 5],
+  ['Legend4', (ctx) => ctx.playedCards.red >= 4],
+  ['Lobbyist', () => false],
+  ['Merchant', (ctx) => allTracksAtOrAbove(ctx, 2, false)],
+  ['Metallurgist', (ctx) => ctx.trackPos(0) + ctx.trackPos(1) >= 9],
+  ['Philantropist', (ctx) => ctx.playedCards.withNonNegativeVP >= 5],
+  ['Pioneer4', () => undefined],
+  ['Planetologist', () => false],
+  ['Producer', (ctx) => topThreeTracksSum(ctx) >= 16],
+  ['Researcher', (ctx) => ctx.trackPos(3) >= 4],
+  ['Spacefarer4', (ctx) => ctx.trackPos(1) >= 4],
+  ['Sponsor', (ctx) => ctx.playedCards.costing20Plus >= 3],
+  ['Tactician4', (ctx) => ctx.mc >= 30],
+  ['Terraformer29', () => false],
+  ['Terran5', (ctx) => ctx.trackPos(5) >= 5],
+  ['Thawer', (ctx) => ctx.temperatureRaises >= 5],
+  ['Trader', () => false],
+  ['Tycoon10', (ctx) => ctx.playedCards.greenOrBlue >= 10],
+]);
 
 /**
  * Award evaluation functions for MarsBot.
- *
- * Returns the numeric score MarsBot would receive for this award,
- * or undefined to indicate fallback to the default game evaluation.
+ * Returns the numeric score, or undefined for fallback to default game evaluation.
  */
-export const AWARD_EVALS: Partial<Record<AwardName, (ctx: MarsBotMAContext) => number | undefined>> = {
-  // === Tharsis ===
-  'Landlord': (ctx) => ctx.tilesOwned,
-  'Banker': (ctx) => ctx.trackPos(0) + ctx.trackPos(2),
-  'Scientist': (ctx) => ctx.trackPos(3),
-  'Thermalist': (ctx) => ctx.trackPos(4) + 5,
-  'Miner': (ctx) => ctx.trackPos(1) + 5,
-
-  // === Hellas ===
-  'Cultivator': () => undefined,
-  'Magnate': (ctx) => ctx.playedCards.green,
-  'Space Baron': (ctx) => ctx.trackPos(1),
-  'Excentric': (ctx) => Math.floor(ctx.mc / 5),
-  'Contractor': (ctx) => ctx.trackPos(0),
-
-  // === Elysium ===
-  'Celebrity': (ctx) => ctx.playedCards.costing20Plus,
-  'Industrialist': (ctx) => ctx.trackPos(4) + 5,
-  'Desert Settler': () => undefined,
-  'Estate Dealer': () => undefined,
-  'Benefactor': (ctx) => Math.max(0, ctx.tr - 15),
-
-  // === Terra Cimmeria ===
-  'Electrician': (ctx) => ctx.trackPos(4),
-  'Founder': () => undefined,
-  'Mogul': (ctx) => ctx.highestTrackPos * 2,
-  'Zoologist': (ctx) => ctx.trackPos(6) + 5,
-  'Forecaster': (ctx) => Math.floor(ctx.mc / 7),
-
-  // === Utopia Planitia (via modular) ===
-  'Suburbian': () => undefined,
-  'Investor': (ctx) => ctx.trackPos(0) + ctx.trackPos(3),
-  'Botanist': (ctx) => Math.max(0, ctx.trackPos(6) - 2),
-  'Incorporator': (ctx) => ctx.playedCards.costing10OrLess,
-  'Metropolist': () => undefined,
-
-  // === Vastitas Borealis Nova ===
-  'Traveller': (ctx) => ctx.trackPos(0) + ctx.trackPos(3) + 5,
-  'Landscaper': () => undefined,
-  'Highlander': () => undefined,
-  'Manufacturer': (ctx) => ctx.trackPos(0) + ctx.trackPos(4),
-  'Blacksmith': (ctx) => Math.max(ctx.trackPos(0), ctx.trackPos(1)),
-
-  // === Modular Awards ===
-  'Administrator': (ctx) => ctx.playedCards.withoutTags + 2,
-  'Collector': (ctx) => ctx.tracksAtOrAbove(3),
-  'Constructor': () => undefined,
-  'Politician': () => 5,
-  'Visionary': (ctx) => ctx.lowestTrackPos * 2,
-  'Promoter': (ctx) => ctx.trackPos(4),
-};
-
-/**
- * Corporate Competition helper registry.
- *
- * These helpers perform special actions when MarsBot funds an award
- * during the Corporate Competition variant. The actual implementations
- * require game state access and will be filled in as the feature is built.
- */
-export const CORPORATE_COMPETITION_HELPERS: Partial<Record<AwardName, CorporateCompetitionHelper>> = {
-  'Landlord': () => { console.log('Corporate Competition helper not implemented: Landlord'); },
-  'Banker': () => { console.log('Corporate Competition helper not implemented: Banker'); },
-  'Scientist': () => { console.log('Corporate Competition helper not implemented: Scientist'); },
-  'Thermalist': () => { console.log('Corporate Competition helper not implemented: Thermalist'); },
-  'Miner': () => { console.log('Corporate Competition helper not implemented: Miner'); },
-  'Celebrity': () => { console.log('Corporate Competition helper not implemented: Celebrity'); },
-  'Industrialist': () => { console.log('Corporate Competition helper not implemented: Industrialist'); },
-  'Desert Settler': () => { console.log('Corporate Competition helper not implemented: Desert Settler'); },
-  'Estate Dealer': () => { console.log('Corporate Competition helper not implemented: Estate Dealer'); },
-  'Benefactor': () => { console.log('Corporate Competition helper not implemented: Benefactor'); },
-  'Contractor': () => { console.log('Corporate Competition helper not implemented: Contractor'); },
-  'Cultivator': () => { console.log('Corporate Competition helper not implemented: Cultivator'); },
-  'Excentric': () => { console.log('Corporate Competition helper not implemented: Excentric'); },
-  'Magnate': () => { console.log('Corporate Competition helper not implemented: Magnate'); },
-  'Space Baron': () => { console.log('Corporate Competition helper not implemented: Space Baron'); },
-  'Electrician': () => { console.log('Corporate Competition helper not implemented: Electrician'); },
-  'Founder': () => { console.log('Corporate Competition helper not implemented: Founder'); },
-  'Mogul': () => { console.log('Corporate Competition helper not implemented: Mogul'); },
-  'Zoologist': () => { console.log('Corporate Competition helper not implemented: Zoologist'); },
-  'Forecaster': () => { console.log('Corporate Competition helper not implemented: Forecaster'); },
-  'Suburbian': () => { console.log('Corporate Competition helper not implemented: Suburbian'); },
-  'Investor': () => { console.log('Corporate Competition helper not implemented: Investor'); },
-  'Botanist': () => { console.log('Corporate Competition helper not implemented: Botanist'); },
-  'Incorporator': () => { console.log('Corporate Competition helper not implemented: Incorporator'); },
-  'Metropolist': () => { console.log('Corporate Competition helper not implemented: Metropolist'); },
-  'Traveller': () => { console.log('Corporate Competition helper not implemented: Traveller'); },
-  'Landscaper': () => { console.log('Corporate Competition helper not implemented: Landscaper'); },
-  'Highlander': () => { console.log('Corporate Competition helper not implemented: Highlander'); },
-  'Manufacturer': () => { console.log('Corporate Competition helper not implemented: Manufacturer'); },
-  'Blacksmith': () => { console.log('Corporate Competition helper not implemented: Blacksmith'); },
-  'Administrator': () => { console.log('Corporate Competition helper not implemented: Administrator'); },
-  'Collector': () => { console.log('Corporate Competition helper not implemented: Collector'); },
-  'Constructor': () => { console.log('Corporate Competition helper not implemented: Constructor'); },
-  'Politician': () => { console.log('Corporate Competition helper not implemented: Politician'); },
-  'Visionary': () => { console.log('Corporate Competition helper not implemented: Visionary'); },
-  'Promoter': () => { console.log('Corporate Competition helper not implemented: Promoter'); },
-};
+export const AWARD_EVALS: Map<AwardName, (ctx: MarsBotMAContext) => number | undefined> = new Map([
+  // Tharsis
+  ['Landlord', (ctx) => ctx.tilesOwned],
+  ['Banker', (ctx) => ctx.trackPos(0) + ctx.trackPos(2)],
+  ['Scientist', (ctx) => ctx.trackPos(3)],
+  ['Thermalist', (ctx) => ctx.trackPos(4) + 5],
+  ['Miner', (ctx) => ctx.trackPos(1) + 5],
+  // Hellas
+  ['Cultivator', () => undefined],
+  ['Magnate', (ctx) => ctx.playedCards.green],
+  ['Space Baron', (ctx) => ctx.trackPos(1)],
+  ['Excentric', (ctx) => Math.floor(ctx.mc / 5)],
+  ['Contractor', (ctx) => ctx.trackPos(0)],
+  // Elysium
+  ['Celebrity', (ctx) => ctx.playedCards.costing20Plus],
+  ['Industrialist', (ctx) => ctx.trackPos(4) + 5],
+  ['Desert Settler', () => undefined],
+  ['Estate Dealer', () => undefined],
+  ['Benefactor', (ctx) => Math.max(0, ctx.tr - 15)],
+  // Terra Cimmeria
+  ['Electrician', (ctx) => ctx.trackPos(4)],
+  ['Founder', () => undefined],
+  ['Mogul', (ctx) => ctx.highestTrackPos * 2],
+  ['Zoologist', (ctx) => ctx.trackPos(6) + 5],
+  ['Forecaster', (ctx) => Math.floor(ctx.mc / 7)],
+  // Utopia Planitia
+  ['Suburbian', () => undefined],
+  ['Investor', (ctx) => ctx.trackPos(0) + ctx.trackPos(3)],
+  ['Botanist', (ctx) => Math.max(0, ctx.trackPos(6) - 2)],
+  ['Incorporator', (ctx) => ctx.playedCards.costing10OrLess],
+  ['Metropolist', () => undefined],
+  // Vastitas Borealis Nova
+  ['Traveller', (ctx) => ctx.trackPos(0) + ctx.trackPos(3) + 5],
+  ['Landscaper', () => undefined],
+  ['Highlander', () => undefined],
+  ['Manufacturer', (ctx) => ctx.trackPos(0) + ctx.trackPos(4)],
+  ['Blacksmith', (ctx) => Math.max(ctx.trackPos(0), ctx.trackPos(1))],
+  // Modular
+  ['Administrator', (ctx) => ctx.playedCards.withoutTags + 2],
+  ['Collector', (ctx) => ctx.tracksAtOrAbove(3)],
+  ['Constructor', () => undefined],
+  ['Politician', () => 5],
+  ['Visionary', (ctx) => ctx.lowestTrackPos * 2],
+  ['Promoter', (ctx) => ctx.trackPos(4)],
+]);
