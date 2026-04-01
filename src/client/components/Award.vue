@@ -75,7 +75,7 @@ export default defineComponent({
       return getAward(this.award.name).description;
     },
     automaRule(): string | undefined {
-      return MARSBOT_AWARD_DESCRIPTIONS[this.award.name];
+      return MARSBOT_AWARD_DESCRIPTIONS.get(this.award.name);
     },
   },
 });

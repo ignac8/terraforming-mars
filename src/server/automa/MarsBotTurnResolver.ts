@@ -332,7 +332,7 @@ export class MarsBotTurnResolver {
 
   /** Check if MarsBot meets a milestone using track-based criteria. */
   public marsBotMeetsMilestone(milestone: IMilestone): boolean {
-    const evalFn = MILESTONE_EVALS[milestone.name];
+    const evalFn = MILESTONE_EVALS.get(milestone.name);
     if (evalFn !== undefined) {
       const result = evalFn(this.buildMAContext());
       if (result !== undefined) return result;
@@ -375,7 +375,7 @@ export class MarsBotTurnResolver {
   /** Get MarsBot's value for an award using track-based evaluation. */
   public getMarsBotAwardValue(award: IAward): number {
     const offset = this.difficulty === 'easy' ? -5 : 0;
-    const evalFn = AWARD_EVALS[award.name];
+    const evalFn = AWARD_EVALS.get(award.name);
     if (evalFn !== undefined) {
       const result = evalFn(this.buildMAContext());
       if (result !== undefined) return result + offset;
