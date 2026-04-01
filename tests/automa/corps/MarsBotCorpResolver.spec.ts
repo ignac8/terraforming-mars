@@ -4,7 +4,7 @@ import {TestPlayer} from '../../TestPlayer';
 import {IGame} from '../../../src/server/IGame';
 import {MarsBot} from '../../../src/server/automa/MarsBot';
 import {MarsBotCorpResolver} from '../../../src/server/automa/corps/MarsBotCorpResolver';
-import {MarsBotCorpId, IMarsBotCorp, MarsBotTrackCube} from '../../../src/common/automa/MarsBotCorpTypes';
+import {IMarsBotCorp, MarsBotTrackCube} from '../../../src/server/automa/MarsBotCorpTypes';
 import {
   registerMarsBotCorp,
   clearMarsBotCorpRegistry,
@@ -15,11 +15,9 @@ import {CardName} from '../../../src/common/cards/CardName';
 import {SeededRandom} from '../../../src/common/utils/Random';
 import {BoardName} from '../../../src/common/boards/BoardName';
 
-const TEST_CORP_ID_A = 'TEST_CORP_A' as MarsBotCorpId;
-const TEST_CORP_ID_B = 'TEST_CORP_B' as MarsBotCorpId;
-
-function createTestCorp(overrides: Partial<IMarsBotCorp> & {id: MarsBotCorpId, name: string}): IMarsBotCorp {
+function createTestCorp(overrides: Partial<IMarsBotCorp> & {name: CardName}): IMarsBotCorp {
   return {
+    description: '',
     startingTags: [],
     ...overrides,
   };
@@ -52,18 +50,18 @@ describe('MarsBotCorpResolver', () => {
     });
 
     it('selects a corp from registry', () => {
-      const corpA = createTestCorp({id: TEST_CORP_ID_A, name: 'Test Corp A'});
+      const corpA = createTestCorp({name: CardName.ECOLINE});
       registerMarsBotCorp(corpA);
 
       const rng = new SeededRandom(42);
-      const result = MarsBotCorpResolver.selectCorp(CardName.ECOLINE, rng);
+      const result = MarsBotCorpResolver.selectCorp(CardName.CREDICOR, rng);
       expect(result).to.not.be.undefined;
-      expect(result!.name).to.eq('Test Corp A');
+      expect(result!.name).to.eq(CardName.ECOLINE);
     });
 
     it('excludes corp matching human corp name', () => {
-      const corpA = createTestCorp({id: TEST_CORP_ID_A, name: CardName.ECOLINE});
-      const corpB = createTestCorp({id: TEST_CORP_ID_B, name: 'Other Corp'});
+      const corpA = createTestCorp({name: CardName.ECOLINE});
+      const corpB = createTestCorp({name: CardName.HELION});
       registerMarsBotCorp(corpA);
       registerMarsBotCorp(corpB);
 
@@ -71,11 +69,11 @@ describe('MarsBotCorpResolver', () => {
       // Human has EcoLine, so MarsBot should get Other Corp
       const result = MarsBotCorpResolver.selectCorp(CardName.ECOLINE, rng);
       expect(result).to.not.be.undefined;
-      expect(result!.name).to.eq('Other Corp');
+      expect(result!.name).to.eq(CardName.HELION);
     });
 
     it('returns undefined when only corp matches human', () => {
-      const corpA = createTestCorp({id: TEST_CORP_ID_A, name: CardName.ECOLINE});
+      const corpA = createTestCorp({name: CardName.ECOLINE});
       registerMarsBotCorp(corpA);
 
       const rng = new SeededRandom(42);
@@ -89,8 +87,8 @@ describe('MarsBotCorpResolver', () => {
       const {marsBot} = createAutomaGame();
 
       const corp = createTestCorp({
-        id: TEST_CORP_ID_A,
-        name: 'Test Corp',
+        id: CardName.ECOLINE,
+        name: CardName.ECOLINE,
         startingTags: [Tag.BUILDING, Tag.BUILDING], // Track 1 should advance twice
       });
 
@@ -111,7 +109,7 @@ describe('MarsBotCorpResolver', () => {
       ];
 
       const corp = createTestCorp({
-        id: TEST_CORP_ID_A,
+        id: CardName.ECOLINE,
         name: 'Cube Corp',
         trackCubes: cubes,
       });
@@ -130,7 +128,7 @@ describe('MarsBotCorpResolver', () => {
       let setupCalled = false;
 
       const corp = createTestCorp({
-        id: TEST_CORP_ID_A,
+        id: CardName.ECOLINE,
         name: 'Setup Corp',
         setup: {
           resolve: () => { setupCalled = true; },
@@ -150,7 +148,7 @@ describe('MarsBotCorpResolver', () => {
       let triggeredPosition = 0;
 
       const corp = createTestCorp({
-        id: TEST_CORP_ID_A,
+        id: CardName.ECOLINE,
         name: 'Trigger Corp',
         trackCubes: [{trackIndex: 1, position: 3, cubeType: 'white'}],
         effect: {
@@ -179,7 +177,7 @@ describe('MarsBotCorpResolver', () => {
       let triggerCount = 0;
 
       const corp = createTestCorp({
-        id: TEST_CORP_ID_A,
+        id: CardName.ECOLINE,
         name: 'No Re-Trigger',
         trackCubes: [{trackIndex: 1, position: 3, cubeType: 'white'}],
         effect: {
@@ -203,7 +201,7 @@ describe('MarsBotCorpResolver', () => {
       let triggered = false;
 
       const corp = createTestCorp({
-        id: TEST_CORP_ID_A,
+        id: CardName.ECOLINE,
         name: 'No Cube',
         effect: {
           onTrackCubeTrigger: () => { triggered = true; },
@@ -222,7 +220,7 @@ describe('MarsBotCorpResolver', () => {
       let called = false;
 
       const corp = createTestCorp({
-        id: TEST_CORP_ID_A,
+        id: CardName.ECOLINE,
         name: 'PerGen Corp',
         perGeneration: {
           timing: 'roundStart',
@@ -238,7 +236,7 @@ describe('MarsBotCorpResolver', () => {
       const {marsBot} = createAutomaGame();
 
       const corp = createTestCorp({
-        id: TEST_CORP_ID_A,
+        id: CardName.ECOLINE,
         name: 'No PerGen',
       });
 
@@ -252,8 +250,7 @@ describe('MarsBotCorpResolver', () => {
       const {marsBot} = createAutomaGame();
 
       const corp = createTestCorp({
-        id: TEST_CORP_ID_A,
-        name: 'Serial Corp',
+        name: CardName.ECOLINE,
         trackCubes: [{trackIndex: 1, position: 7, cubeType: 'credit'}],
       });
 
@@ -264,7 +261,7 @@ describe('MarsBotCorpResolver', () => {
 
       const serialized = marsBot.serialize();
 
-      expect(serialized.corpId).to.eq(TEST_CORP_ID_A);
+      expect(serialized.corpId).to.eq(CardName.ECOLINE);
       expect(serialized.trackCubePositions).to.have.length(1);
       expect(serialized.triggeredCubePositions).to.deep.eq(['1:7']);
 
@@ -273,7 +270,7 @@ describe('MarsBotCorpResolver', () => {
       marsBot2.restoreState(serialized);
 
       expect(marsBot2.corp).to.not.be.undefined;
-      expect(marsBot2.corp!.name).to.eq('Serial Corp');
+      expect(marsBot2.corp!.name).to.eq(CardName.ECOLINE);
       expect(marsBot2.trackCubePositions.size).to.eq(1);
       expect(marsBot2.hasCubeAt(1, 7)).to.not.be.undefined;
       expect(marsBot2.triggeredCubePositions.has('1:7')).to.be.true;
@@ -282,15 +279,15 @@ describe('MarsBotCorpResolver', () => {
 
   describe('registry', () => {
     it('registers and retrieves corps', () => {
-      const corpA = createTestCorp({id: TEST_CORP_ID_A, name: 'Corp A'});
+      const corpA = createTestCorp({name: CardName.ECOLINE});
       registerMarsBotCorp(corpA);
 
       expect(getAllMarsBotCorps()).to.have.length(1);
-      expect(getAllMarsBotCorps()[0].name).to.eq('Corp A');
+      expect(getAllMarsBotCorps()[0].name).to.eq(CardName.ECOLINE);
     });
 
     it('throws on duplicate registration', () => {
-      const corpA = createTestCorp({id: TEST_CORP_ID_A, name: 'Corp A'});
+      const corpA = createTestCorp({name: CardName.ECOLINE});
       registerMarsBotCorp(corpA);
 
       expect(() => registerMarsBotCorp(corpA)).to.throw('already registered');

@@ -2,7 +2,7 @@ import {IGame} from '../IGame';
 import {IPlayer} from '../IPlayer';
 import {IProjectCard} from '../cards/IProjectCard';
 import {Tag} from '../../common/cards/Tag';
-import {toCorpCardRef} from '../../common/automa/MarsBotCorpTypes';
+import {toCorpCardRef} from './MarsBotCorpTypes';
 import {CardType} from '../../common/cards/CardType';
 import {TileType, CITY_TILES, GREENERY_TILES} from '../../common/TileType';
 import {Board} from '../boards/Board';

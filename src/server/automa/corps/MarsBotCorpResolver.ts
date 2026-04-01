@@ -1,4 +1,4 @@
-import {IMarsBotCorp, trackCubeKey} from '../../../common/automa/MarsBotCorpTypes';
+import {IMarsBotCorp, trackCubeKey} from '../MarsBotCorpTypes';
 import {CardName} from '../../../common/cards/CardName';
 import {Random} from '../../../common/utils/Random';
 import {getAllMarsBotCorps} from './MarsBotCorpRegistry';

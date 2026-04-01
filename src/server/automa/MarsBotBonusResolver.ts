@@ -57,7 +57,7 @@ export class MarsBotBonusResolver {
       this.resolveLocalNeuralInstance(card);
       break;
     case BonusCardId.B08_CORPORATE_COMPETITION:
-      this.resolveCorporateCompetition(card);
+      this.resolveCorporateCompetition();
       break;
 
     // Corp-specific bonus cards (B22-B32)
@@ -283,7 +283,7 @@ export class MarsBotBonusResolver {
   }
 
   // B08: Corporate Competition
-  private resolveCorporateCompetition(card: MarsBotBonusCard): void {
+  private resolveCorporateCompetition(): void {
     if (this.turnResolver.mcSupply < 5) {
       // Not enough MC, draw another bonus card
       this.drawAndResolveAnotherBonus();

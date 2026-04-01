@@ -1,4 +1,5 @@
 import {expect} from 'chai';
+import {CardName} from '../../../src/common/cards/CardName';
 import {testGame} from '../../TestGame';
 import {IGame} from '../../../src/server/IGame';
 import {TestPlayer} from '../../TestPlayer';
@@ -36,7 +37,7 @@ describe('Corp Effect Hooks', () => {
   describe('C05 Inventrix hasRequirements', () => {
     it('gains 2 M€ for cards with requirements', () => {
       const {marsBot} = createAutomaGame();
-      const corp = getMarsBotCorp('C05_INVENTRIX')!;
+      const corp = getMarsBotCorp(CardName.INVENTRIX)!;
       marsBot.setCorpAndSetup(corp);
       const mcBefore = marsBot.turnResolver.mcSupply;
       corp.effect!.onProjectCardResolved!(marsBot.getCorpContext(), {name: 'Req', tags: [], cost: 10, hasRequirements: true, victoryPoints: 0});
@@ -45,7 +46,7 @@ describe('Corp Effect Hooks', () => {
 
     it('does NOT gain M€ for cards without requirements', () => {
       const {marsBot} = createAutomaGame();
-      const corp = getMarsBotCorp('C05_INVENTRIX')!;
+      const corp = getMarsBotCorp(CardName.INVENTRIX)!;
       marsBot.setCorpAndSetup(corp);
       const mcBefore = marsBot.turnResolver.mcSupply;
       corp.effect!.onProjectCardResolved!(marsBot.getCorpContext(), {name: 'NoReq', tags: [], cost: 10, hasRequirements: false, victoryPoints: 0});
@@ -56,7 +57,7 @@ describe('Corp Effect Hooks', () => {
   describe('C17 Vitor VP check', () => {
     it('gains 3 M€ for positive VP cards', () => {
       const {marsBot} = createAutomaGame();
-      const corp = getMarsBotCorp('C17_VITOR')!;
+      const corp = getMarsBotCorp(CardName.VITOR)!;
       marsBot.setCorpAndSetup(corp);
       const mcBefore = marsBot.turnResolver.mcSupply;
       corp.effect!.onProjectCardResolved!(marsBot.getCorpContext(), {name: 'VP+', tags: [], cost: 10, hasRequirements: false, victoryPoints: 1});
@@ -65,7 +66,7 @@ describe('Corp Effect Hooks', () => {
 
     it('does NOT gain M€ for 0 VP cards', () => {
       const {marsBot} = createAutomaGame();
-      const corp = getMarsBotCorp('C17_VITOR')!;
+      const corp = getMarsBotCorp(CardName.VITOR)!;
       marsBot.setCorpAndSetup(corp);
       const mcBefore = marsBot.turnResolver.mcSupply;
       corp.effect!.onProjectCardResolved!(marsBot.getCorpContext(), {name: 'VP0', tags: [], cost: 10, hasRequirements: false, victoryPoints: 0});
@@ -74,7 +75,7 @@ describe('Corp Effect Hooks', () => {
 
     it('does NOT gain M€ for negative VP cards', () => {
       const {marsBot} = createAutomaGame();
-      const corp = getMarsBotCorp('C17_VITOR')!;
+      const corp = getMarsBotCorp(CardName.VITOR)!;
       marsBot.setCorpAndSetup(corp);
       const mcBefore = marsBot.turnResolver.mcSupply;
       corp.effect!.onProjectCardResolved!(marsBot.getCorpContext(), {name: 'VP-', tags: [], cost: 10, hasRequirements: false, victoryPoints: -1});
@@ -85,7 +86,7 @@ describe('Corp Effect Hooks', () => {
   describe('C25 Viron floater + VP', () => {
     it('gains floater and tracks action cards', () => {
       const {marsBot} = createAutomaGame();
-      const corp = getMarsBotCorp('C25_VIRON')!;
+      const corp = getMarsBotCorp(CardName.VIRON)!;
       marsBot.setCorpAndSetup(corp);
       corp.effect!.onProjectCardResolved!(marsBot.getCorpContext(), {name: 'Card1', tags: [Tag.BUILDING], cost: 5, hasRequirements: false, victoryPoints: 0});
       expect(marsBot.floaterCount).to.eq(1);
@@ -94,7 +95,7 @@ describe('Corp Effect Hooks', () => {
 
     it('vpBonus returns action card count', () => {
       const {marsBot} = createAutomaGame();
-      const corp = getMarsBotCorp('C25_VIRON')!;
+      const corp = getMarsBotCorp(CardName.VIRON)!;
       marsBot.setCorpAndSetup(corp);
       marsBot.corpSpecificState.set('actionCardsPlayed', 5);
       expect(corp.effect!.vpBonus!(marsBot.getCorpContext())).to.eq(5);
@@ -104,7 +105,7 @@ describe('Corp Effect Hooks', () => {
   describe('C28 Aphrodite onVenusRaised', () => {
     it('gains 2 M€ when Venus raised', () => {
       const {marsBot} = createAutomaGame();
-      const corp = getMarsBotCorp('C28_APHRODITE')!;
+      const corp = getMarsBotCorp(CardName.APHRODITE)!;
       marsBot.setCorpAndSetup(corp);
       const mcBefore = marsBot.turnResolver.mcSupply;
       corp.effect!.onVenusRaised!(marsBot.getCorpContext());
@@ -115,7 +116,7 @@ describe('Corp Effect Hooks', () => {
   describe('C10 Tharsis Republic onTilePlaced', () => {
     it('gains 2 M€ when any city placed', () => {
       const {marsBot} = createAutomaGame();
-      const corp = getMarsBotCorp('C10_THARSIS_REPUBLIC')!;
+      const corp = getMarsBotCorp(CardName.THARSIS_REPUBLIC)!;
       marsBot.setCorpAndSetup(corp);
       const mcBefore = marsBot.turnResolver.mcSupply;
       corp.effect!.onTilePlaced!(marsBot.getCorpContext(), false, 2); // CITY = 2
@@ -124,7 +125,7 @@ describe('Corp Effect Hooks', () => {
 
     it('advances event track when MarsBot places city', () => {
       const {marsBot} = createAutomaGame();
-      const corp = getMarsBotCorp('C10_THARSIS_REPUBLIC')!;
+      const corp = getMarsBotCorp(CardName.THARSIS_REPUBLIC)!;
       marsBot.setCorpAndSetup(corp);
       const eventBefore = marsBot.board.tracks[2].position;
       corp.effect!.onTilePlaced!(marsBot.getCorpContext(), true, 2); // CITY = 2
@@ -133,7 +134,7 @@ describe('Corp Effect Hooks', () => {
 
     it('does not trigger on greenery placement', () => {
       const {marsBot} = createAutomaGame();
-      const corp = getMarsBotCorp('C10_THARSIS_REPUBLIC')!;
+      const corp = getMarsBotCorp(CardName.THARSIS_REPUBLIC)!;
       marsBot.setCorpAndSetup(corp);
       const mcBefore = marsBot.turnResolver.mcSupply;
       corp.effect!.onTilePlaced!(marsBot.getCorpContext(), false, 0); // GREENERY = 0
@@ -144,7 +145,7 @@ describe('Corp Effect Hooks', () => {
   describe('C35 Lakefront Resorts onTilePlaced', () => {
     it('ocean placed with white cube → remove cube, advance building track', () => {
       const {marsBot} = createAutomaGame();
-      const corp = getMarsBotCorp('C35_LAKEFRONT_RESORTS')!;
+      const corp = getMarsBotCorp(CardName.LAKEFRONT_RESORTS)!;
       marsBot.setCorpAndSetup(corp);
       expect(marsBot.corpSpecificState.get('whiteCubeOnCard')).to.eq(1);
       const buildingBefore = marsBot.board.tracks[0].position;
@@ -155,7 +156,7 @@ describe('Corp Effect Hooks', () => {
 
     it('ocean placed without white cube → place white cube', () => {
       const {marsBot} = createAutomaGame();
-      const corp = getMarsBotCorp('C35_LAKEFRONT_RESORTS')!;
+      const corp = getMarsBotCorp(CardName.LAKEFRONT_RESORTS)!;
       marsBot.setCorpAndSetup(corp);
       marsBot.corpSpecificState.set('whiteCubeOnCard', 0);
       corp.effect!.onTilePlaced!(marsBot.getCorpContext(), false, 1); // OCEAN = 1
@@ -166,7 +167,7 @@ describe('Corp Effect Hooks', () => {
   describe('C36 Pristar onGlobalParameterRaised', () => {
     it('intercepts parameter raise when white cube on card', () => {
       const {marsBot} = createAutomaGame();
-      const corp = getMarsBotCorp('C36_PRISTAR')!;
+      const corp = getMarsBotCorp(CardName.PRISTAR)!;
       marsBot.setCorpAndSetup(corp);
       marsBot.corpSpecificState.set('whiteCubeOnCard', 1);
       const trBefore = marsBot.player.getTerraformRating();
@@ -180,7 +181,7 @@ describe('Corp Effect Hooks', () => {
 
     it('does not intercept without white cube', () => {
       const {marsBot} = createAutomaGame();
-      const corp = getMarsBotCorp('C36_PRISTAR')!;
+      const corp = getMarsBotCorp(CardName.PRISTAR)!;
       marsBot.setCorpAndSetup(corp);
       marsBot.corpSpecificState.set('whiteCubeOnCard', 0);
       const skip = corp.effect!.onGlobalParameterRaised!(marsBot.getCorpContext(), 'temperature');
@@ -189,7 +190,7 @@ describe('Corp Effect Hooks', () => {
 
     it('per-gen adds white cube when missing', () => {
       const {marsBot} = createAutomaGame();
-      const corp = getMarsBotCorp('C36_PRISTAR')!;
+      const corp = getMarsBotCorp(CardName.PRISTAR)!;
       marsBot.setCorpAndSetup(corp);
       marsBot.corpSpecificState.set('whiteCubeOnCard', 0);
       corp.perGeneration!.resolve(marsBot.getCorpContext());
@@ -200,7 +201,7 @@ describe('Corp Effect Hooks', () => {
   describe('C32 Polyphemos discard fewest tags', () => {
     it('discards card with fewest tags from action deck', () => {
       const {marsBot} = createAutomaGame();
-      const corp = getMarsBotCorp('C32_POLYPHEMOS')!;
+      const corp = getMarsBotCorp(CardName.POLYPHEMOS)!;
       marsBot.setCorpAndSetup(corp);
       const deckBefore = marsBot.actionDeck.length;
       corp.perGeneration!.resolve(marsBot.getCorpContext());
@@ -211,14 +212,14 @@ describe('Corp Effect Hooks', () => {
   describe('C06 Mining Guild MC interception', () => {
     it('intercepts MC gains, card starts at 10', () => {
       const {marsBot} = createAutomaGame();
-      const corp = getMarsBotCorp('C06_MINING_GUILD')!;
+      const corp = getMarsBotCorp(CardName.MINING_GUILD)!;
       marsBot.setCorpAndSetup(corp);
       expect(marsBot.corpSpecificState.get('mcOnCard')).to.eq(10);
     });
 
     it('onMcGained returns reduced amount', () => {
       const {marsBot} = createAutomaGame();
-      const corp = getMarsBotCorp('C06_MINING_GUILD')!;
+      const corp = getMarsBotCorp(CardName.MINING_GUILD)!;
       marsBot.setCorpAndSetup(corp);
       // 5 MC gained, 5 intercepted to card (10 → 5), 0 passes through
       const actual = corp.effect!.onMcGained!(marsBot.getCorpContext(), 5);
@@ -228,7 +229,7 @@ describe('Corp Effect Hooks', () => {
 
     it('when card empties, refill + advance building track', () => {
       const {marsBot} = createAutomaGame();
-      const corp = getMarsBotCorp('C06_MINING_GUILD')!;
+      const corp = getMarsBotCorp(CardName.MINING_GUILD)!;
       marsBot.setCorpAndSetup(corp);
       marsBot.corpSpecificState.set('mcOnCard', 2);
       const buildingBefore = marsBot.board.tracks[0].position;
@@ -242,7 +243,7 @@ describe('Corp Effect Hooks', () => {
   describe('Ecoline/Ecotec plant targeting (FAQ)', () => {
     it('plant removal targets plantResources on corp card when present', () => {
       const {marsBot} = createAutomaGame();
-      const corp = getMarsBotCorp('C40_ECOTEC')!;
+      const corp = getMarsBotCorp(CardName.ECOTEC)!;
       marsBot.setCorpAndSetup(corp);
       // Ecotec starts with 2 plant resources
       expect(marsBot.corpSpecificState.get('plantResources')).to.eq(2);
@@ -255,7 +256,7 @@ describe('Corp Effect Hooks', () => {
 
     it('non-plant removal still deducts from MC supply', () => {
       const {marsBot} = createAutomaGame();
-      const corp = getMarsBotCorp('C40_ECOTEC')!;
+      const corp = getMarsBotCorp(CardName.ECOTEC)!;
       marsBot.setCorpAndSetup(corp);
       marsBot.turnResolver.mcSupply = 10;
       marsBot.player.stock.add('steel' as any, -3);

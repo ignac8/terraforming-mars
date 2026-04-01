@@ -15,7 +15,7 @@ import {CardName} from '../../common/cards/CardName';
 import {ICard} from '../cards/ICard';
 import {IMilestone} from '../milestones/IMilestone';
 import {IAward} from '../awards/IAward';
-import {trackCubeKey} from '../../common/automa/MarsBotCorpTypes';
+import {trackCubeKey} from './MarsBotCorpTypes';
 import {registerBaseGameCorps} from './corps/BaseGameCorps';
 import {registerExpansionCorps} from './corps/ExpansionCorps';
 
