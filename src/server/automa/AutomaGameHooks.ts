@@ -7,7 +7,7 @@ import {MarsBotModel} from '../../common/models/MarsBotModel';
 import {getAutomaMaxGeneration} from '../../common/automa/AutomaTypes';
 import {SelectCard} from '../inputs/SelectCard';
 import {IProjectCard} from '../cards/IProjectCard';
-import {toCorpCardRef} from '../../common/automa/MarsBotCorpTypes';
+import {toCorpCardRef} from './MarsBotCorpTypes';
 import {inplaceRemove} from '../../common/utils/utils';
 import {MarsBotCorpResolver} from './corps/MarsBotCorpResolver';
 import {MarsBotDraftResolver} from './corps/MarsBotDraftResolver';

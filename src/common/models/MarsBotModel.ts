@@ -1,4 +1,4 @@
-import {DifficultyLevel, TrackAction} from '../automa/AutomaTypes';
+import {DifficultyLevel, TrackAction, CubeType} from '../automa/AutomaTypes';
 import {Tag} from '../cards/Tag';
 import {CubeType} from '../automa/MarsBotCorpTypes';
 import {CardName} from '../cards/CardName';

@@ -1,5 +1,5 @@
 import {IProjectCard} from '../../cards/IProjectCard';
-import {MarsBotDraftPriority} from '../../../common/automa/MarsBotCorpTypes';
+import {MarsBotDraftPriority} from '../MarsBotCorpTypes';
 import {Tag} from '../../../common/cards/Tag';
 import {Random} from '../../../common/utils/Random';
 import {MarsBotBoard} from '../MarsBotBoard';
