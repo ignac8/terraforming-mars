@@ -52,6 +52,7 @@
 <script lang="ts">
 import {defineComponent} from 'vue';
 import {TrackAction} from '@/common/automa/AutomaTypes';
+import {MarsBotModel} from '@/common/models/MarsBotModel';
 
 const ACTION_ICONS: Partial<Record<TrackAction, string>> = {
   'greenery': 'G',
@@ -87,7 +88,7 @@ export default defineComponent({
   name: 'MarsBotPanel',
   props: {
     model: {
-      type: Object,
+      type: Object as () => MarsBotModel,
       required: true,
     },
   },
