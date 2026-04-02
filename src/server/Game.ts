@@ -96,6 +96,13 @@ export class Game implements IGame, Logger {
   public readonly id: GameId;
   public readonly gameOptions: Readonly<GameOptions>;
   public readonly players: ReadonlyArray<IPlayer>;
+  public get allPlayers(): ReadonlyArray<IPlayer> {
+    const marsBotPlayer = this.marsBot?.player;
+    if (marsBotPlayer !== undefined) {
+      return [...this.players, marsBotPlayer];
+    }
+    return this.players;
+  }
   // The API makes this readonly.
   public playersInGenerationOrder: ReadonlyArray<IPlayer> = [];
 
@@ -887,6 +894,14 @@ export class Game implements IGame, Logger {
 
     this.generation++;
     this.log('Generation ${0}', (b) => b.forNewGeneration().number(this.generation));
+
+    // Automa instant win: MarsBot wins when max generation is reached, game ends immediately.
+    if (this.automaHooks !== undefined && this.marsBot?.isInstantWin()) {
+      this.log('MarsBot wins! (Generation limit reached)');
+      this.gotoEndGame();
+      return;
+    }
+
     this.setNextFirstPlayer();
 
     this.players.forEach((player) => {
