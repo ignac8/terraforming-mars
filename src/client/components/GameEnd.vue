@@ -114,8 +114,8 @@
                           <td v-if="game.gameOptions.showTimers"><div class="game-end-timer">{{ getTimer(p) }}</div></td>
                           <td><div class="game-end-timer">{{ p.actionsTakenThisGame }}</div></td>
                       </tr>
-                      <tr v-if="isAutomaGame && game.marsBot?.vpBreakdown" class="game-end-marsbot-row">
-                          <td>MarsBot ({{game.marsBot.difficulty}})
+                      <tr v-if="isAutomaGame && game.marsBot?.vpBreakdown" :class="getEndGamePlayerRowColorClass(game.marsBot.color)">
+                          <td>{{ game.marsBot.name }} ({{game.marsBot.difficulty}})
                             <div v-if="game.marsBot.corpName" class="column-corporation"><div v-i18n>{{ game.marsBot.corpName }}</div></div>
                           </td>
                           <td>{{game.marsBot.vpBreakdown.terraformRating}}</td>
@@ -181,27 +181,15 @@
                   </div>
                   <div v-if="isAutomaGame && game.marsBot?.vpBreakdown" class="game-end-column">
                       <div class="game-end-winer-scorebreak-player-title">
-                          <div class="game-end-player player_bg_color_bronze--bg_transparent">MarsBot</div>
+                          <div :class="'game-end-player ' + getEndGamePlayerRowColorClass(game.marsBot.color)">{{ game.marsBot.name }}</div>
                       </div>
-                      <div class="game-end-column-row">
-                        <div class="game-end-column-vp">{{game.marsBot.vpBreakdown.terraformRating}}</div>
-                        <div class="game-end-column-text" v-i18n>Terraform Rating</div>
+                      <div v-for="(v, i) in game.marsBot.vpBreakdown.detailsMilestones" :key="'m'+i" class="game-end-column-row">
+                        <div class="game-end-column-vp">{{v.victoryPoint}}</div>
+                        <div class="game-end-column-text">{{translateMilestoneDetails(v)}}</div>
                       </div>
-                      <div class="game-end-column-row">
-                        <div class="game-end-column-vp">{{game.marsBot.vpBreakdown.milestones}}</div>
-                        <div class="game-end-column-text" v-i18n>Milestones</div>
-                      </div>
-                      <div class="game-end-column-row">
-                        <div class="game-end-column-vp">{{game.marsBot.vpBreakdown.awards}}</div>
-                        <div class="game-end-column-text" v-i18n>Awards</div>
-                      </div>
-                      <div class="game-end-column-row">
-                        <div class="game-end-column-vp">{{game.marsBot.vpBreakdown.greenery}}</div>
-                        <div class="game-end-column-text" v-i18n>Greenery tiles</div>
-                      </div>
-                      <div class="game-end-column-row">
-                        <div class="game-end-column-vp">{{game.marsBot.vpBreakdown.cityAdjacentGreenery}}</div>
-                        <div class="game-end-column-text" v-i18n>Cities (adj. greenery)</div>
+                      <div v-for="(v, i) in game.marsBot.vpBreakdown.detailsAwards" :key="'a'+i" class="game-end-column-row">
+                        <div class="game-end-column-vp">{{v.victoryPoint}}</div>
+                        <div class="game-end-column-text">{{translateAwardDetails(v)}}</div>
                       </div>
                       <div class="game-end-column-row">
                         <div class="game-end-column-vp">{{game.marsBot.vpBreakdown.neuralInstance}}</div>
@@ -392,11 +380,12 @@ export default defineComponent({
           color: player.color,
         };
       });
-      if (this.game.marsBot?.vpByGeneration && this.game.marsBot.vpByGeneration.length > 0) {
+      const marsBot = this.game.marsBot;
+      if (marsBot?.vpByGeneration && marsBot.vpByGeneration.length > 0) {
         datasets.push({
-          label: 'MarsBot',
-          data: this.game.marsBot.vpByGeneration,
-          color: 'bronze' as Color,
+          label: marsBot.name,
+          data: marsBot.vpByGeneration,
+          color: marsBot.color,
         });
       }
       return datasets;
@@ -439,7 +428,7 @@ export default defineComponent({
       };
       const data = this.players.map((p) => extract(p.name, p.color, p.globalParameterSteps || {}));
       if (this.game.marsBot?.globalParameterSteps) {
-        data.push(extract('MarsBot', 'bronze' as Color, this.game.marsBot.globalParameterSteps));
+        data.push(extract(this.game.marsBot.name, this.game.marsBot.color, this.game.marsBot.globalParameterSteps));
       }
       return data;
     },
