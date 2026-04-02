@@ -6,6 +6,8 @@ import {IProjectCard} from '../cards/IProjectCard';
 import {Space} from '../boards/Space';
 import {Board} from '../boards/Board';
 
+import {MADetail} from '../../common/game/VictoryPointsBreakdown';
+
 export interface MarsBotVPBreakdown {
   terraformRating: number;
   milestones: number;
@@ -16,6 +18,8 @@ export interface MarsBotVPBreakdown {
   mcToVP: number;
   cardVP: number; // Only in Hard/Brutal mode
   total: number;
+  detailsMilestones: Array<MADetail>;
+  detailsAwards: Array<MADetail>;
 }
 
 /**
@@ -46,8 +50,8 @@ export class MarsBotScoring {
   /** Calculate MarsBot's complete VP breakdown. */
   public calculate(): MarsBotVPBreakdown {
     const tr = this.marsBot.getTerraformRating();
-    const milestones = this.calculateMilestoneVP();
-    const awards = this.calculateAwardVP();
+    const milestoneResult = this.calculateMilestoneVP();
+    const awardResult = this.calculateAwardVP();
     const greenery = this.countGreeneryVP();
     const cityAdjacentGreenery = this.countCityAdjacentGreeneryVP();
     const neuralInstance = this.calculateNeuralInstanceVP();
@@ -56,40 +60,45 @@ export class MarsBotScoring {
 
     return {
       terraformRating: tr,
-      milestones,
-      awards,
+      milestones: milestoneResult.total,
+      awards: awardResult.total,
       greenery,
       cityAdjacentGreenery,
       neuralInstance,
       mcToVP,
       cardVP,
-      total: tr + milestones + awards + greenery + cityAdjacentGreenery + neuralInstance + mcToVP + cardVP + this.corpVpBonus,
+      total: tr + milestoneResult.total + awardResult.total + greenery + cityAdjacentGreenery + neuralInstance + mcToVP + cardVP + this.corpVpBonus,
+      detailsMilestones: milestoneResult.details,
+      detailsAwards: awardResult.details,
     };
   }
 
-  private calculateMilestoneVP(): number {
-    return this.game.claimedMilestones
-      .filter((cm) => cm.player === this.marsBot)
-      .length * 5;
+  private calculateMilestoneVP(): {total: number, details: Array<MADetail>} {
+    const details: Array<MADetail> = [];
+    let total = 0;
+    for (const cm of this.game.claimedMilestones) {
+      if (cm.player === this.marsBot) {
+        total += 5;
+        details.push({message: 'Claimed ${0} milestone', messageArgs: [cm.milestone.name], victoryPoint: 5});
+      }
+    }
+    return {total, details};
   }
 
-  private calculateAwardVP(): number {
-    let vp = 0;
+  private calculateAwardVP(): {total: number, details: Array<MADetail>} {
+    const details: Array<MADetail> = [];
+    let total = 0;
     for (const fa of this.game.fundedAwards) {
       const award = fa.award;
-      // Get all players' scores for this award
       const marsBotScore = this.turnResolver.getMarsBotAwardValue(award);
       const humanScore = award.getScore(this.humanPlayer);
 
-      // Determine placement
-      if (marsBotScore > humanScore) {
-        vp += 5; // 1st place
-      } else if (marsBotScore === humanScore) {
-        vp += 5; // Tied for 1st = both get 5 (in 2-player)
+      if (marsBotScore >= humanScore) {
+        total += 5;
+        details.push({message: '${0} place for ${1} award (funded by ${2})', messageArgs: ['1st', award.name, fa.player.name], victoryPoint: 5});
       }
-      // No 2nd place VP in 2-player game
     }
-    return vp;
+    return {total, details};
   }
 
   private countGreeneryVP(): number {
