@@ -43,10 +43,9 @@ describe('MarsBotCorpResolver', () => {
   });
 
   describe('selectCorp', () => {
-    it('returns undefined with empty registry', () => {
+    it('throws with empty registry', () => {
       const rng = new SeededRandom(42);
-      const result = MarsBotCorpResolver.selectCorp(CardName.ECOLINE, rng);
-      expect(result).to.be.undefined;
+      expect(() => MarsBotCorpResolver.selectCorp(CardName.ECOLINE, rng)).to.throw('No MarsBot corps registered');
     });
 
     it('selects a corp from registry', () => {
@@ -72,13 +71,12 @@ describe('MarsBotCorpResolver', () => {
       expect(result!.name).to.eq(CardName.HELION);
     });
 
-    it('returns undefined when only corp matches human', () => {
+    it('throws when only corp matches human', () => {
       const corpA = createTestCorp({name: CardName.ECOLINE});
       registerMarsBotCorp(corpA);
 
       const rng = new SeededRandom(42);
-      const result = MarsBotCorpResolver.selectCorp(CardName.ECOLINE, rng);
-      expect(result).to.be.undefined;
+      expect(() => MarsBotCorpResolver.selectCorp(CardName.ECOLINE, rng)).to.throw('No MarsBot corps registered');
     });
   });
 
