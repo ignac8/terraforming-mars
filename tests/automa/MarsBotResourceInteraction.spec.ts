@@ -164,4 +164,45 @@ describe('MarsBot Resource Interaction (rules page 4-5)', () => {
       expect(marsBot.turnResolver.mcSupply).to.eq(10); // Unchanged
     });
   });
+
+  describe('Production decrease targeting', () => {
+    it('MarsBot is targetable when track position > 0', () => {
+      const {human, marsBot} = createAutomaGame();
+      marsBot.board.tracks[0].advance();
+      expect(marsBot.player.canHaveProductionReduced(Resource.STEEL, 1, human)).to.be.true;
+    });
+
+    it('MarsBot is NOT targetable when track is at position 0', () => {
+      const {human, marsBot} = createAutomaGame();
+      expect(marsBot.board.tracks[0].position).to.eq(0);
+      expect(marsBot.player.canHaveProductionReduced(Resource.STEEL, 1, human)).to.be.false;
+    });
+
+    it('MarsBot appears in target list for DecreaseAnyProduction when track > 0', () => {
+      const {human, marsBot} = createAutomaGame();
+      marsBot.board.tracks[0].advance();
+      marsBot.board.tracks[0].advance();
+      const targets = human.game.allPlayers.filter((p) => p.canHaveProductionReduced(Resource.STEEL, 1, human));
+      expect(targets).to.include(marsBot.player);
+    });
+
+    it('MarsBot production reports track position for mapped resource', () => {
+      const {marsBot} = createAutomaGame();
+      expect(marsBot.player.production[Resource.STEEL]).to.eq(0);
+      marsBot.board.tracks[0].advance();
+      marsBot.board.tracks[0].advance();
+      marsBot.board.tracks[0].advance();
+      expect(marsBot.player.production[Resource.STEEL]).to.eq(3);
+    });
+
+    it('production decrease regresses the corresponding track', () => {
+      const {marsBot} = createAutomaGame();
+      marsBot.board.tracks[0].advance();
+      marsBot.board.tracks[0].advance();
+      expect(marsBot.board.tracks[0].position).to.eq(2);
+
+      marsBot.player.production.add(Resource.STEEL, -1, {log: false});
+      expect(marsBot.board.tracks[0].position).to.eq(1);
+    });
+  });
 });

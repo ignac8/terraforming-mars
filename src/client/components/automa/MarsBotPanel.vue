@@ -262,8 +262,8 @@ export default defineComponent({
   box-shadow: inset 0 0 0 2px #fff;
 }
 .marsbot-square.cube-black {
-  border-color: #666;
-  box-shadow: inset 0 0 0 2px #333;
+  border-color: #000;
+  box-shadow: inset 0 0 0 2px #000;
 }
 .marsbot-square.cube-credit {
   border-color: #ffcc64;
@@ -274,8 +274,8 @@ export default defineComponent({
   border-color: #fff;
 }
 .marsbot-square.filled.cube-black {
-  background: #3d3baf;
-  border-color: #666;
+  background: #000;
+  border-color: #000;
 }
 .marsbot-square.filled.cube-credit {
   background: #d4a017;
