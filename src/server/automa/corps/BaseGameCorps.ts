@@ -2,7 +2,7 @@
  * Base game MarsBot corporation definitions (C01-C12).
  * Each corp implements the IMarsBotCorp interface and is registered in the global registry.
  */
-import {IMarsBotCorp, MarsBotTrackCube} from '../MarsBotCorpTypes';
+import {IMarsBotCorp, MarsBotTrackCube, MarsBotCorpContext} from '../MarsBotCorpTypes';
 import {Tag} from '../../../common/cards/Tag';
 import {CardName} from '../../../common/cards/CardName';
 import {BonusCardId} from '../../../common/automa/AutomaTypes';
@@ -15,7 +15,7 @@ export function whiteTrackCubes(trackIndex: number): MarsBotTrackCube[] {
 }
 
 /** Factory for the common "add bonus card to action deck before action phase" per-gen pattern. */
-export function bonusCardPerGen(bonusCardId: BonusCardId, corpName: string): {timing: 'beforeActionPhase', resolve: (ctx: import('../MarsBotCorpTypes').MarsBotCorpContext) => void} {
+export function bonusCardPerGen(bonusCardId: BonusCardId, corpName: string): {timing: 'beforeActionPhase', resolve: (ctx: MarsBotCorpContext) => void} {
   return {
     timing: 'beforeActionPhase',
     resolve(ctx) {

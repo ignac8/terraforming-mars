@@ -5,7 +5,6 @@ import {MarsBotTurnResolver} from './MarsBotTurnResolver';
 import {IProjectCard} from '../cards/IProjectCard';
 import {Space} from '../boards/Space';
 import {Board} from '../boards/Board';
-
 import {MADetail} from '../../common/game/VictoryPointsBreakdown';
 
 export interface MarsBotVPBreakdown {
