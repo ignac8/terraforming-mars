@@ -183,19 +183,27 @@
                       <div class="game-end-winer-scorebreak-player-title">
                           <div :class="'game-end-player ' + getEndGamePlayerRowColorClass(game.marsBot.color)">{{ game.marsBot.name }}</div>
                       </div>
-                      <div v-for="(v, i) in game.marsBot.vpBreakdown.detailsMilestones" :key="'m'+i" class="game-end-column-row">
-                        <div class="game-end-column-vp">{{v.victoryPoint}}</div>
-                        <div class="game-end-column-text">{{translateMilestoneDetails(v)}}</div>
+                      <div v-for="(v, i) in game.marsBot.vpBreakdown.detailsMilestones" :key="'m'+i">
+                        <div class="game-end-column-row">
+                          <div class="game-end-column-vp">{{v.victoryPoint}}</div>
+                          <div class="game-end-column-text">{{translateMilestoneDetails(v)}}</div>
+                        </div>
                       </div>
-                      <div v-for="(v, i) in game.marsBot.vpBreakdown.detailsAwards" :key="'a'+i" class="game-end-column-row">
-                        <div class="game-end-column-vp">{{v.victoryPoint}}</div>
-                        <div class="game-end-column-text">{{translateAwardDetails(v)}}</div>
+                      <div v-for="(v, i) in game.marsBot.vpBreakdown.detailsAwards" :key="'a'+i">
+                        <div class="game-end-column-row">
+                          <div class="game-end-column-vp">{{v.victoryPoint}}</div>
+                          <div class="game-end-column-text">{{translateAwardDetails(v)}}</div>
+                        </div>
                       </div>
                       <div class="game-end-column-row">
+                        <div class="game-end-column-vp">&nbsp;</div>
+                        <div class="game-end-column-text">&nbsp;</div>
+                      </div>
+                      <div v-if="game.marsBot.vpBreakdown.neuralInstance > 0" class="game-end-column-row">
                         <div class="game-end-column-vp">{{game.marsBot.vpBreakdown.neuralInstance}}</div>
                         <div class="game-end-column-text" v-i18n>Neural Instance</div>
                       </div>
-                      <div class="game-end-column-row">
+                      <div v-if="game.marsBot.vpBreakdown.mcToVP > 0" class="game-end-column-row">
                         <div class="game-end-column-vp">{{game.marsBot.vpBreakdown.mcToVP}}</div>
                         <div class="game-end-column-text"><span v-i18n>MC to VP</span> ({{game.marsBot.mcPerVP || '?'}} MC/VP)</div>
                       </div>
