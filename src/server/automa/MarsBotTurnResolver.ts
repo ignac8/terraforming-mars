@@ -95,6 +95,11 @@ export class MarsBotTurnResolver {
       toCorpCardRef(card.name, card.tags, card.cost, card.requirements !== undefined, card.getVictoryPoints(this.marsBot)),
     );
 
+    // Notify human player's effect cards (Solar Logistics, Saturn Systems, etc.)
+    for (const effectCard of this.humanPlayer.playedCards) {
+      this.humanPlayer.defer(effectCard.onCardPlayedByAnyPlayer?.(this.humanPlayer, card, this.marsBot));
+    }
+
     // Card goes to MarsBot's played pile (for Hard mode scoring)
     this.game.projectDeck.discardPile.push(card);
   }
