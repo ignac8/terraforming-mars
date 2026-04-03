@@ -11,6 +11,9 @@ import {toCorpCardRef} from './MarsBotCorpTypes';
 import {inplaceRemove} from '../../common/utils/utils';
 import {MarsBotCorpResolver} from './corps/MarsBotCorpResolver';
 import {MarsBotDraftResolver} from './corps/MarsBotDraftResolver';
+import {SerializedAutomaState} from '../SerializedGame';
+import {IAward} from '../awards/IAward';
+import {IMilestone} from '../milestones/IMilestone';
 
 /**
  * All automa (MarsBot) hooks into the Game lifecycle.
@@ -305,11 +308,11 @@ export class AutomaGameHooks {
 
   // ---- Serialization ----
 
-  public serialize(): import('../SerializedGame').SerializedAutomaState {
+  public serialize(): SerializedAutomaState {
     return this.marsBot.serialize();
   }
 
-  public restoreState(state: import('../SerializedGame').SerializedAutomaState): void {
+  public restoreState(state: SerializedAutomaState): void {
     this.marsBot.restoreState(state);
   }
 
@@ -321,17 +324,17 @@ export class AutomaGameHooks {
   }
 
   /** Get MarsBot's score for a specific award (track-based). */
-  public getMarsBotAwardScore(award: import('../awards/IAward').IAward): number {
+  public getMarsBotAwardScore(award: IAward): number {
     return this.marsBot.turnResolver.getMarsBotAwardValue(award);
   }
 
   /** Get MarsBot's score for a specific milestone. */
-  public getMarsBotMilestoneScore(milestone: import('../milestones/IMilestone').IMilestone): number {
+  public getMarsBotMilestoneScore(milestone: IMilestone): number {
     return milestone.getScore(this.marsBot.player);
   }
 
   /** Check if MarsBot can claim a specific milestone. */
-  public canMarsBotClaimMilestone(milestone: import('../milestones/IMilestone').IMilestone): boolean {
+  public canMarsBotClaimMilestone(milestone: IMilestone): boolean {
     return this.marsBot.turnResolver.marsBotMeetsMilestone(milestone);
   }
 
