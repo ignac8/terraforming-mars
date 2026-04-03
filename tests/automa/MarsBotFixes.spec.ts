@@ -20,6 +20,10 @@ import {SpaceType} from '../../src/common/boards/SpaceType';
 import {Resource} from '../../src/common/Resource';
 import {createBaseBonusCards} from '../../src/server/automa/MarsBotBonusCard';
 import {BonusCardId} from '../../src/common/automa/AutomaTypes';
+import {CardType} from '../../src/common/cards/CardType';
+import {CardName} from '../../src/common/cards/CardName';
+import {SaturnSystems} from '../../src/server/cards/corporation/SaturnSystems';
+import {Phase} from '../../src/common/Phase';
 
 function createAutomaGame(difficulty: 'easy' | 'normal' | 'hard' | 'brutal' = 'normal'): {game: IGame, human: TestPlayer, marsBot: MarsBot} {
   const [game, human] = testGame(1, {automaOption: true, automaDifficulty: difficulty, boardName: BoardName.THARSIS});
@@ -448,6 +452,101 @@ describe('MarsBot Fixes', () => {
       expect(board.tracks[0].position).to.eq(2);
       // No TR gain from skipped action
       expect(marsBot.getTerraformRating()).to.eq(trBefore);
+    });
+  });
+
+  describe('Hard mode milestone uses track-based criteria', () => {
+    it('hardModeFirstTurnMilestone uses marsBotMeetsMilestone not canClaim', () => {
+      const {game, marsBot} = createAutomaGame('hard');
+      // Advance building track to 8 (Builder milestone requires track 0 >= 8)
+      for (let i = 0; i < 8; i++) {
+        marsBot.board.tracks[0].advance();
+      }
+      marsBot.turnResolver.mcSupply = 10;
+      // MarsBot needs 3 claimable milestones when 0 are claimed
+      // Builder (track 0 >= 8) is met. Need 2 more.
+      // Advance other tracks for Planner (all tracks >= 4) — need all 7 tracks at 4
+      for (let t = 1; t < 7; t++) {
+        for (let i = 0; i < 4; i++) {
+          marsBot.board.tracks[t].advance();
+        }
+      }
+      // Now Builder (track 0 >= 8) and Planner (all >= 4) are met
+      // Terraformer needs TR >= 35
+      marsBot.player.setTerraformRating(35);
+      // 3 milestones claimable, 0 claimed → should claim
+      marsBot.takeTurn();
+      expect(game.claimedMilestones.length).to.be.gte(1);
+      expect(marsBot.turnResolver.mcSupply).to.eq(2); // 10 - 8 = 2
+    });
+  });
+
+  describe('Instant win stops game at max generation', () => {
+    it('isInstantWin returns true at max generation', () => {
+      const {game, marsBot} = createAutomaGame();
+      // Default max generation for non-prelude is 20
+      (game as any).generation = 20;
+      expect(marsBot.isInstantWin()).to.be.true;
+    });
+
+    it('isInstantWin returns false before max generation', () => {
+      const {game, marsBot} = createAutomaGame();
+      (game as any).generation = 19;
+      expect(marsBot.isInstantWin()).to.be.false;
+    });
+  });
+
+  describe('onCardPlayedByAnyPlayer triggers for human cards when MarsBot plays', () => {
+    it('Saturn Systems gains MC production when MarsBot plays Jovian tag', () => {
+      const {marsBot, human} = createAutomaGame();
+      const saturnSystems = new SaturnSystems();
+      human.playCard(saturnSystems);
+
+      const prodBefore = human.production.megacredits;
+      const jovianCard = {cost: 10, tags: [Tag.JOVIAN], type: CardType.AUTOMATED, name: CardName.ASTEROID_MINING, metadata: {}, requirements: undefined, getVictoryPoints: () => 0} as any;
+      marsBot.turnResolver.resolveProjectCard(jovianCard);
+
+      expect(human.production.megacredits).to.eq(prodBefore + 1);
+    });
+  });
+
+  describe('VP breakdown includes milestone and award details', () => {
+    it('detailsMilestones lists claimed milestones', () => {
+      const {game, marsBot} = createAutomaGame();
+      const milestone = game.milestones[0];
+      game.claimedMilestones.push({player: marsBot.player, milestone});
+
+      const vp = marsBot.getVictoryPoints();
+      expect(vp.detailsMilestones).to.have.length(1);
+      expect(vp.detailsMilestones[0].victoryPoint).to.eq(5);
+      expect(vp.detailsMilestones[0].messageArgs).to.include(milestone.name);
+    });
+
+    it('detailsAwards lists winning awards', () => {
+      const {game, marsBot} = createAutomaGame();
+      const award = game.awards[0];
+      game.fundedAwards.push({player: marsBot.player, award});
+      // Advance tracks so MarsBot scores > 0
+      for (let i = 0; i < 5; i++) {
+        marsBot.board.tracks[0].advance();
+      }
+
+      const vp = marsBot.getVictoryPoints();
+      // MarsBot should win or tie (it has track position, human has 0)
+      expect(vp.detailsAwards.length).to.be.gte(1);
+      expect(vp.detailsAwards[0].victoryPoint).to.eq(5);
+    });
+  });
+
+  describe('allPlayers includes MarsBot', () => {
+    it('game.allPlayers includes MarsBot player', () => {
+      const {game, marsBot} = createAutomaGame();
+      expect(game.allPlayers).to.include(marsBot.player);
+    });
+
+    it('game.allPlayers has 2 players in automa game', () => {
+      const {game} = createAutomaGame();
+      expect(game.allPlayers.length).to.eq(2);
     });
   });
 });
