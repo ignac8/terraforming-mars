@@ -29,13 +29,19 @@ Network isolation:
    git clone -b automa https://github.com/ignac8/terraforming-mars.git ~/terraforming-mars
    ```
 
-2. Create `.env` from the example:
+2. Add upstream remote (for auto-merging upstream/main):
+   ```bash
+   cd ~/terraforming-mars
+   git remote add upstream https://github.com/terraforming-mars/terraforming-mars.git
+   ```
+
+3. Create `.env` from the example:
    ```bash
    cd ~/terraforming-mars/deploy
    cp .env.example .env
    ```
 
-3. Edit `.env` with real values:
+4. Edit `.env` with real values:
    - `DOMAIN` - your domain name
    - `POSTGRES_USER` / `POSTGRES_PASSWORD` / `POSTGRES_DB` - database credentials
    - `GIT_BRANCH` - branch to track (default: automa)
@@ -49,7 +55,7 @@ Network isolation:
    openssl rand -hex 16
    ```
 
-4. Start everything:
+5. Start everything:
    ```bash
    docker compose up -d
    ```
@@ -82,4 +88,6 @@ cat ~/terraforming-mars/deploy/.env
 
 ## Auto-deploy
 
-The updater container polls the configured git branch every 60 seconds. When new commits are detected, it pulls and rebuilds the app container automatically. No webhook or external access required.
+The updater container polls the configured git branch every 60 seconds. It also fetches and merges `upstream/main` automatically. When changes are detected, it rebuilds the app container. No webhook or external access required.
+
+The updater only rebuilds the `app` service — it cannot safely rebuild itself. Changes to caddy, postgres, or updater config require a manual `docker compose up --build -d` on the server.

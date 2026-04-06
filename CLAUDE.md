@@ -107,6 +107,20 @@ Composable input classes in `src/server/inputs/` (SelectCard, SelectSpace, Selec
 - `SpaceBonus` — `src/common/boards/SpaceBonus.ts` (numeric enum)
 - `Phase` — `src/common/Phase.ts`
 
+## Deployment
+
+Production deployment uses Docker Compose on a Hetzner VPS. Config lives in `deploy/`.
+
+- `deploy/docker-compose.yml` — 4 services: app, postgres, caddy (reverse proxy + auto-SSL), updater (git polling)
+- `deploy/Caddyfile` — Caddy reverse proxy config
+- `deploy/updater/` — Container that polls git every 60s, pulls changes, merges upstream/main, and rebuilds the app
+- `deploy/.env` — Secrets (gitignored), see `.env.example` for template
+- `deploy/README.md` — Full setup instructions
+
+The updater only rebuilds the `app` service. Changes to caddy, postgres, or updater config require manual `docker compose up --build -d` on the server.
+
+**Server access:** `ssh mzerko@46.224.183.150`
+
 ## Node Version
 
 Requires Node.js >=22.x <=24.x (`.nvmrc` specifies v24).
