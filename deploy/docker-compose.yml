@@ -64,6 +64,9 @@ services:
   updater:
     build: ./updater
     restart: unless-stopped
+    user: "1000:1000"
+    group_add:
+      - "110"
     environment:
       - GIT_BRANCH=${GIT_BRANCH:-automa}
     volumes:
