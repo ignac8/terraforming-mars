@@ -1,4 +1,8 @@
 #!/bin/sh
+export HOME=/tmp
+git config --global user.email "updater@terraforming-mars"
+git config --global user.name "updater"
+git config --global --add safe.directory /repo
 cd /repo
 
 check_and_update() {
