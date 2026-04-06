@@ -14,8 +14,11 @@ check_and_update() {
         REMOTE=$(git rev-parse "origin/${GIT_BRANCH}")
         if [ "$LOCAL" != "$REMOTE" ]; then
             echo "$(date -u) New commits on origin/${GIT_BRANCH}, pulling..."
-            git pull origin "${GIT_BRANCH}" 2>&1
-            CHANGED=true
+            if git pull origin "${GIT_BRANCH}" 2>&1; then
+                CHANGED=true
+            else
+                echo "$(date -u) ERROR: git pull failed"
+            fi
         fi
     else
         echo "$(date -u) ERROR: git fetch origin failed"
