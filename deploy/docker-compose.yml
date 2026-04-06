@@ -7,6 +7,7 @@ services:
       - postgres
     environment:
       - POSTGRES_HOST=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}?sslmode=disable
+      - SERVER_ID=${SERVER_ID}
     security_opt:
       - no-new-privileges:true
     networks:
