@@ -11,6 +11,11 @@ services:
       - SERVER_ID=${SERVER_ID}
     security_opt:
       - no-new-privileges:true
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO /dev/null http://localhost:8080 || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
     networks:
       - frontend
       - backend
@@ -48,6 +53,11 @@ services:
       - caddy_config:/config
     security_opt:
       - no-new-privileges:true
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO /dev/null http://localhost:80 || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
     networks:
       - frontend
 
