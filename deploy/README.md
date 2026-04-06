@@ -40,6 +40,8 @@ Network isolation:
    - `POSTGRES_USER` / `POSTGRES_PASSWORD` / `POSTGRES_DB` - database credentials
    - `GIT_BRANCH` - branch to track (default: automa)
    - `SERVER_ID` - random string for admin panel access
+   - `HOST_UID` / `HOST_GID` - your user's UID/GID (`id -u` / `id -g`)
+   - `DOCKER_GID` - docker socket group (`stat -c '%g' /var/run/docker.sock`)
 
    Generate a random password and server ID:
    ```bash
@@ -49,7 +51,7 @@ Network isolation:
 
 4. Start everything:
    ```bash
-   ./compose.sh up -d
+   docker compose up -d
    ```
 
 Caddy will automatically obtain an SSL certificate once DNS is pointing to the server.
@@ -62,14 +64,14 @@ Accessible at `https://<DOMAIN>/admin?serverId=<SERVER_ID>`.
 
 ```bash
 # View logs
-./compose.sh logs -f app
-./compose.sh logs -f caddy
+docker compose logs -f app
+docker compose logs -f caddy
 
 # Restart a service
-./compose.sh restart app
+docker compose restart app
 
 # Rebuild and restart app
-./compose.sh up --build -d app
+docker compose up --build -d app
 
 # Check resource usage
 docker stats
