@@ -64,9 +64,9 @@ services:
   updater:
     build: ./updater
     restart: unless-stopped
-    user: "1000:1000"
+    user: "${HOST_UID}:${HOST_GID}"
     group_add:
-      - "110"
+      - "${DOCKER_GID}"
     environment:
       - GIT_BRANCH=${GIT_BRANCH:-automa}
     volumes:

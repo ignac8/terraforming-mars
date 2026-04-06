@@ -49,7 +49,7 @@ Network isolation:
 
 4. Start everything:
    ```bash
-   docker compose up -d
+   ./compose.sh up -d
    ```
 
 Caddy will automatically obtain an SSL certificate once DNS is pointing to the server.
@@ -62,14 +62,14 @@ Accessible at `https://<DOMAIN>/admin?serverId=<SERVER_ID>`.
 
 ```bash
 # View logs
-docker compose logs -f app
-docker compose logs -f caddy
+./compose.sh logs -f app
+./compose.sh logs -f caddy
 
 # Restart a service
-docker compose restart app
+./compose.sh restart app
 
 # Rebuild and restart app
-docker compose up --build -d app
+./compose.sh up --build -d app
 
 # Check resource usage
 docker stats
