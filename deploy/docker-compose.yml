@@ -1,0 +1,65 @@
+services:
+  app:
+    container_name: terraforming-mars
+    build: ../
+    restart: unless-stopped
+    depends_on:
+      - postgres
+    environment:
+      - POSTGRES_HOST=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+    security_opt:
+      - no-new-privileges:true
+    networks:
+      - frontend
+      - backend
+
+  postgres:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=${POSTGRES_DB}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    security_opt:
+      - no-new-privileges:true
+    networks:
+      - backend
+
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      - DOMAIN=${DOMAIN}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    security_opt:
+      - no-new-privileges:true
+    networks:
+      - frontend
+
+  updater:
+    build: ./updater
+    restart: unless-stopped
+    environment:
+      - GIT_BRANCH=${GIT_BRANCH:-automa}
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ../:/repo
+    security_opt:
+      - no-new-privileges:true
+
+networks:
+  frontend:
+  backend:
+
+volumes:
+  pgdata:
+  caddy_data:
+  caddy_config:
