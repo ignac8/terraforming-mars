@@ -38,7 +38,7 @@ check_and_update() {
     fi
 
     if [ "$CHANGED" = true ]; then
-        /repo/deploy/compose.sh -f /repo/deploy/docker-compose.yml up --build -d 2>&1
+        docker compose -f /repo/deploy/docker-compose.yml up --build -d 2>&1
         echo "$(date -u) Rebuild complete"
     fi
 }
