@@ -5,12 +5,10 @@ import {IGame} from '../../../src/server/IGame';
 import {TestPlayer} from '../../TestPlayer';
 import {MarsBot} from '../../../src/server/automa/MarsBot';
 import {
-  clearMarsBotCorpRegistry,
+  clearMarsBotCorpRegistry, restoreMarsBotCorpRegistry,
   getMarsBotCorp,
   getAllMarsBotCorps,
 } from '../../../src/server/automa/corps/MarsBotCorpRegistry';
-import {registerBaseGameCorps} from '../../../src/server/automa/corps/BaseGameCorps';
-import {registerExpansionCorps} from '../../../src/server/automa/corps/ExpansionCorps';
 import {Tag} from '../../../src/common/cards/Tag';
 import {BoardName} from '../../../src/common/boards/BoardName';
 
@@ -27,12 +25,11 @@ function createAutomaGame(): {game: IGame, human: TestPlayer, marsBot: MarsBot} 
 describe('Expansion MarsBot Corporations', () => {
   beforeEach(() => {
     clearMarsBotCorpRegistry();
-    registerBaseGameCorps();
-    registerExpansionCorps();
+    restoreMarsBotCorpRegistry();
   });
 
   afterEach(() => {
-    clearMarsBotCorpRegistry();
+    restoreMarsBotCorpRegistry();
   });
 
   describe('Registration', () => {
