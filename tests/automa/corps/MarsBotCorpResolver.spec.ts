@@ -7,7 +7,7 @@ import {MarsBotCorpResolver} from '../../../src/server/automa/corps/MarsBotCorpR
 import {IMarsBotCorp, MarsBotTrackCube} from '../../../src/server/automa/MarsBotCorpTypes';
 import {
   registerMarsBotCorp,
-  clearMarsBotCorpRegistry,
+  clearMarsBotCorpRegistry, restoreMarsBotCorpRegistry,
   getAllMarsBotCorps,
 } from '../../../src/server/automa/corps/MarsBotCorpRegistry';
 import {Tag} from '../../../src/common/cards/Tag';
@@ -39,7 +39,7 @@ describe('MarsBotCorpResolver', () => {
   });
 
   afterEach(() => {
-    clearMarsBotCorpRegistry();
+    restoreMarsBotCorpRegistry();
   });
 
   describe('selectCorp', () => {
@@ -284,11 +284,14 @@ describe('MarsBotCorpResolver', () => {
       expect(getAllMarsBotCorps()[0].name).to.eq(CardName.ECOLINE);
     });
 
-    it('throws on duplicate registration', () => {
-      const corpA = createTestCorp({name: CardName.ECOLINE});
+    it('duplicate registration overwrites', () => {
+      const corpA = createTestCorp({name: CardName.ECOLINE, description: 'first'});
       registerMarsBotCorp(corpA);
+      const corpB = createTestCorp({name: CardName.ECOLINE, description: 'second'});
+      registerMarsBotCorp(corpB);
 
-      expect(() => registerMarsBotCorp(corpA)).to.throw('already registered');
+      expect(getAllMarsBotCorps().filter((c) => c.name === CardName.ECOLINE)).to.have.length(1);
+      expect(getAllMarsBotCorps().find((c) => c.name === CardName.ECOLINE)?.description).to.eq('second');
     });
   });
 });
