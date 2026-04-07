@@ -91,3 +91,8 @@ cat ~/terraforming-mars/deploy/.env
 The updater container polls the configured git branch every 60 seconds. It also fetches and merges `upstream/main` automatically. When changes are detected, it rebuilds the app container. No webhook or external access required.
 
 The updater only rebuilds the `app` service — it cannot safely rebuild itself. Changes to caddy, postgres, or updater config require a manual `docker compose up --build -d` on the server.
+
+A host cron job runs daily at 4:00 AM UTC to pull fresh base images (postgres, caddy, updater) and recreate containers if images changed:
+```
+0 4 * * * cd /home/mzerko/terraforming-mars/deploy && docker compose pull && docker compose up -d
+```
