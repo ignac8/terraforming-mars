@@ -14,6 +14,8 @@ import {MarsBotDraftResolver} from './corps/MarsBotDraftResolver';
 import {SerializedAutomaState} from '../SerializedGame';
 import {IAward} from '../awards/IAward';
 import {IMilestone} from '../milestones/IMilestone';
+import {Tag} from '../../common/cards/Tag';
+import {Resource} from '../../common/Resource';
 
 /**
  * All automa (MarsBot) hooks into the Game lifecycle.
@@ -379,5 +381,40 @@ export class AutomaGameHooks {
     const corp = this.marsBot.corp;
     if (corp?.effect?.onGlobalParameterRaised === undefined) return false;
     return corp.effect.onGlobalParameterRaised(this.marsBot.getCorpContext(), parameter) ?? false;
+  }
+
+  // ---- Card interaction hooks ----
+
+  /** St. Joseph: MarsBot spends 2 MC and advances least-advanced track. Returns true if handled. */
+  public handleStJosephCathedral(spaceOwner: IPlayer): boolean {
+    if (spaceOwner !== this.marsBot.player) return false;
+    if (this.marsBot.turnResolver.mcSupply >= 2) {
+      this.marsBot.turnResolver.mcSupply -= 2;
+      this.marsBot.turnResolver.advanceTrack(this.marsBot.board.getLeastAdvancedTrackIndex());
+      this.game.log('MarsBot pays 2 MC and advances least-advanced track (St. Joseph)');
+    } else {
+      this.game.log('MarsBot cannot afford 2 MC for St. Joseph cathedral');
+    }
+    return true;
+  }
+
+  /** Sponsored Academies: MarsBot gains 1 MC instead of drawing. Returns true if handled. */
+  public handleOpponentCardDraw(opponent: IPlayer): boolean {
+    if (opponent !== this.marsBot.player) return false;
+    this.marsBot.turnResolver.mcSupply += 1;
+    this.game.log('MarsBot gains 1 MC (Sponsored Academies)');
+    return true;
+  }
+
+  /** Galilean Waystation: behavior gives full MarsBot Jovian track, rulebook says half. Adjust after behavior runs. */
+  public adjustGalileanWaystation(player: IPlayer): void {
+    const jovianTrackIndex = this.marsBot.board.getTrackIndexForTag(Tag.JOVIAN);
+    if (jovianTrackIndex === undefined) return;
+    const fullPos = this.marsBot.board.tracks[jovianTrackIndex].position;
+    const halfPos = Math.floor(fullPos / 2);
+    const adjustment = halfPos - fullPos;
+    if (adjustment !== 0) {
+      player.production.add(Resource.MEGACREDITS, adjustment, {log: false});
+    }
   }
 }
