@@ -20,6 +20,17 @@ export function bonusCardPerGen(bonusCardId: BonusCardId, corpName: string): {ti
   };
 }
 
+/** Factory for the common "add 1 floater at round start" per-gen pattern. */
+export function floaterPerRound(corpName: string): {timing: 'roundStart', resolve: (ctx: MarsBotCorpContext) => void} {
+  return {
+    timing: 'roundStart',
+    resolve(ctx) {
+      ctx.addFloaters(1);
+      ctx.gameLog(`MarsBot (${corpName}): round start, +1 floater`);
+    },
+  };
+}
+
 /** Shared cube handler: white -> advance least-advanced track, black -> advance space track. */
 export function whiteLeastBlackSpaceHandler(ctx: MarsBotCorpContext, cubeType: CubeType, corpName: string): void {
   if (cubeType === 'white') {

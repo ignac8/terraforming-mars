@@ -3,6 +3,7 @@ import {Tag} from '../../../common/cards/Tag';
 import {CardName} from '../../../common/cards/CardName';
 import {BonusCardId} from '../../../common/automa/AutomaTypes';
 import {AutomaManifest} from './AutomaManifest';
+import {floaterPerRound} from './BaseGameCorps';
 
 // ==== VENUS NEXT (C25-C28, C34) ====
 
@@ -39,13 +40,7 @@ const CELESTIC: IMarsBotCorp = {
     // Failed action -> +1 additional floater (on top of normal failed action)
     // This would need to hook into the failed action handler
   },
-  perGeneration: {
-    timing: 'roundStart',
-    resolve(ctx) {
-      ctx.addFloaters(1);
-      ctx.gameLog('MarsBot (Celestic): round start, +1 floater');
-    },
-  },
+  perGeneration: floaterPerRound('Celestic'),
 };
 
 // C27 Morningstar Inc.
@@ -99,14 +94,7 @@ const STORMCRAFT: IMarsBotCorp = {
       ctx.gameLog('MarsBot (Stormcraft): +1 floater');
     },
   },
-  // Effect: spending floaters for extra card -> temp +1
-  perGeneration: {
-    timing: 'roundStart',
-    resolve(ctx) {
-      ctx.addFloaters(1);
-      ctx.gameLog('MarsBot (Stormcraft): round start, +1 floater');
-    },
-  },
+  perGeneration: floaterPerRound('Stormcraft'),
 };
 
 export const AUTOMA_VENUS_MANIFEST: AutomaManifest = {
