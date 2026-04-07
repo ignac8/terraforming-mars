@@ -13,6 +13,7 @@ import {MarsBotTurnResolver} from './MarsBotTurnResolver';
 import {IProjectCard} from '../cards/IProjectCard';
 import {CardType} from '../../common/cards/CardType';
 import {Space} from '../boards/Space';
+import {CardName} from '../../common/cards/CardName';
 
 /**
  * Resolves MarsBot bonus cards (B01–B08).
@@ -101,6 +102,13 @@ export class MarsBotBonusResolver {
 
   // B01: Meteor Shower
   private resolveMeteorShower(card: MarsBotBonusCard): void {
+    // Asteroid Deflection System and Protected Habitat block plant removal
+    if (this.humanPlayer.plantsAreProtected()) {
+      this.game.log('MarsBot\'s Meteor Shower: blocked by plant protection');
+      this.bonusDeck.destroy(card);
+      this.game.log('Meteor Shower is destroyed');
+      return;
+    }
     const plantsLost = Math.min(5, this.humanPlayer.plants);
     if (plantsLost > 0) {
       this.humanPlayer.stock.deduct(Resource.PLANTS, plantsLost);
@@ -114,14 +122,19 @@ export class MarsBotBonusResolver {
 
   // B02: Invasive Species
   private resolveInvasiveSpecies(): void {
+    // Protected Habitat blocks animal/microbe removal
+    const isProtected = this.humanPlayer.playedCards.has(CardName.PROTECTED_HABITATS);
+
     // Find highest-scoring animal/microbe on human's cards
     let bestEntry: {card: IProjectCard, resource: CardResource, vp: number} | undefined;
-    for (const played of this.humanPlayer.playedCards) {
-      if (played.resourceCount && played.resourceCount > 0) {
-        if (played.resourceType === CardResource.ANIMAL || played.resourceType === CardResource.MICROBE) {
-          const vp = played.getVictoryPoints(this.humanPlayer);
-          if (bestEntry === undefined || vp > bestEntry.vp) {
-            bestEntry = {card: played as IProjectCard, resource: played.resourceType, vp};
+    if (!isProtected) {
+      for (const played of this.humanPlayer.playedCards) {
+        if (played.resourceCount && played.resourceCount > 0) {
+          if (played.resourceType === CardResource.ANIMAL || played.resourceType === CardResource.MICROBE) {
+            const vp = played.getVictoryPoints(this.humanPlayer);
+            if (bestEntry === undefined || vp > bestEntry.vp) {
+              bestEntry = {card: played as IProjectCard, resource: played.resourceType, vp};
+            }
           }
         }
       }
@@ -131,6 +144,8 @@ export class MarsBotBonusResolver {
       if (card.resourceCount !== undefined) card.resourceCount--;
       this.game.log('MarsBot\'s Invasive Species: removed 1 ${0} from ${1}',
         (b) => b.rawString(resource).card(card));
+    } else if (isProtected) {
+      this.game.log('MarsBot\'s Invasive Species: blocked by Protected Habitats');
     }
     // MarsBot gains 5 MC regardless
     this.turnResolver.mcSupply += 5;
