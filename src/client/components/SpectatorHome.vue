@@ -40,6 +40,10 @@
       id="shortkey-board"
     />
 
+    <template v-if="game.marsBot">
+      <MarsBotPanel :model="game.marsBot"/>
+    </template>
+
     <turmoil v-if="game.turmoil" :turmoil="game.turmoil"/>
 
     <MoonBoard v-if="game.moon !== undefined" :model="game.moon" :tileView="tileView"/>
@@ -95,6 +99,7 @@ import WaitingFor from '@/client/components/WaitingFor.vue';
 import PlayersOverview from '@/client/components/overview/PlayersOverview.vue';
 import {range} from '@/common/utils/utils';
 import {nextTileView, TileView} from './board/TileView';
+import MarsBotPanel from '@/client/components/automa/MarsBotPanel.vue';
 
 export interface SpectatorHomeModel {
   tileView: TileView;
@@ -130,6 +135,7 @@ export default defineComponent({
     Colony,
     DynamicTitle,
     LogPanel,
+    MarsBotPanel,
     Milestone,
     MoonBoard,
     PlanetaryTracks,
