@@ -9,10 +9,8 @@ import {createCorpBonusCard} from '../../../src/server/automa/MarsBotBonusCard';
 import {BonusCardId} from '../../../src/common/automa/AutomaTypes';
 import {BoardName} from '../../../src/common/boards/BoardName';
 import {
-  clearMarsBotCorpRegistry,
+  clearMarsBotCorpRegistry, restoreMarsBotCorpRegistry,
 } from '../../../src/server/automa/corps/MarsBotCorpRegistry';
-import {registerBaseGameCorps} from '../../../src/server/automa/corps/BaseGameCorps';
-import {registerExpansionCorps} from '../../../src/server/automa/corps/ExpansionCorps';
 
 function createAutomaGame(): {game: IGame, human: TestPlayer, marsBot: MarsBot} {
   const [game, human] = testGame(1, {
@@ -27,12 +25,11 @@ function createAutomaGame(): {game: IGame, human: TestPlayer, marsBot: MarsBot} 
 describe('Corp-Specific Bonus Cards (B22-B32)', () => {
   beforeEach(() => {
     clearMarsBotCorpRegistry();
-    registerBaseGameCorps();
-    registerExpansionCorps();
+    restoreMarsBotCorpRegistry();
   });
 
   afterEach(() => {
-    clearMarsBotCorpRegistry();
+    restoreMarsBotCorpRegistry();
   });
 
   describe('B23 Rapid Sprouting', () => {

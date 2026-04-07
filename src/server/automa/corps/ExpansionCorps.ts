@@ -7,7 +7,6 @@ import {Tag} from '../../../common/cards/Tag';
 import {CardName} from '../../../common/cards/CardName';
 import {BonusCardId} from '../../../common/automa/AutomaTypes';
 import {TileType} from '../../../common/TileType';
-import {registerMarsBotCorp} from './MarsBotCorpRegistry';
 import {whiteTrackCubes, bonusCardPerGen} from './BaseGameCorps';
 
 /** Shared cube handler: white → advance least-advanced track, black → advance space track. */
@@ -821,46 +820,46 @@ const UTOPIA_INVEST: IMarsBotCorp = {
   associatedBonusCards: [BonusCardId.B32_INVESTORS],
 };
 
-// ---- Registration ----
-export function registerExpansionCorps(): void {
+// ---- Manifest ----
+export const EXPANSION_MARSBOT_CORPS: Partial<Record<CardName, IMarsBotCorp>> = {
   // Prelude
-  registerMarsBotCorp(CHEUNG_SHING_MARS);
-  registerMarsBotCorp(POINT_LUNA);
-  registerMarsBotCorp(ROBINSON_INDUSTRIES);
-  registerMarsBotCorp(VALLEY_TRUST);
-  registerMarsBotCorp(VITOR);
+  [CardName.CHEUNG_SHING_MARS]: CHEUNG_SHING_MARS,
+  [CardName.POINT_LUNA]: POINT_LUNA,
+  [CardName.ROBINSON_INDUSTRIES]: ROBINSON_INDUSTRIES,
+  [CardName.VALLEY_TRUST]: VALLEY_TRUST,
+  [CardName.VITOR]: VITOR,
   // Prelude 2
-  registerMarsBotCorp(ACADIAN_COMMUNITY);
-  registerMarsBotCorp(ASTRODRILL_ENTERPRISE);
-  registerMarsBotCorp(FACTORUM);
-  registerMarsBotCorp(MANUTECH);
-  registerMarsBotCorp(ECOTEC);
-  registerMarsBotCorp(KUIPER_COOPERATIVE);
-  registerMarsBotCorp(NIRGAL_ENTERPRISES);
-  registerMarsBotCorp(PALADIN_SHIPPING);
-  registerMarsBotCorp(SAGITTA);
-  registerMarsBotCorp(SPIRE);
-  registerMarsBotCorp(TYCO_MAGNETICS);
+  [CardName.ARCADIAN_COMMUNITIES]: ACADIAN_COMMUNITY,
+  [CardName.ASTRODRILL]: ASTRODRILL_ENTERPRISE,
+  [CardName.FACTORUM]: FACTORUM,
+  [CardName.MANUTECH]: MANUTECH,
+  [CardName.ECOTEC]: ECOTEC,
+  [CardName.KUIPER_COOPERATIVE]: KUIPER_COOPERATIVE,
+  [CardName.NIRGAL_ENTERPRISES]: NIRGAL_ENTERPRISES,
+  [CardName.PALLADIN_SHIPPING]: PALADIN_SHIPPING,
+  [CardName.SAGITTA_FRONTIER_SERVICES]: SAGITTA,
+  [CardName.SPIRE]: SPIRE,
+  [CardName.TYCHO_MAGNETICS]: TYCO_MAGNETICS,
   // Promo
-  registerMarsBotCorp(PHARMACY_UNION);
-  registerMarsBotCorp(PHILARES);
-  registerMarsBotCorp(RECYCLONE);
-  registerMarsBotCorp(SPLICE);
+  [CardName.PHARMACY_UNION]: PHARMACY_UNION,
+  [CardName.PHILARES]: PHILARES,
+  [CardName.RECYCLON]: RECYCLONE,
+  [CardName.SPLICE]: SPLICE,
   // Venus
-  registerMarsBotCorp(VIRON);
-  registerMarsBotCorp(CELESTIC);
-  registerMarsBotCorp(MORNINGSTAR);
-  registerMarsBotCorp(APHRODITE);
-  registerMarsBotCorp(STORMCRAFT);
+  [CardName.VIRON]: VIRON,
+  [CardName.CELESTIC]: CELESTIC,
+  [CardName.MORNING_STAR_INC]: MORNINGSTAR,
+  [CardName.APHRODITE]: APHRODITE,
+  [CardName.STORMCRAFT_INCORPORATED]: STORMCRAFT,
   // Colonies
-  registerMarsBotCorp(ARIDOR);
-  registerMarsBotCorp(ARCLIGHT);
-  registerMarsBotCorp(POLYPHEMOS);
-  registerMarsBotCorp(POSEIDON);
+  [CardName.ARIDOR]: ARIDOR,
+  [CardName.ARKLIGHT]: ARCLIGHT,
+  [CardName.POLYPHEMOS]: POLYPHEMOS,
+  [CardName.POSEIDON]: POSEIDON,
   // Turmoil
-  registerMarsBotCorp(LAKEFRONT_RESORTS);
-  registerMarsBotCorp(PRISTAR);
-  registerMarsBotCorp(SEPTEM_TRIBUS);
-  registerMarsBotCorp(TERRALABS);
-  registerMarsBotCorp(UTOPIA_INVEST);
-}
+  [CardName.LAKEFRONT_RESORTS]: LAKEFRONT_RESORTS,
+  [CardName.PRISTAR]: PRISTAR,
+  [CardName.SEPTUM_TRIBUS]: SEPTEM_TRIBUS,
+  [CardName.TERRALABS_RESEARCH]: TERRALABS,
+  [CardName.UTOPIA_INVEST]: UTOPIA_INVEST,
+};
