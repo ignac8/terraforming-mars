@@ -114,12 +114,12 @@ export class AutomaGameSetup {
     // Wire MarsBot manager ref into turn resolver (for corp cube triggers)
     marsBot.turnResolver.marsBotManager = marsBot;
 
-    marsBot.buildInitialActionDeck();
-
-    // Pioneer4/Constructor milestones/awards place colony cubes on tracks
-    AutomaGameSetup.placeColonyCubes(game, marsBot);
-
-    game.log('MarsBot is ready with ${0} difficulty', (b) => b.rawString(gameOptions.automaDifficulty));
+    // Only for new games, not deserialization
+    if (existingPlayer === undefined) {
+      marsBot.buildInitialActionDeck();
+      AutomaGameSetup.placeColonyCubes(game, marsBot);
+      game.log('MarsBot is ready with ${0} difficulty', (b) => b.rawString(gameOptions.automaDifficulty));
+    }
 
     return new AutomaGameHooks(game, marsBot);
   }
