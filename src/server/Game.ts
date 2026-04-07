@@ -96,8 +96,9 @@ export class Game implements IGame, Logger {
   public readonly id: GameId;
   public readonly gameOptions: Readonly<GameOptions>;
   public readonly players: ReadonlyArray<IPlayer>;
+  private _marsBotPlayer: IPlayer | undefined;
   public get allPlayers(): ReadonlyArray<IPlayer> {
-    const marsBotPlayer = this.marsBot?.player;
+    const marsBotPlayer = this.marsBot?.player ?? this._marsBotPlayer;
     if (marsBotPlayer !== undefined) {
       return [...this.players, marsBotPlayer];
     }
@@ -207,16 +208,19 @@ export class Game implements IGame, Logger {
     corporationDeck: CorporationDeck,
     preludeDeck: PreludeDeck,
     ceoDeck: CeoDeck,
-    tags: ReadonlyArray<Tag>) {
+    tags: ReadonlyArray<Tag>,
+    marsBotPlayer?: IPlayer) {
     this.id = id;
     this.gameOptions = {...gameOptions};
     this.players = players;
+    this._marsBotPlayer = marsBotPlayer;
     const playerIds = players.map(toID);
+    const allPlayerIds = this.allPlayers.map(toID);
     if (playerIds.includes(first.id) === false) {
       throw new Error('Cannot find first player ' + first.id + ' in [' + playerIds + ']');
     }
-    if (playerIds.includes(activePlayer) === false) {
-      throw new Error('Cannot find active player ' + activePlayer + ' in [' + playerIds + ']');
+    if (allPlayerIds.includes(activePlayer) === false) {
+      throw new Error('Cannot find active player ' + activePlayer + ' in [' + allPlayerIds + ']');
     }
     if (new Set(playerIds).size !== players.length) {
       throw new Error('Duplicate player found: [' + playerIds + ']');
@@ -536,7 +540,7 @@ export class Game implements IGame, Logger {
 
   // Function to retrieve a player by it's id
   public getPlayerById(id: PlayerId): IPlayer {
-    const player = this.players.find((p) => p.id === id);
+    const player = this.allPlayers.find((p) => p.id === id);
     if (player === undefined) {
       throw new Error(`player ${id} does not exist on game ${this.id}`);
     }
@@ -1747,7 +1751,13 @@ export class Game implements IGame, Logger {
 
     const ceoDeck = CeoDeck.deserialize(d.ceoDeck, rng);
 
-    const game = new Game(d.id, players, first, d.activePlayer, gameOptions, rng, board, projectDeck, corporationDeck, preludeDeck, ceoDeck, d.tags);
+    // Create MarsBot player before the Game constructor so getPlayerById can find it
+    let marsBotPlayer: IPlayer | undefined;
+    if (d.automaState !== undefined && gameOptions.automaOption) {
+      marsBotPlayer = AutomaGameSetup.createMarsBotPlayer(d.id);
+    }
+
+    const game = new Game(d.id, players, first, d.activePlayer, gameOptions, rng, board, projectDeck, corporationDeck, preludeDeck, ceoDeck, d.tags, marsBotPlayer);
     game.resettable = true;
     game.spectatorId = d.spectatorId;
     game.createdTime = new Date(d.createdTimeMs);
@@ -1822,6 +1832,13 @@ export class Game implements IGame, Logger {
     game.undoCount = d.undoCount ?? 0;
     game.temperature = d.temperature;
     game.venusScaleLevel = d.venusScaleLevel;
+
+    // Restore automa with pre-created player, then set real activePlayer
+    if (d.automaState !== undefined && gameOptions.automaOption && marsBotPlayer !== undefined) {
+      game.automaHooks = AutomaGameSetup.setup(game, players[0], gameOptions, rng, marsBotPlayer);
+      game.automaHooks.restoreState(d.automaState);
+    }
+
     game.activePlayer = game.getPlayerById(d.activePlayer);
     game.draftRound = d.draftRound;
     game.initialDraftIteration = d.initialDraftIteration;
@@ -1835,12 +1852,6 @@ export class Game implements IGame, Logger {
     game.globalsPerGeneration = d.globalsPerGeneration;
     game.verminInEffect = d.verminInEffect;
     game.exploitationOfVenusInEffect = d.exploitationOfVenusInEffect;
-
-    // Restore automa state
-    if (d.automaState !== undefined && gameOptions.automaOption) {
-      game.automaHooks = AutomaGameSetup.setup(game, players[0], gameOptions, rng);
-      game.automaHooks.restoreState(d.automaState);
-    }
 
     // Still in Draft or Research of generation 1
     if (game.generation === 1 && players.some((p) => p.playedCards.filter(isICorporationCard).length === 0)) {
