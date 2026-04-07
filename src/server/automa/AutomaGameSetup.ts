@@ -12,6 +12,7 @@ import {AutomaGameHooks} from './AutomaGameHooks';
 import {MarsBotTags} from './MarsBotTags';
 import {MarsBotStock, MarsBotProduction} from './MarsBotStock';
 import {CardName} from '../../common/cards/CardName';
+import {Tag} from '../../common/cards/Tag';
 import {ICard} from '../cards/ICard';
 import {IMilestone} from '../milestones/IMilestone';
 import {IAward} from '../awards/IAward';
@@ -136,17 +137,20 @@ export class AutomaGameSetup {
   /**
    * Pioneer4 milestone and Constructor award place colony cubes on MarsBot's tracks.
    * When MarsBot reaches these positions, it loses 5 MC and builds a colony (if Colonies enabled).
-   * Cubes: Space track #7, Space track #10, Energy track #8.
    */
   private static placeColonyCubes(game: IGame, marsBot: MarsBot): void {
     const hasPioneer4 = game.milestones.some((m) => m.name === 'Pioneer4');
     const hasConstructor = game.awards.some((a) => a.name === 'Constructor');
     if (!hasPioneer4 && !hasConstructor) return;
 
+    const spaceTrack = marsBot.board.getTrackIndexForTag(Tag.SPACE);
+    const energyTrack = marsBot.board.getTrackIndexForTag(Tag.POWER);
+    if (spaceTrack === undefined || energyTrack === undefined) return;
+
     const cubePositions: Array<{trackIndex: number, position: number}> = [
-      {trackIndex: 2, position: 7},  // Space track #7
-      {trackIndex: 2, position: 10}, // Space track #10
-      {trackIndex: 5, position: 8},  // Energy track #8
+      {trackIndex: spaceTrack, position: 7},
+      {trackIndex: spaceTrack, position: 10},
+      {trackIndex: energyTrack, position: 8},
     ];
 
     for (const {trackIndex, position} of cubePositions) {
@@ -157,6 +161,7 @@ export class AutomaGameSetup {
     }
 
     marsBot.hasColonyCubes = true;
-    game.log('MarsBot: colony cubes placed on Space track #7, #10 and Energy track #8');
+    marsBot.colonyCubePositions = new Set(cubePositions.map((c) => trackCubeKey(c.trackIndex, c.position)));
+    game.log('MarsBot: colony cubes placed on tracks');
   }
 }

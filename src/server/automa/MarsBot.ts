@@ -65,6 +65,9 @@ export class MarsBot {
   /** Whether colony cubes are placed (Pioneer4/Constructor in game). */
   public hasColonyCubes: boolean = false;
 
+  /** Colony cube positions (set by AutomaGameSetup when Pioneer4/Constructor in game). */
+  public colonyCubePositions: Set<string> = new Set();
+
   /** Corp-specific state (M€ on card, resources, cubes, etc.). */
   public corpSpecificState: Map<string, number> = new Map();
 
