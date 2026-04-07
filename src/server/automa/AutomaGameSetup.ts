@@ -17,16 +17,6 @@ import {ICard} from '../cards/ICard';
 import {IMilestone} from '../milestones/IMilestone';
 import {IAward} from '../awards/IAward';
 import {trackCubeKey} from './MarsBotCorpTypes';
-import {registerBaseGameCorps} from './corps/BaseGameCorps';
-import {registerExpansionCorps} from './corps/ExpansionCorps';
-
-// Register all MarsBot corporations at module load (once)
-let corpsRegistered = false;
-if (!corpsRegistered) {
-  registerBaseGameCorps();
-  registerExpansionCorps();
-  corpsRegistered = true;
-}
 
 /**
  * Handles automa-specific game setup and provides hooks into the game lifecycle.

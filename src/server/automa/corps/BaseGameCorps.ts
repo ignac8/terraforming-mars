@@ -7,7 +7,6 @@ import {Tag} from '../../../common/cards/Tag';
 import {CardName} from '../../../common/cards/CardName';
 import {BonusCardId} from '../../../common/automa/AutomaTypes';
 import {TileType} from '../../../common/TileType';
-import {registerMarsBotCorp} from './MarsBotCorpRegistry';
 
 /** Generate white cubes for all 18 positions on a track (replaces transparent cubes). */
 export function whiteTrackCubes(trackIndex: number): MarsBotTrackCube[] {
@@ -324,18 +323,18 @@ const UNMI: IMarsBotCorp = {
   associatedBonusCards: [BonusCardId.B31_GOVERNMENT_SUBSIDY],
 };
 
-// ---- Registration ----
-export function registerBaseGameCorps(): void {
-  registerMarsBotCorp(CREDICOR);
-  registerMarsBotCorp(ECO_LINE);
-  registerMarsBotCorp(HELION);
-  registerMarsBotCorp(INTERPLANETARY_CINEMATICS);
-  registerMarsBotCorp(INVENTRIX);
-  registerMarsBotCorp(MINING_GUILD);
-  registerMarsBotCorp(PHOBOLOG);
-  registerMarsBotCorp(SATURN_SYSTEMS);
-  registerMarsBotCorp(TERACTOR);
-  registerMarsBotCorp(THARSIS_REPUBLIC);
-  registerMarsBotCorp(THORGATE);
-  registerMarsBotCorp(UNMI);
-}
+// ---- Manifest ----
+export const BASE_GAME_MARSBOT_CORPS: Partial<Record<CardName, IMarsBotCorp>> = {
+  [CardName.CREDICOR]: CREDICOR,
+  [CardName.ECOLINE]: ECO_LINE,
+  [CardName.HELION]: HELION,
+  [CardName.INTERPLANETARY_CINEMATICS]: INTERPLANETARY_CINEMATICS,
+  [CardName.INVENTRIX]: INVENTRIX,
+  [CardName.MINING_GUILD]: MINING_GUILD,
+  [CardName.PHOBOLOG]: PHOBOLOG,
+  [CardName.SATURN_SYSTEMS]: SATURN_SYSTEMS,
+  [CardName.TERACTOR]: TERACTOR,
+  [CardName.THARSIS_REPUBLIC]: THARSIS_REPUBLIC,
+  [CardName.THORGATE]: THORGATE,
+  [CardName.UNITED_NATIONS_MARS_INITIATIVE]: UNMI,
+};

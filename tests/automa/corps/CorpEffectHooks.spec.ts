@@ -7,11 +7,9 @@ import {MarsBot} from '../../../src/server/automa/MarsBot';
 import {Tag} from '../../../src/common/cards/Tag';
 import {BoardName} from '../../../src/common/boards/BoardName';
 import {
-  clearMarsBotCorpRegistry,
+  clearMarsBotCorpRegistry, restoreMarsBotCorpRegistry,
   getMarsBotCorp,
 } from '../../../src/server/automa/corps/MarsBotCorpRegistry';
-import {registerBaseGameCorps} from '../../../src/server/automa/corps/BaseGameCorps';
-import {registerExpansionCorps} from '../../../src/server/automa/corps/ExpansionCorps';
 
 function createAutomaGame(): {game: IGame, human: TestPlayer, marsBot: MarsBot} {
   const [game, human] = testGame(1, {
@@ -26,12 +24,11 @@ function createAutomaGame(): {game: IGame, human: TestPlayer, marsBot: MarsBot} 
 describe('Corp Effect Hooks', () => {
   beforeEach(() => {
     clearMarsBotCorpRegistry();
-    registerBaseGameCorps();
-    registerExpansionCorps();
+    restoreMarsBotCorpRegistry();
   });
 
   afterEach(() => {
-    clearMarsBotCorpRegistry();
+    restoreMarsBotCorpRegistry();
   });
 
   describe('C05 Inventrix hasRequirements', () => {
