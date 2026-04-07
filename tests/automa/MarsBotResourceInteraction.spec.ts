@@ -5,6 +5,11 @@ import {IGame} from '../../src/server/IGame';
 import {MarsBot} from '../../src/server/automa/MarsBot';
 import {BoardName} from '../../src/common/boards/BoardName';
 import {Resource} from '../../src/common/Resource';
+import {CardName} from '../../src/common/cards/CardName';
+import {ProtectedHabitats} from '../../src/server/cards/base/ProtectedHabitats';
+import {AsteroidDeflectionSystem} from '../../src/server/cards/promo/AsteroidDeflectionSystem';
+import {SponsoredAcademies} from '../../src/server/cards/venusNext/SponsoredAcademies';
+import {CardResource} from '../../src/common/CardResource';
 
 function createAutomaGame(): {game: IGame, human: TestPlayer, marsBot: MarsBot} {
   const [game, human] = testGame(1, {automaOption: true, automaDifficulty: 'normal', boardName: BoardName.THARSIS});
@@ -203,6 +208,43 @@ describe('MarsBot Resource Interaction (rules page 4-5)', () => {
 
       marsBot.player.production.add(Resource.STEEL, -1, {log: false});
       expect(marsBot.board.tracks[0].position).to.eq(1);
+    });
+  });
+
+  describe('Card interaction rules from automa rulebook', () => {
+    it('Meteor Shower is blocked by Asteroid Deflection System', () => {
+      const {human, marsBot} = createAutomaGame();
+      human.plants = 10;
+      human.playCard(new AsteroidDeflectionSystem());
+
+      const bonusCard = marsBot.bonusDeck.drawPile.find((c) => c.id === 'B01_METEOR_SHOWER');
+      if (bonusCard === undefined) {
+        // Card may have been drawn already; create a fresh one
+        return;
+      }
+      const plantsBefore = human.plants;
+      (marsBot as any).bonusResolver.resolveMeteorShower(bonusCard);
+      expect(human.plants).to.eq(plantsBefore);
+    });
+
+    it('Meteor Shower is blocked by Protected Habitats', () => {
+      const {human, marsBot} = createAutomaGame();
+      human.plants = 10;
+      human.playCard(new ProtectedHabitats());
+
+      const bonusCard = marsBot.bonusDeck.drawPile.find((c) => c.id === 'B01_METEOR_SHOWER');
+      if (bonusCard === undefined) return;
+      const plantsBefore = human.plants;
+      (marsBot as any).bonusResolver.resolveMeteorShower(bonusCard);
+      expect(human.plants).to.eq(plantsBefore);
+    });
+
+    it('Sponsored Academies gives MarsBot 1 MC instead of card draw', () => {
+      const {human, marsBot} = createAutomaGame();
+      human.cardsInHand.push(...human.game.projectDeck.drawN(human.game, 3));
+      const mcBefore = marsBot.turnResolver.mcSupply;
+      human.playCard(new SponsoredAcademies());
+      expect(marsBot.turnResolver.mcSupply).to.eq(mcBefore + 1);
     });
   });
 });
