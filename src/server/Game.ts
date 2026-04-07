@@ -226,8 +226,7 @@ export class Game implements IGame, Logger {
       throw new Error('Duplicate color found: [' + colors + ']');
     }
 
-    // In automa games, activePlayer might be MarsBot who isn't in players yet
-    this.activePlayer = this.players.find((p) => p.id === activePlayer) ?? first;
+    this.activePlayer = this.getPlayerById(activePlayer);
     this.first = first; // To satisfy the constructor.
     this.setFirstPlayer(first);
     this.rng = rng;
@@ -1748,7 +1747,15 @@ export class Game implements IGame, Logger {
 
     const ceoDeck = CeoDeck.deserialize(d.ceoDeck, rng);
 
-    const game = new Game(d.id, players, first, d.activePlayer, gameOptions, rng, board, projectDeck, corporationDeck, preludeDeck, ceoDeck, d.tags);
+    // Create MarsBot player before the Game constructor so it's available for automa setup
+    let marsBotPlayer: IPlayer | undefined;
+    if (d.automaState !== undefined && gameOptions.automaOption) {
+      marsBotPlayer = AutomaGameSetup.createMarsBotPlayer(d.id);
+    }
+
+    // If activePlayer is MarsBot, use first player temporarily (restored after automa setup)
+    const constructorActivePlayer = players.some((p) => p.id === d.activePlayer) ? d.activePlayer : first.id;
+    const game = new Game(d.id, players, first, constructorActivePlayer, gameOptions, rng, board, projectDeck, corporationDeck, preludeDeck, ceoDeck, d.tags);
     game.resettable = true;
     game.spectatorId = d.spectatorId;
     game.createdTime = new Date(d.createdTimeMs);
@@ -1824,9 +1831,9 @@ export class Game implements IGame, Logger {
     game.temperature = d.temperature;
     game.venusScaleLevel = d.venusScaleLevel;
 
-    // Restore automa before activePlayer — MarsBot's player must exist for getPlayerById
-    if (d.automaState !== undefined && gameOptions.automaOption) {
-      game.automaHooks = AutomaGameSetup.setup(game, players[0], gameOptions, rng);
+    // Restore automa with pre-created player, then set real activePlayer
+    if (d.automaState !== undefined && gameOptions.automaOption && marsBotPlayer !== undefined) {
+      game.automaHooks = AutomaGameSetup.setup(game, players[0], gameOptions, rng, marsBotPlayer);
       game.automaHooks.restoreState(d.automaState);
     }
 
