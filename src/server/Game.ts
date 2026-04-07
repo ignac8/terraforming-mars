@@ -96,8 +96,9 @@ export class Game implements IGame, Logger {
   public readonly id: GameId;
   public readonly gameOptions: Readonly<GameOptions>;
   public readonly players: ReadonlyArray<IPlayer>;
+  private _marsBotPlayer: IPlayer | undefined;
   public get allPlayers(): ReadonlyArray<IPlayer> {
-    const marsBotPlayer = this.marsBot?.player;
+    const marsBotPlayer = this.marsBot?.player ?? this._marsBotPlayer;
     if (marsBotPlayer !== undefined) {
       return [...this.players, marsBotPlayer];
     }
@@ -207,16 +208,19 @@ export class Game implements IGame, Logger {
     corporationDeck: CorporationDeck,
     preludeDeck: PreludeDeck,
     ceoDeck: CeoDeck,
-    tags: ReadonlyArray<Tag>) {
+    tags: ReadonlyArray<Tag>,
+    marsBotPlayer?: IPlayer) {
     this.id = id;
     this.gameOptions = {...gameOptions};
     this.players = players;
+    this._marsBotPlayer = marsBotPlayer;
     const playerIds = players.map(toID);
+    const allPlayerIds = this.allPlayers.map(toID);
     if (playerIds.includes(first.id) === false) {
       throw new Error('Cannot find first player ' + first.id + ' in [' + playerIds + ']');
     }
-    if (playerIds.includes(activePlayer) === false) {
-      throw new Error('Cannot find active player ' + activePlayer + ' in [' + playerIds + ']');
+    if (allPlayerIds.includes(activePlayer) === false) {
+      throw new Error('Cannot find active player ' + activePlayer + ' in [' + allPlayerIds + ']');
     }
     if (new Set(playerIds).size !== players.length) {
       throw new Error('Duplicate player found: [' + playerIds + ']');
@@ -1747,15 +1751,13 @@ export class Game implements IGame, Logger {
 
     const ceoDeck = CeoDeck.deserialize(d.ceoDeck, rng);
 
-    // Create MarsBot player before the Game constructor so it's available for automa setup
+    // Create MarsBot player before the Game constructor so getPlayerById can find it
     let marsBotPlayer: IPlayer | undefined;
     if (d.automaState !== undefined && gameOptions.automaOption) {
       marsBotPlayer = AutomaGameSetup.createMarsBotPlayer(d.id);
     }
 
-    // If activePlayer is MarsBot, use first player temporarily (restored after automa setup)
-    const constructorActivePlayer = players.some((p) => p.id === d.activePlayer) ? d.activePlayer : first.id;
-    const game = new Game(d.id, players, first, constructorActivePlayer, gameOptions, rng, board, projectDeck, corporationDeck, preludeDeck, ceoDeck, d.tags);
+    const game = new Game(d.id, players, first, d.activePlayer, gameOptions, rng, board, projectDeck, corporationDeck, preludeDeck, ceoDeck, d.tags, marsBotPlayer);
     game.resettable = true;
     game.spectatorId = d.spectatorId;
     game.createdTime = new Date(d.createdTimeMs);
