@@ -392,6 +392,8 @@ export class AutomaGameHooks {
       this.marsBot.turnResolver.mcSupply -= 2;
       this.marsBot.turnResolver.advanceTrack(this.marsBot.board.getLeastAdvancedTrackIndex());
       this.game.log('MarsBot pays 2 MC and advances least-advanced track (St. Joseph)');
+    } else {
+      this.game.log('MarsBot cannot afford 2 MC for St. Joseph cathedral');
     }
     return true;
   }

@@ -146,6 +146,8 @@ export class MarsBotBonusResolver {
         (b) => b.rawString(resource).card(card));
     } else if (isProtected) {
       this.game.log('MarsBot\'s Invasive Species: blocked by Protected Habitats');
+    } else {
+      this.game.log('MarsBot\'s Invasive Species: no animal/microbe resources to remove');
     }
     // MarsBot gains 5 MC regardless
     this.turnResolver.mcSupply += 5;
