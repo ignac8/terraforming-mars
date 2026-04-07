@@ -205,6 +205,48 @@ describe('MarsBotSessionFixes', () => {
     expect(restored.marsBot).to.not.be.undefined;
   });
 
+  it('deserialization works when MarsBot has claimed milestones', () => {
+    const {game, marsBot} = createAutomaGame();
+    const milestone = game.milestones[0];
+    game.claimedMilestones.push({player: marsBot.player, milestone});
+
+    const serialized = game.serialize();
+    const restored = Game.deserialize(serialized);
+    expect(restored.claimedMilestones).to.have.length(1);
+    expect(restored.claimedMilestones[0].player.id).to.eq(marsBot.player.id);
+  });
+
+  it('deserialization works when MarsBot has funded awards', () => {
+    const {game, marsBot} = createAutomaGame();
+    const award = game.awards[0];
+    game.fundedAwards.push({player: marsBot.player, award});
+
+    const serialized = game.serialize();
+    const restored = Game.deserialize(serialized);
+    expect(restored.fundedAwards).to.have.length(1);
+    expect(restored.fundedAwards[0].player.id).to.eq(marsBot.player.id);
+  });
+
+  it('deserialization works with all MarsBot state combined', () => {
+    const {game, marsBot} = createAutomaGame();
+    marsBot.board.tracks[0].advance();
+    marsBot.board.tracks[0].advance();
+    marsBot.turnResolver.mcSupply = 20;
+
+    (game as any).activePlayer = marsBot.player;
+    game.claimedMilestones.push({player: marsBot.player, milestone: game.milestones[0]});
+    game.fundedAwards.push({player: marsBot.player, award: game.awards[0]});
+
+    const serialized = game.serialize();
+    const restored = Game.deserialize(serialized);
+
+    expect(restored.activePlayer.id).to.eq(marsBot.player.id);
+    expect(restored.claimedMilestones[0].player.id).to.eq(marsBot.player.id);
+    expect(restored.fundedAwards[0].player.id).to.eq(marsBot.player.id);
+    expect(restored.marsBot!.board.tracks[0].position).to.eq(2);
+    expect(restored.marsBot!.turnResolver.mcSupply).to.eq(20);
+  });
+
   it('human is limited to 2 actions before MarsBot gets a turn', () => {
     const {game, human, marsBot} = createAutomaGame();
     // MarsBot should not have passed yet (has cards in action deck)
