@@ -85,9 +85,9 @@ export class AutomaGameSetup {
   }
 
   /** Set up MarsBot and return the AutomaGameHooks instance for Game.ts to use. */
-  public static setup(game: IGame, humanPlayer: IPlayer, gameOptions: GameOptions, rng: Random): AutomaGameHooks {
+  public static setup(game: IGame, humanPlayer: IPlayer, gameOptions: GameOptions, rng: Random, existingPlayer?: IPlayer): AutomaGameHooks {
     const boardData = AutomaGameSetup.getBoardData(gameOptions.boardName);
-    const marsBotPlayer = AutomaGameSetup.createMarsBotPlayer(game.id);
+    const marsBotPlayer = existingPlayer ?? AutomaGameSetup.createMarsBotPlayer(game.id);
 
     // Set MarsBot player's game reference
     marsBotPlayer.setup(game);
