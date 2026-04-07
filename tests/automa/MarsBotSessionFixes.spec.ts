@@ -176,6 +176,35 @@ describe('MarsBotSessionFixes', () => {
     expect(restored.marsBot!.vpByGeneration).to.deep.eq([20, 25, 30]);
   });
 
+  it('deserialization works when activePlayer is MarsBot', () => {
+    const {game, marsBot} = createAutomaGame();
+    marsBot.board.tracks[0].advance();
+    marsBot.turnResolver.mcSupply = 15;
+
+    // Simulate MarsBot being the active player when saved
+    (game as any).activePlayer = marsBot.player;
+    const serialized = game.serialize();
+    expect(serialized.activePlayer).to.eq(marsBot.player.id);
+
+    const restored = Game.deserialize(serialized);
+    expect(restored.marsBot).to.not.be.undefined;
+    expect(restored.activePlayer.id).to.eq(marsBot.player.id);
+    expect(restored.marsBot!.board.tracks[0].position).to.eq(1);
+    expect(restored.marsBot!.turnResolver.mcSupply).to.eq(15);
+  });
+
+  it('deserialization works when activePlayer is human', () => {
+    const {game, human, marsBot} = createAutomaGame();
+    marsBot.board.tracks[0].advance();
+
+    const serialized = game.serialize();
+    expect(serialized.activePlayer).to.eq(human.id);
+
+    const restored = Game.deserialize(serialized);
+    expect(restored.activePlayer.id).to.eq(human.id);
+    expect(restored.marsBot).to.not.be.undefined;
+  });
+
   it('human is limited to 2 actions before MarsBot gets a turn', () => {
     const {game, human, marsBot} = createAutomaGame();
     // MarsBot should not have passed yet (has cards in action deck)

@@ -226,7 +226,8 @@ export class Game implements IGame, Logger {
       throw new Error('Duplicate color found: [' + colors + ']');
     }
 
-    this.activePlayer = this.getPlayerById(activePlayer);
+    // In automa games, activePlayer might be MarsBot who isn't in players yet
+    this.activePlayer = this.players.find((p) => p.id === activePlayer) ?? first;
     this.first = first; // To satisfy the constructor.
     this.setFirstPlayer(first);
     this.rng = rng;
@@ -536,7 +537,7 @@ export class Game implements IGame, Logger {
 
   // Function to retrieve a player by it's id
   public getPlayerById(id: PlayerId): IPlayer {
-    const player = this.players.find((p) => p.id === id);
+    const player = this.allPlayers.find((p) => p.id === id);
     if (player === undefined) {
       throw new Error(`player ${id} does not exist on game ${this.id}`);
     }
@@ -1822,6 +1823,13 @@ export class Game implements IGame, Logger {
     game.undoCount = d.undoCount ?? 0;
     game.temperature = d.temperature;
     game.venusScaleLevel = d.venusScaleLevel;
+
+    // Restore automa before activePlayer — MarsBot's player must exist for getPlayerById
+    if (d.automaState !== undefined && gameOptions.automaOption) {
+      game.automaHooks = AutomaGameSetup.setup(game, players[0], gameOptions, rng);
+      game.automaHooks.restoreState(d.automaState);
+    }
+
     game.activePlayer = game.getPlayerById(d.activePlayer);
     game.draftRound = d.draftRound;
     game.initialDraftIteration = d.initialDraftIteration;
@@ -1835,12 +1843,6 @@ export class Game implements IGame, Logger {
     game.globalsPerGeneration = d.globalsPerGeneration;
     game.verminInEffect = d.verminInEffect;
     game.exploitationOfVenusInEffect = d.exploitationOfVenusInEffect;
-
-    // Restore automa state
-    if (d.automaState !== undefined && gameOptions.automaOption) {
-      game.automaHooks = AutomaGameSetup.setup(game, players[0], gameOptions, rng);
-      game.automaHooks.restoreState(d.automaState);
-    }
 
     // Still in Draft or Research of generation 1
     if (game.generation === 1 && players.some((p) => p.playedCards.filter(isICorporationCard).length === 0)) {
