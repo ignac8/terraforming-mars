@@ -10,9 +10,7 @@ check_and_update() {
     CHANGED=false
 
     if git fetch origin "${GIT_BRANCH}" 2>&1; then
-        LOCAL=$(git rev-parse HEAD)
-        REMOTE=$(git rev-parse "origin/${GIT_BRANCH}")
-        if [ "$LOCAL" != "$REMOTE" ]; then
+        if ! git merge-base --is-ancestor "origin/${GIT_BRANCH}" HEAD 2>/dev/null; then
             echo "$(date -u) New commits on origin/${GIT_BRANCH}, pulling..."
             if git pull origin "${GIT_BRANCH}" 2>&1; then
                 CHANGED=true
