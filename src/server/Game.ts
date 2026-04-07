@@ -215,7 +215,7 @@ export class Game implements IGame, Logger {
     if (playerIds.includes(first.id) === false) {
       throw new Error('Cannot find first player ' + first.id + ' in [' + playerIds + ']');
     }
-    if (playerIds.includes(activePlayer) === false) {
+    if (playerIds.includes(activePlayer) === false && !gameOptions.automaOption) {
       throw new Error('Cannot find active player ' + activePlayer + ' in [' + playerIds + ']');
     }
     if (new Set(playerIds).size !== players.length) {
