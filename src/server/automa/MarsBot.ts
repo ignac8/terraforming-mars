@@ -425,6 +425,8 @@ export class MarsBot {
       bonusDeckSize: this.bonusDeck.drawPile.length,
       vpBreakdown: vp,
       instantWin: this.isInstantWin(),
+      globalParameterSteps: this.player.globalParameterSteps,
+      vpByGeneration: this.vpByGeneration,
     };
     if (this.corp !== undefined) {
       model.corpName = this.corp.name as CardName;
@@ -439,8 +441,6 @@ export class MarsBot {
       model.mcPerVP = mcPerVP;
       model.mcVP = Math.floor(this.turnResolver.mcSupply / mcPerVP);
     }
-    model.globalParameterSteps = this.player.globalParameterSteps;
-    model.vpByGeneration = this.vpByGeneration;
     return model;
   }
 
