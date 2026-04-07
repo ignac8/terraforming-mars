@@ -1,12 +1,11 @@
 import {CardName} from '../../../common/cards/CardName';
 import {IMarsBotCorp} from '../MarsBotCorpTypes';
-import {BASE_GAME_MARSBOT_CORPS} from './BaseGameCorps';
-import {EXPANSION_MARSBOT_CORPS} from './ExpansionCorps';
+import {ALL_AUTOMA_MANIFESTS} from './AllAutomaManifests';
 
-const INITIAL_CORPS: Partial<Record<CardName, IMarsBotCorp>> = {
-  ...BASE_GAME_MARSBOT_CORPS,
-  ...EXPANSION_MARSBOT_CORPS,
-};
+const INITIAL_CORPS: Partial<Record<CardName, IMarsBotCorp>> = {};
+for (const manifest of ALL_AUTOMA_MANIFESTS) {
+  Object.assign(INITIAL_CORPS, manifest.corps);
+}
 
 let ALL_MARSBOT_CORPS: Partial<Record<CardName, IMarsBotCorp>> = {...INITIAL_CORPS};
 
