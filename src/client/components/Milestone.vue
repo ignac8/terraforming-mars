@@ -17,7 +17,7 @@
           <p
             :class="getClass(score)"
             data-test="player-score"
-          >{{ score.score }}{{ score.claimable ? '✓' : '✗' }}</p>
+          >{{ score.color === 'bronze' ? '' : score.score }}{{ score.claimable ? '✓' : '✗' }}</p>
       </template>
     </div>
     </div>
