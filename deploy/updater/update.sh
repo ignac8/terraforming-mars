@@ -11,12 +11,9 @@ check_and_update() {
 
     if git fetch origin "${GIT_BRANCH}" 2>&1; then
         if ! git merge-base --is-ancestor "origin/${GIT_BRANCH}" HEAD 2>/dev/null; then
-            echo "$(date -u) New commits on origin/${GIT_BRANCH}, pulling..."
-            if git pull origin "${GIT_BRANCH}" 2>&1; then
-                CHANGED=true
-            else
-                echo "$(date -u) ERROR: git pull failed"
-            fi
+            echo "$(date -u) New commits on origin/${GIT_BRANCH}, resetting..."
+            git reset --hard "origin/${GIT_BRANCH}" 2>&1
+            CHANGED=true
         fi
     else
         echo "$(date -u) ERROR: git fetch origin failed"
