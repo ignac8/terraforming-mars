@@ -127,7 +127,7 @@
                           <td v-if="game.moon !== undefined">-</td>
                           <td v-if="game.moon !== undefined">-</td>
                           <td v-if="game.pathfinders !== undefined">-</td>
-                          <td>{{game.marsBot.vpBreakdown.neuralInstance + game.marsBot.vpBreakdown.mcToVP}}</td>
+                          <td>{{game.marsBot.vpBreakdown.neuralInstance + game.marsBot.vpBreakdown.mcToVP + game.marsBot.vpBreakdown.vermin}}</td>
                           <td v-if="game.gameOptions.escapeVelocity">-</td>
                           <td class="game-end-total">{{game.marsBot.vpBreakdown.total}}</td>
                           <td class="game-end-mc">{{game.marsBot.mcSupply}}</td>
@@ -210,6 +210,10 @@
                       <div v-if="game.marsBot.vpBreakdown.cardVP > 0" class="game-end-column-row">
                         <div class="game-end-column-vp">{{game.marsBot.vpBreakdown.cardVP}}</div>
                         <div class="game-end-column-text" v-i18n>Card VP (hard mode)</div>
+                      </div>
+                      <div v-if="game.marsBot.vpBreakdown.vermin" class="game-end-column-row">
+                        <div class="game-end-column-vp">{{game.marsBot.vpBreakdown.vermin}}</div>
+                        <div class="game-end-column-text" v-i18n>Vermin</div>
                       </div>
                   </div>
               </div>

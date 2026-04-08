@@ -14,6 +14,11 @@ import {GlobalParameter} from '../../src/common/GlobalParameter';
 import {Mayor} from '../../src/server/milestones/Mayor';
 import {Gardener} from '../../src/server/milestones/Gardener';
 import {Landlord} from '../../src/server/awards/Landlord';
+import {RemoveResourcesFromCard} from '../../src/server/deferredActions/RemoveResourcesFromCard';
+import {CardResource} from '../../src/common/CardResource';
+import {OrOptions} from '../../src/server/inputs/OrOptions';
+import {Predators} from '../../src/server/cards/base/Predators';
+import {Ants} from '../../src/server/cards/base/Ants';
 
 function createAutomaGame(difficulty: 'easy' | 'normal' | 'hard' | 'brutal' = 'normal'): {game: IGame, human: TestPlayer, marsBot: MarsBot} {
   const [game, human] = testGame(1, {
@@ -432,5 +437,246 @@ describe('MarsBotSessionFixes', () => {
         normalMarsBot.game.awards.find((a) => a.name === award.name)!);
       expect(easyVal).to.eq(normalVal - 5, `${award.name} easy offset wrong`);
     }
+  });
+
+  it('tile ownership preserved through serialization roundtrip', () => {
+    const {game, marsBot} = createAutomaGame();
+    const spaces = game.board.getAvailableSpacesOnLand(marsBot.player);
+    const space = spaces[0];
+    game.addCity(marsBot.player, space);
+    expect(space.player).to.eq(marsBot.player);
+
+    const serialized = game.serialize();
+    const restored = Game.deserialize(serialized);
+
+    const restoredSpace = restored.board.getSpaceOrThrow(space.id);
+    expect(restoredSpace.player).to.not.be.undefined;
+    expect(restoredSpace.player!.id).to.eq(marsBot.player.id);
+  });
+
+  it('greenery ownership preserved through serialization roundtrip', () => {
+    const {game, marsBot} = createAutomaGame();
+    const spaces = game.board.getAvailableSpacesForGreenery(marsBot.player);
+    const space = spaces[0];
+    game.addGreenery(marsBot.player, space, true);
+
+    const serialized = game.serialize();
+    const restored = Game.deserialize(serialized);
+
+    const restoredSpace = restored.board.getSpaceOrThrow(space.id);
+    expect(restoredSpace.player).to.not.be.undefined;
+    expect(restoredSpace.player!.id).to.eq(marsBot.player.id);
+  });
+
+  it('track regression at position 0 does not log', () => {
+    const {game, marsBot} = createAutomaGame();
+    // Ensure event track is at 0
+    const eventTrackIndex = marsBot.board.data.findIndex((d) => d.productions.includes(Resource.MEGACREDITS));
+    expect(marsBot.board.tracks[eventTrackIndex].position).to.eq(0);
+
+    const logsBefore = game.gameLog.length;
+    marsBot.regressTrack(Resource.MEGACREDITS);
+    expect(game.gameLog.length).to.eq(logsBefore); // No log added
+    expect(marsBot.board.tracks[eventTrackIndex].position).to.eq(0); // Still at 0
+  });
+
+  it('track regression at position > 0 logs and decrements', () => {
+    const {game, marsBot} = createAutomaGame();
+    const eventTrackIndex = marsBot.board.data.findIndex((d) => d.productions.includes(Resource.MEGACREDITS));
+    marsBot.board.tracks[eventTrackIndex].advance(); // Move to 1
+
+    const logsBefore = game.gameLog.length;
+    marsBot.regressTrack(Resource.MEGACREDITS);
+    expect(game.gameLog.length).to.eq(logsBefore + 1); // Log added
+    expect(marsBot.board.tracks[eventTrackIndex].position).to.eq(0);
+  });
+
+  it('vermin VP penalty applied to MarsBot', () => {
+    const {game, marsBot} = createAutomaGame();
+    // Place a city for MarsBot
+    const spaces = game.board.getAvailableSpacesOnLand(marsBot.player);
+    game.addCity(marsBot.player, spaces[0]);
+
+    game.verminInEffect = false;
+    const vpWithout = marsBot.getVictoryPoints();
+
+    game.verminInEffect = true;
+    const vpWith = marsBot.getVictoryPoints();
+
+    expect(vpWith.vermin).to.eq(-1);
+    expect(vpWith.total).to.eq(vpWithout.total - 1);
+  });
+
+  it('CrashSiteCleanup hook triggered when removing plants from MarsBot', () => {
+    const {game, human, marsBot} = createAutomaGame();
+    marsBot.turnResolver.mcSupply = 10;
+
+    expect(game.someoneHasRemovedOtherPlayersPlants).to.be.false;
+
+    marsBot.player.stock.add(Resource.PLANTS, -3, {log: true, from: {player: human}});
+
+    expect(game.someoneHasRemovedOtherPlayersPlants).to.be.true;
+  });
+
+  it('RemoveResourcesFromCard targets MarsBot MC supply when only option', () => {
+    const {human, marsBot} = createAutomaGame();
+    marsBot.turnResolver.mcSupply = 10;
+
+    const action = new RemoveResourcesFromCard(human, undefined, 1, {source: 'opponents'});
+    action.execute();
+
+    // Auto-executed since MarsBot MC is the only target
+    expect(marsBot.turnResolver.mcSupply).to.eq(9);
+  });
+
+  it('RemoveResourcesFromCard offers choice when both cards and MarsBot MC available', () => {
+    const {game, human, marsBot} = createAutomaGame();
+    marsBot.turnResolver.mcSupply = 10;
+
+    // Give human a card with animals so there are card targets too
+    const predators = new Predators();
+    predators.resourceCount = 3;
+    human.playedCards.push(predators);
+
+    const action = new RemoveResourcesFromCard(human, CardResource.ANIMAL, 1, {source: 'all'});
+    const result = action.execute();
+
+    // Should offer OrOptions with both card selection and MarsBot MC
+    expect(result).to.be.instanceOf(OrOptions);
+  });
+
+  it('RemoveResourcesFromCard does not offer MarsBot when source is self', () => {
+    const {human, marsBot} = createAutomaGame();
+    marsBot.turnResolver.mcSupply = 10;
+
+    const action = new RemoveResourcesFromCard(human, undefined, 1, {source: 'self', blockable: false});
+    const result = action.execute();
+
+    // No self-targets and MarsBot excluded for source=self
+    expect(result).to.be.undefined;
+  });
+
+  it('RemoveResourcesFromCard does not offer MarsBot when MC is 0', () => {
+    const {human, marsBot} = createAutomaGame();
+    marsBot.turnResolver.mcSupply = 0;
+
+    const action = new RemoveResourcesFromCard(human, undefined, 1, {source: 'opponents'});
+    const result = action.execute();
+
+    expect(result).to.be.undefined;
+  });
+
+  it('Predators canAct returns true when MarsBot has MC', () => {
+    const {human, marsBot} = createAutomaGame();
+    marsBot.turnResolver.mcSupply = 5;
+    const predators = new Predators();
+    human.playedCards.push(predators);
+
+    expect(predators.canAct(human)).to.be.true;
+  });
+
+  it('Ants canAct returns true when MarsBot has MC', () => {
+    const {human, marsBot} = createAutomaGame();
+    marsBot.turnResolver.mcSupply = 5;
+    const ants = new Ants();
+    human.playedCards.push(ants);
+
+    expect(ants.canAct(human)).to.be.true;
+  });
+
+  it('hasAvailableTargets returns false without automa', () => {
+    const [game, player1, player2] = testGame(2);
+    expect(RemoveResourcesFromCard.hasAvailableTargets(player1, CardResource.ANIMAL)).to.be.false;
+  });
+
+  it('LawSuit hook triggered when removing resources from MarsBot', () => {
+    const {human, marsBot} = createAutomaGame();
+    marsBot.turnResolver.mcSupply = 10;
+
+    marsBot.player.stock.add(Resource.STEEL, -2, {log: true, from: {player: human}});
+
+    // LawSuit tracks removingPlayers
+    expect(marsBot.player.removingPlayers).to.include(human.id);
+  });
+
+  it('vermin penalty is 0 when no cities', () => {
+    const {game, marsBot} = createAutomaGame();
+    game.verminInEffect = true;
+    const vp = marsBot.getVictoryPoints();
+    expect(vp.vermin).to.eq(0);
+  });
+
+  it('vermin penalty scales with number of cities', () => {
+    const {game, marsBot} = createAutomaGame();
+    const citySpaces = game.board.getAvailableSpacesOnLand(marsBot.player);
+    game.addCity(marsBot.player, citySpaces[0]);
+    game.addCity(marsBot.player, citySpaces[5]);
+
+    game.verminInEffect = true;
+    const vp = marsBot.getVictoryPoints();
+    expect(vp.vermin).to.eq(-2);
+  });
+
+  it('multiple tiles preserve ownership through serialization', () => {
+    const {game, marsBot} = createAutomaGame();
+    const landSpaces = game.board.getAvailableSpacesOnLand(marsBot.player);
+
+    game.addCity(marsBot.player, landSpaces[0]);
+    // Pick a greenery space that isn't already occupied
+    const greenerySpaces = game.board.getAvailableSpacesForGreenery(marsBot.player);
+    game.addGreenery(marsBot.player, greenerySpaces[0], true);
+
+    const serialized = game.serialize();
+    const restored = Game.deserialize(serialized);
+
+    const restoredCity = restored.board.getSpaceOrThrow(landSpaces[0].id);
+    const restoredGreenery = restored.board.getSpaceOrThrow(greenerySpaces[0].id);
+
+    expect(restoredCity.player).to.not.be.undefined;
+    expect(restoredCity.player!.id).to.eq(marsBot.player.id);
+    expect(restoredGreenery.player).to.not.be.undefined;
+    expect(restoredGreenery.player!.id).to.eq(marsBot.player.id);
+  });
+
+  it('getCities and getGreeneries work after deserialization', () => {
+    const {game, marsBot} = createAutomaGame();
+    const landSpaces = game.board.getAvailableSpacesOnLand(marsBot.player);
+
+    game.addCity(marsBot.player, landSpaces[0]);
+    const greenerySpaces = game.board.getAvailableSpacesForGreenery(marsBot.player);
+    game.addGreenery(marsBot.player, greenerySpaces[0], true);
+
+    const serialized = game.serialize();
+    const restored = Game.deserialize(serialized);
+
+    const restoredMarsBot = restored.automaHooks!.getMarsBotPlayer();
+    expect(restored.board.getCities(restoredMarsBot).length).to.eq(1);
+    expect(restored.board.getGreeneries(restoredMarsBot).length).to.eq(1);
+  });
+
+  it('Mons Insurance regression at 0 is no-op', () => {
+    const {marsBot} = createAutomaGame();
+    // All tracks start at 0
+    for (const track of marsBot.board.tracks) {
+      expect(track.position).to.eq(0);
+    }
+
+    // Decrease megacredits production by 2 (Mons Insurance)
+    marsBot.player.production.add(Resource.MEGACREDITS, -2);
+
+    // Track should still be at 0
+    const eventTrackIndex = marsBot.board.data.findIndex((d) => d.productions.includes(Resource.MEGACREDITS));
+    expect(marsBot.board.tracks[eventTrackIndex].position).to.eq(0);
+  });
+
+  it('track regression from 1 stops at 0 for multi-step decrease', () => {
+    const {marsBot} = createAutomaGame();
+    const eventTrackIndex = marsBot.board.data.findIndex((d) => d.productions.includes(Resource.MEGACREDITS));
+    marsBot.board.tracks[eventTrackIndex].advance(); // Position 1
+
+    // Decrease by 2 — should regress once to 0, second step is no-op
+    marsBot.player.production.add(Resource.MEGACREDITS, -2);
+
+    expect(marsBot.board.tracks[eventTrackIndex].position).to.eq(0);
   });
 });
