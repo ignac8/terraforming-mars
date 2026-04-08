@@ -1,3 +1,11 @@
 {$DOMAIN} {
+    handle_errors {
+        @502 expression {err.status_code} == 502
+        handle @502 {
+            root * /srv
+            rewrite * /502.html
+            file_server
+        }
+    }
     reverse_proxy app:8080
 }
