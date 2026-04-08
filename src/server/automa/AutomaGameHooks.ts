@@ -16,6 +16,7 @@ import {IAward} from '../awards/IAward';
 import {IMilestone} from '../milestones/IMilestone';
 import {Tag} from '../../common/cards/Tag';
 import {Resource} from '../../common/Resource';
+import {SelectOption} from '../inputs/SelectOption';
 
 /**
  * All automa (MarsBot) hooks into the Game lifecycle.
@@ -344,6 +345,31 @@ export class AutomaGameHooks {
   public updateVPForGeneration(): void {
     const vp = this.marsBot.getVictoryPoints();
     this.marsBot.vpByGeneration.push(vp.total);
+  }
+
+  // ---- Resource removal targeting ----
+
+  /** Check if MarsBot MC supply is a valid target for card resource removal. */
+  public hasRemoveResourceTarget(player: IPlayer, source: string): boolean {
+    if (source === 'self') return false;
+    const marsBot = this.marsBot.player;
+    return marsBot !== player && marsBot.stock.megacredits > 0;
+  }
+
+  /** Get a SelectOption for targeting MarsBot MC supply, or undefined if not available. */
+  public getRemoveResourceOption(player: IPlayer, count: number, source: string, cb: () => void): SelectOption | undefined {
+    if (!this.hasRemoveResourceTarget(player, source)) return undefined;
+    return new SelectOption(`Remove ${count} from MarsBot MC supply`)
+      .andThen(() => {
+        this.executeRemoveResource(player, count, cb);
+        return undefined;
+      });
+  }
+
+  /** Deduct from MarsBot MC supply as if card resources were removed. */
+  public executeRemoveResource(player: IPlayer, count: number, cb: () => void): void {
+    this.marsBot.player.stock.deduct(Resource.MEGACREDITS, count, {log: true, from: {player}});
+    cb();
   }
 
   /** Build the model sent to the client. */
