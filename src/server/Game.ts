@@ -1741,7 +1741,14 @@ export class Game implements IGame, Logger {
       throw new Error(`Player ${d.first} not found when rebuilding First Player`);
     }
 
-    const board = GameSetup.deserializeBoard(players, gameOptions, d);
+    // Create MarsBot player before board deserialization so tile ownership is preserved
+    let marsBotPlayer: IPlayer | undefined;
+    if (d.automaState !== undefined && gameOptions.automaOption) {
+      marsBotPlayer = AutomaGameSetup.createMarsBotPlayer(d.id);
+    }
+
+    const playersForBoard = marsBotPlayer !== undefined ? [...players, marsBotPlayer] : players;
+    const board = GameSetup.deserializeBoard(playersForBoard, gameOptions, d);
 
     const rng = new SeededRandom(d.seed, d.currentSeed);
 
@@ -1750,12 +1757,6 @@ export class Game implements IGame, Logger {
     const preludeDeck = PreludeDeck.deserialize(d.preludeDeck, rng);
 
     const ceoDeck = CeoDeck.deserialize(d.ceoDeck, rng);
-
-    // Create MarsBot player before the Game constructor so getPlayerById can find it
-    let marsBotPlayer: IPlayer | undefined;
-    if (d.automaState !== undefined && gameOptions.automaOption) {
-      marsBotPlayer = AutomaGameSetup.createMarsBotPlayer(d.id);
-    }
 
     const game = new Game(d.id, players, first, d.activePlayer, gameOptions, rng, board, projectDeck, corporationDeck, preludeDeck, ceoDeck, d.tags, marsBotPlayer);
     game.resettable = true;
