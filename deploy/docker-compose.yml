@@ -50,6 +50,7 @@ services:
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
       - ./502.html:/srv/502.html:ro
+      - ../assets/stars.jpg:/srv/stars.jpg:ro
       - caddy_data:/data
       - caddy_config:/config
     security_opt:

@@ -4,9 +4,10 @@
     <meta charset="utf-8">
     <meta http-equiv="refresh" content="3">
     <title>Terraforming Mars - Updating</title>
+    <link href="https://fonts.googleapis.com/css?family=Ubuntu&display=swap" rel="stylesheet"/>
     <style>
         body {
-            background: rgb(48, 48, 48);
+            background: url(/stars.jpg) rgb(48, 48, 48);
             color: #ddd;
             font-family: Ubuntu, sans-serif;
             display: flex;
@@ -39,6 +40,13 @@
         @keyframes spin {
             to { transform: rotate(360deg); }
         }
+        .notice {
+            font-size: 14px;
+            position: fixed;
+            bottom: 0;
+            right: 0;
+            padding: 16px 24px;
+        }
     </style>
 </head>
 <body>
@@ -47,5 +55,6 @@
         <div class="spinner"></div>
         <p>This page will refresh automatically...</p>
     </div>
+    <div class="notice">Not affiliated with FryxGames, Asmodee Digital or Steam in any way.</div>
 </body>
 </html>

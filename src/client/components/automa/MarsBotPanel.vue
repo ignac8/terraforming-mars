@@ -25,8 +25,7 @@
     <div class="marsbot-tracks">
       <div v-for="(track, trackIndex) in model.tracks" :key="trackIndex" class="marsbot-track">
         <div class="marsbot-track-label">
-          <span class="marsbot-track-num">{{ track.tags.join(', ') }}</span>
-          <span v-if="track.productions.length" class="marsbot-track-prod">→ {{ track.productions.join(', ') }}</span>
+          <span class="marsbot-track-num">{{ [...track.tags, ...track.productions].join(', ') }}</span>
         </div>
         <span class="marsbot-track-pos">{{ track.position }}</span>
         <div class="marsbot-track-squares">
@@ -182,11 +181,11 @@ export default defineComponent({
   gap: 6px;
 }
 .marsbot-track-label {
-  width: 150px;
-  min-width: 150px;
+  min-width: max-content;
   display: flex;
   gap: 4px;
   align-items: center;
+  margin-right: 6px;
 }
 .marsbot-track-num {
   font-family: Prototype, monospace;
