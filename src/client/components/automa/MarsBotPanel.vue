@@ -25,8 +25,10 @@
     <div class="marsbot-tracks">
       <div v-for="(track, trackIndex) in model.tracks" :key="trackIndex" class="marsbot-track">
         <div class="marsbot-track-label">
-          <span class="marsbot-track-num">{{ track.tags[0] }}</span>
+          <span class="marsbot-track-num">{{ track.tags.join(', ') }}</span>
+          <span v-if="track.productions.length" class="marsbot-track-prod">→ {{ track.productions.join(', ') }}</span>
         </div>
+        <span class="marsbot-track-pos">{{ track.position }}</span>
         <div class="marsbot-track-squares">
           <div
             v-for="i in trackLength(track)"
@@ -44,7 +46,6 @@
             <span v-if="getAction(track, i)" class="marsbot-action-icon">{{ getActionIcon(track, i) }}</span>
           </div>
         </div>
-        <span class="marsbot-track-pos">{{ track.position }}</span>
       </div>
     </div>
   </div>
@@ -200,6 +201,11 @@ export default defineComponent({
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+.marsbot-track-prod {
+  font-size: 11px;
+  color: #888;
+  white-space: nowrap;
 }
 .marsbot-track-squares {
   display: flex;

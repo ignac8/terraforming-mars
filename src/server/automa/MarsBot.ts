@@ -432,6 +432,7 @@ export class MarsBot {
       difficulty: this.difficulty,
       tracks: this.board.tracks.map((track) => ({
         tags: track.definition.tags,
+        productions: track.definition.productions,
         position: track.position,
         layout: track.definition.layout,
       })),
