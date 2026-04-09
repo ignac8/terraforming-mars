@@ -4,9 +4,11 @@ import {CardName} from '../cards/CardName';
 import {Color} from '../Color';
 import {MADetail} from '../game/VictoryPointsBreakdown';
 import {GlobalParameter} from '../GlobalParameter';
+import {Resource} from '../Resource';
 
 export type MarsBotTrackModel = {
   tags: ReadonlyArray<Tag>;
+  productions: ReadonlyArray<Resource>;
   position: number;
   layout?: ReadonlyArray<TrackAction | undefined>;
 };
