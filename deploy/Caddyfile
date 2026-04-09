@@ -3,7 +3,7 @@
         @502 expression {err.status_code} == 502
         handle @502 {
             root * /srv
-            rewrite * /502.html
+            try_files {path} /502.html
             file_server
         }
     }
