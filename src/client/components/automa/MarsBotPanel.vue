@@ -29,7 +29,7 @@
         </div>
         <div class="marsbot-track-squares">
           <div
-            v-for="i in 18"
+            v-for="i in trackLength(track)"
             :key="i"
             class="marsbot-square"
             :class="{
@@ -66,6 +66,8 @@ const ACTION_ICONS: Partial<Record<TrackAction, string>> = {
   'advance': '+',
   'venus': 'V',
   'venus2': 'V2',
+  'floater': 'F',
+  'floater2': 'F2',
   'tr1': '1', 'tr2': '2', 'tr3': '3', 'tr4': '4',
   'tr5': '5', 'tr6': '6', 'tr7': '7', 'tr8': '8',
 };
@@ -81,6 +83,8 @@ const ACTION_LABELS: Partial<Record<TrackAction, string>> = {
   'advance': 'Advance 1 more',
   'venus': 'Raise Venus',
   'venus2': 'Raise Venus 2 steps',
+  'floater': 'Gain 1 floater',
+  'floater2': 'Gain 2 floaters',
   'tr1': 'Raise TR +1', 'tr2': 'Raise TR +2', 'tr3': 'Raise TR +3', 'tr4': 'Raise TR +4',
   'tr5': 'Raise TR +5', 'tr6': 'Raise TR +6', 'tr7': 'Raise TR +7', 'tr8': 'Raise TR +8',
 };
@@ -101,6 +105,9 @@ export default defineComponent({
           c.trackIndex === trackIndex && c.position === position && c.cubeType === cubeType,
       );
     },
+    trackLength(track: {layout?: ReadonlyArray<TrackAction | undefined>}): number {
+      return track.layout ? track.layout.length - 1 : 18;
+    },
     getAction(track: {layout?: ReadonlyArray<TrackAction | undefined>}, position: number): TrackAction | undefined {
       if (!track.layout) return undefined;
       return track.layout[position];
@@ -108,7 +115,10 @@ export default defineComponent({
     getActionIcon(track: {layout?: ReadonlyArray<TrackAction | undefined>}, position: number): string {
       const action = this.getAction(track, position);
       if (!action) return '';
-      if (action.startsWith('tag_')) return 'T' + action.slice(4);
+      if (action.startsWith('tag_')) {
+        const tag = action.slice(4);
+        return '+' + tag.charAt(0).toUpperCase();
+      }
       return ACTION_ICONS[action] ?? '?';
     },
     getActionTooltip(track: {layout?: ReadonlyArray<TrackAction | undefined>}, position: number): string {
