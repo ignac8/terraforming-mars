@@ -54,6 +54,12 @@ export class MarsBotBonusResolver {
     case BonusCardId.B06_LOBBYISTS:
       this.resolveLobbyists(card);
       break;
+    case BonusCardId.B15_LOBBYISTS_VENUS:
+      this.resolveLobbyistsVenus(card);
+      break;
+    case BonusCardId.B16_GOVERNMENT_INTERVENTION:
+      this.resolveGovernmentIntervention();
+      break;
     case BonusCardId.B07_LOCAL_NEURAL_INSTANCE:
       this.resolveLocalNeuralInstance(card);
       break;
@@ -221,13 +227,52 @@ export class MarsBotBonusResolver {
     // No failed action if can't place
   }
 
-  // B06: Lobbyists
+  // B06: Lobbyists / B15: Lobbyists (Venus) — shared (a) temp and (b) oxygen branches
   private resolveLobbyists(card: MarsBotBonusCard): void {
-    const temp = this.game.getTemperature();
-    const oxy = this.game.getOxygenLevel();
+    if (this.lobbyistsTempBranch(card)) return;
+    if (this.lobbyistsOxygenBranch(card)) return;
 
-    // (a) Temperature 1-2 steps from bonus step or completion
-    // Bonus steps: -24°C, -20°C (heat production), 0°C (ocean), and completion (+8°C)
+    // (c) B06: Ocean adjacent to 2+ oceans
+    const oceanSpaces = this.game.board.getAvailableSpacesForOcean(this.marsBot);
+    const adjacentTo2Oceans = oceanSpaces.filter((s) => {
+      const adj = this.game.board.getAdjacentSpaces(s);
+      return adj.filter((a) => Board.isOceanSpace(a) && a.tile !== undefined).length >= 2;
+    });
+    if (adjacentTo2Oceans.length > 0 && this.game.canAddOcean()) {
+      const space = adjacentTo2Oceans[0];
+      this.game.addOcean(this.marsBot, space);
+      this.turnResolver.mcSupply += this.tilePlacer.getTotalPlacementMC(space);
+      this.bonusDeck.destroy(card);
+      this.game.log('MarsBot places ocean (Lobbyists), card destroyed');
+      return;
+    }
+
+    this.advanceFurthestParameter();
+  }
+
+  private resolveLobbyistsVenus(card: MarsBotBonusCard): void {
+    if (this.lobbyistsTempBranch(card)) return;
+    if (this.lobbyistsOxygenBranch(card)) return;
+
+    // (c) B15: Venus 1-2 steps from bonus step or completion — do NOT destroy card
+    const venus = this.game.getVenusScaleLevel();
+    const venusBonusTargets = [constants.VENUS_LEVEL_FOR_CARD_BONUS, constants.VENUS_LEVEL_FOR_TR_BONUS, constants.MAX_VENUS_SCALE];
+    const venusStepsToNextBonus = venusBonusTargets
+      .filter((v) => v > venus)
+      .map((v) => (v - venus) / 2)
+      .reduce((min, s) => Math.min(min, s), Infinity);
+    if (venusStepsToNextBonus >= 1 && venusStepsToNextBonus <= 2 && venus < constants.MAX_VENUS_SCALE) {
+      this.game.increaseVenusScaleLevel(this.marsBot, 2);
+      this.game.log('MarsBot raises Venus 2 steps (Lobbyists Venus)');
+      return;
+    }
+
+    this.advanceFurthestParameter();
+  }
+
+  /** Lobbyists shared branch (a): temperature 1-2 steps from bonus or completion. */
+  private lobbyistsTempBranch(card: MarsBotBonusCard): boolean {
+    const temp = this.game.getTemperature();
     const tempBonusTargets = [constants.TEMPERATURE_BONUS_FOR_HEAT_1, constants.TEMPERATURE_BONUS_FOR_HEAT_2, constants.TEMPERATURE_FOR_OCEAN_BONUS, constants.MAX_TEMPERATURE];
     const tempStepsToNextBonus = tempBonusTargets
       .filter((t) => t > temp)
@@ -237,47 +282,56 @@ export class MarsBotBonusResolver {
       this.game.increaseTemperature(this.marsBot, 2);
       this.bonusDeck.destroy(card);
       this.game.log('MarsBot raises temperature 2 steps (Lobbyists), card destroyed');
-      return;
+      return true;
     }
+    return false;
+  }
 
-    // (b) Oxygen 1-2 steps from bonus or completion
+  /** Lobbyists shared branch (b): oxygen 1-2 steps from bonus or completion. */
+  private lobbyistsOxygenBranch(card: MarsBotBonusCard): boolean {
+    const oxy = this.game.getOxygenLevel();
     const oxyStepsToMax = constants.MAX_OXYGEN_LEVEL - oxy;
     const oxyBonusAt8 = oxy < constants.OXYGEN_LEVEL_FOR_TEMPERATURE_BONUS;
     const oxyStepsToBonus = oxyBonusAt8 ? constants.OXYGEN_LEVEL_FOR_TEMPERATURE_BONUS - oxy : oxyStepsToMax;
     if ((oxyStepsToMax >= 1 && oxyStepsToMax <= 2) || (oxyStepsToBonus >= 1 && oxyStepsToBonus <= 2)) {
-      // Place greenery + raise oxygen + raise oxygen 1 more
       const greenerySpace = this.tilePlacer.findGreenerySpace();
       if (greenerySpace !== undefined) {
         this.game.addGreenery(this.marsBot, greenerySpace, true);
         this.turnResolver.mcSupply += this.tilePlacer.getPlacementBonusMC(greenerySpace);
         this.turnResolver.mcSupply += this.tilePlacer.getOceanAdjacencyMC(greenerySpace);
-        // Raise oxygen 1 more step
         if (this.game.getOxygenLevel() < constants.MAX_OXYGEN_LEVEL) {
           this.game.increaseOxygenLevel(this.marsBot, 1);
         }
         this.bonusDeck.destroy(card);
         this.game.log('MarsBot places greenery and raises oxygen twice (Lobbyists), card destroyed');
-        return;
+        return true;
       }
     }
+    return false;
+  }
 
-    // (c) Ocean space adjacent to 2+ oceans
-    const oceanSpaces = this.game.board.getAvailableSpacesForOcean(this.marsBot);
-    const adjacentTo2Oceans = oceanSpaces.filter((s) => {
-      const adj = this.game.board.getAdjacentSpaces(s);
-      return adj.filter((a) => Board.isOceanSpace(a) && a.tile !== undefined).length >= 2;
-    });
-    if (adjacentTo2Oceans.length > 0 && this.game.canAddOcean()) {
-      const space = adjacentTo2Oceans[0]; // Simplified: take first
-      this.game.addOcean(this.marsBot, space);
-      this.turnResolver.mcSupply += this.tilePlacer.getTotalPlacementMC(space);
-      this.bonusDeck.destroy(card);
-      this.game.log('MarsBot places ocean (Lobbyists), card destroyed');
-      return;
+  // B16: Government Intervention
+  private resolveGovernmentIntervention(): void {
+    const venus = this.game.getVenusScaleLevel();
+    const isEvenGen = this.game.generation % 2 === 0;
+    const venusComplete = venus >= constants.MAX_VENUS_SCALE;
+
+    if (isEvenGen || venusComplete) {
+      this.withoutTRGain(() => this.advanceFurthestParameter());
+    } else if (venus < constants.MAX_VENUS_SCALE) {
+      this.withoutTRGain(() => this.game.increaseVenusScaleLevel(this.marsBot, 1));
     }
+  }
 
-    // (d) Advance furthest-from-completion parameter (tie: oxygen > ocean > temperature)
-    this.advanceFurthestParameter();
+  /** Execute an action and reverse any TR gained (for Government Intervention). */
+  private withoutTRGain(action: () => void): void {
+    const trBefore = this.marsBot.getTerraformRating();
+    action();
+    const trGained = this.marsBot.getTerraformRating() - trBefore;
+    if (trGained > 0) {
+      this.marsBot.decreaseTerraformRating(trGained);
+      this.game.log('MarsBot does not receive TR from Government Intervention');
+    }
   }
 
   // B07: Local Neural Instance
@@ -420,7 +474,9 @@ export class MarsBotBonusResolver {
     case 'Manufacturer': return advanceLeastOf(0, 4);
     case 'Politician': return false;
     case 'Supplier': return advance(4);
-    case 'Visionary': { const idx2 = board.getLeastAdvancedTrackIndex(); return advance(idx2); }
+    case 'Visionary': { const idx2 = board.getLeastAdvancedTrackIndex(true); return advance(idx2); }
+    // Venus Next: added to ALL Corporate Competition variants
+    case 'Venuphile': return board.tracks.length > 7 ? advance(7) : false;
     default:
       return false;
     }

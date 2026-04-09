@@ -89,7 +89,9 @@ export class MarsBot {
     private readonly random: Random,
   ) {
     this.board = new MarsBotBoard(boardData);
-    this.bonusDeck = MarsBotBonusDeck.createBase(random);
+    this.bonusDeck = game.gameOptions.venusNextExtension ?
+      MarsBotBonusDeck.createWithVenus(random) :
+      MarsBotBonusDeck.createBase(random);
     this.tilePlacer = new MarsBotTilePlacer(game, player, humanPlayer);
     this.turnResolver = new MarsBotTurnResolver(
       game, player, humanPlayer, this.board, difficulty, 0, this.tilePlacer,
@@ -115,8 +117,16 @@ export class MarsBot {
     if (bonusCard) {
       deck.push(bonusCard);
     }
+    this.addGovernmentIntervention(deck);
     inplaceShuffle(deck, this.random);
     this.actionDeck = deck;
+  }
+
+  /** Add Government Intervention (B16) to action deck if Venus is enabled. */
+  private addGovernmentIntervention(deck: Array<IProjectCard | MarsBotBonusCard>): void {
+    if (this.game.gameOptions.venusNextExtension) {
+      deck.push(createCorpBonusCard(BonusCardId.B16_GOVERNMENT_INTERVENTION));
+    }
   }
 
   // ---- Research Phase ----
@@ -131,6 +141,7 @@ export class MarsBot {
     if (bonusCard !== undefined) {
       deck.push(bonusCard);
     }
+    this.addGovernmentIntervention(deck);
 
     inplaceShuffle(deck, this.random);
     this.actionDeck = deck;
@@ -139,12 +150,14 @@ export class MarsBot {
   }
 
   /** Build MarsBot's action deck from drafted cards (drafting variant). */
-  public buildResearchActionDeckFromDraft(draftedCards: Array<IProjectCard>): void {
-    // Shuffle drafted cards, discard 1 to project discard
+  public buildResearchActionDeckFromDraft(draftedCards: Array<IProjectCard>, skipDiscard: boolean = false): void {
     inplaceShuffle(draftedCards, this.random);
-    const discarded = draftedCards.pop();
-    if (discarded) {
-      this.game.projectDeck.discardPile.push(discarded);
+    if (!skipDiscard) {
+      // Normally discard 1 drafted card to project discard
+      const discarded = draftedCards.pop();
+      if (discarded) {
+        this.game.projectDeck.discardPile.push(discarded);
+      }
     }
 
     // Add 1 bonus card
@@ -153,6 +166,7 @@ export class MarsBot {
     if (bonusCard !== undefined) {
       deck.push(bonusCard);
     }
+    this.addGovernmentIntervention(deck);
 
     inplaceShuffle(deck, this.random);
     this.actionDeck = deck;

@@ -36,6 +36,7 @@ function mockContext(overrides: Partial<MarsBotMAContext> = {}): MarsBotMAContex
     specialTilesOwned: 0,
     hasVenus: false,
     venusTrackPos: 0,
+    floaterCount: 0,
     ...overrides,
   };
 }
@@ -87,18 +88,39 @@ describe('MarsBotMilestoneAwardEval', () => {
       expect(MILESTONE_EVALS.get('Diversifier')!(ctx)).to.be.true;
     });
 
-    it('Diversifier (Hellas): one track < 3 returns false', () => {
+    it('Diversifier (Hellas): one track < 3 without Venus fails', () => {
       const ctx = mockContext({allTrackPositions: () => [3, 3, 2, 3, 3, 3, 3]});
       expect(MILESTONE_EVALS.get('Diversifier')!(ctx)).to.be.false;
     });
 
-    it('Diversifier (Hellas): fails when Venus track < 3 and Venus enabled', () => {
+    it('Diversifier (Hellas): one track < 3 with Venus passes (7 of 8)', () => {
       const ctx = mockContext({
         allTrackPositions: () => [3, 3, 3, 3, 3, 3, 3],
         hasVenus: true,
         venusTrackPos: 2,
       });
+      // 7 of 8 at 3+ — needs 7, passes
+      expect(MILESTONE_EVALS.get('Diversifier')!(ctx)).to.be.true;
+    });
+
+    it('Diversifier (Hellas): two tracks < 3 with Venus fails', () => {
+      const ctx = mockContext({
+        allTrackPositions: () => [3, 3, 2, 3, 3, 3, 3],
+        hasVenus: true,
+        venusTrackPos: 2,
+      });
+      // 6 of 8 at 3+ — needs 7, fails
       expect(MILESTONE_EVALS.get('Diversifier')!(ctx)).to.be.false;
+    });
+
+    it('Hoverlord: 7+ floaters returns true', () => {
+      const ctx = mockContext({floaterCount: 7});
+      expect(MILESTONE_EVALS.get('Hoverlord')!(ctx)).to.be.true;
+    });
+
+    it('Hoverlord: 6 floaters returns false', () => {
+      const ctx = mockContext({floaterCount: 6});
+      expect(MILESTONE_EVALS.get('Hoverlord')!(ctx)).to.be.false;
     });
 
     it('Tactician4 (modular): mc >= 30 returns true', () => {
@@ -246,6 +268,18 @@ describe('MarsBotMilestoneAwardEval', () => {
       // The 12 MC cost is deducted during milestone claiming in the game engine.
       // Verify MarsBot has enough MC to cover the 12 MC milestone cost.
       expect(marsBot.turnResolver.mcSupply).to.be.gte(12);
+    });
+  });
+
+  describe('Venus Awards', () => {
+    it('Venuphile: returns Venus track position', () => {
+      const ctx = mockContext({venusTrackPos: 5});
+      expect(AWARD_EVALS.get('Venuphile')!(ctx)).to.eq(5);
+    });
+
+    it('Venuphile: returns 0 when Venus track at 0', () => {
+      const ctx = mockContext({venusTrackPos: 0});
+      expect(AWARD_EVALS.get('Venuphile')!(ctx)).to.eq(0);
     });
   });
 });

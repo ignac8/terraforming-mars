@@ -7,7 +7,7 @@ export interface MarsBotBonusCard {
   destroyed: boolean;
 }
 
-function bonusCard(id: BonusCardId, name: string): MarsBotBonusCard {
+export function bonusCard(id: BonusCardId, name: string): MarsBotBonusCard {
   return {id, name, destroyed: false};
 }
 
@@ -31,6 +31,8 @@ export function createCorpBonusCard(id: BonusCardId): MarsBotBonusCard {
 }
 
 const CORP_BONUS_CARD_NAMES: Map<BonusCardId, string> = new Map([
+  [BonusCardId.B15_LOBBYISTS_VENUS, 'Lobbyists (Venus)'],
+  [BonusCardId.B16_GOVERNMENT_INTERVENTION, 'Government Intervention'],
   [BonusCardId.B22_SETTLERS, 'Settlers'],
   [BonusCardId.B23_RAPID_SPROUTING, 'Rapid Sprouting'],
   [BonusCardId.B24_SUPPLY_AND_DEMAND, 'Supply & Demand'],
