@@ -2,7 +2,6 @@ import {Tag} from '../../common/cards/Tag';
 import {
   TrackAction,
   TrackDefinition,
-  MARSBOT_MAX_TRACK_POSITION,
 } from '../../common/automa/AutomaTypes';
 
 /** Result of advancing a track. */
@@ -20,7 +19,7 @@ export class MarsBotTrack {
   constructor(public readonly definition: TrackDefinition) {}
 
   public canAdvance(): boolean {
-    return this.position < MARSBOT_MAX_TRACK_POSITION;
+    return this.position < this.definition.layout.length - 1;
   }
 
   /** Advance the track by 1. */
@@ -79,10 +78,11 @@ export class MarsBotBoard {
   }
 
   /** Index of the least-advanced track (first index if tied). */
-  public getLeastAdvancedTrackIndex(): number {
+  public getLeastAdvancedTrackIndex(excludeVenus: boolean = false): number {
+    const limit = excludeVenus ? Math.min(this.tracks.length, 7) : this.tracks.length;
     let minPos = this.tracks[0].position;
     let minIndex = 0;
-    for (let i = 1; i < this.tracks.length; i++) {
+    for (let i = 1; i < limit; i++) {
       if (this.tracks[i].position < minPos) {
         minPos = this.tracks[i].position;
         minIndex = i;

@@ -21,8 +21,8 @@ describe('MarsBotGameCreation', () => {
         venusNextExtension: true,
         boardName: BoardName.THARSIS,
       });
-      // Venus should have been force-disabled
-      expect(game.gameOptions.venusNextExtension).to.be.false;
+      // Venus is now supported for automa
+      expect(game.gameOptions.venusNextExtension).to.be.true;
     });
 
     it('automa game forces Colonies off', () => {

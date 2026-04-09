@@ -148,6 +148,8 @@
       <button class="palette-btn" data-action="city">City</button>
       <button class="palette-btn" data-action="venus">Venus</button>
       <button class="palette-btn" data-action="venus2">Venus×2</button>
+      <button class="palette-btn" data-action="floater">Float</button>
+      <button class="palette-btn" data-action="floater2">Float×2</button>
     </div>
   </div>
   <div class="palette-section">
@@ -192,13 +194,13 @@ let trackDefs = [
 ];
 
 const boardData = {
-  1: [null,null,"ocean",null,null,"tr2","temperature","milestone","greenery","award","city","tag_2","ocean",null,"greenery","city","temperature",null,"tr5"],
+  1: [null,null,"ocean",null,null,"tr2","temperature","milestone","greenery","award","city","tag_space","ocean",null,"greenery","city","temperature",null,"tr5"],
   2: [null,"advance",null,"temperature",null,"ocean","city","venus","milestone","temperature",null,"tr3","ocean",null,"temperature",null,"tr4",null,"tr6"],
-  3: [null,"advance",null,null,null,"advance",null,"advance","ocean",null,null,null,null,null,null,"advance",null,null,"tr5"],
-  4: [null,"advance",null,"advance",null,null,null,null,null,null,null,"ocean",null,null,null,"advance",null,null,"tr7"],
-  5: [null,"advance",null,null,null,null,"advance",null,null,null,null,null,"ocean",null,null,null,null,null,null],
-  6: [null,null,null,null,null,null,null,"advance",null,null,"advance",null,null,null,null,"advance",null,null,"tr7"],
-  7: [null,null,null,null,null,null,null,"advance",null,"ocean",null,null,null,null,null,"ocean",null,null,"tr6"],
+  3: [null,"advance",null,"ocean","greenery","advance","floater2","advance","ocean","tr3","award",null,"tr4","temperature","greenery","advance","temperature2",null,"tr5"],
+  4: [null,"advance",null,"advance","city",null,"greenery",null,"tr2","milestone","temperature","ocean","tr3","temperature","tr4","advance",null,"temperature","tr7"],
+  5: [null,"advance","floater","tr3","floater2","temperature","advance","milestone",null,"temperature","greenery","advance","ocean",null,"city","greenery",null,"temperature","tr8"],
+  6: [null,"city",null,null,"tr3","city",null,"advance","city","award","advance","city","greenery","tr4","greenery","advance",null,"city","tr7"],
+  7: [null,null,null,"greenery",null,"greenery","greenery","advance",null,"ocean","award","temperature","tr3","greenery","greenery","ocean","greenery",null,"tr6"],
 };
 
 let selectedAction = null;
@@ -207,7 +209,7 @@ const ACTION_LABELS = {
   empty:'', advance:'\u25B6', tr1:'TR1', tr2:'TR2', tr3:'TR3', tr4:'TR4',
   tr5:'TR5', tr6:'TR6', tr7:'TR7', tr8:'TR8', milestone:'M', award:'A',
   temperature:'Temp', temperature2:'Tmp×2', greenery:'Green', ocean:'Ocean', city:'City',
-  venus:'Venus', venus2:'Vns×2',
+  venus:'Venus', venus2:'Vns×2', floater:'Float', floater2:'Flt×2',
 };
 function getActionLabel(a) {
   if (!a) return '';

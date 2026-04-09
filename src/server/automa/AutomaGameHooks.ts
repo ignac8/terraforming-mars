@@ -142,7 +142,29 @@ export class AutomaGameHooks {
       return true; // Draft handled — don't call runResearchPhase for human
     }
     this.marsBot.buildResearchActionDeck();
+    this.handleFloaterExtraCard();
     return false;
+  }
+
+  /** Venus Next: check if Hoverlord is no longer available and MarsBot has 5+ floaters. */
+  private canSpendFloatersForExtraCard(): boolean {
+    if (!this.game.gameOptions.venusNextExtension) return false;
+    if (this.marsBot.floaterCount < 5) return false;
+    // Hoverlord must be unavailable: not in game, already claimed, or all milestone slots full
+    const hoverlordInGame = this.game.milestones.some((m) => m.name === 'Hoverlord');
+    if (!hoverlordInGame) return true;
+    if (this.game.allMilestonesClaimed()) return true;
+    return this.game.claimedMilestones.some((cm) => cm.milestone.name === 'Hoverlord');
+  }
+
+  /** Venus Next (non-draft): spend 5 floaters for 1 extra card from project deck. */
+  private handleFloaterExtraCard(): void {
+    if (!this.canSpendFloatersForExtraCard()) return;
+
+    this.marsBot.floaterCount -= 5;
+    const extraCards = this.game.projectDeck.drawN(this.game, 1);
+    this.marsBot.actionDeck.push(...extraCards);
+    this.game.log('MarsBot spends 5 floaters for an extra card');
   }
 
   /**
@@ -177,8 +199,22 @@ export class AutomaGameHooks {
             this.game.projectDeck.discardPile.push(discarded);
           }
         }
-        // Build MarsBot deck
-        this.marsBot.buildResearchActionDeckFromDraft(finalMarsBotCards);
+        // Build MarsBot deck — Brutal keeps 4th card free; others spend 5 floaters to skip discard
+        const isBrutal = this.marsBot.difficulty === 'brutal';
+        const canSpend = this.canSpendFloatersForExtraCard();
+        const skipDiscard = isBrutal || canSpend;
+        if (!isBrutal && canSpend) {
+          this.marsBot.floaterCount -= 5;
+          this.game.log('MarsBot spends 5 floaters to keep 4th drafted card');
+        }
+        this.marsBot.buildResearchActionDeckFromDraft(finalMarsBotCards, skipDiscard);
+        // Brutal: spend 5 floaters for a 5th card from project deck
+        if (isBrutal && canSpend) {
+          this.marsBot.floaterCount -= 5;
+          const extra = this.game.projectDeck.drawN(this.game, 1);
+          this.marsBot.actionDeck.push(...extra);
+          this.game.log('MarsBot (Brutal) spends 5 floaters for a 5th card');
+        }
         // Human gets their 4 drafted cards → buy phase
         humanPlayer.draftedCards = humanKept;
         humanPlayer.runResearchPhase();

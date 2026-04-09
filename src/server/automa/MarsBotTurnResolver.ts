@@ -149,11 +149,18 @@ export class MarsBotTurnResolver {
       return;
     }
 
-    // Parse tag_N (advance another track)
-    const tagMatch = action.match(/^tag_(\d+)$/);
-    if (tagMatch) {
-      const targetTrack = parseInt(tagMatch[1], 10);
-      this.advanceTrack(targetTrack);
+    // Parse tag_N (advance another track by index or tag name)
+    if (action.startsWith('tag_')) {
+      const value = action.substring(4);
+      const numericIndex = parseInt(value, 10);
+      if (!isNaN(numericIndex)) {
+        this.advanceTrack(numericIndex);
+      } else {
+        const tagIndex = this.board.getTrackIndexForTag(value as Tag);
+        if (tagIndex !== undefined) {
+          this.advanceTrack(tagIndex);
+        }
+      }
       return;
     }
 
@@ -191,8 +198,24 @@ export class MarsBotTurnResolver {
       this.placeCity();
       return;
 
+    case 'floater':
+      if (!this.game.gameOptions.venusNextExtension) return;
+      if (this.marsBotManager) {
+        this.marsBotManager.floaterCount++;
+        this.game.log('MarsBot gains 1 floater');
+      }
+      return;
+
+    case 'floater2':
+      if (!this.game.gameOptions.venusNextExtension) return;
+      if (this.marsBotManager) {
+        this.marsBotManager.floaterCount += 2;
+        this.game.log('MarsBot gains 2 floaters');
+      }
+      return;
+
     case 'venus':
-      if (!this.game.gameOptions.venusNextExtension) return; // Ignore if expansion not in use
+      if (!this.game.gameOptions.venusNextExtension) return;
       this.raiseVenus(1);
       return;
 
@@ -284,18 +307,23 @@ export class MarsBotTurnResolver {
       return;
     }
 
-    // Tiebreakers: 1) one human also qualifies for, 2) one human is closest to, 3) leftmost
-    let best = claimable[0]; // Default: leftmost (first in array)
+    // Tiebreakers: 1) one human also qualifies for, 2) one human is closest to, 3) leftmost (Hoverlord last)
+    // Sort so Hoverlord is last in "leftmost" priority when tied
+    const sorted = claimable.sort((a, b) => {
+      if (a.name === 'Hoverlord') return 1;
+      if (b.name === 'Hoverlord') return -1;
+      return 0;
+    });
+    let best = sorted[0]; // Default: leftmost (Hoverlord pushed to end)
 
     // Tiebreaker 1: prefer milestones the human also qualifies for
-    const humanAlsoQualifies = claimable.filter((m) => m.canClaim(this.humanPlayer));
+    const humanAlsoQualifies = sorted.filter((m) => m.canClaim(this.humanPlayer));
     if (humanAlsoQualifies.length > 0) {
       best = humanAlsoQualifies[0];
     } else {
       // Tiebreaker 2: whichever the human is closest to meeting
-      // Score each milestone by how close the human is (higher = closer)
       let bestCloseness = -Infinity;
-      for (const m of claimable) {
+      for (const m of sorted) {
         const closeness = this.humanMilestoneCloseness(m);
         if (closeness > bestCloseness) {
           bestCloseness = closeness;
@@ -361,7 +389,7 @@ export class MarsBotTurnResolver {
       // Per rules (page 8): "MarsBot considers your current number of resources plus your production"
       const humanValue = this.getHumanAwardValueForComparison(award);
       const margin = marsBotValue - humanValue;
-      if (margin > bestMargin) {
+      if (margin > bestMargin || (margin === bestMargin && bestAward?.name === 'Venuphile')) {
         bestMargin = margin;
         bestAward = award;
       }
@@ -483,8 +511,9 @@ export class MarsBotTurnResolver {
       tracksAtOrAbove: (pos: number) => positions.filter((p) => p >= pos).length,
       largestConnectedTileGroup: this.calcLargestConnectedTileGroup(),
       specialTilesOwned: this.marsBotManager?.neuralInstanceSpace !== undefined ? 1 : 0,
-      hasVenus: false, // Venus not yet implemented
-      venusTrackPos: 0,
+      hasVenus: this.game.gameOptions.venusNextExtension,
+      venusTrackPos: tracks.length > 7 ? tracks[7].position : 0,
+      floaterCount: this.marsBotManager?.floaterCount ?? 0,
     };
   }
 

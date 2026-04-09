@@ -37,6 +37,7 @@ export type MarsBotMAContext = {
   specialTilesOwned: number;
   hasVenus: boolean;
   venusTrackPos: number;
+  floaterCount: number;
 }
 
 function allTracksAtOrAbove(ctx: MarsBotMAContext, pos: number, includeVenus: boolean): boolean {
@@ -45,6 +46,15 @@ function allTracksAtOrAbove(ctx: MarsBotMAContext, pos: number, includeVenus: bo
   }
   if (includeVenus && ctx.hasVenus && ctx.venusTrackPos < pos) return false;
   return true;
+}
+
+function tracksAtOrAboveCount(ctx: MarsBotMAContext, pos: number): number {
+  let count = 0;
+  for (let t = 0; t < 7; t++) {
+    if (ctx.trackPos(t) >= pos) count++;
+  }
+  if (ctx.hasVenus && ctx.venusTrackPos >= pos) count++;
+  return count;
 }
 
 function anyTrackAtOrAbove(ctx: MarsBotMAContext, pos: number): boolean {
@@ -77,7 +87,11 @@ export const MILESTONE_EVALS = new Map<MilestoneName, MilestoneEval>([
   ['Builder', (ctx: MarsBotMAContext) => ctx.trackPos(0) >= 8],
   ['Planner', (ctx: MarsBotMAContext) => allTracksAtOrAbove(ctx, 4, false)],
   // Hellas
-  ['Diversifier', (ctx: MarsBotMAContext) => allTracksAtOrAbove(ctx, 3, true)],
+  ['Diversifier', (ctx: MarsBotMAContext) => {
+    if (!ctx.hasVenus) return allTracksAtOrAbove(ctx, 3, false);
+    // With Venus: 7 of 8 tracks at 3+ (Venus can substitute one other track)
+    return tracksAtOrAboveCount(ctx, 3) >= 7;
+  }],
   ['Tactician', (ctx: MarsBotMAContext) => ctx.mc >= 35],
   ['Polar Explorer', () => undefined],
   ['Energizer', (ctx: MarsBotMAContext) => ctx.trackPos(4) >= 6],
@@ -120,6 +134,7 @@ export const MILESTONE_EVALS = new Map<MilestoneName, MilestoneEval>([
   ['Terraformer29', () => false],
   ['Terran5', (ctx: MarsBotMAContext) => ctx.trackPos(5) >= 5],
   ['Thawer', (ctx: MarsBotMAContext) => ctx.temperatureRaises >= 5],
+  ['Hoverlord', (ctx: MarsBotMAContext) => ctx.floaterCount >= 7],
   ['Trader', () => false],
   ['Tycoon10', (ctx: MarsBotMAContext) => ctx.playedCards.greenOrBlue >= 10],
 ]);
@@ -171,6 +186,13 @@ export const AWARD_EVALS = new Map<AwardName, AwardEval>([
   ['Collector', (ctx: MarsBotMAContext) => ctx.tracksAtOrAbove(3)],
   ['Constructor', () => undefined],
   ['Politician', () => 5],
-  ['Visionary', (ctx: MarsBotMAContext) => ctx.lowestTrackPos * 2],
+  ['Visionary', (ctx: MarsBotMAContext) => {
+    if (!ctx.hasVenus) return ctx.lowestTrackPos * 2;
+    // With Venus: 2nd lowest track position doubled
+    const all = [...ctx.allTrackPositions(), ctx.venusTrackPos].sort((a, b) => a - b);
+    return all[1] * 2;
+  }],
   ['Promoter', (ctx: MarsBotMAContext) => ctx.trackPos(4)],
+  // Venus Next
+  ['Venuphile', (ctx: MarsBotMAContext) => ctx.venusTrackPos],
 ]);

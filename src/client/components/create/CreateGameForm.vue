@@ -46,8 +46,8 @@
                                 <span v-i18n>Prelude 2</span>
                             </label>
 
-                            <input type="checkbox" name="venusNext" id="venusNext-checkbox" v-model="expansions.venus" :disabled="automaOption">
-                            <label for="venusNext-checkbox" class="expansion-button" :class="{'automa-disabled': automaOption}">
+                            <input type="checkbox" name="venusNext" id="venusNext-checkbox" v-model="expansions.venus">
+                            <label for="venusNext-checkbox" class="expansion-button">
                             <div class="create-game-expansion-icon expansion-icon-venus"></div>
                                 <span v-i18n>Venus Next</span>
                             </label>
@@ -211,8 +211,8 @@
                               </label>
                             </template>
 
-                            <input type="checkbox" v-model="solarPhaseOption" id="WGT-checkbox">
-                            <label for="WGT-checkbox">
+                            <input type="checkbox" v-model="solarPhaseOption" id="WGT-checkbox" :disabled="automaOption">
+                            <label for="WGT-checkbox" :class="{'automa-disabled': automaOption}">
                                 <span v-i18n>World Government Terraforming</span>&nbsp;<a :href="wikiUrls.worldGovernmentTerraforming" class="tooltip" v-i18n data-tooltip="Link opens in a new tab/window" target="_blank">&#9432;</a>
                             </label>
 

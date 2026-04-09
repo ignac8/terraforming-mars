@@ -5,7 +5,7 @@ import {GameOptions} from '../game/GameOptions';
 import {GameId, isPlayerId, safeCast} from '../../common/Types';
 import {Random} from '../../common/utils/Random';
 import {MarsBot} from './MarsBot';
-import {THARSIS_MARSBOT_BOARD} from './boards/TharsisMarsBot';
+import {THARSIS_MARSBOT_BOARD, THARSIS_MARSBOT_BOARD_WITH_VENUS} from './boards/TharsisMarsBot';
 import {TrackDefinition, MARSBOT_STARTING_TR} from '../../common/automa/AutomaTypes';
 import {BoardName} from '../../common/boards/BoardName';
 import {AutomaGameHooks} from './AutomaGameHooks';
@@ -25,7 +25,6 @@ import {trackCubeKey} from './MarsBotCorpTypes';
 export class AutomaGameSetup {
   /** Force-disable unsupported expansions for automa games. Mutates gameOptions in place. */
   public static sanitizeGameOptions(gameOptions: GameOptions): void {
-    gameOptions.venusNextExtension = false;
     gameOptions.coloniesExtension = false;
     gameOptions.turmoilExtension = false;
     gameOptions.aresExtension = false;
@@ -35,6 +34,7 @@ export class AutomaGameSetup {
     gameOptions.starWarsExpansion = false;
     gameOptions.underworldExpansion = false;
     gameOptions.communityCardsOption = false;
+    gameOptions.solarPhaseOption = false; // Venus Solar Phase Step 2 replaced by Government Intervention card
     gameOptions.boardName = BoardName.THARSIS;
   }
 
@@ -75,10 +75,10 @@ export class AutomaGameSetup {
   }
 
   /** Get the MarsBot board data for the selected map. */
-  public static getBoardData(boardName: BoardName): ReadonlyArray<TrackDefinition> {
+  public static getBoardData(boardName: BoardName, venusEnabled: boolean): ReadonlyArray<TrackDefinition> {
     switch (boardName) {
     case BoardName.THARSIS:
-      return THARSIS_MARSBOT_BOARD;
+      return venusEnabled ? THARSIS_MARSBOT_BOARD_WITH_VENUS : THARSIS_MARSBOT_BOARD;
     default:
       throw new Error(`Automa board data not available for ${boardName}. Only Tharsis is currently supported.`);
     }
@@ -86,7 +86,7 @@ export class AutomaGameSetup {
 
   /** Set up MarsBot and return the AutomaGameHooks instance for Game.ts to use. */
   public static setup(game: IGame, humanPlayer: IPlayer, gameOptions: GameOptions, rng: Random, existingPlayer?: IPlayer): AutomaGameHooks {
-    const boardData = AutomaGameSetup.getBoardData(gameOptions.boardName);
+    const boardData = AutomaGameSetup.getBoardData(gameOptions.boardName, gameOptions.venusNextExtension);
     const marsBotPlayer = existingPlayer ?? AutomaGameSetup.createMarsBotPlayer(game.id);
 
     // Set MarsBot player's game reference
