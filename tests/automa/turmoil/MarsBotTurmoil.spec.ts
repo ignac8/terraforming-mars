@@ -1,11 +1,14 @@
 import {expect} from 'chai';
 import {testGame} from '../../TestGame';
+import {runAllActions} from '../../TestingUtils';
 import {BoardName} from '../../../src/common/boards/BoardName';
 import {BonusCardId, MARSBOT_STARTING_TR} from '../../../src/common/automa/AutomaTypes';
 import {DELEGATES_PER_PLAYER} from '../../../src/common/constants';
 import {MarsBotBonusCard, createCorpBonusCard} from '../../../src/server/automa/MarsBotBonusCard';
 import {Turmoil} from '../../../src/server/turmoil/Turmoil';
 import {PartyName} from '../../../src/common/turmoil/PartyName';
+import {Phase} from '../../../src/common/Phase';
+import {MARS_FIRST_BONUS_1, MARS_FIRST_POLICY_3} from '../../../src/server/turmoil/parties/MarsFirst';
 import {
   selectPartyForDelegate,
   totalDelegates,
@@ -478,5 +481,237 @@ describe('MarsBot Turmoil — Global Events solo resolution (T-10/T-10b)', () =>
     expect(() => election.resolve(game, turmoil)).not.to.throw();
     // Score is likely < 5 with only 2 influence, so TR unchanged or +1 max
     expect(humanPlayer.getTerraformRating()).to.be.at.least(trBefore);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Automatic skips (T-5, T-9, T-11a)
+// ---------------------------------------------------------------------------
+
+describe('MarsBot Turmoil — Automatic skips (T-5 T-9 T-11a)', () => {
+  it('T-9: MarsBot does NOT lose TR during Turmoil TR Revision', () => {
+    // endGeneration() calls game.players.forEach(p => p.decreaseTerraformRating())
+    // MarsBot is NOT in game.players, so it never loses TR.
+    const {game, marsBot} = createTurmoilGame();
+    const turmoil = Turmoil.getTurmoil(game);
+    const trBefore = marsBot.player.getTerraformRating();
+
+    game.phase = Phase.SOLAR;
+    turmoil.endGeneration(game);
+    runAllActions(game);
+
+    // MarsBot should be unchanged (no TR loss from TR revision step)
+    expect(marsBot.player.getTerraformRating()).to.equal(trBefore);
+  });
+
+  it('T-11a: MarsBot does NOT receive Ruling Party Bonus (Turmoil new government)', () => {
+    // Bonus.grant() calls game.playersInGenerationOrder.forEach(...grantForPlayer)
+    // MarsBot is NOT in playersInGenerationOrder, so it never receives ruling bonuses.
+    const {game, marsBot} = createTurmoilGame();
+    const turmoil = Turmoil.getTurmoil(game);
+    const marsBotPlayer = marsBot.player;
+
+    // Simulate the Mars First Bonus 1 (gain 1 MC per building tag) via .grant()
+    const mcBefore = marsBotPlayer.stock.megacredits;
+    MARS_FIRST_BONUS_1.grant(game);
+    // MarsBot should NOT have gained any MC from the ruling bonus
+    expect(marsBotPlayer.stock.megacredits).to.equal(mcBefore);
+  });
+
+  it('T-5: MarsBot does NOT receive Ruling Party Policy effect (onPolicyStart)', () => {
+    // Policy.onPolicyStart() iterates game.playersInGenerationOrder.
+    // MarsBot is NOT in that list, so policy effects never touch MarsBot.
+    const {game, marsBot} = createTurmoilGame();
+    const marsBotPlayer = marsBot.player;
+
+    // Mars First Policy 3 (mp03): each player in playersInGenerationOrder gets +1 steel value.
+    // We check MarsBot's steel value is unchanged.
+    const steelValueBefore = marsBotPlayer.getSteelValue();
+    MARS_FIRST_POLICY_3.onPolicyStart?.(game);
+    expect(marsBotPlayer.getSteelValue()).to.equal(steelValueBefore);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Chairman (T-11b, T-11c)
+// ---------------------------------------------------------------------------
+
+describe('MarsBot Turmoil — Chairman rules (T-11b T-11c)', () => {
+  it('T-11b: MarsBot gains 1 TR when it becomes chairman', () => {
+    // setNewChairman() calls chairman.defer(() => chairman.increaseTerraformRating(1)).
+    // This deferred action fires when runAllActions is called. MarsBot is a real IPlayer
+    // so its TR is correctly incremented.
+    const {game, marsBot} = createTurmoilGame();
+    const turmoil = Turmoil.getTurmoil(game);
+    const marsBotPlayer = marsBot.player;
+
+    const trBefore = marsBotPlayer.getTerraformRating();
+    // Set MarsBot as chairman directly (no agenda change to avoid side effects)
+    turmoil.setNewChairman(marsBotPlayer, game, /* setAgenda */ false, /* gainTR */ true);
+    runAllActions(game);
+
+    expect(marsBotPlayer.getTerraformRating()).to.equal(trBefore + 1);
+  });
+
+  it('T-11b: MarsBot gains 1 TR when it becomes chairman via full endGeneration', () => {
+    const {game, marsBot} = createTurmoilGame();
+    const turmoil = Turmoil.getTurmoil(game);
+    const marsBotPlayer = marsBot.player;
+
+    // Make MarsBot party leader of Kelvinists with enough delegates to be dominant
+    for (let i = 0; i < 3; i++) {
+      turmoil.sendDelegateToParty(marsBotPlayer, PartyName.KELVINISTS, game);
+    }
+    const kelvinists = turmoil.getPartyByName(PartyName.KELVINISTS);
+    updatePartyLeaderForMarsBot(kelvinists, marsBotPlayer);
+    turmoil.dominantParty = kelvinists;
+
+    const trBefore = marsBotPlayer.getTerraformRating();
+    game.phase = Phase.SOLAR;
+    turmoil.endGeneration(game);
+    runAllActions(game);
+
+    // MarsBot should have gained +1 TR for becoming chairman (and NOT lost TR from step 1)
+    expect(marsBotPlayer.getTerraformRating()).to.equal(trBefore + 1);
+    expect(turmoil.chairman).to.equal(marsBotPlayer);
+  });
+
+  it('T-11c: MarsBot delegates from ruling party return to reserve (not lost) after New Government', () => {
+    // In the modern Turmoil code there is no separate lobby — setRulingParty() sends
+    // all non-leader delegates back to delegateReserve. MarsBot's delegates behave
+    // identically to human delegates in this respect (T-11c: no lobby placement needed
+    // since delegates just return to reserve).
+    const {game, marsBot} = createTurmoilGame();
+    const turmoil = Turmoil.getTurmoil(game);
+    const marsBotPlayer = marsBot.player;
+
+    // Place 2 MarsBot delegates in Reds; make Reds dominant
+    turmoil.sendDelegateToParty(marsBotPlayer, PartyName.REDS, game);
+    turmoil.sendDelegateToParty(marsBotPlayer, PartyName.REDS, game);
+    const reserveAfterPlacement = turmoil.getAvailableDelegateCount(marsBotPlayer);
+    const reds = turmoil.getPartyByName(PartyName.REDS);
+    updatePartyLeaderForMarsBot(reds, marsBotPlayer);
+    turmoil.dominantParty = reds;
+
+    game.phase = Phase.SOLAR;
+    turmoil.setRulingParty(game); // triggers delegate cleanup
+    runAllActions(game);
+
+    // After ruling party change:
+    // - The party leader (1 MarsBot) becomes the new chairman (reserve unchanged for that one)
+    // - The remaining MarsBot delegates (1) go back to reserve
+    // - The OLD chairman (NEUTRAL) also returns to reserve
+    // So MarsBot reserve should be: reserveAfterPlacement + 1 (non-leader returned)
+    expect(turmoil.getAvailableDelegateCount(marsBotPlayer)).to.equal(reserveAfterPlacement + 1);
+    // MarsBot is the new chairman
+    expect(turmoil.chairman).to.equal(marsBotPlayer);
+    // Reds party is now clean
+    expect(reds.delegates.size).to.equal(0);
+    expect(reds.partyLeader).to.be.undefined;
+  });
+
+  it('T-11c: MarsBot does NOT use the free lobby delegate action each generation', () => {
+    // Turmoil.getSendDelegateInput() is the free standard action for placing a lobby delegate.
+    // Since MarsBot is not in game.players and does not process standard actions,
+    // it never calls getSendDelegateInput(). usedFreeDelegateAction never includes MarsBot.
+    const {game, marsBot} = createTurmoilGame();
+    const turmoil = Turmoil.getTurmoil(game);
+    const marsBotPlayer = marsBot.player;
+
+    game.phase = Phase.SOLAR;
+    turmoil.endGeneration(game);
+    runAllActions(game);
+
+    // MarsBot should NOT be in usedFreeDelegateAction (it never used the lobby action)
+    expect(turmoil.usedFreeDelegateAction.has(marsBotPlayer)).to.be.false;
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Difficulty options (T-14, T-15)
+// ---------------------------------------------------------------------------
+
+describe('MarsBot Turmoil — Difficulty options (T-14 T-15)', () => {
+  it('T-14: automaExtraTurmoilDifficulty=0 → MarsBot starts at 10 TR (base Turmoil)', () => {
+    const [game] = testGame(1, {
+      automaOption: true,
+      turmoilExtension: true,
+      boardName: BoardName.THARSIS,
+      automaExtraTurmoilDifficulty: 0,
+    });
+    expect(game.marsBot!.player.getTerraformRating()).to.equal(MARSBOT_STARTING_TR - 10);
+  });
+
+  it('T-14: automaExtraTurmoilDifficulty=1 → MarsBot starts at 13 TR (reduced by 7)', () => {
+    const [game] = testGame(1, {
+      automaOption: true,
+      turmoilExtension: true,
+      boardName: BoardName.THARSIS,
+      automaExtraTurmoilDifficulty: 1,
+    });
+    expect(game.marsBot!.player.getTerraformRating()).to.equal(MARSBOT_STARTING_TR - 7);
+  });
+
+  it('T-14: automaExtraTurmoilDifficulty=2 → MarsBot starts at 13 TR', () => {
+    const [game] = testGame(1, {
+      automaOption: true,
+      turmoilExtension: true,
+      boardName: BoardName.THARSIS,
+      automaExtraTurmoilDifficulty: 2,
+    });
+    expect(game.marsBot!.player.getTerraformRating()).to.equal(MARSBOT_STARTING_TR - 7);
+  });
+
+  it('T-15: automaExtraTurmoilDifficulty=2 → 1 extra MarsBot delegate placed at setup', () => {
+    const [game] = testGame(1, {
+      automaOption: true,
+      turmoilExtension: true,
+      boardName: BoardName.THARSIS,
+      automaExtraTurmoilDifficulty: 2,
+    });
+    const marsBot = game.marsBot!;
+    const turmoil = Turmoil.getTurmoil(game);
+    const marsBotPlayer = marsBot.player;
+
+    // Count delegates placed in parties (party.delegates.get already includes the party leader)
+    let inParties = 0;
+    for (const party of turmoil.parties) {
+      inParties += party.delegates.get(marsBotPlayer);
+    }
+    // With difficulty=2, 1 extra delegate was taken from reserve and placed in a party.
+    expect(inParties).to.equal(1);
+    // Reserve should be DELEGATES_PER_PLAYER - 1 (1 used for the extra placement)
+    expect(turmoil.getAvailableDelegateCount(marsBotPlayer)).to.equal(DELEGATES_PER_PLAYER - 1);
+  });
+
+  it('T-15: automaExtraTurmoilDifficulty=3 → 2 extra MarsBot delegates placed at setup', () => {
+    const [game] = testGame(1, {
+      automaOption: true,
+      turmoilExtension: true,
+      boardName: BoardName.THARSIS,
+      automaExtraTurmoilDifficulty: 3,
+    });
+    const marsBot = game.marsBot!;
+    const turmoil = Turmoil.getTurmoil(game);
+    const marsBotPlayer = marsBot.player;
+
+    // Count delegates placed in parties (party.delegates.get already includes the party leader)
+    let inParties = 0;
+    for (const party of turmoil.parties) {
+      inParties += party.delegates.get(marsBotPlayer);
+    }
+    expect(inParties).to.equal(2);
+    expect(turmoil.getAvailableDelegateCount(marsBotPlayer)).to.equal(DELEGATES_PER_PLAYER - 2);
+  });
+
+  it('automaExtraTurmoilDifficulty has no effect without turmoilExtension', () => {
+    const [game] = testGame(1, {
+      automaOption: true,
+      turmoilExtension: false,
+      boardName: BoardName.THARSIS,
+      automaExtraTurmoilDifficulty: 1,
+    });
+    // Without Turmoil, starting TR is the base MARSBOT_STARTING_TR (no reduction)
+    expect(game.marsBot!.player.getTerraformRating()).to.equal(MARSBOT_STARTING_TR);
   });
 });
