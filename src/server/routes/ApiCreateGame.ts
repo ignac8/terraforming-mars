@@ -166,6 +166,7 @@ export class ApiCreateGame extends Handler {
             automaOption: gameReq.automaOption ?? false,
             automaDifficulty: gameReq.automaDifficulty ?? 'normal',
             automaCorpOption: gameReq.automaCorpOption ?? false,
+            automaExtraTurmoilDifficulty: 0,
           };
 
           let game: IGame;
