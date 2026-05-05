@@ -99,4 +99,5 @@ export type SerializedAutomaState = {
     vpByGeneration?: Array<number>;
     temperatureRaises?: number;
     colonyCubePositions?: Array<string>;
+    hasSecondTradeFleet?: boolean;
 }
