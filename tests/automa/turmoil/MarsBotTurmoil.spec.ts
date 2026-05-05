@@ -452,11 +452,12 @@ describe('MarsBot Turmoil — Global Events solo resolution (T-10/T-10b)', () =>
     const election = new Election();
 
     const marsBotTR = marsBot.player.getTerraformRating();
+    const humanTR = humanPlayer.getTerraformRating();
     election.resolve(game, turmoil);
     // MarsBot must NOT gain TR from Election regardless of its "score"
     expect(marsBot.player.getTerraformRating()).to.equal(marsBotTR);
-    // Human player's TR depends on their score (0 building tags, 0 cities → 0, no change)
-    expect(humanPlayer.getTerraformRating()).to.equal(humanPlayer.getTerraformRating());
+    // Human player has 0 building tags, 0 influence, 0 cities → score < 5, no TR gain
+    expect(humanPlayer.getTerraformRating()).to.equal(humanTR);
   });
 
   it('Election grants 2 TR to human when score >= 10 in automa game (T-10/T-10b)', () => {
