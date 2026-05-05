@@ -162,11 +162,13 @@ export class MarsBot {
     }
   }
 
-  /** T-3/T-6: Add Party Politics (B21) to the deck if Turmoil is enabled. */
+  /** T-3/T-6: Add Party Politics (B21) to the deck if Turmoil is enabled.
+   * C37: Septem Tribus replaces Party Politics with Gray Eminence — skip B21 when active. */
   private addPartyPolitics(deck: Array<IProjectCard | MarsBotBonusCard>): void {
-    if (this.game.gameOptions.turmoilExtension) {
-      deck.push(createCorpBonusCard(BonusCardId.B21_PARTY_POLITICS));
-    }
+    if (!this.game.gameOptions.turmoilExtension) return;
+    // C37: Septem Tribus uses Gray Eminence (B29) instead of Party Politics (B21)
+    if (this.corp?.name === CardName.SEPTUM_TRIBUS) return;
+    deck.push(createCorpBonusCard(BonusCardId.B21_PARTY_POLITICS));
   }
 
   /**
@@ -392,6 +394,8 @@ export class MarsBot {
       },
       removeBonusCardFromDeck: (bonusCardId: string) => {
         mb.bonusDeck.removeById(bonusCardId);
+        // Also remove from the action deck if present (e.g. initial deck before corp setup runs)
+        mb.actionDeck = mb.actionDeck.filter((c) => !('id' in c) || (c as MarsBotBonusCard).id !== bonusCardId);
       },
       addBonusCardToBonusDeck: (bonusCardId: string) => {
         const card = createCorpBonusCard(bonusCardId as BonusCardId);

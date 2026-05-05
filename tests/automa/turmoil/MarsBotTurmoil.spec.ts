@@ -16,6 +16,8 @@ import {
 } from '../../../src/server/automa/turmoil/MarsBotTurmoilHelper';
 import {Election} from '../../../src/server/turmoil/globalEvents/Election';
 import {Revolution} from '../../../src/server/turmoil/globalEvents/Revolution';
+import {CardName} from '../../../src/common/cards/CardName';
+import {getMarsBotCorp} from '../../../src/server/automa/corps/MarsBotCorpRegistry';
 
 /** Create a Turmoil-enabled automa game. Returns {game, humanPlayer, marsBot}. */
 function createTurmoilGame() {
@@ -713,5 +715,60 @@ describe('MarsBot Turmoil — Difficulty options (T-14 T-15)', () => {
     });
     // Without Turmoil, starting TR is the base MARSBOT_STARTING_TR (no reduction)
     expect(game.marsBot!.player.getTerraformRating()).to.equal(MARSBOT_STARTING_TR);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// C37 Septem Tribus + Turmoil interaction (bug fix: addPartyPolitics / removeBonusCardFromDeck)
+// ---------------------------------------------------------------------------
+
+describe('MarsBot C37 Septem Tribus — Turmoil interaction (Rules-covered: C37)', () => {
+  function hasBonusCard(deck: ReadonlyArray<unknown>, bonusCardId: BonusCardId): boolean {
+    return deck.some((c) => !('cost' in (c as object)) && (c as MarsBotBonusCard).id === bonusCardId);
+  }
+
+  it('C37: B21 (Party Politics) is NOT in the initial action deck when Septem Tribus is active', () => {
+    // Bug: addPartyPolitics() added B21 before corp was set; removeBonusCardFromDeck() only
+    // cleaned bonusDeck (draw/discard piles) but not actionDeck. Fix 1 guards addPartyPolitics
+    // when corp is Septem Tribus; Fix 2 extends removeBonusCardFromDeck to filter actionDeck.
+    const {marsBot} = createTurmoilGame();
+    const septumTribus = getMarsBotCorp(CardName.SEPTUM_TRIBUS)!;
+    marsBot.setCorpAndSetup(septumTribus);
+
+    // B21 must have been removed from the initial action deck by the corp setup
+    expect(hasBonusCard(marsBot.actionDeck, BonusCardId.B21_PARTY_POLITICS)).to.be.false;
+  });
+
+  it('C37: B29 (Gray Eminence) is in the bonusDeck after Septem Tribus setup', () => {
+    const {marsBot} = createTurmoilGame();
+    const septumTribus = getMarsBotCorp(CardName.SEPTUM_TRIBUS)!;
+    marsBot.setCorpAndSetup(septumTribus);
+
+    // addBonusCardToBonusDeck pushed B29 to bonusDeck.drawPile during corp setup
+    const hasGrayEminence = marsBot.bonusDeck.drawPile.some(
+      (c) => c.id === BonusCardId.B29_GRAY_EMINENCE,
+    );
+    expect(hasGrayEminence).to.be.true;
+  });
+
+  it('C37: B21 (Party Politics) is NOT in the gen-2 action deck when Septem Tribus is active', () => {
+    // Bug: buildResearchActionDeck() called addPartyPolitics() unconditionally, re-adding B21
+    // every generation even with Septem Tribus. Fix 1 (corp guard) prevents this.
+    const {marsBot} = createTurmoilGame();
+    const septumTribus = getMarsBotCorp(CardName.SEPTUM_TRIBUS)!;
+    marsBot.setCorpAndSetup(septumTribus);
+    marsBot.buildResearchActionDeck();
+
+    expect(hasBonusCard(marsBot.actionDeck, BonusCardId.B21_PARTY_POLITICS)).to.be.false;
+  });
+
+  it('C37: B29 (Gray Eminence) IS present in the gen-2 action deck (drawn from bonusDeck)', () => {
+    const {marsBot} = createTurmoilGame();
+    const septumTribus = getMarsBotCorp(CardName.SEPTUM_TRIBUS)!;
+    marsBot.setCorpAndSetup(septumTribus);
+    marsBot.buildResearchActionDeck();
+
+    // B29 was placed in bonusDeck during setup; buildResearchActionDeck draws it via bonusDeck.draw()
+    expect(hasBonusCard(marsBot.actionDeck, BonusCardId.B29_GRAY_EMINENCE)).to.be.true;
   });
 });
