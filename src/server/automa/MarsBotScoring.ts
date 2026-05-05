@@ -6,6 +6,7 @@ import {IProjectCard} from '../cards/IProjectCard';
 import {Space} from '../boards/Space';
 import {Board} from '../boards/Board';
 import {MADetail} from '../../common/game/VictoryPointsBreakdown';
+import {Turmoil} from '../turmoil/Turmoil';
 
 export interface MarsBotVPBreakdown {
   terraformRating: number;
@@ -17,6 +18,7 @@ export interface MarsBotVPBreakdown {
   mcToVP: number;
   cardVP: number; // Only in Hard/Brutal mode
   vermin: number;
+  turmoilVP: number; // T-13: 1 VP per party leader or chairman position
   total: number;
   detailsMilestones: Array<MADetail>;
   detailsAwards: Array<MADetail>;
@@ -59,6 +61,7 @@ export class MarsBotScoring {
     const mcToVP = this.calculateMCtoVP();
     const cardVP = this.calculateCardVP();
     const vermin = this.calculateVerminPenalty(cities);
+    const turmoilVP = this.calculateTurmoilVP();
 
     return {
       terraformRating: tr,
@@ -70,7 +73,8 @@ export class MarsBotScoring {
       mcToVP,
       cardVP,
       vermin,
-      total: tr + milestoneResult.total + awardResult.total + greenery + cityAdjacentGreenery + neuralInstance + mcToVP + cardVP + vermin + this.corpVpBonus,
+      turmoilVP,
+      total: tr + milestoneResult.total + awardResult.total + greenery + cityAdjacentGreenery + neuralInstance + mcToVP + cardVP + vermin + turmoilVP + this.corpVpBonus,
       detailsMilestones: milestoneResult.details,
       detailsAwards: awardResult.details,
     };
@@ -145,6 +149,12 @@ export class MarsBotScoring {
       const vp = card.getVictoryPoints(this.marsBot);
       return vp >= 0;
     }).length;
+  }
+
+  /** T-13: 1 VP for each Party Leader or Chairman position MarsBot holds. */
+  private calculateTurmoilVP(): number {
+    if (!this.game.gameOptions.turmoilExtension || this.game.turmoil === undefined) return 0;
+    return Turmoil.getTurmoil(this.game).getVictoryPoints(this.marsBot);
   }
 }
 
