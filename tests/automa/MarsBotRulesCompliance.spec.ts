@@ -61,13 +61,13 @@ describe('MarsBot Rules Compliance', () => {
       const {board, resolver} = makeResolver(game, bot, human, makeBoard(layout));
 
       const greeneryBefore = game.board.getGreeneries(bot).length;
-      const trBefore = bot.getTerraformRating();
+      const trBefore = bot.terraformRating;
 
       resolver.resolveProjectCard(mockCard([Tag.BUILDING]));
 
       expect(game.board.getGreeneries(bot).length).to.eq(greeneryBefore + 1);
       // Greenery raises oxygen which raises TR
-      expect(bot.getTerraformRating()).to.be.gt(trBefore);
+      expect(bot.terraformRating).to.be.gt(trBefore);
     });
   });
 
@@ -82,12 +82,12 @@ describe('MarsBot Rules Compliance', () => {
       const {board, resolver} = makeResolver(game, bot, human, makeBoard(layout));
 
       const oceansBefore = game.board.getOceanSpaces().length;
-      const trBefore = bot.getTerraformRating();
+      const trBefore = bot.terraformRating;
 
       resolver.resolveProjectCard(mockCard([Tag.BUILDING]));
 
       expect(game.board.getOceanSpaces().length).to.eq(oceansBefore + 1);
-      expect(bot.getTerraformRating()).to.eq(trBefore + 1);
+      expect(bot.terraformRating).to.eq(trBefore + 1);
     });
   });
 
@@ -118,12 +118,12 @@ describe('MarsBot Rules Compliance', () => {
       const {board, resolver} = makeResolver(game, bot, human, makeBoard(layout));
 
       const tempBefore = game.getTemperature();
-      const trBefore = bot.getTerraformRating();
+      const trBefore = bot.terraformRating;
 
       resolver.resolveProjectCard(mockCard([Tag.BUILDING]));
 
       expect(game.getTemperature()).to.eq(tempBefore + 2); // 1 step = 2°C
-      expect(bot.getTerraformRating()).to.eq(trBefore + 1);
+      expect(bot.terraformRating).to.eq(trBefore + 1);
     });
   });
 
@@ -315,7 +315,9 @@ describe('MarsBot Rules Compliance', () => {
       // Fund an award so B08 has something to help with
       game.fundAward(human, game.awards.find((a) => a.name === 'Scientist')!);
       // Advance track 4 so MarsBot has a score on Scientist
-      for (let i = 0; i < 5; i++) { marsBot.board.tracks[3].advance(); }
+      for (let i = 0; i < 5; i++) {
+        marsBot.board.tracks[3].advance();
+      }
 
       const cards = createBaseBonusCards();
       const b08 = cards.find((c) => c.id === BonusCardId.B08_CORPORATE_COMPETITION)!;

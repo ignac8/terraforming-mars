@@ -173,7 +173,9 @@ export class MarsBotBonusResolver {
     }
     if (bestEntry !== undefined) {
       const {card, resource} = bestEntry;
-      if (card.resourceCount !== undefined) card.resourceCount--;
+      if (card.resourceCount !== undefined) {
+        card.resourceCount--;
+      }
       this.game.log('MarsBot\'s Invasive Species: removed 1 ${0} from ${1}',
         (b) => b.rawString(resource).card(card));
     } else if (isProtected) {
@@ -255,8 +257,12 @@ export class MarsBotBonusResolver {
 
   // B06: Lobbyists / B15: Lobbyists (Venus) — shared (a) temp and (b) oxygen branches
   private resolveLobbyists(card: MarsBotBonusCard): void {
-    if (this.lobbyistsTempBranch(card)) return;
-    if (this.lobbyistsOxygenBranch(card)) return;
+    if (this.lobbyistsTempBranch(card)) {
+      return;
+    }
+    if (this.lobbyistsOxygenBranch(card)) {
+      return;
+    }
 
     // (c) B06: Ocean adjacent to 2+ oceans
     const oceanSpaces = this.game.board.getAvailableSpacesForOcean(this.marsBot);
@@ -277,8 +283,12 @@ export class MarsBotBonusResolver {
   }
 
   private resolveLobbyistsVenus(card: MarsBotBonusCard): void {
-    if (this.lobbyistsTempBranch(card)) return;
-    if (this.lobbyistsOxygenBranch(card)) return;
+    if (this.lobbyistsTempBranch(card)) {
+      return;
+    }
+    if (this.lobbyistsOxygenBranch(card)) {
+      return;
+    }
 
     // (c) B15: Venus 1-2 steps from bonus step or completion — do NOT destroy card
     const venus = this.game.getVenusScaleLevel();
@@ -351,9 +361,9 @@ export class MarsBotBonusResolver {
 
   /** Execute an action and reverse any TR gained (for Government Intervention). */
   private withoutTRGain(action: () => void): void {
-    const trBefore = this.marsBot.getTerraformRating();
+    const trBefore = this.marsBot.terraformRating;
     action();
-    const trGained = this.marsBot.getTerraformRating() - trBefore;
+    const trGained = this.marsBot.terraformRating - trBefore;
     if (trGained > 0) {
       this.marsBot.decreaseTerraformRating(trGained);
       this.game.log('MarsBot does not receive TR from Government Intervention');
@@ -416,7 +426,9 @@ export class MarsBotBonusResolver {
   }
 
   private tryHelperAction(awardName: string): boolean {
-    const advance = (trackIndex: number) => { this.turnResolver.advanceTrack(trackIndex); return true; };
+    const advance = (trackIndex: number) => {
+      this.turnResolver.advanceTrack(trackIndex); return true;
+    };
     const placeGreenery = () => {
       const space = this.tilePlacer.findGreenerySpace();
       if (space) {
@@ -438,7 +450,9 @@ export class MarsBotBonusResolver {
     const revealAndResolveCard = (filter: (card: IProjectCard) => boolean) => {
       for (let i = 0; i < 20; i++) { // safety limit
         const card = this.game.projectDeck.draw(this.game);
-        if (card === undefined) return false;
+        if (card === undefined) {
+          return false;
+        }
         if (filter(card)) {
           this.game.log('MarsBot reveals ${0} (Corporate Competition)', (b) => b.card(card));
           this.turnResolver.resolveProjectCard(card);

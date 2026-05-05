@@ -136,7 +136,9 @@ describe('MarsBot Resource Interaction (rules page 4-5)', () => {
 
     it('decreasing production by 2 regresses track twice', () => {
       const {marsBot} = createAutomaGame();
-      for (let i = 0; i < 5; i++) { marsBot.board.tracks[0].advance(); }
+      for (let i = 0; i < 5; i++) {
+        marsBot.board.tracks[0].advance();
+      }
 
       marsBot.player.production.add(Resource.STEEL, -2, {log: true, from: {player: marsBot.player}});
       expect(marsBot.board.tracks[0].position).to.eq(3);
@@ -233,7 +235,9 @@ describe('MarsBot Resource Interaction (rules page 4-5)', () => {
       human.playCard(new ProtectedHabitats());
 
       const bonusCard = marsBot.bonusDeck.drawPile.find((c) => c.id === 'B01_METEOR_SHOWER');
-      if (bonusCard === undefined) return;
+      if (bonusCard === undefined) {
+        return;
+      }
       const plantsBefore = human.plants;
       (marsBot as any).bonusResolver.resolveMeteorShower(bonusCard);
       expect(human.plants).to.eq(plantsBefore);

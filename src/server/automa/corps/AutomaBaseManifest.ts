@@ -128,7 +128,9 @@ const MINING_GUILD: IMarsBotCorp = {
     // MC interception: when MarsBot earns MC, it goes to the card first.
     // When card empty, refill 10 MC and advance building track.
     onMcGained(ctx, amount) {
-      if (ctx.trackPositions[0] >= 18) return amount; // Building track maxed, no interception
+      if (ctx.trackPositions[0] >= 18) {
+        return amount;
+      } // Building track maxed, no interception
       let mcOnCard = ctx.getCorpState('mcOnCard');
       const intercepted = Math.min(amount, mcOnCard);
       mcOnCard -= intercepted;

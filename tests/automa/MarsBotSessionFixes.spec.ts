@@ -950,24 +950,24 @@ describe('MarsBotVenusNext', () => {
   it('B16 even generation advances Martian parameter without TR', () => {
     const {game, marsBot} = createVenusAutomaGame();
     (game as any).generation = 4; // even
-    const trBefore = marsBot.player.getTerraformRating();
+    const trBefore = marsBot.player.terraformRating;
     const {bonusCard: bonusCardFn} = require('../../src/server/automa/MarsBotBonusCard');
     const card = bonusCardFn(BonusCardId.B16_GOVERNMENT_INTERVENTION, 'Government Intervention');
     (marsBot as any).bonusResolver.resolve(card);
     // TR should not have changed (reversed by withoutTRGain)
-    expect(marsBot.player.getTerraformRating()).to.eq(trBefore);
+    expect(marsBot.player.terraformRating).to.eq(trBefore);
   });
 
   it('B16 odd generation raises Venus without TR', () => {
     const {game, marsBot} = createVenusAutomaGame();
     (game as any).generation = 3; // odd
     const venusBefore = game.getVenusScaleLevel();
-    const trBefore = marsBot.player.getTerraformRating();
+    const trBefore = marsBot.player.terraformRating;
     const {bonusCard: bonusCardFn} = require('../../src/server/automa/MarsBotBonusCard');
     const card = bonusCardFn(BonusCardId.B16_GOVERNMENT_INTERVENTION, 'Government Intervention');
     (marsBot as any).bonusResolver.resolve(card);
     expect(game.getVenusScaleLevel()).to.eq(venusBefore + 2);
-    expect(marsBot.player.getTerraformRating()).to.eq(trBefore);
+    expect(marsBot.player.terraformRating).to.eq(trBefore);
   });
 
   it('B16 even gen with Venus complete still advances Martian parameter', () => {

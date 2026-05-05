@@ -167,12 +167,12 @@ describe('Corp Effect Hooks', () => {
       const corp = getMarsBotCorp(CardName.PRISTAR)!;
       marsBot.setCorpAndSetup(corp);
       marsBot.corpSpecificState.set('whiteCubeOnCard', 1);
-      const trBefore = marsBot.player.getTerraformRating();
+      const trBefore = marsBot.player.terraformRating;
       const mcBefore = marsBot.turnResolver.mcSupply;
       const skip = corp.effect!.onGlobalParameterRaised!(marsBot.getCorpContext(), 'temperature');
       expect(skip).to.be.true;
       expect(marsBot.corpSpecificState.get('whiteCubeOnCard')).to.eq(0);
-      expect(marsBot.player.getTerraformRating()).to.eq(trBefore + 1);
+      expect(marsBot.player.terraformRating).to.eq(trBefore + 1);
       expect(marsBot.turnResolver.mcSupply).to.eq(mcBefore + 6);
     });
 

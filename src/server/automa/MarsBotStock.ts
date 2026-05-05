@@ -29,7 +29,9 @@ export class MarsBotStock extends Stock {
     // Cards check target.steel > 0 etc. to decide if stealing is possible.
     const stock = this;
     const mcProp = {
-      get() { return stock.marsBotRef?.turnResolver.mcSupply ?? 0; },
+      get() {
+        return stock.marsBotRef?.turnResolver.mcSupply ?? 0;
+      },
       set() { /* no-op: MarsBotStock.add() handles mutations via mcSupply */ },
       configurable: true,
     };

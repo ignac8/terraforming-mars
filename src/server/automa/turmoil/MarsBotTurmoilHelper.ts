@@ -24,7 +24,9 @@ export function selectPartyForDelegate(
   marsBotPlayer: IPlayer,
   humanPlayer: IPlayer,
 ): PartyName | undefined {
-  if (!turmoil.hasDelegatesInReserve(marsBotPlayer)) return undefined;
+  if (!turmoil.hasDelegatesInReserve(marsBotPlayer)) {
+    return undefined;
+  }
 
   const allParties = turmoil.parties as ReadonlyArray<IParty>;
   let candidates: ReadonlyArray<IParty> = allParties;
@@ -84,7 +86,9 @@ export function placeDelegateForMarsBot(
   game: IGame,
 ): PartyName | undefined {
   const partyName = selectPartyForDelegate(turmoil, marsBotPlayer, humanPlayer);
-  if (partyName === undefined) return undefined;
+  if (partyName === undefined) {
+    return undefined;
+  }
   turmoil.sendDelegateToParty(marsBotPlayer, partyName, game);
   // Party.checkPartyLeader only considers game.playersInGenerationOrder + NEUTRAL, not MarsBot.
   // Manually update the party leader if MarsBot now has the most delegates.
@@ -103,7 +107,9 @@ export function placeDelegateForMarsBot(
  */
 export function updatePartyLeaderForMarsBot(party: IParty, marsBotPlayer: IPlayer): void {
   const marsBotCount = party.delegates.get(marsBotPlayer);
-  if (marsBotCount === 0) return;
+  if (marsBotCount === 0) {
+    return;
+  }
   const leaderCount = party.partyLeader !== undefined ?
     party.delegates.get(party.partyLeader) :
     0;
@@ -124,7 +130,9 @@ export function totalDelegates(party: IParty, player: IPlayer): number {
  */
 function wouldBecomePartyLeader(party: IParty, marsBotPlayer: IPlayer): boolean {
   // MarsBot already leads — Tier 3 handles this case
-  if (party.partyLeader === marsBotPlayer) return false;
+  if (party.partyLeader === marsBotPlayer) {
+    return false;
+  }
 
   const currentLeaderCount = party.partyLeader !== undefined ?
     party.delegates.get(party.partyLeader) :
@@ -145,7 +153,9 @@ function wouldBecomeDominant(
   allParties: ReadonlyArray<IParty>,
 ): boolean {
   // Must not already be the dominant party ("becomes" implies a transition)
-  if (turmoil.dominantParty === party) return false;
+  if (turmoil.dominantParty === party) {
+    return false;
+  }
   const partyCountAfter = party.delegates.size + 1;
   return allParties.every((p) => p === party || p.delegates.size < partyCountAfter);
 }
@@ -156,6 +166,8 @@ function wouldBecomeDominant(
  * Distance from a party to itself is `size` (to put it last in clockwise sort).
  */
 function clockwiseDistance(fromIndex: number, toIndex: number, size: number): number {
-  if (fromIndex === toIndex) return size; // same party — put last
+  if (fromIndex === toIndex) {
+    return size;
+  } // same party — put last
   return (fromIndex - toIndex + size) % size;
 }

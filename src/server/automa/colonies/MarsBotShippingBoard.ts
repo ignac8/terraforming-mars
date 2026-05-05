@@ -48,13 +48,17 @@ export class MarsBotShippingBoard {
    */
   public add(colonyName: ColonyName, amount: number, marsBot: MarsBot): void {
     // C-24d: No resources ever placed in Europa's storage area
-    if (colonyName === ColonyName.EUROPA) return;
+    if (colonyName === ColonyName.EUROPA) {
+      return;
+    }
 
     const current = this.storage.get(colonyName) ?? 0;
     this.storage.set(colonyName, current + amount);
 
     // C-23: Titan/Floater area is exempt from C-12 overflow
-    if (colonyName === ColonyName.TITAN) return;
+    if (colonyName === ColonyName.TITAN) {
+      return;
+    }
 
     this.checkOverflow(colonyName, marsBot);
   }
@@ -65,7 +69,9 @@ export class MarsBotShippingBoard {
    */
   private checkOverflow(colonyName: ColonyName, marsBot: MarsBot): void {
     const tag = COLONY_STORAGE_TAG[colonyName];
-    if (tag === undefined) return; // No track mapping — no overflow
+    if (tag === undefined) {
+      return;
+    } // No track mapping — no overflow
 
     while ((this.storage.get(colonyName) ?? 0) >= 5) {
       const current = this.storage.get(colonyName) ?? 0;

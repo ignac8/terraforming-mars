@@ -8,6 +8,7 @@ import {AresHandler} from '../ares/AresHandler';
 import {CardName} from '../../common/cards/CardName';
 import {SpaceId} from '../../common/Types';
 import {oneWayDifference} from '../../common/utils/utils';
+import {Tile} from '../Tile';
 
 export class MarsBoard extends Board {
   private readonly edges: ReadonlyArray<Space>;
@@ -29,13 +30,17 @@ export class MarsBoard extends Board {
 
   public getCities(player?: IPlayer): Array<Space> {
     let cities = this.spaces.filter(Board.isCitySpace);
-    if (player !== undefined) cities = cities.filter(Board.ownedBy(player));
+    if (player !== undefined) {
+      cities = cities.filter(Board.ownedBy(player));
+    }
     return cities;
   }
 
   public getGreeneries(player?: IPlayer): Array<Space> {
     let greeneries = this.spaces.filter((space) => Board.isGreenerySpace(space));
-    if (player !== undefined) greeneries = greeneries.filter(Board.ownedBy(player));
+    if (player !== undefined) {
+      greeneries = greeneries.filter(Board.ownedBy(player));
+    }
     return greeneries;
   }
 
@@ -66,8 +71,12 @@ export class MarsBoard extends Board {
    */
   public getOceanSpaces(include?: {upgradedOceans?: boolean, wetlands?: boolean, newHolland?: boolean}): ReadonlyArray<Space> {
     const spaces = this.spaces.filter((space) => {
-      if (!Board.isOceanSpace(space)) return false;
-      if (space.tile?.tileType === undefined) return false;
+      if (!Board.isOceanSpace(space)) {
+        return false;
+      }
+      if (space.tile?.tileType === undefined) {
+        return false;
+      }
 
       const tileType = space.tile.tileType;
       if (OCEAN_UPGRADE_TILES.has(tileType)) {
@@ -122,7 +131,9 @@ export class MarsBoard extends Board {
   public getAvailableSpacesForGreenery(player: IPlayer, canAffordOptions?: CanAffordOptions): ReadonlyArray<Space> {
     let availableLandSpaces = this.getAvailableSpacesOnLand(player, canAffordOptions);
     // Gordon CEO can ignore placement restrictions for Cities+Greenery
-    if (player.tableau.has(CardName.GORDON)) return availableLandSpaces;
+    if (player.tableau.has(CardName.GORDON)) {
+      return availableLandSpaces;
+    }
     // Spaces next to Red City are always unavialable for Greeneries.
     availableLandSpaces = this.filterSpacesAroundRedCity(availableLandSpaces);
 
@@ -194,5 +205,21 @@ export class MarsBoard extends Board {
         (space.tile === undefined || AresHandler.hasHazardTile(space)) &&
         space.player === undefined;
     });
+  }
+
+  // Returns true if |newTile| can cover go on |space|, particularly if |space| already has a tile.
+  public static canCover(space: Space, newTile: Tile): boolean {
+    if (space.tile === undefined) {
+      return true;
+    }
+
+    // A hazard protected by the Desperate Measures action can't be covered.
+    if (AresHandler.hasHazardTile(space) && space.tile.protectedHazard !== true) {
+      return true;
+    }
+    if (space.tile.tileType === TileType.OCEAN && OCEAN_UPGRADE_TILES.has(newTile.tileType)) {
+      return true;
+    }
+    return false;
   }
 }

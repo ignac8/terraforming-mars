@@ -51,7 +51,7 @@ export class MarsBotScoring {
 
   /** Calculate MarsBot's complete VP breakdown. */
   public calculate(): MarsBotVPBreakdown {
-    const tr = this.marsBot.getTerraformRating();
+    const tr = this.marsBot.terraformRating;
     const milestoneResult = this.calculateMilestoneVP();
     const awardResult = this.calculateAwardVP();
     const greenery = this.countGreeneryVP();
@@ -122,29 +122,39 @@ export class MarsBotScoring {
   }
 
   private calculateNeuralInstanceVP(): number {
-    if (this.neuralInstanceSpace === undefined) return 0;
+    if (this.neuralInstanceSpace === undefined) {
+      return 0;
+    }
     const adj = this.game.board.getAdjacentSpaces(this.neuralInstanceSpace);
     // 1 VP per adjacent space NOT occupied by human (empty or MarsBot-owned)
     return adj.filter((s) => s.player !== this.humanPlayer).length;
   }
 
   private calculateMCtoVP(): number {
-    if (this.game.generation >= this.getMaxGeneration()) return 0;
+    if (this.game.generation >= this.getMaxGeneration()) {
+      return 0;
+    }
     const opts = this.game.gameOptions;
     const mcPerVP = getMcPerVP(this.game.generation, opts.preludeExtension);
-    if (mcPerVP === undefined) return 0;
+    if (mcPerVP === undefined) {
+      return 0;
+    }
     return Math.floor(this.turnResolver.mcSupply / mcPerVP);
   }
 
   /** Vermin: -1 VP per city when 10+ animals on Vermin card. Applies to ALL players. */
   private calculateVerminPenalty(cities: ReadonlyArray<Space>): number {
-    if (!this.game.verminInEffect) return 0;
+    if (!this.game.verminInEffect) {
+      return 0;
+    }
     return -1 * cities.length;
   }
 
   /** Hard/Brutal mode: 1 VP per card with non-negative VP icon in MarsBot's played pile. */
   private calculateCardVP(): number {
-    if (this.difficulty !== 'hard' && this.difficulty !== 'brutal') return 0;
+    if (this.difficulty !== 'hard' && this.difficulty !== 'brutal') {
+      return 0;
+    }
     return this.playedProjectCards.filter((card) => {
       const vp = card.getVictoryPoints(this.marsBot);
       return vp >= 0;
@@ -153,7 +163,9 @@ export class MarsBotScoring {
 
   /** T-13: 1 VP for each Party Leader or Chairman position MarsBot holds. */
   private calculateTurmoilVP(): number {
-    if (!this.game.gameOptions.turmoilExtension || this.game.turmoil === undefined) return 0;
+    if (!this.game.gameOptions.turmoilExtension || this.game.turmoil === undefined) {
+      return 0;
+    }
     return Turmoil.getTurmoil(this.game).getVictoryPoints(this.marsBot);
   }
 }

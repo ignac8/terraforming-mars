@@ -144,9 +144,9 @@ describe('MarsBotTrader (C-17, C-20, C-22, C-24b)', () => {
         const marsBot = getMarsBot(game);
         const europa = new Europa();
         game.colonies = [europa];
-        const trBefore = marsBot.player.getTerraformRating();
+        const trBefore = marsBot.player.terraformRating;
         tradeWithColony(marsBot, europa);
-        expect(marsBot.player.getTerraformRating()).to.eq(trBefore + 1);
+        expect(marsBot.player.terraformRating).to.eq(trBefore + 1);
       });
 
       it('does not add resources to Europa storage (C-24d)', () => {

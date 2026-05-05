@@ -882,7 +882,7 @@
   "Do not use card effect": "Älä käytä kortin vaikutusta",
   "Remove all data from this card to gain 3M€ per data removed.": "Poista kaikki data tältä kortilta saadaksesi 3 M€ per poistettu data.",
   "Remove any number of microbes to gain 3 M€ per microbe removed": "Poista mikä tahansa määrä mikrobeja saadaksesi 3 M€ per poistettu mikrobi",
-  "Remove 1 syndicate fleet from this card to steal 2M€ from every opponent.": "Poista 1 syndikaattilaivasto tältä kortilta varastaaksesi 2 M€ jokaiselta vastustajalta.",
+  "Remove 1 syndicate fleet from this card to steal 2 M€ from every opponent.": "Poista 1 syndikaattilaivasto tältä kortilta varastaaksesi 2 M€ jokaiselta vastustajalta.",
   "Remove syndicate fleet": "Poista syndikaattilaivasto",
   "Remove 1 floater to raise energy production 1 step": "Poista 1 kelluja nostaaksesi energiantuotantoasi 1 askel",
   "Remove 1 asteroid to raise temperature 1 step": "Poista 1 asteroidi nostaaksesi lämpötilaa 1 askel",
@@ -1390,7 +1390,6 @@
   "Stormcraft Incorporated Floaters (2 heat each)": "Stormcraft Incorporatedin kellujat (2 lämpöä kappale)",
   "Play a card, ignoring global requirements": "Pelaa kortti ohittaen globaalit vaatimukset",
 
-  "Select how to pay for the ${0} standard project": "Valitse kuinka maksat vakioprojektista ${0}",
   "Collusion:SP": "Yhteistyö",
   "Excavate:SP": "Kaiva",
   "Power Plant:SP": "Voimala",

@@ -165,9 +165,13 @@ export class MarsBot {
   /** T-3/T-6: Add Party Politics (B21) to the deck if Turmoil is enabled.
    * C37: Septem Tribus replaces Party Politics with Gray Eminence — skip B21 when active. */
   private addPartyPolitics(deck: Array<IProjectCard | MarsBotBonusCard>): void {
-    if (!this.game.gameOptions.turmoilExtension) return;
+    if (!this.game.gameOptions.turmoilExtension) {
+      return;
+    }
     // C37: Septem Tribus uses Gray Eminence (B29) instead of Party Politics (B21)
-    if (this.corp?.name === CardName.SEPTUM_TRIBUS) return;
+    if (this.corp?.name === CardName.SEPTUM_TRIBUS) {
+      return;
+    }
     deck.push(createCorpBonusCard(BonusCardId.B21_PARTY_POLITICS));
   }
 
@@ -176,8 +180,12 @@ export class MarsBot {
    * C-11: If 2nd Trade Fleet is unlocked, also shuffle Extended Shipping Lines (B20).
    */
   private addShippingLines(deck: Array<IProjectCard | MarsBotBonusCard>): void {
-    if (!this.game.gameOptions.coloniesExtension) return;
-    if (this.game.generation <= 1) return;
+    if (!this.game.gameOptions.coloniesExtension) {
+      return;
+    }
+    if (this.game.generation <= 1) {
+      return;
+    }
     deck.push(createCorpBonusCard(BonusCardId.B19_SHIPPING_LINES));
     if (this.hasSecondTradeFleet) {
       deck.push(createCorpBonusCard(BonusCardId.B20_EXTENDED_SHIPPING_LINES));
@@ -248,7 +256,9 @@ export class MarsBot {
     }
 
     const card = this.actionDeck.shift();
-    if (card === undefined) return;
+    if (card === undefined) {
+      return;
+    }
 
     if (this.isProjectCard(card)) {
       const projectCard = card as IProjectCard;
@@ -334,28 +344,50 @@ export class MarsBot {
 
   /** Build the context object for corp callbacks. Cached for reuse since all dynamic fields are getters. */
   public getCorpContext(): MarsBotCorpContext {
-    if (this.cachedCorpContext !== undefined) return this.cachedCorpContext;
+    if (this.cachedCorpContext !== undefined) {
+      return this.cachedCorpContext;
+    }
     const mb = this;
     this.cachedCorpContext = {
       gameLog: (msg: string) => mb.game.log(msg),
       advanceTrack: (trackIndex: number) => mb.turnResolver.advanceTrack(trackIndex),
-      get mcSupply() { return mb.turnResolver.mcSupply; },
-      setMcSupply: (mc: number) => { mb.turnResolver.mcSupply = mc; },
-      get trackPositions() { return mb.board.tracks.map((t) => t.position); },
-      get humanPlayerTR() { return mb.humanPlayer.getTerraformRating(); },
-      get marsBotTR() { return mb.player.getTerraformRating(); },
-      get generation() { return mb.game.generation; },
-      get leastAdvancedTrackIndex() { return mb.board.getLeastAdvancedTrackIndex(); },
-      get mostAdvancedTrackIndex() { return mb.board.getMostAdvancedTrackIndex(); },
+      get mcSupply() {
+        return mb.turnResolver.mcSupply;
+      },
+      setMcSupply: (mc: number) => {
+        mb.turnResolver.mcSupply = mc;
+      },
+      get trackPositions() {
+        return mb.board.tracks.map((t) => t.position);
+      },
+      get humanPlayerTR() {
+        return mb.humanPlayer.terraformRating;
+      },
+      get marsBotTR() {
+        return mb.player.terraformRating;
+      },
+      get generation() {
+        return mb.game.generation;
+      },
+      get leastAdvancedTrackIndex() {
+        return mb.board.getLeastAdvancedTrackIndex();
+      },
+      get mostAdvancedTrackIndex() {
+        return mb.board.getMostAdvancedTrackIndex();
+      },
       drawAndResolveProjectCard: () => {
         const cards = mb.game.projectDeck.drawN(mb.game, 1);
-        if (cards.length === 0) return false;
+        if (cards.length === 0) {
+          return false;
+        }
         mb.turnResolver.resolveProjectCard(cards[0]);
         return true;
       },
       drawAndResolveProjectCardIgnoringFirstNTags: (n: number) => {
         const cards = mb.game.projectDeck.drawN(mb.game, 1);
-        if (cards.length === 0) return false;
+        if (cards.length === 0) {
+          return false;
+        }
         const card = cards[0];
         // Use Object.create to preserve prototype (methods like getVictoryPoints)
         const mockCard = Object.create(card, {tags: {value: card.tags.slice(n)}}) as IProjectCard;
@@ -364,7 +396,9 @@ export class MarsBot {
       },
       drawAndResolveBonusCard: () => {
         const bonusCard = mb.bonusDeck.draw();
-        if (bonusCard === undefined) return false;
+        if (bonusCard === undefined) {
+          return false;
+        }
         mb.bonusResolver.resolve(bonusCard);
         return true;
       },
@@ -402,7 +436,9 @@ export class MarsBot {
         mb.bonusDeck.drawPile.push(card);
       },
       getCorpState: (key: string) => mb.corpSpecificState.get(key) ?? 0,
-      setCorpState: (key: string, value: number) => { mb.corpSpecificState.set(key, value); },
+      setCorpState: (key: string, value: number) => {
+        mb.corpSpecificState.set(key, value);
+      },
       raiseTR: (steps: number) => {
         if (steps > 0) {
           mb.player.increaseTerraformRating(steps);
@@ -410,18 +446,30 @@ export class MarsBot {
           mb.player.decreaseTerraformRating(-steps);
         }
       },
-      get floaterCount() { return mb.floaterCount; },
-      addFloaters: (count: number) => { mb.floaterCount += count; },
-      spendFloaters: (count: number) => { mb.floaterCount = Math.max(0, mb.floaterCount - count); },
-      gainMc: (amount: number) => { mb.turnResolver.mcSupply += amount; },
+      get floaterCount() {
+        return mb.floaterCount;
+      },
+      addFloaters: (count: number) => {
+        mb.floaterCount += count;
+      },
+      spendFloaters: (count: number) => {
+        mb.floaterCount = Math.max(0, mb.floaterCount - count);
+      },
+      gainMc: (amount: number) => {
+        mb.turnResolver.mcSupply += amount;
+      },
       placeRandomColony: () => {
         const colony = selectRandomColony(mb.game, mb);
-        if (colony === undefined) return false;
+        if (colony === undefined) {
+          return false;
+        }
         placeColonyForMarsBot(colony, mb);
         return true;
       },
       discardFewestTagsFromActionDeck: () => {
-        if (mb.actionDeck.length === 0) return;
+        if (mb.actionDeck.length === 0) {
+          return;
+        }
         let fewestTags = Infinity;
         let fewestIdx = 0;
         for (let i = 0; i < mb.actionDeck.length; i++) {
@@ -507,7 +555,7 @@ export class MarsBot {
         position: track.position,
         layout: track.definition.layout,
       })),
-      terraformRating: this.player.getTerraformRating(),
+      terraformRating: this.player.terraformRating,
       mcSupply: this.turnResolver.mcSupply,
       actionDeckSize: this.actionDeck.length,
       bonusDeckSize: this.bonusDeck.drawPile.length,

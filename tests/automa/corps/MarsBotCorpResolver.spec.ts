@@ -129,7 +129,9 @@ describe('MarsBotCorpResolver', () => {
         id: CardName.ECOLINE,
         name: 'Setup Corp',
         setup: {
-          resolve: () => { setupCalled = true; },
+          resolve: () => {
+            setupCalled = true;
+          },
         },
       });
 
@@ -179,7 +181,9 @@ describe('MarsBotCorpResolver', () => {
         name: 'No Re-Trigger',
         trackCubes: [{trackIndex: 1, position: 3, cubeType: 'white'}],
         effect: {
-          onTrackCubeTrigger: () => { triggerCount++; },
+          onTrackCubeTrigger: () => {
+            triggerCount++;
+          },
         },
       });
 
@@ -202,7 +206,9 @@ describe('MarsBotCorpResolver', () => {
         id: CardName.ECOLINE,
         name: 'No Cube',
         effect: {
-          onTrackCubeTrigger: () => { triggered = true; },
+          onTrackCubeTrigger: () => {
+            triggered = true;
+          },
         },
       });
 
@@ -222,7 +228,9 @@ describe('MarsBotCorpResolver', () => {
         name: 'PerGen Corp',
         perGeneration: {
           timing: 'roundStart',
-          resolve: () => { called = true; },
+          resolve: () => {
+            called = true;
+          },
         },
       });
 

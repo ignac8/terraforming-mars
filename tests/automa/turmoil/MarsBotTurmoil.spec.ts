@@ -37,7 +37,7 @@ function createTurmoilGame() {
 describe('MarsBot Turmoil — Setup', () => {
   it('T-2: MarsBot starting TR is 10 (reduced by 10)', () => {
     const {marsBot} = createTurmoilGame();
-    expect(marsBot.player.getTerraformRating()).to.equal(MARSBOT_STARTING_TR - 10);
+    expect(marsBot.player.terraformRating).to.equal(MARSBOT_STARTING_TR - 10);
   });
 
   it('T-1: MarsBot has 7 delegates in the reserve', () => {
@@ -56,7 +56,7 @@ describe('MarsBot Turmoil — Setup', () => {
 
   it('T-2: Without Turmoil, MarsBot starting TR is 20', () => {
     const [game] = testGame(1, {automaOption: true, boardName: BoardName.THARSIS});
-    expect(game.marsBot!.player.getTerraformRating()).to.equal(MARSBOT_STARTING_TR);
+    expect(game.marsBot!.player.terraformRating).to.equal(MARSBOT_STARTING_TR);
   });
 
   it('T-6: Party Politics is in action deck on generation 2', () => {
@@ -246,7 +246,9 @@ describe('MarsBot Turmoil — Party Politics resolver (T-8)', () => {
     for (let i = 0; i < searchLimit && targetCard.cost % 3 !== 0; i++) {
       game.projectDeck.discardPile.push(targetCard);
       const next = game.projectDeck.draw(game);
-      if (next === undefined) break;
+      if (next === undefined) {
+        break;
+      }
       targetCard = next;
     }
 
@@ -406,7 +408,7 @@ describe('MarsBot Turmoil — serialization', () => {
     const {game, marsBot} = createTurmoilGame();
     const state = marsBot.serialize();
     // Starting TR should be 10 (stored via player's TR in game state)
-    expect(marsBot.player.getTerraformRating()).to.equal(MARSBOT_STARTING_TR - 10);
+    expect(marsBot.player.terraformRating).to.equal(MARSBOT_STARTING_TR - 10);
     // Automa state exists
     expect(state).to.not.be.undefined;
     expect(state.marsBotPlayerId).to.not.be.undefined;
@@ -426,10 +428,10 @@ describe('MarsBot Turmoil — Global Events solo resolution (T-10/T-10b)', () =>
     // In a non-automa 1-player game, Revolution crashes because playersInGenerationOrder[1]
     // is undefined. In automa games it must use the solo branch: only the human player's
     // score is checked against the threshold.
-    const trBefore = humanPlayer.getTerraformRating();
+    const trBefore = humanPlayer.terraformRating;
     expect(() => revolution.resolve(game, turmoil)).not.to.throw();
     // Human has 0 Earth tags + influence ≤ 3 → no TR loss
-    expect(humanPlayer.getTerraformRating()).to.equal(trBefore);
+    expect(humanPlayer.terraformRating).to.equal(trBefore);
   });
 
   it('Revolution loses 2 TR when human score >= 4 in automa game (T-10b)', () => {
@@ -444,11 +446,11 @@ describe('MarsBot Turmoil — Global Events solo resolution (T-10/T-10b)', () =>
     turmoil.dominantParty.partyLeader = humanPlayer;
     turmoil.dominantParty.delegates.add(humanPlayer, 4); // enough to be PL
 
-    const trBefore = humanPlayer.getTerraformRating();
+    const trBefore = humanPlayer.terraformRating;
     revolution.resolve(game, turmoil);
     // Influence = 2 (chairman=1 + dominant=1). Score >= 4 only if Earth tags are added.
     // With 0 Earth tags, score = 2 < 4 → no loss. This tests no crash and correct branch.
-    expect(humanPlayer.getTerraformRating()).to.equal(trBefore);
+    expect(humanPlayer.terraformRating).to.equal(trBefore);
   });
 
   it('Election does not grant TR to MarsBot in automa game (T-10)', () => {
@@ -456,13 +458,13 @@ describe('MarsBot Turmoil — Global Events solo resolution (T-10/T-10b)', () =>
     const turmoil = Turmoil.getTurmoil(game);
     const election = new Election();
 
-    const marsBotTR = marsBot.player.getTerraformRating();
-    const humanTR = humanPlayer.getTerraformRating();
+    const marsBotTR = marsBot.player.terraformRating;
+    const humanTR = humanPlayer.terraformRating;
     election.resolve(game, turmoil);
     // MarsBot must NOT gain TR from Election regardless of its "score"
-    expect(marsBot.player.getTerraformRating()).to.equal(marsBotTR);
+    expect(marsBot.player.terraformRating).to.equal(marsBotTR);
     // Human player has 0 building tags, 0 influence, 0 cities → score < 5, no TR gain
-    expect(humanPlayer.getTerraformRating()).to.equal(humanTR);
+    expect(humanPlayer.terraformRating).to.equal(humanTR);
   });
 
   it('Election grants 2 TR to human when score >= 10 in automa game (T-10/T-10b)', () => {
@@ -479,10 +481,10 @@ describe('MarsBot Turmoil — Global Events solo resolution (T-10/T-10b)', () =>
     // Add city tiles so score = influence(2) + building_tags(0) + cities(count)
     // With cities we can push score to 10+. For simplicity, just confirm no crash
     // and that the solo threshold logic runs (no multi-player ranking involving MarsBot).
-    const trBefore = humanPlayer.getTerraformRating();
+    const trBefore = humanPlayer.terraformRating;
     expect(() => election.resolve(game, turmoil)).not.to.throw();
     // Score is likely < 5 with only 2 influence, so TR unchanged or +1 max
-    expect(humanPlayer.getTerraformRating()).to.be.at.least(trBefore);
+    expect(humanPlayer.terraformRating).to.be.at.least(trBefore);
   });
 });
 
@@ -496,14 +498,14 @@ describe('MarsBot Turmoil — Automatic skips (T-5 T-9 T-11a)', () => {
     // MarsBot is NOT in game.players, so it never loses TR.
     const {game, marsBot} = createTurmoilGame();
     const turmoil = Turmoil.getTurmoil(game);
-    const trBefore = marsBot.player.getTerraformRating();
+    const trBefore = marsBot.player.terraformRating;
 
     game.phase = Phase.SOLAR;
     turmoil.endGeneration(game);
     runAllActions(game);
 
     // MarsBot should be unchanged (no TR loss from TR revision step)
-    expect(marsBot.player.getTerraformRating()).to.equal(trBefore);
+    expect(marsBot.player.terraformRating).to.equal(trBefore);
   });
 
   it('T-11a: MarsBot does NOT receive Ruling Party Bonus (Turmoil new government)', () => {
@@ -547,12 +549,12 @@ describe('MarsBot Turmoil — Chairman rules (T-11b T-11c)', () => {
     const turmoil = Turmoil.getTurmoil(game);
     const marsBotPlayer = marsBot.player;
 
-    const trBefore = marsBotPlayer.getTerraformRating();
+    const trBefore = marsBotPlayer.terraformRating;
     // Set MarsBot as chairman directly (no agenda change to avoid side effects)
     turmoil.setNewChairman(marsBotPlayer, game, /* setAgenda */ false, /* gainTR */ true);
     runAllActions(game);
 
-    expect(marsBotPlayer.getTerraformRating()).to.equal(trBefore + 1);
+    expect(marsBotPlayer.terraformRating).to.equal(trBefore + 1);
   });
 
   it('T-11b: MarsBot gains 1 TR when it becomes chairman via full endGeneration', () => {
@@ -568,13 +570,13 @@ describe('MarsBot Turmoil — Chairman rules (T-11b T-11c)', () => {
     updatePartyLeaderForMarsBot(kelvinists, marsBotPlayer);
     turmoil.dominantParty = kelvinists;
 
-    const trBefore = marsBotPlayer.getTerraformRating();
+    const trBefore = marsBotPlayer.terraformRating;
     game.phase = Phase.SOLAR;
     turmoil.endGeneration(game);
     runAllActions(game);
 
     // MarsBot should have gained +1 TR for becoming chairman (and NOT lost TR from step 1)
-    expect(marsBotPlayer.getTerraformRating()).to.equal(trBefore + 1);
+    expect(marsBotPlayer.terraformRating).to.equal(trBefore + 1);
     expect(turmoil.chairman).to.equal(marsBotPlayer);
   });
 
@@ -641,7 +643,7 @@ describe('MarsBot Turmoil — Difficulty options (T-14 T-15)', () => {
       boardName: BoardName.THARSIS,
       automaExtraTurmoilDifficulty: 0,
     });
-    expect(game.marsBot!.player.getTerraformRating()).to.equal(MARSBOT_STARTING_TR - 10);
+    expect(game.marsBot!.player.terraformRating).to.equal(MARSBOT_STARTING_TR - 10);
   });
 
   it('T-14: automaExtraTurmoilDifficulty=1 → MarsBot starts at 13 TR (reduced by 7)', () => {
@@ -651,7 +653,7 @@ describe('MarsBot Turmoil — Difficulty options (T-14 T-15)', () => {
       boardName: BoardName.THARSIS,
       automaExtraTurmoilDifficulty: 1,
     });
-    expect(game.marsBot!.player.getTerraformRating()).to.equal(MARSBOT_STARTING_TR - 7);
+    expect(game.marsBot!.player.terraformRating).to.equal(MARSBOT_STARTING_TR - 7);
   });
 
   it('T-14: automaExtraTurmoilDifficulty=2 → MarsBot starts at 13 TR', () => {
@@ -661,7 +663,7 @@ describe('MarsBot Turmoil — Difficulty options (T-14 T-15)', () => {
       boardName: BoardName.THARSIS,
       automaExtraTurmoilDifficulty: 2,
     });
-    expect(game.marsBot!.player.getTerraformRating()).to.equal(MARSBOT_STARTING_TR - 7);
+    expect(game.marsBot!.player.terraformRating).to.equal(MARSBOT_STARTING_TR - 7);
   });
 
   it('T-15: automaExtraTurmoilDifficulty=2 → 1 extra MarsBot delegate placed at setup', () => {
@@ -714,7 +716,7 @@ describe('MarsBot Turmoil — Difficulty options (T-14 T-15)', () => {
       automaExtraTurmoilDifficulty: 1,
     });
     // Without Turmoil, starting TR is the base MARSBOT_STARTING_TR (no reduction)
-    expect(game.marsBot!.player.getTerraformRating()).to.equal(MARSBOT_STARTING_TR);
+    expect(game.marsBot!.player.terraformRating).to.equal(MARSBOT_STARTING_TR);
   });
 });
 

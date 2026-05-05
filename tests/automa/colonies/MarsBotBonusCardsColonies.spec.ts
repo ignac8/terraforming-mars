@@ -186,11 +186,11 @@ describe('MarsBotBonusCardsColonies (C-15, C-16, C-17)', () => {
       const europa = new Europa();
       europa.trackPosition = 5;
       game.colonies = [europa];
-      const trBefore = marsBot.player.getTerraformRating();
+      const trBefore = marsBot.player.terraformRating;
       const card = b19Card();
       marsBot.bonusDeck.drawPile.push(card);
       marsBot.bonusResolver.resolve(card);
-      expect(marsBot.player.getTerraformRating()).to.eq(trBefore + 1);
+      expect(marsBot.player.terraformRating).to.eq(trBefore + 1);
       expect(marsBot.shippingBoard.get(ColonyName.EUROPA)).to.eq(0);
     });
   });

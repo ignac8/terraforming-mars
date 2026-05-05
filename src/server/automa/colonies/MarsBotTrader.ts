@@ -15,7 +15,9 @@ import type {MarsBot} from '../MarsBot';
  */
 function selectTiedColony(game: IGame, candidates: Array<IColony>): IColony {
   const flipped = game.projectDeck.drawN(game, 1);
-  if (flipped.length === 0) return candidates[0];
+  if (flipped.length === 0) {
+    return candidates[0];
+  }
   const card = flipped[0];
   // Use positive modulo: cost=0 cards (e.g. IndenturedWorkers) would give -1 % N in JS
   const n = candidates.length;
@@ -36,17 +38,25 @@ function selectTiedColony(game: IGame, candidates: Array<IColony>): IColony {
  */
 export function selectTradeColony(game: IGame, marsBot: MarsBot): IColony | undefined {
   const tradeable = ColoniesHandler.tradeableColonies(game);
-  if (tradeable.length === 0) return undefined;
-  if (tradeable.length === 1) return tradeable[0];
+  if (tradeable.length === 0) {
+    return undefined;
+  }
+  if (tradeable.length === 1) {
+    return tradeable[0];
+  }
 
   // C-17a: highest track position
   const maxTrack = Math.max(...tradeable.map((c) => c.trackPosition));
   let candidates = tradeable.filter((c) => c.trackPosition === maxTrack);
-  if (candidates.length === 1) return candidates[0];
+  if (candidates.length === 1) {
+    return candidates[0];
+  }
 
   // C-17b: prefer tiles where MarsBot has a colony
   const withMarsBotColony = candidates.filter((c) => c.colonies.includes(marsBot.player.id));
-  if (withMarsBotColony.length === 1) return withMarsBotColony[0];
+  if (withMarsBotColony.length === 1) {
+    return withMarsBotColony[0];
+  }
   if (withMarsBotColony.length > 1) {
     candidates = withMarsBotColony;
   }
@@ -103,7 +113,9 @@ export function tradeWithColony(marsBot: MarsBot, colony: IColony): void {
   // C-20: Human players with a colony here receive their colony bonus per core rules.
   // (MarsBot's own colony "bonus" is the +1 extra resource handled above, not the tile bonus.)
   for (const playerId of colony.colonies) {
-    if (playerId === marsBot.player.id) continue;
+    if (playerId === marsBot.player.id) {
+      continue;
+    }
     const humanPlayer = game.players.find((p) => p.id === playerId);
     if (humanPlayer !== undefined) {
       // isGiveColonyBonus=false so complex bonuses are deferred into the game queue.

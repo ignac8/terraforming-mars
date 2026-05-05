@@ -40,7 +40,7 @@ const CARD_TYPES_WITHOUT_COST: ReadonlyArray<CardType> = [
 
 /* Properties that are the same internally and externally */
 type SharedProperties = {
-  /** @deprecated use behavior */
+  /** Prefer setting adjacencyBonus inside behavior.tile instead. */
   adjacencyBonus?: AdjacencyBonus;
   action?: Behavior | undefined;
   behavior?: Behavior | undefined;
@@ -310,7 +310,9 @@ export abstract class Card implements ICard {
       return 0;
     }
 
-    if (typeof(vps) === 'number') return vps;
+    if (typeof(vps) === 'number') {
+      return vps;
+    }
 
     if (vps.targetOneOrMore === true || vps.anyPlayer === true) {
       throw new Error('Not yet handled');

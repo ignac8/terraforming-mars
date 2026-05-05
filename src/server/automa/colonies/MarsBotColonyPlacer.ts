@@ -13,9 +13,15 @@ import type {MarsBot} from '../MarsBot';
  */
 export function eligibleColoniesForMarsBot(game: IGame, marsBot: MarsBot): Array<IColony> {
   return game.colonies.filter((colony) => {
-    if (!colony.isActive) return false;
-    if (colony.isFull()) return false;
-    if (colony.colonies.includes(marsBot.player.id)) return false;
+    if (!colony.isActive) {
+      return false;
+    }
+    if (colony.isFull()) {
+      return false;
+    }
+    if (colony.colonies.includes(marsBot.player.id)) {
+      return false;
+    }
     return true;
   });
 }
@@ -30,10 +36,14 @@ export function eligibleColoniesForMarsBot(game: IGame, marsBot: MarsBot): Array
  */
 export function selectRandomColony(game: IGame, marsBot: MarsBot): IColony | undefined {
   const eligible = eligibleColoniesForMarsBot(game, marsBot);
-  if (eligible.length === 0) return undefined;
+  if (eligible.length === 0) {
+    return undefined;
+  }
 
   const flipped = game.projectDeck.drawN(game, 1);
-  if (flipped.length === 0) return undefined;
+  if (flipped.length === 0) {
+    return undefined;
+  }
 
   const card = flipped[0];
   // Use positive modulo: cost=0 cards (e.g. IndenturedWorkers) would give -1 % N in JS

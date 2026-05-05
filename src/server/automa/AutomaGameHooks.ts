@@ -59,7 +59,9 @@ export class AutomaGameHooks {
 
   /** Automa: game ends when Mars is terraformed or max generation reached. */
   public isGameOver(): boolean {
-    if (this.game.generation >= this.getMaxGeneration()) return true;
+    if (this.game.generation >= this.getMaxGeneration()) {
+      return true;
+    }
     return this.game.marsIsTerraformed();
   }
 
@@ -88,15 +90,25 @@ export class AutomaGameHooks {
     const humanPassed = this.game.hasPassedThisActionPhase(humanPlayer);
     const marsBotPassed = this.game.hasPassedThisActionPhase(marsBotPlayer);
 
-    if (humanPassed && marsBotPassed) return undefined;
+    if (humanPassed && marsBotPassed) {
+      return undefined;
+    }
 
     // Alternate: if human just went, MarsBot goes next (and vice versa)
-    if (this.game.activePlayer === humanPlayer && !marsBotPassed) return marsBotPlayer;
-    if (this.game.activePlayer === marsBotPlayer && !humanPassed) return humanPlayer;
+    if (this.game.activePlayer === humanPlayer && !marsBotPassed) {
+      return marsBotPlayer;
+    }
+    if (this.game.activePlayer === marsBotPlayer && !humanPassed) {
+      return humanPlayer;
+    }
 
     // One has passed, give turn to the other
-    if (!humanPassed) return humanPlayer;
-    if (!marsBotPassed) return marsBotPlayer;
+    if (!humanPassed) {
+      return humanPlayer;
+    }
+    if (!marsBotPassed) {
+      return marsBotPlayer;
+    }
 
     return undefined;
   }
@@ -162,18 +174,28 @@ export class AutomaGameHooks {
       return this.marsBot.shippingBoard.get(ColonyName.TITAN) >= 5;
     }
     // Normal Venus Next rule
-    if (!opts.venusNextExtension) return false;
-    if (this.marsBot.floaterCount < 5) return false;
+    if (!opts.venusNextExtension) {
+      return false;
+    }
+    if (this.marsBot.floaterCount < 5) {
+      return false;
+    }
     // Hoverlord must be unavailable: not in game, already claimed, or all milestone slots full
     const hoverlordInGame = this.game.milestones.some((m) => m.name === 'Hoverlord');
-    if (!hoverlordInGame) return true;
-    if (this.game.allMilestonesClaimed()) return true;
+    if (!hoverlordInGame) {
+      return true;
+    }
+    if (this.game.allMilestonesClaimed()) {
+      return true;
+    }
     return this.game.claimedMilestones.some((cm) => cm.milestone.name === 'Hoverlord');
   }
 
   /** Venus Next (non-draft): spend 5 floaters for 1 extra card from project deck. */
   private handleFloaterExtraCard(): void {
-    if (!this.canSpendFloatersForExtraCard()) return;
+    if (!this.canSpendFloatersForExtraCard()) {
+      return;
+    }
 
     const opts = this.game.gameOptions;
     if (opts.coloniesExtension && !opts.venusNextExtension) {
@@ -289,10 +311,14 @@ export class AutomaGameHooks {
    * Selects and sets up MarsBot's corporation if the corp option is enabled.
    */
   public handlePostCorporationSetup(): void {
-    if (!this.game.gameOptions.automaCorpOption) return;
+    if (!this.game.gameOptions.automaCorpOption) {
+      return;
+    }
 
     const humanCorpName = this.game.players[0]?.pickedCorporationCard?.name;
-    if (humanCorpName === undefined) return;
+    if (humanCorpName === undefined) {
+      return;
+    }
 
     const corp = MarsBotCorpResolver.selectCorp(humanCorpName, this.game.rng);
     if (corp === undefined) {
@@ -313,9 +339,13 @@ export class AutomaGameHooks {
    * Resolves beforeActionPhase per-gen effects (gen 2+ only).
    */
   public handleBeforeActionPhase(): void {
-    if (this.game.generation <= 1) return;
+    if (this.game.generation <= 1) {
+      return;
+    }
     const corp = this.marsBot.corp;
-    if (corp === undefined) return;
+    if (corp === undefined) {
+      return;
+    }
     if (corp.perGeneration?.timing === 'beforeActionPhase') {
       MarsBotCorpResolver.resolvePerGenEffect(corp, this.marsBot);
     }
@@ -410,14 +440,18 @@ export class AutomaGameHooks {
 
   /** Check if MarsBot MC supply is a valid target for card resource removal. */
   public hasRemoveResourceTarget(player: IPlayer, source: string): boolean {
-    if (source === 'self') return false;
+    if (source === 'self') {
+      return false;
+    }
     const marsBot = this.marsBot.player;
     return marsBot !== player && marsBot.stock.megacredits > 0;
   }
 
   /** Get a SelectOption for targeting MarsBot MC supply, or undefined if not available. */
   public getRemoveResourceOption(player: IPlayer, count: number, source: string, cb: () => void): SelectOption | undefined {
-    if (!this.hasRemoveResourceTarget(player, source)) return undefined;
+    if (!this.hasRemoveResourceTarget(player, source)) {
+      return undefined;
+    }
     return new SelectOption(`Remove ${count} from MarsBot MC supply`)
       .andThen(() => {
         this.executeRemoveResource(player, count, cb);
@@ -441,7 +475,9 @@ export class AutomaGameHooks {
   /** Called when the human player plays a project card. Notifies MarsBot's corp. */
   public handleHumanCardPlayed(card: IProjectCard): void {
     const corp = this.marsBot.corp;
-    if (corp?.effect?.onHumanCardPlayed === undefined) return;
+    if (corp?.effect?.onHumanCardPlayed === undefined) {
+      return;
+    }
     corp.effect.onHumanCardPlayed(this.marsBot.getCorpContext(),
       toCorpCardRef(card.name, card.tags, card.cost, card.requirements !== undefined, card.getVictoryPoints(this.game.players[0])),
     );
@@ -456,7 +492,9 @@ export class AutomaGameHooks {
    * Returns true if MarsBot's colony bonus was handled (caller should skip normal flow).
    */
   public handleColonyBonus(colony: IColony, playerId: PlayerId): boolean {
-    if (playerId !== this.marsBot.player.id) return false;
+    if (playerId !== this.marsBot.player.id) {
+      return false;
+    }
     // C-24c: Europa → 1 MC to mcSupply
     if (colony.name === ColonyName.EUROPA) {
       this.marsBot.turnResolver.mcSupply += 1;
@@ -478,21 +516,27 @@ export class AutomaGameHooks {
   /** Called when any player places a tile. Notifies MarsBot's corp. */
   public handleTilePlaced(player: IPlayer, tileType: number): void {
     const corp = this.marsBot.corp;
-    if (corp?.effect?.onTilePlaced === undefined) return;
+    if (corp?.effect?.onTilePlaced === undefined) {
+      return;
+    }
     corp.effect.onTilePlaced(this.marsBot.getCorpContext(), player === this.marsBot.player, tileType);
   }
 
   /** Called when Venus scale is raised. Notifies MarsBot's corp. */
   public handleVenusRaised(): void {
     const corp = this.marsBot.corp;
-    if (corp?.effect?.onVenusRaised === undefined) return;
+    if (corp?.effect?.onVenusRaised === undefined) {
+      return;
+    }
     corp.effect.onVenusRaised(this.marsBot.getCorpContext());
   }
 
   /** Called when a global parameter is raised. Returns true to SKIP the raise (Pristar). */
   public handleGlobalParameterRaised(parameter: string): boolean {
     const corp = this.marsBot.corp;
-    if (corp?.effect?.onGlobalParameterRaised === undefined) return false;
+    if (corp?.effect?.onGlobalParameterRaised === undefined) {
+      return false;
+    }
     return corp.effect.onGlobalParameterRaised(this.marsBot.getCorpContext(), parameter) ?? false;
   }
 
@@ -500,7 +544,9 @@ export class AutomaGameHooks {
 
   /** St. Joseph: MarsBot spends 2 MC and advances least-advanced track. Returns true if handled. */
   public handleStJosephCathedral(spaceOwner: IPlayer): boolean {
-    if (spaceOwner !== this.marsBot.player) return false;
+    if (spaceOwner !== this.marsBot.player) {
+      return false;
+    }
     if (this.marsBot.turnResolver.mcSupply >= 2) {
       this.marsBot.turnResolver.mcSupply -= 2;
       this.marsBot.turnResolver.advanceTrack(this.marsBot.board.getLeastAdvancedTrackIndex());
@@ -513,7 +559,9 @@ export class AutomaGameHooks {
 
   /** Sponsored Academies: MarsBot gains 1 MC instead of drawing. Returns true if handled. */
   public handleOpponentCardDraw(opponent: IPlayer): boolean {
-    if (opponent !== this.marsBot.player) return false;
+    if (opponent !== this.marsBot.player) {
+      return false;
+    }
     this.marsBot.turnResolver.mcSupply += 1;
     this.game.log('MarsBot gains 1 MC (Sponsored Academies)');
     return true;
@@ -522,7 +570,9 @@ export class AutomaGameHooks {
   /** Galilean Waystation: behavior gives full MarsBot Jovian track, rulebook says half. Adjust after behavior runs. */
   public adjustGalileanWaystation(player: IPlayer): void {
     const jovianTrackIndex = this.marsBot.board.getTrackIndexForTag(Tag.JOVIAN);
-    if (jovianTrackIndex === undefined) return;
+    if (jovianTrackIndex === undefined) {
+      return;
+    }
     const fullPos = this.marsBot.board.tracks[jovianTrackIndex].position;
     const halfPos = Math.floor(fullPos / 2);
     const adjustment = halfPos - fullPos;
