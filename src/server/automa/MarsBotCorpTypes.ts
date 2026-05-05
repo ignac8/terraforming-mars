@@ -39,6 +39,8 @@ export interface MarsBotCorpEffect {
   onVenusRaised?(ctx: MarsBotCorpContext): void;
   onGlobalParameterRaised?(ctx: MarsBotCorpContext, parameter: string): boolean;
   onMcGained?(ctx: MarsBotCorpContext, amount: number): number;
+  /** C-33: Fired when MarsBot places a colony on any tile. */
+  onColonyPlaced?(ctx: MarsBotCorpContext): void;
   vpBonus?(ctx: MarsBotCorpContext): number;
 }
 
