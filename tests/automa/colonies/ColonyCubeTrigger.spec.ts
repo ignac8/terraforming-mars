@@ -48,11 +48,8 @@ describe('ColonyCubeTrigger (C-X3)', () => {
     const mcBefore = marsBot.turnResolver.mcSupply;
     MarsBotCorpResolver.onTrackAdvanced(marsBot, 7, 10);
 
-    // 5 MC deducted, then Failed Action gives some MC back
-    // Net result: at least some MC gain from failed action
-    expect(marsBot.turnResolver.mcSupply).to.be.greaterThanOrEqual(0);
-    // Failed action compensation should bring mcSupply above (mcBefore - 5)
-    void mcBefore;
+    // 5 MC deducted, then Failed Action gives some MC back — net should exceed (mcBefore - 5)
+    expect(marsBot.turnResolver.mcSupply).to.be.greaterThan(mcBefore - 5);
   });
 
   it('does not trigger colony placement when cube key does not match the triggered position', () => {
