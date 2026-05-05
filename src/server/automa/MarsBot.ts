@@ -89,9 +89,16 @@ export class MarsBot {
     private readonly random: Random,
   ) {
     this.board = new MarsBotBoard(boardData);
-    this.bonusDeck = game.gameOptions.venusNextExtension ?
-      MarsBotBonusDeck.createWithVenus(random) :
-      MarsBotBonusDeck.createBase(random);
+    const opts = game.gameOptions;
+    if (opts.coloniesExtension && opts.venusNextExtension) {
+      this.bonusDeck = MarsBotBonusDeck.createWithVenusAndColonies(random);
+    } else if (opts.coloniesExtension) {
+      this.bonusDeck = MarsBotBonusDeck.createWithColonies(random);
+    } else if (opts.venusNextExtension) {
+      this.bonusDeck = MarsBotBonusDeck.createWithVenus(random);
+    } else {
+      this.bonusDeck = MarsBotBonusDeck.createBase(random);
+    }
     this.tilePlacer = new MarsBotTilePlacer(game, player, humanPlayer);
     this.turnResolver = new MarsBotTurnResolver(
       game, player, humanPlayer, this.board, difficulty, 0, this.tilePlacer,

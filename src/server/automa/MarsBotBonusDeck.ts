@@ -35,6 +35,40 @@ export class MarsBotBonusDeck {
     return new MarsBotBonusDeck(cards, random);
   }
 
+  /**
+   * Create bonus deck with Colonies (C-2, C-3):
+   * Replace B05 (Expedited Construction) with B17 (Expedited Construction Colonies).
+   * Add B18 (Outer System Foothold) to the deck.
+   * B19/B20 are set aside and injected into the action deck each generation (C-10/C-11).
+   */
+  public static createWithColonies(random: Random): MarsBotBonusDeck {
+    const cards = createBaseBonusCards();
+    const idx = cards.findIndex((c) => c.id === BonusCardId.B05_EXPEDITED_CONSTRUCTION);
+    if (idx >= 0) {
+      cards[idx] = bonusCard(BonusCardId.B17_EXPEDITED_CONSTRUCTION_COLONIES, 'Expedited Construction (Colonies)');
+    }
+    cards.push(bonusCard(BonusCardId.B18_OUTER_SYSTEM_FOOTHOLD, 'Outer System Foothold'));
+    return new MarsBotBonusDeck(cards, random);
+  }
+
+  /**
+   * Create bonus deck with both Venus Next and Colonies:
+   * Replace B05 with B17 (Colonies), replace B06 with B15 (Venus), add B18.
+   */
+  public static createWithVenusAndColonies(random: Random): MarsBotBonusDeck {
+    const cards = createBaseBonusCards();
+    const b05Idx = cards.findIndex((c) => c.id === BonusCardId.B05_EXPEDITED_CONSTRUCTION);
+    if (b05Idx >= 0) {
+      cards[b05Idx] = bonusCard(BonusCardId.B17_EXPEDITED_CONSTRUCTION_COLONIES, 'Expedited Construction (Colonies)');
+    }
+    const b06Idx = cards.findIndex((c) => c.id === BonusCardId.B06_LOBBYISTS);
+    if (b06Idx >= 0) {
+      cards[b06Idx] = bonusCard(BonusCardId.B15_LOBBYISTS_VENUS, 'Lobbyists (Venus)');
+    }
+    cards.push(bonusCard(BonusCardId.B18_OUTER_SYSTEM_FOOTHOLD, 'Outer System Foothold'));
+    return new MarsBotBonusDeck(cards, random);
+  }
+
   /** Draw 1 bonus card. Reshuffles discard into draw pile if empty. */
   public draw(): MarsBotBonusCard | undefined {
     if (this.drawPile.length === 0) {

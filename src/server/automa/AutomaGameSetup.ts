@@ -26,7 +26,7 @@ import {DELEGATES_PER_PLAYER} from '../../common/constants';
 export class AutomaGameSetup {
   /** Force-disable unsupported expansions for automa games. Mutates gameOptions in place. */
   public static sanitizeGameOptions(gameOptions: GameOptions): void {
-    gameOptions.coloniesExtension = false;
+    // coloniesExtension is supported — do not force-disable
     // turmoilExtension is supported — do not force-disable
     gameOptions.aresExtension = false;
     gameOptions.moonExpansion = false;
