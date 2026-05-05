@@ -97,6 +97,22 @@ describe('MarsBotColonyPlacer (C-15b, C-16a, C-19, C-24a)', () => {
       const colony = selectRandomColony(game, marsBot);
       expect(colony).to.be.undefined;
     });
+
+    it('handles 0-cost card without returning undefined (negative modulo fix)', () => {
+      // JS: (0 - 1) % N = -1, so ((0-1) % N + N) % N = N-1 (last tile)
+      const [game] = testGame(1, {automaOption: true, coloniesExtension: true, boardName: BoardName.THARSIS});
+      const marsBot = getMarsBot(game);
+      const luna = new Luna();
+      const ceres = new Ceres();
+      game.colonies = [luna, ceres];
+      // Inject a 0-cost card at the front of the draw pile
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      game.projectDeck.drawPile.unshift({cost: 0} as any);
+      // Should NOT return undefined — 0-cost maps to last tile (index N-1 = 1 = ceres)
+      const selected = selectRandomColony(game, marsBot);
+      expect(selected).to.not.be.undefined;
+      expect(selected!.name).to.eq(ColonyName.CERES); // (0-1+2)%2 = 1 = ceres
+    });
   });
 
   describe('placeColonyForMarsBot (C-19)', () => {

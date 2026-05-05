@@ -6,6 +6,7 @@ import {ColonyName} from '../../../src/common/colonies/ColonyName';
 import {Luna} from '../../../src/server/colonies/Luna';
 import {Ceres} from '../../../src/server/colonies/Ceres';
 import {Europa} from '../../../src/server/colonies/Europa';
+import {Titan} from '../../../src/server/colonies/Titan';
 import {BoardName} from '../../../src/common/boards/BoardName';
 
 function getMarsBot(game: ReturnType<typeof testGame>[0]): MarsBot {
@@ -44,6 +45,25 @@ describe('PlayerTradeHook (C-21, C-24c)', () => {
       const storeBefore = marsBot.shippingBoard.get(ColonyName.CERES);
       game.automaHooks!.handleColonyBonus(ceres, marsBot.player.id);
       expect(marsBot.shippingBoard.get(ColonyName.CERES)).to.eq(storeBefore + 1);
+    });
+
+    it('C-21/C-23: Titan colony bonus with Venus Next gives 1 floater, not Titan storage', () => {
+      const [game] = testGame(1, {
+        automaOption: true,
+        coloniesExtension: true,
+        venusNextExtension: true,
+        boardName: BoardName.THARSIS,
+      });
+      const marsBot = getMarsBot(game);
+      const titan = new Titan();
+      titan.colonies = [marsBot.player.id];
+      game.colonies = [titan];
+      const floatersBefore = marsBot.floaterCount;
+      const titanStoreBefore = marsBot.shippingBoard.get(ColonyName.TITAN);
+      const result = game.automaHooks!.handleColonyBonus(titan, marsBot.player.id);
+      expect(result).to.be.true;
+      expect(marsBot.floaterCount).to.eq(floatersBefore + 1);
+      expect(marsBot.shippingBoard.get(ColonyName.TITAN)).to.eq(titanStoreBefore); // Titan storage unchanged
     });
 
     it('C-24c: Europa colony bonus gives 1 MC to mcSupply, not shipping board', () => {
