@@ -23,7 +23,9 @@ function makeBoardWithTrack1Action(pos: number, action: string): ReadonlyArray<T
   const layout = new Array(19).fill(undefined);
   layout[pos] = action;
   return THARSIS_MARSBOT_BOARD.map((def, i) => {
-    if (i === 0) return {...def, layout} as TrackDefinition;
+    if (i === 0) {
+      return {...def, layout} as TrackDefinition;
+    }
     return def;
   });
 }
@@ -149,7 +151,9 @@ describe('MarsBotTurnResolver', () => {
   describe('Failed actions', () => {
     it('gives 5 MC when track is at max', () => {
       const track = board.tracks[6];
-      for (let i = 0; i < 18; i++) { track.advance(); }
+      for (let i = 0; i < 18; i++) {
+        track.advance();
+      }
       expect(track.position).to.eq(18);
 
       resolver.resolveProjectCard(new Algae() as IProjectCard);
@@ -159,7 +163,9 @@ describe('MarsBotTurnResolver', () => {
     it('gives 3 MC in easy mode', () => {
       const easyResolver = new MarsBotTurnResolver(game, marsBot, human, board, 'easy');
       const track = board.tracks[6];
-      for (let i = 0; i < 18; i++) { track.advance(); }
+      for (let i = 0; i < 18; i++) {
+        track.advance();
+      }
 
       easyResolver.resolveProjectCard(new Algae() as IProjectCard);
       expect(easyResolver.mcSupply).to.eq(3);
@@ -170,7 +176,9 @@ describe('MarsBotTurnResolver', () => {
       const emptyBoard = new MarsBotBoard(emptyBoardData);
       const r = new MarsBotTurnResolver(game, marsBot, human, emptyBoard, 'normal');
       // Max out track 7
-      for (let i = 0; i < 18; i++) { emptyBoard.tracks[6].advance(); }
+      for (let i = 0; i < 18; i++) {
+        emptyBoard.tracks[6].advance();
+      }
 
       r.resolveProjectCard(new Algae() as IProjectCard); // 5 MC
       r.resolveProjectCard(new Algae() as IProjectCard); // 5 MC
@@ -215,10 +223,10 @@ describe('MarsBotTurnResolver', () => {
       const b = new MarsBotBoard(boardData);
       const r = new MarsBotTurnResolver(game, marsBot, human, b, 'normal');
 
-      const startTR = marsBot.getTerraformRating();
+      const startTR = marsBot.terraformRating;
       const mockCard = {cost: 5, tags: [Tag.BUILDING], type: 'automated' as any, name: 'T' as any, metadata: {} as any} as any;
       r.resolveProjectCard(mockCard);
-      expect(marsBot.getTerraformRating()).to.eq(startTR + 3);
+      expect(marsBot.terraformRating).to.eq(startTR + 3);
     });
 
     it('TR1 through TR8 all work', () => {
@@ -229,10 +237,10 @@ describe('MarsBotTurnResolver', () => {
         (bot as any).game = game;
         const r = new MarsBotTurnResolver(game, bot, human, b, 'normal');
 
-        const startTR = bot.getTerraformRating();
+        const startTR = bot.terraformRating;
         const mockCard = {cost: 5, tags: [Tag.BUILDING], type: 'automated' as any, name: 'T' as any, metadata: {} as any} as any;
         r.resolveProjectCard(mockCard);
-        expect(bot.getTerraformRating()).to.eq(startTR + n, `TR${n} failed`);
+        expect(bot.terraformRating).to.eq(startTR + n, `TR${n} failed`);
       }
     });
 
@@ -301,7 +309,9 @@ describe('MarsBotTurnResolver', () => {
       const r = new MarsBotTurnResolver(game, marsBot, human, b, 'normal');
 
       // Advance to 17
-      for (let i = 0; i < 17; i++) { b.tracks[0].advance(); }
+      for (let i = 0; i < 17; i++) {
+        b.tracks[0].advance();
+      }
 
       const mockCard = {cost: 5, tags: [Tag.BUILDING], type: 'automated' as any, name: 'T' as any, metadata: {} as any} as any;
       r.resolveProjectCard(mockCard);
@@ -332,7 +342,9 @@ describe('MarsBotTurnResolver', () => {
     });
 
     it('Scientist is track 4 position', () => {
-      for (let i = 0; i < 5; i++) { board.tracks[3].advance(); }
+      for (let i = 0; i < 5; i++) {
+        board.tracks[3].advance();
+      }
       const award = game.awards.find((a) => a.name === 'Scientist');
       if (award) {
         expect(resolver.getMarsBotAwardValue(award)).to.eq(5);
@@ -340,7 +352,9 @@ describe('MarsBotTurnResolver', () => {
     });
 
     it('Thermalist is track 5 + 5', () => {
-      for (let i = 0; i < 3; i++) { board.tracks[4].advance(); }
+      for (let i = 0; i < 3; i++) {
+        board.tracks[4].advance();
+      }
       const award = game.awards.find((a) => a.name === 'Thermalist');
       if (award) {
         expect(resolver.getMarsBotAwardValue(award)).to.eq(3 + 5);
@@ -348,7 +362,9 @@ describe('MarsBotTurnResolver', () => {
     });
 
     it('Miner is track 2 + 5', () => {
-      for (let i = 0; i < 4; i++) { board.tracks[1].advance(); }
+      for (let i = 0; i < 4; i++) {
+        board.tracks[1].advance();
+      }
       const award = game.awards.find((a) => a.name === 'Miner');
       if (award) {
         expect(resolver.getMarsBotAwardValue(award)).to.eq(4 + 5);
@@ -357,7 +373,9 @@ describe('MarsBotTurnResolver', () => {
 
     it('easy mode reduces award values by 5', () => {
       const easyResolver = new MarsBotTurnResolver(game, marsBot, human, board, 'easy');
-      for (let i = 0; i < 3; i++) { board.tracks[3].advance(); }
+      for (let i = 0; i < 3; i++) {
+        board.tracks[3].advance();
+      }
       const award = game.awards.find((a) => a.name === 'Scientist');
       if (award) {
         expect(easyResolver.getMarsBotAwardValue(award)).to.eq(3 - 5);
@@ -379,7 +397,9 @@ describe('MarsBotTurnResolver', () => {
     it('Builder: needs track 1 at position 8', () => {
       const m = game.milestones.find((ms) => ms.name === 'Builder');
       if (m) {
-        for (let i = 0; i < 7; i++) { board.tracks[0].advance(); }
+        for (let i = 0; i < 7; i++) {
+          board.tracks[0].advance();
+        }
         expect(resolver.marsBotMeetsMilestone(m)).to.be.false;
         board.tracks[0].advance();
         expect(resolver.marsBotMeetsMilestone(m)).to.be.true;
@@ -390,10 +410,14 @@ describe('MarsBotTurnResolver', () => {
       const m = game.milestones.find((ms) => ms.name === 'Planner');
       if (m) {
         for (let t = 0; t < 7; t++) {
-          for (let i = 0; i < 3; i++) { board.tracks[t].advance(); }
+          for (let i = 0; i < 3; i++) {
+            board.tracks[t].advance();
+          }
         }
         expect(resolver.marsBotMeetsMilestone(m)).to.be.false;
-        for (let t = 0; t < 7; t++) { board.tracks[t].advance(); }
+        for (let t = 0; t < 7; t++) {
+          board.tracks[t].advance();
+        }
         expect(resolver.marsBotMeetsMilestone(m)).to.be.true;
       }
     });
@@ -419,21 +443,21 @@ describe('MarsBotTurnResolver', () => {
       const r = new MarsBotTurnResolver(game, marsBot, human, b, 'normal');
 
       // Advance to pos 2 (gets tr5)
-      const startTR = marsBot.getTerraformRating();
+      const startTR = marsBot.terraformRating;
       const mockCard = {cost: 5, tags: [Tag.BUILDING], type: 'automated' as any, name: 'T' as any, metadata: {} as any} as any;
       r.resolveProjectCard(mockCard); // pos 1 (null)
       r.resolveProjectCard(mockCard); // pos 2 (tr5)
-      expect(marsBot.getTerraformRating()).to.eq(startTR + 5);
+      expect(marsBot.terraformRating).to.eq(startTR + 5);
 
       // Regress from pos 2
       b.tracks[0].regress();
       expect(b.tracks[0].position).to.eq(1);
 
       // Re-advance to pos 2 — action should be skipped
-      const trBefore = marsBot.getTerraformRating();
+      const trBefore = marsBot.terraformRating;
       r.resolveProjectCard(mockCard);
       expect(b.tracks[0].position).to.eq(2);
-      expect(marsBot.getTerraformRating()).to.eq(trBefore); // No TR gain
+      expect(marsBot.terraformRating).to.eq(trBefore); // No TR gain
     });
   });
 });

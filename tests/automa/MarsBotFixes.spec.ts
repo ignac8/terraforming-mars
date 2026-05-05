@@ -34,7 +34,9 @@ function makeBoardWithTrack1Action(pos: number, action: string): ReadonlyArray<T
   const layout = new Array(19).fill(undefined);
   layout[pos] = action;
   return THARSIS_MARSBOT_BOARD.map((def, i) => {
-    if (i === 0) return {...def, layout} as TrackDefinition;
+    if (i === 0) {
+      return {...def, layout} as TrackDefinition;
+    }
     return def;
   });
 }
@@ -127,7 +129,9 @@ describe('MarsBot Fixes', () => {
 
       // Make MarsBot meet Builder (track 1 >= 8) and Planner (all tracks >= 4)
       // Set track 1 to 8
-      for (let i = 0; i < 8; i++) { board.tracks[0].advance(); }
+      for (let i = 0; i < 8; i++) {
+        board.tracks[0].advance();
+      }
       // Set all tracks to 4
       for (let t = 1; t < 7; t++) {
         for (let i = 0; i < 4; i++) {
@@ -183,7 +187,9 @@ describe('MarsBot Fixes', () => {
       const resolver = marsBot.turnResolver;
 
       // Max out a track
-      for (let i = 0; i < 18; i++) { marsBot.board.tracks[6].advance(); }
+      for (let i = 0; i < 18; i++) {
+        marsBot.board.tracks[6].advance();
+      }
 
       // Play a Plant tag card - track 7 is maxed, should fail
       const mockCard = {
@@ -268,7 +274,9 @@ describe('MarsBot Fixes', () => {
     it('failed action gives 3 MC in easy mode', () => {
       const {marsBot} = createAutomaGame('easy');
       const track = marsBot.board.tracks[6];
-      for (let i = 0; i < 18; i++) { track.advance(); }
+      for (let i = 0; i < 18; i++) {
+        track.advance();
+      }
 
       const mockCard = {cost: 5, tags: [Tag.PLANT], type: 'automated' as any, name: 'T' as any, metadata: {} as any} as any;
       marsBot.turnResolver.resolveProjectCard(mockCard);
@@ -395,11 +403,11 @@ describe('MarsBot Fixes', () => {
       const board = new MarsBotBoard(boardData);
       const resolver = new MarsBotTurnResolver(game, marsBot, human, board, 'normal');
 
-      const startTR = marsBot.getTerraformRating();
+      const startTR = marsBot.terraformRating;
       const mockCard = {cost: 5, tags: [Tag.BUILDING], type: 'automated' as any, name: 'T' as any, metadata: {} as any} as any;
       resolver.resolveProjectCard(mockCard);
 
-      expect(marsBot.getTerraformRating()).to.eq(startTR + 3);
+      expect(marsBot.terraformRating).to.eq(startTR + 3);
     });
   });
 
@@ -432,10 +440,10 @@ describe('MarsBot Fixes', () => {
       const resolver = new MarsBotTurnResolver(game, marsBot, human, board, 'normal');
 
       // Advance to pos 1 (triggers tr3)
-      const startTR = marsBot.getTerraformRating();
+      const startTR = marsBot.terraformRating;
       const mockCard = {cost: 5, tags: [Tag.BUILDING], type: 'automated' as any, name: 'T' as any, metadata: {} as any} as any;
       resolver.resolveProjectCard(mockCard);
-      expect(marsBot.getTerraformRating()).to.eq(startTR + 3);
+      expect(marsBot.terraformRating).to.eq(startTR + 3);
 
       // Advance to pos 2
       resolver.resolveProjectCard(mockCard);
@@ -447,11 +455,11 @@ describe('MarsBot Fixes', () => {
 
       // Re-advance to pos 2 - the action at pos 2 should be null (it's null in our layout)
       // But the IMPORTANT thing: pos 2 was regressed from, so action should be skipped
-      const trBefore = marsBot.getTerraformRating();
+      const trBefore = marsBot.terraformRating;
       resolver.resolveProjectCard(mockCard);
       expect(board.tracks[0].position).to.eq(2);
       // No TR gain from skipped action
-      expect(marsBot.getTerraformRating()).to.eq(trBefore);
+      expect(marsBot.terraformRating).to.eq(trBefore);
     });
   });
 

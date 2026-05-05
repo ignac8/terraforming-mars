@@ -167,7 +167,9 @@ export class MarsBotTurnResolver {
 
     switch (action) {
     case 'advance':
-      if (this.difficulty === 'easy') return; // Easy mode ignores advance actions
+      if (this.difficulty === 'easy') {
+        return;
+      } // Easy mode ignores advance actions
       this.advanceTrack(currentTrackIndex);
       return;
 
@@ -208,12 +210,16 @@ export class MarsBotTurnResolver {
       return;
 
     case 'venus':
-      if (!this.game.gameOptions.venusNextExtension) return;
+      if (!this.game.gameOptions.venusNextExtension) {
+        return;
+      }
       this.raiseVenus(1);
       return;
 
     case 'venus2':
-      if (!this.game.gameOptions.venusNextExtension) return;
+      if (!this.game.gameOptions.venusNextExtension) {
+        return;
+      }
       this.raiseVenus(2);
       return;
     }
@@ -228,7 +234,9 @@ export class MarsBotTurnResolver {
     }
     const increment = steps as 1 | 2;
     this.game.increaseTemperature(this.marsBot, increment);
-    if (this.marsBotManager) this.marsBotManager.temperatureRaises += steps;
+    if (this.marsBotManager) {
+      this.marsBotManager.temperatureRaises += steps;
+    }
     this.game.log('MarsBot raises temperature ${0} step(s)', (b) => b.number(steps));
     // Temperature bonuses at -24C and -20C: MarsBot gains 2 MC instead of heat production
     // This is handled by the game engine granting heat production; we override in MarsBot's production
@@ -294,7 +302,9 @@ export class MarsBotTurnResolver {
   // C-8/C-14: Gain `count` floaters. With Venus → floaterCount; without Venus but with Colonies →
   // Titan storage; without both → ignored (C-13).
   private gainFloaters(count: number): void {
-    if (this.marsBotManager === undefined) return;
+    if (this.marsBotManager === undefined) {
+      return;
+    }
     if (this.game.gameOptions.venusNextExtension) {
       this.marsBotManager.floaterCount += count;
       this.game.log('MarsBot gains ${0} floater(s)', (b) => b.number(count));
@@ -316,8 +326,12 @@ export class MarsBotTurnResolver {
     // Tiebreakers: 1) one human also qualifies for, 2) one human is closest to, 3) leftmost (Hoverlord last)
     // Sort so Hoverlord is last in "leftmost" priority when tied
     const sorted = claimable.sort((a, b) => {
-      if (a.name === 'Hoverlord') return 1;
-      if (b.name === 'Hoverlord') return -1;
+      if (a.name === 'Hoverlord') {
+        return 1;
+      }
+      if (b.name === 'Hoverlord') {
+        return -1;
+      }
       return 0;
     });
     let best = sorted[0]; // Default: leftmost (Hoverlord pushed to end)
@@ -349,9 +363,13 @@ export class MarsBotTurnResolver {
   }
 
   private getClaimableMilestones(): Array<IMilestone> {
-    if (this.game.allMilestonesClaimed()) return [];
+    if (this.game.allMilestonesClaimed()) {
+      return [];
+    }
     return this.game.milestones.filter((m) => {
-      if (this.game.milestoneClaimed(m)) return false;
+      if (this.game.milestoneClaimed(m)) {
+        return false;
+      }
       return this.marsBotMeetsMilestone(m);
     });
   }
@@ -360,7 +378,7 @@ export class MarsBotTurnResolver {
   private humanMilestoneCloseness(milestone: IMilestone): number {
     const name = milestone.name;
     switch (name) {
-    case 'Terraformer': return this.humanPlayer.getTerraformRating(); // closer to 35
+    case 'Terraformer': return this.humanPlayer.terraformRating; // closer to 35
     case 'Mayor': return this.game.board.getCities(this.humanPlayer).length;
     case 'Gardener': return this.game.board.getGreeneries(this.humanPlayer).length;
     case 'Builder': return this.humanPlayer.tags.count(Tag.BUILDING, 'raw'); // closer to 8
@@ -374,7 +392,9 @@ export class MarsBotTurnResolver {
     const evalFn = MILESTONE_EVALS.get(milestone.name);
     if (evalFn !== undefined) {
       const result = evalFn(this.buildMAContext());
-      if (result !== undefined) return result;
+      if (result !== undefined) {
+        return result;
+      }
     }
     return milestone.canClaim(this.marsBot);
   }
@@ -417,7 +437,9 @@ export class MarsBotTurnResolver {
     const evalFn = AWARD_EVALS.get(award.name);
     if (evalFn !== undefined) {
       const result = evalFn(this.buildMAContext());
-      if (result !== undefined) return result + offset;
+      if (result !== undefined) {
+        return result + offset;
+      }
     }
     return award.getScore(this.marsBot) + offset;
   }
@@ -464,7 +486,9 @@ export class MarsBotTurnResolver {
       } else {
         tilesNotAdjacentToOcean++;
       }
-      if (adj.length < 6) tilesOnEdge++;
+      if (adj.length < 6) {
+        tilesOnEdge++;
+      }
     }
 
     let greenCards = 0;
@@ -476,20 +500,34 @@ export class MarsBotTurnResolver {
     let withNonNegativeVP = 0;
     let withRequirements = 0;
     for (const card of playedCards) {
-      if (card.type === CardType.EVENT) redCards++;
-      else if (card.type === CardType.ACTIVE) blueCards++;
-      else greenCards++;
-      if (card.tags.length === 0) withoutTags++;
-      if (card.cost >= 20) costing20Plus++;
-      if (card.cost <= 10) costing10OrLess++;
-      if (card.getVictoryPoints(this.marsBot) >= 0) withNonNegativeVP++;
-      if (card.requirements !== undefined) withRequirements++;
+      if (card.type === CardType.EVENT) {
+        redCards++;
+      } else if (card.type === CardType.ACTIVE) {
+        blueCards++;
+      } else {
+        greenCards++;
+      }
+      if (card.tags.length === 0) {
+        withoutTags++;
+      }
+      if (card.cost >= 20) {
+        costing20Plus++;
+      }
+      if (card.cost <= 10) {
+        costing10OrLess++;
+      }
+      if (card.getVictoryPoints(this.marsBot) >= 0) {
+        withNonNegativeVP++;
+      }
+      if (card.requirements !== undefined) {
+        withRequirements++;
+      }
     }
 
     return {
       trackPos: (index: number) => tracks[index]?.position ?? 0,
       allTrackPositions: () => positions,
-      tr: this.marsBot.getTerraformRating(),
+      tr: this.marsBot.terraformRating,
       mc: this.mcSupply,
       cityCount,
       greeneryCount,
@@ -533,17 +571,25 @@ export class MarsBotTurnResolver {
 
   private calcLargestConnectedTileGroup(): number {
     const ownedSpaces = this.game.board.spaces.filter(Board.ownedBy(this.marsBot));
-    if (ownedSpaces.length === 0) return 0;
+    if (ownedSpaces.length === 0) {
+      return 0;
+    }
     const visited = new Set<string>();
     let largest = 0;
     for (const space of ownedSpaces) {
-      if (visited.has(space.id)) continue;
+      if (visited.has(space.id)) {
+        continue;
+      }
       let groupSize = 0;
       const queue = [space];
       while (queue.length > 0) {
         const s = queue.pop();
-        if (s === undefined) break;
-        if (visited.has(s.id)) continue;
+        if (s === undefined) {
+          break;
+        }
+        if (visited.has(s.id)) {
+          continue;
+        }
         visited.add(s.id);
         groupSize++;
         for (const adj of this.game.board.getAdjacentSpaces(s)) {
@@ -552,7 +598,9 @@ export class MarsBotTurnResolver {
           }
         }
       }
-      if (groupSize > largest) largest = groupSize;
+      if (groupSize > largest) {
+        largest = groupSize;
+      }
     }
     return largest;
   }

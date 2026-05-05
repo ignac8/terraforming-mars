@@ -87,8 +87,12 @@ export class RemoveResourcesFromCard extends DeferredAction<Response> {
 
     // Build the options list
     const options: Array<SelectCard<ICard> | SelectOption> = [];
-    if (selectCard !== undefined) options.push(selectCard);
-    if (marsBotOption !== undefined) options.push(marsBotOption);
+    if (selectCard !== undefined) {
+      options.push(selectCard);
+    }
+    if (marsBotOption !== undefined) {
+      options.push(marsBotOption);
+    }
 
     if (this.mandatory) {
       if (options.length === 1 && cards.length === 1 && this.autoselect === true && marsBotOption === undefined) {
@@ -102,7 +106,9 @@ export class RemoveResourcesFromCard extends DeferredAction<Response> {
         );
         return undefined;
       }
-      if (options.length === 1) return options[0];
+      if (options.length === 1) {
+        return options[0];
+      }
       return new OrOptions(...options);
     }
 
@@ -133,7 +139,9 @@ export class RemoveResourcesFromCard extends DeferredAction<Response> {
   /** Returns true if there are any valid targets (cards or MarsBot MC supply). */
   public static hasAvailableTargets(player: IPlayer, resourceType: CardResource | undefined, source: Source = 'all'): boolean {
     // Check MarsBot MC first (O(1)) before expensive card iteration (O(n*m))
-    if (player.game.automaHooks?.hasRemoveResourceTarget(player, source)) return true;
+    if (player.game.automaHooks?.hasRemoveResourceTarget(player, source)) {
+      return true;
+    }
     return RemoveResourcesFromCard.getAvailableTargetCards(player, resourceType, source).length > 0;
   }
 

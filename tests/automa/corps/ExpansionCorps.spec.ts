@@ -165,7 +165,7 @@ describe('Expansion MarsBot Corporations', () => {
       expect(marsBot.corpSpecificState.get('whiteCubesOnCard')).to.eq(1);
 
       // Collect 1 black cube — should pair and raise temp
-      const trBefore = marsBot.player.getTerraformRating();
+      const trBefore = marsBot.player.terraformRating;
       corp.effect!.onTrackCubeTrigger!(marsBot.getCorpContext(), 2, 3, 'black');
       expect(marsBot.corpSpecificState.get('whiteCubesOnCard')).to.eq(0);
       expect(marsBot.corpSpecificState.get('blackCubesOnCard')).to.eq(0);
@@ -230,9 +230,9 @@ describe('Expansion MarsBot Corporations', () => {
       const {marsBot} = createAutomaGame();
       const corp = getMarsBotCorp(CardName.PHARMACY_UNION)!;
       marsBot.setCorpAndSetup(corp);
-      const trBefore = marsBot.player.getTerraformRating();
+      const trBefore = marsBot.player.terraformRating;
       corp.effect!.onProjectCardResolved!(marsBot.getCorpContext(), {name: 'SciCard', tags: [Tag.SCIENCE], cost: 10, hasRequirements: false, victoryPoints: 0});
-      expect(marsBot.player.getTerraformRating()).to.eq(trBefore + 1);
+      expect(marsBot.player.terraformRating).to.eq(trBefore + 1);
     });
 
     it('human microbe card → lose 4 M€', () => {
@@ -309,9 +309,9 @@ describe('Expansion MarsBot Corporations', () => {
     it('reduces TR by 8 on setup', () => {
       const {marsBot} = createAutomaGame();
       const corp = getMarsBotCorp(CardName.TERRALABS_RESEARCH)!;
-      const trBefore = marsBot.player.getTerraformRating();
+      const trBefore = marsBot.player.terraformRating;
       marsBot.setCorpAndSetup(corp);
-      expect(marsBot.player.getTerraformRating()).to.eq(trBefore - 8);
+      expect(marsBot.player.terraformRating).to.eq(trBefore - 8);
     });
 
     it('draws 1 card for gen 1-8, 2 cards for gen 9+', () => {

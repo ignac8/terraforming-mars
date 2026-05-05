@@ -22,7 +22,9 @@ function pickBest<T>(items: T[], scorer: (t: T) => number, rng: Random): T | und
       bestItems.push(item);
     }
   }
-  if (bestScore <= 0) return undefined;
+  if (bestScore <= 0) {
+    return undefined;
+  }
   return bestItems[rng.nextInt(bestItems.length)];
 }
 
@@ -42,7 +44,9 @@ export class MarsBotDraftResolver {
     if (hand.length === 0) {
       throw new Error('Cannot pick from empty hand');
     }
-    if (hand.length === 1) return hand[0];
+    if (hand.length === 1) {
+      return hand[0];
+    }
 
     switch (priority.type) {
     case 'tags':
@@ -111,7 +115,9 @@ export class MarsBotDraftResolver {
   private static scoreCardByTags(card: IProjectCard, priorityTags: ReadonlyArray<Tag>): number {
     let score = 0;
     for (const cardTag of card.tags) {
-      if (cardTag === Tag.WILD) continue;
+      if (cardTag === Tag.WILD) {
+        continue;
+      }
       const priorityIndex = priorityTags.indexOf(cardTag);
       if (priorityIndex >= 0) {
         score += (priorityTags.length - priorityIndex);
@@ -122,8 +128,12 @@ export class MarsBotDraftResolver {
 
   private static cardMatchesTags(card: IProjectCard, priorityTags: ReadonlyArray<Tag>): boolean {
     for (const cardTag of card.tags) {
-      if (cardTag === Tag.WILD) continue;
-      if (priorityTags.includes(cardTag)) return true;
+      if (cardTag === Tag.WILD) {
+        continue;
+      }
+      if (priorityTags.includes(cardTag)) {
+        return true;
+      }
     }
     return false;
   }

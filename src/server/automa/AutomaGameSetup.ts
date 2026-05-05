@@ -152,11 +152,15 @@ export class AutomaGameSetup {
   private static placeColonyCubes(game: IGame, marsBot: MarsBot): void {
     const hasPioneer4 = game.milestones.some((m) => m.name === 'Pioneer4');
     const hasConstructor = game.awards.some((a) => a.name === 'Constructor');
-    if (!hasPioneer4 && !hasConstructor) return;
+    if (!hasPioneer4 && !hasConstructor) {
+      return;
+    }
 
     const spaceTrack = marsBot.board.getTrackIndexForTag(Tag.SPACE);
     const energyTrack = marsBot.board.getTrackIndexForTag(Tag.POWER);
-    if (spaceTrack === undefined || energyTrack === undefined) return;
+    if (spaceTrack === undefined || energyTrack === undefined) {
+      return;
+    }
 
     const cubePositions: Array<{trackIndex: number, position: number}> = [
       {trackIndex: spaceTrack, position: 7},
@@ -181,9 +185,13 @@ export class AutomaGameSetup {
    * When triggered (C-27), MarsBot unlocks the 2nd trade fleet and Extended Shipping Lines.
    */
   private static place2ndTradeFleetCube(game: IGame, marsBot: MarsBot): void {
-    if (!game.gameOptions.coloniesExtension || marsBot.tradeFleetCubeKey === undefined) return;
+    if (!game.gameOptions.coloniesExtension || marsBot.tradeFleetCubeKey === undefined) {
+      return;
+    }
     const key = marsBot.tradeFleetCubeKey;
-    if (marsBot.trackCubePositions.has(key)) return; // Already placed (shouldn't happen for new game)
+    if (marsBot.trackCubePositions.has(key)) {
+      return;
+    } // Already placed (shouldn't happen for new game)
     // Parse trackIndex and position back from key
     const [trackStr, posStr] = key.split(':');
     const trackIndex = parseInt(trackStr);
@@ -198,14 +206,18 @@ export class AutomaGameSetup {
    */
   private static placeExtraSetupDelegate(game: IGame, marsBotPlayer: IPlayer, rng: Random): void {
     const turmoil = game.turmoil;
-    if (turmoil === undefined) return;
+    if (turmoil === undefined) {
+      return;
+    }
     // Flip a project card for randomness (T-15 rule: "flip a project deck card")
     const card = game.projectDeck.draw(game);
     if (card !== undefined) {
       game.projectDeck.discardPile.push(card);
     }
     // Place 1 MarsBot delegate in a random party (only if reserve is non-empty)
-    if (!turmoil.hasDelegatesInReserve(marsBotPlayer)) return;
+    if (!turmoil.hasDelegatesInReserve(marsBotPlayer)) {
+      return;
+    }
     const parties = turmoil.parties;
     const randomIndex = rng.nextInt(parties.length);
     const party = parties[randomIndex];

@@ -42,26 +42,38 @@ export type MarsBotMAContext = {
 
 function allTracksAtOrAbove(ctx: MarsBotMAContext, pos: number, includeVenus: boolean): boolean {
   for (let t = 0; t < 7; t++) {
-    if (ctx.trackPos(t) < pos) return false;
+    if (ctx.trackPos(t) < pos) {
+      return false;
+    }
   }
-  if (includeVenus && ctx.hasVenus && ctx.venusTrackPos < pos) return false;
+  if (includeVenus && ctx.hasVenus && ctx.venusTrackPos < pos) {
+    return false;
+  }
   return true;
 }
 
 function tracksAtOrAboveCount(ctx: MarsBotMAContext, pos: number): number {
   let count = 0;
   for (let t = 0; t < 7; t++) {
-    if (ctx.trackPos(t) >= pos) count++;
+    if (ctx.trackPos(t) >= pos) {
+      count++;
+    }
   }
-  if (ctx.hasVenus && ctx.venusTrackPos >= pos) count++;
+  if (ctx.hasVenus && ctx.venusTrackPos >= pos) {
+    count++;
+  }
   return count;
 }
 
 function anyTrackAtOrAbove(ctx: MarsBotMAContext, pos: number): boolean {
   for (let t = 0; t < 7; t++) {
-    if (ctx.trackPos(t) >= pos) return true;
+    if (ctx.trackPos(t) >= pos) {
+      return true;
+    }
   }
-  if (ctx.hasVenus && ctx.venusTrackPos >= pos) return true;
+  if (ctx.hasVenus && ctx.venusTrackPos >= pos) {
+    return true;
+  }
   return false;
 }
 
@@ -88,7 +100,9 @@ export const MILESTONE_EVALS = new Map<MilestoneName, MilestoneEval>([
   ['Planner', (ctx: MarsBotMAContext) => allTracksAtOrAbove(ctx, 4, false)],
   // Hellas
   ['Diversifier', (ctx: MarsBotMAContext) => {
-    if (!ctx.hasVenus) return allTracksAtOrAbove(ctx, 3, false);
+    if (!ctx.hasVenus) {
+      return allTracksAtOrAbove(ctx, 3, false);
+    }
     // With Venus: 7 of 8 tracks at 3+ (Venus can substitute one other track)
     return tracksAtOrAboveCount(ctx, 3) >= 7;
   }],
@@ -187,7 +201,9 @@ export const AWARD_EVALS = new Map<AwardName, AwardEval>([
   ['Constructor', () => undefined],
   ['Politician', () => 5],
   ['Visionary', (ctx: MarsBotMAContext) => {
-    if (!ctx.hasVenus) return ctx.lowestTrackPos * 2;
+    if (!ctx.hasVenus) {
+      return ctx.lowestTrackPos * 2;
+    }
     // With Venus: 2nd lowest track position doubled
     const all = [...ctx.allTrackPositions(), ctx.venusTrackPos].sort((a, b) => a - b);
     return all[1] * 2;

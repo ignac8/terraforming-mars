@@ -83,6 +83,7 @@ import {BoardName} from '../common/boards/BoardName';
 import {SpaceType} from '../common/boards/SpaceType';
 import {AutomaGameHooks} from './automa/AutomaGameHooks';
 import {AutomaGameSetup} from './automa/AutomaGameSetup';
+import {ICard} from './cards/ICard';
 
 // Can be overridden by tests
 
@@ -182,6 +183,8 @@ export class Game implements IGame, Logger {
   public beholdTheEmperor: boolean = false;
   // Double Down
   public inDoubleDown: boolean = false;
+  public doubleDownPrelude: CardName | undefined = undefined;
+
   // Vermin
   public verminInEffect: boolean = false;
   public exploitationOfVenusInEffect: boolean = false;
@@ -194,7 +197,9 @@ export class Game implements IGame, Logger {
   public automaHooks: AutomaGameHooks | undefined;
 
   // Backward compat — marsBot accessor for ServerModel and tests
-  public get marsBot() { return this.automaHooks?.marsBot; }
+  public get marsBot() {
+    return this.automaHooks?.marsBot;
+  }
 
   private constructor(
     id: GameId,
@@ -535,7 +540,9 @@ export class Game implements IGame, Logger {
   }
 
   public isSoloMode() :boolean {
-    if (this.automaHooks !== undefined) return false;
+    if (this.automaHooks !== undefined) {
+      return false;
+    }
     return this.players.length === 1;
   }
 
@@ -591,7 +598,9 @@ export class Game implements IGame, Logger {
   }
 
   public lastSoloGeneration(): number {
-    if (this.automaHooks !== undefined) return this.automaHooks.lastSoloGeneration();
+    if (this.automaHooks !== undefined) {
+      return this.automaHooks.lastSoloGeneration();
+    }
     let lastGeneration = 14;
     const options = this.gameOptions;
     if (options.preludeExtension) {
@@ -662,13 +671,19 @@ export class Game implements IGame, Logger {
   }
 
   public allAwardsFunded(): boolean {
-    if (this.players.length === 1 && this.automaHooks === undefined) return true;
+    // Awards are disabled for 1 player games (except automa where MarsBot funds them)
+    if (this.players.length === 1 && this.automaHooks === undefined) {
+      return true;
+    }
 
     return this.fundedAwards.length >= constants.MAX_AWARDS;
   }
 
   public allMilestonesClaimed(): boolean {
-    if (this.players.length === 1 && this.automaHooks === undefined) return true;
+    // Milestones are disabled for 1 player games (except automa where MarsBot claims them)
+    if (this.players.length === 1 && this.automaHooks === undefined) {
+      return true;
+    }
 
     return this.claimedMilestones.length >= constants.MAX_MILESTONES;
   }
@@ -766,7 +781,9 @@ export class Game implements IGame, Logger {
   }
 
   public gameIsOver(): boolean {
-    if (this.automaHooks !== undefined) return this.automaHooks.isGameOver();
+    if (this.automaHooks !== undefined) {
+      return this.automaHooks.isGameOver();
+    }
     if (this.isSoloMode()) {
       // Solo games continue until the designated generation end even if Mars is already terraformed
       return this.generation === this.lastSoloGeneration();
@@ -783,7 +800,9 @@ export class Game implements IGame, Logger {
     this.passedPlayers.clear();
     this.someoneHasRemovedOtherPlayersPlants = false;
     this.players.forEach((player) => {
-      if (this.automaHooks?.handleProductionPhase(player)) return;
+      if (this.automaHooks?.handleProductionPhase(player)) {
+        return;
+      }
       player.colonies.cardDiscount = 0; // Iapetus reset hook
       player.runProductionPhase();
     });
@@ -1027,7 +1046,9 @@ export class Game implements IGame, Logger {
   }
 
   private allPlayersHavePassed(): boolean {
-    if (this.automaHooks?.allPlayersHavePassed() === false) return false;
+    if (this.automaHooks?.allPlayersHavePassed() === false) {
+      return false;
+    }
     for (const player of this.players) {
       if (!this.hasPassedThisActionPhase(player)) {
         return false;
@@ -1195,7 +1216,9 @@ export class Game implements IGame, Logger {
     player.actionsTakenThisGame++;
     player.actionsTakenThisRound = 0;
 
-    if (this.automaHooks?.handleStartActions(player)) return;
+    if (this.automaHooks?.handleStartActions(player)) {
+      return;
+    }
     player.takeAction();
   }
 
@@ -1376,26 +1399,12 @@ export class Game implements IGame, Logger {
     tile: Tile): void {
     // Part 1, basic validation checks.
 
-    if (space.tile !== undefined) {
-      let allow = false;
-      if (tile.tileType === TileType.NEW_HOLLAND) {
-        allow = true;
-      } else if (this.gameOptions.aresExtension) {
-        allow = true;
-      } else if (this.gameOptions.pathfindersExpansion) {
-        allow = true;
-      }
-      if (!allow) {
-        throw new Error('Selected space is occupied');
-      }
-    }
-
     // Land claim a player can claim land for themselves
     if (space.player !== undefined && space.player !== player) {
       throw new Error('This space is land claimed by ' + space.player.name);
     }
 
-    if (!AresHandler.canCover(space, tile)) {
+    if (!MarsBoard.canCover(space, tile)) {
       throw new Error('Selected space is occupied: ' + space.id);
     }
 
@@ -1432,8 +1441,8 @@ export class Game implements IGame, Logger {
 
       if (this.gameOptions.boardName === BoardName.HOLLANDIA) {
         const spaces = this.board.spaces.filter(Board.ownedBy(player));
-        const part = partition(spaces, ((space) => space.spaceType === SpaceType.DEFLECTION_ZONE));
-        player.withinDeflectionZone = part[0].length > 0 && part[1].length === 0;
+        const [inside, outside] = partition(spaces, ((space) => space.spaceType === SpaceType.DEFLECTION_ZONE));
+        player.withinDeflectionZone = inside.length > 0 && outside.length === 0;
       }
     } else if (this.phase === Phase.SOLAR) {
       // World government greeneries during solar phase are unowned
@@ -1444,11 +1453,7 @@ export class Game implements IGame, Logger {
     // Clear out underworld components.
     UnderworldExpansion.onTilePlaced(this, space);
 
-    for (const p of this.players) {
-      for (const playedCard of p.tableau) {
-        playedCard.onTilePlaced?.(p, player, space, BoardType.MARS);
-      }
-    }
+    this.triggerForAllCards((p, c) => c.onTilePlaced?.(p, player, space, BoardType.MARS));
 
     this.automaHooks?.handleTilePlaced(player, tile.tileType);
 
@@ -1456,6 +1461,14 @@ export class Game implements IGame, Logger {
       AresHandler.ifAres(this, () => {
         AresHandler.grantBonusForRemovingHazard(player, initialTileType);
       });
+    }
+  }
+
+  public triggerForAllCards(f: (cardOwner: IPlayer, card: ICard) => void) {
+    for (const p of this.playersInGenerationOrder) {
+      for (const playedCard of p.tableau) {
+        f(p, playedCard);
+      }
     }
   }
 
@@ -1588,7 +1601,9 @@ export class Game implements IGame, Logger {
     // Turmoil Greens ruling policy
     PartyHooks.applyGreensRulingPolicy(player, space);
 
-    if (shouldRaiseOxygen) this.increaseOxygenLevel(player, 1);
+    if (shouldRaiseOxygen) {
+      this.increaseOxygenLevel(player, 1);
+    }
     return undefined;
   }
 
@@ -1611,7 +1626,9 @@ export class Game implements IGame, Logger {
   }
 
   public addOcean(player: IPlayer, space: Space): void {
-    if (this.canAddOcean() === false) return;
+    if (this.canAddOcean() === false) {
+      return;
+    }
 
     this.addTile(player, space, {
       tileType: TileType.OCEAN,
@@ -1768,10 +1785,6 @@ export class Game implements IGame, Logger {
     const milestones: Array<IMilestone> = [];
     d.milestones.forEach((milestoneName) => {
       milestoneName = maybeRenamedMilestone(milestoneName);
-      // TODO(kberg): Tycoon10 had the wrong name. Remove this by 2026-04-15
-      if (milestoneName === 'Tycoon' && gameOptions.modularMA) {
-        milestoneName = 'Tycoon10';
-      }
       const milestone = milestoneManifest.create(milestoneName);
       if (milestone !== undefined) {
         milestones.push(milestone);
@@ -1890,7 +1903,9 @@ export class Game implements IGame, Logger {
       game.activePlayer.takeAction(/* saveBeforeTakingAction */ false);
     }
 
-    if (game.phase === Phase.END) GameLoader.getInstance().mark(game.id);
+    if (game.phase === Phase.END) {
+      GameLoader.getInstance().mark(game.id);
+    }
     return game;
   }
 

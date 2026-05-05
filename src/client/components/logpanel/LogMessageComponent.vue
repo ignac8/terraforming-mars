@@ -126,9 +126,13 @@ export default defineComponent({
     },
     getPlayerName(color: Color) {
       const player = this.viewModel.players.find((player) => player.color === color);
-      if (player !== undefined) return player.name;
+      if (player !== undefined) {
+        return player.name;
+      }
       // Automa: MarsBot's color won't be in the players list
-      if (this.viewModel.game.marsBot !== undefined) return 'MarsBot';
+      if (this.viewModel.game.marsBot !== undefined) {
+        return 'MarsBot';
+      }
       return color;
     },
   },

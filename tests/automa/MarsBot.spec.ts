@@ -34,12 +34,12 @@ describe('MarsBot', () => {
 
     it('MarsBot starts with TR 20', () => {
       const {marsBot} = createAutomaGame();
-      expect(marsBot.player.getTerraformRating()).to.eq(20);
+      expect(marsBot.player.terraformRating).to.eq(20);
     });
 
     it('human player starts with TR 20 (not 14 like normal solo)', () => {
       const {human} = createAutomaGame();
-      expect(human.getTerraformRating()).to.eq(20);
+      expect(human.terraformRating).to.eq(20);
     });
 
     it('MarsBot has initial action deck of 4 cards', () => {
@@ -119,7 +119,9 @@ describe('MarsBot', () => {
     it('regressTrack maps production types correctly', () => {
       const {marsBot} = createAutomaGame();
       // Advance all tracks to position 1
-      for (let i = 0; i < 7; i++) { marsBot.board.tracks[i].advance(); }
+      for (let i = 0; i < 7; i++) {
+        marsBot.board.tracks[i].advance();
+      }
 
       marsBot.regressTrack(Resource.TITANIUM); // → Track 2 (Space)
       expect(marsBot.board.tracks[1].position).to.eq(0);

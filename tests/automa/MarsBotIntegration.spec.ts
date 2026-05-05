@@ -120,13 +120,17 @@ describe('MarsBot Integration', () => {
   describe('Tag counting via track positions (opponent card effects)', () => {
     it('Toll Station scenario: opponent Space tags = Track 2 position', () => {
       const {marsBot} = createAutomaGame();
-      for (let i = 0; i < 7; i++) { marsBot.board.tracks[1].advance(); }
+      for (let i = 0; i < 7; i++) {
+        marsBot.board.tracks[1].advance();
+      }
       expect(marsBot.player.tags.count(Tag.SPACE, 'raw')).to.eq(7);
     });
 
     it('Galilean Waystation scenario: opponent Jovian tags = Track 5 position', () => {
       const {marsBot} = createAutomaGame();
-      for (let i = 0; i < 4; i++) { marsBot.board.tracks[4].advance(); }
+      for (let i = 0; i < 4; i++) {
+        marsBot.board.tracks[4].advance();
+      }
       // Galilean Waystation uses floor(jovianTags / 2) but we just verify the raw count
       expect(marsBot.player.tags.count(Tag.JOVIAN, 'raw')).to.eq(4);
     });
@@ -145,7 +149,9 @@ describe('MarsBot Integration', () => {
 
     it('shared tracks return same value for all mapped tags', () => {
       const {marsBot} = createAutomaGame();
-      for (let i = 0; i < 5; i++) { marsBot.board.tracks[6].advance(); }
+      for (let i = 0; i < 5; i++) {
+        marsBot.board.tracks[6].advance();
+      }
       // Track 7 = Plant, Animal, Microbe — all return 5
       expect(marsBot.player.tags.count(Tag.PLANT, 'raw')).to.eq(5);
       expect(marsBot.player.tags.count(Tag.ANIMAL, 'raw')).to.eq(5);
@@ -157,7 +163,9 @@ describe('MarsBot Integration', () => {
     it('award model includes MarsBot score', () => {
       const {game, marsBot} = createAutomaGame();
       // Advance track 4 for Scientist award
-      for (let i = 0; i < 6; i++) { marsBot.board.tracks[3].advance(); }
+      for (let i = 0; i < 6; i++) {
+        marsBot.board.tracks[3].advance();
+      }
 
       // Import Server to get the model (indirect test via automaHooks)
       const award = game.awards.find((a) => a.name === 'Scientist');

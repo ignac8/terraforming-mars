@@ -110,7 +110,9 @@ export default defineComponent({
   },
   methods: {
     hasCube(trackIndex: number, position: number, cubeType: string): boolean {
-      if (!this.model.trackCubes) return false;
+      if (!this.model.trackCubes) {
+        return false;
+      }
       return this.model.trackCubes.some(
         (c: {trackIndex: number, position: number, cubeType: string}) =>
           c.trackIndex === trackIndex && c.position === position && c.cubeType === cubeType,
@@ -120,12 +122,16 @@ export default defineComponent({
       return track.layout ? track.layout.length - 1 : 18;
     },
     getAction(track: {layout?: ReadonlyArray<TrackAction | undefined>}, position: number): TrackAction | undefined {
-      if (!track.layout) return undefined;
+      if (!track.layout) {
+        return undefined;
+      }
       return track.layout[position];
     },
     getActionIcon(track: {layout?: ReadonlyArray<TrackAction | undefined>}, position: number): string {
       const action = this.getAction(track, position);
-      if (!action) return '';
+      if (!action) {
+        return '';
+      }
       if (action.startsWith('tag_')) {
         const tag = action.slice(4);
         return '+' + tag.charAt(0).toUpperCase();
@@ -134,8 +140,12 @@ export default defineComponent({
     },
     getActionTooltip(track: {layout?: ReadonlyArray<TrackAction | undefined>}, position: number): string {
       const action = this.getAction(track, position);
-      if (!action) return this.$t('Position') + ' ' + position;
-      if (action.startsWith('tag_')) return this.$t('Advance track') + ' ' + action.slice(4);
+      if (!action) {
+        return this.$t('Position') + ' ' + position;
+      }
+      if (action.startsWith('tag_')) {
+        return this.$t('Advance track') + ' ' + action.slice(4);
+      }
       const label = ACTION_LABELS[action];
       return label ? this.$t(label) : action;
     },

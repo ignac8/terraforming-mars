@@ -23,7 +23,9 @@ describe('MarsBot track regression', () => {
 
   it('regressTrack maps Energy to Energy track (index 4)', () => {
     const mb = createMarsBot();
-    for (let i = 0; i < 3; i++) { mb.board.tracks[4].advance(); }
+    for (let i = 0; i < 3; i++) {
+      mb.board.tracks[4].advance();
+    }
 
     mb.regressTrack(Resource.ENERGY);
     expect(mb.board.tracks[4].position).to.eq(2);

@@ -5,7 +5,7 @@ import {UnderworldExpansion} from '../../src/server/underworld/UnderworldExpansi
 import {Game} from '../../src/server/Game';
 import {IGame} from '../../src/server/IGame';
 import {UnderworldData} from '../../src/server/underworld/UnderworldData';
-import {cast, fakeCard, forceGenerationEnd, formatMessage, runAllActions} from '../TestingUtils';
+import {fakeCard, forceGenerationEnd, formatMessage, runAllActions} from '../TestingUtils';
 import {Units} from '../../src/common/Units';
 import {Cryptocurrency} from '../../src/server/cards/pathfinders/Cryptocurrency';
 import {MartianCulture} from '../../src/server/cards/pathfinders/MartianCulture';
@@ -23,6 +23,7 @@ import {Tag} from '../../src/common/cards/Tag';
 import {BoardName} from '../../src/common/boards/BoardName';
 import {TunnelingLoophole} from '../../src/server/cards/underworld/TunnelingLoophole';
 import {SpaceType} from '../../src/common/boards/SpaceType';
+import {cast} from '@/common/utils/utils';
 
 describe('UnderworldExpansion', () => {
   let player1: TestPlayer;
@@ -76,18 +77,19 @@ describe('UnderworldExpansion', () => {
     const responses: Array<string> = [];
     const space = game.board.getAvailableSpacesOnLand(player1)[0];
     const fake = fakeCard({
-      onIdentificationByAnyPlayer(cardOwner, identifyingPlayer, space) {
-        responses.push(`${identifyingPlayer?.id} - ${cardOwner.id} - ${space.id}`);
+      onIdentificationByAnyPlayer(cardOwner, identifyingPlayer, token) {
+        responses.push(`${identifyingPlayer?.id} - ${cardOwner.id} - ${token}`);
       },
     });
     player1.playedCards.push(fake);
     player2.playedCards.push(fake);
 
+    game.underworldData.tokens.push('ocean');
     UnderworldExpansion.identify(game, space, player1);
 
     expect(responses).deep.eq([
-      'p-player1-id - p-player1-id - 03',
-      'p-player1-id - p-player2-id - 03',
+      'p-player1-id - p-player1-id - ocean',
+      'p-player1-id - p-player2-id - ocean',
     ]);
   });
 
@@ -396,16 +398,14 @@ describe('UnderworldExpansion', () => {
     expect(UnderworldExpansion.excavatableSpaces(player1)).contains(space);
   });
 
-  it('Rey Skywalker space is identifiable and excavatable', () => {
+  it('Rey Skywalker space is not identifiable or excavatable', () => {
     const space = UnderworldExpansion.identifiableSpaces(player1)[0];
     game.simpleAddTile(player1, space, {tileType: TileType.REY_SKYWALKER});
 
-    expect(UnderworldExpansion.identifiableSpaces(player1)).contains(space);
-    expect(UnderworldExpansion.excavatableSpaces(player1)).contains(space);
+    expect(UnderworldExpansion.identifiableSpaces(player1)).not.contains(space);
+    expect(UnderworldExpansion.excavatableSpaces(player1)).not.contains(space);
 
-    UnderworldExpansion.excavate(player1, space);
-
-    expect(space.excavator?.id).eq(player1.id);
+    expect(() => UnderworldExpansion.excavate(player1, space)).to.throw();
   });
 
   it('Martian Nature Wonders space is identifiable and excavatable', () => {
@@ -795,6 +795,26 @@ describe('UnderworldExpansion', () => {
     expect(space2.excavator).eq(player1);
     expect(space2.undergroundResources).eq('card2');
     expect(game.underworldData.tokens).to.have.members(['card1']);
+  });
+
+  it('removeClaimedToken - planttag decrements extra plant tag', () => {
+    player1.underworldData.tokens.push({token: 'planttag', shelter: false, active: false});
+    player1.tags.extraPlantTags = 1;
+
+    UnderworldExpansion.removeClaimedToken(player1, 0);
+
+    expect(player1.underworldData.tokens).is.empty;
+    expect(player1.tags.extraPlantTags).eq(0);
+  });
+
+  it('removeClaimedToken - sciencetag decrements extra science tag', () => {
+    player1.underworldData.tokens.push({token: 'sciencetag', shelter: false, active: false});
+    player1.tags.extraScienceTags = 1;
+
+    UnderworldExpansion.removeClaimedToken(player1, 0);
+
+    expect(player1.underworldData.tokens).is.empty;
+    expect(player1.tags.extraScienceTags).eq(0);
   });
 
   it('Cannot identify the restricted space on Amazonis Planitia', () => {

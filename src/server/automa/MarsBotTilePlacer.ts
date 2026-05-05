@@ -27,7 +27,9 @@ export class MarsBotTilePlacer {
   public findGreenerySpace(): Space | undefined {
     const board = this.game.board;
     const spaces = board.getAvailableSpacesForGreenery(this.marsBot);
-    if (spaces.length === 0) return undefined;
+    if (spaces.length === 0) {
+      return undefined;
+    }
 
     return this.selectBestSpace(spaces, (space) => {
       const adj = board.getAdjacentSpaces(space);
@@ -42,7 +44,9 @@ export class MarsBotTilePlacer {
   public findCitySpace(): Space | undefined {
     const board = this.game.board;
     const spaces = board.getAvailableSpacesForCity(this.marsBot);
-    if (spaces.length === 0) return undefined;
+    if (spaces.length === 0) {
+      return undefined;
+    }
 
     return this.selectBestSpace(spaces, (space) => {
       const adj = board.getAdjacentSpaces(space);
@@ -61,7 +65,9 @@ export class MarsBotTilePlacer {
       ).length;
       return greeneryOrOcean >= 2;
     });
-    if (eligible.length === 0) return undefined;
+    if (eligible.length === 0) {
+      return undefined;
+    }
 
     return this.selectBestSpace(eligible, (space) => {
       const adj = board.getAdjacentSpaces(space);
@@ -74,7 +80,9 @@ export class MarsBotTilePlacer {
   /** Find the best space for MarsBot to place an ocean. Returns undefined if none available. */
   public findOceanSpace(): Space | undefined {
     const spaces = this.game.board.getAvailableSpacesForOcean(this.marsBot);
-    if (spaces.length === 0) return undefined;
+    if (spaces.length === 0) {
+      return undefined;
+    }
     // Oceans have no type-specific primary sort, go straight to tiebreakers.
     return this.selectBestSpace(spaces, () => 0);
   }
@@ -86,16 +94,26 @@ export class MarsBotTilePlacer {
     const spaces = board.getAvailableSpacesOnLand(this.marsBot).filter((space) => {
       const adj = board.getAdjacentSpaces(space);
       // Adjacent to no tiles
-      if (adj.some((s) => s.tile !== undefined)) return false;
+      if (adj.some((s) => s.tile !== undefined)) {
+        return false;
+      }
       // Not on edge (has fewer than 6 adjacent spaces means edge)
-      if (adj.length < 6) return false;
+      if (adj.length < 6) {
+        return false;
+      }
       // Not adjacent to reserved spaces (ocean-reserved, restricted, specific cities)
-      if (adj.some(isReserved)) return false;
+      if (adj.some(isReserved)) {
+        return false;
+      }
       // Not on a reserved space itself
-      if (isReserved(space)) return false;
+      if (isReserved(space)) {
+        return false;
+      }
       return true;
     });
-    if (spaces.length === 0) return undefined;
+    if (spaces.length === 0) {
+      return undefined;
+    }
     return this.selectBestSpace(spaces, () => 0);
   }
 
@@ -110,8 +128,12 @@ export class MarsBotTilePlacer {
     spaces: ReadonlyArray<Space>,
     primaryScore: (space: Space) => number,
   ): Space | undefined {
-    if (spaces.length === 0) return undefined;
-    if (spaces.length === 1) return spaces[0];
+    if (spaces.length === 0) {
+      return undefined;
+    }
+    if (spaces.length === 1) {
+      return spaces[0];
+    }
 
     const board = this.game.board;
 
@@ -124,8 +146,12 @@ export class MarsBotTilePlacer {
 
     // Sort by primary desc, then adjacent oceans desc, then bonus icons desc
     scored.sort((a, b) => {
-      if (a.primary !== b.primary) return b.primary - a.primary;
-      if (a.adjacentOceans !== b.adjacentOceans) return b.adjacentOceans - a.adjacentOceans;
+      if (a.primary !== b.primary) {
+        return b.primary - a.primary;
+      }
+      if (a.adjacentOceans !== b.adjacentOceans) {
+        return b.adjacentOceans - a.adjacentOceans;
+      }
       return b.bonusIcons - a.bonusIcons;
     });
 
@@ -137,7 +163,9 @@ export class MarsBotTilePlacer {
       s.bonusIcons === best.bonusIcons,
     );
 
-    if (tied.length === 1) return tied[0].space;
+    if (tied.length === 1) {
+      return tied[0].space;
+    }
 
     // Tiebreaker 3: random using project deck card cost
     return this.randomTiebreak(tied.map((t) => t.space));

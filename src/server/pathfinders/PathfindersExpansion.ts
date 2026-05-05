@@ -51,6 +51,26 @@ export class PathfindersExpansion {
     });
   }
 
+  public static willGainEnergyProductionOnNextMarsTag(player: IPlayer, count: 1 | 2 = 1): boolean {
+    const data = player.game.pathfindersData;
+    if (data === undefined) {
+      return false;
+    }
+    const idx = data[Tag.MARS] + count;
+    const rewards = TRACKS[Tag.MARS].spaces[idx]?.risingPlayer;
+
+    if (rewards === undefined) {
+      return false;
+    }
+    if (rewards.includes('energy_production')) {
+      return true;
+    }
+    if (count === 2) {
+      return this.willGainEnergyProductionOnNextMarsTag(player, 1);
+    }
+    return false;
+  }
+
   public static raiseTrack(tag: PlanetaryTag, player: IPlayer, steps: number = 1): void {
     PathfindersExpansion.raiseTrackEssense(tag, player, player.game, steps, true);
   }
@@ -80,7 +100,9 @@ export class PathfindersExpansion {
 
     const lastSpace = Math.min(track.spaces.length - 1, space + steps);
     const distance = lastSpace - space;
-    if (distance === 0) return;
+    if (distance === 0) {
+      return;
+    }
 
     if (typeof(from) === 'object') {
       game.log('${0} raised the ${1} planetary track ${2} step(s)', (b) => {

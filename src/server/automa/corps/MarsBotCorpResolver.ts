@@ -58,8 +58,12 @@ export class MarsBotCorpResolver {
    */
   public static onTrackAdvanced(marsBot: MarsBot, trackIndex: number, position: number): void {
     const cube = marsBot.hasCubeAt(trackIndex, position);
-    if (cube === undefined) return;
-    if (marsBot.isCubeTriggered(trackIndex, position)) return;
+    if (cube === undefined) {
+      return;
+    }
+    if (marsBot.isCubeTriggered(trackIndex, position)) {
+      return;
+    }
 
     marsBot.markCubeTriggered(trackIndex, position);
 

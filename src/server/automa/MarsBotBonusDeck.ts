@@ -98,10 +98,14 @@ export class MarsBotBonusDeck {
   /** Find and remove a bonus card by ID from the draw pile. Returns the card or undefined. */
   public findAndRemove(bonusCardId: string): MarsBotBonusCard | undefined {
     const idx = this.drawPile.findIndex((c) => c.id === bonusCardId);
-    if (idx >= 0) return this.drawPile.splice(idx, 1)[0];
+    if (idx >= 0) {
+      return this.drawPile.splice(idx, 1)[0];
+    }
     // Also check discard pile
     const discardIdx = this.discardPile.findIndex((c) => c.id === bonusCardId);
-    if (discardIdx >= 0) return this.discardPile.splice(discardIdx, 1)[0];
+    if (discardIdx >= 0) {
+      return this.discardPile.splice(discardIdx, 1)[0];
+    }
     return undefined;
   }
 

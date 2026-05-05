@@ -30,7 +30,9 @@ describe('MarsBot Limitations Fixed', () => {
     it('Thermalist comparison includes human heat production', () => {
       const {game, human, marsBot} = createAutomaGame();
       // MarsBot Thermalist = track 5 position + 5
-      for (let i = 0; i < 3; i++) { marsBot.board.tracks[4].advance(); }
+      for (let i = 0; i < 3; i++) {
+        marsBot.board.tracks[4].advance();
+      }
       // MarsBot value = 3 + 5 = 8
 
       // Human has 2 heat resources + 5 heat production = 7 for comparison
@@ -47,7 +49,9 @@ describe('MarsBot Limitations Fixed', () => {
     it('Miner comparison includes human steel + titanium production', () => {
       const {game, human, marsBot} = createAutomaGame();
       // MarsBot Miner = track 2 position + 5
-      for (let i = 0; i < 4; i++) { marsBot.board.tracks[1].advance(); }
+      for (let i = 0; i < 4; i++) {
+        marsBot.board.tracks[1].advance();
+      }
       // MarsBot value = 4 + 5 = 9
 
       // Human has 3 steel + 2 titanium + 2 steel prod + 1 titanium prod = 8 for comparison

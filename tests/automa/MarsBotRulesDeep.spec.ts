@@ -81,7 +81,7 @@ describe('MarsBot Deep Rules Tests', () => {
       // Set oxygen to 7 so next raise hits 8 (bonus: raise temperature)
       (game as any).oxygenLevel = 7;
       const tempBefore = game.getTemperature();
-      const trBefore = marsBot.player.getTerraformRating();
+      const trBefore = marsBot.player.terraformRating;
 
       const layout = emptyLayout();
       layout[1] = 'greenery'; // Greenery raises oxygen
@@ -98,7 +98,7 @@ describe('MarsBot Deep Rules Tests', () => {
       // Temperature should have increased by 2 (1 step = 2°C from the bonus)
       expect(game.getTemperature()).to.eq(tempBefore + 2);
       // TR: +1 for oxygen + +1 for temperature bonus = 2 more TR
-      expect(marsBot.player.getTerraformRating()).to.be.gte(trBefore + 2);
+      expect(marsBot.player.terraformRating).to.be.gte(trBefore + 2);
     });
   });
 
@@ -116,7 +116,9 @@ describe('MarsBot Deep Rules Tests', () => {
       const resolver = new MarsBotTurnResolver(game, bot, human, board, 'normal');
 
       // Max out Track 1 (Building)
-      for (let i = 0; i < 18; i++) { board.tracks[0].advance(); }
+      for (let i = 0; i < 18; i++) {
+        board.tracks[0].advance();
+      }
       expect(board.tracks[0].position).to.eq(18);
 
       // Play card with Building + Space tags
@@ -334,7 +336,9 @@ describe('MarsBot Deep Rules Tests', () => {
         const card = marsBot.bonusDeck.draw()!;
         drawn.push(card);
       }
-      for (const c of drawn) { marsBot.bonusDeck.discard(c); }
+      for (const c of drawn) {
+        marsBot.bonusDeck.discard(c);
+      }
 
       // Now draw pile is 0, discard has all cards
       // Next draw should reshuffle
@@ -363,7 +367,9 @@ describe('MarsBot Deep Rules Tests', () => {
       const reshuffled: string[] = [];
       for (let i = 0; i < 10; i++) {
         const c = marsBot.bonusDeck.draw();
-        if (c === undefined) break;
+        if (c === undefined) {
+          break;
+        }
         reshuffled.push(c.id);
         marsBot.bonusDeck.discard(c);
       }
