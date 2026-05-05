@@ -55,14 +55,10 @@ describe('MarsBotBonusCardsColonies (C-15, C-16, C-17)', () => {
       game.colonies = [luna];
       const card = b17Card();
       marsBot.bonusDeck.drawPile.push(card);
-      const coloniesBefore = luna.colonies.length;
       marsBot.bonusResolver.resolve(card);
       // Either a colony was placed or no eligible colony was found
       // Card should NOT be destroyed in this branch
       expect(card.destroyed).to.be.false;
-      // If a colony was placed, luna.colonies should grow
-      // (test just verifies no exception and no card destroy)
-      void coloniesBefore;
     });
 
     it('C-15b: gains 2 resources if colony placed', () => {
