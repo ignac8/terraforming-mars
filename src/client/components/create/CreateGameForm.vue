@@ -52,8 +52,8 @@
                                 <span v-i18n>Venus Next</span>
                             </label>
 
-                            <input type="checkbox" name="colonies" id="colonies-checkbox" v-model="expansions.colonies" :disabled="automaOption">
-                            <label for="colonies-checkbox" class="expansion-button" :class="{'automa-disabled': automaOption}">
+                            <input type="checkbox" name="colonies" id="colonies-checkbox" v-model="expansions.colonies">
+                            <label for="colonies-checkbox" class="expansion-button">
                             <div class="create-game-expansion-icon expansion-icon-colony"></div>
                                 <span v-i18n>Colonies</span>
                             </label>

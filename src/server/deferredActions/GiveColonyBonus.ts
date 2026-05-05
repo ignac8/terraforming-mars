@@ -25,6 +25,10 @@ export class GiveColonyBonus extends DeferredAction {
 
     for (const playerId of this.colony.colonies) {
       if (!this.selfish) {
+        // C-21: If MarsBot has a colony here and this is MarsBot's player, give the automa bonus instead.
+        if (this.player.game.automaHooks?.handleColonyBonus(this.colony, playerId) === true) {
+          continue;
+        }
         // Normal behavior; colony owners get their bonuses.
         this.waitingFor.add(playerId);
         this.playersWithBonuses.add(playerId);

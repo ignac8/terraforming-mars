@@ -77,6 +77,16 @@ export class MarsBotShippingBoard {
     }
   }
 
+  /**
+   * Spend (remove) resources from a storage area without triggering overflow.
+   * Used for floater spending (C-9): deduct from Titan storage.
+   * Does not go below 0.
+   */
+  public spend(colonyName: ColonyName, amount: number): void {
+    const current = this.storage.get(colonyName) ?? 0;
+    this.storage.set(colonyName, Math.max(0, current - amount));
+  }
+
   /** Get the current storage amount for a colony tile. */
   public get(colonyName: ColonyName): number {
     return this.storage.get(colonyName) ?? 0;

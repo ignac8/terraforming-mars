@@ -89,4 +89,6 @@ export interface MarsBotCorpContext {
   spendFloaters(count: number): void;
   readonly discardFewestTagsFromActionDeck: () => void;
   readonly gainMc: (amount: number) => void;
+  /** C-15b method: place a colony on a randomly selected eligible tile. Returns true if placed. */
+  readonly placeRandomColony: () => boolean;
 }

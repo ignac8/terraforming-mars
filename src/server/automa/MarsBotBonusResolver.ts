@@ -15,6 +15,9 @@ import {CardType} from '../../common/cards/CardType';
 import {Space} from '../boards/Space';
 import {CardName} from '../../common/cards/CardName';
 import {placeDelegateForMarsBot, selectPartyForDelegate, updatePartyLeaderForMarsBot} from './turmoil/MarsBotTurmoilHelper';
+import {selectRandomColony, placeColonyForMarsBot} from './colonies/MarsBotColonyPlacer';
+import {selectTradeColony, tradeWithColony} from './colonies/MarsBotTrader';
+import type {MarsBot} from './MarsBot';
 
 /**
  * Resolves MarsBot bonus cards (B01–B08).
@@ -23,6 +26,9 @@ export class MarsBotBonusResolver {
   private readonly tilePlacer: MarsBotTilePlacer;
   /** Callback to set the Neural Instance space on the MarsBot manager. */
   public onNeuralInstancePlaced: ((space: Space) => void) | undefined;
+
+  /** Reference to the full MarsBot manager (set post-construction; needed for Colonies cards). */
+  public marsBotManager: MarsBot | undefined;
 
   constructor(
     private readonly game: IGame,
@@ -66,6 +72,20 @@ export class MarsBotBonusResolver {
       break;
     case BonusCardId.B08_CORPORATE_COMPETITION:
       this.resolveCorporateCompetition();
+      break;
+
+    // Colonies bonus cards (B17-B20)
+    case BonusCardId.B17_EXPEDITED_CONSTRUCTION_COLONIES:
+      this.resolveExpeditedConstructionColonies(card);
+      break;
+    case BonusCardId.B18_OUTER_SYSTEM_FOOTHOLD:
+      this.resolveOuterSystemFoothold(card);
+      break;
+    case BonusCardId.B19_SHIPPING_LINES:
+      this.resolveShippingLines();
+      break;
+    case BonusCardId.B20_EXTENDED_SHIPPING_LINES:
+      this.resolveExtendedShippingLines();
       break;
 
     // Turmoil bonus card
@@ -486,6 +506,101 @@ export class MarsBotBonusResolver {
     default:
       return false;
     }
+  }
+
+  // B17: Expedited Construction (Colonies) — C-15
+  private resolveExpeditedConstructionColonies(card: MarsBotBonusCard): void {
+    // C-15a: Place city adjacent to ≥2 greenery/ocean tiles → destroy card
+    const citySpace = this.tilePlacer.findExpediteConstructionCitySpace();
+    if (citySpace !== undefined) {
+      this.game.addCity(this.marsBot, citySpace);
+      this.turnResolver.mcSupply += this.tilePlacer.getTotalPlacementMC(citySpace);
+      this.bonusDeck.destroy(card);
+      this.game.log('MarsBot places city (Expedited Construction Colonies), card destroyed (C-15a)');
+      return;
+    }
+
+    // C-15b: If MarsBot has ≤1 colonies, place on a random eligible tile — do NOT destroy
+    const marsBot = this.marsBotManager;
+    if (marsBot !== undefined) {
+      const colonyCount = this.game.colonies.filter((c) => c.colonies.includes(this.marsBot.id)).length;
+      if (colonyCount <= 1) {
+        const colony = selectRandomColony(this.game, marsBot);
+        if (colony !== undefined) {
+          placeColonyForMarsBot(colony, marsBot);
+          this.game.log('MarsBot places colony (Expedited Construction Colonies, C-15b)');
+          return;
+        }
+      }
+    }
+
+    // C-15c: No effect
+    this.game.log('MarsBot Expedited Construction Colonies: no effect (C-15c)');
+  }
+
+  // B18: Outer System Foothold — C-16
+  private resolveOuterSystemFoothold(card: MarsBotBonusCard): void {
+    const marsBot = this.marsBotManager;
+    if (marsBot === undefined) {
+      this.game.log('MarsBot Outer System Foothold: no MarsBot manager available');
+      return;
+    }
+
+    // C-16a/b: Place colony on randomly selected eligible tile
+    const colony = selectRandomColony(this.game, marsBot);
+    if (colony !== undefined) {
+      placeColonyForMarsBot(colony, marsBot);
+      this.game.log('MarsBot places colony via Outer System Foothold (C-16a/b)');
+    } else {
+      this.game.log('MarsBot Outer System Foothold: no eligible colony tile (C-16a)');
+    }
+
+    // C-16c/d: Draw from bonus deck (excluding B18 itself), discard without resolving
+    // Temporarily remove B18 from discard so it isn't reshuffled back in
+    const b18Idx = this.bonusDeck.discardPile.findIndex((c) => c.id === BonusCardId.B18_OUTER_SYSTEM_FOOTHOLD);
+    let b18Card: MarsBotBonusCard | undefined;
+    if (b18Idx >= 0) {
+      [b18Card] = this.bonusDeck.discardPile.splice(b18Idx, 1);
+    }
+    const drawnBonus = this.bonusDeck.draw();
+    if (b18Card !== undefined) {
+      this.bonusDeck.discardPile.push(b18Card); // Restore B18
+    }
+    if (drawnBonus !== undefined) {
+      this.bonusDeck.discard(drawnBonus);
+      this.game.log('MarsBot draws and discards ${0} (Outer System Foothold, C-16c)', (b) => b.rawString(drawnBonus.name));
+    }
+
+    // The card itself (B18) is discarded by the caller after resolve() returns.
+    void card; // No destroy for B18
+  }
+
+  // B19: Shipping Lines / B20: Extended Shipping Lines — C-17
+  private resolveShippingLines(): void {
+    this.resolveTradeAction('Shipping Lines');
+  }
+
+  private resolveExtendedShippingLines(): void {
+    this.resolveTradeAction('Extended Shipping Lines');
+  }
+
+  private resolveTradeAction(cardName: string): void {
+    const marsBot = this.marsBotManager;
+    if (marsBot === undefined) {
+      this.game.log(`MarsBot ${cardName}: no MarsBot manager available`);
+      return;
+    }
+
+    const colony = selectTradeColony(this.game, marsBot);
+    if (colony === undefined) {
+      // No tradeable colony: Failed Action
+      this.turnResolver.failedAction();
+      this.game.log(`MarsBot ${cardName}: no tradeable colony — Failed Action (C-17)`);
+      return;
+    }
+
+    tradeWithColony(marsBot, colony);
+    this.game.log(`MarsBot resolves ${cardName} (C-17)`);
   }
 
   private drawAndResolveAnotherBonus(): void {

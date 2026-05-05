@@ -25,8 +25,13 @@ const ARIDOR: IMarsBotCorp = {
   ],
   setup: {
     resolve(ctx) {
-      // Add 1 colony tile
-      ctx.gameLog('MarsBot (Aridor): placed 1 colony (needs Colonies expansion)');
+      // C-30: Place 1 colony using random selection (C-15b method)
+      const placed = ctx.placeRandomColony();
+      if (placed) {
+        ctx.gameLog('MarsBot (Aridor): placed 1 colony (C-30)');
+      } else {
+        ctx.gameLog('MarsBot (Aridor): no eligible colony tile for setup (C-30)');
+      }
     },
   },
   effect: {
@@ -80,8 +85,13 @@ const POSEIDON: IMarsBotCorp = {
   startingTags: [],
   setup: {
     resolve(ctx) {
-      // Place 1 colony
-      ctx.gameLog('MarsBot (Poseidon): placed 1 colony (needs Colonies expansion)');
+      // C-33: Place 1 colony using random selection (C-15b method)
+      const placed = ctx.placeRandomColony();
+      if (placed) {
+        ctx.gameLog('MarsBot (Poseidon): placed 1 colony (C-33)');
+      } else {
+        ctx.gameLog('MarsBot (Poseidon): no eligible colony tile for setup (C-33)');
+      }
     },
   },
   // Effect: colony placement -> advance least-advanced track
