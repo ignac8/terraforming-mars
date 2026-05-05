@@ -58,8 +58,8 @@
                                 <span v-i18n>Colonies</span>
                             </label>
 
-                            <input type="checkbox" name="turmoil" id="turmoil-checkbox" v-model="expansions.turmoil" :disabled="automaOption">
-                            <label for="turmoil-checkbox" class="expansion-button" :class="{'automa-disabled': automaOption}">
+                            <input type="checkbox" name="turmoil" id="turmoil-checkbox" v-model="expansions.turmoil">
+                            <label for="turmoil-checkbox" class="expansion-button">
                                 <div class="create-game-expansion-icon expansion-icon-turmoil"></div>
                                 <span v-i18n>Turmoil</span>
                             </label>

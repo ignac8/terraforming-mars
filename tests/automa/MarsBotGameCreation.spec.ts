@@ -34,13 +34,14 @@ describe('MarsBotGameCreation', () => {
       expect(game.gameOptions.coloniesExtension).to.be.false;
     });
 
-    it('automa game forces Turmoil off', () => {
+    it('automa game supports Turmoil', () => {
       const [game] = testGame(1, {
         automaOption: true,
         turmoilExtension: true,
         boardName: BoardName.THARSIS,
       });
-      expect(game.gameOptions.turmoilExtension).to.be.false;
+      // Turmoil is now supported for automa games
+      expect(game.gameOptions.turmoilExtension).to.be.true;
     });
 
     it('automa game forces Ares off', () => {

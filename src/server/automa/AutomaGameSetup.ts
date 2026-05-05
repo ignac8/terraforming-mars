@@ -17,6 +17,7 @@ import {ICard} from '../cards/ICard';
 import {IMilestone} from '../milestones/IMilestone';
 import {IAward} from '../awards/IAward';
 import {trackCubeKey} from './MarsBotCorpTypes';
+import {DELEGATES_PER_PLAYER} from '../../common/constants';
 
 /**
  * Handles automa-specific game setup and provides hooks into the game lifecycle.
@@ -25,8 +26,8 @@ import {trackCubeKey} from './MarsBotCorpTypes';
 export class AutomaGameSetup {
   /** Force-disable unsupported expansions for automa games. Mutates gameOptions in place. */
   public static sanitizeGameOptions(gameOptions: GameOptions): void {
-    gameOptions.coloniesExtension = false;
-    gameOptions.turmoilExtension = false;
+    // coloniesExtension is supported — do not force-disable
+    // turmoilExtension is supported — do not force-disable
     gameOptions.aresExtension = false;
     gameOptions.moonExpansion = false;
     gameOptions.pathfindersExpansion = false;
@@ -91,7 +92,9 @@ export class AutomaGameSetup {
 
     // Set MarsBot player's game reference
     marsBotPlayer.setup(game);
-    marsBotPlayer.setTerraformRating(MARSBOT_STARTING_TR);
+    // T-2: Turmoil reduces MarsBot's starting TR by 10 (to 10 TR)
+    const startingTR = gameOptions.turmoilExtension ? MARSBOT_STARTING_TR - 10 : MARSBOT_STARTING_TR;
+    marsBotPlayer.setTerraformRating(startingTR);
 
     // Override stock/production to intercept resource removal and production decrease
     const marsBotStock = new MarsBotStock(marsBotPlayer);
@@ -116,6 +119,11 @@ export class AutomaGameSetup {
 
     // Only for new games, not deserialization
     if (existingPlayer === undefined) {
+      // T-1: Add MarsBot's 7 delegates to the reserve (Turmoil setup)
+      if (gameOptions.turmoilExtension && game.turmoil !== undefined) {
+        game.turmoil.delegateReserve.add(marsBotPlayer, DELEGATES_PER_PLAYER);
+        game.log('MarsBot: 7 delegates placed in reserve (Turmoil)');
+      }
       marsBot.buildInitialActionDeck();
       AutomaGameSetup.placeColonyCubes(game, marsBot);
       game.log('MarsBot is ready with ${0} difficulty', (b) => b.rawString(gameOptions.automaDifficulty));
