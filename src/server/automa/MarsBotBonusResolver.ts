@@ -79,7 +79,7 @@ export class MarsBotBonusResolver {
       this.resolveExpeditedConstructionColonies(card);
       break;
     case BonusCardId.B18_OUTER_SYSTEM_FOOTHOLD:
-      this.resolveOuterSystemFoothold(card);
+      this.resolveOuterSystemFoothold();
       break;
     case BonusCardId.B19_SHIPPING_LINES:
       this.resolveShippingLines();
@@ -539,7 +539,7 @@ export class MarsBotBonusResolver {
   }
 
   // B18: Outer System Foothold — C-16
-  private resolveOuterSystemFoothold(card: MarsBotBonusCard): void {
+  private resolveOuterSystemFoothold(): void {
     const marsBot = this.marsBotManager;
     if (marsBot === undefined) {
       this.game.log('MarsBot Outer System Foothold: no MarsBot manager available');
@@ -572,7 +572,6 @@ export class MarsBotBonusResolver {
     }
 
     // The card itself (B18) is discarded by the caller after resolve() returns.
-    void card; // No destroy for B18
   }
 
   // B19: Shipping Lines / B20: Extended Shipping Lines — C-17
