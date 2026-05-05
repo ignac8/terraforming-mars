@@ -200,37 +200,11 @@ export class MarsBotTurnResolver {
       return;
 
     case 'floater':
-      if (this.game.gameOptions.venusNextExtension) {
-        // C-8: With Venus Next, gain 1 floater normally
-        if (this.marsBotManager) {
-          this.marsBotManager.floaterCount++;
-          this.game.log('MarsBot gains 1 floater');
-        }
-      } else if (this.game.gameOptions.coloniesExtension) {
-        // C-14: Without Venus Next but with Colonies, add to Titan storage area
-        if (this.marsBotManager) {
-          this.marsBotManager.shippingBoard.add(ColonyName.TITAN, 1, this.marsBotManager);
-          this.game.log('MarsBot gains 1 floater token in Titan storage (C-14)');
-        }
-      }
-      // Without both, ignore (C-13)
+      this.gainFloaters(1);
       return;
 
     case 'floater2':
-      if (this.game.gameOptions.venusNextExtension) {
-        // C-8: With Venus Next, gain 2 floaters normally
-        if (this.marsBotManager) {
-          this.marsBotManager.floaterCount += 2;
-          this.game.log('MarsBot gains 2 floaters');
-        }
-      } else if (this.game.gameOptions.coloniesExtension) {
-        // C-14: Without Venus Next but with Colonies, add to Titan storage area
-        if (this.marsBotManager) {
-          this.marsBotManager.shippingBoard.add(ColonyName.TITAN, 2, this.marsBotManager);
-          this.game.log('MarsBot gains 2 floater tokens in Titan storage (C-14)');
-        }
-      }
-      // Without both, ignore (C-13)
+      this.gainFloaters(2);
       return;
 
     case 'venus':
@@ -315,6 +289,19 @@ export class MarsBotTurnResolver {
     }
     this.game.increaseVenusScaleLevel(this.marsBot, steps as 1 | 2);
     this.game.log('MarsBot raises Venus ${0} step(s)', (b) => b.number(steps));
+  }
+
+  // C-8/C-14: Gain `count` floaters. With Venus → floaterCount; without Venus but with Colonies →
+  // Titan storage; without both → ignored (C-13).
+  private gainFloaters(count: number): void {
+    if (this.marsBotManager === undefined) return;
+    if (this.game.gameOptions.venusNextExtension) {
+      this.marsBotManager.floaterCount += count;
+      this.game.log('MarsBot gains ${0} floater(s)', (b) => b.number(count));
+    } else if (this.game.gameOptions.coloniesExtension) {
+      this.marsBotManager.shippingBoard.add(ColonyName.TITAN, count, this.marsBotManager);
+      this.game.log('MarsBot gains ${0} floater token(s) in Titan storage (C-14)', (b) => b.number(count));
+    }
   }
 
   // ---- Milestones & Awards ----

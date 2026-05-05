@@ -1,19 +1,12 @@
 import {IGame} from '../../IGame';
 import {IColony} from '../../colonies/IColony';
 import {ColonyName} from '../../../common/colonies/ColonyName';
+import {ColoniesHandler} from '../../colonies/ColoniesHandler';
 import type {MarsBot} from '../MarsBot';
 
 /**
  * MarsBot colony trading logic (C-17, C-20, C-22, C-24b, C-24c).
  */
-
-/**
- * Returns colony tiles that MarsBot may trade with this generation.
- * C-22: Only tiles not already visited (visitor === undefined) may be traded.
- */
-function tradeableColonies(game: IGame): Array<IColony> {
-  return game.colonies.filter((colony) => colony.isActive && colony.visitor === undefined);
-}
 
 /**
  * C-17c: Break a tie among candidate tiles by flipping a project card.
@@ -42,7 +35,7 @@ function selectTiedColony(game: IGame, candidates: Array<IColony>): IColony {
  * Returns undefined if no tradeable colonies exist.
  */
 export function selectTradeColony(game: IGame, marsBot: MarsBot): IColony | undefined {
-  const tradeable = tradeableColonies(game);
+  const tradeable = ColoniesHandler.tradeableColonies(game);
   if (tradeable.length === 0) return undefined;
   if (tradeable.length === 1) return tradeable[0];
 
