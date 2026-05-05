@@ -118,6 +118,8 @@ export class MarsBot {
       deck.push(bonusCard);
     }
     this.addGovernmentIntervention(deck);
+    // T-3: Shuffle Party Politics into the initial action deck when Turmoil is enabled
+    this.addPartyPolitics(deck);
     inplaceShuffle(deck, this.random);
     this.actionDeck = deck;
   }
@@ -126,6 +128,13 @@ export class MarsBot {
   private addGovernmentIntervention(deck: Array<IProjectCard | MarsBotBonusCard>): void {
     if (this.game.gameOptions.venusNextExtension) {
       deck.push(createCorpBonusCard(BonusCardId.B16_GOVERNMENT_INTERVENTION));
+    }
+  }
+
+  /** T-3/T-6: Add Party Politics (B21) to the deck if Turmoil is enabled. */
+  private addPartyPolitics(deck: Array<IProjectCard | MarsBotBonusCard>): void {
+    if (this.game.gameOptions.turmoilExtension) {
+      deck.push(createCorpBonusCard(BonusCardId.B21_PARTY_POLITICS));
     }
   }
 
@@ -142,6 +151,8 @@ export class MarsBot {
       deck.push(bonusCard);
     }
     this.addGovernmentIntervention(deck);
+    // T-6: Reshuffle Party Politics into action deck each generation
+    this.addPartyPolitics(deck);
 
     inplaceShuffle(deck, this.random);
     this.actionDeck = deck;
@@ -167,6 +178,8 @@ export class MarsBot {
       deck.push(bonusCard);
     }
     this.addGovernmentIntervention(deck);
+    // T-6: Reshuffle Party Politics into action deck each generation
+    this.addPartyPolitics(deck);
 
     inplaceShuffle(deck, this.random);
     this.actionDeck = deck;

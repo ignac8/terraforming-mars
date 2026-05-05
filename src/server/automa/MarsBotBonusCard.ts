@@ -33,6 +33,11 @@ export function createCorpBonusCard(id: BonusCardId): MarsBotBonusCard {
 const CORP_BONUS_CARD_NAMES: Map<BonusCardId, string> = new Map([
   [BonusCardId.B15_LOBBYISTS_VENUS, 'Lobbyists (Venus)'],
   [BonusCardId.B16_GOVERNMENT_INTERVENTION, 'Government Intervention'],
+  [BonusCardId.B17_EXPEDITED_CONSTRUCTION_COLONIES, 'Expedited Construction (Colonies)'],
+  [BonusCardId.B18_OUTER_SYSTEM_FOOTHOLD, 'Outer System Foothold'],
+  [BonusCardId.B19_SHIPPING_LINES, 'Shipping Lines'],
+  [BonusCardId.B20_EXTENDED_SHIPPING_LINES, 'Extended Shipping Lines'],
+  [BonusCardId.B21_PARTY_POLITICS, 'Party Politics'],
   [BonusCardId.B22_SETTLERS, 'Settlers'],
   [BonusCardId.B23_RAPID_SPROUTING, 'Rapid Sprouting'],
   [BonusCardId.B24_SUPPLY_AND_DEMAND, 'Supply & Demand'],
