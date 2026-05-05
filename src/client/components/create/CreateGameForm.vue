@@ -116,13 +116,13 @@
                             </template>
 
                             <template v-if="expansions.turmoil">
-                                <input type="checkbox" name="politicalAgendas" id="politicalAgendas-checkbox" v-on:change="politicalAgendasExtensionToggle()">
-                                <label for="politicalAgendas-checkbox" class="expansion-button">
+                                <input type="checkbox" name="politicalAgendas" id="politicalAgendas-checkbox" v-on:change="politicalAgendasExtensionToggle()" :disabled="automaOption">
+                                <label for="politicalAgendas-checkbox" class="expansion-button" :class="{'automa-disabled': automaOption}">
                                     <div class="create-game-expansion-icon expansion-icon-agendas"></div>
                                     <span v-i18n>Agendas</span>&nbsp;<a href="https://www.notion.so/Political-Agendas-8c6b0b018a884692be29b3ef44b340a9" class="tooltip" v-i18n data-tooltip="Link opens in a new tab/window" target="_blank">&#9432;</a>
                                 </label>
 
-                                <div class="create-game-page-column-row" v-if="isPoliticalAgendasExtensionEnabled()">
+                                <div class="create-game-page-column-row" v-if="isPoliticalAgendasExtensionEnabled() && !automaOption">
                                     <div>
                                     <input type="radio" name="agendaStyle" v-model="politicalAgendasExtension" :value="getPoliticalAgendasExtensionAgendaStyle('random')" id="randomAgendaStyle-radio">
                                     <label class="label-agendaStyle agendaStyle-random" for="randomAgendaStyle-radio">
@@ -665,11 +665,10 @@ export default defineComponent({
       this.expansions.prelude = value;
       this.expansions.prelude2 = value;
       this.expansions.promo = value;
-      if (!this.automaOption) {
-        this.expansions.venus = value;
-        this.expansions.colonies = value;
-        this.expansions.turmoil = value;
-      }
+      // Venus, Colonies, and Turmoil are now supported under automa, so toggle them too.
+      this.expansions.venus = value;
+      this.expansions.colonies = value;
+      this.expansions.turmoil = value;
       this.solarPhaseOption = this.expansions.venus;
     },
     'expansions.venus': function(value: boolean) {
@@ -714,10 +713,9 @@ export default defineComponent({
         this.initialDraft = false;
         this.randomFirstPlayer = false;
         this.includeFanMA = false;
-        // Disable unsupported expansions
-        this.expansions.venus = false;
-        this.expansions.colonies = false;
-        this.expansions.turmoil = false;
+        // T-5: MarsBot ignores ruling party policy, force Standard agendas
+        this.politicalAgendasExtension = 'Standard';
+        // Disable unsupported expansions (Venus, Colonies, Turmoil are supported and stay as-is)
         this.expansions.ares = false;
         this.expansions.community = false;
         this.expansions.moon = false;
