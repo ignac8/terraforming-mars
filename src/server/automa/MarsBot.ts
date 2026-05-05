@@ -83,7 +83,7 @@ export class MarsBot {
 
   /**
    * Track-cube key for the 2nd Trade Fleet position (Colonies, C-6).
-   * Set in constructor when coloniesExtension is enabled; null otherwise.
+   * Set in constructor when coloniesExtension is enabled; undefined otherwise.
    * Recomputed on restore — not serialized.
    */
   public tradeFleetCubeKey: string | undefined = undefined;
