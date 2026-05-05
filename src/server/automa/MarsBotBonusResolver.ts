@@ -14,6 +14,7 @@ import {IProjectCard} from '../cards/IProjectCard';
 import {CardType} from '../../common/cards/CardType';
 import {Space} from '../boards/Space';
 import {CardName} from '../../common/cards/CardName';
+import {placeDelegateForMarsBot, selectPartyForDelegate, updatePartyLeaderForMarsBot} from './turmoil/MarsBotTurmoilHelper';
 
 /**
  * Resolves MarsBot bonus cards (B01–B08).
@@ -65,6 +66,11 @@ export class MarsBotBonusResolver {
       break;
     case BonusCardId.B08_CORPORATE_COMPETITION:
       this.resolveCorporateCompetition();
+      break;
+
+    // Turmoil bonus card
+    case BonusCardId.B21_PARTY_POLITICS:
+      this.resolvePartyPolitics();
       break;
 
     // Corp-specific bonus cards (B22-B32)
@@ -598,11 +604,54 @@ export class MarsBotBonusResolver {
     this.game.log('MarsBot resolves Diversification: advance least-advanced track');
   }
 
+  // B21: Party Politics (T-7, T-8)
+  private resolvePartyPolitics(): void {
+    const turmoil = this.game.turmoil;
+    if (turmoil === undefined) {
+      this.game.log('MarsBot resolves Party Politics: Turmoil not active');
+      return;
+    }
+    // T-7: Place 1 delegate from reserve using the priority list
+    const placed = placeDelegateForMarsBot(turmoil, this.marsBot, this.humanPlayer, this.game);
+    if (placed === undefined) {
+      this.game.log('MarsBot resolves Party Politics: no delegates in reserve');
+      return;
+    }
+
+    // T-8: If ≥1 delegate still in reserve AND MarsBot has ≥5 MC:
+    //       flip a project deck card — if its cost is divisible by 3, spend 5 MC and place another delegate
+    if (turmoil.hasDelegatesInReserve(this.marsBot) && this.turnResolver.mcSupply >= 5) {
+      const flipped = this.game.projectDeck.draw(this.game);
+      if (flipped !== undefined) {
+        this.game.log('MarsBot flips ${0} (cost ${1}) for Party Politics T-8 check', (b) => b.card(flipped).number(flipped.cost));
+        this.game.projectDeck.discardPile.push(flipped);
+        if (flipped.cost % 3 === 0) {
+          this.turnResolver.mcSupply -= 5;
+          this.game.log('MarsBot spends 5 M€ to place a second delegate (Party Politics T-8)');
+          placeDelegateForMarsBot(turmoil, this.marsBot, this.humanPlayer, this.game);
+        }
+      }
+    }
+  }
+
+  // B29: Gray Eminence (Septem Tribus — T-7 delegate placement, no T-8 repeat)
   private resolveGrayEminence(): void {
-    // Septem Tribus: place delegate (Turmoil)
-    // Turmoil not yet supported — gain 5 MC as placeholder
-    this.turnResolver.mcSupply += 5;
-    this.game.log('MarsBot resolves Gray Eminence: +5 M€ (Turmoil delegate placement not yet implemented)');
+    const turmoil = this.game.turmoil;
+    if (turmoil === undefined) {
+      this.game.log('MarsBot resolves Gray Eminence: Turmoil not active');
+      return;
+    }
+    if (!turmoil.hasDelegatesInReserve(this.marsBot)) {
+      this.game.log('MarsBot resolves Gray Eminence: no delegates in reserve');
+      return;
+    }
+    // Gray Eminence: same T-7 priority logic as Party Politics, but no T-8 second-delegate check
+    const partyName = selectPartyForDelegate(turmoil, this.marsBot, this.humanPlayer);
+    if (partyName !== undefined) {
+      turmoil.sendDelegateToParty(this.marsBot, partyName, this.game);
+      updatePartyLeaderForMarsBot(turmoil.getPartyByName(partyName), this.marsBot);
+      this.game.log('MarsBot places delegate in ${0} (Gray Eminence)', (b) => b.partyName(partyName));
+    }
   }
 
   private resolveInterfaceHyperlink(): void {
