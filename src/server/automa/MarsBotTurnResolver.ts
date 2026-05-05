@@ -519,7 +519,7 @@ export class MarsBotTurnResolver {
 
   // ---- Utilities ----
 
-  private failedAction(): void {
+  public failedAction(): void {
     const mc = this.difficulty === 'easy' ? FAILED_ACTION_MC_EASY : FAILED_ACTION_MC;
     this.mcSupply += mc;
     this.game.log('MarsBot takes a Failed Action, gains ${0} MC', (b) => b.number(mc));
