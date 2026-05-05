@@ -19,6 +19,7 @@ import {Space} from '../boards/Space';
 import {Random} from '../../common/utils/Random';
 import {inplaceShuffle} from '../utils/shuffle';
 import {IMarsBotCorp, MarsBotTrackCube, MarsBotCorpContext, trackCubeKey} from './MarsBotCorpTypes';
+import {MarsBotShippingBoard} from './colonies/MarsBotShippingBoard';
 import {MarsBotCorpResolver} from './corps/MarsBotCorpResolver';
 import {getMarsBotCorp} from './corps/MarsBotCorpRegistry';
 import {SerializedAutomaState} from '../SerializedGame';
@@ -88,6 +89,9 @@ export class MarsBot {
 
   /** Whether MarsBot has unlocked the 2nd Trade Fleet (Colonies, C-27). */
   public hasSecondTradeFleet: boolean = false;
+
+  /** Shipping Board with 11 storage areas, one per colony tile (C-18). */
+  public shippingBoard: MarsBotShippingBoard = new MarsBotShippingBoard();
 
   constructor(
     public readonly game: IGame,
@@ -530,6 +534,9 @@ export class MarsBot {
     if (this.hasSecondTradeFleet) {
       state.hasSecondTradeFleet = true;
     }
+    if (this.shippingBoard.storage.size > 0) {
+      state.shippingBoard = this.shippingBoard.serialize();
+    }
     if (this.corpSpecificState.size > 0) {
       state.corpSpecificState = Object.fromEntries(this.corpSpecificState);
     }
@@ -600,6 +607,9 @@ export class MarsBot {
     }
     if (state.hasSecondTradeFleet === true) {
       this.hasSecondTradeFleet = true;
+    }
+    if (state.shippingBoard !== undefined) {
+      this.shippingBoard.restoreState(state.shippingBoard);
     }
 
     // Restore action deck (project cards + bonus cards)

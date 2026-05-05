@@ -100,4 +100,5 @@ export type SerializedAutomaState = {
     temperatureRaises?: number;
     colonyCubePositions?: Array<string>;
     hasSecondTradeFleet?: boolean;
+    shippingBoard?: Record<string, number>;
 }
