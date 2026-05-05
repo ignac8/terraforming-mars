@@ -25,13 +25,15 @@ describe('MarsBotGameCreation', () => {
       expect(game.gameOptions.venusNextExtension).to.be.true;
     });
 
-    it('automa game forces Colonies off', () => {
+    it('automa game supports Colonies (C-1)', () => {
       const [game] = testGame(1, {
         automaOption: true,
         coloniesExtension: true,
         boardName: BoardName.THARSIS,
       });
-      expect(game.gameOptions.coloniesExtension).to.be.false;
+      expect(game.gameOptions.coloniesExtension).to.be.true;
+      // C-1: 2-player setup = 5 colonies active
+      expect(game.colonies.length).to.eq(5);
     });
 
     it('automa game supports Turmoil', () => {
