@@ -85,7 +85,7 @@ export type GameOptions = {
    *   2 = T-14 + T-15: one extra delegate placed at setup
    *   3 = T-14 + T-15 x2: two extra delegates placed at setup
    */
-  automaExtraTurmoilDifficulty: 0 | 1 | 2 | 3;
+  automaExtraTurmoilDifficulty?: 0 | 1 | 2 | 3;
 }
 
 export const DEFAULT_GAME_OPTIONS: GameOptions = {
