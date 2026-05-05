@@ -27,8 +27,8 @@ export class Election extends GlobalEvent implements IGlobalEvent {
   }
 
   public resolve(game: IGame, turmoil: Turmoil) {
-    // Solo
-    if (game.isSoloMode()) {
+    // Solo — also applies to automa games (MarsBot doesn't participate in Election ranking, T-10/T-10b)
+    if (game.isSoloMode() || game.automaHooks !== undefined) {
       const player = game.players[0];
       const score = this.getScore(player, turmoil, game);
       if (score >= 10) {
