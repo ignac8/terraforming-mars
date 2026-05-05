@@ -237,6 +237,18 @@
                               <label for="automa-corp-checkbox">
                                 <span v-i18n>MarsBot Corporation</span>
                               </label>
+                              <template v-if="expansions.turmoil">
+                                <br>
+                                <label for="automa-extra-turmoil">
+                                  <span v-i18n>Turmoil extra difficulty:</span>&nbsp;
+                                  <select v-model.number="automaExtraTurmoilDifficulty" id="automa-extra-turmoil">
+                                    <option :value="0" v-i18n>Off</option>
+                                    <option :value="1" v-i18n>TR -7 instead of -10</option>
+                                    <option :value="2" v-i18n>TR -7 + 1 random delegate</option>
+                                    <option :value="3" v-i18n>TR -7 + 2 random delegates</option>
+                                  </select>
+                                </label>
+                              </template>
                             </template>
 
                             <template v-if="!automaOption">
@@ -1235,6 +1247,7 @@ export default defineComponent({
         automaOption: this.automaOption,
         automaDifficulty: this.automaDifficulty,
         automaCorpOption: this.automaCorpOption,
+        automaExtraTurmoilDifficulty: this.automaExtraTurmoilDifficulty,
       };
       return JSON.stringify(dataToSend, undefined, 4);
     },

@@ -72,5 +72,6 @@ export function defaultCreateGameModel(): CreateGameModel {
     automaOption: true,
     automaDifficulty: 'normal',
     automaCorpOption: false,
+    automaExtraTurmoilDifficulty: 0,
   };
 }
