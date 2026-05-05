@@ -106,7 +106,6 @@ describe('MarsBotColonyPlacer (C-15b, C-16a, C-19, C-24a)', () => {
       const ceres = new Ceres();
       game.colonies = [luna, ceres];
       // Inject a 0-cost card at the front of the draw pile
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       game.projectDeck.drawPile.unshift({cost: 0} as any);
       // Should NOT return undefined — 0-cost maps to last tile (index N-1 = 1 = ceres)
       const selected = selectRandomColony(game, marsBot);
