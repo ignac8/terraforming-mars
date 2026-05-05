@@ -464,6 +464,7 @@ export class Server {
       automaOption: options.automaOption,
       automaDifficulty: options.automaDifficulty,
       automaCorpOption: options.automaCorpOption,
+      automaExtraTurmoilDifficulty: options.automaExtraTurmoilDifficulty ?? 0,
     };
   }
 
