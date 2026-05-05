@@ -74,13 +74,11 @@ describe('MarsBotShippingBoard (C-18)', () => {
 
     it('stores resources for Titan but no overflow check (C-23)', () => {
       // Add 7 to Titan; should NOT trigger track advance (exempt from C-12)
-      const startPos = marsBot.board.getTrackIndexForTag(Tag.BUILDING);  // irrelevant track
       marsBot.shippingBoard.add(ColonyName.TITAN, 7, marsBot);
       expect(marsBot.shippingBoard.get(ColonyName.TITAN)).to.eq(7);
       // Track positions unchanged
       const eventTrackIdx = marsBot.board.getTrackIndexForTag(Tag.EVENT)!;
       expect(marsBot.board.tracks[eventTrackIdx].position).to.eq(0);
-      void startPos; // suppress unused var
     });
   });
 
