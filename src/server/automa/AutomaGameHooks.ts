@@ -464,8 +464,14 @@ export class AutomaGameHooks {
       return true;
     }
     // C-21: Other colonies → 1 resource to shipping board
-    this.marsBot.shippingBoard.add(colony.name, 1, this.marsBot);
-    this.game.log('MarsBot gains 1 resource to ${0} storage (C-21)', (b) => b.colony(colony));
+    // C-23: Titan storage only used without Venus Next; with Venus, gain 1 floater instead
+    if (colony.name === ColonyName.TITAN && this.game.gameOptions.venusNextExtension) {
+      this.marsBot.floaterCount += 1;
+      this.game.log('MarsBot gains 1 floater as Titan colony bonus (C-21, C-23)');
+    } else {
+      this.marsBot.shippingBoard.add(colony.name, 1, this.marsBot);
+      this.game.log('MarsBot gains 1 resource to ${0} storage (C-21)', (b) => b.colony(colony));
+    }
     return true;
   }
 

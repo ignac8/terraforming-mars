@@ -186,7 +186,7 @@ describe('MarsBotTrader (C-17, C-20, C-22, C-24b)', () => {
       });
     });
 
-    it('Titan: adds resources to Titan storage (C-20, not exempted for trading)', () => {
+    it('Titan without Venus: adds resources to Titan storage (C-20, C-23)', () => {
       const [game] = testGame(1, {automaOption: true, coloniesExtension: true, boardName: BoardName.THARSIS});
       const marsBot = getMarsBot(game);
       const titan = new Titan();
@@ -194,6 +194,23 @@ describe('MarsBotTrader (C-17, C-20, C-22, C-24b)', () => {
       const storeBefore = marsBot.shippingBoard.get(ColonyName.TITAN);
       tradeWithColony(marsBot, titan);
       expect(marsBot.shippingBoard.get(ColonyName.TITAN)).to.eq(storeBefore + 2);
+    });
+
+    it('Titan with Venus Next: adds floaters instead of Titan storage (C-20, C-23)', () => {
+      const [game] = testGame(1, {
+        automaOption: true,
+        coloniesExtension: true,
+        venusNextExtension: true,
+        boardName: BoardName.THARSIS,
+      });
+      const marsBot = getMarsBot(game);
+      const titan = new Titan();
+      game.colonies = [titan];
+      const floatersBefore = marsBot.floaterCount;
+      const titanStoreBefore = marsBot.shippingBoard.get(ColonyName.TITAN);
+      tradeWithColony(marsBot, titan);
+      expect(marsBot.floaterCount).to.eq(floatersBefore + 2);
+      expect(marsBot.shippingBoard.get(ColonyName.TITAN)).to.eq(titanStoreBefore); // Titan storage unchanged
     });
 
     describe('Pluto special case (C-26)', () => {

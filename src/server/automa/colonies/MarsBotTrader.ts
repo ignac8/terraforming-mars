@@ -24,7 +24,9 @@ function selectTiedColony(game: IGame, candidates: Array<IColony>): IColony {
   const flipped = game.projectDeck.drawN(game, 1);
   if (flipped.length === 0) return candidates[0];
   const card = flipped[0];
-  const index = (card.cost - 1) % candidates.length;
+  // Use positive modulo: cost=0 cards (e.g. IndenturedWorkers) would give -1 % N in JS
+  const n = candidates.length;
+  const index = ((card.cost - 1) % n + n) % n;
   game.projectDeck.discardPile.push(card);
   return candidates[index];
 }
@@ -89,11 +91,20 @@ export function tradeWithColony(marsBot: MarsBot, colony: IColony): void {
   } else {
     // C-20: base 2 resources; +1 if MarsBot already has a colony here
     const amount = colony.colonies.includes(marsBot.player.id) ? 3 : 2;
-    marsBot.shippingBoard.add(colony.name, amount, marsBot);
-    game.log(
-      'MarsBot trades with ${0}, gains ${1} resource(s) to storage (C-20)',
-      (b) => b.colony(colony).number(amount),
-    );
+    // C-23: Titan storage is only used without Venus Next; with Venus, gain floaters instead
+    if (colony.name === ColonyName.TITAN && game.gameOptions.venusNextExtension) {
+      marsBot.floaterCount += amount;
+      game.log(
+        'MarsBot trades with Titan, gains ${0} floater(s) (C-20, C-23)',
+        (b) => b.number(amount),
+      );
+    } else {
+      marsBot.shippingBoard.add(colony.name, amount, marsBot);
+      game.log(
+        'MarsBot trades with ${0}, gains ${1} resource(s) to storage (C-20)',
+        (b) => b.colony(colony).number(amount),
+      );
+    }
   }
 
   // C-20: Human players with a colony here receive their colony bonus per core rules.

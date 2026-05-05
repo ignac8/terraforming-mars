@@ -36,7 +36,9 @@ export function selectRandomColony(game: IGame, marsBot: MarsBot): IColony | und
   if (flipped.length === 0) return undefined;
 
   const card = flipped[0];
-  const index = (card.cost - 1) % eligible.length;
+  // Use positive modulo: cost=0 cards (e.g. IndenturedWorkers) would give -1 % N in JS
+  const n = eligible.length;
+  const index = ((card.cost - 1) % n + n) % n;
   // Discard the flipped card back to the project deck discard pile
   game.projectDeck.discardPile.push(card);
 
