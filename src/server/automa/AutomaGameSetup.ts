@@ -96,7 +96,8 @@ export class AutomaGameSetup {
     // T-2/T-14: Turmoil reduces MarsBot's starting TR.
     //   Base Turmoil (difficulty 0): TR - 10 = 10
     //   T-14 (difficulty ≥ 1): TR - 7 = 13 (less harsh for higher difficulty option)
-    const turmoilTRReduction = gameOptions.automaExtraTurmoilDifficulty >= 1 ? 7 : 10;
+    const turmoilDifficulty = gameOptions.automaExtraTurmoilDifficulty ?? 0;
+    const turmoilTRReduction = turmoilDifficulty >= 1 ? 7 : 10;
     const startingTR = gameOptions.turmoilExtension ? MARSBOT_STARTING_TR - turmoilTRReduction : MARSBOT_STARTING_TR;
     marsBotPlayer.setTerraformRating(startingTR);
 
@@ -128,10 +129,10 @@ export class AutomaGameSetup {
         game.turmoil.delegateReserve.add(marsBotPlayer, DELEGATES_PER_PLAYER);
         game.log('MarsBot: 7 delegates placed in reserve (Turmoil)');
         // T-15: Extra delegates placed at setup for increased difficulty
-        if (gameOptions.automaExtraTurmoilDifficulty >= 2) {
+        if (turmoilDifficulty >= 2) {
           AutomaGameSetup.placeExtraSetupDelegate(game, marsBotPlayer, rng);
         }
-        if (gameOptions.automaExtraTurmoilDifficulty >= 3) {
+        if (turmoilDifficulty >= 3) {
           AutomaGameSetup.placeExtraSetupDelegate(game, marsBotPlayer, rng);
         }
       }
