@@ -17,6 +17,7 @@
       <span class="marsbot-stat" v-if="model.vpBreakdown?.mcToVP"><span v-i18n>MC to VP</span>: <b>{{ model.vpBreakdown.mcToVP }}</b></span>
       <span class="marsbot-stat" v-if="model.vpBreakdown?.cardVP"><span v-i18n>Cards</span>: <b>{{ model.vpBreakdown.cardVP }}</b></span>
       <span class="marsbot-stat" v-if="model.vpBreakdown?.vermin"><span v-i18n>Vermin</span>: <b>{{ model.vpBreakdown.vermin }}</b></span>
+      <span class="marsbot-stat" v-if="model.vpBreakdown?.turmoilVP"><span v-i18n>Turmoil</span>: <b>{{ model.vpBreakdown.turmoilVP }}</b></span>
       <span class="marsbot-stat"><span v-i18n>MC</span>: <b>{{ model.mcSupply }}</b></span>
       <span class="marsbot-stat" v-if="model.mcPerVP"><span v-i18n>MC/VP</span>: <b>{{ model.mcPerVP }}</b></span>
       <span class="marsbot-stat"><span v-i18n>Action Deck</span>: <b>{{ model.actionDeckSize }}</b></span>

@@ -23,6 +23,7 @@ export type MarsBotVPModel = {
   mcToVP: number;
   cardVP: number;
   vermin: number;
+  turmoilVP: number; // T-13: 1 VP per party leader or chairman position
   total: number;
   detailsMilestones: ReadonlyArray<MADetail>;
   detailsAwards: ReadonlyArray<MADetail>;
