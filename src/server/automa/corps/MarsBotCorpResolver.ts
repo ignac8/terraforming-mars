@@ -2,6 +2,7 @@ import {IMarsBotCorp, trackCubeKey} from '../MarsBotCorpTypes';
 import {CardName} from '../../../common/cards/CardName';
 import {Random} from '../../../common/utils/Random';
 import {getAllMarsBotCorps} from './MarsBotCorpRegistry';
+import {selectRandomColony, placeColonyForMarsBot} from '../colonies/MarsBotColonyPlacer';
 import type {MarsBot} from '../MarsBot';
 
 /**
@@ -69,10 +70,18 @@ export class MarsBotCorpResolver {
     }
 
     // Colony cubes (Pioneer4/Constructor): positions set by AutomaGameSetup
+    // C-X3: deduct 5 MC then place a colony on a randomly selected eligible tile
     if (marsBot.hasColonyCubes && marsBot.colonyCubePositions.has(trackCubeKey(trackIndex, position))) {
       const cost = 5;
       marsBot.turnResolver.mcSupply = Math.max(0, marsBot.turnResolver.mcSupply - cost);
-      marsBot.game.log('MarsBot loses ${0} MC and builds a colony', (b) => b.number(cost));
+      marsBot.game.log('MarsBot loses ${0} MC for colony cube trigger (C-X3)', (b) => b.number(cost));
+      const colony = selectRandomColony(marsBot.game, marsBot);
+      if (colony !== undefined) {
+        placeColonyForMarsBot(colony, marsBot);
+      } else {
+        marsBot.game.log('MarsBot colony cube: no eligible colony tile — Failed Action (C-X3)');
+        marsBot.turnResolver.failedAction();
+      }
     }
 
     // 2nd Trade Fleet cube (Colonies, C-6/C-27): unlock when credits track position 9 is reached

@@ -48,6 +48,16 @@
         </div>
       </div>
     </div>
+    <div v-if="model.shippingBoard" class="marsbot-shipping-board">
+      <div class="marsbot-shipping-board-title" v-i18n>Shipping Board</div>
+      <div class="marsbot-shipping-areas">
+        <span
+          v-for="(amount, colony) in model.shippingBoard"
+          :key="colony"
+          class="marsbot-shipping-area"
+        >{{ colony }}: {{ amount }}</span>
+      </div>
+    </div>
   </div>
 </template>
 

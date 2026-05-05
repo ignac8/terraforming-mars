@@ -47,4 +47,6 @@ export type MarsBotModel = {
   mcVP?: number;
   globalParameterSteps: Record<GlobalParameter, number>;
   vpByGeneration: ReadonlyArray<number>;
+  /** Colonies Shipping Board storage areas (C-18). Keys are ColonyName strings. */
+  shippingBoard?: Record<string, number>;
 };

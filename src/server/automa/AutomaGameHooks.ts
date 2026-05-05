@@ -17,6 +17,8 @@ import {IMilestone} from '../milestones/IMilestone';
 import {Tag} from '../../common/cards/Tag';
 import {Resource} from '../../common/Resource';
 import {SelectOption} from '../inputs/SelectOption';
+import {IColony} from '../colonies/IColony';
+import {ColonyName} from '../../common/colonies/ColonyName';
 
 /**
  * All automa (MarsBot) hooks into the Game lifecycle.
@@ -146,9 +148,21 @@ export class AutomaGameHooks {
     return false;
   }
 
-  /** Venus Next: check if Hoverlord is no longer available and MarsBot has 5+ floaters. */
+  /**
+   * Check if MarsBot can spend floaters for an extra card.
+   * Venus Next: requires Hoverlord to be unavailable and 5+ floaters.
+   * C-X2/C-9: With Colonies but without Venus Next, use the same rule but
+   *            Hoverlord is always considered unavailable (not in game).
+   */
   private canSpendFloatersForExtraCard(): boolean {
-    if (!this.game.gameOptions.venusNextExtension) return false;
+    const opts = this.game.gameOptions;
+    // C-9/C-X2: Colonies without Venus Next — floaters are in Titan storage
+    // Hoverlord is always unavailable; check if Titan storage has 5+ floaters
+    if (opts.coloniesExtension && !opts.venusNextExtension) {
+      return this.marsBot.shippingBoard.get(ColonyName.TITAN) >= 5;
+    }
+    // Normal Venus Next rule
+    if (!opts.venusNextExtension) return false;
     if (this.marsBot.floaterCount < 5) return false;
     // Hoverlord must be unavailable: not in game, already claimed, or all milestone slots full
     const hoverlordInGame = this.game.milestones.some((m) => m.name === 'Hoverlord');
@@ -161,10 +175,19 @@ export class AutomaGameHooks {
   private handleFloaterExtraCard(): void {
     if (!this.canSpendFloatersForExtraCard()) return;
 
-    this.marsBot.floaterCount -= 5;
-    const extraCards = this.game.projectDeck.drawN(this.game, 1);
-    this.marsBot.actionDeck.push(...extraCards);
-    this.game.log('MarsBot spends 5 floaters for an extra card');
+    const opts = this.game.gameOptions;
+    if (opts.coloniesExtension && !opts.venusNextExtension) {
+      // C-9/C-X2: Spend 5 from Titan storage (floaters) for extra card
+      this.marsBot.shippingBoard.spend(ColonyName.TITAN, 5);
+      const extraCards = this.game.projectDeck.drawN(this.game, 1);
+      this.marsBot.actionDeck.push(...extraCards);
+      this.game.log('MarsBot spends 5 Titan floaters for an extra card (C-9)');
+    } else {
+      this.marsBot.floaterCount -= 5;
+      const extraCards = this.game.projectDeck.drawN(this.game, 1);
+      this.marsBot.actionDeck.push(...extraCards);
+      this.game.log('MarsBot spends 5 floaters for an extra card');
+    }
   }
 
   /**
@@ -422,6 +445,28 @@ export class AutomaGameHooks {
     corp.effect.onHumanCardPlayed(this.marsBot.getCorpContext(),
       toCorpCardRef(card.name, card.tags, card.cost, card.requirements !== undefined, card.getVictoryPoints(this.game.players[0])),
     );
+  }
+
+  /**
+   * C-21: When the player trades with a colony where MarsBot has a colony,
+   * intercept MarsBot's colony bonus and give 1 resource to shipping board instead
+   * of the printed tile bonus.
+   * C-24c: For Europa, give 1 MC to mcSupply instead.
+   *
+   * Returns true if MarsBot's colony bonus was handled (caller should skip normal flow).
+   */
+  public handleColonyBonus(colony: IColony, playerId: PlayerId): boolean {
+    if (playerId !== this.marsBot.player.id) return false;
+    // C-24c: Europa → 1 MC to mcSupply
+    if (colony.name === ColonyName.EUROPA) {
+      this.marsBot.turnResolver.mcSupply += 1;
+      this.game.log('MarsBot gains 1 MC as Europa colony bonus (C-24c)');
+      return true;
+    }
+    // C-21: Other colonies → 1 resource to shipping board
+    this.marsBot.shippingBoard.add(colony.name, 1, this.marsBot);
+    this.game.log('MarsBot gains 1 resource to ${0} storage (C-21)', (b) => b.colony(colony));
+    return true;
   }
 
   /** Called when any player places a tile. Notifies MarsBot's corp. */

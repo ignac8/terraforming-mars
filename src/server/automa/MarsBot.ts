@@ -20,6 +20,7 @@ import {Random} from '../../common/utils/Random';
 import {inplaceShuffle} from '../utils/shuffle';
 import {IMarsBotCorp, MarsBotTrackCube, MarsBotCorpContext, trackCubeKey} from './MarsBotCorpTypes';
 import {MarsBotShippingBoard} from './colonies/MarsBotShippingBoard';
+import {selectRandomColony, placeColonyForMarsBot} from './colonies/MarsBotColonyPlacer';
 import {MarsBotCorpResolver} from './corps/MarsBotCorpResolver';
 import {getMarsBotCorp} from './corps/MarsBotCorpRegistry';
 import {SerializedAutomaState} from '../SerializedGame';
@@ -131,6 +132,7 @@ export class MarsBot {
     this.bonusResolver.onNeuralInstancePlaced = (space) => {
       this.neuralInstanceSpace = space;
     };
+    this.bonusResolver.marsBotManager = this;
   }
 
   // ---- Setup ----
@@ -167,6 +169,19 @@ export class MarsBot {
     }
   }
 
+  /**
+   * C-10: After gen 1, shuffle Shipping Lines (B19) into the action deck.
+   * C-11: If 2nd Trade Fleet is unlocked, also shuffle Extended Shipping Lines (B20).
+   */
+  private addShippingLines(deck: Array<IProjectCard | MarsBotBonusCard>): void {
+    if (!this.game.gameOptions.coloniesExtension) return;
+    if (this.game.generation <= 1) return;
+    deck.push(createCorpBonusCard(BonusCardId.B19_SHIPPING_LINES));
+    if (this.hasSecondTradeFleet) {
+      deck.push(createCorpBonusCard(BonusCardId.B20_EXTENDED_SHIPPING_LINES));
+    }
+  }
+
   // ---- Research Phase ----
 
   /** Build MarsBot's action deck for a new generation (non-drafting). */
@@ -182,6 +197,8 @@ export class MarsBot {
     this.addGovernmentIntervention(deck);
     // T-6: Reshuffle Party Politics into action deck each generation
     this.addPartyPolitics(deck);
+    // C-10/C-11: Inject Shipping Lines (and Extended if 2nd Trade Fleet unlocked)
+    this.addShippingLines(deck);
 
     inplaceShuffle(deck, this.random);
     this.actionDeck = deck;
@@ -209,6 +226,8 @@ export class MarsBot {
     this.addGovernmentIntervention(deck);
     // T-6: Reshuffle Party Politics into action deck each generation
     this.addPartyPolitics(deck);
+    // C-10/C-11: Inject Shipping Lines (and Extended if 2nd Trade Fleet unlocked)
+    this.addShippingLines(deck);
 
     inplaceShuffle(deck, this.random);
     this.actionDeck = deck;
@@ -391,6 +410,12 @@ export class MarsBot {
       addFloaters: (count: number) => { mb.floaterCount += count; },
       spendFloaters: (count: number) => { mb.floaterCount = Math.max(0, mb.floaterCount - count); },
       gainMc: (amount: number) => { mb.turnResolver.mcSupply += amount; },
+      placeRandomColony: () => {
+        const colony = selectRandomColony(mb.game, mb);
+        if (colony === undefined) return false;
+        placeColonyForMarsBot(colony, mb);
+        return true;
+      },
       discardFewestTagsFromActionDeck: () => {
         if (mb.actionDeck.length === 0) return;
         let fewestTags = Infinity;
@@ -499,6 +524,10 @@ export class MarsBot {
     if (mcPerVP !== undefined) {
       model.mcPerVP = mcPerVP;
       model.mcVP = Math.floor(this.turnResolver.mcSupply / mcPerVP);
+    }
+    // C-18: Shipping Board storage (Colonies)
+    if (opts.coloniesExtension && this.shippingBoard.storage.size > 0) {
+      model.shippingBoard = this.shippingBoard.serialize();
     }
     return model;
   }

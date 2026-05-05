@@ -6,6 +6,7 @@ import {toCorpCardRef} from './MarsBotCorpTypes';
 import {CardType} from '../../common/cards/CardType';
 import {TileType, CITY_TILES, GREENERY_TILES} from '../../common/TileType';
 import {Board} from '../boards/Board';
+import {ColonyName} from '../../common/colonies/ColonyName';
 import {
   TrackAction,
   FAILED_ACTION_MC,
@@ -199,19 +200,37 @@ export class MarsBotTurnResolver {
       return;
 
     case 'floater':
-      if (!this.game.gameOptions.venusNextExtension) return;
-      if (this.marsBotManager) {
-        this.marsBotManager.floaterCount++;
-        this.game.log('MarsBot gains 1 floater');
+      if (this.game.gameOptions.venusNextExtension) {
+        // C-8: With Venus Next, gain 1 floater normally
+        if (this.marsBotManager) {
+          this.marsBotManager.floaterCount++;
+          this.game.log('MarsBot gains 1 floater');
+        }
+      } else if (this.game.gameOptions.coloniesExtension) {
+        // C-14: Without Venus Next but with Colonies, add to Titan storage area
+        if (this.marsBotManager) {
+          this.marsBotManager.shippingBoard.add(ColonyName.TITAN, 1, this.marsBotManager);
+          this.game.log('MarsBot gains 1 floater token in Titan storage (C-14)');
+        }
       }
+      // Without both, ignore (C-13)
       return;
 
     case 'floater2':
-      if (!this.game.gameOptions.venusNextExtension) return;
-      if (this.marsBotManager) {
-        this.marsBotManager.floaterCount += 2;
-        this.game.log('MarsBot gains 2 floaters');
+      if (this.game.gameOptions.venusNextExtension) {
+        // C-8: With Venus Next, gain 2 floaters normally
+        if (this.marsBotManager) {
+          this.marsBotManager.floaterCount += 2;
+          this.game.log('MarsBot gains 2 floaters');
+        }
+      } else if (this.game.gameOptions.coloniesExtension) {
+        // C-14: Without Venus Next but with Colonies, add to Titan storage area
+        if (this.marsBotManager) {
+          this.marsBotManager.shippingBoard.add(ColonyName.TITAN, 2, this.marsBotManager);
+          this.game.log('MarsBot gains 2 floater tokens in Titan storage (C-14)');
+        }
       }
+      // Without both, ignore (C-13)
       return;
 
     case 'venus':
