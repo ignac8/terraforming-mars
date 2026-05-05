@@ -18,6 +18,7 @@ import {IMilestone} from '../milestones/IMilestone';
 import {IAward} from '../awards/IAward';
 import {trackCubeKey} from './MarsBotCorpTypes';
 import {DELEGATES_PER_PLAYER} from '../../common/constants';
+import {updatePartyLeaderForMarsBot} from './turmoil/MarsBotTurmoilHelper';
 
 /**
  * Handles automa-specific game setup and provides hooks into the game lifecycle.
@@ -92,8 +93,11 @@ export class AutomaGameSetup {
 
     // Set MarsBot player's game reference
     marsBotPlayer.setup(game);
-    // T-2: Turmoil reduces MarsBot's starting TR by 10 (to 10 TR)
-    const startingTR = gameOptions.turmoilExtension ? MARSBOT_STARTING_TR - 10 : MARSBOT_STARTING_TR;
+    // T-2/T-14: Turmoil reduces MarsBot's starting TR.
+    //   Base Turmoil (difficulty 0): TR - 10 = 10
+    //   T-14 (difficulty ≥ 1): TR - 7 = 13 (less harsh for higher difficulty option)
+    const turmoilTRReduction = gameOptions.automaExtraTurmoilDifficulty >= 1 ? 7 : 10;
+    const startingTR = gameOptions.turmoilExtension ? MARSBOT_STARTING_TR - turmoilTRReduction : MARSBOT_STARTING_TR;
     marsBotPlayer.setTerraformRating(startingTR);
 
     // Override stock/production to intercept resource removal and production decrease
@@ -123,6 +127,13 @@ export class AutomaGameSetup {
       if (gameOptions.turmoilExtension && game.turmoil !== undefined) {
         game.turmoil.delegateReserve.add(marsBotPlayer, DELEGATES_PER_PLAYER);
         game.log('MarsBot: 7 delegates placed in reserve (Turmoil)');
+        // T-15: Extra delegates placed at setup for increased difficulty
+        if (gameOptions.automaExtraTurmoilDifficulty >= 2) {
+          AutomaGameSetup.placeExtraSetupDelegate(game, marsBotPlayer, rng);
+        }
+        if (gameOptions.automaExtraTurmoilDifficulty >= 3) {
+          AutomaGameSetup.placeExtraSetupDelegate(game, marsBotPlayer, rng);
+        }
       }
       marsBot.buildInitialActionDeck();
       AutomaGameSetup.placeColonyCubes(game, marsBot);
@@ -178,5 +189,27 @@ export class AutomaGameSetup {
     const position = parseInt(posStr);
     marsBot.trackCubePositions.set(key, {trackIndex, position, cubeType: 'white'});
     game.log('MarsBot: 2nd Trade Fleet cube placed on credits track position ${0} (C-6)', (b) => b.number(position));
+  }
+
+  /**
+   * T-15: Flip a project card (discard it) and place 1 MarsBot delegate at a random party.
+   * Called during setup when automaExtraTurmoilDifficulty >= 2 (once) or >= 3 (twice).
+   */
+  private static placeExtraSetupDelegate(game: IGame, marsBotPlayer: IPlayer, rng: Random): void {
+    const turmoil = game.turmoil;
+    if (turmoil === undefined) return;
+    // Flip a project card for randomness (T-15 rule: "flip a project deck card")
+    const card = game.projectDeck.draw(game);
+    if (card !== undefined) {
+      game.projectDeck.discardPile.push(card);
+    }
+    // Place 1 MarsBot delegate in a random party (only if reserve is non-empty)
+    if (!turmoil.hasDelegatesInReserve(marsBotPlayer)) return;
+    const parties = turmoil.parties;
+    const randomIndex = rng.nextInt(parties.length);
+    const party = parties[randomIndex];
+    turmoil.sendDelegateToParty(marsBotPlayer, party.name, game);
+    updatePartyLeaderForMarsBot(party, marsBotPlayer);
+    game.log('MarsBot: extra setup delegate placed in ${0} (T-15)', (b) => b.partyName(party.name));
   }
 }

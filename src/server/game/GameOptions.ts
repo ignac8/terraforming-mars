@@ -78,6 +78,14 @@ export type GameOptions = {
   automaOption: boolean;
   automaDifficulty: 'easy' | 'normal' | 'hard' | 'brutal';
   automaCorpOption: boolean;
+  /**
+   * T-14/T-15: Optional Turmoil difficulty for MarsBot.
+   *   0 = standard (TR -10, no extra delegates)
+   *   1 = T-14: TR -7 instead of -10 (MarsBot starts at 13 instead of 10)
+   *   2 = T-14 + T-15: one extra delegate placed at setup
+   *   3 = T-14 + T-15 x2: two extra delegates placed at setup
+   */
+  automaExtraTurmoilDifficulty: 0 | 1 | 2 | 3;
 }
 
 export const DEFAULT_GAME_OPTIONS: GameOptions = {
@@ -150,4 +158,5 @@ export const DEFAULT_GAME_OPTIONS: GameOptions = {
   automaOption: false,
   automaDifficulty: 'normal',
   automaCorpOption: false,
+  automaExtraTurmoilDifficulty: 0,
 };
