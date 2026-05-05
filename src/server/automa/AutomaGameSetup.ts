@@ -126,6 +126,7 @@ export class AutomaGameSetup {
       }
       marsBot.buildInitialActionDeck();
       AutomaGameSetup.placeColonyCubes(game, marsBot);
+      AutomaGameSetup.place2ndTradeFleetCube(game, marsBot);
       game.log('MarsBot is ready with ${0} difficulty', (b) => b.rawString(gameOptions.automaDifficulty));
     }
 
@@ -161,5 +162,21 @@ export class AutomaGameSetup {
     marsBot.hasColonyCubes = true;
     marsBot.colonyCubePositions = new Set(cubePositions.map((c) => trackCubeKey(c.trackIndex, c.position)));
     game.log('MarsBot: colony cubes placed on tracks');
+  }
+
+  /**
+   * C-6: Place the 2nd Trade Fleet cube on the credits track (Event track) at position 9.
+   * When triggered (C-27), MarsBot unlocks the 2nd trade fleet and Extended Shipping Lines.
+   */
+  private static place2ndTradeFleetCube(game: IGame, marsBot: MarsBot): void {
+    if (!game.gameOptions.coloniesExtension || marsBot.tradeFleetCubeKey === undefined) return;
+    const key = marsBot.tradeFleetCubeKey;
+    if (marsBot.trackCubePositions.has(key)) return; // Already placed (shouldn't happen for new game)
+    // Parse trackIndex and position back from key
+    const [trackStr, posStr] = key.split(':');
+    const trackIndex = parseInt(trackStr);
+    const position = parseInt(posStr);
+    marsBot.trackCubePositions.set(key, {trackIndex, position, cubeType: 'white'});
+    game.log('MarsBot: 2nd Trade Fleet cube placed on credits track position ${0} (C-6)', (b) => b.number(position));
   }
 }

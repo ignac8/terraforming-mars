@@ -5,6 +5,7 @@ import {Resource} from '../../common/Resource';
 import {CardName} from '../../common/cards/CardName';
 import {newCard} from '../createCard';
 import {DifficultyLevel, BonusCardId, TrackDefinition, getAutomaMaxGeneration} from '../../common/automa/AutomaTypes';
+import {Tag} from '../../common/cards/Tag';
 import {getMcPerVP} from './MarsBotScoring';
 import {MarsBotBoard} from './MarsBotBoard';
 import {MarsBotModel} from '../../common/models/MarsBotModel';
@@ -78,6 +79,16 @@ export class MarsBot {
   /** Floater resources (Venus Next corps). */
   public floaterCount: number = 0;
 
+  /**
+   * Track-cube key for the 2nd Trade Fleet position (Colonies, C-6).
+   * Set in constructor when coloniesExtension is enabled; null otherwise.
+   * Recomputed on restore — not serialized.
+   */
+  public tradeFleetCubeKey: string | undefined = undefined;
+
+  /** Whether MarsBot has unlocked the 2nd Trade Fleet (Colonies, C-27). */
+  public hasSecondTradeFleet: boolean = false;
+
   constructor(
     public readonly game: IGame,
     /** The Player instance that represents MarsBot in the game engine. */
@@ -98,6 +109,13 @@ export class MarsBot {
       this.bonusDeck = MarsBotBonusDeck.createWithVenus(random);
     } else {
       this.bonusDeck = MarsBotBonusDeck.createBase(random);
+    }
+    // C-6: Compute 2nd Trade Fleet cube position for Colonies (Event track pos 9)
+    if (opts.coloniesExtension) {
+      const eventTrackIdx = this.board.getTrackIndexForTag(Tag.EVENT);
+      if (eventTrackIdx !== undefined) {
+        this.tradeFleetCubeKey = trackCubeKey(eventTrackIdx, 9);
+      }
     }
     this.tilePlacer = new MarsBotTilePlacer(game, player, humanPlayer);
     this.turnResolver = new MarsBotTurnResolver(
@@ -501,8 +519,16 @@ export class MarsBot {
     };
     if (this.corp !== undefined) {
       state.corpId = this.corp.name;
+    }
+    // Serialize cube positions whenever they exist (corp cubes AND trade fleet cube, C-6)
+    if (this.trackCubePositions.size > 0) {
       state.trackCubePositions = Array.from(this.trackCubePositions.values());
+    }
+    if (this.triggeredCubePositions.size > 0) {
       state.triggeredCubePositions = Array.from(this.triggeredCubePositions);
+    }
+    if (this.hasSecondTradeFleet) {
+      state.hasSecondTradeFleet = true;
     }
     if (this.corpSpecificState.size > 0) {
       state.corpSpecificState = Object.fromEntries(this.corpSpecificState);
@@ -571,6 +597,9 @@ export class MarsBot {
     }
     if (state.temperatureRaises !== undefined) {
       this.temperatureRaises = state.temperatureRaises;
+    }
+    if (state.hasSecondTradeFleet === true) {
+      this.hasSecondTradeFleet = true;
     }
 
     // Restore action deck (project cards + bonus cards)

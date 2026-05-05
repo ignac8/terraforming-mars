@@ -123,8 +123,8 @@ export class MarsBotTurnResolver {
       return;
     }
 
-    // Corp cube trigger — fires BEFORE track icon resolution
-    if (this.marsBotManager?.corp !== undefined) {
+    // Cube trigger — fires BEFORE track icon resolution (corp cubes, colony cubes, trade fleet cube)
+    if (this.marsBotManager !== undefined) {
       MarsBotCorpResolver.onTrackAdvanced(this.marsBotManager, trackIndex, track.position);
     }
 

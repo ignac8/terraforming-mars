@@ -74,6 +74,14 @@ export class MarsBotCorpResolver {
       marsBot.turnResolver.mcSupply = Math.max(0, marsBot.turnResolver.mcSupply - cost);
       marsBot.game.log('MarsBot loses ${0} MC and builds a colony', (b) => b.number(cost));
     }
+
+    // 2nd Trade Fleet cube (Colonies, C-6/C-27): unlock when credits track position 9 is reached
+    if (marsBot.tradeFleetCubeKey !== undefined &&
+        marsBot.tradeFleetCubeKey === trackCubeKey(trackIndex, position) &&
+        !marsBot.hasSecondTradeFleet) {
+      marsBot.hasSecondTradeFleet = true;
+      marsBot.game.log('MarsBot unlocks 2nd Trade Fleet — Extended Shipping Lines available next generation (C-27)');
+    }
   }
 
   /**
