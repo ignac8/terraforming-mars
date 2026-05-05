@@ -3,11 +3,14 @@ import {testGame} from '../../TestGame';
 import {AutomaGameHooks} from '../../../src/server/automa/AutomaGameHooks';
 import {MarsBot} from '../../../src/server/automa/MarsBot';
 import {selectTradeColony, tradeWithColony} from '../../../src/server/automa/colonies/MarsBotTrader';
+import {COLONY_STORAGE_TAG} from '../../../src/server/automa/colonies/MarsBotShippingBoard';
 import {ColonyName} from '../../../src/common/colonies/ColonyName';
 import {Luna} from '../../../src/server/colonies/Luna';
 import {Europa} from '../../../src/server/colonies/Europa';
 import {Ceres} from '../../../src/server/colonies/Ceres';
 import {Titan} from '../../../src/server/colonies/Titan';
+import {Pluto} from '../../../src/server/colonies/Pluto';
+import {Tag} from '../../../src/common/cards/Tag';
 import {BoardName} from '../../../src/common/boards/BoardName';
 
 function getMarsBot(game: ReturnType<typeof testGame>[0]): MarsBot {
@@ -191,6 +194,37 @@ describe('MarsBotTrader (C-17, C-20, C-22, C-24b)', () => {
       const storeBefore = marsBot.shippingBoard.get(ColonyName.TITAN);
       tradeWithColony(marsBot, titan);
       expect(marsBot.shippingBoard.get(ColonyName.TITAN)).to.eq(storeBefore + 2);
+    });
+
+    describe('Pluto special case (C-26)', () => {
+      it('adds 2 resources to Pluto storage (MC-equivalent) instead of drawing cards', () => {
+        const [game] = testGame(1, {automaOption: true, coloniesExtension: true, boardName: BoardName.THARSIS});
+        const marsBot = getMarsBot(game);
+        const pluto = new Pluto();
+        game.colonies = [pluto];
+        const storeBefore = marsBot.shippingBoard.get(ColonyName.PLUTO);
+        tradeWithColony(marsBot, pluto);
+        // 2 resources added to Pluto storage (not cards drawn)
+        expect(marsBot.shippingBoard.get(ColonyName.PLUTO)).to.eq(storeBefore + 2);
+      });
+
+      it('Pluto storage maps to Event (MC) track via COLONY_STORAGE_TAG (C-26)', () => {
+        // COLONY_STORAGE_TAG[PLUTO] = Tag.EVENT which corresponds to the credits/MC track
+        expect(COLONY_STORAGE_TAG[ColonyName.PLUTO]).to.eq(Tag.EVENT);
+      });
+
+      it('Pluto overflow advances Event track (C-26, C-12)', () => {
+        const [game] = testGame(1, {automaOption: true, coloniesExtension: true, boardName: BoardName.THARSIS});
+        const marsBot = getMarsBot(game);
+        const pluto = new Pluto();
+        game.colonies = [pluto];
+        const eventTrackIdx = marsBot.board.getTrackIndexForTag(Tag.EVENT)!;
+        const before = marsBot.board.tracks[eventTrackIdx].position;
+        // Add 5 to Pluto → overflow → advance Event track
+        marsBot.shippingBoard.add(ColonyName.PLUTO, 5, marsBot);
+        expect(marsBot.board.tracks[eventTrackIdx].position).to.be.greaterThan(before);
+        expect(marsBot.shippingBoard.get(ColonyName.PLUTO)).to.eq(0);
+      });
     });
   });
 });
