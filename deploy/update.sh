@@ -2,6 +2,12 @@
 # Auto-update script — invoked by cron every minute.
 # Polls git, refreshes Docker base images, and recreates any containers
 # whose image hash changed. No-op invocations are silent.
+#
+# Self-locking: if another instance is running, exit silently. Safe to run
+# manually without conflicting with the cron.
+
+exec 200>/tmp/tm-update.lock
+flock -n 200 || exit 0
 
 cd "$(dirname "$0")/.."
 
