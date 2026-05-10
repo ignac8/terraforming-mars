@@ -6,8 +6,8 @@
 # Self-locking: if another instance is running, exit silently. Safe to run
 # manually without conflicting with the cron.
 
-exec 200>/tmp/tm-update.lock
-flock -n 200 || exit 0
+exec 9>/tmp/tm-update.lock
+flock -n 9 || exit 0
 
 cd "$(dirname "$0")/.."
 
