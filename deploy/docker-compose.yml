@@ -63,29 +63,6 @@ services:
     networks:
       - frontend
 
-  updater:
-    build: ./updater
-    restart: unless-stopped
-    user: "${HOST_UID}:${HOST_GID}"
-    group_add:
-      - "${DOCKER_GID}"
-    environment:
-      - GIT_BRANCH=${GIT_BRANCH:-automa}
-      - HOST_UID=${HOST_UID}
-      - HOST_GID=${HOST_GID}
-      - DOCKER_GID=${DOCKER_GID}
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
-      - ../:/repo
-    security_opt:
-      - no-new-privileges:true
-    healthcheck:
-      test: ["CMD-SHELL", "find /tmp/heartbeat -mmin -5 | grep -q heartbeat || exit 1"]
-      interval: 60s
-      timeout: 5s
-      retries: 3
-      start_period: 90s
-
 networks:
   frontend:
   backend:
