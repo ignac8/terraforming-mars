@@ -39,6 +39,8 @@ check_and_update() {
         docker compose -f /repo/deploy/docker-compose.yml up --build -d app 2>&1
         echo "$(date -u) Rebuild complete"
     fi
+
+    touch /tmp/heartbeat
 }
 
 check_and_update
