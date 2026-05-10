@@ -39,3 +39,6 @@ cd deploy
 docker compose pull --quiet 2>&1
 docker compose build --pull --quiet 2>&1
 docker compose up -d --remove-orphans 2>&1 | grep -vE 'Running$|Healthy$' || true
+
+# Clean up dangling images and stale build cache older than 24h (no-op when nothing to reclaim).
+docker system prune -f --filter "until=24h" 2>&1 | grep -vE '^(Total reclaimed space: 0B|Deleted [A-Z][a-z]+:)$' || true
