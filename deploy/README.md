@@ -7,7 +7,7 @@ Production setup using Docker Compose on a Hetzner VPS.
 Three containers managed by Docker Compose:
 
 - **app** - Node.js game server (built from repo root Dockerfile)
-- **postgres** - PostgreSQL 17 database
+- **postgres** - PostgreSQL 18 database
 - **caddy** - Reverse proxy with automatic SSL via Let's Encrypt
 
 Auto-deploy is handled by a host-side cron job calling `deploy/update.sh` (see below), so no separate updater container is needed.
