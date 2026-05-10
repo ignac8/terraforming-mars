@@ -99,9 +99,9 @@ No-op invocations (no git changes, no base image updates) are silent and cost a 
 
 Install the cron:
 ```bash
-( crontab -l 2>/dev/null; echo '* * * * * cd ~/terraforming-mars && flock -n /tmp/tm-update.lock deploy/update.sh >> ~/tm-update.log 2>&1' ) | crontab -
+( crontab -l 2>/dev/null; echo '* * * * * cd ~/terraforming-mars && deploy/update.sh >> ~/tm-update.log 2>&1' ) | crontab -
 ```
 
-The `flock -n` ensures only one update runs at a time — a slow rebuild can take longer than 60s and the next tick will skip silently.
+The script is self-locking (`flock` on `/tmp/tm-update.lock`) — a slow rebuild that takes longer than 60s causes the next tick to exit silently, and manual invocations are also safe.
 
 Logs go to `~/tm-update.log`. Rotate as needed.
