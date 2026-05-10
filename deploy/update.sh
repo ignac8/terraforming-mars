@@ -38,4 +38,4 @@ fi
 cd deploy
 docker compose pull --quiet 2>&1
 docker compose build --pull --quiet 2>&1
-docker compose up -d 2>&1 | grep -vE 'Running$|Healthy$' || true
+docker compose up -d --remove-orphans 2>&1 | grep -vE 'Running$|Healthy$' || true
