@@ -128,13 +128,13 @@ Custom i18n via `src/client/directives/i18n.ts` with `v-i18n` directive. Transla
 
 Production deployment uses Docker Compose on a Hetzner VPS. Config lives in `deploy/`.
 
-- `deploy/docker-compose.yml` — 4 services: app, postgres, caddy (reverse proxy + auto-SSL), updater (git polling)
+- `deploy/docker-compose.yml` — 3 services: app, postgres, caddy (reverse proxy + auto-SSL)
 - `deploy/Caddyfile` — Caddy reverse proxy config
-- `deploy/updater/` — Container that polls git every 60s, pulls changes, merges upstream/main, and rebuilds the app
+- `deploy/update.sh` — Host-side script run by cron every minute. Polls git, refreshes Docker base images, recreates containers with changed image hashes
 - `deploy/.env` — Secrets (gitignored), see `.env.example` for template
 - `deploy/README.md` — Full setup instructions
 
-The updater only rebuilds the `app` service. Changes to caddy, postgres, or updater config require manual `docker compose up --build -d` on the server.
+`update.sh` handles all auto-deploy: git changes trigger an `app` rebuild; base image updates (postgres, caddy, node) trigger recreation of whatever changed. No separate updater container.
 
 **Server access:** SSH details kept in personal notes (not committed).
 

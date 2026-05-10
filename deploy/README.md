@@ -4,17 +4,17 @@ Production setup using Docker Compose on a Hetzner VPS.
 
 ## Architecture
 
-Four containers managed by Docker Compose:
+Three containers managed by Docker Compose:
 
 - **app** - Node.js game server (built from repo root Dockerfile)
 - **postgres** - PostgreSQL 17 database
 - **caddy** - Reverse proxy with automatic SSL via Let's Encrypt
-- **updater** - Polls git every 60s, rebuilds app on changes
+
+Auto-deploy is handled by a host-side cron job calling `deploy/update.sh` (see below), so no separate updater container is needed.
 
 Network isolation:
 - `frontend` network: caddy <-> app
 - `backend` network: app <-> postgres
-- updater has no app network access, only Docker socket for rebuilds
 
 ## Prerequisites
 
@@ -46,8 +46,6 @@ Network isolation:
    - `POSTGRES_USER` / `POSTGRES_PASSWORD` / `POSTGRES_DB` - database credentials
    - `GIT_BRANCH` - branch to track (default: automa)
    - `SERVER_ID` - random string for admin panel access
-   - `HOST_UID` / `HOST_GID` - your user's UID/GID (`id -u` / `id -g`)
-   - `DOCKER_GID` - docker socket group (`stat -c '%g' /var/run/docker.sock`)
 
    Generate a random password and server ID:
    ```bash
@@ -59,6 +57,8 @@ Network isolation:
    ```bash
    docker compose up -d
    ```
+
+6. Install the auto-deploy cron (see [Auto-deploy](#auto-deploy) below).
 
 Caddy will automatically obtain an SSL certificate once DNS is pointing to the server.
 
@@ -88,11 +88,20 @@ cat ~/terraforming-mars/deploy/.env
 
 ## Auto-deploy
 
-The updater container polls the configured git branch every 60 seconds. It also fetches and merges `upstream/main` automatically. When changes are detected, it rebuilds the app container. No webhook or external access required.
+A host cron job runs `deploy/update.sh` every minute. The script:
 
-The updater only rebuilds the `app` service — it cannot safely rebuild itself. Changes to caddy, postgres, or updater config require a manual `docker compose up --build -d` on the server.
+1. Fetches `origin/$GIT_BRANCH` and `upstream/main`, hard-resets / merges if there are new commits
+2. Runs `docker compose pull` (refreshes image-based services: postgres, caddy)
+3. Runs `docker compose build --pull` (refreshes the `node` base for the locally-built `app` image — cache-hit no-op when the base hasn't changed)
+4. Runs `docker compose up -d` (recreates only containers whose image hash actually changed)
 
-A host cron job runs daily at 4:00 AM UTC to pull fresh base images (postgres, caddy, updater) and recreate containers if images changed:
+No-op invocations (no git changes, no base image updates) are silent and cost a few seconds of cache-hit work.
+
+Install the cron:
+```bash
+( crontab -l 2>/dev/null; echo '* * * * * cd ~/terraforming-mars && flock -n /tmp/tm-update.lock deploy/update.sh >> ~/tm-update.log 2>&1' ) | crontab -
 ```
-0 4 * * * cd /home/mzerko/terraforming-mars/deploy && docker compose pull && docker compose up -d
-```
+
+The `flock -n` ensures only one update runs at a time — a slow rebuild can take longer than 60s and the next tick will skip silently.
+
+Logs go to `~/tm-update.log`. Rotate as needed.
