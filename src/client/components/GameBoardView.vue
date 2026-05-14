@@ -31,14 +31,12 @@
     <PlanetaryTracks :tracks="game.pathfinders" :gameOptions="game.gameOptions"/>
   </template>
 
-  <template v-if="game.marsBot">
-    <MarsBotPanel :model="game.marsBot"/>
-  </template>
+  <MarsBotPanel v-if="game.marsBot" :model="game.marsBot"/>
 
-  <div v-if="playerCount > 1 || game.marsBot" class="player_home_block--milestones-and-awards">
+  <div v-if="playerCount > 1 || isAutoma" class="player_home_block--milestones-and-awards">
     <a class="hotkey-target"></a>
-    <Milestones :milestones="game.milestones" :isAutoma="!!game.marsBot" />
-    <Awards :awards="game.awards" :isAutoma="!!game.marsBot" />
+    <Milestones :milestones="game.milestones" :isAutoma="isAutoma" />
+    <Awards :awards="game.awards" :isAutoma="isAutoma" />
   </div>
 </template>
 
@@ -80,6 +78,11 @@ export default defineComponent({
     MoonBoard,
     PlanetaryTracks,
     MarsBotPanel,
+  },
+  computed: {
+    isAutoma(): boolean {
+      return this.game.marsBot !== undefined;
+    },
   },
 });
 </script>
