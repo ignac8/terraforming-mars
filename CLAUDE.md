@@ -140,4 +140,4 @@ Production deployment uses Docker Compose on a Hetzner VPS. Config lives in `dep
 
 ## Node Version
 
-Requires Node.js >=22.x <=24.x (`.nvmrc` specifies v24).
+`.nvmrc` specifies v24; `package.json` `engines` says `22.x` (upstream's value, kept as-is). Run `nvm use` before any `npm` command to switch to the version `.nvmrc` declares — on other versions, optional deps (`pg`, `better-sqlite3`) get skipped and the client tests break (Node 25+ has a half-working native `localStorage` that conflicts with jsdom).
