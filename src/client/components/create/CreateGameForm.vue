@@ -146,8 +146,8 @@
                             </label>
 
                             <template v-if="expansions.venus">
-                                <input type="checkbox" v-model="altVenusBoard" id="altVenusBoard-checkbox">
-                                <label for="altVenusBoard-checkbox">
+                                <input type="checkbox" v-model="altVenusBoard" id="altVenusBoard-checkbox" :disabled="automaOption">
+                                <label for="altVenusBoard-checkbox" :class="{'automa-disabled': automaOption}">
                                     <span v-i18n>Alt. Venus Board</span> &nbsp;<a :href="wikiUrls.alternativeVenusBoard" class="tooltip" v-i18n data-tooltip="Link opens in a new tab/window" target="_blank">&#9432;</a>
                                 </label>
                             </template>
@@ -170,8 +170,8 @@
                                 <span v-i18n>Underworld 2</span><span></span>&nbsp;<a :href="wikiUrls.underworld" class="tooltip" v-i18n data-tooltip="Link opens in a new tab/window" target="_blank">&#9432;</a>
                             </label>
 
-                            <input type="checkbox" name="deltaProject" id="deltaProject-checkbox" v-model="expansions.deltaProject">
-                            <label for="deltaProject-checkbox" class="expansion-button">
+                            <input type="checkbox" name="deltaProject" id="deltaProject-checkbox" v-model="expansions.deltaProject" :disabled="automaOption">
+                            <label for="deltaProject-checkbox" class="expansion-button" :class="{'automa-disabled': automaOption}">
                                 <div class="create-game-expansion-icon expansion-icon-deltaProject"></div>
                                 <span v-i18n>Delta Project</span>&nbsp;<span title="Alpha — work in progress">(&#945;)</span><span></span>&nbsp;<a :href="wikiUrls.deltaProject" class="tooltip" v-i18n data-tooltip="Link opens in a new tab/window" target="_blank">&#9432;</a>
                             </label>
@@ -285,8 +285,8 @@
                                 <span v-i18n>Show timers</span>
                             </label>
 
-                            <input type="checkbox" v-model="escapeVelocityMode" id="escapevelocity-checkbox">
-                            <label for="escapevelocity-checkbox">
+                            <input type="checkbox" v-model="escapeVelocityMode" id="escapevelocity-checkbox" :disabled="automaOption">
+                            <label for="escapevelocity-checkbox" :class="{'automa-disabled': automaOption}">
                                 <div class="create-game-expansion-icon expansion-icon-escape-velocity"></div>
                                 <span v-i18n>Escape Velocity</span>&nbsp;<a :href="wikiUrls.escapeVelocity" class="tooltip" v-i18n data-tooltip="Link opens in a new tab/window" target="_blank">&#9432;</a>
                             </label>
@@ -456,8 +456,8 @@
                               These are <b>always fully random</b>.
                             </div>
                             <template v-if="expansions.venus">
-                                <input type="checkbox" v-model="requiresVenusTrackCompletion" id="requiresVenusTrackCompletion-checkbox">
-                                <label for="requiresVenusTrackCompletion-checkbox">
+                                <input type="checkbox" v-model="requiresVenusTrackCompletion" id="requiresVenusTrackCompletion-checkbox" :disabled="automaOption">
+                                <label for="requiresVenusTrackCompletion-checkbox" :class="{'automa-disabled': automaOption}">
                                     <span v-i18n>Mandatory Venus Terraforming</span> &nbsp;<a :href="wikiUrls.venusTerraforming" class="tooltip" v-i18n data-tooltip="Link opens in a new tab/window" target="_blank">&#9432;</a>
                                 </label>
                             </template>
@@ -474,8 +474,8 @@
                                 <span v-i18n>Show real-time VP</span>&nbsp;<a :href="wikiUrls.showRealtimeVP" class="tooltip" v-i18n data-tooltip="Link opens in a new tab/window" target="_blank">&#9432;</a>
                             </label>
 
-                            <input type="checkbox" v-model="fastModeOption" id="fastMode-checkbox">
-                            <label for="fastMode-checkbox">
+                            <input type="checkbox" v-model="fastModeOption" id="fastMode-checkbox" :disabled="automaOption">
+                            <label for="fastMode-checkbox" :class="{'automa-disabled': automaOption}">
                                 <span v-i18n>Fast mode</span>&nbsp;<a :href="wikiUrls.fastMode" class="tooltip" v-i18n data-tooltip="Link opens in a new tab/window" target="_blank">&#9432;</a>
                             </label>
                         </div>
@@ -709,7 +709,7 @@ export default defineComponent({
       if (value === 1) {
         this.expansions.corpera = true;
         this.automaOption = true;
-        this.draftVariant = false;
+        this.draftVariant = true;
       } else {
         this.automaOption = false;
       }
@@ -722,7 +722,19 @@ export default defineComponent({
         this.includeFanMA = false;
         // T-5: MarsBot ignores ruling party policy, force Standard agendas
         this.politicalAgendasExtension = 'Standard';
-        // Disable unsupported expansions (Venus, Colonies, Turmoil are supported and stay as-is)
+        // All official (automa-supported) expansions on by default.
+        this.expansions.corpera = true;
+        this.expansions.prelude = true;
+        this.expansions.prelude2 = true;
+        this.expansions.promo = true;
+        this.expansions.venus = true;
+        this.expansions.colonies = true;
+        this.expansions.turmoil = true;
+        // Automa play defaults.
+        this.automaCorpOption = true;
+        this.automaDifficulty = 'normal';
+        this.draftVariant = true;
+        // Disable unsupported / fan-made expansions.
         this.expansions.ares = false;
         this.expansions.community = false;
         this.expansions.moon = false;
@@ -730,6 +742,12 @@ export default defineComponent({
         this.expansions.ceo = false;
         this.expansions.starwars = false;
         this.expansions.underworld = false;
+        this.expansions.deltaProject = false;
+        // Options incompatible with automa (also greyed out in the UI).
+        this.altVenusBoard = false;
+        this.requiresVenusTrackCompletion = false;
+        this.fastModeOption = false;
+        this.escapeVelocityMode = false;
       }
     },
   },
