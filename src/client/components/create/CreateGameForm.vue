@@ -722,19 +722,7 @@ export default defineComponent({
         this.includeFanMA = false;
         // T-5: MarsBot ignores ruling party policy, force Standard agendas
         this.politicalAgendasExtension = 'Standard';
-        // All official (automa-supported) expansions on by default.
-        this.expansions.corpera = true;
-        this.expansions.prelude = true;
-        this.expansions.prelude2 = true;
-        this.expansions.promo = true;
-        this.expansions.venus = true;
-        this.expansions.colonies = true;
-        this.expansions.turmoil = true;
-        // Automa play defaults.
-        this.automaCorpOption = true;
-        this.automaDifficulty = 'normal';
-        this.draftVariant = true;
-        // Disable unsupported / fan-made expansions.
+        // Disable unsupported / fan-made expansions (Venus, Colonies, Turmoil are supported and stay as-is)
         this.expansions.ares = false;
         this.expansions.community = false;
         this.expansions.moon = false;
