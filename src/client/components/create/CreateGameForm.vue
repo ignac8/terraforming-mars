@@ -368,8 +368,8 @@
                             </label>
 
                             <template v-if="expansions.colonies">
-                                <input type="checkbox" v-model="showColoniesList" id="customColonies-checkbox">
-                                <label for="customColonies-checkbox">
+                                <input type="checkbox" v-model="showColoniesList" id="customColonies-checkbox" :disabled="automaOption">
+                                <label for="customColonies-checkbox" :class="{'automa-disabled': automaOption}">
                                     <span v-i18n>Custom Colonies list</span>
                                   <span v-if="customColonies.length">&nbsp;({{ customColonies.length }})</span>
                                 </label>
@@ -736,6 +736,10 @@ export default defineComponent({
         this.requiresVenusTrackCompletion = false;
         this.fastModeOption = false;
         this.escapeVelocityMode = false;
+        this.showColoniesList = false;
+        this.customColonies = [];
+        // Mirrors AutomaGameSetup.sanitizeGameOptions (server forces this off).
+        this.solarPhaseOption = false;
       }
     },
   },
