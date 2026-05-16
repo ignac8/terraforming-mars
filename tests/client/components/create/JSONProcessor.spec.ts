@@ -131,7 +131,7 @@ const TEMPLATE_EXPECTED: CreateGameModel = {
   board: 'tharsis' as BoardName,
   seed: 0.40189423667985547,
   seededGame: false,
-  solarPhaseOption: false,
+  solarPhaseOption: true,
   shuffleMapOption: false,
   aresExtremeVariant: false,
   politicalAgendasExtension: 'Standard',
@@ -142,7 +142,7 @@ const TEMPLATE_EXPECTED: CreateGameModel = {
   includeFanMA: false,
   startingCorporations: 2,
   soloTR: false,
-  allOfficialExpansions: false,
+  allOfficialExpansions: true,
   requiresVenusTrackCompletion: false,
   requiresMoonTrackCompletion: false,
   moonStandardProjectVariant: false,
@@ -161,7 +161,7 @@ const TEMPLATE_EXPECTED: CreateGameModel = {
   ceosDraftVariant: false,
   automaOption: true,
   automaDifficulty: 'normal',
-  automaCorpOption: false,
+  automaCorpOption: true,
   automaExtraTurmoilDifficulty: 0,
 };
 
