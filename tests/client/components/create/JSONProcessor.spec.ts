@@ -131,7 +131,7 @@ const TEMPLATE_EXPECTED: CreateGameModel = {
   board: 'tharsis' as BoardName,
   seed: 0.40189423667985547,
   seededGame: false,
-  solarPhaseOption: true,
+  solarPhaseOption: false,
   shuffleMapOption: false,
   aresExtremeVariant: false,
   politicalAgendasExtension: 'Standard',

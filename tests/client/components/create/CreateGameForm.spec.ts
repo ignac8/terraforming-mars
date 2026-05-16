@@ -37,6 +37,10 @@ describe('CreateGameForm', () => {
     expect(vm.fastModeOption).to.be.false;
     expect(vm.escapeVelocityMode).to.be.false;
     expect(vm.expansions.deltaProject).to.be.false;
+    expect(vm.randomFirstPlayer).to.be.false;
+    expect(vm.showColoniesList).to.be.false;
+    expect(vm.customColonies).to.deep.equal([]);
+    expect(vm.solarPhaseOption).to.be.false;
   });
 
   it('enabling automa disables fan-made expansions and force-offs incompatible options', async () => {
@@ -53,6 +57,10 @@ describe('CreateGameForm', () => {
     vm.expansions.deltaProject = true;
     vm.expansions.moon = true;
     vm.expansions.ceo = true;
+    vm.randomFirstPlayer = true;
+    vm.showColoniesList = true;
+    vm.customColonies = ['Ceres'];
+    vm.solarPhaseOption = true;
 
     vm.automaOption = true;
     await vm.$nextTick();
@@ -62,6 +70,10 @@ describe('CreateGameForm', () => {
     expect(vm.requiresVenusTrackCompletion).to.be.false;
     expect(vm.fastModeOption).to.be.false;
     expect(vm.escapeVelocityMode).to.be.false;
+    expect(vm.randomFirstPlayer).to.be.false;
+    expect(vm.showColoniesList).to.be.false;
+    expect(vm.customColonies).to.deep.equal([]);
+    expect(vm.solarPhaseOption).to.be.false;
     expect(vm.expansions.deltaProject).to.be.false;
     expect(vm.expansions.moon).to.be.false;
     expect(vm.expansions.ceo).to.be.false;
@@ -72,5 +84,27 @@ describe('CreateGameForm', () => {
     vm.automaOption = true;
     await vm.$nextTick();
     expect(vm.expansions.venus).to.be.false;
+  });
+
+  // Generic guard for the whole bug class: any control that is greyed/disabled
+  // under automa AND force-set by the automaOption watcher must have a matching
+  // default in defaultCreateGameModel. Since the form defaults to automa-on and
+  // watchers do not fire on mount, the default state must already equal the
+  // state the watcher enforces. Toggling automa off->on re-runs the watcher; if
+  // any default disagrees the snapshots differ and the diff names the field.
+  it('default automa-on state already matches what the automa watcher enforces', async () => {
+    const wrapper = shallowMount(CreateGameForm, {...globalConfig});
+    const vm = wrapper.vm as any;
+    expect(vm.automaOption).to.be.true;
+
+    const snapshot = () => JSON.parse(JSON.stringify(vm.$data));
+    const defaultState = snapshot();
+
+    vm.automaOption = false;
+    await vm.$nextTick();
+    vm.automaOption = true;
+    await vm.$nextTick();
+
+    expect(snapshot()).to.deep.equal(defaultState);
   });
 });
