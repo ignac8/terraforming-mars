@@ -426,7 +426,7 @@ interface MarsBotState {
 
 ---
 
-## 5. Test Coverage (7244 tests total, ~500 automa-specific)
+## 5. Test Coverage (7703 tests total, 808 automa-specific)
 
 ### Test Files
 | File | Tests | Coverage |
@@ -669,7 +669,7 @@ No 2nd place VP in 2-player automa games (same as standard 2-player TM rules). O
 - [x] Terraformer29 filtered from automa games
 - [x] Temperature raise tracking (for Thawer milestone)
 - [x] i18n support for all player-visible text
-- [x] 7559+ tests
+- [x] 7700+ tests
 - [x] Venus Next — full expansion support (board, floater track action, milestones/awards/scoring, Government Intervention card)
 - [x] Colonies — full expansion support (Tharsis only): MarsBot Shipping Board with 11 storage areas, colony placement (B17 Expedited Construction Colonies, B18 Outer System Foothold), trading (B19 Shipping Lines, B20 Extended Shipping Lines), 2nd Trade Fleet unlock at credits-track position 9, player-trade colony bonus hook, Europa special handling (ocean tile / TR / MC), Pluto card-resource handling, Aridor/Poseidon corp ongoing effects, Pioneer/Constructor cube colony-build trigger
 - [x] Turmoil — full expansion support: 7 delegates in reserve, MarsBot starts at 10 TR (or 13 with extra-difficulty), Party Politics (B21) with 6-tier narrowing priority and divisible-by-3 second-delegate trigger, Gray Eminence (B29) using same delegate priority, Election/Revolution global events solo-resolution for automa, Chairman gives MarsBot +1 TR, no Lobby placement, 1 VP per Party Leader / Chairman owned, Septem Tribus replaces Party Politics with Gray Eminence in deck
@@ -686,3 +686,21 @@ No 2nd place VP in 2-player automa games (same as standard 2-player TM rules). O
 ## 11. Data Verification Note
 
 Corporation card data was extracted from NamuWiki (Korean wiki). This data may not be 100% accurate — effects should be verified against physical Automa expansion cards when available. The NamuWiki PDF is stored at `automa/Terraforming Mars_Automa - NamuWiki.pdf` for reference.
+
+---
+
+## 12. Upstream Merge Integration (2026-05-17)
+
+Merged `upstream/main` (Delta Project expansion #7962 + the new game-name feature) into `automa`. Three conflicts, all resolved as combine-both:
+
+### 12.1 Game options sanitize guard (`Game.ts`)
+Upstream's side was whitespace-only; kept the automa guard `if (gameOptions.automaOption) { AutomaGameSetup.sanitizeGameOptions(gameOptions); }`. No behavior change.
+
+### 12.2 Game constructor gains `name` (`Game.ts`)
+Upstream added a required `name` parameter as the **2nd** constructor argument (`new Game(id, name, players, …)`), with deserialize falling back to `d.name ?? generateGameName(UnseededRandom.INSTANCE)` for old saves (upstream TODO: remove fallback by 2026-07-01). The automa deserialize path was combined to pass **both** the new `name` and the automa `marsBotPlayer` (last, optional) arguments. Constructor signature is now `(id, name, players, first, activePlayer, gameOptions, rng, board, projectDeck, corporationDeck, preludeDeck, ceoDeck, tags, marsBotPlayer?)`. Pinned by a regression test in `MarsBotSessionFixes.spec.ts` ("serialization roundtrip preserves both game name and MarsBot") so a future bad merge dropping/reordering either arg fails fast.
+
+### 12.3 GameBoardView coexistence (`GameBoardView.vue`)
+`MarsBotPanel` (automa) and `DeltaProjectBoard` (upstream) now render side by side. Upstream renamed the component's `playerCount` prop to `players`, so the milestones/awards visibility condition was reconciled from `playerCount > 1 || isAutoma` to `players.length > 1 || isAutoma`, preserving the automa-shows-MA behavior.
+
+### 12.4 Delta Project ↔ automa
+Delta Project is a community (unofficial) expansion. Automa support is intentionally scoped to official expansions only, so no MarsBot interaction with Delta Project is implemented and none is planned — this is out of scope by design, not a tracked gap. The merge only ensures the two features render side by side without breaking automa.
