@@ -48,13 +48,14 @@ import {AresSetup} from './ares/AresSetup';
 import {MoonData} from './moon/MoonData';
 import {MoonExpansion} from './moon/MoonExpansion';
 import {TurmoilHandler} from './turmoil/TurmoilHandler';
-import {SeededRandom} from '../common/utils/Random';
+import {SeededRandom, UnseededRandom} from '../common/utils/Random';
 import {chooseMilestonesAndAwards} from './ma/MilestoneAwardSelector';
 import {BoardType} from './boards/BoardType';
 import {MultiSet} from 'mnemonist';
 import {GrantVenusAltTrackBonusDeferred} from './venusNext/GrantVenusAltTrackBonusDeferred';
 import {PathfindersExpansion} from './pathfinders/PathfindersExpansion';
 import {PathfindersData} from './pathfinders/PathfindersData';
+import {DeltaProject} from './cards/delta/DeltaProject';
 import {AddResourcesToCard} from './deferredActions/AddResourcesToCard';
 import {ColonyDeserializer} from './colonies/ColonyDeserializer';
 import {GameLoader} from './database/GameLoader';
@@ -84,6 +85,7 @@ import {SpaceType} from '../common/boards/SpaceType';
 import {AutomaGameHooks} from './automa/AutomaGameHooks';
 import {AutomaGameSetup} from './automa/AutomaGameSetup';
 import {ICard} from './cards/ICard';
+import {generateGameName} from './GameName';
 
 // Can be overridden by tests
 
@@ -95,6 +97,7 @@ export function setGameLog(f: () => Array<LogMessage>) {
 
 export class Game implements IGame, Logger {
   public readonly id: GameId;
+  public readonly name: string;
   public readonly gameOptions: Readonly<GameOptions>;
   public readonly players: ReadonlyArray<IPlayer>;
   private _marsBotPlayer: IPlayer | undefined;
@@ -203,6 +206,7 @@ export class Game implements IGame, Logger {
 
   private constructor(
     id: GameId,
+    name: string,
     players: Array<IPlayer>,
     first: IPlayer,
     activePlayer: PlayerId,
@@ -216,6 +220,7 @@ export class Game implements IGame, Logger {
     tags: ReadonlyArray<Tag>,
     marsBotPlayer?: IPlayer) {
     this.id = id;
+    this.name = name;
     this.gameOptions = {...gameOptions};
     this.players = players;
     this._marsBotPlayer = marsBotPlayer;
@@ -287,6 +292,7 @@ export class Game implements IGame, Logger {
         ceo: options.ceoExtension ?? false,
         starwars: options.starWarsExpansion ?? false,
         underworld: options.underworldExpansion ?? false,
+        deltaProject: options.deltaProjectExpansion ?? false,
       };
     }
     const gameOptions = {...DEFAULT_GAME_OPTIONS, ...options};
@@ -296,6 +302,13 @@ export class Game implements IGame, Logger {
     if (gameOptions.clonedGamedId !== undefined) {
       throw new Error('Cloning should not come through this execution path.');
     }
+    if (gameOptions.customPreludes !== undefined && gameOptions.customPreludes.includes(CardName.DELTA_PROJECT)) {
+      throw new Error('Delta Project cannot be included in custom preludes. It is given to all players as part of the Delta Project.');
+    }
+    if (gameOptions.bannedCards !== undefined && gameOptions.bannedCards.includes(CardName.DELTA_PROJECT)) {
+      throw new Error('Delta Project cannot be banned. It is given to all players as part of the Delta Project.');
+    }
+
     const rng = new SeededRandom(seed);
     const board = GameSetup.newBoard(gameOptions, rng);
     const gameCards = new GameCards(gameOptions);
@@ -335,7 +348,8 @@ export class Game implements IGame, Logger {
       players[0].setTerraformRating(14);
     }
 
-    const game = new Game(id, players, firstPlayer, activePlayer, gameOptions, rng, board, projectDeck, corporationDeck, preludeDeck, ceoDeck, Array.from(tags));
+    const name = generateGameName(UnseededRandom.INSTANCE);
+    const game = new Game(id, name, players, firstPlayer, activePlayer, gameOptions, rng, board, projectDeck, corporationDeck, preludeDeck, ceoDeck, Array.from(tags));
     game.spectatorId = spectatorId;
     // This evaluation of created time doesn't match what's stored in the database, but that's fine.
     game.createdTime = new Date();
@@ -388,6 +402,13 @@ export class Game implements IGame, Logger {
 
     if (gameOptions.pathfindersExpansion) {
       game.pathfindersData = PathfindersExpansion.initialize(game);
+    }
+
+    if (game.gameOptions.deltaProjectExpansion) {
+      for (const player of game.players) {
+        player.preludeCardsInHand.push(new DeltaProject());
+        player.deltaProjectData = {position: 0, jovianBonus: false};
+      }
     }
 
     // Failsafe for exceeding corporation pool
@@ -504,6 +525,7 @@ export class Game implements IGame, Logger {
       lastSaveId: this.lastSaveId,
       milestones: this.milestones.map(toName),
       moonData: MoonData.serialize(this.moonData),
+      name: this.name,
       oxygenLevel: this.oxygenLevel,
       passedPlayers: Array.from(this.passedPlayers),
       pathfindersData: PathfindersData.serialize(this.pathfindersData),
@@ -1778,7 +1800,9 @@ export class Game implements IGame, Logger {
 
     const ceoDeck = CeoDeck.deserialize(d.ceoDeck, rng);
 
-    const game = new Game(d.id, players, first, d.activePlayer, gameOptions, rng, board, projectDeck, corporationDeck, preludeDeck, ceoDeck, d.tags, marsBotPlayer);
+    // TODO(kberg): remove ?? generateGameName(...) by 2026-07-01
+    const name = d.name ?? generateGameName(UnseededRandom.INSTANCE);
+    const game = new Game(d.id, name, players, first, d.activePlayer, gameOptions, rng, board, projectDeck, corporationDeck, preludeDeck, ceoDeck, d.tags, marsBotPlayer);
     game.resettable = true;
     game.spectatorId = d.spectatorId;
     game.createdTime = new Date(d.createdTimeMs);

@@ -183,6 +183,20 @@ describe('MarsBotSessionFixes', () => {
     expect(restored.marsBot!.vpByGeneration).to.deep.eq([20, 25, 30]);
   });
 
+  it('serialization roundtrip preserves both game name and MarsBot (upstream merge regression)', () => {
+    const {game, marsBot} = createAutomaGame();
+    marsBot.board.tracks[0].advance();
+
+    const serialized = game.serialize();
+    expect(serialized.name).to.not.be.undefined;
+
+    const restored = Game.deserialize(serialized);
+
+    expect(restored.name).to.eq(game.name);
+    expect(restored.marsBot).to.not.be.undefined;
+    expect(restored.marsBot!.board.tracks[0].position).to.eq(1);
+  });
+
   it('deserialization works when activePlayer is MarsBot', () => {
     const {game, marsBot} = createAutomaGame();
     marsBot.board.tracks[0].advance();

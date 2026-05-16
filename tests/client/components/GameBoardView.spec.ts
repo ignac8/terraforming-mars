@@ -15,7 +15,7 @@ describe('GameBoardView', () => {
       props: {
         game: fakeGameModel(),
         tileView: 'show',
-        playerCount: 2,
+        players: [],
       },
     });
     expect(wrapper.exists()).to.be.true;
