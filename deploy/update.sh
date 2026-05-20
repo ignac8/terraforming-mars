@@ -87,4 +87,4 @@ docker compose up -d --remove-orphans 2>&1 | grep -vE 'Running$|Healthy$' || tru
 
 # Cap total build cache at 5 GB. Belt-and-suspenders: when build only runs on
 # real changes, cache shouldn't grow much, but this prevents pathological growth.
-docker builder prune -f --keep-storage 5gb 2>&1 | grep -vE '^Total reclaimed space: 0B$' || true
+docker builder prune -f --reserved-space 5gb 2>&1 | grep -vE '^Total:[[:space:]]*0B$' || true

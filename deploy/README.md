@@ -95,7 +95,7 @@ A host cron job runs `deploy/update.sh` every minute. The script:
 3. Runs `docker compose pull` (refreshes image-based services: postgres, caddy)
 4. Runs `docker compose build` when git changed, a base image was just updated, or the weekly safety fallback fires
 5. Runs `docker compose up -d` (recreates only containers whose image hash actually changed)
-6. Caps total Docker build cache at 5 GB via `docker builder prune --keep-storage 5gb`
+6. Caps total Docker build cache at 5 GB via `docker builder prune --reserved-space 5gb`
 
 No-op invocations (no git changes, no base updates) cost only the cheap `git fetch` + `docker pull` round-trips and stay silent. Building only when something actually changed keeps buildkit cache from growing unbounded — running `docker compose build` every minute (the previous design) refreshed cache layer timestamps so the old `until=24h` prune filter never fired and storage grew past 100 GB.
 
