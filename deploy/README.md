@@ -92,10 +92,11 @@ A host cron job runs `deploy/update.sh` every minute. The script:
 
 1. Fetches `origin/$GIT_BRANCH` and `upstream/main`, hard-resets / merges if there are new commits
 2. Runs `docker compose pull` (refreshes image-based services: postgres, caddy)
-3. Runs `docker compose build --pull` (refreshes the `node` base for the locally-built `app` image — cache-hit no-op when the base hasn't changed)
+3. Runs `docker compose build --pull` when git changed or the last build is ≥ 24h old (refreshes the `node` base for the locally-built `app` image)
 4. Runs `docker compose up -d` (recreates only containers whose image hash actually changed)
+5. Caps total Docker build cache at 5 GB via `docker builder prune --keep-storage 5gb`
 
-No-op invocations (no git changes, no base image updates) are silent and cost a few seconds of cache-hit work.
+No-op invocations (no git changes, recent base-image refresh) are silent and cost only the cheap `git fetch` + `docker compose pull` cache-hit work. Base-image updates propagate within 24 h rather than the next minute, which keeps cache growth bounded.
 
 Install the cron:
 ```bash
