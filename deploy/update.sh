@@ -45,29 +45,46 @@ else
     echo "$LOG_PREFIX ERROR: git fetch upstream failed"
 fi
 
-# Decide whether to rebuild the locally-built `app` image. Build is needed when:
-#   1. Git changed (new app code), or
-#   2. The base image hasn't been refreshed in ≥ 24h (catches upstream node updates).
-# Building every minute (the previous design) keeps touching cache layers, so the
-# `until=24h` prune filter could never fire — cache grew without bound (~100 GB).
+# Pull base images referenced by Dockerfile FROM lines and detect digest changes.
+# Pulls only fetch image layer storage, not buildkit cache, so they're safe to
+# run every minute. External bases are FROM targets containing `:` or `/`
+# (excludes internal stage names). ARG NODE_VERSION is substituted from the
+# Dockerfile default.
+BASE_CHANGED=0
+NODE_VERSION=$(awk -F= '/^ARG NODE_VERSION=/ {print $2; exit}' Dockerfile)
+BASES=$(awk '/^FROM/ {print $2}' Dockerfile | grep -E '[:/]' | sed "s/\${NODE_VERSION}/$NODE_VERSION/g" | sort -u)
+for img in $BASES; do
+    BEFORE=$(docker image inspect -f '{{.Id}}' "$img" 2>/dev/null || echo none)
+    docker pull -q "$img" >/dev/null 2>&1 || continue
+    AFTER=$(docker image inspect -f '{{.Id}}' "$img" 2>/dev/null || echo none)
+    if [ "$BEFORE" != "$AFTER" ]; then
+        echo "$LOG_PREFIX base image $img updated"
+        BASE_CHANGED=1
+    fi
+done
+
+# Build the locally-built `app` image when git changed, a base image was just
+# updated, or the marker is missing (first run / never built). A weekly safety
+# fallback also rebuilds in case the Dockerfile parsing above silently misses
+# something — the digest-based detection is the primary signal.
 NEEDS_BUILD=0
-if [ "$CHANGED" = "1" ]; then
+if [ "$CHANGED" = "1" ] || [ "$BASE_CHANGED" = "1" ]; then
     NEEDS_BUILD=1
 elif [ ! -f "$LAST_BUILD_MARKER" ] || \
-     [ $(($(date +%s) - $(stat -c %Y "$LAST_BUILD_MARKER"))) -gt 86400 ]; then
+     [ $(($(date +%s) - $(stat -c %Y "$LAST_BUILD_MARKER"))) -gt 604800 ]; then
     NEEDS_BUILD=1
 fi
 
-# Docker: refresh image-based services every tick, build app only when needed.
+# Docker: refresh image-based services every tick, rebuild app only when needed.
 # `up -d` is idempotent — only recreates containers whose image hash changed.
 cd deploy
 docker compose pull --quiet 2>&1
 if [ "$NEEDS_BUILD" = "1" ]; then
-    docker compose build --pull --quiet 2>&1
+    docker compose build --quiet 2>&1
     touch "$LAST_BUILD_MARKER"
 fi
 docker compose up -d --remove-orphans 2>&1 | grep -vE 'Running$|Healthy$' || true
 
-# Cap total build cache at 5 GB. Replaces the previous `until=24h` filter, which
-# never matched because every tick's build refreshed all cache timestamps.
+# Cap total build cache at 5 GB. Belt-and-suspenders: when build only runs on
+# real changes, cache shouldn't grow much, but this prevents pathological growth.
 docker builder prune -f --keep-storage 5gb 2>&1 | grep -vE '^Total reclaimed space: 0B$' || true
