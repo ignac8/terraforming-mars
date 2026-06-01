@@ -26,7 +26,7 @@ import {PlayerId, GameId, SpectatorId, SpaceId} from '../common/Types';
 import {PlayerInput} from './PlayerInput';
 import {CardResource} from '../common/CardResource';
 import {Resource} from '../common/Resource';
-import {AndThen, DeferredAction} from './deferredActions/DeferredAction';
+import {AndThen, DeferredAction, SimpleDeferredAction} from './deferredActions/DeferredAction';
 import {Priority} from './deferredActions/Priority';
 import {DeferredActionsQueue} from './deferredActions/DeferredActionsQueue';
 import {SelectPaymentDeferred} from './deferredActions/SelectPaymentDeferred';
@@ -603,7 +603,7 @@ export class Game implements IGame, Logger {
         const moonMaxed =
           moonData.habitatRate === constants.MAXIMUM_HABITAT_RATE &&
           moonData.miningRate === constants.MAXIMUM_MINING_RATE &&
-          moonData.logisticRate === constants.MAXIMUM_LOGISTICS_RATE;
+          moonData.logisticRate === constants.MAXIMUM_LOGISTIC_RATE;
         globalParametersMaxed = globalParametersMaxed && moonMaxed;
       }
     });
@@ -930,7 +930,7 @@ export class Game implements IGame, Logger {
     MoonExpansion.ifMoon(this, (moonData) => {
       entry[GlobalParameter.MOON_HABITAT_RATE] = moonData.habitatRate;
       entry[GlobalParameter.MOON_MINING_RATE] = moonData.miningRate;
-      entry[GlobalParameter.MOON_LOGISTICS_RATE] = moonData.logisticRate;
+      entry[GlobalParameter.MOON_LOGISTIC_RATE] = moonData.logisticRate;
     });
   }
 
@@ -975,25 +975,30 @@ export class Game implements IGame, Logger {
       .setButtonLabel('Confirm');
     if (this.getTemperature() < constants.MAX_TEMPERATURE) {
       orOptions.options.push(
-        new SelectOption('Increase temperature', 'Increase').andThen(() => {
-          this.increaseTemperature(player, 1);
-          this.log('${0} acted as World Government and increased temperature', (b) => b.player(player));
-          return undefined;
-        }),
+        new SelectOption('Increase temperature', 'Increase')
+          .annotate(GlobalParameter.TEMPERATURE)
+          .andThen(() => {
+            this.increaseTemperature(player, 1);
+            this.log('${0} acted as World Government and increased temperature', (b) => b.player(player));
+            return undefined;
+          }),
       );
     }
     if (this.getOxygenLevel() < constants.MAX_OXYGEN_LEVEL) {
       orOptions.options.push(
-        new SelectOption('Increase oxygen', 'Increase').andThen(() => {
-          this.increaseOxygenLevel(player, 1);
-          this.log('${0} acted as World Government and increased oxygen level', (b) => b.player(player));
-          return undefined;
-        }),
+        new SelectOption('Increase oxygen', 'Increase')
+          .annotate(GlobalParameter.OXYGEN)
+          .andThen(() => {
+            this.increaseOxygenLevel(player, 1);
+            this.log('${0} acted as World Government and increased oxygen level', (b) => b.player(player));
+            return undefined;
+          }),
       );
     }
     if (this.canAddOcean()) {
       orOptions.options.push(
         new SelectSpace('Add an ocean', this.board.getAvailableSpacesForOcean(player))
+          .annotate(GlobalParameter.OCEANS)
           .andThen((space) => {
             this.addOcean(player, space);
             this.log('${0} acted as World Government and placed an ocean', (b) => b.player(player));
@@ -1046,9 +1051,9 @@ export class Game implements IGame, Logger {
         );
       }
 
-      if (moonData.logisticRate < constants.MAXIMUM_LOGISTICS_RATE) {
+      if (moonData.logisticRate < constants.MAXIMUM_LOGISTIC_RATE) {
         orOptions.options.push(
-          new SelectOption('Increase the Moon logistics rate', 'Increase').andThen(() => {
+          new SelectOption('Increase the Moon logistic rate', 'Increase').andThen(() => {
             MoonExpansion.raiseLogisticRate(player, 1);
             return undefined;
           }),
@@ -1065,6 +1070,19 @@ export class Game implements IGame, Logger {
     player.setWaitingFor(input, () => {
       this.gotoEndGeneration();
     });
+  }
+
+  public temporarySolarPhase(player: IPlayer, cb: () => void): void {
+    // This temporarily changes the game phase to Solar so the current player does not
+    // benefit from the global parameter change.
+    const savedPhase = this.phase;
+    this.phase = Phase.SOLAR;
+    cb();
+
+    this.defer(new SimpleDeferredAction(player, () => {
+      this.phase = savedPhase;
+      return undefined;
+    }), Priority.BACK_OF_THE_LINE);
   }
 
   private allPlayersHavePassed(): boolean {
@@ -1891,6 +1909,15 @@ export class Game implements IGame, Logger {
     game.tradeEmbargo = d.tradeEmbargo ?? false;
     game.beholdTheEmperor = d.beholdTheEmperor ?? false;
     game.globalsPerGeneration = d.globalsPerGeneration;
+
+    // TODO(kberg): Remove this migration code by 2026-08-01
+    for (const generation of game.globalsPerGeneration) {
+      const asany = generation as any;
+      if (asany['moon-logistics']) {
+        generation['moon-logistic'] = asany['moon-logistics'];
+        delete asany['moon-logistics'];
+      }
+    }
     game.verminInEffect = d.verminInEffect;
     game.exploitationOfVenusInEffect = d.exploitationOfVenusInEffect;
 

@@ -243,7 +243,7 @@
                           <td v-if="game.gameOptions.expansions.venus">{{ data.venus }}</td>
                           <td v-if="game.gameOptions.expansions.moon">{{ data.moonHabitat }}</td>
                           <td v-if="game.gameOptions.expansions.moon">{{ data.moonMining }}</td>
-                          <td v-if="game.gameOptions.expansions.moon">{{ data.moonLogistics }}</td>
+                          <td v-if="game.gameOptions.expansions.moon">{{ data.moonLogistic }}</td>
                           <td class="game-end-total">{{ data.total }}</td>
                       </tr>
                   </tbody>
@@ -447,11 +447,11 @@ export default defineComponent({
       if (this.game.gameOptions.expansions.moon === true) {
         dataset.push({label: $t('L. Habitat'), color: 'orange', data: getValues(GlobalParameter.MOON_HABITAT_RATE, 0, 8)});
         dataset.push({label: $t('L. Mining'), color: 'pink', data: getValues(GlobalParameter.MOON_MINING_RATE, 0, 8)});
-        dataset.push({label: $t('L. Logistics'), color: 'purple', data: getValues(GlobalParameter.MOON_LOGISTICS_RATE, 0, 8)});
+        dataset.push({label: $t('L. Logistic'), color: 'purple', data: getValues(GlobalParameter.MOON_LOGISTIC_RATE, 0, 8)});
       }
       return dataset;
     },
-    playerContributionsData(): Array<{player: string, color: Color, temp: number, oxygen: number, oceans: number, venus?: number, moonHabitat?: number, moonMining?: number, moonLogistics?: number, total: number}> {
+    playerContributionsData(): Array<{player: string, color: Color, temp: number, oxygen: number, oceans: number, venus?: number, moonHabitat?: number, moonMining?: number, moonLogistic?: number, total: number}> {
       const extract = (name: string, color: Color, steps: Partial<Record<GlobalParameter, number>>) => {
         const temp = steps[GlobalParameter.TEMPERATURE] || 0;
         const oxygen = steps[GlobalParameter.OXYGEN] || 0;
@@ -459,9 +459,9 @@ export default defineComponent({
         const venus = steps[GlobalParameter.VENUS] || 0;
         const moonHabitat = steps[GlobalParameter.MOON_HABITAT_RATE] || 0;
         const moonMining = steps[GlobalParameter.MOON_MINING_RATE] || 0;
-        const moonLogistics = steps[GlobalParameter.MOON_LOGISTICS_RATE] || 0;
-        return {player: name, color, temp, oxygen, oceans, venus, moonHabitat, moonMining, moonLogistics,
-          total: temp + oxygen + oceans + venus + moonHabitat + moonMining + moonLogistics};
+        const moonLogistic = steps[GlobalParameter.MOON_LOGISTIC_RATE] || 0;
+        return {player: name, color, temp, oxygen, oceans, venus, moonHabitat, moonMining, moonLogistic,
+          total: temp + oxygen + oceans + venus + moonHabitat + moonMining + moonLogistic};
       };
       const data = this.players.map((p) => extract(p.name, p.color, p.globalParameterSteps || {}));
       if (this.game.marsBot?.globalParameterSteps) {
