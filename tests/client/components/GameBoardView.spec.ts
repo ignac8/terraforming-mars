@@ -6,7 +6,7 @@ import MarsBotPanel from '@/client/components/automa/MarsBotPanel.vue';
 import Milestones from '@/client/components/Milestones.vue';
 import Awards from '@/client/components/Awards.vue';
 import {MarsBotModel} from '@/common/models/MarsBotModel';
-import {fakeGameModel} from './testHelpers';
+import {fakeGameModel, fakePublicPlayerModel} from './testHelpers';
 
 describe('GameBoardView', () => {
   it('mounts without errors', () => {
@@ -27,7 +27,7 @@ describe('GameBoardView', () => {
       props: {
         game: fakeGameModel(),
         tileView: 'show',
-        playerCount: 2,
+        players: [fakePublicPlayerModel(), fakePublicPlayerModel()],
       },
     });
     expect(wrapper.findComponent(MarsBotPanel).exists()).to.be.false;
@@ -41,7 +41,7 @@ describe('GameBoardView', () => {
       props: {
         game: fakeGameModel({marsBot: {} as MarsBotModel}),
         tileView: 'show',
-        playerCount: 1,
+        players: [],
       },
     });
     expect(wrapper.findComponent(MarsBotPanel).exists()).to.be.true;
