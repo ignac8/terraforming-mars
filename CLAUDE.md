@@ -124,6 +124,12 @@ Custom i18n via `src/client/directives/i18n.ts` with `v-i18n` directive. Transla
 - Single quotes, 2-space indent, prefer const. Config in `eslint.config.mjs`.
 - Follow the style of the code around the file. If this is a new file, follow the style of the code in the directory.
 
+## Upstreaming (this fork)
+
+MarsBot code is upstreamed to terraforming-mars/terraforming-mars one file at a time.
+PR state, per-PR divergences from the automa branch, and the per-PR process live in
+`automa/UPSTREAM-PRS.md`. Update that file whenever PR status changes.
+
 ## Deployment (this fork)
 
 Production deployment uses Docker Compose on a Hetzner VPS. Config lives in `deploy/`.
