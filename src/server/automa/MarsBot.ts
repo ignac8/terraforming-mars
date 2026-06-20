@@ -596,8 +596,6 @@ export class MarsBot {
       actionDeckCardNames: this.actionDeck.map((c) => this.isProjectCard(c) ? c.name : (c as MarsBotBonusCard).id),
       bonusDeckDrawPile: this.bonusDeck.drawPile.map((c) => c.id),
       bonusDeckDiscardPile: this.bonusDeck.discardPile.map((c) => c.id),
-      destroyedBonusCards: this.bonusDeck.drawPile.concat(this.bonusDeck.discardPile)
-        .filter((c) => c.destroyed).map((c) => c.id),
       neuralInstanceSpaceId: this.neuralInstanceSpace?.id,
       playedProjectCardNames: this.playedProjectCards.map((c) => c.name),
       marsBotPlayerId: this.player.id,
@@ -714,14 +712,6 @@ export class MarsBot {
     }
     if (state.bonusDeckDiscardPile !== undefined) {
       this.bonusDeck.discardPile = state.bonusDeckDiscardPile.map((id) => createCorpBonusCard(id as BonusCardId));
-    }
-    if (state.destroyedBonusCards !== undefined) {
-      const destroyed = new Set(state.destroyedBonusCards);
-      for (const card of [...this.bonusDeck.drawPile, ...this.bonusDeck.discardPile]) {
-        if (destroyed.has(card.id)) {
-          card.destroyed = true;
-        }
-      }
     }
 
     // Restore played project cards

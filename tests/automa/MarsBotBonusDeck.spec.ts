@@ -47,31 +47,4 @@ describe('MarsBotBonusDeck', () => {
     expect(deck.discardPile.length).to.eq(0);
   });
 
-  it('destroyed cards do not return when reshuffled', () => {
-    const card = deck.draw()!;
-    deck.destroy(card);
-    expect(card.destroyed).to.be.true;
-
-    // Draw and discard remaining 7
-    const remaining = [];
-    for (let i = 0; i < 7; i++) {
-      remaining.push(deck.draw()!);
-    }
-    for (const c of remaining) {
-      deck.discard(c);
-    }
-
-    // Reshuffle and draw all — should get 7, not 8
-    const reshuffled = [];
-    for (let i = 0; i < 10; i++) {
-      const c = deck.draw();
-      if (c === undefined) {
-        break;
-      }
-      reshuffled.push(c);
-      deck.discard(c);
-    }
-    // Should never see the destroyed card
-    expect(reshuffled.every((c) => c.id !== card.id)).to.be.true;
-  });
 });

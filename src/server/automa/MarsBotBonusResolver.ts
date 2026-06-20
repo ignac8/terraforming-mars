@@ -41,105 +41,105 @@ export class MarsBotBonusResolver {
     this.tilePlacer = tilePlacer;
   }
 
-  public resolve(card: MarsBotBonusCard): void {
+  public resolve(card: MarsBotBonusCard): boolean {
+    const destroyed = this.resolveEffect(card);
+    if (!destroyed) {
+      this.bonusDeck.discard(card);
+    }
+    return destroyed;
+  }
+
+  /** Resolve a bonus card's effect. Returns true if the card was destroyed and must not be discarded. */
+  private resolveEffect(card: MarsBotBonusCard): boolean {
     switch (card.id) {
     case BonusCardId.B01_METEOR_SHOWER:
-      this.resolveMeteorShower(card);
-      break;
+      return this.resolveMeteorShower();
     case BonusCardId.B02_INVASIVE_SPECIES:
       this.resolveInvasiveSpecies();
-      break;
+      return false;
     case BonusCardId.B03_RESEARCH_AND_DEVELOPMENT:
       this.resolveResearchAndDevelopment();
-      break;
+      return false;
     case BonusCardId.B04_OVERACHIEVEMENT:
-      this.resolveOverachievement(card);
-      break;
+      return this.resolveOverachievement();
     case BonusCardId.B05_EXPEDITED_CONSTRUCTION:
-      this.resolveExpeditedConstruction(card);
-      break;
+      return this.resolveExpeditedConstruction();
     case BonusCardId.B06_LOBBYISTS:
-      this.resolveLobbyists(card);
-      break;
+      return this.resolveLobbyists();
     case BonusCardId.B15_LOBBYISTS_VENUS:
-      this.resolveLobbyistsVenus(card);
-      break;
+      return this.resolveLobbyistsVenus();
     case BonusCardId.B16_GOVERNMENT_INTERVENTION:
       this.resolveGovernmentIntervention();
-      break;
+      return false;
     case BonusCardId.B07_LOCAL_NEURAL_INSTANCE:
-      this.resolveLocalNeuralInstance(card);
-      break;
+      return this.resolveLocalNeuralInstance();
     case BonusCardId.B08_CORPORATE_COMPETITION:
       this.resolveCorporateCompetition();
-      break;
+      return false;
 
     // Colonies bonus cards (B17-B20)
     case BonusCardId.B17_EXPEDITED_CONSTRUCTION_COLONIES:
-      this.resolveExpeditedConstructionColonies(card);
-      break;
+      return this.resolveExpeditedConstructionColonies();
     case BonusCardId.B18_OUTER_SYSTEM_FOOTHOLD:
       this.resolveOuterSystemFoothold();
-      break;
+      return false;
     case BonusCardId.B19_SHIPPING_LINES:
       this.resolveShippingLines();
-      break;
+      return false;
     case BonusCardId.B20_EXTENDED_SHIPPING_LINES:
       this.resolveExtendedShippingLines();
-      break;
+      return false;
 
     // Turmoil bonus card
     case BonusCardId.B21_PARTY_POLITICS:
       this.resolvePartyPolitics();
-      break;
+      return false;
 
     // Corp-specific bonus cards (B22-B32)
     case BonusCardId.B22_SETTLERS:
       this.resolveSettlers();
-      break;
+      return false;
     case BonusCardId.B23_RAPID_SPROUTING:
       this.resolveRapidSprouting();
-      break;
+      return false;
     case BonusCardId.B24_SUPPLY_AND_DEMAND:
       this.resolveSupplyAndDemand();
-      break;
+      return false;
     case BonusCardId.B25_DO_IT_RIGHT:
       this.resolveDoItRight();
-      break;
+      return false;
     case BonusCardId.B26_VENUSIAN_LOBBY:
       this.resolveVenusianLobby();
-      break;
+      return false;
     case BonusCardId.B27_BUILD_BUILD_BUILD:
       this.resolveBuildBuildBuild();
-      break;
+      return false;
     case BonusCardId.B28_DIVERSIFICATION:
       this.resolveDiversification();
-      break;
+      return false;
     case BonusCardId.B29_GRAY_EMINENCE:
       this.resolveGrayEminence();
-      break;
+      return false;
     case BonusCardId.B30_INTERFACE_HYPERLINK:
       this.resolveInterfaceHyperlink();
-      break;
+      return false;
     case BonusCardId.B31_GOVERNMENT_SUBSIDY:
       this.resolveGovernmentSubsidy();
-      break;
+      return false;
     case BonusCardId.B32_INVESTORS:
       this.resolveInvestors();
-      break;
+      return false;
     }
-
-    this.bonusDeck.discard(card);
+    return false;
   }
 
   // B01: Meteor Shower
-  private resolveMeteorShower(card: MarsBotBonusCard): void {
+  private resolveMeteorShower(): boolean {
     // Asteroid Deflection System and Protected Habitat block plant removal
     if (this.humanPlayer.plantsAreProtected()) {
       this.game.log('MarsBot\'s Meteor Shower: blocked by plant protection');
-      this.bonusDeck.destroy(card);
       this.game.log('Meteor Shower is destroyed');
-      return;
+      return true;
     }
     const plantsLost = Math.min(5, this.humanPlayer.plants);
     if (plantsLost > 0) {
@@ -147,9 +147,10 @@ export class MarsBotBonusResolver {
       this.game.log('MarsBot\'s Meteor Shower: ${0} loses ${1} plants', (b) => b.player(this.humanPlayer).number(plantsLost));
     }
     if (plantsLost >= 3) {
-      this.bonusDeck.destroy(card);
       this.game.log('Meteor Shower is destroyed');
+      return true;
     }
+    return false;
   }
 
   // B02: Invasive Species
@@ -199,7 +200,7 @@ export class MarsBotBonusResolver {
   }
 
   // B04: Overachievement
-  private resolveOverachievement(card: MarsBotBonusCard): void {
+  private resolveOverachievement(): boolean {
     // Try to claim a milestone
     const claimable = this.game.milestones.filter((m) =>
       !this.game.milestoneClaimed(m) && !this.game.allMilestonesClaimed(),
@@ -235,33 +236,34 @@ export class MarsBotBonusResolver {
     }
 
     if (claimed) {
-      this.bonusDeck.destroy(card);
       this.game.log('Overachievement is destroyed');
-    } else {
-      this.turnResolver.mcSupply += 5;
-      this.game.log('MarsBot gains 5 MC (Overachievement failed)');
+      return true;
     }
+    this.turnResolver.mcSupply += 5;
+    this.game.log('MarsBot gains 5 MC (Overachievement failed)');
+    return false;
   }
 
   // B05: Expedited Construction
-  private resolveExpeditedConstruction(card: MarsBotBonusCard): void {
+  private resolveExpeditedConstruction(): boolean {
     const space = this.tilePlacer.findExpediteConstructionCitySpace();
     if (space !== undefined) {
       this.game.addCity(this.marsBot, space);
       this.turnResolver.mcSupply += this.tilePlacer.getTotalPlacementMC(space);
-      this.bonusDeck.destroy(card);
       this.game.log('MarsBot places city (Expedited Construction), card destroyed');
+      return true;
     }
     // No failed action if can't place
+    return false;
   }
 
   // B06: Lobbyists / B15: Lobbyists (Venus) — shared (a) temp and (b) oxygen branches
-  private resolveLobbyists(card: MarsBotBonusCard): void {
-    if (this.lobbyistsTempBranch(card)) {
-      return;
+  private resolveLobbyists(): boolean {
+    if (this.lobbyistsTempBranch()) {
+      return true;
     }
-    if (this.lobbyistsOxygenBranch(card)) {
-      return;
+    if (this.lobbyistsOxygenBranch()) {
+      return true;
     }
 
     // (c) B06: Ocean adjacent to 2+ oceans
@@ -274,20 +276,20 @@ export class MarsBotBonusResolver {
       const space = adjacentTo2Oceans[0];
       this.game.addOcean(this.marsBot, space);
       this.turnResolver.mcSupply += this.tilePlacer.getTotalPlacementMC(space);
-      this.bonusDeck.destroy(card);
       this.game.log('MarsBot places ocean (Lobbyists), card destroyed');
-      return;
+      return true;
     }
 
     this.advanceFurthestParameter();
+    return false;
   }
 
-  private resolveLobbyistsVenus(card: MarsBotBonusCard): void {
-    if (this.lobbyistsTempBranch(card)) {
-      return;
+  private resolveLobbyistsVenus(): boolean {
+    if (this.lobbyistsTempBranch()) {
+      return true;
     }
-    if (this.lobbyistsOxygenBranch(card)) {
-      return;
+    if (this.lobbyistsOxygenBranch()) {
+      return true;
     }
 
     // (c) B15: Venus 1-2 steps from bonus step or completion — do NOT destroy card
@@ -300,14 +302,15 @@ export class MarsBotBonusResolver {
     if (venusStepsToNextBonus >= 1 && venusStepsToNextBonus <= 2 && venus < constants.MAX_VENUS_SCALE) {
       this.game.increaseVenusScaleLevel(this.marsBot, 2);
       this.game.log('MarsBot raises Venus 2 steps (Lobbyists Venus)');
-      return;
+      return false;
     }
 
     this.advanceFurthestParameter();
+    return false;
   }
 
   /** Lobbyists shared branch (a): temperature 1-2 steps from bonus or completion. */
-  private lobbyistsTempBranch(card: MarsBotBonusCard): boolean {
+  private lobbyistsTempBranch(): boolean {
     const temp = this.game.getTemperature();
     const tempBonusTargets = [constants.TEMPERATURE_BONUS_FOR_HEAT_1, constants.TEMPERATURE_BONUS_FOR_HEAT_2, constants.TEMPERATURE_FOR_OCEAN_BONUS, constants.MAX_TEMPERATURE];
     const tempStepsToNextBonus = tempBonusTargets
@@ -316,7 +319,6 @@ export class MarsBotBonusResolver {
       .reduce((min, s) => Math.min(min, s), Infinity);
     if (tempStepsToNextBonus >= 1 && tempStepsToNextBonus <= 2 && temp < constants.MAX_TEMPERATURE) {
       this.game.increaseTemperature(this.marsBot, 2);
-      this.bonusDeck.destroy(card);
       this.game.log('MarsBot raises temperature 2 steps (Lobbyists), card destroyed');
       return true;
     }
@@ -324,7 +326,7 @@ export class MarsBotBonusResolver {
   }
 
   /** Lobbyists shared branch (b): oxygen 1-2 steps from bonus or completion. */
-  private lobbyistsOxygenBranch(card: MarsBotBonusCard): boolean {
+  private lobbyistsOxygenBranch(): boolean {
     const oxy = this.game.getOxygenLevel();
     const oxyStepsToMax = constants.MAX_OXYGEN_LEVEL - oxy;
     const oxyBonusAt8 = oxy < constants.OXYGEN_LEVEL_FOR_TEMPERATURE_BONUS;
@@ -338,7 +340,6 @@ export class MarsBotBonusResolver {
         if (this.game.getOxygenLevel() < constants.MAX_OXYGEN_LEVEL) {
           this.game.increaseOxygenLevel(this.marsBot, 1);
         }
-        this.bonusDeck.destroy(card);
         this.game.log('MarsBot places greenery and raises oxygen twice (Lobbyists), card destroyed');
         return true;
       }
@@ -371,7 +372,7 @@ export class MarsBotBonusResolver {
   }
 
   // B07: Local Neural Instance
-  private resolveLocalNeuralInstance(card: MarsBotBonusCard): void {
+  private resolveLocalNeuralInstance(): boolean {
     const space = this.tilePlacer.findNeuralInstanceSpace();
     if (space !== undefined) {
       this.game.simpleAddTile(this.marsBot, space, {tileType: TileType.NEURAL_INSTANCE});
@@ -385,8 +386,8 @@ export class MarsBotBonusResolver {
         this.turnResolver.resolveProjectCard(drawnCard);
       }
     }
-    this.bonusDeck.destroy(card);
     this.game.log('Local Neural Instance is destroyed');
+    return true;
   }
 
   // B08: Corporate Competition
@@ -523,15 +524,14 @@ export class MarsBotBonusResolver {
   }
 
   // B17: Expedited Construction (Colonies) — C-15
-  private resolveExpeditedConstructionColonies(card: MarsBotBonusCard): void {
+  private resolveExpeditedConstructionColonies(): boolean {
     // C-15a: Place city adjacent to ≥2 greenery/ocean tiles → destroy card
     const citySpace = this.tilePlacer.findExpediteConstructionCitySpace();
     if (citySpace !== undefined) {
       this.game.addCity(this.marsBot, citySpace);
       this.turnResolver.mcSupply += this.tilePlacer.getTotalPlacementMC(citySpace);
-      this.bonusDeck.destroy(card);
       this.game.log('MarsBot places city (Expedited Construction Colonies), card destroyed (C-15a)');
-      return;
+      return true;
     }
 
     // C-15b: If MarsBot has ≤1 colonies, place on a random eligible tile — do NOT destroy
@@ -543,13 +543,14 @@ export class MarsBotBonusResolver {
         if (colony !== undefined) {
           placeColonyForMarsBot(colony, marsBot);
           this.game.log('MarsBot places colony (Expedited Construction Colonies, C-15b)');
-          return;
+          return false;
         }
       }
     }
 
     // C-15c: No effect
     this.game.log('MarsBot Expedited Construction Colonies: no effect (C-15c)');
+    return false;
   }
 
   // B18: Outer System Foothold — C-16

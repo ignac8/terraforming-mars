@@ -38,13 +38,13 @@ describe('MarsBotBonusCardsColonies (C-15, C-16, C-17)', () => {
 
       // Stub findExpediteConstructionCitySpace to return a valid space
       const tilesBefore = game.board.spaces.filter((s) => s.tile !== undefined).length;
-      marsBot.bonusResolver.resolve(card);
+      const destroyed = marsBot.bonusResolver.resolve(card);
 
       // If city placed, tile count should increase and card should be destroyed
       const tilesAfter = game.board.spaces.filter((s) => s.tile !== undefined).length;
       // Either the city was placed (and card destroyed) or it wasn't (no city space found)
       if (tilesAfter > tilesBefore) {
-        expect(card.destroyed).to.be.true;
+        expect(destroyed).to.be.true;
       }
     });
 
@@ -55,10 +55,10 @@ describe('MarsBotBonusCardsColonies (C-15, C-16, C-17)', () => {
       game.colonies = [luna];
       const card = b17Card();
       marsBot.bonusDeck.drawPile.push(card);
-      marsBot.bonusResolver.resolve(card);
+      const destroyed = marsBot.bonusResolver.resolve(card);
       // Either a colony was placed or no eligible colony was found
       // Card should NOT be destroyed in this branch
-      expect(card.destroyed).to.be.false;
+      expect(destroyed).to.be.false;
     });
 
     it('C-15b: gains 2 resources if colony placed', () => {
@@ -86,8 +86,8 @@ describe('MarsBotBonusCardsColonies (C-15, C-16, C-17)', () => {
       game.colonies = [luna, ceres];
       const card = b17Card();
       marsBot.bonusDeck.drawPile.push(card);
-      marsBot.bonusResolver.resolve(card);
-      expect(card.destroyed).to.be.false;
+      const destroyed = marsBot.bonusResolver.resolve(card);
+      expect(destroyed).to.be.false;
       // No new colonies should be added
       expect(luna.colonies.filter((id) => id === marsBot.player.id).length).to.eq(1);
     });
@@ -106,13 +106,13 @@ describe('MarsBotBonusCardsColonies (C-15, C-16, C-17)', () => {
       const card = b18Card();
       marsBot.bonusDeck.discardPile.push(card); // Will be restored; deck starts fresh
       marsBot.bonusDeck.drawPile.push(card);
-      marsBot.bonusResolver.resolve(card);
+      const destroyed = marsBot.bonusResolver.resolve(card);
       // Luna should have marsBot as a colony or shipping board got resources
       const hasColony = luna.colonies.includes(marsBot.player.id);
       if (hasColony) {
         expect(marsBot.shippingBoard.get(ColonyName.LUNA)).to.eq(2);
       }
-      expect(card.destroyed).to.be.false;
+      expect(destroyed).to.be.false;
     });
 
     it('C-16c/d: draws and discards a bonus card (not resolves)', () => {

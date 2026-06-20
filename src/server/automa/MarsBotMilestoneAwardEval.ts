@@ -28,7 +28,6 @@ export type MarsBotMAContext = {
     withNonNegativeVP: number;
     withRequirements: number;
   };
-  destroyedBonusCards: number;
   temperatureRaises: number;
   highestTrackPos: number;
   lowestTrackPos: number;

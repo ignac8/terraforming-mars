@@ -548,7 +548,6 @@ export class MarsBotTurnResolver {
         withNonNegativeVP,
         withRequirements,
       },
-      destroyedBonusCards: this.marsBotManager?.bonusDeck.drawPile.filter((c) => c.destroyed).length ?? 0,
       temperatureRaises: this.marsBotManager?.temperatureRaises ?? 0,
       highestTrackPos: Math.max(...positions),
       lowestTrackPos: Math.min(...positions),
