@@ -2,7 +2,7 @@
   <div>
     <div v-if="showtitle === true">{{ $t(playerinput.title) }}</div>
     <label v-for="player in (playerinput.players || [])" :key="player" class="form-radio form-inline">
-      <input type="radio" v-model="selectedPlayer" :value="player" />
+      <input type="radio" v-model="selectedPlayer" :value="player" >
       <i class="form-icon"></i>
       <SelectPlayerRow :player="playerView.players.find((otherPlayer) => otherPlayer.color === player)" :fallbackName="playerView.game?.marsBot?.name"></SelectPlayerRow>
     </label>

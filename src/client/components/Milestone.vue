@@ -1,10 +1,10 @@
 <template>
   <div class="ma-block">
     <div class="ma-player" v-if="milestone.playerName">
-      <i :title="milestone.playerName" class="board-cube" :class="`board-cube--${milestone.color}`" />
+      <i :title="milestone.playerName" class="board-cube" :class="`board-cube--${milestone.color}`" ></i>
     </div>
     <div class="ma-name--milestones" :class="nameCss">
-      <span v-i18n>{{name}}</span>
+      <span ref="name" v-i18n>{{name}}</span>
       <div v-if="showScores" class="ma-scores player_home_block--milestones-and-awards-scores">
         <template v-for="score in sortedScores" :key="score.color">
           <p
@@ -13,7 +13,7 @@
             :class="`player_bg_color_${score.color}`"
             v-text="playerSymbol(score.color)"
             data-test="player-score"
-          />
+          ></p>
           <p
             :class="getClass(score)"
             data-test="player-score"
@@ -37,6 +37,12 @@ import {getMilestone} from '@/client/MilestoneAwardManifest';
 import {playerSymbol} from '@/client/utils/playerSymbol';
 import {Color} from '@/common/Color';
 import {MARSBOT_MILESTONE_DESCRIPTIONS} from '@/common/automa/MarsBotMADescriptions';
+import {fitTextWhenReady} from '@/client/utils/textFit';
+import {getPreferences} from '@/client/utils/PreferencesManager';
+
+type Refs = {
+  name: HTMLElement | undefined;
+};
 
 export default defineComponent({
   name: 'Milestone',
@@ -57,7 +63,24 @@ export default defineComponent({
       default: false,
     },
   },
+  mounted() {
+    this.fitName();
+  },
+  watch: {
+    name() {
+      this.fitName();
+    },
+  },
   methods: {
+    // Size the name to fit its medal box by measuring the rendered text rather
+    // than guessing from its length. Only when the experimental UI is on;
+    // otherwise the language_hacks ma-name overrides handle sizing.
+    fitName(): void {
+      if (!getPreferences().experimental_ui) {
+        return;
+      }
+      fitTextWhenReady(this.typedRefs.name, 'milestone-name');
+    },
     playerSymbol(color: Color): string {
       return playerSymbol(color);
     },
@@ -73,6 +96,9 @@ export default defineComponent({
     },
   },
   computed: {
+    typedRefs(): Refs {
+      return this.$refs as unknown as Refs;
+    },
     name(): string {
       return this.milestone.name.replace(/[0-9]+$/, '');
     },
