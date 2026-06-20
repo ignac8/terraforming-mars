@@ -229,9 +229,9 @@ describe('MarsBot Deep Rules Tests', () => {
       const bonusDeck = MarsBotBonusDeck.createBase(new SeededRandom(99));
       const bonusResolver = new MarsBotBonusResolver(game, marsBot.player, human, marsBot.turnResolver, bonusDeck, tilePlacer);
 
-      bonusResolver.resolve(b06);
+      const destroyed = bonusResolver.resolve(b06);
       expect(game.getTemperature()).to.eq(8); // Raised 2 steps (4°C)
-      expect(b06.destroyed).to.be.true;
+      expect(destroyed).to.be.true;
     });
 
     it('option (d): advance furthest parameter — oxygen > ocean > temp priority', () => {
@@ -247,11 +247,11 @@ describe('MarsBot Deep Rules Tests', () => {
       const bonusResolver = new MarsBotBonusResolver(game, marsBot.player, human, marsBot.turnResolver, bonusDeck, tilePlacer);
 
       const oxyBefore = game.getOxygenLevel();
-      bonusResolver.resolve(b06);
+      const destroyed = bonusResolver.resolve(b06);
       // With all at 0, none of a/b/c apply, so option d fires
       // Priority: oxygen first
       expect(game.getOxygenLevel()).to.eq(oxyBefore + 1);
-      expect(b06.destroyed).to.be.false; // Option d does NOT destroy
+      expect(destroyed).to.be.false; // Option d does NOT destroy
     });
   });
 
@@ -350,20 +350,16 @@ describe('MarsBot Deep Rules Tests', () => {
   // ---- Page 6: Destroyed bonus cards never return ----
 
   describe('Destroyed bonus cards (page 6)', () => {
-    it('destroyed card does not appear in reshuffled deck', () => {
+    it('a card that is never discarded does not return after reshuffle', () => {
       const {marsBot} = createAutomaGame();
-      // Draw and destroy the first card
-      const card = marsBot.bonusDeck.draw()!;
-      marsBot.bonusDeck.destroy(card);
-      const destroyedId = card.id;
+      // A destroyed card is simply never discarded (the resolver skips the discard),
+      // so it can never be reshuffled back into the deck.
+      const removedId = marsBot.bonusDeck.draw()!.id;
 
-      // Draw and discard all remaining
+      // Draw and discard everything else, then reshuffle by draining the deck again.
       while (marsBot.bonusDeck.drawPile.length > 0) {
-        const c = marsBot.bonusDeck.draw()!;
-        marsBot.bonusDeck.discard(c);
+        marsBot.bonusDeck.discard(marsBot.bonusDeck.draw()!);
       }
-
-      // Reshuffle by drawing
       const reshuffled: string[] = [];
       for (let i = 0; i < 10; i++) {
         const c = marsBot.bonusDeck.draw();
@@ -374,7 +370,7 @@ describe('MarsBot Deep Rules Tests', () => {
         marsBot.bonusDeck.discard(c);
       }
 
-      expect(reshuffled).to.not.include(destroyedId);
+      expect(reshuffled).to.not.include(removedId);
     });
   });
 

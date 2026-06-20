@@ -945,9 +945,9 @@ describe('MarsBotVenusNext', () => {
     (game as any).oxygenLevel = 14;
     const {bonusCard: bonusCardFn} = require('../../src/server/automa/MarsBotBonusCard');
     const card = bonusCardFn(BonusCardId.B15_LOBBYISTS_VENUS, 'Lobbyists (Venus)');
-    (marsBot as any).bonusResolver.resolve(card);
+    const destroyed = (marsBot as any).bonusResolver.resolve(card);
     expect(game.getVenusScaleLevel()).to.eq(30);
-    expect(card.destroyed).to.be.false;
+    expect(destroyed).to.be.false;
   });
 
   it('B15 temp branch destroys card', () => {
@@ -956,9 +956,9 @@ describe('MarsBotVenusNext', () => {
     (game as any).temperature = -26;
     const {bonusCard: bonusCardFn} = require('../../src/server/automa/MarsBotBonusCard');
     const card = bonusCardFn(BonusCardId.B15_LOBBYISTS_VENUS, 'Lobbyists (Venus)');
-    (marsBot as any).bonusResolver.resolve(card);
+    const destroyed = (marsBot as any).bonusResolver.resolve(card);
     expect(game.getTemperature()).to.eq(-22); // raised 2 steps
-    expect(card.destroyed).to.be.true;
+    expect(destroyed).to.be.true;
   });
 
   it('B16 even generation advances Martian parameter without TR', () => {

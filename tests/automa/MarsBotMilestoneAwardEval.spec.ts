@@ -27,7 +27,6 @@ function mockContext(overrides: Partial<MarsBotMAContext> = {}): MarsBotMAContex
     tilesOnEdge: 0,
     tilesNotAdjacentToOcean: 0,
     playedCards: {total: 0, green: 0, blue: 0, red: 0, greenOrBlue: 0, withoutTags: 0, costing20Plus: 0, costing10OrLess: 0, withNonNegativeVP: 0, withRequirements: 0},
-    destroyedBonusCards: 0,
     temperatureRaises: 0,
     highestTrackPos: Math.max(...positions),
     lowestTrackPos: Math.min(...positions),

@@ -88,7 +88,6 @@ export type SerializedAutomaState = {
     actionDeckCardNames: Array<string>;
     bonusDeckDrawPile: Array<string>;
     bonusDeckDiscardPile: Array<string>;
-    destroyedBonusCards: Array<string>;
     neuralInstanceSpaceId: string | undefined;
     playedProjectCardNames: Array<string>;
     marsBotPlayerId: string;

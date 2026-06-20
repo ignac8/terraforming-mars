@@ -245,10 +245,10 @@ describe('MarsBot Rules Compliance', () => {
       const resolver = new MarsBotTurnResolver(game, marsBot.player, human, marsBot.board, 'normal');
       const bonusResolver = new MarsBotBonusResolver(game, marsBot.player, human, resolver, bonusDeck, tilePlacer);
 
-      bonusResolver.resolve(b01);
+      const destroyed = bonusResolver.resolve(b01);
 
       expect(human.plants).to.eq(0); // Lost 2 plants
-      expect(b01.destroyed).to.be.false; // NOT destroyed (lost <3)
+      expect(destroyed).to.be.false; // NOT destroyed (lost <3)
     });
 
     it('card IS destroyed when human loses >=3 plants', () => {
@@ -262,10 +262,10 @@ describe('MarsBot Rules Compliance', () => {
       const resolver = new MarsBotTurnResolver(game, marsBot.player, human, marsBot.board, 'normal');
       const bonusResolver = new MarsBotBonusResolver(game, marsBot.player, human, resolver, bonusDeck, tilePlacer);
 
-      bonusResolver.resolve(b01);
+      const destroyed = bonusResolver.resolve(b01);
 
       expect(human.plants).to.eq(0); // Lost 5 plants
-      expect(b01.destroyed).to.be.true; // Destroyed
+      expect(destroyed).to.be.true; // Destroyed
     });
   });
 
@@ -283,11 +283,11 @@ describe('MarsBot Rules Compliance', () => {
       const bonusResolver = new MarsBotBonusResolver(game, marsBot.player, human, marsBot.turnResolver, bonusDeck, tilePlacer);
 
       const awardsBefore = game.fundedAwards.length;
-      bonusResolver.resolve(b04);
+      const destroyed = bonusResolver.resolve(b04);
 
       expect(game.fundedAwards.length).to.eq(awardsBefore); // No award funded
       expect(marsBot.turnResolver.mcSupply).to.eq(5); // Failed → 5 MC
-      expect(b04.destroyed).to.be.false; // Not destroyed
+      expect(destroyed).to.be.false; // Not destroyed
     });
   });
 

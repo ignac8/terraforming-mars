@@ -1,14 +1,12 @@
 import {BonusCardId} from '../../common/automa/AutomaTypes';
 
-export interface MarsBotBonusCard {
+export type MarsBotBonusCard = {
   readonly id: BonusCardId;
   readonly name: string;
-  /** If true, this card has been destroyed and cannot re-enter the game. */
-  destroyed: boolean;
-}
+};
 
 export function bonusCard(id: BonusCardId, name: string): MarsBotBonusCard {
-  return {id, name, destroyed: false};
+  return {id, name};
 }
 
 /** Create the base set of bonus cards (B01–B08). */
