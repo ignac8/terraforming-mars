@@ -17,15 +17,26 @@ gates Phase 2.
 
 | PR | Branch | Contents | Divergence from automa branch |
 |----|--------|----------|-------------------------------|
-| [#8203](https://github.com/terraforming-mars/terraforming-mars/pull/8203) | `marsbot-bonus-cards` | `MarsBotBonusCard.ts` + new spec | Trimmed to base set B01-B08: `createCorpBonusCard` + `CORP_BONUS_CARD_NAMES` deferred to corps PRs. `interface` -> `type` |
+| [#8203](https://github.com/terraforming-mars/terraforming-mars/pull/8203) | `marsbot-bonus-cards` | `MarsBotBonusCard.ts` (no spec) | **kberg review addressed (2026-06-20):** card type is just `{id, name}` — `destroyed` field removed entirely, test file deleted. Base set only (corp names deferred). `type` not `interface` |
 | [#8204](https://github.com/terraforming-mars/terraforming-mars/pull/8204) | `marsbot-tags` | `MarsBotTags.ts` + new spec | Spec rewritten standalone (builds `MarsBotTags` directly with a `testGame` player + `MarsBotBoard`; automa-branch spec goes through `game.marsBot`) |
 | [#8205](https://github.com/terraforming-mars/terraforming-mars/pull/8205) | `marsbot-venus-track` | `VenusMarsBot.ts`, `AutomaTypes` floater/floater2 + `tag_${string}` actions, `canAdvance` uses layout length, Venus tests in board spec | `regress()` boolean return and `getLeastAdvancedTrackIndex(excludeVenus)` deferred until their consumers land |
-| [#8206](https://github.com/terraforming-mars/terraforming-mars/pull/8206) | `marsbot-bonus-deck` (stacked on `marsbot-bonus-cards`) | `MarsBotBonusDeck.ts` + spec | Trimmed to base game: `createWithVenus`, `createWithColonies`, `createWithVenusAndColonies`, `findAndRemove`, `removeById` deferred. Spec: unused import dropped. **Rebase after #8203 merges** |
+| [#8206](https://github.com/terraforming-mars/terraforming-mars/pull/8206) | `marsbot-bonus-deck` (stacked on `marsbot-bonus-cards`) | `MarsBotBonusDeck.ts` + spec | **Flag-free (2026-06-20):** deck has NO `destroy()` — destruction = the resolver not discarding the card; just createBase/draw/discard/reshuffle. Expansion deck variants deferred. **Rebase after #8203 merges** |
 | [#8207](https://github.com/terraforming-mars/terraforming-mars/pull/8207) | `marsbot-corp-types` | `MarsBotCorpTypes.ts` + `CubeType` in `AutomaTypes` | 3 interfaces -> `type`, C-xx comments labeled as Colonies rule numbers. No spec (types only). Body invites early design feedback |
 | [#8208](https://github.com/terraforming-mars/terraforming-mars/pull/8208) | `marsbot-tile-placer` | `MarsBotTilePlacer.ts` + spec | Spec setup: `testGame(2)` instead of `TestPlayer.RED.newPlayer` + `as any` cast |
 | [#8209](https://github.com/terraforming-mars/terraforming-mars/pull/8209) | `marsbot-draft-resolver` (stacked on `marsbot-corp-types`) | `MarsBotDraftResolver.ts` + spec | None. **Rebase after #8207 merges** |
 | [#8210](https://github.com/terraforming-mars/terraforming-mars/pull/8210) | `marsbot-ma-eval` | `MarsBotMilestoneAwardEval.ts` + spec | `@/` imports -> relative. 2 integration tests dropped (Terraformer29 filtering, Briber MC deduction) - re-add with game integration PRs |
 | [#8211](https://github.com/terraforming-mars/terraforming-mars/pull/8211) | `marsbot-turmoil-helper` | `MarsBotTurmoilHelper.ts` + new spec | Spec is a 10-test extraction from `MarsBotTurmoil.spec.ts` (T-7 selection, party leader, totalDelegates); 2-player Turmoil game stands in for the bot |
+
+## Design note: bonus card destruction (resolved 2026-06-20)
+
+A bonus card is destroyed *during its own resolution*, when it sits in MarsBot's
+action deck rather than any bonus-deck pile. So destruction only needs to mean
+"do not file the card to discard" — then it is unreferenced and can never reshuffle.
+No flag on the card, no destroyed-list on the deck. On the automa branch,
+`MarsBotBonusResolver.resolve()` returns whether the card was destroyed and skips
+the discard accordingly. The old `destroyedBonusCards` serialize/restore/milestone
+plumbing was dead code (it scanned piles a destroyed card can never be in) and was
+removed.
 
 ## Blocked (everything else)
 
