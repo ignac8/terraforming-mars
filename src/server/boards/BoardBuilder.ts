@@ -84,7 +84,7 @@ export class BoardBuilder {
   }
 
 
-  build(tilesPerRow: ReadonlyArray<number> = [5, 6, 7, 8, 9, 8, 7, 6, 5]): Array<Space> {
+  build(tilesPerRow: ReadonlyArray<number> = [5, 6, 7, 8, 9, 8, 7, 6, 5], idPrefix: string = ''): Array<Space> {
     if (this.gameOptions.shuffleMapOption) {
       this.shuffle(this.rng);
     }
@@ -103,7 +103,7 @@ export class BoardBuilder {
         const spaceId = idx + idOffset;
         const xCoordinate = xOffset + i;
         const space: Space = {
-          id: BoardBuilder.spaceId(spaceId),
+          id: BoardBuilder.spaceId(spaceId, idPrefix),
           spaceType: this.spaceTypes[idx],
           x: xCoordinate,
           y: row,
@@ -160,12 +160,12 @@ export class BoardBuilder {
     return;
   }
 
-  private static spaceId(id: number): SpaceId {
+  private static spaceId(id: number, idPrefix: string = ''): SpaceId {
     let strId = id.toString();
     if (id < 10) {
       strId = '0'+strId;
     }
-    return safeCast(strId, isSpaceId);
+    return safeCast(idPrefix + strId, isSpaceId);
   }
 }
 

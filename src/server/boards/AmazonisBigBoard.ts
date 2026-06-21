@@ -44,11 +44,11 @@ export class AmazonisBigBoard extends MarsBoard {
     // y=10 (6)
     builder.land().land().ocean().land().land().land();
 
-    if (gameOptions.shuffleMapOption) {
-      builder.shuffle(rng);
-    }
-
-    const spaces = builder.build([6, 7, 8, 9, 10, 11, 10, 9, 8, 7, 6]);
+    // The numbered mars spaces are prefixed with 'a' (e.g. 'a03'..'a93') so they do not collide
+    // with the fixed reserved ids the off-board expansion colonies use ('69'..'78'), which fall
+    // inside this big board's numeric range. (The Moon board prefixes its spaces 'm##' for the
+    // same reason.) build() handles shuffling internally when shuffleMapOption is set.
+    const spaces = builder.build([6, 7, 8, 9, 10, 11, 10, 9, 8, 7, 6], 'a');
     return new AmazonisBigBoard(spaces);
   }
 
