@@ -19,7 +19,8 @@ export class AmazonisBigBoard extends MarsBoard {
     const builder = new BoardBuilder(gameOptions, rng);
 
     // Placeholder layout: all spaces have empty bonuses; only the space type matters for now.
-    // 12 ocean spaces, one restricted near the center, two volcanic.
+    // 12 ocean spaces; two volcanic and the single restricted space are clustered together as a
+    // "caldera" zone (y=7) so the centre of the board stays open land rather than a blocked hex.
 
     // y=0 (6)
     builder.land().ocean().land().land().land().land();
@@ -31,12 +32,12 @@ export class AmazonisBigBoard extends MarsBoard {
     builder.land().land().land().ocean().land().land().land().land().land();
     // y=4 (10)
     builder.land().land().land().land().ocean().land().land().land().land().land();
-    // y=5 (11, widest row)
-    builder.ocean().land().land().land().land().restricted().land().land().land().land().ocean();
+    // y=5 (11, widest row) — centre space (x=5) is open land
+    builder.ocean().land().land().land().land().land().land().land().land().land().ocean();
     // y=6 (10)
     builder.land().land().land().land().land().ocean().land().land().land().land();
-    // y=7 (9)
-    builder.land().land().ocean().land().land().volcanic().land().land().land();
+    // y=7 (9) — caldera zone: volcanic + restricted adjacent
+    builder.land().land().ocean().land().land().volcanic().restricted().land().land();
     // y=8 (8)
     builder.land().land().land().land().ocean().land().land().land();
     // y=9 (7)

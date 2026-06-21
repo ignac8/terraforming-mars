@@ -20,6 +20,12 @@
           <BoardSpace v-if="hasSpace(SpaceName.VENERA_BASE)" :space="getSpace(SpaceName.VENERA_BASE)" text="Venera Base" :tileView="tileView"/>
         </div>
 
+        <svg v-if="isBigBoard" class="big-track-overlay" viewBox="0 0 910 920" width="910" height="920" xmlns="http://www.w3.org/2000/svg">
+          <path v-for="(b, i) in bigTrackBands" :key="'bt-band-'+i" :d="b.d" :fill="b.color" opacity="0.82"/>
+          <line v-for="(t, i) in bigTrackTicks" :key="'bt-tick-'+i" :x1="t.x1" :y1="t.y1" :x2="t.x2" :y2="t.y2" stroke="#ffffff" stroke-opacity="0.5" stroke-width="1.5"/>
+          <image v-for="(ic, i) in bigTrackIcons" :key="'bt-ic-'+i" :href="ic.href" :x="ic.x - 9" :y="ic.y - 9" width="18" height="18"/>
+        </svg>
+
         <div class="global-numbers">
             <div class="global-numbers-temperature">
                 <div :class="getScaleCSS(lvl)" v-for="(lvl, idx) in getValuesForParameter('temperature')" :key="idx">{{ lvl.strValue }}</div>
@@ -370,6 +376,48 @@ class GlobalParamLevel {
   }
 }
 
+// Big-board (Amazonis Planitia big board) parameter-track geometry, in .board-cont px.
+// The SVG overlay below and the .board-size-big number-position CSS in globs.less are both
+// generated from these constants so bands, ticks, numbers and bonus icons stay aligned by
+// construction. C is the hex-field centre; numbers sit at R=315, the band rings 288..332
+// (outside the planet disc, R_PLANET=274), bonus/label icons at R=300.
+const BT_C = {x: 445, y: 455};
+const BT_DEG = Math.PI / 180;
+const BT_BAND_IN = 284;
+const BT_BAND_OUT = 374;
+const BT_BONUS_R = 388;
+type BigTrack = {name: string, color: string, start: number, end: number, vals: Array<number>};
+const BT_TRACKS: Array<BigTrack> = [
+  {name: 'venus', color: '#c8895a', start: 229.5, end: 310.5,
+    vals: [0, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24, 26, 28, 30, 31, 32, 33]},
+  {name: 'oxygen', color: '#185163', start: 136.5, end: 217.5,
+    vals: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18]},
+  {name: 'temperature', color: '#6e4b80', start: 322.5, end: 421.5,
+    vals: [-30, -28, -26, -24, -22, -20, -18, -16, -14, -12, -10, -8, -6, -4, -2, 0, 2, 4, 6, 8, 10, 12, 14]},
+];
+// Parameter bonuses painted on the bands (standard TM thresholds): {track index, value, icon}.
+const BT_BONUSES: Array<{t: number, v: number, href: string}> = [
+  {t: 2, v: -24, href: 'assets/resources/heat.png'},
+  {t: 2, v: -20, href: 'assets/resources/heat.png'},
+  {t: 2, v: 0, href: 'assets/tiles/ocean.png'},
+  {t: 1, v: 8, href: 'assets/global-parameters/temperature.png'},
+  {t: 0, v: 8, href: 'assets/resources/card.png'},
+  {t: 0, v: 16, href: 'assets/resources/tr.png'},
+];
+// Track-label icon at each arc's high-value end: {track index, icon}.
+const BT_LABELS: Array<{t: number, href: string}> = [
+  {t: 0, href: 'assets/global-parameters/venus.png'},
+  {t: 1, href: 'assets/global-parameters/oxygen.png'},
+  {t: 2, href: 'assets/global-parameters/temperature.png'},
+];
+function btPoint(r: number, deg: number): {x: number, y: number} {
+  return {x: BT_C.x + r * Math.cos(deg * BT_DEG), y: BT_C.y + r * Math.sin(deg * BT_DEG)};
+}
+function btAngle(track: BigTrack, value: number): number {
+  const i = track.vals.indexOf(value);
+  return track.start + (track.end - track.start) * i / (track.vals.length - 1);
+}
+
 export default defineComponent({
   name: 'Board',
   props: {
@@ -543,6 +591,53 @@ export default defineComponent({
     },
     SpaceName(): typeof SpaceName {
       return SpaceName;
+    },
+    isBigBoard(): boolean {
+      return this.boardName === BoardName.AMAZONIS_BIG;
+    },
+    // One filled annulus-sector path per track, each ending half a cell beyond its end values.
+    bigTrackBands(): Array<{d: string, color: string}> {
+      return BT_TRACKS.map((t) => {
+        const step = (t.end - t.start) / (t.vals.length - 1);
+        const a0 = t.start - step / 2;
+        const a1 = t.end + step / 2;
+        const oi = btPoint(BT_BAND_OUT, a0);
+        const oo = btPoint(BT_BAND_OUT, a1);
+        const ii = btPoint(BT_BAND_IN, a1);
+        const io = btPoint(BT_BAND_IN, a0);
+        const d = `M ${oi.x} ${oi.y} A ${BT_BAND_OUT} ${BT_BAND_OUT} 0 0 1 ${oo.x} ${oo.y} ` +
+          `L ${ii.x} ${ii.y} A ${BT_BAND_IN} ${BT_BAND_IN} 0 0 0 ${io.x} ${io.y} Z`;
+        return {d, color: t.color};
+      });
+    },
+    // Radial divider between every cell (and a cap at each end): N+1 ticks per track.
+    bigTrackTicks(): Array<{x1: number, y1: number, x2: number, y2: number}> {
+      const out: Array<{x1: number, y1: number, x2: number, y2: number}> = [];
+      for (const t of BT_TRACKS) {
+        const step = (t.end - t.start) / (t.vals.length - 1);
+        for (let k = 0; k <= t.vals.length; k++) {
+          const deg = t.start - step / 2 + step * k;
+          const a = btPoint(BT_BAND_IN, deg);
+          const b = btPoint(BT_BAND_OUT, deg);
+          out.push({x1: a.x, y1: a.y, x2: b.x, y2: b.y});
+        }
+      }
+      return out;
+    },
+    // Bonus icons at their parameter thresholds plus one label icon per track end.
+    bigTrackIcons(): Array<{href: string, x: number, y: number}> {
+      const out: Array<{href: string, x: number, y: number}> = [];
+      for (const b of BT_BONUSES) {
+        const t = BT_TRACKS[b.t];
+        const p = btPoint(BT_BONUS_R, btAngle(t, b.v));
+        out.push({href: b.href, x: p.x, y: p.y});
+      }
+      for (const l of BT_LABELS) {
+        const t = BT_TRACKS[l.t];
+        const p = btPoint(BT_BONUS_R, btAngle(t, t.vals[t.vals.length - 1]));
+        out.push({href: l.href, x: p.x, y: p.y});
+      }
+      return out;
     },
   },
 });

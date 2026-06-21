@@ -81,6 +81,14 @@
           :expansions="game.gameOptions.expansions"
           :venusScaleLevel="game.venusScaleLevel"
           :boardName ="game.gameOptions.boardName"
+          :oceans_count="game.oceans"
+          :oxygen_level="game.oxygenLevel"
+          :temperature="game.temperature"
+          :maxOceans="game.maxOceans"
+          :maxTemperature="game.maxTemperature"
+          :maxOxygenLevel="game.maxOxygenLevel"
+          :maxVenusScale="game.maxVenusScale"
+          :venusFieldValues="game.venusFieldValues"
           :aresData="game.aresData"
           :altVenusBoard="game.gameOptions.altVenusBoard"/>
 

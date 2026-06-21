@@ -8,13 +8,13 @@
   }
 }
 
-// The big Amazonis board has 91 hexes (vs 61), so give the hex field more room.
-// Cosmetic: the generic mars.png background won't align perfectly under the
-// larger grid, which is acceptable for now.
+// The big Amazonis board has 91 hexes (vs 61), so give the hex field more room. The margin
+// places the hex-field centroid at board-cont (445, 454.5) = the shared centre C used by the
+// planet disc, the SVG track overlay and the number ring (so the whole thing is concentric).
 .board-size-big .board {
   width: 560px;
   height: 510px;
-  margin: 60px 0 0 60px;
+  margin: 170px 0 0 171px;
 }
 
 .board-cont {
@@ -31,6 +31,52 @@
 
 .board-without-venus{
   background: url(./assets/board/mars-without-venus.png) no-repeat;
+}
+
+// Big board: a clean photographic Mars disc (mars-big.png, cropped free of the painted
+// tracks). The colored parameter-track bands, cell-division ticks and bonus/label icons are
+// drawn by the SVG overlay in Board.vue (.big-track-overlay), concentric with the hex field at
+// C=(445,455). The disc/bands/numbers/bonuses/colonies form disjoint radial shells:
+// planet 0-274 | band 284-374 | numbers ~R362 | bonuses ~R388 | colonies ~R432. The container
+// is grown to 910x920 so the colony ring fits AROUND the track ring with clear margin.
+.board-size-big.board-cont {
+  position: relative;   // anchor the SVG overlay + absolute number divs to board-cont
+  width: 910px;         // overrides the 670px .board-cont base width
+  min-height: 920px;    // holds the colony ring (bbox y up to ~907) below/around the tracks
+  overflow: visible;
+}
+
+// Big board: the off-board colony tiles normally ring an arc fitted to the smaller standard
+// planet, which collides with the expanded track ring. Pin each colony (by its space-id class)
+// onto an OUTER ring at R=432 about C=(445,455), in the clear margin beyond the bonus lane.
+// Positions are id-based, so colonies absent from a game simply leave their slot empty.
+.board-size-big #colony_spaces { position: absolute; top: 0; left: 0; }
+.board-size-big #colony_spaces .board-space-text { font-size: 10px; white-space: nowrap; }
+.board-size-big #colony_spaces > .board-space-01 { margin: 63px  0 0 193px; transform: none; } // Ganymede
+.board-size-big #colony_spaces > .board-space-02 { margin: 10px  0 0 317px; transform: none; } // Phobos
+.board-size-big #colony_spaces > .board-space-69 { margin: 24px  0 0 570px; transform: none; } // Stanford Torus
+.board-size-big #colony_spaces > .board-space-70 { margin: 89px  0 0 688px; transform: none; } // Luna Metropolis
+.board-size-big #colony_spaces > .board-space-71 { margin: 213px 0 0 796px; transform: none; } // Dawn City
+.board-size-big #colony_spaces > .board-space-72 { margin: 377px 0 0 851px; transform: none; } // Stratopolis
+.board-size-big #colony_spaces > .board-space-73 { margin: 541px 0 0 839px; transform: none; } // Maxwell Base
+.board-size-big #colony_spaces > .board-space-75 { margin: 707px 0 0 753px; transform: none; } // Ceres
+.board-size-big #colony_spaces > .board-space-76 { margin: 856px 0 0 354px; transform: none; } // Dyson
+.board-size-big #colony_spaces > .board-space-77 { margin: 770px 0 0 156px; transform: none; } // Lunar Embassy
+.board-size-big #colony_spaces > .board-space-78 { margin: 591px 0 0 21px;  transform: none; } // Venera
+
+// SHOW TILES button: relocate to the clear top-left corner (outside the track ring).
+.board-size-big .hide-tile-button-container .hide-tile-button {
+  top: 8px;
+  left: 8px;
+  bottom: auto;
+}
+
+.board-size-big.board-with-venus,
+.board-size-big.board-without-venus {
+  background-image: url(./assets/board/mars-big.png);
+  background-size: 548px 548px;      // 2 * R_PLANET(274), concentric with the hex field
+  background-position: 171px 181px;  // C - R_PLANET = (445-274, 455-274)
+  background-repeat: no-repeat;
 }
 
 .board-legend {
