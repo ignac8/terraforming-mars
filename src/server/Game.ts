@@ -1253,7 +1253,18 @@ export class Game implements IGame, Logger {
     // big board appends 31, 32, 33 which are each 1% apart. We advance by field index, not by *2,
     // so a step at the extended top moves 1% while the rest of the track still moves 2%.
     const fields = this.board.venusFieldValues;
-    const currentIndex = fields.indexOf(this.venusScaleLevel);
+    // indexOf returns -1 if the stored level is not an exact field value (shouldn't happen, but
+    // defends loaded games). Fall back to the highest field index whose value is <= the current
+    // level, clamped to 0.
+    let currentIndex = fields.indexOf(this.venusScaleLevel);
+    if (currentIndex === -1) {
+      currentIndex = 0;
+      for (let i = 0; i < fields.length; i++) {
+        if (fields[i] <= this.venusScaleLevel) {
+          currentIndex = i;
+        }
+      }
+    }
     const oldLevel = this.venusScaleLevel;
 
     // PoliticalAgendas Reds P3 hook: decrement by one field (-1 at the extended top, -2 below 30).

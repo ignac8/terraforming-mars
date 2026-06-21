@@ -11,11 +11,11 @@ describe('AmazonisBigBoard', () => {
     expect(board.spaces).has.length(93);
   });
 
-  it('mars space ids run 03..93', () => {
+  it('mars space ids run a03..a93', () => {
     const marsSpaces = board.spaces.filter((s) => s.spaceType !== SpaceType.COLONY);
     expect(marsSpaces).has.length(91);
-    expect(marsSpaces[0].id).eq('03');
-    expect(marsSpaces[marsSpaces.length - 1].id).eq('93');
+    expect(marsSpaces[0].id).eq('a03');
+    expect(marsSpaces[marsSpaces.length - 1].id).eq('a93');
   });
 
   it('colony spaces have ids 01 and 02', () => {
@@ -23,8 +23,8 @@ describe('AmazonisBigBoard', () => {
     expect(colonies.map((s) => s.id)).deep.eq(['01', '02']);
   });
 
-  it('first mars space 03 is at {x:5, y:0}', () => {
-    const space = board.getSpaceOrThrow('03');
+  it('first mars space a03 is at {x:5, y:0}', () => {
+    const space = board.getSpaceOrThrow('a03');
     expect(space.x).eq(5);
     expect(space.y).eq(0);
   });
@@ -35,8 +35,8 @@ describe('AmazonisBigBoard', () => {
     expect(space).is.not.undefined;
   });
 
-  it('last mars space 93 is at {x:10, y:10}', () => {
-    const space = board.getSpaceOrThrow('93');
+  it('last mars space a93 is at {x:10, y:10}', () => {
+    const space = board.getSpaceOrThrow('a93');
     expect(space.x).eq(10);
     expect(space.y).eq(10);
   });
@@ -95,7 +95,7 @@ describe('AmazonisBigBoard', () => {
     }
 
     // The top-left corner of the hexagon.
-    const corner = board.getSpaceOrThrow('03');
+    const corner = board.getSpaceOrThrow('a03');
     expect(board.getAdjacentSpaces(corner).length).is.lessThan(6);
   });
 });
