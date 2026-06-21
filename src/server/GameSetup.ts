@@ -15,6 +15,7 @@ import {VastitasBorealisBoard} from './boards/VastitasBorealisBoard';
 import {SerializedGame} from './SerializedGame';
 import {TerraCimmeriaBoard} from './boards/TerraCimmeriaBoard';
 import {AmazonisBoard} from './boards/AmazonisBoard';
+import {AmazonisBigBoard} from './boards/AmazonisBigBoard';
 import {UtopiaPlanitiaBoard} from './boards/UtopiaPlanitiaBoard';
 import {VastitasBorealisNovaBoard} from './boards/VastitasBorealisNovaBoard';
 import {TerraCimmeriaNovaBoard} from './boards/TerraCimmeriaNovaBoard';
@@ -42,6 +43,7 @@ const boards: Record<BoardName, BoardFactory> = {
   [BoardName.VASTITAS_BOREALIS_NOVA]: VastitasBorealisNovaBoard,
   [BoardName.TERRA_CIMMERIA_NOVA]: TerraCimmeriaNovaBoard,
   [BoardName.AMAZONIS]: AmazonisBoard,
+  [BoardName.AMAZONIS_BIG]: AmazonisBigBoard,
   [BoardName.ARABIA_TERRA]: ArabiaTerraBoard,
   [BoardName.TERRA_CIMMERIA]: TerraCimmeriaBoard,
   [BoardName.VASTITAS_BOREALIS]: VastitasBorealisBoard,

@@ -10,6 +10,7 @@ export enum BoardName {
   ARABIA_TERRA = 'arabia terra',
   VASTITAS_BOREALIS = 'vastitas borealis',
   AMAZONIS = 'amazonis p.',
+  AMAZONIS_BIG = 'amazonis p. (big)',
   TERRA_CIMMERIA = 't. cimmeria',
   HOLLANDIA = 'Hollandia',
 }
