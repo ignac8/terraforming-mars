@@ -25,6 +25,12 @@ type BaseGlobalParameter = Exclude<
   GlobalParameter.MOON_MINING_RATE |
   GlobalParameter.MOON_LOGISTIC_RATE>;
 
+// TODO: per-map max — the big Amazonis board raises these maxes (oceans 11, temp 14,
+// oxygen 18, venus 33). This component is rendered from the Sidebar, which receives
+// only the scalar parameter values and not the game model, so threading per-game maxes
+// here would mean plumbing four extra props through Sidebar from two call sites. The
+// primary track display (Board.vue) already uses the per-game maxes; the sidebar's
+// "maxed" checkmark stays on the constants until the maxes are available here.
 const attributes: Record<BaseGlobalParameter, {max: number, title: string, iconClass: string}> = {
   [GlobalParameter.TEMPERATURE]: {max: MAX_TEMPERATURE, title: 'Temperature', iconClass: 'temperature-tile'},
   [GlobalParameter.OXYGEN]: {max: MAX_OXYGEN_LEVEL, title: 'Oxygen Level', iconClass: 'oxygen-tile'},

@@ -707,6 +707,7 @@ export default defineComponent({
         BoardName.TERRA_CIMMERIA_NOVA,
         BoardName.ARABIA_TERRA,
         BoardName.AMAZONIS,
+        BoardName.AMAZONIS_BIG,
         BoardName.TERRA_CIMMERIA,
         BoardName.VASTITAS_BOREALIS,
         BoardName.HOLLANDIA,
@@ -875,6 +876,8 @@ export default defineComponent({
         return 'create-game-board-hexagon create-game-vastitas-borealis-nova';
       case BoardName.AMAZONIS:
         return 'create-game-board-hexagon create-game-amazonis';
+      case BoardName.AMAZONIS_BIG:
+        return 'create-game-board-hexagon create-game-amazonis';
       case BoardName.ARABIA_TERRA:
         return 'create-game-board-hexagon create-game-arabia-terra';
       case BoardName.TERRA_CIMMERIA:
@@ -903,6 +906,7 @@ export default defineComponent({
         [BoardName.VASTITAS_BOREALIS_NOVA]: 'vastitas-borealis-nova',
         [BoardName.VASTITAS_BOREALIS]: 'vastitas-borealis',
         [BoardName.AMAZONIS]: 'amazonis-planatia',
+        [BoardName.AMAZONIS_BIG]: 'amazonis-planitia',
         [BoardName.TERRA_CIMMERIA]: 'terra-cimmeria',
         [BoardName.TERRA_CIMMERIA_NOVA]: 'terra-cimmeria-nova',
         [BoardName.HOLLANDIA]: 'hollandia',

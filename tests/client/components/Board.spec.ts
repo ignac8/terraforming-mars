@@ -110,4 +110,46 @@ describe('Board', () => {
 
     expect(wrapper.find('[data-test=hide-tiles-button]').text()).to.be.eq('hide tiles');
   });
+
+  it('renders all 91 mars spaces and the big-board size class for AMAZONIS_BIG', () => {
+    const bigSpaces: SpaceModel[] = [];
+    for (let i = 0; i < 91; i++) {
+      bigSpaces.push({
+        id: `a${(i + 10).toString()}`,
+        x: i % 11,
+        y: Math.floor(i / 11),
+        bonus: [],
+        spaceType: SpaceType.LAND,
+        color: undefined,
+        highlight: undefined,
+        tileType: undefined,
+      });
+    }
+    const wrapper = shallowMount(Board, {
+      ...globalConfig,
+      props: {spaces: bigSpaces, expansions: DEFAULT_EXPANSIONS, tileView: 'show', venusScaleLevel: 0, boardName: BoardName.AMAZONIS_BIG},
+    });
+
+    const boardSpacesWrappers = wrapper.findAllComponents(BoardSpace).filter((w) => {
+      return w.attributes('data-test') === 'board-space';
+    });
+    expect(boardSpacesWrappers.length).to.eq(91);
+    expect(wrapper.classes()).to.include('board-size-big');
+  });
+
+  it('includes the big-board Venus values 31/32/33 in the venus ladder', () => {
+    const venusFieldValues = [0, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24, 26, 28, 30, 31, 32, 33];
+    const wrapper = shallowMount(Board, {
+      ...globalConfig,
+      props: {spaces, expansions: {...DEFAULT_EXPANSIONS, venus: true}, tileView: 'show', venusScaleLevel: 0, boardName: BoardName.AMAZONIS_BIG, venusFieldValues},
+    });
+
+    const ladder = (wrapper.vm as any).getValuesForParameter('venus').map((l: {value: number}) => l.value);
+    expect(ladder).to.include(31);
+    expect(ladder).to.include(32);
+    expect(ladder).to.include(33);
+    // highest to lowest
+    expect(ladder[0]).to.eq(33);
+    expect(ladder[ladder.length - 1]).to.eq(0);
+  });
 });

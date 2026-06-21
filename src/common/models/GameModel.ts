@@ -30,6 +30,10 @@ export type GameModel = {
   globalsPerGeneration: ReadonlyArray<Partial<Record<GlobalParameter, number>>>,
   isSoloModeWin: boolean;
   lastSoloGeneration: number,
+  maxOceans: number;
+  maxTemperature: number;
+  maxOxygenLevel: number;
+  maxVenusScale: number;
   milestones: ReadonlyArray<ClaimedMilestoneModel>;
   moon: MoonModel | undefined;
   name: string;
@@ -47,4 +51,5 @@ export type GameModel = {
   turmoil: TurmoilModel | undefined;
   undoCount: number;
   venusScaleLevel: number;
+  venusFieldValues: ReadonlyArray<number>;
 }

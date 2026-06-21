@@ -1,5 +1,5 @@
 <template>
-  <div v-if="space !== undefined" :class="mainClass" :data_space_id="space.id">
+  <div v-if="space !== undefined" :class="mainClass" :data_space_id="space.id" :style="spaceStyle">
     <BoardSpaceTile
       :space="space"
       :aresExtension="aresExtension"
@@ -42,6 +42,7 @@ import {getPreferences} from '../utils/PreferencesManager';
 import {ClaimedToken} from '@/common/underworld/UnderworldPlayerData';
 import {getSpaceName} from '@/common/boards/spaces';
 import {SpaceType} from '@/common/boards/SpaceType';
+import {BoardName} from '@/common/boards/BoardName';
 export default defineComponent({
   name: 'BoardSpace',
   props: {
@@ -59,6 +60,10 @@ export default defineComponent({
     tileView: {
       type: String as () => TileView,
       required: true,
+    },
+    boardName: {
+      type: String as () => BoardName,
+      default: undefined,
     },
   },
   data() {
@@ -90,6 +95,18 @@ export default defineComponent({
         return undefined;
       }
       return {token: this.space.undergroundResource, shelter: false, active: false};
+    },
+    // For the big Amazonis board the 91 hexes are positioned absolutely from their
+    // x/y coordinates instead of hand-written .board-space-NN margin rules. Every
+    // other board (and off-board colony spaces, x<0) keeps its existing CSS margins.
+    spaceStyle(): Record<string, string> {
+      if (this.boardName !== BoardName.AMAZONIS_BIG || this.space.x < 0) {
+        return {};
+      }
+      const mid = 5;
+      const top = 34 + 41 * this.space.y;
+      const left = 6 + 49 * this.space.x - 24.5 * Math.abs(this.space.y - mid);
+      return {margin: `${top}px 0 0 ${left}px`};
     },
 
     getSpaceName(): typeof getSpaceName {

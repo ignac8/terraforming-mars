@@ -16,6 +16,7 @@ export const LEGENDS = {
   [BoardName.VASTITAS_BOREALIS_NOVA]: [],
   [BoardName.VASTITAS_BOREALIS]: [],
   [BoardName.AMAZONIS]: [],
+  [BoardName.AMAZONIS_BIG]: [],
   [BoardName.TERRA_CIMMERIA]: [],
   [BoardName.TERRA_CIMMERIA_NOVA]: [
     {text: ['Albor', 'Tholius'], position: [282, 83], line: {from: [28, 18], to: [42, 27]}},
