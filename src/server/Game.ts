@@ -127,6 +127,13 @@ export class Game implements IGame, Logger {
   private temperature: number = constants.MIN_TEMPERATURE;
   private venusScaleLevel: number = constants.MIN_VENUS_SCALE;
 
+  // Per-board maximum global parameter values, derived from the board. Not serialized: they
+  // re-derive from the rebuilt board on load.
+  public readonly maxOceanTiles: number;
+  public readonly maxTemperature: number;
+  public readonly maxOxygenLevel: number;
+  public readonly maxVenusScale: number;
+
   // Player data
   public activePlayer: IPlayer;
   /** Players that are done with the game after final greenery placement. */
@@ -234,6 +241,10 @@ export class Game implements IGame, Logger {
     this.preludeDeck = preludeDeck;
     this.ceoDeck = ceoDeck;
     this.board = board;
+    this.maxOceanTiles = board.maxOceanTiles;
+    this.maxTemperature = board.maxTemperature;
+    this.maxOxygenLevel = board.maxOxygenLevel;
+    this.maxVenusScale = board.maxVenusScale;
 
     this.players.forEach((player) => {
       player.setup(this);
@@ -561,11 +572,11 @@ export class Game implements IGame, Logger {
   }
 
   public marsIsTerraformed(): boolean {
-    const oxygenMaxed = this.oxygenLevel >= constants.MAX_OXYGEN_LEVEL;
-    const temperatureMaxed = this.temperature >= constants.MAX_TEMPERATURE;
+    const oxygenMaxed = this.oxygenLevel >= this.maxOxygenLevel;
+    const temperatureMaxed = this.temperature >= this.maxTemperature;
     const oceansMaxed = !this.canAddOcean();
     let globalParametersMaxed = oxygenMaxed && temperatureMaxed && oceansMaxed;
-    const venusMaxed = this.getVenusScaleLevel() === constants.MAX_VENUS_SCALE;
+    const venusMaxed = this.getVenusScaleLevel() === this.maxVenusScale;
 
     MoonExpansion.ifMoon(this, (moonData) => {
       if (this.gameOptions.requiresMoonTrackCompletion) {
@@ -929,7 +940,7 @@ export class Game implements IGame, Logger {
     const orOptions = new OrOptions()
       .setTitle('Select action for World Government Terraforming')
       .setButtonLabel('Confirm');
-    if (this.getTemperature() < constants.MAX_TEMPERATURE) {
+    if (this.getTemperature() < this.maxTemperature) {
       orOptions.options.push(
         new SelectOption('Increase temperature', 'Increase')
           .annotate(GlobalParameter.TEMPERATURE)
@@ -940,7 +951,7 @@ export class Game implements IGame, Logger {
           }),
       );
     }
-    if (this.getOxygenLevel() < constants.MAX_OXYGEN_LEVEL) {
+    if (this.getOxygenLevel() < this.maxOxygenLevel) {
       orOptions.options.push(
         new SelectOption('Increase oxygen', 'Increase')
           .annotate(GlobalParameter.OXYGEN)
@@ -962,7 +973,7 @@ export class Game implements IGame, Logger {
           }),
       );
     }
-    if (this.getVenusScaleLevel() < constants.MAX_VENUS_SCALE && this.gameOptions.venusNextExtension) {
+    if (this.getVenusScaleLevel() < this.maxVenusScale && this.gameOptions.venusNextExtension) {
       orOptions.options.push(
         new SelectOption('Increase Venus scale', 'Increase').andThen(() => {
           this.increaseVenusScaleLevel(player, 1);
@@ -1198,7 +1209,7 @@ export class Game implements IGame, Logger {
   }
 
   public increaseOxygenLevel(player: IPlayer, increments: -2 | -1 | 1 | 2): void {
-    if (this.oxygenLevel >= constants.MAX_OXYGEN_LEVEL) {
+    if (this.oxygenLevel >= this.maxOxygenLevel) {
       return undefined;
     }
 
@@ -1209,7 +1220,7 @@ export class Game implements IGame, Logger {
     }
 
     // Literal typing makes |increments| a const
-    const steps = Math.min(increments, constants.MAX_OXYGEN_LEVEL - this.oxygenLevel);
+    const steps = Math.min(increments, this.maxOxygenLevel - this.oxygenLevel);
 
     if (this.phase !== Phase.SOLAR) {
       TurmoilHandler.onGlobalParameterIncrease(player, GlobalParameter.OXYGEN, steps);
@@ -1234,35 +1245,47 @@ export class Game implements IGame, Logger {
   }
 
   public increaseVenusScaleLevel(player: IPlayer, increments: -1 | 1 | 2 | 3): number {
-    if (this.venusScaleLevel >= constants.MAX_VENUS_SCALE) {
+    if (this.venusScaleLevel >= this.maxVenusScale) {
       return 0;
     }
 
-    // PoliticalAgendas Reds P3 hook
+    // The reachable Venus % values, low to high. The base 0-30 track advances 2% per field; the
+    // big board appends 31, 32, 33 which are each 1% apart. We advance by field index, not by *2,
+    // so a step at the extended top moves 1% while the rest of the track still moves 2%.
+    const fields = this.board.venusFieldValues;
+    const currentIndex = fields.indexOf(this.venusScaleLevel);
+    const oldLevel = this.venusScaleLevel;
+
+    // PoliticalAgendas Reds P3 hook: decrement by one field (-1 at the extended top, -2 below 30).
     if (increments === -1) {
-      this.venusScaleLevel = Math.max(constants.MIN_VENUS_SCALE, this.venusScaleLevel + increments * 2);
+      const decrementedIndex = Math.max(0, currentIndex - 1);
+      this.venusScaleLevel = fields[decrementedIndex];
       return -1;
     }
 
-    // Literal typing makes |increments| a const
-    const steps = Math.min(increments, (constants.MAX_VENUS_SCALE - this.venusScaleLevel) / 2);
+    // Literal typing makes |increments| a const. |steps| counts fields, which is also the number
+    // of TR / global-parameter-increase events granted.
+    const steps = Math.min(increments, (fields.length - 1) - currentIndex);
+    const newLevel = fields[currentIndex + steps];
 
     if (this.phase !== Phase.SOLAR) {
-      if (this.venusScaleLevel < constants.VENUS_LEVEL_FOR_CARD_BONUS &&
-        this.venusScaleLevel + steps * 2 >= constants.VENUS_LEVEL_FOR_CARD_BONUS) {
+      if (oldLevel < constants.VENUS_LEVEL_FOR_CARD_BONUS &&
+        newLevel >= constants.VENUS_LEVEL_FOR_CARD_BONUS) {
         player.drawCard();
       }
-      if (this.venusScaleLevel < constants.VENUS_LEVEL_FOR_TR_BONUS &&
-        this.venusScaleLevel + steps * 2 >= constants.VENUS_LEVEL_FOR_TR_BONUS) {
+      if (oldLevel < constants.VENUS_LEVEL_FOR_TR_BONUS &&
+        newLevel >= constants.VENUS_LEVEL_FOR_TR_BONUS) {
         player.increaseTerraformRating();
       }
       if (this.gameOptions.altVenusBoard) {
-        const newValue = this.venusScaleLevel + steps * 2;
-        const minimalBaseline = Math.max(this.venusScaleLevel, constants.ALT_VENUS_MINIMUM_BONUS);
-        const maximumBaseline = Math.min(newValue, constants.MAX_VENUS_SCALE);
+        // altVenusBoard math lives entirely in the <=30 (2%-step) region; combining it with the
+        // extended top (31/32/33) is out of scope. newLevel - oldLevel matches the original
+        // `steps * 2` on every standard board.
+        const minimalBaseline = Math.max(oldLevel, constants.ALT_VENUS_MINIMUM_BONUS);
+        const maximumBaseline = Math.min(newLevel, constants.MAX_VENUS_SCALE);
         const standardResourcesGranted = Math.max((maximumBaseline - minimalBaseline) / 2, 0);
 
-        const grantWildResource = this.venusScaleLevel + (steps * 2) >= constants.MAX_VENUS_SCALE;
+        const grantWildResource = newLevel >= constants.MAX_VENUS_SCALE;
         // The second half of this expression removes any increases earler than 16-to-18.
         if (grantWildResource || standardResourcesGranted > 0) {
           this.defer(new GrantVenusAltTrackBonusDeferred(player, standardResourcesGranted, grantWildResource));
@@ -1285,7 +1308,7 @@ export class Game implements IGame, Logger {
       aphrodite.stock.add(Resource.MEGACREDITS, 2 * steps, {log: true, from: {card: CardName.APHRODITE}});
     }
 
-    this.venusScaleLevel += steps * 2;
+    this.venusScaleLevel = newLevel;
     this.maybeLogMarsIsTerraformed();
 
     return steps;
@@ -1296,7 +1319,7 @@ export class Game implements IGame, Logger {
   }
 
   public increaseTemperature(player: IPlayer, increments: -2 | -1 | 1 | 2 | 3): undefined {
-    if (this.temperature >= constants.MAX_TEMPERATURE) {
+    if (this.temperature >= this.maxTemperature) {
       return undefined;
     }
 
@@ -1306,7 +1329,7 @@ export class Game implements IGame, Logger {
     }
 
     // Literal typing makes |increments| a const
-    const steps = Math.min(increments, (constants.MAX_TEMPERATURE - this.temperature) / 2);
+    const steps = Math.min(increments, (this.maxTemperature - this.temperature) / 2);
 
     if (this.phase !== Phase.SOLAR) {
       // BONUS FOR HEAT PRODUCTION AT -20 and -24
@@ -1526,7 +1549,7 @@ export class Game implements IGame, Logger {
       break;
     case SpaceBonus.TEMPERATURE:
     case SpaceBonus.TEMPERATURE_4MC:
-      if (this.getTemperature() < constants.MAX_TEMPERATURE) {
+      if (this.getTemperature() < this.maxTemperature) {
         const cost = spaceBonus === SpaceBonus.TEMPERATURE ? constants.VASTITAS_BOREALIS_BONUS_TEMPERATURE_COST : constants.VASTITAS_BOREALIS_NOVA_BONUS_TEMPERATURE_COST;
         this.defer(new SelectPaymentDeferred(
           player,
@@ -1581,12 +1604,12 @@ export class Game implements IGame, Logger {
   }
 
   public canAddOcean(): boolean {
-    return this.board.getOceanSpaces().length < constants.MAX_OCEAN_TILES;
+    return this.board.getOceanSpaces().length < this.maxOceanTiles;
   }
 
   public canRemoveOcean(): boolean {
     const count = this.board.getOceanSpaces().length;
-    return count > 0 && count < constants.MAX_OCEAN_TILES;
+    return count > 0 && count < this.maxOceanTiles;
   }
 
   public addOcean(player: IPlayer, space: Space): void {

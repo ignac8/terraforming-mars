@@ -27,8 +27,8 @@ export type SpaceCosts = {
  * It also includes additional spaces, known as Colonies, that are not adjacent to other spaces.
  */
 export abstract class Board {
-  private maxX: number = 0;
-  private maxY: number = 0;
+  protected maxX: number = 0;
+  protected maxY: number = 0;
   private map: Map<SpaceId, Space> = new Map();
   public volcanicSpaceIds: ReadonlyArray<SpaceId>;
 

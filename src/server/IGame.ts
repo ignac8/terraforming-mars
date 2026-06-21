@@ -70,6 +70,11 @@ export interface IGame extends Logger {
   ceoDeck: CeoDeck;
   corporationDeck: CorporationDeck;
   board: MarsBoard;
+  // Per-board maximum global parameter values, derived from the board at construction.
+  readonly maxOceanTiles: number;
+  readonly maxTemperature: number;
+  readonly maxOxygenLevel: number;
+  readonly maxVenusScale: number;
   activePlayer: IPlayer;
   claimedMilestones: Array<ClaimedMilestone>;
   milestones: Array<IMilestone>;
