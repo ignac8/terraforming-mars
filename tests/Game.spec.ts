@@ -843,6 +843,11 @@ describe('Game', () => {
       'inDoubleDown',
       'inputsThisRound',
       'inTurmoil',
+      // Per-board maximum global parameters, derived from the board on construction.
+      'maxOceanTiles',
+      'maxOxygenLevel',
+      'maxTemperature',
+      'maxVenusScale',
       'playersInGenerationOrder',
       'marsIsTerraformedAnnounced',
       'monsInsuranceOwner',
