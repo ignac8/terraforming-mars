@@ -14,7 +14,9 @@ function colonySpace(id: SpaceId): Space {
 }
 
 export class BoardBuilder {
-  // This builder assumes the map has nine rows, of tile counts [5,6,7,8,9,8,7,6,5].
+  // By default this builder assumes the map has nine rows, of tile counts [5,6,7,8,9,8,7,6,5].
+  // `build()` accepts a different `tilesPerRow` to describe larger regular hexagons (e.g. the
+  // Amazonis Planitia big board, [6,7,8,9,10,11,10,9,8,7,6]).
   //
   // "Son I am able, " she said "though you scare me."
   // "Watch, " said I
@@ -82,7 +84,7 @@ export class BoardBuilder {
   }
 
 
-  build(): Array<Space> {
+  build(tilesPerRow: ReadonlyArray<number> = [5, 6, 7, 8, 9, 8, 7, 6, 5]): Array<Space> {
     if (this.gameOptions.shuffleMapOption) {
       this.shuffle(this.rng);
     }
@@ -90,13 +92,13 @@ export class BoardBuilder {
     this.spaces.push(colonySpace(SpaceName.GANYMEDE_COLONY));
     this.spaces.push(colonySpace(SpaceName.PHOBOS_SPACE_HAVEN));
 
-    const tilesPerRow = [5, 6, 7, 8, 9, 8, 7, 6, 5];
     const idOffset = this.spaces.length + 1;
+    const maxWidth = Math.max(...tilesPerRow);
     let idx = 0;
 
-    for (let row = 0; row < 9; row++) {
+    for (let row = 0; row < tilesPerRow.length; row++) {
       const tilesInThisRow = tilesPerRow[row];
-      const xOffset = 9 - tilesInThisRow;
+      const xOffset = maxWidth - tilesInThisRow;
       for (let i = 0; i < tilesInThisRow; i++) {
         const spaceId = idx + idOffset;
         const xCoordinate = xOffset + i;

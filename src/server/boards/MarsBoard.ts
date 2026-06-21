@@ -12,8 +12,40 @@ import {Tile} from '../Tile';
 import {SpaceBonus} from '../../common/boards/SpaceBonus';
 import * as constants from '../../common/constants';
 
+// The reachable Venus % values on a standard board, low to high: [0, 2, 4, ..., 30].
+const STANDARD_VENUS_FIELDS: ReadonlyArray<number> =
+  Array.from({length: constants.MAX_VENUS_SCALE / 2 + 1}, (_, i) => i * 2);
+
 export class MarsBoard extends Board {
   private readonly edges: ReadonlyArray<Space>;
+
+  /**
+   * The maximum value each global parameter can reach on this board. Standard boards default to the
+   * global constants; the Amazonis Planitia big board overrides them with its extended tracks.
+   */
+  public get maxOceanTiles(): number {
+    return constants.MAX_OCEAN_TILES;
+  }
+
+  public get maxTemperature(): number {
+    return constants.MAX_TEMPERATURE;
+  }
+
+  public get maxOxygenLevel(): number {
+    return constants.MAX_OXYGEN_LEVEL;
+  }
+
+  public get maxVenusScale(): number {
+    return constants.MAX_VENUS_SCALE;
+  }
+
+  /**
+   * The explicit list of reachable Venus % values, low to high. The base 0-30 track advances 2% per
+   * field; the big board appends 31, 32, 33 which are each 1% apart.
+   */
+  public get venusFieldValues(): ReadonlyArray<number> {
+    return STANDARD_VENUS_FIELDS;
+  }
 
   public constructor(
     spaces: ReadonlyArray<Space>,
@@ -203,12 +235,12 @@ export class MarsBoard extends Board {
         return false;
       }
     }
-    if (space.bonus.includes(SpaceBonus.TEMPERATURE) && game.getTemperature() < constants.MAX_TEMPERATURE) {
+    if (space.bonus.includes(SpaceBonus.TEMPERATURE) && game.getTemperature() < game.maxTemperature) {
       if (!player.canAfford({cost: constants.VASTITAS_BOREALIS_BONUS_TEMPERATURE_COST, tr: {temperature: 1}})) {
         return false;
       }
     }
-    if (space.bonus.includes(SpaceBonus.TEMPERATURE_4MC) && game.getTemperature() < constants.MAX_TEMPERATURE) {
+    if (space.bonus.includes(SpaceBonus.TEMPERATURE_4MC) && game.getTemperature() < game.maxTemperature) {
       if (!player.canAfford({cost: constants.VASTITAS_BOREALIS_NOVA_BONUS_TEMPERATURE_COST, tr: {temperature: 1}})) {
         return false;
       }
@@ -222,17 +254,20 @@ export class MarsBoard extends Board {
   }
 
   private computeEdges(): ReadonlyArray<Space> {
+    const maxX = this.maxX;
+    const maxY = this.maxY;
+    const half = maxY / 2;
     return this.spaces.filter((space) => {
-      if (space.y === 0 || space.y === 8 || space.x === 8) {
+      if (space.y === 0 || space.y === maxY || space.x === maxX) {
         return true;
       }
       // left side is tricky.
       // top-left is easy with math. Look at the map.
-      if (space.y + space.x === 4) {
+      if (space.y + space.x === maxX - half) {
         return true;
       }
       // bottom-left is also easy with math. Look at the map.
-      if (space.y - space.x === 4) {
+      if (space.y - space.x === half) {
         return true;
       }
       return false;
