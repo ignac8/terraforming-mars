@@ -67,6 +67,10 @@ export class Server {
       isSoloModeWin: game.isSoloModeWin(),
       isTerraformed: game.marsIsTerraformed(),
       lastSoloGeneration: game.lastSoloGeneration(),
+      maxOceans: game.maxOceanTiles,
+      maxTemperature: game.maxTemperature,
+      maxOxygenLevel: game.maxOxygenLevel,
+      maxVenusScale: game.maxVenusScale,
       milestones: this.getMilestones(game),
       moon: this.getMoonModel(game),
       name: game.name,
@@ -83,6 +87,7 @@ export class Server {
       turmoil: turmoil,
       undoCount: game.undoCount,
       venusScaleLevel: game.getVenusScaleLevel(),
+      venusFieldValues: game.board.venusFieldValues,
     };
   }
 

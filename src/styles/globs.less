@@ -220,7 +220,13 @@
     24 46px 401px 27deg,
     26 58px 425px 31deg,
     28 72px 446px 35deg,
-    30 88px 466px 42deg;
+    30 88px 466px 42deg,
+    // Big-board-only Venus values (31/32/33 are 1% apart). Positions are approximate
+    // — the big board's printed Venus track art is not present, so these extrapolate
+    // the existing curve at roughly half the per-field step.
+    31 96px 475px 45deg,
+    32 105px 483px 48deg,
+    33 114px 490px 51deg;
 
   .global-numbers-venus {
     position: absolute;
@@ -243,7 +249,14 @@
     11 207px 32px 19deg,
     12 179px 43px 25deg,
     13 153px 56px 31deg,
-    14 128px 72px 37deg;
+    14 128px 72px 37deg,
+    // Big-board-only oxygen values (15-18). Positions are approximate — the big
+    // board's printed oxygen track art is not present, so these extrapolate the
+    // existing curve continuing the 13->14 step.
+    15 105px 91px 43deg,
+    16 84px 113px 49deg,
+    17 66px 138px 55deg,
+    18 51px 165px 61deg;
 
   .global-numbers-oxygen {
     position: absolute;
@@ -271,7 +284,13 @@
     2 177px 531px -24deg,
     4 156px 521px -30deg,
     6 137px 509px -33deg,
-    8 117px 494px -40deg;
+    8 117px 494px -40deg,
+    // Big-board-only temperature values (+10/+12/+14). Positions are approximate —
+    // the big board's printed temperature track art is not present, so these
+    // extrapolate the existing curve continuing the +6->+8 step.
+    10 99px 477px -45deg,
+    12 83px 458px -50deg,
+    14 69px 437px -55deg;
 
   .global-numbers-temperature {
     each(@temperature-vals, .(@v) { .pin-and-rotate(@v); });

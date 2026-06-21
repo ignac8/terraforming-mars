@@ -34,11 +34,11 @@
             </div>
 
             <div class="global-numbers-oceans">
-              <span v-if="oceans_count === constants.MAX_OCEAN_TILES">
+              <span v-if="oceans_count === maxOceans">
                 <img width="26" src="assets/misc/circle-checkmark.png" class="board-ocean-checkmark" :alt="$t('Completed!')">
               </span>
               <span v-else>
-                {{oceans_count}}/{{constants.MAX_OCEAN_TILES}}
+                {{oceans_count}}/{{maxOceans}}
               </span>
             </div>
 
@@ -80,6 +80,7 @@
               :space="curSpace"
               :aresExtension="expansions.ares"
               :tileView="tileView"
+              :boardName="boardName"
               data-test="board-space"
             />
 
@@ -399,6 +400,26 @@ export default defineComponent({
       type: Number,
       default: constants.MIN_TEMPERATURE,
     },
+    maxOceans: {
+      type: Number,
+      default: constants.MAX_OCEAN_TILES,
+    },
+    maxTemperature: {
+      type: Number,
+      default: constants.MAX_TEMPERATURE,
+    },
+    maxOxygenLevel: {
+      type: Number,
+      default: constants.MAX_OXYGEN_LEVEL,
+    },
+    maxVenusScale: {
+      type: Number,
+      default: constants.MAX_VENUS_SCALE,
+    },
+    venusFieldValues: {
+      type: Array as () => ReadonlyArray<number>,
+      default: () => [0, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24, 26, 28, 30],
+    },
     expansions: {
       type: Object as () => Record<Expansion, boolean>,
       required: true,
@@ -457,22 +478,26 @@ export default defineComponent({
       switch (targetParameter) {
       case 'oxygen':
         startValue = constants.MIN_OXYGEN_LEVEL;
-        endValue = constants.MAX_OXYGEN_LEVEL;
+        endValue = this.maxOxygenLevel;
         step = 1;
         curValue = this.oxygen_level;
         break;
       case 'temperature':
         startValue = constants.MIN_TEMPERATURE;
-        endValue = constants.MAX_TEMPERATURE;
+        endValue = this.maxTemperature;
         step = 2;
         curValue = this.temperature;
         break;
-      case 'venus':
-        startValue = constants.MIN_VENUS_SCALE;
-        endValue = constants.MAX_VENUS_SCALE;
-        step = 2;
+      case 'venus': {
+        // The Venus ladder is not a fixed-step range: the big board appends 31/32/33
+        // which are 1% apart, so we iterate the explicit reachable values high to low.
         curValue = this.venusScaleLevel;
-        break;
+        const fields = [...this.venusFieldValues].sort((a, b) => b - a);
+        for (const value of fields) {
+          values.push(new GlobalParamLevel(value, value === curValue, value.toString()));
+        }
+        return values;
+      }
       default:
         throw new Error('Wrong parameter to get values from: ' + targetParameter);
       }
@@ -502,7 +527,11 @@ export default defineComponent({
       }
     },
     getGameBoardClassName(): string {
-      return this.expansions.venus ? 'board-cont board-with-venus' : 'board-cont board-without-venus';
+      let css = this.expansions.venus ? 'board-cont board-with-venus' : 'board-cont board-without-venus';
+      if (this.boardName === BoardName.AMAZONIS_BIG) {
+        css += ' board-size-big';
+      }
+      return css;
     },
   },
   computed: {
