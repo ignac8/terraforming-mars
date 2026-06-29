@@ -8,7 +8,7 @@
 
   "Anthozoa": "Anthozoen",
   "Action: Spend 1 plant to add an animal to this card.": "AKTION: Verbrauche 1 Pflanze, um dieser Karte 1 Tier hinzuzufügen.",
-  "Requires 3 oceans on Mars. 1 VP per 2 animals on this card.": "Benötigt 3 Ozeanplättchen. 1 SP je 2 Tiere auf dieser Karte.",
+  "Requires 3 oceans on Mars.": "Benötigt 3 Ozeanplättchen.",
 
   "Asteroid Resources": "Asteroiden-Ressorcen",
   "Spend 3 energy. Either increase your steel and titanium production one step, OR place an ocean, and gain 2 steel and one titanium.": "Verbrauche 3 Energie. Erhöhe deine Stahl- und Titan-Produktion um 1 ODER platziere ein Ozeanplättchen und erhalte 2 Stahl und 1 Titan.",
@@ -49,8 +49,7 @@
   "Add 1 data to any card. Add 1 resource to any card.)": "Füge 1 Datenressource einer beliebigen Karte hinzu. Füge 1 beliebige Ressource einer beliebigen Karte hinzu.",
 
   "Cryptocurrency": "Kryptowährung",
-  "Action: Spend 1 energy to add 1 data to this card.": "AKTION: Verbrauche 1 Energie, um dieser Karte 1 Datenressource hinzuzufügen.",
-  "Action: Remove all data from this card to gain 3M€ per data removed.": "AKTION: Entferne Daten von hier, um 3 M€ je entfernten Daten zu erhalten.",
+  "Action: Spend 1 energy to add 1 data to this card, or remove all data from this card to gain 3M€ per data removed.": "AKTION: Verbrauche 1 Energie, um dieser Karte 1 Datenressource hinzuzufügen, oder entferne Daten von hier, um 3 M€ je entfernten Daten zu erhalten.",
 
   "Cultivation of Venus": "Kultivierung der Venus",
   "Action: Spend 3 plants to raise Venus 1 step.": "AKTION: Verbrauche 3 Pflanzen, um Venus um 2% zu erhöhen.",

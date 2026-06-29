@@ -180,19 +180,6 @@ input[type="radio"]:checked+.filterDiv::after {
 }
 
 
-/*********** Title text sizing************/
-.title-small {
-  font-size: 15px !important;
-}
-
-.title-smaller {
-  font-size: 14px !important;
-}
-
-.title-smallest {
-  font-size: 13px !important;
-}
-
 /*********** Background colors************/
 
 .background-color-corporation {
@@ -395,14 +382,11 @@ input[type="radio"]:checked+.filterDiv::after {
 
 .starwars-icon:after {
   .expansion-icon-base();
-  border: 1px solid @grey_900;
-  color: #DDD;
-  background: #999;
-  font-family: Prototype, sans-serif;
-  font-weight: bold;
-  font-size: 14px;
-  line-height: 17px;
-  content: "W";
+  background-image: url(./assets/expansion_icons/expansion_icon_starwars.png);
+  background-size: 12px;
+  background-position: 2px 2px;
+  background-repeat: no-repeat;
+  content: "";
 }
 
 .underworld-icon:after {
@@ -679,11 +663,18 @@ input[type="radio"]:checked+.filterDiv::after {
   filter: brightness(0.8) drop-shadow(0px 1px 1px rgba(0, 0, 0, 0.5));
 }
 
-.empty-tile-small {
+.empty-tile--S {
   background-image: url(./assets/tiles/empty.png);
   width: 30px;
   height: 32px;
   background-size: 30px 32px;
+}
+
+.empty-tile--M {
+  background-image: url(./assets/tiles/empty.png);
+  width: 40px;
+  height: 47px;
+  background-size: 40px 47px;
 }
 
 .special-tile {
