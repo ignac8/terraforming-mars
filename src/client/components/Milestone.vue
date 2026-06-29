@@ -38,7 +38,6 @@ import {playerSymbol} from '@/client/utils/playerSymbol';
 import {Color} from '@/common/Color';
 import {MARSBOT_MILESTONE_DESCRIPTIONS} from '@/common/automa/MarsBotMADescriptions';
 import {fitTextWhenReady} from '@/client/utils/textFit';
-import {getPreferences} from '@/client/utils/PreferencesManager';
 
 type Refs = {
   name: HTMLElement | undefined;
@@ -73,12 +72,8 @@ export default defineComponent({
   },
   methods: {
     // Size the name to fit its medal box by measuring the rendered text rather
-    // than guessing from its length. Only when the experimental UI is on;
-    // otherwise the language_hacks ma-name overrides handle sizing.
+    // than guessing from its length.
     fitName(): void {
-      if (!getPreferences().experimental_ui) {
-        return;
-      }
       fitTextWhenReady(this.typedRefs.name, 'milestone-name');
     },
     playerSymbol(color: Color): string {
