@@ -6,7 +6,37 @@ tournaments, so players can practice online. It is deployed as a second, indepen
 instance alongside the fork's main instance; all deployment infrastructure lives on the
 `deploy` branch (see its README for the runbook).
 
-Status: living document — update as implementation proceeds.
+## Status (2026-07-10)
+
+Implemented and **live at <https://tournament.terraforming-mars.zerko.it>**. The create
+game form opens with Tournament rules pre-checked and locked to the regulation; every
+table is dealt the same pool of 5 tournament corporations, duplicates allowed. Card list
+for reviewers: <https://tournament.terraforming-mars.zerko.it/cards#~mT~tc>.
+
+Verified: full lint, server suite (7000+ tests incl. 33 tournament-specific), client
+suite, and an HTTP end-to-end run (server-side preset clamp + shared pool). Pushes to
+this branch go live on the instance within about a minute (see the `deploy` branch).
+
+### Acceptance checklist (needs humans)
+
+- [ ] Organizers proof all 16 corporations against the printed sheets (link above).
+      Three interpretation calls to bless explicitly:
+      1. **Sagitta** — "4 poziomami produkcji M€" read as total M€ production 4
+         (original has 2), not +4 on top.
+      2. **Recyclon** — effect triggers once **per building tag** on the played card.
+      3. **UNMI** — "no placement bonuses" for the three setup tiles also skips the
+         ocean-adjacency M€, not just the printed hex bonuses; ocean/oxygen/TR raises
+         still apply.
+- [ ] One real multiplayer game played start to finish on the instance.
+
+### Possible follow-ups
+
+- A "tournament" badge on variant corporations if players confuse them with the
+  originals in the card browser (in tournament games only the variants appear).
+- Upstream candidates per `automa/UPSTREAM-PRS.md` (on the automa branch): the
+  `grantPlacementBonus` option on `Game.addTile`, the instance-based
+  `getCardPlayerByCard` owner lookup used by `RemoveResourcesFromCard`, and the
+  `IntragenSanctuaryHeadquarters` owner-argument simplification.
 
 ## Tournament setup (from the championship regulations)
 
