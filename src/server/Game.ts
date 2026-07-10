@@ -440,7 +440,12 @@ export class Game implements IGame, Logger {
         gameOptions.moonExpansion ||
         gameOptions.tournamentExpansion) {
         if (tournamentPool !== undefined) {
-          player.dealtCorporationCards.push(...tournamentPool.map((name) => newCorporationCard(name)!));
+          for (const name of tournamentPool) {
+            const corporation = newCorporationCard(name);
+            if (corporation !== undefined) {
+              player.dealtCorporationCards.push(corporation);
+            }
+          }
         } else {
           player.dealtCorporationCards.push(...corporationDeck.drawN(game, gameOptions.startingCorporations));
         }
