@@ -37,9 +37,8 @@ export class IntragenSanctuaryHeadquarters extends CorporationCard implements IC
     });
   }
 
-  public onCardPlayedByAnyPlayer(player: IPlayer, card: ICard) {
-    const corporationOwner = player.game.getCardPlayerOrThrow(this.name);
-    const count = corporationOwner.tags.cardTagCount(card, Tag.ANIMAL);
-    corporationOwner.addResourceTo(this, {qty: count, log: true});
+  public onCardPlayedByAnyPlayer(thisCardOwner: IPlayer, card: ICard) {
+    const count = thisCardOwner.tags.cardTagCount(card, Tag.ANIMAL);
+    thisCardOwner.addResourceTo(this, {qty: count, log: true});
   }
 }

@@ -94,7 +94,10 @@ export class RemoveResourcesFromCard extends DeferredAction<Response> {
   }
 
   private attack(card: ICard) {
-    const target = this.player.game.getCardPlayerOrThrow(card.name);
+    const target = this.player.game.getCardPlayerByCard(card);
+    if (target === undefined) {
+      throw new Error(`No player has played ${card.name}`);
+    }
 
     // TODO(kberg): Consolidate the blockable in maybeBlock.
     if (this.blockable === false) {
