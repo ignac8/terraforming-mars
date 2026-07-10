@@ -239,6 +239,8 @@ export interface IGame extends Logger {
    * Returns the Player holding this card, or returns undefined.
    */
   getCardPlayerOrUndefined(name: CardName): IPlayer | undefined;
+  /** Returns the Player holding this exact card instance. Safe with duplicate card names. */
+  getCardPlayerByCard(card: ICard): IPlayer | undefined;
   /**
    * Returns the list of standard project cards used in this game, sorted by cost.
    */

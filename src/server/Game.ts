@@ -1,7 +1,11 @@
 import * as constants from '../common/constants';
 import {BeginnerCorporation} from './cards/corporation/BeginnerCorporation';
 import {Board} from './boards/Board';
+import {CardManifest} from './cards/ModuleManifest';
 import {CardName} from '../common/cards/CardName';
+import {TOURNAMENT_CARD_MANIFEST} from './cards/tournament/TournamentCardManifest';
+import {newCorporationCard} from './createCard';
+import {inplaceShuffle} from './utils/shuffle';
 import {ClaimedMilestone, serializeClaimedMilestones, deserializeClaimedMilestones} from './milestones/ClaimedMilestone';
 import {ColonyDealer} from './colonies/ColonyDealer';
 import {IColony} from './colonies/IColony';
@@ -383,10 +387,26 @@ export class Game implements IGame, Logger {
       }
     }
 
+    // Tournament mode: every player chooses from the same shared pool of
+    // tournament corporations, and several players may pick the same one.
+    let tournamentPool: ReadonlyArray<CardName> | undefined;
+    if (gameOptions.tournamentExpansion) {
+      const tournamentCorps = CardManifest.keys(TOURNAMENT_CARD_MANIFEST.corporationCards);
+      const custom = [...new Set(gameOptions.customCorporationsList)].filter((name) => tournamentCorps.includes(name));
+      if (custom.length > 0) {
+        tournamentPool = custom;
+      } else {
+        const names = [...tournamentCorps];
+        inplaceShuffle(names, rng);
+        tournamentPool = names.slice(0, constants.TOURNAMENT_CORPORATION_POOL_SIZE);
+      }
+      game.log('Tournament corporation pool: ${0}', (b) => b.rawString(tournamentPool?.join(', ') ?? ''));
+    }
+
     // Failsafe for exceeding corporation pool
     // (I do not think this is necessary any further given how corporation cards are stored now)
     const minCorpsRequired = players.length * gameOptions.startingCorporations;
-    if (minCorpsRequired > corporationDeck.drawPile.length) {
+    if (!gameOptions.tournamentExpansion && minCorpsRequired > corporationDeck.drawPile.length) {
       gameOptions.startingCorporations = 2;
     }
 
@@ -417,8 +437,13 @@ export class Game implements IGame, Logger {
         gameOptions.initialDraftVariant ||
         gameOptions.preludeDraftVariant ||
         gameOptions.underworldExpansion ||
-        gameOptions.moonExpansion) {
-        player.dealtCorporationCards.push(...corporationDeck.drawN(game, gameOptions.startingCorporations));
+        gameOptions.moonExpansion ||
+        gameOptions.tournamentExpansion) {
+        if (tournamentPool !== undefined) {
+          player.dealtCorporationCards.push(...tournamentPool.map((name) => newCorporationCard(name)!));
+        } else {
+          player.dealtCorporationCards.push(...corporationDeck.drawN(game, gameOptions.startingCorporations));
+        }
         if (gameOptions.initialDraftVariant === false) {
           player.dealtProjectCards.push(...projectDeck.drawN(game, 10));
         }
@@ -1614,6 +1639,16 @@ export class Game implements IGame, Logger {
    */
   public getCardPlayerOrUndefined(name: CardName): IPlayer | undefined {
     return this.players.find((player) => player.tableau.has(name));
+  }
+
+  /**
+   * Returns the Player holding this exact card instance, or returns undefined.
+   *
+   * Unlike the name-based lookups this is safe when several players hold a
+   * card with the same name (possible with tournament corporations).
+   */
+  public getCardPlayerByCard(card: ICard): IPlayer | undefined {
+    return this.players.find((player) => player.tableau.get(card.name) === card);
   }
 
   private potentiallyChangeFirstPlayer() {
