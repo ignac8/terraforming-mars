@@ -1,0 +1,27 @@
+{
+    "Tournament rules": "Zasady turniejowe",
+    "Tournament": "Turniej",
+    "Tournament corporation pool: ${0}": "Pula korporacji turniejowych: ${0}",
+
+    "As your first action in the game, draw 3 cards. Start with 45 M€. Increase your steel production 2 steps and gain 4 steel.": "W ramach swojej pierwszej akcji w grze dobierz za darmo 3 karty. Rozpoczynasz grę z 45 M€. Podnieś swoją produkcję stali o 2 poziomy. Otrzymujesz 4 jednostki stali.",
+    "You start with 31 M€. Increase your energy and plant production 1 step each, and your M€ production 4 steps. Draw a card that has no tag.": "Rozpoczynasz grę z 31 M€, 1 dodatkowym poziomem produkcji energii, 1 poziomem produkcji roślinności oraz 4 poziomami produkcji M€. Dobierz kartę bez symbolu.",
+    "You start with 10 titanium, 28 M€, and 1 plant production. Raise your TR 1 step.": "Rozpoczynasz grę z 10 jednostkami tytanu i 28 M€ oraz 1 dodatkowym poziomem produkcji roślinności. Podnieś swój WT o jeden.",
+    "You start with 57 M€, 1 steel production, and 2 heat production. Gain 2 heat.": "Rozpoczynasz grę z 57 M€, 1 dodatkowym poziomem produkcji stali i 2 dodatkowymi poziomami produkcji ciepła. Otrzymujesz 2 jednostki ciepła.",
+    "You start with 60 M€ and 1 plant production. Draw 3 cards.": "Rozpoczynasz grę z 60 M€ oraz 1 dodatkowym poziomem produkcji roślinności. Dobierz 3 karty.",
+    "You start with 40 M€. Increase your steel production 1 step and your M€ production 4 steps.": "Rozpoczynasz grę z 40 M€, 1 dodatkowym poziomem produkcji stali oraz 4 dodatkowymi poziomami produkcji M€.",
+    "You start with 2 plant production, 3 plants, and 36 M€. Increase your M€, steel, and titanium production 1 step each.": "Rozpoczynasz grę z 36 M€. Podnieś swoją produkcję roślinności o 2 poziomy, M€ o 1 poziom, stali o 1 poziom oraz tytanu o 1 poziom. Otrzymujesz 3 jednostki roślinności.",
+    "You start with 30 M€. Increase your energy, plant, and steel production 1 step each, and your heat production 3 steps. Gain 3 heat.": "Rozpoczynasz grę z 30 M€, 1 dodatkowym poziomem produkcji energii, 1 dodatkowym poziomem produkcji roślinności, 1 dodatkowym poziomem produkcji stali oraz 3 dodatkowymi poziomami produkcji ciepła. Otrzymujesz 3 jednostki ciepła.",
+    "You start with 38 M€. Decrease your M€ production 1 step and increase your plant, energy, heat, and steel production 1 step each.": "Rozpoczynasz grę z 38 M€. Obniż swoją produkcję M€ o 1 poziom. Podnieś swoją produkcję roślinności, energii, ciepła i stali o 1 poziom.",
+    "When you play a building tag, including this, FOR EACH building tag on that card, gain 1 microbe to this card, or remove 2 microbes here and raise your plant production 1 step.": "Gdy zagrywasz kartę z symbolem budowli (z tą włącznie), za każdy symbol budowli na zagranej karcie umieść na tej karcie 1 jednostkę mikrobów albo usuń z tej karty 2 jednostki mikrobów i podnieś swoją produkcję roślinności o 1 poziom.",
+    "You start with 20 steel, 2 plants, and 30 M€. Increase your energy and plant production 1 step each.": "Rozpoczynasz grę z 30 M€. Podnieś swoją produkcję energii i roślinności o 1 poziom. Otrzymujesz 20 jednostek stali oraz 2 jednostki roślinności.",
+    "You start with 1 steel production, 1 plant production, and 35 M€. Place a city tile.": "Rozpoczynasz grę z 35 M€. Podnieś swoją produkcję stali o 1 poziom. Podnieś swoją produkcję roślinności o 1 poziom. Umieść na planszy obszar miasta.",
+    "You start with 3 M€ production and 65 M€.": "Rozpoczynasz grę z 65 M€. Podnieś swoją produkcję M€ o 3 poziomy.",
+    "You start with 36 M€ and 1 M€ production. Gain 5 titanium. Draw 3 cards.": "Rozpoczynasz grę z 36 M€. Podnieś produkcję M€ o 1 poziom. Otrzymujesz 5 jednostek tytanu. Dobierz 3 karty.",
+    "You start with 48 M€. Increase your plant, energy, and steel production 1 step each.": "Rozpoczynasz grę z 48 M€. Podnieś produkcję roślinności, energii oraz stali o 1 poziom.",
+    "You start with 40 M€. Place 1 ocean, 1 city, and 1 greenery tile, collecting no placement bonuses from the map. Discard 3 cards.": "Rozpoczynasz grę z 40 M€. Umieść na planszy 1 obszar oceanu, 1 obszar miasta i 1 obszar zieleni. Nie pobierasz premii za pola dla obszarów umieszczonych z efektu natychmiastowego tej karty. Odrzuć 3 karty z ręki.",
+    "You start with 40 M€. Increase your steel and titanium production 1 step each, and your energy production 2 steps. Gain 4 steel.": "Rozpoczynasz grę z 40 M€. Podnieś swoją produkcję stali i tytanu o 1 poziom oraz produkcję energii o 2 poziomy. Otrzymujesz 4 jednostki stali.",
+
+    "Select space for ocean tile (no placement bonus)": "Wybierz pole na obszar oceanu (bez premii za pole)",
+    "Select space for city tile (no placement bonus)": "Wybierz pole na obszar miasta (bez premii za pole)",
+    "Select 3 cards to discard": "Wybierz 3 karty do odrzucenia"
+}
