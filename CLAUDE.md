@@ -133,8 +133,9 @@ PR state, per-PR divergences from the automa branch, and the per-PR process live
 ## Deployment (this fork)
 
 Production deployment (Docker Compose on a Hetzner VPS, two instances: this branch
-plus the `tournament` branch) lives on the orphan **`deploy` branch** — compose file,
-Caddyfile, the cron-driven `update.sh` and the full setup/migration runbook in its
+plus the `tournament` branch) lives in the separate repo
+**[ignac8/terraforming-mars-deploy](https://github.com/ignac8/terraforming-mars-deploy)**
+— compose file, Caddyfile, the cron-driven `update.sh` and the setup runbook in its
 README. This branch contains no deployment files. `update.sh` auto-merges
 `upstream/main` into this branch on the server, so pushes here go live within a
 minute.
