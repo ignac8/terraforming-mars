@@ -132,15 +132,12 @@ PR state, per-PR divergences from the automa branch, and the per-PR process live
 
 ## Deployment (this fork)
 
-Production deployment uses Docker Compose on a Hetzner VPS. Config lives in `deploy/`.
-
-- `deploy/docker-compose.yml` — 3 services: app, postgres, caddy (reverse proxy + auto-SSL)
-- `deploy/Caddyfile` — Caddy reverse proxy config
-- `deploy/update.sh` — Host-side script run by cron every minute. Polls git, refreshes Docker base images, recreates containers with changed image hashes
-- `deploy/.env` — Secrets (gitignored), see `.env.example` for template
-- `deploy/README.md` — Full setup instructions
-
-`update.sh` handles all auto-deploy: git changes trigger an `app` rebuild; base image updates (postgres, caddy, node) trigger recreation of whatever changed. No separate updater container.
+Production deployment (Docker Compose on a Hetzner VPS, two instances: this branch
+plus the `tournament` branch) lives on the orphan **`deploy` branch** — compose file,
+Caddyfile, the cron-driven `update.sh` and the full setup/migration runbook in its
+README. This branch contains no deployment files. `update.sh` auto-merges
+`upstream/main` into this branch on the server, so pushes here go live within a
+minute.
 
 **Server access:** SSH details kept in personal notes (not committed).
 
