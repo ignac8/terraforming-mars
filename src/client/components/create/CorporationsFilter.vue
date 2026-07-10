@@ -63,6 +63,7 @@ export default defineComponent({
       ...this.expansions.moon ? corpCardNames('moon') : [],
       ...this.expansions.pathfinders ? corpCardNames('pathfinders') : [],
       ...this.expansions.underworld ? corpCardNames('underworld') : [],
+      ...this.expansions.tournament ? corpCardNames('tournament') : [],
     ];
     return {initialSelected};
   },

@@ -126,6 +126,7 @@ export default defineComponent({
       switch (this.selectedCorporations.length === 1 ? this.selectedCorporations[0] : undefined) {
       // For each step you increase the production of a resource ... you also gain that resource.
       case CardName.MANUTECH:
+      case CardName.MANUTECH_TOURNAMENT:
         return card.productionBox?.megacredits ?? 0;
 
       // When you place a city tile, gain 3 M€.
@@ -188,6 +189,7 @@ export default defineComponent({
       // Gain 4MC for playing a card with no tags.
       // Gain 1MC for playing a card with 1 tag.
       case CardName.SAGITTA_FRONTIER_SERVICES:
+      case CardName.SAGITTA_FRONTIER_SERVICES_TOURNAMENT:
         const count = card.tags.filter((tag) => tag !== Tag.WILD).length;
         return count === 0 ? 4 : count === 1 ? 1 : 0;
 
@@ -207,7 +209,7 @@ export default defineComponent({
       const cardCost = corporation.cardCost === undefined ? constants.CARD_COST : corporation.cardCost;
       starting -= this.selectedCards.length * cardCost;
 
-      if (corpName === CardName.SAGITTA_FRONTIER_SERVICES) {
+      if (corpName === CardName.SAGITTA_FRONTIER_SERVICES || corpName === CardName.SAGITTA_FRONTIER_SERVICES_TOURNAMENT) {
         // Effect for playing itself.
         starting += 4;
       }

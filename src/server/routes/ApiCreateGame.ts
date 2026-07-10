@@ -6,7 +6,7 @@ import {BoardName} from '../../common/boards/BoardName';
 import {RandomBoardOption} from '../../common/boards/RandomBoardOption';
 import {Cloner} from '../database/Cloner';
 import {Game} from '../Game';
-import {GameOptions} from '../game/GameOptions';
+import {GameOptions, applyTournamentPreset} from '../game/GameOptions';
 import {Player} from '../Player';
 import {Server} from '../models/ServerModel';
 import {NewGameConfig} from '../../common/game/NewGameConfig';
@@ -168,6 +168,10 @@ export class ApiCreateGame extends Handler {
             undoOption: gameReq.undoOption,
             venusNextExtension: gameReq.expansions.venus,
           };
+
+          if (gameOptions.tournamentExpansion) {
+            applyTournamentPreset(gameOptions);
+          }
 
           let game: IGame;
           if (gameOptions.clonedGamedId !== undefined && !gameOptions.clonedGamedId.startsWith('#')) {

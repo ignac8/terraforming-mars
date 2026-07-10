@@ -7,7 +7,7 @@ import {CreateGameModel} from './CreateGameModel';
 export function defaultCreateGameModel(): CreateGameModel {
   return {
     firstIndex: 1,
-    playersCount: 1,
+    playersCount: 4,
     players: [
       {name: '', color: 'red', beginner: false, handicap: 0, first: false},
       {name: '', color: 'green', beginner: false, handicap: 0, first: false},
@@ -18,9 +18,9 @@ export function defaultCreateGameModel(): CreateGameModel {
       {name: '', color: 'orange', beginner: false, handicap: 0, first: false},
       {name: '', color: 'pink', beginner: false, handicap: 0, first: false},
     ],
-    expansions: {...DEFAULT_EXPANSIONS},
+    expansions: {...DEFAULT_EXPANSIONS, tournament: true},
     draftVariant: true,
-    initialDraft: false,
+    initialDraft: true,
     randomMA: RandomMAOptionType.NONE,
     modularMA: false,
     randomFirstPlayer: true,
@@ -50,7 +50,7 @@ export function defaultCreateGameModel(): CreateGameModel {
     fastModeOption: false,
     removeNegativeGlobalEventsOption: false,
     includeFanMA: false,
-    startingCorporations: 2,
+    startingCorporations: 5,
     soloTR: false,
     clonedGameId: undefined,
     allOfficialExpansions: false,

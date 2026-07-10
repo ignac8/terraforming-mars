@@ -42,6 +42,10 @@ The decision is to go with 2 - the effect is reduced by half.`,
 `*  Event tags count as tags for Sagitta Frontier Services [ref](https://boardgamegeek.com/thread/3154781/article/42964845#42964845)
 *  Wild tags do not count for Sagitta Frontier Services. [ref](https://boardgamegeek.com/thread/2031069/article/43202892#43202892)`,
 
+  [CardName.SAGITTA_FRONTIER_SERVICES_TOURNAMENT]:
+`*  Event tags count as tags for Sagitta Frontier Services [ref](https://boardgamegeek.com/thread/3154781/article/42964845#42964845)
+*  Wild tags do not count for Sagitta Frontier Services. [ref](https://boardgamegeek.com/thread/2031069/article/43202892#43202892)`,
+
   [CardName.PRICE_WARS]:
 `Price Wars cannot be replayed by Odyssey or Playwrights. Once it is discarded, the ongoing effect is also removed from play. It is strange for an event to have a generational effect.
 

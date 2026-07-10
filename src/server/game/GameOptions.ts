@@ -77,6 +77,73 @@ export type GameOptions = {
   twoCorpsVariant: boolean;
 }
 
+/**
+ * Forces the game options the tournament regulations prescribe. The create
+ * game form locks the same options, but the client is not trusted.
+ *
+ * Base + Corporate Era only, draft everywhere, an official board, and none
+ * of the rule-changing variants. Player count, timers, undo and the
+ * corporation pool override stay untouched.
+ */
+export function applyTournamentPreset(options: GameOptions): void {
+  options.corporateEra = true;
+  options.preludeExtension = false;
+  options.prelude2Expansion = false;
+  options.venusNextExtension = false;
+  options.coloniesExtension = false;
+  options.turmoilExtension = false;
+  options.promoCardsOption = false;
+  options.communityCardsOption = false;
+  options.aresExtension = false;
+  options.aresExtremeVariant = false;
+  options.moonExpansion = false;
+  options.pathfindersExpansion = false;
+  options.ceoExtension = false;
+  options.starWarsExpansion = false;
+  options.underworldExpansion = false;
+  options.deltaProjectExpansion = false;
+  options.expansions = {
+    ...options.expansions,
+    corpera: true,
+    prelude: false,
+    prelude2: false,
+    venus: false,
+    colonies: false,
+    turmoil: false,
+    promo: false,
+    community: false,
+    ares: false,
+    moon: false,
+    pathfinders: false,
+    ceo: false,
+    starwars: false,
+    underworld: false,
+    deltaProject: false,
+    tournament: true,
+  };
+  options.draftVariant = true;
+  options.initialDraftVariant = true;
+  options.preludeDraftVariant = false;
+  options.ceosDraftVariant = false;
+  options.solarPhaseOption = false;
+  options.politicalAgendasExtension = 'Standard';
+  options.randomMA = RandomMAOptionType.NONE;
+  options.includeFanMA = false;
+  options.modularMA = false;
+  options.shuffleMapOption = false;
+  options.escapeVelocity = undefined;
+  options.altVenusBoard = false;
+  options.requiresMoonTrackCompletion = false;
+  options.requiresVenusTrackCompletion = false;
+  options.moonStandardProjectVariant = false;
+  options.moonStandardProjectVariant1 = false;
+  options.twoCorpsVariant = false;
+  const officialBoards = [BoardName.THARSIS, BoardName.HELLAS, BoardName.ELYSIUM];
+  if (!officialBoards.includes(options.boardName)) {
+    options.boardName = BoardName.THARSIS;
+  }
+}
+
 export const DEFAULT_GAME_OPTIONS: GameOptions = {
   altVenusBoard: false,
   aresExtension: false,

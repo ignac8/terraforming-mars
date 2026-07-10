@@ -23,48 +23,54 @@
                         <div class="create-game-page-column">
                             <h4 v-i18n>Expansions</h4>
 
-                            <input type="checkbox" name="allOfficialExpansions" id="allOfficialExpansions-checkbox" v-model="allOfficialExpansions">
+                            <input type="checkbox" name="tournament" id="tournament-checkbox" v-model="expansions.tournament">
+                            <label for="tournament-checkbox" class="expansion-button">
+                                <div class="create-game-expansion-icon expansion-icon-tournament"></div>
+                                <span v-i18n>Tournament rules</span>&nbsp;<a :href="wikiUrls.tournament" class="tooltip" v-i18n data-tooltip="Link opens in a new tab/window" target="_blank">&#9432;</a>
+                            </label>
+
+                            <input type="checkbox" name="allOfficialExpansions" id="allOfficialExpansions-checkbox" v-model="allOfficialExpansions" :disabled="expansions.tournament">
                             <label for="allOfficialExpansions-checkbox">
                                 <span v-i18n>All</span>
                             </label>
 
-                            <input type="checkbox" name="corporateEra" id="corporateEra-checkbox" v-model="expansions.corpera">
+                            <input type="checkbox" name="corporateEra" id="corporateEra-checkbox" v-model="expansions.corpera" :disabled="expansions.tournament">
                             <label for="corporateEra-checkbox" class="expansion-button">
                                 <div class="create-game-expansion-icon expansion-icon-CE"></div>
                                 <span v-i18n>Corporate Era</span>
                             </label>
 
-                            <input type="checkbox" name="prelude" id="prelude-checkbox" v-model="expansions.prelude">
+                            <input type="checkbox" name="prelude" id="prelude-checkbox" v-model="expansions.prelude" :disabled="expansions.tournament">
                             <label for="prelude-checkbox" class="expansion-button">
                                 <div class="create-game-expansion-icon expansion-icon-prelude"></div>
                                 <span v-i18n>Prelude</span>
                             </label>
 
-                            <input type="checkbox" name="prelude2" id="prelude2-checkbox" v-model="expansions.prelude2">
+                            <input type="checkbox" name="prelude2" id="prelude2-checkbox" v-model="expansions.prelude2" :disabled="expansions.tournament">
                             <label for="prelude2-checkbox" class="expansion-button">
                                 <div class="create-game-expansion-icon expansion-icon-prelude2"></div>
                                 <span v-i18n>Prelude 2</span>
                             </label>
 
-                            <input type="checkbox" name="venusNext" id="venusNext-checkbox" v-model="expansions.venus">
+                            <input type="checkbox" name="venusNext" id="venusNext-checkbox" v-model="expansions.venus" :disabled="expansions.tournament">
                             <label for="venusNext-checkbox" class="expansion-button">
                             <div class="create-game-expansion-icon expansion-icon-venus"></div>
                                 <span v-i18n>Venus Next</span>
                             </label>
 
-                            <input type="checkbox" name="colonies" id="colonies-checkbox" v-model="expansions.colonies">
+                            <input type="checkbox" name="colonies" id="colonies-checkbox" v-model="expansions.colonies" :disabled="expansions.tournament">
                             <label for="colonies-checkbox" class="expansion-button">
                             <div class="create-game-expansion-icon expansion-icon-colony"></div>
                                 <span v-i18n>Colonies</span>
                             </label>
 
-                            <input type="checkbox" name="turmoil" id="turmoil-checkbox" v-model="expansions.turmoil">
+                            <input type="checkbox" name="turmoil" id="turmoil-checkbox" v-model="expansions.turmoil" :disabled="expansions.tournament">
                             <label for="turmoil-checkbox" class="expansion-button">
                                 <div class="create-game-expansion-icon expansion-icon-turmoil"></div>
                                 <span v-i18n>Turmoil</span>
                             </label>
 
-                            <input type="checkbox" name="promo" id="promo-checkbox" v-model="expansions.promo">
+                            <input type="checkbox" name="promo" id="promo-checkbox" v-model="expansions.promo" :disabled="expansions.tournament">
                             <label for="promo-checkbox" class="expansion-button">
                                 <div class="create-game-expansion-icon expansion-icon-promo"></div>
                                 <span v-i18n>Promos</span>&nbsp;<a :href="wikiUrls.promo" class="tooltip" v-i18n data-tooltip="Link opens in a new tab/window" target="_blank">&#9432;</a>
@@ -72,27 +78,27 @@
 
                             <div class="create-game-subsection-label" v-i18n>Fan-made</div>
 
-                            <input type="checkbox" name="ares" id="ares-checkbox" v-model="expansions.ares">
+                            <input type="checkbox" name="ares" id="ares-checkbox" v-model="expansions.ares" :disabled="expansions.tournament">
                             <label for="ares-checkbox" class="expansion-button">
                                 <div class="create-game-expansion-icon expansion-icon-ares"></div>
                                 <span v-i18n>Ares</span>&nbsp;<a :href="wikiUrls.ares" class="tooltip" v-i18n data-tooltip="Link opens in a new tab/window" target="_blank">&#9432;</a>
                             </label>
 
                             <template v-if="expansions.ares">
-                                <input type="checkbox" v-model="aresExtremeVariant" id="aresExtremeVariantVariant-checkbox">
+                                <input type="checkbox" v-model="aresExtremeVariant" id="aresExtremeVariantVariant-checkbox" :disabled="expansions.tournament">
                                 <label for="aresExtremeVariantVariant-checkbox">
                                     <div class="create-game-expansion-icon expansion-icon-ares"></div>
                                     <span v-i18n>Extreme</span> &nbsp;<a :href="wikiUrls.aresExtreme" class="tooltip" v-i18n data-tooltip="Link opens in a new tab/window" target="_blank">&#9432;</a>
                                 </label>
                             </template>
 
-                            <input type="checkbox" name="community" id="communityCards-checkbox" v-model="expansions.community">
+                            <input type="checkbox" name="community" id="communityCards-checkbox" v-model="expansions.community" :disabled="expansions.tournament">
                             <label for="communityCards-checkbox" class="expansion-button">
                                 <div class="create-game-expansion-icon expansion-icon-community"></div>
                                 <span v-i18n>Community</span>&nbsp;<a :href="wikiUrls.community" class="tooltip" v-i18n data-tooltip="Link opens in a new tab/window" target="_blank">&#9432;</a>
                             </label>
 
-                            <input type="checkbox" name="themoon" id="themoon-checkbox" v-model="expansions.moon">
+                            <input type="checkbox" name="themoon" id="themoon-checkbox" v-model="expansions.moon" :disabled="expansions.tournament">
                             <label for="themoon-checkbox" class="expansion-button">
                                 <div class="create-game-expansion-icon expansion-icon-themoon"></div>
                                 <span v-i18n>The Moon</span>&nbsp;<a :href="wikiUrls.moon" class="tooltip" v-i18n data-tooltip="Link opens in a new tab/window" target="_blank">&#9432;</a>
@@ -139,7 +145,7 @@
                                 </div>
                             </template>
 
-                            <input type="checkbox" name="pathfinders" id="pathfinders-checkbox" v-model="expansions.pathfinders">
+                            <input type="checkbox" name="pathfinders" id="pathfinders-checkbox" v-model="expansions.pathfinders" :disabled="expansions.tournament">
                             <label for="pathfinders-checkbox" class="expansion-button">
                                 <div class="create-game-expansion-icon expansion-icon-pathfinders"></div>
                                 <span v-i18n>Pathfinders</span>&nbsp;<a :href="wikiUrls.pathfinders" class="tooltip" v-i18n data-tooltip="Link opens in a new tab/window" target="_blank">&#9432;</a>
@@ -152,25 +158,25 @@
                                 </label>
                             </template>
 
-                            <input type="checkbox" name="ceo" id="ceo-checkbox" v-model="expansions.ceo">
+                            <input type="checkbox" name="ceo" id="ceo-checkbox" v-model="expansions.ceo" :disabled="expansions.tournament">
                             <label for="ceo-checkbox" class="expansion-button">
                                 <div class="create-game-expansion-icon expansion-icon-ceo"></div>
                                 <span v-i18n>CEOs</span>&nbsp;<a :href="wikiUrls.ceo" class="tooltip" v-i18n data-tooltip="Link opens in a new tab/window" target="_blank">&#9432;</a>
                             </label>
 
-                            <input type="checkbox" name="starwars" id="starwars-checkbox" v-model="expansions.starwars">
+                            <input type="checkbox" name="starwars" id="starwars-checkbox" v-model="expansions.starwars" :disabled="expansions.tournament">
                             <label for="starwars-checkbox" class="expansion-button">
                                 <div class="create-game-expansion-icon expansion-icon-starwars"></div>
                                 <span v-i18n>Star Wars</span><span> </span>&nbsp;<a :href="wikiUrls.starwars" class="tooltip" v-i18n data-tooltip="Link opens in a new tab/window" target="_blank">&#9432;</a>
                             </label>
 
-                            <input type="checkbox" name="ceo" id="underworld-checkbox" v-model="expansions.underworld">
+                            <input type="checkbox" name="ceo" id="underworld-checkbox" v-model="expansions.underworld" :disabled="expansions.tournament">
                             <label for="underworld-checkbox" class="expansion-button">
                                 <div class="create-game-expansion-icon expansion-icon-underworld"></div>
                                 <span v-i18n>Underworld 2</span><span></span>&nbsp;<a :href="wikiUrls.underworld" class="tooltip" v-i18n data-tooltip="Link opens in a new tab/window" target="_blank">&#9432;</a>
                             </label>
 
-                            <input type="checkbox" name="deltaProject" id="deltaProject-checkbox" v-model="expansions.deltaProject">
+                            <input type="checkbox" name="deltaProject" id="deltaProject-checkbox" v-model="expansions.deltaProject" :disabled="expansions.tournament">
                             <label for="deltaProject-checkbox" class="expansion-button">
                                 <div class="create-game-expansion-icon expansion-icon-deltaProject"></div>
                                 <span v-i18n>Delta Project</span>&nbsp;<span title="Alpha — work in progress">(&#945;)</span><span></span>&nbsp;<a :href="wikiUrls.deltaProject" class="tooltip" v-i18n data-tooltip="Link opens in a new tab/window" target="_blank">&#9432;</a>
@@ -182,7 +188,7 @@
 
                             <div v-for="boardName in boards" :key="boardName">
                               <div v-if="boardName==='utopia planitia'" class="create-game-subsection-label" v-i18n>Fan-made</div>
-                              <input type="radio" :value="boardName" name="board" v-model="board" :id="boardName+'-checkbox'">
+                              <input type="radio" :value="boardName" name="board" v-model="board" :id="boardName+'-checkbox'" :disabled="expansions.tournament && !tournamentBoards.includes(boardName)">
                               <label :for="boardName+'-checkbox'" class="expansion-button">
                                   <span :class="getBoardColorClass(boardName)">&#x2B22;</span>
                                   <span class="capitalized" v-i18n>{{ boardName }}</span>
@@ -197,7 +203,7 @@
                             <h4 v-i18n>Options</h4>
 
                             <label for="startingCorpNum-checkbox">
-                            <input type="number" class="create-game-corporations-count" value="2" min="1" :max="6" v-model="startingCorporations" id="startingCorpNum-checkbox">
+                            <input type="number" class="create-game-corporations-count" value="2" min="1" :max="6" v-model="startingCorporations" id="startingCorpNum-checkbox" :disabled="expansions.tournament">
                                 <span v-i18n>Starting Corporations</span>
                             </label>
 
@@ -217,7 +223,7 @@
                               </label>
                             </template>
 
-                            <input type="checkbox" v-model="solarPhaseOption" id="WGT-checkbox">
+                            <input type="checkbox" v-model="solarPhaseOption" id="WGT-checkbox" :disabled="expansions.tournament">
                             <label for="WGT-checkbox">
                                 <span v-i18n>World Government Terraforming</span>&nbsp;<a :href="wikiUrls.worldGovernmentTerraforming" class="tooltip" v-i18n data-tooltip="Link opens in a new tab/window" target="_blank">&#9432;</a>
                             </label>
@@ -249,7 +255,7 @@
                                 <span v-i18n>Show timers</span>
                             </label>
 
-                            <input type="checkbox" v-model="escapeVelocityMode" id="escapevelocity-checkbox">
+                            <input type="checkbox" v-model="escapeVelocityMode" id="escapevelocity-checkbox" :disabled="expansions.tournament">
                             <label for="escapevelocity-checkbox">
                                 <div class="create-game-expansion-icon expansion-icon-escape-velocity"></div>
                                 <span v-i18n>Escape Velocity</span>&nbsp;<a :href="wikiUrls.escapeVelocity" class="tooltip" v-i18n data-tooltip="Link opens in a new tab/window" target="_blank">&#9432;</a>
@@ -283,7 +289,7 @@
                               </label>
                             </template>
 
-                            <input type="checkbox" v-model="shuffleMapOption" id="shuffleMap-checkbox">
+                            <input type="checkbox" v-model="shuffleMapOption" id="shuffleMap-checkbox" :disabled="expansions.tournament">
                             <label for="shuffleMap-checkbox">
                                     <span v-i18n>Randomize board tiles</span>&nbsp;<a :href="wikiUrls.randomizeBoardTiles" class="tooltip" v-i18n data-tooltip="Link opens in a new tab/window" target="_blank">&#9432;</a>
                             </label>
@@ -353,14 +359,14 @@
 
                             <div class="create-game-page-column-row">
                                 <div>
-                                <input type="checkbox" name="draftVariant" v-model="draftVariant" id="draft-checkbox">
+                                <input type="checkbox" name="draftVariant" v-model="draftVariant" id="draft-checkbox" :disabled="expansions.tournament">
                                 <label for="draft-checkbox">
                                     <span v-i18n>Draft variant</span>
                                 </label>
                                 </div>
 
                                 <div>
-                                <input type="checkbox" name="initialDraft" v-model="initialDraft" id="initialDraft-checkbox">
+                                <input type="checkbox" name="initialDraft" v-model="initialDraft" id="initialDraft-checkbox" :disabled="expansions.tournament">
                                 <label for="initialDraft-checkbox">
                                     <span v-i18n>Initial Draft variant</span>&nbsp;<a :href="wikiUrls.initialDraft" class="tooltip" v-i18n data-tooltip="Link opens in a new tab/window" target="_blank">&#9432;</a>
                                 </label>
@@ -387,7 +393,7 @@
                                 <span v-i18n>Random first player</span>
                             </label>
 
-                            <input type="checkbox" name="randomMAToggle" id="randomMA-checkbox" @change="randomMAToggle()">
+                            <input type="checkbox" name="randomMAToggle" id="randomMA-checkbox" @change="randomMAToggle()" :disabled="expansions.tournament">
                             <label for="randomMA-checkbox">
                                 <span v-i18n>Random Milestones/Awards</span>&nbsp;<a :href="wikiUrls.randomMilestonesAndAwards" class="tooltip" v-i18n data-tooltip="Link opens in a new tab/window" target="_blank">&#9432;</a>
                             </label>
@@ -635,6 +641,9 @@ export default defineComponent({
   },
   watch: {
     allOfficialExpansions(value: boolean) {
+      if (this.expansions.tournament) {
+        return;
+      }
       this.expansions.corpera = value;
       this.expansions.prelude = value;
       this.expansions.venus = value;
@@ -643,6 +652,39 @@ export default defineComponent({
       this.expansions.prelude2 = value;
       this.expansions.promo = value;
       this.solarPhaseOption = value;
+    },
+    'expansions.tournament': function(value: boolean) {
+      if (value === true) {
+        this.allOfficialExpansions = false;
+        this.expansions.corpera = true;
+        this.expansions.prelude = false;
+        this.expansions.prelude2 = false;
+        this.expansions.venus = false;
+        this.expansions.colonies = false;
+        this.expansions.turmoil = false;
+        this.expansions.promo = false;
+        this.expansions.ares = false;
+        this.expansions.community = false;
+        this.expansions.moon = false;
+        this.expansions.pathfinders = false;
+        this.expansions.ceo = false;
+        this.expansions.starwars = false;
+        this.expansions.underworld = false;
+        this.expansions.deltaProject = false;
+        this.draftVariant = true;
+        this.initialDraft = true;
+        this.solarPhaseOption = false;
+        this.randomMA = RandomMAOptionType.NONE;
+        this.includeFanMA = false;
+        this.modularMA = false;
+        this.shuffleMapOption = false;
+        this.escapeVelocityMode = false;
+        this.aresExtremeVariant = false;
+        this.startingCorporations = 5;
+        if (!this.tournamentBoards.includes(this.board)) {
+          this.board = BoardName.THARSIS;
+        }
+      }
     },
     'expansions.venus': function(value: boolean) {
       this.solarPhaseOption = value;
@@ -699,6 +741,9 @@ export default defineComponent({
     },
     PLAYER_COLORS(): typeof PLAYER_COLORS {
       return PLAYER_COLORS;
+    },
+    tournamentBoards(): Array<BoardName | RandomBoardOption> {
+      return [BoardName.THARSIS, BoardName.HELLAS, BoardName.ELYSIUM, RandomBoardOption.OFFICIAL];
     },
     boards() {
       return [
