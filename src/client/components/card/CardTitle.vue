@@ -3,7 +3,7 @@
     <div v-if="isPrelude()" class="prelude-label">prelude</div>
     <div v-if="isCorporation()" class="corporation-label">corporation</div>
     <div v-if="isCeo()" class="ceo-label">CEO</div>
-    <CardCorporationLogo v-if="isCorporation()" :title="title"/>
+    <CardCorporationLogo v-if="isCorporation()" :title="logoTitle"/>
     <div v-else ref="title" :class="getClasses()">{{ titleWithoutSuffix }}</div>
   </div>
 </template>
@@ -96,6 +96,10 @@ export default defineComponent({
   computed: {
     titleWithoutSuffix(): string {
       return this.title.split(':')[0];
+    },
+    // Variant corporations (e.g. 'Teractor:tournament') reuse the base corporation's logo.
+    logoTitle(): CardName {
+      return this.title.split(':')[0] as CardName;
     },
     typedRefs(): Refs {
       return this.$refs as unknown as Refs;
