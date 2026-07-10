@@ -249,7 +249,10 @@ class InitialDraft extends Draft {
   }
 
   override draw(_player: IPlayer) {
-    return this.game.projectDeck.drawN(this.game, 5, 'bottom');
+    // Tournament rules: the initial draft is a single pack of 10 cards
+    // rather than two packs of 5.
+    const count = this.game.gameOptions.tournamentExpansion ? 10 : 5;
+    return this.game.projectDeck.drawN(this.game, count, 'bottom');
   }
 
   override cardsToKeep(_player: IPlayer): number {
@@ -269,6 +272,12 @@ class InitialDraft extends Draft {
     this.game.initialDraftIteration++;
     // TODO(kberg): Move this to runDraftRound.
     this.game.draftRound = 1;
+
+    // Tournament rules: all 10 cards were drafted in the first iteration,
+    // so there is no second one.
+    if (this.game.gameOptions.tournamentExpansion && this.game.initialDraftIteration === 2) {
+      this.game.initialDraftIteration = 3;
+    }
 
     switch (this.game.initialDraftIteration) {
     case 2:

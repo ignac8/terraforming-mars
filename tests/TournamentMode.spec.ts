@@ -9,6 +9,8 @@ import {newInitialDraft} from '../src/server/Draft';
 import {RecyclonTournament} from '../src/server/cards/tournament/RecyclonTournament';
 import {RemoveResourcesFromCard} from '../src/server/deferredActions/RemoveResourcesFromCard';
 import {SelectCard} from '../src/server/inputs/SelectCard';
+import {SelectInitialCards} from '../src/server/inputs/SelectInitialCards';
+import {IProjectCard} from '../src/server/cards/IProjectCard';
 import {cast, toName} from '../src/common/utils/utils';
 import {runAllActions} from './TestingUtils';
 
@@ -103,6 +105,28 @@ describe('TournamentMode', () => {
 
     expect(cardA.resourceCount).to.eq(3);
     expect(cardB.resourceCount).to.eq(3);
+  });
+
+  it('Initial draft is a single pack of 10 cards', () => {
+    const [game, ...players] = testGame(3, {tournamentExpansion: true, initialDraftVariant: true, skipInitialCardSelection: false});
+
+    for (const player of players) {
+      expect(cast(player.getWaitingFor(), SelectCard).cards).has.length(10);
+    }
+
+    // 9 pick rounds; the last card of each hand passes automatically.
+    for (let round = 0; round < 9; round++) {
+      for (const player of players) {
+        const input = cast(player.popWaitingFor(), SelectCard);
+        input.cb([input.cards[0] as IProjectCard]);
+      }
+    }
+
+    expect(game.initialDraftIteration).to.eq(3);
+    for (const player of players) {
+      expect(player.dealtProjectCards).has.length(10);
+      cast(player.getWaitingFor(), SelectInitialCards);
+    }
   });
 
   it('Initial draft passes one direction under tournament rules', () => {
