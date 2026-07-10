@@ -13,6 +13,8 @@ export class PlaceCityTile extends DeferredAction<Space | undefined> {
       on?: PlacementType,
       title?: string | Message,
       spaces?: ReadonlyArray<Space>,
+      /** When false, the placement grants no space bonuses. */
+      grantPlacementBonus?: boolean,
     }) {
     super(player, Priority.DEFAULT);
   }
@@ -28,7 +30,7 @@ export class PlaceCityTile extends DeferredAction<Space | undefined> {
     }
     return new SelectSpace(title, spaces)
       .andThen((space) => {
-        this.player.game.addCity(this.player, space);
+        this.player.game.addCity(this.player, space, undefined, {grantPlacementBonus: this.options?.grantPlacementBonus});
         this.cb(space);
         return undefined;
       });

@@ -9,6 +9,10 @@ export class PlaceGreeneryTile extends DeferredAction<Space | undefined> {
   constructor(
     player: IPlayer,
     private on: PlacementType = 'greenery',
+    private options?: {
+      /** When false, the placement grants no space bonuses. Oxygen still rises. */
+      grantPlacementBonus?: boolean,
+    },
   ) {
     super(player, Priority.DEFAULT);
   }
@@ -24,7 +28,7 @@ export class PlaceGreeneryTile extends DeferredAction<Space | undefined> {
 
     return new SelectSpace(this.getTitle(), filtered)
       .andThen((space) => {
-        this.player.game.addGreenery(this.player, space);
+        this.player.game.addGreenery(this.player, space, true, {grantPlacementBonus: this.options?.grantPlacementBonus});
         this.cb(space);
         return undefined;
       });

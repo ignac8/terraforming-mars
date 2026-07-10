@@ -197,7 +197,7 @@ export interface IGame extends Logger {
    * This only applies to the Mars board. See MoonExpansion.addTile for placing
    * a tile on The Moon.
    */
-  addTile(player: IPlayer, space: Space, tile: Tile): void;
+  addTile(player: IPlayer, space: Space, tile: Tile, options?: {grantPlacementBonus?: boolean}): void;
   /**
    * Add `tile` to `space` for `player` without triggering any effects.
    *
@@ -224,11 +224,11 @@ export interface IGame extends Logger {
    */
   grantSpaceBonuses(player: IPlayer, space: Space): void;
   grantSpaceBonus(player: IPlayer, spaceBonus: SpaceBonus, count?: number): void;
-  addGreenery(player: IPlayer, space: Space, shouldRaiseOxygen?: boolean): void;
-  addCity(player: IPlayer, space: Space, cardName?: CardName | undefined): void;
+  addGreenery(player: IPlayer, space: Space, shouldRaiseOxygen?: boolean, options?: {grantPlacementBonus?: boolean}): void;
+  addCity(player: IPlayer, space: Space, cardName?: CardName | undefined, options?: {grantPlacementBonus?: boolean}): void;
   canAddOcean(): boolean;
   canRemoveOcean(): boolean;
-  addOcean(player: IPlayer, space: Space): void;
+  addOcean(player: IPlayer, space: Space, options?: {grantPlacementBonus?: boolean}): void;
   removeTile(spaceId: string): void;
 
   /**

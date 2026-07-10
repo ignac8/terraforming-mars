@@ -1344,7 +1344,7 @@ export class Game implements IGame, Logger {
 
   // addTile applies to the Mars board, but not the Moon board, see MoonExpansion.addTile for placing
   // a tile on The Moon.
-  public addTile(player: IPlayer, space: Space, tile: Tile): void {
+  public addTile(player: IPlayer, space: Space, tile: Tile, options?: {grantPlacementBonus?: boolean}): void {
     // Part 1, basic validation checks.
 
     // Land claim a player can claim land for themselves
@@ -1380,7 +1380,7 @@ export class Game implements IGame, Logger {
     this.simpleAddTile(player, space, tile);
 
     // Part 5. Collect the bonuses
-    if (this.phase !== Phase.SOLAR) {
+    if (this.phase !== Phase.SOLAR && (options?.grantPlacementBonus ?? true)) {
       this.grantPlacementBonuses(player, space, coveringExistingTile, arcadianCommunityBonus);
 
       AresHandler.ifAres(this, (aresData) => {
@@ -1392,7 +1392,7 @@ export class Game implements IGame, Logger {
         const [inside, outside] = partition(spaces, ((space) => space.spaceType === SpaceType.DEFLECTION_ZONE));
         player.withinDeflectionZone = inside.length > 0 && outside.length === 0;
       }
-    } else {
+    } else if (this.phase === Phase.SOLAR) {
       space.player = undefined;
     }
 
@@ -1542,10 +1542,11 @@ export class Game implements IGame, Logger {
 
   public addGreenery(
     player: IPlayer, space: Space,
-    shouldRaiseOxygen: boolean = true): undefined {
+    shouldRaiseOxygen: boolean = true,
+    options?: {grantPlacementBonus?: boolean}): undefined {
     this.addTile(player, space, {
       tileType: TileType.GREENERY,
-    });
+    }, options);
     // Turmoil Greens ruling policy
     PartyHooks.applyGreensRulingPolicy(player, space);
 
@@ -1557,11 +1558,12 @@ export class Game implements IGame, Logger {
 
   public addCity(
     player: IPlayer, space: Space,
-    cardName: CardName | undefined = undefined): void {
+    cardName: CardName | undefined = undefined,
+    options?: {grantPlacementBonus?: boolean}): void {
     this.addTile(player, space, {
       tileType: TileType.CITY,
       card: cardName,
-    });
+    }, options);
   }
 
   public canAddOcean(): boolean {
@@ -1573,12 +1575,12 @@ export class Game implements IGame, Logger {
     return count > 0 && count < constants.MAX_OCEAN_TILES;
   }
 
-  public addOcean(player: IPlayer, space: Space): void {
+  public addOcean(player: IPlayer, space: Space, options?: {grantPlacementBonus?: boolean}): void {
     if (this.canAddOcean() === false) {
       return;
     }
 
-    this.addTile(player, space, {tileType: TileType.OCEAN});
+    this.addTile(player, space, {tileType: TileType.OCEAN}, options);
 
     if (this.phase !== Phase.SOLAR) {
       TurmoilHandler.onGlobalParameterIncrease(player, GlobalParameter.OCEANS);
