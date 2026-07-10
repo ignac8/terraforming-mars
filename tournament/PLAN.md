@@ -26,9 +26,11 @@ Status: living document — update as implementation proceeds.
 ## The 16 tournament corporations
 
 Rebalanced variants of official corporations (roughly: original corp + a prelude folded
-into the starting conditions). Implemented as standalone card classes in
-`src/server/cards/tournament/` with colon-suffix names (`'Teractor:tournament'`),
-registered in `TournamentCardManifest` under the `tournament` module.
+into the starting conditions). Implemented in `src/server/cards/tournament/` with
+colon-suffix names (`'Teractor:tournament'`), registered in `TournamentCardManifest`
+under the `tournament` module. Purely declarative corporations are standalone classes;
+corporations with effect/action code subclass the original (their constructors accept
+config overrides), so the behavior code exists once.
 
 | Tournament card | Original | Delta vs original |
 |---|---|---|
