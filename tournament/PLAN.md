@@ -3,8 +3,8 @@
 This branch (`tournament`, cut from upstream/main) adds a **Tournament rules** mode
 replicating the setup used by the Polish Terraforming Mars Championship 2026 qualifier
 tournaments, so players can practice online. It is deployed as a second, independent
-instance alongside the fork's main instance; all deployment infrastructure lives on the
-`deploy` branch (see its README for the runbook).
+instance alongside the fork's main instance; all deployment infrastructure lives in the
+[ignac8/terraforming-mars-deploy](https://github.com/ignac8/terraforming-mars-deploy) repo (see its README for the runbook).
 
 ## Status (2026-07-10)
 
@@ -15,7 +15,7 @@ for reviewers: <https://tournament.terraforming-mars.zerko.it/cards#~mT~tc>.
 
 Verified: full lint, server suite (7000+ tests incl. 33 tournament-specific), client
 suite, and an HTTP end-to-end run (server-side preset clamp + shared pool). Pushes to
-this branch go live on the instance within about a minute (see the `deploy` branch).
+this branch go live on the instance within about a minute (see the deploy repo).
 
 ### Acceptance checklist (needs humans)
 
@@ -115,7 +115,8 @@ The printed tournament cards (Polish) are the authoritative source for these val
 ## Relationship to other branches
 
 - `automa` — the fork's main line (MarsBot). Not merged here.
-- `deploy` — all deployment configuration for both instances (compose, Caddy, updater,
-  migration runbook). This branch contains no deployment files.
+- [ignac8/terraforming-mars-deploy](https://github.com/ignac8/terraforming-mars-deploy) — all deployment
+  configuration for both instances (compose, Caddy, updater, runbook). This branch
+  contains no deployment files.
 - Upstream merges into `tournament` are manual and deliberate (the deployment updater
   never auto-merges upstream into this branch).
