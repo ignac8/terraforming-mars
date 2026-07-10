@@ -433,6 +433,7 @@ export class Server {
         starwars: options.starWarsExpansion,
         underworld: options.underworldExpansion,
         deltaProject: options.deltaProjectExpansion,
+        tournament: options.tournamentExpansion,
       },
       fastModeOption: options.fastModeOption,
       includedCards: options.includedCards,
