@@ -1105,7 +1105,7 @@ export class Player implements IPlayer {
   }
 
   public milestoneCost() {
-    if (this.playedCards.has(CardName.VANALLEN) || this.playedCards.has(CardName.NIRGAL_ENTERPRISES)) {
+    if (this.playedCards.has(CardName.VANALLEN) || this.playedCards.has(CardName.NIRGAL_ENTERPRISES) || this.playedCards.has(CardName.NIRGAL_ENTERPRISES_TOURNAMENT)) {
       return 0;
     }
     return this.isStagedProtestsActive() ? MILESTONE_COST + 8 : MILESTONE_COST;
@@ -1113,7 +1113,7 @@ export class Player implements IPlayer {
 
   // Public for tests.
   public awardFundingCost() {
-    if (this.playedCards.has(CardName.NIRGAL_ENTERPRISES)) {
+    if (this.playedCards.has(CardName.NIRGAL_ENTERPRISES) || this.playedCards.has(CardName.NIRGAL_ENTERPRISES_TOURNAMENT)) {
       return 0;
     }
     const plus8 = this.isStagedProtestsActive() ? 8 : 0;

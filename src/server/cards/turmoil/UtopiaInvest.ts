@@ -1,4 +1,5 @@
 import {IActionCard} from '../ICard';
+import {StaticCardProperties} from '../Card';
 import {Tag} from '../../../common/cards/Tag';
 import {IPlayer} from '../../IPlayer';
 import {CorporationCard} from '../corporation/CorporationCard';
@@ -11,7 +12,7 @@ import {digit} from '../Options';
 import {ICorporationCard} from '../corporation/ICorporationCard';
 
 export class UtopiaInvest extends CorporationCard implements ICorporationCard, IActionCard {
-  constructor() {
+  constructor(params: Partial<Omit<StaticCardProperties, 'type'>> = {}) {
     super({
       name: CardName.UTOPIA_INVEST,
       tags: [Tag.BUILDING],
@@ -34,6 +35,7 @@ export class UtopiaInvest extends CorporationCard implements ICorporationCard, I
           });
         }),
       },
+      ...params,
     });
   }
   public canAct(player: IPlayer): boolean {

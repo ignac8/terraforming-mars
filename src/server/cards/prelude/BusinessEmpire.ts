@@ -28,7 +28,7 @@ export class BusinessEmpire extends PreludeCard {
     });
   }
   public override bespokeCanPlay(player: IPlayer) {
-    if (player.tableau.has(CardName.MANUTECH)) {
+    if (player.tableau.has(CardName.MANUTECH) || player.tableau.has(CardName.MANUTECH_TOURNAMENT)) {
       return true;
     }
     return player.canAfford(6);

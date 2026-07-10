@@ -1,4 +1,5 @@
 import {ICorporationCard} from '../corporation/ICorporationCard';
+import {StaticCardProperties} from '../Card';
 import {CorporationCard} from '../corporation/CorporationCard';
 import {CardName} from '../../../common/cards/CardName';
 import {CardRenderer} from '../render/CardRenderer';
@@ -11,7 +12,7 @@ import {Resource} from '../../../common/Resource';
 import {Tag} from '../../../common/cards/Tag';
 
 export class SagittaFrontierServices extends CorporationCard implements ICorporationCard {
-  constructor() {
+  constructor(params: Partial<Omit<StaticCardProperties, 'type'>> = {}) {
     super({
       name: CardName.SAGITTA_FRONTIER_SERVICES,
       startingMegaCredits: 31,
@@ -30,6 +31,7 @@ export class SagittaFrontierServices extends CorporationCard implements ICorpora
         }),
         description: 'You start with 31 M€. Increase energy production 1 step and M€ production 2 steps. Draw a card that has no tag.',
       },
+      ...params,
     });
   }
 

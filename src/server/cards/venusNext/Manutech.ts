@@ -1,4 +1,5 @@
 import {CorporationCard} from '../corporation/CorporationCard';
+import {StaticCardProperties} from '../Card';
 import {IPlayer} from '../../IPlayer';
 import {Tag} from '../../../common/cards/Tag';
 import {Resource} from '../../../common/Resource';
@@ -7,7 +8,7 @@ import {CardRenderer} from '../render/CardRenderer';
 import {ICorporationCard} from '../corporation/ICorporationCard';
 
 export class Manutech extends CorporationCard implements ICorporationCard {
-  constructor() {
+  constructor(params: Partial<Omit<StaticCardProperties, 'type'>> = {}) {
     super({
       name: CardName.MANUTECH,
       tags: [Tag.BUILDING],
@@ -30,6 +31,7 @@ export class Manutech extends CorporationCard implements ICorporationCard {
           });
         }),
       },
+      ...params,
     });
   }
 

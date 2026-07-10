@@ -1,4 +1,5 @@
 import {CorporationCard} from '../corporation/CorporationCard';
+import {StaticCardProperties} from '../Card';
 import {CardName} from '../../../common/cards/CardName';
 import {CardRenderer} from '../render/CardRenderer';
 import {Tag} from '../../../common/cards/Tag';
@@ -12,7 +13,7 @@ import {SelectCard} from '../../inputs/SelectCard';
 import {ICorporationCard} from '../corporation/ICorporationCard';
 
 export class Ecotec extends CorporationCard implements ICorporationCard {
-  constructor() {
+  constructor(params: Partial<Omit<StaticCardProperties, 'type'>> = {}) {
     super({
       name: CardName.ECOTEC,
       tags: [Tag.MICROBE, Tag.PLANT],
@@ -32,6 +33,7 @@ export class Ecotec extends CorporationCard implements ICorporationCard {
         }),
         description: 'You start with 42 M€. Increase your plant production 1 step.',
       },
+      ...params,
     });
   }
 

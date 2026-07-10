@@ -37,7 +37,7 @@ export class EcologyExperts extends PreludeCard {
     // NOTE: If the player has production-based benefits from this prelude (like )
     player.temporaryGlobalParameterRequirementBonus += 50;
     player.production.plants++;
-    if (player.playedCards.has(CardName.MANUTECH)) {
+    if (player.playedCards.has(CardName.MANUTECH) || player.playedCards.has(CardName.MANUTECH_TOURNAMENT)) {
       player.plants++;
     }
     try {
@@ -45,7 +45,7 @@ export class EcologyExperts extends PreludeCard {
     } finally {
       player.temporaryGlobalParameterRequirementBonus -= 50;
       player.production.plants--;
-      if (player.playedCards.has(CardName.MANUTECH)) {
+      if (player.playedCards.has(CardName.MANUTECH) || player.playedCards.has(CardName.MANUTECH_TOURNAMENT)) {
         player.plants--;
       }
     }

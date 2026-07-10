@@ -1066,4 +1066,22 @@ export enum CardName {
   STANDARD_TECHNOLOGY_UNDERWORLD = 'Standard Technology:u',
   HACKERS_UNDERWORLD = 'Hackers:u',
   HIRED_RAIDERS_UNDERWORLD = 'Hired Raiders:u',
+
+  // Tournament corporations (Polish TM Championship variants of official corporations)
+  INVENTRIX_TOURNAMENT = 'Inventrix:tournament',
+  SAGITTA_FRONTIER_SERVICES_TOURNAMENT = 'Sagitta Frontier Services:tournament',
+  PHOBOLOG_TOURNAMENT = 'PhoboLog:tournament',
+  CREDICOR_TOURNAMENT = 'CrediCor:tournament',
+  TERACTOR_TOURNAMENT = 'Teractor:tournament',
+  FACTORUM_TOURNAMENT = 'Factorum:tournament',
+  ECOLINE_TOURNAMENT = 'Ecoline:tournament',
+  NIRGAL_ENTERPRISES_TOURNAMENT = 'Nirgal Enterprises:tournament',
+  RECYCLON_TOURNAMENT = 'Recyclon:tournament',
+  INTERPLANETARY_CINEMATICS_TOURNAMENT = 'Interplanetary Cinematics:tournament',
+  MANUTECH_TOURNAMENT = 'Manutech:tournament',
+  CHEUNG_SHING_MARS_TOURNAMENT = 'Cheung Shing MARS:tournament',
+  PALLADIN_SHIPPING_TOURNAMENT = 'Palladin Shipping:tournament',
+  ECOTEC_TOURNAMENT = 'EcoTec:tournament',
+  UNITED_NATIONS_MARS_INITIATIVE_TOURNAMENT = 'United Nations Mars Initiative:tournament',
+  UTOPIA_INVEST_TOURNAMENT = 'Utopia Invest:tournament',
 }

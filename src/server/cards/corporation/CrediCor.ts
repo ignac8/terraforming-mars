@@ -1,4 +1,5 @@
 import {CorporationCard} from './CorporationCard';
+import {StaticCardProperties} from '../Card';
 import {IPlayer} from '../../IPlayer';
 import {IProjectCard, isIProjectCard} from '../IProjectCard';
 import {CardName} from '../../../common/cards/CardName';
@@ -9,7 +10,7 @@ import {ICorporationCard} from './ICorporationCard';
 import {ICard} from '../ICard';
 
 export class CrediCor extends CorporationCard implements ICorporationCard {
-  constructor() {
+  constructor(params: Partial<Omit<StaticCardProperties, 'type'>> = {}) {
     super({
       name: CardName.CREDICOR,
       startingMegaCredits: 57,
@@ -27,6 +28,7 @@ export class CrediCor extends CorporationCard implements ICorporationCard {
           });
         }),
       },
+      ...params,
     });
   }
   private effect(player: IPlayer, card: IProjectCard | IStandardProjectCard): void {

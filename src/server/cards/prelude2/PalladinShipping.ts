@@ -1,4 +1,5 @@
 import {CorporationCard} from '../corporation/CorporationCard';
+import {StaticCardProperties} from '../Card';
 import {CardName} from '../../../common/cards/CardName';
 import {CardRenderer} from '../render/CardRenderer';
 import {Tag} from '../../../common/cards/Tag';
@@ -13,7 +14,7 @@ import {ICorporationCard} from '../corporation/ICorporationCard';
 import {Size} from '../../../common/cards/render/Size';
 
 export class PalladinShipping extends CorporationCard implements ICorporationCard, IActionCard {
-  constructor() {
+  constructor(params: Partial<Omit<StaticCardProperties, 'type'>> = {}) {
     super({
       name: CardName.PALLADIN_SHIPPING,
       tags: [Tag.SPACE],
@@ -40,6 +41,7 @@ export class PalladinShipping extends CorporationCard implements ICorporationCar
         }),
         description: 'You start with 36 M€. Gain 5 titanium.',
       },
+      ...params,
     });
   }
 

@@ -1,4 +1,5 @@
 import {CorporationCard} from './CorporationCard';
+import {StaticCardProperties} from '../Card';
 import {Tag} from '../../../common/cards/Tag';
 import {ICard} from '../ICard';
 import {IPlayer} from '../../IPlayer';
@@ -10,7 +11,7 @@ import {Resource} from '../../../common/Resource';
 import {ICorporationCard} from './ICorporationCard';
 
 export class InterplanetaryCinematics extends CorporationCard implements ICorporationCard {
-  constructor() {
+  constructor(params: Partial<Omit<StaticCardProperties, 'type'>> = {}) {
     super({
       name: CardName.INTERPLANETARY_CINEMATICS,
       tags: [Tag.BUILDING],
@@ -33,6 +34,7 @@ export class InterplanetaryCinematics extends CorporationCard implements ICorpor
           });
         }),
       },
+      ...params,
     });
   }
   public onCardPlayed(player: IPlayer, card: ICard) {

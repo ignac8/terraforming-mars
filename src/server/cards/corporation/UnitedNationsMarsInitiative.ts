@@ -1,4 +1,5 @@
 import {CorporationCard} from './CorporationCard';
+import {StaticCardProperties} from '../Card';
 import {IActionCard} from '../ICard';
 import {Tag} from '../../../common/cards/Tag';
 import {IPlayer} from '../../IPlayer';
@@ -9,7 +10,7 @@ import {SelectPaymentDeferred} from '../../deferredActions/SelectPaymentDeferred
 import {TITLES} from '../../inputs/titles';
 export const ACTION_COST = 3;
 export class UnitedNationsMarsInitiative extends CorporationCard implements IActionCard, ICorporationCard {
-  constructor() {
+  constructor(params: Partial<Omit<StaticCardProperties, 'type'>> = {}) {
     super({
       name: CardName.UNITED_NATIONS_MARS_INITIATIVE,
       tags: [Tag.EARTH],
@@ -29,6 +30,7 @@ export class UnitedNationsMarsInitiative extends CorporationCard implements IAct
           });
         }),
       },
+      ...params,
     });
   }
 

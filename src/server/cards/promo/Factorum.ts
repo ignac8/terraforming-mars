@@ -1,4 +1,5 @@
 import {CorporationCard} from '../corporation/CorporationCard';
+import {StaticCardProperties} from '../Card';
 import {IPlayer} from '../../IPlayer';
 import {Tag} from '../../../common/cards/Tag';
 import {IActionCard} from '../ICard';
@@ -13,7 +14,7 @@ import {TITLES} from '../../inputs/titles';
 import {ICorporationCard} from '../corporation/ICorporationCard';
 
 export class Factorum extends CorporationCard implements ICorporationCard, IActionCard {
-  constructor() {
+  constructor(params: Partial<Omit<StaticCardProperties, 'type'>> = {}) {
     super({
       name: CardName.FACTORUM,
       tags: [Tag.POWER, Tag.BUILDING],
@@ -37,6 +38,7 @@ export class Factorum extends CorporationCard implements ICorporationCard, IActi
           });
         }),
       },
+      ...params,
     });
   }
 
