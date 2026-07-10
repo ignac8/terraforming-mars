@@ -33,10 +33,16 @@ export class UnitedNationsMarsInitiativeTournament extends UnitedNationsMarsInit
 
   public override bespokePlay(player: IPlayer) {
     const game = player.game;
-    game.defer(new PlaceOceanTile(player, {title: 'Select space for ocean tile (no placement bonus)', grantPlacementBonus: false}));
-    game.defer(new PlaceCityTile(player, {title: 'Select space for city tile (no placement bonus)', grantPlacementBonus: false}));
-    game.defer(new PlaceGreeneryTile(player, 'greenery', {grantPlacementBonus: false}));
-    game.defer(new DiscardCards(player, 3, 3, 'Select 3 cards to discard'));
+    game.defer(new PlaceOceanTile(player, {title: 'Select space for ocean tile (no placement bonus)', grantPlacementBonus: false}))
+      .andThen(() => {
+        game.defer(new PlaceCityTile(player, {title: 'Select space for city tile (no placement bonus)', grantPlacementBonus: false}))
+          .andThen(() => {
+            game.defer(new PlaceGreeneryTile(player, 'greenery', {grantPlacementBonus: false}))
+              .andThen(() => {
+                game.defer(new DiscardCards(player, 3, 3, 'Select 3 cards to discard'));
+              });
+          });
+      });
     return undefined;
   }
 }
