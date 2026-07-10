@@ -257,6 +257,11 @@ class InitialDraft extends Draft {
   }
 
   override passDirection() {
+    // Tournament rules: the whole initial draft passes one direction,
+    // opposite to the generation-2 research draft.
+    if (this.game.gameOptions.tournamentExpansion) {
+      return 'before';
+    }
     return this.game.initialDraftIteration === 2 ? 'before' : 'after';
   }
 
