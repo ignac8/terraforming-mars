@@ -1374,7 +1374,7 @@ export class Game implements IGame, Logger {
 
   // addTile applies to the Mars board, but not the Moon board, see MoonExpansion.addTile for placing
   // a tile on The Moon.
-  public addTile(player: IPlayer, space: Space, tile: Tile, options?: {grantPlacementBonus?: boolean}): void {
+  public addTile(player: IPlayer, space: Space, tile: Tile, options?: {grantSpaceBonuses?: boolean}): void {
     // Part 1, basic validation checks.
 
     // Land claim a player can claim land for themselves
@@ -1410,8 +1410,11 @@ export class Game implements IGame, Logger {
     this.simpleAddTile(player, space, tile);
 
     // Part 5. Collect the bonuses
-    if (this.phase !== Phase.SOLAR && (options?.grantPlacementBonus ?? true)) {
-      this.grantPlacementBonuses(player, space, coveringExistingTile, arcadianCommunityBonus);
+    if (this.phase !== Phase.SOLAR) {
+      // grantSpaceBonuses: false skips the printed space bonuses the same way
+      // covering an existing tile does. Adjacency rewards (like the ocean
+      // 2 M€) and other placement effects still apply.
+      this.grantPlacementBonuses(player, space, coveringExistingTile || options?.grantSpaceBonuses === false, arcadianCommunityBonus);
 
       AresHandler.ifAres(this, (aresData) => {
         AresHandler.maybeIncrementMilestones(aresData, player, space, hazardSeverity(initialTileType));
@@ -1422,7 +1425,7 @@ export class Game implements IGame, Logger {
         const [inside, outside] = partition(spaces, ((space) => space.spaceType === SpaceType.DEFLECTION_ZONE));
         player.withinDeflectionZone = inside.length > 0 && outside.length === 0;
       }
-    } else if (this.phase === Phase.SOLAR) {
+    } else {
       space.player = undefined;
     }
 
@@ -1573,7 +1576,7 @@ export class Game implements IGame, Logger {
   public addGreenery(
     player: IPlayer, space: Space,
     shouldRaiseOxygen: boolean = true,
-    options?: {grantPlacementBonus?: boolean}): undefined {
+    options?: {grantSpaceBonuses?: boolean}): undefined {
     this.addTile(player, space, {
       tileType: TileType.GREENERY,
     }, options);
@@ -1589,7 +1592,7 @@ export class Game implements IGame, Logger {
   public addCity(
     player: IPlayer, space: Space,
     cardName: CardName | undefined = undefined,
-    options?: {grantPlacementBonus?: boolean}): void {
+    options?: {grantSpaceBonuses?: boolean}): void {
     this.addTile(player, space, {
       tileType: TileType.CITY,
       card: cardName,
@@ -1605,7 +1608,7 @@ export class Game implements IGame, Logger {
     return count > 0 && count < constants.MAX_OCEAN_TILES;
   }
 
-  public addOcean(player: IPlayer, space: Space, options?: {grantPlacementBonus?: boolean}): void {
+  public addOcean(player: IPlayer, space: Space, options?: {grantSpaceBonuses?: boolean}): void {
     if (this.canAddOcean() === false) {
       return;
     }

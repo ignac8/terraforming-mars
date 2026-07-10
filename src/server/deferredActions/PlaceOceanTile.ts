@@ -13,8 +13,8 @@ type Options = {
   spaces?: Array<Space>,
   /** For Icy Impactors */
   creditedPlayer?: IPlayer,
-  /** When false, the placement grants no space bonuses. Global effects still apply. */
-  grantPlacementBonus?: boolean,
+  /** When false, the placement grants no printed space bonuses. Adjacency rewards and global effects still apply. */
+  grantSpaceBonuses?: boolean,
 };
 
 export class PlaceOceanTile extends DeferredAction<Space | undefined> {
@@ -49,7 +49,7 @@ export class PlaceOceanTile extends DeferredAction<Space | undefined> {
 
     return new SelectSpace(title, availableSpaces)
       .andThen((space) => {
-        this.creditedPlayer.game.addOcean(this.creditedPlayer, space, {grantPlacementBonus: this.options.grantPlacementBonus});
+        this.creditedPlayer.game.addOcean(this.creditedPlayer, space, {grantSpaceBonuses: this.options.grantSpaceBonuses});
         this.creditedPlayer.defer(this.cb(space));
         return undefined;
       });

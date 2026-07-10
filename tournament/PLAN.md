@@ -20,13 +20,15 @@ this branch go live on the instance within about a minute (see the deploy repo).
 ### Acceptance checklist (needs humans)
 
 - [ ] Organizers proof all 16 corporations against the printed sheets (link above).
-      Three interpretation calls to bless explicitly:
+      Interpretation calls still to bless explicitly:
       1. **Sagitta** — "4 poziomami produkcji M€" read as total M€ production 4
          (original has 2), not +4 on top.
       2. **Recyclon** — effect triggers once **per building tag** on the played card.
-      3. **UNMI** — "no placement bonuses" for the three setup tiles also skips the
-         ocean-adjacency M€, not just the printed hex bonuses; ocean/oxygen/TR raises
-         still apply.
+- [x] **UNMI** — resolved by the organizer (2026-07-10): the three setup tiles skip
+      only the printed space bonuses; the ocean-adjacency 2 M€ is a different reward
+      and still pays. Ocean/oxygen/TR raises apply as normal. Implemented.
+- [x] **Initial draft** — resolved by the organizer (2026-07-10): one pack of 10
+      cards, not 5+5. Implemented.
 - [ ] One real multiplayer game played start to finish on the instance.
 
 ### Possible follow-ups
@@ -46,8 +48,9 @@ this branch go live on the instance within about a minute (see the deploy repo).
   corporation cards**; every player picks from the same 5 and **duplicates are allowed**
   (in the extreme, all players may play the same corporation).
 - Draft variant in every generation, including the initial 10-card draft. The initial
-  draft passes in one direction for all 10 cards; generation drafts alternate per the
-  rulebook (gen 2 opposite to the initial draft, gen 3 same, ...).
+  draft is **one pack of 10 cards** (not the upstream app's two packs of 5) and passes
+  in one direction; generation drafts alternate per the rulebook (gen 2 opposite to the
+  initial draft, gen 3 same, ...). [Organizer ruling, 2026-07-10.]
 - Card purchase cost 3 M€ (standard). Ecological Zone uses the English-edition
   requirement (own greenery) — already how this codebase implements it.
 - The physical tournaments also use a 120-minute table limit; this instance is for
@@ -78,7 +81,7 @@ config overrides), so the behavior code exists once.
 | Cheung Shing Mars:tournament | Cheung Shing MARS (44 M€, +3 M€ prod, building tags −2 M€) | 44→65 M€ |
 | Palladin Shipping:tournament | Palladin Shipping (36 M€, 5 titanium, space event → 1 titanium; action: 2 titanium → raise temperature) | +1 M€ production, draw 3 cards at start |
 | Ecotec:tournament | Ecotec (42 M€, +1 plant prod; per bio tag → 1 plant or microbe to any card) | 42→48 M€, +1 energy production, +1 steel production |
-| UNMI:tournament | United Nations Mars Initiative (40 M€; action: 3 M€ → +1 TR if TR raised this gen) | on play: place 1 ocean, 1 city and 1 greenery **without hex placement bonuses** (global effects still apply), then discard 3 cards from hand (capped at hand size) |
+| UNMI:tournament | United Nations Mars Initiative (40 M€; action: 3 M€ → +1 TR if TR raised this gen) | on play: place 1 ocean, 1 city and 1 greenery **without printed space bonuses** (the ocean-adjacency 2 M€ still pays; global effects apply), then discard 3 cards from hand (capped at hand size) |
 | Utopia Invest:tournament | Utopia Invest (40 M€, +1 steel/titanium prod; action: lower a production → gain 4 of that resource) | +2 energy production, +4 steel |
 
 The printed tournament cards (Polish) are the authoritative source for these values.
@@ -96,11 +99,12 @@ The printed tournament cards (Polish) are the authoritative source for these val
    override), then give every player fresh per-player instances of those same cards.
    Duplicate corporations across players are supported; name→owner reverse lookups were
    audited (`RemoveResourcesFromCard` now resolves the owner by card instance).
-4. **Engine** — `Game.addTile(..., {grantBonuses: false})` threaded through
+4. **Engine** — `Game.addTile(..., {grantSpaceBonuses: false})` threaded through
    `addOcean`/`addGreenery`/`addCity` and the Place*Tile deferred actions (used by
-   UNMI:tournament).
-5. **Initial draft direction** — with the module on, both 5-card iterations of the
-   initial draft pass the same direction ('before'), matching the regulation (gen 2
+   UNMI:tournament). Skips only the printed space bonuses; adjacency rewards and
+   global effects still apply.
+5. **Initial draft** — with the module on, the initial draft is a single pack of 10
+   cards passed in one constant direction ('before'), matching the regulation (gen 2
    passes opposite).
 6. **Create-game UI** — "Tournament rules" checkbox, ON by default, forces + locks
    incompatible options (expansions, draft toggles, fan boards, rule variants); board

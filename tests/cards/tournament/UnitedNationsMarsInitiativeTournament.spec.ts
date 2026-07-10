@@ -30,23 +30,31 @@ describe('UnitedNationsMarsInitiativeTournament', () => {
     expect(game.board.getOceanSpaces()).has.length(1);
     expect(player.terraformRating).to.eq(initialTR + 1);
 
-    // City.
+    expect(player.megaCredits).to.eq(25);
+
+    // City: next to the new ocean — the 2 M€ adjacency reward still pays.
     const selectCity = cast(player.popWaitingFor(), SelectSpace);
-    const citySpace = selectCity.spaces.find((space) => space.bonus.length > 0) ?? selectCity.spaces[0];
-    selectCity.cb(citySpace);
+    const oceanNeighbors = game.board.getAdjacentSpaces(oceanSpace);
+    const citySpace = selectCity.spaces.find((space) => oceanNeighbors.includes(space));
+    expect(citySpace).is.not.undefined;
+    selectCity.cb(citySpace!);
     runAllActions(game);
-    expect(citySpace.tile?.tileType).to.eq(TileType.CITY);
+    expect(citySpace!.tile?.tileType).to.eq(TileType.CITY);
+    expect(player.megaCredits).to.eq(27);
 
     // Greenery: raises oxygen and TR.
     const selectGreenery = cast(player.popWaitingFor(), SelectSpace);
     const greenerySpace = selectGreenery.spaces.find((space) => space.bonus.length > 0) ?? selectGreenery.spaces[0];
+    const greeneryOceans = game.board.getAdjacentSpaces(greenerySpace).filter((space) => space.tile?.tileType === TileType.OCEAN).length;
+    const megaCreditsBeforeGreenery = player.megaCredits;
     selectGreenery.cb(greenerySpace);
     runAllActions(game);
     expect(greenerySpace.tile?.tileType).to.eq(TileType.GREENERY);
     expect(game.getOxygenLevel()).to.eq(1);
     expect(player.terraformRating).to.eq(initialTR + 2);
+    expect(player.megaCredits).to.eq(megaCreditsBeforeGreenery + 2 * greeneryOceans);
 
-    // No space bonuses were collected for any of the three placements.
+    // No printed space bonuses were collected for any of the three placements.
     expect(player.plants).to.eq(0);
     expect(player.steel).to.eq(0);
     expect(player.titanium).to.eq(0);
