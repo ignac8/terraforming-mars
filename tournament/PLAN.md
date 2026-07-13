@@ -6,12 +6,17 @@ tournaments, so players can practice online. It is deployed as a second, indepen
 instance alongside the fork's main instance; all deployment infrastructure lives in the
 [ignac8/terraforming-mars-deploy](https://github.com/ignac8/terraforming-mars-deploy) repo (see its README for the runbook).
 
-## Status (2026-07-10)
+## Status (2026-07-13)
 
 Implemented and **live at <https://tournament.terraforming-mars.zerko.it>**. The create
 game form opens with Tournament rules pre-checked and locked to the regulation; every
 table is dealt the same pool of 5 tournament corporations, duplicates allowed. Card list
 for reviewers: <https://tournament.terraforming-mars.zerko.it/cards#~mT~tc>.
+
+Announced by the organizer in the "Terraformacja Marsa Polska" FB group on 2026-07-12.
+The feedback round produced two changes (Sagitta shown as 35 M€ with no self-trigger;
+Robotic Workforce cannot copy corporations) and confirmed all open interpretation calls
+— organizer rulings relayed 2026-07-13.
 
 Verified: full lint, server suite (7000+ tests incl. 33 tournament-specific), client
 suite, and an HTTP end-to-end run (server-side preset clamp + shared pool). Pushes to
@@ -19,14 +24,18 @@ this branch go live on the instance within about a minute (see the deploy repo).
 
 ### Acceptance checklist (needs humans)
 
-- [ ] Organizers proof all 16 corporations against the printed sheets (link above).
-      Interpretation calls still to bless explicitly:
-      1. **Sagitta** — "4 poziomami produkcji M€" read as total M€ production 4
-         (original has 2), not +4 on top.
-      2. **Recyclon** — effect triggers once **per building tag** on the played card.
+- [x] Organizers proofed the corporations (FB announcement 2026-07-12, rulings
+      2026-07-13):
+      1. **Sagitta** — M€ production total 4 confirmed. Starting M€ corrected to 35:
+         the original's "including this" self-trigger is folded into the start, and
+         the effect no longer triggers on the corporation itself. Implemented.
+      2. **Recyclon** — per-building-tag trigger confirmed ("works like Mars
+         University", whose per-science-tag trigger is the same pattern).
 - [x] **UNMI** — resolved by the organizer (2026-07-10): the three setup tiles skip
       only the printed space bonuses; the ocean-adjacency 2 M€ is a different reward
       and still pays. Ocean/oxygen/TR raises apply as normal. Implemented.
+      Re-confirmed publicly after an FAQ 1.8 objection (2026-07-13): "for these three
+      placements the map has no printed bonuses".
 - [x] **Initial draft** — resolved by the organizer (2026-07-10): one pack of 10
       cards, not 5+5. Implemented.
 - [ ] One real multiplayer game played start to finish on the instance.
@@ -51,6 +60,9 @@ this branch go live on the instance within about a minute (see the deploy repo).
   draft is **one pack of 10 cards** (not the upstream app's two packs of 5) and passes
   in one direction; generation drafts alternate per the rulebook (gen 2 opposite to the
   initial draft, gen 3 same, ...). [Organizer ruling, 2026-07-10.]
+- **Robotic Workforce cannot copy corporation cards** (organizer ruling 2026-07-12,
+  not yet in the written regulations). Official rules allow copying building-tag
+  corporations, but the fused corp+prelude production boxes made that too strong.
 - Card purchase cost 3 M€ (standard). Ecological Zone uses the English-edition
   requirement (own greenery) — already how this codebase implements it.
 - The physical tournaments also use a 120-minute table limit; this instance is for
@@ -68,7 +80,7 @@ config overrides), so the behavior code exists once.
 | Tournament card | Original | Delta vs original |
 |---|---|---|
 | Inventrix:tournament | Inventrix (45 M€, first action draw 3, ±2 global requirements) | + 2 steel production, + 4 steel |
-| Sagitta Frontier Services:tournament | Sagitta Frontier Services (31 M€, +1 energy +2 M€ prod, draw a no-tag card; no-tag play → 4 M€, one-tag play → 1 M€) | M€ production 2→4, +1 plant production |
+| Sagitta Frontier Services:tournament | Sagitta Frontier Services (31 M€, +1 energy +2 M€ prod, draw a no-tag card; no-tag play → 4 M€, one-tag play → 1 M€) | 31→35 M€ (the original's "including this" self-trigger folded into the start; effect no longer triggers on itself), M€ production 2→4, +1 plant production |
 | Phobolog:tournament | Phobolog (23 M€, 10 titanium, titanium value +1) | 23→28 M€, +1 plant production, +1 TR at start |
 | CrediCor:tournament | CrediCor (57 M€, ≥20 M€ card/SP → 4 M€ back) | +1 steel production, +2 heat production, +2 heat |
 | Teractor:tournament | Teractor (60 M€, Earth tags −3 M€) | +1 plant production, draw 3 cards at start |
@@ -102,7 +114,8 @@ The printed tournament cards (Polish) are the authoritative source for these val
 4. **Engine** — `Game.addTile(..., {grantSpaceBonuses: false})` threaded through
    `addOcean`/`addGreenery`/`addCity` and the Place*Tile deferred actions (used by
    UNMI:tournament). Skips only the printed space bonuses; adjacency rewards and
-   global effects still apply.
+   global effects still apply. `RoboticWorkforceBase` excludes corporation cards
+   from copying in tournament games.
 5. **Initial draft** — with the module on, the initial draft is a single pack of 10
    cards passed in one constant direction ('before'), matching the regulation (gen 2
    passes opposite).
