@@ -29,6 +29,11 @@ export abstract class RoboticWorkforceBase extends Card {
   }
 
   protected isCardApplicable(card: ICard, player: IPlayer, canAfford: boolean): boolean {
+    // Tournament rules: corporation cards cannot be copied.
+    if (card.type === CardType.CORPORATION && player.game.gameOptions.tournamentExpansion) {
+      return false;
+    }
+
     // Exclude events unless Odyssey is in play.
     if (card.type === CardType.EVENT && !player.tableau.has(CardName.ODYSSEY)) {
       return false;

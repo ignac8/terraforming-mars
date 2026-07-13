@@ -6,6 +6,9 @@ import {CardResource} from '../src/common/CardResource';
 import {BoardName} from '../src/common/boards/BoardName';
 import {DEFAULT_GAME_OPTIONS, GameOptions, applyTournamentPreset} from '../src/server/game/GameOptions';
 import {newInitialDraft} from '../src/server/Draft';
+import {Mine} from '../src/server/cards/base/Mine';
+import {RoboticWorkforce} from '../src/server/cards/base/RoboticWorkforce';
+import {CheungShingMARSTournament} from '../src/server/cards/tournament/CheungShingMARSTournament';
 import {RecyclonTournament} from '../src/server/cards/tournament/RecyclonTournament';
 import {RemoveResourcesFromCard} from '../src/server/deferredActions/RemoveResourcesFromCard';
 import {SelectCard} from '../src/server/inputs/SelectCard';
@@ -105,6 +108,25 @@ describe('TournamentMode', () => {
 
     expect(cardA.resourceCount).to.eq(3);
     expect(cardB.resourceCount).to.eq(3);
+  });
+
+  it('Robotic Workforce cannot copy corporations in tournament games', () => {
+    const [game, player] = testGame(2, {tournamentExpansion: true});
+    const roboticWorkforce = new RoboticWorkforce();
+    const corporation = new CheungShingMARSTournament();
+    player.playedCards.push(corporation);
+
+    expect(roboticWorkforce.canPlay(player)).is.false;
+
+    const mine = new Mine();
+    player.playedCards.push(mine);
+    expect(roboticWorkforce.canPlay(player)).is.true;
+
+    cast(roboticWorkforce.play(player), undefined);
+    runAllActions(game);
+    const selectCard = cast(player.popWaitingFor(), SelectCard);
+    expect(selectCard.cards).has.length(1);
+    expect(selectCard.cards[0]).to.eq(mine);
   });
 
   it('Initial draft is a single pack of 10 cards', () => {
