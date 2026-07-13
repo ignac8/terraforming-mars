@@ -1,5 +1,5 @@
 import {IProjectCard} from '../IProjectCard';
-import {IActionCard} from '../ICard';
+import {IActionCard, ICard} from '../ICard';
 import {IPlayer} from '../../IPlayer';
 import {Card} from '../Card';
 import {CardType} from '../../../common/cards/CardType';
@@ -54,27 +54,32 @@ export class FloatingRefinery extends Card implements IProjectCard, IActionCard 
       return undefined;
     });
 
-    const remove2floaters = new SelectOption(
+    const remove2FloatersOption = new SelectOption(
       'Remove 2 floaters from ANY CARD to gain 1 titanium and 2 M€',
       'Remove floaters',
     ).andThen(() => {
+      if (floater2Cards.length === 1) {
+        return this.remove2Floaters(player, floater2Cards[0]);
+      }
       return new SelectCard('Remove 2 floaters from ANY CARD to gain 1 titanium and 2 M€',
         'Choose a card to spend 2 floaters from, to gain 1 titanium and 2 M€.',
         floater2Cards,
       ).andThen(
-        ([card]) => {
-          player.removeResourceFrom(card, 2);
-          player.stock.add(Resource.MEGACREDITS, 2, {log: true});
-          player.stock.add(Resource.TITANIUM, 1, {log: true});
-          return undefined;
-        });
+        ([card]) => this.remove2Floaters(player, card));
     });
 
     if (floater2Cards.length > 0) {
-      return new OrOptions(remove2floaters, addFloater);
+      return new OrOptions(remove2FloatersOption, addFloater);
     } else {
       player.addResourceTo(this, {log: true});
       return undefined;
     }
+  }
+
+  private remove2Floaters(player: IPlayer, card: ICard): undefined {
+    player.removeResourceFrom(card, 2);
+    player.stock.add(Resource.MEGACREDITS, 2, {log: true});
+    player.stock.add(Resource.TITANIUM, 1, {log: true});
+    return undefined;
   }
 }
