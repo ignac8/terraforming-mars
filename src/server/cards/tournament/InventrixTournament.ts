@@ -9,7 +9,7 @@ export class InventrixTournament extends CorporationCard implements ICorporation
   constructor() {
     super({
       name: CardName.INVENTRIX_TOURNAMENT,
-      tags: [Tag.SCIENCE],
+      tags: [Tag.BUILDING, Tag.SCIENCE],
       startingMegaCredits: 45,
       globalParameterRequirementBonus: {steps: 2},
 

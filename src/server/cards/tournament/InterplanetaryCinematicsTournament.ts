@@ -9,7 +9,7 @@ export class InterplanetaryCinematicsTournament extends InterplanetaryCinematics
   constructor() {
     super({
       name: CardName.INTERPLANETARY_CINEMATICS_TOURNAMENT,
-      tags: [Tag.BUILDING],
+      tags: [Tag.MICROBE, Tag.BUILDING, Tag.BUILDING],
       startingMegaCredits: 30,
 
       behavior: {

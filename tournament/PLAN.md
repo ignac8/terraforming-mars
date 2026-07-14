@@ -6,7 +6,7 @@ tournaments, so players can practice online. It is deployed as a second, indepen
 instance alongside the fork's main instance; all deployment infrastructure lives in the
 [ignac8/terraforming-mars-deploy](https://github.com/ignac8/terraforming-mars-deploy) repo (see its README for the runbook).
 
-## Status (2026-07-13)
+## Status (2026-07-14)
 
 Implemented and **live at <https://tournament.terraforming-mars.zerko.it>**. The create
 game form opens with Tournament rules pre-checked and locked to the regulation; every
@@ -16,7 +16,11 @@ for reviewers: <https://tournament.terraforming-mars.zerko.it/cards#~mT~tc>.
 Announced by the organizer in the "Terraformacja Marsa Polska" FB group on 2026-07-12.
 The feedback round produced two changes (Sagitta shown as 35 M€ with no self-trigger;
 Robotic Workforce cannot copy corporations) and confirmed all open interpretation calls
-— organizer rulings relayed 2026-07-13.
+— organizer rulings relayed 2026-07-13. On 2026-07-14 the organizer reported the
+corporation tags: the printed cards carry the fused prelude's tags on top of the
+original corporation's, so 11 corporations gained tags (delta table below, verified
+against the card sheet PDFs). Double tags (two buildings on Nirgal, Interplanetary
+Cinematics and Manutech) are as printed and count twice where tags are counted.
 
 Verified: full lint, server suite (7000+ tests incl. 33 tournament-specific), client
 suite, and an HTTP end-to-end run (server-side preset clamp + shared pool). Pushes to
@@ -79,22 +83,22 @@ config overrides), so the behavior code exists once.
 
 | Tournament card | Original | Delta vs original |
 |---|---|---|
-| Inventrix:tournament | Inventrix (45 M€, first action draw 3, ±2 global requirements) | + 2 steel production, + 4 steel |
-| Sagitta Frontier Services:tournament | Sagitta Frontier Services (31 M€, +1 energy +2 M€ prod, draw a no-tag card; no-tag play → 4 M€, one-tag play → 1 M€) | 31→35 M€ (the original's "including this" self-trigger folded into the start; effect no longer triggers on itself), M€ production 2→4, +1 plant production |
+| Inventrix:tournament | Inventrix (45 M€, first action draw 3, ±2 global requirements) | + 2 steel production, + 4 steel; + building tag |
+| Sagitta Frontier Services:tournament | Sagitta Frontier Services (31 M€, +1 energy +2 M€ prod, draw a no-tag card; no-tag play → 4 M€, one-tag play → 1 M€) | 31→35 M€ (the original's "including this" self-trigger folded into the start; effect no longer triggers on itself), M€ production 2→4, +1 plant production; + plant and building tags (no longer a no-tag card) |
 | Phobolog:tournament | Phobolog (23 M€, 10 titanium, titanium value +1) | 23→28 M€, +1 plant production, +1 TR at start |
-| CrediCor:tournament | CrediCor (57 M€, ≥20 M€ card/SP → 4 M€ back) | +1 steel production, +2 heat production, +2 heat |
-| Teractor:tournament | Teractor (60 M€, Earth tags −3 M€) | +1 plant production, draw 3 cards at start |
-| Factorum:tournament | Factorum (37 M€, +1 steel prod; action: +1 energy prod if no energy OR 3 M€ → draw building card) | 37→40 M€, +4 M€ production |
+| CrediCor:tournament | CrediCor (57 M€, ≥20 M€ card/SP → 4 M€ back) | +1 steel production, +2 heat production, +2 heat; + building tag |
+| Teractor:tournament | Teractor (60 M€, Earth tags −3 M€) | +1 plant production, draw 3 cards at start; + science tag |
+| Factorum:tournament | Factorum (37 M€, +1 steel prod; action: +1 energy prod if no energy OR 3 M€ → draw building card) | 37→40 M€, +4 M€ production; + Earth tag |
 | Ecoline:tournament | Ecoline (36 M€, +2 plant prod, 3 plants, greenery for 7 plants) | +1 M€ production, +1 steel production, +1 titanium production |
-| Nirgal Enterprises:tournament | Nirgal Enterprises (30 M€, +1 energy/plant/steel prod, milestones & awards free) | +3 heat production, +3 heat |
+| Nirgal Enterprises:tournament | Nirgal Enterprises (30 M€, +1 energy/plant/steel prod, milestones & awards free) | +3 heat production, +3 heat; + a second building tag |
 | Recyclon:tournament | Recyclon (38 M€, +1 steel prod; building tag → +1 microbe here OR spend 2 microbes → +1 plant prod) | production: −1 M€, +1 plant, +1 energy, +1 heat (steel kept); effect now triggers **per building tag** on the played card |
-| Interplanetary Cinematics:tournament | Interplanetary Cinematics (30 M€, 20 steel, event → 2 M€) | +1 energy production, +1 plant production, +2 plants |
-| Manutech:tournament | Manutech (35 M€, +1 steel prod; gain resources equal to production increases) | +1 plant production, place a city tile at start |
+| Interplanetary Cinematics:tournament | Interplanetary Cinematics (30 M€, 20 steel, event → 2 M€) | +1 energy production, +1 plant production, +2 plants; + microbe tag and a second building tag |
+| Manutech:tournament | Manutech (35 M€, +1 steel prod; gain resources equal to production increases) | +1 plant production, place a city tile at start; + city tag and a second building tag |
 | Cheung Shing Mars:tournament | Cheung Shing MARS (44 M€, +3 M€ prod, building tags −2 M€) | 44→65 M€ |
-| Palladin Shipping:tournament | Palladin Shipping (36 M€, 5 titanium, space event → 1 titanium; action: 2 titanium → raise temperature) | +1 M€ production, draw 3 cards at start |
-| Ecotec:tournament | Ecotec (42 M€, +1 plant prod; per bio tag → 1 plant or microbe to any card) | 42→48 M€, +1 energy production, +1 steel production |
-| UNMI:tournament | United Nations Mars Initiative (40 M€; action: 3 M€ → +1 TR if TR raised this gen) | on play: place 1 ocean, 1 city and 1 greenery **without printed space bonuses** (the ocean-adjacency 2 M€ still pays; global effects apply), then discard 3 cards from hand (capped at hand size) |
-| Utopia Invest:tournament | Utopia Invest (40 M€, +1 steel/titanium prod; action: lower a production → gain 4 of that resource) | +2 energy production, +4 steel |
+| Palladin Shipping:tournament | Palladin Shipping (36 M€, 5 titanium, space event → 1 titanium; action: 2 titanium → raise temperature) | +1 M€ production, draw 3 cards at start; + wild tag |
+| Ecotec:tournament | Ecotec (42 M€, +1 plant prod; per bio tag → 1 plant or microbe to any card) | 42→48 M€, +1 energy production, +1 steel production; + building tag |
+| UNMI:tournament | United Nations Mars Initiative (40 M€; action: 3 M€ → +1 TR if TR raised this gen) | on play: place 1 ocean, 1 city and 1 greenery **without printed space bonuses** (the ocean-adjacency 2 M€ still pays; global effects apply), then discard 3 cards from hand (capped at hand size); + city and plant tags |
+| Utopia Invest:tournament | Utopia Invest (40 M€, +1 steel/titanium prod; action: lower a production → gain 4 of that resource) | +2 energy production, +4 steel; + power tag |
 
 The printed tournament cards (Polish) are the authoritative source for these values.
 

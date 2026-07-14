@@ -8,7 +8,7 @@ export class ManutechTournament extends Manutech implements ICorporationCard {
   constructor() {
     super({
       name: CardName.MANUTECH_TOURNAMENT,
-      tags: [Tag.BUILDING],
+      tags: [Tag.CITY, Tag.BUILDING, Tag.BUILDING],
       startingMegaCredits: 35,
 
       behavior: {

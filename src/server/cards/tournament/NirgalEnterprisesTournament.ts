@@ -9,7 +9,7 @@ export class NirgalEnterprisesTournament extends CorporationCard implements ICor
   constructor() {
     super({
       name: CardName.NIRGAL_ENTERPRISES_TOURNAMENT,
-      tags: [Tag.POWER, Tag.PLANT, Tag.BUILDING],
+      tags: [Tag.PLANT, Tag.POWER, Tag.BUILDING, Tag.BUILDING],
       startingMegaCredits: 30,
 
       behavior: {

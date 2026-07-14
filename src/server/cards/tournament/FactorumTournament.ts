@@ -9,7 +9,7 @@ export class FactorumTournament extends Factorum implements ICorporationCard {
   constructor() {
     super({
       name: CardName.FACTORUM_TOURNAMENT,
-      tags: [Tag.POWER, Tag.BUILDING],
+      tags: [Tag.EARTH, Tag.POWER, Tag.BUILDING],
       startingMegaCredits: 40,
 
       behavior: {

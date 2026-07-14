@@ -9,7 +9,7 @@ export class UtopiaInvestTournament extends UtopiaInvest implements ICorporation
   constructor() {
     super({
       name: CardName.UTOPIA_INVEST_TOURNAMENT,
-      tags: [Tag.BUILDING],
+      tags: [Tag.POWER, Tag.BUILDING],
       startingMegaCredits: 40,
 
       behavior: {

@@ -1,4 +1,5 @@
 import {SagittaFrontierServices} from '../prelude2/SagittaFrontierServices';
+import {Tag} from '../../../common/cards/Tag';
 import {CardName} from '../../../common/cards/CardName';
 import {CardRenderer} from '../render/CardRenderer';
 import {AltSecondaryTag} from '../../../common/cards/render/AltSecondaryTag';
@@ -10,6 +11,7 @@ export class SagittaFrontierServicesTournament extends SagittaFrontierServices i
   constructor() {
     super({
       name: CardName.SAGITTA_FRONTIER_SERVICES_TOURNAMENT,
+      tags: [Tag.PLANT, Tag.BUILDING],
       startingMegaCredits: 35,
 
       behavior: {

@@ -3,6 +3,8 @@ import {testGame} from './TestGame';
 import {Game} from '../src/server/Game';
 import {CardName} from '../src/common/cards/CardName';
 import {CardResource} from '../src/common/CardResource';
+import {Tag} from '../src/common/cards/Tag';
+import {newCorporationCard} from '../src/server/createCard';
 import {BoardName} from '../src/common/boards/BoardName';
 import {DEFAULT_GAME_OPTIONS, GameOptions, applyTournamentPreset} from '../src/server/game/GameOptions';
 import {newInitialDraft} from '../src/server/Draft';
@@ -108,6 +110,31 @@ describe('TournamentMode', () => {
 
     expect(cardA.resourceCount).to.eq(3);
     expect(cardB.resourceCount).to.eq(3);
+  });
+
+  it('Corporation tags match the printed tournament cards', () => {
+    const printedTags: ReadonlyArray<[CardName, ReadonlyArray<Tag>]> = [
+      [CardName.INVENTRIX_TOURNAMENT, [Tag.BUILDING, Tag.SCIENCE]],
+      [CardName.SAGITTA_FRONTIER_SERVICES_TOURNAMENT, [Tag.PLANT, Tag.BUILDING]],
+      [CardName.PHOBOLOG_TOURNAMENT, [Tag.SPACE]],
+      [CardName.CREDICOR_TOURNAMENT, [Tag.BUILDING]],
+      [CardName.TERACTOR_TOURNAMENT, [Tag.SCIENCE, Tag.EARTH]],
+      [CardName.FACTORUM_TOURNAMENT, [Tag.EARTH, Tag.POWER, Tag.BUILDING]],
+      [CardName.ECOLINE_TOURNAMENT, [Tag.PLANT]],
+      [CardName.NIRGAL_ENTERPRISES_TOURNAMENT, [Tag.PLANT, Tag.POWER, Tag.BUILDING, Tag.BUILDING]],
+      [CardName.RECYCLON_TOURNAMENT, [Tag.MICROBE, Tag.BUILDING]],
+      [CardName.INTERPLANETARY_CINEMATICS_TOURNAMENT, [Tag.MICROBE, Tag.BUILDING, Tag.BUILDING]],
+      [CardName.MANUTECH_TOURNAMENT, [Tag.CITY, Tag.BUILDING, Tag.BUILDING]],
+      [CardName.CHEUNG_SHING_MARS_TOURNAMENT, [Tag.BUILDING]],
+      [CardName.PALLADIN_SHIPPING_TOURNAMENT, [Tag.WILD, Tag.SPACE]],
+      [CardName.ECOTEC_TOURNAMENT, [Tag.BUILDING, Tag.MICROBE, Tag.PLANT]],
+      [CardName.UNITED_NATIONS_MARS_INITIATIVE_TOURNAMENT, [Tag.CITY, Tag.PLANT, Tag.EARTH]],
+      [CardName.UTOPIA_INVEST_TOURNAMENT, [Tag.POWER, Tag.BUILDING]],
+    ];
+
+    for (const [name, tags] of printedTags) {
+      expect(newCorporationCard(name)?.tags, name).deep.eq(tags);
+    }
   });
 
   it('Robotic Workforce cannot copy corporations in tournament games', () => {

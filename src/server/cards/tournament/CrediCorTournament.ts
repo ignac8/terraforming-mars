@@ -1,4 +1,5 @@
 import {CrediCor} from '../corporation/CrediCor';
+import {Tag} from '../../../common/cards/Tag';
 import {CardName} from '../../../common/cards/CardName';
 import {CardRenderer} from '../render/CardRenderer';
 import {ICorporationCard} from '../corporation/ICorporationCard';
@@ -7,6 +8,7 @@ export class CrediCorTournament extends CrediCor implements ICorporationCard {
   constructor() {
     super({
       name: CardName.CREDICOR_TOURNAMENT,
+      tags: [Tag.BUILDING],
       startingMegaCredits: 57,
 
       behavior: {

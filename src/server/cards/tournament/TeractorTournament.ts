@@ -8,7 +8,7 @@ export class TeractorTournament extends CorporationCard implements ICorporationC
   constructor() {
     super({
       name: CardName.TERACTOR_TOURNAMENT,
-      tags: [Tag.EARTH],
+      tags: [Tag.SCIENCE, Tag.EARTH],
       startingMegaCredits: 60,
 
       behavior: {

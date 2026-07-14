@@ -10,7 +10,7 @@ export class PalladinShippingTournament extends PalladinShipping implements ICor
   constructor() {
     super({
       name: CardName.PALLADIN_SHIPPING_TOURNAMENT,
-      tags: [Tag.SPACE],
+      tags: [Tag.WILD, Tag.SPACE],
       startingMegaCredits: 36,
 
       behavior: {

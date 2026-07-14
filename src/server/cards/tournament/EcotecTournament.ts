@@ -9,7 +9,7 @@ export class EcotecTournament extends Ecotec implements ICorporationCard {
   constructor() {
     super({
       name: CardName.ECOTEC_TOURNAMENT,
-      tags: [Tag.MICROBE, Tag.PLANT],
+      tags: [Tag.BUILDING, Tag.MICROBE, Tag.PLANT],
       startingMegaCredits: 48,
 
       behavior: {

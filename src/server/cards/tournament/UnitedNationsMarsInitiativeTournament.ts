@@ -13,7 +13,7 @@ export class UnitedNationsMarsInitiativeTournament extends UnitedNationsMarsInit
   constructor() {
     super({
       name: CardName.UNITED_NATIONS_MARS_INITIATIVE_TOURNAMENT,
-      tags: [Tag.EARTH],
+      tags: [Tag.CITY, Tag.PLANT, Tag.EARTH],
       startingMegaCredits: 40,
 
       metadata: {
