@@ -137,7 +137,8 @@ export default defineComponent({
     },
     cardClasses(): string {
       const classes = [];
-      classes.push('card-' + this.card.name.toLowerCase().replaceAll(' ', '-'));
+      // Variant corporations (e.g. 'Teractor:tournament') reuse the base card's per-name CSS.
+      classes.push('card-' + this.card.name.split(':')[0].toLowerCase().replaceAll(' ', '-'));
 
       if (this.card.isDisabled) {
         classes.push('card-unavailable');
