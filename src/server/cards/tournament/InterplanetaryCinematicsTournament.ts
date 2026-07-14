@@ -22,7 +22,8 @@ export class InterplanetaryCinematicsTournament extends InterplanetaryCinematics
         description: 'You start with 20 steel, 2 plants, and 30 M€. Increase your energy and plant production 1 step each.',
         renderData: CardRenderer.builder((b) => {
           b.br;
-          b.megacredits(30).nbsp.steel(20, {digit}).plants(2).nbsp.production((pb) => pb.energy(1).plants(1));
+          b.megacredits(30).nbsp.steel(20, {digit}).plants(2).br;
+          b.production((pb) => pb.energy(1).plants(1)).br;
           b.corpBox('effect', (ce) => {
             ce.effect('Each time you play an event, you gain 2 M€.', (eb) => {
               eb.tag(Tag.EVENT).startEffect.megacredits(2);

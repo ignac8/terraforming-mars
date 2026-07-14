@@ -28,7 +28,8 @@ export class InventrixTournament extends CorporationCard implements ICorporation
         description: 'As your first action in the game, draw 3 cards. Start with 45 M€. Increase your steel production 2 steps and gain 4 steel.',
         renderData: CardRenderer.builder((b) => {
           b.br;
-          b.megacredits(45).nbsp.cards(3).nbsp.production((pb) => pb.steel(2)).steel(4, {digit});
+          b.megacredits(45).nbsp.cards(3).br;
+          b.production((pb) => pb.steel(2)).steel(4, {digit}).br;
           b.corpBox('effect', (ce) => {
             ce.effect('Your temperature, oxygen, ocean, and Venus requirements are +2 or -2 steps, your choice in each case.', (eb) => {
               eb.plate('Global requirements').startEffect.text('+/- 2');
