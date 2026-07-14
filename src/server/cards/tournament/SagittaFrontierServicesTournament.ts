@@ -22,8 +22,8 @@ export class SagittaFrontierServicesTournament extends SagittaFrontierServices i
         cardNumber: 'T02',
         renderData: CardRenderer.builder((b) => {
           b.megacredits(35).production((pb) => pb.energy(1).plants(1).megacredits(4)).cards(1, {secondaryTag: AltSecondaryTag.NO_TAGS}).br;
-          b.effect('When you play a card with no tags, gain 4 M€.', (eb) => eb.noTags().startEffect.megacredits(4)).br;
-          b.effect('When you play a card with EXACTLY 1 TAG, you gain 1 M€.', (eb) => eb.emptyTag().asterix().startEffect.megacredits(1)).br;
+          b.effect('When you play a card with no tags, gain 4 M€. When you play a card with EXACTLY 1 TAG, you gain 1 M€.', (eb) => eb.noTags().startEffect.megacredits(4)).br;
+          b.effect(undefined, (eb) => eb.emptyTag().asterix().startEffect.megacredits(1));
         }),
         description: 'You start with 35 M€. Increase your energy and plant production 1 step each, and your M€ production 4 steps. Draw a card that has no tag.',
       },

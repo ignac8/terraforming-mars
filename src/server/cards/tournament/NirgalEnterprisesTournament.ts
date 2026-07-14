@@ -21,7 +21,8 @@ export class NirgalEnterprisesTournament extends CorporationCard implements ICor
         cardNumber: 'T08',
         renderData: CardRenderer.builder((b) => {
           b.br.br;
-          b.megacredits(30).production((pb) => pb.energy(1).plants(1).steel(1).heat(3)).heat(3, {digit}).br;
+          b.megacredits(30).production((pb) => pb.energy(1).plants(1).steel(1).heat(3, {digit})).br;
+          b.heat(3, {digit}).br;
           b.effect('AWARDS AND MILESTONES ALWAYS COST 0 M€ FOR YOU.', (eb) => {
             eb.plate('Awards and Milestones').startEffect.megacredits(1, {text: '0'});
           });

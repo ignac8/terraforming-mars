@@ -28,7 +28,7 @@ export class RecyclonTournament extends Recyclon implements ICorporationCard {
         description: 'You start with 38 M€. Decrease your M€ production 1 step and increase your plant, energy, heat, and steel production 1 step each.',
         renderData: CardRenderer.builder((b) => {
           b.br;
-          b.megacredits(38).nbsp.production((pb) => pb.megacredits(-1).br.plants(1).energy(1).heat(1).steel(1));
+          b.megacredits(38).nbsp.production((pb) => pb.megacredits(-1).plants(1).energy(1).heat(1).steel(1));
           b.corpBox('effect', (ce) => {
             ce.effect('When you play a building tag, including this, FOR EACH building tag on that card, gain 1 microbe to this card, or remove 2 microbes here and raise your plant production 1 step.', (eb) => {
               eb.tag(Tag.BUILDING).colon().resource(CardResource.MICROBE).or();
