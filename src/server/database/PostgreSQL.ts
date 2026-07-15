@@ -12,6 +12,8 @@ import {toID} from '../../common/utils/utils';
 import {databaseMetrics, withDatabaseMetrics} from './MetricsDelegate';
 import {ThrottledCache} from './ThrottledCache';
 import {Clock} from '@/common/Timer';
+import {parseInterned} from './parseInterned';
+import {LogMessage} from '@/common/logs/LogMessage';
 
 type StoredSerializedGame = Omit<SerializedGame, 'gameOptions' | 'gameLog'> & {logLength: number};
 
@@ -174,18 +176,15 @@ export class PostgreSQL implements IDatabase {
   }
 
   private compose(game: string, log: string, options: string): SerializedGame {
-    const stored: StoredSerializedGame = JSON.parse(game);
+    const stored: StoredSerializedGame = parseInterned(game);
     const {logLength, ...remainder} = stored;
-    // console.log(log, options, stored.logLength);
-    // TODO(kberg): Remove the outer join, and the else of this conditional by 2025-01-01
-    if (stored.logLength !== undefined) {
-      const gameLog = JSON.parse(log);
-      gameLog.length = logLength;
-      const gameOptions = JSON.parse(options);
-      return {...remainder, gameOptions, gameLog};
-    } else {
-      return remainder as SerializedGame;
-    }
+
+    const gameLog: Array<LogMessage> = parseInterned(log);
+    // If this is part of an undo operation, delete the end
+    // of the array so the log matches the length.
+    gameLog.length = logLength;
+    const gameOptions: GameOptions = parseInterned(options);
+    return {...remainder, gameOptions, gameLog};
   }
 
   public async getGameId(participantId: ParticipantId): Promise<GameId> {
@@ -218,7 +217,7 @@ export class PostgreSQL implements IDatabase {
         game.log as log,
         game.options as options
       FROM games
-      LEFT JOIN game on game.game_id = games.game_id
+      INNER JOIN game on game.game_id = games.game_id
       WHERE games.game_id = $1
       ORDER BY save_id DESC
       LIMIT 1`,
@@ -238,7 +237,7 @@ export class PostgreSQL implements IDatabase {
         game.log as log,
         game.options as options
       FROM games
-      LEFT JOIN game on game.game_id = games.game_id
+      INNER JOIN game on game.game_id = games.game_id
       WHERE games.game_id = $1
       AND games.save_id = $2`,
       [gameId, saveId],
@@ -285,8 +284,9 @@ export class PostgreSQL implements IDatabase {
 
   async markFinished(gameId: GameId): Promise<void> {
     const promise1 = this.client.query('UPDATE games SET status = \'finished\' WHERE game_id = $1', [gameId]);
-    const promise2 = this.client.query('INSERT INTO completed_game(game_id) VALUES ($1)', [gameId]);
-    await Promise.all([promise1, promise2]);
+    const promise2 = this.client.query('UPDATE game SET status = \'finished\' WHERE game_id = $1', [gameId]);
+    const promise3 = this.client.query('INSERT INTO completed_game(game_id) VALUES ($1)', [gameId]);
+    await Promise.all([promise1, promise2, promise3]);
   }
 
   // Purge unfinished games older than MAX_GAME_DAYS days. If this environment variable is absent, it uses the default of 10 days.
