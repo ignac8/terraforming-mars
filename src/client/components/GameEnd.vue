@@ -137,7 +137,7 @@
                   </tbody>
               </table>
               <!-- MarsBot VP detail shown in the column section below -->
-              <br/>
+              <br>
               <h2 v-i18n>Victory points details</h2>
               <VictoryPointChart
                 :datasets="vpDataset"
