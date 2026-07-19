@@ -4,7 +4,7 @@
     <label v-for="player in (playerinput.players || [])" :key="player" class="form-radio form-inline">
       <input type="radio" v-model="selectedPlayer" :value="player" >
       <i class="form-icon"></i>
-      <SelectPlayerRow :player="playerView.players.find((otherPlayer) => otherPlayer.color === player)" :fallbackName="playerView.game?.marsBot?.name"></SelectPlayerRow>
+      <SelectPlayerRow :player="playerView.players.find((otherPlayer) => otherPlayer.color === player)" :fallbackName="playerView.game?.marsBot?.name" />
     </label>
     <AppButton v-if="showsave === true" size="big" @click="saveData" :title="$t(playerinput.buttonLabel)" />
   </div>
