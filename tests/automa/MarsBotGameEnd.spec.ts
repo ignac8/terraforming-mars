@@ -10,7 +10,7 @@ import {calculateVictoryPoints} from '../../src/server/game/calculateVictoryPoin
 
 function createAutomaGame(difficulty: 'easy' | 'normal' | 'hard' | 'brutal' = 'normal'): {game: IGame, human: TestPlayer, marsBot: MarsBot} {
   const [game, human] = testGame(1, {automaOption: true, automaDifficulty: difficulty, boardName: BoardName.THARSIS});
-  return {game, human, marsBot: game.marsBot!};
+  return {game, human, marsBot: game.automaHooks!.marsBot};
 }
 
 describe('MarsBot Game End Model', () => {
@@ -149,7 +149,6 @@ describe('MarsBot Game End Model', () => {
       marsBot.player.setTerraformRating(25);
       (game as any).phase = Phase.END;
 
-      const marsBotVP = marsBot.getVictoryPoints();
       // Both have TR 25 as base. Human might have additional VP from cards, but
       // the key rule: tie = MarsBot wins.
       // We verify the model includes this info

@@ -779,7 +779,7 @@ describe('Game', () => {
     assertIsJSON(serialized);
     const serializedKeys = Object.keys(serialized);
 
-    const unserializedFieldsInGame: Array<keyof Game> = [
+    const unserializedFieldsInGame: Array<keyof Game | '_marsBotPlayer'> = [
       '_marsBotPlayer',
       'createdTime',
       'discardedColonies',

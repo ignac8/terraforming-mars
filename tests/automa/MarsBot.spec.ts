@@ -1,13 +1,9 @@
 import {Resource} from '../../src/common/Resource';
 import {expect} from 'chai';
-import {Game} from '../../src/server/Game';
 import {testGame} from '../TestGame';
 import {TestPlayer} from '../TestPlayer';
 import {IGame} from '../../src/server/IGame';
 import {MarsBot} from '../../src/server/automa/MarsBot';
-import {AutomaGameSetup} from '../../src/server/automa/AutomaGameSetup';
-import {THARSIS_MARSBOT_BOARD} from '../../src/server/automa/boards/TharsisMarsBot';
-import {SeededRandom} from '../../src/common/utils/Random';
 import {BoardName} from '../../src/common/boards/BoardName';
 import {TileType} from '../../src/common/TileType';
 
@@ -19,9 +15,9 @@ function createAutomaGame(difficulty: 'easy' | 'normal' | 'hard' | 'brutal' = 'n
   });
 
   // The game should have created a MarsBot
-  expect(game.marsBot).to.not.be.undefined;
+  expect(game.automaHooks?.marsBot).to.not.be.undefined;
 
-  return {game, human, marsBot: game.marsBot!};
+  return {game, human, marsBot: game.automaHooks!.marsBot};
 }
 
 describe('MarsBot', () => {

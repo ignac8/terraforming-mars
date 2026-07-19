@@ -10,7 +10,7 @@ import {AwardScorer} from '../../src/server/awards/AwardScorer';
 
 function createAutomaGame(): {game: IGame, human: TestPlayer, marsBot: MarsBot} {
   const [game, human] = testGame(1, {automaOption: true, automaDifficulty: 'normal', boardName: BoardName.THARSIS});
-  return {game, human, marsBot: game.marsBot!};
+  return {game, human, marsBot: game.automaHooks!.marsBot};
 }
 
 describe('MarsBot Award Crash Fix', () => {
@@ -154,7 +154,7 @@ describe('MarsBot Award Crash Fix', () => {
     });
 
     it('human gets 0 award VP with no funded awards', () => {
-      const {game, human} = createAutomaGame();
+      const {human} = createAutomaGame();
       const vp = calculateVictoryPoints(human);
       expect(vp.awards).to.eq(0);
     });

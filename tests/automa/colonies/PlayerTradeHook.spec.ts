@@ -17,10 +17,9 @@ describe('PlayerTradeHook (C-21, C-24c)', () => {
   describe('handleColonyBonus', () => {
     it('returns false for non-MarsBot player IDs', () => {
       const [game] = testGame(1, {automaOption: true, coloniesExtension: true, boardName: BoardName.THARSIS});
-      const marsBot = getMarsBot(game);
       const luna = new Luna();
       game.colonies = [luna];
-      const result = game.automaHooks!.handleColonyBonus(luna, 'some-other-player');
+      const result = game.automaHooks!.handleColonyBonus(luna, 'psome-other-player');
       expect(result).to.be.false;
     });
 

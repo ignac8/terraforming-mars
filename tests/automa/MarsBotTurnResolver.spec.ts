@@ -4,19 +4,15 @@ import {TestPlayer} from '../TestPlayer';
 import {IGame} from '../../src/server/IGame';
 import {Tag} from '../../src/common/cards/Tag';
 import {MarsBotBoard} from '../../src/server/automa/MarsBotBoard';
-import {MarsBotBonusDeck} from '../../src/server/automa/MarsBotBonusDeck';
 import {MarsBotTurnResolver} from '../../src/server/automa/MarsBotTurnResolver';
 import {THARSIS_MARSBOT_BOARD} from '../../src/server/automa/boards/TharsisMarsBot';
 import {TrackDefinition} from '../../src/common/automa/AutomaTypes';
-import {SeededRandom} from '../../src/common/utils/Random';
 import {IProjectCard} from '../../src/server/cards/IProjectCard';
 import {Algae} from '../../src/server/cards/base/Algae';
-import {Birds} from '../../src/server/cards/base/Birds';
 import {Asteroid} from '../../src/server/cards/base/Asteroid';
 import {EarthOffice} from '../../src/server/cards/base/EarthOffice';
 import {SpaceStation} from '../../src/server/cards/base/SpaceStation';
 import {SearchForLife} from '../../src/server/cards/base/SearchForLife';
-import {TundraFarming} from '../../src/server/cards/base/TundraFarming';
 
 /** Helper: create a board where track 1 has a specific action at a given position, rest null. */
 function makeBoardWithTrack1Action(pos: number, action: string): ReadonlyArray<TrackDefinition> {
@@ -41,7 +37,6 @@ describe('MarsBotTurnResolver', () => {
   let human: TestPlayer;
   let marsBot: TestPlayer;
   let board: MarsBotBoard;
-  let bonusDeck: MarsBotBonusDeck;
   let resolver: MarsBotTurnResolver;
 
   beforeEach(() => {
@@ -49,7 +44,6 @@ describe('MarsBotTurnResolver', () => {
     marsBot = TestPlayer.RED.newPlayer({name: 'marsbot'});
     (marsBot as any).game = game;
     board = new MarsBotBoard(THARSIS_MARSBOT_BOARD);
-    bonusDeck = MarsBotBonusDeck.createBase(new SeededRandom(42));
     resolver = new MarsBotTurnResolver(game, marsBot, human, board, 'normal');
   });
 

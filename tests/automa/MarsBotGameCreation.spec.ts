@@ -1,20 +1,10 @@
 import {expect} from 'chai';
 import {testGame} from '../TestGame';
 import {BoardName} from '../../src/common/boards/BoardName';
-import {GameOptions, DEFAULT_GAME_OPTIONS} from '../../src/server/game/GameOptions';
 import {ApiCreateGame} from '../../src/server/routes/ApiCreateGame';
 
 describe('MarsBotGameCreation', () => {
   describe('Server-side expansion gating', () => {
-    function createAutomaOptions(overrides: Partial<GameOptions> = {}): GameOptions {
-      return {
-        ...DEFAULT_GAME_OPTIONS,
-        automaOption: true,
-        automaDifficulty: 'normal',
-        ...overrides,
-      };
-    }
-
     it('automa game forces Venus off', () => {
       const [game] = testGame(1, {
         automaOption: true,

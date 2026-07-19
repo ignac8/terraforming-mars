@@ -8,7 +8,6 @@ import {BoardName} from '../../src/common/boards/BoardName';
 import {Phase} from '../../src/common/Phase';
 import {Resource} from '../../src/common/Resource';
 import {getMcPerVP} from '../../src/server/automa/MarsBotScoring';
-import {MarsBotBonusCard} from '../../src/server/automa/MarsBotBonusCard';
 import {BonusCardId} from '../../src/common/automa/AutomaTypes';
 import {GlobalParameter} from '../../src/common/GlobalParameter';
 import {Mayor} from '../../src/server/milestones/Mayor';
@@ -26,8 +25,8 @@ function createAutomaGame(difficulty: 'easy' | 'normal' | 'hard' | 'brutal' = 'n
     automaDifficulty: difficulty,
     boardName: BoardName.THARSIS,
   });
-  expect(game.marsBot).to.not.be.undefined;
-  return {game, human, marsBot: game.marsBot!};
+  expect(game.automaHooks?.marsBot).to.not.be.undefined;
+  return {game, human, marsBot: game.automaHooks!.marsBot};
 }
 
 describe('MarsBotSessionFixes', () => {
@@ -179,8 +178,8 @@ describe('MarsBotSessionFixes', () => {
     const serialized = game.serialize();
     const restored = Game.deserialize(serialized);
 
-    expect(restored.marsBot).to.not.be.undefined;
-    expect(restored.marsBot!.vpByGeneration).to.deep.eq([20, 25, 30]);
+    expect(restored.automaHooks?.marsBot).to.not.be.undefined;
+    expect(restored.automaHooks!.marsBot.vpByGeneration).to.deep.eq([20, 25, 30]);
   });
 
   it('serialization roundtrip preserves both game name and MarsBot (upstream merge regression)', () => {
@@ -193,8 +192,8 @@ describe('MarsBotSessionFixes', () => {
     const restored = Game.deserialize(serialized);
 
     expect(restored.name).to.eq(game.name);
-    expect(restored.marsBot).to.not.be.undefined;
-    expect(restored.marsBot!.board.tracks[0].position).to.eq(1);
+    expect(restored.automaHooks?.marsBot).to.not.be.undefined;
+    expect(restored.automaHooks!.marsBot.board.tracks[0].position).to.eq(1);
   });
 
   it('deserialization works when activePlayer is MarsBot', () => {
@@ -208,10 +207,10 @@ describe('MarsBotSessionFixes', () => {
     expect(serialized.activePlayer).to.eq(marsBot.player.id);
 
     const restored = Game.deserialize(serialized);
-    expect(restored.marsBot).to.not.be.undefined;
+    expect(restored.automaHooks?.marsBot).to.not.be.undefined;
     expect(restored.activePlayer.id).to.eq(marsBot.player.id);
-    expect(restored.marsBot!.board.tracks[0].position).to.eq(1);
-    expect(restored.marsBot!.turnResolver.mcSupply).to.eq(15);
+    expect(restored.automaHooks!.marsBot.board.tracks[0].position).to.eq(1);
+    expect(restored.automaHooks!.marsBot.turnResolver.mcSupply).to.eq(15);
   });
 
   it('deserialization works when activePlayer is human', () => {
@@ -223,7 +222,7 @@ describe('MarsBotSessionFixes', () => {
 
     const restored = Game.deserialize(serialized);
     expect(restored.activePlayer.id).to.eq(human.id);
-    expect(restored.marsBot).to.not.be.undefined;
+    expect(restored.automaHooks?.marsBot).to.not.be.undefined;
   });
 
   it('deserialization works when MarsBot has claimed milestones', () => {
@@ -255,7 +254,7 @@ describe('MarsBotSessionFixes', () => {
 
     const serialized = game.serialize();
     const restored = Game.deserialize(serialized);
-    expect(restored.marsBot!.actionDeck.length).to.eq(deckSize);
+    expect(restored.automaHooks!.marsBot.actionDeck.length).to.eq(deckSize);
   });
 
   it('bonus deck roundtrip preserves draw and discard piles', () => {
@@ -269,8 +268,8 @@ describe('MarsBotSessionFixes', () => {
 
     const serialized = game.serialize();
     const restored = Game.deserialize(serialized);
-    expect(restored.marsBot!.bonusDeck.drawPile.length).to.eq(drawSize - 1);
-    expect(restored.marsBot!.bonusDeck.discardPile.length).to.eq(1);
+    expect(restored.automaHooks!.marsBot.bonusDeck.drawPile.length).to.eq(drawSize - 1);
+    expect(restored.automaHooks!.marsBot.bonusDeck.discardPile.length).to.eq(1);
   });
 
   it('bonus deck roundtrip preserves total card count (draw + discard - destroyed)', () => {
@@ -279,7 +278,7 @@ describe('MarsBotSessionFixes', () => {
 
     const serialized = game.serialize();
     const restored = Game.deserialize(serialized);
-    const totalAfter = restored.marsBot!.bonusDeck.drawPile.length + restored.marsBot!.bonusDeck.discardPile.length;
+    const totalAfter = restored.automaHooks!.marsBot.bonusDeck.drawPile.length + restored.automaHooks!.marsBot.bonusDeck.discardPile.length;
     expect(totalAfter).to.eq(totalBefore);
   });
 
@@ -294,7 +293,7 @@ describe('MarsBotSessionFixes', () => {
 
     const serialized = game.serialize();
     const restored = Game.deserialize(serialized);
-    expect(restored.marsBot!.playedProjectCards.length).to.eq(count);
+    expect(restored.automaHooks!.marsBot.playedProjectCards.length).to.eq(count);
   });
 
   it('floater count roundtrip', () => {
@@ -303,7 +302,7 @@ describe('MarsBotSessionFixes', () => {
 
     const serialized = game.serialize();
     const restored = Game.deserialize(serialized);
-    expect(restored.marsBot!.floaterCount).to.eq(7);
+    expect(restored.automaHooks!.marsBot.floaterCount).to.eq(7);
   });
 
   it('temperature raises roundtrip', () => {
@@ -312,12 +311,11 @@ describe('MarsBotSessionFixes', () => {
 
     const serialized = game.serialize();
     const restored = Game.deserialize(serialized);
-    expect(restored.marsBot!.temperatureRaises).to.eq(4);
+    expect(restored.automaHooks!.marsBot.temperatureRaises).to.eq(4);
   });
 
   it('deserialization does not re-log MarsBot is ready', () => {
     const {game} = createAutomaGame();
-    const logBefore = game.gameLog.length;
 
     const serialized = game.serialize();
     const restored = Game.deserialize(serialized);
@@ -334,7 +332,7 @@ describe('MarsBotSessionFixes', () => {
     const serialized = game.serialize();
     const restored = Game.deserialize(serialized);
     // Should still be empty, not rebuilt
-    expect(restored.marsBot!.actionDeck.length).to.eq(0);
+    expect(restored.automaHooks!.marsBot.actionDeck.length).to.eq(0);
   });
 
   it('comprehensive roundtrip: all MarsBot state preserved', () => {
@@ -378,7 +376,7 @@ describe('MarsBotSessionFixes', () => {
     // Serialize and restore
     const serialized = game.serialize();
     const restored = Game.deserialize(serialized);
-    const rm = restored.marsBot!;
+    const rm = restored.automaHooks!.marsBot;
 
     // Verify all fields
     expect(restored.activePlayer.id).to.eq(marsBot.player.id);
@@ -408,7 +406,7 @@ describe('MarsBotSessionFixes', () => {
   });
 
   it('human is limited to 2 actions before MarsBot gets a turn', () => {
-    const {game, human, marsBot} = createAutomaGame();
+    const {game, marsBot} = createAutomaGame();
     // MarsBot should not have passed yet (has cards in action deck)
     expect(game.hasPassedThisActionPhase(marsBot.player)).to.be.false;
     // allOtherPlayersHavePassed should return false for human (MarsBot hasn't passed)
@@ -544,7 +542,7 @@ describe('MarsBotSessionFixes', () => {
   });
 
   it('RemoveResourcesFromCard offers choice when both cards and MarsBot MC available', () => {
-    const {game, human, marsBot} = createAutomaGame();
+    const {human, marsBot} = createAutomaGame();
     marsBot.turnResolver.mcSupply = 10;
 
     // Give human a card with animals so there are card targets too
@@ -599,7 +597,7 @@ describe('MarsBotSessionFixes', () => {
   });
 
   it('hasAvailableTargets returns false without automa', () => {
-    const [game, player1, player2] = testGame(2);
+    const [, player1] = testGame(2);
     expect(RemoveResourcesFromCard.hasAvailableTargets(player1, CardResource.ANIMAL)).to.be.false;
   });
 
@@ -702,8 +700,8 @@ function createVenusAutomaGame(): {game: IGame, human: TestPlayer, marsBot: Mars
     boardName: BoardName.THARSIS,
     venusNextExtension: true,
   });
-  expect(game.marsBot).to.not.be.undefined;
-  return {game, human, marsBot: game.marsBot!};
+  expect(game.automaHooks?.marsBot).to.not.be.undefined;
+  return {game, human, marsBot: game.automaHooks!.marsBot};
 }
 
 describe('MarsBotVenusNext', () => {
@@ -781,7 +779,7 @@ describe('MarsBotVenusNext', () => {
     const serialized = game.serialize();
     const restored = Game.deserialize(serialized);
 
-    const restoredMarsBot = restored.marsBot!;
+    const restoredMarsBot = restored.automaHooks!.marsBot;
     expect(restoredMarsBot.board.tracks.length).to.eq(8);
     expect(restoredMarsBot.board.tracks[7].position).to.eq(3);
     expect(restoredMarsBot.floaterCount).to.eq(4);
@@ -802,7 +800,7 @@ describe('MarsBotVenusNext', () => {
   });
 
   it('floater extra card not triggered when Hoverlord still available', () => {
-    const {game, marsBot} = createVenusAutomaGame();
+    const {marsBot} = createVenusAutomaGame();
     marsBot.floaterCount = 10;
     // Hoverlord is still available (not claimed, not all milestones claimed)
     marsBot.buildResearchActionDeck();
@@ -834,13 +832,13 @@ describe('MarsBotVenusNext', () => {
   });
 
   it('floater spending: Brutal non-draft spends only 5 floaters (not 10)', () => {
-    const [game, human] = testGame(1, {
+    const [game] = testGame(1, {
       automaOption: true,
       automaDifficulty: 'brutal',
       boardName: BoardName.THARSIS,
       venusNextExtension: true,
     });
-    const marsBot = game.marsBot!;
+    const marsBot = game.automaHooks!.marsBot;
     marsBot.floaterCount = 15;
     // Make Hoverlord unavailable
     for (const m of game.milestones.slice(0, 3)) {
@@ -858,7 +856,7 @@ describe('MarsBotVenusNext', () => {
       boardName: BoardName.THARSIS,
       venusNextExtension: true,
     });
-    const marsBot = game.marsBot!;
+    const marsBot = game.automaHooks!.marsBot;
     // Brutal uses skipDiscard=true, keeps all 4 cards
     const cards = game.projectDeck.drawN(game, 4);
     marsBot.buildResearchActionDeckFromDraft([...cards], true);
@@ -910,7 +908,6 @@ describe('MarsBotVenusNext', () => {
     const {game, marsBot} = createVenusAutomaGame();
     // Venus at 6% → 1 step from 8% bonus
     (game as any).venusScaleLevel = 6;
-    const resolver = (marsBot as any).bonusResolver;
     // Need to access private method - use the bonus card directly
     const b15 = marsBot.bonusDeck.drawPile.find((c) => c.id === BonusCardId.B15_LOBBYISTS_VENUS);
     if (b15 === undefined) {

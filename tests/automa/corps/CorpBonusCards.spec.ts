@@ -4,7 +4,6 @@ import {testGame} from '../../TestGame';
 import {IGame} from '../../../src/server/IGame';
 import {TestPlayer} from '../../TestPlayer';
 import {MarsBot} from '../../../src/server/automa/MarsBot';
-import {MarsBotBonusResolver} from '../../../src/server/automa/MarsBotBonusResolver';
 import {createCorpBonusCard} from '../../../src/server/automa/MarsBotBonusCard';
 import {BonusCardId} from '../../../src/common/automa/AutomaTypes';
 import {BoardName} from '../../../src/common/boards/BoardName';
@@ -18,8 +17,8 @@ function createAutomaGame(): {game: IGame, human: TestPlayer, marsBot: MarsBot} 
     automaDifficulty: 'normal',
     boardName: BoardName.THARSIS,
   });
-  expect(game.marsBot).to.not.be.undefined;
-  return {game, human, marsBot: game.marsBot!};
+  expect(game.automaHooks?.marsBot).to.not.be.undefined;
+  return {game, human, marsBot: game.automaHooks!.marsBot};
 }
 
 describe('Corp-Specific Bonus Cards (B22-B32)', () => {
@@ -37,7 +36,7 @@ describe('Corp-Specific Bonus Cards (B22-B32)', () => {
       const {marsBot} = createAutomaGame();
       const card = createCorpBonusCard(BonusCardId.B23_RAPID_SPROUTING);
       const greeneryBefore = marsBot.game.board.getGreeneries(marsBot.player).length;
-      marsBot.bonusResolver.resolve(card);
+      marsBot['bonusResolver'].resolve(card);
       expect(marsBot.game.board.getGreeneries(marsBot.player).length).to.be.gte(greeneryBefore);
     });
   });
@@ -47,7 +46,7 @@ describe('Corp-Specific Bonus Cards (B22-B32)', () => {
       const {marsBot} = createAutomaGame();
       const card = createCorpBonusCard(BonusCardId.B24_SUPPLY_AND_DEMAND);
       const trackBefore = marsBot.board.tracks[0].position;
-      marsBot.bonusResolver.resolve(card);
+      marsBot['bonusResolver'].resolve(card);
       expect(marsBot.board.tracks[0].position).to.be.gte(trackBefore + 1);
     });
   });
@@ -57,7 +56,7 @@ describe('Corp-Specific Bonus Cards (B22-B32)', () => {
       const {marsBot} = createAutomaGame();
       const card = createCorpBonusCard(BonusCardId.B25_DO_IT_RIGHT);
       const trackBefore = marsBot.board.tracks[3].position;
-      marsBot.bonusResolver.resolve(card);
+      marsBot['bonusResolver'].resolve(card);
       expect(marsBot.board.tracks[3].position).to.be.gte(trackBefore + 1);
     });
   });
@@ -67,7 +66,7 @@ describe('Corp-Specific Bonus Cards (B22-B32)', () => {
       const {marsBot} = createAutomaGame();
       const card = createCorpBonusCard(BonusCardId.B27_BUILD_BUILD_BUILD);
       const citiesBefore = marsBot.game.board.getCities(marsBot.player).length;
-      marsBot.bonusResolver.resolve(card);
+      marsBot['bonusResolver'].resolve(card);
       expect(marsBot.game.board.getCities(marsBot.player).length).to.be.gte(citiesBefore);
     });
   });
@@ -81,7 +80,7 @@ describe('Corp-Specific Bonus Cards (B22-B32)', () => {
       // Least advanced should be one of the others (all at 0)
       const leastIdx = marsBot.board.getLeastAdvancedTrackIndex();
       const trackBefore = marsBot.board.tracks[leastIdx].position;
-      marsBot.bonusResolver.resolve(card);
+      marsBot['bonusResolver'].resolve(card);
       expect(marsBot.board.tracks[leastIdx].position).to.be.gte(trackBefore + 1);
     });
   });
@@ -92,7 +91,7 @@ describe('Corp-Specific Bonus Cards (B22-B32)', () => {
       const card = createCorpBonusCard(BonusCardId.B30_INTERFACE_HYPERLINK);
       const energyBefore = marsBot.board.tracks[4].position;
       const scienceBefore = marsBot.board.tracks[3].position;
-      marsBot.bonusResolver.resolve(card);
+      marsBot['bonusResolver'].resolve(card);
       // One of them should have advanced
       const energyAfter = marsBot.board.tracks[4].position;
       const scienceAfter = marsBot.board.tracks[3].position;
@@ -105,7 +104,7 @@ describe('Corp-Specific Bonus Cards (B22-B32)', () => {
       const {marsBot} = createAutomaGame();
       const card = createCorpBonusCard(BonusCardId.B31_GOVERNMENT_SUBSIDY);
       const mcBefore = marsBot.turnResolver.mcSupply;
-      marsBot.bonusResolver.resolve(card);
+      marsBot['bonusResolver'].resolve(card);
       expect(marsBot.turnResolver.mcSupply).to.be.gte(mcBefore + 5);
     });
   });
@@ -116,7 +115,7 @@ describe('Corp-Specific Bonus Cards (B22-B32)', () => {
       const card = createCorpBonusCard(BonusCardId.B32_INVESTORS);
       const buildingBefore = marsBot.board.tracks[0].position;
       const spaceBefore = marsBot.board.tracks[1].position;
-      marsBot.bonusResolver.resolve(card);
+      marsBot['bonusResolver'].resolve(card);
       expect(marsBot.board.tracks[0].position).to.be.gte(buildingBefore + 1);
       expect(marsBot.board.tracks[1].position).to.be.gte(spaceBefore + 1);
     });
@@ -132,7 +131,7 @@ describe('Corp-Specific Bonus Cards (B22-B32)', () => {
 
   describe('Corp per-gen bonus card flow', () => {
     it('Eco Line adds Rapid Sprouting to action deck each gen', () => {
-      const {marsBot, game} = createAutomaGame();
+      const {marsBot} = createAutomaGame();
       const corp = require('../../../src/server/automa/corps/MarsBotCorpRegistry').getMarsBotCorp(CardName.ECOLINE);
       marsBot.setCorpAndSetup(corp);
 

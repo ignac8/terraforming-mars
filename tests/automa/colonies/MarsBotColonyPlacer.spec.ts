@@ -138,7 +138,7 @@ describe('MarsBotColonyPlacer (C-15b, C-16a, C-19, C-24a)', () => {
       const marsBot = getMarsBot(game);
       const luna = new Luna();
       luna.trackPosition = 1;
-      luna.colonies = ['human-id']; // 1 colony already
+      luna.colonies = ['phuman-id']; // 1 colony already
       game.colonies = [luna];
       placeColonyForMarsBot(luna, marsBot);
       expect(luna.trackPosition).to.be.at.least(luna.colonies.length);

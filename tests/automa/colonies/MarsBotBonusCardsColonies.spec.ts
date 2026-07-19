@@ -38,7 +38,7 @@ describe('MarsBotBonusCardsColonies (C-15, C-16, C-17)', () => {
 
       // Stub findExpediteConstructionCitySpace to return a valid space
       const tilesBefore = game.board.spaces.filter((s) => s.tile !== undefined).length;
-      const destroyed = marsBot.bonusResolver.resolve(card);
+      const destroyed = marsBot['bonusResolver'].resolve(card);
 
       // If city placed, tile count should increase and card should be destroyed
       const tilesAfter = game.board.spaces.filter((s) => s.tile !== undefined).length;
@@ -55,7 +55,7 @@ describe('MarsBotBonusCardsColonies (C-15, C-16, C-17)', () => {
       game.colonies = [luna];
       const card = b17Card();
       marsBot.bonusDeck.drawPile.push(card);
-      const destroyed = marsBot.bonusResolver.resolve(card);
+      const destroyed = marsBot['bonusResolver'].resolve(card);
       // Either a colony was placed or no eligible colony was found
       // Card should NOT be destroyed in this branch
       expect(destroyed).to.be.false;
@@ -69,7 +69,7 @@ describe('MarsBotBonusCardsColonies (C-15, C-16, C-17)', () => {
       const card = b17Card();
       marsBot.bonusDeck.drawPile.push(card);
       const storageBefore = marsBot.shippingBoard.get(ColonyName.LUNA);
-      marsBot.bonusResolver.resolve(card);
+      marsBot['bonusResolver'].resolve(card);
       // Only meaningful if luna colony was placed
       if (luna.colonies.includes(marsBot.player.id)) {
         expect(marsBot.shippingBoard.get(ColonyName.LUNA)).to.eq(storageBefore + 2);
@@ -86,7 +86,7 @@ describe('MarsBotBonusCardsColonies (C-15, C-16, C-17)', () => {
       game.colonies = [luna, ceres];
       const card = b17Card();
       marsBot.bonusDeck.drawPile.push(card);
-      const destroyed = marsBot.bonusResolver.resolve(card);
+      const destroyed = marsBot['bonusResolver'].resolve(card);
       expect(destroyed).to.be.false;
       // No new colonies should be added
       expect(luna.colonies.filter((id) => id === marsBot.player.id).length).to.eq(1);
@@ -106,7 +106,7 @@ describe('MarsBotBonusCardsColonies (C-15, C-16, C-17)', () => {
       const card = b18Card();
       marsBot.bonusDeck.discardPile.push(card); // Will be restored; deck starts fresh
       marsBot.bonusDeck.drawPile.push(card);
-      const destroyed = marsBot.bonusResolver.resolve(card);
+      const destroyed = marsBot['bonusResolver'].resolve(card);
       // Luna should have marsBot as a colony or shipping board got resources
       const hasColony = luna.colonies.includes(marsBot.player.id);
       if (hasColony) {
@@ -125,7 +125,7 @@ describe('MarsBotBonusCardsColonies (C-15, C-16, C-17)', () => {
       marsBot.bonusDeck.drawPile = [fillerCard];
 
       const card = b18Card();
-      marsBot.bonusResolver.resolve(card);
+      marsBot['bonusResolver'].resolve(card);
 
       // The filler should have been discarded (not resolved, so deck mcSupply unchanged)
       // Since R&D would have changed mcSupply, and it was just discarded, no change expected
@@ -141,7 +141,7 @@ describe('MarsBotBonusCardsColonies (C-15, C-16, C-17)', () => {
       const card = b18Card();
       marsBot.bonusDeck.drawPile = [];
       marsBot.bonusDeck.discardPile = [card];
-      marsBot.bonusResolver.resolve(card);
+      marsBot['bonusResolver'].resolve(card);
       // B18 should be back in discard but not have been drawn (no infinite loop)
       // No crash = success
     });
@@ -161,7 +161,7 @@ describe('MarsBotBonusCardsColonies (C-15, C-16, C-17)', () => {
       const mcBefore = marsBot.turnResolver.mcSupply;
       const card = b19Card();
       marsBot.bonusDeck.drawPile.push(card);
-      marsBot.bonusResolver.resolve(card);
+      marsBot['bonusResolver'].resolve(card);
       // Should have spent 1 MC and gained 2 resources to Luna
       expect(marsBot.turnResolver.mcSupply).to.eq(Math.max(0, mcBefore - 1));
       expect(marsBot.shippingBoard.get(ColonyName.LUNA)).to.eq(2);
@@ -175,7 +175,7 @@ describe('MarsBotBonusCardsColonies (C-15, C-16, C-17)', () => {
       const mcBefore = marsBot.turnResolver.mcSupply;
       const card = b19Card();
       marsBot.bonusDeck.drawPile.push(card);
-      marsBot.bonusResolver.resolve(card);
+      marsBot['bonusResolver'].resolve(card);
       // Failed action gives MC
       expect(marsBot.turnResolver.mcSupply).to.be.greaterThan(mcBefore);
     });
@@ -189,7 +189,7 @@ describe('MarsBotBonusCardsColonies (C-15, C-16, C-17)', () => {
       const trBefore = marsBot.player.terraformRating;
       const card = b19Card();
       marsBot.bonusDeck.drawPile.push(card);
-      marsBot.bonusResolver.resolve(card);
+      marsBot['bonusResolver'].resolve(card);
       expect(marsBot.player.terraformRating).to.eq(trBefore + 1);
       expect(marsBot.shippingBoard.get(ColonyName.EUROPA)).to.eq(0);
     });
@@ -209,7 +209,7 @@ describe('MarsBotBonusCardsColonies (C-15, C-16, C-17)', () => {
       const mcBefore = marsBot.turnResolver.mcSupply;
       const card = b20Card();
       marsBot.bonusDeck.drawPile.push(card);
-      marsBot.bonusResolver.resolve(card);
+      marsBot['bonusResolver'].resolve(card);
       expect(marsBot.turnResolver.mcSupply).to.eq(Math.max(0, mcBefore - 1));
       expect(marsBot.shippingBoard.get(ColonyName.LUNA)).to.eq(2);
     });
@@ -218,12 +218,12 @@ describe('MarsBotBonusCardsColonies (C-15, C-16, C-17)', () => {
       const [game] = testGame(1, {automaOption: true, coloniesExtension: true, boardName: BoardName.THARSIS});
       const marsBot = getMarsBot(game);
       const luna = new Luna();
-      luna.visitor = 'some-player'; // Already traded
+      luna.visitor = 'psome-player'; // Already traded
       game.colonies = [luna];
       const mcBefore = marsBot.turnResolver.mcSupply;
       const card = b20Card();
       marsBot.bonusDeck.drawPile.push(card);
-      marsBot.bonusResolver.resolve(card);
+      marsBot['bonusResolver'].resolve(card);
       expect(marsBot.turnResolver.mcSupply).to.be.greaterThan(mcBefore);
     });
   });

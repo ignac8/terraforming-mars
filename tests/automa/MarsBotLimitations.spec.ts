@@ -3,24 +3,16 @@ import {testGame} from '../TestGame';
 import {TestPlayer} from '../TestPlayer';
 import {IGame} from '../../src/server/IGame';
 import {MarsBot} from '../../src/server/automa/MarsBot';
-import {MarsBotBoard} from '../../src/server/automa/MarsBotBoard';
-import {MarsBotTurnResolver} from '../../src/server/automa/MarsBotTurnResolver';
-import {MarsBotScoring} from '../../src/server/automa/MarsBotScoring';
-import {THARSIS_MARSBOT_BOARD} from '../../src/server/automa/boards/TharsisMarsBot';
-import {TrackDefinition} from '../../src/common/automa/AutomaTypes';
 import {BoardName} from '../../src/common/boards/BoardName';
-import {Tag} from '../../src/common/cards/Tag';
 import {TileType} from '../../src/common/TileType';
 import {Phase} from '../../src/common/Phase';
-import {Resource} from '../../src/common/Resource';
 import {Algae} from '../../src/server/cards/base/Algae';
-import {Birds} from '../../src/server/cards/base/Birds';
 import {SearchForLife} from '../../src/server/cards/base/SearchForLife';
 import {IProjectCard} from '../../src/server/cards/IProjectCard';
 
 function createAutomaGame(difficulty: 'easy' | 'normal' | 'hard' | 'brutal' = 'normal'): {game: IGame, human: TestPlayer, marsBot: MarsBot} {
   const [game, human] = testGame(1, {automaOption: true, automaDifficulty: difficulty, boardName: BoardName.THARSIS});
-  return {game, human, marsBot: game.marsBot!};
+  return {game, human, marsBot: game.automaHooks!.marsBot};
 }
 
 describe('MarsBot Limitations Fixed', () => {
@@ -65,7 +57,7 @@ describe('MarsBot Limitations Fixed', () => {
     });
 
     it('non-resource awards use standard comparison', () => {
-      const {game, human, marsBot} = createAutomaGame();
+      const {game, human} = createAutomaGame();
       // Landlord uses tiles, not resources — standard comparison
       const spaces = game.board.getAvailableSpacesOnLand(human);
       game.simpleAddTile(human, spaces[5], {tileType: TileType.GREENERY});

@@ -4,9 +4,7 @@ import {IGame} from '../../../src/server/IGame';
 import {TestPlayer} from '../../TestPlayer';
 import {MarsBot} from '../../../src/server/automa/MarsBot';
 import {MarsBotCorpResolver} from '../../../src/server/automa/corps/MarsBotCorpResolver';
-import {IMarsBotCorp} from '../../../src/server/automa/MarsBotCorpTypes';
 import {
-  registerMarsBotCorp,
   clearMarsBotCorpRegistry, restoreMarsBotCorpRegistry,
   getMarsBotCorp,
 } from '../../../src/server/automa/corps/MarsBotCorpRegistry';
@@ -20,8 +18,8 @@ function createAutomaGame(): {game: IGame, human: TestPlayer, marsBot: MarsBot} 
     automaDifficulty: 'normal',
     boardName: BoardName.THARSIS,
   });
-  expect(game.marsBot).to.not.be.undefined;
-  return {game, human, marsBot: game.marsBot!};
+  expect(game.automaHooks?.marsBot).to.not.be.undefined;
+  return {game, human, marsBot: game.automaHooks!.marsBot};
 }
 
 describe('Base Game MarsBot Corporations', () => {
@@ -226,14 +224,14 @@ describe('Base Game MarsBot Corporations', () => {
 
   describe('Corp selection', () => {
     it('selects a corp excluding human corp', () => {
-      const rng = {next: () => 0, nextInt: (n: number) => 0} as any;
+      const rng = {next: () => 0, nextInt: (_n: number) => 0} as any;
       const corp = MarsBotCorpResolver.selectCorp(CardName.CREDICOR, rng);
       expect(corp).to.not.be.undefined;
       expect(corp!.name).to.not.eq(CardName.CREDICOR);
     });
 
     it('can select any of the 12 base corps', () => {
-      const rng = {next: () => 0, nextInt: (n: number) => 0} as any;
+      const rng = {next: () => 0, nextInt: (_n: number) => 0} as any;
       // With Credicor excluded, should get Ecoline (index 0 of 11 remaining)
       const corp = MarsBotCorpResolver.selectCorp(CardName.CREDICOR, rng);
       expect(corp).to.not.be.undefined;

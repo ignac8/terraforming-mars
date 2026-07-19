@@ -8,9 +8,9 @@ import {MarsBotTurnResolver} from '../../src/server/automa/MarsBotTurnResolver';
 import {MarsBotBonusDeck} from '../../src/server/automa/MarsBotBonusDeck';
 import {MarsBotBonusResolver} from '../../src/server/automa/MarsBotBonusResolver';
 import {MarsBotTilePlacer} from '../../src/server/automa/MarsBotTilePlacer';
-import {MarsBotBonusCard, createBaseBonusCards} from '../../src/server/automa/MarsBotBonusCard';
+import {createBaseBonusCards} from '../../src/server/automa/MarsBotBonusCard';
 import {THARSIS_MARSBOT_BOARD} from '../../src/server/automa/boards/TharsisMarsBot';
-import {TrackDefinition, BonusCardId} from '../../src/common/automa/AutomaTypes';
+import {TrackAction, TrackDefinition, BonusCardId} from '../../src/common/automa/AutomaTypes';
 import {SeededRandom} from '../../src/common/utils/Random';
 import {BoardName} from '../../src/common/boards/BoardName';
 import {Tag} from '../../src/common/cards/Tag';
@@ -18,20 +18,19 @@ import {TileType} from '../../src/common/TileType';
 import {Phase} from '../../src/common/Phase';
 import {SpaceType} from '../../src/common/boards/SpaceType';
 import {Board} from '../../src/server/boards/Board';
-import {Resource} from '../../src/common/Resource';
 
 function createAutomaGame(difficulty: 'easy' | 'normal' | 'hard' | 'brutal' = 'normal'): {game: IGame, human: TestPlayer, marsBot: MarsBot} {
   const [game, human] = testGame(1, {automaOption: true, automaDifficulty: difficulty, boardName: BoardName.THARSIS});
-  return {game, human, marsBot: game.marsBot!};
+  return {game, human, marsBot: game.automaHooks!.marsBot};
 }
 
-function makeBoard(track1Layout: Array<string | null>): ReadonlyArray<TrackDefinition> {
+function makeBoard(track1Layout: ReadonlyArray<TrackAction | undefined>): ReadonlyArray<TrackDefinition> {
   return THARSIS_MARSBOT_BOARD.map((def, i) =>
-    i === 0 ? {...def, layout: track1Layout} as TrackDefinition : def,
+    i === 0 ? {...def, layout: track1Layout} : def,
   );
 }
 
-function emptyLayout(): Array<null> {
+function emptyLayout(): Array<TrackAction | undefined> {
   return new Array(19).fill(undefined);
 }
 
@@ -58,7 +57,7 @@ describe('MarsBot Rules Compliance', () => {
 
       const layout = emptyLayout();
       layout[1] = 'greenery';
-      const {board, resolver} = makeResolver(game, bot, human, makeBoard(layout));
+      const {resolver} = makeResolver(game, bot, human, makeBoard(layout));
 
       const greeneryBefore = game.board.getGreeneries(bot).length;
       const trBefore = bot.terraformRating;
@@ -79,7 +78,7 @@ describe('MarsBot Rules Compliance', () => {
 
       const layout = emptyLayout();
       layout[1] = 'ocean';
-      const {board, resolver} = makeResolver(game, bot, human, makeBoard(layout));
+      const {resolver} = makeResolver(game, bot, human, makeBoard(layout));
 
       const oceansBefore = game.board.getOceanSpaces().length;
       const trBefore = bot.terraformRating;
@@ -99,7 +98,7 @@ describe('MarsBot Rules Compliance', () => {
 
       const layout = emptyLayout();
       layout[1] = 'city';
-      const {board, resolver} = makeResolver(game, bot, human, makeBoard(layout));
+      const {resolver} = makeResolver(game, bot, human, makeBoard(layout));
 
       const citiesBefore = game.board.getCities(bot).length;
       resolver.resolveProjectCard(mockCard([Tag.BUILDING]));
@@ -115,7 +114,7 @@ describe('MarsBot Rules Compliance', () => {
 
       const layout = emptyLayout();
       layout[1] = 'temperature';
-      const {board, resolver} = makeResolver(game, bot, human, makeBoard(layout));
+      const {resolver} = makeResolver(game, bot, human, makeBoard(layout));
 
       const tempBefore = game.getTemperature();
       const trBefore = bot.terraformRating;
@@ -137,7 +136,7 @@ describe('MarsBot Rules Compliance', () => {
 
       const layout = emptyLayout();
       layout[1] = 'city';
-      const {board, resolver} = makeResolver(game, bot, human, makeBoard(layout));
+      const {resolver} = makeResolver(game, bot, human, makeBoard(layout));
 
       // Find a space with bonus icons
       const spaceWithBonus = game.board.spaces.find((s) =>
@@ -164,7 +163,7 @@ describe('MarsBot Rules Compliance', () => {
 
       const layout = emptyLayout();
       layout[1] = 'city';
-      const {board, resolver} = makeResolver(game, bot, human, makeBoard(layout));
+      const {resolver} = makeResolver(game, bot, human, makeBoard(layout));
 
       const mcBefore = resolver.mcSupply;
       resolver.resolveProjectCard(mockCard([Tag.BUILDING]));
@@ -190,7 +189,7 @@ describe('MarsBot Rules Compliance', () => {
 
       const layout = emptyLayout();
       layout[1] = 'greenery';
-      const {board, resolver} = makeResolver(game, bot, human, makeBoard(layout));
+      const {resolver} = makeResolver(game, bot, human, makeBoard(layout));
       resolver.resolveProjectCard(mockCard([Tag.BUILDING]));
       expect(resolver.mcSupply).to.eq(5);
     });
@@ -208,7 +207,7 @@ describe('MarsBot Rules Compliance', () => {
 
       const layout = emptyLayout();
       layout[1] = 'city';
-      const {board, resolver} = makeResolver(game, bot, human, makeBoard(layout));
+      const {resolver} = makeResolver(game, bot, human, makeBoard(layout));
       resolver.resolveProjectCard(mockCard([Tag.BUILDING]));
       expect(resolver.mcSupply).to.eq(5);
     });
@@ -224,7 +223,7 @@ describe('MarsBot Rules Compliance', () => {
       // Both at 0 for all awards — MarsBot is not AHEAD
       const layout = emptyLayout();
       layout[1] = 'award';
-      const {board, resolver} = makeResolver(game, bot, human, makeBoard(layout));
+      const {resolver} = makeResolver(game, bot, human, makeBoard(layout));
 
       resolver.resolveProjectCard(mockCard([Tag.BUILDING]));
       expect(resolver.mcSupply).to.eq(5); // Failed action
@@ -409,7 +408,7 @@ describe('MarsBot Rules Compliance', () => {
     });
 
     it('gen 3: human goes first again', () => {
-      const {game, marsBot} = createAutomaGame();
+      const {marsBot} = createAutomaGame();
       marsBot.goesFirst = true; // gen 2
       marsBot.goesFirst = !marsBot.goesFirst; // gen 3 toggle
       expect(marsBot.goesFirst).to.be.false;
@@ -483,7 +482,7 @@ describe('MarsBot Rules Compliance', () => {
 
   describe('Rule 2.4: MarsBot plays one card per turn', () => {
     it('action deck decreases after takeTurn', () => {
-      const {game, marsBot} = createAutomaGame();
+      const {marsBot} = createAutomaGame();
       const deckBefore = marsBot.actionDeck.length;
       expect(deckBefore).to.eq(4);
 

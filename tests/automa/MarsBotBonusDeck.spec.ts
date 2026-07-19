@@ -1,6 +1,5 @@
 import {expect} from 'chai';
 import {MarsBotBonusDeck} from '../../src/server/automa/MarsBotBonusDeck';
-import {createBaseBonusCards} from '../../src/server/automa/MarsBotBonusCard';
 import {SeededRandom} from '../../src/common/utils/Random';
 
 describe('MarsBotBonusDeck', () => {
@@ -46,5 +45,4 @@ describe('MarsBotBonusDeck', () => {
     expect(card).to.not.be.undefined;
     expect(deck.discardPile.length).to.eq(0);
   });
-
 });
