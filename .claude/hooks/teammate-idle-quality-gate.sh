@@ -5,6 +5,11 @@
 set -uo pipefail
 cd "${CLAUDE_PROJECT_DIR:-$(pwd)}" || exit 0
 
+# Use the .nvmrc-pinned Node — the system default may be a different major whose
+# ABI breaks native modules (better-sqlite3) in the shared node_modules.
+export NVM_DIR="${NVM_DIR:-$HOME/.nvm}"
+[ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh" && nvm use >/dev/null 2>&1
+
 LOG=$(mktemp -t marsbot-idle-XXXXXX.log)
 trap 'rm -f "$LOG"' EXIT
 
