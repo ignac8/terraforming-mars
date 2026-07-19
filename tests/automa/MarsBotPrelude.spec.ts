@@ -5,10 +5,8 @@ import {TestPlayer} from '../TestPlayer';
 import {MarsBot} from '../../src/server/automa/MarsBot';
 import {BoardName} from '../../src/common/boards/BoardName';
 import {CardName} from '../../src/common/cards/CardName';
-import {Tag} from '../../src/common/cards/Tag';
-import {MarsBotBoard, MarsBotTrack} from '../../src/server/automa/MarsBotBoard';
+import {MarsBotBoard} from '../../src/server/automa/MarsBotBoard';
 import {THARSIS_MARSBOT_BOARD} from '../../src/server/automa/boards/TharsisMarsBot';
-import {MarsBotTurnResolver} from '../../src/server/automa/MarsBotTurnResolver';
 import {MARSBOT_MAX_GENERATION, MARSBOT_MAX_GENERATION_PRELUDE} from '../../src/common/automa/AutomaTypes';
 
 function createAutomaGame(opts: {prelude?: boolean, prelude2?: boolean, difficulty?: 'easy' | 'normal' | 'hard' | 'brutal'} = {}): {game: IGame, human: TestPlayer, marsBot: MarsBot} {
@@ -19,8 +17,8 @@ function createAutomaGame(opts: {prelude?: boolean, prelude2?: boolean, difficul
     preludeExtension: opts.prelude ?? false,
     prelude2Expansion: opts.prelude2 ?? false,
   });
-  expect(game.marsBot).to.not.be.undefined;
-  return {game, human, marsBot: game.marsBot!};
+  expect(game.automaHooks?.marsBot).to.not.be.undefined;
+  return {game, human, marsBot: game.automaHooks!.marsBot};
 }
 
 describe('MarsBot Prelude Support', () => {

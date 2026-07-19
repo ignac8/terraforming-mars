@@ -17,8 +17,8 @@ function createAutomaGame(): {game: IGame, human: TestPlayer, marsBot: MarsBot} 
     automaDifficulty: 'normal',
     boardName: BoardName.THARSIS,
   });
-  expect(game.marsBot).to.not.be.undefined;
-  return {game, human, marsBot: game.marsBot!};
+  expect(game.automaHooks?.marsBot).to.not.be.undefined;
+  return {game, human, marsBot: game.automaHooks!.marsBot};
 }
 
 describe('Corp Effect Hooks', () => {

@@ -5,15 +5,14 @@ import {IGame} from '../../src/server/IGame';
 import {MarsBot} from '../../src/server/automa/MarsBot';
 import {BoardName} from '../../src/common/boards/BoardName';
 import {Resource} from '../../src/common/Resource';
-import {CardName} from '../../src/common/cards/CardName';
 import {ProtectedHabitats} from '../../src/server/cards/base/ProtectedHabitats';
 import {AsteroidDeflectionSystem} from '../../src/server/cards/promo/AsteroidDeflectionSystem';
 import {SponsoredAcademies} from '../../src/server/cards/venusNext/SponsoredAcademies';
-import {CardResource} from '../../src/common/CardResource';
+import {BonusCardId} from '../../src/common/automa/AutomaTypes';
 
 function createAutomaGame(): {game: IGame, human: TestPlayer, marsBot: MarsBot} {
   const [game, human] = testGame(1, {automaOption: true, automaDifficulty: 'normal', boardName: BoardName.THARSIS});
-  return {game, human, marsBot: game.marsBot!};
+  return {game, human, marsBot: game.automaHooks!.marsBot};
 }
 
 describe('MarsBot Resource Interaction (rules page 4-5)', () => {
@@ -24,7 +23,7 @@ describe('MarsBot Resource Interaction (rules page 4-5)', () => {
     });
 
     it('human can see MarsBot as steal/remove target', () => {
-      const {human, marsBot} = createAutomaGame();
+      const {human} = createAutomaGame();
       const targets = human.opponents.filter((p) => p.name === 'MarsBot');
       expect(targets.length).to.eq(1);
     });
@@ -219,7 +218,7 @@ describe('MarsBot Resource Interaction (rules page 4-5)', () => {
       human.plants = 10;
       human.playCard(new AsteroidDeflectionSystem());
 
-      const bonusCard = marsBot.bonusDeck.drawPile.find((c) => c.id === 'B01_METEOR_SHOWER');
+      const bonusCard = marsBot.bonusDeck.drawPile.find((c) => c.id === BonusCardId.B01_METEOR_SHOWER);
       if (bonusCard === undefined) {
         // Card may have been drawn already; create a fresh one
         return;
@@ -234,7 +233,7 @@ describe('MarsBot Resource Interaction (rules page 4-5)', () => {
       human.plants = 10;
       human.playCard(new ProtectedHabitats());
 
-      const bonusCard = marsBot.bonusDeck.drawPile.find((c) => c.id === 'B01_METEOR_SHOWER');
+      const bonusCard = marsBot.bonusDeck.drawPile.find((c) => c.id === BonusCardId.B01_METEOR_SHOWER);
       if (bonusCard === undefined) {
         return;
       }

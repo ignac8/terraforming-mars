@@ -29,8 +29,8 @@ function createAutomaGame(difficulty: 'easy' | 'normal' | 'hard' | 'brutal' = 'n
     automaDifficulty: difficulty,
     boardName: BoardName.THARSIS,
   });
-  expect(game.marsBot).to.not.be.undefined;
-  return {game, human, marsBot: game.marsBot!};
+  expect(game.automaHooks?.marsBot).to.not.be.undefined;
+  return {game, human, marsBot: game.automaHooks!.marsBot};
 }
 
 describe('MarsBotCorpResolver', () => {
@@ -85,7 +85,6 @@ describe('MarsBotCorpResolver', () => {
       const {marsBot} = createAutomaGame();
 
       const corp = createTestCorp({
-        id: CardName.ECOLINE,
         name: CardName.ECOLINE,
         startingTags: [Tag.BUILDING, Tag.BUILDING], // Track 1 should advance twice
       });
@@ -107,8 +106,7 @@ describe('MarsBotCorpResolver', () => {
       ];
 
       const corp = createTestCorp({
-        id: CardName.ECOLINE,
-        name: 'Cube Corp',
+        name: CardName.ECOLINE,
         trackCubes: cubes,
       });
 
@@ -126,8 +124,7 @@ describe('MarsBotCorpResolver', () => {
       let setupCalled = false;
 
       const corp = createTestCorp({
-        id: CardName.ECOLINE,
-        name: 'Setup Corp',
+        name: CardName.ECOLINE,
         setup: {
           resolve: () => {
             setupCalled = true;
@@ -148,8 +145,7 @@ describe('MarsBotCorpResolver', () => {
       let triggeredPosition = 0;
 
       const corp = createTestCorp({
-        id: CardName.ECOLINE,
-        name: 'Trigger Corp',
+        name: CardName.ECOLINE,
         trackCubes: [{trackIndex: 1, position: 3, cubeType: 'white'}],
         effect: {
           onTrackCubeTrigger: (_ctx, trackIndex, position, _cubeType) => {
@@ -177,8 +173,7 @@ describe('MarsBotCorpResolver', () => {
       let triggerCount = 0;
 
       const corp = createTestCorp({
-        id: CardName.ECOLINE,
-        name: 'No Re-Trigger',
+        name: CardName.ECOLINE,
         trackCubes: [{trackIndex: 1, position: 3, cubeType: 'white'}],
         effect: {
           onTrackCubeTrigger: () => {
@@ -203,8 +198,7 @@ describe('MarsBotCorpResolver', () => {
       let triggered = false;
 
       const corp = createTestCorp({
-        id: CardName.ECOLINE,
-        name: 'No Cube',
+        name: CardName.ECOLINE,
         effect: {
           onTrackCubeTrigger: () => {
             triggered = true;
@@ -224,8 +218,7 @@ describe('MarsBotCorpResolver', () => {
       let called = false;
 
       const corp = createTestCorp({
-        id: CardName.ECOLINE,
-        name: 'PerGen Corp',
+        name: CardName.ECOLINE,
         perGeneration: {
           timing: 'roundStart',
           resolve: () => {
@@ -242,8 +235,7 @@ describe('MarsBotCorpResolver', () => {
       const {marsBot} = createAutomaGame();
 
       const corp = createTestCorp({
-        id: CardName.ECOLINE,
-        name: 'No PerGen',
+        name: CardName.ECOLINE,
       });
 
       // Should not throw

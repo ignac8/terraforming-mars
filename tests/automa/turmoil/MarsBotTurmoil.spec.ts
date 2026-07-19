@@ -1,6 +1,9 @@
 import {expect} from 'chai';
 import {testGame} from '../../TestGame';
+import {TestPlayer} from '../../TestPlayer';
 import {runAllActions} from '../../TestingUtils';
+import {IGame} from '../../../src/server/IGame';
+import {MarsBot} from '../../../src/server/automa/MarsBot';
 import {BoardName} from '../../../src/common/boards/BoardName';
 import {BonusCardId, MARSBOT_STARTING_TR} from '../../../src/common/automa/AutomaTypes';
 import {DELEGATES_PER_PLAYER} from '../../../src/common/constants';
@@ -20,13 +23,13 @@ import {CardName} from '../../../src/common/cards/CardName';
 import {getMarsBotCorp} from '../../../src/server/automa/corps/MarsBotCorpRegistry';
 
 /** Create a Turmoil-enabled automa game. Returns {game, humanPlayer, marsBot}. */
-function createTurmoilGame() {
+function createTurmoilGame(): {game: IGame, humanPlayer: TestPlayer, marsBot: MarsBot} {
   const [game, humanPlayer] = testGame(1, {
     automaOption: true,
     turmoilExtension: true,
     boardName: BoardName.THARSIS,
   });
-  const marsBot = game.marsBot!;
+  const marsBot = game.automaHooks!.marsBot;
   return {game, humanPlayer, marsBot};
 }
 
@@ -56,7 +59,7 @@ describe('MarsBot Turmoil — Setup', () => {
 
   it('T-2: Without Turmoil, MarsBot starting TR is 20', () => {
     const [game] = testGame(1, {automaOption: true, boardName: BoardName.THARSIS});
-    expect(game.marsBot!.player.terraformRating).to.equal(MARSBOT_STARTING_TR);
+    expect(game.automaHooks!.marsBot.player.terraformRating).to.equal(MARSBOT_STARTING_TR);
   });
 
   it('T-6: Party Politics is in action deck on generation 2', () => {
@@ -304,7 +307,7 @@ describe('MarsBot Turmoil — End-of-game VP (T-13)', () => {
 
   it('turmoilVP is 0 without Turmoil extension', () => {
     const [game] = testGame(1, {automaOption: true, boardName: BoardName.THARSIS});
-    const marsBot = game.marsBot!;
+    const marsBot = game.automaHooks!.marsBot;
     const vp = marsBot.getVictoryPoints();
     expect(vp.turmoilVP).to.equal(0);
   });
@@ -405,7 +408,7 @@ describe('MarsBot Turmoil — serialization', () => {
   });
 
   it('MarsBot automa state serializes correctly with turmoil', () => {
-    const {game, marsBot} = createTurmoilGame();
+    const {marsBot} = createTurmoilGame();
     const state = marsBot.serialize();
     // Starting TR should be 10 (stored via player's TR in game state)
     expect(marsBot.player.terraformRating).to.equal(MARSBOT_STARTING_TR - 10);
@@ -512,7 +515,6 @@ describe('MarsBot Turmoil — Automatic skips (T-5 T-9 T-11a)', () => {
     // Bonus.grant() calls game.playersInGenerationOrder.forEach(...grantForPlayer)
     // MarsBot is NOT in playersInGenerationOrder, so it never receives ruling bonuses.
     const {game, marsBot} = createTurmoilGame();
-    const turmoil = Turmoil.getTurmoil(game);
     const marsBotPlayer = marsBot.player;
 
     // Simulate the Mars First Bonus 1 (gain 1 MC per building tag) via .grant()
@@ -643,7 +645,7 @@ describe('MarsBot Turmoil — Difficulty options (T-14 T-15)', () => {
       boardName: BoardName.THARSIS,
       automaExtraTurmoilDifficulty: 0,
     });
-    expect(game.marsBot!.player.terraformRating).to.equal(MARSBOT_STARTING_TR - 10);
+    expect(game.automaHooks!.marsBot.player.terraformRating).to.equal(MARSBOT_STARTING_TR - 10);
   });
 
   it('T-14: automaExtraTurmoilDifficulty=1 → MarsBot starts at 13 TR (reduced by 7)', () => {
@@ -653,7 +655,7 @@ describe('MarsBot Turmoil — Difficulty options (T-14 T-15)', () => {
       boardName: BoardName.THARSIS,
       automaExtraTurmoilDifficulty: 1,
     });
-    expect(game.marsBot!.player.terraformRating).to.equal(MARSBOT_STARTING_TR - 7);
+    expect(game.automaHooks!.marsBot.player.terraformRating).to.equal(MARSBOT_STARTING_TR - 7);
   });
 
   it('T-14: automaExtraTurmoilDifficulty=2 → MarsBot starts at 13 TR', () => {
@@ -663,7 +665,7 @@ describe('MarsBot Turmoil — Difficulty options (T-14 T-15)', () => {
       boardName: BoardName.THARSIS,
       automaExtraTurmoilDifficulty: 2,
     });
-    expect(game.marsBot!.player.terraformRating).to.equal(MARSBOT_STARTING_TR - 7);
+    expect(game.automaHooks!.marsBot.player.terraformRating).to.equal(MARSBOT_STARTING_TR - 7);
   });
 
   it('T-15: automaExtraTurmoilDifficulty=2 → 1 extra MarsBot delegate placed at setup', () => {
@@ -673,7 +675,7 @@ describe('MarsBot Turmoil — Difficulty options (T-14 T-15)', () => {
       boardName: BoardName.THARSIS,
       automaExtraTurmoilDifficulty: 2,
     });
-    const marsBot = game.marsBot!;
+    const marsBot = game.automaHooks!.marsBot;
     const turmoil = Turmoil.getTurmoil(game);
     const marsBotPlayer = marsBot.player;
 
@@ -695,7 +697,7 @@ describe('MarsBot Turmoil — Difficulty options (T-14 T-15)', () => {
       boardName: BoardName.THARSIS,
       automaExtraTurmoilDifficulty: 3,
     });
-    const marsBot = game.marsBot!;
+    const marsBot = game.automaHooks!.marsBot;
     const turmoil = Turmoil.getTurmoil(game);
     const marsBotPlayer = marsBot.player;
 
@@ -716,7 +718,7 @@ describe('MarsBot Turmoil — Difficulty options (T-14 T-15)', () => {
       automaExtraTurmoilDifficulty: 1,
     });
     // Without Turmoil, starting TR is the base MARSBOT_STARTING_TR (no reduction)
-    expect(game.marsBot!.player.terraformRating).to.equal(MARSBOT_STARTING_TR);
+    expect(game.automaHooks!.marsBot.player.terraformRating).to.equal(MARSBOT_STARTING_TR);
   });
 });
 

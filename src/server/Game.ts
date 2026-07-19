@@ -101,7 +101,7 @@ export class Game implements IGame, Logger {
   public readonly players: ReadonlyArray<IPlayer>;
   private _marsBotPlayer: IPlayer | undefined;
   public get allPlayers(): ReadonlyArray<IPlayer> {
-    const marsBotPlayer = this.marsBot?.player ?? this._marsBotPlayer;
+    const marsBotPlayer = this.automaHooks?.marsBot.player ?? this._marsBotPlayer;
     if (marsBotPlayer !== undefined) {
       return [...this.players, marsBotPlayer];
     }
@@ -197,11 +197,6 @@ export class Game implements IGame, Logger {
   public underworldDraftEnabled = true;
 
   public automaHooks: AutomaGameHooks | undefined;
-
-  // Backward compat — marsBot accessor for ServerModel and tests
-  public get marsBot() {
-    return this.automaHooks?.marsBot;
-  }
 
   private constructor(
     id: GameId,
@@ -943,7 +938,7 @@ export class Game implements IGame, Logger {
     this.log('Generation ${0}', (b) => b.forNewGeneration().number(this.generation));
 
     // Automa instant win: MarsBot wins when max generation is reached, game ends immediately.
-    if (this.automaHooks !== undefined && this.marsBot?.isInstantWin()) {
+    if (this.automaHooks !== undefined && this.automaHooks.marsBot.isInstantWin()) {
       this.log('MarsBot wins! (Generation limit reached)');
       this.gotoEndGame();
       return;

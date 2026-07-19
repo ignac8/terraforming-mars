@@ -8,8 +8,8 @@ import {MILESTONE_EVALS, AWARD_EVALS, MarsBotMAContext} from '../../src/server/a
 
 function createAutomaGame(): {game: IGame, human: TestPlayer, marsBot: MarsBot} {
   const [game, human] = testGame(1, {automaOption: true, automaDifficulty: 'normal', boardName: BoardName.THARSIS});
-  expect(game.marsBot).to.not.be.undefined;
-  return {game, human, marsBot: game.marsBot!};
+  expect(game.automaHooks?.marsBot).to.not.be.undefined;
+  return {game, human, marsBot: game.automaHooks!.marsBot};
 }
 
 function mockContext(overrides: Partial<MarsBotMAContext> = {}): MarsBotMAContext {
@@ -256,7 +256,7 @@ describe('MarsBotMilestoneAwardEval', () => {
     });
 
     it('Briber milestone deducts 12 MC when claimed', () => {
-      const {game, marsBot} = createAutomaGame();
+      const {marsBot} = createAutomaGame();
       // Give MarsBot enough MC and set the eval to pass
       marsBot.turnResolver.mcSupply = 30;
 

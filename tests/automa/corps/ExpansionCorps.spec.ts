@@ -18,8 +18,8 @@ function createAutomaGame(): {game: IGame, human: TestPlayer, marsBot: MarsBot} 
     automaDifficulty: 'normal',
     boardName: BoardName.THARSIS,
   });
-  expect(game.marsBot).to.not.be.undefined;
-  return {game, human, marsBot: game.marsBot!};
+  expect(game.automaHooks?.marsBot).to.not.be.undefined;
+  return {game, human, marsBot: game.automaHooks!.marsBot};
 }
 
 describe('Expansion MarsBot Corporations', () => {
@@ -165,7 +165,6 @@ describe('Expansion MarsBot Corporations', () => {
       expect(marsBot.corpSpecificState.get('whiteCubesOnCard')).to.eq(1);
 
       // Collect 1 black cube — should pair and raise temp
-      const trBefore = marsBot.player.terraformRating;
       corp.effect!.onTrackCubeTrigger!(marsBot.getCorpContext(), 2, 3, 'black');
       expect(marsBot.corpSpecificState.get('whiteCubesOnCard')).to.eq(0);
       expect(marsBot.corpSpecificState.get('blackCubesOnCard')).to.eq(0);

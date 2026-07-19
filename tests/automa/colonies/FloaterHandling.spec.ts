@@ -19,7 +19,7 @@ describe('FloaterHandling (C-8, C-9, C-14, C-X2)', () => {
       const titanBefore = marsBot.shippingBoard.get(ColonyName.TITAN);
       const floatersBefore = marsBot.floaterCount;
 
-      marsBot.turnResolver.resolveTrackAction('floater');
+      marsBot.turnResolver['resolveTrackAction']('floater', 0);
 
       expect(marsBot.shippingBoard.get(ColonyName.TITAN)).to.eq(titanBefore + 1);
       expect(marsBot.floaterCount).to.eq(floatersBefore); // No change to floaterCount
@@ -30,7 +30,7 @@ describe('FloaterHandling (C-8, C-9, C-14, C-X2)', () => {
       const marsBot = getMarsBot(game);
       const titanBefore = marsBot.shippingBoard.get(ColonyName.TITAN);
 
-      marsBot.turnResolver.resolveTrackAction('floater2');
+      marsBot.turnResolver['resolveTrackAction']('floater2', 0);
 
       expect(marsBot.shippingBoard.get(ColonyName.TITAN)).to.eq(titanBefore + 2);
     });
@@ -41,7 +41,7 @@ describe('FloaterHandling (C-8, C-9, C-14, C-X2)', () => {
       const titanBefore = marsBot.shippingBoard.get(ColonyName.TITAN);
       const floatersBefore = marsBot.floaterCount;
 
-      marsBot.turnResolver.resolveTrackAction('floater');
+      marsBot.turnResolver['resolveTrackAction']('floater', 0);
 
       expect(marsBot.shippingBoard.get(ColonyName.TITAN)).to.eq(titanBefore);
       expect(marsBot.floaterCount).to.eq(floatersBefore);
@@ -60,7 +60,7 @@ describe('FloaterHandling (C-8, C-9, C-14, C-X2)', () => {
       const floatersBefore = marsBot.floaterCount;
       const titanBefore = marsBot.shippingBoard.get(ColonyName.TITAN);
 
-      marsBot.turnResolver.resolveTrackAction('floater');
+      marsBot.turnResolver['resolveTrackAction']('floater', 0);
 
       expect(marsBot.floaterCount).to.eq(floatersBefore + 1);
       expect(marsBot.shippingBoard.get(ColonyName.TITAN)).to.eq(titanBefore); // No Titan storage
@@ -135,7 +135,7 @@ describe('FloaterHandling (C-8, C-9, C-14, C-X2)', () => {
 
       // Add 6 floaters to Titan (via floater track actions)
       for (let i = 0; i < 6; i++) {
-        marsBot.turnResolver.resolveTrackAction('floater');
+        marsBot.turnResolver['resolveTrackAction']('floater', 0);
       }
 
       // No track advancement should happen (Titan is exempt from C-12)

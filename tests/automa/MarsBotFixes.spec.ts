@@ -2,32 +2,23 @@ import {expect} from 'chai';
 import {testGame} from '../TestGame';
 import {TestPlayer} from '../TestPlayer';
 import {IGame} from '../../src/server/IGame';
-import {Game} from '../../src/server/Game';
 import {MarsBot} from '../../src/server/automa/MarsBot';
 import {MarsBotBoard} from '../../src/server/automa/MarsBotBoard';
-import {MarsBotBonusDeck} from '../../src/server/automa/MarsBotBonusDeck';
 import {MarsBotTurnResolver} from '../../src/server/automa/MarsBotTurnResolver';
-import {MarsBotTilePlacer} from '../../src/server/automa/MarsBotTilePlacer';
-import {MarsBotBonusResolver} from '../../src/server/automa/MarsBotBonusResolver';
-import {MarsBotScoring} from '../../src/server/automa/MarsBotScoring';
 import {THARSIS_MARSBOT_BOARD} from '../../src/server/automa/boards/TharsisMarsBot';
 import {TrackDefinition} from '../../src/common/automa/AutomaTypes';
-import {SeededRandom} from '../../src/common/utils/Random';
 import {TileType} from '../../src/common/TileType';
 import {Tag} from '../../src/common/cards/Tag';
 import {BoardName} from '../../src/common/boards/BoardName';
 import {SpaceType} from '../../src/common/boards/SpaceType';
 import {Resource} from '../../src/common/Resource';
-import {createBaseBonusCards} from '../../src/server/automa/MarsBotBonusCard';
-import {BonusCardId} from '../../src/common/automa/AutomaTypes';
 import {CardType} from '../../src/common/cards/CardType';
 import {CardName} from '../../src/common/cards/CardName';
 import {SaturnSystems} from '../../src/server/cards/corporation/SaturnSystems';
-import {Phase} from '../../src/common/Phase';
 
 function createAutomaGame(difficulty: 'easy' | 'normal' | 'hard' | 'brutal' = 'normal'): {game: IGame, human: TestPlayer, marsBot: MarsBot} {
   const [game, human] = testGame(1, {automaOption: true, automaDifficulty: difficulty, boardName: BoardName.THARSIS});
-  return {game, human, marsBot: game.marsBot!};
+  return {game, human, marsBot: game.automaHooks!.marsBot};
 }
 
 function makeBoardWithTrack1Action(pos: number, action: string): ReadonlyArray<TrackDefinition> {
@@ -67,7 +58,6 @@ describe('MarsBot Fixes', () => {
         const plantsBefore = bot.plants;
         const steelBefore = bot.steel;
         const titaniumBefore = bot.titanium;
-        const mcBefore = bot.megaCredits;
 
         game.addCity(bot, spaceWithBonus);
 
@@ -123,9 +113,8 @@ describe('MarsBot Fixes', () => {
 
   describe('Milestone tiebreaker #2 - closest to meeting', () => {
     it('uses humanMilestoneCloseness when no human qualifies', () => {
-      const {game, human, marsBot} = createAutomaGame();
+      const {marsBot} = createAutomaGame();
       const board = marsBot.board;
-      const resolver = marsBot.turnResolver;
 
       // Make MarsBot meet Builder (track 1 >= 8) and Planner (all tracks >= 4)
       // Set track 1 to 8
@@ -161,7 +150,7 @@ describe('MarsBot Fixes', () => {
 
   describe('Event cards advance Event track', () => {
     it('event-type card advances both its tag track and event track', () => {
-      const {game, marsBot} = createAutomaGame();
+      const {marsBot} = createAutomaGame();
       const board = marsBot.board;
 
       // Create a mock event card with Space tag

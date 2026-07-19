@@ -14,7 +14,7 @@ function createAutomaGameWithDraft(): {game: IGame, human: TestPlayer, marsBot: 
     boardName: BoardName.THARSIS,
     draftVariant: true,
   });
-  return {game, human, marsBot: game.marsBot!};
+  return {game, human, marsBot: game.automaHooks!.marsBot};
 }
 
 function createAutomaGameNoDraft(): {game: IGame, human: TestPlayer, marsBot: MarsBot} {
@@ -24,7 +24,7 @@ function createAutomaGameNoDraft(): {game: IGame, human: TestPlayer, marsBot: Ma
     boardName: BoardName.THARSIS,
     draftVariant: false,
   });
-  return {game, human, marsBot: game.marsBot!};
+  return {game, human, marsBot: game.automaHooks!.marsBot};
 }
 
 describe('MarsBot Draft Variant', () => {
@@ -38,7 +38,7 @@ describe('MarsBot Draft Variant', () => {
 
   describe('Draft research phase', () => {
     it('draft presents SelectCard to human player', () => {
-      const {game, human, marsBot} = createAutomaGameWithDraft();
+      const {game, human} = createAutomaGameWithDraft();
       // Trigger research phase
       game.gotoResearchPhase();
 
@@ -106,7 +106,7 @@ describe('MarsBot Draft Variant', () => {
     });
 
     it('project deck reduces by 8 cards (two piles of 4)', () => {
-      const {game, human} = createAutomaGameWithDraft();
+      const {game} = createAutomaGameWithDraft();
       const deckSizeBefore = game.projectDeck.drawPile.length;
 
       game.gotoResearchPhase();
@@ -118,7 +118,7 @@ describe('MarsBot Draft Variant', () => {
     });
 
     it('MarsBot discards 1 drafted card to project discard', () => {
-      const {game, human, marsBot} = createAutomaGameWithDraft();
+      const {game, human} = createAutomaGameWithDraft();
       const discardBefore = game.projectDeck.discardPile.length;
 
       game.gotoResearchPhase();
@@ -143,10 +143,7 @@ describe('MarsBot Draft Variant', () => {
       const round2Cards = [...(human.getWaitingFor() as SelectCard<IProjectCard>).cards];
       // Round 2 cards come from MarsBot's original pile (swapped), so they should be different
       // (There's a very small chance of overlap if the same card name appears twice, but extremely unlikely)
-      const round1Names = round1Cards.map((c) => c.name);
-      const round2Names = round2Cards.map((c) => c.name);
       // At least some cards should differ (piles were swapped)
-      const allSame = round2Names.every((n) => round1Names.includes(n));
       // This COULD be true if both piles had the same cards, but vanishingly unlikely
       // Just verify the round progressed
       expect(round2Cards.length).to.eq(3);

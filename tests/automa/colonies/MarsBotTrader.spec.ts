@@ -30,7 +30,7 @@ describe('MarsBotTrader (C-17, C-20, C-22, C-24b)', () => {
       const [game] = testGame(1, {automaOption: true, coloniesExtension: true, boardName: BoardName.THARSIS});
       const marsBot = getMarsBot(game);
       const luna = new Luna();
-      luna.visitor = 'some-player';
+      luna.visitor = 'psome-player';
       game.colonies = [luna];
       expect(selectTradeColony(game, marsBot)).to.be.undefined;
     });
