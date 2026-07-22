@@ -55,6 +55,30 @@ describe('TournamentMode', () => {
     }
   });
 
+  it('customCorporationsList larger than the pool size is sampled down to 5', () => {
+    const custom = [
+      CardName.TERACTOR_TOURNAMENT,
+      CardName.ECOLINE_TOURNAMENT,
+      CardName.CREDICOR_TOURNAMENT,
+      CardName.INVENTRIX_TOURNAMENT,
+      CardName.PHOBOLOG_TOURNAMENT,
+      CardName.MANUTECH_TOURNAMENT,
+      CardName.RECYCLON_TOURNAMENT,
+      CardName.ECOTEC_TOURNAMENT,
+    ];
+    const [/* game */, p1, p2] = testGame(2, {
+      tournamentExpansion: true,
+      customCorporationsList: custom,
+    });
+
+    const names = (cards: ReadonlyArray<{name: CardName}>) => cards.map(toName).sort();
+    expect(p1.dealtCorporationCards).has.length(5);
+    expect(names(p2.dealtCorporationCards)).deep.eq(names(p1.dealtCorporationCards));
+    for (const name of p1.dealtCorporationCards.map(toName)) {
+      expect(custom).includes(name);
+    }
+  });
+
   it('Two players may play the same corporation', () => {
     const [game, p1, p2] = testGame(2, {tournamentExpansion: true});
     const first = new RecyclonTournament();
