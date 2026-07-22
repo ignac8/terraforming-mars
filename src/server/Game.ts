@@ -393,13 +393,9 @@ export class Game implements IGame, Logger {
     if (gameOptions.tournamentExpansion) {
       const tournamentCorps = CardManifest.keys(TOURNAMENT_CARD_MANIFEST.corporationCards);
       const custom = [...new Set(gameOptions.customCorporationsList)].filter((name) => tournamentCorps.includes(name));
-      if (custom.length > 0) {
-        tournamentPool = custom;
-      } else {
-        const names = [...tournamentCorps];
-        inplaceShuffle(names, rng);
-        tournamentPool = names.slice(0, constants.TOURNAMENT_CORPORATION_POOL_SIZE);
-      }
+      const candidates = custom.length > 0 ? custom : [...tournamentCorps];
+      inplaceShuffle(candidates, rng);
+      tournamentPool = candidates.slice(0, constants.TOURNAMENT_CORPORATION_POOL_SIZE);
       game.log('Tournament corporation pool: ${0}', (b) => b.rawString(tournamentPool?.join(', ') ?? ''));
     }
 
