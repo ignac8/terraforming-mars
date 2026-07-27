@@ -1,27 +1,27 @@
-import {MarsBotBonusCard, bonusCard, createBaseBonusCards} from './MarsBotBonusCard';
+import {MarsBotBonusCard, createBaseBonusCards, createCorpBonusCard} from './MarsBotBonusCard';
 import {BonusCardId} from '../../common/automa/AutomaTypes';
+import {Deck} from '../cards/Deck';
 import {Random} from '../../common/utils/Random';
-import {inplaceShuffle} from '../utils/shuffle';
 
 /**
- * Manages the MarsBot bonus card deck.
- * Cards flow: drawPile → (played) → discardPile.
+ * The MarsBot bonus card deck.
+ * Cards flow: drawPile -> (resolved) -> discardPile, and the discard pile is
+ * reshuffled back into the draw pile when it runs out.
  */
-export class MarsBotBonusDeck {
-  public drawPile: Array<MarsBotBonusCard>;
-  public discardPile: Array<MarsBotBonusCard> = [];
-
-  constructor(
-    cards: Array<MarsBotBonusCard>,
-    private readonly random: Random,
-  ) {
-    this.drawPile = [...cards];
-    inplaceShuffle(this.drawPile, this.random);
+export class MarsBotBonusDeck extends Deck<MarsBotBonusCard> {
+  public constructor(deck: Array<MarsBotBonusCard>, discarded: Array<MarsBotBonusCard>, random: Random) {
+    super('marsbot', deck, discarded, random);
   }
 
-  /** Create the base game bonus deck (B01–B08), shuffled. */
+  private static create(cards: Array<MarsBotBonusCard>, random: Random): MarsBotBonusDeck {
+    const deck = new MarsBotBonusDeck(cards, [], random);
+    deck.shuffle();
+    return deck;
+  }
+
+  /** Create the base game bonus deck (B01-B08), shuffled. */
   public static createBase(random: Random): MarsBotBonusDeck {
-    return new MarsBotBonusDeck(createBaseBonusCards(), random);
+    return MarsBotBonusDeck.create(createBaseBonusCards(), random);
   }
 
   /** Create bonus deck with Venus Next: replace B06 (Lobbyists) with B15 (Lobbyists Venus). */
@@ -29,9 +29,9 @@ export class MarsBotBonusDeck {
     const cards = createBaseBonusCards();
     const idx = cards.findIndex((c) => c.id === BonusCardId.B06_LOBBYISTS);
     if (idx >= 0) {
-      cards[idx] = bonusCard(BonusCardId.B15_LOBBYISTS_VENUS, 'Lobbyists (Venus)');
+      cards[idx] = createCorpBonusCard(BonusCardId.B15_LOBBYISTS_VENUS);
     }
-    return new MarsBotBonusDeck(cards, random);
+    return MarsBotBonusDeck.create(cards, random);
   }
 
   /**
@@ -44,10 +44,10 @@ export class MarsBotBonusDeck {
     const cards = createBaseBonusCards();
     const idx = cards.findIndex((c) => c.id === BonusCardId.B05_EXPEDITED_CONSTRUCTION);
     if (idx >= 0) {
-      cards[idx] = bonusCard(BonusCardId.B17_EXPEDITED_CONSTRUCTION_COLONIES, 'Expedited Construction (Colonies)');
+      cards[idx] = createCorpBonusCard(BonusCardId.B17_EXPEDITED_CONSTRUCTION_COLONIES);
     }
-    cards.push(bonusCard(BonusCardId.B18_OUTER_SYSTEM_FOOTHOLD, 'Outer System Foothold'));
-    return new MarsBotBonusDeck(cards, random);
+    cards.push(createCorpBonusCard(BonusCardId.B18_OUTER_SYSTEM_FOOTHOLD));
+    return MarsBotBonusDeck.create(cards, random);
   }
 
   /**
@@ -58,27 +58,14 @@ export class MarsBotBonusDeck {
     const cards = createBaseBonusCards();
     const b05Idx = cards.findIndex((c) => c.id === BonusCardId.B05_EXPEDITED_CONSTRUCTION);
     if (b05Idx >= 0) {
-      cards[b05Idx] = bonusCard(BonusCardId.B17_EXPEDITED_CONSTRUCTION_COLONIES, 'Expedited Construction (Colonies)');
+      cards[b05Idx] = createCorpBonusCard(BonusCardId.B17_EXPEDITED_CONSTRUCTION_COLONIES);
     }
     const b06Idx = cards.findIndex((c) => c.id === BonusCardId.B06_LOBBYISTS);
     if (b06Idx >= 0) {
-      cards[b06Idx] = bonusCard(BonusCardId.B15_LOBBYISTS_VENUS, 'Lobbyists (Venus)');
+      cards[b06Idx] = createCorpBonusCard(BonusCardId.B15_LOBBYISTS_VENUS);
     }
-    cards.push(bonusCard(BonusCardId.B18_OUTER_SYSTEM_FOOTHOLD, 'Outer System Foothold'));
-    return new MarsBotBonusDeck(cards, random);
-  }
-
-  /** Draw 1 bonus card. Reshuffles discard into draw pile if empty. */
-  public draw(): MarsBotBonusCard | undefined {
-    if (this.drawPile.length === 0) {
-      this.reshuffleDiscard();
-    }
-    return this.drawPile.pop();
-  }
-
-  /** Place a resolved bonus card into the discard pile. */
-  public discard(card: MarsBotBonusCard): void {
-    this.discardPile.push(card);
+    cards.push(createCorpBonusCard(BonusCardId.B18_OUTER_SYSTEM_FOOTHOLD));
+    return MarsBotBonusDeck.create(cards, random);
   }
 
   /** Find and remove a bonus card by ID from the draw pile. Returns the card or undefined. */
@@ -99,12 +86,5 @@ export class MarsBotBonusDeck {
   public removeById(bonusCardId: string): void {
     this.drawPile = this.drawPile.filter((c) => c.id !== bonusCardId);
     this.discardPile = this.discardPile.filter((c) => c.id !== bonusCardId);
-  }
-
-  /** Shuffle the discard pile back into the draw pile. */
-  private reshuffleDiscard(): void {
-    this.drawPile = this.discardPile;
-    this.discardPile = [];
-    inplaceShuffle(this.drawPile, this.random);
   }
 }

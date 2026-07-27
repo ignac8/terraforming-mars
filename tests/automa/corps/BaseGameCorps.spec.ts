@@ -63,7 +63,7 @@ describe('Base Game MarsBot Corporations', () => {
       marsBot.setCorpAndSetup(corp);
 
       const mcBefore = marsBot.turnResolver.mcSupply;
-      corp.effect!.onProjectCardResolved!(marsBot.getCorpContext(), {name: 'Expensive', tags: [], cost: 25, hasRequirements: false, victoryPoints: 0});
+      corp.effect!.onProjectCardResolved!(marsBot.getCorpContext(), {name: 'Expensive' as CardName, tags: [], cost: 25, hasRequirements: false, victoryPoints: 0});
       expect(marsBot.turnResolver.mcSupply).to.eq(mcBefore + 4);
     });
 
@@ -73,7 +73,7 @@ describe('Base Game MarsBot Corporations', () => {
       marsBot.setCorpAndSetup(corp);
 
       const mcBefore = marsBot.turnResolver.mcSupply;
-      corp.effect!.onProjectCardResolved!(marsBot.getCorpContext(), {name: 'Cheap', tags: [], cost: 15, hasRequirements: false, victoryPoints: 0});
+      corp.effect!.onProjectCardResolved!(marsBot.getCorpContext(), {name: 'Cheap' as CardName, tags: [], cost: 15, hasRequirements: false, victoryPoints: 0});
       expect(marsBot.turnResolver.mcSupply).to.eq(mcBefore);
     });
 
@@ -100,7 +100,7 @@ describe('Base Game MarsBot Corporations', () => {
       marsBot.setCorpAndSetup(corp);
 
       const eventTrackBefore = marsBot.board.tracks[2].position; // Event = track 3
-      corp.effect!.onProjectCardResolved!(marsBot.getCorpContext(), {name: 'JovianCard', tags: [Tag.JOVIAN], cost: 10, hasRequirements: false, victoryPoints: 0});
+      corp.effect!.onProjectCardResolved!(marsBot.getCorpContext(), {name: 'JovianCard' as CardName, tags: [Tag.JOVIAN], cost: 10, hasRequirements: false, victoryPoints: 0});
       // Event track should have advanced (may chain from starting tags advancement)
       expect(marsBot.board.tracks[2].position).to.be.gte(eventTrackBefore + 1);
     });
@@ -111,7 +111,7 @@ describe('Base Game MarsBot Corporations', () => {
       marsBot.setCorpAndSetup(corp);
 
       const eventTrackBefore = marsBot.board.tracks[2].position;
-      corp.effect!.onHumanCardPlayed!(marsBot.getCorpContext(), {name: 'HumanJovian', tags: [Tag.JOVIAN], cost: 5, hasRequirements: false, victoryPoints: 0});
+      corp.effect!.onHumanCardPlayed!(marsBot.getCorpContext(), {name: 'HumanJovian' as CardName, tags: [Tag.JOVIAN], cost: 5, hasRequirements: false, victoryPoints: 0});
       expect(marsBot.board.tracks[2].position).to.be.gte(eventTrackBefore + 1);
     });
 
@@ -121,7 +121,7 @@ describe('Base Game MarsBot Corporations', () => {
       marsBot.setCorpAndSetup(corp);
 
       const eventTrackBefore = marsBot.board.tracks[2].position;
-      corp.effect!.onProjectCardResolved!(marsBot.getCorpContext(), {name: 'SpaceCard', tags: [Tag.SPACE], cost: 10, hasRequirements: false, victoryPoints: 0});
+      corp.effect!.onProjectCardResolved!(marsBot.getCorpContext(), {name: 'SpaceCard' as CardName, tags: [Tag.SPACE], cost: 10, hasRequirements: false, victoryPoints: 0});
       expect(marsBot.board.tracks[2].position).to.eq(eventTrackBefore);
     });
   });

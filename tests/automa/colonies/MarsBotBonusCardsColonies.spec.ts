@@ -9,13 +9,14 @@ import {Luna} from '../../../src/server/colonies/Luna';
 import {Europa} from '../../../src/server/colonies/Europa';
 import {Ceres} from '../../../src/server/colonies/Ceres';
 import {BoardName} from '../../../src/common/boards/BoardName';
+import {CardName} from '../../../src/common/cards/CardName';
 
 function getMarsBot(game: ReturnType<typeof testGame>[0]): MarsBot {
   return (game.automaHooks as AutomaGameHooks).marsBot;
 }
 
 function makeCard(id: BonusCardId, name: string): MarsBotBonusCard {
-  return bonusCard(id, name);
+  return bonusCard(id, name as CardName);
 }
 
 describe('MarsBotBonusCardsColonies (C-15, C-16, C-17)', () => {

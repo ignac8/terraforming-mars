@@ -261,7 +261,7 @@ describe('MarsBotSessionFixes', () => {
     const {game, marsBot} = createAutomaGame();
     const drawSize = marsBot.bonusDeck.drawPile.length;
     // Move one to discard
-    const card = marsBot.bonusDeck.draw();
+    const card = marsBot.bonusDeck.draw(game);
     if (card) {
       marsBot.bonusDeck.discard(card);
     }
