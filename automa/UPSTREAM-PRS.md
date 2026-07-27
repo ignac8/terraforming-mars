@@ -1,13 +1,16 @@
 # Upstream PR tracker
 
 State of the one-file-at-a-time PR series against `terraforming-mars/terraforming-mars`,
-agreed after #8001 was deemed too big to review. Last updated: 2026-06-09.
+agreed after #8001 was deemed too big to review. Last updated: 2026-07-27.
 
 ## Merged
 
 | PR | Contents |
 |----|----------|
 | [#7994](https://github.com/terraforming-mars/terraforming-mars/pull/7994) | Foundation: `AutomaTypes`, `MarsBotBoard`, `TharsisMarsBot`, `MarsBotModel`, `MarsBotMADescriptions`, board spec |
+| [#8203](https://github.com/terraforming-mars/terraforming-mars/pull/8203) | `MarsBotBonusCard.ts` — bonus card type + base set (squash-merged 2026-07-20) |
+| [#8204](https://github.com/terraforming-mars/terraforming-mars/pull/8204) | `MarsBotTags.ts` + spec |
+| [#8205](https://github.com/terraforming-mars/terraforming-mars/pull/8205) | Venus track layout, `AutomaTypes` floater/floater2 + `tag_${string}` actions |
 
 ## Open
 
@@ -15,15 +18,16 @@ agreed after #8001 was deemed too big to review. Last updated: 2026-06-09.
 The ICard / MarsBot-as-IPlayer-subtype question raised there is **unresolved** and
 gates Phase 2.
 
+kberg keeps an upstream `marsbot` staging branch. Its commit `b5c7df0cf` (Automa cards
+join the `CardName` family, `Deck` generalized to `Named<CardName>`) is cherry-picked
+into #8206 and into the automa branch; it dedupes whenever he merges it to main.
+
 | PR | Branch | Contents | Divergence from automa branch |
 |----|--------|----------|-------------------------------|
-| [#8203](https://github.com/terraforming-mars/terraforming-mars/pull/8203) | `marsbot-bonus-cards` | `MarsBotBonusCard.ts` (no spec) | **kberg review addressed (2026-06-20):** card type is just `{id, name}` — `destroyed` field removed entirely, test file deleted. Base set only (corp names deferred). `type` not `interface` |
-| [#8204](https://github.com/terraforming-mars/terraforming-mars/pull/8204) | `marsbot-tags` | `MarsBotTags.ts` + new spec | Spec rewritten standalone (builds `MarsBotTags` directly with a `testGame` player + `MarsBotBoard`; automa-branch spec goes through `game.marsBot`) |
-| [#8205](https://github.com/terraforming-mars/terraforming-mars/pull/8205) | `marsbot-venus-track` | `VenusMarsBot.ts`, `AutomaTypes` floater/floater2 + `tag_${string}` actions, `canAdvance` uses layout length, Venus tests in board spec | `regress()` boolean return and `getLeastAdvancedTrackIndex(excludeVenus)` deferred until their consumers land |
-| [#8206](https://github.com/terraforming-mars/terraforming-mars/pull/8206) | `marsbot-bonus-deck` (stacked on `marsbot-bonus-cards`) | `MarsBotBonusDeck.ts` + spec | **Flag-free (2026-06-20):** deck has NO `destroy()` — destruction = the resolver not discarding the card; just createBase/draw/discard/reshuffle. Expansion deck variants deferred. **Rebase after #8203 merges** |
-| [#8207](https://github.com/terraforming-mars/terraforming-mars/pull/8207) | `marsbot-corp-types` | `MarsBotCorpTypes.ts` + `CubeType` in `AutomaTypes` | 3 interfaces -> `type`, C-xx comments labeled as Colonies rule numbers. No spec (types only). Body invites early design feedback |
+| [#8206](https://github.com/terraforming-mars/terraforming-mars/pull/8206) | `marsbot-bonus-deck` | `MarsBotBonusDeck.ts` + spec. **kberg review addressed (2026-07-27):** extends `Deck<MarsBotBonusCard>`, carries his `b5c7df0cf`; `deserialize` via new `marsBotBonusCardsFromJSON` | Automa keeps id-based serde in `MarsBot.ts` (no save migration), expansion deck factories, `findAndRemove`/`removeById`, and `bonusCardDisplayName()` so the game log doesn't show the `Automa:` prefix |
+| [#8207](https://github.com/terraforming-mars/terraforming-mars/pull/8207) | `marsbot-corp-types` | `MarsBotCorpTypes.ts` + `CubeType` in `AutomaTypes`. **2026-07-27:** `CorpCardRef.name` tightened `string` -> `CardName` (ported to automa) | 3 interfaces -> `type`, C-xx comments labeled as Colonies rule numbers. No spec (types only). Open design question for kberg: could corp effects take `ICard` instead of the ref snapshot? |
 | [#8208](https://github.com/terraforming-mars/terraforming-mars/pull/8208) | `marsbot-tile-placer` | `MarsBotTilePlacer.ts` + spec | Spec setup: `testGame(2)` instead of `TestPlayer.RED.newPlayer` + `as any` cast |
-| [#8209](https://github.com/terraforming-mars/terraforming-mars/pull/8209) | `marsbot-draft-resolver` (stacked on `marsbot-corp-types`) | `MarsBotDraftResolver.ts` + spec | None. **Rebase after #8207 merges** |
+| [#8209](https://github.com/terraforming-mars/terraforming-mars/pull/8209) | `marsbot-draft-resolver` (stacked on `marsbot-corp-types`) | `MarsBotDraftResolver.ts` + spec | None. **Update after #8207 merges** |
 | [#8210](https://github.com/terraforming-mars/terraforming-mars/pull/8210) | `marsbot-ma-eval` | `MarsBotMilestoneAwardEval.ts` + spec | `@/` imports -> relative. 2 integration tests dropped (Terraformer29 filtering, Briber MC deduction) - re-add with game integration PRs |
 | [#8211](https://github.com/terraforming-mars/terraforming-mars/pull/8211) | `marsbot-turmoil-helper` | `MarsBotTurmoilHelper.ts` + new spec | Spec is a 10-test extraction from `MarsBotTurmoil.spec.ts` (T-7 selection, party leader, totalDelegates); 2-player Turmoil game stands in for the bot |
 
@@ -70,3 +74,5 @@ manifests/registry/resolver, and the client UI (needs `GameModel.marsBot`).
 5. PR body: human tone, reference #8001, note independence/stacking.
 6. When kberg requests changes: fix on the PR branch, then port the fix back to the
    automa branch (never merge automa into PR branches).
+7. Update published PR branches by merging (`upstream/main` or the parent branch) and
+   adding normal commits on top - no rebases, no force pushes.
