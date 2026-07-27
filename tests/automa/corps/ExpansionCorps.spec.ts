@@ -130,7 +130,7 @@ describe('Expansion MarsBot Corporations', () => {
       const {marsBot} = createAutomaGame();
       const corp = getMarsBotCorp(CardName.ECOTEC)!;
       marsBot.setCorpAndSetup(corp);
-      corp.effect!.onProjectCardResolved!(marsBot.getCorpContext(), {name: 'PlantCard', tags: [Tag.PLANT], cost: 5, hasRequirements: false, victoryPoints: 0});
+      corp.effect!.onProjectCardResolved!(marsBot.getCorpContext(), {name: 'PlantCard' as CardName, tags: [Tag.PLANT], cost: 5, hasRequirements: false, victoryPoints: 0});
       expect(marsBot.corpSpecificState.get('plantResources')).to.eq(3);
     });
 
@@ -185,7 +185,7 @@ describe('Expansion MarsBot Corporations', () => {
       const corp = getMarsBotCorp(CardName.SAGITTA_FRONTIER_SERVICES)!;
       marsBot.setCorpAndSetup(corp);
       const mcBefore = marsBot.turnResolver.mcSupply;
-      corp.effect!.onProjectCardResolved!(marsBot.getCorpContext(), {name: 'Tagless', tags: [], cost: 5, hasRequirements: false, victoryPoints: 0});
+      corp.effect!.onProjectCardResolved!(marsBot.getCorpContext(), {name: 'Tagless' as CardName, tags: [], cost: 5, hasRequirements: false, victoryPoints: 0});
       expect(marsBot.turnResolver.mcSupply).to.eq(mcBefore + 5);
     });
 
@@ -194,7 +194,7 @@ describe('Expansion MarsBot Corporations', () => {
       const corp = getMarsBotCorp(CardName.SAGITTA_FRONTIER_SERVICES)!;
       marsBot.setCorpAndSetup(corp);
       const mcBefore = marsBot.turnResolver.mcSupply;
-      corp.effect!.onProjectCardResolved!(marsBot.getCorpContext(), {name: 'OneTag', tags: [Tag.BUILDING], cost: 5, hasRequirements: false, victoryPoints: 0});
+      corp.effect!.onProjectCardResolved!(marsBot.getCorpContext(), {name: 'OneTag' as CardName, tags: [Tag.BUILDING], cost: 5, hasRequirements: false, victoryPoints: 0});
       expect(marsBot.turnResolver.mcSupply).to.eq(mcBefore + 1);
     });
   });
@@ -209,7 +209,7 @@ describe('Expansion MarsBot Corporations', () => {
       const {marsBot} = createAutomaGame();
       const corp = getMarsBotCorp(CardName.SPIRE)!;
       marsBot.setCorpAndSetup(corp);
-      corp.effect!.onProjectCardResolved!(marsBot.getCorpContext(), {name: 'TwoTags', tags: [Tag.BUILDING, Tag.SPACE], cost: 10, hasRequirements: false, victoryPoints: 0});
+      corp.effect!.onProjectCardResolved!(marsBot.getCorpContext(), {name: 'TwoTags' as CardName, tags: [Tag.BUILDING, Tag.SPACE], cost: 10, hasRequirements: false, victoryPoints: 0});
       expect(marsBot.corpSpecificState.get('scienceResources')).to.eq(1);
     });
 
@@ -217,7 +217,7 @@ describe('Expansion MarsBot Corporations', () => {
       const {marsBot} = createAutomaGame();
       const corp = getMarsBotCorp(CardName.SPIRE)!;
       marsBot.setCorpAndSetup(corp);
-      corp.effect!.onProjectCardResolved!(marsBot.getCorpContext(), {name: 'OneTag', tags: [Tag.BUILDING], cost: 5, hasRequirements: false, victoryPoints: 0});
+      corp.effect!.onProjectCardResolved!(marsBot.getCorpContext(), {name: 'OneTag' as CardName, tags: [Tag.BUILDING], cost: 5, hasRequirements: false, victoryPoints: 0});
       expect(marsBot.corpSpecificState.get('scienceResources') ?? 0).to.eq(0);
     });
   });
@@ -230,7 +230,7 @@ describe('Expansion MarsBot Corporations', () => {
       const corp = getMarsBotCorp(CardName.PHARMACY_UNION)!;
       marsBot.setCorpAndSetup(corp);
       const trBefore = marsBot.player.terraformRating;
-      corp.effect!.onProjectCardResolved!(marsBot.getCorpContext(), {name: 'SciCard', tags: [Tag.SCIENCE], cost: 10, hasRequirements: false, victoryPoints: 0});
+      corp.effect!.onProjectCardResolved!(marsBot.getCorpContext(), {name: 'SciCard' as CardName, tags: [Tag.SCIENCE], cost: 10, hasRequirements: false, victoryPoints: 0});
       expect(marsBot.player.terraformRating).to.eq(trBefore + 1);
     });
 
@@ -239,7 +239,7 @@ describe('Expansion MarsBot Corporations', () => {
       const corp = getMarsBotCorp(CardName.PHARMACY_UNION)!;
       marsBot.setCorpAndSetup(corp);
       marsBot.turnResolver.mcSupply = 10;
-      corp.effect!.onHumanCardPlayed!(marsBot.getCorpContext(), {name: 'MicrobeCard', tags: [Tag.MICROBE], cost: 5, hasRequirements: false, victoryPoints: 0});
+      corp.effect!.onHumanCardPlayed!(marsBot.getCorpContext(), {name: 'MicrobeCard' as CardName, tags: [Tag.MICROBE], cost: 5, hasRequirements: false, victoryPoints: 0});
       expect(marsBot.turnResolver.mcSupply).to.eq(6);
     });
   });
@@ -278,7 +278,7 @@ describe('Expansion MarsBot Corporations', () => {
       const corp = getMarsBotCorp(CardName.SPLICE)!;
       marsBot.setCorpAndSetup(corp);
       const mcBefore = marsBot.turnResolver.mcSupply;
-      corp.effect!.onProjectCardResolved!(marsBot.getCorpContext(), {name: 'Microbe', tags: [Tag.MICROBE], cost: 5, hasRequirements: false, victoryPoints: 0});
+      corp.effect!.onProjectCardResolved!(marsBot.getCorpContext(), {name: 'Microbe' as CardName, tags: [Tag.MICROBE], cost: 5, hasRequirements: false, victoryPoints: 0});
       expect(marsBot.turnResolver.mcSupply).to.eq(mcBefore + 4);
     });
   });

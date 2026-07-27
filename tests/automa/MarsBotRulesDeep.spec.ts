@@ -325,12 +325,12 @@ describe('MarsBot Deep Rules Tests', () => {
     });
 
     it('bonus deck reshuffles automatically when draw pile exhausted', () => {
-      const {marsBot} = createAutomaGame();
+      const {game, marsBot} = createAutomaGame();
       // 7 in draw pile (1 used for initial action deck), 0 in discard
       // Draw all remaining and discard them
       const drawn = [];
       while (marsBot.bonusDeck.drawPile.length > 0) {
-        const card = marsBot.bonusDeck.draw()!;
+        const card = marsBot.bonusDeck.draw(game)!;
         drawn.push(card);
       }
       for (const c of drawn) {
@@ -339,7 +339,7 @@ describe('MarsBot Deep Rules Tests', () => {
 
       // Now draw pile is 0, discard has all cards
       // Next draw should reshuffle
-      const card = marsBot.bonusDeck.draw();
+      const card = marsBot.bonusDeck.draw(game);
       expect(card).to.not.be.undefined;
     });
   });
@@ -348,18 +348,19 @@ describe('MarsBot Deep Rules Tests', () => {
 
   describe('Destroyed bonus cards (page 6)', () => {
     it('a card that is never discarded does not return after reshuffle', () => {
-      const {marsBot} = createAutomaGame();
+      const {game, marsBot} = createAutomaGame();
       // A destroyed card is simply never discarded (the resolver skips the discard),
       // so it can never be reshuffled back into the deck.
-      const removedId = marsBot.bonusDeck.draw()!.id;
+      const removedId = marsBot.bonusDeck.draw(game)!.id;
 
-      // Draw and discard everything else, then reshuffle by draining the deck again.
-      while (marsBot.bonusDeck.drawPile.length > 0) {
-        marsBot.bonusDeck.discard(marsBot.bonusDeck.draw()!);
+      // Draw and discard everything else, forcing a reshuffle on the last draw.
+      const remaining = marsBot.bonusDeck.drawPile.length;
+      for (let i = 0; i < remaining; i++) {
+        marsBot.bonusDeck.discard(marsBot.bonusDeck.draw(game)!);
       }
       const reshuffled: string[] = [];
       for (let i = 0; i < 10; i++) {
-        const c = marsBot.bonusDeck.draw();
+        const c = marsBot.bonusDeck.draw(game);
         if (c === undefined) {
           break;
         }

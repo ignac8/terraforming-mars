@@ -3,6 +3,7 @@ import {MarsBotBonusDeck} from '../../src/server/automa/MarsBotBonusDeck';
 import {SeededRandom} from '../../src/common/utils/Random';
 
 describe('MarsBotBonusDeck', () => {
+  const logger = {log: () => {}};
   let deck: MarsBotBonusDeck;
 
   beforeEach(() => {
@@ -15,13 +16,13 @@ describe('MarsBotBonusDeck', () => {
   });
 
   it('draws a card', () => {
-    const card = deck.draw();
+    const card = deck.draw(logger);
     expect(card).to.not.be.undefined;
     expect(deck.drawPile.length).to.eq(7);
   });
 
   it('discards a card', () => {
-    const card = deck.draw()!;
+    const card = deck.draw(logger)!;
     deck.discard(card);
     expect(deck.discardPile.length).to.eq(1);
   });
@@ -30,7 +31,7 @@ describe('MarsBotBonusDeck', () => {
     // Draw all 8 cards
     const cards = [];
     for (let i = 0; i < 8; i++) {
-      cards.push(deck.draw()!);
+      cards.push(deck.draw(logger)!);
     }
     expect(deck.drawPile.length).to.eq(0);
 
@@ -41,7 +42,7 @@ describe('MarsBotBonusDeck', () => {
     expect(deck.discardPile.length).to.eq(8);
 
     // Drawing should reshuffle
-    const card = deck.draw();
+    const card = deck.draw(logger);
     expect(card).to.not.be.undefined;
     expect(deck.discardPile.length).to.eq(0);
   });

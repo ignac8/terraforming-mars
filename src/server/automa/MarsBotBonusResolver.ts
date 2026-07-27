@@ -6,7 +6,7 @@ import {CardResource} from '../../common/CardResource';
 import {TileType} from '../../common/TileType';
 import {Board} from '../boards/Board';
 import * as constants from '../../common/constants';
-import {MarsBotBonusCard} from './MarsBotBonusCard';
+import {MarsBotBonusCard, bonusCardDisplayName} from './MarsBotBonusCard';
 import {MarsBotBonusDeck} from './MarsBotBonusDeck';
 import {MarsBotTilePlacer} from './MarsBotTilePlacer';
 import {MarsBotTurnResolver} from './MarsBotTurnResolver';
@@ -577,13 +577,13 @@ export class MarsBotBonusResolver {
     if (b18Idx >= 0) {
       [b18Card] = this.bonusDeck.discardPile.splice(b18Idx, 1);
     }
-    const drawnBonus = this.bonusDeck.draw();
+    const drawnBonus = this.bonusDeck.draw(this.game);
     if (b18Card !== undefined) {
       this.bonusDeck.discardPile.push(b18Card); // Restore B18
     }
     if (drawnBonus !== undefined) {
       this.bonusDeck.discard(drawnBonus);
-      this.game.log('MarsBot draws and discards ${0} (Outer System Foothold, C-16c)', (b) => b.rawString(drawnBonus.name));
+      this.game.log('MarsBot draws and discards ${0} (Outer System Foothold, C-16c)', (b) => b.rawString(bonusCardDisplayName(drawnBonus)));
     }
 
     // The card itself (B18) is discarded by the caller after resolve() returns.
@@ -618,9 +618,9 @@ export class MarsBotBonusResolver {
   }
 
   private drawAndResolveAnotherBonus(): void {
-    const nextBonus = this.bonusDeck.draw();
+    const nextBonus = this.bonusDeck.draw(this.game);
     if (nextBonus !== undefined) {
-      this.game.log('MarsBot draws another bonus card: ${0}', (b) => b.rawString(nextBonus.name));
+      this.game.log('MarsBot draws another bonus card: ${0}', (b) => b.rawString(bonusCardDisplayName(nextBonus)));
       this.resolve(nextBonus);
     }
     // Both cards are discarded (original was already discarded by caller)

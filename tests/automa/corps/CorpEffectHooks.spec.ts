@@ -37,7 +37,7 @@ describe('Corp Effect Hooks', () => {
       const corp = getMarsBotCorp(CardName.INVENTRIX)!;
       marsBot.setCorpAndSetup(corp);
       const mcBefore = marsBot.turnResolver.mcSupply;
-      corp.effect!.onProjectCardResolved!(marsBot.getCorpContext(), {name: 'Req', tags: [], cost: 10, hasRequirements: true, victoryPoints: 0});
+      corp.effect!.onProjectCardResolved!(marsBot.getCorpContext(), {name: 'Req' as CardName, tags: [], cost: 10, hasRequirements: true, victoryPoints: 0});
       expect(marsBot.turnResolver.mcSupply).to.eq(mcBefore + 2);
     });
 
@@ -46,7 +46,7 @@ describe('Corp Effect Hooks', () => {
       const corp = getMarsBotCorp(CardName.INVENTRIX)!;
       marsBot.setCorpAndSetup(corp);
       const mcBefore = marsBot.turnResolver.mcSupply;
-      corp.effect!.onProjectCardResolved!(marsBot.getCorpContext(), {name: 'NoReq', tags: [], cost: 10, hasRequirements: false, victoryPoints: 0});
+      corp.effect!.onProjectCardResolved!(marsBot.getCorpContext(), {name: 'NoReq' as CardName, tags: [], cost: 10, hasRequirements: false, victoryPoints: 0});
       expect(marsBot.turnResolver.mcSupply).to.eq(mcBefore);
     });
   });
@@ -57,7 +57,7 @@ describe('Corp Effect Hooks', () => {
       const corp = getMarsBotCorp(CardName.VITOR)!;
       marsBot.setCorpAndSetup(corp);
       const mcBefore = marsBot.turnResolver.mcSupply;
-      corp.effect!.onProjectCardResolved!(marsBot.getCorpContext(), {name: 'VP+', tags: [], cost: 10, hasRequirements: false, victoryPoints: 1});
+      corp.effect!.onProjectCardResolved!(marsBot.getCorpContext(), {name: 'VP+' as CardName, tags: [], cost: 10, hasRequirements: false, victoryPoints: 1});
       expect(marsBot.turnResolver.mcSupply).to.eq(mcBefore + 3);
     });
 
@@ -66,7 +66,7 @@ describe('Corp Effect Hooks', () => {
       const corp = getMarsBotCorp(CardName.VITOR)!;
       marsBot.setCorpAndSetup(corp);
       const mcBefore = marsBot.turnResolver.mcSupply;
-      corp.effect!.onProjectCardResolved!(marsBot.getCorpContext(), {name: 'VP0', tags: [], cost: 10, hasRequirements: false, victoryPoints: 0});
+      corp.effect!.onProjectCardResolved!(marsBot.getCorpContext(), {name: 'VP0' as CardName, tags: [], cost: 10, hasRequirements: false, victoryPoints: 0});
       expect(marsBot.turnResolver.mcSupply).to.eq(mcBefore);
     });
 
@@ -75,7 +75,7 @@ describe('Corp Effect Hooks', () => {
       const corp = getMarsBotCorp(CardName.VITOR)!;
       marsBot.setCorpAndSetup(corp);
       const mcBefore = marsBot.turnResolver.mcSupply;
-      corp.effect!.onProjectCardResolved!(marsBot.getCorpContext(), {name: 'VP-', tags: [], cost: 10, hasRequirements: false, victoryPoints: -1});
+      corp.effect!.onProjectCardResolved!(marsBot.getCorpContext(), {name: 'VP-' as CardName, tags: [], cost: 10, hasRequirements: false, victoryPoints: -1});
       expect(marsBot.turnResolver.mcSupply).to.eq(mcBefore);
     });
   });
@@ -85,7 +85,7 @@ describe('Corp Effect Hooks', () => {
       const {marsBot} = createAutomaGame();
       const corp = getMarsBotCorp(CardName.VIRON)!;
       marsBot.setCorpAndSetup(corp);
-      corp.effect!.onProjectCardResolved!(marsBot.getCorpContext(), {name: 'Card1', tags: [Tag.BUILDING], cost: 5, hasRequirements: false, victoryPoints: 0});
+      corp.effect!.onProjectCardResolved!(marsBot.getCorpContext(), {name: 'Card1' as CardName, tags: [Tag.BUILDING], cost: 5, hasRequirements: false, victoryPoints: 0});
       expect(marsBot.floaterCount).to.eq(1);
       expect(marsBot.corpSpecificState.get('actionCardsPlayed')).to.eq(1);
     });

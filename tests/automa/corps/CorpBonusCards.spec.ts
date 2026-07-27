@@ -125,7 +125,7 @@ describe('Corp-Specific Bonus Cards (B22-B32)', () => {
     it('creates a card with correct ID and name', () => {
       const card = createCorpBonusCard(BonusCardId.B23_RAPID_SPROUTING);
       expect(card.id).to.eq(BonusCardId.B23_RAPID_SPROUTING);
-      expect(card.name).to.eq('Rapid Sprouting');
+      expect(card.name).to.eq(CardName.AUTOMA_RAPID_SPROUTING);
     });
   });
 

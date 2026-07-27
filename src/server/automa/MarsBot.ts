@@ -9,7 +9,7 @@ import {Tag} from '../../common/cards/Tag';
 import {getMcPerVP} from './MarsBotScoring';
 import {MarsBotBoard} from './MarsBotBoard';
 import {MarsBotModel} from '../../common/models/MarsBotModel';
-import {MarsBotBonusCard, createCorpBonusCard} from './MarsBotBonusCard';
+import {MarsBotBonusCard, bonusCardDisplayName, createCorpBonusCard} from './MarsBotBonusCard';
 import {MarsBotBonusDeck} from './MarsBotBonusDeck';
 import {MarsBotBonusResolver} from './MarsBotBonusResolver';
 import {MarsBotTilePlacer} from './MarsBotTilePlacer';
@@ -143,7 +143,7 @@ export class MarsBot {
     // Prelude: MarsBot gets 3 extra project cards instead of Prelude cards
     const numProjectCards = opts.preludeExtension ? 6 : 3;
     const projectCards = this.game.projectDeck.drawN(this.game, numProjectCards);
-    const bonusCard = this.bonusDeck.draw();
+    const bonusCard = this.bonusDeck.draw(this.game);
     const deck: Array<IProjectCard | MarsBotBonusCard> = [...projectCards];
     if (bonusCard) {
       deck.push(bonusCard);
@@ -198,7 +198,7 @@ export class MarsBot {
   public buildResearchActionDeck(): void {
     const numProjectCards = this.difficulty === 'brutal' ? 4 : 3;
     const projectCards = this.game.projectDeck.drawN(this.game, numProjectCards);
-    const bonusCard = this.bonusDeck.draw();
+    const bonusCard = this.bonusDeck.draw(this.game);
 
     const deck: Array<IProjectCard | MarsBotBonusCard> = [...projectCards];
     if (bonusCard !== undefined) {
@@ -228,7 +228,7 @@ export class MarsBot {
     }
 
     // Add 1 bonus card
-    const bonusCard = this.bonusDeck.draw();
+    const bonusCard = this.bonusDeck.draw(this.game);
     const deck: Array<IProjectCard | MarsBotBonusCard> = [...draftedCards];
     if (bonusCard !== undefined) {
       deck.push(bonusCard);
@@ -266,7 +266,7 @@ export class MarsBot {
       this.turnResolver.resolveProjectCard(projectCard);
     } else {
       const bonusCard = card as MarsBotBonusCard;
-      this.game.log('MarsBot plays bonus card: ${0}', (b) => b.rawString(bonusCard.name));
+      this.game.log('MarsBot plays bonus card: ${0}', (b) => b.rawString(bonusCardDisplayName(bonusCard)));
       this.bonusResolver.resolve(bonusCard);
     }
 
@@ -395,7 +395,7 @@ export class MarsBot {
         return true;
       },
       drawAndResolveBonusCard: () => {
-        const bonusCard = mb.bonusDeck.draw();
+        const bonusCard = mb.bonusDeck.draw(mb.game);
         if (bonusCard === undefined) {
           return false;
         }
