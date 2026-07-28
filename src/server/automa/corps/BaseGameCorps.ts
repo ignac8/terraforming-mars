@@ -1,8 +1,8 @@
 /**
  * Shared helper functions for MarsBot corporation definitions.
  */
-import {MarsBotTrackCube, MarsBotCorpContext, CubeType} from '../MarsBotCorpTypes';
-import {BonusCardId} from '../../../common/automa/AutomaTypes';
+import {IMarsBot, MarsBotTrackCube} from '../MarsBotCorpTypes';
+import {BonusCardId, CubeType} from '../../../common/automa/AutomaTypes';
 
 /** Generate white cubes for all 18 positions on a track (replaces transparent cubes). */
 export function whiteTrackCubes(trackIndex: number): MarsBotTrackCube[] {
@@ -10,34 +10,34 @@ export function whiteTrackCubes(trackIndex: number): MarsBotTrackCube[] {
 }
 
 /** Factory for the common "add bonus card to action deck before action phase" per-gen pattern. */
-export function bonusCardPerGen(bonusCardId: BonusCardId, corpName: string): {timing: 'beforeActionPhase', resolve: (ctx: MarsBotCorpContext) => void} {
+export function bonusCardPerGen(bonusCardId: BonusCardId, corpName: string): {timing: 'beforeActionPhase', resolve: (bot: IMarsBot) => void} {
   return {
     timing: 'beforeActionPhase',
-    resolve(ctx) {
-      ctx.addBonusCardToActionDeck(bonusCardId);
-      ctx.gameLog(`MarsBot (${corpName}): ${bonusCardId} added to action deck`);
+    resolve(bot) {
+      bot.addBonusCardToActionDeck(bonusCardId);
+      bot.game.log(`MarsBot (${corpName}): ${bonusCardId} added to action deck`);
     },
   };
 }
 
 /** Factory for the common "add 1 floater at round start" per-gen pattern. */
-export function floaterPerRound(corpName: string): {timing: 'roundStart', resolve: (ctx: MarsBotCorpContext) => void} {
+export function floaterPerRound(corpName: string): {timing: 'roundStart', resolve: (bot: IMarsBot) => void} {
   return {
     timing: 'roundStart',
-    resolve(ctx) {
-      ctx.addFloaters(1);
-      ctx.gameLog(`MarsBot (${corpName}): round start, +1 floater`);
+    resolve(bot) {
+      bot.addFloaters(1);
+      bot.game.log(`MarsBot (${corpName}): round start, +1 floater`);
     },
   };
 }
 
 /** Shared cube handler: white -> advance least-advanced track, black -> advance space track. */
-export function whiteLeastBlackSpaceHandler(ctx: MarsBotCorpContext, cubeType: CubeType, corpName: string): void {
+export function whiteLeastBlackSpaceHandler(bot: IMarsBot, cubeType: CubeType, corpName: string): void {
   if (cubeType === 'white') {
-    ctx.advanceTrack(ctx.leastAdvancedTrackIndex);
-    ctx.gameLog(`MarsBot (${corpName}): white cube — advance least-advanced track`);
+    bot.advanceTrack(bot.board.getLeastAdvancedTrackIndex());
+    bot.game.log(`MarsBot (${corpName}): white cube — advance least-advanced track`);
   } else if (cubeType === 'black') {
-    ctx.advanceTrack(1);
-    ctx.gameLog(`MarsBot (${corpName}): black cube — advance space track`);
+    bot.advanceTrack(1);
+    bot.game.log(`MarsBot (${corpName}): black cube — advance space track`);
   }
 }

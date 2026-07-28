@@ -10,6 +10,7 @@ import {
   getAllMarsBotCorps,
 } from '../../../src/server/automa/corps/MarsBotCorpRegistry';
 import {Tag} from '../../../src/common/cards/Tag';
+import {IProjectCard} from '../../../src/server/cards/IProjectCard';
 import {BoardName} from '../../../src/common/boards/BoardName';
 
 function createAutomaGame(): {game: IGame, human: TestPlayer, marsBot: MarsBot} {
@@ -20,6 +21,16 @@ function createAutomaGame(): {game: IGame, human: TestPlayer, marsBot: MarsBot} 
   });
   expect(game.automaHooks?.marsBot).to.not.be.undefined;
   return {game, human, marsBot: game.automaHooks!.marsBot};
+}
+
+function fakeCard(name: string, opts: {tags?: Array<Tag>, cost?: number, requirements?: boolean, victoryPoints?: number} = {}): IProjectCard {
+  return {
+    name: name as CardName,
+    tags: opts.tags ?? [],
+    cost: opts.cost ?? 0,
+    requirements: opts.requirements ? [{oceans: 1}] : [],
+    getVictoryPoints: () => opts.victoryPoints ?? 0,
+  } as unknown as IProjectCard;
 }
 
 describe('Expansion MarsBot Corporations', () => {
@@ -43,7 +54,7 @@ describe('Expansion MarsBot Corporations', () => {
   describe('C13 Cheung Shing MARS', () => {
     it('has building tag and building draft priority', () => {
       const corp = getMarsBotCorp(CardName.CHEUNG_SHING_MARS)!;
-      expect(corp.startingTags).to.deep.eq([Tag.BUILDING]);
+      expect(corp.tags).to.deep.eq([Tag.BUILDING]);
       expect(corp.draftPriority).to.deep.eq({type: 'tags', tags: [Tag.BUILDING]});
     });
 
@@ -59,7 +70,7 @@ describe('Expansion MarsBot Corporations', () => {
       const corp = getMarsBotCorp(CardName.CHEUNG_SHING_MARS)!;
       marsBot.setCorpAndSetup(corp);
       const mcBefore = marsBot.turnResolver.mcSupply;
-      corp.effect!.onTrackCubeTrigger!(marsBot.getCorpContext(), 0, 4, 'credit');
+      corp.effect!.onTrackCubeTrigger!(marsBot, 0, 4, 'credit');
       expect(marsBot.turnResolver.mcSupply).to.eq(mcBefore + 1);
     });
   });
@@ -78,11 +89,10 @@ describe('Expansion MarsBot Corporations', () => {
       const corp = getMarsBotCorp(CardName.POINT_LUNA)!;
       marsBot.setCorpAndSetup(corp);
       // All tracks at some position after starting tags. White cube → least advanced.
-      const ctx = marsBot.getCorpContext();
-      const leastBefore = marsBot.board.tracks[ctx.leastAdvancedTrackIndex].position;
-      corp.effect!.onTrackCubeTrigger!(marsBot.getCorpContext(), 5, 1, 'white');
+      const leastBefore = marsBot.board.tracks[marsBot.board.getLeastAdvancedTrackIndex()].position;
+      corp.effect!.onTrackCubeTrigger!(marsBot, 5, 1, 'white');
       // Some track should have advanced
-      expect(marsBot.board.tracks[ctx.leastAdvancedTrackIndex].position).to.be.gte(leastBefore);
+      expect(marsBot.board.tracks[marsBot.board.getLeastAdvancedTrackIndex()].position).to.be.gte(leastBefore);
     });
   });
 
@@ -113,7 +123,7 @@ describe('Expansion MarsBot Corporations', () => {
       const corp = getMarsBotCorp(CardName.MANUTECH)!;
       marsBot.setCorpAndSetup(corp);
       const track1Before = marsBot.board.tracks[0].position;
-      corp.effect!.onTrackCubeTrigger!(marsBot.getCorpContext(), 0, 5, 'black');
+      corp.effect!.onTrackCubeTrigger!(marsBot, 0, 5, 'black');
       expect(marsBot.board.tracks[0].position).to.be.gte(track1Before + 1);
     });
   });
@@ -130,7 +140,7 @@ describe('Expansion MarsBot Corporations', () => {
       const {marsBot} = createAutomaGame();
       const corp = getMarsBotCorp(CardName.ECOTEC)!;
       marsBot.setCorpAndSetup(corp);
-      corp.effect!.onProjectCardResolved!(marsBot.getCorpContext(), {name: 'PlantCard' as CardName, tags: [Tag.PLANT], cost: 5, hasRequirements: false, victoryPoints: 0});
+      corp.effect!.onProjectCardResolved!(marsBot, fakeCard('PlantCard', {tags: [Tag.PLANT], cost: 5}));
       expect(marsBot.corpSpecificState.get('plantResources')).to.eq(3);
     });
 
@@ -140,7 +150,7 @@ describe('Expansion MarsBot Corporations', () => {
       marsBot.setCorpAndSetup(corp);
       marsBot.corpSpecificState.set('plantResources', 6);
       const plantTrackBefore = marsBot.board.tracks[6].position;
-      corp.perGeneration!.resolve(marsBot.getCorpContext());
+      corp.perGeneration!.resolve(marsBot);
       expect(marsBot.corpSpecificState.get('plantResources')).to.eq(1);
       expect(marsBot.board.tracks[6].position).to.be.gte(plantTrackBefore + 1);
     });
@@ -161,11 +171,11 @@ describe('Expansion MarsBot Corporations', () => {
       marsBot.setCorpAndSetup(corp);
 
       // Collect 1 white cube
-      corp.effect!.onTrackCubeTrigger!(marsBot.getCorpContext(), 1, 3, 'white');
+      corp.effect!.onTrackCubeTrigger!(marsBot, 1, 3, 'white');
       expect(marsBot.corpSpecificState.get('whiteCubesOnCard')).to.eq(1);
 
       // Collect 1 black cube — should pair and raise temp
-      corp.effect!.onTrackCubeTrigger!(marsBot.getCorpContext(), 2, 3, 'black');
+      corp.effect!.onTrackCubeTrigger!(marsBot, 2, 3, 'black');
       expect(marsBot.corpSpecificState.get('whiteCubesOnCard')).to.eq(0);
       expect(marsBot.corpSpecificState.get('blackCubesOnCard')).to.eq(0);
     });
@@ -185,7 +195,7 @@ describe('Expansion MarsBot Corporations', () => {
       const corp = getMarsBotCorp(CardName.SAGITTA_FRONTIER_SERVICES)!;
       marsBot.setCorpAndSetup(corp);
       const mcBefore = marsBot.turnResolver.mcSupply;
-      corp.effect!.onProjectCardResolved!(marsBot.getCorpContext(), {name: 'Tagless' as CardName, tags: [], cost: 5, hasRequirements: false, victoryPoints: 0});
+      corp.effect!.onProjectCardResolved!(marsBot, fakeCard('Tagless', {cost: 5}));
       expect(marsBot.turnResolver.mcSupply).to.eq(mcBefore + 5);
     });
 
@@ -194,7 +204,7 @@ describe('Expansion MarsBot Corporations', () => {
       const corp = getMarsBotCorp(CardName.SAGITTA_FRONTIER_SERVICES)!;
       marsBot.setCorpAndSetup(corp);
       const mcBefore = marsBot.turnResolver.mcSupply;
-      corp.effect!.onProjectCardResolved!(marsBot.getCorpContext(), {name: 'OneTag' as CardName, tags: [Tag.BUILDING], cost: 5, hasRequirements: false, victoryPoints: 0});
+      corp.effect!.onProjectCardResolved!(marsBot, fakeCard('OneTag', {tags: [Tag.BUILDING], cost: 5}));
       expect(marsBot.turnResolver.mcSupply).to.eq(mcBefore + 1);
     });
   });
@@ -209,7 +219,7 @@ describe('Expansion MarsBot Corporations', () => {
       const {marsBot} = createAutomaGame();
       const corp = getMarsBotCorp(CardName.SPIRE)!;
       marsBot.setCorpAndSetup(corp);
-      corp.effect!.onProjectCardResolved!(marsBot.getCorpContext(), {name: 'TwoTags' as CardName, tags: [Tag.BUILDING, Tag.SPACE], cost: 10, hasRequirements: false, victoryPoints: 0});
+      corp.effect!.onProjectCardResolved!(marsBot, fakeCard('TwoTags', {tags: [Tag.BUILDING, Tag.SPACE], cost: 10}));
       expect(marsBot.corpSpecificState.get('scienceResources')).to.eq(1);
     });
 
@@ -217,7 +227,7 @@ describe('Expansion MarsBot Corporations', () => {
       const {marsBot} = createAutomaGame();
       const corp = getMarsBotCorp(CardName.SPIRE)!;
       marsBot.setCorpAndSetup(corp);
-      corp.effect!.onProjectCardResolved!(marsBot.getCorpContext(), {name: 'OneTag' as CardName, tags: [Tag.BUILDING], cost: 5, hasRequirements: false, victoryPoints: 0});
+      corp.effect!.onProjectCardResolved!(marsBot, fakeCard('OneTag', {tags: [Tag.BUILDING], cost: 5}));
       expect(marsBot.corpSpecificState.get('scienceResources') ?? 0).to.eq(0);
     });
   });
@@ -230,7 +240,7 @@ describe('Expansion MarsBot Corporations', () => {
       const corp = getMarsBotCorp(CardName.PHARMACY_UNION)!;
       marsBot.setCorpAndSetup(corp);
       const trBefore = marsBot.player.terraformRating;
-      corp.effect!.onProjectCardResolved!(marsBot.getCorpContext(), {name: 'SciCard' as CardName, tags: [Tag.SCIENCE], cost: 10, hasRequirements: false, victoryPoints: 0});
+      corp.effect!.onProjectCardResolved!(marsBot, fakeCard('SciCard', {tags: [Tag.SCIENCE], cost: 10}));
       expect(marsBot.player.terraformRating).to.eq(trBefore + 1);
     });
 
@@ -239,7 +249,7 @@ describe('Expansion MarsBot Corporations', () => {
       const corp = getMarsBotCorp(CardName.PHARMACY_UNION)!;
       marsBot.setCorpAndSetup(corp);
       marsBot.turnResolver.mcSupply = 10;
-      corp.effect!.onHumanCardPlayed!(marsBot.getCorpContext(), {name: 'MicrobeCard' as CardName, tags: [Tag.MICROBE], cost: 5, hasRequirements: false, victoryPoints: 0});
+      corp.effect!.onHumanCardPlayed!(marsBot, fakeCard('MicrobeCard', {tags: [Tag.MICROBE], cost: 5}));
       expect(marsBot.turnResolver.mcSupply).to.eq(6);
     });
   });
@@ -259,7 +269,7 @@ describe('Expansion MarsBot Corporations', () => {
       const corp = getMarsBotCorp(CardName.RECYCLON)!;
       marsBot.setCorpAndSetup(corp);
       const plantBefore = marsBot.board.tracks[6].position;
-      corp.effect!.onTrackCubeTrigger!(marsBot.getCorpContext(), 0, 3, 'white');
+      corp.effect!.onTrackCubeTrigger!(marsBot, 0, 3, 'white');
       expect(marsBot.board.tracks[6].position).to.be.gte(plantBefore + 1);
     });
   });
@@ -278,7 +288,7 @@ describe('Expansion MarsBot Corporations', () => {
       const corp = getMarsBotCorp(CardName.SPLICE)!;
       marsBot.setCorpAndSetup(corp);
       const mcBefore = marsBot.turnResolver.mcSupply;
-      corp.effect!.onProjectCardResolved!(marsBot.getCorpContext(), {name: 'Microbe' as CardName, tags: [Tag.MICROBE], cost: 5, hasRequirements: false, victoryPoints: 0});
+      corp.effect!.onProjectCardResolved!(marsBot, fakeCard('Microbe', {tags: [Tag.MICROBE], cost: 5}));
       expect(marsBot.turnResolver.mcSupply).to.eq(mcBefore + 4);
     });
   });
@@ -297,7 +307,7 @@ describe('Expansion MarsBot Corporations', () => {
       const {marsBot} = createAutomaGame();
       const corp = getMarsBotCorp(CardName.CELESTIC)!;
       marsBot.setCorpAndSetup(corp);
-      corp.perGeneration!.resolve(marsBot.getCorpContext());
+      corp.perGeneration!.resolve(marsBot);
       expect(marsBot.floaterCount).to.eq(2);
     });
   });
@@ -319,7 +329,7 @@ describe('Expansion MarsBot Corporations', () => {
       marsBot.setCorpAndSetup(corp);
 
       const deckBefore = marsBot.actionDeck.length;
-      corp.perGeneration!.resolve(marsBot.getCorpContext()); // gen 1 → 1 card
+      corp.perGeneration!.resolve(marsBot); // gen 1 → 1 card
       expect(marsBot.actionDeck.length).to.eq(deckBefore + 1);
     });
   });
@@ -342,7 +352,7 @@ describe('Expansion MarsBot Corporations', () => {
       const corp = getMarsBotCorp(CardName.ARIDOR)!;
       marsBot.setCorpAndSetup(corp);
       const eventBefore = marsBot.board.tracks[2].position;
-      corp.effect!.onTrackCubeTrigger!(marsBot.getCorpContext(), 1, 3, 'white');
+      corp.effect!.onTrackCubeTrigger!(marsBot, 1, 3, 'white');
       expect(marsBot.board.tracks[2].position).to.be.gte(eventBefore + 1);
     });
   });
@@ -358,7 +368,7 @@ describe('Expansion MarsBot Corporations', () => {
 
     it('has 6 starting tags (3 Space + 3 Event)', () => {
       const corp = getMarsBotCorp(CardName.POLYPHEMOS)!;
-      expect(corp.startingTags).to.deep.eq([Tag.SPACE, Tag.SPACE, Tag.SPACE, Tag.EVENT, Tag.EVENT, Tag.EVENT]);
+      expect(corp.tags).to.deep.eq([Tag.SPACE, Tag.SPACE, Tag.SPACE, Tag.EVENT, Tag.EVENT, Tag.EVENT]);
     });
   });
 });

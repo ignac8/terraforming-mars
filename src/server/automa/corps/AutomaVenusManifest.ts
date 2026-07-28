@@ -11,15 +11,15 @@ import {floaterPerRound} from './BaseGameCorps';
 const VIRON: IMarsBotCorp = {
   name: CardName.VIRON,
   description: 'Tag: Microbe. Each card resolved adds 1 floater. VP bonus equal to total cards resolved.',
-  startingTags: [Tag.MICROBE],
+  tags: [Tag.MICROBE],
   effect: {
-    onProjectCardResolved(ctx, _card) {
-      ctx.addFloaters(1);
-      ctx.setCorpState('actionCardsPlayed', ctx.getCorpState('actionCardsPlayed') + 1);
-      ctx.gameLog('MarsBot (Viron): card played, +1 floater');
+    onProjectCardResolved(bot, _card) {
+      bot.addFloaters(1);
+      bot.setCorpState('actionCardsPlayed', bot.getCorpState('actionCardsPlayed') + 1);
+      bot.game.log('MarsBot (Viron): card played, +1 floater');
     },
-    vpBonus(ctx) {
-      return ctx.getCorpState('actionCardsPlayed');
+    vpBonus(bot) {
+      return bot.getCorpState('actionCardsPlayed');
     },
   },
 };
@@ -28,13 +28,11 @@ const VIRON: IMarsBotCorp = {
 const CELESTIC: IMarsBotCorp = {
   name: CardName.CELESTIC,
   description: 'Tag: Venus. Draft: Venus > Jovian. Setup: +1 floater. Each round start: +1 floater.',
-  startingTags: [Tag.VENUS],
+  tags: [Tag.VENUS],
   draftPriority: {type: 'tags', tags: [Tag.VENUS, Tag.JOVIAN]},
-  setup: {
-    resolve(ctx) {
-      ctx.addFloaters(1);
-      ctx.gameLog('MarsBot (Celestic): +1 floater');
-    },
+  setup(bot) {
+    bot.addFloaters(1);
+    bot.game.log('MarsBot (Celestic): +1 floater');
   },
   effect: {
     // Failed action -> +1 additional floater (on top of normal failed action)
@@ -47,38 +45,35 @@ const CELESTIC: IMarsBotCorp = {
 const MORNINGSTAR: IMarsBotCorp = {
   name: CardName.MORNING_STAR_INC,
   description: 'Tags: 2 Venus. Setup: remove Lobbyists, add Venusian Lobby. Credit cubes on Venus track earn 1 MC each.',
-  startingTags: [Tag.VENUS, Tag.VENUS],
-  setup: {
-    resolve(ctx) {
-      ctx.removeBonusCardFromDeck(BonusCardId.B06_LOBBYISTS);
-      ctx.addBonusCardToBonusDeck(BonusCardId.B26_VENUSIAN_LOBBY);
-      ctx.gameLog('MarsBot (Morningstar): Lobbyists removed, Venusian Lobby added');
-    },
+  tags: [Tag.VENUS, Tag.VENUS],
+  setup(bot) {
+    bot.removeBonusCard(BonusCardId.B06_LOBBYISTS);
+    bot.addBonusCardToBonusDeck(BonusCardId.B26_VENUSIAN_LOBBY);
+    bot.game.log('MarsBot (Morningstar): Lobbyists removed, Venusian Lobby added');
   },
   // Credit cubes on Venus track positions 5-9, 11-12
   // Venus track is track 8 (index 7) when Venus expansion is enabled
   // These cubes are on the separate Venus board
   effect: {
-    onTrackCubeTrigger(ctx, _trackIndex, _position, cubeType) {
+    onTrackCubeTrigger(bot, _trackIndex, _position, cubeType) {
       if (cubeType === 'credit') {
-        ctx.gainMc(1);
-        ctx.gameLog('MarsBot (Morningstar): credit cube, +1 M€');
+        bot.gainMc(1);
+        bot.game.log('MarsBot (Morningstar): credit cube, +1 M€');
       }
     },
   },
-  associatedBonusCards: [BonusCardId.B26_VENUSIAN_LOBBY],
 };
 
 // C28 Aphrodite
 const APHRODITE: IMarsBotCorp = {
   name: CardName.APHRODITE,
   description: 'Tag: Plant. Draft: Plant > Animal > Venus. Whenever Venus is raised, earn 2 MC.',
-  startingTags: [Tag.PLANT],
+  tags: [Tag.PLANT],
   draftPriority: {type: 'tags', tags: [Tag.PLANT, Tag.ANIMAL, Tag.VENUS]},
   effect: {
-    onVenusRaised(ctx) {
-      ctx.gainMc(2);
-      ctx.gameLog('MarsBot (Aphrodite): Venus raised, +2 M€');
+    onVenusRaised(bot) {
+      bot.gainMc(2);
+      bot.game.log('MarsBot (Aphrodite): Venus raised, +2 M€');
     },
   },
 };
@@ -87,12 +82,10 @@ const APHRODITE: IMarsBotCorp = {
 const STORMCRAFT: IMarsBotCorp = {
   name: CardName.STORMCRAFT_INCORPORATED,
   description: 'Tag: Jovian. Setup: +1 floater. Each round start: +1 floater. Spending floaters for an extra card also raises temperature +1.',
-  startingTags: [Tag.JOVIAN],
-  setup: {
-    resolve(ctx) {
-      ctx.addFloaters(1);
-      ctx.gameLog('MarsBot (Stormcraft): +1 floater');
-    },
+  tags: [Tag.JOVIAN],
+  setup(bot) {
+    bot.addFloaters(1);
+    bot.game.log('MarsBot (Stormcraft): +1 floater');
   },
   perGeneration: floaterPerRound('Stormcraft'),
 };

@@ -136,7 +136,7 @@ describe('Corp-Specific Bonus Cards (B22-B32)', () => {
       marsBot.setCorpAndSetup(corp);
 
       const deckBefore = marsBot.actionDeck.length;
-      corp.perGeneration.resolve(marsBot.getCorpContext());
+      corp.perGeneration.resolve(marsBot);
       expect(marsBot.actionDeck.length).to.eq(deckBefore + 1);
       // The last card should be Rapid Sprouting
       const lastCard = marsBot.actionDeck[marsBot.actionDeck.length - 1];
@@ -166,7 +166,7 @@ describe('Corp-Specific Bonus Cards (B22-B32)', () => {
       marsBot.setCorpAndSetup(corp);
       const mcBefore = marsBot.turnResolver.mcSupply;
       // Trigger white cube on Earth track (track 6)
-      corp.effect.onTrackCubeTrigger(marsBot.getCorpContext(), 5, 1, 'white');
+      corp.effect.onTrackCubeTrigger(marsBot, 5, 1, 'white');
       expect(marsBot.turnResolver.mcSupply).to.eq(mcBefore + 2);
     });
 
@@ -175,9 +175,9 @@ describe('Corp-Specific Bonus Cards (B22-B32)', () => {
       const corp = require('../../../src/server/automa/corps/MarsBotCorpRegistry').getMarsBotCorp(CardName.INTERPLANETARY_CINEMATICS);
       marsBot.setCorpAndSetup(corp);
       const mcBefore = marsBot.turnResolver.mcSupply;
-      corp.effect.onTrackCubeTrigger(marsBot.getCorpContext(), 0, 1, 'white');
+      corp.effect.onTrackCubeTrigger(marsBot, 0, 1, 'white');
       expect(marsBot.turnResolver.mcSupply).to.eq(mcBefore + 2);
-      corp.effect.onTrackCubeTrigger(marsBot.getCorpContext(), 2, 1, 'white');
+      corp.effect.onTrackCubeTrigger(marsBot, 2, 1, 'white');
       expect(marsBot.turnResolver.mcSupply).to.eq(mcBefore + 4);
     });
   });

@@ -25,10 +25,10 @@ describe('AridorSetup (C-30)', () => {
     // Simulate Aridor setup
     const corp = marsBot.corp;
     if (corp !== undefined && corp.setup !== undefined) {
-      corp.setup.resolve(marsBot.getCorpContext());
+      corp.setup(marsBot);
     } else {
       // Manually trigger setup context
-      marsBot.getCorpContext().placeRandomColony();
+      marsBot.placeRandomColony();
     }
 
     // Either a colony was placed or none was available
@@ -43,7 +43,7 @@ describe('AridorSetup (C-30)', () => {
     const luna = new Luna();
     game.colonies = [luna];
 
-    const placed = marsBot.getCorpContext().placeRandomColony();
+    const placed = marsBot.placeRandomColony();
     expect(placed).to.be.true;
     expect(luna.colonies).to.include(marsBot.player.id);
   });
@@ -53,7 +53,7 @@ describe('AridorSetup (C-30)', () => {
     const marsBot = getMarsBot(game);
     game.colonies = []; // No colonies in game
 
-    const placed = marsBot.getCorpContext().placeRandomColony();
+    const placed = marsBot.placeRandomColony();
     expect(placed).to.be.false;
   });
 
@@ -63,9 +63,8 @@ describe('AridorSetup (C-30)', () => {
     const luna = new Luna();
     game.colonies = [luna];
 
-    const ctx = marsBot.getCorpContext();
     const initialStorage = marsBot.shippingBoard.get(luna.name);
-    ctx.placeRandomColony();
+    marsBot.placeRandomColony();
     expect(marsBot.shippingBoard.get(luna.name)).to.eq(initialStorage + 2);
   });
 

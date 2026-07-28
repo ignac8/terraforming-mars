@@ -21,7 +21,7 @@ describe('PoseidonSetup (C-33)', () => {
     const ceres = new Ceres();
     game.colonies = [luna, ceres];
 
-    marsBot.getCorpContext().placeRandomColony();
+    marsBot.placeRandomColony();
 
     // One of the two should have MarsBot's colony
     const hasLuna = luna.colonies.includes(marsBot.player.id);
@@ -36,7 +36,7 @@ describe('PoseidonSetup (C-33)', () => {
     game.colonies = [luna];
 
     const before = marsBot.shippingBoard.get(ColonyName.LUNA);
-    marsBot.getCorpContext().placeRandomColony();
+    marsBot.placeRandomColony();
     expect(marsBot.shippingBoard.get(ColonyName.LUNA)).to.eq(before + 2);
   });
 
@@ -57,7 +57,7 @@ describe('PoseidonSetup (C-33)', () => {
     const leastIdx = marsBot.board.tracks.reduce((minIdx, t, i, arr) => t.position < arr[minIdx].position ? i : minIdx, 0);
     const beforePos = marsBot.board.tracks[leastIdx].position;
 
-    marsBot.getCorpContext().placeRandomColony();
+    marsBot.placeRandomColony();
 
     // The least-advanced track should have advanced by 1
     const newLeastAdvancedPos = marsBot.board.tracks[leastIdx].position;

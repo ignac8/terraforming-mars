@@ -18,7 +18,7 @@ import {BoardName} from '../../../src/common/boards/BoardName';
 function createTestCorp(overrides: Partial<IMarsBotCorp> & {name: CardName}): IMarsBotCorp {
   return {
     description: '',
-    startingTags: [],
+    tags: [],
     ...overrides,
   };
 }
@@ -86,7 +86,7 @@ describe('MarsBotCorpResolver', () => {
 
       const corp = createTestCorp({
         name: CardName.ECOLINE,
-        startingTags: [Tag.BUILDING, Tag.BUILDING], // Track 1 should advance twice
+        tags: [Tag.BUILDING, Tag.BUILDING], // Track 1 should advance twice
       });
 
       const track1Before = marsBot.board.tracks[0].position;
@@ -125,10 +125,8 @@ describe('MarsBotCorpResolver', () => {
 
       const corp = createTestCorp({
         name: CardName.ECOLINE,
-        setup: {
-          resolve: () => {
-            setupCalled = true;
-          },
+        setup: () => {
+          setupCalled = true;
         },
       });
 
