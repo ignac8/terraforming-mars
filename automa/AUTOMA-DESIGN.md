@@ -532,9 +532,9 @@ MarsBot can play with a corporation card (optional, toggle `automaCorpOption` in
 
 ### 7.2 Corporation Framework
 
-- **IMarsBotCorp**: Interface with id, name, description, startingTags, draftPriority, setup, effect, perGeneration, trackCubes, associatedBonusCards
-- **MarsBotCorpContext**: Cached context with 20+ operations (advanceTrack, gainMc, placeOcean/City/Greenery, drawAndResolveProjectCard, raiseTR, etc.)
-- **MarsBotCorpEffect**: Hooks for onTrackCubeTrigger, onProjectCardResolved, onHumanCardPlayed, onTilePlaced, onVenusRaised, onGlobalParameterRaised, onMcGained, vpBonus
+- **IMarsBotCorp**: Type with name (the real corporation's `CardName`), description, tags, draftPriority, setup, effect, perGeneration, trackCubes
+- **IMarsBot**: The bot as corp handlers see it (IPlayer-style: game/player/board references plus operations like advanceTrack, gainMc, placeOcean/City/Greenery, drawAndResolveProjectCard, raiseTR). Implemented by `MarsBot` itself.
+- **MarsBotCorpEffect**: Hooks for onTrackCubeTrigger, onProjectCardResolved, onHumanCardPlayed, onTilePlaced, onVenusRaised, onGlobalParameterRaised, onMcGained, vpBonus. Card hooks receive the real `IProjectCard`.
 - **Draft priority types**: tags (standard), mostExpensive (Credicor), leastAdvancedTrack (Aridor), mostTags (Spire)
 
 ### 7.3 Track Cubes
