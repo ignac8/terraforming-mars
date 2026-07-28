@@ -62,3 +62,18 @@ const BONUS_CARD_NAMES: Map<BonusCardId, CardName> = new Map([
   [BonusCardId.B31_GOVERNMENT_SUBSIDY, CardName.AUTOMA_GOVERNMENT_SUBSIDY],
   [BonusCardId.B32_INVESTORS, CardName.AUTOMA_INVESTORS],
 ]);
+
+/** Restore bonus cards from their serialized names. */
+export function marsBotBonusCardsFromJSON(names: ReadonlyArray<CardName>): Array<MarsBotBonusCard> {
+  const byName = new Map(createBaseBonusCards().map((card) => [card.name, card]));
+  const cards: Array<MarsBotBonusCard> = [];
+  for (const name of names) {
+    const card = byName.get(name);
+    if (card !== undefined) {
+      cards.push(card);
+    } else {
+      console.warn(`bonus card ${name} not found while loading game.`);
+    }
+  }
+  return cards;
+}
