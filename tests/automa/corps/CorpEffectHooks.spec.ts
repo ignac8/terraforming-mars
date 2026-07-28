@@ -5,6 +5,9 @@ import {IGame} from '../../../src/server/IGame';
 import {TestPlayer} from '../../TestPlayer';
 import {MarsBot} from '../../../src/server/automa/MarsBot';
 import {Tag} from '../../../src/common/cards/Tag';
+import {GlobalParameter} from '../../../src/common/GlobalParameter';
+import {TileType} from '../../../src/common/TileType';
+import {IProjectCard} from '../../../src/server/cards/IProjectCard';
 import {BoardName} from '../../../src/common/boards/BoardName';
 import {
   clearMarsBotCorpRegistry, restoreMarsBotCorpRegistry,
@@ -19,6 +22,16 @@ function createAutomaGame(): {game: IGame, human: TestPlayer, marsBot: MarsBot} 
   });
   expect(game.automaHooks?.marsBot).to.not.be.undefined;
   return {game, human, marsBot: game.automaHooks!.marsBot};
+}
+
+function fakeCard(name: string, opts: {tags?: Array<Tag>, cost?: number, requirements?: boolean, victoryPoints?: number} = {}): IProjectCard {
+  return {
+    name: name as CardName,
+    tags: opts.tags ?? [],
+    cost: opts.cost ?? 0,
+    requirements: opts.requirements ? [{oceans: 1}] : [],
+    getVictoryPoints: () => opts.victoryPoints ?? 0,
+  } as unknown as IProjectCard;
 }
 
 describe('Corp Effect Hooks', () => {
@@ -37,7 +50,7 @@ describe('Corp Effect Hooks', () => {
       const corp = getMarsBotCorp(CardName.INVENTRIX)!;
       marsBot.setCorpAndSetup(corp);
       const mcBefore = marsBot.turnResolver.mcSupply;
-      corp.effect!.onProjectCardResolved!(marsBot.getCorpContext(), {name: 'Req' as CardName, tags: [], cost: 10, hasRequirements: true, victoryPoints: 0});
+      corp.effect!.onProjectCardResolved!(marsBot, fakeCard('Req', {cost: 10, requirements: true}));
       expect(marsBot.turnResolver.mcSupply).to.eq(mcBefore + 2);
     });
 
@@ -46,7 +59,7 @@ describe('Corp Effect Hooks', () => {
       const corp = getMarsBotCorp(CardName.INVENTRIX)!;
       marsBot.setCorpAndSetup(corp);
       const mcBefore = marsBot.turnResolver.mcSupply;
-      corp.effect!.onProjectCardResolved!(marsBot.getCorpContext(), {name: 'NoReq' as CardName, tags: [], cost: 10, hasRequirements: false, victoryPoints: 0});
+      corp.effect!.onProjectCardResolved!(marsBot, fakeCard('NoReq', {cost: 10}));
       expect(marsBot.turnResolver.mcSupply).to.eq(mcBefore);
     });
   });
@@ -57,7 +70,7 @@ describe('Corp Effect Hooks', () => {
       const corp = getMarsBotCorp(CardName.VITOR)!;
       marsBot.setCorpAndSetup(corp);
       const mcBefore = marsBot.turnResolver.mcSupply;
-      corp.effect!.onProjectCardResolved!(marsBot.getCorpContext(), {name: 'VP+' as CardName, tags: [], cost: 10, hasRequirements: false, victoryPoints: 1});
+      corp.effect!.onProjectCardResolved!(marsBot, fakeCard('VP+', {cost: 10, victoryPoints: 1}));
       expect(marsBot.turnResolver.mcSupply).to.eq(mcBefore + 3);
     });
 
@@ -66,7 +79,7 @@ describe('Corp Effect Hooks', () => {
       const corp = getMarsBotCorp(CardName.VITOR)!;
       marsBot.setCorpAndSetup(corp);
       const mcBefore = marsBot.turnResolver.mcSupply;
-      corp.effect!.onProjectCardResolved!(marsBot.getCorpContext(), {name: 'VP0' as CardName, tags: [], cost: 10, hasRequirements: false, victoryPoints: 0});
+      corp.effect!.onProjectCardResolved!(marsBot, fakeCard('VP0', {cost: 10}));
       expect(marsBot.turnResolver.mcSupply).to.eq(mcBefore);
     });
 
@@ -75,7 +88,7 @@ describe('Corp Effect Hooks', () => {
       const corp = getMarsBotCorp(CardName.VITOR)!;
       marsBot.setCorpAndSetup(corp);
       const mcBefore = marsBot.turnResolver.mcSupply;
-      corp.effect!.onProjectCardResolved!(marsBot.getCorpContext(), {name: 'VP-' as CardName, tags: [], cost: 10, hasRequirements: false, victoryPoints: -1});
+      corp.effect!.onProjectCardResolved!(marsBot, fakeCard('VP-', {cost: 10, victoryPoints: -1}));
       expect(marsBot.turnResolver.mcSupply).to.eq(mcBefore);
     });
   });
@@ -85,7 +98,7 @@ describe('Corp Effect Hooks', () => {
       const {marsBot} = createAutomaGame();
       const corp = getMarsBotCorp(CardName.VIRON)!;
       marsBot.setCorpAndSetup(corp);
-      corp.effect!.onProjectCardResolved!(marsBot.getCorpContext(), {name: 'Card1' as CardName, tags: [Tag.BUILDING], cost: 5, hasRequirements: false, victoryPoints: 0});
+      corp.effect!.onProjectCardResolved!(marsBot, fakeCard('Card1', {tags: [Tag.BUILDING], cost: 5}));
       expect(marsBot.floaterCount).to.eq(1);
       expect(marsBot.corpSpecificState.get('actionCardsPlayed')).to.eq(1);
     });
@@ -95,7 +108,7 @@ describe('Corp Effect Hooks', () => {
       const corp = getMarsBotCorp(CardName.VIRON)!;
       marsBot.setCorpAndSetup(corp);
       marsBot.corpSpecificState.set('actionCardsPlayed', 5);
-      expect(corp.effect!.vpBonus!(marsBot.getCorpContext())).to.eq(5);
+      expect(corp.effect!.vpBonus!(marsBot)).to.eq(5);
     });
   });
 
@@ -105,7 +118,7 @@ describe('Corp Effect Hooks', () => {
       const corp = getMarsBotCorp(CardName.APHRODITE)!;
       marsBot.setCorpAndSetup(corp);
       const mcBefore = marsBot.turnResolver.mcSupply;
-      corp.effect!.onVenusRaised!(marsBot.getCorpContext());
+      corp.effect!.onVenusRaised!(marsBot);
       expect(marsBot.turnResolver.mcSupply).to.eq(mcBefore + 2);
     });
   });
@@ -116,7 +129,7 @@ describe('Corp Effect Hooks', () => {
       const corp = getMarsBotCorp(CardName.THARSIS_REPUBLIC)!;
       marsBot.setCorpAndSetup(corp);
       const mcBefore = marsBot.turnResolver.mcSupply;
-      corp.effect!.onTilePlaced!(marsBot.getCorpContext(), false, 2); // CITY = 2
+      corp.effect!.onTilePlaced!(marsBot, false, TileType.CITY);
       expect(marsBot.turnResolver.mcSupply).to.eq(mcBefore + 2);
     });
 
@@ -125,7 +138,7 @@ describe('Corp Effect Hooks', () => {
       const corp = getMarsBotCorp(CardName.THARSIS_REPUBLIC)!;
       marsBot.setCorpAndSetup(corp);
       const eventBefore = marsBot.board.tracks[2].position;
-      corp.effect!.onTilePlaced!(marsBot.getCorpContext(), true, 2); // CITY = 2
+      corp.effect!.onTilePlaced!(marsBot, true, TileType.CITY);
       expect(marsBot.board.tracks[2].position).to.be.gte(eventBefore + 1);
     });
 
@@ -134,7 +147,7 @@ describe('Corp Effect Hooks', () => {
       const corp = getMarsBotCorp(CardName.THARSIS_REPUBLIC)!;
       marsBot.setCorpAndSetup(corp);
       const mcBefore = marsBot.turnResolver.mcSupply;
-      corp.effect!.onTilePlaced!(marsBot.getCorpContext(), false, 0); // GREENERY = 0
+      corp.effect!.onTilePlaced!(marsBot, false, TileType.GREENERY);
       expect(marsBot.turnResolver.mcSupply).to.eq(mcBefore);
     });
   });
@@ -146,7 +159,7 @@ describe('Corp Effect Hooks', () => {
       marsBot.setCorpAndSetup(corp);
       expect(marsBot.corpSpecificState.get('whiteCubeOnCard')).to.eq(1);
       const buildingBefore = marsBot.board.tracks[0].position;
-      corp.effect!.onTilePlaced!(marsBot.getCorpContext(), false, 1); // OCEAN = 1
+      corp.effect!.onTilePlaced!(marsBot, false, TileType.OCEAN);
       expect(marsBot.corpSpecificState.get('whiteCubeOnCard')).to.eq(0);
       expect(marsBot.board.tracks[0].position).to.be.gte(buildingBefore + 1);
     });
@@ -156,7 +169,7 @@ describe('Corp Effect Hooks', () => {
       const corp = getMarsBotCorp(CardName.LAKEFRONT_RESORTS)!;
       marsBot.setCorpAndSetup(corp);
       marsBot.corpSpecificState.set('whiteCubeOnCard', 0);
-      corp.effect!.onTilePlaced!(marsBot.getCorpContext(), false, 1); // OCEAN = 1
+      corp.effect!.onTilePlaced!(marsBot, false, TileType.OCEAN);
       expect(marsBot.corpSpecificState.get('whiteCubeOnCard')).to.eq(1);
     });
   });
@@ -169,7 +182,7 @@ describe('Corp Effect Hooks', () => {
       marsBot.corpSpecificState.set('whiteCubeOnCard', 1);
       const trBefore = marsBot.player.terraformRating;
       const mcBefore = marsBot.turnResolver.mcSupply;
-      const skip = corp.effect!.onGlobalParameterRaised!(marsBot.getCorpContext(), 'temperature');
+      const skip = corp.effect!.onGlobalParameterRaised!(marsBot, GlobalParameter.TEMPERATURE);
       expect(skip).to.be.true;
       expect(marsBot.corpSpecificState.get('whiteCubeOnCard')).to.eq(0);
       expect(marsBot.player.terraformRating).to.eq(trBefore + 1);
@@ -181,7 +194,7 @@ describe('Corp Effect Hooks', () => {
       const corp = getMarsBotCorp(CardName.PRISTAR)!;
       marsBot.setCorpAndSetup(corp);
       marsBot.corpSpecificState.set('whiteCubeOnCard', 0);
-      const skip = corp.effect!.onGlobalParameterRaised!(marsBot.getCorpContext(), 'temperature');
+      const skip = corp.effect!.onGlobalParameterRaised!(marsBot, GlobalParameter.TEMPERATURE);
       expect(skip).to.be.false;
     });
 
@@ -190,7 +203,7 @@ describe('Corp Effect Hooks', () => {
       const corp = getMarsBotCorp(CardName.PRISTAR)!;
       marsBot.setCorpAndSetup(corp);
       marsBot.corpSpecificState.set('whiteCubeOnCard', 0);
-      corp.perGeneration!.resolve(marsBot.getCorpContext());
+      corp.perGeneration!.resolve(marsBot);
       expect(marsBot.corpSpecificState.get('whiteCubeOnCard')).to.eq(1);
     });
   });
@@ -201,7 +214,7 @@ describe('Corp Effect Hooks', () => {
       const corp = getMarsBotCorp(CardName.POLYPHEMOS)!;
       marsBot.setCorpAndSetup(corp);
       const deckBefore = marsBot.actionDeck.length;
-      corp.perGeneration!.resolve(marsBot.getCorpContext());
+      corp.perGeneration!.resolve(marsBot);
       expect(marsBot.actionDeck.length).to.eq(deckBefore - 1);
     });
   });
@@ -219,7 +232,7 @@ describe('Corp Effect Hooks', () => {
       const corp = getMarsBotCorp(CardName.MINING_GUILD)!;
       marsBot.setCorpAndSetup(corp);
       // 5 MC gained, 5 intercepted to card (10 → 5), 0 passes through
-      const actual = corp.effect!.onMcGained!(marsBot.getCorpContext(), 5);
+      const actual = corp.effect!.onMcGained!(marsBot, 5);
       expect(actual).to.eq(0);
       expect(marsBot.corpSpecificState.get('mcOnCard')).to.eq(5);
     });
@@ -230,7 +243,7 @@ describe('Corp Effect Hooks', () => {
       marsBot.setCorpAndSetup(corp);
       marsBot.corpSpecificState.set('mcOnCard', 2);
       const buildingBefore = marsBot.board.tracks[0].position;
-      const actual = corp.effect!.onMcGained!(marsBot.getCorpContext(), 5);
+      const actual = corp.effect!.onMcGained!(marsBot, 5);
       expect(actual).to.eq(3); // 5 - 2 intercepted = 3 passes through
       expect(marsBot.corpSpecificState.get('mcOnCard')).to.eq(10); // Refilled
       expect(marsBot.board.tracks[0].position).to.be.gte(buildingBefore + 1);

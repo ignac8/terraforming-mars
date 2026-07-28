@@ -11,13 +11,13 @@ import {whiteTrackCubes, bonusCardPerGen} from './BaseGameCorps';
 const CREDICOR: IMarsBotCorp = {
   name: CardName.CREDICOR,
   description: 'Draft: most expensive card. Effect: card cost 20+ gives 4 MC.',
-  startingTags: [],
+  tags: [],
   draftPriority: {type: 'mostExpensive'},
   effect: {
-    onProjectCardResolved(ctx, card) {
+    onProjectCardResolved(bot, card) {
       if (card.cost >= 20) {
-        ctx.gainMc(4);
-        ctx.gameLog(`MarsBot (Credicor): card cost ${card.cost} >= 20, gain 4 M€`);
+        bot.gainMc(4);
+        bot.game.log(`MarsBot (Credicor): card cost ${card.cost} >= 20, gain 4 M€`);
       }
     },
   },
@@ -28,9 +28,8 @@ const CREDICOR: IMarsBotCorp = {
 const ECO_LINE: IMarsBotCorp = {
   name: CardName.ECOLINE,
   description: 'Each generation: add Rapid Sprouting bonus card to action deck.',
-  startingTags: [],
+  tags: [],
   perGeneration: bonusCardPerGen(BonusCardId.B23_RAPID_SPROUTING, 'Eco Line'),
-  associatedBonusCards: [BonusCardId.B23_RAPID_SPROUTING],
 };
 
 // ---- C03 Helion ----
@@ -39,7 +38,7 @@ const ECO_LINE: IMarsBotCorp = {
 const HELION: IMarsBotCorp = {
   name: CardName.HELION,
   description: 'White cubes: draw and resolve a card instead of raising temperature. Black cubes: temperature +1.',
-  startingTags: [],
+  tags: [],
   trackCubes: [
     {trackIndex: 0, position: 6, cubeType: 'white'},
     {trackIndex: 1, position: 9, cubeType: 'white'},
@@ -55,13 +54,13 @@ const HELION: IMarsBotCorp = {
     {trackIndex: 5, position: 14, cubeType: 'black'},
   ],
   effect: {
-    onTrackCubeTrigger(ctx, _trackIndex, _position, cubeType) {
+    onTrackCubeTrigger(bot, _trackIndex, _position, cubeType) {
       if (cubeType === 'white') {
-        ctx.drawAndResolveProjectCard();
-        ctx.gameLog('MarsBot (Helion): white cube — drew and resolved card instead of temp raise');
+        bot.drawAndResolveProjectCard();
+        bot.game.log('MarsBot (Helion): white cube — drew and resolved card instead of temp raise');
       } else if (cubeType === 'black') {
-        ctx.raiseTemperature(1);
-        ctx.gameLog('MarsBot (Helion): black cube — temperature +1');
+        bot.raiseTemperature(1);
+        bot.game.log('MarsBot (Helion): black cube — temperature +1');
       }
     },
   },
@@ -73,13 +72,13 @@ const HELION: IMarsBotCorp = {
 const INTERPLANETARY_CINEMATICS: IMarsBotCorp = {
   name: CardName.INTERPLANETARY_CINEMATICS,
   description: 'Tags: 2 Events. White cubes on building and event tracks. Each advance on those tracks earns 2 MC.',
-  startingTags: [Tag.EVENT, Tag.EVENT],
+  tags: [Tag.EVENT, Tag.EVENT],
   trackCubes: [...whiteTrackCubes(0), ...whiteTrackCubes(2)],
   effect: {
-    onTrackCubeTrigger(ctx, trackIndex, _position, cubeType) {
+    onTrackCubeTrigger(bot, trackIndex, _position, cubeType) {
       if (cubeType === 'white' && (trackIndex === 0 || trackIndex === 2)) {
-        ctx.gainMc(2);
-        ctx.gameLog('MarsBot (IC): advance on building/event track, +2 M€');
+        bot.gainMc(2);
+        bot.game.log('MarsBot (IC): advance on building/event track, +2 M€');
       }
     },
   },
@@ -91,24 +90,20 @@ const INTERPLANETARY_CINEMATICS: IMarsBotCorp = {
 const INVENTRIX: IMarsBotCorp = {
   name: CardName.INVENTRIX,
   description: 'Setup: remove Lobbyists. Effect: card with requirements gives 2 MC. Each generation: add Do It Right to action deck.',
-  startingTags: [],
-  setup: {
-    resolve(ctx) {
-      ctx.removeBonusCardFromDeck(BonusCardId.B06_LOBBYISTS);
-      ctx.gameLog('MarsBot (Inventrix): Lobbyists removed from bonus deck');
-    },
+  tags: [],
+  setup(bot) {
+    bot.removeBonusCard(BonusCardId.B06_LOBBYISTS);
+    bot.game.log('MarsBot (Inventrix): Lobbyists removed from bonus deck');
   },
   effect: {
-    onProjectCardResolved(ctx, card) {
-      // Cards with requirements — approximate by checking if card has a cost > 0
-      if (card.hasRequirements) {
-        ctx.gainMc(2);
-        ctx.gameLog('MarsBot (Inventrix): card with requirements, +2 M€');
+    onProjectCardResolved(bot, card) {
+      if (card.requirements.length > 0) {
+        bot.gainMc(2);
+        bot.game.log('MarsBot (Inventrix): card with requirements, +2 M€');
       }
     },
   },
   perGeneration: bonusCardPerGen(BonusCardId.B25_DO_IT_RIGHT, 'Inventrix'),
-  associatedBonusCards: [BonusCardId.B25_DO_IT_RIGHT],
 };
 
 // ---- C06 Mining Guild ----
@@ -117,28 +112,26 @@ const INVENTRIX: IMarsBotCorp = {
 const MINING_GUILD: IMarsBotCorp = {
   name: CardName.MINING_GUILD,
   description: 'Tags: 2 Building. Setup: 10 MC on card. MC earned goes to card first; when empty, refill 10 MC and advance building track.',
-  startingTags: [Tag.BUILDING, Tag.BUILDING],
-  setup: {
-    resolve(ctx) {
-      ctx.setCorpState('mcOnCard', 10);
-      ctx.gameLog('MarsBot (Mining Guild): 10 M€ placed on card');
-    },
+  tags: [Tag.BUILDING, Tag.BUILDING],
+  setup(bot) {
+    bot.setCorpState('mcOnCard', 10);
+    bot.game.log('MarsBot (Mining Guild): 10 M€ placed on card');
   },
   effect: {
     // MC interception: when MarsBot earns MC, it goes to the card first.
     // When card empty, refill 10 MC and advance building track.
-    onMcGained(ctx, amount) {
-      if (ctx.trackPositions[0] >= 18) {
+    onMcGained(bot, amount) {
+      if (bot.board.tracks[0].position >= 18) {
         return amount;
       } // Building track maxed, no interception
-      let mcOnCard = ctx.getCorpState('mcOnCard');
+      let mcOnCard = bot.getCorpState('mcOnCard');
       const intercepted = Math.min(amount, mcOnCard);
       mcOnCard -= intercepted;
-      ctx.setCorpState('mcOnCard', mcOnCard);
+      bot.setCorpState('mcOnCard', mcOnCard);
       if (mcOnCard <= 0) {
-        ctx.setCorpState('mcOnCard', 10);
-        ctx.advanceTrack(0); // Building track = index 0
-        ctx.gameLog('MarsBot (Mining Guild): card empty, refill 10 M€ + advance building track');
+        bot.setCorpState('mcOnCard', 10);
+        bot.advanceTrack(0); // Building track = index 0
+        bot.game.log('MarsBot (Mining Guild): card empty, refill 10 M€ + advance building track');
       }
       return amount - intercepted; // Return the amount that actually goes to mcSupply
     },
@@ -151,25 +144,23 @@ const MINING_GUILD: IMarsBotCorp = {
 const PHOBOLOG: IMarsBotCorp = {
   name: CardName.PHOBOLOG,
   description: 'Tag: Space. Setup: draw 2 space cards to bonus deck. White cubes on space track: resolve 1 bonus card each.',
-  startingTags: [Tag.SPACE],
+  tags: [Tag.SPACE],
   trackCubes: [
     {trackIndex: 1, position: 7, cubeType: 'white'},
     {trackIndex: 1, position: 10, cubeType: 'white'},
     {trackIndex: 1, position: 13, cubeType: 'white'},
     {trackIndex: 1, position: 15, cubeType: 'white'},
   ],
-  setup: {
-    resolve(ctx) {
-      // Draw 2 space cards from project deck and add to bonus deck
-      // This needs special handling — for now we add 2 project cards to action deck as approximation
-      ctx.gameLog('MarsBot (Phobolog): 2 space cards drawn and added to bonus deck');
-    },
+  setup(bot) {
+    // Draw 2 space cards from project deck and add to bonus deck
+    // This needs special handling — for now we add 2 project cards to action deck as approximation
+    bot.game.log('MarsBot (Phobolog): 2 space cards drawn and added to bonus deck');
   },
   effect: {
-    onTrackCubeTrigger(ctx, _trackIndex, _position, cubeType) {
+    onTrackCubeTrigger(bot, _trackIndex, _position, cubeType) {
       if (cubeType === 'white') {
-        ctx.drawAndResolveBonusCard();
-        ctx.gameLog('MarsBot (Phobolog): white cube — resolved 1 bonus card');
+        bot.drawAndResolveBonusCard();
+        bot.game.log('MarsBot (Phobolog): white cube — resolved 1 bonus card');
       }
     },
   },
@@ -181,19 +172,19 @@ const PHOBOLOG: IMarsBotCorp = {
 const SATURN_SYSTEMS: IMarsBotCorp = {
   name: CardName.SATURN_SYSTEMS,
   description: 'Tags: Jovian, 3 Space. Draft: Jovian > Space. When anyone plays a Jovian tag, advance event track.',
-  startingTags: [Tag.JOVIAN, Tag.SPACE, Tag.SPACE, Tag.SPACE],
+  tags: [Tag.JOVIAN, Tag.SPACE, Tag.SPACE, Tag.SPACE],
   draftPriority: {type: 'tags', tags: [Tag.JOVIAN, Tag.SPACE]},
   effect: {
-    onProjectCardResolved(ctx, card) {
+    onProjectCardResolved(bot, card) {
       if (card.tags.includes(Tag.JOVIAN)) {
-        ctx.advanceTrack(2);
-        ctx.gameLog('MarsBot (Saturn Systems): Jovian tag played, advance event track');
+        bot.advanceTrack(2);
+        bot.game.log('MarsBot (Saturn Systems): Jovian tag played, advance event track');
       }
     },
-    onHumanCardPlayed(ctx, card) {
+    onHumanCardPlayed(bot, card) {
       if (card.tags.includes(Tag.JOVIAN)) {
-        ctx.advanceTrack(2);
-        ctx.gameLog('MarsBot (Saturn Systems): Human played Jovian, advance event track');
+        bot.advanceTrack(2);
+        bot.game.log('MarsBot (Saturn Systems): Human played Jovian, advance event track');
       }
     },
   },
@@ -205,20 +196,18 @@ const SATURN_SYSTEMS: IMarsBotCorp = {
 const TERACTOR: IMarsBotCorp = {
   name: CardName.TERACTOR,
   description: 'Draft: Earth. Setup: +25 MC, white cubes on Earth track. Each Earth track advance earns 2 MC.',
-  startingTags: [],
+  tags: [],
   draftPriority: {type: 'tags', tags: [Tag.EARTH]},
   trackCubes: whiteTrackCubes(5),
-  setup: {
-    resolve(ctx) {
-      ctx.gainMc(25);
-      ctx.gameLog('MarsBot (Teractor): +25 M€');
-    },
+  setup(bot) {
+    bot.gainMc(25);
+    bot.game.log('MarsBot (Teractor): +25 M€');
   },
   effect: {
-    onTrackCubeTrigger(ctx, trackIndex, _position, cubeType) {
+    onTrackCubeTrigger(bot, trackIndex, _position, cubeType) {
       if (cubeType === 'white' && trackIndex === 5) {
-        ctx.gainMc(2);
-        ctx.gameLog('MarsBot (Teractor): Earth track advance, +2 M€');
+        bot.gainMc(2);
+        bot.game.log('MarsBot (Teractor): Earth track advance, +2 M€');
       }
     },
   },
@@ -229,22 +218,20 @@ const TERACTOR: IMarsBotCorp = {
 const THARSIS_REPUBLIC: IMarsBotCorp = {
   name: CardName.THARSIS_REPUBLIC,
   description: 'Draft: City. Setup: place 1 city. Any city placement gives 2 MC; MarsBot city also advances event track.',
-  startingTags: [],
+  tags: [],
   draftPriority: {type: 'tags', tags: [Tag.CITY]},
-  setup: {
-    resolve(ctx) {
-      ctx.placeCity();
-      ctx.gameLog('MarsBot (Tharsis Republic): placed 1 city tile');
-    },
+  setup(bot) {
+    bot.placeCity();
+    bot.game.log('MarsBot (Tharsis Republic): placed 1 city tile');
   },
   effect: {
-    onTilePlaced(ctx, placedByMarsBot, tileType) {
+    onTilePlaced(bot, placedByMarsBot, tileType) {
       if (tileType === TileType.CITY || tileType === TileType.CAPITAL) {
-        ctx.gainMc(2);
-        ctx.gameLog('MarsBot (Tharsis Republic): city placed, +2 M€');
+        bot.gainMc(2);
+        bot.game.log('MarsBot (Tharsis Republic): city placed, +2 M€');
         if (placedByMarsBot) {
-          ctx.advanceTrack(2); // Event track = index 2
-          ctx.gameLog('MarsBot (Tharsis Republic): MarsBot city, advance event track');
+          bot.advanceTrack(2); // Event track = index 2
+          bot.game.log('MarsBot (Tharsis Republic): MarsBot city, advance event track');
         }
       }
     },
@@ -257,7 +244,7 @@ const THARSIS_REPUBLIC: IMarsBotCorp = {
 const THORGATE: IMarsBotCorp = {
   name: CardName.THORGATE,
   description: 'Tag: Power. Draft: Power. Setup: +10 MC, white cubes on energy track. White cube: resolve card (ignore first tag) then temperature +1.',
-  startingTags: [Tag.POWER],
+  tags: [Tag.POWER],
   draftPriority: {type: 'tags', tags: [Tag.POWER]},
   trackCubes: [
     {trackIndex: 4, position: 4, cubeType: 'white'},
@@ -265,18 +252,16 @@ const THORGATE: IMarsBotCorp = {
     {trackIndex: 4, position: 8, cubeType: 'white'},
     {trackIndex: 4, position: 10, cubeType: 'white'},
   ],
-  setup: {
-    resolve(ctx) {
-      ctx.gainMc(10);
-      ctx.gameLog('MarsBot (Thorgate): +10 M€');
-    },
+  setup(bot) {
+    bot.gainMc(10);
+    bot.game.log('MarsBot (Thorgate): +10 M€');
   },
   effect: {
-    onTrackCubeTrigger(ctx, _trackIndex, _position, cubeType) {
+    onTrackCubeTrigger(bot, _trackIndex, _position, cubeType) {
       if (cubeType === 'white') {
-        ctx.drawAndResolveProjectCardIgnoringFirstNTags(1);
-        ctx.raiseTemperature(1);
-        ctx.gameLog('MarsBot (Thorgate): white cube — resolved card (first tag ignored) + temp +1');
+        bot.drawAndResolveProjectCardIgnoringFirstNTags(1);
+        bot.raiseTemperature(1);
+        bot.game.log('MarsBot (Thorgate): white cube — resolved card (first tag ignored) + temp +1');
       }
     },
   },
@@ -288,23 +273,20 @@ const THORGATE: IMarsBotCorp = {
 const UNMI: IMarsBotCorp = {
   name: CardName.UNITED_NATIONS_MARS_INITIATIVE,
   description: 'Setup: add Government Subsidy to bonus deck. From generation 2 onward, resolve 1 bonus card each generation.',
-  startingTags: [],
-  setup: {
-    resolve(ctx) {
-      ctx.addBonusCardToBonusDeck(BonusCardId.B31_GOVERNMENT_SUBSIDY);
-      ctx.gameLog('MarsBot (UNMI): Government Subsidy added to bonus deck');
-    },
+  tags: [],
+  setup(bot) {
+    bot.addBonusCardToBonusDeck(BonusCardId.B31_GOVERNMENT_SUBSIDY);
+    bot.game.log('MarsBot (UNMI): Government Subsidy added to bonus deck');
   },
   perGeneration: {
     timing: 'beforeActionPhase',
-    resolve(ctx) {
-      if (ctx.generation >= 2) {
-        ctx.drawAndResolveBonusCard();
-        ctx.gameLog('MarsBot (UNMI): added 1 bonus card to action deck');
+    resolve(bot) {
+      if (bot.game.generation >= 2) {
+        bot.drawAndResolveBonusCard();
+        bot.game.log('MarsBot (UNMI): added 1 bonus card to action deck');
       }
     },
   },
-  associatedBonusCards: [BonusCardId.B31_GOVERNMENT_SUBSIDY],
 };
 
 export const AUTOMA_BASE_MANIFEST: AutomaManifest = {

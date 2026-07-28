@@ -1,13 +1,14 @@
 import {IGame} from '../IGame';
 import {IPlayer} from '../IPlayer';
 import {Color} from '../../common/Color';
+import {GlobalParameter} from '../../common/GlobalParameter';
+import {TileType} from '../../common/TileType';
 import {PlayerId} from '../../common/Types';
 import {MarsBot} from './MarsBot';
 import {MarsBotModel} from '../../common/models/MarsBotModel';
 import {getAutomaMaxGeneration} from '../../common/automa/AutomaTypes';
 import {SelectCard} from '../inputs/SelectCard';
 import {IProjectCard} from '../cards/IProjectCard';
-import {toCorpCardRef} from './MarsBotCorpTypes';
 import {inplaceRemove} from '../../common/utils/utils';
 import {MarsBotCorpResolver} from './corps/MarsBotCorpResolver';
 import {MarsBotDraftResolver} from './corps/MarsBotDraftResolver';
@@ -478,9 +479,7 @@ export class AutomaGameHooks {
     if (corp?.effect?.onHumanCardPlayed === undefined) {
       return;
     }
-    corp.effect.onHumanCardPlayed(this.marsBot.getCorpContext(),
-      toCorpCardRef(card.name, card.tags, card.cost, card.requirements !== undefined, card.getVictoryPoints(this.game.players[0])),
-    );
+    corp.effect.onHumanCardPlayed(this.marsBot, card);
   }
 
   /**
@@ -514,12 +513,12 @@ export class AutomaGameHooks {
   }
 
   /** Called when any player places a tile. Notifies MarsBot's corp. */
-  public handleTilePlaced(player: IPlayer, tileType: number): void {
+  public handleTilePlaced(player: IPlayer, tileType: TileType): void {
     const corp = this.marsBot.corp;
     if (corp?.effect?.onTilePlaced === undefined) {
       return;
     }
-    corp.effect.onTilePlaced(this.marsBot.getCorpContext(), player === this.marsBot.player, tileType);
+    corp.effect.onTilePlaced(this.marsBot, player === this.marsBot.player, tileType);
   }
 
   /** Called when Venus scale is raised. Notifies MarsBot's corp. */
@@ -528,16 +527,16 @@ export class AutomaGameHooks {
     if (corp?.effect?.onVenusRaised === undefined) {
       return;
     }
-    corp.effect.onVenusRaised(this.marsBot.getCorpContext());
+    corp.effect.onVenusRaised(this.marsBot);
   }
 
   /** Called when a global parameter is raised. Returns true to SKIP the raise (Pristar). */
-  public handleGlobalParameterRaised(parameter: string): boolean {
+  public handleGlobalParameterRaised(parameter: GlobalParameter): boolean {
     const corp = this.marsBot.corp;
     if (corp?.effect?.onGlobalParameterRaised === undefined) {
       return false;
     }
-    return corp.effect.onGlobalParameterRaised(this.marsBot.getCorpContext(), parameter) ?? false;
+    return corp.effect.onGlobalParameterRaised(this.marsBot, parameter) ?? false;
   }
 
   // ---- Card interaction hooks ----

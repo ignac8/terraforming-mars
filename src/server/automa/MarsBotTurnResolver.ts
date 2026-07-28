@@ -2,7 +2,6 @@ import {IGame} from '../IGame';
 import {IPlayer} from '../IPlayer';
 import {IProjectCard} from '../cards/IProjectCard';
 import {Tag} from '../../common/cards/Tag';
-import {toCorpCardRef} from './MarsBotCorpTypes';
 import {CardType} from '../../common/cards/CardType';
 import {TileType, CITY_TILES, GREENERY_TILES} from '../../common/TileType';
 import {Board} from '../boards/Board';
@@ -91,10 +90,7 @@ export class MarsBotTurnResolver {
     }
 
     // Notify corp of card resolution
-    this.marsBotManager?.corp?.effect?.onProjectCardResolved?.(
-      this.marsBotManager.getCorpContext(),
-      toCorpCardRef(card.name, card.tags, card.cost, card.requirements !== undefined, card.getVictoryPoints(this.marsBot)),
-    );
+    this.marsBotManager?.corp?.effect?.onProjectCardResolved?.(this.marsBotManager, card);
 
     // Notify human player's effect cards (Solar Logistics, Saturn Systems, etc.)
     for (const effectCard of this.humanPlayer.playedCards) {

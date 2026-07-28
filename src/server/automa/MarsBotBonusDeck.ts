@@ -69,7 +69,7 @@ export class MarsBotBonusDeck extends Deck<MarsBotBonusCard> {
   }
 
   /** Find and remove a bonus card by ID from the draw pile. Returns the card or undefined. */
-  public findAndRemove(bonusCardId: string): MarsBotBonusCard | undefined {
+  public findAndRemove(bonusCardId: BonusCardId): MarsBotBonusCard | undefined {
     const idx = this.drawPile.findIndex((c) => c.id === bonusCardId);
     if (idx >= 0) {
       return this.drawPile.splice(idx, 1)[0];
@@ -83,7 +83,7 @@ export class MarsBotBonusDeck extends Deck<MarsBotBonusCard> {
   }
 
   /** Remove a bonus card from the deck entirely by ID (does not return it). */
-  public removeById(bonusCardId: string): void {
+  public removeById(bonusCardId: BonusCardId): void {
     this.drawPile = this.drawPile.filter((c) => c.id !== bonusCardId);
     this.discardPile = this.discardPile.filter((c) => c.id !== bonusCardId);
   }

@@ -9,6 +9,7 @@ import {
   getMarsBotCorp,
 } from '../../../src/server/automa/corps/MarsBotCorpRegistry';
 import {Tag} from '../../../src/common/cards/Tag';
+import {IProjectCard} from '../../../src/server/cards/IProjectCard';
 import {CardName} from '../../../src/common/cards/CardName';
 import {BoardName} from '../../../src/common/boards/BoardName';
 
@@ -20,6 +21,16 @@ function createAutomaGame(): {game: IGame, human: TestPlayer, marsBot: MarsBot} 
   });
   expect(game.automaHooks?.marsBot).to.not.be.undefined;
   return {game, human, marsBot: game.automaHooks!.marsBot};
+}
+
+function fakeCard(name: string, opts: {tags?: Array<Tag>, cost?: number, requirements?: boolean, victoryPoints?: number} = {}): IProjectCard {
+  return {
+    name: name as CardName,
+    tags: opts.tags ?? [],
+    cost: opts.cost ?? 0,
+    requirements: opts.requirements ? [{oceans: 1}] : [],
+    getVictoryPoints: () => opts.victoryPoints ?? 0,
+  } as unknown as IProjectCard;
 }
 
 describe('Base Game MarsBot Corporations', () => {
@@ -63,7 +74,7 @@ describe('Base Game MarsBot Corporations', () => {
       marsBot.setCorpAndSetup(corp);
 
       const mcBefore = marsBot.turnResolver.mcSupply;
-      corp.effect!.onProjectCardResolved!(marsBot.getCorpContext(), {name: 'Expensive' as CardName, tags: [], cost: 25, hasRequirements: false, victoryPoints: 0});
+      corp.effect!.onProjectCardResolved!(marsBot, fakeCard('Expensive', {cost: 25}));
       expect(marsBot.turnResolver.mcSupply).to.eq(mcBefore + 4);
     });
 
@@ -73,7 +84,7 @@ describe('Base Game MarsBot Corporations', () => {
       marsBot.setCorpAndSetup(corp);
 
       const mcBefore = marsBot.turnResolver.mcSupply;
-      corp.effect!.onProjectCardResolved!(marsBot.getCorpContext(), {name: 'Cheap' as CardName, tags: [], cost: 15, hasRequirements: false, victoryPoints: 0});
+      corp.effect!.onProjectCardResolved!(marsBot, fakeCard('Cheap', {cost: 15}));
       expect(marsBot.turnResolver.mcSupply).to.eq(mcBefore);
     });
 
@@ -91,7 +102,7 @@ describe('Base Game MarsBot Corporations', () => {
 
     it('has 4 starting tags (Jovian + 3 Space)', () => {
       const corp = getMarsBotCorp(CardName.SATURN_SYSTEMS)!;
-      expect(corp.startingTags).to.deep.eq([Tag.JOVIAN, Tag.SPACE, Tag.SPACE, Tag.SPACE]);
+      expect(corp.tags).to.deep.eq([Tag.JOVIAN, Tag.SPACE, Tag.SPACE, Tag.SPACE]);
     });
 
     it('advances event track when Jovian card resolved', () => {
@@ -100,7 +111,7 @@ describe('Base Game MarsBot Corporations', () => {
       marsBot.setCorpAndSetup(corp);
 
       const eventTrackBefore = marsBot.board.tracks[2].position; // Event = track 3
-      corp.effect!.onProjectCardResolved!(marsBot.getCorpContext(), {name: 'JovianCard' as CardName, tags: [Tag.JOVIAN], cost: 10, hasRequirements: false, victoryPoints: 0});
+      corp.effect!.onProjectCardResolved!(marsBot, fakeCard('JovianCard', {tags: [Tag.JOVIAN], cost: 10}));
       // Event track should have advanced (may chain from starting tags advancement)
       expect(marsBot.board.tracks[2].position).to.be.gte(eventTrackBefore + 1);
     });
@@ -111,7 +122,7 @@ describe('Base Game MarsBot Corporations', () => {
       marsBot.setCorpAndSetup(corp);
 
       const eventTrackBefore = marsBot.board.tracks[2].position;
-      corp.effect!.onHumanCardPlayed!(marsBot.getCorpContext(), {name: 'HumanJovian' as CardName, tags: [Tag.JOVIAN], cost: 5, hasRequirements: false, victoryPoints: 0});
+      corp.effect!.onHumanCardPlayed!(marsBot, fakeCard('HumanJovian', {tags: [Tag.JOVIAN], cost: 5}));
       expect(marsBot.board.tracks[2].position).to.be.gte(eventTrackBefore + 1);
     });
 
@@ -121,7 +132,7 @@ describe('Base Game MarsBot Corporations', () => {
       marsBot.setCorpAndSetup(corp);
 
       const eventTrackBefore = marsBot.board.tracks[2].position;
-      corp.effect!.onProjectCardResolved!(marsBot.getCorpContext(), {name: 'SpaceCard' as CardName, tags: [Tag.SPACE], cost: 10, hasRequirements: false, victoryPoints: 0});
+      corp.effect!.onProjectCardResolved!(marsBot, fakeCard('SpaceCard', {tags: [Tag.SPACE], cost: 10}));
       expect(marsBot.board.tracks[2].position).to.eq(eventTrackBefore);
     });
   });
@@ -204,21 +215,21 @@ describe('Base Game MarsBot Corporations', () => {
 
     it('has Space starting tag', () => {
       const corp = getMarsBotCorp(CardName.PHOBOLOG)!;
-      expect(corp.startingTags).to.deep.eq([Tag.SPACE]);
+      expect(corp.tags).to.deep.eq([Tag.SPACE]);
     });
   });
 
   describe('C04 Interplanetary Cinematics', () => {
     it('has 2 Event starting tags', () => {
       const corp = getMarsBotCorp(CardName.INTERPLANETARY_CINEMATICS)!;
-      expect(corp.startingTags).to.deep.eq([Tag.EVENT, Tag.EVENT]);
+      expect(corp.tags).to.deep.eq([Tag.EVENT, Tag.EVENT]);
     });
   });
 
   describe('C06 Mining Guild', () => {
     it('has 2 Building starting tags', () => {
       const corp = getMarsBotCorp(CardName.MINING_GUILD)!;
-      expect(corp.startingTags).to.deep.eq([Tag.BUILDING, Tag.BUILDING]);
+      expect(corp.tags).to.deep.eq([Tag.BUILDING, Tag.BUILDING]);
     });
   });
 

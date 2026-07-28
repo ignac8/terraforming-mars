@@ -60,7 +60,7 @@ describe('MarsBot serialization roundtrip', () => {
     const mb = createMarsBot();
     const cube: MarsBotTrackCube = {trackIndex: 1, position: 5, cubeType: 'black'};
     mb.trackCubePositions.set(trackCubeKey(1, 5), cube);
-    mb.corp = {id: 'C01', name: 'TestCorp', description: '', startingTags: []} as any;
+    mb.corp = {id: 'C01', name: 'TestCorp', description: '', tags: []} as any;
 
     const state = mb.serialize();
     const mb2 = createMarsBot();

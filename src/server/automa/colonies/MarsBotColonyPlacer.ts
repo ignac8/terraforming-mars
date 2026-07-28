@@ -125,7 +125,7 @@ function directAddColony(colony: IColony, marsBot: MarsBot): void {
   }
 
   // C-33: notify corp effect (e.g. Poseidon advances least-advanced track)
-  marsBot.corp?.effect?.onColonyPlaced?.(marsBot.getCorpContext());
+  marsBot.corp?.effect?.onColonyPlaced?.(marsBot);
 
   marsBot.game.log('MarsBot builds colony on ${0}', (b) => b.colony(colony));
 }

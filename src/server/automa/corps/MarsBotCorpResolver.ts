@@ -30,7 +30,7 @@ export class MarsBotCorpResolver {
     }
 
     // 2. Resolve starting tags — advance tracks like project card tags
-    for (const tag of corp.startingTags) {
+    for (const tag of corp.tags) {
       const trackIndex = marsBot.board.getTrackIndexForTag(tag);
       if (trackIndex !== undefined) {
         marsBot.turnResolver.advanceTrack(trackIndex);
@@ -39,9 +39,9 @@ export class MarsBotCorpResolver {
 
     // 2b. FAQ: trigger human corp callbacks for MarsBot's starting tags
     // e.g., if human plays Saturn Systems and MarsBot has Jovian starting tag
-    if (corp.startingTags.length > 0) {
+    if (corp.tags.length > 0) {
       const humanPlayer = marsBot.humanPlayer;
-      const fakeCard = {tags: [...corp.startingTags], name: corp.name} as any;
+      const fakeCard = {tags: [...corp.tags], name: corp.name} as any;
       for (const effectCard of humanPlayer.playedCards) {
         humanPlayer.defer(effectCard.onCardPlayedByAnyPlayer?.(humanPlayer, fakeCard, marsBot.player));
       }
@@ -49,7 +49,7 @@ export class MarsBotCorpResolver {
 
     // 3. Call corp-specific setup
     if (corp.setup !== undefined) {
-      corp.setup.resolve(marsBot.getCorpContext());
+      corp.setup(marsBot);
     }
   }
 
@@ -70,7 +70,7 @@ export class MarsBotCorpResolver {
     // Corp cube trigger
     const corp = marsBot.corp;
     if (corp !== undefined) {
-      corp.effect?.onTrackCubeTrigger?.(marsBot.getCorpContext(), trackIndex, position, cube.cubeType);
+      corp.effect?.onTrackCubeTrigger?.(marsBot, trackIndex, position, cube.cubeType);
     }
 
     // Colony cubes (Pioneer4/Constructor): positions set by AutomaGameSetup
@@ -102,7 +102,7 @@ export class MarsBotCorpResolver {
    */
   public static resolvePerGenEffect(corp: IMarsBotCorp, marsBot: MarsBot): void {
     if (corp.perGeneration !== undefined) {
-      corp.perGeneration.resolve(marsBot.getCorpContext());
+      corp.perGeneration.resolve(marsBot);
     }
   }
 }

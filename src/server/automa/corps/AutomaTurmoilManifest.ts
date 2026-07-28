@@ -12,24 +12,22 @@ import {bonusCardPerGen} from './BaseGameCorps';
 const LAKEFRONT_RESORTS: IMarsBotCorp = {
   name: CardName.LAKEFRONT_RESORTS,
   description: 'Setup: 1 white cube on card. Oceans alternate between removing the cube (advance building track) and placing it back.',
-  startingTags: [],
-  setup: {
-    resolve(ctx) {
-      ctx.setCorpState('whiteCubeOnCard', 1);
-      ctx.gameLog('MarsBot (Lakefront): 1 white cube on card');
-    },
+  tags: [],
+  setup(bot) {
+    bot.setCorpState('whiteCubeOnCard', 1);
+    bot.game.log('MarsBot (Lakefront): 1 white cube on card');
   },
   effect: {
-    onTilePlaced(ctx, _placedByMarsBot, tileType) {
+    onTilePlaced(bot, _placedByMarsBot, tileType) {
       if (tileType === TileType.OCEAN) {
-        const cube = ctx.getCorpState('whiteCubeOnCard');
+        const cube = bot.getCorpState('whiteCubeOnCard');
         if (cube > 0) {
-          ctx.setCorpState('whiteCubeOnCard', 0);
-          ctx.advanceTrack(0); // Building track = index 0
-          ctx.gameLog('MarsBot (Lakefront): ocean placed, removed cube, advance building track');
+          bot.setCorpState('whiteCubeOnCard', 0);
+          bot.advanceTrack(0); // Building track = index 0
+          bot.game.log('MarsBot (Lakefront): ocean placed, removed cube, advance building track');
         } else {
-          ctx.setCorpState('whiteCubeOnCard', 1);
-          ctx.gameLog('MarsBot (Lakefront): ocean placed, placed white cube on card');
+          bot.setCorpState('whiteCubeOnCard', 1);
+          bot.game.log('MarsBot (Lakefront): ocean placed, placed white cube on card');
         }
       }
     },
@@ -40,15 +38,15 @@ const LAKEFRONT_RESORTS: IMarsBotCorp = {
 const PRISTAR: IMarsBotCorp = {
   name: CardName.PRISTAR,
   description: 'When a global parameter would be raised and a cube is on card: skip the raise, remove cube, +1 TR, +6 MC. Cube is restored each generation.',
-  startingTags: [],
+  tags: [],
   effect: {
-    onGlobalParameterRaised(ctx, _parameter) {
-      const cube = ctx.getCorpState('whiteCubeOnCard');
+    onGlobalParameterRaised(bot, _parameter) {
+      const cube = bot.getCorpState('whiteCubeOnCard');
       if (cube > 0) {
-        ctx.setCorpState('whiteCubeOnCard', 0);
-        ctx.raiseTR(1);
-        ctx.gainMc(6);
-        ctx.gameLog('MarsBot (Pristar): parameter raise intercepted — removed cube, +1 TR, +6 M€, SKIP raise');
+        bot.setCorpState('whiteCubeOnCard', 0);
+        bot.raiseTR(1);
+        bot.gainMc(6);
+        bot.game.log('MarsBot (Pristar): parameter raise intercepted — removed cube, +1 TR, +6 M€, SKIP raise');
         return true; // SKIP the parameter raise
       }
       return false;
@@ -56,10 +54,10 @@ const PRISTAR: IMarsBotCorp = {
   },
   perGeneration: {
     timing: 'beforeActionPhase',
-    resolve(ctx) {
-      if (ctx.getCorpState('whiteCubeOnCard') === 0) {
-        ctx.setCorpState('whiteCubeOnCard', 1);
-        ctx.gameLog('MarsBot (Pristar): added white cube on card');
+    resolve(bot) {
+      if (bot.getCorpState('whiteCubeOnCard') === 0) {
+        bot.setCorpState('whiteCubeOnCard', 1);
+        bot.game.log('MarsBot (Pristar): added white cube on card');
       }
     },
   },
@@ -69,36 +67,31 @@ const PRISTAR: IMarsBotCorp = {
 const SEPTEM_TRIBUS: IMarsBotCorp = {
   name: CardName.SEPTUM_TRIBUS,
   description: 'Setup: remove Party Politics, add Gray Eminence to bonus deck. Each generation: add Gray Eminence to action deck.',
-  startingTags: [],
-  setup: {
-    resolve(ctx) {
-      ctx.removeBonusCardFromDeck(BonusCardId.B21_PARTY_POLITICS);
-      ctx.addBonusCardToBonusDeck(BonusCardId.B29_GRAY_EMINENCE);
-      ctx.gameLog('MarsBot (Septem Tribus): Party Politics removed, Gray Eminence added');
-    },
+  tags: [],
+  setup(bot) {
+    bot.removeBonusCard(BonusCardId.B21_PARTY_POLITICS);
+    bot.addBonusCardToBonusDeck(BonusCardId.B29_GRAY_EMINENCE);
+    bot.game.log('MarsBot (Septem Tribus): Party Politics removed, Gray Eminence added');
   },
   perGeneration: bonusCardPerGen(BonusCardId.B29_GRAY_EMINENCE, 'Septem Tribus'),
-  associatedBonusCards: [BonusCardId.B29_GRAY_EMINENCE],
 };
 
 // C38 Terralabs
 const TERRALABS: IMarsBotCorp = {
   name: CardName.TERRALABS_RESEARCH,
   description: 'Tag: Science. Setup: TR -8. Each generation: draw 1 card to action deck (2 cards from generation 9 onward).',
-  startingTags: [Tag.SCIENCE],
-  setup: {
-    resolve(ctx) {
-      // Reduce TR by 8
-      ctx.raiseTR(-8);
-      ctx.gameLog('MarsBot (Terralabs): TR -8');
-    },
+  tags: [Tag.SCIENCE],
+  setup(bot) {
+    // Reduce TR by 8
+    bot.raiseTR(-8);
+    bot.game.log('MarsBot (Terralabs): TR -8');
   },
   perGeneration: {
     timing: 'beforeActionPhase',
-    resolve(ctx) {
-      const count = ctx.generation <= 8 ? 1 : 2;
-      ctx.addProjectCardToActionDeck(count);
-      ctx.gameLog(`MarsBot (Terralabs): drew ${count} card(s) to action deck`);
+    resolve(bot) {
+      const count = bot.game.generation <= 8 ? 1 : 2;
+      bot.drawProjectCardsToActionDeck(count);
+      bot.game.log(`MarsBot (Terralabs): drew ${count} card(s) to action deck`);
     },
   },
 };
@@ -107,9 +100,8 @@ const TERRALABS: IMarsBotCorp = {
 const UTOPIA_INVEST: IMarsBotCorp = {
   name: CardName.UTOPIA_INVEST,
   description: 'Tags: Building, Space. Each generation: add Investors bonus card to action deck.',
-  startingTags: [Tag.BUILDING, Tag.SPACE],
+  tags: [Tag.BUILDING, Tag.SPACE],
   perGeneration: bonusCardPerGen(BonusCardId.B32_INVESTORS, 'Utopia Invest'),
-  associatedBonusCards: [BonusCardId.B32_INVESTORS],
 };
 
 export const AUTOMA_TURMOIL_MANIFEST: AutomaManifest = {
