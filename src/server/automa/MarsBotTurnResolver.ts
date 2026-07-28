@@ -2,6 +2,7 @@ import {IGame} from '../IGame';
 import {IPlayer} from '../IPlayer';
 import {IProjectCard} from '../cards/IProjectCard';
 import {Tag} from '../../common/cards/Tag';
+import {GlobalParameter} from '../../common/GlobalParameter';
 import {CardType} from '../../common/cards/CardType';
 import {TileType, CITY_TILES, GREENERY_TILES} from '../../common/TileType';
 import {Board} from '../boards/Board';
@@ -228,6 +229,9 @@ export class MarsBotTurnResolver {
       this.failedAction();
       return;
     }
+    if (this.interceptsRaise(GlobalParameter.TEMPERATURE)) {
+      return;
+    }
     const increment = steps as 1 | 2;
     this.game.increaseTemperature(this.marsBot, increment);
     if (this.marsBotManager) {
@@ -246,11 +250,13 @@ export class MarsBotTurnResolver {
       return;
     }
 
-    // Place tile and raise oxygen
-    this.game.addGreenery(this.marsBot, space, true);
+    // Place tile and raise oxygen (unless the corp intercepts the raise)
+    const raiseOxygen = this.game.getOxygenLevel() >= constants.MAX_OXYGEN_LEVEL ||
+      !this.interceptsRaise(GlobalParameter.OXYGEN);
+    this.game.addGreenery(this.marsBot, space, raiseOxygen);
 
     // MarsBot placement bonuses: 1 MC per icon, 2 MC per adjacent ocean
-    this.mcSupply += this.tilePlacer.getTotalPlacementMC(space);
+    this.gainMc(this.tilePlacer.getTotalPlacementMC(space));
     this.game.log('MarsBot places greenery');
   }
 
@@ -265,10 +271,13 @@ export class MarsBotTurnResolver {
       return;
     }
 
+    if (this.interceptsRaise(GlobalParameter.OCEANS)) {
+      return;
+    }
     this.game.addOcean(this.marsBot, space);
 
     // MarsBot placement bonuses
-    this.mcSupply += this.tilePlacer.getTotalPlacementMC(space);
+    this.gainMc(this.tilePlacer.getTotalPlacementMC(space));
     this.game.log('MarsBot places ocean');
   }
 
@@ -282,13 +291,16 @@ export class MarsBotTurnResolver {
     this.game.addCity(this.marsBot, space);
 
     // MarsBot placement bonuses
-    this.mcSupply += this.tilePlacer.getTotalPlacementMC(space);
+    this.gainMc(this.tilePlacer.getTotalPlacementMC(space));
     this.game.log('MarsBot places city');
   }
 
   private raiseVenus(steps: number): void {
     if (this.game.getVenusScaleLevel() >= constants.MAX_VENUS_SCALE) {
       this.failedAction();
+      return;
+    }
+    if (this.interceptsRaise(GlobalParameter.VENUS)) {
       return;
     }
     this.game.increaseVenusScaleLevel(this.marsBot, steps as 1 | 2);
@@ -560,8 +572,22 @@ export class MarsBotTurnResolver {
 
   public failedAction(): void {
     const mc = this.difficulty === 'easy' ? FAILED_ACTION_MC_EASY : FAILED_ACTION_MC;
-    this.mcSupply += mc;
+    this.gainMc(mc);
     this.game.log('MarsBot takes a Failed Action, gains ${0} MC', (b) => b.number(mc));
+  }
+
+  /** Add M€ to MarsBot's supply, letting the corp react first (Mining Guild). */
+  public gainMc(amount: number): void {
+    if (amount <= 0) {
+      return;
+    }
+    const gained = this.marsBotManager?.corp?.effect?.onMcGained?.(this.marsBotManager, amount) ?? amount;
+    this.mcSupply += gained;
+  }
+
+  /** Pristar: true when the corp consumes its cube to skip this raise. */
+  private interceptsRaise(parameter: GlobalParameter): boolean {
+    return this.marsBotManager?.interceptsParameterRaise(parameter) ?? false;
   }
 
   private calcLargestConnectedTileGroup(): number {

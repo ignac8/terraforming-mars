@@ -111,29 +111,29 @@ const INVENTRIX: IMarsBotCorp = {
 // Effect: when earning MC, deduct from card first. When card empty, refill 10 + advance building track.
 const MINING_GUILD: IMarsBotCorp = {
   name: CardName.MINING_GUILD,
-  description: 'Tags: 2 Building. Setup: 10 MC on card. MC earned goes to card first; when empty, refill 10 MC and advance building track.',
+  description: 'Tags: 2 Building. Setup: 10 MC on card. MC MarsBot earns comes off this card; when empty, refill 10 MC and advance building track.',
   tags: [Tag.BUILDING, Tag.BUILDING],
   setup(bot) {
     bot.setCorpState('mcOnCard', 10);
     bot.game.log('MarsBot (Mining Guild): 10 M€ placed on card');
   },
   effect: {
-    // MC interception: when MarsBot earns MC, it goes to the card first.
-    // When card empty, refill 10 MC and advance building track.
+    // The card is a countdown: M€ MarsBot earns is removed from the card, but the
+    // bot keeps the earnings. When the card empties, refill 10 M€ and advance the
+    // building track. (NamuWiki card text; verify against the physical card.)
     onMcGained(bot, amount) {
       if (bot.board.tracks[0].position >= 18) {
         return amount;
-      } // Building track maxed, no interception
-      let mcOnCard = bot.getCorpState('mcOnCard');
-      const intercepted = Math.min(amount, mcOnCard);
-      mcOnCard -= intercepted;
-      bot.setCorpState('mcOnCard', mcOnCard);
+      } // Building track maxed, the card stops
+      const mcOnCard = bot.getCorpState('mcOnCard') - Math.min(amount, bot.getCorpState('mcOnCard'));
       if (mcOnCard <= 0) {
         bot.setCorpState('mcOnCard', 10);
         bot.advanceTrack(0); // Building track = index 0
         bot.game.log('MarsBot (Mining Guild): card empty, refill 10 M€ + advance building track');
+      } else {
+        bot.setCorpState('mcOnCard', mcOnCard);
       }
-      return amount - intercepted; // Return the amount that actually goes to mcSupply
+      return amount;
     },
   },
 };
