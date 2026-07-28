@@ -1,7 +1,6 @@
 import {IGame} from '../IGame';
 import {IPlayer} from '../IPlayer';
 import {Color} from '../../common/Color';
-import {GlobalParameter} from '../../common/GlobalParameter';
 import {TileType} from '../../common/TileType';
 import {PlayerId} from '../../common/Types';
 import {MarsBot} from './MarsBot';
@@ -382,7 +381,7 @@ export class AutomaGameHooks {
    */
   public handleTemperatureHeatBonus(player: IPlayer): boolean {
     if (player === this.marsBot.player) {
-      this.marsBot.turnResolver.mcSupply += 2;
+      this.marsBot.gainMc(2);
       this.game.log('MarsBot gains 2 MC (temperature heat bonus)');
       return true;
     }
@@ -496,7 +495,7 @@ export class AutomaGameHooks {
     }
     // C-24c: Europa → 1 MC to mcSupply
     if (colony.name === ColonyName.EUROPA) {
-      this.marsBot.turnResolver.mcSupply += 1;
+      this.marsBot.gainMc(1);
       this.game.log('MarsBot gains 1 MC as Europa colony bonus (C-24c)');
       return true;
     }
@@ -530,15 +529,6 @@ export class AutomaGameHooks {
     corp.effect.onVenusRaised(this.marsBot);
   }
 
-  /** Called when a global parameter is raised. Returns true to SKIP the raise (Pristar). */
-  public handleGlobalParameterRaised(parameter: GlobalParameter): boolean {
-    const corp = this.marsBot.corp;
-    if (corp?.effect?.onGlobalParameterRaised === undefined) {
-      return false;
-    }
-    return corp.effect.onGlobalParameterRaised(this.marsBot, parameter) ?? false;
-  }
-
   // ---- Card interaction hooks ----
 
   /** St. Joseph: MarsBot spends 2 MC and advances least-advanced track. Returns true if handled. */
@@ -561,7 +551,7 @@ export class AutomaGameHooks {
     if (opponent !== this.marsBot.player) {
       return false;
     }
-    this.marsBot.turnResolver.mcSupply += 1;
+    this.marsBot.gainMc(1);
     this.game.log('MarsBot gains 1 MC (Sponsored Academies)');
     return true;
   }

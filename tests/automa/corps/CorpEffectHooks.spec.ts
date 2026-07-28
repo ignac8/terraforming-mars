@@ -219,21 +219,21 @@ describe('Corp Effect Hooks', () => {
     });
   });
 
-  describe('C06 Mining Guild MC interception', () => {
-    it('intercepts MC gains, card starts at 10', () => {
+  describe('C06 Mining Guild card countdown', () => {
+    it('card starts at 10', () => {
       const {marsBot} = createAutomaGame();
       const corp = getMarsBotCorp(CardName.MINING_GUILD)!;
       marsBot.setCorpAndSetup(corp);
       expect(marsBot.corpSpecificState.get('mcOnCard')).to.eq(10);
     });
 
-    it('onMcGained returns reduced amount', () => {
+    it('earning M€ counts down the card, bot keeps the earnings', () => {
       const {marsBot} = createAutomaGame();
       const corp = getMarsBotCorp(CardName.MINING_GUILD)!;
       marsBot.setCorpAndSetup(corp);
-      // 5 MC gained, 5 intercepted to card (10 → 5), 0 passes through
+      // 5 MC earned: card counts down 10 → 5, the full 5 reaches the supply
       const actual = corp.effect!.onMcGained!(marsBot, 5);
-      expect(actual).to.eq(0);
+      expect(actual).to.eq(5);
       expect(marsBot.corpSpecificState.get('mcOnCard')).to.eq(5);
     });
 
@@ -244,9 +244,52 @@ describe('Corp Effect Hooks', () => {
       marsBot.corpSpecificState.set('mcOnCard', 2);
       const buildingBefore = marsBot.board.tracks[0].position;
       const actual = corp.effect!.onMcGained!(marsBot, 5);
-      expect(actual).to.eq(3); // 5 - 2 intercepted = 3 passes through
+      expect(actual).to.eq(5); // the bot keeps its earnings
       expect(marsBot.corpSpecificState.get('mcOnCard')).to.eq(10); // Refilled
       expect(marsBot.board.tracks[0].position).to.be.gte(buildingBefore + 1);
+    });
+  });
+
+  describe('corp hook wiring', () => {
+    it('Mining Guild counts down through turnResolver.gainMc', () => {
+      const {marsBot} = createAutomaGame();
+      marsBot.setCorpAndSetup(getMarsBotCorp(CardName.MINING_GUILD)!);
+      const mcBefore = marsBot.turnResolver.mcSupply;
+      marsBot.turnResolver.gainMc(4);
+      expect(marsBot.turnResolver.mcSupply).to.eq(mcBefore + 4);
+      expect(marsBot.corpSpecificState.get('mcOnCard')).to.eq(6);
+    });
+
+    it('Pristar cube intercepts the bot ocean placement', () => {
+      const {game, marsBot} = createAutomaGame();
+      marsBot.setCorpAndSetup(getMarsBotCorp(CardName.PRISTAR)!);
+      marsBot.corpSpecificState.set('whiteCubeOnCard', 1);
+      const oceansBefore = game.board.getOceanSpaces().length;
+      const trBefore = marsBot.player.terraformRating;
+      const mcBefore = marsBot.turnResolver.mcSupply;
+      marsBot.turnResolver.placeOcean();
+      expect(game.board.getOceanSpaces().length).to.eq(oceansBefore);
+      expect(marsBot.player.terraformRating).to.eq(trBefore + 1);
+      expect(marsBot.turnResolver.mcSupply).to.eq(mcBefore + 6);
+      expect(marsBot.corpSpecificState.get('whiteCubeOnCard')).to.eq(0);
+    });
+
+    it('Pristar without a cube lets the raise through', () => {
+      const {game, marsBot} = createAutomaGame();
+      marsBot.setCorpAndSetup(getMarsBotCorp(CardName.PRISTAR)!);
+      marsBot.corpSpecificState.set('whiteCubeOnCard', 0);
+      const oceansBefore = game.board.getOceanSpaces().length;
+      marsBot.turnResolver.placeOcean();
+      expect(game.board.getOceanSpaces().length).to.eq(oceansBefore + 1);
+    });
+
+    it('Government Intervention does not trigger Pristar (FAQ)', () => {
+      const {game, marsBot} = createAutomaGame();
+      marsBot.setCorpAndSetup(getMarsBotCorp(CardName.PRISTAR)!);
+      marsBot.corpSpecificState.set('whiteCubeOnCard', 1);
+      (game as any).generation = 2; // even generation → furthest-parameter branch
+      (marsBot as any).bonusResolver.resolveGovernmentIntervention();
+      expect(marsBot.corpSpecificState.get('whiteCubeOnCard')).to.eq(1);
     });
   });
 

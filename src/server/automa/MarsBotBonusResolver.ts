@@ -3,6 +3,7 @@ import {IGame} from '../IGame';
 import {IPlayer} from '../IPlayer';
 import {Resource} from '../../common/Resource';
 import {CardResource} from '../../common/CardResource';
+import {GlobalParameter} from '../../common/GlobalParameter';
 import {TileType} from '../../common/TileType';
 import {Board} from '../boards/Board';
 import * as constants from '../../common/constants';
@@ -185,7 +186,7 @@ export class MarsBotBonusResolver {
       this.game.log('MarsBot\'s Invasive Species: no animal/microbe resources to remove');
     }
     // MarsBot gains 5 MC regardless
-    this.turnResolver.mcSupply += 5;
+    this.turnResolver.gainMc(5);
     this.game.log('MarsBot gains 5 MC from Invasive Species');
     // Card is NOT destroyed in base game
   }
@@ -239,7 +240,7 @@ export class MarsBotBonusResolver {
       this.game.log('Overachievement is destroyed');
       return true;
     }
-    this.turnResolver.mcSupply += 5;
+    this.turnResolver.gainMc(5);
     this.game.log('MarsBot gains 5 MC (Overachievement failed)');
     return false;
   }
@@ -249,7 +250,7 @@ export class MarsBotBonusResolver {
     const space = this.tilePlacer.findExpediteConstructionCitySpace();
     if (space !== undefined) {
       this.game.addCity(this.marsBot, space);
-      this.turnResolver.mcSupply += this.tilePlacer.getTotalPlacementMC(space);
+      this.turnResolver.gainMc(this.tilePlacer.getTotalPlacementMC(space));
       this.game.log('MarsBot places city (Expedited Construction), card destroyed');
       return true;
     }
@@ -274,8 +275,12 @@ export class MarsBotBonusResolver {
     });
     if (adjacentTo2Oceans.length > 0 && this.game.canAddOcean()) {
       const space = adjacentTo2Oceans[0];
+      if (this.interceptsRaise(GlobalParameter.OCEANS)) {
+        this.game.log('MarsBot skips the ocean (Lobbyists), card destroyed');
+        return true;
+      }
       this.game.addOcean(this.marsBot, space);
-      this.turnResolver.mcSupply += this.tilePlacer.getTotalPlacementMC(space);
+      this.turnResolver.gainMc(this.tilePlacer.getTotalPlacementMC(space));
       this.game.log('MarsBot places ocean (Lobbyists), card destroyed');
       return true;
     }
@@ -300,8 +305,10 @@ export class MarsBotBonusResolver {
       .map((v) => (v - venus) / 2)
       .reduce((min, s) => Math.min(min, s), Infinity);
     if (venusStepsToNextBonus >= 1 && venusStepsToNextBonus <= 2 && venus < constants.MAX_VENUS_SCALE) {
-      this.game.increaseVenusScaleLevel(this.marsBot, 2);
-      this.game.log('MarsBot raises Venus 2 steps (Lobbyists Venus)');
+      if (!this.interceptsRaise(GlobalParameter.VENUS)) {
+        this.game.increaseVenusScaleLevel(this.marsBot, 2);
+        this.game.log('MarsBot raises Venus 2 steps (Lobbyists Venus)');
+      }
       return false;
     }
 
@@ -318,8 +325,10 @@ export class MarsBotBonusResolver {
       .map((t) => (t - temp) / 2)
       .reduce((min, s) => Math.min(min, s), Infinity);
     if (tempStepsToNextBonus >= 1 && tempStepsToNextBonus <= 2 && temp < constants.MAX_TEMPERATURE) {
-      this.game.increaseTemperature(this.marsBot, 2);
-      this.game.log('MarsBot raises temperature 2 steps (Lobbyists), card destroyed');
+      if (!this.interceptsRaise(GlobalParameter.TEMPERATURE)) {
+        this.game.increaseTemperature(this.marsBot, 2);
+        this.game.log('MarsBot raises temperature 2 steps (Lobbyists), card destroyed');
+      }
       return true;
     }
     return false;
@@ -334,10 +343,11 @@ export class MarsBotBonusResolver {
     if ((oxyStepsToMax >= 1 && oxyStepsToMax <= 2) || (oxyStepsToBonus >= 1 && oxyStepsToBonus <= 2)) {
       const greenerySpace = this.tilePlacer.findGreenerySpace();
       if (greenerySpace !== undefined) {
-        this.game.addGreenery(this.marsBot, greenerySpace, true);
-        this.turnResolver.mcSupply += this.tilePlacer.getPlacementBonusMC(greenerySpace);
-        this.turnResolver.mcSupply += this.tilePlacer.getOceanAdjacencyMC(greenerySpace);
-        if (this.game.getOxygenLevel() < constants.MAX_OXYGEN_LEVEL) {
+        const raiseOxygen = this.game.getOxygenLevel() >= constants.MAX_OXYGEN_LEVEL ||
+          !this.interceptsRaise(GlobalParameter.OXYGEN);
+        this.game.addGreenery(this.marsBot, greenerySpace, raiseOxygen);
+        this.turnResolver.gainMc(this.tilePlacer.getPlacementBonusMC(greenerySpace) + this.tilePlacer.getOceanAdjacencyMC(greenerySpace));
+        if (this.game.getOxygenLevel() < constants.MAX_OXYGEN_LEVEL && !this.interceptsRaise(GlobalParameter.OXYGEN)) {
           this.game.increaseOxygenLevel(this.marsBot, 1);
         }
         this.game.log('MarsBot places greenery and raises oxygen twice (Lobbyists), card destroyed');
@@ -354,10 +364,15 @@ export class MarsBotBonusResolver {
     const venusComplete = venus >= constants.MAX_VENUS_SCALE;
 
     if (isEvenGen || venusComplete) {
-      this.withoutTRGain(() => this.advanceFurthestParameter());
+      this.withoutTRGain(() => this.advanceFurthestParameter(false));
     } else if (venus < constants.MAX_VENUS_SCALE) {
       this.withoutTRGain(() => this.game.increaseVenusScaleLevel(this.marsBot, 1));
     }
+  }
+
+  /** Pristar: true when the corp consumes its cube to skip this raise. */
+  private interceptsRaise(parameter: GlobalParameter): boolean {
+    return this.marsBotManager?.interceptsParameterRaise(parameter) ?? false;
   }
 
   /** Execute an action and reverse any TR gained (for Government Intervention). */
@@ -433,8 +448,10 @@ export class MarsBotBonusResolver {
     const placeGreenery = () => {
       const space = this.tilePlacer.findGreenerySpace();
       if (space) {
-        this.game.addGreenery(this.marsBot, space, true);
-        this.turnResolver.mcSupply += this.tilePlacer.getTotalPlacementMC(space);
+        const raiseOxygen = this.game.getOxygenLevel() >= constants.MAX_OXYGEN_LEVEL ||
+          !this.interceptsRaise(GlobalParameter.OXYGEN);
+        this.game.addGreenery(this.marsBot, space, raiseOxygen);
+        this.turnResolver.gainMc(this.tilePlacer.getTotalPlacementMC(space));
         return true;
       }
       return false;
@@ -443,7 +460,7 @@ export class MarsBotBonusResolver {
       const space = this.tilePlacer.findCitySpace();
       if (space) {
         this.game.addCity(this.marsBot, space);
-        this.turnResolver.mcSupply += this.tilePlacer.getTotalPlacementMC(space);
+        this.turnResolver.gainMc(this.tilePlacer.getTotalPlacementMC(space));
         return true;
       }
       return false;
@@ -529,7 +546,7 @@ export class MarsBotBonusResolver {
     const citySpace = this.tilePlacer.findExpediteConstructionCitySpace();
     if (citySpace !== undefined) {
       this.game.addCity(this.marsBot, citySpace);
-      this.turnResolver.mcSupply += this.tilePlacer.getTotalPlacementMC(citySpace);
+      this.turnResolver.gainMc(this.tilePlacer.getTotalPlacementMC(citySpace));
       this.game.log('MarsBot places city (Expedited Construction Colonies), card destroyed (C-15a)');
       return true;
     }
@@ -627,7 +644,7 @@ export class MarsBotBonusResolver {
   }
 
   /** Advance the global parameter furthest from completion. Tie: oxygen > ocean > temperature. */
-  private advanceFurthestParameter(): void {
+  private advanceFurthestParameter(allowCorpIntercept: boolean = true): void {
     const tempProgress = (this.game.getTemperature() - constants.MIN_TEMPERATURE) /
       (constants.MAX_TEMPERATURE - constants.MIN_TEMPERATURE);
     const oxyProgress = this.game.getOxygenLevel() / constants.MAX_OXYGEN_LEVEL;
@@ -637,6 +654,9 @@ export class MarsBotBonusResolver {
     const params: Array<{name: string, progress: number, action: () => boolean}> = [
       {name: 'oxygen', progress: oxyProgress, action: () => {
         if (this.game.getOxygenLevel() < constants.MAX_OXYGEN_LEVEL) {
+          if (allowCorpIntercept && this.interceptsRaise(GlobalParameter.OXYGEN)) {
+            return true;
+          }
           this.game.increaseOxygenLevel(this.marsBot, 1);
           return true;
         }
@@ -646,9 +666,11 @@ export class MarsBotBonusResolver {
         if (this.game.canAddOcean()) {
           const space = this.tilePlacer.findOceanSpace();
           if (space) {
+            if (allowCorpIntercept && this.interceptsRaise(GlobalParameter.OCEANS)) {
+              return true;
+            }
             this.game.addOcean(this.marsBot, space);
-            this.turnResolver.mcSupply += this.tilePlacer.getPlacementBonusMC(space);
-            this.turnResolver.mcSupply += this.tilePlacer.getOceanAdjacencyMC(space);
+            this.turnResolver.gainMc(this.tilePlacer.getPlacementBonusMC(space) + this.tilePlacer.getOceanAdjacencyMC(space));
             return true;
           }
         }
@@ -656,6 +678,9 @@ export class MarsBotBonusResolver {
       }},
       {name: 'temperature', progress: tempProgress, action: () => {
         if (this.game.getTemperature() < constants.MAX_TEMPERATURE) {
+          if (allowCorpIntercept && this.interceptsRaise(GlobalParameter.TEMPERATURE)) {
+            return true;
+          }
           this.game.increaseTemperature(this.marsBot, 1);
           return true;
         }
@@ -799,7 +824,7 @@ export class MarsBotBonusResolver {
 
   private resolveGovernmentSubsidy(): void {
     // UNMI: gain 5 MC and advance any track (least-advanced)
-    this.turnResolver.mcSupply += 5;
+    this.turnResolver.gainMc(5);
     const board = this.turnResolver.board;
     const leastIndex = board.getLeastAdvancedTrackIndex();
     this.turnResolver.advanceTrack(leastIndex);
