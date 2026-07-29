@@ -451,10 +451,10 @@ export class MarsBot implements IMarsBot {
 
   /** Ask the corp to intercept a parameter raise (Pristar). True means the raise is skipped. */
   public interceptsParameterRaise(parameter: GlobalParameter): boolean {
-    return this.corp?.effect?.onGlobalParameterRaised?.(this, parameter) ?? false;
+    return this.corp?.effect?.interceptGlobalParameterRaise?.(this, parameter) ?? false;
   }
 
-  public placeRandomColony(): boolean {
+  public maybePlaceRandomColony(): boolean {
     const colony = selectRandomColony(this.game, this);
     if (colony === undefined) {
       return false;
@@ -463,7 +463,7 @@ export class MarsBot implements IMarsBot {
     return true;
   }
 
-  public discardFewestTagsFromActionDeck(): void {
+  public discardCardWithFewestTags(): void {
     if (this.actionDeck.length === 0) {
       return;
     }

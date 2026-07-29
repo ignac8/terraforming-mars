@@ -28,7 +28,7 @@ describe('AridorSetup (C-30)', () => {
       corp.setup(marsBot);
     } else {
       // Manually trigger setup context
-      marsBot.placeRandomColony();
+      marsBot.maybePlaceRandomColony();
     }
 
     // Either a colony was placed or none was available
@@ -37,23 +37,23 @@ describe('AridorSetup (C-30)', () => {
     expect(totalColonies).to.be.greaterThanOrEqual(0);
   });
 
-  it('placeRandomColony returns true when eligible colony exists', () => {
+  it('maybePlaceRandomColony returns true when eligible colony exists', () => {
     const [game] = testGame(1, {automaOption: true, coloniesExtension: true, boardName: BoardName.THARSIS});
     const marsBot = getMarsBot(game);
     const luna = new Luna();
     game.colonies = [luna];
 
-    const placed = marsBot.placeRandomColony();
+    const placed = marsBot.maybePlaceRandomColony();
     expect(placed).to.be.true;
     expect(luna.colonies).to.include(marsBot.player.id);
   });
 
-  it('placeRandomColony returns false when no eligible colonies', () => {
+  it('maybePlaceRandomColony returns false when no eligible colonies', () => {
     const [game] = testGame(1, {automaOption: true, coloniesExtension: true, boardName: BoardName.THARSIS});
     const marsBot = getMarsBot(game);
     game.colonies = []; // No colonies in game
 
-    const placed = marsBot.placeRandomColony();
+    const placed = marsBot.maybePlaceRandomColony();
     expect(placed).to.be.false;
   });
 
@@ -64,7 +64,7 @@ describe('AridorSetup (C-30)', () => {
     game.colonies = [luna];
 
     const initialStorage = marsBot.shippingBoard.get(luna.name);
-    marsBot.placeRandomColony();
+    marsBot.maybePlaceRandomColony();
     expect(marsBot.shippingBoard.get(luna.name)).to.eq(initialStorage + 2);
   });
 

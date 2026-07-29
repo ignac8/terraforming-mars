@@ -25,7 +25,7 @@ const ARIDOR: IMarsBotCorp = {
   ],
   setup(bot) {
     // C-30: Place 1 colony using random selection (C-15b method)
-    const placed = bot.placeRandomColony();
+    const placed = bot.maybePlaceRandomColony();
     if (placed) {
       bot.game.log('MarsBot (Aridor): placed 1 colony (C-30)');
     } else {
@@ -66,11 +66,8 @@ const POLYPHEMOS: IMarsBotCorp = {
     bot.gainMc(25);
     bot.game.log('MarsBot (Polyphemos): +25 M€');
   },
-  perGeneration: {
-    timing: 'beforeActionPhase',
-    resolve(bot) {
-      bot.discardFewestTagsFromActionDeck();
-    },
+  beforeActionPhase(bot) {
+    bot.discardCardWithFewestTags();
   },
 };
 
@@ -81,7 +78,7 @@ const POSEIDON: IMarsBotCorp = {
   tags: [],
   setup(bot) {
     // C-33: Place 1 colony using random selection (C-15b method)
-    const placed = bot.placeRandomColony();
+    const placed = bot.maybePlaceRandomColony();
     if (placed) {
       bot.game.log('MarsBot (Poseidon): placed 1 colony (C-33)');
     } else {

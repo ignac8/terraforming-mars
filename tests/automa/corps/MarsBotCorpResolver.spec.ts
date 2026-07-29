@@ -210,36 +210,6 @@ describe('MarsBotCorpResolver', () => {
     });
   });
 
-  describe('resolvePerGenEffect', () => {
-    it('calls per-gen resolve', () => {
-      const {marsBot} = createAutomaGame();
-      let called = false;
-
-      const corp = createTestCorp({
-        name: CardName.ECOLINE,
-        perGeneration: {
-          timing: 'roundStart',
-          resolve: () => {
-            called = true;
-          },
-        },
-      });
-
-      MarsBotCorpResolver.resolvePerGenEffect(corp, marsBot);
-      expect(called).to.be.true;
-    });
-
-    it('does nothing if no per-gen effect', () => {
-      const {marsBot} = createAutomaGame();
-
-      const corp = createTestCorp({
-        name: CardName.ECOLINE,
-      });
-
-      // Should not throw
-      MarsBotCorpResolver.resolvePerGenEffect(corp, marsBot);
-    });
-  });
 
   describe('serialization round-trip', () => {
     it('preserves corp state through serialize/restore', () => {

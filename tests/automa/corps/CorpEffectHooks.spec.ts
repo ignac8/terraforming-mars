@@ -174,7 +174,7 @@ describe('Corp Effect Hooks', () => {
     });
   });
 
-  describe('C36 Pristar onGlobalParameterRaised', () => {
+  describe('C36 Pristar interceptGlobalParameterRaise', () => {
     it('intercepts parameter raise when white cube on card', () => {
       const {marsBot} = createAutomaGame();
       const corp = getMarsBotCorp(CardName.PRISTAR)!;
@@ -182,7 +182,7 @@ describe('Corp Effect Hooks', () => {
       marsBot.corpSpecificState.set('whiteCubeOnCard', 1);
       const trBefore = marsBot.player.terraformRating;
       const mcBefore = marsBot.turnResolver.mcSupply;
-      const skip = corp.effect!.onGlobalParameterRaised!(marsBot, GlobalParameter.TEMPERATURE);
+      const skip = corp.effect!.interceptGlobalParameterRaise!(marsBot, GlobalParameter.TEMPERATURE);
       expect(skip).to.be.true;
       expect(marsBot.corpSpecificState.get('whiteCubeOnCard')).to.eq(0);
       expect(marsBot.player.terraformRating).to.eq(trBefore + 1);
@@ -194,7 +194,7 @@ describe('Corp Effect Hooks', () => {
       const corp = getMarsBotCorp(CardName.PRISTAR)!;
       marsBot.setCorpAndSetup(corp);
       marsBot.corpSpecificState.set('whiteCubeOnCard', 0);
-      const skip = corp.effect!.onGlobalParameterRaised!(marsBot, GlobalParameter.TEMPERATURE);
+      const skip = corp.effect!.interceptGlobalParameterRaise!(marsBot, GlobalParameter.TEMPERATURE);
       expect(skip).to.be.false;
     });
 
@@ -203,7 +203,7 @@ describe('Corp Effect Hooks', () => {
       const corp = getMarsBotCorp(CardName.PRISTAR)!;
       marsBot.setCorpAndSetup(corp);
       marsBot.corpSpecificState.set('whiteCubeOnCard', 0);
-      corp.perGeneration!.resolve(marsBot);
+      corp.beforeActionPhase!(marsBot);
       expect(marsBot.corpSpecificState.get('whiteCubeOnCard')).to.eq(1);
     });
   });
@@ -214,7 +214,7 @@ describe('Corp Effect Hooks', () => {
       const corp = getMarsBotCorp(CardName.POLYPHEMOS)!;
       marsBot.setCorpAndSetup(corp);
       const deckBefore = marsBot.actionDeck.length;
-      corp.perGeneration!.resolve(marsBot);
+      corp.beforeActionPhase!(marsBot);
       expect(marsBot.actionDeck.length).to.eq(deckBefore - 1);
     });
   });
@@ -231,9 +231,8 @@ describe('Corp Effect Hooks', () => {
       const {marsBot} = createAutomaGame();
       const corp = getMarsBotCorp(CardName.MINING_GUILD)!;
       marsBot.setCorpAndSetup(corp);
-      // 5 MC earned: card counts down 10 → 5, the full 5 reaches the supply
-      const actual = corp.effect!.onMcGained!(marsBot, 5);
-      expect(actual).to.eq(5);
+      // 5 MC earned: card counts down 10 → 5
+      corp.effect!.onMcGained!(marsBot, 5);
       expect(marsBot.corpSpecificState.get('mcOnCard')).to.eq(5);
     });
 
@@ -243,8 +242,7 @@ describe('Corp Effect Hooks', () => {
       marsBot.setCorpAndSetup(corp);
       marsBot.corpSpecificState.set('mcOnCard', 2);
       const buildingBefore = marsBot.board.tracks[0].position;
-      const actual = corp.effect!.onMcGained!(marsBot, 5);
-      expect(actual).to.eq(5); // the bot keeps its earnings
+      corp.effect!.onMcGained!(marsBot, 5);
       expect(marsBot.corpSpecificState.get('mcOnCard')).to.eq(10); // Refilled
       expect(marsBot.board.tracks[0].position).to.be.gte(buildingBefore + 1);
     });

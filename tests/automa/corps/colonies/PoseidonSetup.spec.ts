@@ -14,14 +14,14 @@ function getMarsBot(game: ReturnType<typeof testGame>[0]): MarsBot {
 }
 
 describe('PoseidonSetup (C-33)', () => {
-  it('placeRandomColony places on one of the available tiles', () => {
+  it('maybePlaceRandomColony places on one of the available tiles', () => {
     const [game] = testGame(1, {automaOption: true, coloniesExtension: true, boardName: BoardName.THARSIS});
     const marsBot = getMarsBot(game);
     const luna = new Luna();
     const ceres = new Ceres();
     game.colonies = [luna, ceres];
 
-    marsBot.placeRandomColony();
+    marsBot.maybePlaceRandomColony();
 
     // One of the two should have MarsBot's colony
     const hasLuna = luna.colonies.includes(marsBot.player.id);
@@ -36,7 +36,7 @@ describe('PoseidonSetup (C-33)', () => {
     game.colonies = [luna];
 
     const before = marsBot.shippingBoard.get(ColonyName.LUNA);
-    marsBot.placeRandomColony();
+    marsBot.maybePlaceRandomColony();
     expect(marsBot.shippingBoard.get(ColonyName.LUNA)).to.eq(before + 2);
   });
 
@@ -57,7 +57,7 @@ describe('PoseidonSetup (C-33)', () => {
     const leastIdx = marsBot.board.tracks.reduce((minIdx, t, i, arr) => t.position < arr[minIdx].position ? i : minIdx, 0);
     const beforePos = marsBot.board.tracks[leastIdx].position;
 
-    marsBot.placeRandomColony();
+    marsBot.maybePlaceRandomColony();
 
     // The least-advanced track should have advanced by 1
     const newLeastAdvancedPos = marsBot.board.tracks[leastIdx].position;

@@ -576,13 +576,13 @@ export class MarsBotTurnResolver {
     this.game.log('MarsBot takes a Failed Action, gains ${0} MC', (b) => b.number(mc));
   }
 
-  /** Add M€ to MarsBot's supply, letting the corp react first (Mining Guild). */
+  /** Add M€ to MarsBot's supply and tell the corp about it (Mining Guild). */
   public gainMc(amount: number): void {
     if (amount <= 0) {
       return;
     }
-    const gained = this.marsBotManager?.corp?.effect?.onMcGained?.(this.marsBotManager, amount) ?? amount;
-    this.mcSupply += gained;
+    this.mcSupply += amount;
+    this.marsBotManager?.corp?.effect?.onMcGained?.(this.marsBotManager, amount);
   }
 
   /** Pristar: true when the corp consumes its cube to skip this raise. */

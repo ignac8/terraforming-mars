@@ -4,7 +4,7 @@ import {CardName} from '../../../common/cards/CardName';
 import {BonusCardId} from '../../../common/automa/AutomaTypes';
 import {TileType} from '../../../common/TileType';
 import {AutomaManifest} from './AutomaManifest';
-import {bonusCardPerGen} from './BaseGameCorps';
+import {bonusCardBeforeActionPhase} from './BaseGameCorps';
 
 // ==== TURMOIL (C35-C39) ====
 
@@ -40,7 +40,7 @@ const PRISTAR: IMarsBotCorp = {
   description: 'When a global parameter would be raised and a cube is on card: skip the raise, remove cube, +1 TR, +6 MC. Cube is restored each generation.',
   tags: [],
   effect: {
-    onGlobalParameterRaised(bot, _parameter) {
+    interceptGlobalParameterRaise(bot, _parameter) {
       const cube = bot.getCorpState('whiteCubeOnCard');
       if (cube > 0) {
         bot.setCorpState('whiteCubeOnCard', 0);
@@ -52,14 +52,11 @@ const PRISTAR: IMarsBotCorp = {
       return false;
     },
   },
-  perGeneration: {
-    timing: 'beforeActionPhase',
-    resolve(bot) {
-      if (bot.getCorpState('whiteCubeOnCard') === 0) {
-        bot.setCorpState('whiteCubeOnCard', 1);
-        bot.game.log('MarsBot (Pristar): added white cube on card');
-      }
-    },
+  beforeActionPhase(bot) {
+    if (bot.getCorpState('whiteCubeOnCard') === 0) {
+      bot.setCorpState('whiteCubeOnCard', 1);
+      bot.game.log('MarsBot (Pristar): added white cube on card');
+    }
   },
 };
 
@@ -73,7 +70,7 @@ const SEPTEM_TRIBUS: IMarsBotCorp = {
     bot.addBonusCardToBonusDeck(BonusCardId.B29_GRAY_EMINENCE);
     bot.game.log('MarsBot (Septem Tribus): Party Politics removed, Gray Eminence added');
   },
-  perGeneration: bonusCardPerGen(BonusCardId.B29_GRAY_EMINENCE, 'Septem Tribus'),
+  beforeActionPhase: bonusCardBeforeActionPhase(BonusCardId.B29_GRAY_EMINENCE, 'Septem Tribus'),
 };
 
 // C38 Terralabs
@@ -86,13 +83,10 @@ const TERRALABS: IMarsBotCorp = {
     bot.raiseTR(-8);
     bot.game.log('MarsBot (Terralabs): TR -8');
   },
-  perGeneration: {
-    timing: 'beforeActionPhase',
-    resolve(bot) {
-      const count = bot.game.generation <= 8 ? 1 : 2;
-      bot.drawProjectCardsToActionDeck(count);
-      bot.game.log(`MarsBot (Terralabs): drew ${count} card(s) to action deck`);
-    },
+  beforeActionPhase(bot) {
+    const count = bot.game.generation <= 8 ? 1 : 2;
+    bot.drawProjectCardsToActionDeck(count);
+    bot.game.log(`MarsBot (Terralabs): drew ${count} card(s) to action deck`);
   },
 };
 
@@ -101,7 +95,7 @@ const UTOPIA_INVEST: IMarsBotCorp = {
   name: CardName.UTOPIA_INVEST,
   description: 'Tags: Building, Space. Each generation: add Investors bonus card to action deck.',
   tags: [Tag.BUILDING, Tag.SPACE],
-  perGeneration: bonusCardPerGen(BonusCardId.B32_INVESTORS, 'Utopia Invest'),
+  beforeActionPhase: bonusCardBeforeActionPhase(BonusCardId.B32_INVESTORS, 'Utopia Invest'),
 };
 
 export const AUTOMA_TURMOIL_MANIFEST: AutomaManifest = {
