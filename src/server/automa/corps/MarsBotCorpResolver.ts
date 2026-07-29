@@ -96,13 +96,4 @@ export class MarsBotCorpResolver {
       marsBot.game.log('MarsBot unlocks 2nd Trade Fleet — Extended Shipping Lines available next generation (C-27)');
     }
   }
-
-  /**
-   * Resolve per-generation effect for the corp.
-   */
-  public static resolvePerGenEffect(corp: IMarsBotCorp, marsBot: MarsBot): void {
-    if (corp.perGeneration !== undefined) {
-      corp.perGeneration.resolve(marsBot);
-    }
-  }
 }

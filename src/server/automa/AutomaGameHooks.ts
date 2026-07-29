@@ -145,11 +145,8 @@ export class AutomaGameHooks {
       this.marsBot.goesFirst = !this.marsBot.goesFirst;
     }
 
-    // Resolve roundStart per-gen effects
-    const corp = this.marsBot.corp;
-    if (corp?.perGeneration?.timing === 'roundStart') {
-      MarsBotCorpResolver.resolvePerGenEffect(corp, this.marsBot);
-    }
+    // Corp round start effects
+    this.marsBot.corp?.roundStart?.(this.marsBot);
 
     if (this.game.gameOptions.draftVariant) {
       this.handleDraftResearchPhase();
@@ -328,10 +325,8 @@ export class AutomaGameHooks {
 
     this.marsBot.setCorpAndSetup(corp);
 
-    // If corp has beforeActionPhase per-gen effect, resolve it now (gen 1)
-    if (corp.perGeneration?.timing === 'beforeActionPhase') {
-      MarsBotCorpResolver.resolvePerGenEffect(corp, this.marsBot);
-    }
+    // Corp before-action-phase effects run now for gen 1
+    corp.beforeActionPhase?.(this.marsBot);
   }
 
   /**
@@ -346,9 +341,7 @@ export class AutomaGameHooks {
     if (corp === undefined) {
       return;
     }
-    if (corp.perGeneration?.timing === 'beforeActionPhase') {
-      MarsBotCorpResolver.resolvePerGenEffect(corp, this.marsBot);
-    }
+    corp.beforeActionPhase?.(this.marsBot);
   }
 
   /** Returns true if this player's production should be skipped (MarsBot). */

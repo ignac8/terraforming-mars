@@ -9,25 +9,19 @@ export function whiteTrackCubes(trackIndex: number): MarsBotTrackCube[] {
   return Array.from({length: 18}, (_, i) => ({trackIndex, position: i + 1, cubeType: 'white' as const}));
 }
 
-/** Factory for the common "add bonus card to action deck before action phase" per-gen pattern. */
-export function bonusCardPerGen(bonusCardId: BonusCardId, corpName: string): {timing: 'beforeActionPhase', resolve: (bot: IMarsBot) => void} {
-  return {
-    timing: 'beforeActionPhase',
-    resolve(bot) {
-      bot.addBonusCardToActionDeck(bonusCardId);
-      bot.game.log(`MarsBot (${corpName}): ${bonusCardId} added to action deck`);
-    },
+/** Factory for the common "add bonus card to action deck before the action phase" pattern. */
+export function bonusCardBeforeActionPhase(bonusCardId: BonusCardId, corpName: string): (bot: IMarsBot) => void {
+  return (bot) => {
+    bot.addBonusCardToActionDeck(bonusCardId);
+    bot.game.log(`MarsBot (${corpName}): ${bonusCardId} added to action deck`);
   };
 }
 
-/** Factory for the common "add 1 floater at round start" per-gen pattern. */
-export function floaterPerRound(corpName: string): {timing: 'roundStart', resolve: (bot: IMarsBot) => void} {
-  return {
-    timing: 'roundStart',
-    resolve(bot) {
-      bot.addFloaters(1);
-      bot.game.log(`MarsBot (${corpName}): round start, +1 floater`);
-    },
+/** Factory for the common "add 1 floater at round start" pattern. */
+export function floaterAtRoundStart(corpName: string): (bot: IMarsBot) => void {
+  return (bot) => {
+    bot.addFloaters(1);
+    bot.game.log(`MarsBot (${corpName}): round start, +1 floater`);
   };
 }
 

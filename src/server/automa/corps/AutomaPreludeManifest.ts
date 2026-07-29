@@ -3,7 +3,7 @@ import {Tag} from '../../../common/cards/Tag';
 import {CardName} from '../../../common/cards/CardName';
 import {BonusCardId} from '../../../common/automa/AutomaTypes';
 import {AutomaManifest} from './AutomaManifest';
-import {whiteTrackCubes, bonusCardPerGen, whiteLeastBlackSpaceHandler} from './BaseGameCorps';
+import {whiteTrackCubes, bonusCardBeforeActionPhase, whiteLeastBlackSpaceHandler} from './BaseGameCorps';
 
 // ==== PRELUDE (C13-C17) ====
 
@@ -58,7 +58,7 @@ const ROBINSON_INDUSTRIES: IMarsBotCorp = {
     bot.gainMc(10);
     bot.game.log('MarsBot (Robinson Industries): +10 M€');
   },
-  perGeneration: bonusCardPerGen(BonusCardId.B28_DIVERSIFICATION, 'Robinson Industries'),
+  beforeActionPhase: bonusCardBeforeActionPhase(BonusCardId.B28_DIVERSIFICATION, 'Robinson Industries'),
 };
 
 // C16 Valley Trust
@@ -102,7 +102,7 @@ const VITOR: IMarsBotCorp = {
       }
     },
   },
-  perGeneration: bonusCardPerGen(BonusCardId.B04_OVERACHIEVEMENT, 'Vitor'),
+  beforeActionPhase: bonusCardBeforeActionPhase(BonusCardId.B04_OVERACHIEVEMENT, 'Vitor'),
 };
 
 // ==== PRELUDE 2 (C18, C20, C29, C40-C46) ====
@@ -120,7 +120,7 @@ const ACADIAN_COMMUNITY: IMarsBotCorp = {
     // Every time MarsBot places a tile on a space with its marker -> 3 MC
     // Needs onTilePlaced hook
   },
-  perGeneration: bonusCardPerGen(BonusCardId.B22_SETTLERS, 'Acadian Community'),
+  beforeActionPhase: bonusCardBeforeActionPhase(BonusCardId.B22_SETTLERS, 'Acadian Community'),
 };
 
 // C19 Astrodrill Enterprise — white+black cubes on space track
@@ -161,7 +161,7 @@ const FACTORUM: IMarsBotCorp = {
       }
     },
   },
-  perGeneration: bonusCardPerGen(BonusCardId.B24_SUPPLY_AND_DEMAND, 'Factorum'),
+  beforeActionPhase: bonusCardBeforeActionPhase(BonusCardId.B24_SUPPLY_AND_DEMAND, 'Factorum'),
 };
 
 // C29 Manutech — black cubes at #5/#12 on each track
@@ -202,16 +202,13 @@ const ECOTEC: IMarsBotCorp = {
       }
     },
   },
-  perGeneration: {
-    timing: 'beforeActionPhase',
-    resolve(bot) {
-      const plants = bot.getCorpState('plantResources');
-      if (plants >= 5) {
-        bot.setCorpState('plantResources', plants - 5);
-        bot.advanceTrack(6); // Plant track = index 6
-        bot.game.log('MarsBot (Ecotec): spent 5 plant resources, advance plant track');
-      }
-    },
+  beforeActionPhase(bot) {
+    const plants = bot.getCorpState('plantResources');
+    if (plants >= 5) {
+      bot.setCorpState('plantResources', plants - 5);
+      bot.advanceTrack(6); // Plant track = index 6
+      bot.game.log('MarsBot (Ecotec): spent 5 plant resources, advance plant track');
+    }
   },
 };
 
@@ -252,18 +249,15 @@ const NIRGAL_ENTERPRISES: IMarsBotCorp = {
     bot.game.log('MarsBot (Nirgal): Overachievement removed from bonus deck');
   },
   // effect: +2 in all corporate awards — needs award scoring integration
-  perGeneration: {
-    timing: 'beforeActionPhase',
-    resolve(bot) {
-      // Gen 2-5 or 10+: claim milestone. Gen 6-9: fund award.
-      if ((bot.game.generation >= 2 && bot.game.generation <= 5) || bot.game.generation >= 10) {
-        bot.game.log('MarsBot (Nirgal): attempt milestone claim');
-        // Milestone claiming is handled by the track action system
-      } else if (bot.game.generation >= 6 && bot.game.generation <= 9) {
-        bot.game.log('MarsBot (Nirgal): attempt award funding');
-        // Award funding is handled by the track action system
-      }
-    },
+  beforeActionPhase(bot) {
+    // Gen 2-5 or 10+: claim milestone. Gen 6-9: fund award.
+    if ((bot.game.generation >= 2 && bot.game.generation <= 5) || bot.game.generation >= 10) {
+      bot.game.log('MarsBot (Nirgal): attempt milestone claim');
+      // Milestone claiming is handled by the track action system
+    } else if (bot.game.generation >= 6 && bot.game.generation <= 9) {
+      bot.game.log('MarsBot (Nirgal): attempt award funding');
+      // Award funding is handled by the track action system
+    }
   },
 };
 
@@ -349,17 +343,14 @@ const SPIRE: IMarsBotCorp = {
       }
     },
   },
-  perGeneration: {
-    timing: 'beforeActionPhase',
-    resolve(bot) {
-      const science = bot.getCorpState('scienceResources');
-      if (science >= 10) {
-        bot.setCorpState('scienceResources', science - 10);
-        bot.placeCity();
-        bot.raiseTR(1);
-        bot.game.log('MarsBot (Spire): spent 10 science, placed city + TR +1');
-      }
-    },
+  beforeActionPhase(bot) {
+    const science = bot.getCorpState('scienceResources');
+    if (science >= 10) {
+      bot.setCorpState('scienceResources', science - 10);
+      bot.placeCity();
+      bot.raiseTR(1);
+      bot.game.log('MarsBot (Spire): spent 10 science, placed city + TR +1');
+    }
   },
 };
 

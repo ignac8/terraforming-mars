@@ -4,7 +4,7 @@ import {CardName} from '../../../common/cards/CardName';
 import {BonusCardId} from '../../../common/automa/AutomaTypes';
 import {TileType} from '../../../common/TileType';
 import {AutomaManifest} from './AutomaManifest';
-import {whiteTrackCubes, bonusCardPerGen} from './BaseGameCorps';
+import {whiteTrackCubes, bonusCardBeforeActionPhase} from './BaseGameCorps';
 
 // ---- C01 Credicor ----
 // Draft: most expensive card. Effect: card cost 20+ gives 4 MC.
@@ -29,7 +29,7 @@ const ECO_LINE: IMarsBotCorp = {
   name: CardName.ECOLINE,
   description: 'Each generation: add Rapid Sprouting bonus card to action deck.',
   tags: [],
-  perGeneration: bonusCardPerGen(BonusCardId.B23_RAPID_SPROUTING, 'Eco Line'),
+  beforeActionPhase: bonusCardBeforeActionPhase(BonusCardId.B23_RAPID_SPROUTING, 'Eco Line'),
 };
 
 // ---- C03 Helion ----
@@ -103,7 +103,7 @@ const INVENTRIX: IMarsBotCorp = {
       }
     },
   },
-  perGeneration: bonusCardPerGen(BonusCardId.B25_DO_IT_RIGHT, 'Inventrix'),
+  beforeActionPhase: bonusCardBeforeActionPhase(BonusCardId.B25_DO_IT_RIGHT, 'Inventrix'),
 };
 
 // ---- C06 Mining Guild ----
@@ -123,7 +123,7 @@ const MINING_GUILD: IMarsBotCorp = {
     // building track. (NamuWiki card text; verify against the physical card.)
     onMcGained(bot, amount) {
       if (bot.board.tracks[0].position >= 18) {
-        return amount;
+        return;
       } // Building track maxed, the card stops
       const mcOnCard = bot.getCorpState('mcOnCard') - Math.min(amount, bot.getCorpState('mcOnCard'));
       if (mcOnCard <= 0) {
@@ -133,7 +133,6 @@ const MINING_GUILD: IMarsBotCorp = {
       } else {
         bot.setCorpState('mcOnCard', mcOnCard);
       }
-      return amount;
     },
   },
 };
@@ -278,14 +277,11 @@ const UNMI: IMarsBotCorp = {
     bot.addBonusCardToBonusDeck(BonusCardId.B31_GOVERNMENT_SUBSIDY);
     bot.game.log('MarsBot (UNMI): Government Subsidy added to bonus deck');
   },
-  perGeneration: {
-    timing: 'beforeActionPhase',
-    resolve(bot) {
-      if (bot.game.generation >= 2) {
-        bot.drawAndResolveBonusCard();
-        bot.game.log('MarsBot (UNMI): added 1 bonus card to action deck');
-      }
-    },
+  beforeActionPhase(bot) {
+    if (bot.game.generation >= 2) {
+      bot.drawAndResolveBonusCard();
+      bot.game.log('MarsBot (UNMI): added 1 bonus card to action deck');
+    }
   },
 };
 

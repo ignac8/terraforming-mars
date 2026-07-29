@@ -150,7 +150,7 @@ describe('Expansion MarsBot Corporations', () => {
       marsBot.setCorpAndSetup(corp);
       marsBot.corpSpecificState.set('plantResources', 6);
       const plantTrackBefore = marsBot.board.tracks[6].position;
-      corp.perGeneration!.resolve(marsBot);
+      corp.beforeActionPhase!(marsBot);
       expect(marsBot.corpSpecificState.get('plantResources')).to.eq(1);
       expect(marsBot.board.tracks[6].position).to.be.gte(plantTrackBefore + 1);
     });
@@ -307,7 +307,7 @@ describe('Expansion MarsBot Corporations', () => {
       const {marsBot} = createAutomaGame();
       const corp = getMarsBotCorp(CardName.CELESTIC)!;
       marsBot.setCorpAndSetup(corp);
-      corp.perGeneration!.resolve(marsBot);
+      corp.roundStart!(marsBot);
       expect(marsBot.floaterCount).to.eq(2);
     });
   });
@@ -329,7 +329,7 @@ describe('Expansion MarsBot Corporations', () => {
       marsBot.setCorpAndSetup(corp);
 
       const deckBefore = marsBot.actionDeck.length;
-      corp.perGeneration!.resolve(marsBot); // gen 1 → 1 card
+      corp.beforeActionPhase!(marsBot); // gen 1 → 1 card
       expect(marsBot.actionDeck.length).to.eq(deckBefore + 1);
     });
   });

@@ -136,7 +136,7 @@ describe('Corp-Specific Bonus Cards (B22-B32)', () => {
       marsBot.setCorpAndSetup(corp);
 
       const deckBefore = marsBot.actionDeck.length;
-      corp.perGeneration.resolve(marsBot);
+      corp.beforeActionPhase(marsBot);
       expect(marsBot.actionDeck.length).to.eq(deckBefore + 1);
       // The last card should be Rapid Sprouting
       const lastCard = marsBot.actionDeck[marsBot.actionDeck.length - 1];
