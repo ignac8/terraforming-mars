@@ -9,6 +9,7 @@ import {getAutomaMaxGeneration} from '../../common/automa/AutomaTypes';
 import {SelectCard} from '../inputs/SelectCard';
 import {IProjectCard} from '../cards/IProjectCard';
 import {inplaceRemove} from '../../common/utils/utils';
+import {inplaceShuffle} from '../utils/shuffle';
 import {MarsBotCorpResolver} from './corps/MarsBotCorpResolver';
 import {MarsBotDraftResolver} from './corps/MarsBotDraftResolver';
 import {SerializedAutomaState} from '../SerializedGame';
@@ -163,6 +164,10 @@ export class AutomaGameHooks {
    * C-X2/C-9: With Colonies but without Venus Next, use the same rule but
    *            Hoverlord is always considered unavailable (not in game).
    */
+  private draftResolver(): MarsBotDraftResolver {
+    return new MarsBotDraftResolver(this.marsBot.tracks, (items) => inplaceShuffle(items, this.game.rng));
+  }
+
   private canSpendFloatersForExtraCard(): boolean {
     const opts = this.game.gameOptions;
     // C-9/C-X2: Colonies without Venus Next — floaters are in Titan storage
@@ -235,7 +240,7 @@ export class AutomaGameHooks {
         // Draft complete — apply post-draft discard if corp has draft priority
         let finalMarsBotCards = marsBotKept;
         if (draftPriority !== undefined) {
-          const result = MarsBotDraftResolver.postDraftDiscard(marsBotKept, draftPriority, this.game.rng);
+          const result = this.draftResolver().discardAfterDraft(marsBotKept, draftPriority);
           finalMarsBotCards = result.kept;
           for (const discarded of result.discarded) {
             this.game.projectDeck.discardPile.push(discarded);
@@ -267,9 +272,7 @@ export class AutomaGameHooks {
       if (marsBotPile.length > 0) {
         let picked: IProjectCard;
         if (draftPriority !== undefined) {
-          picked = MarsBotDraftResolver.pickCardForMarsBot(
-            marsBotPile, draftPriority, this.game.rng, this.marsBot.tracks,
-          );
+          picked = this.draftResolver().pickCard(marsBotPile, draftPriority);
         } else {
           picked = marsBotPile[this.game.rng.nextInt(marsBotPile.length)];
         }
