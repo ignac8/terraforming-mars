@@ -1795,14 +1795,15 @@ export class Game implements IGame, Logger {
       throw new Error(`Player ${d.first} not found when rebuilding First Player`);
     }
 
-    // Create MarsBot player before board deserialization so tile ownership is preserved
+    // Create MarsBot player before the board and Turmoil are read back, since both resolve
+    // owners by player id and MarsBot is not one of d.players.
     let marsBotPlayer: IPlayer | undefined;
     if (d.automaState !== undefined && gameOptions.automaOption) {
       marsBotPlayer = AutomaGameSetup.createMarsBotPlayer(d.id);
     }
 
-    const playersForBoard = marsBotPlayer !== undefined ? [...players, marsBotPlayer] : players;
-    const board = GameSetup.deserializeBoard(playersForBoard, gameOptions, d);
+    const playersWithMarsBot = marsBotPlayer !== undefined ? [...players, marsBotPlayer] : players;
+    const board = GameSetup.deserializeBoard(playersWithMarsBot, gameOptions, d);
 
     const rng = new SeededRandom(d.seed, d.currentSeed);
 
@@ -1854,7 +1855,7 @@ export class Game implements IGame, Logger {
 
     // Reload turmoil elements if needed
     if (d.turmoil && gameOptions.turmoilExtension) {
-      game.turmoil = Turmoil.deserialize(d.turmoil, players);
+      game.turmoil = Turmoil.deserialize(d.turmoil, playersWithMarsBot);
     }
 
     // Reload moon elements if needed

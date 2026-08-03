@@ -2,6 +2,7 @@ import {expect} from 'chai';
 import {testGame} from '../../TestGame';
 import {TestPlayer} from '../../TestPlayer';
 import {runAllActions} from '../../TestingUtils';
+import {Game} from '../../../src/server/Game';
 import {IGame} from '../../../src/server/IGame';
 import {IPlayer} from '../../../src/server/IPlayer';
 import {MarsBot} from '../../../src/server/automa/MarsBot';
@@ -408,6 +409,50 @@ describe('MarsBot Turmoil — serialization', () => {
     expect(marsParty).to.not.be.undefined;
     // MarsBot's player ID should be in Mars First delegates
     expect(marsParty!.delegates).to.include(marsBotPlayer.id);
+  });
+
+  it('a game with MarsBot delegates loads again', () => {
+    const {game, marsBot} = createTurmoilGame();
+    const turmoil = Turmoil.getTurmoil(game);
+    turmoil.sendDelegateToParty(marsBot.player, PartyName.MARS, game);
+    turmoil.sendDelegateToParty(marsBot.player, PartyName.MARS, game);
+    turmoil.sendDelegateToParty(marsBot.player, PartyName.SCIENTISTS, game);
+
+    // MarsBot is not one of the serialized players, so reading its delegates back
+    // needs the bot in the list Turmoil resolves owners against.
+    const restored = Game.deserialize(game.serialize());
+
+    const restoredBot = restored.automaHooks!.marsBot.player;
+    const restoredTurmoil = Turmoil.getTurmoil(restored);
+    expect(restoredTurmoil.getPartyByName(PartyName.MARS).delegates.get(restoredBot)).to.eq(2);
+    expect(restoredTurmoil.getPartyByName(PartyName.SCIENTISTS).delegates.get(restoredBot)).to.eq(1);
+  });
+
+  it('MarsBot party leadership survives a reload', () => {
+    const {game, marsBot} = createTurmoilGame();
+    const turmoil = Turmoil.getTurmoil(game);
+    for (let i = 0; i < 3; i++) {
+      turmoil.sendDelegateToParty(marsBot.player, PartyName.GREENS, game);
+    }
+    turmoilHelper(game, marsBot.player).maybeUpdatePartyLeader(turmoil.getPartyByName(PartyName.GREENS));
+    expect(turmoil.getPartyByName(PartyName.GREENS).partyLeader).to.eq(marsBot.player);
+
+    const restored = Game.deserialize(game.serialize());
+
+    const restoredBot = restored.automaHooks!.marsBot.player;
+    expect(Turmoil.getTurmoil(restored).getPartyByName(PartyName.GREENS).partyLeader).to.eq(restoredBot);
+  });
+
+  it('the bot keeps its delegate reserve across a reload', () => {
+    const {game, marsBot} = createTurmoilGame();
+    const turmoil = Turmoil.getTurmoil(game);
+    turmoil.sendDelegateToParty(marsBot.player, PartyName.REDS, game);
+    const remaining = turmoil.getAvailableDelegateCount(marsBot.player);
+
+    const restored = Game.deserialize(game.serialize());
+
+    const restoredBot = restored.automaHooks!.marsBot.player;
+    expect(Turmoil.getTurmoil(restored).getAvailableDelegateCount(restoredBot)).to.eq(remaining);
   });
 
   it('MarsBot automa state serializes correctly with turmoil', () => {
