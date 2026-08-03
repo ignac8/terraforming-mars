@@ -1,17 +1,18 @@
 # Upstream PR tracker
 
 State of the one-file-at-a-time PR series against `terraforming-mars/terraforming-mars`,
-agreed after #8001 was deemed too big to review. Last updated: 2026-07-28.
+agreed after #8001 was deemed too big to review. Last updated: 2026-08-03.
 
 ## Merged
 
 | PR | Contents |
 |----|----------|
-| [#7994](https://github.com/terraforming-mars/terraforming-mars/pull/7994) | Foundation: `AutomaTypes`, `MarsBotBoard`, `TharsisMarsBot`, `MarsBotModel`, `MarsBotMADescriptions`, board spec |
+| [#7994](https://github.com/terraforming-mars/terraforming-mars/pull/7994) | Foundation: `AutomaTypes`, `MarsBotTracks` (was `MarsBotBoard`), `TharsisMarsBot`, `MarsBotModel`, `MarsBotMADescriptions`, board spec |
 | [#8203](https://github.com/terraforming-mars/terraforming-mars/pull/8203) | `MarsBotBonusCard.ts` — bonus card type + base set (squash-merged 2026-07-20) |
 | [#8204](https://github.com/terraforming-mars/terraforming-mars/pull/8204) | `MarsBotTags.ts` + spec |
 | [#8205](https://github.com/terraforming-mars/terraforming-mars/pull/8205) | Venus track layout, `AutomaTypes` floater/floater2 + `tag_${string}` actions |
-| [#8206](https://github.com/terraforming-mars/terraforming-mars/pull/8206) | `MarsBotBonusDeck.ts` extending `Deck<MarsBotBonusCard>` + spec, kberg's `b5c7df0cf` (`AUTOMA_*` CardNames, `Deck<Named<CardName>>`) riding along (squash-merged 2026-07-28 as `27bd8b963`). His approval note: many of the deck tests duplicate `Deck.spec.ts` now — #8342 trims them. Automa divergence stays: id-based serde in `MarsBot.ts` (no save migration), expansion deck factories, `findAndRemove`/`removeById`, `bonusCardDisplayName()` |
+| [#8206](https://github.com/terraforming-mars/terraforming-mars/pull/8206) | `MarsBotBonusDeck.ts` extending `Deck<MarsBotBonusCard>` + spec, kberg's `b5c7df0cf` (`AUTOMA_*` CardNames, `Deck<Named<CardName>>`) riding along (squash-merged 2026-07-28 as `27bd8b963`). His approval note: many of the deck tests duplicate `Deck.spec.ts` now — #8342 trims them. Automa divergence stays: id-based serde in `MarsBot.ts` (no save migration), expansion deck factories, `findAndRemove`/`removeById`, `bonusCardDisplayName()` (now a `split(':')[0]`) |
+| [#8207](https://github.com/terraforming-mars/terraforming-mars/pull/8207) | `MarsBotCorpTypes.ts` + `CubeType` in `AutomaTypes` (squash-merged 2026-07-31 as `8d8e335d8`). Approved with questions still open, answered and fixed in #8353 |
 | [#8342](https://github.com/terraforming-mars/terraforming-mars/pull/8342) | Trims the 3 bonus deck tests that duplicate `Deck.spec.ts` (merged 2026-07-28 as `740d79ef6`). Automa keeps its adapted 4-test spec (id-based deserialize, no name round trip) |
 
 ## Open
@@ -24,12 +25,11 @@ plus a `game` reference installed at load), and card hooks take the real
 
 | PR | Branch | Contents | Divergence from automa branch |
 |----|--------|----------|-------------------------------|
-| [#8207](https://github.com/terraforming-mars/terraforming-mars/pull/8207) | `marsbot-corp-types` | `MarsBotCorpTypes.ts` + `CubeType` in `AutomaTypes`. **Round 3 addressed (2026-07-29):** file banner and filler comments removed, `MarsBotCorpPerGen` replaced by `roundStart?`/`beforeActionPhase?` methods on the corp, `onGlobalParameterRaised` -> `interceptGlobalParameterRaise` (pre-event), `onMcGained` made a true post-event returning void, `placeRandomColony` -> `maybePlaceRandomColony`, `discardFewestTagsFromActionDeck` -> `discardCardWithFewestTags` | None in the types file (identical); automa additionally implements `IMarsBot` on `MarsBot` |
-| [#8208](https://github.com/terraforming-mars/terraforming-mars/pull/8208) | `marsbot-tile-placer` | `MarsBotTilePlacer.ts` + spec | Spec setup: `testGame(2)` instead of `TestPlayer.RED.newPlayer` + `as any` cast |
-| [#8209](https://github.com/terraforming-mars/terraforming-mars/pull/8209) | `marsbot-draft-resolver` (stacked on `marsbot-corp-types`) | `MarsBotDraftResolver.ts` + spec | None. **Update after #8207 merges** |
-| [#8210](https://github.com/terraforming-mars/terraforming-mars/pull/8210) | `marsbot-ma-eval` | `MarsBotMilestoneAwardEval.ts` + spec | `@/` imports -> relative. 2 integration tests dropped (Terraformer29 filtering, Briber MC deduction) - re-add with game integration PRs |
-| [#8211](https://github.com/terraforming-mars/terraforming-mars/pull/8211) | `marsbot-turmoil-helper` | `MarsBotTurmoilHelper.ts` + new spec | Spec is a 10-test extraction from `MarsBotTurmoil.spec.ts` (T-7 selection, party leader, totalDelegates); 2-player Turmoil game stands in for the bot |
-| [#8342](https://github.com/terraforming-mars/terraforming-mars/pull/8342) | `marsbot-deck-tests` | Trims the 3 bonus deck tests that duplicate `Deck.spec.ts` (follow-up to #8206's approval note) | Automa keeps its adapted 4-test spec; revisit after this merges |
+| [#8353](https://github.com/terraforming-mars/terraforming-mars/pull/8353) | `marsbot-postmerge-fixes` | Follow-ups to the merged #8206 and #8207: `Automa: X` card names to the `X:automa` suffix form (the client keeps what precedes the colon, so all eight rendered as "Automa"), `mcSupply`/`floaterCount` to `megacredits`/`floaters`, hook comments, and `MarsBotBoard` to `MarsBotTracks` with its array as `all` | Automa keeps the old `mcSupply`/`floaterCount` save keys and reads either |
+| [#8208](https://github.com/terraforming-mars/terraforming-mars/pull/8208) | `marsbot-tile-placer` | `MarsBotTilePlacer.ts` + spec. **Round 2 addressed (2026-08-03):** `Board.ownedBy` filters, `drawOrThrow`, redundant `s.tile !== undefined` dropped, duplicated adjacency scorer collapsed, dead reserved-space check removed; spec rewritten so no test can pass without asserting, tiebreakers covered | Spec setup: `testGame(2)` instead of `TestPlayer.RED.newPlayer` + `as any` cast |
+| [#8209](https://github.com/terraforming-mars/terraforming-mars/pull/8209) | `marsbot-draft-resolver` | `MarsBotDraftResolver.ts` + spec. **Round 2 addressed (2026-08-03):** now a class taking tracks and an injected shuffle, `pickBest` made total, `postDraftDiscard` to `discardAfterDraft`, spec on real cards | Uses `MarsBotTracks`; this PR adopts the name when #8353 merges |
+| [#8210](https://github.com/terraforming-mars/terraforming-mars/pull/8210) | `marsbot-ma-eval` | `MarsBotMilestoneAwardEval.ts` + spec. **Round 2 addressed (2026-08-03):** `MarsBotMAContext` dropped, evals take `IMarsBot` and read the game like the real milestones. Fixed two bugs it exposed: Hydrologist counted owners of ocean tiles, which the engine never sets, so it could never be claimed; Visionary counted the Venus track twice | `@/` imports -> relative. 2 integration tests dropped (Terraformer29 filtering, Briber MC deduction) - re-add with game integration PRs |
+| [#8211](https://github.com/terraforming-mars/terraforming-mars/pull/8211) | `marsbot-turmoil-helper` | `MarsBotTurmoilHelper.ts` + spec. **Round 1 addressed (2026-08-03):** now a class holding game, turmoil and both players; `totalDelegates` and a no-op `as` cast deleted, `maybeUpdatePartyLeader` renamed, delegate log message generalised | Spec is a 13-test extraction from `MarsBotTurmoil.spec.ts`; 2-player Turmoil game stands in for the bot |
 
 ## Design note: bonus card destruction (resolved 2026-06-20)
 
