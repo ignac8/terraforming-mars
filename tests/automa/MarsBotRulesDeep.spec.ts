@@ -3,7 +3,7 @@ import {testGame} from '../TestGame';
 import {TestPlayer} from '../TestPlayer';
 import {IGame} from '../../src/server/IGame';
 import {MarsBot} from '../../src/server/automa/MarsBot';
-import {MarsBotBoard} from '../../src/server/automa/MarsBotBoard';
+import {MarsBotTracks} from '../../src/server/automa/MarsBotTracks';
 import {MarsBotTurnResolver} from '../../src/server/automa/MarsBotTurnResolver';
 import {MarsBotBonusDeck} from '../../src/server/automa/MarsBotBonusDeck';
 import {MarsBotBonusResolver} from '../../src/server/automa/MarsBotBonusResolver';
@@ -46,13 +46,13 @@ describe('MarsBot Deep Rules Tests', () => {
 
       const layout = emptyLayout();
       layout[1] = 'venus';
-      const board = new MarsBotBoard(makeBoard(layout));
+      const board = new MarsBotTracks(makeBoard(layout));
       const resolver = new MarsBotTurnResolver(game, bot, human, board, 'normal');
 
       resolver.resolveProjectCard(mockCard([Tag.BUILDING]));
       // Venus should be ignored, NOT a failed action
       expect(resolver.megacredits).to.eq(0); // No 5 MC from failed action
-      expect(board.tracks[0].position).to.eq(1); // Track still advanced
+      expect(board.all[0].position).to.eq(1); // Track still advanced
     });
 
     it('venus2 action is ignored when Venus not enabled', () => {
@@ -62,7 +62,7 @@ describe('MarsBot Deep Rules Tests', () => {
 
       const layout = emptyLayout();
       layout[1] = 'venus2';
-      const board = new MarsBotBoard(makeBoard(layout));
+      const board = new MarsBotTracks(makeBoard(layout));
       const resolver = new MarsBotTurnResolver(game, bot, human, board, 'normal');
 
       resolver.resolveProjectCard(mockCard([Tag.BUILDING]));
@@ -82,7 +82,7 @@ describe('MarsBot Deep Rules Tests', () => {
 
       const layout = emptyLayout();
       layout[1] = 'greenery'; // Greenery raises oxygen
-      const board = new MarsBotBoard(makeBoard(layout));
+      const board = new MarsBotTracks(makeBoard(layout));
       // Place a city for greenery placement rules
       const spaces = game.board.getAvailableSpacesOnLand(marsBot.player);
       game.simpleAddTile(marsBot.player, spaces[15], {tileType: TileType.CITY});
@@ -109,14 +109,14 @@ describe('MarsBot Deep Rules Tests', () => {
 
       const allEmpty = emptyLayout();
       const boardData = THARSIS_MARSBOT_BOARD.map((def) => ({...def, layout: allEmpty}));
-      const board = new MarsBotBoard(boardData);
+      const board = new MarsBotTracks(boardData);
       const resolver = new MarsBotTurnResolver(game, bot, human, board, 'normal');
 
       // Max out Track 1 (Building)
       for (let i = 0; i < 18; i++) {
-        board.tracks[0].advance();
+        board.all[0].advance();
       }
-      expect(board.tracks[0].position).to.eq(18);
+      expect(board.all[0].position).to.eq(18);
 
       // Play card with Building + Space tags
       resolver.resolveProjectCard(mockCard([Tag.BUILDING, Tag.SPACE]));
@@ -124,8 +124,8 @@ describe('MarsBot Deep Rules Tests', () => {
       // Building track maxed → Failed Action (5 MC)
       // Space track should still advance
       expect(resolver.megacredits).to.eq(5);
-      expect(board.tracks[1].position).to.eq(1);
-      expect(board.tracks[0].position).to.eq(18); // Unchanged
+      expect(board.all[1].position).to.eq(1);
+      expect(board.all[0].position).to.eq(18); // Unchanged
     });
   });
 
@@ -158,7 +158,7 @@ describe('MarsBot Deep Rules Tests', () => {
 
       const layout = emptyLayout();
       layout[1] = 'milestone';
-      const board = new MarsBotBoard(makeBoard(layout));
+      const board = new MarsBotTracks(makeBoard(layout));
       const resolver = new MarsBotTurnResolver(game, bot, human, board, 'normal');
       resolver.megacredits = 10;
 
@@ -180,7 +180,7 @@ describe('MarsBot Deep Rules Tests', () => {
 
       const layout = emptyLayout();
       layout[1] = 'award';
-      const board = new MarsBotBoard(makeBoard(layout));
+      const board = new MarsBotTracks(makeBoard(layout));
       const resolver = new MarsBotTurnResolver(game, bot, human, board, 'normal');
       resolver.megacredits = 10;
 
@@ -386,7 +386,7 @@ describe('MarsBot Deep Rules Tests', () => {
 
       const layout = emptyLayout();
       layout[1] = 'milestone';
-      const board = new MarsBotBoard(makeBoard(layout));
+      const board = new MarsBotTracks(makeBoard(layout));
       const resolver = new MarsBotTurnResolver(game, marsBot.player, human, board, 'normal');
 
       resolver.resolveProjectCard(mockCard([Tag.BUILDING]));
@@ -407,13 +407,13 @@ describe('MarsBot Deep Rules Tests', () => {
 
       const allEmpty = emptyLayout();
       const boardData = THARSIS_MARSBOT_BOARD.map((def) => ({...def, layout: allEmpty}));
-      const board = new MarsBotBoard(boardData);
+      const board = new MarsBotTracks(boardData);
       const resolver = new MarsBotTurnResolver(game, bot, human, board, 'normal');
 
       resolver.resolveProjectCard(mockCard([Tag.BUILDING], 'event'));
 
-      expect(board.tracks[0].position).to.eq(1); // Building
-      expect(board.tracks[2].position).to.eq(1); // Event (injected)
+      expect(board.all[0].position).to.eq(1); // Building
+      expect(board.all[2].position).to.eq(1); // Event (injected)
     });
 
     it('event card with NO explicit tags still advances Event track', () => {
@@ -423,13 +423,13 @@ describe('MarsBot Deep Rules Tests', () => {
 
       const allEmpty = emptyLayout();
       const boardData = THARSIS_MARSBOT_BOARD.map((def) => ({...def, layout: allEmpty}));
-      const board = new MarsBotBoard(boardData);
+      const board = new MarsBotTracks(boardData);
       const resolver = new MarsBotTurnResolver(game, bot, human, board, 'normal');
 
       // Event card with zero explicit tags — should NOT be a failed action
       resolver.resolveProjectCard(mockCard([], 'event'));
 
-      expect(board.tracks[2].position).to.eq(1); // Event tag injected
+      expect(board.all[2].position).to.eq(1); // Event tag injected
       expect(resolver.megacredits).to.eq(0); // Not a failed action
     });
   });

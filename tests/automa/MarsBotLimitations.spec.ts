@@ -24,7 +24,7 @@ describe('MarsBot Limitations Fixed', () => {
       const {game, human, marsBot} = createAutomaGame();
       // MarsBot Thermalist = track 5 position + 5
       for (let i = 0; i < 3; i++) {
-        marsBot.board.tracks[4].advance();
+        marsBot.tracks.all[4].advance();
       }
       // MarsBot value = 3 + 5 = 8
 
@@ -43,7 +43,7 @@ describe('MarsBot Limitations Fixed', () => {
       const {game, human, marsBot} = createAutomaGame();
       // MarsBot Miner = track 2 position + 5
       for (let i = 0; i < 4; i++) {
-        marsBot.board.tracks[1].advance();
+        marsBot.tracks.all[1].advance();
       }
       // MarsBot value = 4 + 5 = 9
 
@@ -121,9 +121,9 @@ describe('MarsBot Limitations Fixed', () => {
     it('serialize produces valid state', () => {
       const {marsBot} = createAutomaGame();
       // Advance some tracks
-      marsBot.board.tracks[0].advance();
-      marsBot.board.tracks[0].advance();
-      marsBot.board.tracks[2].advance();
+      marsBot.tracks.all[0].advance();
+      marsBot.tracks.all[0].advance();
+      marsBot.tracks.all[2].advance();
       marsBot.turnResolver.megacredits = 15;
       marsBot.goesFirst = true;
 
@@ -164,9 +164,9 @@ describe('MarsBot Limitations Fixed', () => {
 
     it('serialize includes regressed positions', () => {
       const {marsBot} = createAutomaGame();
-      marsBot.board.tracks[0].advance();
-      marsBot.board.tracks[0].advance();
-      marsBot.board.tracks[0].regress();
+      marsBot.tracks.all[0].advance();
+      marsBot.tracks.all[0].advance();
+      marsBot.tracks.all[0].regress();
 
       const state = marsBot.serialize();
       expect(state.trackRegressedPositions[0]).to.include(2);
@@ -184,9 +184,9 @@ describe('MarsBot Limitations Fixed', () => {
   describe('MarsBot restoreState', () => {
     it('restores track positions', () => {
       const {marsBot} = createAutomaGame();
-      marsBot.board.tracks[0].advance();
-      marsBot.board.tracks[0].advance();
-      marsBot.board.tracks[0].advance();
+      marsBot.tracks.all[0].advance();
+      marsBot.tracks.all[0].advance();
+      marsBot.tracks.all[0].advance();
       marsBot.turnResolver.megacredits = 20;
       marsBot.goesFirst = true;
 
@@ -194,26 +194,26 @@ describe('MarsBot Limitations Fixed', () => {
 
       // Create a new game and restore
       const {marsBot: marsBot2} = createAutomaGame();
-      expect(marsBot2.board.tracks[0].position).to.eq(0);
+      expect(marsBot2.tracks.all[0].position).to.eq(0);
 
       marsBot2.restoreState(state);
-      expect(marsBot2.board.tracks[0].position).to.eq(3);
+      expect(marsBot2.tracks.all[0].position).to.eq(3);
       expect(marsBot2.turnResolver.megacredits).to.eq(20);
       expect(marsBot2.goesFirst).to.be.true;
     });
 
     it('restores regressed positions', () => {
       const {marsBot} = createAutomaGame();
-      marsBot.board.tracks[1].advance();
-      marsBot.board.tracks[1].advance();
-      marsBot.board.tracks[1].regress();
+      marsBot.tracks.all[1].advance();
+      marsBot.tracks.all[1].advance();
+      marsBot.tracks.all[1].regress();
 
       const state = marsBot.serialize();
       const {marsBot: marsBot2} = createAutomaGame();
       marsBot2.restoreState(state);
 
-      expect(marsBot2.board.tracks[1].position).to.eq(1);
-      expect(marsBot2.board.tracks[1].regressedPositions.has(2)).to.be.true;
+      expect(marsBot2.tracks.all[1].position).to.eq(1);
+      expect(marsBot2.tracks.all[1].regressedPositions.has(2)).to.be.true;
     });
   });
 
@@ -222,7 +222,7 @@ describe('MarsBot Limitations Fixed', () => {
   describe('Game serialization includes automa state', () => {
     it('serialized game has automaState when automa enabled', () => {
       const {game, marsBot} = createAutomaGame();
-      marsBot.board.tracks[0].advance();
+      marsBot.tracks.all[0].advance();
       marsBot.turnResolver.megacredits = 10;
 
       const serialized = game.serialize();

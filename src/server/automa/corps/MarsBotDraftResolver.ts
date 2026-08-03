@@ -2,7 +2,7 @@ import {IProjectCard} from '../../cards/IProjectCard';
 import {MarsBotDraftPriority} from '../MarsBotCorpTypes';
 import {Tag} from '../../../common/cards/Tag';
 import {Random} from '../../../common/utils/Random';
-import {MarsBotBoard} from '../MarsBotBoard';
+import {MarsBotTracks} from '../MarsBotTracks';
 import {inplaceShuffle} from '../../utils/shuffle';
 
 /**
@@ -39,7 +39,7 @@ export class MarsBotDraftResolver {
     hand: IProjectCard[],
     priority: MarsBotDraftPriority,
     rng: Random,
-    board?: MarsBotBoard,
+    board?: MarsBotTracks,
   ): IProjectCard {
     if (hand.length === 0) {
       throw new Error('Cannot pick from empty hand');
@@ -138,7 +138,7 @@ export class MarsBotDraftResolver {
     return false;
   }
 
-  private static pickByLeastAdvancedTrack(hand: IProjectCard[], rng: Random, board?: MarsBotBoard): IProjectCard {
+  private static pickByLeastAdvancedTrack(hand: IProjectCard[], rng: Random, board?: MarsBotTracks): IProjectCard {
     if (board === undefined) {
       return hand[rng.nextInt(hand.length)];
     }

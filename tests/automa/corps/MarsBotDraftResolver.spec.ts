@@ -6,7 +6,7 @@ import {SeededRandom} from '../../../src/common/utils/Random';
 import {IProjectCard} from '../../../src/server/cards/IProjectCard';
 import {CardType} from '../../../src/common/cards/CardType';
 import {CardName} from '../../../src/common/cards/CardName';
-import {MarsBotBoard} from '../../../src/server/automa/MarsBotBoard';
+import {MarsBotTracks} from '../../../src/server/automa/MarsBotTracks';
 import {THARSIS_MARSBOT_BOARD} from '../../../src/server/automa/boards/TharsisMarsBot';
 
 function fakeCard(name: string, tags: Tag[], cost: number = 10): IProjectCard {
@@ -104,13 +104,13 @@ describe('MarsBotDraftResolver', () => {
     const priority: MarsBotDraftPriority = {type: 'leastAdvancedTrack'};
 
     it('uses least-advanced track tags to pick', () => {
-      const board = new MarsBotBoard(THARSIS_MARSBOT_BOARD);
+      const board = new MarsBotTracks(THARSIS_MARSBOT_BOARD);
       const rng = new SeededRandom(42);
 
       // Advance all tracks except Track 1 (Building/Microbe)
-      for (let i = 1; i < board.tracks.length; i++) {
-        board.tracks[i].advance();
-        board.tracks[i].advance();
+      for (let i = 1; i < board.all.length; i++) {
+        board.all[i].advance();
+        board.all[i].advance();
       }
 
       // Track 0 (Building) is least advanced at position 0

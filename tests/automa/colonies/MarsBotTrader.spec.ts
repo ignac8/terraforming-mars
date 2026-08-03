@@ -235,11 +235,11 @@ describe('MarsBotTrader (C-17, C-20, C-22, C-24b)', () => {
         const marsBot = getMarsBot(game);
         const pluto = new Pluto();
         game.colonies = [pluto];
-        const eventTrackIdx = marsBot.board.getTrackIndexForTag(Tag.EVENT)!;
-        const before = marsBot.board.tracks[eventTrackIdx].position;
+        const eventTrackIdx = marsBot.tracks.getTrackIndexForTag(Tag.EVENT)!;
+        const before = marsBot.tracks.all[eventTrackIdx].position;
         // Add 5 to Pluto → overflow → advance Event track
         marsBot.shippingBoard.add(ColonyName.PLUTO, 5, marsBot);
-        expect(marsBot.board.tracks[eventTrackIdx].position).to.be.greaterThan(before);
+        expect(marsBot.tracks.all[eventTrackIdx].position).to.be.greaterThan(before);
         expect(marsBot.shippingBoard.get(ColonyName.PLUTO)).to.eq(0);
       });
     });

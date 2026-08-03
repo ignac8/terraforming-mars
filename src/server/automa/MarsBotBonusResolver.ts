@@ -481,11 +481,11 @@ export class MarsBotBonusResolver {
       return false;
     };
     const advanceLeastOf = (t1: number, t2: number) => {
-      const pos1 = this.turnResolver.board.tracks[t1].position;
-      const pos2 = this.turnResolver.board.tracks[t2].position;
+      const pos1 = this.turnResolver.tracks.all[t1].position;
+      const pos2 = this.turnResolver.tracks.all[t2].position;
       return advance(pos1 <= pos2 ? t1 : t2);
     };
-    const board = this.turnResolver.board;
+    const board = this.turnResolver.tracks;
 
     switch (awardName) {
     // Tharsis: Building=0, Space=1, Event=2, Science=3, Energy=4, Earth=5, Plant=6
@@ -534,7 +534,7 @@ export class MarsBotBonusResolver {
     case 'Supplier': return advance(4);
     case 'Visionary': { const idx2 = board.getLeastAdvancedTrackIndex(true); return advance(idx2); }
     // Venus Next: added to ALL Corporate Competition variants
-    case 'Venuphile': return board.tracks.length > 7 ? advance(7) : false;
+    case 'Venuphile': return board.all.length > 7 ? advance(7) : false;
     default:
       return false;
     }
@@ -730,7 +730,7 @@ export class MarsBotBonusResolver {
     if (this.game.gameOptions.venusNextExtension) {
       // Venus track is track 8 (index 7) when Venus expansion is enabled
       // If Venus track exists on the board, advance it
-      if (this.turnResolver.board.tracks.length > 7) {
+      if (this.turnResolver.tracks.all.length > 7) {
         this.turnResolver.advanceTrack(7);
         this.game.log('MarsBot resolves Venusian Lobby: advance Venus track');
       } else {
@@ -738,7 +738,7 @@ export class MarsBotBonusResolver {
       }
     } else {
       // Without Venus, advance least-advanced track
-      const leastIdx = this.turnResolver.board.getLeastAdvancedTrackIndex();
+      const leastIdx = this.turnResolver.tracks.getLeastAdvancedTrackIndex();
       this.turnResolver.advanceTrack(leastIdx);
       this.game.log('MarsBot resolves Venusian Lobby: advance least-advanced track (no Venus)');
     }
@@ -752,7 +752,7 @@ export class MarsBotBonusResolver {
 
   private resolveDiversification(): void {
     // Robinson Industries: advance least-advanced track
-    const board = this.turnResolver.board;
+    const board = this.turnResolver.tracks;
     const leastIndex = board.getLeastAdvancedTrackIndex();
     this.turnResolver.advanceTrack(leastIndex);
     this.game.log('MarsBot resolves Diversification: advance least-advanced track');
@@ -810,9 +810,9 @@ export class MarsBotBonusResolver {
 
   private resolveInterfaceHyperlink(): void {
     // Tyco Magnetics: advance energy (index 4) or science (index 3) track — whichever is least advanced
-    const board = this.turnResolver.board;
-    const energyPos = board.tracks[4].position; // Energy = track 5
-    const sciencePos = board.tracks[3].position; // Science = track 4
+    const board = this.turnResolver.tracks;
+    const energyPos = board.all[4].position; // Energy = track 5
+    const sciencePos = board.all[3].position; // Science = track 4
     if (energyPos <= sciencePos) {
       this.turnResolver.advanceTrack(4); // Energy track = index 4
       this.game.log('MarsBot resolves Interface Hyperlink: advance energy track');
@@ -825,7 +825,7 @@ export class MarsBotBonusResolver {
   private resolveGovernmentSubsidy(): void {
     // UNMI: gain 5 MC and advance any track (least-advanced)
     this.turnResolver.gainMc(5);
-    const board = this.turnResolver.board;
+    const board = this.turnResolver.tracks;
     const leastIndex = board.getLeastAdvancedTrackIndex();
     this.turnResolver.advanceTrack(leastIndex);
     this.game.log('MarsBot resolves Government Subsidy: +5 M€, advance least-advanced track');

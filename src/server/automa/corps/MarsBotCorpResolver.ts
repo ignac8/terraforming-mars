@@ -31,7 +31,7 @@ export class MarsBotCorpResolver {
 
     // 2. Resolve starting tags — advance tracks like project card tags
     for (const tag of corp.tags) {
-      const trackIndex = marsBot.board.getTrackIndexForTag(tag);
+      const trackIndex = marsBot.tracks.getTrackIndexForTag(tag);
       if (trackIndex !== undefined) {
         marsBot.turnResolver.advanceTrack(trackIndex);
       }

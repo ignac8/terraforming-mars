@@ -76,7 +76,7 @@ export class MarsBotShippingBoard {
     while ((this.storage.get(colonyName) ?? 0) >= 5) {
       const current = this.storage.get(colonyName) ?? 0;
       this.storage.set(colonyName, current - 5);
-      const trackIndex = marsBot.board.getTrackIndexForTag(tag);
+      const trackIndex = marsBot.tracks.getTrackIndexForTag(tag);
       if (trackIndex !== undefined) {
         marsBot.turnResolver.advanceTrack(trackIndex);
       }

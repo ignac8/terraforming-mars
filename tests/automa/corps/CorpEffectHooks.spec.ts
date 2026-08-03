@@ -137,9 +137,9 @@ describe('Corp Effect Hooks', () => {
       const {marsBot} = createAutomaGame();
       const corp = getMarsBotCorp(CardName.THARSIS_REPUBLIC)!;
       marsBot.setCorpAndSetup(corp);
-      const eventBefore = marsBot.board.tracks[2].position;
+      const eventBefore = marsBot.tracks.all[2].position;
       corp.effect!.onTilePlaced!(marsBot, true, TileType.CITY);
-      expect(marsBot.board.tracks[2].position).to.be.gte(eventBefore + 1);
+      expect(marsBot.tracks.all[2].position).to.be.gte(eventBefore + 1);
     });
 
     it('does not trigger on greenery placement', () => {
@@ -158,10 +158,10 @@ describe('Corp Effect Hooks', () => {
       const corp = getMarsBotCorp(CardName.LAKEFRONT_RESORTS)!;
       marsBot.setCorpAndSetup(corp);
       expect(marsBot.corpSpecificState.get('whiteCubeOnCard')).to.eq(1);
-      const buildingBefore = marsBot.board.tracks[0].position;
+      const buildingBefore = marsBot.tracks.all[0].position;
       corp.effect!.onTilePlaced!(marsBot, false, TileType.OCEAN);
       expect(marsBot.corpSpecificState.get('whiteCubeOnCard')).to.eq(0);
-      expect(marsBot.board.tracks[0].position).to.be.gte(buildingBefore + 1);
+      expect(marsBot.tracks.all[0].position).to.be.gte(buildingBefore + 1);
     });
 
     it('ocean placed without white cube → place white cube', () => {
@@ -241,10 +241,10 @@ describe('Corp Effect Hooks', () => {
       const corp = getMarsBotCorp(CardName.MINING_GUILD)!;
       marsBot.setCorpAndSetup(corp);
       marsBot.corpSpecificState.set('mcOnCard', 2);
-      const buildingBefore = marsBot.board.tracks[0].position;
+      const buildingBefore = marsBot.tracks.all[0].position;
       corp.effect!.onMcGained!(marsBot, 5);
       expect(marsBot.corpSpecificState.get('mcOnCard')).to.eq(10); // Refilled
-      expect(marsBot.board.tracks[0].position).to.be.gte(buildingBefore + 1);
+      expect(marsBot.tracks.all[0].position).to.be.gte(buildingBefore + 1);
     });
   });
 

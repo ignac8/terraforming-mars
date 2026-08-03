@@ -5,7 +5,7 @@ import {TestPlayer} from '../TestPlayer';
 import {MarsBot} from '../../src/server/automa/MarsBot';
 import {BoardName} from '../../src/common/boards/BoardName';
 import {CardName} from '../../src/common/cards/CardName';
-import {MarsBotBoard} from '../../src/server/automa/MarsBotBoard';
+import {MarsBotTracks} from '../../src/server/automa/MarsBotTracks';
 import {THARSIS_MARSBOT_BOARD} from '../../src/server/automa/boards/TharsisMarsBot';
 import {MARSBOT_MAX_GENERATION, MARSBOT_MAX_GENERATION_PRELUDE} from '../../src/common/automa/AutomaTypes';
 
@@ -73,31 +73,31 @@ describe('MarsBot Prelude Support', () => {
 
   describe('Wild tag handling', () => {
     it('Wild tag advances least-advanced track', () => {
-      const board = new MarsBotBoard(THARSIS_MARSBOT_BOARD);
+      const board = new MarsBotTracks(THARSIS_MARSBOT_BOARD);
       // Advance track 0 to position 3, leave others at 0
-      board.tracks[0].position = 3;
-      board.tracks[1].position = 2;
-      board.tracks[2].position = 1;
+      board.all[0].position = 3;
+      board.all[1].position = 2;
+      board.all[2].position = 1;
       // Tracks 3-6 are all at 0, so least-advanced is track 3 (first at 0, topmost)
       const leastIndex = board.getLeastAdvancedTrackIndex();
       expect(leastIndex).to.eq(3);
     });
 
     it('Wild tag with tie: topmost track (lowest index) wins', () => {
-      const board = new MarsBotBoard(THARSIS_MARSBOT_BOARD);
+      const board = new MarsBotTracks(THARSIS_MARSBOT_BOARD);
       // All tracks at 0 — least advanced is track 0 (topmost)
       const leastIndex = board.getLeastAdvancedTrackIndex();
       expect(leastIndex).to.eq(0);
     });
 
     it('Wild tag with tie: picks lowest index among tied tracks', () => {
-      const board = new MarsBotBoard(THARSIS_MARSBOT_BOARD);
+      const board = new MarsBotTracks(THARSIS_MARSBOT_BOARD);
       // Set all tracks to 5, except tracks 2 and 4 at 3
       for (let i = 0; i < 7; i++) {
-        board.tracks[i].position = 5;
+        board.all[i].position = 5;
       }
-      board.tracks[2].position = 3;
-      board.tracks[4].position = 3;
+      board.all[2].position = 3;
+      board.all[4].position = 3;
       const leastIndex = board.getLeastAdvancedTrackIndex();
       expect(leastIndex).to.eq(2); // Track 2 is topmost of the tied ones
     });

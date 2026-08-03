@@ -3,7 +3,7 @@ import {testGame} from '../TestGame';
 import {TestPlayer} from '../TestPlayer';
 import {IGame} from '../../src/server/IGame';
 import {MarsBot} from '../../src/server/automa/MarsBot';
-import {MarsBotBoard} from '../../src/server/automa/MarsBotBoard';
+import {MarsBotTracks} from '../../src/server/automa/MarsBotTracks';
 import {MarsBotTurnResolver} from '../../src/server/automa/MarsBotTurnResolver';
 import {MarsBotBonusDeck} from '../../src/server/automa/MarsBotBonusDeck';
 import {MarsBotBonusResolver} from '../../src/server/automa/MarsBotBonusResolver';
@@ -35,7 +35,7 @@ function emptyLayout(): Array<TrackAction | undefined> {
 }
 
 function makeResolver(game: IGame, marsBot: TestPlayer, human: TestPlayer, boardData: ReadonlyArray<TrackDefinition>, difficulty: 'easy' | 'normal' | 'hard' | 'brutal' = 'normal') {
-  const board = new MarsBotBoard(boardData);
+  const board = new MarsBotTracks(boardData);
   return {board, resolver: new MarsBotTurnResolver(game, marsBot, human, board, difficulty)};
 }
 
@@ -241,7 +241,7 @@ describe('MarsBot Rules Compliance', () => {
       const b01 = cards.find((c) => c.id === BonusCardId.B01_METEOR_SHOWER)!;
       const tilePlacer = new MarsBotTilePlacer(game, marsBot.player, human);
       const bonusDeck = MarsBotBonusDeck.createBase(new SeededRandom(99));
-      const resolver = new MarsBotTurnResolver(game, marsBot.player, human, marsBot.board, 'normal');
+      const resolver = new MarsBotTurnResolver(game, marsBot.player, human, marsBot.tracks, 'normal');
       const bonusResolver = new MarsBotBonusResolver(game, marsBot.player, human, resolver, bonusDeck, tilePlacer);
 
       const destroyed = bonusResolver.resolve(b01);
@@ -258,7 +258,7 @@ describe('MarsBot Rules Compliance', () => {
       const b01 = cards.find((c) => c.id === BonusCardId.B01_METEOR_SHOWER)!;
       const tilePlacer = new MarsBotTilePlacer(game, marsBot.player, human);
       const bonusDeck = MarsBotBonusDeck.createBase(new SeededRandom(99));
-      const resolver = new MarsBotTurnResolver(game, marsBot.player, human, marsBot.board, 'normal');
+      const resolver = new MarsBotTurnResolver(game, marsBot.player, human, marsBot.tracks, 'normal');
       const bonusResolver = new MarsBotBonusResolver(game, marsBot.player, human, resolver, bonusDeck, tilePlacer);
 
       const destroyed = bonusResolver.resolve(b01);
@@ -315,7 +315,7 @@ describe('MarsBot Rules Compliance', () => {
       game.fundAward(human, game.awards.find((a) => a.name === 'Scientist')!);
       // Advance track 4 so MarsBot has a score on Scientist
       for (let i = 0; i < 5; i++) {
-        marsBot.board.tracks[3].advance();
+        marsBot.tracks.all[3].advance();
       }
 
       const cards = createBaseBonusCards();
@@ -343,8 +343,8 @@ describe('MarsBot Rules Compliance', () => {
       game.simpleAddTile(marsBot.player, spaces[15], {tileType: TileType.CITY});
 
       // Advance Track 7 to position where next action is greenery (pos 3 = greenery on Track 7)
-      marsBot.board.tracks[6].advance(); // pos 1
-      marsBot.board.tracks[6].advance(); // pos 2
+      marsBot.tracks.all[6].advance(); // pos 1
+      marsBot.tracks.all[6].advance(); // pos 2
       // Next action (pos 3) = greenery
 
       const greeneryBefore = game.board.getGreeneries(marsBot.player).length;

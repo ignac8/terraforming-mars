@@ -122,7 +122,7 @@ const MINING_GUILD: IMarsBotCorp = {
     // bot keeps the earnings. When the card empties, refill 10 M€ and advance the
     // building track. (NamuWiki card text; verify against the physical card.)
     onMcGained(bot, amount) {
-      if (bot.board.tracks[0].position >= 18) {
+      if (bot.tracks.all[0].position >= 18) {
         return;
       } // Building track maxed, the card stops
       const mcOnCard = bot.getCorpState('mcOnCard') - Math.min(amount, bot.getCorpState('mcOnCard'));

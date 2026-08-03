@@ -114,7 +114,7 @@ export class AutomaGameSetup {
     marsBotProduction.setMarsBot(marsBot);
 
     // Override tag counting to use track positions instead of played cards
-    marsBotPlayer.tags = new MarsBotTags(marsBotPlayer, marsBot.board);
+    marsBotPlayer.tags = new MarsBotTags(marsBotPlayer, marsBot.tracks);
 
     // Add MarsBot to human's opponents so cards that target opponents can see MarsBot
     (humanPlayer.opponents as Array<IPlayer>).push(marsBotPlayer);
@@ -156,8 +156,8 @@ export class AutomaGameSetup {
       return;
     }
 
-    const spaceTrack = marsBot.board.getTrackIndexForTag(Tag.SPACE);
-    const energyTrack = marsBot.board.getTrackIndexForTag(Tag.POWER);
+    const spaceTrack = marsBot.tracks.getTrackIndexForTag(Tag.SPACE);
+    const energyTrack = marsBot.tracks.getTrackIndexForTag(Tag.POWER);
     if (spaceTrack === undefined || energyTrack === undefined) {
       return;
     }

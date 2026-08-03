@@ -215,10 +215,10 @@ describe('MarsBotColonyPlacer (C-15b, C-16a, C-19, C-24a)', () => {
       game.colonies = [titan, new Luna()];
       // Add enough Titan floaters to hit overflow threshold
       marsBot.shippingBoard.add(ColonyName.TITAN, 3, marsBot);
-      const plantIdx = marsBot.board.getTrackIndexForTag(Tag.PLANT)!;
-      const plantBefore = marsBot.board.tracks[plantIdx].position;
+      const plantIdx = marsBot.tracks.getTrackIndexForTag(Tag.PLANT)!;
+      const plantBefore = marsBot.tracks.all[plantIdx].position;
       placeColonyForMarsBot(titan, marsBot); // Adds 2 more = 5 total, but exempt from C-12
-      expect(marsBot.board.tracks[plantIdx].position).to.eq(plantBefore); // No overflow
+      expect(marsBot.tracks.all[plantIdx].position).to.eq(plantBefore); // No overflow
     });
   });
 });
