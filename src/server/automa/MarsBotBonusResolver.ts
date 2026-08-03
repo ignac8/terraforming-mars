@@ -15,7 +15,8 @@ import {IProjectCard} from '../cards/IProjectCard';
 import {CardType} from '../../common/cards/CardType';
 import {Space} from '../boards/Space';
 import {CardName} from '../../common/cards/CardName';
-import {placeDelegateForMarsBot, selectPartyForDelegate, updatePartyLeaderForMarsBot} from './turmoil/MarsBotTurmoilHelper';
+import {MarsBotTurmoilHelper} from './turmoil/MarsBotTurmoilHelper';
+import {Turmoil} from '../turmoil/Turmoil';
 import {selectRandomColony, placeColonyForMarsBot} from './colonies/MarsBotColonyPlacer';
 import {selectTradeColony, tradeWithColony} from './colonies/MarsBotTrader';
 import type {MarsBot} from './MarsBot';
@@ -373,6 +374,10 @@ export class MarsBotBonusResolver {
   /** Pristar: true when the corp consumes its cube to skip this raise. */
   private interceptsRaise(parameter: GlobalParameter): boolean {
     return this.marsBotManager?.interceptsParameterRaise(parameter) ?? false;
+  }
+
+  private turmoilHelper(turmoil: Turmoil): MarsBotTurmoilHelper {
+    return new MarsBotTurmoilHelper(this.game, turmoil, this.marsBot, this.humanPlayer);
   }
 
   /** Execute an action and reverse any TR gained (for Government Intervention). */
@@ -766,7 +771,7 @@ export class MarsBotBonusResolver {
       return;
     }
     // T-7: Place 1 delegate from reserve using the priority list
-    const placed = placeDelegateForMarsBot(turmoil, this.marsBot, this.humanPlayer, this.game);
+    const placed = this.turmoilHelper(turmoil).maybePlaceDelegate();
     if (placed === undefined) {
       this.game.log('MarsBot resolves Party Politics: no delegates in reserve');
       return;
@@ -782,7 +787,7 @@ export class MarsBotBonusResolver {
         if (flipped.cost % 3 === 0) {
           this.turnResolver.megacredits -= 5;
           this.game.log('MarsBot spends 5 M€ to place a second delegate (Party Politics T-8)');
-          placeDelegateForMarsBot(turmoil, this.marsBot, this.humanPlayer, this.game);
+          this.turmoilHelper(turmoil).maybePlaceDelegate();
         }
       }
     }
@@ -800,10 +805,10 @@ export class MarsBotBonusResolver {
       return;
     }
     // Gray Eminence: same T-7 priority logic as Party Politics, but no T-8 second-delegate check
-    const partyName = selectPartyForDelegate(turmoil, this.marsBot, this.humanPlayer);
+    const partyName = this.turmoilHelper(turmoil).selectParty();
     if (partyName !== undefined) {
       turmoil.sendDelegateToParty(this.marsBot, partyName, this.game);
-      updatePartyLeaderForMarsBot(turmoil.getPartyByName(partyName), this.marsBot);
+      this.turmoilHelper(turmoil).maybeUpdatePartyLeader(turmoil.getPartyByName(partyName));
       this.game.log('MarsBot places delegate in ${0} (Gray Eminence)', (b) => b.partyName(partyName));
     }
   }
