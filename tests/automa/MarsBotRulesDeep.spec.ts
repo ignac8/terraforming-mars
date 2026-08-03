@@ -51,7 +51,7 @@ describe('MarsBot Deep Rules Tests', () => {
 
       resolver.resolveProjectCard(mockCard([Tag.BUILDING]));
       // Venus should be ignored, NOT a failed action
-      expect(resolver.mcSupply).to.eq(0); // No 5 MC from failed action
+      expect(resolver.megacredits).to.eq(0); // No 5 MC from failed action
       expect(board.tracks[0].position).to.eq(1); // Track still advanced
     });
 
@@ -66,7 +66,7 @@ describe('MarsBot Deep Rules Tests', () => {
       const resolver = new MarsBotTurnResolver(game, bot, human, board, 'normal');
 
       resolver.resolveProjectCard(mockCard([Tag.BUILDING]));
-      expect(resolver.mcSupply).to.eq(0);
+      expect(resolver.megacredits).to.eq(0);
     });
   });
 
@@ -123,7 +123,7 @@ describe('MarsBot Deep Rules Tests', () => {
 
       // Building track maxed → Failed Action (5 MC)
       // Space track should still advance
-      expect(resolver.mcSupply).to.eq(5);
+      expect(resolver.megacredits).to.eq(5);
       expect(board.tracks[1].position).to.eq(1);
       expect(board.tracks[0].position).to.eq(18); // Unchanged
     });
@@ -143,14 +143,14 @@ describe('MarsBot Deep Rules Tests', () => {
       const bonusResolver = new MarsBotBonusResolver(game, marsBot.player, human, marsBot.turnResolver, bonusDeck, tilePlacer);
 
       bonusResolver.resolve(b02);
-      expect(marsBot.turnResolver.mcSupply).to.eq(5);
+      expect(marsBot.turnResolver.megacredits).to.eq(5);
     });
   });
 
   // ---- Page 8: MarsBot does NOT pay for milestones or awards ----
 
   describe('MarsBot does not pay for milestones or awards (page 8)', () => {
-    it('milestone claim does not deduct MC from mcSupply', () => {
+    it('milestone claim does not deduct MC from megacredits', () => {
       const [game, human] = testGame(1);
       const bot = TestPlayer.RED.newPlayer({name: 'bot'});
       (bot as any).game = game;
@@ -160,15 +160,15 @@ describe('MarsBot Deep Rules Tests', () => {
       layout[1] = 'milestone';
       const board = new MarsBotBoard(makeBoard(layout));
       const resolver = new MarsBotTurnResolver(game, bot, human, board, 'normal');
-      resolver.mcSupply = 10;
+      resolver.megacredits = 10;
 
       resolver.resolveProjectCard(mockCard([Tag.BUILDING]));
       // MC should not have decreased (MarsBot doesn't pay for milestones)
       // It might have increased from failed action if couldn't claim
-      expect(resolver.mcSupply).to.be.gte(10);
+      expect(resolver.megacredits).to.be.gte(10);
     });
 
-    it('award funding does not deduct MC from mcSupply', () => {
+    it('award funding does not deduct MC from megacredits', () => {
       const [game, human] = testGame(1);
       const bot = TestPlayer.RED.newPlayer({name: 'bot'});
       (bot as any).game = game;
@@ -182,11 +182,11 @@ describe('MarsBot Deep Rules Tests', () => {
       layout[1] = 'award';
       const board = new MarsBotBoard(makeBoard(layout));
       const resolver = new MarsBotTurnResolver(game, bot, human, board, 'normal');
-      resolver.mcSupply = 10;
+      resolver.megacredits = 10;
 
       resolver.resolveProjectCard(mockCard([Tag.BUILDING]));
       // MC should not have decreased
-      expect(resolver.mcSupply).to.be.gte(10);
+      expect(resolver.megacredits).to.be.gte(10);
     });
   });
 
@@ -292,20 +292,20 @@ describe('MarsBot Deep Rules Tests', () => {
       const {game, marsBot} = createAutomaGame();
       (game as any).temperature = -22; // 1 step below -20
 
-      const mcBefore = marsBot.turnResolver.mcSupply;
+      const mcBefore = marsBot.turnResolver.megacredits;
       game.increaseTemperature(marsBot.player, 1);
       // Should cross -20, giving 2 MC
-      expect(marsBot.turnResolver.mcSupply).to.eq(mcBefore + 2);
+      expect(marsBot.turnResolver.megacredits).to.eq(mcBefore + 2);
     });
 
     it('MarsBot gets 2 MC at both -24C and -20C when raising 3 steps', () => {
       const {game, marsBot} = createAutomaGame();
       (game as any).temperature = -26; // Raising 3 steps: -26 → -20, crosses both -24 and -20
 
-      const mcBefore = marsBot.turnResolver.mcSupply;
+      const mcBefore = marsBot.turnResolver.megacredits;
       game.increaseTemperature(marsBot.player, 3);
       // Crosses both -24 and -20, giving 2 MC each = 4 MC total
-      expect(marsBot.turnResolver.mcSupply).to.eq(mcBefore + 4);
+      expect(marsBot.turnResolver.megacredits).to.eq(mcBefore + 4);
     });
   });
 
@@ -430,7 +430,7 @@ describe('MarsBot Deep Rules Tests', () => {
       resolver.resolveProjectCard(mockCard([], 'event'));
 
       expect(board.tracks[2].position).to.eq(1); // Event tag injected
-      expect(resolver.mcSupply).to.eq(0); // Not a failed action
+      expect(resolver.megacredits).to.eq(0); // Not a failed action
     });
   });
 
@@ -440,7 +440,7 @@ describe('MarsBot Deep Rules Tests', () => {
     it('example: gen 14, 24 MC → 4 VP (1 per 6 MC)', () => {
       const {game, marsBot} = createAutomaGame();
       (game as any).generation = 14;
-      marsBot.turnResolver.mcSupply = 24;
+      marsBot.turnResolver.megacredits = 24;
       (game as any).phase = 'end';
 
       const vp = marsBot.getVictoryPoints();
@@ -450,7 +450,7 @@ describe('MarsBot Deep Rules Tests', () => {
     it('example: gen 16, 24 MC → 6 VP (1 per 4 MC)', () => {
       const {game, marsBot} = createAutomaGame();
       (game as any).generation = 16;
-      marsBot.turnResolver.mcSupply = 24;
+      marsBot.turnResolver.megacredits = 24;
       (game as any).phase = 'end';
 
       const vp = marsBot.getVictoryPoints();

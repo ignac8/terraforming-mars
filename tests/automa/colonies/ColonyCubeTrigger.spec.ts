@@ -27,11 +27,11 @@ describe('ColonyCubeTrigger (C-X3)', () => {
 
     registerColonyCube(marsBot, 7, 10);
 
-    const mcBefore = marsBot.turnResolver.mcSupply;
+    const mcBefore = marsBot.turnResolver.megacredits;
     MarsBotCorpResolver.onTrackAdvanced(marsBot, 7, 10);
 
     // Should have deducted 5 MC
-    expect(marsBot.turnResolver.mcSupply).to.eq(Math.max(0, mcBefore - 5));
+    expect(marsBot.turnResolver.megacredits).to.eq(Math.max(0, mcBefore - 5));
     // Luna should now have marsBot's colony
     expect(luna.colonies).to.include(marsBot.player.id);
     // And shippingBoard should have 2 resources
@@ -45,11 +45,11 @@ describe('ColonyCubeTrigger (C-X3)', () => {
 
     registerColonyCube(marsBot, 7, 10);
 
-    const mcBefore = marsBot.turnResolver.mcSupply;
+    const mcBefore = marsBot.turnResolver.megacredits;
     MarsBotCorpResolver.onTrackAdvanced(marsBot, 7, 10);
 
     // 5 MC deducted, then Failed Action gives some MC back — net should exceed (mcBefore - 5)
-    expect(marsBot.turnResolver.mcSupply).to.be.greaterThan(mcBefore - 5);
+    expect(marsBot.turnResolver.megacredits).to.be.greaterThan(mcBefore - 5);
   });
 
   it('does not trigger colony placement when cube key does not match the triggered position', () => {
@@ -76,11 +76,11 @@ describe('ColonyCubeTrigger (C-X3)', () => {
     game.colonies = [luna];
 
     // No cube registered at 7:10
-    const mcBefore = marsBot.turnResolver.mcSupply;
+    const mcBefore = marsBot.turnResolver.megacredits;
     MarsBotCorpResolver.onTrackAdvanced(marsBot, 7, 10);
 
     // Nothing should happen
-    expect(marsBot.turnResolver.mcSupply).to.eq(mcBefore);
+    expect(marsBot.turnResolver.megacredits).to.eq(mcBefore);
     expect(luna.colonies).to.not.include(marsBot.player.id);
   });
 });

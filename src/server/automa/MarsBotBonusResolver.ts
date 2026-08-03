@@ -407,7 +407,7 @@ export class MarsBotBonusResolver {
 
   // B08: Corporate Competition
   private resolveCorporateCompetition(): void {
-    if (this.turnResolver.mcSupply < 5) {
+    if (this.turnResolver.megacredits < 5) {
       // Not enough MC, draw another bonus card
       this.drawAndResolveAnotherBonus();
       return;
@@ -429,7 +429,7 @@ export class MarsBotBonusResolver {
 
     for (const {award} of sorted) {
       if (this.tryHelperAction(award.name)) {
-        this.turnResolver.mcSupply -= 5;
+        this.turnResolver.megacredits -= 5;
         resolved = true;
         this.game.log('MarsBot resolves Corporate Competition on ${0}, loses 5 MC', (b) => b.rawString(award.name));
         break;
@@ -774,13 +774,13 @@ export class MarsBotBonusResolver {
 
     // T-8: If ≥1 delegate still in reserve AND MarsBot has ≥5 MC:
     //       flip a project deck card — if its cost is divisible by 3, spend 5 MC and place another delegate
-    if (turmoil.hasDelegatesInReserve(this.marsBot) && this.turnResolver.mcSupply >= 5) {
+    if (turmoil.hasDelegatesInReserve(this.marsBot) && this.turnResolver.megacredits >= 5) {
       const flipped = this.game.projectDeck.draw(this.game);
       if (flipped !== undefined) {
         this.game.log('MarsBot flips ${0} (cost ${1}) for Party Politics T-8 check', (b) => b.card(flipped).number(flipped.cost));
         this.game.projectDeck.discardPile.push(flipped);
         if (flipped.cost % 3 === 0) {
-          this.turnResolver.mcSupply -= 5;
+          this.turnResolver.megacredits -= 5;
           this.game.log('MarsBot spends 5 M€ to place a second delegate (Party Politics T-8)');
           placeDelegateForMarsBot(turmoil, this.marsBot, this.humanPlayer, this.game);
         }

@@ -81,7 +81,7 @@ export type SerializedGame = {
 export type SerializedAutomaState = {
     trackPositions: Array<number>;
     trackRegressedPositions: Array<Array<number>>;
-    mcSupply: number;
+    megacredits: number;
     goesFirst: boolean;
     difficulty: 'easy' | 'normal' | 'hard' | 'brutal';
     actionDeckCardNames: Array<string>;
@@ -95,10 +95,14 @@ export type SerializedAutomaState = {
     trackCubePositions?: Array<{trackIndex: number, position: number, cubeType: CubeType}>;
     triggeredCubePositions?: Array<string>;
     corpSpecificState?: Record<string, unknown>;
-    floaterCount?: number;
+    floaters?: number;
     vpByGeneration?: Array<number>;
     temperatureRaises?: number;
     colonyCubePositions?: Array<string>;
     hasSecondTradeFleet?: boolean;
     shippingBoard?: Record<string, number>;
+
+    // Older saved games hold megacredits and floaters under these names.
+    mcSupply?: number;
+    floaterCount?: number;
 }

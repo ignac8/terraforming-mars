@@ -57,24 +57,24 @@ describe('PlayerTradeHook (C-21, C-24c)', () => {
       const titan = new Titan();
       titan.colonies = [marsBot.player.id];
       game.colonies = [titan];
-      const floatersBefore = marsBot.floaterCount;
+      const floatersBefore = marsBot.floaters;
       const titanStoreBefore = marsBot.shippingBoard.get(ColonyName.TITAN);
       const result = game.automaHooks!.handleColonyBonus(titan, marsBot.player.id);
       expect(result).to.be.true;
-      expect(marsBot.floaterCount).to.eq(floatersBefore + 1);
+      expect(marsBot.floaters).to.eq(floatersBefore + 1);
       expect(marsBot.shippingBoard.get(ColonyName.TITAN)).to.eq(titanStoreBefore); // Titan storage unchanged
     });
 
-    it('C-24c: Europa colony bonus gives 1 MC to mcSupply, not shipping board', () => {
+    it('C-24c: Europa colony bonus gives 1 MC to megacredits, not shipping board', () => {
       const [game] = testGame(1, {automaOption: true, coloniesExtension: true, boardName: BoardName.THARSIS});
       const marsBot = getMarsBot(game);
       const europa = new Europa();
       europa.colonies = [marsBot.player.id];
       game.colonies = [europa];
-      const mcBefore = marsBot.turnResolver.mcSupply;
+      const mcBefore = marsBot.turnResolver.megacredits;
       const result = game.automaHooks!.handleColonyBonus(europa, marsBot.player.id);
       expect(result).to.be.true;
-      expect(marsBot.turnResolver.mcSupply).to.eq(mcBefore + 1);
+      expect(marsBot.turnResolver.megacredits).to.eq(mcBefore + 1);
       // No storage change for Europa
       expect(marsBot.shippingBoard.get(ColonyName.EUROPA)).to.eq(0);
     });

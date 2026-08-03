@@ -235,7 +235,7 @@ describe('MarsBot Integration', () => {
     it('VP total includes all sources', () => {
       const {game, marsBot} = createAutomaGame();
       marsBot.player.setTerraformRating(30);
-      marsBot.turnResolver.mcSupply = 12;
+      marsBot.turnResolver.megacredits = 12;
       (game as any).generation = 14; // 1 VP per 6 MC
       const spaces = game.board.getAvailableSpacesOnLand(marsBot.player);
       game.simpleAddTile(marsBot.player, spaces[5], {tileType: TileType.GREENERY});

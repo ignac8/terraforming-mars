@@ -239,7 +239,7 @@ describe('MarsBot Turmoil — Party Politics resolver (T-8)', () => {
     const marsBotPlayer = marsBot.player;
 
     // Give MarsBot 5+ MC
-    marsBot.turnResolver.mcSupply = 5;
+    marsBot.turnResolver.megacredits = 5;
 
     // Find a card whose cost is divisible by 3 and put it on top of project deck
     const projectCard = game.projectDeck.draw(game)!;

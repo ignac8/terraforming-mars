@@ -39,7 +39,7 @@ export class MarsBotTurnResolver {
     private readonly humanPlayer: IPlayer,
     public readonly board: MarsBotBoard,
     private readonly difficulty: DifficultyLevel,
-    public mcSupply: number = 0,
+    public megacredits: number = 0,
     tilePlacer?: MarsBotTilePlacer,
   ) {
     this.tilePlacer = tilePlacer ?? new MarsBotTilePlacer(game, marsBot, humanPlayer);
@@ -307,14 +307,14 @@ export class MarsBotTurnResolver {
     this.game.log('MarsBot raises Venus ${0} step(s)', (b) => b.number(steps));
   }
 
-  // C-8/C-14: Gain `count` floaters. With Venus → floaterCount; without Venus but with Colonies →
+  // C-8/C-14: Gain `count` floaters. With Venus → floaters; without Venus but with Colonies →
   // Titan storage; without both → ignored (C-13).
   private gainFloaters(count: number): void {
     if (this.marsBotManager === undefined) {
       return;
     }
     if (this.game.gameOptions.venusNextExtension) {
-      this.marsBotManager.floaterCount += count;
+      this.marsBotManager.floaters += count;
       this.game.log('MarsBot gains ${0} floater(s)', (b) => b.number(count));
     } else if (this.game.gameOptions.coloniesExtension) {
       this.marsBotManager.shippingBoard.add(ColonyName.TITAN, count, this.marsBotManager);
@@ -365,7 +365,7 @@ export class MarsBotTurnResolver {
 
     // Briber milestone: lose 12 MC on claim
     if (best.name === 'Briber') {
-      this.mcSupply = Math.max(0, this.mcSupply - 12);
+      this.megacredits = Math.max(0, this.megacredits - 12);
       this.game.log('MarsBot loses 12 MC (Briber)');
     }
   }
@@ -536,7 +536,7 @@ export class MarsBotTurnResolver {
       trackPos: (index: number) => tracks[index]?.position ?? 0,
       allTrackPositions: () => positions,
       tr: this.marsBot.terraformRating,
-      mc: this.mcSupply,
+      mc: this.megacredits,
       cityCount,
       greeneryCount,
       oceanCount: this.game.board.getOceanSpaces().filter((s) => s.player === this.marsBot).length,
@@ -564,7 +564,7 @@ export class MarsBotTurnResolver {
       specialTilesOwned: this.marsBotManager?.neuralInstanceSpace !== undefined ? 1 : 0,
       hasVenus: this.game.gameOptions.venusNextExtension,
       venusTrackPos: tracks.length > 7 ? tracks[7].position : 0,
-      floaterCount: this.marsBotManager?.floaterCount ?? 0,
+      floaters: this.marsBotManager?.floaters ?? 0,
     };
   }
 
@@ -581,7 +581,7 @@ export class MarsBotTurnResolver {
     if (amount <= 0) {
       return;
     }
-    this.mcSupply += amount;
+    this.megacredits += amount;
     this.marsBotManager?.corp?.effect?.onMcGained?.(this.marsBotManager, amount);
   }
 

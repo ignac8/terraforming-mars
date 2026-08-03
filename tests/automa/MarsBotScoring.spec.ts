@@ -133,67 +133,67 @@ describe('MarsBotScoring', () => {
   describe('MC to VP conversion', () => {
     it('gen ≤12: 1 VP per 8 MC', () => {
       (game as any).generation = 12;
-      turnResolver.mcSupply = 24;
+      turnResolver.megacredits = 24;
       expect(makeScoring().calculate().mcToVP).to.eq(3);
     });
 
     it('gen 13: 1 VP per 7 MC', () => {
       (game as any).generation = 13;
-      turnResolver.mcSupply = 21;
+      turnResolver.megacredits = 21;
       expect(makeScoring().calculate().mcToVP).to.eq(3);
     });
 
     it('gen 14: 1 VP per 6 MC', () => {
       (game as any).generation = 14;
-      turnResolver.mcSupply = 13;
+      turnResolver.megacredits = 13;
       expect(makeScoring().calculate().mcToVP).to.eq(2);
     });
 
     it('gen 15: 1 VP per 5 MC', () => {
       (game as any).generation = 15;
-      turnResolver.mcSupply = 23;
+      turnResolver.megacredits = 23;
       expect(makeScoring().calculate().mcToVP).to.eq(4);
     });
 
     it('gen 16: 1 VP per 4 MC', () => {
       (game as any).generation = 16;
-      turnResolver.mcSupply = 9;
+      turnResolver.megacredits = 9;
       expect(makeScoring().calculate().mcToVP).to.eq(2);
     });
 
     it('gen 17: 1 VP per 3 MC', () => {
       (game as any).generation = 17;
-      turnResolver.mcSupply = 10;
+      turnResolver.megacredits = 10;
       expect(makeScoring().calculate().mcToVP).to.eq(3);
     });
 
     it('gen 18: 1 VP per 2 MC', () => {
       (game as any).generation = 18;
-      turnResolver.mcSupply = 7;
+      turnResolver.megacredits = 7;
       expect(makeScoring().calculate().mcToVP).to.eq(3);
     });
 
     it('gen 19: 1 VP per 1 MC', () => {
       (game as any).generation = 19;
-      turnResolver.mcSupply = 7;
+      turnResolver.megacredits = 7;
       expect(makeScoring().calculate().mcToVP).to.eq(7);
     });
 
     it('gen 20 (instant win): 0 MC VP', () => {
       (game as any).generation = 20;
-      turnResolver.mcSupply = 100;
+      turnResolver.megacredits = 100;
       expect(makeScoring().calculate().mcToVP).to.eq(0);
     });
 
     it('fractional points rounded down', () => {
       (game as any).generation = 14; // 1 per 6 MC
-      turnResolver.mcSupply = 17;
+      turnResolver.megacredits = 17;
       expect(makeScoring().calculate().mcToVP).to.eq(2); // floor(17/6) = 2
     });
 
     it('0 MC gives 0 VP', () => {
       (game as any).generation = 14;
-      turnResolver.mcSupply = 0;
+      turnResolver.megacredits = 0;
       expect(makeScoring().calculate().mcToVP).to.eq(0);
     });
   });
@@ -236,7 +236,7 @@ describe('MarsBotScoring', () => {
   describe('Total VP', () => {
     it('combines all VP sources', () => {
       marsBot.setTerraformRating(25);
-      turnResolver.mcSupply = 16;
+      turnResolver.megacredits = 16;
       (game as any).generation = 12; // 1 VP per 8 MC
 
       const spaces = game.board.getAvailableSpacesOnLand(marsBot);

@@ -153,7 +153,7 @@ describe('MarsBot Prelude Support', () => {
     it('MC to VP at gen 15 with Prelude: 1 VP per 3 MC', () => {
       const {game, marsBot} = createAutomaGame({prelude: true});
       (game as any).generation = 15;
-      marsBot.turnResolver.mcSupply = 9;
+      marsBot.turnResolver.megacredits = 9;
       const scoring = marsBot.getVictoryPoints();
       expect(scoring.mcToVP).to.eq(3); // 9 / 3 = 3
     });
@@ -161,7 +161,7 @@ describe('MarsBot Prelude Support', () => {
     it('MC to VP at gen 17 with Prelude: 1 VP per 1 MC', () => {
       const {game, marsBot} = createAutomaGame({prelude: true});
       (game as any).generation = 17;
-      marsBot.turnResolver.mcSupply = 12;
+      marsBot.turnResolver.megacredits = 12;
       const scoring = marsBot.getVictoryPoints();
       expect(scoring.mcToVP).to.eq(12); // 12 / 1 = 12
     });
@@ -169,7 +169,7 @@ describe('MarsBot Prelude Support', () => {
     it('instant win at gen 18 with Prelude: mcToVP is 0', () => {
       const {game, marsBot} = createAutomaGame({prelude: true});
       (game as any).generation = 18;
-      marsBot.turnResolver.mcSupply = 100;
+      marsBot.turnResolver.megacredits = 100;
       const scoring = marsBot.getVictoryPoints();
       expect(scoring.mcToVP).to.eq(0); // Instant win, no VP calculation
     });
@@ -177,7 +177,7 @@ describe('MarsBot Prelude Support', () => {
     it('gen 18 is NOT instant win without Prelude', () => {
       const {game, marsBot} = createAutomaGame();
       (game as any).generation = 18;
-      marsBot.turnResolver.mcSupply = 8;
+      marsBot.turnResolver.megacredits = 8;
       const scoring = marsBot.getVictoryPoints();
       expect(scoring.mcToVP).to.eq(4); // 8 / 2 = 4 (gen 18 = 1 VP per 2 MC)
     });

@@ -128,8 +128,8 @@ describe('MarsBotBonusCardsColonies (C-15, C-16, C-17)', () => {
       const card = b18Card();
       marsBot['bonusResolver'].resolve(card);
 
-      // The filler should have been discarded (not resolved, so deck mcSupply unchanged)
-      // Since R&D would have changed mcSupply, and it was just discarded, no change expected
+      // The filler should have been discarded (not resolved, so deck megacredits unchanged)
+      // Since R&D would have changed megacredits, and it was just discarded, no change expected
       expect(marsBot.bonusDeck.discardPile).to.include(fillerCard);
     });
 
@@ -159,12 +159,12 @@ describe('MarsBotBonusCardsColonies (C-15, C-16, C-17)', () => {
       const luna = new Luna();
       luna.trackPosition = 4;
       game.colonies = [luna];
-      const mcBefore = marsBot.turnResolver.mcSupply;
+      const mcBefore = marsBot.turnResolver.megacredits;
       const card = b19Card();
       marsBot.bonusDeck.drawPile.push(card);
       marsBot['bonusResolver'].resolve(card);
       // Should have spent 1 MC and gained 2 resources to Luna
-      expect(marsBot.turnResolver.mcSupply).to.eq(Math.max(0, mcBefore - 1));
+      expect(marsBot.turnResolver.megacredits).to.eq(Math.max(0, mcBefore - 1));
       expect(marsBot.shippingBoard.get(ColonyName.LUNA)).to.eq(2);
       expect(luna.visitor).to.eq(marsBot.player.id);
     });
@@ -173,12 +173,12 @@ describe('MarsBotBonusCardsColonies (C-15, C-16, C-17)', () => {
       const [game] = testGame(1, {automaOption: true, coloniesExtension: true, boardName: BoardName.THARSIS});
       const marsBot = getMarsBot(game);
       game.colonies = []; // No colonies
-      const mcBefore = marsBot.turnResolver.mcSupply;
+      const mcBefore = marsBot.turnResolver.megacredits;
       const card = b19Card();
       marsBot.bonusDeck.drawPile.push(card);
       marsBot['bonusResolver'].resolve(card);
       // Failed action gives MC
-      expect(marsBot.turnResolver.mcSupply).to.be.greaterThan(mcBefore);
+      expect(marsBot.turnResolver.megacredits).to.be.greaterThan(mcBefore);
     });
 
     it('C-24b: Europa trade raises TR instead of resources', () => {
@@ -207,11 +207,11 @@ describe('MarsBotBonusCardsColonies (C-15, C-16, C-17)', () => {
       const luna = new Luna();
       luna.trackPosition = 3;
       game.colonies = [luna];
-      const mcBefore = marsBot.turnResolver.mcSupply;
+      const mcBefore = marsBot.turnResolver.megacredits;
       const card = b20Card();
       marsBot.bonusDeck.drawPile.push(card);
       marsBot['bonusResolver'].resolve(card);
-      expect(marsBot.turnResolver.mcSupply).to.eq(Math.max(0, mcBefore - 1));
+      expect(marsBot.turnResolver.megacredits).to.eq(Math.max(0, mcBefore - 1));
       expect(marsBot.shippingBoard.get(ColonyName.LUNA)).to.eq(2);
     });
 
@@ -221,11 +221,11 @@ describe('MarsBotBonusCardsColonies (C-15, C-16, C-17)', () => {
       const luna = new Luna();
       luna.visitor = 'psome-player'; // Already traded
       game.colonies = [luna];
-      const mcBefore = marsBot.turnResolver.mcSupply;
+      const mcBefore = marsBot.turnResolver.megacredits;
       const card = b20Card();
       marsBot.bonusDeck.drawPile.push(card);
       marsBot['bonusResolver'].resolve(card);
-      expect(marsBot.turnResolver.mcSupply).to.be.greaterThan(mcBefore);
+      expect(marsBot.turnResolver.megacredits).to.be.greaterThan(mcBefore);
     });
   });
 });

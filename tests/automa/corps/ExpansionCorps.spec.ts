@@ -69,9 +69,9 @@ describe('Expansion MarsBot Corporations', () => {
       const {marsBot} = createAutomaGame();
       const corp = getMarsBotCorp(CardName.CHEUNG_SHING_MARS)!;
       marsBot.setCorpAndSetup(corp);
-      const mcBefore = marsBot.turnResolver.mcSupply;
+      const mcBefore = marsBot.turnResolver.megacredits;
       corp.effect!.onTrackCubeTrigger!(marsBot, 0, 4, 'credit');
-      expect(marsBot.turnResolver.mcSupply).to.eq(mcBefore + 1);
+      expect(marsBot.turnResolver.megacredits).to.eq(mcBefore + 1);
     });
   });
 
@@ -100,9 +100,9 @@ describe('Expansion MarsBot Corporations', () => {
     it('gains 10 M€ on setup', () => {
       const {marsBot} = createAutomaGame();
       const corp = getMarsBotCorp(CardName.ROBINSON_INDUSTRIES)!;
-      const mcBefore = marsBot.turnResolver.mcSupply;
+      const mcBefore = marsBot.turnResolver.megacredits;
       marsBot.setCorpAndSetup(corp);
-      expect(marsBot.turnResolver.mcSupply).to.eq(mcBefore + 10);
+      expect(marsBot.turnResolver.megacredits).to.eq(mcBefore + 10);
     });
   });
 
@@ -185,27 +185,27 @@ describe('Expansion MarsBot Corporations', () => {
     it('gains 8 M€ on setup', () => {
       const {marsBot} = createAutomaGame();
       const corp = getMarsBotCorp(CardName.SAGITTA_FRONTIER_SERVICES)!;
-      const mcBefore = marsBot.turnResolver.mcSupply;
+      const mcBefore = marsBot.turnResolver.megacredits;
       marsBot.setCorpAndSetup(corp);
-      expect(marsBot.turnResolver.mcSupply).to.eq(mcBefore + 8);
+      expect(marsBot.turnResolver.megacredits).to.eq(mcBefore + 8);
     });
 
     it('gains extra 5 M€ for tagless cards', () => {
       const {marsBot} = createAutomaGame();
       const corp = getMarsBotCorp(CardName.SAGITTA_FRONTIER_SERVICES)!;
       marsBot.setCorpAndSetup(corp);
-      const mcBefore = marsBot.turnResolver.mcSupply;
+      const mcBefore = marsBot.turnResolver.megacredits;
       corp.effect!.onProjectCardResolved!(marsBot, fakeCard('Tagless', {cost: 5}));
-      expect(marsBot.turnResolver.mcSupply).to.eq(mcBefore + 5);
+      expect(marsBot.turnResolver.megacredits).to.eq(mcBefore + 5);
     });
 
     it('gains 1 M€ for 1-tag cards', () => {
       const {marsBot} = createAutomaGame();
       const corp = getMarsBotCorp(CardName.SAGITTA_FRONTIER_SERVICES)!;
       marsBot.setCorpAndSetup(corp);
-      const mcBefore = marsBot.turnResolver.mcSupply;
+      const mcBefore = marsBot.turnResolver.megacredits;
       corp.effect!.onProjectCardResolved!(marsBot, fakeCard('OneTag', {tags: [Tag.BUILDING], cost: 5}));
-      expect(marsBot.turnResolver.mcSupply).to.eq(mcBefore + 1);
+      expect(marsBot.turnResolver.megacredits).to.eq(mcBefore + 1);
     });
   });
 
@@ -248,9 +248,9 @@ describe('Expansion MarsBot Corporations', () => {
       const {marsBot} = createAutomaGame();
       const corp = getMarsBotCorp(CardName.PHARMACY_UNION)!;
       marsBot.setCorpAndSetup(corp);
-      marsBot.turnResolver.mcSupply = 10;
+      marsBot.turnResolver.megacredits = 10;
       corp.effect!.onHumanCardPlayed!(marsBot, fakeCard('MicrobeCard', {tags: [Tag.MICROBE], cost: 5}));
-      expect(marsBot.turnResolver.mcSupply).to.eq(6);
+      expect(marsBot.turnResolver.megacredits).to.eq(6);
     });
   });
 
@@ -278,18 +278,18 @@ describe('Expansion MarsBot Corporations', () => {
     it('gains 8 M€ on setup and removes R&D', () => {
       const {marsBot} = createAutomaGame();
       const corp = getMarsBotCorp(CardName.SPLICE)!;
-      const mcBefore = marsBot.turnResolver.mcSupply;
+      const mcBefore = marsBot.turnResolver.megacredits;
       marsBot.setCorpAndSetup(corp);
-      expect(marsBot.turnResolver.mcSupply).to.eq(mcBefore + 8);
+      expect(marsBot.turnResolver.megacredits).to.eq(mcBefore + 8);
     });
 
     it('marsbot microbe card → +4 M€', () => {
       const {marsBot} = createAutomaGame();
       const corp = getMarsBotCorp(CardName.SPLICE)!;
       marsBot.setCorpAndSetup(corp);
-      const mcBefore = marsBot.turnResolver.mcSupply;
+      const mcBefore = marsBot.turnResolver.megacredits;
       corp.effect!.onProjectCardResolved!(marsBot, fakeCard('Microbe', {tags: [Tag.MICROBE], cost: 5}));
-      expect(marsBot.turnResolver.mcSupply).to.eq(mcBefore + 4);
+      expect(marsBot.turnResolver.megacredits).to.eq(mcBefore + 4);
     });
   });
 
@@ -300,7 +300,7 @@ describe('Expansion MarsBot Corporations', () => {
       const {marsBot} = createAutomaGame();
       const corp = getMarsBotCorp(CardName.CELESTIC)!;
       marsBot.setCorpAndSetup(corp);
-      expect(marsBot.floaterCount).to.eq(1);
+      expect(marsBot.floaters).to.eq(1);
     });
 
     it('gains floater each round start', () => {
@@ -308,7 +308,7 @@ describe('Expansion MarsBot Corporations', () => {
       const corp = getMarsBotCorp(CardName.CELESTIC)!;
       marsBot.setCorpAndSetup(corp);
       corp.roundStart!(marsBot);
-      expect(marsBot.floaterCount).to.eq(2);
+      expect(marsBot.floaters).to.eq(2);
     });
   });
 
@@ -361,9 +361,9 @@ describe('Expansion MarsBot Corporations', () => {
     it('gains at least 25 M€ on setup (plus MC from starting tag track actions)', () => {
       const {marsBot} = createAutomaGame();
       const corp = getMarsBotCorp(CardName.POLYPHEMOS)!;
-      const mcBefore = marsBot.turnResolver.mcSupply;
+      const mcBefore = marsBot.turnResolver.megacredits;
       marsBot.setCorpAndSetup(corp);
-      expect(marsBot.turnResolver.mcSupply).to.be.gte(mcBefore + 25);
+      expect(marsBot.turnResolver.megacredits).to.be.gte(mcBefore + 25);
     });
 
     it('has 6 starting tags (3 Space + 3 Event)', () => {

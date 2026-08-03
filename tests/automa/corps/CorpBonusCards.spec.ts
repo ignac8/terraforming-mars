@@ -103,9 +103,9 @@ describe('Corp-Specific Bonus Cards (B22-B32)', () => {
     it('gains 5 M€ and advances a track', () => {
       const {marsBot} = createAutomaGame();
       const card = createCorpBonusCard(BonusCardId.B31_GOVERNMENT_SUBSIDY);
-      const mcBefore = marsBot.turnResolver.mcSupply;
+      const mcBefore = marsBot.turnResolver.megacredits;
       marsBot['bonusResolver'].resolve(card);
-      expect(marsBot.turnResolver.mcSupply).to.be.gte(mcBefore + 5);
+      expect(marsBot.turnResolver.megacredits).to.be.gte(mcBefore + 5);
     });
   });
 
@@ -164,21 +164,21 @@ describe('Corp-Specific Bonus Cards (B22-B32)', () => {
       const {marsBot} = createAutomaGame();
       const corp = require('../../../src/server/automa/corps/MarsBotCorpRegistry').getMarsBotCorp(CardName.TERACTOR);
       marsBot.setCorpAndSetup(corp);
-      const mcBefore = marsBot.turnResolver.mcSupply;
+      const mcBefore = marsBot.turnResolver.megacredits;
       // Trigger white cube on Earth track (track 6)
       corp.effect.onTrackCubeTrigger(marsBot, 5, 1, 'white');
-      expect(marsBot.turnResolver.mcSupply).to.eq(mcBefore + 2);
+      expect(marsBot.turnResolver.megacredits).to.eq(mcBefore + 2);
     });
 
     it('C04 IC gains 2 M€ per building/event track advance', () => {
       const {marsBot} = createAutomaGame();
       const corp = require('../../../src/server/automa/corps/MarsBotCorpRegistry').getMarsBotCorp(CardName.INTERPLANETARY_CINEMATICS);
       marsBot.setCorpAndSetup(corp);
-      const mcBefore = marsBot.turnResolver.mcSupply;
+      const mcBefore = marsBot.turnResolver.megacredits;
       corp.effect.onTrackCubeTrigger(marsBot, 0, 1, 'white');
-      expect(marsBot.turnResolver.mcSupply).to.eq(mcBefore + 2);
+      expect(marsBot.turnResolver.megacredits).to.eq(mcBefore + 2);
       corp.effect.onTrackCubeTrigger(marsBot, 2, 1, 'white');
-      expect(marsBot.turnResolver.mcSupply).to.eq(mcBefore + 4);
+      expect(marsBot.turnResolver.megacredits).to.eq(mcBefore + 4);
     });
   });
 });

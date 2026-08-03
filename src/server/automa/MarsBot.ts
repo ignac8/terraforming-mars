@@ -77,7 +77,7 @@ export class MarsBot implements IMarsBot {
   public corpSpecificState: Map<string, number> = new Map();
 
   /** Floater resources (Venus Next corps). */
-  public floaterCount: number = 0;
+  public floaters: number = 0;
 
   /**
    * Track-cube key for the 2nd Trade Fleet position (Colonies, C-6).
@@ -283,7 +283,7 @@ export class MarsBot implements IMarsBot {
     if (this.player.actionsTakenThisRound !== 0) {
       return;
     }
-    if (this.turnResolver.mcSupply < 8) {
+    if (this.turnResolver.megacredits < 8) {
       return;
     }
     if (this.game.allMilestonesClaimed()) {
@@ -301,7 +301,7 @@ export class MarsBot implements IMarsBot {
       const toClaim = unclaimed.find((m) => this.turnResolver.marsBotMeetsMilestone(m));
       if (toClaim) {
         this.game.claimedMilestones.push({player: this.player, milestone: toClaim});
-        this.turnResolver.mcSupply -= 8;
+        this.turnResolver.megacredits -= 8;
         this.game.log('MarsBot claims milestone ${0} (Hard mode), loses 8 MC', (b) => b.rawString(toClaim.name));
       }
     }
@@ -342,12 +342,12 @@ export class MarsBot implements IMarsBot {
 
   // ---- IMarsBot: the view corp handlers get ----
 
-  public get mcSupply(): number {
-    return this.turnResolver.mcSupply;
+  public get megacredits(): number {
+    return this.turnResolver.megacredits;
   }
 
-  public set mcSupply(mc: number) {
-    this.turnResolver.mcSupply = mc;
+  public set megacredits(mc: number) {
+    this.turnResolver.megacredits = mc;
   }
 
   public advanceTrack(trackIndex: number): void {
@@ -438,11 +438,11 @@ export class MarsBot implements IMarsBot {
   }
 
   public addFloaters(count: number): void {
-    this.floaterCount += count;
+    this.floaters += count;
   }
 
   public spendFloaters(count: number): void {
-    this.floaterCount = Math.max(0, this.floaterCount - count);
+    this.floaters = Math.max(0, this.floaters - count);
   }
 
   public gainMc(amount: number): void {
@@ -550,7 +550,7 @@ export class MarsBot implements IMarsBot {
         layout: track.definition.layout,
       })),
       terraformRating: this.player.terraformRating,
-      mcSupply: this.turnResolver.mcSupply,
+      megacredits: this.turnResolver.megacredits,
       actionDeckSize: this.actionDeck.length,
       bonusDeckSize: this.bonusDeck.drawPile.length,
       vpBreakdown: vp,
@@ -569,7 +569,7 @@ export class MarsBot implements IMarsBot {
     const mcPerVP = getMcPerVP(this.game.generation, opts.preludeExtension);
     if (mcPerVP !== undefined) {
       model.mcPerVP = mcPerVP;
-      model.mcVP = Math.floor(this.turnResolver.mcSupply / mcPerVP);
+      model.mcVP = Math.floor(this.turnResolver.megacredits / mcPerVP);
     }
     // C-18: Shipping Board storage (Colonies)
     if (opts.coloniesExtension && this.shippingBoard.storage.size > 0) {
@@ -584,7 +584,7 @@ export class MarsBot implements IMarsBot {
     const state: SerializedAutomaState = {
       trackPositions: this.board.tracks.map((t) => t.position),
       trackRegressedPositions: this.board.tracks.map((t) => Array.from(t.regressedPositions)),
-      mcSupply: this.turnResolver.mcSupply,
+      megacredits: this.turnResolver.megacredits,
       goesFirst: this.goesFirst,
       difficulty: this.difficulty,
       actionDeckCardNames: this.actionDeck.map((c) => this.isProjectCard(c) ? c.name : (c as MarsBotBonusCard).id),
@@ -613,8 +613,8 @@ export class MarsBot implements IMarsBot {
     if (this.corpSpecificState.size > 0) {
       state.corpSpecificState = Object.fromEntries(this.corpSpecificState);
     }
-    if (this.floaterCount > 0) {
-      state.floaterCount = this.floaterCount;
+    if (this.floaters > 0) {
+      state.floaters = this.floaters;
     }
     if (this.vpByGeneration.length > 0) {
       state.vpByGeneration = this.vpByGeneration;
@@ -640,7 +640,7 @@ export class MarsBot implements IMarsBot {
     }
 
     // Restore MC
-    this.turnResolver.mcSupply = state.mcSupply;
+    this.turnResolver.megacredits = state.megacredits ?? state.mcSupply ?? 0;
 
     // Restore first player
     this.goesFirst = state.goesFirst;
@@ -669,8 +669,9 @@ export class MarsBot implements IMarsBot {
     if (state.corpSpecificState !== undefined) {
       this.corpSpecificState = new Map(Object.entries(state.corpSpecificState).map(([k, v]) => [k, v as number]));
     }
-    if (state.floaterCount !== undefined) {
-      this.floaterCount = state.floaterCount;
+    const floaters = state.floaters ?? state.floaterCount;
+    if (floaters !== undefined) {
+      this.floaters = floaters;
     }
     if (state.vpByGeneration !== undefined) {
       this.vpByGeneration = [...state.vpByGeneration];

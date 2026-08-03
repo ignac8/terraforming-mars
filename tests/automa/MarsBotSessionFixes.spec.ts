@@ -64,23 +64,23 @@ describe('MarsBotSessionFixes', () => {
     expect(space.player).to.eq(undefined);
   });
 
-  it('MarsBot resource getters report mcSupply', () => {
+  it('MarsBot resource getters report megacredits', () => {
     const {marsBot} = createAutomaGame();
-    marsBot.turnResolver.mcSupply = 42;
+    marsBot.turnResolver.megacredits = 42;
 
     expect(marsBot.player.steel).to.eq(42);
     expect(marsBot.player.megaCredits).to.eq(42);
     expect(marsBot.player.plants).to.eq(42);
   });
 
-  it('steal from MarsBot deducts mcSupply', () => {
+  it('steal from MarsBot deducts megacredits', () => {
     const {marsBot, human} = createAutomaGame();
-    marsBot.turnResolver.mcSupply = 10;
+    marsBot.turnResolver.megacredits = 10;
     const humanSteelBefore = human.steel;
 
     marsBot.player.stock.steal(Resource.STEEL, 2, human);
 
-    expect(marsBot.turnResolver.mcSupply).to.eq(8);
+    expect(marsBot.turnResolver.megacredits).to.eq(8);
     expect(human.steel).to.eq(humanSteelBefore + 2);
   });
 
@@ -199,7 +199,7 @@ describe('MarsBotSessionFixes', () => {
   it('deserialization works when activePlayer is MarsBot', () => {
     const {game, marsBot} = createAutomaGame();
     marsBot.board.tracks[0].advance();
-    marsBot.turnResolver.mcSupply = 15;
+    marsBot.turnResolver.megacredits = 15;
 
     // Simulate MarsBot being the active player when saved
     (game as any).activePlayer = marsBot.player;
@@ -210,7 +210,7 @@ describe('MarsBotSessionFixes', () => {
     expect(restored.automaHooks?.marsBot).to.not.be.undefined;
     expect(restored.activePlayer.id).to.eq(marsBot.player.id);
     expect(restored.automaHooks!.marsBot.board.tracks[0].position).to.eq(1);
-    expect(restored.automaHooks!.marsBot.turnResolver.mcSupply).to.eq(15);
+    expect(restored.automaHooks!.marsBot.turnResolver.megacredits).to.eq(15);
   });
 
   it('deserialization works when activePlayer is human', () => {
@@ -298,11 +298,11 @@ describe('MarsBotSessionFixes', () => {
 
   it('floater count roundtrip', () => {
     const {game, marsBot} = createAutomaGame();
-    marsBot.floaterCount = 7;
+    marsBot.floaters = 7;
 
     const serialized = game.serialize();
     const restored = Game.deserialize(serialized);
-    expect(restored.automaHooks!.marsBot.floaterCount).to.eq(7);
+    expect(restored.automaHooks!.marsBot.floaters).to.eq(7);
   });
 
   it('temperature raises roundtrip', () => {
@@ -344,9 +344,9 @@ describe('MarsBotSessionFixes', () => {
     marsBot.board.tracks[1].advance();
     // Regress track 0 from position 2 to 1
     marsBot.board.tracks[0].regress();
-    marsBot.turnResolver.mcSupply = 42;
+    marsBot.turnResolver.megacredits = 42;
     marsBot.goesFirst = true;
-    marsBot.floaterCount = 3;
+    marsBot.floaters = 3;
     marsBot.temperatureRaises = 5;
     marsBot.vpByGeneration = [10, 20, 30];
     marsBot.corpSpecificState.set('testKey', 99);
@@ -385,9 +385,9 @@ describe('MarsBotSessionFixes', () => {
     expect(rm.board.tracks[0].position).to.eq(1);
     expect(rm.board.tracks[0].regressedPositions.has(2)).to.eq(true);
     expect(rm.board.tracks[1].position).to.eq(1);
-    expect(rm.turnResolver.mcSupply).to.eq(42);
+    expect(rm.turnResolver.megacredits).to.eq(42);
     expect(rm.goesFirst).to.eq(true);
-    expect(rm.floaterCount).to.eq(3);
+    expect(rm.floaters).to.eq(3);
     expect(rm.temperatureRaises).to.eq(5);
     expect(rm.vpByGeneration).to.deep.eq([10, 20, 30]);
     expect(rm.corpSpecificState.get('testKey')).to.eq(99);
@@ -521,7 +521,7 @@ describe('MarsBotSessionFixes', () => {
 
   it('CrashSiteCleanup hook triggered when removing plants from MarsBot', () => {
     const {game, human, marsBot} = createAutomaGame();
-    marsBot.turnResolver.mcSupply = 10;
+    marsBot.turnResolver.megacredits = 10;
 
     expect(game.someoneHasRemovedOtherPlayersPlants).to.be.false;
 
@@ -532,18 +532,18 @@ describe('MarsBotSessionFixes', () => {
 
   it('RemoveResourcesFromCard targets MarsBot MC supply when only option', () => {
     const {human, marsBot} = createAutomaGame();
-    marsBot.turnResolver.mcSupply = 10;
+    marsBot.turnResolver.megacredits = 10;
 
     const action = new RemoveResourcesFromCard(human, undefined, 1, {source: 'opponents'});
     action.execute();
 
     // Auto-executed since MarsBot MC is the only target
-    expect(marsBot.turnResolver.mcSupply).to.eq(9);
+    expect(marsBot.turnResolver.megacredits).to.eq(9);
   });
 
   it('RemoveResourcesFromCard offers choice when both cards and MarsBot MC available', () => {
     const {human, marsBot} = createAutomaGame();
-    marsBot.turnResolver.mcSupply = 10;
+    marsBot.turnResolver.megacredits = 10;
 
     // Give human a card with animals so there are card targets too
     const predators = new Predators();
@@ -559,7 +559,7 @@ describe('MarsBotSessionFixes', () => {
 
   it('RemoveResourcesFromCard does not offer MarsBot when source is self', () => {
     const {human, marsBot} = createAutomaGame();
-    marsBot.turnResolver.mcSupply = 10;
+    marsBot.turnResolver.megacredits = 10;
 
     const action = new RemoveResourcesFromCard(human, undefined, 1, {source: 'self', blockable: false});
     const result = action.execute();
@@ -570,7 +570,7 @@ describe('MarsBotSessionFixes', () => {
 
   it('RemoveResourcesFromCard does not offer MarsBot when MC is 0', () => {
     const {human, marsBot} = createAutomaGame();
-    marsBot.turnResolver.mcSupply = 0;
+    marsBot.turnResolver.megacredits = 0;
 
     const action = new RemoveResourcesFromCard(human, undefined, 1, {source: 'opponents'});
     const result = action.execute();
@@ -580,7 +580,7 @@ describe('MarsBotSessionFixes', () => {
 
   it('Predators canAct returns true when MarsBot has MC', () => {
     const {human, marsBot} = createAutomaGame();
-    marsBot.turnResolver.mcSupply = 5;
+    marsBot.turnResolver.megacredits = 5;
     const predators = new Predators();
     human.playedCards.push(predators);
 
@@ -589,7 +589,7 @@ describe('MarsBotSessionFixes', () => {
 
   it('Ants canAct returns true when MarsBot has MC', () => {
     const {human, marsBot} = createAutomaGame();
-    marsBot.turnResolver.mcSupply = 5;
+    marsBot.turnResolver.megacredits = 5;
     const ants = new Ants();
     human.playedCards.push(ants);
 
@@ -603,7 +603,7 @@ describe('MarsBotSessionFixes', () => {
 
   it('LawSuit hook triggered when removing resources from MarsBot', () => {
     const {human, marsBot} = createAutomaGame();
-    marsBot.turnResolver.mcSupply = 10;
+    marsBot.turnResolver.megacredits = 10;
 
     marsBot.player.stock.add(Resource.STEEL, -2, {log: true, from: {player: human}});
 
@@ -727,14 +727,14 @@ describe('MarsBotVenusNext', () => {
 
   it('floater track action increments floater count', () => {
     const {marsBot} = createVenusAutomaGame();
-    expect(marsBot.floaterCount).to.eq(0);
+    expect(marsBot.floaters).to.eq(0);
     // Advance Venus track to a position with a 'floater' action (position 1 in placeholder layout)
     const venusTrack = marsBot.board.tracks[7];
     venusTrack.advance(); // position 0 -> 1, triggers 'floater' action via turn resolver
     // Directly test via the action deck mechanism
-    marsBot.floaterCount = 0;
+    marsBot.floaters = 0;
     (marsBot.turnResolver as any).resolveTrackAction('floater', 7);
-    expect(marsBot.floaterCount).to.eq(1);
+    expect(marsBot.floaters).to.eq(1);
   });
 
   it('B16 Government Intervention shuffled into action deck', () => {
@@ -774,7 +774,7 @@ describe('MarsBotVenusNext', () => {
     marsBot.board.tracks[7].advance();
     marsBot.board.tracks[7].advance();
     marsBot.board.tracks[7].advance();
-    marsBot.floaterCount = 4;
+    marsBot.floaters = 4;
 
     const serialized = game.serialize();
     const restored = Game.deserialize(serialized);
@@ -782,7 +782,7 @@ describe('MarsBotVenusNext', () => {
     const restoredMarsBot = restored.automaHooks!.marsBot;
     expect(restoredMarsBot.board.tracks.length).to.eq(8);
     expect(restoredMarsBot.board.tracks[7].position).to.eq(3);
-    expect(restoredMarsBot.floaterCount).to.eq(4);
+    expect(restoredMarsBot.floaters).to.eq(4);
   });
 
   it('draft skipDiscard keeps all 4 cards when floaters spent', () => {
@@ -801,16 +801,16 @@ describe('MarsBotVenusNext', () => {
 
   it('floater extra card not triggered when Hoverlord still available', () => {
     const {marsBot} = createVenusAutomaGame();
-    marsBot.floaterCount = 10;
+    marsBot.floaters = 10;
     // Hoverlord is still available (not claimed, not all milestones claimed)
     marsBot.buildResearchActionDeck();
     // Floaters should not be spent
-    expect(marsBot.floaterCount).to.eq(10);
+    expect(marsBot.floaters).to.eq(10);
   });
 
   it('floater extra card triggered when all milestones claimed', () => {
     const {game, marsBot} = createVenusAutomaGame();
-    marsBot.floaterCount = 10;
+    marsBot.floaters = 10;
     // Claim all milestones to make Hoverlord unavailable
     for (const m of game.milestones.slice(0, 3)) {
       game.claimedMilestones.push({player: marsBot.player, milestone: m});
@@ -818,7 +818,7 @@ describe('MarsBotVenusNext', () => {
     // handleResearchPhase calls buildResearchActionDeck + handleFloaterExtraCard
     game.automaHooks!.handleResearchPhase();
     // Non-draft: should have spent 5 floaters and drawn 1 extra card
-    expect(marsBot.floaterCount).to.eq(5);
+    expect(marsBot.floaters).to.eq(5);
   });
 
   it('Hoverlord milestone tiebreaker: considered last', () => {
@@ -839,14 +839,14 @@ describe('MarsBotVenusNext', () => {
       venusNextExtension: true,
     });
     const marsBot = game.automaHooks!.marsBot;
-    marsBot.floaterCount = 15;
+    marsBot.floaters = 15;
     // Make Hoverlord unavailable
     for (const m of game.milestones.slice(0, 3)) {
       game.claimedMilestones.push({player: marsBot.player, milestone: m});
     }
     game.automaHooks!.handleResearchPhase();
     // Brutal: 4 project cards normally + spend 5 floaters for 1 extra = 5 spent
-    expect(marsBot.floaterCount).to.eq(10);
+    expect(marsBot.floaters).to.eq(10);
   });
 
   it('floater spending: Brutal draft keeps 4th free via skipDiscard', () => {
@@ -871,7 +871,7 @@ describe('MarsBotVenusNext', () => {
 
   it('floater spending: Normal draft spends 5 to keep 4th card', () => {
     const {game, marsBot} = createVenusAutomaGame();
-    marsBot.floaterCount = 10;
+    marsBot.floaters = 10;
     for (const m of game.milestones.slice(0, 3)) {
       game.claimedMilestones.push({player: marsBot.player, milestone: m});
     }
@@ -879,29 +879,29 @@ describe('MarsBotVenusNext', () => {
     expect((game.automaHooks as any).canSpendFloatersForExtraCard()).to.be.true;
     // Verify non-draft path spends correctly (draft is async, can't test end-to-end)
     game.automaHooks!.handleResearchPhase();
-    expect(marsBot.floaterCount).to.eq(5);
+    expect(marsBot.floaters).to.eq(5);
   });
 
   it('floater spending: not triggered when Hoverlord not in milestones', () => {
     // This tests modular milestones where Hoverlord isn't in the game
     const {game, marsBot} = createVenusAutomaGame();
-    marsBot.floaterCount = 10;
+    marsBot.floaters = 10;
     // Remove Hoverlord from milestones list
     game.milestones = game.milestones.filter((m) => m.name !== 'Hoverlord');
     // Hoverlord not in game → considered unavailable → floaters should be spent
     game.automaHooks!.handleResearchPhase();
-    expect(marsBot.floaterCount).to.eq(5);
+    expect(marsBot.floaters).to.eq(5);
   });
 
   it('floater spending: not triggered with < 5 floaters', () => {
     const {game, marsBot} = createVenusAutomaGame();
-    marsBot.floaterCount = 4;
+    marsBot.floaters = 4;
     for (const m of game.milestones.slice(0, 3)) {
       game.claimedMilestones.push({player: marsBot.player, milestone: m});
     }
     game.automaHooks!.handleResearchPhase();
     // Not enough floaters, should not spend
-    expect(marsBot.floaterCount).to.eq(4);
+    expect(marsBot.floaters).to.eq(4);
   });
 
   it('B15 Venus branch triggers at 1 step from Venus bonus at 8%', () => {
