@@ -37,7 +37,6 @@ describe('MarsBotBonusCardsColonies (C-15, C-16, C-17)', () => {
       const card = b17Card();
       marsBot.bonusDeck.drawPile.push(card);
 
-      // Stub findExpediteConstructionCitySpace to return a valid space
       const tilesBefore = game.board.spaces.filter((s) => s.tile !== undefined).length;
       const destroyed = marsBot['bonusResolver'].resolve(card);
 

@@ -248,7 +248,7 @@ export class MarsBotBonusResolver {
 
   // B05: Expedited Construction
   private resolveExpeditedConstruction(): boolean {
-    const space = this.tilePlacer.findExpediteConstructionCitySpace();
+    const space = this.tilePlacer.findExpeditedConstructionCitySpace();
     if (space !== undefined) {
       this.game.addCity(this.marsBot, space);
       this.turnResolver.gainMc(this.tilePlacer.getTotalPlacementMC(space));
@@ -548,7 +548,7 @@ export class MarsBotBonusResolver {
   // B17: Expedited Construction (Colonies) — C-15
   private resolveExpeditedConstructionColonies(): boolean {
     // C-15a: Place city adjacent to ≥2 greenery/ocean tiles → destroy card
-    const citySpace = this.tilePlacer.findExpediteConstructionCitySpace();
+    const citySpace = this.tilePlacer.findExpeditedConstructionCitySpace();
     if (citySpace !== undefined) {
       this.game.addCity(this.marsBot, citySpace);
       this.turnResolver.gainMc(this.tilePlacer.getTotalPlacementMC(citySpace));
