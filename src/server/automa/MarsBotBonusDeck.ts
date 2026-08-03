@@ -3,11 +3,7 @@ import {BonusCardId} from '../../common/automa/AutomaTypes';
 import {Deck} from '../cards/Deck';
 import {Random} from '../../common/utils/Random';
 
-/**
- * The MarsBot bonus card deck.
- * Cards flow: drawPile -> (resolved) -> discardPile, and the discard pile is
- * reshuffled back into the draw pile when it runs out.
- */
+/** The MarsBot bonus card deck. */
 export class MarsBotBonusDeck extends Deck<MarsBotBonusCard> {
   public constructor(deck: Array<MarsBotBonusCard>, discarded: Array<MarsBotBonusCard>, random: Random) {
     super('marsbot', deck, discarded, random);

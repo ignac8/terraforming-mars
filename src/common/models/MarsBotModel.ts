@@ -35,7 +35,7 @@ export type MarsBotModel = {
   difficulty: DifficultyLevel;
   tracks: ReadonlyArray<MarsBotTrackModel>;
   terraformRating: number;
-  mcSupply: number;
+  megacredits: number;
   actionDeckSize: number;
   bonusDeckSize: number;
   vpBreakdown: MarsBotVPModel;
