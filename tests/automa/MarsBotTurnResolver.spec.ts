@@ -4,6 +4,7 @@ import {TestPlayer} from '../TestPlayer';
 import {IGame} from '../../src/server/IGame';
 import {Tag} from '../../src/common/cards/Tag';
 import {MarsBotTracks} from '../../src/server/automa/MarsBotTracks';
+import {MarsBot} from '../../src/server/automa/MarsBot';
 import {MarsBotTurnResolver} from '../../src/server/automa/MarsBotTurnResolver';
 import {THARSIS_MARSBOT_BOARD} from '../../src/server/automa/boards/TharsisMarsBot';
 import {TrackDefinition} from '../../src/common/automa/AutomaTypes';
@@ -39,12 +40,30 @@ describe('MarsBotTurnResolver', () => {
   let board: MarsBotTracks;
   let resolver: MarsBotTurnResolver;
 
+  /** The milestone and award evals read the bot, which the real game attaches after construction. */
+  function attachManager(target: MarsBotTurnResolver): void {
+    target.marsBotManager = {
+      game,
+      player: marsBot,
+      tracks: board,
+      get megacredits() {
+        return target.megacredits;
+      },
+      floaters: 0,
+      playedProjectCards: [],
+      temperatureRaises: 0,
+      corp: undefined,
+      hasCubeAt: () => undefined,
+    } as unknown as MarsBot;
+  }
+
   beforeEach(() => {
     [game, human] = testGame(1);
     marsBot = TestPlayer.RED.newPlayer({name: 'marsbot'});
     (marsBot as any).game = game;
     board = new MarsBotTracks(THARSIS_MARSBOT_BOARD);
     resolver = new MarsBotTurnResolver(game, marsBot, human, board, 'normal');
+    attachManager(resolver);
   });
 
   describe('Project card tag resolution', () => {
@@ -156,6 +175,7 @@ describe('MarsBotTurnResolver', () => {
 
     it('gives 3 MC in easy mode', () => {
       const easyResolver = new MarsBotTurnResolver(game, marsBot, human, board, 'easy');
+      attachManager(easyResolver);
       const track = board.all[6];
       for (let i = 0; i < 18; i++) {
         track.advance();
@@ -367,6 +387,7 @@ describe('MarsBotTurnResolver', () => {
 
     it('easy mode reduces award values by 5', () => {
       const easyResolver = new MarsBotTurnResolver(game, marsBot, human, board, 'easy');
+      attachManager(easyResolver);
       for (let i = 0; i < 3; i++) {
         board.all[3].advance();
       }

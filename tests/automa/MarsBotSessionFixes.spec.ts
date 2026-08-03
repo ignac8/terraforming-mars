@@ -5,6 +5,7 @@ import {IGame} from '../../src/server/IGame';
 import {Game} from '../../src/server/Game';
 import {MarsBot} from '../../src/server/automa/MarsBot';
 import {BoardName} from '../../src/common/boards/BoardName';
+import {AWARD_EVALS} from '../../src/server/automa/MarsBotMilestoneAwardEval';
 import {Phase} from '../../src/common/Phase';
 import {Resource} from '../../src/common/Resource';
 import {getMcPerVP} from '../../src/server/automa/MarsBotScoring';
@@ -1027,28 +1028,27 @@ describe('MarsBotVenusNext', () => {
   });
 
   it('Visionary award uses 2nd lowest track with Venus', () => {
-    const ctx = require('../../src/server/automa/MarsBotMilestoneAwardEval');
-    const mockCtx = {
-      allTrackPositions: () => [5, 3, 4, 2, 6, 7, 1], // lowest=1 (plant), 2nd lowest=2 (science)
-      hasVenus: true,
-      venusTrackPos: 0, // Venus is actually the lowest at 0
-      lowestTrackPos: 1,
-    };
-    // With Venus: all positions = [5,3,4,2,6,7,1,0], sorted = [0,1,2,3,4,5,6,7], 2nd = 1
-    const evalFn = ctx.AWARD_EVALS.get('Visionary');
-    expect(evalFn(mockCtx)).to.eq(2); // 2nd lowest (1) * 2 = 2
+    const {marsBot} = createVenusAutomaGame();
+    // Venus sits lowest at 0, the Mars tracks run 1 to 7, so the second lowest is 1
+    for (let index = 0; index < 7; index++) {
+      for (let step = 0; step <= index; step++) {
+        marsBot.tracks.all[index].advance();
+      }
+    }
+
+    expect(AWARD_EVALS.get('Visionary')!(marsBot)).to.eq(2);
   });
 
   it('Visionary award uses lowest track without Venus', () => {
-    const ctx = require('../../src/server/automa/MarsBotMilestoneAwardEval');
-    const mockCtx = {
-      allTrackPositions: () => [5, 3, 4, 2, 6, 7, 1],
-      hasVenus: false,
-      venusTrackPos: 0,
-      lowestTrackPos: 1,
-    };
-    const evalFn = ctx.AWARD_EVALS.get('Visionary');
-    expect(evalFn(mockCtx)).to.eq(2); // lowest (1) * 2 = 2
+    const {marsBot} = createAutomaGame();
+    // Tracks run 1 to 7, so the lowest is 1
+    for (let index = 0; index < 7; index++) {
+      for (let step = 0; step <= index; step++) {
+        marsBot.tracks.all[index].advance();
+      }
+    }
+
+    expect(AWARD_EVALS.get('Visionary')!(marsBot)).to.eq(2);
   });
 
   it('Visionary Corporate Competition excludes Venus track', () => {

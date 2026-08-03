@@ -4,8 +4,6 @@ import {IProjectCard} from '../cards/IProjectCard';
 import {Tag} from '../../common/cards/Tag';
 import {GlobalParameter} from '../../common/GlobalParameter';
 import {CardType} from '../../common/cards/CardType';
-import {TileType, CITY_TILES, GREENERY_TILES} from '../../common/TileType';
-import {Board} from '../boards/Board';
 import {ColonyName} from '../../common/colonies/ColonyName';
 import {
   TrackAction,
@@ -20,7 +18,7 @@ import {IAward} from '../awards/IAward';
 import {Resource} from '../../common/Resource';
 import * as constants from '../../common/constants';
 import {MarsBotCorpResolver} from './corps/MarsBotCorpResolver';
-import {MILESTONE_EVALS, AWARD_EVALS, MarsBotMAContext} from './MarsBotMilestoneAwardEval';
+import {MILESTONE_EVALS, AWARD_EVALS} from './MarsBotMilestoneAwardEval';
 import type {MarsBot} from './MarsBot';
 
 /**
@@ -398,8 +396,8 @@ export class MarsBotTurnResolver {
   /** Check if MarsBot meets a milestone using track-based criteria. */
   public marsBotMeetsMilestone(milestone: IMilestone): boolean {
     const evalFn = MILESTONE_EVALS.get(milestone.name);
-    if (evalFn !== undefined) {
-      const result = evalFn(this.buildMAContext());
+    if (evalFn !== undefined && this.marsBotManager !== undefined) {
+      const result = evalFn(this.marsBotManager);
       if (result !== undefined) {
         return result;
       }
@@ -443,8 +441,8 @@ export class MarsBotTurnResolver {
   public getMarsBotAwardValue(award: IAward): number {
     const offset = this.difficulty === 'easy' ? -5 : 0;
     const evalFn = AWARD_EVALS.get(award.name);
-    if (evalFn !== undefined) {
-      const result = evalFn(this.buildMAContext());
+    if (evalFn !== undefined && this.marsBotManager !== undefined) {
+      const result = evalFn(this.marsBotManager);
       if (result !== undefined) {
         return result + offset;
       }
@@ -469,105 +467,6 @@ export class MarsBotTurnResolver {
     }
   }
 
-  // ---- MA Context ----
-
-  private buildMAContext(): MarsBotMAContext {
-    const tracks = this.tracks.all;
-    const positions = tracks.map((t) => t.position);
-    const playedCards = this.marsBotManager?.playedProjectCards ?? [];
-
-    const cityCount = this.countMarsBotTiles(TileType.CITY);
-    const greeneryCount = this.countMarsBotTiles(TileType.GREENERY);
-    const tilesOwned = this.countMarsBotTiles();
-
-    const ownedSpaces = this.game.board.spaces.filter(Board.ownedBy(this.marsBot));
-    const oceanSpaces = this.game.board.getOceanSpaces();
-    const oceanIds = new Set(oceanSpaces.map((s) => s.id));
-
-    let tilesAdjacentToOcean = 0;
-    let tilesNotAdjacentToOcean = 0;
-    let tilesOnEdge = 0;
-    for (const space of ownedSpaces) {
-      const adj = this.game.board.getAdjacentSpaces(space);
-      if (adj.some((a) => oceanIds.has(a.id))) {
-        tilesAdjacentToOcean++;
-      } else {
-        tilesNotAdjacentToOcean++;
-      }
-      if (adj.length < 6) {
-        tilesOnEdge++;
-      }
-    }
-
-    let greenCards = 0;
-    let blueCards = 0;
-    let redCards = 0;
-    let withoutTags = 0;
-    let costing20Plus = 0;
-    let costing10OrLess = 0;
-    let withNonNegativeVP = 0;
-    let withRequirements = 0;
-    for (const card of playedCards) {
-      if (card.type === CardType.EVENT) {
-        redCards++;
-      } else if (card.type === CardType.ACTIVE) {
-        blueCards++;
-      } else {
-        greenCards++;
-      }
-      if (card.tags.length === 0) {
-        withoutTags++;
-      }
-      if (card.cost >= 20) {
-        costing20Plus++;
-      }
-      if (card.cost <= 10) {
-        costing10OrLess++;
-      }
-      if (card.getVictoryPoints(this.marsBot) >= 0) {
-        withNonNegativeVP++;
-      }
-      if (card.requirements !== undefined) {
-        withRequirements++;
-      }
-    }
-
-    return {
-      trackPos: (index: number) => tracks[index]?.position ?? 0,
-      allTrackPositions: () => positions,
-      tr: this.marsBot.terraformRating,
-      mc: this.megacredits,
-      cityCount,
-      greeneryCount,
-      oceanCount: this.game.board.getOceanSpaces().filter((s) => s.player === this.marsBot).length,
-      tilesOwned,
-      tilesAdjacentToOcean,
-      tilesOnEdge,
-      tilesNotAdjacentToOcean,
-      playedCards: {
-        total: playedCards.length,
-        green: greenCards,
-        blue: blueCards,
-        red: redCards,
-        greenOrBlue: greenCards + blueCards,
-        withoutTags,
-        costing20Plus,
-        costing10OrLess,
-        withNonNegativeVP,
-        withRequirements,
-      },
-      temperatureRaises: this.marsBotManager?.temperatureRaises ?? 0,
-      highestTrackPos: Math.max(...positions),
-      lowestTrackPos: Math.min(...positions),
-      tracksAtOrAbove: (pos: number) => positions.filter((p) => p >= pos).length,
-      largestConnectedTileGroup: this.calcLargestConnectedTileGroup(),
-      specialTilesOwned: this.marsBotManager?.neuralInstanceSpace !== undefined ? 1 : 0,
-      hasVenus: this.game.gameOptions.venusNextExtension,
-      venusTrackPos: tracks.length > 7 ? tracks[7].position : 0,
-      floaters: this.marsBotManager?.floaters ?? 0,
-    };
-  }
-
   // ---- Utilities ----
 
   public failedAction(): void {
@@ -588,56 +487,5 @@ export class MarsBotTurnResolver {
   /** Pristar: true when the corp consumes its cube to skip this raise. */
   private interceptsRaise(parameter: GlobalParameter): boolean {
     return this.marsBotManager?.interceptsParameterRaise(parameter) ?? false;
-  }
-
-  private calcLargestConnectedTileGroup(): number {
-    const ownedSpaces = this.game.board.spaces.filter(Board.ownedBy(this.marsBot));
-    if (ownedSpaces.length === 0) {
-      return 0;
-    }
-    const visited = new Set<string>();
-    let largest = 0;
-    for (const space of ownedSpaces) {
-      if (visited.has(space.id)) {
-        continue;
-      }
-      let groupSize = 0;
-      const queue = [space];
-      while (queue.length > 0) {
-        const s = queue.pop();
-        if (s === undefined) {
-          break;
-        }
-        if (visited.has(s.id)) {
-          continue;
-        }
-        visited.add(s.id);
-        groupSize++;
-        for (const adj of this.game.board.getAdjacentSpaces(s)) {
-          if (!visited.has(adj.id) && adj.player === this.marsBot) {
-            queue.push(adj);
-          }
-        }
-      }
-      if (groupSize > largest) {
-        largest = groupSize;
-      }
-    }
-    return largest;
-  }
-
-  private countMarsBotTiles(tileType?: TileType): number {
-    if (tileType !== undefined && CITY_TILES.has(tileType)) {
-      return this.game.board.getCities(this.marsBot).length;
-    }
-    if (tileType !== undefined && GREENERY_TILES.has(tileType)) {
-      return this.game.board.getGreeneries(this.marsBot).length;
-    }
-    if (tileType === undefined) {
-      return this.game.board.spaces.filter(Board.ownedBy(this.marsBot)).length;
-    }
-    return this.game.board.spaces.filter((s) =>
-      s.player === this.marsBot && s.tile?.tileType === tileType,
-    ).length;
   }
 }
