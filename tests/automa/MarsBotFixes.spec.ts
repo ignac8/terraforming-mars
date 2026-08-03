@@ -90,13 +90,13 @@ describe('MarsBot Fixes', () => {
       // Set temperature to -26 (one step below -24 bonus)
       (game as any).temperature = -26;
 
-      const mcBefore = marsBot.turnResolver.mcSupply;
+      const mcBefore = marsBot.turnResolver.megacredits;
       const heatProdBefore = bot.production.get(Resource.HEAT);
 
       game.increaseTemperature(bot, 1);
 
       // MarsBot should get 2 MC, NOT heat production
-      expect(marsBot.turnResolver.mcSupply).to.eq(mcBefore + 2);
+      expect(marsBot.turnResolver.megacredits).to.eq(mcBefore + 2);
       expect(bot.production.get(Resource.HEAT)).to.eq(heatProdBefore);
     });
 
@@ -171,7 +171,7 @@ describe('MarsBot Fixes', () => {
   });
 
   describe('MarsBot MC supply is canonical', () => {
-    it('failed action adds to mcSupply', () => {
+    it('failed action adds to megacredits', () => {
       const {marsBot} = createAutomaGame();
       const resolver = marsBot.turnResolver;
 
@@ -187,7 +187,7 @@ describe('MarsBot Fixes', () => {
       } as any;
       resolver.resolveProjectCard(mockCard);
 
-      expect(resolver.mcSupply).to.eq(5);
+      expect(resolver.megacredits).to.eq(5);
     });
   });
 
@@ -269,7 +269,7 @@ describe('MarsBot Fixes', () => {
 
       const mockCard = {cost: 5, tags: [Tag.PLANT], type: 'automated' as any, name: 'T' as any, metadata: {} as any} as any;
       marsBot.turnResolver.resolveProjectCard(mockCard);
-      expect(marsBot.turnResolver.mcSupply).to.eq(3);
+      expect(marsBot.turnResolver.megacredits).to.eq(3);
     });
 
     it('award values reduced by 5 in easy mode', () => {
@@ -288,7 +288,7 @@ describe('MarsBot Fixes', () => {
     it('gen 10: 1 VP per 8 MC', () => {
       const {game, marsBot} = createAutomaGame();
       (game as any).generation = 10;
-      marsBot.turnResolver.mcSupply = 17;
+      marsBot.turnResolver.megacredits = 17;
       const vp = marsBot.getVictoryPoints();
       expect(vp.mcToVP).to.eq(2); // floor(17/8)
     });
@@ -296,7 +296,7 @@ describe('MarsBot Fixes', () => {
     it('gen 14: 1 VP per 6 MC', () => {
       const {game, marsBot} = createAutomaGame();
       (game as any).generation = 14;
-      marsBot.turnResolver.mcSupply = 13;
+      marsBot.turnResolver.megacredits = 13;
       const vp = marsBot.getVictoryPoints();
       expect(vp.mcToVP).to.eq(2); // floor(13/6)
     });
@@ -304,7 +304,7 @@ describe('MarsBot Fixes', () => {
     it('gen 17: 1 VP per 3 MC', () => {
       const {game, marsBot} = createAutomaGame();
       (game as any).generation = 17;
-      marsBot.turnResolver.mcSupply = 10;
+      marsBot.turnResolver.megacredits = 10;
       const vp = marsBot.getVictoryPoints();
       expect(vp.mcToVP).to.eq(3); // floor(10/3)
     });
@@ -459,7 +459,7 @@ describe('MarsBot Fixes', () => {
       for (let i = 0; i < 8; i++) {
         marsBot.board.tracks[0].advance();
       }
-      marsBot.turnResolver.mcSupply = 10;
+      marsBot.turnResolver.megacredits = 10;
       // MarsBot needs 3 claimable milestones when 0 are claimed
       // Builder (track 0 >= 8) is met. Need 2 more.
       // Advance other tracks for Planner (all tracks >= 4) — need all 7 tracks at 4
@@ -474,7 +474,7 @@ describe('MarsBot Fixes', () => {
       // 3 milestones claimable, 0 claimed → should claim
       marsBot.takeTurn();
       expect(game.claimedMilestones.length).to.be.gte(1);
-      expect(marsBot.turnResolver.mcSupply).to.eq(2); // 10 - 8 = 2
+      expect(marsBot.turnResolver.megacredits).to.eq(2); // 10 - 8 = 2
     });
   });
 

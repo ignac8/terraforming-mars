@@ -25,7 +25,7 @@ const PHARMACY_UNION: IMarsBotCorp = {
     },
     onHumanCardPlayed(bot, card) {
       if (card.tags.includes(Tag.MICROBE)) {
-        bot.mcSupply = Math.max(0, bot.mcSupply - 4);
+        bot.megacredits = Math.max(0, bot.megacredits - 4);
         bot.game.log('MarsBot (Pharmacy Union): human played microbe, -4 M€');
       }
     },

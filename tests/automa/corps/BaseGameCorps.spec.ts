@@ -73,9 +73,9 @@ describe('Base Game MarsBot Corporations', () => {
       const corp = getMarsBotCorp(CardName.CREDICOR)!;
       marsBot.setCorpAndSetup(corp);
 
-      const mcBefore = marsBot.turnResolver.mcSupply;
+      const mcBefore = marsBot.turnResolver.megacredits;
       corp.effect!.onProjectCardResolved!(marsBot, fakeCard('Expensive', {cost: 25}));
-      expect(marsBot.turnResolver.mcSupply).to.eq(mcBefore + 4);
+      expect(marsBot.turnResolver.megacredits).to.eq(mcBefore + 4);
     });
 
     it('does not gain M€ when card costs less than 20', () => {
@@ -83,9 +83,9 @@ describe('Base Game MarsBot Corporations', () => {
       const corp = getMarsBotCorp(CardName.CREDICOR)!;
       marsBot.setCorpAndSetup(corp);
 
-      const mcBefore = marsBot.turnResolver.mcSupply;
+      const mcBefore = marsBot.turnResolver.megacredits;
       corp.effect!.onProjectCardResolved!(marsBot, fakeCard('Cheap', {cost: 15}));
-      expect(marsBot.turnResolver.mcSupply).to.eq(mcBefore);
+      expect(marsBot.turnResolver.megacredits).to.eq(mcBefore);
     });
 
     it('has mostExpensive draft priority', () => {
@@ -142,9 +142,9 @@ describe('Base Game MarsBot Corporations', () => {
       const {marsBot} = createAutomaGame();
       const corp = getMarsBotCorp(CardName.TERACTOR)!;
 
-      const mcBefore = marsBot.turnResolver.mcSupply;
+      const mcBefore = marsBot.turnResolver.megacredits;
       marsBot.setCorpAndSetup(corp);
-      expect(marsBot.turnResolver.mcSupply).to.eq(mcBefore + 25);
+      expect(marsBot.turnResolver.megacredits).to.eq(mcBefore + 25);
     });
 
     it('has earth draft priority', () => {
@@ -165,9 +165,9 @@ describe('Base Game MarsBot Corporations', () => {
       const {marsBot} = createAutomaGame();
       const corp = getMarsBotCorp(CardName.THORGATE)!;
 
-      const mcBefore = marsBot.turnResolver.mcSupply;
+      const mcBefore = marsBot.turnResolver.megacredits;
       marsBot.setCorpAndSetup(corp);
-      expect(marsBot.turnResolver.mcSupply).to.eq(mcBefore + 10);
+      expect(marsBot.turnResolver.megacredits).to.eq(mcBefore + 10);
     });
 
     it('has energy draft priority', () => {

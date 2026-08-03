@@ -30,50 +30,50 @@ describe('MarsBot Resource Interaction (rules page 4-5)', () => {
   });
 
   describe('Remove resources from MarsBot → deduct from MC supply', () => {
-    it('removing plants from MarsBot deducts from mcSupply', () => {
+    it('removing plants from MarsBot deducts from megacredits', () => {
       const {marsBot} = createAutomaGame();
-      marsBot.turnResolver.mcSupply = 10;
+      marsBot.turnResolver.megacredits = 10;
 
       // Simulate removing 3 plants (via stock.add with negative amount)
       marsBot.player.stock.add(Resource.PLANTS, -3, {log: true, from: {player: marsBot.player}});
-      expect(marsBot.turnResolver.mcSupply).to.eq(7);
+      expect(marsBot.turnResolver.megacredits).to.eq(7);
     });
 
-    it('removing steel from MarsBot deducts from mcSupply', () => {
+    it('removing steel from MarsBot deducts from megacredits', () => {
       const {marsBot} = createAutomaGame();
-      marsBot.turnResolver.mcSupply = 10;
+      marsBot.turnResolver.megacredits = 10;
 
       marsBot.player.stock.add(Resource.STEEL, -2, {log: true, from: {player: marsBot.player}});
-      expect(marsBot.turnResolver.mcSupply).to.eq(8);
+      expect(marsBot.turnResolver.megacredits).to.eq(8);
     });
 
-    it('removing more than mcSupply clamps to 0', () => {
+    it('removing more than megacredits clamps to 0', () => {
       const {marsBot} = createAutomaGame();
-      marsBot.turnResolver.mcSupply = 3;
+      marsBot.turnResolver.megacredits = 3;
 
       marsBot.player.stock.add(Resource.PLANTS, -10, {log: true, from: {player: marsBot.player}});
-      expect(marsBot.turnResolver.mcSupply).to.eq(0);
+      expect(marsBot.turnResolver.megacredits).to.eq(0);
     });
 
-    it('removing heat from MarsBot deducts from mcSupply', () => {
+    it('removing heat from MarsBot deducts from megacredits', () => {
       const {marsBot} = createAutomaGame();
-      marsBot.turnResolver.mcSupply = 15;
+      marsBot.turnResolver.megacredits = 15;
 
       marsBot.player.stock.add(Resource.HEAT, -5, {log: true, from: {player: marsBot.player}});
-      expect(marsBot.turnResolver.mcSupply).to.eq(10);
+      expect(marsBot.turnResolver.megacredits).to.eq(10);
     });
   });
 
   describe('Steal resources from MarsBot → deduct from MC supply', () => {
-    it('stealing resources deducts from MarsBot mcSupply', () => {
+    it('stealing resources deducts from MarsBot megacredits', () => {
       const {human, marsBot} = createAutomaGame();
-      marsBot.turnResolver.mcSupply = 10;
+      marsBot.turnResolver.megacredits = 10;
 
       // Use stock.steal which calls deduct internally
       marsBot.player.stock.steal(Resource.PLANTS, 3, human);
 
       // MarsBot should have lost MC
-      expect(marsBot.turnResolver.mcSupply).to.eq(7);
+      expect(marsBot.turnResolver.megacredits).to.eq(7);
     });
   });
 
@@ -154,20 +154,20 @@ describe('MarsBot Resource Interaction (rules page 4-5)', () => {
   });
 
   describe('Resource additions to MarsBot are ignored', () => {
-    it('adding plants to MarsBot does not affect mcSupply', () => {
+    it('adding plants to MarsBot does not affect megacredits', () => {
       const {marsBot} = createAutomaGame();
-      marsBot.turnResolver.mcSupply = 10;
+      marsBot.turnResolver.megacredits = 10;
 
       marsBot.player.stock.add(Resource.PLANTS, 5);
-      expect(marsBot.turnResolver.mcSupply).to.eq(10); // Unchanged
+      expect(marsBot.turnResolver.megacredits).to.eq(10); // Unchanged
     });
 
-    it('adding MC to MarsBot does not affect mcSupply', () => {
+    it('adding MC to MarsBot does not affect megacredits', () => {
       const {marsBot} = createAutomaGame();
-      marsBot.turnResolver.mcSupply = 10;
+      marsBot.turnResolver.megacredits = 10;
 
       marsBot.player.stock.add(Resource.MEGACREDITS, 5);
-      expect(marsBot.turnResolver.mcSupply).to.eq(10); // Unchanged
+      expect(marsBot.turnResolver.megacredits).to.eq(10); // Unchanged
     });
   });
 
@@ -245,9 +245,9 @@ describe('MarsBot Resource Interaction (rules page 4-5)', () => {
     it('Sponsored Academies gives MarsBot 1 MC instead of card draw', () => {
       const {human, marsBot} = createAutomaGame();
       human.cardsInHand.push(...human.game.projectDeck.drawN(human.game, 3));
-      const mcBefore = marsBot.turnResolver.mcSupply;
+      const mcBefore = marsBot.turnResolver.megacredits;
       human.playCard(new SponsoredAcademies());
-      expect(marsBot.turnResolver.mcSupply).to.eq(mcBefore + 1);
+      expect(marsBot.turnResolver.megacredits).to.eq(mcBefore + 1);
     });
   });
 });

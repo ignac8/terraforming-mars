@@ -3,6 +3,7 @@ import {testGame} from '../TestGame';
 import {TestPlayer} from '../TestPlayer';
 import {IGame} from '../../src/server/IGame';
 import {MarsBot} from '../../src/server/automa/MarsBot';
+import {SerializedAutomaState} from '../../src/server/SerializedGame';
 import {BoardName} from '../../src/common/boards/BoardName';
 import {TileType} from '../../src/common/TileType';
 import {Phase} from '../../src/common/Phase';
@@ -123,17 +124,30 @@ describe('MarsBot Limitations Fixed', () => {
       marsBot.board.tracks[0].advance();
       marsBot.board.tracks[0].advance();
       marsBot.board.tracks[2].advance();
-      marsBot.turnResolver.mcSupply = 15;
+      marsBot.turnResolver.megacredits = 15;
       marsBot.goesFirst = true;
 
       const state = marsBot.serialize();
       expect(state.trackPositions).to.have.length(7);
       expect(state.trackPositions[0]).to.eq(2);
       expect(state.trackPositions[2]).to.eq(1);
-      expect(state.mcSupply).to.eq(15);
+      expect(state.megacredits).to.eq(15);
       expect(state.goesFirst).to.be.true;
       expect(state.difficulty).to.eq('normal');
       expect(state.marsBotPlayerId).to.be.a('string');
+    });
+
+    it('loads games saved under the old mcSupply and floaterCount names', () => {
+      const {marsBot} = createAutomaGame();
+      const state = marsBot.serialize();
+      delete (state as Partial<SerializedAutomaState>).megacredits;
+      delete state.floaters;
+      state.mcSupply = 23;
+      state.floaterCount = 4;
+
+      marsBot.restoreState(state);
+      expect(marsBot.turnResolver.megacredits).to.eq(23);
+      expect(marsBot.floaters).to.eq(4);
     });
 
     it('serialize includes action deck card names', () => {
@@ -173,7 +187,7 @@ describe('MarsBot Limitations Fixed', () => {
       marsBot.board.tracks[0].advance();
       marsBot.board.tracks[0].advance();
       marsBot.board.tracks[0].advance();
-      marsBot.turnResolver.mcSupply = 20;
+      marsBot.turnResolver.megacredits = 20;
       marsBot.goesFirst = true;
 
       const state = marsBot.serialize();
@@ -184,7 +198,7 @@ describe('MarsBot Limitations Fixed', () => {
 
       marsBot2.restoreState(state);
       expect(marsBot2.board.tracks[0].position).to.eq(3);
-      expect(marsBot2.turnResolver.mcSupply).to.eq(20);
+      expect(marsBot2.turnResolver.megacredits).to.eq(20);
       expect(marsBot2.goesFirst).to.be.true;
     });
 
@@ -209,12 +223,12 @@ describe('MarsBot Limitations Fixed', () => {
     it('serialized game has automaState when automa enabled', () => {
       const {game, marsBot} = createAutomaGame();
       marsBot.board.tracks[0].advance();
-      marsBot.turnResolver.mcSupply = 10;
+      marsBot.turnResolver.megacredits = 10;
 
       const serialized = game.serialize();
       expect(serialized.automaState).to.not.be.undefined;
       expect(serialized.automaState!.trackPositions[0]).to.eq(1);
-      expect(serialized.automaState!.mcSupply).to.eq(10);
+      expect(serialized.automaState!.megacredits).to.eq(10);
     });
 
     it('serialized game has no automaState for normal games', () => {

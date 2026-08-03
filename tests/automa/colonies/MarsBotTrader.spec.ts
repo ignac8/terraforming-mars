@@ -92,9 +92,9 @@ describe('MarsBotTrader (C-17, C-20, C-22, C-24b)', () => {
       const marsBot = getMarsBot(game);
       const luna = new Luna();
       game.colonies = [luna];
-      const mcBefore = marsBot.turnResolver.mcSupply;
+      const mcBefore = marsBot.turnResolver.megacredits;
       tradeWithColony(marsBot, luna);
-      expect(marsBot.turnResolver.mcSupply).to.eq(Math.max(0, mcBefore - 1));
+      expect(marsBot.turnResolver.megacredits).to.eq(Math.max(0, mcBefore - 1));
     });
 
     it('marks colony.visitor with MarsBot player id (C-22)', () => {
@@ -206,10 +206,10 @@ describe('MarsBotTrader (C-17, C-20, C-22, C-24b)', () => {
       const marsBot = getMarsBot(game);
       const titan = new Titan();
       game.colonies = [titan];
-      const floatersBefore = marsBot.floaterCount;
+      const floatersBefore = marsBot.floaters;
       const titanStoreBefore = marsBot.shippingBoard.get(ColonyName.TITAN);
       tradeWithColony(marsBot, titan);
-      expect(marsBot.floaterCount).to.eq(floatersBefore + 2);
+      expect(marsBot.floaters).to.eq(floatersBefore + 2);
       expect(marsBot.shippingBoard.get(ColonyName.TITAN)).to.eq(titanStoreBefore); // Titan storage unchanged
     });
 

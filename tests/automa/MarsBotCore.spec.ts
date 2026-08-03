@@ -72,14 +72,14 @@ describe('MarsBot serialization roundtrip', () => {
     expect(restored!.cubeType).to.eq('black');
   });
 
-  it('preserves mcSupply', () => {
+  it('preserves megacredits', () => {
     const mb = createMarsBot();
-    mb.turnResolver.mcSupply = 42;
+    mb.turnResolver.megacredits = 42;
 
     const state = mb.serialize();
     const mb2 = createMarsBot();
     mb2.restoreState(state);
 
-    expect(mb2.turnResolver.mcSupply).to.eq(42);
+    expect(mb2.turnResolver.megacredits).to.eq(42);
   });
 });

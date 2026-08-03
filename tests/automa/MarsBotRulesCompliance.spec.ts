@@ -128,8 +128,8 @@ describe('MarsBot Rules Compliance', () => {
 
   // ---- Rule 2.7: Placement Bonuses ----
 
-  describe('Rule 2.7: Placement bonuses give MC to mcSupply', () => {
-    it('tile placement adds 1 MC per bonus icon to mcSupply', () => {
+  describe('Rule 2.7: Placement bonuses give MC to megacredits', () => {
+    it('tile placement adds 1 MC per bonus icon to megacredits', () => {
       const [game, human] = testGame(1);
       const bot = TestPlayer.RED.newPlayer({name: 'bot'});
       (bot as any).game = game;
@@ -145,10 +145,10 @@ describe('MarsBot Rules Compliance', () => {
       );
 
       if (spaceWithBonus) {
-        const mcBefore = resolver.mcSupply;
+        const mcBefore = resolver.megacredits;
         resolver.resolveProjectCard(mockCard([Tag.BUILDING]));
         // MC should have increased (from bonus icons and/or ocean adjacency)
-        expect(resolver.mcSupply).to.be.gte(mcBefore);
+        expect(resolver.megacredits).to.be.gte(mcBefore);
       }
     });
 
@@ -165,10 +165,10 @@ describe('MarsBot Rules Compliance', () => {
       layout[1] = 'city';
       const {resolver} = makeResolver(game, bot, human, makeBoard(layout));
 
-      const mcBefore = resolver.mcSupply;
+      const mcBefore = resolver.megacredits;
       resolver.resolveProjectCard(mockCard([Tag.BUILDING]));
       // At minimum, the city might be adjacent to the ocean
-      expect(resolver.mcSupply).to.be.gte(mcBefore);
+      expect(resolver.megacredits).to.be.gte(mcBefore);
     });
   });
 
@@ -191,7 +191,7 @@ describe('MarsBot Rules Compliance', () => {
       layout[1] = 'greenery';
       const {resolver} = makeResolver(game, bot, human, makeBoard(layout));
       resolver.resolveProjectCard(mockCard([Tag.BUILDING]));
-      expect(resolver.mcSupply).to.eq(5);
+      expect(resolver.megacredits).to.eq(5);
     });
 
     it('city action with no available space = failed action', () => {
@@ -209,7 +209,7 @@ describe('MarsBot Rules Compliance', () => {
       layout[1] = 'city';
       const {resolver} = makeResolver(game, bot, human, makeBoard(layout));
       resolver.resolveProjectCard(mockCard([Tag.BUILDING]));
-      expect(resolver.mcSupply).to.eq(5);
+      expect(resolver.megacredits).to.eq(5);
     });
   });
 
@@ -226,7 +226,7 @@ describe('MarsBot Rules Compliance', () => {
       const {resolver} = makeResolver(game, bot, human, makeBoard(layout));
 
       resolver.resolveProjectCard(mockCard([Tag.BUILDING]));
-      expect(resolver.mcSupply).to.eq(5); // Failed action
+      expect(resolver.megacredits).to.eq(5); // Failed action
     });
   });
 
@@ -285,7 +285,7 @@ describe('MarsBot Rules Compliance', () => {
       const destroyed = bonusResolver.resolve(b04);
 
       expect(game.fundedAwards.length).to.eq(awardsBefore); // No award funded
-      expect(marsBot.turnResolver.mcSupply).to.eq(5); // Failed → 5 MC
+      expect(marsBot.turnResolver.megacredits).to.eq(5); // Failed → 5 MC
       expect(destroyed).to.be.false; // Not destroyed
     });
   });
@@ -293,7 +293,7 @@ describe('MarsBot Rules Compliance', () => {
   describe('Rule 2.10: B08 Corporate Competition', () => {
     it('fails when MarsBot has <5 MC', () => {
       const {game, human, marsBot} = createAutomaGame();
-      marsBot.turnResolver.mcSupply = 3;
+      marsBot.turnResolver.megacredits = 3;
 
       const cards = createBaseBonusCards();
       const b08 = cards.find((c) => c.id === BonusCardId.B08_CORPORATE_COMPETITION)!;
@@ -309,7 +309,7 @@ describe('MarsBot Rules Compliance', () => {
 
     it('deducts 5 MC on successful helper action', () => {
       const {game, human, marsBot} = createAutomaGame();
-      marsBot.turnResolver.mcSupply = 10;
+      marsBot.turnResolver.megacredits = 10;
 
       // Fund an award so B08 has something to help with
       game.fundAward(human, game.awards.find((a) => a.name === 'Scientist')!);
@@ -324,12 +324,12 @@ describe('MarsBot Rules Compliance', () => {
       const bonusDeck = MarsBotBonusDeck.createBase(new SeededRandom(99));
       const bonusResolver = new MarsBotBonusResolver(game, marsBot.player, human, marsBot.turnResolver, bonusDeck, tilePlacer);
 
-      const mcBefore = marsBot.turnResolver.mcSupply;
+      const mcBefore = marsBot.turnResolver.megacredits;
       bonusResolver.resolve(b08);
       // Helper for Scientist = advance track 4. Costs 5 MC.
       // Track advance may trigger actions that grant additional MC, so just verify 5 was deducted
-      expect(marsBot.turnResolver.mcSupply).to.be.lte(mcBefore - 5 + 10); // At most 10 MC gained from track actions
-      expect(marsBot.turnResolver.mcSupply).to.be.lt(mcBefore); // Overall MC decreased
+      expect(marsBot.turnResolver.megacredits).to.be.lte(mcBefore - 5 + 10); // At most 10 MC gained from track actions
+      expect(marsBot.turnResolver.megacredits).to.be.lt(mcBefore); // Overall MC decreased
     });
   });
 
@@ -420,7 +420,7 @@ describe('MarsBot Rules Compliance', () => {
   describe('Rule 2.12: Hard mode milestone conditions', () => {
     it('does not claim when 0 milestones claimed and MarsBot meets <3', () => {
       const {game, marsBot} = createAutomaGame('hard');
-      marsBot.turnResolver.mcSupply = 10;
+      marsBot.turnResolver.megacredits = 10;
       marsBot.player.setTerraformRating(35); // Meets Terraformer only (1 milestone)
       marsBot.player.actionsTakenThisRound = 0;
 
@@ -431,7 +431,7 @@ describe('MarsBot Rules Compliance', () => {
 
     it('claims when 2 milestones claimed and MarsBot meets any', () => {
       const {game, human, marsBot} = createAutomaGame('hard');
-      marsBot.turnResolver.mcSupply = 10;
+      marsBot.turnResolver.megacredits = 10;
       marsBot.player.setTerraformRating(35); // Meets Terraformer
 
       // Claim 2 OTHER milestones (not Terraformer) so MarsBot can still claim Terraformer
@@ -442,12 +442,12 @@ describe('MarsBot Rules Compliance', () => {
 
       (marsBot as any).hardModeFirstTurnMilestone();
       expect(game.claimedMilestones.length).to.eq(3); // Now 3
-      expect(marsBot.turnResolver.mcSupply).to.eq(2); // 10 - 8
+      expect(marsBot.turnResolver.megacredits).to.eq(2); // 10 - 8
     });
 
     it('does not claim when not enough MC', () => {
       const {game, human, marsBot} = createAutomaGame('hard');
-      marsBot.turnResolver.mcSupply = 5; // Less than 8
+      marsBot.turnResolver.megacredits = 5; // Less than 8
       marsBot.player.setTerraformRating(35);
       game.claimedMilestones.push({player: human, milestone: game.milestones[0]});
       game.claimedMilestones.push({player: human, milestone: game.milestones[1]});
@@ -463,9 +463,9 @@ describe('MarsBot Rules Compliance', () => {
   describe('Rule 2.9: MarsBot skips production', () => {
     it('MarsBot MC supply unchanged during production', () => {
       const {marsBot} = createAutomaGame();
-      marsBot.turnResolver.mcSupply = 15;
+      marsBot.turnResolver.megacredits = 15;
       marsBot.runProductionPhase();
-      expect(marsBot.turnResolver.mcSupply).to.eq(15);
+      expect(marsBot.turnResolver.megacredits).to.eq(15);
     });
 
     it('MarsBot TR does not add MC during production', () => {

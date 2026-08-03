@@ -130,7 +130,7 @@
                           <td>{{game.marsBot.vpBreakdown.neuralInstance + game.marsBot.vpBreakdown.mcToVP + game.marsBot.vpBreakdown.vermin}}</td>
                           <td v-if="game.gameOptions.escapeVelocity">-</td>
                           <td class="game-end-total">{{game.marsBot.vpBreakdown.total}}</td>
-                          <td class="game-end-mc">{{game.marsBot.mcSupply}}</td>
+                          <td class="game-end-mc">{{game.marsBot.megacredits}}</td>
                           <td v-if="game.gameOptions.showTimers">-</td>
                           <td>-</td>
                       </tr>

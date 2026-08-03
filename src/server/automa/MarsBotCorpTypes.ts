@@ -57,7 +57,7 @@ export type MarsBotCorpEffect = {
   onTilePlaced?(bot: IMarsBot, placedByMarsBot: boolean, tileType: TileType): void;
   /** Called once after the bot raises Venus, however many steps it moved. */
   onVenusRaised?(bot: IMarsBot): void;
-  /** Called before the bot raises a global parameter. Returning true means the corp took the raise instead, and the parameter is left where it was. */
+  /** Called before the bot raises a global parameter. Returning true cancels that raise: the global parameter stays at its current value. */
   interceptGlobalParameterRaise?(bot: IMarsBot, parameter: GlobalParameter): boolean;
   /** The bot's M€ supply just grew by this amount. */
   onMcGained?(bot: IMarsBot, amount: number): void;
@@ -88,8 +88,8 @@ export interface IMarsBot {
   advanceTrack(trackIndex: number): void;
 
   /**
-   * Draws the top project card and resolves it as a bot action. The deck reshuffles its own
-   * discard pile when it runs out, so false means both piles were empty and nothing happened.
+   * Draws the top project card and resolves it as a bot action. The deck reshuffles its
+   * discard pile when it runs out, so false means both piles were empty.
    */
   drawAndResolveProjectCard(): boolean;
   /** Same, but the card's first n tags are ignored while resolving. */

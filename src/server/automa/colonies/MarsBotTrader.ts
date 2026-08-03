@@ -81,7 +81,7 @@ export function tradeWithColony(marsBot: MarsBot, colony: IColony): void {
   const game = marsBot.game;
 
   // C-17d: MarsBot loses 1 MC
-  marsBot.turnResolver.mcSupply = Math.max(0, marsBot.turnResolver.mcSupply - 1);
+  marsBot.turnResolver.megacredits = Math.max(0, marsBot.turnResolver.megacredits - 1);
   game.log('MarsBot pays 1 MC to trade with ${0} (C-17d)', (b) => b.colony(colony));
 
   // C-22: Mark trade fleet used on this tile
@@ -96,7 +96,7 @@ export function tradeWithColony(marsBot: MarsBot, colony: IColony): void {
     const amount = colony.colonies.includes(marsBot.player.id) ? 3 : 2;
     // C-23: Titan storage is only used without Venus Next; with Venus, gain floaters instead
     if (colony.name === ColonyName.TITAN && game.gameOptions.venusNextExtension) {
-      marsBot.floaterCount += amount;
+      marsBot.floaters += amount;
       game.log(
         'MarsBot trades with Titan, gains ${0} floater(s) (C-20, C-23)',
         (b) => b.number(amount),

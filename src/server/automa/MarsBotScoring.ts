@@ -139,7 +139,7 @@ export class MarsBotScoring {
     if (mcPerVP === undefined) {
       return 0;
     }
-    return Math.floor(this.turnResolver.mcSupply / mcPerVP);
+    return Math.floor(this.turnResolver.megacredits / mcPerVP);
   }
 
   /** Vermin: -1 VP per city when 10+ animals on Vermin card. Applies to ALL players. */

@@ -77,7 +77,7 @@ export class MarsBotCorpResolver {
     // C-X3: deduct 5 MC then place a colony on a randomly selected eligible tile
     if (marsBot.hasColonyCubes && marsBot.colonyCubePositions.has(trackCubeKey(trackIndex, position))) {
       const cost = 5;
-      marsBot.turnResolver.mcSupply = Math.max(0, marsBot.turnResolver.mcSupply - cost);
+      marsBot.turnResolver.megacredits = Math.max(0, marsBot.turnResolver.megacredits - cost);
       marsBot.game.log('MarsBot loses ${0} MC for colony cube trigger (C-X3)', (b) => b.number(cost));
       const colony = selectRandomColony(marsBot.game, marsBot);
       if (colony !== undefined) {

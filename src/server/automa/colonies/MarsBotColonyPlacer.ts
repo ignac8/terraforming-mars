@@ -63,7 +63,7 @@ export function selectRandomColony(game: IGame, marsBot: MarsBot): IColony | und
  * C-24a: Europa — place an ocean tile (raise TR 1) instead of 2 resources.
  *         If impossible, Failed Action. No storage.
  * C-23: Titan + !venusNext — add 2 to Titan storage (floaters).
- *        Titan + venusNext — add 2 floaters to floaterCount.
+ *        Titan + venusNext — add 2 floaters to floaters.
  */
 export function placeColonyForMarsBot(colony: IColony, marsBot: MarsBot): void {
   const game = marsBot.game;
@@ -94,8 +94,8 @@ export function placeColonyForMarsBot(colony: IColony, marsBot: MarsBot): void {
       marsBot.shippingBoard.add(ColonyName.TITAN, 2, marsBot);
       game.log('MarsBot builds colony on Titan, gains 2 floaters in Titan storage (C-19/C-23)');
     } else {
-      // With Venus: add 2 floaters to floaterCount
-      marsBot.floaterCount += 2;
+      // With Venus: add 2 floaters to floaters
+      marsBot.floaters += 2;
       game.log('MarsBot builds colony on Titan, gains 2 floaters (C-19, Venus rules)');
     }
     return;

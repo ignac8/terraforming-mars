@@ -10,7 +10,7 @@ export function bonusCard(id: BonusCardId, name: CardName): MarsBotBonusCard {
   return {id, name};
 }
 
-/** Create the base set of bonus cards (B01–B08). */
+/** Create the base set of bonus cards (B01-B08). */
 export function createBaseBonusCards(): Array<MarsBotBonusCard> {
   return [
     bonusCard(BonusCardId.B01_METEOR_SHOWER, CardName.AUTOMA_METEOR_SHOWER),
@@ -29,9 +29,9 @@ export function createCorpBonusCard(id: BonusCardId): MarsBotBonusCard {
   return bonusCard(id, BONUS_CARD_NAMES.get(id) ?? (id as unknown as CardName));
 }
 
-/** Card name without the 'Automa: ' prefix, for game log display. */
+/** Card name without its ':automa' suffix, for log lines that print the name raw. */
 export function bonusCardDisplayName(card: MarsBotBonusCard): string {
-  return card.name.replace('Automa: ', '');
+  return card.name.split(':')[0];
 }
 
 const BONUS_CARD_NAMES: Map<BonusCardId, CardName> = new Map([

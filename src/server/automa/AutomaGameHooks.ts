@@ -174,7 +174,7 @@ export class AutomaGameHooks {
     if (!opts.venusNextExtension) {
       return false;
     }
-    if (this.marsBot.floaterCount < 5) {
+    if (this.marsBot.floaters < 5) {
       return false;
     }
     // Hoverlord must be unavailable: not in game, already claimed, or all milestone slots full
@@ -202,7 +202,7 @@ export class AutomaGameHooks {
       this.marsBot.actionDeck.push(...extraCards);
       this.game.log('MarsBot spends 5 Titan floaters for an extra card (C-9)');
     } else {
-      this.marsBot.floaterCount -= 5;
+      this.marsBot.floaters -= 5;
       const extraCards = this.game.projectDeck.drawN(this.game, 1);
       this.marsBot.actionDeck.push(...extraCards);
       this.game.log('MarsBot spends 5 floaters for an extra card');
@@ -246,13 +246,13 @@ export class AutomaGameHooks {
         const canSpend = this.canSpendFloatersForExtraCard();
         const skipDiscard = isBrutal || canSpend;
         if (!isBrutal && canSpend) {
-          this.marsBot.floaterCount -= 5;
+          this.marsBot.floaters -= 5;
           this.game.log('MarsBot spends 5 floaters to keep 4th drafted card');
         }
         this.marsBot.buildResearchActionDeckFromDraft(finalMarsBotCards, skipDiscard);
         // Brutal: spend 5 floaters for a 5th card from project deck
         if (isBrutal && canSpend) {
-          this.marsBot.floaterCount -= 5;
+          this.marsBot.floaters -= 5;
           const extra = this.game.projectDeck.drawN(this.game, 1);
           this.marsBot.actionDeck.push(...extra);
           this.game.log('MarsBot (Brutal) spends 5 floaters for a 5th card');
@@ -478,7 +478,7 @@ export class AutomaGameHooks {
    * C-21: When the player trades with a colony where MarsBot has a colony,
    * intercept MarsBot's colony bonus and give 1 resource to shipping board instead
    * of the printed tile bonus.
-   * C-24c: For Europa, give 1 MC to mcSupply instead.
+   * C-24c: For Europa, give 1 MC to megacredits instead.
    *
    * Returns true if MarsBot's colony bonus was handled (caller should skip normal flow).
    */
@@ -486,7 +486,7 @@ export class AutomaGameHooks {
     if (playerId !== this.marsBot.player.id) {
       return false;
     }
-    // C-24c: Europa → 1 MC to mcSupply
+    // C-24c: Europa → 1 MC to megacredits
     if (colony.name === ColonyName.EUROPA) {
       this.marsBot.gainMc(1);
       this.game.log('MarsBot gains 1 MC as Europa colony bonus (C-24c)');
@@ -495,7 +495,7 @@ export class AutomaGameHooks {
     // C-21: Other colonies → 1 resource to shipping board
     // C-23: Titan storage only used without Venus Next; with Venus, gain 1 floater instead
     if (colony.name === ColonyName.TITAN && this.game.gameOptions.venusNextExtension) {
-      this.marsBot.floaterCount += 1;
+      this.marsBot.floaters += 1;
       this.game.log('MarsBot gains 1 floater as Titan colony bonus (C-21, C-23)');
     } else {
       this.marsBot.shippingBoard.add(colony.name, 1, this.marsBot);
@@ -529,8 +529,8 @@ export class AutomaGameHooks {
     if (spaceOwner !== this.marsBot.player) {
       return false;
     }
-    if (this.marsBot.turnResolver.mcSupply >= 2) {
-      this.marsBot.turnResolver.mcSupply -= 2;
+    if (this.marsBot.turnResolver.megacredits >= 2) {
+      this.marsBot.turnResolver.megacredits -= 2;
       this.marsBot.turnResolver.advanceTrack(this.marsBot.board.getLeastAdvancedTrackIndex());
       this.game.log('MarsBot pays 2 MC and advances least-advanced track (St. Joseph)');
     } else {

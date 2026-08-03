@@ -13,19 +13,19 @@ function getMarsBot(game: ReturnType<typeof testGame>[0]): MarsBot {
 
 describe('FloaterHandling (C-8, C-9, C-14, C-X2)', () => {
   describe('C-14: floater track action without Venus Next', () => {
-    it('adds to Titan storage instead of floaterCount (1 floater)', () => {
+    it('adds to Titan storage instead of floaters (1 floater)', () => {
       const [game] = testGame(1, {automaOption: true, coloniesExtension: true, boardName: BoardName.THARSIS});
       const marsBot = getMarsBot(game);
       const titanBefore = marsBot.shippingBoard.get(ColonyName.TITAN);
-      const floatersBefore = marsBot.floaterCount;
+      const floatersBefore = marsBot.floaters;
 
       marsBot.turnResolver['resolveTrackAction']('floater', 0);
 
       expect(marsBot.shippingBoard.get(ColonyName.TITAN)).to.eq(titanBefore + 1);
-      expect(marsBot.floaterCount).to.eq(floatersBefore); // No change to floaterCount
+      expect(marsBot.floaters).to.eq(floatersBefore); // No change to floaters
     });
 
-    it('adds to Titan storage instead of floaterCount (2 floaters)', () => {
+    it('adds to Titan storage instead of floaters (2 floaters)', () => {
       const [game] = testGame(1, {automaOption: true, coloniesExtension: true, boardName: BoardName.THARSIS});
       const marsBot = getMarsBot(game);
       const titanBefore = marsBot.shippingBoard.get(ColonyName.TITAN);
@@ -39,17 +39,17 @@ describe('FloaterHandling (C-8, C-9, C-14, C-X2)', () => {
       const [game] = testGame(1, {automaOption: true, coloniesExtension: false, boardName: BoardName.THARSIS});
       const marsBot = getMarsBot(game);
       const titanBefore = marsBot.shippingBoard.get(ColonyName.TITAN);
-      const floatersBefore = marsBot.floaterCount;
+      const floatersBefore = marsBot.floaters;
 
       marsBot.turnResolver['resolveTrackAction']('floater', 0);
 
       expect(marsBot.shippingBoard.get(ColonyName.TITAN)).to.eq(titanBefore);
-      expect(marsBot.floaterCount).to.eq(floatersBefore);
+      expect(marsBot.floaters).to.eq(floatersBefore);
     });
   });
 
   describe('C-8: floater track action with Venus Next', () => {
-    it('adds to floaterCount when Venus Next is active', () => {
+    it('adds to floaters when Venus Next is active', () => {
       const [game] = testGame(1, {
         automaOption: true,
         coloniesExtension: true,
@@ -57,12 +57,12 @@ describe('FloaterHandling (C-8, C-9, C-14, C-X2)', () => {
         boardName: BoardName.THARSIS,
       });
       const marsBot = getMarsBot(game);
-      const floatersBefore = marsBot.floaterCount;
+      const floatersBefore = marsBot.floaters;
       const titanBefore = marsBot.shippingBoard.get(ColonyName.TITAN);
 
       marsBot.turnResolver['resolveTrackAction']('floater', 0);
 
-      expect(marsBot.floaterCount).to.eq(floatersBefore + 1);
+      expect(marsBot.floaters).to.eq(floatersBefore + 1);
       expect(marsBot.shippingBoard.get(ColonyName.TITAN)).to.eq(titanBefore); // No Titan storage
     });
   });

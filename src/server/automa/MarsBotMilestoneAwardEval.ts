@@ -36,7 +36,7 @@ export type MarsBotMAContext = {
   specialTilesOwned: number;
   hasVenus: boolean;
   venusTrackPos: number;
-  floaterCount: number;
+  floaters: number;
 }
 
 function allTracksAtOrAbove(ctx: MarsBotMAContext, pos: number, includeVenus: boolean): boolean {
@@ -147,7 +147,7 @@ export const MILESTONE_EVALS = new Map<MilestoneName, MilestoneEval>([
   ['Terraformer29', () => false],
   ['Terran5', (ctx: MarsBotMAContext) => ctx.trackPos(5) >= 5],
   ['Thawer', (ctx: MarsBotMAContext) => ctx.temperatureRaises >= 5],
-  ['Hoverlord', (ctx: MarsBotMAContext) => ctx.floaterCount >= 7],
+  ['Hoverlord', (ctx: MarsBotMAContext) => ctx.floaters >= 7],
   ['Trader', () => false],
   ['Tycoon10', (ctx: MarsBotMAContext) => ctx.playedCards.greenOrBlue >= 10],
 ]);

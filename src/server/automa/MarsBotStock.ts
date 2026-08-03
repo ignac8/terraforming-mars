@@ -15,9 +15,9 @@ import {LawSuit} from '../cards/promo/LawSuit';
  * - "Remove" resources → remove from MarsBot's MC supply
  * - "Steal" resources → take from MarsBot's MC supply as if they were the resource type
  *
- * All resource removals are converted to MC deductions from mcSupply.
+ * All resource removals are converted to MC deductions from megacredits.
  * Resource additions (from game engine bonuses) are ignored since MarsBot
- * doesn't use resources — MC is tracked separately in turnResolver.mcSupply.
+ * doesn't use resources — MC is tracked separately in turnResolver.megacredits.
  */
 export class MarsBotStock extends Stock {
   private marsBotRef: MarsBot | undefined;
@@ -30,9 +30,9 @@ export class MarsBotStock extends Stock {
     const stock = this;
     const mcProp = {
       get() {
-        return stock.marsBotRef?.turnResolver.mcSupply ?? 0;
+        return stock.marsBotRef?.turnResolver.megacredits ?? 0;
       },
-      set() { /* no-op: MarsBotStock.add() handles mutations via mcSupply */ },
+      set() { /* no-op: MarsBotStock.add() handles mutations via megacredits */ },
       configurable: true,
     };
     for (const resource of ALL_RESOURCES) {
@@ -40,16 +40,16 @@ export class MarsBotStock extends Stock {
     }
   }
 
-  /** MarsBot has mcSupply, not separate resource pools. */
+  /** MarsBot has megacredits, not separate resource pools. */
   public override has(units: Units): boolean {
     const total = Units.values(units).reduce((a, b) => a + b, 0);
-    return (this.marsBotRef?.turnResolver.mcSupply ?? 0) >= total;
+    return (this.marsBotRef?.turnResolver.megacredits ?? 0) >= total;
   }
 
-  /** MarsBot can adjust if mcSupply can cover the total cost. */
+  /** MarsBot can adjust if megacredits can cover the total cost. */
   public override canAdjust(units: Units): boolean {
     const cost = Units.values(units).reduce((sum, v) => sum + Math.min(0, v), 0);
-    return (this.marsBotRef?.turnResolver.mcSupply ?? 0) + cost >= 0;
+    return (this.marsBotRef?.turnResolver.megacredits ?? 0) + cost >= 0;
   }
 
   public override add(
@@ -79,8 +79,8 @@ export class MarsBotStock extends Stock {
       }
 
       // All other resources → deduct from MC supply
-      const mc = Math.min(-amount, this.marsBotRef.turnResolver.mcSupply);
-      this.marsBotRef.turnResolver.mcSupply -= mc;
+      const mc = Math.min(-amount, this.marsBotRef.turnResolver.megacredits);
+      this.marsBotRef.turnResolver.megacredits -= mc;
 
       if (options?.log) {
         this.player.game.log('MarsBot loses ${0} MC (${1} removed)',
@@ -94,11 +94,11 @@ export class MarsBotStock extends Stock {
       }
     }
     // Positive amounts (resource gains from placement bonuses etc.) are ignored
-    // MarsBot gets MC from turnResolver.mcSupply via tile placement calculations
+    // MarsBot gets MC from turnResolver.megacredits via tile placement calculations
   }
 
   /**
-   * Override steal: use mcSupply instead of actual resource count.
+   * Override steal: use megacredits instead of actual resource count.
    * Per rules: "you may take the resources from MarsBot's MC supply
    * as if they were the resource type you are stealing."
    */
@@ -107,9 +107,9 @@ export class MarsBotStock extends Stock {
       super.steal(resource, qty, thief, options);
       return;
     }
-    const qtyToSteal = Math.min(this.marsBotRef.turnResolver.mcSupply, qty);
+    const qtyToSteal = Math.min(this.marsBotRef.turnResolver.megacredits, qty);
     if (qtyToSteal > 0) {
-      this.marsBotRef.turnResolver.mcSupply -= qtyToSteal;
+      this.marsBotRef.turnResolver.megacredits -= qtyToSteal;
       // Thief gains the actual resource type (plants, steel, etc.)
       thief.stock.add(resource, qtyToSteal);
       if (options?.log) {

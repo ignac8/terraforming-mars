@@ -49,18 +49,18 @@ describe('Corp Effect Hooks', () => {
       const {marsBot} = createAutomaGame();
       const corp = getMarsBotCorp(CardName.INVENTRIX)!;
       marsBot.setCorpAndSetup(corp);
-      const mcBefore = marsBot.turnResolver.mcSupply;
+      const mcBefore = marsBot.turnResolver.megacredits;
       corp.effect!.onProjectCardResolved!(marsBot, fakeCard('Req', {cost: 10, requirements: true}));
-      expect(marsBot.turnResolver.mcSupply).to.eq(mcBefore + 2);
+      expect(marsBot.turnResolver.megacredits).to.eq(mcBefore + 2);
     });
 
     it('does NOT gain M€ for cards without requirements', () => {
       const {marsBot} = createAutomaGame();
       const corp = getMarsBotCorp(CardName.INVENTRIX)!;
       marsBot.setCorpAndSetup(corp);
-      const mcBefore = marsBot.turnResolver.mcSupply;
+      const mcBefore = marsBot.turnResolver.megacredits;
       corp.effect!.onProjectCardResolved!(marsBot, fakeCard('NoReq', {cost: 10}));
-      expect(marsBot.turnResolver.mcSupply).to.eq(mcBefore);
+      expect(marsBot.turnResolver.megacredits).to.eq(mcBefore);
     });
   });
 
@@ -69,27 +69,27 @@ describe('Corp Effect Hooks', () => {
       const {marsBot} = createAutomaGame();
       const corp = getMarsBotCorp(CardName.VITOR)!;
       marsBot.setCorpAndSetup(corp);
-      const mcBefore = marsBot.turnResolver.mcSupply;
+      const mcBefore = marsBot.turnResolver.megacredits;
       corp.effect!.onProjectCardResolved!(marsBot, fakeCard('VP+', {cost: 10, victoryPoints: 1}));
-      expect(marsBot.turnResolver.mcSupply).to.eq(mcBefore + 3);
+      expect(marsBot.turnResolver.megacredits).to.eq(mcBefore + 3);
     });
 
     it('does NOT gain M€ for 0 VP cards', () => {
       const {marsBot} = createAutomaGame();
       const corp = getMarsBotCorp(CardName.VITOR)!;
       marsBot.setCorpAndSetup(corp);
-      const mcBefore = marsBot.turnResolver.mcSupply;
+      const mcBefore = marsBot.turnResolver.megacredits;
       corp.effect!.onProjectCardResolved!(marsBot, fakeCard('VP0', {cost: 10}));
-      expect(marsBot.turnResolver.mcSupply).to.eq(mcBefore);
+      expect(marsBot.turnResolver.megacredits).to.eq(mcBefore);
     });
 
     it('does NOT gain M€ for negative VP cards', () => {
       const {marsBot} = createAutomaGame();
       const corp = getMarsBotCorp(CardName.VITOR)!;
       marsBot.setCorpAndSetup(corp);
-      const mcBefore = marsBot.turnResolver.mcSupply;
+      const mcBefore = marsBot.turnResolver.megacredits;
       corp.effect!.onProjectCardResolved!(marsBot, fakeCard('VP-', {cost: 10, victoryPoints: -1}));
-      expect(marsBot.turnResolver.mcSupply).to.eq(mcBefore);
+      expect(marsBot.turnResolver.megacredits).to.eq(mcBefore);
     });
   });
 
@@ -99,7 +99,7 @@ describe('Corp Effect Hooks', () => {
       const corp = getMarsBotCorp(CardName.VIRON)!;
       marsBot.setCorpAndSetup(corp);
       corp.effect!.onProjectCardResolved!(marsBot, fakeCard('Card1', {tags: [Tag.BUILDING], cost: 5}));
-      expect(marsBot.floaterCount).to.eq(1);
+      expect(marsBot.floaters).to.eq(1);
       expect(marsBot.corpSpecificState.get('actionCardsPlayed')).to.eq(1);
     });
 
@@ -117,9 +117,9 @@ describe('Corp Effect Hooks', () => {
       const {marsBot} = createAutomaGame();
       const corp = getMarsBotCorp(CardName.APHRODITE)!;
       marsBot.setCorpAndSetup(corp);
-      const mcBefore = marsBot.turnResolver.mcSupply;
+      const mcBefore = marsBot.turnResolver.megacredits;
       corp.effect!.onVenusRaised!(marsBot);
-      expect(marsBot.turnResolver.mcSupply).to.eq(mcBefore + 2);
+      expect(marsBot.turnResolver.megacredits).to.eq(mcBefore + 2);
     });
   });
 
@@ -128,9 +128,9 @@ describe('Corp Effect Hooks', () => {
       const {marsBot} = createAutomaGame();
       const corp = getMarsBotCorp(CardName.THARSIS_REPUBLIC)!;
       marsBot.setCorpAndSetup(corp);
-      const mcBefore = marsBot.turnResolver.mcSupply;
+      const mcBefore = marsBot.turnResolver.megacredits;
       corp.effect!.onTilePlaced!(marsBot, false, TileType.CITY);
-      expect(marsBot.turnResolver.mcSupply).to.eq(mcBefore + 2);
+      expect(marsBot.turnResolver.megacredits).to.eq(mcBefore + 2);
     });
 
     it('advances event track when MarsBot places city', () => {
@@ -146,9 +146,9 @@ describe('Corp Effect Hooks', () => {
       const {marsBot} = createAutomaGame();
       const corp = getMarsBotCorp(CardName.THARSIS_REPUBLIC)!;
       marsBot.setCorpAndSetup(corp);
-      const mcBefore = marsBot.turnResolver.mcSupply;
+      const mcBefore = marsBot.turnResolver.megacredits;
       corp.effect!.onTilePlaced!(marsBot, false, TileType.GREENERY);
-      expect(marsBot.turnResolver.mcSupply).to.eq(mcBefore);
+      expect(marsBot.turnResolver.megacredits).to.eq(mcBefore);
     });
   });
 
@@ -181,12 +181,12 @@ describe('Corp Effect Hooks', () => {
       marsBot.setCorpAndSetup(corp);
       marsBot.corpSpecificState.set('whiteCubeOnCard', 1);
       const trBefore = marsBot.player.terraformRating;
-      const mcBefore = marsBot.turnResolver.mcSupply;
+      const mcBefore = marsBot.turnResolver.megacredits;
       const skip = corp.effect!.interceptGlobalParameterRaise!(marsBot, GlobalParameter.TEMPERATURE);
       expect(skip).to.be.true;
       expect(marsBot.corpSpecificState.get('whiteCubeOnCard')).to.eq(0);
       expect(marsBot.player.terraformRating).to.eq(trBefore + 1);
-      expect(marsBot.turnResolver.mcSupply).to.eq(mcBefore + 6);
+      expect(marsBot.turnResolver.megacredits).to.eq(mcBefore + 6);
     });
 
     it('does not intercept without white cube', () => {
@@ -252,9 +252,9 @@ describe('Corp Effect Hooks', () => {
     it('Mining Guild counts down through turnResolver.gainMc', () => {
       const {marsBot} = createAutomaGame();
       marsBot.setCorpAndSetup(getMarsBotCorp(CardName.MINING_GUILD)!);
-      const mcBefore = marsBot.turnResolver.mcSupply;
+      const mcBefore = marsBot.turnResolver.megacredits;
       marsBot.turnResolver.gainMc(4);
-      expect(marsBot.turnResolver.mcSupply).to.eq(mcBefore + 4);
+      expect(marsBot.turnResolver.megacredits).to.eq(mcBefore + 4);
       expect(marsBot.corpSpecificState.get('mcOnCard')).to.eq(6);
     });
 
@@ -264,11 +264,11 @@ describe('Corp Effect Hooks', () => {
       marsBot.corpSpecificState.set('whiteCubeOnCard', 1);
       const oceansBefore = game.board.getOceanSpaces().length;
       const trBefore = marsBot.player.terraformRating;
-      const mcBefore = marsBot.turnResolver.mcSupply;
+      const mcBefore = marsBot.turnResolver.megacredits;
       marsBot.turnResolver.placeOcean();
       expect(game.board.getOceanSpaces().length).to.eq(oceansBefore);
       expect(marsBot.player.terraformRating).to.eq(trBefore + 1);
-      expect(marsBot.turnResolver.mcSupply).to.eq(mcBefore + 6);
+      expect(marsBot.turnResolver.megacredits).to.eq(mcBefore + 6);
       expect(marsBot.corpSpecificState.get('whiteCubeOnCard')).to.eq(0);
     });
 
@@ -298,31 +298,31 @@ describe('Corp Effect Hooks', () => {
       marsBot.setCorpAndSetup(corp);
       // Ecotec starts with 2 plant resources
       expect(marsBot.corpSpecificState.get('plantResources')).to.eq(2);
-      const mcBefore = marsBot.turnResolver.mcSupply;
+      const mcBefore = marsBot.turnResolver.megacredits;
       // Remove 3 plants — should take 2 from card, excess lost, NOT from MC supply
       marsBot.player.stock.add('plants' as any, -3);
       expect(marsBot.corpSpecificState.get('plantResources')).to.eq(0);
-      expect(marsBot.turnResolver.mcSupply).to.eq(mcBefore); // No MC deducted
+      expect(marsBot.turnResolver.megacredits).to.eq(mcBefore); // No MC deducted
     });
 
     it('non-plant removal still deducts from MC supply', () => {
       const {marsBot} = createAutomaGame();
       const corp = getMarsBotCorp(CardName.ECOTEC)!;
       marsBot.setCorpAndSetup(corp);
-      marsBot.turnResolver.mcSupply = 10;
+      marsBot.turnResolver.megacredits = 10;
       marsBot.player.stock.add('steel' as any, -3);
-      expect(marsBot.turnResolver.mcSupply).to.eq(7);
+      expect(marsBot.turnResolver.megacredits).to.eq(7);
     });
   });
 
   describe('Serialization with corp state', () => {
-    it('round-trips floaterCount', () => {
+    it('round-trips floaters', () => {
       const {marsBot} = createAutomaGame();
-      marsBot.floaterCount = 7;
+      marsBot.floaters = 7;
       const state = marsBot.serialize();
       const {marsBot: marsBot2} = createAutomaGame();
       marsBot2.restoreState(state);
-      expect(marsBot2.floaterCount).to.eq(7);
+      expect(marsBot2.floaters).to.eq(7);
     });
 
     it('round-trips corpSpecificState', () => {

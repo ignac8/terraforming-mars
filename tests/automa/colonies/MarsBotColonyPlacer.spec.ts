@@ -175,10 +175,10 @@ describe('MarsBotColonyPlacer (C-15b, C-16a, C-19, C-24a)', () => {
       while (game.canAddOcean()) {
         marsBot.turnResolver.placeOcean();
       }
-      const mcBefore = marsBot.turnResolver.mcSupply;
+      const mcBefore = marsBot.turnResolver.megacredits;
       placeColonyForMarsBot(europa, marsBot);
       // Should be a failed action (gains MC)
-      expect(marsBot.turnResolver.mcSupply).to.be.greaterThan(mcBefore);
+      expect(marsBot.turnResolver.megacredits).to.be.greaterThan(mcBefore);
       expect(europa.colonies).to.not.include(marsBot.player.id);
     });
   });
@@ -193,7 +193,7 @@ describe('MarsBotColonyPlacer (C-15b, C-16a, C-19, C-24a)', () => {
       expect(marsBot.shippingBoard.get(ColonyName.TITAN)).to.eq(2);
     });
 
-    it('with Venus Next: adds 2 floaters to floaterCount', () => {
+    it('with Venus Next: adds 2 floaters to floaters', () => {
       const [game] = testGame(1, {
         automaOption: true,
         coloniesExtension: true,
@@ -203,9 +203,9 @@ describe('MarsBotColonyPlacer (C-15b, C-16a, C-19, C-24a)', () => {
       const marsBot = getMarsBot(game);
       const titan = new Titan();
       game.colonies = [titan];
-      const floatersBefore = marsBot.floaterCount;
+      const floatersBefore = marsBot.floaters;
       placeColonyForMarsBot(titan, marsBot);
-      expect(marsBot.floaterCount).to.eq(floatersBefore + 2);
+      expect(marsBot.floaters).to.eq(floatersBefore + 2);
     });
 
     it('Titan storage overflow does NOT advance any track (C-23)', () => {

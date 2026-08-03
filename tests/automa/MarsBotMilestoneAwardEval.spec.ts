@@ -35,7 +35,7 @@ function mockContext(overrides: Partial<MarsBotMAContext> = {}): MarsBotMAContex
     specialTilesOwned: 0,
     hasVenus: false,
     venusTrackPos: 0,
-    floaterCount: 0,
+    floaters: 0,
     ...overrides,
   };
 }
@@ -113,12 +113,12 @@ describe('MarsBotMilestoneAwardEval', () => {
     });
 
     it('Hoverlord: 7+ floaters returns true', () => {
-      const ctx = mockContext({floaterCount: 7});
+      const ctx = mockContext({floaters: 7});
       expect(MILESTONE_EVALS.get('Hoverlord')!(ctx)).to.be.true;
     });
 
     it('Hoverlord: 6 floaters returns false', () => {
-      const ctx = mockContext({floaterCount: 6});
+      const ctx = mockContext({floaters: 6});
       expect(MILESTONE_EVALS.get('Hoverlord')!(ctx)).to.be.false;
     });
 
@@ -258,7 +258,7 @@ describe('MarsBotMilestoneAwardEval', () => {
     it('Briber milestone deducts 12 MC when claimed', () => {
       const {marsBot} = createAutomaGame();
       // Give MarsBot enough MC and set the eval to pass
-      marsBot.turnResolver.mcSupply = 30;
+      marsBot.turnResolver.megacredits = 30;
 
       // Verify the Briber eval would pass with sufficient MC
       const ctx = mockContext({mc: 30});
@@ -266,7 +266,7 @@ describe('MarsBotMilestoneAwardEval', () => {
 
       // The 12 MC cost is deducted during milestone claiming in the game engine.
       // Verify MarsBot has enough MC to cover the 12 MC milestone cost.
-      expect(marsBot.turnResolver.mcSupply).to.be.gte(12);
+      expect(marsBot.turnResolver.megacredits).to.be.gte(12);
     });
   });
 
