@@ -134,8 +134,8 @@ export class MarsBotProduction extends Production {
 
     // Precompute resource -> track index mapping.
     const resourceToTrack = new Map<Resource, number>();
-    for (let i = 0; i < marsBot.board.data.length; i++) {
-      for (const res of marsBot.board.data[i].productions) {
+    for (let i = 0; i < marsBot.tracks.data.length; i++) {
+      for (const res of marsBot.tracks.data[i].productions) {
         resourceToTrack.set(res, i);
       }
     }
@@ -150,7 +150,7 @@ export class MarsBotProduction extends Production {
           if (trackIndex === undefined || this.marsBotRef === undefined) {
             return 0;
           }
-          return this.marsBotRef.board.tracks[trackIndex].position;
+          return this.marsBotRef.tracks.all[trackIndex].position;
         },
         set() { /* no-op */ },
         configurable: true,

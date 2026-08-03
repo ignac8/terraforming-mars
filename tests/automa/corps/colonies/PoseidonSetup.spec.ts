@@ -54,13 +54,13 @@ describe('PoseidonSetup (C-33)', () => {
     marsBot.corp = AUTOMA_COLONIES_MANIFEST.corps[CardName.POSEIDON];
 
     // Record the least-advanced track position before placement
-    const leastIdx = marsBot.board.tracks.reduce((minIdx, t, i, arr) => t.position < arr[minIdx].position ? i : minIdx, 0);
-    const beforePos = marsBot.board.tracks[leastIdx].position;
+    const leastIdx = marsBot.tracks.all.reduce((minIdx, t, i, arr) => t.position < arr[minIdx].position ? i : minIdx, 0);
+    const beforePos = marsBot.tracks.all[leastIdx].position;
 
     marsBot.maybePlaceRandomColony();
 
     // The least-advanced track should have advanced by 1
-    const newLeastAdvancedPos = marsBot.board.tracks[leastIdx].position;
+    const newLeastAdvancedPos = marsBot.tracks.all[leastIdx].position;
     expect(newLeastAdvancedPos).to.eq(beforePos + 1);
   });
 });

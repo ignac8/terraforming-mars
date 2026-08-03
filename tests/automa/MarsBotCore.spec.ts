@@ -14,46 +14,46 @@ function createMarsBot(): MarsBot {
 describe('MarsBot track regression', () => {
   it('regressTrack maps Steel to Building track (index 0)', () => {
     const mb = createMarsBot();
-    mb.board.tracks[0].advance();
-    mb.board.tracks[0].advance();
+    mb.tracks.all[0].advance();
+    mb.tracks.all[0].advance();
 
     mb.regressTrack(Resource.STEEL);
-    expect(mb.board.tracks[0].position).to.eq(1);
+    expect(mb.tracks.all[0].position).to.eq(1);
   });
 
   it('regressTrack maps Energy to Energy track (index 4)', () => {
     const mb = createMarsBot();
     for (let i = 0; i < 3; i++) {
-      mb.board.tracks[4].advance();
+      mb.tracks.all[4].advance();
     }
 
     mb.regressTrack(Resource.ENERGY);
-    expect(mb.board.tracks[4].position).to.eq(2);
+    expect(mb.tracks.all[4].position).to.eq(2);
   });
 
   it('regressTrack ignores resources not mapped to any track', () => {
     const mb = createMarsBot();
-    mb.board.tracks[1].advance();
+    mb.tracks.all[1].advance();
 
     mb.regressTrack(Resource.TITANIUM);
-    expect(mb.board.tracks[1].position).to.eq(0);
+    expect(mb.tracks.all[1].position).to.eq(0);
   });
 });
 
 describe('MarsBot serialization roundtrip', () => {
   it('preserves track positions', () => {
     const mb = createMarsBot();
-    mb.board.tracks[0].advance();
-    mb.board.tracks[0].advance();
-    mb.board.tracks[3].advance();
+    mb.tracks.all[0].advance();
+    mb.tracks.all[0].advance();
+    mb.tracks.all[3].advance();
 
     const state = mb.serialize();
     const mb2 = createMarsBot();
     mb2.restoreState(state);
 
-    expect(mb2.board.tracks[0].position).to.eq(2);
-    expect(mb2.board.tracks[3].position).to.eq(1);
-    expect(mb2.board.tracks[1].position).to.eq(0);
+    expect(mb2.tracks.all[0].position).to.eq(2);
+    expect(mb2.tracks.all[3].position).to.eq(1);
+    expect(mb2.tracks.all[1].position).to.eq(0);
   });
 
   it('preserves cube positions', () => {

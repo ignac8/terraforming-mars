@@ -89,10 +89,10 @@ describe('Expansion MarsBot Corporations', () => {
       const corp = getMarsBotCorp(CardName.POINT_LUNA)!;
       marsBot.setCorpAndSetup(corp);
       // All tracks at some position after starting tags. White cube → least advanced.
-      const leastBefore = marsBot.board.tracks[marsBot.board.getLeastAdvancedTrackIndex()].position;
+      const leastBefore = marsBot.tracks.all[marsBot.tracks.getLeastAdvancedTrackIndex()].position;
       corp.effect!.onTrackCubeTrigger!(marsBot, 5, 1, 'white');
       // Some track should have advanced
-      expect(marsBot.board.tracks[marsBot.board.getLeastAdvancedTrackIndex()].position).to.be.gte(leastBefore);
+      expect(marsBot.tracks.all[marsBot.tracks.getLeastAdvancedTrackIndex()].position).to.be.gte(leastBefore);
     });
   });
 
@@ -122,9 +122,9 @@ describe('Expansion MarsBot Corporations', () => {
       const {marsBot} = createAutomaGame();
       const corp = getMarsBotCorp(CardName.MANUTECH)!;
       marsBot.setCorpAndSetup(corp);
-      const track1Before = marsBot.board.tracks[0].position;
+      const track1Before = marsBot.tracks.all[0].position;
       corp.effect!.onTrackCubeTrigger!(marsBot, 0, 5, 'black');
-      expect(marsBot.board.tracks[0].position).to.be.gte(track1Before + 1);
+      expect(marsBot.tracks.all[0].position).to.be.gte(track1Before + 1);
     });
   });
 
@@ -149,10 +149,10 @@ describe('Expansion MarsBot Corporations', () => {
       const corp = getMarsBotCorp(CardName.ECOTEC)!;
       marsBot.setCorpAndSetup(corp);
       marsBot.corpSpecificState.set('plantResources', 6);
-      const plantTrackBefore = marsBot.board.tracks[6].position;
+      const plantTrackBefore = marsBot.tracks.all[6].position;
       corp.beforeActionPhase!(marsBot);
       expect(marsBot.corpSpecificState.get('plantResources')).to.eq(1);
-      expect(marsBot.board.tracks[6].position).to.be.gte(plantTrackBefore + 1);
+      expect(marsBot.tracks.all[6].position).to.be.gte(plantTrackBefore + 1);
     });
   });
 
@@ -268,9 +268,9 @@ describe('Expansion MarsBot Corporations', () => {
       const {marsBot} = createAutomaGame();
       const corp = getMarsBotCorp(CardName.RECYCLON)!;
       marsBot.setCorpAndSetup(corp);
-      const plantBefore = marsBot.board.tracks[6].position;
+      const plantBefore = marsBot.tracks.all[6].position;
       corp.effect!.onTrackCubeTrigger!(marsBot, 0, 3, 'white');
-      expect(marsBot.board.tracks[6].position).to.be.gte(plantBefore + 1);
+      expect(marsBot.tracks.all[6].position).to.be.gte(plantBefore + 1);
     });
   });
 
@@ -351,9 +351,9 @@ describe('Expansion MarsBot Corporations', () => {
       const {marsBot} = createAutomaGame();
       const corp = getMarsBotCorp(CardName.ARIDOR)!;
       marsBot.setCorpAndSetup(corp);
-      const eventBefore = marsBot.board.tracks[2].position;
+      const eventBefore = marsBot.tracks.all[2].position;
       corp.effect!.onTrackCubeTrigger!(marsBot, 1, 3, 'white');
-      expect(marsBot.board.tracks[2].position).to.be.gte(eventBefore + 1);
+      expect(marsBot.tracks.all[2].position).to.be.gte(eventBefore + 1);
     });
   });
 

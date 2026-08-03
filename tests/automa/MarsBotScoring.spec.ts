@@ -3,7 +3,7 @@ import {testGame} from '../TestGame';
 import {TestPlayer} from '../TestPlayer';
 import {IGame} from '../../src/server/IGame';
 import {MarsBotScoring} from '../../src/server/automa/MarsBotScoring';
-import {MarsBotBoard} from '../../src/server/automa/MarsBotBoard';
+import {MarsBotTracks} from '../../src/server/automa/MarsBotTracks';
 import {MarsBotTurnResolver} from '../../src/server/automa/MarsBotTurnResolver';
 import {THARSIS_MARSBOT_BOARD} from '../../src/server/automa/boards/TharsisMarsBot';
 import {TileType} from '../../src/common/TileType';
@@ -13,14 +13,14 @@ describe('MarsBotScoring', () => {
   let game: IGame;
   let human: TestPlayer;
   let marsBot: TestPlayer;
-  let board: MarsBotBoard;
+  let board: MarsBotTracks;
   let turnResolver: MarsBotTurnResolver;
 
   beforeEach(() => {
     [game, human] = testGame(1);
     marsBot = TestPlayer.RED.newPlayer({name: 'marsbot'});
     (marsBot as any).game = game;
-    board = new MarsBotBoard(THARSIS_MARSBOT_BOARD);
+    board = new MarsBotTracks(THARSIS_MARSBOT_BOARD);
     turnResolver = new MarsBotTurnResolver(game, marsBot, human, board, 'normal');
   });
 

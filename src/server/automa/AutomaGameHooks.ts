@@ -268,7 +268,7 @@ export class AutomaGameHooks {
         let picked: IProjectCard;
         if (draftPriority !== undefined) {
           picked = MarsBotDraftResolver.pickCardForMarsBot(
-            marsBotPile, draftPriority, this.game.rng, this.marsBot.board,
+            marsBotPile, draftPriority, this.game.rng, this.marsBot.tracks,
           );
         } else {
           picked = marsBotPile[this.game.rng.nextInt(marsBotPile.length)];
@@ -531,7 +531,7 @@ export class AutomaGameHooks {
     }
     if (this.marsBot.turnResolver.megacredits >= 2) {
       this.marsBot.turnResolver.megacredits -= 2;
-      this.marsBot.turnResolver.advanceTrack(this.marsBot.board.getLeastAdvancedTrackIndex());
+      this.marsBot.turnResolver.advanceTrack(this.marsBot.tracks.getLeastAdvancedTrackIndex());
       this.game.log('MarsBot pays 2 MC and advances least-advanced track (St. Joseph)');
     } else {
       this.game.log('MarsBot cannot afford 2 MC for St. Joseph cathedral');
@@ -551,11 +551,11 @@ export class AutomaGameHooks {
 
   /** Galilean Waystation: behavior gives full MarsBot Jovian track, rulebook says half. Adjust after behavior runs. */
   public adjustGalileanWaystation(player: IPlayer): void {
-    const jovianTrackIndex = this.marsBot.board.getTrackIndexForTag(Tag.JOVIAN);
+    const jovianTrackIndex = this.marsBot.tracks.getTrackIndexForTag(Tag.JOVIAN);
     if (jovianTrackIndex === undefined) {
       return;
     }
-    const fullPos = this.marsBot.board.tracks[jovianTrackIndex].position;
+    const fullPos = this.marsBot.tracks.all[jovianTrackIndex].position;
     const halfPos = Math.floor(fullPos / 2);
     const adjustment = halfPos - fullPos;
     if (adjustment !== 0) {
