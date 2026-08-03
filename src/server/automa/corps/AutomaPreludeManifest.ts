@@ -78,7 +78,7 @@ const VALLEY_TRUST: IMarsBotCorp = {
   effect: {
     onTrackCubeTrigger(bot, _trackIndex, _position, cubeType) {
       if (cubeType === 'white') {
-        bot.drawAndResolveProjectCard();
+        bot.maybeDrawAndResolveProjectCard();
         bot.game.log('MarsBot (Valley Trust): white cube — drew and resolved 1 card');
       }
     },

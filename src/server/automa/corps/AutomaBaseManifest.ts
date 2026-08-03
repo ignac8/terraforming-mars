@@ -56,7 +56,7 @@ const HELION: IMarsBotCorp = {
   effect: {
     onTrackCubeTrigger(bot, _trackIndex, _position, cubeType) {
       if (cubeType === 'white') {
-        bot.drawAndResolveProjectCard();
+        bot.maybeDrawAndResolveProjectCard();
         bot.game.log('MarsBot (Helion): white cube — drew and resolved card instead of temp raise');
       } else if (cubeType === 'black') {
         bot.raiseTemperature(1);
@@ -158,7 +158,7 @@ const PHOBOLOG: IMarsBotCorp = {
   effect: {
     onTrackCubeTrigger(bot, _trackIndex, _position, cubeType) {
       if (cubeType === 'white') {
-        bot.drawAndResolveBonusCard();
+        bot.maybeDrawAndResolveBonusCard();
         bot.game.log('MarsBot (Phobolog): white cube — resolved 1 bonus card');
       }
     },
@@ -258,7 +258,7 @@ const THORGATE: IMarsBotCorp = {
   effect: {
     onTrackCubeTrigger(bot, _trackIndex, _position, cubeType) {
       if (cubeType === 'white') {
-        bot.drawAndResolveProjectCardIgnoringFirstNTags(1);
+        bot.maybeDrawAndResolveProjectCardIgnoringFirstNTags(1);
         bot.raiseTemperature(1);
         bot.game.log('MarsBot (Thorgate): white cube — resolved card (first tag ignored) + temp +1');
       }
@@ -279,7 +279,7 @@ const UNMI: IMarsBotCorp = {
   },
   beforeActionPhase(bot) {
     if (bot.game.generation >= 2) {
-      bot.drawAndResolveBonusCard();
+      bot.maybeDrawAndResolveBonusCard();
       bot.game.log('MarsBot (UNMI): added 1 bonus card to action deck');
     }
   },

@@ -354,34 +354,31 @@ export class MarsBot implements IMarsBot {
     this.turnResolver.advanceTrack(trackIndex);
   }
 
-  public drawAndResolveProjectCard(): boolean {
+  public maybeDrawAndResolveProjectCard(): void {
     const cards = this.game.projectDeck.drawN(this.game, 1);
     if (cards.length === 0) {
-      return false;
+      return;
     }
     this.turnResolver.resolveProjectCard(cards[0]);
-    return true;
   }
 
-  public drawAndResolveProjectCardIgnoringFirstNTags(n: number): boolean {
+  public maybeDrawAndResolveProjectCardIgnoringFirstNTags(n: number): void {
     const cards = this.game.projectDeck.drawN(this.game, 1);
     if (cards.length === 0) {
-      return false;
+      return;
     }
     const card = cards[0];
     // Use Object.create to preserve prototype (methods like getVictoryPoints)
     const mockCard = Object.create(card, {tags: {value: card.tags.slice(n)}}) as IProjectCard;
     this.turnResolver.resolveProjectCard(mockCard);
-    return true;
   }
 
-  public drawAndResolveBonusCard(): boolean {
+  public maybeDrawAndResolveBonusCard(): void {
     const bonusCard = this.bonusDeck.draw(this.game);
     if (bonusCard === undefined) {
-      return false;
+      return;
     }
     this.bonusResolver.resolve(bonusCard);
-    return true;
   }
 
   public raiseTemperature(steps: 1 | 2 | 3): void {
