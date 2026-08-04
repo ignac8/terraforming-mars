@@ -16,7 +16,7 @@ describe('MarsBot Colonies — 2nd Trade Fleet Cube (C-6, C-27)', () => {
     const marsBot = getMarsBotFromGame(game);
 
     // Event track is index 2 on Tharsis
-    const eventTrackIdx = marsBot.tracks.tagToTrack[Tag.EVENT];
+    const eventTrackIdx = marsBot.marsBotBoard.tagToTrack[Tag.EVENT];
     expect(eventTrackIdx).to.not.be.undefined;
     const key = trackCubeKey(eventTrackIdx!, 9);
     const cube = marsBot.trackCubePositions.get(key);
@@ -28,7 +28,7 @@ describe('MarsBot Colonies — 2nd Trade Fleet Cube (C-6, C-27)', () => {
   it('does NOT place trade fleet cube when coloniesExtension is disabled', () => {
     const [game] = testGame(1, {automaOption: true, coloniesExtension: false, boardName: BoardName.THARSIS});
     const marsBot = getMarsBotFromGame(game);
-    const eventTrackIdx = marsBot.tracks.tagToTrack[Tag.EVENT];
+    const eventTrackIdx = marsBot.marsBotBoard.tagToTrack[Tag.EVENT];
     expect(eventTrackIdx).to.not.be.undefined;
     const key = trackCubeKey(eventTrackIdx!, 9);
     expect(marsBot.trackCubePositions.has(key)).to.be.false;
@@ -50,7 +50,7 @@ describe('MarsBot Colonies — 2nd Trade Fleet Cube (C-6, C-27)', () => {
     const [game] = testGame(1, {automaOption: true, coloniesExtension: true, boardName: BoardName.THARSIS});
     const marsBot = getMarsBotFromGame(game);
     // Advance Event track (index 2) to position 9
-    const eventTrackIdx = marsBot.tracks.tagToTrack[Tag.EVENT]!;
+    const eventTrackIdx = marsBot.marsBotBoard.tagToTrack[Tag.EVENT]!;
     while (marsBot.marsBotBoard.tracks[eventTrackIdx].position < 9) {
       marsBot.turnResolver.advanceTrack(eventTrackIdx);
     }
@@ -60,7 +60,7 @@ describe('MarsBot Colonies — 2nd Trade Fleet Cube (C-6, C-27)', () => {
   it('does NOT unlock 2nd trade fleet without coloniesExtension', () => {
     const [game] = testGame(1, {automaOption: true, coloniesExtension: false, boardName: BoardName.THARSIS});
     const marsBot = getMarsBotFromGame(game);
-    const eventTrackIdx = marsBot.tracks.tagToTrack[Tag.EVENT]!;
+    const eventTrackIdx = marsBot.marsBotBoard.tagToTrack[Tag.EVENT]!;
     while (marsBot.marsBotBoard.tracks[eventTrackIdx].position < 9) {
       marsBot.turnResolver.advanceTrack(eventTrackIdx);
     }

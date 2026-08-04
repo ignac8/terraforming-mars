@@ -4,7 +4,6 @@ import {TestPlayer} from '../../TestPlayer';
 import {runAllActions} from '../../TestingUtils';
 import {Game} from '../../../src/server/Game';
 import {IGame} from '../../../src/server/IGame';
-import {IPlayer} from '../../../src/server/IPlayer';
 import {MarsBot} from '../../../src/server/automa/MarsBot';
 import {BoardName} from '../../../src/common/boards/BoardName';
 import {BonusCardId, MARSBOT_STARTING_TR} from '../../../src/common/automa/AutomaTypes';
@@ -22,9 +21,9 @@ import {Revolution} from '../../../src/server/turmoil/globalEvents/Revolution';
 import {CardName} from '../../../src/common/cards/CardName';
 import {getMarsBotCorp} from '../../../src/server/automa/corps/MarsBotCorpRegistry';
 
-/** The turmoil helper for this game. The human is the only real player in an automa game. */
-function turmoilHelper(game: IGame, marsBotPlayer: IPlayer): MarsBotTurmoilHelper {
-  return new MarsBotTurmoilHelper(game, Turmoil.getTurmoil(game), marsBotPlayer, game.players[0]);
+/** The turmoil helper for this game. */
+function turmoilHelper(game: IGame): MarsBotTurmoilHelper {
+  return new MarsBotTurmoilHelper(game);
 }
 
 /** Create a Turmoil-enabled automa game. Returns {game, humanPlayer, marsBot}. */
@@ -102,7 +101,7 @@ describe('MarsBot Turmoil — Party Politics delegate selection (T-7)', () => {
     // Scientists: MarsBot(1) + any NEUTRAL from initGlobalEvent. Others ≤ 2 each.
     // After +1: MarsBot(2) > NEUTRAL leader, AND Scientists(2+) > all others if they have ≤ 1.
     // T-7.1 should fire for Scientists if it satisfies both conditions.
-    const selected = turmoilHelper(game, marsBotPlayer).selectParty();
+    const selected = turmoilHelper(game).selectParty();
     expect(selected).to.equal(PartyName.SCIENTISTS);
   });
 
@@ -122,7 +121,7 @@ describe('MarsBot Turmoil — Party Politics delegate selection (T-7)', () => {
       turmoil.sendDelegateToParty('NEUTRAL', name, game);
     }
 
-    const selected = turmoilHelper(game, marsBotPlayer).selectParty();
+    const selected = turmoilHelper(game).selectParty();
     expect(selected).to.equal(PartyName.SCIENTISTS);
   });
 
@@ -140,7 +139,7 @@ describe('MarsBot Turmoil — Party Politics delegate selection (T-7)', () => {
     turmoil.sendDelegateToParty(marsBotPlayer, PartyName.UNITY, game);
     turmoil.sendDelegateToParty(marsBotPlayer, PartyName.UNITY, game);
     const unity = turmoil.getPartyByName(PartyName.UNITY);
-    turmoilHelper(game, marsBotPlayer).maybeUpdatePartyLeader(unity);
+    expect(unity.partyLeader).to.equal(marsBotPlayer);
 
     // Force a different party as dominant so Unity is NOT currently dominant.
     // (wouldBecomeDominant returns false if the party is already dominant.)
@@ -150,14 +149,13 @@ describe('MarsBot Turmoil — Party Politics delegate selection (T-7)', () => {
     // T-7.2: non-Unity parties have NEUTRAL(1+), MarsBot+1=1, 1>1 false. No fire.
     // T-7.3: MarsBot IS leader in Unity AND Unity is not dominant AND +1 makes it dominant → FIRES.
 
-    const selected = turmoilHelper(game, marsBotPlayer).selectParty();
+    const selected = turmoilHelper(game).selectParty();
     expect(selected).to.equal(PartyName.UNITY);
   });
 
   it('T-7.4: picks party where human has fewest delegates', () => {
-    const {game, humanPlayer, marsBot} = createTurmoilGame();
+    const {game, humanPlayer} = createTurmoilGame();
     const turmoil = Turmoil.getTurmoil(game);
-    const marsBotPlayer = marsBot.player;
 
     // Put 1 NEUTRAL in each party to block T-7.1/7.2 (MarsBot+1=1 can't beat NEUTRAL(1))
     for (const name of Object.values(PartyName)) {
@@ -168,7 +166,7 @@ describe('MarsBot Turmoil — Party Politics delegate selection (T-7)', () => {
       turmoil.sendDelegateToParty(humanPlayer, name, game);
     }
     // Result: human has 0 in Greens (min), 1 in all others → T-7.4 picks Greens
-    const selected = turmoilHelper(game, marsBotPlayer).selectParty();
+    const selected = turmoilHelper(game).selectParty();
     expect(selected).to.equal(PartyName.GREENS);
   });
 
@@ -181,21 +179,19 @@ describe('MarsBot Turmoil — Party Politics delegate selection (T-7)', () => {
     // MarsBot has 1 delegate in Reds → other parties have 0 for MarsBot
     // Drain all existing neutral delegates from Reds so MarsBot's 1 stands out
     turmoil.sendDelegateToParty(marsBotPlayer, PartyName.REDS, game);
-    turmoilHelper(game, marsBotPlayer).maybeUpdatePartyLeader(turmoil.getPartyByName(PartyName.REDS));
 
     // T-7.5: MarsBot has 0 in all except Reds → pick a party with 0 MarsBot delegates
-    const selected = turmoilHelper(game, marsBotPlayer).selectParty();
+    const selected = turmoilHelper(game).selectParty();
     // Should not pick Reds (MarsBot has 1 there)
     expect(selected).to.not.equal(PartyName.REDS);
     expect(selected).to.not.be.undefined;
   });
 
   it('T-7.6: final tiebreaker selects a valid party', () => {
-    const {game, marsBot} = createTurmoilGame();
-    const marsBotPlayer = marsBot.player;
+    const {game} = createTurmoilGame();
 
     // All parties have 0 human and 0 MarsBot delegates → T-7.6
-    const selected = turmoilHelper(game, marsBotPlayer).selectParty();
+    const selected = turmoilHelper(game).selectParty();
     expect(selected).to.not.be.undefined;
     expect(Object.values(PartyName)).to.include(selected);
   });
@@ -211,7 +207,7 @@ describe('MarsBot Turmoil — Party Politics delegate selection (T-7)', () => {
     }
     expect(turmoil.hasDelegatesInReserve(marsBotPlayer)).to.be.false;
 
-    const selected = turmoilHelper(game, marsBotPlayer).selectParty();
+    const selected = turmoilHelper(game).selectParty();
     expect(selected).to.be.undefined;
   });
 });
@@ -288,7 +284,6 @@ describe('MarsBot Turmoil — End-of-game VP (T-13)', () => {
     turmoil.sendDelegateToParty(marsBotPlayer, PartyName.MARS, game);
     turmoil.sendDelegateToParty(marsBotPlayer, PartyName.MARS, game);
     const marsFirst = turmoil.getPartyByName(PartyName.MARS);
-    turmoilHelper(game, marsBotPlayer).maybeUpdatePartyLeader(marsFirst);
 
     // MarsBot should now be party leader
     expect(marsFirst.partyLeader).to.equal(marsBotPlayer);
@@ -344,7 +339,7 @@ describe('updatePartyLeaderForMarsBot', () => {
     turmoil.sendDelegateToParty(marsBotPlayer, PartyName.UNITY, game);
     turmoil.sendDelegateToParty(marsBotPlayer, PartyName.UNITY, game);
     const unity = turmoil.getPartyByName(PartyName.UNITY);
-    turmoilHelper(game, marsBotPlayer).maybeUpdatePartyLeader(unity);
+    expect(unity.partyLeader).to.equal(marsBotPlayer);
 
     expect(unity.partyLeader).to.equal(marsBotPlayer);
   });
@@ -359,7 +354,6 @@ describe('updatePartyLeaderForMarsBot', () => {
     turmoil.sendDelegateToParty(marsBotPlayer, PartyName.MARS, game);
     const marsFirst = turmoil.getPartyByName(PartyName.MARS);
     const leaderBefore = marsFirst.partyLeader;
-    turmoilHelper(game, marsBotPlayer).maybeUpdatePartyLeader(marsFirst);
 
     // If NEUTRAL had 1 and MarsBot now has 1, no change (NEUTRAL remains leader)
     // If NEUTRAL had 0, MarsBot becomes leader (first come first served from party init)
@@ -434,7 +428,6 @@ describe('MarsBot Turmoil — serialization', () => {
     for (let i = 0; i < 3; i++) {
       turmoil.sendDelegateToParty(marsBot.player, PartyName.GREENS, game);
     }
-    turmoilHelper(game, marsBot.player).maybeUpdatePartyLeader(turmoil.getPartyByName(PartyName.GREENS));
     expect(turmoil.getPartyByName(PartyName.GREENS).partyLeader).to.eq(marsBot.player);
 
     const restored = Game.deserialize(game.serialize());
@@ -615,7 +608,6 @@ describe('MarsBot Turmoil — Chairman rules (T-11b T-11c)', () => {
       turmoil.sendDelegateToParty(marsBotPlayer, PartyName.KELVINISTS, game);
     }
     const kelvinists = turmoil.getPartyByName(PartyName.KELVINISTS);
-    turmoilHelper(game, marsBotPlayer).maybeUpdatePartyLeader(kelvinists);
     turmoil.dominantParty = kelvinists;
 
     const trBefore = marsBotPlayer.terraformRating;
@@ -642,7 +634,6 @@ describe('MarsBot Turmoil — Chairman rules (T-11b T-11c)', () => {
     turmoil.sendDelegateToParty(marsBotPlayer, PartyName.REDS, game);
     const reserveAfterPlacement = turmoil.getAvailableDelegateCount(marsBotPlayer);
     const reds = turmoil.getPartyByName(PartyName.REDS);
-    turmoilHelper(game, marsBotPlayer).maybeUpdatePartyLeader(reds);
     turmoil.dominantParty = reds;
 
     game.phase = Phase.SOLAR;

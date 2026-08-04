@@ -129,9 +129,9 @@ describe('FloaterHandling (C-8, C-9, C-14, C-X2)', () => {
     it('Titan storage can hold more than 5 without triggering C-12', () => {
       const [game] = testGame(1, {automaOption: true, coloniesExtension: true, boardName: BoardName.THARSIS});
       const marsBot = getMarsBot(game);
-      const board: MarsBotBoard = marsBot.tracks;
+      const board: MarsBotBoard = marsBot.marsBotBoard;
       const eventIdx = board.tagToTrack[Tag.EVENT]!;
-      const before = board.all[eventIdx].position;
+      const before = board.tracks[eventIdx].position;
 
       // Add 6 floaters to Titan (via floater track actions)
       for (let i = 0; i < 6; i++) {
@@ -139,7 +139,7 @@ describe('FloaterHandling (C-8, C-9, C-14, C-X2)', () => {
       }
 
       // No track advancement should happen (Titan is exempt from C-12)
-      expect(board.all[eventIdx].position).to.eq(before);
+      expect(board.tracks[eventIdx].position).to.eq(before);
       expect(marsBot.shippingBoard.get(ColonyName.TITAN)).to.eq(6);
     });
   });
