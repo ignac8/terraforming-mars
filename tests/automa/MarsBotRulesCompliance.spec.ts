@@ -241,7 +241,7 @@ describe('MarsBot Rules Compliance', () => {
       const b01 = cards.find((c) => c.id === BonusCardId.B01_METEOR_SHOWER)!;
       const tilePlacer = new MarsBotTilePlacer(game, marsBot.player, human);
       const bonusDeck = MarsBotBonusDeck.createBase(new SeededRandom(99));
-      const resolver = new MarsBotTurnResolver(game, marsBot.player, human, marsBot.tracks, 'normal');
+      const resolver = new MarsBotTurnResolver(game, marsBot.player, human, marsBot.marsBotBoard, 'normal');
       const bonusResolver = new MarsBotBonusResolver(game, marsBot.player, human, resolver, bonusDeck, tilePlacer);
 
       const destroyed = bonusResolver.resolve(b01);
@@ -258,7 +258,7 @@ describe('MarsBot Rules Compliance', () => {
       const b01 = cards.find((c) => c.id === BonusCardId.B01_METEOR_SHOWER)!;
       const tilePlacer = new MarsBotTilePlacer(game, marsBot.player, human);
       const bonusDeck = MarsBotBonusDeck.createBase(new SeededRandom(99));
-      const resolver = new MarsBotTurnResolver(game, marsBot.player, human, marsBot.tracks, 'normal');
+      const resolver = new MarsBotTurnResolver(game, marsBot.player, human, marsBot.marsBotBoard, 'normal');
       const bonusResolver = new MarsBotBonusResolver(game, marsBot.player, human, resolver, bonusDeck, tilePlacer);
 
       const destroyed = bonusResolver.resolve(b01);

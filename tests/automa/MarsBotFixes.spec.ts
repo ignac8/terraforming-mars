@@ -114,24 +114,24 @@ describe('MarsBot Fixes', () => {
   describe('Milestone tiebreaker #2 - closest to meeting', () => {
     it('uses humanMilestoneCloseness when no human qualifies', () => {
       const {marsBot} = createAutomaGame();
-      const board = marsBot.tracks;
+      const marsBotBoard = marsBot.marsBotBoard;
 
       // Make MarsBot meet Builder (track 1 >= 8) and Planner (all tracks >= 4)
       // Set track 1 to 8
       for (let i = 0; i < 8; i++) {
-        board.all[0].advance();
+        marsBotBoard.tracks[0].advance();
       }
       // Set all tracks to 4
       for (let t = 1; t < 7; t++) {
         for (let i = 0; i < 4; i++) {
-          board.all[t].advance();
+          marsBotBoard.tracks[t].advance();
         }
       }
 
       // Human has 0 building tags (far from Builder=8) but 20 TR (close to Terraformer=35)
       // So Terraformer is "closer" for the human than Builder
       // But MarsBot doesn't meet Terraformer, so this test just verifies no crash
-      expect(board.all[0].position).to.eq(8);
+      expect(marsBotBoard.tracks[0].position).to.eq(8);
     });
   });
 
@@ -151,7 +151,7 @@ describe('MarsBot Fixes', () => {
   describe('Event cards advance Event track', () => {
     it('event-type card advances both its tag track and event track', () => {
       const {marsBot} = createAutomaGame();
-      const board = marsBot.tracks;
+      const marsBotBoard = marsBot.marsBotBoard;
 
       // Create a mock event card with Space tag
       const mockEventCard = {
@@ -165,8 +165,8 @@ describe('MarsBot Fixes', () => {
       marsBot.turnResolver.resolveProjectCard(mockEventCard);
 
       // Space tag → Track 2 (pos 1 = advance, chains to pos 2), Event tag → Track 3 (pos 1 = advance, chains to pos 2)
-      expect(board.all[1].position).to.eq(2);
-      expect(board.all[2].position).to.eq(2);
+      expect(marsBotBoard.tracks[1].position).to.eq(2);
+      expect(marsBotBoard.tracks[2].position).to.eq(2);
     });
   });
 
@@ -250,14 +250,14 @@ describe('MarsBot Fixes', () => {
       (marsBot as any).game = game;
 
       const boardData = makeBoardWithTrack1Action(1, 'advance');
-      const board = new MarsBotBoard(boardData);
-      const resolver = new MarsBotTurnResolver(game, marsBot, human, board, 'easy');
+      const marsBotBoard = new MarsBotBoard(boardData);
+      const resolver = new MarsBotTurnResolver(game, marsBot, human, marsBotBoard, 'easy');
 
       const mockCard = {cost: 5, tags: [Tag.BUILDING], type: 'automated' as any, name: 'T' as any, metadata: {} as any} as any;
       resolver.resolveProjectCard(mockCard);
 
       // Position should be 1 (advanced once), NOT 2 (advance action ignored)
-      expect(board.all[0].position).to.eq(1);
+      expect(marsBotBoard.tracks[0].position).to.eq(1);
     });
 
     it('failed action gives 3 MC in easy mode', () => {
@@ -358,14 +358,14 @@ describe('MarsBot Fixes', () => {
       (marsBot as any).game = game;
 
       const boardData = makeBoardWithTrack1Action(1, 'tag_1');
-      const board = new MarsBotBoard(boardData);
-      const resolver = new MarsBotTurnResolver(game, marsBot, human, board, 'normal');
+      const marsBotBoard = new MarsBotBoard(boardData);
+      const resolver = new MarsBotTurnResolver(game, marsBot, human, marsBotBoard, 'normal');
 
       const mockCard = {cost: 5, tags: [Tag.BUILDING], type: 'automated' as any, name: 'T' as any, metadata: {} as any} as any;
       resolver.resolveProjectCard(mockCard);
 
-      expect(board.all[0].position).to.eq(1);
-      expect(board.all[1].position).to.eq(2); // Chained: tag_1 → Space track pos 1 (advance) → pos 2
+      expect(marsBotBoard.tracks[0].position).to.eq(1);
+      expect(marsBotBoard.tracks[1].position).to.eq(2); // Chained: tag_1 → Space track pos 1 (advance) → pos 2
     });
 
     it('advance action moves same track forward again', () => {
@@ -374,13 +374,13 @@ describe('MarsBot Fixes', () => {
       (marsBot as any).game = game;
 
       const boardData = makeBoardWithTrack1Action(1, 'advance');
-      const board = new MarsBotBoard(boardData);
-      const resolver = new MarsBotTurnResolver(game, marsBot, human, board, 'normal');
+      const marsBotBoard = new MarsBotBoard(boardData);
+      const resolver = new MarsBotTurnResolver(game, marsBot, human, marsBotBoard, 'normal');
 
       const mockCard = {cost: 5, tags: [Tag.BUILDING], type: 'automated' as any, name: 'T' as any, metadata: {} as any} as any;
       resolver.resolveProjectCard(mockCard);
 
-      expect(board.all[0].position).to.eq(2); // 1 + advance = 2
+      expect(marsBotBoard.tracks[0].position).to.eq(2); // 1 + advance = 2
     });
 
     it('TR action increases terraform rating', () => {
@@ -389,8 +389,8 @@ describe('MarsBot Fixes', () => {
       (marsBot as any).game = game;
 
       const boardData = makeBoardWithTrack1Action(1, 'tr3');
-      const board = new MarsBotBoard(boardData);
-      const resolver = new MarsBotTurnResolver(game, marsBot, human, board, 'normal');
+      const marsBotBoard = new MarsBotBoard(boardData);
+      const resolver = new MarsBotTurnResolver(game, marsBot, human, marsBotBoard, 'normal');
 
       const startTR = marsBot.terraformRating;
       const mockCard = {cost: 5, tags: [Tag.BUILDING], type: 'automated' as any, name: 'T' as any, metadata: {} as any} as any;
@@ -425,8 +425,8 @@ describe('MarsBot Fixes', () => {
 
       // Track 1 pos 1 has tr3 action
       const boardData = makeBoardWithTrack1Action(1, 'tr3');
-      const board = new MarsBotBoard(boardData);
-      const resolver = new MarsBotTurnResolver(game, marsBot, human, board, 'normal');
+      const marsBotBoard = new MarsBotBoard(boardData);
+      const resolver = new MarsBotTurnResolver(game, marsBot, human, marsBotBoard, 'normal');
 
       // Advance to pos 1 (triggers tr3)
       const startTR = marsBot.terraformRating;
@@ -436,17 +436,17 @@ describe('MarsBot Fixes', () => {
 
       // Advance to pos 2
       resolver.resolveProjectCard(mockCard);
-      expect(board.all[0].position).to.eq(2);
+      expect(marsBotBoard.tracks[0].position).to.eq(2);
 
       // Regress back to pos 1
-      board.all[0].regress();
-      expect(board.all[0].position).to.eq(1);
+      marsBotBoard.tracks[0].regress();
+      expect(marsBotBoard.tracks[0].position).to.eq(1);
 
       // Re-advance to pos 2 - the action at pos 2 should be null (it's null in our layout)
       // But the IMPORTANT thing: pos 2 was regressed from, so action should be skipped
       const trBefore = marsBot.terraformRating;
       resolver.resolveProjectCard(mockCard);
-      expect(board.all[0].position).to.eq(2);
+      expect(marsBotBoard.tracks[0].position).to.eq(2);
       // No TR gain from skipped action
       expect(marsBot.terraformRating).to.eq(trBefore);
     });

@@ -22,29 +22,29 @@ type BotOptions = {
 
 /**
  * The evals only read the bot, so a plain object standing in for one is enough here.
- * The game and the tracks are real, since the tile and card counts come off them.
+ * The game and the marsBotBoard are real, since the tile and card counts come off them.
  */
 function createBot(options: BotOptions = {}) {
   const [game, player] = testGame(2, {venusNextExtension: options.venus === true});
   const trackDefinitions = options.venus === true ?
     [...THARSIS_MARSBOT_BOARD, VENUS_MARSBOT_TRACK] :
     THARSIS_MARSBOT_BOARD;
-  const tracks = new MarsBotBoard(trackDefinitions);
+  const marsBotBoard = new MarsBotBoard(trackDefinitions);
   const bot = {
     game,
     player,
-    tracks,
+    marsBotBoard,
     megacredits: options.megacredits ?? 0,
     floaters: options.floaters ?? 0,
     temperatureRaises: options.temperatureRaises ?? 0,
     playedProjectCards: options.played ?? [],
   } as unknown as IMarsBot;
-  return {game, player, tracks, bot};
+  return {game, player, marsBotBoard, bot};
 }
 
-function advance(tracks: MarsBotBoard, index: number, steps: number): void {
+function advance(marsBotBoard: MarsBotBoard, index: number, steps: number): void {
   for (let step = 0; step < steps; step++) {
-    tracks.all[index].advance();
+    marsBotBoard.tracks[index].advance();
   }
 }
 
@@ -92,7 +92,7 @@ describe('MarsBotMilestoneAwardEval', () => {
     });
   });
 
-  describe('read from the tracks', () => {
+  describe('read from the marsBotBoard', () => {
     it('Mayor counts the cities MarsBot owns', () => {
       const {game, player, bot} = createBot();
       for (const space of game.board.getAvailableSpacesForCity(player).slice(0, 3)) {
@@ -104,7 +104,7 @@ describe('MarsBotMilestoneAwardEval', () => {
 
     it('Mayor does not count the other player’s cities', () => {
       const [game, human, other] = testGame(2);
-      const bot = {game, player: other, tracks: new MarsBotBoard(THARSIS_MARSBOT_BOARD), playedProjectCards: []} as unknown as IMarsBot;
+      const bot = {game, player: other, marsBotBoard: new MarsBotBoard(THARSIS_MARSBOT_BOARD), playedProjectCards: []} as unknown as IMarsBot;
       for (const space of game.board.getAvailableSpacesForCity(human).slice(0, 3)) {
         game.simpleAddTile(human, space, {tileType: TileType.CITY});
       }
@@ -164,59 +164,59 @@ describe('MarsBotMilestoneAwardEval', () => {
     });
   });
 
-  describe('read from the tracks', () => {
+  describe('read from the marsBotBoard', () => {
     it('Builder needs the building track at 8', () => {
-      const {tracks, bot} = createBot();
-      advance(tracks, 0, 7);
+      const {marsBotBoard, bot} = createBot();
+      advance(marsBotBoard, 0, 7);
       expect(milestone('Builder', bot)).is.false;
 
-      advance(tracks, 0, 1);
+      advance(marsBotBoard, 0, 1);
       expect(milestone('Builder', bot)).is.true;
     });
 
     it('Planner needs every Mars track at 4', () => {
-      const {tracks, bot} = createBot();
+      const {marsBotBoard, bot} = createBot();
       for (let index = 0; index < 7; index++) {
-        advance(tracks, index, 4);
+        advance(marsBotBoard, index, 4);
       }
       expect(milestone('Planner', bot)).is.true;
 
-      tracks.all[2].regress();
+      marsBotBoard.tracks[2].regress();
       expect(milestone('Planner', bot)).is.false;
     });
 
     it('Specialist needs one track at 10', () => {
-      const {tracks, bot} = createBot();
-      advance(tracks, 5, 9);
+      const {marsBotBoard, bot} = createBot();
+      advance(marsBotBoard, 5, 9);
       expect(milestone('Specialist', bot)).is.false;
 
-      advance(tracks, 5, 1);
+      advance(marsBotBoard, 5, 1);
       expect(milestone('Specialist', bot)).is.true;
     });
 
-    it('Producer sums the top three tracks', () => {
-      const {tracks, bot} = createBot();
-      advance(tracks, 0, 6);
-      advance(tracks, 1, 6);
-      advance(tracks, 2, 3);
+    it('Producer sums the top three marsBotBoard', () => {
+      const {marsBotBoard, bot} = createBot();
+      advance(marsBotBoard, 0, 6);
+      advance(marsBotBoard, 1, 6);
+      advance(marsBotBoard, 2, 3);
       expect(milestone('Producer', bot)).is.false;
 
-      advance(tracks, 2, 1);
+      advance(marsBotBoard, 2, 1);
       expect(milestone('Producer', bot)).is.true;
     });
 
     it('Mogul doubles the furthest track', () => {
-      const {tracks, bot} = createBot();
-      advance(tracks, 3, 6);
-      advance(tracks, 1, 2);
+      const {marsBotBoard, bot} = createBot();
+      advance(marsBotBoard, 3, 6);
+      advance(marsBotBoard, 1, 2);
 
       expect(award('Mogul', bot)).to.eq(12);
     });
 
-    it('Blacksmith takes the further of the building and space tracks', () => {
-      const {tracks, bot} = createBot();
-      advance(tracks, 0, 3);
-      advance(tracks, 1, 5);
+    it('Blacksmith takes the further of the building and space marsBotBoard', () => {
+      const {marsBotBoard, bot} = createBot();
+      advance(marsBotBoard, 0, 3);
+      advance(marsBotBoard, 1, 5);
 
       expect(award('Blacksmith', bot)).to.eq(5);
     });
@@ -224,31 +224,31 @@ describe('MarsBotMilestoneAwardEval', () => {
 
   describe('Venus changes the track maths', () => {
     it('Diversifier needs every Mars track at 3 without Venus', () => {
-      const {tracks, bot} = createBot();
+      const {marsBotBoard, bot} = createBot();
       for (let index = 0; index < 7; index++) {
-        advance(tracks, index, 3);
+        advance(marsBotBoard, index, 3);
       }
       expect(milestone('Diversifier', bot)).is.true;
 
-      tracks.all[4].regress();
+      marsBotBoard.tracks[4].regress();
       expect(milestone('Diversifier', bot)).is.false;
     });
 
     it('Diversifier lets the Venus track cover one short Mars track', () => {
-      const {tracks, bot} = createBot({venus: true});
+      const {marsBotBoard, bot} = createBot({venus: true});
       for (let index = 0; index < 8; index++) {
-        advance(tracks, index, 3);
+        advance(marsBotBoard, index, 3);
       }
-      tracks.all[4].regress();
+      marsBotBoard.tracks[4].regress();
 
-      // Seven of the eight tracks still stand at 3
+      // Seven of the eight marsBotBoard still stand at 3
       expect(milestone('Diversifier', bot)).is.true;
     });
 
     it('Planner ignores the Venus track', () => {
-      const {tracks, bot} = createBot({venus: true});
+      const {marsBotBoard, bot} = createBot({venus: true});
       for (let index = 0; index < 7; index++) {
-        advance(tracks, index, 4);
+        advance(marsBotBoard, index, 4);
       }
 
       // The Venus track sits at 0 and must not hold the milestone back
@@ -256,8 +256,8 @@ describe('MarsBotMilestoneAwardEval', () => {
     });
 
     it('Venuphile scores the Venus track, and nothing without Venus', () => {
-      const {tracks, bot} = createBot({venus: true});
-      advance(tracks, 7, 4);
+      const {marsBotBoard, bot} = createBot({venus: true});
+      advance(marsBotBoard, 7, 4);
       expect(award('Venuphile', bot)).to.eq(4);
 
       expect(award('Venuphile', createBot().bot)).to.eq(0);
@@ -265,12 +265,12 @@ describe('MarsBotMilestoneAwardEval', () => {
 
     it('Visionary doubles the lowest track, or the second lowest with Venus', () => {
       const withoutVenus = createBot();
-      advance(withoutVenus.tracks, 0, 5);
+      advance(withoutVenus.marsBotBoard, 0, 5);
       expect(award('Visionary', withoutVenus.bot)).to.eq(0);
 
       const withVenus = createBot({venus: true});
       for (let index = 0; index < 8; index++) {
-        advance(withVenus.tracks, index, 2);
+        advance(withVenus.marsBotBoard, index, 2);
       }
       withVenus.marsBotBoard.tracks[6].regress();
       // Positions are 1, 2, 2, 2, 2, 2, 2, 2, so the second lowest is 2

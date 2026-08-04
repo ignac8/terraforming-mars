@@ -235,7 +235,7 @@ describe('MarsBotTrader (C-17, C-20, C-22, C-24b)', () => {
         const marsBot = getMarsBot(game);
         const pluto = new Pluto();
         game.colonies = [pluto];
-        const eventTrackIdx = marsBot.tracks.tagToTrack[Tag.EVENT]!;
+        const eventTrackIdx = marsBot.marsBotBoard.tagToTrack[Tag.EVENT]!;
         const before = marsBot.marsBotBoard.tracks[eventTrackIdx].position;
         // Add 5 to Pluto → overflow → advance Event track
         marsBot.shippingBoard.add(ColonyName.PLUTO, 5, marsBot);
