@@ -54,7 +54,7 @@ describe('MarsBot Award Crash Fix', () => {
     it('AwardScorer has MarsBot score for Scientist (track 4)', () => {
       const {game, marsBot} = createAutomaGame();
       for (let i = 0; i < 6; i++) {
-        marsBot.tracks.all[3].advance();
+        marsBot.marsBotBoard.tracks[3].advance();
       }
 
       const award = game.awards.find((a) => a.name === 'Scientist')!;
@@ -65,10 +65,10 @@ describe('MarsBot Award Crash Fix', () => {
     it('AwardScorer has MarsBot score for Banker (track 1 + track 3)', () => {
       const {game, marsBot} = createAutomaGame();
       for (let i = 0; i < 3; i++) {
-        marsBot.tracks.all[0].advance();
+        marsBot.marsBotBoard.tracks[0].advance();
       }
       for (let i = 0; i < 4; i++) {
-        marsBot.tracks.all[2].advance();
+        marsBot.marsBotBoard.tracks[2].advance();
       }
 
       const award = game.awards.find((a) => a.name === 'Banker')!;
@@ -79,7 +79,7 @@ describe('MarsBot Award Crash Fix', () => {
     it('AwardScorer has MarsBot score for Thermalist (track 5 + 5)', () => {
       const {game, marsBot} = createAutomaGame();
       for (let i = 0; i < 2; i++) {
-        marsBot.tracks.all[4].advance();
+        marsBot.marsBotBoard.tracks[4].advance();
       }
 
       const award = game.awards.find((a) => a.name === 'Thermalist')!;
@@ -90,7 +90,7 @@ describe('MarsBot Award Crash Fix', () => {
     it('AwardScorer has MarsBot score for Miner (track 2 + 5)', () => {
       const {game, marsBot} = createAutomaGame();
       for (let i = 0; i < 8; i++) {
-        marsBot.tracks.all[1].advance();
+        marsBot.marsBotBoard.tracks[1].advance();
       }
 
       const award = game.awards.find((a) => a.name === 'Miner')!;
@@ -146,7 +146,7 @@ describe('MarsBot Award Crash Fix', () => {
 
       // MarsBot track 4 at 10, human has 0 science tags
       for (let i = 0; i < 10; i++) {
-        marsBot.tracks.all[3].advance();
+        marsBot.marsBotBoard.tracks[3].advance();
       }
 
       const vp = calculateVictoryPoints(human);

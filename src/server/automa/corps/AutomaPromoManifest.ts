@@ -52,7 +52,7 @@ const PHILARES: IMarsBotCorp = {
       const science = bot.getCorpState('scienceResources');
       if (science >= 4) {
         bot.setCorpState('scienceResources', science - 4);
-        const trackIdx = bot.tracks.getMostAdvancedTrackIndex();
+        const trackIdx = bot.marsBotBoard.getMostAdvancedTrackIndex();
         bot.advanceTrack(trackIdx);
         bot.game.log('MarsBot (Philares): spent 4 science, advance most-advanced track');
       }

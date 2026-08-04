@@ -45,9 +45,9 @@ describe('Corp-Specific Bonus Cards (B22-B32)', () => {
     it('advances building track', () => {
       const {marsBot} = createAutomaGame();
       const card = createCorpBonusCard(BonusCardId.B24_SUPPLY_AND_DEMAND);
-      const trackBefore = marsBot.tracks.all[0].position;
+      const trackBefore = marsBot.marsBotBoard.tracks[0].position;
       marsBot['bonusResolver'].resolve(card);
-      expect(marsBot.tracks.all[0].position).to.be.gte(trackBefore + 1);
+      expect(marsBot.marsBotBoard.tracks[0].position).to.be.gte(trackBefore + 1);
     });
   });
 
@@ -55,9 +55,9 @@ describe('Corp-Specific Bonus Cards (B22-B32)', () => {
     it('advances science track', () => {
       const {marsBot} = createAutomaGame();
       const card = createCorpBonusCard(BonusCardId.B25_DO_IT_RIGHT);
-      const trackBefore = marsBot.tracks.all[3].position;
+      const trackBefore = marsBot.marsBotBoard.tracks[3].position;
       marsBot['bonusResolver'].resolve(card);
-      expect(marsBot.tracks.all[3].position).to.be.gte(trackBefore + 1);
+      expect(marsBot.marsBotBoard.tracks[3].position).to.be.gte(trackBefore + 1);
     });
   });
 
@@ -76,12 +76,12 @@ describe('Corp-Specific Bonus Cards (B22-B32)', () => {
       const {marsBot} = createAutomaGame();
       const card = createCorpBonusCard(BonusCardId.B28_DIVERSIFICATION);
       // Advance track 1 to create a non-uniform state
-      marsBot.tracks.all[0].position = 5;
+      marsBot.marsBotBoard.tracks[0].position = 5;
       // Least advanced should be one of the others (all at 0)
-      const leastIdx = marsBot.tracks.getLeastAdvancedTrackIndex();
-      const trackBefore = marsBot.tracks.all[leastIdx].position;
+      const leastIdx = marsBot.marsBotBoard.getLeastAdvancedTrackIndex();
+      const trackBefore = marsBot.marsBotBoard.tracks[leastIdx].position;
       marsBot['bonusResolver'].resolve(card);
-      expect(marsBot.tracks.all[leastIdx].position).to.be.gte(trackBefore + 1);
+      expect(marsBot.marsBotBoard.tracks[leastIdx].position).to.be.gte(trackBefore + 1);
     });
   });
 
@@ -89,12 +89,12 @@ describe('Corp-Specific Bonus Cards (B22-B32)', () => {
     it('advances energy or science track (least advanced)', () => {
       const {marsBot} = createAutomaGame();
       const card = createCorpBonusCard(BonusCardId.B30_INTERFACE_HYPERLINK);
-      const energyBefore = marsBot.tracks.all[4].position;
-      const scienceBefore = marsBot.tracks.all[3].position;
+      const energyBefore = marsBot.marsBotBoard.tracks[4].position;
+      const scienceBefore = marsBot.marsBotBoard.tracks[3].position;
       marsBot['bonusResolver'].resolve(card);
       // One of them should have advanced
-      const energyAfter = marsBot.tracks.all[4].position;
-      const scienceAfter = marsBot.tracks.all[3].position;
+      const energyAfter = marsBot.marsBotBoard.tracks[4].position;
+      const scienceAfter = marsBot.marsBotBoard.tracks[3].position;
       expect(energyAfter + scienceAfter).to.be.gt(energyBefore + scienceBefore);
     });
   });
@@ -113,11 +113,11 @@ describe('Corp-Specific Bonus Cards (B22-B32)', () => {
     it('advances building and space tracks', () => {
       const {marsBot} = createAutomaGame();
       const card = createCorpBonusCard(BonusCardId.B32_INVESTORS);
-      const buildingBefore = marsBot.tracks.all[0].position;
-      const spaceBefore = marsBot.tracks.all[1].position;
+      const buildingBefore = marsBot.marsBotBoard.tracks[0].position;
+      const spaceBefore = marsBot.marsBotBoard.tracks[1].position;
       marsBot['bonusResolver'].resolve(card);
-      expect(marsBot.tracks.all[0].position).to.be.gte(buildingBefore + 1);
-      expect(marsBot.tracks.all[1].position).to.be.gte(spaceBefore + 1);
+      expect(marsBot.marsBotBoard.tracks[0].position).to.be.gte(buildingBefore + 1);
+      expect(marsBot.marsBotBoard.tracks[1].position).to.be.gte(spaceBefore + 1);
     });
   });
 

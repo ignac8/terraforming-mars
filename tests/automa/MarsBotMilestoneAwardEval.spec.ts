@@ -1,7 +1,7 @@
 import {expect} from 'chai';
 import {MILESTONE_EVALS, AWARD_EVALS} from '../../src/server/automa/MarsBotMilestoneAwardEval';
 import {IMarsBot} from '../../src/server/automa/MarsBotCorpTypes';
-import {MarsBotTracks} from '../../src/server/automa/MarsBotTracks';
+import {MarsBotBoard} from '../../src/server/automa/MarsBotBoard';
 import {THARSIS_MARSBOT_BOARD} from '../../src/server/automa/boards/TharsisMarsBot';
 import {VENUS_MARSBOT_TRACK} from '../../src/server/automa/boards/VenusMarsBot';
 import {IProjectCard} from '../../src/server/cards/IProjectCard';
@@ -29,7 +29,7 @@ function createBot(options: BotOptions = {}) {
   const trackDefinitions = options.venus === true ?
     [...THARSIS_MARSBOT_BOARD, VENUS_MARSBOT_TRACK] :
     THARSIS_MARSBOT_BOARD;
-  const tracks = new MarsBotTracks(trackDefinitions);
+  const tracks = new MarsBotBoard(trackDefinitions);
   const bot = {
     game,
     player,
@@ -42,7 +42,7 @@ function createBot(options: BotOptions = {}) {
   return {game, player, tracks, bot};
 }
 
-function advance(tracks: MarsBotTracks, index: number, steps: number): void {
+function advance(tracks: MarsBotBoard, index: number, steps: number): void {
   for (let step = 0; step < steps; step++) {
     tracks.all[index].advance();
   }
@@ -104,7 +104,7 @@ describe('MarsBotMilestoneAwardEval', () => {
 
     it('Mayor does not count the other player’s cities', () => {
       const [game, human, other] = testGame(2);
-      const bot = {game, player: other, tracks: new MarsBotTracks(THARSIS_MARSBOT_BOARD), playedProjectCards: []} as unknown as IMarsBot;
+      const bot = {game, player: other, tracks: new MarsBotBoard(THARSIS_MARSBOT_BOARD), playedProjectCards: []} as unknown as IMarsBot;
       for (const space of game.board.getAvailableSpacesForCity(human).slice(0, 3)) {
         game.simpleAddTile(human, space, {tileType: TileType.CITY});
       }
@@ -272,7 +272,7 @@ describe('MarsBotMilestoneAwardEval', () => {
       for (let index = 0; index < 8; index++) {
         advance(withVenus.tracks, index, 2);
       }
-      withVenus.tracks.all[6].regress();
+      withVenus.marsBotBoard.tracks[6].regress();
       // Positions are 1, 2, 2, 2, 2, 2, 2, 2, so the second lowest is 2
       expect(award('Visionary', withVenus.bot)).to.eq(4);
     });

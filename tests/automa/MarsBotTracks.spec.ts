@@ -1,14 +1,14 @@
 import {expect} from 'chai';
 import {Tag} from '../../src/common/cards/Tag';
-import {MarsBotTracks, MarsBotTrack} from '../../src/server/automa/MarsBotTracks';
+import {MarsBotBoard, MarsBotTrack} from '../../src/server/automa/MarsBotBoard';
 import {THARSIS_MARSBOT_BOARD} from '../../src/server/automa/boards/TharsisMarsBot';
 import {VENUS_MARSBOT_TRACK} from '../../src/server/automa/boards/VenusMarsBot';
 
-describe('MarsBotTracks', () => {
-  let tracks: MarsBotTracks;
+describe('MarsBotBoard', () => {
+  let tracks: MarsBotBoard;
 
   beforeEach(() => {
-    tracks = new MarsBotTracks(THARSIS_MARSBOT_BOARD);
+    tracks = new MarsBotBoard(THARSIS_MARSBOT_BOARD);
   });
 
   it('has 7 tracks', () => {
@@ -16,40 +16,40 @@ describe('MarsBotTracks', () => {
   });
 
   it('maps Building tag to track 0', () => {
-    expect(tracks.getTrackIndexForTag(Tag.BUILDING)).to.eq(0);
+    expect(tracks.tagToTrack[Tag.BUILDING]).to.eq(0);
   });
 
   it('maps Space tag to track 1', () => {
-    expect(tracks.getTrackIndexForTag(Tag.SPACE)).to.eq(1);
+    expect(tracks.tagToTrack[Tag.SPACE]).to.eq(1);
   });
 
   it('maps Event tag to track 2', () => {
-    expect(tracks.getTrackIndexForTag(Tag.EVENT)).to.eq(2);
+    expect(tracks.tagToTrack[Tag.EVENT]).to.eq(2);
   });
 
   it('maps Science tag to track 3', () => {
-    expect(tracks.getTrackIndexForTag(Tag.SCIENCE)).to.eq(3);
+    expect(tracks.tagToTrack[Tag.SCIENCE]).to.eq(3);
   });
 
   it('maps Power/Jovian to track 4', () => {
-    expect(tracks.getTrackIndexForTag(Tag.POWER)).to.eq(4);
-    expect(tracks.getTrackIndexForTag(Tag.JOVIAN)).to.eq(4);
+    expect(tracks.tagToTrack[Tag.POWER]).to.eq(4);
+    expect(tracks.tagToTrack[Tag.JOVIAN]).to.eq(4);
   });
 
   it('maps Earth/City to track 5', () => {
-    expect(tracks.getTrackIndexForTag(Tag.EARTH)).to.eq(5);
-    expect(tracks.getTrackIndexForTag(Tag.CITY)).to.eq(5);
+    expect(tracks.tagToTrack[Tag.EARTH]).to.eq(5);
+    expect(tracks.tagToTrack[Tag.CITY]).to.eq(5);
   });
 
   it('maps Plant/Animal/Microbe to track 6', () => {
-    expect(tracks.getTrackIndexForTag(Tag.PLANT)).to.eq(6);
-    expect(tracks.getTrackIndexForTag(Tag.ANIMAL)).to.eq(6);
-    expect(tracks.getTrackIndexForTag(Tag.MICROBE)).to.eq(6);
+    expect(tracks.tagToTrack[Tag.PLANT]).to.eq(6);
+    expect(tracks.tagToTrack[Tag.ANIMAL]).to.eq(6);
+    expect(tracks.tagToTrack[Tag.MICROBE]).to.eq(6);
   });
 
   it('returns undefined for unmapped tags', () => {
-    expect(tracks.getTrackIndexForTag(Tag.VENUS)).to.be.undefined;
-    expect(tracks.getTrackIndexForTag(Tag.WILD)).to.be.undefined;
+    expect(tracks.tagToTrack[Tag.VENUS]).to.be.undefined;
+    expect(tracks.tagToTrack[Tag.WILD]).to.be.undefined;
   });
 });
 
@@ -154,11 +154,11 @@ describe('MarsBotTrack', () => {
   });
 });
 
-describe('MarsBotTracks with the Venus track', () => {
-  let tracks: MarsBotTracks;
+describe('MarsBotBoard with the Venus track', () => {
+  let tracks: MarsBotBoard;
 
   beforeEach(() => {
-    tracks = new MarsBotTracks([...THARSIS_MARSBOT_BOARD, VENUS_MARSBOT_TRACK]);
+    tracks = new MarsBotBoard([...THARSIS_MARSBOT_BOARD, VENUS_MARSBOT_TRACK]);
   });
 
   it('has 8 tracks', () => {
@@ -166,7 +166,7 @@ describe('MarsBotTracks with the Venus track', () => {
   });
 
   it('maps Venus tag to track 7', () => {
-    expect(tracks.getTrackIndexForTag(Tag.VENUS)).to.eq(7);
+    expect(tracks.tagToTrack[Tag.VENUS]).to.eq(7);
   });
 
   it('Venus track maxes out at position 12', () => {

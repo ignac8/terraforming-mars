@@ -20,6 +20,7 @@ import {SpaceBonus} from '../common/boards/SpaceBonus';
 import {TileType} from '../common/TileType';
 import {ICard} from './cards/ICard';
 import {Turmoil} from './turmoil/Turmoil';
+import {AutomaGameHooks} from './automa/AutomaGameHooks';
 import {AresData} from '../common/ares/AresData';
 import {MoonData} from './moon/MoonData';
 import {SeededRandom} from '../common/utils/Random';
@@ -88,7 +89,7 @@ export interface IGame extends Logger {
   pathfindersData: PathfindersData | undefined;
   underworldData: UnderworldData;
 
-  automaHooks: import('./automa/AutomaGameHooks').AutomaGameHooks | undefined;
+  automaHooks: AutomaGameHooks | undefined;
 
   // Card-specific data
 

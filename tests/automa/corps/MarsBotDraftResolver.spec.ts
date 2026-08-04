@@ -2,7 +2,7 @@ import {expect} from 'chai';
 import {MarsBotDraftResolver, Shuffler} from '../../../src/server/automa/corps/MarsBotDraftResolver';
 import {MarsBotDraftPriority} from '../../../src/server/automa/MarsBotCorpTypes';
 import {Tag} from '../../../src/common/cards/Tag';
-import {MarsBotTracks} from '../../../src/server/automa/MarsBotTracks';
+import {MarsBotBoard} from '../../../src/server/automa/MarsBotBoard';
 import {THARSIS_MARSBOT_BOARD} from '../../../src/server/automa/boards/TharsisMarsBot';
 import {fakeCard} from '../../TestingUtils';
 import {CarbonateProcessing} from '../../../src/server/cards/base/CarbonateProcessing';
@@ -34,7 +34,7 @@ const reverseOrder: Shuffler = (items) => {
 };
 
 function resolver(shuffler: Shuffler = keepOrder): MarsBotDraftResolver {
-  return new MarsBotDraftResolver(new MarsBotTracks(THARSIS_MARSBOT_BOARD), shuffler);
+  return new MarsBotDraftResolver(new MarsBotBoard(THARSIS_MARSBOT_BOARD), shuffler);
 }
 
 describe('MarsBotDraftResolver', () => {
@@ -119,14 +119,14 @@ describe('MarsBotDraftResolver', () => {
     const priority: MarsBotDraftPriority = {type: 'leastAdvancedTrack'};
 
     it('drafts for the tags on the least advanced track', () => {
-      const tracks = new MarsBotTracks(THARSIS_MARSBOT_BOARD);
+      const marsBotBoard = new MarsBotBoard(THARSIS_MARSBOT_BOARD);
       // Leave track 0 (Building and Microbe) behind, so its tags become the priority.
-      for (let i = 1; i < tracks.all.length; i++) {
-        tracks.all[i].advance();
+      for (let i = 1; i < marsBotBoard.tracks.length; i++) {
+        marsBotBoard.tracks[i].advance();
       }
-      expect(tracks.data[tracks.getLeastAdvancedTrackIndex()].tags).to.include(Tag.BUILDING);
+      expect(marsBotBoard.definitions[marsBotBoard.getLeastAdvancedTrackIndex()].tags).to.include(Tag.BUILDING);
 
-      const picked = new MarsBotDraftResolver(tracks, keepOrder)
+      const picked = new MarsBotDraftResolver(marsBotBoard, keepOrder)
         .pickCard([earthCard, buildingCard, plantCard], priority);
 
       expect(picked).to.eq(buildingCard);
@@ -200,15 +200,15 @@ describe('MarsBotDraftResolver', () => {
     });
 
     it('drafting on the least advanced track saves the cards carrying its tags', () => {
-      const tracks = new MarsBotTracks(THARSIS_MARSBOT_BOARD);
+      const marsBotBoard = new MarsBotBoard(THARSIS_MARSBOT_BOARD);
       // Leave track 0 (Building and Microbe) behind, so its tags protect the Building card.
-      for (let i = 1; i < tracks.all.length; i++) {
-        tracks.all[i].advance();
+      for (let i = 1; i < marsBotBoard.tracks.length; i++) {
+        marsBotBoard.tracks[i].advance();
       }
       // The Building card comes first, so a discard that ignored the track would take it.
       const drafted = [buildingCard, plantCard, earthCard];
 
-      const {kept, discarded} = new MarsBotDraftResolver(tracks, keepOrder)
+      const {kept, discarded} = new MarsBotDraftResolver(marsBotBoard, keepOrder)
         .discardAfterDraft(drafted, {type: 'leastAdvancedTrack'});
 
       expect(discarded).to.deep.eq([plantCard]);

@@ -89,9 +89,9 @@ describe('MarsBotCorpResolver', () => {
         tags: [Tag.BUILDING, Tag.BUILDING], // Track 1 should advance twice
       });
 
-      const track1Before = marsBot.tracks.all[0].position;
+      const track1Before = marsBot.marsBotBoard.tracks[0].position;
       MarsBotCorpResolver.setupCorp(corp, marsBot);
-      const track1After = marsBot.tracks.all[0].position;
+      const track1After = marsBot.marsBotBoard.tracks[0].position;
 
       // Track 1 handles Building tag, so should advance at least 2 (may chain)
       expect(track1After).to.be.gte(track1Before + 2);
