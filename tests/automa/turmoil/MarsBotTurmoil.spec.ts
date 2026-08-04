@@ -473,14 +473,13 @@ describe('MarsBot Turmoil — serialization', () => {
 describe('MarsBot Turmoil — Global Events solo resolution (T-10/T-10b)', () => {
   it('Revolution does not crash in automa game (T-10b)', () => {
     const {game, humanPlayer} = createTurmoilGame();
-    const turmoil = Turmoil.getTurmoil(game);
     const revolution = new Revolution();
 
     // In a non-automa 1-player game, Revolution crashes because playersInGenerationOrder[1]
     // is undefined. In automa games it must use the solo branch: only the human player's
     // score is checked against the threshold.
     const trBefore = humanPlayer.terraformRating;
-    expect(() => revolution.resolve(game, turmoil)).not.to.throw();
+    expect(() => revolution.bespokeResolve(game)).not.to.throw();
     // Human has 0 Earth tags + influence ≤ 3 → no TR loss
     expect(humanPlayer.terraformRating).to.equal(trBefore);
   });
@@ -498,7 +497,7 @@ describe('MarsBot Turmoil — Global Events solo resolution (T-10/T-10b)', () =>
     turmoil.dominantParty.delegates.add(humanPlayer, 4); // enough to be PL
 
     const trBefore = humanPlayer.terraformRating;
-    revolution.resolve(game, turmoil);
+    revolution.bespokeResolve(game);
     // Influence = 2 (chairman=1 + dominant=1). Score >= 4 only if Earth tags are added.
     // With 0 Earth tags, score = 2 < 4 → no loss. This tests no crash and correct branch.
     expect(humanPlayer.terraformRating).to.equal(trBefore);
@@ -506,12 +505,11 @@ describe('MarsBot Turmoil — Global Events solo resolution (T-10/T-10b)', () =>
 
   it('Election does not grant TR to MarsBot in automa game (T-10)', () => {
     const {game, humanPlayer, marsBot} = createTurmoilGame();
-    const turmoil = Turmoil.getTurmoil(game);
     const election = new Election();
 
     const marsBotTR = marsBot.player.terraformRating;
     const humanTR = humanPlayer.terraformRating;
-    election.resolve(game, turmoil);
+    election.bespokeResolve(game);
     // MarsBot must NOT gain TR from Election regardless of its "score"
     expect(marsBot.player.terraformRating).to.equal(marsBotTR);
     // Human player has 0 building tags, 0 influence, 0 cities → score < 5, no TR gain
@@ -533,7 +531,7 @@ describe('MarsBot Turmoil — Global Events solo resolution (T-10/T-10b)', () =>
     // With cities we can push score to 10+. For simplicity, just confirm no crash
     // and that the solo threshold logic runs (no multi-player ranking involving MarsBot).
     const trBefore = humanPlayer.terraformRating;
-    expect(() => election.resolve(game, turmoil)).not.to.throw();
+    expect(() => election.bespokeResolve(game)).not.to.throw();
     // Score is likely < 5 with only 2 influence, so TR unchanged or +1 max
     expect(humanPlayer.terraformRating).to.be.at.least(trBefore);
   });

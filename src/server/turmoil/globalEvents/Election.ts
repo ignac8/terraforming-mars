@@ -24,8 +24,10 @@ export class Election extends GlobalEvent implements IGlobalEvent {
     });
   }
 
-  public resolve(game: IGame, turmoil: Turmoil) {
-    // Solo — also applies to automa games (MarsBot doesn't participate in Election ranking, T-10/T-10b)
+  public override bespokeResolve(game: IGame) {
+    const turmoil = Turmoil.getTurmoil(game);
+
+    // Solo, and automa games too: MarsBot takes no part in the Election ranking (T-10/T-10b).
     if (game.isSoloMode() || game.automaHooks !== undefined) {
       const player = game.players[0];
       const score = this.getScore(player, turmoil, game);
