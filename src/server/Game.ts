@@ -101,7 +101,7 @@ export class Game implements IGame, Logger {
   public readonly players: ReadonlyArray<IPlayer>;
   private _marsBotPlayer: IPlayer | undefined;
   public get allPlayers(): ReadonlyArray<IPlayer> {
-    const marsBotPlayer = this.automaHooks?.marsBot.player ?? this._marsBotPlayer;
+    const marsBotPlayer = this.automaHooks?.marsBotPlayer ?? this._marsBotPlayer;
     if (marsBotPlayer !== undefined) {
       return [...this.players, marsBotPlayer];
     }

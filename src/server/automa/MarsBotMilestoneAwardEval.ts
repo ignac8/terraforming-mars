@@ -10,12 +10,12 @@ import {IMarsBot} from './MarsBotCorpTypes';
 const VENUS_TRACK = 7;
 
 function trackPos(bot: IMarsBot, index: number): number {
-  return bot.tracks.all[index]?.position ?? 0;
+  return bot.marsBotBoard.tracks[index]?.position ?? 0;
 }
 
 /** Every track position, including the Venus track when that expansion is in play. */
 function trackPositions(bot: IMarsBot): Array<number> {
-  return bot.tracks.all.map((track) => track.position);
+  return bot.marsBotBoard.tracks.map((track) => track.position);
 }
 
 /** The seven Mars tracks, leaving the Venus track out. */
@@ -28,7 +28,7 @@ function hasVenus(bot: IMarsBot): boolean {
 }
 
 function venusTrackPos(bot: IMarsBot): number {
-  return bot.tracks.all.length > VENUS_TRACK ? bot.tracks.all[VENUS_TRACK].position : 0;
+  return bot.marsBotBoard.tracks.length > VENUS_TRACK ? bot.marsBotBoard.tracks[VENUS_TRACK].position : 0;
 }
 
 function allMarsTracksAtOrAbove(bot: IMarsBot, pos: number): boolean {

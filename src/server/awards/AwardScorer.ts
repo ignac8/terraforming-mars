@@ -16,7 +16,7 @@ export class AwardScorer {
       this.scores.set(player.id, score);
     }
     if (game.automaHooks !== undefined) {
-      const marsBotPlayer = game.automaHooks.getMarsBotPlayer();
+      const marsBotPlayer = game.automaHooks.marsBotPlayer;
       this.scores.set(marsBotPlayer.id, game.automaHooks.getMarsBotAwardScore(award));
     }
   }

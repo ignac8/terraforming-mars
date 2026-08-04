@@ -121,7 +121,7 @@ describe('MarsBot Integration', () => {
     it('Toll Station scenario: opponent Space tags = Track 2 position', () => {
       const {marsBot} = createAutomaGame();
       for (let i = 0; i < 7; i++) {
-        marsBot.tracks.all[1].advance();
+        marsBot.marsBotBoard.tracks[1].advance();
       }
       expect(marsBot.player.tags.count(Tag.SPACE, 'raw')).to.eq(7);
     });
@@ -129,7 +129,7 @@ describe('MarsBot Integration', () => {
     it('Galilean Waystation scenario: opponent Jovian tags = Track 5 position', () => {
       const {marsBot} = createAutomaGame();
       for (let i = 0; i < 4; i++) {
-        marsBot.tracks.all[4].advance();
+        marsBot.marsBotBoard.tracks[4].advance();
       }
       // Galilean Waystation uses floor(jovianTags / 2) but we just verify the raw count
       expect(marsBot.player.tags.count(Tag.JOVIAN, 'raw')).to.eq(4);
@@ -137,9 +137,9 @@ describe('MarsBot Integration', () => {
 
     it('counting all tags works for MarsBot', () => {
       const {marsBot} = createAutomaGame();
-      marsBot.tracks.all[0].advance(); // Building
-      marsBot.tracks.all[0].advance();
-      marsBot.tracks.all[2].advance(); // Event
+      marsBot.marsBotBoard.tracks[0].advance(); // Building
+      marsBot.marsBotBoard.tracks[0].advance();
+      marsBot.marsBotBoard.tracks[2].advance(); // Event
 
       const allTags = marsBot.player.tags.countAllTags();
       expect(allTags[Tag.BUILDING]).to.eq(2);
@@ -150,7 +150,7 @@ describe('MarsBot Integration', () => {
     it('shared tracks return same value for all mapped tags', () => {
       const {marsBot} = createAutomaGame();
       for (let i = 0; i < 5; i++) {
-        marsBot.tracks.all[6].advance();
+        marsBot.marsBotBoard.tracks[6].advance();
       }
       // Track 7 = Plant, Animal, Microbe — all return 5
       expect(marsBot.player.tags.count(Tag.PLANT, 'raw')).to.eq(5);
@@ -164,7 +164,7 @@ describe('MarsBot Integration', () => {
       const {game, marsBot} = createAutomaGame();
       // Advance track 4 for Scientist award
       for (let i = 0; i < 6; i++) {
-        marsBot.tracks.all[3].advance();
+        marsBot.marsBotBoard.tracks[3].advance();
       }
 
       // Import Server to get the model (indirect test via automaHooks)

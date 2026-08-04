@@ -110,10 +110,10 @@ describe('Base Game MarsBot Corporations', () => {
       const corp = getMarsBotCorp(CardName.SATURN_SYSTEMS)!;
       marsBot.setCorpAndSetup(corp);
 
-      const eventTrackBefore = marsBot.tracks.all[2].position; // Event = track 3
+      const eventTrackBefore = marsBot.marsBotBoard.tracks[2].position; // Event = track 3
       corp.effect!.onProjectCardResolved!(marsBot, fakeCard('JovianCard', {tags: [Tag.JOVIAN], cost: 10}));
       // Event track should have advanced (may chain from starting tags advancement)
-      expect(marsBot.tracks.all[2].position).to.be.gte(eventTrackBefore + 1);
+      expect(marsBot.marsBotBoard.tracks[2].position).to.be.gte(eventTrackBefore + 1);
     });
 
     it('advances event track when human plays Jovian card', () => {
@@ -121,9 +121,9 @@ describe('Base Game MarsBot Corporations', () => {
       const corp = getMarsBotCorp(CardName.SATURN_SYSTEMS)!;
       marsBot.setCorpAndSetup(corp);
 
-      const eventTrackBefore = marsBot.tracks.all[2].position;
+      const eventTrackBefore = marsBot.marsBotBoard.tracks[2].position;
       corp.effect!.onHumanCardPlayed!(marsBot, fakeCard('HumanJovian', {tags: [Tag.JOVIAN], cost: 5}));
-      expect(marsBot.tracks.all[2].position).to.be.gte(eventTrackBefore + 1);
+      expect(marsBot.marsBotBoard.tracks[2].position).to.be.gte(eventTrackBefore + 1);
     });
 
     it('does NOT advance event track for non-Jovian cards', () => {
@@ -131,9 +131,9 @@ describe('Base Game MarsBot Corporations', () => {
       const corp = getMarsBotCorp(CardName.SATURN_SYSTEMS)!;
       marsBot.setCorpAndSetup(corp);
 
-      const eventTrackBefore = marsBot.tracks.all[2].position;
+      const eventTrackBefore = marsBot.marsBotBoard.tracks[2].position;
       corp.effect!.onProjectCardResolved!(marsBot, fakeCard('SpaceCard', {tags: [Tag.SPACE], cost: 10}));
-      expect(marsBot.tracks.all[2].position).to.eq(eventTrackBefore);
+      expect(marsBot.marsBotBoard.tracks[2].position).to.eq(eventTrackBefore);
     });
   });
 
@@ -180,7 +180,7 @@ describe('Base Game MarsBot Corporations', () => {
       const corp = getMarsBotCorp(CardName.THORGATE)!;
       marsBot.setCorpAndSetup(corp);
       // Energy = track 5 (Power/Jovian tag)
-      expect(marsBot.tracks.all[4].position).to.be.gte(1);
+      expect(marsBot.marsBotBoard.tracks[4].position).to.be.gte(1);
     });
   });
 

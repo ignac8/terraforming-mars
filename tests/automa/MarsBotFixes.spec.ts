@@ -3,7 +3,7 @@ import {testGame} from '../TestGame';
 import {TestPlayer} from '../TestPlayer';
 import {IGame} from '../../src/server/IGame';
 import {MarsBot} from '../../src/server/automa/MarsBot';
-import {MarsBotTracks} from '../../src/server/automa/MarsBotTracks';
+import {MarsBotBoard} from '../../src/server/automa/MarsBotBoard';
 import {MarsBotTurnResolver} from '../../src/server/automa/MarsBotTurnResolver';
 import {THARSIS_MARSBOT_BOARD} from '../../src/server/automa/boards/TharsisMarsBot';
 import {TrackDefinition} from '../../src/common/automa/AutomaTypes';
@@ -177,7 +177,7 @@ describe('MarsBot Fixes', () => {
 
       // Max out a track
       for (let i = 0; i < 18; i++) {
-        marsBot.tracks.all[6].advance();
+        marsBot.marsBotBoard.tracks[6].advance();
       }
 
       // Play a Plant tag card - track 7 is maxed, should fail
@@ -194,7 +194,7 @@ describe('MarsBot Fixes', () => {
   describe('Track regression from production decrease', () => {
     it('Steel production decrease regresses Track 1', () => {
       const {marsBot} = createAutomaGame();
-      const track = marsBot.tracks.all[0];
+      const track = marsBot.marsBotBoard.tracks[0];
       track.advance(); track.advance(); track.advance();
       expect(track.position).to.eq(3);
 
@@ -204,7 +204,7 @@ describe('MarsBot Fixes', () => {
 
     it('Titanium production decrease regresses Track 2', () => {
       const {marsBot} = createAutomaGame();
-      const track = marsBot.tracks.all[1];
+      const track = marsBot.marsBotBoard.tracks[1];
       track.advance();
       marsBot.regressTrack(Resource.TITANIUM);
       expect(track.position).to.eq(0);
@@ -212,7 +212,7 @@ describe('MarsBot Fixes', () => {
 
     it('MC production decrease regresses Track 3', () => {
       const {marsBot} = createAutomaGame();
-      const track = marsBot.tracks.all[2];
+      const track = marsBot.marsBotBoard.tracks[2];
       track.advance(); track.advance();
       marsBot.regressTrack(Resource.MEGACREDITS);
       expect(track.position).to.eq(1);
@@ -220,7 +220,7 @@ describe('MarsBot Fixes', () => {
 
     it('Electricity production decrease regresses Track 5', () => {
       const {marsBot} = createAutomaGame();
-      const track = marsBot.tracks.all[4];
+      const track = marsBot.marsBotBoard.tracks[4];
       track.advance();
       marsBot.regressTrack(Resource.ENERGY);
       expect(track.position).to.eq(0);
@@ -228,7 +228,7 @@ describe('MarsBot Fixes', () => {
 
     it('Heat production decrease regresses Track 6', () => {
       const {marsBot} = createAutomaGame();
-      const track = marsBot.tracks.all[5];
+      const track = marsBot.marsBotBoard.tracks[5];
       track.advance(); track.advance();
       marsBot.regressTrack(Resource.HEAT);
       expect(track.position).to.eq(1);
@@ -236,7 +236,7 @@ describe('MarsBot Fixes', () => {
 
     it('Plants production decrease regresses Track 7', () => {
       const {marsBot} = createAutomaGame();
-      const track = marsBot.tracks.all[6];
+      const track = marsBot.marsBotBoard.tracks[6];
       track.advance(); track.advance(); track.advance();
       marsBot.regressTrack(Resource.PLANTS);
       expect(track.position).to.eq(2);
@@ -250,7 +250,7 @@ describe('MarsBot Fixes', () => {
       (marsBot as any).game = game;
 
       const boardData = makeBoardWithTrack1Action(1, 'advance');
-      const board = new MarsBotTracks(boardData);
+      const board = new MarsBotBoard(boardData);
       const resolver = new MarsBotTurnResolver(game, marsBot, human, board, 'easy');
 
       const mockCard = {cost: 5, tags: [Tag.BUILDING], type: 'automated' as any, name: 'T' as any, metadata: {} as any} as any;
@@ -262,7 +262,7 @@ describe('MarsBot Fixes', () => {
 
     it('failed action gives 3 MC in easy mode', () => {
       const {marsBot} = createAutomaGame('easy');
-      const track = marsBot.tracks.all[6];
+      const track = marsBot.marsBotBoard.tracks[6];
       for (let i = 0; i < 18; i++) {
         track.advance();
       }
@@ -275,7 +275,7 @@ describe('MarsBot Fixes', () => {
     it('award values reduced by 5 in easy mode', () => {
       const {marsBot, game} = createAutomaGame('easy');
       // Scientist award = track 4 position + offset
-      marsBot.tracks.all[3].advance(); // position 1
+      marsBot.marsBotBoard.tracks[3].advance(); // position 1
       const award = game.awards.find((a) => a.name === 'Scientist');
       if (award) {
         const val = marsBot.turnResolver.getMarsBotAwardValue(award);
@@ -346,8 +346,8 @@ describe('MarsBot Fixes', () => {
       } as any;
       marsBot.turnResolver.resolveProjectCard(mockCard);
 
-      expect(marsBot.tracks.all[0].position).to.eq(1); // Building: pos 1 (null)
-      expect(marsBot.tracks.all[1].position).to.eq(2); // Space: pos 1 (advance) → pos 2
+      expect(marsBot.marsBotBoard.tracks[0].position).to.eq(1); // Building: pos 1 (null)
+      expect(marsBot.marsBotBoard.tracks[1].position).to.eq(2); // Space: pos 1 (advance) → pos 2
     });
   });
 
@@ -358,7 +358,7 @@ describe('MarsBot Fixes', () => {
       (marsBot as any).game = game;
 
       const boardData = makeBoardWithTrack1Action(1, 'tag_1');
-      const board = new MarsBotTracks(boardData);
+      const board = new MarsBotBoard(boardData);
       const resolver = new MarsBotTurnResolver(game, marsBot, human, board, 'normal');
 
       const mockCard = {cost: 5, tags: [Tag.BUILDING], type: 'automated' as any, name: 'T' as any, metadata: {} as any} as any;
@@ -374,7 +374,7 @@ describe('MarsBot Fixes', () => {
       (marsBot as any).game = game;
 
       const boardData = makeBoardWithTrack1Action(1, 'advance');
-      const board = new MarsBotTracks(boardData);
+      const board = new MarsBotBoard(boardData);
       const resolver = new MarsBotTurnResolver(game, marsBot, human, board, 'normal');
 
       const mockCard = {cost: 5, tags: [Tag.BUILDING], type: 'automated' as any, name: 'T' as any, metadata: {} as any} as any;
@@ -389,7 +389,7 @@ describe('MarsBot Fixes', () => {
       (marsBot as any).game = game;
 
       const boardData = makeBoardWithTrack1Action(1, 'tr3');
-      const board = new MarsBotTracks(boardData);
+      const board = new MarsBotBoard(boardData);
       const resolver = new MarsBotTurnResolver(game, marsBot, human, board, 'normal');
 
       const startTR = marsBot.terraformRating;
@@ -410,9 +410,9 @@ describe('MarsBot Fixes', () => {
       marsBot.turnResolver.resolveProjectCard(mockCard);
 
       // Wild tag advances the least-advanced track (all at 0, so index 0 = first)
-      expect(marsBot.tracks.all[0].position).to.eq(1);
+      expect(marsBot.marsBotBoard.tracks[0].position).to.eq(1);
       for (let t = 1; t < 7; t++) {
-        expect(marsBot.tracks.all[t].position).to.eq(0);
+        expect(marsBot.marsBotBoard.tracks[t].position).to.eq(0);
       }
     });
   });
@@ -425,7 +425,7 @@ describe('MarsBot Fixes', () => {
 
       // Track 1 pos 1 has tr3 action
       const boardData = makeBoardWithTrack1Action(1, 'tr3');
-      const board = new MarsBotTracks(boardData);
+      const board = new MarsBotBoard(boardData);
       const resolver = new MarsBotTurnResolver(game, marsBot, human, board, 'normal');
 
       // Advance to pos 1 (triggers tr3)
@@ -457,7 +457,7 @@ describe('MarsBot Fixes', () => {
       const {game, marsBot} = createAutomaGame('hard');
       // Advance building track to 8 (Builder milestone requires track 0 >= 8)
       for (let i = 0; i < 8; i++) {
-        marsBot.tracks.all[0].advance();
+        marsBot.marsBotBoard.tracks[0].advance();
       }
       marsBot.turnResolver.megacredits = 10;
       // MarsBot needs 3 claimable milestones when 0 are claimed
@@ -465,7 +465,7 @@ describe('MarsBot Fixes', () => {
       // Advance other tracks for Planner (all tracks >= 4) — need all 7 tracks at 4
       for (let t = 1; t < 7; t++) {
         for (let i = 0; i < 4; i++) {
-          marsBot.tracks.all[t].advance();
+          marsBot.marsBotBoard.tracks[t].advance();
         }
       }
       // Now Builder (track 0 >= 8) and Planner (all >= 4) are met
@@ -525,7 +525,7 @@ describe('MarsBot Fixes', () => {
       game.fundedAwards.push({player: marsBot.player, award});
       // Advance tracks so MarsBot scores > 0
       for (let i = 0; i < 5; i++) {
-        marsBot.tracks.all[0].advance();
+        marsBot.marsBotBoard.tracks[0].advance();
       }
 
       const vp = marsBot.getVictoryPoints();

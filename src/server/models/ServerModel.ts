@@ -157,7 +157,7 @@ export class Server {
         }));
         if (game.automaHooks !== undefined) {
           scores.push({
-            color: game.automaHooks.getMarsBotPlayer().color,
+            color: game.automaHooks.marsBotPlayer.color,
             score: game.automaHooks.getMarsBotMilestoneScore(milestone),
             claimable: game.automaHooks.canMarsBotClaimMilestone(milestone),
           });
@@ -190,7 +190,7 @@ export class Server {
         }));
         if (game.automaHooks !== undefined) {
           scores.push({
-            color: game.automaHooks.getMarsBotPlayer().color,
+            color: game.automaHooks.marsBotPlayer.color,
             score: game.automaHooks.getMarsBotAwardScore(award),
           });
         }

@@ -1,7 +1,7 @@
 import {IProjectCard} from '../../cards/IProjectCard';
 import {MarsBotDraftPriority} from '../MarsBotCorpTypes';
 import {Tag} from '../../../common/cards/Tag';
-import {MarsBotTracks} from '../MarsBotTracks';
+import {MarsBotBoard} from '../MarsBotBoard';
 import {hasIntersection} from '@/common/utils/utils';
 
 /** Shuffles an array in place. The game passes a random shuffle; tests pass an order they control. */
@@ -10,7 +10,7 @@ export type Shuffler = <T>(items: Array<T>) => void;
 /** Chooses MarsBot's draft card and its post-draft discard from the corp's draft priority. */
 export class MarsBotDraftResolver {
   constructor(
-    private readonly tracks: MarsBotTracks,
+    private readonly marsBotBoard: MarsBotBoard,
     private readonly shuffler: Shuffler,
   ) {}
 
@@ -114,7 +114,7 @@ export class MarsBotDraftResolver {
   }
 
   private leastAdvancedTrackTags(): ReadonlyArray<Tag> {
-    return this.tracks.data[this.tracks.getLeastAdvancedTrackIndex()].tags;
+    return this.marsBotBoard.definitions[this.marsBotBoard.getLeastAdvancedTrackIndex()].tags;
   }
 
   /**

@@ -1,3 +1,4 @@
+import {IAutomaGameHooks} from './IAutomaGameHooks';
 import {IGame} from '../IGame';
 import {IPlayer} from '../IPlayer';
 import {Color} from '../../common/Color';
@@ -29,7 +30,7 @@ import {ColonyName} from '../../common/colonies/ColonyName';
  * When `automaHooks` is undefined, the `?.` operator returns undefined/false and
  * the game proceeds with normal behavior.
  */
-export class AutomaGameHooks {
+export class AutomaGameHooks implements IAutomaGameHooks {
   constructor(
     private readonly game: IGame,
     public readonly marsBot: MarsBot,
@@ -165,7 +166,7 @@ export class AutomaGameHooks {
    *            Hoverlord is always considered unavailable (not in game).
    */
   private draftResolver(): MarsBotDraftResolver {
-    return new MarsBotDraftResolver(this.marsBot.tracks, (items) => inplaceShuffle(items, this.game.rng));
+    return new MarsBotDraftResolver(this.marsBot.marsBotBoard, (items) => inplaceShuffle(items, this.game.rng));
   }
 
   private canSpendFloatersForExtraCard(): boolean {
@@ -407,8 +408,8 @@ export class AutomaGameHooks {
 
   // ---- Award/Milestone helpers (for base classes) ----
 
-  /** Get MarsBot's player for inclusion in award/milestone comparisons. */
-  public getMarsBotPlayer(): IPlayer {
+  /** MarsBot's player, for award and milestone comparisons and the client model. */
+  public get marsBotPlayer(): IPlayer {
     return this.marsBot.player;
   }
 
@@ -535,7 +536,7 @@ export class AutomaGameHooks {
     }
     if (this.marsBot.turnResolver.megacredits >= 2) {
       this.marsBot.turnResolver.megacredits -= 2;
-      this.marsBot.turnResolver.advanceTrack(this.marsBot.tracks.getLeastAdvancedTrackIndex());
+      this.marsBot.turnResolver.advanceTrack(this.marsBot.marsBotBoard.getLeastAdvancedTrackIndex());
       this.game.log('MarsBot pays 2 MC and advances least-advanced track (St. Joseph)');
     } else {
       this.game.log('MarsBot cannot afford 2 MC for St. Joseph cathedral');
@@ -555,11 +556,11 @@ export class AutomaGameHooks {
 
   /** Galilean Waystation: behavior gives full MarsBot Jovian track, rulebook says half. Adjust after behavior runs. */
   public adjustGalileanWaystation(player: IPlayer): void {
-    const jovianTrackIndex = this.marsBot.tracks.getTrackIndexForTag(Tag.JOVIAN);
+    const jovianTrackIndex = this.marsBot.marsBotBoard.tagToTrack[Tag.JOVIAN];
     if (jovianTrackIndex === undefined) {
       return;
     }
-    const fullPos = this.marsBot.tracks.all[jovianTrackIndex].position;
+    const fullPos = this.marsBot.marsBotBoard.tracks[jovianTrackIndex].position;
     const halfPos = Math.floor(fullPos / 2);
     const adjustment = halfPos - fullPos;
     if (adjustment !== 0) {

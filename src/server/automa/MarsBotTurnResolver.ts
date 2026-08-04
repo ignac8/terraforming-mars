@@ -11,7 +11,7 @@ import {
   FAILED_ACTION_MC_EASY,
   DifficultyLevel,
 } from '../../common/automa/AutomaTypes';
-import {MarsBotTracks} from './MarsBotTracks';
+import {MarsBotBoard} from './MarsBotBoard';
 import {MarsBotTilePlacer} from './MarsBotTilePlacer';
 import {IMilestone} from '../milestones/IMilestone';
 import {IAward} from '../awards/IAward';
@@ -35,7 +35,7 @@ export class MarsBotTurnResolver {
     private readonly game: IGame,
     private readonly marsBot: IPlayer,
     private readonly humanPlayer: IPlayer,
-    public readonly tracks: MarsBotTracks,
+    public readonly marsBotBoard: MarsBotBoard,
     private readonly difficulty: DifficultyLevel,
     public megacredits: number = 0,
     tilePlacer?: MarsBotTilePlacer,
@@ -68,14 +68,14 @@ export class MarsBotTurnResolver {
     for (const tag of tags) {
       if (tag === Tag.WILD) {
         // Prelude rule: advance the least-advanced track, topmost if tied
-        const leastIndex = this.tracks.getLeastAdvancedTrackIndex();
+        const leastIndex = this.marsBotBoard.getLeastAdvancedTrackIndex();
         this.game.log('MarsBot: wild tag advances least-advanced track ${0}', (b) => b.number(leastIndex + 1));
         this.advanceTrack(leastIndex);
         advancedAny = true;
         continue;
       }
 
-      const trackIndex = this.tracks.getTrackIndexForTag(tag);
+      const trackIndex = this.marsBotBoard.tagToTrack[tag];
       if (trackIndex === undefined) {
         this.game.log('MarsBot: tag ${0} has no matching track, ignored', (b) => b.rawString(tag));
         continue;
@@ -103,12 +103,12 @@ export class MarsBotTurnResolver {
   // ---- Track Advancement ----
 
   private trackName(trackIndex: number): string {
-    return this.tracks.all[trackIndex]?.definition.tags[0] ?? `Track ${trackIndex}`;
+    return this.marsBotBoard.tracks[trackIndex]?.definition.tags[0] ?? `Track ${trackIndex}`;
   }
 
   /** Advance a track by index. Handles chain actions. */
   public advanceTrack(trackIndex: number): void {
-    const track = this.tracks.all[trackIndex];
+    const track = this.marsBotBoard.tracks[trackIndex];
     const name = this.trackName(trackIndex);
 
     const result = track.advance();
@@ -152,7 +152,7 @@ export class MarsBotTurnResolver {
       if (!isNaN(numericIndex)) {
         this.advanceTrack(numericIndex);
       } else {
-        const tagIndex = this.tracks.getTrackIndexForTag(value as Tag);
+        const tagIndex = this.marsBotBoard.tagToTrack[value as Tag];
         if (tagIndex !== undefined) {
           this.advanceTrack(tagIndex);
         }

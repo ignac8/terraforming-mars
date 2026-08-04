@@ -127,7 +127,7 @@ function giveAwards(player: IPlayer, builder: VictoryPointsBreakdownBuilder) {
     const scorer = new AwardScorer(player.game, award);
     const players: Array<IPlayer> = player.game.players.slice();
     if (player.game.automaHooks !== undefined) {
-      players.push(player.game.automaHooks.getMarsBotPlayer());
+      players.push(player.game.automaHooks.marsBotPlayer);
     }
     players.sort((p1, p2) => scorer.get(p2) - scorer.get(p1));
 

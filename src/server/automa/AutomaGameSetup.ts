@@ -18,7 +18,6 @@ import {IMilestone} from '../milestones/IMilestone';
 import {IAward} from '../awards/IAward';
 import {trackCubeKey} from './MarsBotCorpTypes';
 import {DELEGATES_PER_PLAYER} from '../../common/constants';
-import {MarsBotTurmoilHelper} from './turmoil/MarsBotTurmoilHelper';
 
 /**
  * Handles automa-specific game setup and provides hooks into the game lifecycle.
@@ -114,7 +113,7 @@ export class AutomaGameSetup {
     marsBotProduction.setMarsBot(marsBot);
 
     // Override tag counting to use track positions instead of played cards
-    marsBotPlayer.tags = new MarsBotTags(marsBotPlayer, marsBot.tracks);
+    marsBotPlayer.tags = new MarsBotTags(marsBotPlayer, marsBot.marsBotBoard);
 
     // Add MarsBot to human's opponents so cards that target opponents can see MarsBot
     (humanPlayer.opponents as Array<IPlayer>).push(marsBotPlayer);
@@ -130,10 +129,10 @@ export class AutomaGameSetup {
         game.log('MarsBot: 7 delegates placed in reserve (Turmoil)');
         // T-15: Extra delegates placed at setup for increased difficulty
         if (turmoilDifficulty >= 2) {
-          AutomaGameSetup.placeExtraSetupDelegate(game, marsBotPlayer, humanPlayer, rng);
+          AutomaGameSetup.placeExtraSetupDelegate(game, marsBotPlayer, rng);
         }
         if (turmoilDifficulty >= 3) {
-          AutomaGameSetup.placeExtraSetupDelegate(game, marsBotPlayer, humanPlayer, rng);
+          AutomaGameSetup.placeExtraSetupDelegate(game, marsBotPlayer, rng);
         }
       }
       marsBot.buildInitialActionDeck();
@@ -156,8 +155,8 @@ export class AutomaGameSetup {
       return;
     }
 
-    const spaceTrack = marsBot.tracks.getTrackIndexForTag(Tag.SPACE);
-    const energyTrack = marsBot.tracks.getTrackIndexForTag(Tag.POWER);
+    const spaceTrack = marsBot.marsBotBoard.tagToTrack[Tag.SPACE];
+    const energyTrack = marsBot.marsBotBoard.tagToTrack[Tag.POWER];
     if (spaceTrack === undefined || energyTrack === undefined) {
       return;
     }
@@ -204,7 +203,7 @@ export class AutomaGameSetup {
    * T-15: Flip a project card (discard it) and place 1 MarsBot delegate at a random party.
    * Called during setup when automaExtraTurmoilDifficulty >= 2 (once) or >= 3 (twice).
    */
-  private static placeExtraSetupDelegate(game: IGame, marsBotPlayer: IPlayer, humanPlayer: IPlayer, rng: Random): void {
+  private static placeExtraSetupDelegate(game: IGame, marsBotPlayer: IPlayer, rng: Random): void {
     const turmoil = game.turmoil;
     if (turmoil === undefined) {
       return;
@@ -222,7 +221,6 @@ export class AutomaGameSetup {
     const randomIndex = rng.nextInt(parties.length);
     const party = parties[randomIndex];
     turmoil.sendDelegateToParty(marsBotPlayer, party.name, game);
-    new MarsBotTurmoilHelper(game, turmoil, marsBotPlayer, humanPlayer).maybeUpdatePartyLeader(party);
     game.log('MarsBot: extra setup delegate placed in ${0} (T-15)', (b) => b.partyName(party.name));
   }
 }

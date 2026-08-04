@@ -102,7 +102,7 @@ describe('MarsBot', () => {
     it('regressTrack reduces track position', () => {
       const {marsBot} = createAutomaGame();
       // Advance Track 1 to position 3
-      const track = marsBot.tracks.all[0];
+      const track = marsBot.marsBotBoard.tracks[0];
       track.advance(); // 1
       track.advance(); // 2
       track.advance(); // 3
@@ -116,23 +116,23 @@ describe('MarsBot', () => {
       const {marsBot} = createAutomaGame();
       // Advance all tracks to position 1
       for (let i = 0; i < 7; i++) {
-        marsBot.tracks.all[i].advance();
+        marsBot.marsBotBoard.tracks[i].advance();
       }
 
       marsBot.regressTrack(Resource.TITANIUM); // → Track 2 (Space)
-      expect(marsBot.tracks.all[1].position).to.eq(0);
+      expect(marsBot.marsBotBoard.tracks[1].position).to.eq(0);
 
       marsBot.regressTrack(Resource.MEGACREDITS); // → Track 3 (Event)
-      expect(marsBot.tracks.all[2].position).to.eq(0);
+      expect(marsBot.marsBotBoard.tracks[2].position).to.eq(0);
 
       marsBot.regressTrack(Resource.ENERGY); // → Track 5 (Energy)
-      expect(marsBot.tracks.all[4].position).to.eq(0);
+      expect(marsBot.marsBotBoard.tracks[4].position).to.eq(0);
 
       marsBot.regressTrack(Resource.HEAT); // → Track 6 (Earth)
-      expect(marsBot.tracks.all[5].position).to.eq(0);
+      expect(marsBot.marsBotBoard.tracks[5].position).to.eq(0);
 
       marsBot.regressTrack(Resource.PLANTS); // → Track 7 (Plant)
-      expect(marsBot.tracks.all[6].position).to.eq(0);
+      expect(marsBot.marsBotBoard.tracks[6].position).to.eq(0);
     });
   });
 

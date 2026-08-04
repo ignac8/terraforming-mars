@@ -80,76 +80,76 @@ describe('MarsBot Resource Interaction (rules page 4-5)', () => {
   describe('Decrease production → regress track', () => {
     it('decreasing steel production regresses Track 1', () => {
       const {marsBot} = createAutomaGame();
-      marsBot.tracks.all[0].advance();
-      marsBot.tracks.all[0].advance();
-      expect(marsBot.tracks.all[0].position).to.eq(2);
+      marsBot.marsBotBoard.tracks[0].advance();
+      marsBot.marsBotBoard.tracks[0].advance();
+      expect(marsBot.marsBotBoard.tracks[0].position).to.eq(2);
 
       // Decrease steel production via production.add with negative
       marsBot.player.production.add(Resource.STEEL, -1, {log: true, from: {player: marsBot.player}});
-      expect(marsBot.tracks.all[0].position).to.eq(1);
+      expect(marsBot.marsBotBoard.tracks[0].position).to.eq(1);
     });
 
     it('decreasing titanium production regresses Track 2', () => {
       const {marsBot} = createAutomaGame();
-      marsBot.tracks.all[1].advance();
-      marsBot.tracks.all[1].advance();
-      marsBot.tracks.all[1].advance();
+      marsBot.marsBotBoard.tracks[1].advance();
+      marsBot.marsBotBoard.tracks[1].advance();
+      marsBot.marsBotBoard.tracks[1].advance();
 
       marsBot.player.production.add(Resource.TITANIUM, -1, {log: true, from: {player: marsBot.player}});
-      expect(marsBot.tracks.all[1].position).to.eq(2);
+      expect(marsBot.marsBotBoard.tracks[1].position).to.eq(2);
     });
 
     it('decreasing MC production regresses Track 3', () => {
       const {marsBot} = createAutomaGame();
-      marsBot.tracks.all[2].advance();
+      marsBot.marsBotBoard.tracks[2].advance();
 
       marsBot.player.production.add(Resource.MEGACREDITS, -1, {log: true, from: {player: marsBot.player}});
-      expect(marsBot.tracks.all[2].position).to.eq(0);
+      expect(marsBot.marsBotBoard.tracks[2].position).to.eq(0);
     });
 
     it('decreasing energy production regresses Track 5', () => {
       const {marsBot} = createAutomaGame();
-      marsBot.tracks.all[4].advance();
-      marsBot.tracks.all[4].advance();
+      marsBot.marsBotBoard.tracks[4].advance();
+      marsBot.marsBotBoard.tracks[4].advance();
 
       marsBot.player.production.add(Resource.ENERGY, -1, {log: true, from: {player: marsBot.player}});
-      expect(marsBot.tracks.all[4].position).to.eq(1);
+      expect(marsBot.marsBotBoard.tracks[4].position).to.eq(1);
     });
 
     it('decreasing heat production regresses Track 6', () => {
       const {marsBot} = createAutomaGame();
-      marsBot.tracks.all[5].advance();
+      marsBot.marsBotBoard.tracks[5].advance();
 
       marsBot.player.production.add(Resource.HEAT, -1, {log: true, from: {player: marsBot.player}});
-      expect(marsBot.tracks.all[5].position).to.eq(0);
+      expect(marsBot.marsBotBoard.tracks[5].position).to.eq(0);
     });
 
     it('decreasing plant production regresses Track 7', () => {
       const {marsBot} = createAutomaGame();
-      marsBot.tracks.all[6].advance();
-      marsBot.tracks.all[6].advance();
+      marsBot.marsBotBoard.tracks[6].advance();
+      marsBot.marsBotBoard.tracks[6].advance();
 
       marsBot.player.production.add(Resource.PLANTS, -1, {log: true, from: {player: marsBot.player}});
-      expect(marsBot.tracks.all[6].position).to.eq(1);
+      expect(marsBot.marsBotBoard.tracks[6].position).to.eq(1);
     });
 
     it('decreasing production by 2 regresses track twice', () => {
       const {marsBot} = createAutomaGame();
       for (let i = 0; i < 5; i++) {
-        marsBot.tracks.all[0].advance();
+        marsBot.marsBotBoard.tracks[0].advance();
       }
 
       marsBot.player.production.add(Resource.STEEL, -2, {log: true, from: {player: marsBot.player}});
-      expect(marsBot.tracks.all[0].position).to.eq(3);
+      expect(marsBot.marsBotBoard.tracks[0].position).to.eq(3);
     });
 
     it('production increase is ignored', () => {
       const {marsBot} = createAutomaGame();
-      const posBefore = marsBot.tracks.all[0].position;
+      const posBefore = marsBot.marsBotBoard.tracks[0].position;
 
       marsBot.player.production.add(Resource.STEEL, 3, {log: true});
       // No change — MarsBot ignores production increases
-      expect(marsBot.tracks.all[0].position).to.eq(posBefore);
+      expect(marsBot.marsBotBoard.tracks[0].position).to.eq(posBefore);
     });
   });
 
@@ -174,20 +174,20 @@ describe('MarsBot Resource Interaction (rules page 4-5)', () => {
   describe('Production decrease targeting', () => {
     it('MarsBot is targetable when track position > 0', () => {
       const {human, marsBot} = createAutomaGame();
-      marsBot.tracks.all[0].advance();
+      marsBot.marsBotBoard.tracks[0].advance();
       expect(marsBot.player.canHaveProductionReduced(Resource.STEEL, 1, human)).to.be.true;
     });
 
     it('MarsBot is NOT targetable when track is at position 0', () => {
       const {human, marsBot} = createAutomaGame();
-      expect(marsBot.tracks.all[0].position).to.eq(0);
+      expect(marsBot.marsBotBoard.tracks[0].position).to.eq(0);
       expect(marsBot.player.canHaveProductionReduced(Resource.STEEL, 1, human)).to.be.false;
     });
 
     it('MarsBot appears in target list for DecreaseAnyProduction when track > 0', () => {
       const {human, marsBot} = createAutomaGame();
-      marsBot.tracks.all[0].advance();
-      marsBot.tracks.all[0].advance();
+      marsBot.marsBotBoard.tracks[0].advance();
+      marsBot.marsBotBoard.tracks[0].advance();
       const targets = human.game.allPlayers.filter((p) => p.canHaveProductionReduced(Resource.STEEL, 1, human));
       expect(targets).to.include(marsBot.player);
     });
@@ -195,20 +195,20 @@ describe('MarsBot Resource Interaction (rules page 4-5)', () => {
     it('MarsBot production reports track position for mapped resource', () => {
       const {marsBot} = createAutomaGame();
       expect(marsBot.player.production[Resource.STEEL]).to.eq(0);
-      marsBot.tracks.all[0].advance();
-      marsBot.tracks.all[0].advance();
-      marsBot.tracks.all[0].advance();
+      marsBot.marsBotBoard.tracks[0].advance();
+      marsBot.marsBotBoard.tracks[0].advance();
+      marsBot.marsBotBoard.tracks[0].advance();
       expect(marsBot.player.production[Resource.STEEL]).to.eq(3);
     });
 
     it('production decrease regresses the corresponding track', () => {
       const {marsBot} = createAutomaGame();
-      marsBot.tracks.all[0].advance();
-      marsBot.tracks.all[0].advance();
-      expect(marsBot.tracks.all[0].position).to.eq(2);
+      marsBot.marsBotBoard.tracks[0].advance();
+      marsBot.marsBotBoard.tracks[0].advance();
+      expect(marsBot.marsBotBoard.tracks[0].position).to.eq(2);
 
       marsBot.player.production.add(Resource.STEEL, -1, {log: false});
-      expect(marsBot.tracks.all[0].position).to.eq(1);
+      expect(marsBot.marsBotBoard.tracks[0].position).to.eq(1);
     });
   });
 

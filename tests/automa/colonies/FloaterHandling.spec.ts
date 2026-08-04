@@ -4,7 +4,7 @@ import {AutomaGameHooks} from '../../../src/server/automa/AutomaGameHooks';
 import {MarsBot} from '../../../src/server/automa/MarsBot';
 import {ColonyName} from '../../../src/common/colonies/ColonyName';
 import {BoardName} from '../../../src/common/boards/BoardName';
-import {MarsBotTracks} from '../../../src/server/automa/MarsBotTracks';
+import {MarsBotBoard} from '../../../src/server/automa/MarsBotBoard';
 import {Tag} from '../../../src/common/cards/Tag';
 
 function getMarsBot(game: ReturnType<typeof testGame>[0]): MarsBot {
@@ -129,8 +129,8 @@ describe('FloaterHandling (C-8, C-9, C-14, C-X2)', () => {
     it('Titan storage can hold more than 5 without triggering C-12', () => {
       const [game] = testGame(1, {automaOption: true, coloniesExtension: true, boardName: BoardName.THARSIS});
       const marsBot = getMarsBot(game);
-      const board: MarsBotTracks = marsBot.tracks;
-      const eventIdx = board.getTrackIndexForTag(Tag.EVENT)!;
+      const board: MarsBotBoard = marsBot.tracks;
+      const eventIdx = board.tagToTrack[Tag.EVENT]!;
       const before = board.all[eventIdx].position;
 
       // Add 6 floaters to Titan (via floater track actions)

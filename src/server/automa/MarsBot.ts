@@ -8,7 +8,7 @@ import {newCard} from '../createCard';
 import {DifficultyLevel, BonusCardId, TrackDefinition, getAutomaMaxGeneration} from '../../common/automa/AutomaTypes';
 import {Tag} from '../../common/cards/Tag';
 import {getMcPerVP} from './MarsBotScoring';
-import {MarsBotTracks} from './MarsBotTracks';
+import {MarsBotBoard} from './MarsBotBoard';
 import {MarsBotModel} from '../../common/models/MarsBotModel';
 import {MarsBotBonusCard, bonusCardDisplayName, createCorpBonusCard} from './MarsBotBonusCard';
 import {MarsBotBonusDeck} from './MarsBotBonusDeck';
@@ -34,7 +34,7 @@ import {SerializedAutomaState} from '../SerializedGame';
  * externally via this manager.
  */
 export class MarsBot implements IMarsBot {
-  public readonly tracks: MarsBotTracks;
+  public readonly marsBotBoard: MarsBotBoard;
   public readonly bonusDeck: MarsBotBonusDeck;
   public readonly turnResolver: MarsBotTurnResolver;
   private readonly bonusResolver: MarsBotBonusResolver;
@@ -102,7 +102,7 @@ export class MarsBot implements IMarsBot {
     public readonly difficulty: DifficultyLevel,
     private readonly random: Random,
   ) {
-    this.tracks = new MarsBotTracks(boardData);
+    this.marsBotBoard = new MarsBotBoard(boardData);
     const opts = game.gameOptions;
     if (opts.coloniesExtension && opts.venusNextExtension) {
       this.bonusDeck = MarsBotBonusDeck.createWithVenusAndColonies(random);
@@ -115,14 +115,14 @@ export class MarsBot implements IMarsBot {
     }
     // C-6: Compute 2nd Trade Fleet cube position for Colonies (Event track pos 9)
     if (opts.coloniesExtension) {
-      const eventTrackIdx = this.tracks.getTrackIndexForTag(Tag.EVENT);
+      const eventTrackIdx = this.marsBotBoard.tagToTrack[Tag.EVENT];
       if (eventTrackIdx !== undefined) {
         this.tradeFleetCubeKey = trackCubeKey(eventTrackIdx, 9);
       }
     }
     this.tilePlacer = new MarsBotTilePlacer(game, player, humanPlayer);
     this.turnResolver = new MarsBotTurnResolver(
-      game, player, humanPlayer, this.tracks, difficulty, 0, this.tilePlacer,
+      game, player, humanPlayer, this.marsBotBoard, difficulty, 0, this.tilePlacer,
     );
     this.bonusResolver = new MarsBotBonusResolver(
       game, player, humanPlayer, this.turnResolver, this.bonusDeck, this.tilePlacer,
@@ -317,7 +317,7 @@ export class MarsBot implements IMarsBot {
 
   /** Place final greenery tiles for MarsBot (tracks with greenery as next action). */
   public placeFinalGreeneries(): void {
-    for (const track of this.tracks.all) {
+    for (const track of this.marsBotBoard.tracks) {
       const nextAction = track.peek();
       if (nextAction === 'greenery') {
         const space = this.tilePlacer.findGreenerySpace();
@@ -519,10 +519,10 @@ export class MarsBot implements IMarsBot {
 
   /** Regress a track when human decreases MarsBot's production. */
   public regressTrack(productionType: Resource): void {
-    for (let i = 0; i < this.tracks.all.length; i++) {
-      const trackDef = this.tracks.data[i];
+    for (let i = 0; i < this.marsBotBoard.tracks.length; i++) {
+      const trackDef = this.marsBotBoard.definitions[i];
       if (trackDef.productions.includes(productionType)) {
-        if (this.tracks.all[i].regress()) {
+        if (this.marsBotBoard.tracks[i].regress()) {
           this.game.log('MarsBot\'s ${0} track regressed (${1} production decreased)',
             (b) => b.rawString(trackDef.tags[0]).rawString(productionType));
         }
@@ -540,7 +540,7 @@ export class MarsBot implements IMarsBot {
       name: this.player.name,
       color: this.player.color,
       difficulty: this.difficulty,
-      tracks: this.tracks.all.map((track) => ({
+      tracks: this.marsBotBoard.tracks.map((track) => ({
         tags: track.definition.tags,
         productions: track.definition.productions,
         position: track.position,
@@ -579,8 +579,8 @@ export class MarsBot implements IMarsBot {
 
   public serialize(): SerializedAutomaState {
     const state: SerializedAutomaState = {
-      trackPositions: this.tracks.all.map((t) => t.position),
-      trackRegressedPositions: this.tracks.all.map((t) => Array.from(t.regressedPositions)),
+      trackPositions: this.marsBotBoard.tracks.map((t) => t.position),
+      trackRegressedPositions: this.marsBotBoard.tracks.map((t) => Array.from(t.regressedPositions)),
       megacredits: this.turnResolver.megacredits,
       goesFirst: this.goesFirst,
       difficulty: this.difficulty,
@@ -627,8 +627,8 @@ export class MarsBot implements IMarsBot {
 
   public restoreState(state: SerializedAutomaState): void {
     // Restore track positions
-    for (let i = 0; i < state.trackPositions.length && i < this.tracks.all.length; i++) {
-      const track = this.tracks.all[i];
+    for (let i = 0; i < state.trackPositions.length && i < this.marsBotBoard.tracks.length; i++) {
+      const track = this.marsBotBoard.tracks[i];
       // Set position directly
       while (track.position < state.trackPositions[i]) {
         track.advance(); // We advance without resolving actions since we're restoring state

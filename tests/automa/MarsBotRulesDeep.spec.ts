@@ -3,7 +3,7 @@ import {testGame} from '../TestGame';
 import {TestPlayer} from '../TestPlayer';
 import {IGame} from '../../src/server/IGame';
 import {MarsBot} from '../../src/server/automa/MarsBot';
-import {MarsBotTracks} from '../../src/server/automa/MarsBotTracks';
+import {MarsBotBoard} from '../../src/server/automa/MarsBotBoard';
 import {MarsBotTurnResolver} from '../../src/server/automa/MarsBotTurnResolver';
 import {MarsBotBonusDeck} from '../../src/server/automa/MarsBotBonusDeck';
 import {MarsBotBonusResolver} from '../../src/server/automa/MarsBotBonusResolver';
@@ -46,7 +46,7 @@ describe('MarsBot Deep Rules Tests', () => {
 
       const layout = emptyLayout();
       layout[1] = 'venus';
-      const board = new MarsBotTracks(makeBoard(layout));
+      const board = new MarsBotBoard(makeBoard(layout));
       const resolver = new MarsBotTurnResolver(game, bot, human, board, 'normal');
 
       resolver.resolveProjectCard(mockCard([Tag.BUILDING]));
@@ -62,7 +62,7 @@ describe('MarsBot Deep Rules Tests', () => {
 
       const layout = emptyLayout();
       layout[1] = 'venus2';
-      const board = new MarsBotTracks(makeBoard(layout));
+      const board = new MarsBotBoard(makeBoard(layout));
       const resolver = new MarsBotTurnResolver(game, bot, human, board, 'normal');
 
       resolver.resolveProjectCard(mockCard([Tag.BUILDING]));
@@ -82,7 +82,7 @@ describe('MarsBot Deep Rules Tests', () => {
 
       const layout = emptyLayout();
       layout[1] = 'greenery'; // Greenery raises oxygen
-      const board = new MarsBotTracks(makeBoard(layout));
+      const board = new MarsBotBoard(makeBoard(layout));
       // Place a city for greenery placement rules
       const spaces = game.board.getAvailableSpacesOnLand(marsBot.player);
       game.simpleAddTile(marsBot.player, spaces[15], {tileType: TileType.CITY});
@@ -109,7 +109,7 @@ describe('MarsBot Deep Rules Tests', () => {
 
       const allEmpty = emptyLayout();
       const boardData = THARSIS_MARSBOT_BOARD.map((def) => ({...def, layout: allEmpty}));
-      const board = new MarsBotTracks(boardData);
+      const board = new MarsBotBoard(boardData);
       const resolver = new MarsBotTurnResolver(game, bot, human, board, 'normal');
 
       // Max out Track 1 (Building)
@@ -158,7 +158,7 @@ describe('MarsBot Deep Rules Tests', () => {
 
       const layout = emptyLayout();
       layout[1] = 'milestone';
-      const board = new MarsBotTracks(makeBoard(layout));
+      const board = new MarsBotBoard(makeBoard(layout));
       const resolver = new MarsBotTurnResolver(game, bot, human, board, 'normal');
       resolver.megacredits = 10;
 
@@ -180,7 +180,7 @@ describe('MarsBot Deep Rules Tests', () => {
 
       const layout = emptyLayout();
       layout[1] = 'award';
-      const board = new MarsBotTracks(makeBoard(layout));
+      const board = new MarsBotBoard(makeBoard(layout));
       const resolver = new MarsBotTurnResolver(game, bot, human, board, 'normal');
       resolver.megacredits = 10;
 
@@ -386,7 +386,7 @@ describe('MarsBot Deep Rules Tests', () => {
 
       const layout = emptyLayout();
       layout[1] = 'milestone';
-      const board = new MarsBotTracks(makeBoard(layout));
+      const board = new MarsBotBoard(makeBoard(layout));
       const resolver = new MarsBotTurnResolver(game, marsBot.player, human, board, 'normal');
 
       resolver.resolveProjectCard(mockCard([Tag.BUILDING]));
@@ -407,7 +407,7 @@ describe('MarsBot Deep Rules Tests', () => {
 
       const allEmpty = emptyLayout();
       const boardData = THARSIS_MARSBOT_BOARD.map((def) => ({...def, layout: allEmpty}));
-      const board = new MarsBotTracks(boardData);
+      const board = new MarsBotBoard(boardData);
       const resolver = new MarsBotTurnResolver(game, bot, human, board, 'normal');
 
       resolver.resolveProjectCard(mockCard([Tag.BUILDING], 'event'));
@@ -423,7 +423,7 @@ describe('MarsBot Deep Rules Tests', () => {
 
       const allEmpty = emptyLayout();
       const boardData = THARSIS_MARSBOT_BOARD.map((def) => ({...def, layout: allEmpty}));
-      const board = new MarsBotTracks(boardData);
+      const board = new MarsBotBoard(boardData);
       const resolver = new MarsBotTurnResolver(game, bot, human, board, 'normal');
 
       // Event card with zero explicit tags — should NOT be a failed action

@@ -88,7 +88,7 @@ const POSEIDON: IMarsBotCorp = {
   // C-33: each colony placement advances the least-advanced track
   effect: {
     onColonyPlaced(bot) {
-      bot.advanceTrack(bot.tracks.getLeastAdvancedTrackIndex());
+      bot.advanceTrack(bot.marsBotBoard.getLeastAdvancedTrackIndex());
       bot.game.log('MarsBot (Poseidon): colony placed → advance least-advanced track (C-33)');
     },
   },
