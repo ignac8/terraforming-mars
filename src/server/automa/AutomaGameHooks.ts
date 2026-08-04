@@ -237,15 +237,6 @@ export class AutomaGameHooks {
     // Run all 4 draft rounds synchronously with human input chaining
     const runDraftRound = (round: number) => {
       if (round > 4) {
-        // Draft complete — apply post-draft discard if corp has draft priority
-        let finalMarsBotCards = marsBotKept;
-        if (draftPriority !== undefined) {
-          const result = this.draftResolver().discardAfterDraft(marsBotKept, draftPriority);
-          finalMarsBotCards = result.kept;
-          for (const discarded of result.discarded) {
-            this.game.projectDeck.discardPile.push(discarded);
-          }
-        }
         // Build MarsBot deck — Brutal keeps 4th card free; others spend 5 floaters to skip discard
         const isBrutal = this.marsBot.difficulty === 'brutal';
         const canSpend = this.canSpendFloatersForExtraCard();
@@ -254,7 +245,17 @@ export class AutomaGameHooks {
           this.marsBot.floaters -= 5;
           this.game.log('MarsBot spends 5 floaters to keep 4th drafted card');
         }
-        this.marsBot.buildResearchActionDeckFromDraft(finalMarsBotCards, skipDiscard);
+        // A corp with a draft priority chooses which card goes, so it stands in for the discard
+        // below rather than happening on top of it.
+        let finalMarsBotCards = marsBotKept;
+        if (draftPriority !== undefined && !skipDiscard) {
+          const result = this.draftResolver().discardAfterDraft(marsBotKept, draftPriority);
+          finalMarsBotCards = result.kept;
+          for (const discarded of result.discarded) {
+            this.game.projectDeck.discardPile.push(discarded);
+          }
+        }
+        this.marsBot.buildResearchActionDeckFromDraft(finalMarsBotCards, skipDiscard || draftPriority !== undefined);
         // Brutal: spend 5 floaters for a 5th card from project deck
         if (isBrutal && canSpend) {
           this.marsBot.floaters -= 5;
