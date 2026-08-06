@@ -18,7 +18,7 @@ import {IAward} from '../awards/IAward';
 import {Resource} from '../../common/Resource';
 import * as constants from '../../common/constants';
 import {MarsBotCorpResolver} from './corps/MarsBotCorpResolver';
-import {MILESTONE_EVALS, AWARD_EVALS} from './MarsBotMilestoneAwardEval';
+import {marsBotCanClaimMilestone, marsBotAwardScore} from './MarsBotMilestoneAwardEval';
 import type {MarsBot} from './MarsBot';
 
 /**
@@ -393,14 +393,10 @@ export class MarsBotTurnResolver {
     }
   }
 
-  /** Check if MarsBot meets a milestone using track-based criteria. */
+  /** Check if MarsBot meets a milestone. */
   public marsBotMeetsMilestone(milestone: IMilestone): boolean {
-    const evalFn = MILESTONE_EVALS.get(milestone.name);
-    if (evalFn !== undefined && this.marsBotManager !== undefined) {
-      const result = evalFn(this.marsBotManager);
-      if (result !== undefined) {
-        return result;
-      }
+    if (this.marsBotManager !== undefined) {
+      return marsBotCanClaimMilestone(milestone, this.marsBotManager);
     }
     return milestone.canClaim(this.marsBot);
   }
@@ -437,15 +433,11 @@ export class MarsBotTurnResolver {
     this.game.log('MarsBot funds award ${0}', (b) => b.rawString(bestAward.name));
   }
 
-  /** Get MarsBot's value for an award using track-based evaluation. */
+  /** Get MarsBot's value for an award, with the easy difficulty handicap. */
   public getMarsBotAwardValue(award: IAward): number {
     const offset = this.difficulty === 'easy' ? -5 : 0;
-    const evalFn = AWARD_EVALS.get(award.name);
-    if (evalFn !== undefined && this.marsBotManager !== undefined) {
-      const result = evalFn(this.marsBotManager);
-      if (result !== undefined) {
-        return result + offset;
-      }
+    if (this.marsBotManager !== undefined) {
+      return marsBotAwardScore(award, this.marsBotManager) + offset;
     }
     return award.getScore(this.marsBot) + offset;
   }

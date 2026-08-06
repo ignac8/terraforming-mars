@@ -39,7 +39,6 @@ export class AutomaGameSetup {
     gameOptions.boardName = BoardName.THARSIS;
   }
 
-  /** Filter out milestones not supported against MarsBot (e.g., Terraformer29). */
   /** Filter milestones unsupported against MarsBot. */
   public static filterMilestones(milestones: Array<IMilestone>, gameOptions: GameOptions): Array<IMilestone> {
     const unsupported: Array<string> = ['Terraformer29'];

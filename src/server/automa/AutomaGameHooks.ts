@@ -1,4 +1,3 @@
-import {IAutomaGameHooks} from './IAutomaGameHooks';
 import {IGame} from '../IGame';
 import {IPlayer} from '../IPlayer';
 import {Color} from '../../common/Color';
@@ -30,7 +29,7 @@ import {ColonyName} from '../../common/colonies/ColonyName';
  * When `automaHooks` is undefined, the `?.` operator returns undefined/false and
  * the game proceeds with normal behavior.
  */
-export class AutomaGameHooks implements IAutomaGameHooks {
+export class AutomaGameHooks {
   constructor(
     private readonly game: IGame,
     public readonly marsBot: MarsBot,

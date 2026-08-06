@@ -5,7 +5,8 @@ import {IGame} from '../../src/server/IGame';
 import {Game} from '../../src/server/Game';
 import {MarsBot} from '../../src/server/automa/MarsBot';
 import {BoardName} from '../../src/common/boards/BoardName';
-import {AWARD_EVALS} from '../../src/server/automa/MarsBotMilestoneAwardEval';
+import {marsBotAwardScore} from '../../src/server/automa/MarsBotMilestoneAwardEval';
+import {Visionary} from '../../src/server/awards/Visionary';
 import {Phase} from '../../src/common/Phase';
 import {Resource} from '../../src/common/Resource';
 import {getMcPerVP} from '../../src/server/automa/MarsBotScoring';
@@ -1027,28 +1028,14 @@ describe('MarsBotVenusNext', () => {
     expect(buildingTrack.canAdvance()).to.be.false;
   });
 
-  it('Visionary award uses 2nd lowest track with Venus', () => {
-    const {marsBot} = createVenusAutomaGame();
-    // Venus sits lowest at 0, the Mars tracks run 1 to 7, so the second lowest is 1
-    for (let index = 0; index < 7; index++) {
-      for (let step = 0; step <= index; step++) {
-        marsBot.marsBotBoard.tracks[index].advance();
-      }
-    }
-
-    expect(AWARD_EVALS.get('Visionary')!(marsBot)).to.eq(2);
-  });
-
-  it('Visionary award uses lowest track without Venus', () => {
+  it('Visionary scores MarsBot through the class, not the tracks', () => {
     const {marsBot} = createAutomaGame();
-    // Tracks run 1 to 7, so the lowest is 1
     for (let index = 0; index < 7; index++) {
-      for (let step = 0; step <= index; step++) {
-        marsBot.marsBotBoard.tracks[index].advance();
-      }
+      marsBot.marsBotBoard.tracks[index].advance();
     }
 
-    expect(AWARD_EVALS.get('Visionary')!(marsBot)).to.eq(2);
+    // The bot's player holds no cards in hand, so the class scores it 0
+    expect(marsBotAwardScore(new Visionary(), marsBot)).to.eq(0);
   });
 
   it('Visionary Corporate Competition excludes Venus track', () => {
