@@ -5,6 +5,7 @@ import {IGame} from '../../src/server/IGame';
 import {Tag} from '../../src/common/cards/Tag';
 import {MarsBotBoard} from '../../src/server/automa/MarsBotBoard';
 import {MarsBot} from '../../src/server/automa/MarsBot';
+import {MarsBotTags} from '../../src/server/automa/MarsBotTags';
 import {MarsBotTurnResolver} from '../../src/server/automa/MarsBotTurnResolver';
 import {THARSIS_MARSBOT_BOARD} from '../../src/server/automa/boards/TharsisMarsBot';
 import {TrackDefinition} from '../../src/common/automa/AutomaTypes';
@@ -40,7 +41,7 @@ describe('MarsBotTurnResolver', () => {
   let marsBotBoard: MarsBotBoard;
   let resolver: MarsBotTurnResolver;
 
-  /** The milestone and award evals read the bot, which the real game attaches after construction. */
+  /** The milestone and award dispatchers read the bot, which the real game attaches after construction. */
   function attachManager(target: MarsBotTurnResolver): void {
     target.marsBotManager = {
       game,
@@ -62,6 +63,7 @@ describe('MarsBotTurnResolver', () => {
     marsBot = TestPlayer.RED.newPlayer({name: 'marsbot'});
     (marsBot as any).game = game;
     marsBotBoard = new MarsBotBoard(THARSIS_MARSBOT_BOARD);
+    marsBot.tags = new MarsBotTags(marsBot, marsBotBoard);
     resolver = new MarsBotTurnResolver(game, marsBot, human, marsBotBoard, 'normal');
     attachManager(resolver);
   });
