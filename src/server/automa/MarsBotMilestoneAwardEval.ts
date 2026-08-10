@@ -22,3 +22,15 @@ export function marsBotTrackPosition(bot: IMarsBot, tag: Tag): number {
   const index = bot.marsBotBoard.tagToTrack[tag];
   return index === undefined ? 0 : bot.marsBotBoard.tracks[index].position;
 }
+
+/** Every track position, the Venus track included when in play. */
+export function marsBotAllTrackPositions(bot: IMarsBot): Array<number> {
+  return bot.marsBotBoard.tracks.map((track) => track.position);
+}
+
+/** The Mars track positions, leaving a Venus track out. */
+export function marsBotMarsTrackPositions(bot: IMarsBot): Array<number> {
+  return bot.marsBotBoard.tracks
+    .filter((track) => !track.definition.tags.includes(Tag.VENUS))
+    .map((track) => track.position);
+}
