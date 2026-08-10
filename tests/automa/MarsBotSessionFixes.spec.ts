@@ -1028,14 +1028,28 @@ describe('MarsBotVenusNext', () => {
     expect(buildingTrack.canAdvance()).to.be.false;
   });
 
-  it('Visionary scores MarsBot through the class, not the tracks', () => {
-    const {marsBot} = createAutomaGame();
+  it('Visionary award uses 2nd lowest track with Venus', () => {
+    const {marsBot} = createVenusAutomaGame();
+    // Venus sits lowest at 0, the Mars tracks run 1 to 7, so the second lowest is 1
     for (let index = 0; index < 7; index++) {
-      marsBot.marsBotBoard.tracks[index].advance();
+      for (let step = 0; step <= index; step++) {
+        marsBot.marsBotBoard.tracks[index].advance();
+      }
     }
 
-    // The bot's player holds no cards in hand, so the class scores it 0
-    expect(marsBotAwardScore(new Visionary(), marsBot)).to.eq(0);
+    expect(marsBotAwardScore(new Visionary(), marsBot)).to.eq(2);
+  });
+
+  it('Visionary award uses lowest track without Venus', () => {
+    const {marsBot} = createAutomaGame();
+    // Tracks run 1 to 7, so the lowest is 1
+    for (let index = 0; index < 7; index++) {
+      for (let step = 0; step <= index; step++) {
+        marsBot.marsBotBoard.tracks[index].advance();
+      }
+    }
+
+    expect(marsBotAwardScore(new Visionary(), marsBot)).to.eq(2);
   });
 
   it('Visionary Corporate Competition excludes Venus track', () => {
