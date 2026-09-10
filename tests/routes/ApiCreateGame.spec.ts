@@ -85,6 +85,7 @@ describe('ApiCreateGame', () => {
         showTimers: false,
         fastModeOption: false,
         showOtherPlayersVP: false,
+        playerPasswords: false,
         aresExtremeVariant: false,
         politicalAgendasExtension: 'Standard',
         solarPhaseOption: false,

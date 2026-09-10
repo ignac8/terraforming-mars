@@ -37,6 +37,7 @@ export class PlayerInput extends Handler {
       console.warn(`unable to find player ${playerId}`, err);
       throw RouteError.notFound();
     }
+    this.checkPlayerPassword(player, ctx);
     return this.processInput(req, res, ctx, player);
   }
 

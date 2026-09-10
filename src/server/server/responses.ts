@@ -73,6 +73,13 @@ export function forbidden(req: Request, res: Response): void {
   res.end();
 }
 
+export function unauthorized(req: Request, res: Response, msg: string = 'Incorrect password'): void {
+  console.warn('Unauthorized', req.method, req.url);
+  res.writeHead(statusCode.unauthorized);
+  res.write(msg);
+  res.end();
+}
+
 export function unprocessableEntity(req: Request, res: Response, msg: string = 'Unprocessable Entity'): void {
   console.warn(msg, req.method, req.url);
   res.writeHead(statusCode.unprocessableEntity);

@@ -118,6 +118,7 @@ const TEMPLATE_EXPECTED: CreateGameModel = {
   modularMA: false,
   randomFirstPlayer: true,
   showOtherPlayersVP: false,
+  playerPasswords: false,
   showColoniesList: false,
   showCorporationList: false,
   showPreludesList: false,

@@ -158,6 +158,7 @@ export class ApiCreateGame extends Handler {
         requiresMoonTrackCompletion: gameReq.requiresMoonTrackCompletion,
         requiresVenusTrackCompletion: gameReq.requiresVenusTrackCompletion,
         showOtherPlayersVP: gameReq.showOtherPlayersVP,
+        playerPasswords: gameReq.playerPasswords ?? false,
         showTimers: gameReq.showTimers,
         shuffleMapOption: gameReq.shuffleMapOption,
         solarPhaseOption: gameReq.solarPhaseOption,

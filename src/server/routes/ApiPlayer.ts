@@ -5,6 +5,7 @@ import {Context} from './IHandler';
 import {Request} from '../Request';
 import {Response} from '../Response';
 import {RouteError} from './RouteError';
+import {IPlayer} from '../IPlayer';
 
 export class ApiPlayer extends Handler {
   public static readonly INSTANCE = new ApiPlayer();
@@ -19,17 +20,22 @@ export class ApiPlayer extends Handler {
     if (game === undefined) {
       throw RouteError.notFound();
     }
+    // Only the lookup is guarded: a wider catch turns every RouteError raised
+    // below -- forbidden, unauthorized -- into a 404.
+    let player: IPlayer;
     try {
-      const player = game.getPlayerById(playerId);
-      if (!this.isUser(player.user, ctx)) {
-        throw RouteError.forbidden();
-      }
-
-      ctx.ipTracker.addParticipant(playerId, ctx.ip);
-      responses.writeJson(res, ctx, Server.getPlayerModel(player));
+      player = game.getPlayerById(playerId);
     } catch (err) {
       console.warn(`unable to find player ${playerId}`, err);
       throw RouteError.notFound();
     }
+
+    if (!this.isUser(player.user, ctx)) {
+      throw RouteError.forbidden();
+    }
+    this.checkPlayerPassword(player, ctx);
+
+    ctx.ipTracker.addParticipant(playerId, ctx.ip);
+    responses.writeJson(res, ctx, Server.getPlayerModel(player));
   }
 }

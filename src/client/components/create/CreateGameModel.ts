@@ -51,6 +51,7 @@ export type CreateGameModel = {
   showCorporationList: boolean;
   showIncludedCards: boolean;
   showOtherPlayersVP: boolean;
+  playerPasswords: boolean;
   showPreludesList: boolean;
   showTimers: boolean;
   shuffleMapOption: boolean;

@@ -1,4 +1,4 @@
-import {PlayerId} from '../common/Types';
+import {PlayerId, Password} from '../common/Types';
 import {CardName} from '../common/cards/CardName';
 import {Color} from '../common/Color';
 import {SerializedCard} from './SerializedCard';
@@ -84,6 +84,7 @@ export interface SerializedPlayer extends DeprecatedFields{
   underworldData: UnderworldPlayerData;
   victoryPointsByGeneration: Array<number>;
   user?: DiscordId;
+  password?: Password;
   warmongerCards: number;
   withinDeflectionZone: boolean;
 }

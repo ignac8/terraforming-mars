@@ -4,7 +4,7 @@ import {VictoryPointsBreakdown} from '../game/VictoryPointsBreakdown';
 import {PlayerInputModel} from './PlayerInputModel';
 import {TimerModel} from './TimerModel';
 import {GameModel} from './GameModel';
-import {PlayerId, ParticipantId} from '../Types';
+import {PlayerId, ParticipantId, Password} from '../Types';
 import {CardName} from '../cards/CardName';
 import {Resource} from '../Resource';
 import {PartyName} from '../turmoil/PartyName';
@@ -94,6 +94,8 @@ export interface PlayerViewModel extends ViewModel {
   dealtCeoCards: ReadonlyArray<CardModel>;
   draftedCards: ReadonlyArray<CardModel>;
   id: PlayerId;
+  /** This seat's password, when `playerPasswords` is on. Never on `PublicPlayerModel`. */
+  password: Password | undefined;
   ceoCardsInHand: ReadonlyArray<CardModel>;
   pickedCorporationCard: ReadonlyArray<CardModel>; // Why Array?
   preludeCardsInHand: ReadonlyArray<CardModel>;
