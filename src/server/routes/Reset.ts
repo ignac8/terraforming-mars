@@ -46,6 +46,7 @@ export class Reset extends Handler {
     if (player === undefined) {
       throw RouteError.notFound();
     }
+    this.checkPlayerPassword(player, ctx);
     if (player.game.activePlayer.id !== player.id) {
       throw RouteError.badRequest('Not the active player');
     }

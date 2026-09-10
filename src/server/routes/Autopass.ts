@@ -27,6 +27,8 @@ export class Autopass extends Handler {
       throw RouteError.notFound('player not found');
     }
 
+    this.checkPlayerPassword(player, ctx);
+
     // This doesn't get saved.
     player.autopass = autopass;
   }

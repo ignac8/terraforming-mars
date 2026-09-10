@@ -17,6 +17,15 @@ export type GameOptions = {
   showTimers: boolean;
   fastModeOption: boolean;
   showOtherPlayersVP: boolean;
+  /**
+   * When set, each player page is claimed by the first visitor to open it, and
+   * only requests carrying that seat's password may read or act on it.
+   *
+   * A claim is held in memory until the game is next saved, which in practice
+   * is the claimant's first action. A server restart in between drops it and
+   * the seat can be claimed again.
+   */
+  playerPasswords: boolean;
 
   // Extensions -- Deprecated, except when importing JSON
   corporateEra: boolean;
@@ -200,6 +209,7 @@ export const DEFAULT_GAME_OPTIONS: GameOptions = {
   removeNegativeGlobalEventsOption: false,
   requiresVenusTrackCompletion: false,
   showOtherPlayersVP: false,
+  playerPasswords: false,
   showTimers: true,
   shuffleMapOption: false,
   solarPhaseOption: false,

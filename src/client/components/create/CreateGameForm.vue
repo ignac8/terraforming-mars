@@ -448,6 +448,11 @@
                             <label for="fastMode-checkbox">
                                 <span v-i18n>Fast mode</span>&nbsp;<a :href="wikiUrls.fastMode" class="tooltip" v-i18n data-tooltip="Link opens in a new tab/window" target="_blank">&#9432;</a>
                             </label>
+
+                            <input type="checkbox" name="playerPasswords" v-model="playerPasswords" id="playerPasswords-checkbox">
+                            <label for="playerPasswords-checkbox" title="The first person to open a player link claims that seat. From then on only they can use it.">
+                                <span v-i18n>Player passwords</span>
+                            </label>
                         </div>
 
                         <div class="create-game-players-cont">
@@ -1071,6 +1076,7 @@ export default defineComponent({
       const initialDraft = this.initialDraft;
       const randomMA = this.randomMA;
       const showOtherPlayersVP = this.showOtherPlayersVP;
+      const playerPasswords = this.playerPasswords;
       const solarPhaseOption = this.solarPhaseOption;
       const shuffleMapOption = this.shuffleMapOption;
       const customColonies = this.customColonies;
@@ -1274,6 +1280,7 @@ export default defineComponent({
         expansions: this.expansions,
         draftVariant,
         showOtherPlayersVP,
+        playerPasswords,
         customCorporationsList: customCorporations,
         customColoniesList: customColonies,
         customCeos: customCeos,

@@ -1,4 +1,4 @@
-import {PlayerId, isPlayerId} from '../common/Types';
+import {PlayerId, Password, isPlayerId} from '../common/Types';
 import {CardName} from '../common/cards/CardName';
 import {ICorporationCard} from './cards/corporation/ICorporationCard';
 import {IGame, isIGame} from './IGame';
@@ -193,6 +193,10 @@ export interface IPlayer {
 
   // When set, this player can only be accessed by the user.
   user?: DiscordId;
+
+  // When set, this seat has been claimed, and only requests carrying this
+  // password may read or act on it. Only ever sent to the seat's own player.
+  password?: Password;
 
   setup(game: IGame): void;
 

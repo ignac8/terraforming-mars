@@ -79,6 +79,7 @@ export class ApiWaitingFor extends Handler {
     if (!this.isUser(player.user, ctx)) {
       throw RouteError.forbidden();
     }
+    this.checkPlayerPassword(player, ctx);
     ctx.ipTracker.addParticipant(id, ctx.ip);
     responses.writeJson(res, ctx, this.getPlayerWaitingForModel(player, game, gameAge, undoCount));
   }

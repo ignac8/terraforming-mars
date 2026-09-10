@@ -68,6 +68,11 @@ const SpectatorHome = defineAsyncComponent(() => import(/* webpackChunkName: "sp
 const StartScreen = defineAsyncComponent(() => import(/* webpackChunkName: "start-screen" */ '@/client/components/StartScreen.vue'));
 import {$t, setTranslationContext} from '@/client/directives/i18n';
 import {paths} from '@/common/app/paths';
+import {statusCode} from '@/common/http/statusCode';
+import {passwordParam} from '@/client/utils/playerPassword';
+
+/** A player seat already claimed by someone else. */
+class UnauthorizedError extends Error {}
 import {PlayerViewModel, ViewModel} from '@/common/models/PlayerModel';
 import {SimpleGameModel} from '@/common/models/SimpleGameModel';
 import {SpectatorModel} from '@/common/models/SpectatorModel';
@@ -192,6 +197,9 @@ export default defineComponent({
 
       fetch(url)
         .then((resp) => {
+          if (resp.status === statusCode.unauthorized) {
+            throw new UnauthorizedError();
+          }
           if (!resp.ok) {
             throw new Error(`Error getting game data: ${resp.statusText}`);
           }
@@ -205,6 +213,9 @@ export default defineComponent({
             app.spectator = model as SpectatorModel;
           }
           app.playerkey++;
+          // The password has to survive into the address bar: it is how this
+          // seat stays claimed, and every later poll reads it back out of the URL.
+          const password = path === paths.PLAYER ? passwordParam(model as PlayerViewModel) : '';
           if (
             model.game.phase === 'end' &&
               window.location.search.includes('&noredirect') === false
@@ -223,16 +234,20 @@ export default defineComponent({
             } else if (path === paths.SPECTATOR) {
               app.screen = 'spectator-home';
             }
-            if (currentPathname !== path) {
+            if (currentPathname !== path || (password !== '' && !window.location.search.includes('password='))) {
               window.history.replaceState(
                 model,
                 `${constants.APP_NAME} - Game`,
-                `${path}?id=${model.id}`,
+                `${path}?id=${model.id}${password}`,
               );
             }
           }
         })
         .catch((err) => {
+          if (err instanceof UnauthorizedError) {
+            alert('Incorrect password.\n(If you accidentally closed your player page, check your browser\'s History > Recently Closed tabs.)');
+            return;
+          }
           alert('Error getting game data');
           console.error(err);
         });

@@ -1,5 +1,5 @@
 import * as constants from '../common/constants';
-import {PlayerId} from '../common/Types';
+import {PlayerId, Password} from '../common/Types';
 import {MILESTONE_COST, REDS_RULING_POLICY_COST} from '../common/constants';
 import {cardsFromJSON, ceosFromJSON, corporationCardsFromJSON, newCorporationCard, preludesFromJSON} from './createCard';
 import {CardName} from '../common/cards/CardName';
@@ -183,6 +183,8 @@ export class Player implements IPlayer {
   public globalParameterSteps: Record<GlobalParameter, number> = {...DEFAULT_GLOBAL_PARAMETER_STEPS};
 
   public user?: DiscordId;
+
+  public password?: Password;
 
   public get megaCredits(): number {
     return this.stock.megacredits;
@@ -1765,6 +1767,7 @@ export class Player implements IPlayer {
     const result: SerializedPlayer = {
       id: this.id,
       user: this.user,
+      password: this.password,
       // Used only during set-up
       pickedCorporationCard: this.pickedCorporationCard?.name,
       // Terraforming Rating
@@ -1913,6 +1916,7 @@ export class Player implements IPlayer {
     player.turmoilPolicyActionUsed = d.turmoilPolicyActionUsed;
     player.politicalAgendasActionUsedCount = d.politicalAgendasActionUsedCount;
     player.user = d.user;
+    player.password = d.password;
 
     // Rebuild removed from play cards (Playwrights, Odyssey)
     player.removedFromPlayCards = cardsFromJSON(d.removedFromPlayCards);

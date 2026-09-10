@@ -37,6 +37,7 @@ import {SoundManager} from '@/client/utils/SoundManager';
 import {WaitingForModel} from '@/common/models/WaitingForModel';
 import {Phase} from '@/common/Phase';
 import {paths} from '@/common/app/paths';
+import {passwordParam} from '@/client/utils/playerPassword';
 import {statusCode} from '@/common/http/statusCode';
 import {isPlayerId} from '@/common/Types';
 import {InputResponse} from '@/common/inputs/InputResponse';
@@ -107,7 +108,7 @@ export default defineComponent({
     },
     onsave(out: InputResponse) {
       this.fetchPlayerInput(
-        paths.PLAYER_INPUT + '?id=' + this.playerView.id,
+        paths.PLAYER_INPUT + '?id=' + this.playerView.id + passwordParam(this.playerView),
         {
           method: 'POST',
           headers: {'Content-Type': 'application/json'},
@@ -116,7 +117,7 @@ export default defineComponent({
     },
     reset() {
       this.fetchPlayerInput(
-        paths.RESET + '?id=' + this.playerView.id,
+        paths.RESET + '?id=' + this.playerView.id + passwordParam(this.playerView),
         {method: 'GET'});
     },
     fetchPlayerInput(url: string, options: RequestInit) {

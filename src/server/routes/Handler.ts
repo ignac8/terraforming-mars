@@ -5,6 +5,22 @@ import {Response} from '../Response';
 import {DiscordId} from '../server/auth/discord';
 import {RouteError} from './RouteError';
 import {assertNever} from '../../common/utils/utils';
+import {IPlayer} from '../IPlayer';
+import {Phase} from '../../common/Phase';
+import {randomBytes, timingSafeEqual} from 'crypto';
+
+/** 48 bits, matching the fork this was ported from, but from a CSPRNG. */
+const PASSWORD_BYTES = 6;
+
+/** Compares two passwords without leaking their common prefix through timing. */
+function safeEquals(a: string, b: string): boolean {
+  const left = Buffer.from(a);
+  const right = Buffer.from(b);
+  if (left.length !== right.length) {
+    return false;
+  }
+  return timingSafeEqual(left, right);
+}
 
 export type Options = {
   validateServerId: boolean;
@@ -65,6 +81,41 @@ export abstract class Handler implements IHandler {
     return false;
   }
 
+  /**
+   * Gates a player seat when the game runs with `playerPasswords`.
+   *
+   * The first request to reach an unclaimed seat claims it: a fresh password is
+   * generated and stored, and the caller is let through so the client can put it
+   * in the URL. Every later request must carry that password.
+   *
+   * Callers must apply this to *every* player-scoped route. Guarding only the
+   * route that serves the page leaves the seat wide open, since knowing a player
+   * id is otherwise enough to submit that player's moves.
+   */
+  protected checkPlayerPassword(player: IPlayer, ctx: Context): void {
+    const game = player.game;
+    if (game.gameOptions.playerPasswords === false) {
+      return;
+    }
+    // A solo game has no other seat to protect, and a finished game has no moves
+    // left to make -- both stay readable without a password.
+    if (game.isSoloMode() || game.phase === Phase.END) {
+      return;
+    }
+    // The operator's serverId link is a master key, as it is elsewhere.
+    if (this.isServerIdValid(ctx)) {
+      return;
+    }
+    if (player.password === undefined) {
+      player.password = randomBytes(PASSWORD_BYTES).toString('hex');
+      return;
+    }
+    const incoming = ctx.urlParams.stringOrUndefined('password');
+    if (incoming === undefined || !safeEquals(incoming, player.password)) {
+      throw RouteError.unauthorized();
+    }
+  }
+
   private isServerIdValid(ctx: Context): boolean {
     if (ctx.user?.id && DISCORD_ADMIN_USER_IDS.includes(ctx.user?.id)) {
       return true;
@@ -96,6 +147,9 @@ export abstract class Handler implements IHandler {
         break;
       case 'notFound':
         responses.notFound(req, res, e.detail);
+        break;
+      case 'unauthorized':
+        responses.unauthorized(req, res, e.detail);
         break;
       default:
         assertNever(e.kind);

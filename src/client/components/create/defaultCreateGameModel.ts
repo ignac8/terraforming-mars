@@ -25,6 +25,7 @@ export function defaultCreateGameModel(): CreateGameModel {
     modularMA: false,
     randomFirstPlayer: true,
     showOtherPlayersVP: false,
+    playerPasswords: false,
     // beginnerOption: false,
     showCeosList: false,
     showColoniesList: false,
