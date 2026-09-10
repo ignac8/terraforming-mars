@@ -3,7 +3,7 @@ import {testGame} from '../../TestGame';
 import {UtopiaInvestTournament} from '../../../src/server/cards/tournament/UtopiaInvestTournament';
 import {OrOptions} from '../../../src/server/inputs/OrOptions';
 import {cast} from '../../../src/common/utils/utils';
-import {runAllActions} from '../../TestingUtils';
+import {churn, runAllActions} from '../../TestingUtils';
 
 describe('UtopiaInvestTournament', () => {
   it('Should play', () => {
@@ -25,7 +25,8 @@ describe('UtopiaInvestTournament', () => {
     player.playCorporationCard(card);
     runAllActions(game);
 
-    const orOptions = cast(card.action(player), OrOptions);
+    // The action is declarative now, so the OrOptions comes back through the deferred queue.
+    const orOptions = cast(churn(card.action(player), player), OrOptions);
     const reduceSteel = orOptions.options.find((option) => option.title === 'Decrease steel production');
     reduceSteel!.cb(undefined);
     expect(player.production.steel).to.eq(0);

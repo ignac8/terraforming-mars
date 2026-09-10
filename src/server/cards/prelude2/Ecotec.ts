@@ -11,6 +11,7 @@ import {OrOptions} from '../../inputs/OrOptions';
 import {SelectOption} from '../../inputs/SelectOption';
 import {SelectCard} from '../../inputs/SelectCard';
 import {ICorporationCard} from '../corporation/ICorporationCard';
+import {message} from '../../logs/MessageBuilder';
 
 export class Ecotec extends CorporationCard implements ICorporationCard {
   constructor(params: Partial<Omit<StaticCardProperties, 'type'>> = {}) {
@@ -37,7 +38,7 @@ export class Ecotec extends CorporationCard implements ICorporationCard {
     });
   }
 
-  public process(player: IPlayer, count: number): void {
+  private process(player: IPlayer, count: number): void {
     if (count === 0) {
       return;
     }
@@ -49,22 +50,20 @@ export class Ecotec extends CorporationCard implements ICorporationCard {
     }
 
     for (let i = 0; i < count; i++) {
-      player.defer(
-        () => new OrOptions(
-          new SelectCard(
-            'Select card to gain a microbe',
-            'Add microbe',
-            microbeCards)
-            .andThen(([card]) => {
-              player.addResourceTo(card, {qty: 1, log: true});
-              return undefined;
-            }),
+      const gainPlant = new SelectOption('Gain plant').andThen(() => {
+        player.stock.add(Resource.PLANTS, 1, {log: true});
+        return undefined;
+      });
 
-          new SelectOption('Gain plant').andThen(() => {
-            player.stock.add(Resource.PLANTS, 1, {log: true});
-            return undefined;
-          }),
-        ),
+      const addMicrobe = new SelectCard('Select card to gain a microbe', 'Add microbe', microbeCards)
+        .andThen(([card]) => {
+          player.addResourceTo(card, {qty: 1, log: true});
+          return undefined;
+        })
+        .maybeConvertToSelectOption(message('Add microbe to ${0}', (b) => b.card(microbeCards[0])));
+
+      player.defer(
+        () => new OrOptions(addMicrobe, gainPlant),
       );
     }
   }

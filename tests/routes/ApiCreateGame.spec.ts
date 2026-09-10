@@ -115,7 +115,7 @@ describe('ApiCreateGame', () => {
         startingCeos: 0,
         startingPreludes: 0,
       };
-      req.emitter.emit('data', JSON.stringify(newGameConfig));
+      req.emitString(JSON.stringify(newGameConfig));
       req.emitter.emit('end');
     });
     await Promise.all(([emit, post]));
@@ -132,7 +132,7 @@ describe('ApiCreateGame', () => {
   it('red rover solo game', async () => {
     const post = scaffolding.post(apiCreateGame, res);
     const emit = Promise.resolve().then(() => {
-      scaffolding.req.emitter.emit('data', JSON.stringify({players: [{name: 'a player', color: 'red'}]}));
+      scaffolding.req.emitString(JSON.stringify({players: [{name: 'a player', color: 'red'}]}));
       scaffolding.req.emitter.emit('end');
     });
     await Promise.all(([emit, post]));
@@ -145,7 +145,7 @@ describe('ApiCreateGame', () => {
   function postGame(handler: ApiCreateGame, request: MockRequest, response: MockResponse) {
     const post = handler.post(request, response, scaffolding.ctx);
     const emit = Promise.resolve().then(() => {
-      request.emitter.emit('data', JSON.stringify({players: [{name: 'a player', color: 'red'}]}));
+      request.emitString(JSON.stringify({players: [{name: 'a player', color: 'red'}]}));
       request.emitter.emit('end');
     });
     return Promise.all([emit, post]);

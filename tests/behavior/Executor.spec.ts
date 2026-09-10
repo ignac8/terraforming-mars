@@ -10,8 +10,9 @@ import {Resource} from '../../src/common/Resource';
 import {CardResource} from '../../src/common/CardResource';
 import {Tag} from '../../src/common/cards/Tag';
 import {CardType} from '../../src/common/cards/CardType';
-import {fakeCard, formatMessage, runAllActions, setRulingParty} from '../TestingUtils';
+import {fakeCard, formatMessage, runAllActions, setOxygenLevel, setRulingParty, setVenusScaleLevel} from '../TestingUtils';
 import {SelectCard} from '../../src/server/inputs/SelectCard';
+import {SelectOption} from '../../src/server/inputs/SelectOption';
 import {SelectPlayer} from '../../src/server/inputs/SelectPlayer';
 import {Tardigrades} from '../../src/server/cards/base/Tardigrades';
 import {Ants} from '../../src/server/cards/base/Ants';
@@ -38,6 +39,8 @@ import {SelectPayment} from '../../src/server/inputs/SelectPayment';
 import {CardName} from '../../src/common/cards/CardName';
 import {cast} from '@/common/utils/utils';
 import {AsteroidMining} from '../../src/server/turmoil/globalEvents/AsteroidMining';
+import {MAX_OXYGEN_LEVEL, MAX_VENUS_SCALE} from '../../src/common/constants';
+import {TileType} from '../../src/common/TileType';
 
 function asUnits(player: IPlayer): Units {
   return {
@@ -111,6 +114,14 @@ describe('Executor', () => {
     executor.execute({titanumValue: 1}, player, fake);
     expect(player.payingAmount(Payment.of({titanium: 4}), {titanium: true})).eq(16);
     executor.onDiscard({titanumValue: 1}, player, fake);
+    expect(player.payingAmount(Payment.of({titanium: 4}), {titanium: true})).eq(12);
+  });
+
+  it('titaniumValue, negative', () => {
+    expect(player.payingAmount(Payment.of({titanium: 4}), {titanium: true})).eq(12);
+    executor.execute({titanumValue: -1}, player, fake);
+    expect(player.payingAmount(Payment.of({titanium: 4}), {titanium: true})).eq(8);
+    executor.onDiscard({titanumValue: -1}, player, fake);
     expect(player.payingAmount(Payment.of({titanium: 4}), {titanium: true})).eq(12);
   });
 
@@ -247,6 +258,25 @@ describe('Executor', () => {
     executor.execute({tr: -1}, player, fake);
 
     expect(player.terraformRating).eq(21);
+  });
+
+  it('ocean - first player places, acting player is credited (Icy Impactors)', () => {
+    const behavior: Behavior = {ocean: {firstPlayerPlaces: true}};
+    expect(game.first).eq(player);
+    expect(player2.terraformRating).eq(20);
+
+    executor.execute(behavior, player2, fake);
+    runAllActions(game);
+
+    // The acting player isn't the one placing the tile.
+    expect(player2.popWaitingFor()).is.undefined;
+
+    const selectSpace = cast(player.popWaitingFor(), SelectSpace);
+    selectSpace.cb(selectSpace.spaces[0]);
+
+    expect(selectSpace.spaces[0].tile?.tileType).eq(TileType.OCEAN);
+    expect(player2.terraformRating).eq(21);
+    expect(player.terraformRating).eq(20);
   });
 
   it('add resources to specific card', () => {
@@ -429,6 +459,124 @@ describe('Executor', () => {
     expect(executor.canExecute({addResourcesToAnyCard: {count: 1, type: CardResource.ANIMAL, mustHaveCard: true}}, player, fake)).is.false;
   });
 
+  it('add resources to any card, without excludeThis the acting card is a candidate too', () => {
+    const actingCard = new Birds(); // Holds animals
+    const livestock = new Livestock(); // Holds animals
+    player.playedCards.set(actingCard, livestock);
+
+    executor.execute({addResourcesToAnyCard: {count: 1, type: CardResource.ANIMAL}}, player, actingCard);
+    runAllActions(game);
+
+    const selectCard = cast(player.popWaitingFor(), SelectCard);
+    expect(selectCard.cards).has.members([actingCard, livestock]);
+  });
+
+  it('add resources to any card, excludeThis rules out the acting card', () => {
+    const actingCard = new Birds(); // Holds animals
+    const livestock = new Livestock(); // Holds animals
+    player.playedCards.set(actingCard, livestock);
+
+    executor.execute({addResourcesToAnyCard: {count: 1, type: CardResource.ANIMAL, excludeThis: true}}, player, actingCard);
+    runAllActions(game);
+
+    // livestock is the only eligible target once the acting card excludes itself, so it's auto-populated.
+    cast(player.popWaitingFor(), undefined);
+    expect(livestock.resourceCount).eq(1);
+    expect(actingCard.resourceCount).eq(0);
+  });
+
+  it('add resources to any card, excludeThis combined with mustHaveCard', () => {
+    const actingCard = new Birds(); // Holds animals
+    player.playedCards.set(actingCard);
+
+    const behavior: Behavior = {addResourcesToAnyCard: {count: 1, type: CardResource.ANIMAL, excludeThis: true, mustHaveCard: true}};
+
+    // The acting card is the only animal-holding card, but excludeThis rules it out, so there's nothing to target.
+    expect(executor.canExecute(behavior, player, actingCard)).is.false;
+
+    const livestock = new Livestock();
+    player.playedCards.push(livestock);
+    expect(executor.canExecute(behavior, player, actingCard)).is.true;
+  });
+
+  it('removeResourcesFromAnyCard - count is a minimum, not just a presence check', () => {
+    const target = fakeCard({resourceType: CardResource.ANIMAL});
+    player.playedCards.push(target);
+    target.resourceCount = 1;
+
+    const behavior: Behavior = {removeResourcesFromAnyCard: {type: CardResource.ANIMAL, count: 2}};
+    expect(executor.canExecute(behavior, player, fake)).is.false;
+
+    target.resourceCount = 2;
+    expect(executor.canExecute(behavior, player, fake)).is.true;
+  });
+
+  it('removeResourcesFromAnyCard - source self is unblockable and chains the rest of the behavior', () => {
+    const target = fakeCard({resourceType: CardResource.ANIMAL});
+    player.playedCards.push(target);
+    target.resourceCount = 2;
+
+    const behavior: Behavior = {
+      removeResourcesFromAnyCard: {type: CardResource.ANIMAL, count: 2, source: 'self'},
+      stock: {megacredits: 3},
+    };
+    executor.execute(behavior, player, fake);
+    runAllActions(game);
+
+    expect(target.resourceCount).eq(0);
+    expect(player.megaCredits).eq(3);
+  });
+
+  it('removeResourcesFromAnyCard - source defaults to self', () => {
+    const target = fakeCard({resourceType: CardResource.ANIMAL});
+    player.playedCards.push(target);
+    target.resourceCount = 1;
+
+    const behavior: Behavior = {removeResourcesFromAnyCard: {type: CardResource.ANIMAL}, stock: {megacredits: 3}};
+    executor.execute(behavior, player, fake);
+    runAllActions(game);
+
+    // No block prompt, unlike the explicit source: 'all' cases below.
+    expect(target.resourceCount).eq(0);
+    expect(player.megaCredits).eq(3);
+  });
+
+  it('removeResourcesFromAnyCard - a blocked attack skips the rest of the behavior', () => {
+    const target = fakeCard({resourceType: CardResource.ANIMAL});
+    player2.playedCards.push(target);
+    target.resourceCount = 1;
+    player2.underworldData.corruption = 1;
+
+    const behavior: Behavior = {removeResourcesFromAnyCard: {type: CardResource.ANIMAL, source: 'all'}, stock: {megacredits: 3}};
+    executor.execute(behavior, player, fake);
+    runAllActions(game);
+
+    const orOptions = cast(player2.popWaitingFor(), OrOptions);
+    orOptions.options[0].cb(); // Block with corruption
+    runAllActions(game);
+
+    expect(target.resourceCount).eq(1);
+    expect(player.megaCredits).eq(0);
+  });
+
+  it('removeResourcesFromAnyCard - an unblocked attack still runs the rest of the behavior', () => {
+    const target = fakeCard({resourceType: CardResource.ANIMAL});
+    player2.playedCards.push(target);
+    target.resourceCount = 1;
+    player2.underworldData.corruption = 1;
+
+    const behavior: Behavior = {removeResourcesFromAnyCard: {type: CardResource.ANIMAL, source: 'all'}, stock: {megacredits: 3}};
+    executor.execute(behavior, player, fake);
+    runAllActions(game);
+
+    const orOptions = cast(player2.popWaitingFor(), OrOptions);
+    orOptions.options[1].cb(); // Do not block
+    runAllActions(game);
+
+    expect(target.resourceCount).eq(0);
+    expect(player.megaCredits).eq(3);
+  });
+
   it('decrease any production - cannot execute with zero targets', () => {
     expect(executor.canExecute({decreaseAnyProduction: {count: 2, type: Resource.TITANIUM}}, player, fake)).is.false;
   });
@@ -550,6 +698,61 @@ describe('Executor', () => {
     expect(player.megaCredits).eq(1);
     runAllActions(game);
     expect(player.megaCredits).eq(0);
+  });
+
+  it('spend - megacredits, steel not allowed by default', () => {
+    const behavior: Behavior = {spend: {megacredits: 8}};
+    player.steel = 4;
+    expect(executor.canExecute(behavior, player, fake)).is.false;
+  });
+
+  it('spend - megacredits, canUseSteel', () => {
+    const behavior: Behavior = {spend: {megacredits: 8, canUseSteel: true}};
+    expect(executor.canExecute(behavior, player, fake)).is.false;
+
+    player.steel = 3; // worth 6 M€, not enough alone
+    expect(executor.canExecute(behavior, player, fake)).is.false;
+
+    player.megaCredits = 2;
+    expect(executor.canExecute(behavior, player, fake)).is.true;
+
+    executor.execute(behavior, player, fake);
+    runAllActions(game);
+    const selectPayment = cast(player.popWaitingFor(), SelectPayment);
+    selectPayment.cb(Payment.of({steel: 3, megacredits: 2}));
+
+    expect(player.steel).eq(0);
+    expect(player.megaCredits).eq(0);
+  });
+
+  it('spend - megacredits, canUseTitanium', () => {
+    const behavior: Behavior = {spend: {megacredits: 6, canUseTitanium: true}};
+    expect(executor.canExecute(behavior, player, fake)).is.false;
+
+    player.titanium = 1; // worth 3 M€, not enough alone
+    expect(executor.canExecute(behavior, player, fake)).is.false;
+
+    player.megaCredits = 3;
+    expect(executor.canExecute(behavior, player, fake)).is.true;
+
+    executor.execute(behavior, player, fake);
+    runAllActions(game);
+    const selectPayment = cast(player.popWaitingFor(), SelectPayment);
+    selectPayment.cb(Payment.of({titanium: 1, megacredits: 3}));
+
+    expect(player.titanium).eq(0);
+    expect(player.megaCredits).eq(0);
+  });
+
+  it('spend - megacredits, canUseSteel accounts for reds tax', () => {
+    const behavior: Behavior = {spend: {megacredits: 8, canUseSteel: true}, ocean: {}};
+    setRulingParty(game, PartyName.REDS);
+    player.steel = 4;
+    player.megaCredits = 0;
+    expect(executor.canExecute(behavior, player, fake)).is.false;
+
+    player.megaCredits = 3;
+    expect(executor.canExecute(behavior, player, fake)).is.true;
   });
 
   it('spend - heat', () => {
@@ -699,6 +902,19 @@ describe('Executor', () => {
     expect(executor.canExecute(behavior, player, fake)).is.true;
   });
 
+  it('or, canExecute, checks every sub-behavior so warnings are not lost to short-circuiting', () => {
+    setOxygenLevel(game, MAX_OXYGEN_LEVEL);
+    const behavior: Behavior = {or: {behaviors: [
+      {stock: {megacredits: 1}, title: 'MC'},
+      {global: {oxygen: 1}, title: 'Oxygen'},
+    ]}};
+
+    // The first sub-behavior alone is enough to make this executable, but the second
+    // sub-behavior's warning must still be set on the card.
+    expect(executor.canExecute(behavior, player, fake)).is.true;
+    expect(fake.warnings).deep.eq(new Set(['maxoxygen']));
+  });
+
   it('or, execute', () => {
     const behavior: Behavior = {or: {behaviors: [
       {stock: {megacredits: 3}, title: '3MC'},
@@ -740,6 +956,37 @@ describe('Executor', () => {
     runAllActions(game);
     cast(player.popWaitingFor(), undefined);
     expect(player.megaCredits).eq(1);
+  });
+
+  it('or, execute, warnings apply only to the option that earned them', () => {
+    setVenusScaleLevel(game, MAX_VENUS_SCALE);
+    const behavior: Behavior = {or: {behaviors: [
+      {global: {venus: 1}, title: 'Venus'},
+      {stock: {megacredits: 1}, title: 'MC'},
+    ]}};
+    executor.execute(behavior, player, fake);
+    runAllActions(game);
+
+    const orOptions = cast(player.popWaitingFor(), OrOptions);
+    const [venusOption, mcOption] = orOptions.options.map((option) => cast(option, SelectOption));
+
+    expect(venusOption.warnings).deep.eq(['maxvenus']);
+    expect(mcOption.warnings).is.undefined;
+    // The warning was scoped to the option, not left dangling on the card.
+    expect(fake.warnings.size).eq(0);
+  });
+
+  it('or, execute, does not clobber warnings the card already had', () => {
+    fake.addWarning('decreaseOwnProduction');
+    setVenusScaleLevel(game, MAX_VENUS_SCALE);
+    const behavior: Behavior = {or: {behaviors: [
+      {global: {venus: 1}, title: 'Venus'},
+      {stock: {megacredits: 1}, title: 'MC'},
+    ]}};
+    executor.execute(behavior, player, fake);
+    runAllActions(game);
+
+    expect(fake.warnings).deep.eq(new Set(['decreaseOwnProduction']));
   });
 
   it('underworld, identify', () => {
