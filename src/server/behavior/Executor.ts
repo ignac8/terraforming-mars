@@ -1,7 +1,6 @@
 import {Units} from '../../common/Units';
 import {ICard} from '../cards/ICard';
 import {TRSource} from '../../common/cards/TRSource';
-import {AddResourcesToCard} from '../deferredActions/AddResourcesToCard';
 import {BuildColony} from '../deferredActions/BuildColony';
 import {DecreaseAnyProduction} from '../deferredActions/DecreaseAnyProduction';
 import {PlaceCityTile} from '../deferredActions/PlaceCityTile';
@@ -37,12 +36,13 @@ import {RemoveResourcesFromCard} from '../deferredActions/RemoveResourcesFromCar
 import {isIProjectCard} from '../cards/IProjectCard';
 import {MAXIMUM_HABITAT_RATE, MAXIMUM_LOGISTIC_RATE, MAXIMUM_MINING_RATE, MAX_OCEAN_TILES, MAX_OXYGEN_LEVEL, MAX_TEMPERATURE, MAX_VENUS_SCALE} from '../../common/constants';
 import {CardName} from '../../common/cards/CardName';
-import {asArray, inplaceRemove} from '../../common/utils/utils';
+import {inplaceRemove} from '../../common/utils/utils';
 import {SelectCard} from '../inputs/SelectCard';
 import {IGlobalEvent, isIGlobalEvent} from '../turmoil/globalEvents/IGlobalEvent';
 import {ProxyCard} from '../cards/ProxyCard';
 import {From} from '../logs/From';
 import {BaseStock} from '../player/StockBase';
+import {AddResourcesToAnyCardExecutor} from './AddResourcesToAnyCardExecutor';
 
 /**
  * Caps each count at what `lose` is allowed to take: never below zero, so a countable that
@@ -69,7 +69,10 @@ export class Executor implements BehaviorExecutor {
     }
 
     if (behavior.or) {
-      if (!behavior.or.behaviors.some((behavior) => this.canExecute(behavior, player, card, canAffordOptions))) {
+      // Checks every sub-behavior (using map vs some)
+      // so that all warnings get set on the card.
+      const executable = behavior.or.behaviors.map((behavior) => this.canExecute(behavior, player, card, canAffordOptions));
+      if (!executable.some((result) => result)) {
         return false;
       }
     }
@@ -122,7 +125,12 @@ export class Executor implements BehaviorExecutor {
     // TODO(kberg): Spend is not combined with PredictedCost.
     if (behavior.spend !== undefined) {
       const spend = behavior.spend;
-      if (spend.megacredits && !player.canAfford(spend.megacredits)) {
+      if (spend.megacredits && !player.canAfford({
+        cost: spend.megacredits,
+        steel: spend.canUseSteel,
+        titanium: spend.canUseTitanium,
+        tr: asTrSource,
+      })) {
         return false;
       }
       if (spend.steel && player.steel < spend.steel) {
@@ -179,6 +187,18 @@ export class Executor implements BehaviorExecutor {
       }
     }
 
+    if (behavior.removeResourcesFromAnyCard !== undefined) {
+      const r = behavior.removeResourcesFromAnyCard;
+      const source = r.source ?? 'self';
+      // Solo mode has no opponents to steal from, but the attack still resolves (as insurance) — see execute().
+      if (!(source !== 'self' && game.isSoloMode())) {
+        const count = ctx.count(r.count ?? 1);
+        if (RemoveResourcesFromCard.getAvailableTargetCards(player, r.type, source, count).length === 0) {
+          return false;
+        }
+      }
+    }
+
     if (behavior.decreaseAnyProduction !== undefined) {
       if (!game.isSoloMode()) {
         const dap = behavior.decreaseAnyProduction;
@@ -227,39 +247,11 @@ export class Executor implements BehaviorExecutor {
     }
 
     if (behavior.addResourcesToAnyCard !== undefined) {
-      const arctac = behavior.addResourcesToAnyCard;
-      if (!Array.isArray(arctac) && arctac.mustHaveCard === true) {
-        const action = new AddResourcesToCard(player, arctac.type, {
-          count: ctx.count(arctac.count),
-          restrictedTag: arctac.tag,
-          min: arctac.min,
-          robotCards: arctac.robotCards !== undefined,
-        });
-        const cards = action.getCards();
-        if (cards.length === 0) {
-          return false;
-        }
-        // Not playable if the behavior is based on spending a resource
-        // from itself to add to itself, like Applied Science.
-        if (cards.length === 1 && (behavior.spend?.resourcesHere ?? 0 > 0)) {
-          // TODO(kberg): also check wither arctac.min + spend is enough.
-          // but that's just to make this future-proof.
-          if (cards[0]?.name === card.name) {
-            return false;
-          }
-        }
+      const subExecutor = new AddResourcesToAnyCardExecutor(player, card, behavior, ctx, behavior.addResourcesToAnyCard);
+      if (!subExecutor.canExecute()) {
+        return false;
       }
     }
-
-    // if (behavior.removeResourcesFromAnyCard !== undefined) {
-    //   const rrfac = behavior.removeResourcesFromAnyCard;
-    //   if (rrfac.tag !== undefined || rrfac.count !== 1) {
-    //     throw new Error('Tag and sophisticated counts are not yet implemented.');
-    //   }
-    //   if (player.getCardsWithResources(behavior.removeResourcesFromAnyCard.type).length === 0) {
-    //     return false;
-    //   }
-    // }
 
     if (behavior.turmoil) {
       const turmoil = Turmoil.getTurmoil(game);
@@ -332,20 +324,36 @@ export class Executor implements BehaviorExecutor {
     const ctx = new Counter(player, card);
 
     if (behavior.or !== undefined) {
-      const options = behavior.or.behaviors
-        .filter((behavior) => this.canExecute(behavior, player, card))
-        .map((behavior) => {
-          return new SelectOption(behavior.title)
-            .andThen(() => {
-              this.execute(behavior, player, inputCard);
-              return undefined;
-            });
-        });
-
+      // Warnings the card already had (unrelated to this or-block) must survive it.
+      const saved = new Set(card.warnings);
+      const options: Array<SelectOption> = [];
+      for (const subBehavior of behavior.or.behaviors) {
+        // Check (and clear) one sub-behavior at a time so its warnings don't bleed into
+        // the next sub-behavior's option.
+        card.clearWarnings();
+        if (!this.canExecute(subBehavior, player, card)) {
+          continue;
+        }
+        const option = new SelectOption(subBehavior.title)
+          .andThen(() => {
+            this.execute(subBehavior, player, inputCard);
+            return undefined;
+          });
+        if (card.warnings.size > 0) {
+          option.warnings = Array.from(card.warnings);
+        }
+        options.push(option);
+      }
+      card.clearWarnings();
+      saved.forEach((warning) => card.addWarning(warning));
       if (options.length === 1 && behavior.or.autoSelect === true) {
         options[0].cb(undefined);
       } else {
-        player.defer(new OrOptions(...options));
+        const orOptions = new OrOptions(...options);
+        if (behavior.or.title) {
+          orOptions.title = behavior.or.title;
+        }
+        player.defer(orOptions);
       }
     }
 
@@ -357,6 +365,8 @@ export class Executor implements BehaviorExecutor {
       if (spend.megacredits) {
         player.game.defer(new SelectPaymentDeferred(player, spend.megacredits, {
           title: TITLES.payForCardAction(card.name),
+          canUseSteel: spend.canUseSteel,
+          canUseTitanium: spend.canUseTitanium,
         })).andThen(() => this.execute(remainder, player, inputCard));
         // Exit early as the rest of handled by the deferred action.
         return;
@@ -415,6 +425,22 @@ export class Executor implements BehaviorExecutor {
       }
     }
 
+    if (behavior.removeResourcesFromAnyCard !== undefined) {
+      const r = behavior.removeResourcesFromAnyCard;
+      const remainder = {...behavior};
+      delete remainder['removeResourcesFromAnyCard'];
+      const source = r.source ?? 'self';
+      const count = ctx.count(r.count ?? 1);
+      player.game.defer(new RemoveResourcesFromCard(player, r.type, count, {source, blockable: source !== 'self', log: true, min: count}))
+        .andThen((response) => {
+          if (response.proceed) {
+            this.execute(remainder, player, inputCard);
+          }
+        });
+      // Exit early — the rest only runs if the removal isn't blocked.
+      return;
+    }
+
     if (behavior.lose !== undefined) {
       const lose = behavior.lose;
       if (lose.production) {
@@ -460,6 +486,9 @@ export class Executor implements BehaviorExecutor {
     }
     if (behavior.titanumValue === 1) {
       player.increaseTitaniumValue();
+    }
+    if (behavior.titanumValue === -1) {
+      player.decreaseTitaniumValue();
     }
 
     if (behavior?.greeneryDiscount) {
@@ -521,27 +550,9 @@ export class Executor implements BehaviorExecutor {
     }
 
     if (behavior.addResourcesToAnyCard) {
-      const array = asArray(behavior.addResourcesToAnyCard);
-      for (const arctac of array) {
-        const count = ctx.count(arctac.count);
-        if (count > 0) {
-          player.game.defer(
-            new AddResourcesToCard(
-              player,
-              arctac.type,
-              {
-                count,
-                restrictedTag: arctac.tag,
-                min: arctac.min,
-                robotCards: arctac.robotCards !== undefined,
-              }));
-        }
-      }
+      const subExecutor = new AddResourcesToAnyCardExecutor(player, card, behavior, ctx, behavior.addResourcesToAnyCard);
+      subExecutor.execute();
     }
-
-    // if (behavior.removeResourcesFromAnyCard !== undefined) {
-    //   throw new Error('not yet');
-    // }
 
     if (behavior.decreaseAnyProduction !== undefined) {
       player.game.defer(new DecreaseAnyProduction(player, behavior.decreaseAnyProduction.type, {count: behavior.decreaseAnyProduction.count}));
@@ -571,6 +582,11 @@ export class Executor implements BehaviorExecutor {
       if (behavior.ocean.count === 2) {
         player.game.defer(new PlaceOceanTile(player, {title: 'Select space for first ocean'}));
         player.game.defer(new PlaceOceanTile(player, {title: 'Select space for second ocean'}));
+      } else if (behavior.ocean.firstPlayerPlaces === true) {
+        player.game.defer(new PlaceOceanTile(player.game.first, {
+          creditedPlayer: player,
+          title: message('Select space for ${0} to place an ocean', (b) => b.player(player)),
+        }));
       } else {
         player.game.defer(new PlaceOceanTile(player, {on: behavior.ocean.on}));
       }
@@ -718,6 +734,9 @@ export class Executor implements BehaviorExecutor {
     }
     if (behavior.titanumValue === 1) {
       player.decreaseTitaniumValue();
+    }
+    if (behavior.titanumValue === -1) {
+      player.increaseTitaniumValue();
     }
 
     if (behavior?.greeneryDiscount) {
