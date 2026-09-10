@@ -8,13 +8,15 @@ import {BoardName} from '@/common/boards/BoardName';
 import {DEFAULT_EXPANSIONS} from '@/common/cards/GameModule';
 import {JSONObject} from '@/common/Types';
 import {defineComponent} from 'vue';
+import {NewGameConfig} from '@/common/game/NewGameConfig';
 
 // Minimal serialized Create Game payload used by settings restore tests.
-function createGameSettings(overrides: JSONObject = {}): JSONObject {
-  return {
+function createNewGameConfig(overrides: JSONObject = {}):  NewGameConfig {
+  // Not ideal but is fine for the tests.
+  const config: Partial<NewGameConfig> = {
     players: [
-      {name: 'Alice', color: 'red', beginner: false, handicap: 0},
-      {name: 'Bob', color: 'blue', beginner: false, handicap: 0},
+      {name: 'Alice', color: 'red', beginner: false, handicap: 0, first: false},
+      {name: 'Bob', color: 'blue', beginner: false, handicap: 0, first: true},
     ],
     expansions: DEFAULT_EXPANSIONS,
     board: BoardName.HELLAS,
@@ -22,6 +24,7 @@ function createGameSettings(overrides: JSONObject = {}): JSONObject {
     solarPhaseOption: true,
     ...overrides,
   };
+  return config as NewGameConfig;
 }
 
 describe('CreateGameForm', () => {
@@ -141,7 +144,7 @@ describe('CreateGameForm', () => {
   });
 
   it('restores the last saved game settings on load', async () => {
-    new CreateGameSettingsStorage(localStorage).saveSettings(createGameSettings({
+    new CreateGameSettingsStorage(localStorage).saveSettings(createNewGameConfig({
       expansions: {...DEFAULT_EXPANSIONS, venus: true},
     }));
 
@@ -175,7 +178,7 @@ describe('CreateGameForm', () => {
       alerts.push({title, message});
     };
 
-    new CreateGameSettingsStorage(localStorage).saveSettings(createGameSettings({
+    new CreateGameSettingsStorage(localStorage).saveSettings(createNewGameConfig({
       customPreludes: ['Bad Prelude Name'],
     }));
 
@@ -190,7 +193,7 @@ describe('CreateGameForm', () => {
 
   it('resets the form and clears saved settings', async () => {
     const settingsStorage = new CreateGameSettingsStorage(localStorage);
-    settingsStorage.saveSettings(createGameSettings());
+    settingsStorage.saveSettings(createNewGameConfig());
 
     const wrapper = shallowMount(CreateGameForm, {
       ...globalConfig,
@@ -213,7 +216,7 @@ describe('CreateGameForm', () => {
       ...globalConfig,
     });
 
-    expect(() => (wrapper.vm as any).applySettings(createGameSettings({
+    expect(() => (wrapper.vm as any).applySettings(createNewGameConfig({
       players: [
         {name: 'Alice', color: 'red', beginner: false, handicap: 0},
         {name: 'Bob', color: 'red', beginner: false, handicap: 0},
