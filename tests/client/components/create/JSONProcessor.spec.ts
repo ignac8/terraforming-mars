@@ -151,7 +151,7 @@ const TEMPLATE_EXPECTED: CreateGameModel = {
   moonStandardProjectVariant1: false,
   altVenusBoard: false,
   escapeVelocityMode: false,
-  escapeVelocityThreshold: 30,
+  escapeVelocityThreshold: 45,
   escapeVelocityBonusSeconds: 2,
   escapeVelocityPeriod: 2,
   escapeVelocityPenalty: 1,

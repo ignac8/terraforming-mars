@@ -7,6 +7,7 @@ import {Tag} from '../src/common/cards/Tag';
 import {newCorporationCard} from '../src/server/createCard';
 import {BoardName} from '../src/common/boards/BoardName';
 import {DEFAULT_GAME_OPTIONS, GameOptions, applyTournamentPreset} from '../src/server/game/GameOptions';
+import {DEFAULT_ESCAPE_VELOCITY_THRESHOLD} from '../src/common/constants';
 import {newInitialDraft} from '../src/server/Draft';
 import {Mine} from '../src/server/cards/base/Mine';
 import {RoboticWorkforce} from '../src/server/cards/base/RoboticWorkforce';
@@ -243,5 +244,24 @@ describe('TournamentMode', () => {
     expect(options.initialDraftVariant).is.true;
     expect(options.solarPhaseOption).is.false;
     expect(options.boardName).to.eq(BoardName.THARSIS);
+  });
+
+  it('applyTournamentPreset keeps escape velocity', () => {
+    const escapeVelocity = {
+      thresholdMinutes: DEFAULT_ESCAPE_VELOCITY_THRESHOLD,
+      bonusSectionsPerAction: 2,
+      penaltyPeriodMinutes: 2,
+      penaltyVPPerPeriod: 1,
+    };
+    const options: GameOptions = {
+      ...DEFAULT_GAME_OPTIONS,
+      tournamentExpansion: true,
+      escapeVelocity,
+      expansions: {...DEFAULT_GAME_OPTIONS.expansions, tournament: true},
+    };
+
+    applyTournamentPreset(options);
+
+    expect(options.escapeVelocity).to.deep.eq(escapeVelocity);
   });
 });

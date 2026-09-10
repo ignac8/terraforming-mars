@@ -131,7 +131,7 @@ export function applyTournamentPreset(options: GameOptions): void {
   options.includeFanMA = false;
   options.modularMA = false;
   options.shuffleMapOption = false;
-  options.escapeVelocity = undefined;
+  // Escape velocity is left alone: tournament games may use the clock.
   options.altVenusBoard = false;
   options.requiresMoonTrackCompletion = false;
   options.requiresVenusTrackCompletion = false;

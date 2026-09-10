@@ -255,7 +255,7 @@
                                 <span v-i18n>Show timers</span>
                             </label>
 
-                            <input type="checkbox" v-model="escapeVelocityMode" id="escapevelocity-checkbox" :disabled="expansions.tournament">
+                            <input type="checkbox" v-model="escapeVelocityMode" id="escapevelocity-checkbox">
                             <label for="escapevelocity-checkbox">
                                 <div class="create-game-expansion-icon expansion-icon-escape-velocity"></div>
                                 <span v-i18n>Escape Velocity</span>&nbsp;<a :href="wikiUrls.escapeVelocity" class="tooltip" v-i18n data-tooltip="Link opens in a new tab/window" target="_blank">&#9432;</a>
@@ -263,7 +263,7 @@
 
                             <label for="escapeThreshold-checkbox" v-show="escapeVelocityMode">
                               <span v-i18n>After</span><span>&nbsp;</span>
-                              <input type="number" class="create-game-corporations-count" value="30" step="5" min="0" :max="180" v-model="escapeVelocityThreshold" id="escapeThreshold-checkbox">
+                              <input type="number" class="create-game-corporations-count" value="45" step="5" min="0" :max="180" v-model="escapeVelocityThreshold" id="escapeThreshold-checkbox">
                               <span v-i18n>min</span>
                             </label>
 
@@ -680,7 +680,6 @@ export default defineComponent({
         this.includeFanMA = false;
         this.modularMA = false;
         this.shuffleMapOption = false;
-        this.escapeVelocityMode = false;
         this.aresExtremeVariant = false;
         this.startingCorporations = 5;
         if (!this.tournamentBoards.includes(this.board)) {
