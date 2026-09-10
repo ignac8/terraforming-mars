@@ -40,6 +40,7 @@ import {playerSymbol} from '@/client/utils/playerSymbol';
 import {Color} from '@/common/Color';
 import {MARSBOT_AWARD_DESCRIPTIONS} from '@/common/automa/MarsBotMADescriptions';
 import {fitTextWhenReady} from '@/client/utils/textFit';
+import {comparing, reversed} from '@/common/utils/Ordering';
 
 type Refs = {
   name: HTMLElement | undefined;
@@ -90,7 +91,7 @@ export default defineComponent({
       return 'ma-name--' + this.award.name.replaceAll(' ', '-').replaceAll('.', '').toLowerCase();
     },
     sortedScores(): Array<AwardScore> {
-      return [...this.award.scores].sort((s1, s2) => s2.score - s1.score);
+      return this.award.scores.toSorted(reversed(comparing((score) => score.score)));
     },
     description(): string {
       return getAward(this.award.name).description;

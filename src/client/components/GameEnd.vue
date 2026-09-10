@@ -267,8 +267,10 @@
                   :boardName ="game.gameOptions.boardName"
                   :oceans_count="game.oceans"
                   :oxygen_level="game.oxygenLevel"
-                  :temperature="game.temperature"/>
-            <MoonBoard v-if="game.moon !== undefined" :model="game.moon"/>
+                  :temperature="game.temperature"
+                  :tileView="tileView"
+                  @toggleTileView="cycleTileView()"/>
+            <MoonBoard v-if="game.moon !== undefined" :model="game.moon" :tileView="tileView"/>
             <div v-if="game.gameOptions.expansions.pathfinders">
               <PlanetaryTracks :tracks="game.pathfinders" :gameOptions="game.gameOptions"/>
             </div>
@@ -295,6 +297,7 @@ import {GameModel} from '@/common/models/GameModel';
 import {PlayerViewModel, PublicPlayerModel, ViewModel} from '@/common/models/PlayerModel';
 import Board from '@/client/components/Board.vue';
 import MoonBoard from '@/client/components/moon/MoonBoard.vue';
+import {nextTileView, TileView} from '@/client/components/board/TileView';
 import PlanetaryTracks from '@/client/components/pathfinders/PlanetaryTracks.vue';
 import DeltaProjectBoard from '@/client/components/delta/DeltaProjectBoard.vue';
 import LogPanel from '@/client/components/logpanel/LogPanel.vue';
@@ -359,11 +362,10 @@ export default defineComponent({
       if (id === undefined) {
         return undefined;
       }
-      return `${paths.API_GAME_LOGS}?id=${id}&full=true`;
+      return `${paths.END_GAME_LOG}?id=${id}`;
     },
     playersInPlace(): Array<PublicPlayerModel> {
-      const copy = [...this.viewModel.players];
-      copy.sort(function(a:PublicPlayerModel, b:PublicPlayerModel) {
+      const sorted = this.viewModel.players.toSorted(function(a:PublicPlayerModel, b:PublicPlayerModel) {
         if (a.victoryPointsBreakdown.total < b.victoryPointsBreakdown.total) {
           return -1;
         }
@@ -378,7 +380,7 @@ export default defineComponent({
         }
         return 0;
       });
-      return copy.reverse();
+      return sorted.reverse();
     },
     winners() {
       const sortedPlayers = this.playersInPlace;
@@ -471,10 +473,13 @@ export default defineComponent({
       }
       return data;
     },
+    constants(): typeof constants {
+      return constants;
+    },
   },
-  data() {
+  data(): {tileView: TileView} {
     return {
-      constants,
+      tileView: 'show',
     };
   },
   components: {
@@ -493,6 +498,9 @@ export default defineComponent({
     }
   },
   methods: {
+    cycleTileView(): void {
+      this.tileView = nextTileView(this.tileView);
+    },
     getEndGamePlayerRowColorClass(color: Color): string {
       return playerColorClass(color, 'bg_transparent');
     },

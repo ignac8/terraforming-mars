@@ -649,6 +649,7 @@ type Refs = {
 type FormModel = {
   preludeToggled: boolean;
   uploading: boolean;
+  previousViewport: string;
 };
 
 export default defineComponent({
@@ -658,6 +659,7 @@ export default defineComponent({
       ...defaultCreateGameModel(),
       preludeToggled: false,
       uploading: false,
+      previousViewport: '',
     };
   },
   components: {
@@ -749,6 +751,24 @@ export default defineComponent({
   mounted() {
     setDocumentTitle('Create New Game');
     this.restoreLastSettings();
+
+    // Set the viewport width to width=device-width on the create game form so mobile browsers use their actual CSS viewport width.
+    // The current global viewport is width=1260, which prevents the create game form from using the device width on phones.
+    // This is a temporary solution in order to make this edit scoped to the create game form.
+    // TODO: Once responsiveness covers the whole project, this code should be removed and the tag in index.html should be updated directly.
+    const viewport = document.querySelector('meta[name="viewport"]');
+    if (viewport !== null) {
+      this.previousViewport = viewport.getAttribute('content') ?? '';
+      viewport.setAttribute(
+        'content',
+        'width=device-width, initial-scale=1, viewport-fit=cover',
+      );
+    }
+  },
+  beforeUnmount() {
+    document
+      .querySelector('meta[name="viewport"]')
+      ?.setAttribute('content', this.previousViewport);
   },
   computed: {
     wikiUrls(): typeof RULEBOOK_URLS & typeof WIKI_URLS {
@@ -857,11 +877,11 @@ export default defineComponent({
       });
     },
     async downloadSettings() {
-      const serializedData = await this.serializeSettings();
+      const newGameConfig = await this.serializeSettings();
 
-      if (serializedData) {
+      if (newGameConfig) {
         const a = document.createElement('a');
-        const blob = new Blob([serializedData], {'type': 'application/json'});
+        const blob = new Blob([JSON.stringify(newGameConfig, undefined, 2)], {'type': 'application/json'});
         a.href = window.URL.createObjectURL(blob);
         a.download = 'tm_settings.json';
         a.click();
@@ -1024,7 +1044,7 @@ export default defineComponent({
       };
       return `${WIKI}/Maps#${options[boardName]}`;
     },
-    async serializeSettings() {
+    async serializeSettings(): Promise<NewGameConfig | undefined> {
       let players = this.players.slice(0, this.playersCount);
 
       if (this.randomFirstPlayer) {
@@ -1113,7 +1133,7 @@ export default defineComponent({
 
         if (customColonies.length < neededColoniesCount) {
           window.alert(translateTextWithParams('Must select at least ${0} colonies', [neededColoniesCount.toString()]));
-          return;
+          return undefined;
         }
 
         let valid = true;
@@ -1128,7 +1148,7 @@ export default defineComponent({
           const confirm = window.confirm(translateText(
             'Some of the colonies you selected need expansions you have not enabled. Using them might break your game. Press OK to continue or Cancel to change your selections.'));
           if (confirm === false) {
-            return;
+            return undefined;
           }
         }
       }
@@ -1137,7 +1157,7 @@ export default defineComponent({
         const confirm = window.confirm(translateText(
           'We do not recommend playing a solo game without the Corporate Era. Press OK if you want to play without it.'));
         if (confirm === false) {
-          return;
+          return undefined;
         }
       }
 
@@ -1170,7 +1190,7 @@ export default defineComponent({
         const confirm = window.confirm(translateText(
           'It is possible with ThorGate, Standard Technology, Suitable Infrastructure, and High Temp. Superconductors for a player to have infinite energy production. Press OK to continue or Cancel to change your selections.'));
         if (confirm === false) {
-          return;
+          return undefined;
         }
       }
 
@@ -1194,7 +1214,7 @@ export default defineComponent({
         }
         if (customCorporations.length < neededCorpsCount) {
           window.alert(translateTextWithParams('Must select at least ${0} corporations', [neededCorpsCount.toString()]));
-          return;
+          return undefined;
         }
         let valid = true;
         for (const corp of customCorporations) {
@@ -1209,7 +1229,7 @@ export default defineComponent({
           const confirm = window.confirm(translateText(
             'Some of the corps you selected need expansions you have not enabled. Using them might break your game. Press OK to continue or Cancel to change your selections.'));
           if (confirm === false) {
-            return;
+            return undefined;
           }
         }
       } else {
@@ -1222,7 +1242,7 @@ export default defineComponent({
         const requiredPreludeCount = players.length * startingPreludes;
         if (customPreludes.length < requiredPreludeCount) {
           window.alert(translateTextWithParams('Must select at least ${0} Preludes', [requiredPreludeCount.toString()]));
-          return;
+          return undefined;
         }
         let valid = true;
         for (const prelude of customPreludes) {
@@ -1237,7 +1257,7 @@ export default defineComponent({
           const confirm = window.confirm(translateText(
             'Some of the Preludes you selected need expansions you have not enabled. Using them might break your game. Press OK to continue or Cancel to change your selections.'));
           if (confirm === false) {
-            return;
+            return undefined;
           }
         }
       } else {
@@ -1252,29 +1272,29 @@ export default defineComponent({
               return response.json();
             }
             if (response.status === 404) {
-              return;
+              return undefined;
             }
             return response.text().then((res) => new Error(res));
           });
         if (gameData === undefined) {
           alert(this.$t('Game id ' + this.clonedGameId + ' not found'));
-          return;
+          return undefined;
         }
         if (gameData instanceof Error) {
           alert(this.$t('Error looking for predefined game ' + gameData.message));
-          return;
+          return undefined;
         }
         clonedGamedId = this.clonedGameId;
         if (gameData.playerCount !== players.length) {
           alert(this.$t('Player count mismatch'));
           this.playersCount = gameData.playerCount;
-          return;
+          return undefined;
         }
       } else if (!this.seededGame) {
         clonedGamedId = undefined;
       }
 
-      const dataToSend: NewGameConfig = {
+      return {
         players,
         expansions: this.expansions,
         draftVariant,
@@ -1326,15 +1346,14 @@ export default defineComponent({
         automaCorpOption: this.automaCorpOption,
         automaExtraTurmoilDifficulty: this.automaExtraTurmoilDifficulty,
       };
-      return JSON.stringify(dataToSend, undefined, 4);
     },
     async createGame() {
-      const dataToSend = await this.serializeSettings();
+      const newGameConfig = await this.serializeSettings();
 
-      if (dataToSend === undefined) {
+      if (newGameConfig === undefined) {
         return;
       }
-      createGameSettingsStorage.saveSettings(JSON.parse(dataToSend) as JSONObject);
+      createGameSettingsStorage.saveSettings(newGameConfig);
       const onSuccess = (json: any) => {
         if (json.players.length === 1) {
           window.location.href = 'player?id=' + json.players[0].id;
@@ -1346,7 +1365,7 @@ export default defineComponent({
         }
       };
 
-      fetch(paths.API_CREATEGAME, {'method': 'POST', 'body': dataToSend, 'headers': {'Content-Type': 'application/json'}})
+      fetch(paths.API_CREATEGAME, {'method': 'POST', 'body': JSON.stringify(newGameConfig), 'headers': {'Content-Type': 'application/json'}})
         .then((response) => response.text())
         .then((text) => {
           try {

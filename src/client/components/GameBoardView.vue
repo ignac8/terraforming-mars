@@ -47,6 +47,7 @@ import {defineComponent, PropType} from 'vue';
 
 import {GameModel} from '@/common/models/GameModel';
 import {PublicPlayerModel} from '@/common/models/PlayerModel';
+import {SpaceId} from '@/common/Types';
 import Board from '@/client/components/Board.vue';
 import DeltaProjectBoard from '@/client/components/delta/DeltaProjectBoard.vue';
 import Milestones from '@/client/components/Milestones.vue';
@@ -56,6 +57,7 @@ import MoonBoard from '@/client/components/moon/MoonBoard.vue';
 import PlanetaryTracks from '@/client/components/pathfinders/PlanetaryTracks.vue';
 import MarsBotPanel from '@/client/components/automa/MarsBotPanel.vue';
 import {TileView} from './board/TileView';
+import {scrollToSpace} from '@/client/utils/boardScroll';
 
 export default defineComponent({
   name: 'GameBoardView',
@@ -87,6 +89,29 @@ export default defineComponent({
   computed: {
     isAutoma(): boolean {
       return this.game.marsBot !== undefined;
+    },
+  },
+  methods: {
+    highlightSpace(spaceId: SpaceId) {
+      scrollToSpace(spaceId);
+
+      const regions = ['main_board', 'moon_board', 'moon_board_outer_spaces'];
+      for (const region of regions) {
+        const board = document.getElementById(region);
+        if (board !== null) {
+          const array = board.getElementsByClassName('board-log-highlight');
+          for (let i = 0, length = array.length; i < length; i++) {
+            const element = array[i] as HTMLElement;
+            if (element.getAttribute('data_log_highlight_id') === spaceId) {
+              element.classList.add('highlight');
+              setTimeout(() => {
+                element.classList.remove('highlight');
+              }, 3000);
+              return;
+            }
+          }
+        }
+      }
     },
   },
 });
