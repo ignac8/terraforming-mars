@@ -13,9 +13,10 @@ import {AppError} from '../server/AppError';
 import {statusCode} from '../../common/http/statusCode';
 import {InputError} from '../inputs/InputError';
 import {isIProjectCard} from '../cards/IProjectCard';
-import {AppErrorResponse, INVALID_RUN_ID} from '../../common/app/AppErrorId';
+import {AppErrorResponse, INVALID_RUN_ID, STALE_VIEW} from '../../common/app/AppErrorId';
 import {RouteError} from './RouteError';
 import {readBody} from './readBody';
+import {responseMatchesInput} from '../inputs/responseMatchesInput';
 
 export class PlayerInput extends Handler {
   public static readonly INSTANCE = new PlayerInput();
@@ -82,6 +83,7 @@ export class PlayerInput extends Handler {
     try {
       const entity = JSON.parse(body);
       validateRunId(entity);
+      validateMatchesWaitingFor(player, entity);
       if (this.isWaitingForUndo(player, entity)) {
         await this.performUndo(req, res, ctx, player);
       } else {
@@ -116,5 +118,19 @@ function validateRunId(entity: any) {
   }
   // Clearing this out to be compatible with the input response processors.
   delete entity.runId;
+}
+
+/**
+ * Rejects a response built for a prompt the player is no longer being shown.
+ *
+ * That happens when the page missed the outcome of its previous submission
+ * and still shows the earlier prompt. Without this check the mismatch surfaces
+ * as an opaque "Not a valid ...Response" error, and the page stays stale.
+ */
+function validateMatchesWaitingFor(player: IPlayer, entity: InputResponse) {
+  const waitingFor = player.getWaitingFor();
+  if (waitingFor === undefined || !responseMatchesInput(waitingFor, entity)) {
+    throw new AppError(STALE_VIEW, 'This page was out of date. Click OK to refresh it, then choose your action again.');
+  }
 }
 
