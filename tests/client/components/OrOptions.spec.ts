@@ -5,6 +5,7 @@ import OrOptions from '@/client/components/OrOptions.vue';
 import {PreferencesManager} from '@/client/utils/PreferencesManager';
 import {InputResponse} from '@/common/inputs/InputResponse';
 import PlayerInputFactory from '@/client/components/PlayerInputFactory.vue';
+import ConfirmDialog from '@/client/components/common/ConfirmDialog.vue';
 import {PlayerViewModel} from '@/common/models/PlayerModel';
 import {PlayerInputModel, SelectCardModel} from '@/common/models/PlayerInputModel';
 import {asComplete} from './utils/models';
@@ -293,5 +294,49 @@ describe('OrOptions', () => {
       },
     });
     expect(component.findComponent({name: 'AppButton'}).text()).to.eq('Sell 0');
+  });
+
+  it('asks for confirmation before passing', async () => {
+    let savedData: InputResponse | undefined;
+    PreferencesManager.INSTANCE.set('show_alerts', true);
+    const component = mount(OrOptions, {
+      ...globalConfig,
+      global: {...globalConfig.global, components: {'PlayerInputFactory': PlayerInputFactory}},
+      props: {
+        playerView: asComplete<PlayerViewModel>({}),
+        playerinput: {
+          type: 'or',
+          title: 'Take action',
+          buttonLabel: '',
+          initialIdx: 1,
+          options: [{
+            type: 'option',
+            title: 'End Turn',
+            buttonLabel: 'End',
+          }, {
+            type: 'option',
+            title: 'Pass for this generation',
+            buttonLabel: 'Pass',
+            warnings: ['pass'],
+          }],
+        },
+        onsave: function(data: InputResponse) {
+          savedData = data;
+        },
+        showsave: true,
+        showtitle: true,
+      },
+    });
+
+    await component.findComponent({name: 'AppButton'}).trigger('click');
+    expect(savedData).is.undefined;
+
+    const dialog = component.findComponent(ConfirmDialog);
+    expect(dialog.exists()).is.true;
+    expect(dialog.vm.$data.shown).is.true;
+
+    dialog.vm.$emit('accept');
+    await component.vm.$nextTick();
+    expect(savedData).to.deep.eq({type: 'or', index: 1, response: {type: 'option'}});
   });
 });

@@ -400,6 +400,8 @@
   "Pay trade fee": "Zapłać opłatę handlową",
   "Select colony tile for trade": "Wybierz kafel obiektu, z którym będziesz handlować",
   "Pass for this generation": "Spasuj w tym pokoleniu",
+  "Pass for this generation? You will not take any more actions this generation.": "Spasować w tym pokoleniu? Nie wykonasz już żadnych akcji w tym pokoleniu.",
+  "You will not take any more actions this generation.": "Nie wykonasz już żadnych akcji w tym pokoleniu.",
   "Buy": "Kup",
   "Buy 0": "Kup 0",
   "Buy 1": "Kup 1",
