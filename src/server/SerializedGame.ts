@@ -97,6 +97,10 @@ export type SerializedAutomaState = {
     corpSpecificState?: Record<string, unknown>;
     floaters?: number;
     vpByGeneration?: Array<number>;
+    /** The bot player's terraform rating; older saves lack it and keep the starting value. */
+    terraformRating?: number;
+    /** The bot player's global parameter steps; older saves lack them and keep zeros. */
+    globalParameterSteps?: Partial<Record<GlobalParameter, number>>;
     temperatureRaises?: number;
     colonyCubePositions?: Array<string>;
     hasSecondTradeFleet?: boolean;
