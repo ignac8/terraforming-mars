@@ -590,6 +590,8 @@ export class MarsBot implements IMarsBot {
       neuralInstanceSpaceId: this.neuralInstanceSpace?.id,
       playedProjectCardNames: this.playedProjectCards.map((c) => c.name),
       marsBotPlayerId: this.player.id,
+      terraformRating: this.player.terraformRating,
+      globalParameterSteps: {...this.player.globalParameterSteps},
     };
     if (this.corp !== undefined) {
       state.corpId = this.corp.name;
@@ -638,6 +640,14 @@ export class MarsBot implements IMarsBot {
 
     // Restore MC
     this.turnResolver.megacredits = state.megacredits ?? state.mcSupply ?? 0;
+
+    // The bot player is rebuilt from scratch on load, so its scoring state lives here.
+    if (state.terraformRating !== undefined) {
+      this.player.setTerraformRating(state.terraformRating);
+    }
+    if (state.globalParameterSteps !== undefined) {
+      Object.assign(this.player.globalParameterSteps, state.globalParameterSteps);
+    }
 
     // Restore first player
     this.goesFirst = state.goesFirst;
