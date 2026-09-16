@@ -5,6 +5,7 @@ import {IGame} from '../../src/server/IGame';
 import {MarsBot} from '../../src/server/automa/MarsBot';
 import {BoardName} from '../../src/common/boards/BoardName';
 import {GlobalParameter} from '../../src/common/GlobalParameter';
+import {Phase} from '../../src/common/Phase';
 
 function createAutomaGame(): {game: IGame, marsBot: MarsBot} {
   const [game] = testGame(1, {
@@ -47,5 +48,26 @@ describe('MarsBotReload', () => {
     const restored = Game.deserialize(serialized);
 
     expect(restored.automaHooks!.marsBot.player.terraformRating).to.eq(marsBot.player.terraformRating);
+  });
+
+  it('records the bot as a global-parameter contributor when it raises parameters', () => {
+    const {game, marsBot} = createAutomaGame();
+    game.phase = Phase.ACTION;
+
+    game.increaseTemperature(marsBot.player, 2);
+    game.increaseOxygenLevel(marsBot.player, 1);
+    game.increaseVenusScaleLevel(marsBot.player, 1);
+
+    const steps = marsBot.player.globalParameterSteps;
+    expect(steps[GlobalParameter.TEMPERATURE]).is.greaterThan(0);
+    expect(steps[GlobalParameter.OXYGEN]).is.greaterThan(0);
+    expect(steps[GlobalParameter.VENUS]).is.greaterThan(0);
+
+    // The end-of-game contribution table reads these off the reloaded model.
+    const restored = Game.deserialize(game.serialize());
+    const restoredSteps = restored.automaHooks!.marsBot.player.globalParameterSteps;
+    expect(restoredSteps[GlobalParameter.TEMPERATURE]).eq(steps[GlobalParameter.TEMPERATURE]);
+    expect(restoredSteps[GlobalParameter.OXYGEN]).eq(steps[GlobalParameter.OXYGEN]);
+    expect(restoredSteps[GlobalParameter.VENUS]).eq(steps[GlobalParameter.VENUS]);
   });
 });
