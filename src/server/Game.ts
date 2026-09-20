@@ -604,8 +604,8 @@ export class Game implements IGame, Logger {
       }
     });
 
-    // Solo games with Venus needs Venus maxed to end the game.
-    if (this.players.length === 1 && this.gameOptions.venusNextExtension) {
+    // Solo games with Venus needs Venus maxed to end the game. (Automa games are two-player games.)
+    if (this.isSoloMode() && this.gameOptions.venusNextExtension) {
       return globalParametersMaxed && venusMaxed;
     }
     // Option "requiresVenusTrackCompletion" also makes maximizing Venus a game-end requirement
