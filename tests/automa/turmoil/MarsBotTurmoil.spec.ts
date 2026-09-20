@@ -691,84 +691,82 @@ describe('MarsBot Turmoil — Chairman rules (T-11b T-11c)', () => {
 // ---------------------------------------------------------------------------
 
 describe('MarsBot Turmoil — Difficulty options (T-14 T-15)', () => {
-  it('T-14: automaExtraTurmoilDifficulty=0 → MarsBot starts at 10 TR (base Turmoil)', () => {
+  function delegatesInParties(game: ReturnType<typeof testGame>[0]): number {
+    const turmoil = Turmoil.getTurmoil(game);
+    const marsBotPlayer = game.automaHooks!.marsBot.player;
+    let inParties = 0;
+    for (const party of turmoil.parties) {
+      inParties += party.delegates.get(marsBotPlayer);
+    }
+    return inParties;
+  }
+
+  it('T-14: by default MarsBot starts at 10 TR (reduced by 10) with no seeded delegates', () => {
     const [game] = testGame(1, {
       automaOption: true,
       turmoilExtension: true,
       boardName: BoardName.THARSIS,
-      automaExtraTurmoilDifficulty: 0,
     });
     expect(game.automaHooks!.marsBot.player.terraformRating).to.equal(MARSBOT_STARTING_TR - 10);
+    expect(delegatesInParties(game)).to.equal(0);
+    expect(Turmoil.getTurmoil(game).getAvailableDelegateCount(game.automaHooks!.marsBot.player)).to.equal(DELEGATES_PER_PLAYER);
   });
 
-  it('T-14: automaExtraTurmoilDifficulty=1 → MarsBot starts at 13 TR (reduced by 7)', () => {
+  it('T-14: automaTurmoilTRReduction=7 → MarsBot starts at 13 TR and still seeds no delegates', () => {
     const [game] = testGame(1, {
       automaOption: true,
       turmoilExtension: true,
       boardName: BoardName.THARSIS,
-      automaExtraTurmoilDifficulty: 1,
+      automaTurmoilTRReduction: 7,
     });
     expect(game.automaHooks!.marsBot.player.terraformRating).to.equal(MARSBOT_STARTING_TR - 7);
+    expect(delegatesInParties(game)).to.equal(0);
   });
 
-  it('T-14: automaExtraTurmoilDifficulty=2 → MarsBot starts at 13 TR', () => {
+  it('T-15: automaTurmoilSetupDelegates=1 → 1 MarsBot delegate seeded, TR reduction unchanged', () => {
     const [game] = testGame(1, {
       automaOption: true,
       turmoilExtension: true,
       boardName: BoardName.THARSIS,
-      automaExtraTurmoilDifficulty: 2,
+      automaTurmoilSetupDelegates: 1,
+    });
+    const marsBotPlayer = game.automaHooks!.marsBot.player;
+    expect(delegatesInParties(game)).to.equal(1);
+    expect(Turmoil.getTurmoil(game).getAvailableDelegateCount(marsBotPlayer)).to.equal(DELEGATES_PER_PLAYER - 1);
+    expect(marsBotPlayer.terraformRating).to.equal(MARSBOT_STARTING_TR - 10);
+  });
+
+  it('T-15: automaTurmoilSetupDelegates=2 → 2 MarsBot delegates seeded', () => {
+    const [game] = testGame(1, {
+      automaOption: true,
+      turmoilExtension: true,
+      boardName: BoardName.THARSIS,
+      automaTurmoilSetupDelegates: 2,
+    });
+    const marsBotPlayer = game.automaHooks!.marsBot.player;
+    expect(delegatesInParties(game)).to.equal(2);
+    expect(Turmoil.getTurmoil(game).getAvailableDelegateCount(marsBotPlayer)).to.equal(DELEGATES_PER_PLAYER - 2);
+  });
+
+  it('T-14 + T-15 combine: reduction 7 and 2 seeded delegates', () => {
+    const [game] = testGame(1, {
+      automaOption: true,
+      turmoilExtension: true,
+      boardName: BoardName.THARSIS,
+      automaTurmoilTRReduction: 7,
+      automaTurmoilSetupDelegates: 2,
     });
     expect(game.automaHooks!.marsBot.player.terraformRating).to.equal(MARSBOT_STARTING_TR - 7);
+    expect(delegatesInParties(game)).to.equal(2);
   });
 
-  it('T-15: automaExtraTurmoilDifficulty=2 → 1 extra MarsBot delegate placed at setup', () => {
-    const [game] = testGame(1, {
-      automaOption: true,
-      turmoilExtension: true,
-      boardName: BoardName.THARSIS,
-      automaExtraTurmoilDifficulty: 2,
-    });
-    const marsBot = game.automaHooks!.marsBot;
-    const turmoil = Turmoil.getTurmoil(game);
-    const marsBotPlayer = marsBot.player;
-
-    // Count delegates placed in parties (party.delegates.get already includes the party leader)
-    let inParties = 0;
-    for (const party of turmoil.parties) {
-      inParties += party.delegates.get(marsBotPlayer);
-    }
-    // With difficulty=2, 1 extra delegate was taken from reserve and placed in a party.
-    expect(inParties).to.equal(1);
-    // Reserve should be DELEGATES_PER_PLAYER - 1 (1 used for the extra placement)
-    expect(turmoil.getAvailableDelegateCount(marsBotPlayer)).to.equal(DELEGATES_PER_PLAYER - 1);
-  });
-
-  it('T-15: automaExtraTurmoilDifficulty=3 → 2 extra MarsBot delegates placed at setup', () => {
-    const [game] = testGame(1, {
-      automaOption: true,
-      turmoilExtension: true,
-      boardName: BoardName.THARSIS,
-      automaExtraTurmoilDifficulty: 3,
-    });
-    const marsBot = game.automaHooks!.marsBot;
-    const turmoil = Turmoil.getTurmoil(game);
-    const marsBotPlayer = marsBot.player;
-
-    // Count delegates placed in parties (party.delegates.get already includes the party leader)
-    let inParties = 0;
-    for (const party of turmoil.parties) {
-      inParties += party.delegates.get(marsBotPlayer);
-    }
-    expect(inParties).to.equal(2);
-    expect(turmoil.getAvailableDelegateCount(marsBotPlayer)).to.equal(DELEGATES_PER_PLAYER - 2);
-  });
-
-  it('automaExtraTurmoilDifficulty has no effect without turmoilExtension', () => {
+  it('Turmoil difficulty options have no effect without turmoilExtension', () => {
     const [game] = testGame(1, {
       automaOption: true,
       turmoilExtension: false,
       boardName: BoardName.THARSIS,
-      automaExtraTurmoilDifficulty: 1,
+      automaTurmoilTRReduction: 7,
+      automaTurmoilSetupDelegates: 2,
     });
     // Without Turmoil, starting TR is the base MARSBOT_STARTING_TR (no reduction)
     expect(game.automaHooks!.marsBot.player.terraformRating).to.equal(MARSBOT_STARTING_TR);

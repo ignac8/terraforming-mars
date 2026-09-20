@@ -682,7 +682,7 @@ No 2nd place VP in 2-player automa games (same as standard 2-player TM rules). O
 
 ### Not Yet Implemented (Official Expansions Only)
 - [ ] Other official maps — Hellas, Elysium, Utopia Planitia, Terra Cimmeria, Vastitas Borealis (milestone/award evals done, but track layouts still needed from physical boards). Note: 2nd Trade Fleet for Vastitas Borealis must use the Energy track (currently uses Event/credits track for Tharsis)
-- [ ] Turmoil difficulty option T-15 fully wired into UI (the GameOption exists; UI selector control may need a final visual pass)
+- [x] Turmoil difficulty options T-14 and T-15 are independent settings in the create-game form (`automaTurmoilTRReduction`: 10 or 7; `automaTurmoilSetupDelegates`: 0 to 2), matching the rulebook's "one of the following ways"
 - [ ] Promos — Some promo cards may need special MarsBot interaction handling
 - [ ] Physical card verification — Corp effects from NamuWiki need verification against physical Automa expansion cards
 

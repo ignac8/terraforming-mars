@@ -162,7 +162,8 @@ const TEMPLATE_EXPECTED: CreateGameModel = {
   automaOption: true,
   automaDifficulty: 'normal',
   automaCorpOption: true,
-  automaExtraTurmoilDifficulty: 0,
+  automaTurmoilTRReduction: 10,
+  automaTurmoilSetupDelegates: 0,
   automaNoGenerationLimit: false,
 };
 

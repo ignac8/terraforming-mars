@@ -175,7 +175,8 @@ export class ApiCreateGame extends Handler {
         automaOption: gameReq.automaOption ?? false,
         automaDifficulty: gameReq.automaDifficulty ?? 'normal',
         automaCorpOption: gameReq.automaCorpOption ?? false,
-        automaExtraTurmoilDifficulty: gameReq.automaExtraTurmoilDifficulty ?? 0,
+        automaTurmoilTRReduction: gameReq.automaTurmoilTRReduction ?? 10,
+        automaTurmoilSetupDelegates: gameReq.automaTurmoilSetupDelegates ?? 0,
         automaNoGenerationLimit: gameReq.automaNoGenerationLimit ?? false,
       };
 
