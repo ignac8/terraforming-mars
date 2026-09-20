@@ -39,6 +39,12 @@ export class GiveColonyBonus extends DeferredAction {
       }
     }
 
+    if (this.playersWithBonuses.size === 0) {
+      // Every colony here is MarsBot's and was handled above, so there is nobody left to wait for.
+      this.cb(undefined);
+      return undefined;
+    }
+
     for (const playerId of this.waitingFor.keys()) {
       const bonusPlayer = this.player.game.getPlayerById(playerId);
       this.giveColonyBonus(bonusPlayer);
