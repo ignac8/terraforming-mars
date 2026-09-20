@@ -36,6 +36,10 @@ export class PartyHooks {
     if (player.game.phase !== Phase.ACTION) {
       return false;
     }
+    // T-5: MarsBot ignores the ruling party's policy.
+    if (player.game.automaHooks?.isAutomaPlayer(player)) {
+      return false;
+    }
     return Turmoil.ifTurmoilElse(player.game, (turmoil) => {
       // Hook for CEO Zan's effect (Skip all Reds Policy effects)
       if (partyName === PartyName.REDS && player.tableau.has(CardName.ZAN)) {
