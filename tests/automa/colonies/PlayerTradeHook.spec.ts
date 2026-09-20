@@ -98,5 +98,25 @@ describe('PlayerTradeHook (C-21, C-24c)', () => {
 
       expect(marsBot.shippingBoard.get(ColonyName.LUNA)).to.eq(storeBefore + 1);
     });
+
+    it('finishes the trade when MarsBot is the only colony owner', () => {
+      const [game, player] = testGame(1, {automaOption: true, coloniesExtension: true, boardName: BoardName.THARSIS});
+      const marsBot = getMarsBot(game);
+      const ceres = new Ceres();
+      ceres.colonies = [marsBot.player.id];
+      ceres.trackPosition = 2;
+      game.colonies = [ceres];
+
+      ceres.trade(player);
+
+      let done = false;
+      game.deferredActions.runAll(() => {
+        done = true;
+      });
+
+      expect(done).to.be.true;
+      expect(game.deferredActions.length).to.eq(0);
+      expect(ceres.trackPosition).to.eq(1);
+    });
   });
 });
