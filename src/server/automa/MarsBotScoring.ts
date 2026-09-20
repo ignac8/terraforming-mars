@@ -44,8 +44,11 @@ export class MarsBotScoring {
     return getAutomaMaxGeneration(opts.preludeExtension);
   }
 
-  /** Check if MarsBot instantly wins because max generation reached. */
+  /** Check if MarsBot instantly wins because max generation reached. Never without a generation limit. */
   public isInstantWin(): boolean {
+    if (this.game.gameOptions.automaNoGenerationLimit) {
+      return false;
+    }
     return this.game.generation >= this.getMaxGeneration();
   }
 
@@ -131,11 +134,7 @@ export class MarsBotScoring {
   }
 
   private calculateMCtoVP(): number {
-    if (this.game.generation >= this.getMaxGeneration()) {
-      return 0;
-    }
-    const opts = this.game.gameOptions;
-    const mcPerVP = getMcPerVP(this.game.generation, opts.preludeExtension);
+    const mcPerVP = currentMcPerVP(this.game);
     if (mcPerVP === undefined) {
       return 0;
     }
@@ -185,4 +184,21 @@ export function getMcPerVP(generation: number, preludeExtension: boolean): numbe
   const table = preludeExtension ? MC_TO_VP_TABLE_PRELUDE : MC_TO_VP_TABLE;
   const entry = table.find((e) => generation <= e.maxGeneration);
   return entry?.mcPerVP;
+}
+
+/**
+ * MC per VP for the generation the game is in, or undefined once the generation limit is reached.
+ *
+ * Without a generation limit the table's last row (1 MC per VP) applies from then on.
+ */
+export function currentMcPerVP(game: IGame): number | undefined {
+  const opts = game.gameOptions;
+  const maxGeneration = getAutomaMaxGeneration(opts.preludeExtension);
+  let generation = game.generation;
+  if (opts.automaNoGenerationLimit) {
+    generation = Math.min(generation, maxGeneration - 1);
+  } else if (generation >= maxGeneration) {
+    return undefined;
+  }
+  return getMcPerVP(generation, opts.preludeExtension);
 }

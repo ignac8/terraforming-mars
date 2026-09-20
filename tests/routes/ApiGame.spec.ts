@@ -101,6 +101,7 @@ describe('ApiGame', () => {
           'automaDifficulty': 'normal',
           'automaCorpOption': false,
           'automaExtraTurmoilDifficulty': 0,
+          'automaNoGenerationLimit': false,
         },
       },
     );

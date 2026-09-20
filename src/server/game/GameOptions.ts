@@ -87,6 +87,12 @@ export type GameOptions = {
    *   3 = T-14 + T-15 x2: two extra delegates placed at setup
    */
   automaExtraTurmoilDifficulty?: 0 | 1 | 2 | 3;
+  /**
+   * True when the game has no generation limit: it ends only once Mars is
+   * terraformed, MarsBot never wins on the generation count, and its
+   * megacredits convert at the table's last row (1 MC per VP) from then on.
+   */
+  automaNoGenerationLimit?: boolean;
 }
 
 export const DEFAULT_GAME_OPTIONS: GameOptions = {
@@ -162,4 +168,5 @@ export const DEFAULT_GAME_OPTIONS: GameOptions = {
   automaDifficulty: 'normal',
   automaCorpOption: false,
   automaExtraTurmoilDifficulty: 0,
+  automaNoGenerationLimit: false,
 };

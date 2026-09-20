@@ -52,6 +52,7 @@ describe('CreateGameForm', () => {
 
     expect(vm.automaOption).to.be.true;
     expect(vm.automaCorpOption).to.be.true;
+    expect(vm.automaNoGenerationLimit).to.be.false;
     expect(vm.automaDifficulty).to.eq('normal');
     expect(vm.draftVariant).to.be.true;
     expect(vm.allOfficialExpansions).to.be.true;

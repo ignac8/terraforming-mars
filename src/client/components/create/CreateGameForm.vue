@@ -243,6 +243,11 @@
                               <label for="automa-corp-checkbox">
                                 <span v-i18n>MarsBot Corporation</span>
                               </label>
+                              <br>
+                              <input type="checkbox" v-model="automaNoGenerationLimit" id="automa-no-generation-limit-checkbox">
+                              <label for="automa-no-generation-limit-checkbox">
+                                <span v-i18n>No generation limit</span>&nbsp;<span class="tooltip" v-i18n data-tooltip="The game goes on until Mars is terraformed. MarsBot no longer wins when the last generation ends.">&#9432;</span>
+                              </label>
                               <template v-if="expansions.turmoil">
                                 <br>
                                 <label for="automa-extra-turmoil">
@@ -1345,6 +1350,7 @@ export default defineComponent({
         automaDifficulty: this.automaDifficulty,
         automaCorpOption: this.automaCorpOption,
         automaExtraTurmoilDifficulty: this.automaExtraTurmoilDifficulty,
+        automaNoGenerationLimit: this.automaNoGenerationLimit,
       };
     },
     async createGame() {
