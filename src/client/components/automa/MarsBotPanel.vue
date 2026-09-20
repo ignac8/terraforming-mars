@@ -55,7 +55,7 @@
           v-for="(amount, colony) in model.shippingBoard"
           :key="colony"
           class="marsbot-shipping-area"
-        >{{ colony }}: {{ amount }}</span>
+        >{{ colony }}: <b>{{ amount }}</b></span>
       </div>
     </div>
   </div>
