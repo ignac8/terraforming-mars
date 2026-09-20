@@ -18,8 +18,8 @@ describe('PlayerHome', () => {
     FakeLocalStorage.deregister(localStorage);
   });
 
-  it('mounts without errors', () => {
-    const wrapper = shallowMount(PlayerHome, {
+  function mount() {
+    return shallowMount(PlayerHome, {
       ...globalConfig,
       parentComponent: {
         methods: {
@@ -32,6 +32,25 @@ describe('PlayerHome', () => {
         settings: raw_settings,
       },
     });
+  }
+
+  it('mounts without errors', () => {
+    const wrapper = mount();
     expect(wrapper.exists()).to.be.true;
+  });
+
+  it('uses the device width viewport while mounted', () => {
+    const viewport = document.createElement('meta');
+    viewport.setAttribute('name', 'viewport');
+    viewport.setAttribute('content', 'width=1260, user-scalable=1');
+    document.head.appendChild(viewport);
+    try {
+      const wrapper = mount();
+      expect(viewport.getAttribute('content')).to.eq('width=device-width, initial-scale=1, viewport-fit=cover');
+      wrapper.unmount();
+      expect(viewport.getAttribute('content')).to.eq('width=1260, user-scalable=1');
+    } finally {
+      viewport.remove();
+    }
   });
 });
