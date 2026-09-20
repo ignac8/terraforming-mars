@@ -58,12 +58,17 @@ export class AutomaGameHooks {
     return getAutomaMaxGeneration(opts.preludeExtension);
   }
 
-  /** Automa: game ends when Mars is terraformed or max generation reached. */
+  /** Automa: game ends when Mars is terraformed or, with a generation limit, at the max generation. */
   public isGameOver(): boolean {
-    if (this.game.generation >= this.getMaxGeneration()) {
+    if (this.hasGenerationLimit() && this.game.generation >= this.getMaxGeneration()) {
       return true;
     }
     return this.game.marsIsTerraformed();
+  }
+
+  /** False when the game was created without a generation limit. */
+  public hasGenerationLimit(): boolean {
+    return this.game.gameOptions.automaNoGenerationLimit !== true;
   }
 
   // ---- Turn flow ----

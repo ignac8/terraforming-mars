@@ -197,6 +197,11 @@ Human produces as normal. MarsBot skips production entirely.
 
 Tie = MarsBot wins.
 
+**No generation limit option** (`automaNoGenerationLimit`, off by default): the game ignores the
+generation cap and ends only once Mars is terraformed. MarsBot never wins on the generation count,
+and its MC → VP conversion stays at 1 VP per MC from generation 19 (17 with Prelude) onward. The
+client hides the "of N" generation cap for such games.
+
 ### 2.12 Difficulty Levels
 
 **Easy:**

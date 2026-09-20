@@ -7,7 +7,7 @@ import {CardName} from '../../common/cards/CardName';
 import {newCard} from '../createCard';
 import {DifficultyLevel, BonusCardId, TrackDefinition, getAutomaMaxGeneration} from '../../common/automa/AutomaTypes';
 import {Tag} from '../../common/cards/Tag';
-import {getMcPerVP} from './MarsBotScoring';
+import {currentMcPerVP} from './MarsBotScoring';
 import {MarsBotBoard} from './MarsBotBoard';
 import {MarsBotModel} from '../../common/models/MarsBotModel';
 import {MarsBotBonusCard, bonusCardDisplayName, createCorpBonusCard} from './MarsBotBonusCard';
@@ -509,9 +509,12 @@ export class MarsBot implements IMarsBot {
     return scoring.calculate();
   }
 
-  /** Check if MarsBot instantly wins (gen 20, or gen 18 with Prelude). */
+  /** Check if MarsBot instantly wins (gen 20, or gen 18 with Prelude). Never without a generation limit. */
   public isInstantWin(): boolean {
     const opts = this.game.gameOptions;
+    if (opts.automaNoGenerationLimit) {
+      return false;
+    }
     return this.game.generation >= getAutomaMaxGeneration(opts.preludeExtension);
   }
 
@@ -563,7 +566,7 @@ export class MarsBot implements IMarsBot {
       }));
     }
     const opts = this.game.gameOptions;
-    const mcPerVP = getMcPerVP(this.game.generation, opts.preludeExtension);
+    const mcPerVP = currentMcPerVP(this.game);
     if (mcPerVP !== undefined) {
       model.mcPerVP = mcPerVP;
       model.mcVP = Math.floor(this.turnResolver.megacredits / mcPerVP);

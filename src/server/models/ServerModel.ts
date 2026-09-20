@@ -470,6 +470,7 @@ export class Server {
       automaDifficulty: options.automaDifficulty,
       automaCorpOption: options.automaCorpOption,
       automaExtraTurmoilDifficulty: options.automaExtraTurmoilDifficulty ?? 0,
+      automaNoGenerationLimit: options.automaNoGenerationLimit ?? false,
     };
   }
 

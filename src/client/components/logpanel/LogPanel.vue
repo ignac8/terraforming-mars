@@ -179,7 +179,10 @@ export default defineComponent({
       return this.viewModel.game.generation;
     },
     lastSoloGeneration(): number | undefined {
-      return this.viewModel.players.length === 1 ? this.viewModel.game.lastSoloGeneration : undefined;
+      if (this.viewModel.players.length !== 1 || this.viewModel.game.gameOptions.automaNoGenerationLimit) {
+        return undefined;
+      }
+      return this.viewModel.game.lastSoloGeneration;
     },
     titleClasses(): string {
       const classes = ['log-title'];

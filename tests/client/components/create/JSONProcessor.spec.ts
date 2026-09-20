@@ -163,6 +163,7 @@ const TEMPLATE_EXPECTED: CreateGameModel = {
   automaDifficulty: 'normal',
   automaCorpOption: true,
   automaExtraTurmoilDifficulty: 0,
+  automaNoGenerationLimit: false,
 };
 
 const cases: Array<Case> = [

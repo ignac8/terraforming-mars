@@ -83,5 +83,6 @@ export function defaultCreateGameModel(): CreateGameModel {
     automaDifficulty: 'normal',
     automaCorpOption: true,
     automaExtraTurmoilDifficulty: 0,
+    automaNoGenerationLimit: false,
   };
 }
