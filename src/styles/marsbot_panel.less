@@ -35,15 +35,16 @@
   color: #ffcc64;
   font-family: Prototype, monospace;
 }
+// One grid for all rows, so the squares start on the same column whatever
+// the label width.
 .marsbot-tracks {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
+  display: grid;
+  grid-template-columns: max-content max-content max-content;
+  align-items: center;
+  gap: 4px 6px;
 }
 .marsbot-track {
-  display: flex;
-  align-items: center;
-  gap: 6px;
+  display: contents;
 }
 .marsbot-track-label {
   min-width: max-content;
