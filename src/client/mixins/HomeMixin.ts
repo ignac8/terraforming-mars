@@ -1,6 +1,6 @@
 // Common code shared between PlayerHome and SpectatorHome:
 // hotkey navigation, the keyboard shortcuts dialog, tile view cycling,
-// and setting the document title on mount.
+// the device-width viewport and setting the document title on mount.
 import {defineComponent} from 'vue';
 import {GameModel} from '@/common/models/GameModel';
 import {SpaceId} from '@/common/Types';
@@ -12,6 +12,7 @@ type DataModel = {
   tileView: TileView;
   keyboardShortcutOpened: boolean;
   hotkeyTargets: Array<Element>;
+  previousViewport: string;
 }
 
 export const HomeMixin = defineComponent({
@@ -21,6 +22,7 @@ export const HomeMixin = defineComponent({
       tileView: 'show',
       keyboardShortcutOpened: false,
       hotkeyTargets: [],
+      previousViewport: '',
     };
   },
   computed: {
@@ -78,6 +80,18 @@ export const HomeMixin = defineComponent({
   },
   mounted() {
     setDocumentTitle(this.game.name);
+    // Set the viewport width to width=device-width so mobile browsers lay the game out at their
+    // actual CSS viewport width and mobile.less can respond to it. The global viewport is
+    // width=1260, which shrinks the whole desktop layout to fit a phone.
+    // TODO: Once responsiveness covers the whole project, this code should be removed and the tag in index.html should be updated directly.
+    const viewport = document.querySelector('meta[name="viewport"]');
+    if (viewport !== null) {
+      this.previousViewport = viewport.getAttribute('content') ?? '';
+      viewport.setAttribute(
+        'content',
+        'width=device-width, initial-scale=1, viewport-fit=cover',
+      );
+    }
     window.addEventListener('keydown', this.navigatePage);
     const targets = this.$el.getElementsByClassName('hotkey-target');
     for (let i = 0; i < targets.length; i++) {
@@ -86,6 +100,11 @@ export const HomeMixin = defineComponent({
         this.hotkeyTargets.push(element);
       }
     }
+  },
+  beforeUnmount() {
+    document
+      .querySelector('meta[name="viewport"]')
+      ?.setAttribute('content', this.previousViewport);
   },
   unmounted() {
     window.removeEventListener('keydown', this.navigatePage);
