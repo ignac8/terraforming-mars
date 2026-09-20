@@ -91,11 +91,8 @@ export class AutomaGameSetup {
 
     // Set MarsBot player's game reference
     marsBotPlayer.setup(game);
-    // T-2/T-14: Turmoil reduces MarsBot's starting TR.
-    //   Base Turmoil (difficulty 0): TR - 10 = 10
-    //   T-14 (difficulty ≥ 1): TR - 7 = 13 (less harsh for higher difficulty option)
-    const turmoilDifficulty = gameOptions.automaExtraTurmoilDifficulty ?? 0;
-    const turmoilTRReduction = turmoilDifficulty >= 1 ? 7 : 10;
+    // T-2/T-14: Turmoil reduces MarsBot's starting TR by 10 (rulebook default) or by 7 (harder variant).
+    const turmoilTRReduction = gameOptions.automaTurmoilTRReduction ?? 10;
     const startingTR = gameOptions.turmoilExtension ? MARSBOT_STARTING_TR - turmoilTRReduction : MARSBOT_STARTING_TR;
     marsBotPlayer.setTerraformRating(startingTR);
 
@@ -126,11 +123,9 @@ export class AutomaGameSetup {
       if (gameOptions.turmoilExtension && game.turmoil !== undefined) {
         game.turmoil.delegateReserve.add(marsBotPlayer, DELEGATES_PER_PLAYER);
         game.log('MarsBot: 7 delegates placed in reserve (Turmoil)');
-        // T-15: Extra delegates placed at setup for increased difficulty
-        if (turmoilDifficulty >= 2) {
-          AutomaGameSetup.placeExtraSetupDelegate(game, marsBotPlayer, rng);
-        }
-        if (turmoilDifficulty >= 3) {
+        // T-15: Extra delegates seeded at setup for increased difficulty
+        const setupDelegates = gameOptions.automaTurmoilSetupDelegates ?? 0;
+        for (let i = 0; i < setupDelegates; i++) {
           AutomaGameSetup.placeExtraSetupDelegate(game, marsBotPlayer, rng);
         }
       }
@@ -200,7 +195,7 @@ export class AutomaGameSetup {
 
   /**
    * T-15: Flip a project card (discard it) and place 1 MarsBot delegate at a random party.
-   * Called during setup when automaExtraTurmoilDifficulty >= 2 (once) or >= 3 (twice).
+   * Called during setup once per delegate in automaTurmoilSetupDelegates (0 to 2).
    */
   private static placeExtraSetupDelegate(game: IGame, marsBotPlayer: IPlayer, rng: Random): void {
     const turmoil = game.turmoil;

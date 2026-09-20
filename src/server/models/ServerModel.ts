@@ -469,7 +469,8 @@ export class Server {
       automaOption: options.automaOption,
       automaDifficulty: options.automaDifficulty,
       automaCorpOption: options.automaCorpOption,
-      automaExtraTurmoilDifficulty: options.automaExtraTurmoilDifficulty ?? 0,
+      automaTurmoilTRReduction: options.automaTurmoilTRReduction ?? 10,
+      automaTurmoilSetupDelegates: options.automaTurmoilSetupDelegates ?? 0,
       automaNoGenerationLimit: options.automaNoGenerationLimit ?? false,
     };
   }

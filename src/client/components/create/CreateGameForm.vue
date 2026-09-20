@@ -250,13 +250,20 @@
                               </label>
                               <template v-if="expansions.turmoil">
                                 <br>
-                                <label for="automa-extra-turmoil">
-                                  <span v-i18n>Turmoil extra difficulty:</span>&nbsp;
-                                  <select v-model.number="automaExtraTurmoilDifficulty" id="automa-extra-turmoil">
-                                    <option :value="0" v-i18n>Off</option>
-                                    <option :value="1" v-i18n>TR -7 instead of -10</option>
-                                    <option :value="2" v-i18n>TR -7 + 1 random delegate</option>
-                                    <option :value="3" v-i18n>TR -7 + 2 random delegates</option>
+                                <label for="automa-turmoil-tr">
+                                  <span v-i18n>MarsBot starting TR:</span>&nbsp;
+                                  <select v-model.number="automaTurmoilTRReduction" id="automa-turmoil-tr">
+                                    <option :value="10" v-i18n>10 (rulebook)</option>
+                                    <option :value="7" v-i18n>13 (harder)</option>
+                                  </select>
+                                </label>
+                                <br>
+                                <label for="automa-turmoil-delegates">
+                                  <span v-i18n>MarsBot delegates seeded at setup:</span>&nbsp;
+                                  <select v-model.number="automaTurmoilSetupDelegates" id="automa-turmoil-delegates">
+                                    <option :value="0">0</option>
+                                    <option :value="1">1</option>
+                                    <option :value="2">2</option>
                                   </select>
                                 </label>
                               </template>
@@ -1349,7 +1356,8 @@ export default defineComponent({
         automaOption: this.automaOption,
         automaDifficulty: this.automaDifficulty,
         automaCorpOption: this.automaCorpOption,
-        automaExtraTurmoilDifficulty: this.automaExtraTurmoilDifficulty,
+        automaTurmoilTRReduction: this.automaTurmoilTRReduction,
+        automaTurmoilSetupDelegates: this.automaTurmoilSetupDelegates,
         automaNoGenerationLimit: this.automaNoGenerationLimit,
       };
     },

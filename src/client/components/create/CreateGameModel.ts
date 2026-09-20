@@ -64,6 +64,7 @@ export type CreateGameModel = {
   automaOption: boolean;
   automaDifficulty: 'easy' | 'normal' | 'hard' | 'brutal';
   automaCorpOption: boolean;
-  automaExtraTurmoilDifficulty: 0 | 1 | 2 | 3;
+  automaTurmoilTRReduction: 7 | 10;
+  automaTurmoilSetupDelegates: 0 | 1 | 2;
   automaNoGenerationLimit: boolean;
 }

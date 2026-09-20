@@ -80,13 +80,15 @@ export type GameOptions = {
   automaDifficulty: 'easy' | 'normal' | 'hard' | 'brutal';
   automaCorpOption: boolean;
   /**
-   * T-14/T-15: Optional Turmoil difficulty for MarsBot.
-   *   0 = standard (TR -10, no extra delegates)
-   *   1 = T-14: TR -7 instead of -10 (MarsBot starts at 13 instead of 10)
-   *   2 = T-14 + T-15: one extra delegate placed at setup
-   *   3 = T-14 + T-15 x2: two extra delegates placed at setup
+   * T-14: how much Turmoil lowers MarsBot's starting TR. The rulebook default
+   * is 10 (MarsBot starts on 10 TR); 7 is its harder variant (13 TR).
    */
-  automaExtraTurmoilDifficulty?: 0 | 1 | 2 | 3;
+  automaTurmoilTRReduction?: 7 | 10;
+  /**
+   * T-15: MarsBot delegates seeded into random parties at setup, the
+   * rulebook's other harder variant: 0, 1 or 2.
+   */
+  automaTurmoilSetupDelegates?: 0 | 1 | 2;
   /**
    * True when the game has no generation limit: it ends only once Mars is
    * terraformed, MarsBot never wins on the generation count, and its
@@ -167,6 +169,7 @@ export const DEFAULT_GAME_OPTIONS: GameOptions = {
   automaOption: false,
   automaDifficulty: 'normal',
   automaCorpOption: false,
-  automaExtraTurmoilDifficulty: 0,
+  automaTurmoilTRReduction: 10,
+  automaTurmoilSetupDelegates: 0,
   automaNoGenerationLimit: false,
 };
