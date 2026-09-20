@@ -1,7 +1,7 @@
 import {expect} from 'chai';
 import {testGame} from '../../TestGame';
 import {TestPlayer} from '../../TestPlayer';
-import {runAllActions} from '../../TestingUtils';
+import {runAllActions, setRulingParty} from '../../TestingUtils';
 import {Game} from '../../../src/server/Game';
 import {IGame} from '../../../src/server/IGame';
 import {MarsBot} from '../../../src/server/automa/MarsBot';
@@ -574,6 +574,22 @@ describe('MarsBot Turmoil — Automatic skips (T-5 T-9 T-11a)', () => {
     const steelValueBefore = marsBotPlayer.getSteelValue();
     MARS_FIRST_POLICY_3.onPolicyStart?.(game);
     expect(marsBotPlayer.getSteelValue()).to.equal(steelValueBefore);
+  });
+
+  it('T-5: MarsBot raises TR under Reds without paying and without being asked to pay', () => {
+    const {game, marsBot} = createTurmoilGame();
+    const bot = marsBot.player;
+    setRulingParty(game, PartyName.REDS);
+    game.phase = Phase.ACTION;
+    marsBot.turnResolver.megacredits = 10;
+    const trBefore = bot.terraformRating;
+
+    bot.increaseTerraformRating(1);
+    runAllActions(game);
+
+    expect(bot.terraformRating).to.equal(trBefore + 1);
+    expect(marsBot.turnResolver.megacredits).to.equal(10);
+    expect(bot.getWaitingFor()).is.undefined;
   });
 });
 
