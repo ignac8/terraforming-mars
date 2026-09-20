@@ -15,7 +15,8 @@ import {Resource} from '../../src/common/Resource';
 import {CardType} from '../../src/common/cards/CardType';
 import {CardName} from '../../src/common/cards/CardName';
 import {SaturnSystems} from '../../src/server/cards/corporation/SaturnSystems';
-import {runAllActions} from '../TestingUtils';
+import {maxOutOceans, runAllActions} from '../TestingUtils';
+import {MAX_OXYGEN_LEVEL, MAX_TEMPERATURE, MAX_VENUS_SCALE} from '../../src/common/constants';
 import {cast} from '../../src/common/utils/utils';
 import {SelectSpace} from '../../src/server/inputs/SelectSpace';
 
@@ -111,6 +112,34 @@ describe('MarsBot Fixes', () => {
       const heatProdBefore = human.production.get(Resource.HEAT);
       game.increaseTemperature(human, 1);
       expect(human.production.get(Resource.HEAT)).to.eq(heatProdBefore + 1);
+    });
+  });
+
+  describe('Game end with Venus Next', () => {
+    function terraformMars(game: IGame, player: TestPlayer) {
+      (game as any).oxygenLevel = MAX_OXYGEN_LEVEL;
+      (game as any).temperature = MAX_TEMPERATURE;
+      maxOutOceans(player);
+    }
+
+    it('ends the game when the three Mars parameters are maxed even though Venus is not', () => {
+      const [game, human] = testGame(1, {automaOption: true, venusNextExtension: true, boardName: BoardName.THARSIS});
+      terraformMars(game, human);
+
+      expect(game.getVenusScaleLevel()).to.be.lessThan(MAX_VENUS_SCALE);
+      expect(game.marsIsTerraformed()).is.true;
+      expect(game.gameIsOver()).is.true;
+    });
+
+    it('still waits for Venus when the game requires the Venus track', () => {
+      const [game, human] = testGame(1, {
+        automaOption: true, venusNextExtension: true, requiresVenusTrackCompletion: true, boardName: BoardName.THARSIS,
+      });
+      terraformMars(game, human);
+
+      expect(game.marsIsTerraformed()).is.false;
+      (game as any).venusScaleLevel = MAX_VENUS_SCALE;
+      expect(game.marsIsTerraformed()).is.true;
     });
   });
 
