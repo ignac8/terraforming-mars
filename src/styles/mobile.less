@@ -44,11 +44,38 @@
     padding: 12px 8px 0 8px;
   }
 
-  // The sidebar keeps its column but shrinks so its bottom-anchored items no
-  // longer overlap the jump links on a short screen. With Turmoil the column
-  // needs about 870px at full size; 0.78 fits an unfolded Fold's 700px.
+  // The sidebar keeps its column but shrinks, and scrolls when the column is
+  // still taller than the screen. The items that are pinned to the bottom on
+  // desktop join the flow, and the language item's auto margin keeps the
+  // group at the bottom whenever there is room.
   .sidebar_cont {
     zoom: 0.78;
+    padding-bottom: 8px;
+    overflow: hidden auto;
+  }
+
+  .sidebar_item--language,
+  .sidebar_item--info,
+  .sidebar_item--help,
+  .sidebar_item--settings {
+    position: static;
+    margin-left: 0;
+  }
+
+  .sidebar_item--language {
+    margin-top: auto;
+  }
+
+  // The panels those items open become fixed so the scrolling column does
+  // not clip them. preferences.less already turns the preferences panel into
+  // a bottom sheet below 768px.
+  .info_panel,
+  .preferences_panel {
+    position: fixed;
+    left: 40px;
+    bottom: 0;
+    max-height: 100dvh;
+    overflow-y: auto;
   }
 
   .top-bar-container {
@@ -262,38 +289,14 @@
   }
 }
 
-// Landscape phones and other short screens: the sidebar column is taller than
-// the viewport even at the sizes above, so it scrolls, with the items that are
-// normally pinned to the bottom placed in the flow. The panels those items
-// open become fixed so the scrolling column does not clip them.
-@media only screen and (max-width: 1023px) and (max-height: 640px) {
-  .topmost-player-home,
-  .topmost-spectator-home {
-    .main-container {
-      margin-left: 37px;
-    }
+// A phone held sideways: the sticky resource bar would take a quarter of the
+// height, so it shrinks further; it has the width to spare.
+@media only screen and (max-width: 1023px) and (max-height: 420px) {
+  .top-bar {
+    zoom: 0.6;
   }
 
-  .sidebar_cont {
-    zoom: 0.62;
-    padding-bottom: 8px;
-    overflow: hidden auto;
-  }
-
-  .sidebar_item--language,
-  .sidebar_item--info,
-  .sidebar_item--help,
-  .sidebar_item--settings {
-    position: static;
-    margin-left: 0;
-  }
-
-  .info_panel,
-  .preferences_panel {
-    position: fixed;
-    left: 40px;
-    bottom: 0;
-    max-height: 100dvh;
-    overflow-y: auto;
+  .top-bar-collapsed {
+    zoom: 1;
   }
 }
