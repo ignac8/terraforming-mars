@@ -385,6 +385,22 @@ export class AutomaGameHooks {
     return false;
   }
 
+  /**
+   * Handle the temperature ocean bonus at 0C for MarsBot, which places the ocean
+   * itself rather than being asked for a space it could never choose.
+   *
+   * Returns true if handled.
+   */
+  public handleTemperatureOceanBonus(player: IPlayer): boolean {
+    if (player !== this.marsBot.player) {
+      return false;
+    }
+    if (this.game.canAddOcean()) {
+      this.marsBot.placeOcean();
+    }
+    return true;
+  }
+
   // ---- Utility ----
 
   /** Resolve the color for a passed player ID that might be MarsBot. */

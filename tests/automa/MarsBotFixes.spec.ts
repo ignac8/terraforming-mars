@@ -15,6 +15,9 @@ import {Resource} from '../../src/common/Resource';
 import {CardType} from '../../src/common/cards/CardType';
 import {CardName} from '../../src/common/cards/CardName';
 import {SaturnSystems} from '../../src/server/cards/corporation/SaturnSystems';
+import {runAllActions} from '../TestingUtils';
+import {cast} from '../../src/common/utils/utils';
+import {SelectSpace} from '../../src/server/inputs/SelectSpace';
 
 function createAutomaGame(difficulty: 'easy' | 'normal' | 'hard' | 'brutal' = 'normal'): {game: IGame, human: TestPlayer, marsBot: MarsBot} {
   const [game, human] = testGame(1, {automaOption: true, automaDifficulty: difficulty, boardName: BoardName.THARSIS});
@@ -108,6 +111,51 @@ describe('MarsBot Fixes', () => {
       const heatProdBefore = human.production.get(Resource.HEAT);
       game.increaseTemperature(human, 1);
       expect(human.production.get(Resource.HEAT)).to.eq(heatProdBefore + 1);
+    });
+  });
+
+  describe('Temperature ocean bonus at 0C', () => {
+    it('MarsBot places the bonus ocean itself instead of being asked for a space', () => {
+      const {game, marsBot} = createAutomaGame();
+      const bot = marsBot.player;
+      (game as any).temperature = -2;
+      const oceansBefore = game.board.getOceanSpaces().length;
+
+      game.increaseTemperature(bot, 1);
+      runAllActions(game);
+
+      expect(game.getTemperature()).to.eq(0);
+      expect(game.board.getOceanSpaces()).to.have.length(oceansBefore + 1);
+      expect(bot.getWaitingFor()).is.undefined;
+    });
+
+    it('MarsBot gets nothing when all oceans are already placed', () => {
+      const {game, marsBot} = createAutomaGame();
+      const bot = marsBot.player;
+      (game as any).temperature = -2;
+      for (const space of game.board.getAvailableSpacesForOcean(bot)) {
+        if (game.canAddOcean()) {
+          game.addOcean(bot, space);
+        }
+      }
+      const mcBefore = marsBot.turnResolver.megacredits;
+
+      game.increaseTemperature(bot, 1);
+      runAllActions(game);
+
+      expect(game.getTemperature()).to.eq(0);
+      expect(marsBot.turnResolver.megacredits).to.eq(mcBefore);
+      expect(bot.getWaitingFor()).is.undefined;
+    });
+
+    it('human player is still asked where to place the ocean', () => {
+      const {game, human} = createAutomaGame();
+      (game as any).temperature = -2;
+
+      game.increaseTemperature(human, 1);
+      runAllActions(game);
+
+      cast(human.popWaitingFor(), SelectSpace);
     });
   });
 

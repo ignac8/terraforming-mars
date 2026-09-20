@@ -1395,7 +1395,9 @@ export class Game implements IGame, Logger {
 
     // BONUS FOR OCEAN TILE AT 0
     if (this.temperature < constants.TEMPERATURE_FOR_OCEAN_BONUS && this.temperature + steps * 2 >= constants.TEMPERATURE_FOR_OCEAN_BONUS) {
-      this.defer(new PlaceOceanTile(player, {title: 'Select space for ocean from temperature increase'}));
+      if (!this.automaHooks?.handleTemperatureOceanBonus(player)) {
+        this.defer(new PlaceOceanTile(player, {title: 'Select space for ocean from temperature increase'}));
+      }
     }
 
     this.temperature += steps * 2;
