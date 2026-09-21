@@ -1,0 +1,82 @@
+name: Android APK
+
+# Builds the standalone Android app (android/README.md) from the branch it
+# runs on. Run it by hand to get an APK; it also runs when the app or the
+# game changes on automa-android. A manual run publishes the APK on the
+# rolling android-latest release, so the phone can download it from a
+# stable link.
+on:
+  workflow_dispatch:
+  push:
+    branches: [automa-android]
+    paths-ignore:
+      - '**.md'
+      - 'automa/**'
+
+permissions:
+  contents: write
+
+jobs:
+  apk:
+    runs-on: ubuntu-latest
+    env:
+      # The secrets context is not available in step conditions; env is.
+      ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Cache the nodejs-mobile runtime
+        uses: actions/cache@v4
+        with:
+          path: android/.cache
+          key: nodejs-mobile-18.20.4
+
+      - name: Restore the signing key
+        # Without the secret every run signs with a fresh key, and the phone
+        # asks for an uninstall before it takes the next build.
+        if: ${{ env.ANDROID_KEYSTORE_BASE64 != '' }}
+        run: |
+          mkdir -p android/keystore
+          echo "$ANDROID_KEYSTORE_BASE64" | base64 -d > android/keystore/release.jks
+
+      - name: Build the APK
+        run: android/build-apk.sh
+        env:
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+
+      - name: Boot the bundle under Node 18, the runtime the app embeds
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+      - run: android/smoke-test.sh
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: terraforming-mars-android
+          path: android/out/terraforming-mars-*.apk
+          if-no-files-found: error
+
+      - name: Publish on the android-latest release
+        if: ${{ github.event_name == 'workflow_dispatch' }}
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: android-latest
+          name: Android app (latest)
+          body: |
+            Standalone offline build of `${{ github.ref_name }}` at ${{ github.sha }}.
+            Install `terraforming-mars.apk` on the phone; android/README.md on that branch explains the rest.
+          files: |
+            android/out/terraforming-mars.apk
+            android/out/terraforming-mars-*.apk

@@ -170,6 +170,14 @@ minute.
 
 **Server access:** SSH details kept in personal notes (not committed).
 
+## Android app (this fork)
+
+The `automa-android` branch adds `android/`: a standalone Android APK that runs
+the server, its file database, the client and a nodejs-mobile runtime inside
+one app, for playing offline. `android/build-apk.sh` builds it and
+`android/README.md` documents the layout, signing and limits. Keep `android/`
+out of `automa` and out of upstream PRs.
+
 ## Node Version
 
 `.nvmrc` specifies v24; `package.json` `engines` says `22.x` (upstream's value, kept as-is). Run `nvm use` before any `npm` command to switch to the version `.nvmrc` declares — on other versions, optional deps (`pg`, `better-sqlite3`) get skipped and the client tests break (Node 25+ has a half-working native `localStorage` that conflicts with jsdom).
