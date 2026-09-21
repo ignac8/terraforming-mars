@@ -22,7 +22,14 @@ cp -R "$PROJECT" "$WORK/nodejs-project"
 echo "node $(node --version), project $PROJECT"
 node "$WORK/nodejs-project/main.js" --port "$PORT" > "$LOG" 2>&1 &
 SERVER_PID=$!
-trap 'kill $SERVER_PID 2>/dev/null; wait $SERVER_PID 2>/dev/null; rm -rf "$WORK"' EXIT
+cleanup() {
+    # The server dies by SIGTERM, so its wait status is never zero; that must
+    # not become the script's exit code.
+    kill $SERVER_PID 2>/dev/null || true
+    wait $SERVER_PID 2>/dev/null || true
+    rm -rf "$WORK"
+}
+trap cleanup EXIT
 
 for _ in $(seq 1 120); do
     if curl -fsS -o /dev/null "$BASE/" 2>/dev/null; then
