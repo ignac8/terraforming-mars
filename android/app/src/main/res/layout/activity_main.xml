@@ -10,17 +10,17 @@
         android:layout_height="match_parent"
         android:visibility="invisible" />
 
-    <!-- Tap: the server's admin panel (games overview with join links, stats, metrics).
-         Long-press: share the diagnostics bundle. -->
+    <!-- Opens the corner menu: main menu, saved games (the admin games overview
+         with join links), admin panel, share diagnostics. -->
     <TextView
-        android:id="@+id/admin_button"
+        android:id="@+id/menu_button"
         android:layout_width="40dp"
         android:layout_height="40dp"
         android:layout_gravity="bottom|end"
         android:layout_margin="12dp"
         android:alpha="0.7"
-        android:background="@drawable/admin_button_background"
-        android:contentDescription="@string/admin_button"
+        android:background="@drawable/menu_button_background"
+        android:contentDescription="@string/menu_button"
         android:gravity="center"
         android:text="⚙"
         android:textColor="#F4E3D3"

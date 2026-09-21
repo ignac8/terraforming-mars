@@ -2,7 +2,10 @@
 <resources>
     <string name="app_name">Terraforming Mars</string>
     <string name="server_starting">Starting the game server…</string>
-    <string name="admin_button">Admin panel (saved games, stats); long-press to share diagnostics</string>
+    <string name="menu_button">Menu: main menu, saved games, admin panel, diagnostics</string>
+    <string name="menu_main">Main menu</string>
+    <string name="menu_saved_games">Saved games</string>
+    <string name="menu_admin">Admin panel</string>
     <string name="share_diagnostics">Share diagnostics (logs and saved games)</string>
     <string name="diagnostics_failed">Could not build the diagnostics bundle: %1$s</string>
     <string name="server_failed">The game server did not start (%1$s).\n\nShare the diagnostics below, or run adb logcat -s TerraformingMars.</string>

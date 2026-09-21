@@ -14,6 +14,7 @@ import android.webkit.WebResourceRequest;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
+import android.widget.PopupMenu;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -26,10 +27,11 @@ import java.net.URL;
 /**
  * A full-screen WebView on the game server that NodeRuntime runs inside this
  * process. The last page is remembered so that reopening the app lands back
- * in the game that was being played. The round corner button opens the
- * server's admin panel (its games overview lists every saved game with join
- * links); a long-press on it shares the diagnostics bundle, as does the
- * button on the screen shown when the server fails to start.
+ * in the game that was being played. A game page has no links out of it,
+ * so the round corner button opens a menu: the main menu, the saved games
+ * (the admin games overview, one join link per seat), the admin panel and
+ * the diagnostics bundle, which the screen shown when the server fails to
+ * start also offers.
  */
 public class MainActivity extends Activity {
   private static final String PREFERENCES = "terraforming-mars";
@@ -37,6 +39,7 @@ public class MainActivity extends Activity {
   /** The server id main.js gives the embedded server; the admin routes ask for it. */
   private static final String SERVER_ID = "offline";
   private static final String ADMIN_PATH = "/admin?serverId=" + SERVER_ID;
+  private static final String SAVED_GAMES_PATH = "/games-overview?serverId=" + SERVER_ID;
   private static final long SERVER_TIMEOUT_MS = 90_000;
 
   /** The port the server listens on, chosen once per process. */
@@ -45,7 +48,7 @@ public class MainActivity extends Activity {
   private WebView webView;
   private View loading;
   private TextView status;
-  private View adminButton;
+  private View menuButton;
   private View shareButton;
 
   @Override
@@ -59,13 +62,9 @@ public class MainActivity extends Activity {
     webView = findViewById(R.id.webview);
     loading = findViewById(R.id.loading);
     status = findViewById(R.id.status);
-    adminButton = findViewById(R.id.admin_button);
+    menuButton = findViewById(R.id.menu_button);
     shareButton = findViewById(R.id.share_button);
-    adminButton.setOnClickListener((view) -> webView.loadUrl(serverUrl(ADMIN_PATH)));
-    adminButton.setOnLongClickListener((view) -> {
-      shareDiagnostics();
-      return true;
-    });
+    menuButton.setOnClickListener(this::showMenu);
     shareButton.setOnClickListener((view) -> shareDiagnostics());
     configure(webView);
 
@@ -124,6 +123,27 @@ public class MainActivity extends Activity {
     });
   }
 
+  private void showMenu(View anchor) {
+    PopupMenu menu = new PopupMenu(this, anchor);
+    menu.getMenuInflater().inflate(R.menu.corner_menu, menu.getMenu());
+    menu.setOnMenuItemClickListener((item) -> {
+      int id = item.getItemId();
+      if (id == R.id.menu_main) {
+        webView.loadUrl(serverUrl("/"));
+      } else if (id == R.id.menu_saved_games) {
+        webView.loadUrl(serverUrl(SAVED_GAMES_PATH));
+      } else if (id == R.id.menu_admin) {
+        webView.loadUrl(serverUrl(ADMIN_PATH));
+      } else if (id == R.id.menu_diagnostics) {
+        shareDiagnostics();
+      } else {
+        return false;
+      }
+      return true;
+    });
+    menu.show();
+  }
+
   private static boolean isLocalServer(Uri uri) {
     return "http".equals(uri.getScheme()) && "127.0.0.1".equals(uri.getHost()) && uri.getPort() == port;
   }
@@ -150,7 +170,7 @@ public class MainActivity extends Activity {
     runOnUiThread(() -> {
       loading.setVisibility(View.GONE);
       webView.setVisibility(View.VISIBLE);
-      adminButton.setVisibility(View.VISIBLE);
+      menuButton.setVisibility(View.VISIBLE);
       webView.loadUrl(serverUrl(path));
     });
   }

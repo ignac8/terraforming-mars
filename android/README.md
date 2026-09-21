@@ -24,10 +24,11 @@ APK
   thread and shows a full-screen `WebView` on `http://127.0.0.1:<port>/` once
   the server answers. The last page is remembered, so reopening the app lands
   back in the game. Back navigates the WebView; links off the server open in
-  the system browser. The round button in the bottom-right corner opens the
-  server's admin panel (`/admin?serverId=offline`): its games overview lists
-  every saved game with a join link per seat, and the stats and metrics
-  links help with debugging.
+  the system browser. A game page has no links out of it, so the round
+  button in the bottom-right corner opens a menu: the main menu (`/`), the
+  saved games (`/games-overview?serverId=offline`, one join link per seat),
+  the admin panel (`/admin?serverId=offline`, with the stats and metrics
+  pages for debugging) and the diagnostics bundle.
 - The server runs the code of the game checkout, configured through the
   environment the launcher sets: `HOST=127.0.0.1`, `LOCAL_FS_DB` (the
   JSON-files database), `NODE_ENV=production`, `SERVER_ID=offline` (fixed,
@@ -103,8 +104,8 @@ needs an uninstall before it takes the next one (saved games go with it).
 2. Start the app; the first launch takes a few seconds longer while it
    unpacks the project. Create a game as usual (solo only: one seat, with or
    without MarsBot).
-3. To get back into a game, tap the round button in the corner: the admin
-   panel's games overview lists every saved game with its join links.
+3. The round button in the corner is the way out of a game page: "Main
+   menu" for the start screen, "Saved games" to get back into a game.
 4. The client is laid out for a 1260px desktop viewport and is scaled to the
    screen; pinch to zoom. A tablet, or a phone in landscape, is the
    comfortable size.
@@ -115,9 +116,10 @@ survive app updates; uninstalling the app deletes them.
 
 ## Getting logs
 
-Long-press the round corner button (or tap "Share diagnostics" on the
-screen shown when the server fails to start) and pick where to send the
-zip: mail, Drive, a chat. It holds everything needed to troubleshoot:
+Tap the round corner button and choose "Share diagnostics" (the screen
+shown when the server fails to start has the same button), then pick where
+to send the zip: mail, Drive, a chat. It holds everything needed to
+troubleshoot:
 
 - `logs/server.log` (and `.1`): the game server's own output, which
   `main.js` keeps on disk next to the database, rotated at 2 MB.
