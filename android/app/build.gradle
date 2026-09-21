@@ -68,3 +68,8 @@ android {
         buildConfig true
     }
 }
+
+dependencies {
+    // FileProvider, for sharing the diagnostics zip.
+    implementation 'androidx.core:core:1.13.1'
+}

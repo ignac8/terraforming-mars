@@ -59,6 +59,36 @@ process.env.LOCAL_FS_DB = '1';
 // /admin?serverId=offline. The server only listens on this phone's loopback.
 process.env.SERVER_ID = 'offline';
 
+// Keep a copy of the server's output on disk, next to the database, so the
+// app can share it for troubleshooting without adb. Rotates at 2 MB; the app
+// preserves ./logs across updates like ./db.
+const logDir = path.join(__dirname, 'logs');
+fs.mkdirSync(logDir, {recursive: true});
+const logFile = path.join(logDir, 'server.log');
+const LOG_LIMIT = 2 * 1024 * 1024;
+let logSize = fs.existsSync(logFile) ? fs.statSync(logFile).size : 0;
+function appendToLog(chunk) {
+  try {
+    const text = typeof chunk === 'string' ? chunk : chunk.toString();
+    if (logSize + text.length > LOG_LIMIT) {
+      fs.renameSync(logFile, logFile + '.1');
+      logSize = 0;
+    }
+    fs.appendFileSync(logFile, text);
+    logSize += text.length;
+  } catch (e) {
+    // Logging must never take the server down.
+  }
+}
+for (const stream of [process.stdout, process.stderr]) {
+  const write = stream.write.bind(stream);
+  stream.write = (chunk, encoding, callback) => {
+    appendToLog(chunk);
+    return write(chunk, encoding, callback);
+  };
+}
+appendToLog(`\n===== ${new Date().toISOString()} start =====\n`);
+
 console.log(`Terraforming Mars offline: node ${process.version}, port ${process.env.PORT}, cwd ${process.cwd()}`);
 
 require('./server.js');

@@ -111,8 +111,25 @@ needs an uninstall before it takes the next one (saved games go with it).
 
 Saved games live in the app's private storage
 (`/data/data/it.zerko.terraformingmars/files/nodejs-project/db/files/`) and
-survive app updates; uninstalling the app deletes them. The server's log is
-in logcat: `adb logcat -s TerraformingMars`.
+survive app updates; uninstalling the app deletes them.
+
+## Getting logs
+
+Long-press the round corner button (or tap "Share diagnostics" on the
+screen shown when the server fails to start) and pick where to send the
+zip: mail, Drive, a chat. It holds everything needed to troubleshoot:
+
+- `logs/server.log` (and `.1`): the game server's own output, which
+  `main.js` keeps on disk next to the database, rotated at 2 MB.
+- `logs/app.log`: the Android side (project install, server start, WebView
+  console messages such as client-side JavaScript errors).
+- `logcat.txt`: this process's logcat lines, including native crash
+  information when the runtime itself died.
+- `info.txt`: app version, Android version, device, ABIs, memory page size.
+- `games/*.json`: the saved games, so a state can be reproduced.
+
+Both log folders survive app updates. With a computer, `adb logcat -s
+TerraformingMars` shows the same output live.
 
 ## Known limits
 

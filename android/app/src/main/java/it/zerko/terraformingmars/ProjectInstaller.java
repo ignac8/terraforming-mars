@@ -1,7 +1,6 @@
 package it.zerko.terraformingmars;
 
 import android.content.Context;
-import android.util.Log;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -20,31 +19,36 @@ import java.util.zip.ZipInputStream;
  * The project ships as one zip asset because the Android asset merger
  * strips ".gz" from asset names, which would make the client's plain and
  * gzipped files collide. The copy is refreshed whenever the installed app
- * version changes; the db/ folder inside the project, where the server
- * keeps saved games, survives the refresh.
+ * version changes; db/ (saved games) and logs/ (server and app logs)
+ * inside the project survive the refresh.
  */
 final class ProjectInstaller {
-  private static final String TAG = "TerraformingMars";
   private static final String PROJECT_ASSET = "nodejs-project.zip";
   private static final String PROJECT_FOLDER = "nodejs-project";
   private static final String DATABASE_FOLDER = "db";
+  private static final String LOGS_FOLDER = "logs";
   private static final String STAMP_FILE = ".installed-version";
 
   private ProjectInstaller() {
   }
 
+  /** Where the project lives once installed; the server runs with this as its working directory. */
+  static File projectDir(Context context) {
+    return new File(context.getFilesDir(), PROJECT_FOLDER);
+  }
+
   /** Makes sure the project on disk matches the one packaged in this build, and returns its folder. */
   static File install(Context context) throws IOException {
-    File target = new File(context.getFilesDir(), PROJECT_FOLDER);
+    File target = projectDir(context);
     String stamp = BuildConfig.VERSION_CODE + " " + BuildConfig.VERSION_NAME;
     File stampFile = new File(target, STAMP_FILE);
     if (stampFile.isFile() && stamp.equals(new String(Files.readAllBytes(stampFile.toPath()), StandardCharsets.UTF_8))) {
       return target;
     }
-    Log.i(TAG, "Installing nodejs-project " + stamp + " into " + target);
+    AppLog.i("Installing nodejs-project " + stamp + " into " + target);
     if (target.isDirectory()) {
       for (File child : listOrEmpty(target)) {
-        if (!child.getName().equals(DATABASE_FOLDER)) {
+        if (!child.getName().equals(DATABASE_FOLDER) && !child.getName().equals(LOGS_FOLDER)) {
           deleteRecursively(child);
         }
       }

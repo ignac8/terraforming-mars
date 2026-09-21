@@ -10,7 +10,8 @@
         android:layout_height="match_parent"
         android:visibility="invisible" />
 
-    <!-- Opens the server's admin panel: games overview with join links, stats, metrics. -->
+    <!-- Tap: the server's admin panel (games overview with join links, stats, metrics).
+         Long-press: share the diagnostics bundle. -->
     <TextView
         android:id="@+id/admin_button"
         android:layout_width="40dp"
@@ -47,6 +48,14 @@
             android:text="@string/server_starting"
             android:textColor="#e8e0d4"
             android:textSize="16sp" />
+
+        <Button
+            android:id="@+id/share_button"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="24dp"
+            android:text="@string/share_diagnostics"
+            android:visibility="gone" />
     </LinearLayout>
 
 </FrameLayout>
