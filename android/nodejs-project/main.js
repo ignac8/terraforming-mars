@@ -55,6 +55,9 @@ process.env.NODE_ENV = 'production';
 process.env.HOST = '127.0.0.1';
 process.env.PORT = argument('--port', '8384');
 process.env.LOCAL_FS_DB = '1';
+// A fixed id so the app can open the admin panel (games overview, stats) at
+// /admin?serverId=offline. The server only listens on this phone's loopback.
+process.env.SERVER_ID = 'offline';
 
 console.log(`Terraforming Mars offline: node ${process.version}, port ${process.env.PORT}, cwd ${process.cwd()}`);
 

@@ -83,6 +83,15 @@ node -e '
 [ -f "$WORK/nodejs-project/db/files/$GAME_ID.json" ] || die "the game was not saved to db/files"
 echo "saved: db/files/$GAME_ID.json ($(wc -c < "$WORK/nodejs-project/db/files/$GAME_ID.json") bytes)"
 
+# The app's admin button relies on the fixed server id main.js sets.
+curl -fsS -o /dev/null "$BASE/admin?serverId=offline" || die "GET /admin?serverId=offline failed"
+GAMES=$(curl -fsS "$BASE/api/games?serverId=offline") || die "GET /api/games?serverId=offline failed"
+node -e '
+  const games = JSON.parse(process.argv[1]);
+  if (!games.some((game) => game.gameId === process.argv[2])) throw new Error("games overview lacks " + process.argv[2] + ": " + process.argv[1]);
+  console.log("admin panel lists the game (" + games.length + " game(s))");
+' "$GAMES" "$GAME_ID"
+
 # Play the first move: pick the first corporation and no project cards.
 CORPORATION=$(node -e 'console.log(JSON.parse(process.argv[1]).dealtCorporationCards[0].name)' "$PLAYER")
 INPUT=$(node -e 'console.log(JSON.stringify({type: "initialCards", responses: [

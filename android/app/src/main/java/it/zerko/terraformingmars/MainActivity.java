@@ -23,12 +23,17 @@ import java.net.URL;
 /**
  * A full-screen WebView on the game server that NodeRuntime runs inside this
  * process. The last page is remembered so that reopening the app lands back
- * in the game that was being played.
+ * in the game that was being played, and a floating button opens the
+ * server's admin panel, whose games overview lists every saved game with its
+ * join links.
  */
 public class MainActivity extends Activity {
   private static final String TAG = "TerraformingMars";
   private static final String PREFERENCES = "terraforming-mars";
   private static final String LAST_PATH = "lastPath";
+  /** The server id main.js gives the embedded server; the admin routes ask for it. */
+  private static final String SERVER_ID = "offline";
+  private static final String ADMIN_PATH = "/admin?serverId=" + SERVER_ID;
   private static final long SERVER_TIMEOUT_MS = 90_000;
 
   /** The port the server listens on, chosen once per process. */
@@ -37,6 +42,7 @@ public class MainActivity extends Activity {
   private WebView webView;
   private View loading;
   private TextView status;
+  private View adminButton;
 
   @Override
   protected void onCreate(Bundle savedInstanceState) {
@@ -47,6 +53,8 @@ public class MainActivity extends Activity {
     webView = findViewById(R.id.webview);
     loading = findViewById(R.id.loading);
     status = findViewById(R.id.status);
+    adminButton = findViewById(R.id.admin_button);
+    adminButton.setOnClickListener((view) -> webView.loadUrl(serverUrl(ADMIN_PATH)));
     configure(webView);
 
     new Thread(this::startServerAndOpen, "server-boot").start();
@@ -56,6 +64,8 @@ public class MainActivity extends Activity {
     WebSettings settings = view.getSettings();
     settings.setJavaScriptEnabled(true);
     settings.setDomStorageEnabled(true);
+    // The client reads this to offer solo games only.
+    settings.setUserAgentString(settings.getUserAgentString() + " TerraformingMarsAndroid/" + BuildConfig.VERSION_NAME);
     // The game lays itself out for a 1260px-wide desktop viewport; scale it
     // to the screen and let the player pinch-zoom, as a phone browser would.
     settings.setUseWideViewPort(true);
@@ -112,6 +122,7 @@ public class MainActivity extends Activity {
     runOnUiThread(() -> {
       loading.setVisibility(View.GONE);
       webView.setVisibility(View.VISIBLE);
+      adminButton.setVisibility(View.VISIBLE);
       webView.loadUrl(serverUrl(path));
     });
   }

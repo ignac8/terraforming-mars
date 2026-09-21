@@ -12,7 +12,7 @@
                     <div class="create-game-page-container">
                         <div class="create-game-page-column">
                             <h4 v-i18n>№ of Players</h4>
-                            <div v-for="pCount in [1,2,3,4,5,6]" :key="pCount">
+                            <div v-for="pCount in playerCountOptions" :key="pCount">
                               <input type="radio" :value="pCount" name="playersCount" v-model="playersCount" :id="pCount+'-radio'">
                               <label :for="pCount+'-radio'">
                                   {{ getPlayersCountText(pCount) }}
@@ -723,6 +723,10 @@ export default defineComponent({
       }
     },
     playersCount(value: number) {
+      if (!this.playerCountOptions.includes(value)) {
+        this.playersCount = 1;
+        return;
+      }
       if (value === 1) {
         this.expansions.corpera = true;
         this.automaOption = true;
@@ -783,6 +787,11 @@ export default defineComponent({
       ?.setAttribute('content', this.previousViewport);
   },
   computed: {
+    // The Android app (android/ on the automa-android branch) names itself in
+    // the user agent and plays solo games only.
+    playerCountOptions(): Array<number> {
+      return navigator.userAgent.includes('TerraformingMarsAndroid') ? [1] : [1, 2, 3, 4, 5, 6];
+    },
     wikiUrls(): typeof RULEBOOK_URLS & typeof WIKI_URLS {
       return {...RULEBOOK_URLS, ...WIKI_URLS};
     },

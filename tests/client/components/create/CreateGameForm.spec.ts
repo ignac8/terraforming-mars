@@ -164,6 +164,23 @@ describe('CreateGameForm', () => {
     expect((wrapper.vm as any).solarPhaseOption).eq(true);
   });
 
+  it('offers solo games only inside the Android app', async () => {
+    // The app (android/ on the automa-android branch) identifies itself in the user agent.
+    const userAgent = Object.getOwnPropertyDescriptor(Navigator.prototype, 'userAgent');
+    Object.defineProperty(navigator, 'userAgent', {value: 'Mozilla/5.0 (Linux; Android 14) TerraformingMarsAndroid/1', configurable: true});
+    try {
+      new CreateGameSettingsStorage(localStorage).saveSettings(createNewGameConfig());
+
+      const wrapper = shallowMount(CreateGameForm, {...globalConfig});
+      await wrapper.vm.$nextTick();
+
+      expect(wrapper.findAll('input[name="playersCount"]')).has.length(1);
+      expect((wrapper.vm as any).playersCount).eq(1);
+    } finally {
+      Object.defineProperty(navigator, 'userAgent', userAgent!);
+    }
+  });
+
   it('shows warnings when restoring saved settings', async () => {
     const alerts: Array<{title: string, message: string}> = [];
     const Root = defineComponent({
