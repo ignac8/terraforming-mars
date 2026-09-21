@@ -5,16 +5,19 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.net.Uri;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.KeyEvent;
 import android.view.View;
 import android.view.WindowManager;
+import android.webkit.ConsoleMessage;
+import android.webkit.WebChromeClient;
 import android.webkit.WebResourceRequest;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.widget.TextView;
+import android.widget.Toast;
 
+import java.io.File;
 import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.ServerSocket;
@@ -23,12 +26,12 @@ import java.net.URL;
 /**
  * A full-screen WebView on the game server that NodeRuntime runs inside this
  * process. The last page is remembered so that reopening the app lands back
- * in the game that was being played, and a floating button opens the
- * server's admin panel, whose games overview lists every saved game with its
- * join links.
+ * in the game that was being played. The round corner button opens the
+ * server's admin panel (its games overview lists every saved game with join
+ * links); a long-press on it shares the diagnostics bundle, as does the
+ * button on the screen shown when the server fails to start.
  */
 public class MainActivity extends Activity {
-  private static final String TAG = "TerraformingMars";
   private static final String PREFERENCES = "terraforming-mars";
   private static final String LAST_PATH = "lastPath";
   /** The server id main.js gives the embedded server; the admin routes ask for it. */
@@ -43,18 +46,27 @@ public class MainActivity extends Activity {
   private View loading;
   private TextView status;
   private View adminButton;
+  private View shareButton;
 
   @Override
   protected void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
     setContentView(R.layout.activity_main);
     getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+    AppLog.init(new File(ProjectInstaller.projectDir(this), "logs"));
+    AppLog.i("Activity created, app " + BuildConfig.VERSION_NAME);
 
     webView = findViewById(R.id.webview);
     loading = findViewById(R.id.loading);
     status = findViewById(R.id.status);
     adminButton = findViewById(R.id.admin_button);
+    shareButton = findViewById(R.id.share_button);
     adminButton.setOnClickListener((view) -> webView.loadUrl(serverUrl(ADMIN_PATH)));
+    adminButton.setOnLongClickListener((view) -> {
+      shareDiagnostics();
+      return true;
+    });
+    shareButton.setOnClickListener((view) -> shareDiagnostics());
     configure(webView);
 
     new Thread(this::startServerAndOpen, "server-boot").start();
@@ -82,7 +94,7 @@ public class MainActivity extends Activity {
         try {
           startActivity(new Intent(Intent.ACTION_VIEW, uri));
         } catch (RuntimeException e) {
-          Log.w(TAG, "No app can open " + uri, e);
+          AppLog.e("No app can open " + uri, e);
         }
         return true;
       }
@@ -94,6 +106,20 @@ public class MainActivity extends Activity {
           String path = uri.getPath() + (uri.getQuery() == null ? "" : "?" + uri.getQuery());
           preferences().edit().putString(LAST_PATH, path).apply();
         }
+      }
+    });
+    // The client's console (JavaScript errors included) goes to the app log.
+    view.setWebChromeClient(new WebChromeClient() {
+      @Override
+      public boolean onConsoleMessage(ConsoleMessage message) {
+        String line = "web " + message.messageLevel() + " " + message.message()
+            + " (" + message.sourceId() + ":" + message.lineNumber() + ")";
+        if (message.messageLevel() == ConsoleMessage.MessageLevel.ERROR) {
+          AppLog.e(line, null);
+        } else {
+          AppLog.i(line);
+        }
+        return true;
       }
     });
   }
@@ -111,9 +137,13 @@ public class MainActivity extends Activity {
       }
       NodeRuntime.start(ProjectInstaller.install(this), port, getCacheDir());
       waitForServer();
+      AppLog.i("Server answering on port " + port);
     } catch (IOException | InterruptedException e) {
-      Log.e(TAG, "The game server did not start", e);
-      runOnUiThread(() -> status.setText(getString(R.string.server_failed, e.getMessage())));
+      AppLog.e("The game server did not start", e);
+      runOnUiThread(() -> {
+        status.setText(getString(R.string.server_failed, e.getMessage()));
+        shareButton.setVisibility(View.VISIBLE);
+      });
       return;
     }
     String path = preferences().getString(LAST_PATH, "/");
@@ -123,6 +153,20 @@ public class MainActivity extends Activity {
       adminButton.setVisibility(View.VISIBLE);
       webView.loadUrl(serverUrl(path));
     });
+  }
+
+  /** Builds the diagnostics zip off the UI thread, then opens the share sheet for it. */
+  private void shareDiagnostics() {
+    new Thread(() -> {
+      try {
+        File zip = Diagnostics.create(this);
+        AppLog.i("Diagnostics bundle " + zip.getName() + ", " + zip.length() + " bytes");
+        runOnUiThread(() -> startActivity(Diagnostics.shareIntent(this, zip)));
+      } catch (IOException | RuntimeException e) {
+        AppLog.e("Cannot build the diagnostics bundle", e);
+        runOnUiThread(() -> Toast.makeText(this, getString(R.string.diagnostics_failed, e.getMessage()), Toast.LENGTH_LONG).show());
+      }
+    }, "diagnostics").start();
   }
 
   private static int pickFreePort() throws IOException {

@@ -130,4 +130,7 @@ node -e '
 if grep -qiE "uncaught exception|TypeError|ReferenceError" "$LOG"; then
     die "the server log has errors"
 fi
+# main.js keeps the server's output in logs/server.log for the diagnostics bundle.
+grep -q "Server is ready" "$WORK/nodejs-project/logs/server.log" || die "logs/server.log lacks the server's own output"
+echo "logs/server.log: $(wc -l < "$WORK/nodejs-project/logs/server.log") lines"
 echo "smoke test passed"

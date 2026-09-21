@@ -1,7 +1,5 @@
 package it.zerko.terraformingmars;
 
-import android.util.Log;
-
 import java.io.File;
 
 /**
@@ -12,8 +10,6 @@ import java.io.File;
  * later Activities (after a configuration change) only reconnect to it.
  */
 final class NodeRuntime {
-  private static final String TAG = "TerraformingMars";
-
   static {
     System.loadLibrary("node");
     System.loadLibrary("native-lib");
@@ -44,7 +40,7 @@ final class NodeRuntime {
     };
     Thread thread = new Thread(() -> {
       int code = startNode(argv, env);
-      Log.e(TAG, "Node exited with code " + code);
+      AppLog.e("Node exited with code " + code, null);
     }, "node-main");
     thread.start();
   }
