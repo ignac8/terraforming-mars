@@ -10,6 +10,22 @@
         android:layout_height="match_parent"
         android:visibility="invisible" />
 
+    <!-- Opens the server's admin panel: games overview with join links, stats, metrics. -->
+    <TextView
+        android:id="@+id/admin_button"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:layout_gravity="bottom|end"
+        android:layout_margin="12dp"
+        android:alpha="0.7"
+        android:background="@drawable/admin_button_background"
+        android:contentDescription="@string/admin_button"
+        android:gravity="center"
+        android:text="⚙"
+        android:textColor="#F4E3D3"
+        android:textSize="22sp"
+        android:visibility="gone" />
+
     <LinearLayout
         android:id="@+id/loading"
         android:layout_width="match_parent"

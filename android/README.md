@@ -2,8 +2,8 @@
 
 A standalone Android APK of Terraforming Mars: the game server, its database,
 the web client and a Node.js runtime, all inside one app. Nothing talks to
-the network, so it plays on a plane. Games are single-device: every seat in a
-game is played from this phone (or the game is set up solo / against MarsBot).
+the network, so it plays on a plane. Games are solo only: one seat on this
+phone, with or without MarsBot.
 
 ## How it works
 
@@ -24,11 +24,18 @@ APK
   thread and shows a full-screen `WebView` on `http://127.0.0.1:<port>/` once
   the server answers. The last page is remembered, so reopening the app lands
   back in the game. Back navigates the WebView; links off the server open in
-  the system browser.
-- The server runs exactly the code of the game checkout, configured through
-  the environment the launcher sets: `HOST=127.0.0.1`, `LOCAL_FS_DB` (the
-  JSON-files database), `NODE_ENV=production`. No game-repo changes are
-  needed for the app.
+  the system browser. The round button in the bottom-right corner opens the
+  server's admin panel (`/admin?serverId=offline`): its games overview lists
+  every saved game with a join link per seat, and the stats and metrics
+  links help with debugging.
+- The server runs the code of the game checkout, configured through the
+  environment the launcher sets: `HOST=127.0.0.1`, `LOCAL_FS_DB` (the
+  JSON-files database), `NODE_ENV=production`, `SERVER_ID=offline` (fixed,
+  so the admin button works; the server only listens on the phone's own
+  loopback). The one game-code change on this branch is in
+  `CreateGameForm.vue`: when the user agent carries the app's
+  `TerraformingMarsAndroid/<version>` suffix, the form offers solo games
+  only.
 - nodejs-mobile only ships Node 18, so `main.js` polyfills the ES2023
   array methods (`toSorted` and friends) the server uses, and `build-apk.sh`
   bundles the server with esbuild because Node 18 cannot `require()` the
@@ -61,9 +68,9 @@ Gradle, the Android Gradle plugin and the nodejs-mobile zip (57 MB, cached
 in `android/.cache/`).
 
 `android/smoke-test.sh` boots the assembled project (`android/build/nodejs-project`)
-with the `node` on PATH, fetches the client bundle, creates a game, plays
-its first move, restarts the server and finds the game again behind the
-same player id. Run it under Node 18 (`nvm use 18`) to exercise the runtime
+with the `node` on PATH, fetches the client bundle, creates a game, checks
+that the admin panel lists it, plays its first move, restarts the server and
+finds the game again behind the same player id. Run it under Node 18 (`nvm use 18`) to exercise the runtime
 major the app embeds; CI does the same after every build.
 
 ### GitHub Actions
@@ -93,8 +100,11 @@ needs an uninstall before it takes the next one (saved games go with it).
 1. Copy the APK to the phone (or open the release link in its browser) and
    open it; allow installs from that source when Android asks.
 2. Start the app; the first launch takes a few seconds longer while it
-   unpacks the project. Create a game as usual.
-3. The client is laid out for a 1260px desktop viewport and is scaled to the
+   unpacks the project. Create a game as usual (solo only: one seat, with or
+   without MarsBot).
+3. To get back into a game, tap the round button in the corner: the admin
+   panel's games overview lists every saved game with its join links.
+4. The client is laid out for a 1260px desktop viewport and is scaled to the
    screen; pinch to zoom. A tablet, or a phone in landscape, is the
    comfortable size.
 
