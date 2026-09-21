@@ -787,10 +787,10 @@ export default defineComponent({
       ?.setAttribute('content', this.previousViewport);
   },
   computed: {
-    // The Android app (android/ on the automa-android branch) names itself in
-    // the user agent and plays solo games only.
+    // TM_SOLO_ONLY is a build-time switch (webpack.config.js), off by default;
+    // the Android app's build turns it on and offers solo games only.
     playerCountOptions(): Array<number> {
-      return navigator.userAgent.includes('TerraformingMarsAndroid') ? [1] : [1, 2, 3, 4, 5, 6];
+      return process.env.TM_SOLO_ONLY === '1' ? [1] : [1, 2, 3, 4, 5, 6];
     },
     wikiUrls(): typeof RULEBOOK_URLS & typeof WIKI_URLS {
       return {...RULEBOOK_URLS, ...WIKI_URLS};
