@@ -7,7 +7,7 @@
 #
 # Usage: android/build-apk.sh
 #   MAIN_CHECKOUT          game checkout to build (default: this repo)
-#   SKIP_GAME_BUILD=1      reuse the checkout's existing build/ instead of npm ci + npm run build
+#   SKIP_GAME_BUILD=1      reuse the checkout's node_modules and server build (the client is always rebuilt)
 #   ANDROID_ABIS           comma-separated ABIs (default: arm64-v8a; add x86_64 for an emulator)
 #   ANDROID_KEYSTORE       signing keystore (default: android/keystore/release.jks, generated when missing)
 #   ANDROID_KEYSTORE_PASSWORD, ANDROID_KEY_ALIAS, ANDROID_KEY_PASSWORD
@@ -50,8 +50,12 @@ ensure_sdk_package "cmake;$CMAKE_VERSION" "cmake/$CMAKE_VERSION"
 [ -d "$MAIN_CHECKOUT" ] || die "no game checkout at $MAIN_CHECKOUT (set MAIN_CHECKOUT)"
 if [ -z "${SKIP_GAME_BUILD:-}" ]; then
     log "Building the game in $MAIN_CHECKOUT"
-    (cd "$MAIN_CHECKOUT" && npm ci --no-audit --no-fund && npm run build)
+    (cd "$MAIN_CHECKOUT" && npm ci --no-audit --no-fund && npm run make:static && npm run build:server)
 fi
+# The client is always built here: TM_SOLO_ONLY is a build-time switch
+# (webpack.config.js) that is off in a normal build and on in the app.
+log "Building the client with TM_SOLO_ONLY=1"
+(cd "$MAIN_CHECKOUT" && TM_SOLO_ONLY=1 npm run build:client)
 for f in build/src/server/server.js build/main.js.br build/vendors.js.br build/styles.css.br assets/index.html; do
     [ -f "$MAIN_CHECKOUT/$f" ] || die "$MAIN_CHECKOUT/$f is missing; run npm run build there"
 done

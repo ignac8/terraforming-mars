@@ -64,8 +64,6 @@ public class MainActivity extends Activity {
     WebSettings settings = view.getSettings();
     settings.setJavaScriptEnabled(true);
     settings.setDomStorageEnabled(true);
-    // The client reads this to offer solo games only.
-    settings.setUserAgentString(settings.getUserAgentString() + " TerraformingMarsAndroid/" + BuildConfig.VERSION_NAME);
     // The game lays itself out for a 1260px-wide desktop viewport; scale it
     // to the screen and let the player pinch-zoom, as a phone browser would.
     settings.setUseWideViewPort(true);

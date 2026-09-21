@@ -32,10 +32,11 @@ APK
   environment the launcher sets: `HOST=127.0.0.1`, `LOCAL_FS_DB` (the
   JSON-files database), `NODE_ENV=production`, `SERVER_ID=offline` (fixed,
   so the admin button works; the server only listens on the phone's own
-  loopback). The one game-code change on this branch is in
-  `CreateGameForm.vue`: when the user agent carries the app's
-  `TerraformingMarsAndroid/<version>` suffix, the form offers solo games
-  only.
+  loopback). The one game-code change on this branch is a build-time
+  switch: `webpack.config.js` defines `process.env.TM_SOLO_ONLY`, off by
+  default, and `CreateGameForm.vue` offers one seat when it is `1`.
+  `build-apk.sh` always rebuilds the client with it on, so a normal `npm run
+  build` of this branch behaves like `automa`.
 - nodejs-mobile only ships Node 18, so `main.js` polyfills the ES2023
   array methods (`toSorted` and friends) the server uses, and `build-apk.sh`
   bundles the server with esbuild because Node 18 cannot `require()` the
@@ -58,7 +59,7 @@ Prerequisites:
 ```bash
 export ANDROID_HOME=~/android-sdk
 android/build-apk.sh                  # npm ci + npm run build in the checkout, then the APK
-SKIP_GAME_BUILD=1 android/build-apk.sh   # reuse the checkout's existing build/
+SKIP_GAME_BUILD=1 android/build-apk.sh   # reuse node_modules and the server build; the client is rebuilt
 ANDROID_ABIS=arm64-v8a,x86_64 android/build-apk.sh   # add an emulator ABI (about 65 MB more)
 ```
 

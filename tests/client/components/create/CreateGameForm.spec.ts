@@ -164,10 +164,9 @@ describe('CreateGameForm', () => {
     expect((wrapper.vm as any).solarPhaseOption).eq(true);
   });
 
-  it('offers solo games only inside the Android app', async () => {
-    // The app (android/ on the automa-android branch) identifies itself in the user agent.
-    const userAgent = Object.getOwnPropertyDescriptor(Navigator.prototype, 'userAgent');
-    Object.defineProperty(navigator, 'userAgent', {value: 'Mozilla/5.0 (Linux; Android 14) TerraformingMarsAndroid/1', configurable: true});
+  it('offers solo games only when built with TM_SOLO_ONLY (the Android app)', async () => {
+    const soloOnly = process.env.TM_SOLO_ONLY;
+    process.env.TM_SOLO_ONLY = '1';
     try {
       new CreateGameSettingsStorage(localStorage).saveSettings(createNewGameConfig());
 
@@ -177,7 +176,11 @@ describe('CreateGameForm', () => {
       expect(wrapper.findAll('input[name="playersCount"]')).has.length(1);
       expect((wrapper.vm as any).playersCount).eq(1);
     } finally {
-      Object.defineProperty(navigator, 'userAgent', userAgent!);
+      if (soloOnly === undefined) {
+        delete process.env.TM_SOLO_ONLY;
+      } else {
+        process.env.TM_SOLO_ONLY = soloOnly;
+      }
     }
   });
 
