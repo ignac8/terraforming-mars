@@ -47,8 +47,14 @@ export type IMarsBotCorp = {
 };
 
 export type MarsBotCorpEffect = {
-  /** The bot's track marker reached one of this corp's cubes. */
-  onTrackCubeTrigger?(bot: IMarsBot, trackIndex: number, position: number, cubeType: CubeType): void;
+  /**
+   * The bot's track marker reached one of this corp's cubes.
+   *
+   * Cube effects come on top of the icon printed on that space unless the corp's card says
+   * otherwise: return true when the cube's effect replaces the icon (Helion's white cubes draw
+   * a card instead of the temperature step under them), and the icon is then left unresolved.
+   */
+  onTrackCubeTrigger?(bot: IMarsBot, trackIndex: number, position: number, cubeType: CubeType): boolean | void;
   /** The bot drew and resolved a project card. */
   onProjectCardResolved?(bot: IMarsBot, card: IProjectCard): void;
   /** The human player played a card. */
