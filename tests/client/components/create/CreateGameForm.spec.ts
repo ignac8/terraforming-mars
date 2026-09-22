@@ -164,22 +164,40 @@ describe('CreateGameForm', () => {
     expect((wrapper.vm as any).solarPhaseOption).eq(true);
   });
 
-  it('offers solo games only when built with TM_SOLO_ONLY (the Android app)', async () => {
-    const soloOnly = process.env.TM_SOLO_ONLY;
-    process.env.TM_SOLO_ONLY = '1';
+  it('offers MarsBot games only when built with TM_MARSBOT_ONLY (the Android app)', async () => {
+    const marsBotOnly = process.env.TM_MARSBOT_ONLY;
+    process.env.TM_MARSBOT_ONLY = '1';
     try {
-      new CreateGameSettingsStorage(localStorage).saveSettings(createNewGameConfig());
+      // Two players, MarsBot off: the saved settings must not win over the switch.
+      new CreateGameSettingsStorage(localStorage).saveSettings(createNewGameConfig({automaOption: false}));
 
       const wrapper = shallowMount(CreateGameForm, {...globalConfig});
       await wrapper.vm.$nextTick();
+      const vm = wrapper.vm as any;
 
-      expect(wrapper.findAll('input[name="playersCount"]')).has.length(1);
-      expect((wrapper.vm as any).playersCount).eq(1);
+      expect(vm.playersCount).eq(1);
+      expect(vm.automaOption).eq(true);
+      expect(wrapper.find('.create-game').classes()).to.include('create-game--marsbot-only');
+      // Nothing to choose from: no player count, no MarsBot toggle, no board, no first player.
+      expect(wrapper.findAll('input[name="playersCount"]')).has.length(0);
+      expect(wrapper.find('#automa-checkbox').exists()).eq(false);
+      expect(wrapper.findAll('input[name="board"]')).has.length(0);
+      expect(wrapper.findAll('input[name="firstIndex"]')).has.length(0);
+      expect(wrapper.find('.discord-invite').exists()).eq(false);
+      // What MarsBot itself allows stays: its difficulty, draft, undo.
+      expect(wrapper.find('#automa-difficulty').exists()).eq(true);
+      expect(wrapper.find('#draft-checkbox').exists()).eq(true);
+      expect(wrapper.find('#undo-checkbox').exists()).eq(true);
+
+      // Turning MarsBot off (a loaded settings file could) is undone.
+      vm.automaOption = false;
+      await vm.$nextTick();
+      expect(vm.automaOption).eq(true);
     } finally {
-      if (soloOnly === undefined) {
-        delete process.env.TM_SOLO_ONLY;
+      if (marsBotOnly === undefined) {
+        delete process.env.TM_MARSBOT_ONLY;
       } else {
-        process.env.TM_SOLO_ONLY = soloOnly;
+        process.env.TM_MARSBOT_ONLY = marsBotOnly;
       }
     }
   });

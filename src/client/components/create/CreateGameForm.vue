@@ -1,8 +1,8 @@
 <template>
-        <div id="create-game" class="create-game">
+        <div id="create-game" class="create-game" :class="{'create-game--marsbot-only': marsBotOnly}">
             <h1><span v-i18n>{{ constants.APP_NAME }}</span> — <span v-i18n>Create New Game</span></h1>
             <div class="changelog"><a :href="wikiUrls.changelog" class="tooltip" v-i18n data-tooltip="Link opens in a new tab/window" target="_blank"><u v-i18n>Read our changelog to get the latest updates.</u></a></div>
-            <div class="discord-invite" v-if="playersCount===1">
+            <div class="discord-invite" v-if="playersCount===1 && !marsBotOnly">
               (<span v-i18n>Looking for people to play with</span>? <a :href="constants.DISCORD_INVITE" class="tooltip" v-i18n data-tooltip="Link opens in a new tab/window" target="_blank"><u v-i18n>Join us on Discord</u></a>.)
             </div>
 
@@ -10,9 +10,9 @@
 
                 <div class="create-game-options">
                     <div class="create-game-page-container">
-                        <div class="create-game-page-column">
+                        <div class="create-game-page-column" v-if="!marsBotOnly">
                             <h4 v-i18n>№ of Players</h4>
-                            <div v-for="pCount in playerCountOptions" :key="pCount">
+                            <div v-for="pCount in [1,2,3,4,5,6]" :key="pCount">
                               <input type="radio" :value="pCount" name="playersCount" v-model="playersCount" :id="pCount+'-radio'">
                               <label :for="pCount+'-radio'">
                                   {{ getPlayersCountText(pCount) }}
@@ -177,7 +177,7 @@
                             </label>
                         </div>
 
-                        <div class="create-game-page-column">
+                        <div class="create-game-page-column" v-if="!marsBotOnly">
                             <h4 v-i18n>Board</h4>
 
                             <div v-for="boardName in boards" :key="boardName">
@@ -223,10 +223,12 @@
                             </label>
 
                             <template v-if="playersCount === 1">
+                            <template v-if="!marsBotOnly">
                             <input type="checkbox" v-model="automaOption" id="automa-checkbox">
                             <label for="automa-checkbox">
                                 <span v-i18n>MarsBot (Automa)</span>
                             </label>
+                            </template>
 
                             <template v-if="automaOption">
                               <label for="automa-difficulty">
@@ -524,7 +526,7 @@
                                                   </label>
                                               <!-- </template> -->
 
-                                              <label class="form-radio form-inline" v-if="!randomFirstPlayer">
+                                              <label class="form-radio form-inline" v-if="!randomFirstPlayer && !marsBotOnly">
                                                   <input type="radio" name="firstIndex" :value="index + 1" v-model="firstIndex">
                                                   <i class="form-icon"></i> <span v-i18n>Goes First?</span>
                                               </label>
@@ -723,7 +725,7 @@ export default defineComponent({
       }
     },
     playersCount(value: number) {
-      if (!this.playerCountOptions.includes(value)) {
+      if (this.marsBotOnly && value !== 1) {
         this.playersCount = 1;
         return;
       }
@@ -736,6 +738,10 @@ export default defineComponent({
       }
     },
     automaOption(value: boolean) {
+      if (this.marsBotOnly && !value) {
+        this.automaOption = true;
+        return;
+      }
       if (value) {
         this.board = 'tharsis' as any;
         this.initialDraft = false;
@@ -767,6 +773,10 @@ export default defineComponent({
   mounted() {
     setDocumentTitle('Create New Game');
     this.restoreLastSettings();
+    if (this.marsBotOnly) {
+      this.playersCount = 1;
+      this.automaOption = true;
+    }
 
     // Set the viewport width to width=device-width on the create game form so mobile browsers use their actual CSS viewport width.
     // The current global viewport is width=1260, which prevents the create game form from using the device width on phones.
@@ -787,10 +797,12 @@ export default defineComponent({
       ?.setAttribute('content', this.previousViewport);
   },
   computed: {
-    // TM_SOLO_ONLY is a build-time switch (webpack.config.js), off by default;
-    // the Android app's build turns it on and offers solo games only.
-    playerCountOptions(): Array<number> {
-      return process.env.TM_SOLO_ONLY === '1' ? [1] : [1, 2, 3, 4, 5, 6];
+    // TM_MARSBOT_ONLY is a build-time switch (webpack.config.js), off by
+    // default. The Android app's build turns it on: one human seat against
+    // MarsBot, and whatever MarsBot rules out is hidden rather than greyed
+    // (see .create-game--marsbot-only in create_game_form.less).
+    marsBotOnly(): boolean {
+      return process.env.TM_MARSBOT_ONLY === '1';
     },
     wikiUrls(): typeof RULEBOOK_URLS & typeof WIKI_URLS {
       return {...RULEBOOK_URLS, ...WIKI_URLS};

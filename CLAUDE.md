@@ -176,8 +176,9 @@ The `automa-android` branch adds `android/`: a standalone Android APK that runs
 the server, its file database, the client and a nodejs-mobile runtime inside
 one app, for playing offline. `android/build-apk.sh` builds it and
 `android/README.md` documents the layout, signing and limits. The only game-code
-hook is the build-time switch `TM_SOLO_ONLY` (webpack `DefinePlugin`, off by
-default; the APK build sets it), which limits the create-game form to solo games.
+hook is the build-time switch `TM_MARSBOT_ONLY` (webpack `DefinePlugin`, off by
+default; the APK build sets it), which limits the create-game form to MarsBot
+games and hides the options MarsBot disables.
 Keep `android/` out of `automa` and out of upstream PRs.
 
 ## Node Version
