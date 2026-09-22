@@ -312,6 +312,38 @@ describe('Expansion MarsBot Corporations', () => {
     });
   });
 
+  describe('C27 Morningstar', () => {
+    function createVenusAutomaGame(): {game: IGame, marsBot: MarsBot} {
+      const [game] = testGame(1, {
+        automaOption: true,
+        automaDifficulty: 'normal',
+        venusNextExtension: true,
+        boardName: BoardName.THARSIS,
+      });
+      return {game, marsBot: game.automaHooks!.marsBot};
+    }
+
+    it('places credit cubes on the Venus track', () => {
+      const {marsBot} = createVenusAutomaGame();
+      marsBot.setCorpAndSetup(getMarsBotCorp(CardName.MORNING_STAR_INC)!);
+      for (const position of [5, 6, 7, 8, 9, 11, 12]) {
+        expect(marsBot.hasCubeAt(7, position)?.cubeType, `Venus ${position}`).to.eq('credit');
+      }
+      expect(marsBot.hasCubeAt(7, 10)).to.be.undefined;
+    });
+
+    it('pays 1 M€ when the Venus track reaches a credit cube', () => {
+      const {marsBot} = createVenusAutomaGame();
+      marsBot.setCorpAndSetup(getMarsBotCorp(CardName.MORNING_STAR_INC)!);
+      marsBot.marsBotBoard.tracks[7].position = 4;
+      const mc = marsBot.turnResolver.megacredits;
+
+      marsBot.advanceTrack(7);
+
+      expect(marsBot.turnResolver.megacredits).to.eq(mc + 1);
+    });
+  });
+
   // ---- Turmoil corps ----
 
   describe('C38 Terralabs', () => {

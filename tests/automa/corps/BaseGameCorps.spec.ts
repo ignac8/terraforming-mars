@@ -201,6 +201,44 @@ describe('Base Game MarsBot Corporations', () => {
       expect(marsBot.hasCubeAt(0, 6)).to.not.be.undefined;
       expect(marsBot.hasCubeAt(5, 3)).to.not.be.undefined;
     });
+
+    it('reports its cubes to the client on the same track indexes as the tracks', () => {
+      const {marsBot} = createAutomaGame();
+      marsBot.setCorpAndSetup(getMarsBotCorp(CardName.HELION)!);
+
+      const model = marsBot.toModel();
+
+      expect(model.tracks[0].tags).to.deep.eq([Tag.BUILDING]);
+      expect(model.trackCubes).to.deep.include({trackIndex: 0, position: 6, cubeType: 'white'});
+      expect(model.trackCubes).to.deep.include({trackIndex: 5, position: 3, cubeType: 'black'});
+      expect(model.trackCubes!.every((cube) => cube.trackIndex >= 0)).to.be.true;
+    });
+
+    it('white cube draws a card instead of the temperature step under it', () => {
+      const {game, marsBot} = createAutomaGame();
+      marsBot.setCorpAndSetup(getMarsBotCorp(CardName.HELION)!);
+      // No card to draw, so only the temperature icon under the cube could move the temperature.
+      game.projectDeck.drawPile.length = 0;
+      game.projectDeck.discardPile.length = 0;
+      marsBot.marsBotBoard.tracks[0].position = 5; // Building 6: a temperature icon under a white cube
+      const temperature = game.getTemperature();
+
+      marsBot.advanceTrack(0);
+
+      expect(marsBot.marsBotBoard.tracks[0].position).to.eq(6);
+      expect(game.getTemperature()).to.eq(temperature);
+    });
+
+    it('black cube raises the temperature on top of the space it sits on', () => {
+      const {game, marsBot} = createAutomaGame();
+      marsBot.setCorpAndSetup(getMarsBotCorp(CardName.HELION)!);
+      marsBot.marsBotBoard.tracks[5].position = 2; // Earth 3: no icon, a black cube
+      const temperature = game.getTemperature();
+
+      marsBot.advanceTrack(5);
+
+      expect(game.getTemperature()).to.eq(temperature + 2);
+    });
   });
 
   describe('C07 Phobolog', () => {

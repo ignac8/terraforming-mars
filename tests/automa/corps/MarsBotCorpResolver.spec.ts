@@ -166,6 +166,27 @@ describe('MarsBotCorpResolver', () => {
       expect(triggeredPosition).to.eq(3);
     });
 
+    it('reports whether the cube replaced the printed icon', () => {
+      const {marsBot} = createAutomaGame();
+      const corp = createTestCorp({
+        name: CardName.ECOLINE,
+        trackCubes: [
+          {trackIndex: 1, position: 3, cubeType: 'white'},
+          {trackIndex: 1, position: 4, cubeType: 'black'},
+        ],
+        effect: {
+          onTrackCubeTrigger: (_ctx, _trackIndex, _position, cubeType) => cubeType === 'white',
+        },
+      });
+      marsBot.corp = corp;
+      marsBot.trackCubePositions.set('1:3', {trackIndex: 1, position: 3, cubeType: 'white'});
+      marsBot.trackCubePositions.set('1:4', {trackIndex: 1, position: 4, cubeType: 'black'});
+
+      expect(MarsBotCorpResolver.onTrackAdvanced(marsBot, 1, 3)).to.be.true;
+      expect(MarsBotCorpResolver.onTrackAdvanced(marsBot, 1, 4)).to.be.false;
+      expect(MarsBotCorpResolver.onTrackAdvanced(marsBot, 1, 5)).to.be.false;
+    });
+
     it('does not re-trigger already triggered cubes', () => {
       const {marsBot} = createAutomaGame();
       let triggerCount = 0;

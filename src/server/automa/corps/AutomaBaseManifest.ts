@@ -58,10 +58,13 @@ const HELION: IMarsBotCorp = {
       if (cubeType === 'white') {
         bot.maybeDrawAndResolveProjectCard();
         bot.game.log('MarsBot (Helion): white cube — drew and resolved card instead of temp raise');
-      } else if (cubeType === 'black') {
+        return true; // The temperature icon under the cube stays unresolved.
+      }
+      if (cubeType === 'black') {
         bot.raiseTemperature(1);
         bot.game.log('MarsBot (Helion): black cube — temperature +1');
       }
+      return false;
     },
   },
 };
