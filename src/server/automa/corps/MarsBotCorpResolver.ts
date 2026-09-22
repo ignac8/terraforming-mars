@@ -55,23 +55,24 @@ export class MarsBotCorpResolver {
 
   /**
    * Called when a track advances to a new position. Checks for cube triggers.
+   *
+   * Returns true when a corp cube replaced the icon printed on that space, so the caller
+   * leaves the icon unresolved.
    */
-  public static onTrackAdvanced(marsBot: MarsBot, trackIndex: number, position: number): void {
+  public static onTrackAdvanced(marsBot: MarsBot, trackIndex: number, position: number): boolean {
     const cube = marsBot.hasCubeAt(trackIndex, position);
     if (cube === undefined) {
-      return;
+      return false;
     }
     if (marsBot.isCubeTriggered(trackIndex, position)) {
-      return;
+      return false;
     }
 
     marsBot.markCubeTriggered(trackIndex, position);
 
     // Corp cube trigger
     const corp = marsBot.corp;
-    if (corp !== undefined) {
-      corp.effect?.onTrackCubeTrigger?.(marsBot, trackIndex, position, cube.cubeType);
-    }
+    const replacedIcon = corp?.effect?.onTrackCubeTrigger?.(marsBot, trackIndex, position, cube.cubeType) === true;
 
     // Colony cubes (Pioneer4/Constructor): positions set by AutomaGameSetup
     // C-X3: deduct 5 MC then place a colony on a randomly selected eligible tile
@@ -95,5 +96,7 @@ export class MarsBotCorpResolver {
       marsBot.hasSecondTradeFleet = true;
       marsBot.game.log('MarsBot unlocks 2nd Trade Fleet — Extended Shipping Lines available next generation (C-27)');
     }
+
+    return replacedIcon;
   }
 }
