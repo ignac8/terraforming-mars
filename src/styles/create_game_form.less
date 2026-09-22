@@ -313,6 +313,17 @@
   pointer-events: none;
 }
 
+// The MarsBot-only build (the Android app) has nothing to choose among the
+// options MarsBot disables, so they vanish instead of greying out. Every
+// disabled control is an input directly followed by its label.
+.create-game--marsbot-only {
+  input:disabled,
+  input:disabled + label,
+  .create-game-subsection-label {
+    display: none;
+  }
+}
+
 @media only screen and (max-width: 1023px) {
   .topmost-create-game-form {
     min-height: 100dvh;

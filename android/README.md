@@ -2,8 +2,8 @@
 
 A standalone Android APK of Terraforming Mars: the game server, its database,
 the web client and a Node.js runtime, all inside one app. Nothing talks to
-the network, so it plays on a plane. Games are solo only: one seat on this
-phone, with or without MarsBot.
+the network, so it plays on a plane. Games are MarsBot games only: one human
+seat on this phone against the bot.
 
 ## How it works
 
@@ -34,10 +34,14 @@ APK
   JSON-files database), `NODE_ENV=production`, `SERVER_ID=offline` (fixed,
   so the admin button works; the server only listens on the phone's own
   loopback). The one game-code change on this branch is a build-time
-  switch: `webpack.config.js` defines `process.env.TM_SOLO_ONLY`, off by
-  default, and `CreateGameForm.vue` offers one seat when it is `1`.
-  `build-apk.sh` always rebuilds the client with it on, so a normal `npm run
-  build` of this branch behaves like `automa`.
+  switch: `webpack.config.js` defines `process.env.TM_MARSBOT_ONLY`, off by
+  default. When it is `1`, `CreateGameForm.vue` fixes one human seat with
+  MarsBot on and hides, rather than greys out, everything that cannot be
+  changed in such a game: the player count, the MarsBot toggle, the board
+  (Tharsis), the first player, the options and fan expansions MarsBot
+  disables, the Discord invite. `build-apk.sh` always rebuilds the client
+  with the switch on, so a normal `npm run build` of this branch behaves like
+  `automa`.
 - nodejs-mobile only ships Node 18, so `main.js` polyfills the ES2023
   array methods (`toSorted` and friends) the server uses, and `build-apk.sh`
   bundles the server with esbuild because Node 18 cannot `require()` the
@@ -102,8 +106,8 @@ needs an uninstall before it takes the next one (saved games go with it).
 1. Copy the APK to the phone (or open the release link in its browser) and
    open it; allow installs from that source when Android asks.
 2. Start the app; the first launch takes a few seconds longer while it
-   unpacks the project. Create a game as usual (solo only: one seat, with or
-   without MarsBot).
+   unpacks the project. Create a game as usual; the form only shows what a
+   MarsBot game lets you change.
 3. The round button in the corner is the way out of a game page: "Main
    menu" for the start screen, "Saved games" to get back into a game.
 4. The client is laid out for a 1260px desktop viewport and is scaled to the

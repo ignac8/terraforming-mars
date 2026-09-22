@@ -29,8 +29,8 @@ const plugins = [
     __VUE_PROD_DEVTOOLS__: false,
     __VUE_PROD_HYDRATION_MISMATCH_DETAILS__: false,
     // Build-time switch for the Android app (android/build-apk.sh sets it to '1'):
-    // the create-game form then offers solo games only. Off by default.
-    'process.env.TM_SOLO_ONLY': JSON.stringify(process.env.TM_SOLO_ONLY ?? ''),
+    // the create-game form then offers MarsBot games only. Off by default.
+    'process.env.TM_MARSBOT_ONLY': JSON.stringify(process.env.TM_MARSBOT_ONLY ?? ''),
   }),
   {
     apply: (compiler) => {
