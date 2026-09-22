@@ -120,8 +120,11 @@ export class MarsBotTurnResolver {
     }
 
     // Cube trigger — fires BEFORE track icon resolution (corp cubes, colony cubes, trade fleet cube)
-    if (this.marsBotManager !== undefined) {
-      MarsBotCorpResolver.onTrackAdvanced(this.marsBotManager, trackIndex, track.position);
+    if (this.marsBotManager !== undefined &&
+        MarsBotCorpResolver.onTrackAdvanced(this.marsBotManager, trackIndex, track.position)) {
+      this.game.log('MarsBot: ${0} track to ${1}, icon replaced by a corp cube',
+        (b) => b.rawString(name).number(track.position));
+      return;
     }
 
     if (result.type === 'action') {

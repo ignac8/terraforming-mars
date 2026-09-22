@@ -544,9 +544,14 @@ MarsBot can play with a corporation card (optional, toggle `automaCorpOption` in
 
 ### 7.3 Track Cubes
 
-Corporations place cubes on specific track positions during setup:
-- **White cubes**: Replace the normal track action. When MarsBot advances to this position, the corp's `onTrackCubeTrigger` fires instead.
-- **Black cubes**: Add an additional effect. The normal track action still fires, AND the cube trigger fires.
+Corporations place cubes on specific track positions during setup. The colour only tells the corp's
+`onTrackCubeTrigger` which cube was reached; what the cube does, and whether it comes on top of the
+icon printed on that space, is the corp card's business:
+- The cube trigger fires before the icon resolves, and by default the icon then resolves as usual
+  (black cubes, credit cubes, and the white cubes of IC, Teractor, Phobolog, Thorgate, Valley Trust and the rest).
+- A corp whose card says the cube's effect happens *instead of* the icon returns `true` from
+  `onTrackCubeTrigger`, and `advanceTrack` leaves the icon unresolved. Helion's white cubes (a card
+  instead of the temperature step under them) are the only such case so far.
 - **Credit cubes**: MarsBot gains MC when advancing to this position.
 
 Some corps use `whiteTrackCubes(trackNum)` to replace ALL 18 positions on a track with white cubes.

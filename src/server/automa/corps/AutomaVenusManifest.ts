@@ -51,9 +51,8 @@ const MORNINGSTAR: IMarsBotCorp = {
     bot.addBonusCardToBonusDeck(BonusCardId.B26_VENUSIAN_LOBBY);
     bot.game.log('MarsBot (Morningstar): Lobbyists removed, Venusian Lobby added');
   },
-  // Credit cubes on Venus track positions 5-9, 11-12
-  // Venus track is track 8 (index 7) when Venus expansion is enabled
-  // These cubes are on the separate Venus board
+  // Credit cubes on the Venus track (index 7, present only on the Venus board) at positions 5-9 and 11-12.
+  trackCubes: [5, 6, 7, 8, 9, 11, 12].map((position) => ({trackIndex: 7, position, cubeType: 'credit' as const})),
   effect: {
     onTrackCubeTrigger(bot, _trackIndex, _position, cubeType) {
       if (cubeType === 'credit') {
