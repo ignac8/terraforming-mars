@@ -561,8 +561,9 @@ export class MarsBot implements IMarsBot {
     if (this.corp !== undefined) {
       model.corpName = this.corp.name as CardName;
       model.corpDescription = this.corp.description;
+      // Cube track indexes match model.tracks, which the panel iterates from 0.
       model.trackCubes = Array.from(this.trackCubePositions.values()).map((c) => ({
-        trackIndex: c.trackIndex - 1, position: c.position, cubeType: c.cubeType,
+        trackIndex: c.trackIndex, position: c.position, cubeType: c.cubeType,
       }));
     }
     const opts = this.game.gameOptions;
