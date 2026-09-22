@@ -202,6 +202,18 @@ describe('Base Game MarsBot Corporations', () => {
       expect(marsBot.hasCubeAt(5, 3)).to.not.be.undefined;
     });
 
+    it('reports its cubes to the client on the same track indexes as the tracks', () => {
+      const {marsBot} = createAutomaGame();
+      marsBot.setCorpAndSetup(getMarsBotCorp(CardName.HELION)!);
+
+      const model = marsBot.toModel();
+
+      expect(model.tracks[0].tags).to.deep.eq([Tag.BUILDING]);
+      expect(model.trackCubes).to.deep.include({trackIndex: 0, position: 6, cubeType: 'white'});
+      expect(model.trackCubes).to.deep.include({trackIndex: 5, position: 3, cubeType: 'black'});
+      expect(model.trackCubes!.every((cube) => cube.trackIndex >= 0)).to.be.true;
+    });
+
     it('white cube draws a card instead of the temperature step under it', () => {
       const {game, marsBot} = createAutomaGame();
       marsBot.setCorpAndSetup(getMarsBotCorp(CardName.HELION)!);
