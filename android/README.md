@@ -64,7 +64,7 @@ Prerequisites:
 ```bash
 export ANDROID_HOME=~/android-sdk
 android/build-apk.sh                  # npm ci + npm run build in the checkout, then the APK
-SKIP_GAME_BUILD=1 android/build-apk.sh   # reuse node_modules and the server build; the client is rebuilt
+SKIP_GAME_BUILD=1 android/build-apk.sh   # reuse node_modules and the server build; styles and the client are rebuilt
 ANDROID_ABIS=arm64-v8a,x86_64 android/build-apk.sh   # add an emulator ABI (about 65 MB more)
 ```
 
