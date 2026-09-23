@@ -90,7 +90,7 @@ const VALLEY_TRUST: IMarsBotCorp = {
 // C17 Vitor — separates B04, adds it to action deck each gen
 const VITOR: IMarsBotCorp = {
   name: CardName.VITOR,
-  description: 'Setup: separate Overachievement from bonus deck. Cards with non-negative VP earn 3 MC. Each generation: add Overachievement to action deck.',
+  description: 'Setup: separate Overachievement from bonus deck. Cards with non-negative VP earn 3 MC. Each generation: add Overachievement to action deck, until it is removed.',
   tags: [],
   setup(bot) {
     bot.removeBonusCard(BonusCardId.B04_OVERACHIEVEMENT);

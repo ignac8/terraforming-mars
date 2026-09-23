@@ -87,6 +87,25 @@ describe('MarsBot decks', () => {
     expect(bonusDeckIds(marsBot)).does.not.include(BonusCardId.B04_OVERACHIEVEMENT);
   });
 
+  it('keeps Vitor\'s Overachievement out of later generations once it removes itself, across a reload', () => {
+    const {game, marsBot} = createAutomaGame();
+    const corp = getMarsBotCorp(CardName.VITOR)!;
+    marsBot.setCorpAndSetup(corp);
+    marsBot.turnResolver.marsBotMeetsMilestone = () => true;
+
+    const destroyed = marsBot['bonusResolver'].resolve(createCorpBonusCard(BonusCardId.B04_OVERACHIEVEMENT));
+    expect(destroyed).is.true;
+    expect(game.claimedMilestones).has.length(1);
+
+    corp.beforeActionPhase!(marsBot);
+    expect(actionDeckIds(marsBot)).does.not.include(BonusCardId.B04_OVERACHIEVEMENT);
+
+    const restored = Game.deserialize(game.serialize()).automaHooks!.marsBot;
+    restored.corp!.beforeActionPhase!(restored);
+    expect(actionDeckIds(restored)).does.not.include(BonusCardId.B04_OVERACHIEVEMENT);
+    expect(bonusDeckIds(restored)).does.not.include(BonusCardId.B04_OVERACHIEVEMENT);
+  });
+
   it('still discards Overachievement to the bonus deck without Vitor', () => {
     const {marsBot} = createAutomaGame();
 
