@@ -19,6 +19,30 @@ import {MarsBotTurmoilHelper} from './turmoil/MarsBotTurmoilHelper';
 import {selectRandomColony, placeColonyForMarsBot} from './colonies/MarsBotColonyPlacer';
 import {selectTradeColony, tradeWithColony} from './colonies/MarsBotTrader';
 import type {MarsBot} from './MarsBot';
+import {inplaceRemove, inplaceRemoveIf} from '../../common/utils/utils';
+import {inplaceShuffle} from '../utils/shuffle';
+
+/**
+ * The special tile each project card MarsBot can play shows, for Build, Build, Build (B27).
+ *
+ * Capital and New Holland are left out: their tiles are cities, and a city can't go next to the
+ * player's city.
+ */
+const SPECIAL_TILES: ReadonlyMap<CardName, TileType> = new Map([
+  [CardName.COMMERCIAL_DISTRICT, TileType.COMMERCIAL_DISTRICT],
+  [CardName.ECOLOGICAL_ZONE, TileType.ECOLOGICAL_ZONE],
+  [CardName.INDUSTRIAL_CENTER, TileType.INDUSTRIAL_CENTER],
+  [CardName.LAVA_FLOWS, TileType.LAVA_FLOWS],
+  [CardName.MINING_AREA, TileType.MINING_AREA],
+  [CardName.MINING_RIGHTS, TileType.MINING_RIGHTS],
+  [CardName.MOHOLE_AREA, TileType.MOHOLE_AREA],
+  [CardName.NATURAL_PRESERVE, TileType.NATURAL_PRESERVE],
+  [CardName.NUCLEAR_ZONE, TileType.NUCLEAR_ZONE],
+  [CardName.RESTRICTED_AREA, TileType.RESTRICTED_AREA],
+  [CardName.DEIMOS_DOWN_PROMO, TileType.DEIMOS_DOWN],
+  [CardName.GREAT_DAM_PROMO, TileType.GREAT_DAM],
+  [CardName.MAGNETIC_FIELD_GENERATORS_PROMO, TileType.MAGNETIC_FIELD_GENERATORS],
+]);
 
 /**
  * Resolves MarsBot bonus cards (B01–B08).
@@ -50,7 +74,11 @@ export class MarsBotBonusResolver {
     return destroyed;
   }
 
-  /** Resolve a bonus card's effect. Returns true if the card was destroyed and must not be discarded. */
+  /**
+   * Resolve a bonus card's effect.
+   *
+   * Returns true when the card must not be discarded: it was destroyed, or it went back into the bonus deck.
+   */
   public resolveEffect(card: MarsBotBonusCard): boolean {
     switch (card.id) {
     case BonusCardId.B01_METEOR_SHOWER:
@@ -113,8 +141,7 @@ export class MarsBotBonusResolver {
       this.resolveVenusianLobby();
       return false;
     case BonusCardId.B27_BUILD_BUILD_BUILD:
-      this.resolveBuildBuildBuild();
-      return false;
+      return this.resolveBuildBuildBuild(card);
     case BonusCardId.B28_DIVERSIFICATION:
       this.resolveDiversification();
       return false;
@@ -811,10 +838,46 @@ export class MarsBotBonusResolver {
     }
   }
 
-  private resolveBuildBuildBuild(): void {
-    // Philares: place city tile
-    this.turnResolver.placeCity();
-    this.game.log('MarsBot resolves Build Build Build: placed city');
+  // Philares: a. a city next to the player's greenery, then lose 5 M€; b. the special tile of a
+  // card MarsBot played next to the player's city, then lose that card and 3 M€; c. gain 3 M€
+  // and shuffle this card back into the bonus deck
+  private resolveBuildBuildBuild(card: MarsBotBonusCard): boolean {
+    const citySpace = this.tilePlacer.findCitySpaceNextToHumanGreenery();
+    if (citySpace !== undefined) {
+      this.game.addCity(this.marsBot, citySpace);
+      this.turnResolver.gainMc(this.tilePlacer.getTotalPlacementMC(citySpace));
+      const lost = this.loseMc(5);
+      this.game.log('MarsBot resolves Build Build Build: city next to the player\'s greenery, loses ${0} M€', (b) => b.number(lost));
+      return false;
+    }
+
+    const bot = this.marsBotManager;
+    const played = bot?.playedProjectCards.find((c) => SPECIAL_TILES.has(c.name));
+    const tileType = played === undefined ? undefined : SPECIAL_TILES.get(played.name);
+    const specialSpace = tileType === undefined ? undefined : this.tilePlacer.findSpecialTileSpaceNextToHumanCity();
+    if (bot !== undefined && played !== undefined && tileType !== undefined && specialSpace !== undefined) {
+      this.game.addTile(this.marsBot, specialSpace, {tileType, card: played.name});
+      this.turnResolver.gainMc(this.tilePlacer.getTotalPlacementMC(specialSpace));
+      inplaceRemove(bot.playedProjectCards, played);
+      inplaceRemoveIf(this.game.projectDeck.discardPile, (c) => c.name === played.name);
+      const lost = this.loseMc(3);
+      this.game.log('MarsBot resolves Build Build Build: ${0} tile next to the player\'s city, removes the card and loses ${1} M€',
+        (b) => b.card(played).number(lost));
+      return false;
+    }
+
+    this.turnResolver.gainMc(3);
+    this.bonusDeck.drawPile.push(card);
+    inplaceShuffle(this.bonusDeck.drawPile, this.game.rng);
+    this.game.log('MarsBot resolves Build Build Build: +3 M€, card shuffled back into the bonus deck');
+    return true;
+  }
+
+  /** Takes up to `amount` M€ from MarsBot and returns how much it lost. */
+  private loseMc(amount: number): number {
+    const lost = Math.min(amount, this.turnResolver.megacredits);
+    this.turnResolver.megacredits -= lost;
+    return lost;
   }
 
   private resolveDiversification(): void {

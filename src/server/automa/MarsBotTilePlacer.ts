@@ -73,6 +73,28 @@ export class MarsBotTilePlacer {
     return this.selectBestSpace(eligible, adjacentGreeneryOrOcean);
   }
 
+  /**
+   * Finds the best space for a MarsBot city next to at least one of the human's greeneries.
+   * This is what the Build, Build, Build bonus card (B27) asks for first.
+   */
+  public findCitySpaceNextToHumanGreenery(): Space | undefined {
+    const board = this.game.board;
+    const eligible = board.getAvailableSpacesForCity(this.marsBot).filter((space) =>
+      board.getAdjacentSpaces(space).some((s) => Board.isGreenerySpace(s) && Board.spaceOwnedBy(s, this.humanPlayer)));
+    return this.selectBestSpace(eligible, (space) => board.getAdjacentSpaces(space).filter(Board.isGreenerySpace).length);
+  }
+
+  /**
+   * Finds the best land space for a MarsBot special tile next to at least one of the human's cities.
+   * This is what the Build, Build, Build bonus card (B27) asks for second.
+   */
+  public findSpecialTileSpaceNextToHumanCity(): Space | undefined {
+    const board = this.game.board;
+    const eligible = board.getAvailableSpacesOnLand(this.marsBot).filter((space) =>
+      board.getAdjacentSpaces(space).some((s) => Board.isCitySpace(s) && Board.spaceOwnedBy(s, this.humanPlayer)));
+    return this.selectBestSpace(eligible, () => 0);
+  }
+
   /** Find the best space for MarsBot to place an ocean. Returns undefined if none available. */
   public findOceanSpace(): Space | undefined {
     const spaces = this.game.board.getAvailableSpacesForOcean(this.marsBot);
