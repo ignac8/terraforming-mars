@@ -18,7 +18,10 @@ export async function runParallel(
   const shards = Math.max(1, cpus().length);
   const results: Array<GameResult> = [];
   await Promise.all(Array.from({length: shards}, (_, shard) => new Promise<void>((resolve, reject) => {
-    const child = spawn('npx', ['tsx', join(__dirname, 'batch.ts'), file, String(shard), String(shards)], {stdio: ['ignore', 'pipe', 'inherit']});
+    // Cap each worker's heap: V8 otherwise lets it grow towards a quarter of RAM before collecting,
+    // and four lookahead workers doing that at once run the machine out of memory.
+    const env = {...process.env, NODE_OPTIONS: `${process.env.NODE_OPTIONS ?? ''} --max-old-space-size=1536`.trim()};
+    const child = spawn('npx', ['tsx', join(__dirname, 'batch.ts'), file, String(shard), String(shards)], {stdio: ['ignore', 'pipe', 'inherit'], env});
     let buffer = '';
     child.stdout.on('data', (chunk: Buffer) => {
       buffer += chunk.toString();
