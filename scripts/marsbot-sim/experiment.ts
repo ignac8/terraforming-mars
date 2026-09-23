@@ -22,13 +22,9 @@ const ALL_DIFFICULTIES: ReadonlyArray<Difficulty> = ['easy', 'normal', 'hard', '
 const DIFFICULTIES = (process.env.DIFFICULTIES?.split(',') as Array<Difficulty> | undefined) ?? ALL_DIFFICULTIES;
 const STUDY_B_DIFFICULTY = (process.env.STUDY_B_DIFFICULTY ?? 'normal') as Difficulty;
 
-type StudyConfig = GameConfig & {study: 'A' | 'B'};
+export type StudyConfig = GameConfig & {study: 'A' | 'B'};
 
-async function main() {
-  const perCell = Number(process.argv[2] ?? 500);
-  const outDir = process.argv[3] ?? join(__dirname, 'out');
-  mkdirSync(outDir, {recursive: true});
-
+export function buildConfigs(perCell: number): Array<StudyConfig> {
   const configs: Array<StudyConfig> = [];
   for (const difficulty of DIFFICULTIES) {
     for (const humanCorp of HUMAN_CORPS) {
@@ -43,6 +39,14 @@ async function main() {
       configs.push({study: 'B', seed: 1_000_000 + i, humanCorp: humanCorps[i % humanCorps.length], difficulty: STUDY_B_DIFFICULTY, botCorp});
     }
   }
+  return configs;
+}
+
+async function main() {
+  const perCell = Number(process.argv[2] ?? 500);
+  const outDir = process.argv[3] ?? join(__dirname, 'out');
+  mkdirSync(outDir, {recursive: true});
+  const configs = buildConfigs(perCell);
 
   const started = Date.now();
   let lastReport = 0;
@@ -60,7 +64,9 @@ async function main() {
   process.stderr.write(`Wrote ${results.length} results to ${outDir}\n`);
 }
 
-main().catch((e) => {
-  console.error(e);
-  process.exit(1);
-});
+if (require.main === module) {
+  main().catch((e) => {
+    console.error(e);
+    process.exit(1);
+  });
+}
