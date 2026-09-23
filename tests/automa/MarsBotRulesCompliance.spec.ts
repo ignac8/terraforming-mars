@@ -333,6 +333,66 @@ describe('MarsBot Rules Compliance', () => {
     });
   });
 
+  describe('B08 Corporate Competition target', () => {
+    function setup(margins: Record<string, number>) {
+      const {game, human, marsBot} = createAutomaGame();
+      marsBot.turnResolver.megacredits = 10;
+      for (const [name, margin] of Object.entries(margins)) {
+        const award = game.awards.find((a) => a.name === name)!;
+        game.fundAward(human, award);
+        // human score minus MarsBot score
+        award.getScore = () => 10 + margin;
+      }
+      marsBot.turnResolver.getMarsBotAwardValue = () => 10;
+      const b08 = createBaseBonusCards().find((c) => c.id === BonusCardId.B08_CORPORATE_COMPETITION)!;
+      return {game, marsBot, b08};
+    }
+
+    it('competes for the award the player leads by the least, over one MarsBot leads', () => {
+      const {marsBot, b08} = setup({Scientist: 2, Miner: -4});
+      marsBot['bonusResolver'].resolve(b08);
+      // Scientist moves the science track; Miner would have moved the space track
+      expect(marsBot.marsBotBoard.tracks[3].position).to.be.greaterThan(0);
+      expect(marsBot.marsBotBoard.tracks[1].position).to.eq(0);
+    });
+
+    it('when MarsBot leads every award, competes for the smallest gap', () => {
+      const {marsBot, b08} = setup({Scientist: -1, Miner: -4});
+      marsBot['bonusResolver'].resolve(b08);
+      // Scientist moves the science track; Miner would have moved the space track
+      expect(marsBot.marsBotBoard.tracks[3].position).to.be.greaterThan(0);
+      expect(marsBot.marsBotBoard.tracks[1].position).to.eq(0);
+    });
+
+    it('for Banker advances the less-advanced of the building and event tracks', () => {
+      const {marsBot, b08} = setup({Banker: 1});
+      const tracks = marsBot.marsBotBoard.tracks;
+      tracks[0].position = 3;
+      tracks[2].position = 2;
+      marsBot['bonusResolver'].resolve(b08);
+      expect(tracks[0].position).to.eq(3);
+      expect(tracks[2].position).to.eq(3);
+      expect(tracks[4].position).to.eq(0);
+    });
+  });
+
+  describe('B04 Overachievement award', () => {
+    it('funds the award MarsBot leads by the most', () => {
+      const {game, marsBot} = createAutomaGame();
+      game.generation = 6;
+      const leads: Record<string, number> = {Scientist: 1, Miner: 4};
+      for (const award of game.awards) {
+        award.getScore = () => 10 - (leads[award.name] ?? -1);
+      }
+      marsBot.turnResolver.getMarsBotAwardValue = () => 10;
+      const b04 = createBaseBonusCards().find((c) => c.id === BonusCardId.B04_OVERACHIEVEMENT)!;
+
+      marsBot['bonusResolver'].resolve(b04);
+
+      expect(game.fundedAwards.map((f) => f.award.name)).deep.eq(['Miner']);
+    });
+  });
+
   // ---- Rule 2.11: Game End ----
 
   describe('Rule 2.11: Final greenery placement', () => {

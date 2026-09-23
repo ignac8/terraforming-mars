@@ -9,6 +9,10 @@ import {GlobalParameter} from '../../../src/common/GlobalParameter';
 import {TileType} from '../../../src/common/TileType';
 import {IProjectCard} from '../../../src/server/cards/IProjectCard';
 import {BoardName} from '../../../src/common/boards/BoardName';
+import {SpaceType} from '../../../src/common/boards/SpaceType';
+import {Birds} from '../../../src/server/cards/base/Birds';
+import {MarsUniversity} from '../../../src/server/cards/base/MarsUniversity';
+import {Asteroid} from '../../../src/server/cards/base/Asteroid';
 import {
   clearMarsBotCorpRegistry, restoreMarsBotCorpRegistry,
   getMarsBotCorp,
@@ -94,11 +98,17 @@ describe('Corp Effect Hooks', () => {
   });
 
   describe('C25 Viron floater + VP', () => {
-    it('gains floater and tracks action cards', () => {
+    it('gains a floater and counts the card only for active cards with an action', () => {
       const {marsBot} = createAutomaGame();
       const corp = getMarsBotCorp(CardName.VIRON)!;
       marsBot.setCorpAndSetup(corp);
-      corp.effect!.onProjectCardResolved!(marsBot, fakeCard('Card1', {tags: [Tag.BUILDING], cost: 5}));
+      corp.effect!.onProjectCardResolved!(marsBot, new Birds());
+      expect(marsBot.floaters).to.eq(1);
+      expect(marsBot.corpSpecificState.get('actionCardsPlayed')).to.eq(1);
+
+      // An active card with only an effect, and an event, count for nothing
+      corp.effect!.onProjectCardResolved!(marsBot, new MarsUniversity());
+      corp.effect!.onProjectCardResolved!(marsBot, new Asteroid());
       expect(marsBot.floaters).to.eq(1);
       expect(marsBot.corpSpecificState.get('actionCardsPlayed')).to.eq(1);
     });
@@ -133,13 +143,18 @@ describe('Corp Effect Hooks', () => {
       expect(marsBot.turnResolver.megacredits).to.eq(mcBefore + 2);
     });
 
-    it('advances event track when MarsBot places city', () => {
+    it('advances event track when MarsBot places city, without the 2 M€', () => {
       const {marsBot} = createAutomaGame();
       const corp = getMarsBotCorp(CardName.THARSIS_REPUBLIC)!;
       marsBot.setCorpAndSetup(corp);
+      marsBot.turnResolver.advanceTrack = (i) => {
+        marsBot.marsBotBoard.tracks[i].position++;
+      };
+      const mcBefore = marsBot.turnResolver.megacredits;
       const eventBefore = marsBot.marsBotBoard.tracks[2].position;
       corp.effect!.onTilePlaced!(marsBot, true, TileType.CITY);
-      expect(marsBot.marsBotBoard.tracks[2].position).to.be.gte(eventBefore + 1);
+      expect(marsBot.marsBotBoard.tracks[2].position).to.eq(eventBefore + 1);
+      expect(marsBot.turnResolver.megacredits).to.eq(mcBefore);
     });
 
     it('does not trigger on greenery placement', () => {
@@ -162,6 +177,17 @@ describe('Corp Effect Hooks', () => {
       corp.effect!.onTilePlaced!(marsBot, false, TileType.OCEAN);
       expect(marsBot.corpSpecificState.get('whiteCubeOnCard')).to.eq(0);
       expect(marsBot.marsBotBoard.tracks[0].position).to.be.gte(buildingBefore + 1);
+    });
+
+    it('pays 3 M€ per adjacent ocean when MarsBot places a tile', () => {
+      const {game, marsBot} = createAutomaGame();
+      const ocean = game.board.getAvailableSpacesForOcean(marsBot.player)[0];
+      const land = game.board.getAdjacentSpaces(ocean).find((s) => s.spaceType === SpaceType.LAND)!;
+      game.simpleAddTile(marsBot.player, ocean, {tileType: TileType.OCEAN});
+      const tilePlacer = marsBot['bonusResolver']['tilePlacer'];
+      expect(tilePlacer.getOceanAdjacencyMC(land)).to.eq(2);
+      marsBot.setCorpAndSetup(getMarsBotCorp(CardName.LAKEFRONT_RESORTS)!);
+      expect(tilePlacer.getOceanAdjacencyMC(land)).to.eq(3);
     });
 
     it('ocean placed without white cube → place white cube', () => {

@@ -10,7 +10,7 @@ import {MarsBotBonusResolver} from '../../src/server/automa/MarsBotBonusResolver
 import {MarsBotTilePlacer} from '../../src/server/automa/MarsBotTilePlacer';
 import {THARSIS_MARSBOT_BOARD} from '../../src/server/automa/boards/TharsisMarsBot';
 import {TrackAction, TrackDefinition, BonusCardId} from '../../src/common/automa/AutomaTypes';
-import {createBaseBonusCards} from '../../src/server/automa/MarsBotBonusCard';
+import {createBaseBonusCards, createCorpBonusCard} from '../../src/server/automa/MarsBotBonusCard';
 import {SeededRandom} from '../../src/common/utils/Random';
 import {BoardName} from '../../src/common/boards/BoardName';
 import {Tag} from '../../src/common/cards/Tag';
@@ -18,6 +18,7 @@ import {TileType} from '../../src/common/TileType';
 import {Pets} from '../../src/server/cards/base/Pets';
 import {Birds} from '../../src/server/cards/base/Birds';
 import {ColonyName} from '../../src/common/colonies/ColonyName';
+import {maxOutOceans, setOxygenLevel, setTemperature} from '../TestingUtils';
 
 function createAutomaGame(difficulty: 'easy' | 'normal' | 'hard' | 'brutal' = 'normal'): {game: IGame, human: TestPlayer, marsBot: MarsBot} {
   const [game, human] = testGame(1, {automaOption: true, automaDifficulty: difficulty, boardName: BoardName.THARSIS});
@@ -185,6 +186,25 @@ describe('MarsBot Deep Rules Tests', () => {
 
       expect(marsBot.turnResolver.megacredits).to.eq(2);
       expect(marsBot.shippingBoard.storage.get(ColonyName.TITAN)).to.eq(1);
+    });
+  });
+
+  describe('B16 Government Intervention', () => {
+    it('gives MarsBot neither TR nor M€, even from a temperature bonus', () => {
+      const [game] = testGame(1, {automaOption: true, venusNextExtension: true, boardName: BoardName.THARSIS});
+      const marsBot = game.automaHooks!.marsBot;
+      game.generation = 2;
+      setOxygenLevel(game, 14);
+      maxOutOceans(game.players[0]);
+      setTemperature(game, -26);
+      const tr = marsBot.player.terraformRating;
+      const mc = marsBot.turnResolver.megacredits;
+
+      marsBot['bonusResolver'].resolve(createCorpBonusCard(BonusCardId.B16_GOVERNMENT_INTERVENTION));
+
+      expect(game.getTemperature()).to.eq(-24);
+      expect(marsBot.player.terraformRating).to.eq(tr);
+      expect(marsBot.turnResolver.megacredits).to.eq(mc);
     });
   });
 

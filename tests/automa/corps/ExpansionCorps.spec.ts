@@ -12,6 +12,9 @@ import {
 import {Tag} from '../../../src/common/cards/Tag';
 import {IProjectCard} from '../../../src/server/cards/IProjectCard';
 import {BoardName} from '../../../src/common/boards/BoardName';
+import {BonusCardId} from '../../../src/common/automa/AutomaTypes';
+import {MicroMills} from '../../../src/server/cards/base/MicroMills';
+import {IceCapMelting} from '../../../src/server/cards/base/IceCapMelting';
 
 function createAutomaGame(): {game: IGame, human: TestPlayer, marsBot: MarsBot} {
   const [game, human] = testGame(1, {
@@ -199,6 +202,23 @@ describe('Expansion MarsBot Corporations', () => {
       expect(marsBot.turnResolver.megacredits).to.eq(mcBefore + 5);
     });
 
+    it('pays 10 M€ in all for a tagless card MarsBot plays', () => {
+      const {marsBot} = createAutomaGame();
+      marsBot.setCorpAndSetup(getMarsBotCorp(CardName.SAGITTA_FRONTIER_SERVICES)!);
+      const mcBefore = marsBot.turnResolver.megacredits;
+      marsBot.turnResolver.resolveProjectCard(new MicroMills());
+      expect(marsBot.turnResolver.megacredits).to.eq(mcBefore + 10);
+    });
+
+    it('counts the Event tag, so an event with no printed tags pays 1 M€', () => {
+      const {marsBot} = createAutomaGame();
+      const corp = getMarsBotCorp(CardName.SAGITTA_FRONTIER_SERVICES)!;
+      marsBot.setCorpAndSetup(corp);
+      const mcBefore = marsBot.turnResolver.megacredits;
+      corp.effect!.onProjectCardResolved!(marsBot, new IceCapMelting());
+      expect(marsBot.turnResolver.megacredits).to.eq(mcBefore + 1);
+    });
+
     it('gains 1 M€ for 1-tag cards', () => {
       const {marsBot} = createAutomaGame();
       const corp = getMarsBotCorp(CardName.SAGITTA_FRONTIER_SERVICES)!;
@@ -341,6 +361,16 @@ describe('Expansion MarsBot Corporations', () => {
       marsBot.advanceTrack(7);
 
       expect(marsBot.turnResolver.megacredits).to.eq(mc + 1);
+    });
+
+    it('removes the Venus Next Lobbyists from the bonus deck', () => {
+      const {marsBot} = createVenusAutomaGame();
+      const deck = marsBot['bonusDeck'];
+      const ids = () => [...deck.drawPile, ...deck.discardPile, ...marsBot.actionDeck].map((c) => (c as {id?: BonusCardId}).id);
+      expect(ids()).to.include(BonusCardId.B15_LOBBYISTS_VENUS);
+      marsBot.setCorpAndSetup(getMarsBotCorp(CardName.MORNING_STAR_INC)!);
+      expect(ids()).to.not.include(BonusCardId.B15_LOBBYISTS_VENUS);
+      expect(ids()).to.include(BonusCardId.B26_VENUSIAN_LOBBY);
     });
   });
 

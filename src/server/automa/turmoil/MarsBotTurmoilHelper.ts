@@ -64,6 +64,19 @@ export class MarsBotTurmoilHelper {
   }
 
   /**
+   * Chooses the party for a Gray Eminence delegate (Septem Tribus): the fewest MarsBot
+   * delegates, then the fewest player delegates, then a random party.
+   */
+  public selectGrayEminenceParty(): PartyName {
+    let candidates = this.turmoil.parties;
+    const fewestMarsBot = Math.min(...candidates.map((party) => party.delegates.get(this.marsBotPlayer)));
+    candidates = candidates.filter((party) => party.delegates.get(this.marsBotPlayer) === fewestMarsBot);
+    const fewestHuman = Math.min(...candidates.map((party) => party.delegates.get(this.humanPlayer)));
+    candidates = candidates.filter((party) => party.delegates.get(this.humanPlayer) === fewestHuman);
+    return candidates[this.game.rng.nextInt(candidates.length)].name;
+  }
+
+  /**
    * Sends one delegate from MarsBot's reserve to the party it picks (T-7).
    * Returns the party it went to, or undefined when the reserve is empty.
    */

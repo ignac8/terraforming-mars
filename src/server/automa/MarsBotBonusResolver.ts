@@ -230,16 +230,20 @@ export class MarsBotBonusResolver {
     if (!claimed && this.game.generation >= 6) {
       // Try to fund an award
       if (!this.game.allAwardsFunded()) {
+        // Fund the award MarsBot leads by the most (ties go to the leftmost)
         const unfunded = this.game.awards.filter((a) => !this.game.hasBeenFunded(a));
+        let best: {award: typeof unfunded[number], lead: number} | undefined;
         for (const a of unfunded) {
-          const marsBotVal = this.turnResolver.getMarsBotAwardValue(a);
-          const humanVal = a.getScore(this.humanPlayer);
-          if (marsBotVal > humanVal) {
-            this.game.fundAward(this.marsBot, a);
-            this.game.log('MarsBot funds award ${0} (Overachievement)', (b) => b.rawString(a.name));
-            claimed = true;
-            break;
+          const lead = this.turnResolver.getMarsBotAwardValue(a) - a.getScore(this.humanPlayer);
+          if (lead > 0 && (best === undefined || lead > best.lead)) {
+            best = {award: a, lead};
           }
+        }
+        if (best !== undefined) {
+          const a = best.award;
+          this.game.fundAward(this.marsBot, a);
+          this.game.log('MarsBot funds award ${0} (Overachievement)', (b) => b.rawString(a.name));
+          claimed = true;
         }
       }
     }
@@ -276,6 +280,16 @@ export class MarsBotBonusResolver {
     }
 
     // (c) B06: Ocean adjacent to 2+ oceans
+    if (this.lobbyistsOceanBranch()) {
+      return true;
+    }
+
+    this.advanceFurthestParameter();
+    return false;
+  }
+
+  /** Lobbyists branch (c): an ocean space next to 2+ oceans takes an ocean. */
+  private lobbyistsOceanBranch(source: string = 'Lobbyists'): boolean {
     const oceanSpaces = this.game.board.getAvailableSpacesForOcean(this.marsBot);
     const adjacentTo2Oceans = oceanSpaces.filter((s) => {
       const adj = this.game.board.getAdjacentSpaces(s);
@@ -284,16 +298,14 @@ export class MarsBotBonusResolver {
     if (adjacentTo2Oceans.length > 0 && this.game.canAddOcean()) {
       const space = adjacentTo2Oceans[0];
       if (this.interceptsRaise(GlobalParameter.OCEANS)) {
-        this.game.log('MarsBot skips the ocean (Lobbyists), card destroyed');
+        this.game.log(`MarsBot skips the ocean (${source})`);
         return true;
       }
       this.game.addOcean(this.marsBot, space);
       this.turnResolver.gainMc(this.tilePlacer.getTotalPlacementMC(space));
-      this.game.log('MarsBot places ocean (Lobbyists), card destroyed');
+      this.game.log(`MarsBot places ocean (${source})`);
       return true;
     }
-
-    this.advanceFurthestParameter();
     return false;
   }
 
@@ -325,7 +337,7 @@ export class MarsBotBonusResolver {
   }
 
   /** Lobbyists shared branch (a): temperature 1-2 steps from bonus or completion. */
-  private lobbyistsTempBranch(): boolean {
+  private lobbyistsTempBranch(source: string = 'Lobbyists'): boolean {
     const temp = this.game.getTemperature();
     const tempBonusTargets = [constants.TEMPERATURE_BONUS_FOR_HEAT_1, constants.TEMPERATURE_BONUS_FOR_HEAT_2, constants.TEMPERATURE_FOR_OCEAN_BONUS, constants.MAX_TEMPERATURE];
     const tempStepsToNextBonus = tempBonusTargets
@@ -335,7 +347,7 @@ export class MarsBotBonusResolver {
     if (tempStepsToNextBonus >= 1 && tempStepsToNextBonus <= 2 && temp < constants.MAX_TEMPERATURE) {
       if (!this.interceptsRaise(GlobalParameter.TEMPERATURE)) {
         this.game.increaseTemperature(this.marsBot, 2);
-        this.game.log('MarsBot raises temperature 2 steps (Lobbyists), card destroyed');
+        this.game.log(`MarsBot raises temperature 2 steps (${source})`);
       }
       return true;
     }
@@ -343,7 +355,7 @@ export class MarsBotBonusResolver {
   }
 
   /** Lobbyists shared branch (b): oxygen 1-2 steps from bonus or completion. */
-  private lobbyistsOxygenBranch(): boolean {
+  private lobbyistsOxygenBranch(source: string = 'Lobbyists'): boolean {
     const oxy = this.game.getOxygenLevel();
     const oxyStepsToMax = constants.MAX_OXYGEN_LEVEL - oxy;
     const oxyBonusAt8 = oxy < constants.OXYGEN_LEVEL_FOR_TEMPERATURE_BONUS;
@@ -358,7 +370,7 @@ export class MarsBotBonusResolver {
         if (this.game.getOxygenLevel() < constants.MAX_OXYGEN_LEVEL && !this.interceptsRaise(GlobalParameter.OXYGEN)) {
           this.game.increaseOxygenLevel(this.marsBot, 1);
         }
-        this.game.log('MarsBot places greenery and raises oxygen twice (Lobbyists), card destroyed');
+        this.game.log(`MarsBot places greenery and raises oxygen twice (${source})`);
         return true;
       }
     }
@@ -372,9 +384,9 @@ export class MarsBotBonusResolver {
     const venusComplete = venus >= constants.MAX_VENUS_SCALE;
 
     if (isEvenGen || venusComplete) {
-      this.withoutTRGain(() => this.advanceFurthestParameter(false));
+      this.withoutTRorMcGain(() => this.advanceFurthestParameter(false));
     } else if (venus < constants.MAX_VENUS_SCALE) {
-      this.withoutTRGain(() => this.game.increaseVenusScaleLevel(this.marsBot, 1));
+      this.withoutTRorMcGain(() => this.game.increaseVenusScaleLevel(this.marsBot, 1));
     }
   }
 
@@ -387,14 +399,19 @@ export class MarsBotBonusResolver {
     return new MarsBotTurmoilHelper(this.game);
   }
 
-  /** Execute an action and reverse any TR gained (for Government Intervention). */
-  private withoutTRGain(action: () => void): void {
+  /** Execute an action and reverse any TR or M€ gained (for Government Intervention). */
+  private withoutTRorMcGain(action: () => void): void {
     const trBefore = this.marsBot.terraformRating;
+    const mcBefore = this.turnResolver.megacredits;
     action();
     const trGained = this.marsBot.terraformRating - trBefore;
     if (trGained > 0) {
       this.marsBot.decreaseTerraformRating(trGained);
       this.game.log('MarsBot does not receive TR from Government Intervention');
+    }
+    if (this.turnResolver.megacredits > mcBefore) {
+      this.turnResolver.megacredits = mcBefore;
+      this.game.log('MarsBot does not receive M€ from Government Intervention');
     }
   }
 
@@ -431,13 +448,19 @@ export class MarsBotBonusResolver {
       return;
     }
 
-    // Find closest funded award (smallest margin human leads by, or smallest margin MarsBot leads by)
+    // The closest award is the one the player leads by the least or is tied on. If MarsBot
+    // leads every funded award, it is the one with the smallest gap.
     let resolved = false;
     const sorted = funded.map((a) => {
       const humanVal = a.getScore(this.humanPlayer);
       const marsBotVal = this.turnResolver.getMarsBotAwardValue(a);
       return {award: a, margin: humanVal - marsBotVal};
-    }).sort((a, b) => a.margin - b.margin); // Smallest margin first (MarsBot most competitive)
+    }).sort((a, b) => {
+      if ((a.margin >= 0) !== (b.margin >= 0)) {
+        return a.margin >= 0 ? -1 : 1;
+      }
+      return Math.abs(a.margin) - Math.abs(b.margin);
+    });
 
     for (const {award} of sorted) {
       if (this.tryHelperAction(award.name)) {
@@ -502,7 +525,7 @@ export class MarsBotBonusResolver {
     switch (awardName) {
     // Tharsis: Building=0, Space=1, Event=2, Science=3, Energy=4, Earth=5, Plant=6
     case 'Landlord': return placeGreenery();
-    case 'Banker': return advanceLeastOf(0, 4);
+    case 'Banker': return advanceLeastOf(0, 2);
     case 'Scientist': return advance(3);
     case 'Thermalist': return advance(4);
     case 'Miner': return advance(1);
@@ -722,32 +745,57 @@ export class MarsBotBonusResolver {
     this.resolvePlaceGreeneryCard('Settlers');
   }
 
+  // Ecoline: a. spend the plant on the corp card to place a greenery; b. otherwise put a plant there
   private resolveRapidSprouting(): void {
-    this.resolvePlaceGreeneryCard('Rapid Sprouting');
+    const bot = this.marsBotManager;
+    if (bot === undefined) {
+      return;
+    }
+    if (bot.getCorpState('plantOnCard') > 0) {
+      bot.setCorpState('plantOnCard', 0);
+      this.resolvePlaceGreeneryCard('Rapid Sprouting');
+    } else {
+      bot.setCorpState('plantOnCard', 1);
+      this.game.log('MarsBot resolves Rapid Sprouting: 1 plant on the corporation card');
+    }
   }
 
+  // Factorum: take up to 3 M€ from the corp card; with none taken, advance the energy track
   private resolveSupplyAndDemand(): void {
-    // Factorum: advance building track (index 0)
-    this.turnResolver.advanceTrack(0);
-    this.game.log('MarsBot resolves Supply & Demand: advance building track');
+    const bot = this.marsBotManager;
+    const taken = Math.min(3, bot?.getCorpState('mcOnCard') ?? 0);
+    if (bot !== undefined && taken > 0) {
+      bot.setCorpState('mcOnCard', bot.getCorpState('mcOnCard') - taken);
+      this.turnResolver.gainMc(taken);
+      this.game.log('MarsBot resolves Supply & Demand: takes ${0} M€ from the corporation card', (b) => b.number(taken));
+    } else {
+      this.turnResolver.advanceTrack(4);
+      this.game.log('MarsBot resolves Supply & Demand: advance energy track');
+    }
   }
 
+  // Inventrix: the first of Lobbyists' temperature, oxygen and ocean branches that applies
   private resolveDoItRight(): void {
-    // Inventrix: advance science track (index 3)
-    this.turnResolver.advanceTrack(3);
-    this.game.log('MarsBot resolves Do It Right: advance science track');
+    if (this.lobbyistsTempBranch('Do It Right') ||
+      this.lobbyistsOxygenBranch('Do It Right') ||
+      this.lobbyistsOceanBranch('Do It Right')) {
+      return;
+    }
+    this.game.log('MarsBot resolves Do It Right: no effect');
   }
 
   private resolveVenusianLobby(): void {
     if (this.game.gameOptions.venusNextExtension) {
-      // Venus track is track 8 (index 7) when Venus expansion is enabled
-      // If Venus track exists on the board, advance it
+      // Morningstar: raise Venus 1 step and advance the Venus track (index 7), then raise the
+      // global parameter furthest from its maximum
+      if (this.game.getVenusScaleLevel() < constants.MAX_VENUS_SCALE && !this.interceptsRaise(GlobalParameter.VENUS)) {
+        this.game.increaseVenusScaleLevel(this.marsBot, 1);
+      }
       if (this.turnResolver.marsBotBoard.tracks.length > 7) {
         this.turnResolver.advanceTrack(7);
-        this.game.log('MarsBot resolves Venusian Lobby: advance Venus track');
-      } else {
-        this.game.log('MarsBot resolves Venusian Lobby: no Venus track available');
       }
+      this.game.log('MarsBot resolves Venusian Lobby: raise Venus, advance Venus track');
+      this.advanceFurthestParameter();
     } else {
       // Without Venus, advance least-advanced track
       const leastIdx = this.turnResolver.marsBotBoard.getLeastAdvancedTrackIndex();
@@ -763,11 +811,13 @@ export class MarsBotBonusResolver {
   }
 
   private resolveDiversification(): void {
-    // Robinson Industries: advance least-advanced track
+    // Robinson Industries: advance least-advanced track, then lose up to 4 M€
     const marsBotBoard = this.turnResolver.marsBotBoard;
     const leastIndex = marsBotBoard.getLeastAdvancedTrackIndex();
     this.turnResolver.advanceTrack(leastIndex);
-    this.game.log('MarsBot resolves Diversification: advance least-advanced track');
+    const lost = Math.min(4, this.turnResolver.megacredits);
+    this.turnResolver.megacredits -= lost;
+    this.game.log('MarsBot resolves Diversification: advance least-advanced track, lose ${0} M€', (b) => b.number(lost));
   }
 
   // B21: Party Politics (T-7, T-8)
@@ -807,13 +857,15 @@ export class MarsBotBonusResolver {
       this.game.log('MarsBot resolves Gray Eminence: Turmoil not active');
       return;
     }
-    if (!turmoil.hasDelegatesInReserve(this.marsBot)) {
-      this.game.log('MarsBot resolves Gray Eminence: no delegates in reserve');
-      return;
-    }
-    // Gray Eminence: same T-7 priority logic as Party Politics, but no T-8 second-delegate check
-    const partyName = this.turmoilHelper().selectParty();
-    if (partyName !== undefined) {
+    // Up to 2 delegates, each to the party with the fewest MarsBot delegates, then the fewest
+    // player delegates, then a random one. 2 M€ for each delegate it can't place.
+    for (let i = 0; i < 2; i++) {
+      if (!turmoil.hasDelegatesInReserve(this.marsBot)) {
+        this.turnResolver.gainMc(2);
+        this.game.log('MarsBot resolves Gray Eminence: no delegate in reserve, +2 M€');
+        continue;
+      }
+      const partyName = this.turmoilHelper().selectGrayEminenceParty();
       turmoil.sendDelegateToParty(this.marsBot, partyName, this.game);
       this.game.log('MarsBot places delegate in ${0} (Gray Eminence)', (b) => b.partyName(partyName));
     }
@@ -834,12 +886,9 @@ export class MarsBotBonusResolver {
   }
 
   private resolveGovernmentSubsidy(): void {
-    // UNMI: gain 5 MC and advance any track (least-advanced)
-    this.turnResolver.gainMc(5);
-    const marsBotBoard = this.turnResolver.marsBotBoard;
-    const leastIndex = marsBotBoard.getLeastAdvancedTrackIndex();
-    this.turnResolver.advanceTrack(leastIndex);
-    this.game.log('MarsBot resolves Government Subsidy: +5 M€, advance least-advanced track');
+    // UNMI: raise TR 1 step
+    this.marsBot.increaseTerraformRating(1);
+    this.game.log('MarsBot resolves Government Subsidy: +1 TR');
   }
 
   private resolveInvestors(): void {

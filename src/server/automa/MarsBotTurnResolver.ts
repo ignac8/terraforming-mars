@@ -3,7 +3,6 @@ import {IPlayer} from '../IPlayer';
 import {IProjectCard} from '../cards/IProjectCard';
 import {Tag} from '../../common/cards/Tag';
 import {GlobalParameter} from '../../common/GlobalParameter';
-import {CardType} from '../../common/cards/CardType';
 import {ColonyName} from '../../common/colonies/ColonyName';
 import {
   TrackAction,
@@ -12,6 +11,7 @@ import {
   DifficultyLevel,
 } from '../../common/automa/AutomaTypes';
 import {MarsBotBoard} from './MarsBotBoard';
+import {marsBotCardTags} from './MarsBotTags';
 import {MarsBotTilePlacer} from './MarsBotTilePlacer';
 import {IMilestone} from '../milestones/IMilestone';
 import {IAward} from '../awards/IAward';
@@ -49,18 +49,12 @@ export class MarsBotTurnResolver {
   public resolveProjectCard(card: IProjectCard): void {
     this.game.log('MarsBot plays ${0}', (b) => b.card(card));
 
-    // Build the effective tag list: card.tags + Event tag if the card is an event type.
-    // In the physical game, event cards show the Event tag icon on the top-right.
-    // In the codebase, card.tags does NOT include Tag.EVENT for event-type cards.
-    const tags: Array<Tag> = [...card.tags];
-    if (card.type === CardType.EVENT && !tags.includes(Tag.EVENT)) {
-      tags.push(Tag.EVENT);
-    }
+    const tags = marsBotCardTags(card);
 
+    // A card with no tags is still played: its corp and player effects apply below.
     if (tags.length === 0) {
       this.game.log('MarsBot takes a Failed Action (card has no tags)');
       this.failedAction();
-      return;
     }
 
     // Resolve each tag left-to-right
