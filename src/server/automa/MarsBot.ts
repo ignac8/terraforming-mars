@@ -422,7 +422,9 @@ export class MarsBot implements IMarsBot {
   }
 
   public raiseTemperature(steps: 1 | 2 | 3): void {
+    const before = this.game.getTemperature();
     this.game.increaseTemperature(this.player, steps);
+    this.temperatureRaises += (this.game.getTemperature() - before) / 2;
   }
 
   public placeOcean(): void {

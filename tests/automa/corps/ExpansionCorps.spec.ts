@@ -23,6 +23,8 @@ import {SpaceType} from '../../../src/common/boards/SpaceType';
 import {TileType} from '../../../src/common/TileType';
 import {SelectCard} from '../../../src/server/inputs/SelectCard';
 import {cast} from '../../../src/common/utils/utils';
+import {setTemperature} from '../../TestingUtils';
+import {MAX_TEMPERATURE} from '../../../src/common/constants';
 
 function createAutomaGame(): {game: IGame, human: TestPlayer, marsBot: MarsBot} {
   const [game, human] = testGame(1, {
@@ -603,6 +605,25 @@ describe('Expansion MarsBot Corporations', () => {
 
       expect(marsBot.floaters).to.eq(1);
       expect(game.getTemperature()).to.eq(temperature + 2);
+    });
+
+    it('counts its temperature step among the ones MarsBot raised', () => {
+      const {game, marsBot} = createVenusGame(false);
+      game.generation = 2;
+
+      game.automaHooks!.handleResearchPhase();
+
+      expect(marsBot.temperatureRaises).to.eq(1);
+    });
+
+    it('counts no temperature step once the temperature is maxed', () => {
+      const {game, marsBot} = createVenusGame(false);
+      setTemperature(game, MAX_TEMPERATURE);
+      game.generation = 2;
+
+      game.automaHooks!.handleResearchPhase();
+
+      expect(marsBot.temperatureRaises).to.eq(0);
     });
 
     it('does not raise the temperature without spending floaters', () => {

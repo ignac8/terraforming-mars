@@ -177,6 +177,7 @@ export interface IMarsBot {
    */
   maybeFundAward(): boolean;
 
+  /** Raises the temperature. The steps it actually moves count toward `temperatureRaises`. */
   raiseTemperature(steps: 1 | 2 | 3): void;
   placeOcean(): void;
   placeCity(): void;
