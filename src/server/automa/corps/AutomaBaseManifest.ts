@@ -95,7 +95,9 @@ const INVENTRIX: IMarsBotCorp = {
   description: 'Setup: remove Lobbyists. Effect: card with requirements gives 2 MC. Each generation: add Do It Right to action deck.',
   tags: [],
   setup(bot) {
+    // With Venus Next the bonus deck's Lobbyists is B15
     bot.removeBonusCard(BonusCardId.B06_LOBBYISTS);
+    bot.removeBonusCard(BonusCardId.B15_LOBBYISTS_VENUS);
     bot.game.log('MarsBot (Inventrix): Lobbyists removed from bonus deck');
   },
   effect: {
@@ -229,11 +231,12 @@ const THARSIS_REPUBLIC: IMarsBotCorp = {
   effect: {
     onTilePlaced(bot, placedByMarsBot, tileType) {
       if (tileType === TileType.CITY || tileType === TileType.CAPITAL) {
-        bot.gainMc(2);
-        bot.game.log('MarsBot (Tharsis Republic): city placed, +2 M€');
         if (placedByMarsBot) {
           bot.advanceTrack(2); // Event track = index 2
           bot.game.log('MarsBot (Tharsis Republic): MarsBot city, advance event track');
+        } else {
+          bot.gainMc(2);
+          bot.game.log('MarsBot (Tharsis Republic): player city placed, +2 M€');
         }
       }
     },

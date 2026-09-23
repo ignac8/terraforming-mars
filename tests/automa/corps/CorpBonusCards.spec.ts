@@ -7,6 +7,8 @@ import {MarsBot} from '../../../src/server/automa/MarsBot';
 import {createCorpBonusCard} from '../../../src/server/automa/MarsBotBonusCard';
 import {BonusCardId} from '../../../src/common/automa/AutomaTypes';
 import {BoardName} from '../../../src/common/boards/BoardName';
+import {setTemperature} from '../../TestingUtils';
+import {Turmoil} from '../../../src/server/turmoil/Turmoil';
 import {
   clearMarsBotCorpRegistry, restoreMarsBotCorpRegistry,
 } from '../../../src/server/automa/corps/MarsBotCorpRegistry';
@@ -32,32 +34,67 @@ describe('Corp-Specific Bonus Cards (B22-B32)', () => {
   });
 
   describe('B23 Rapid Sprouting', () => {
-    it('places a greenery tile', () => {
-      const {marsBot} = createAutomaGame();
-      const card = createCorpBonusCard(BonusCardId.B23_RAPID_SPROUTING);
-      const greeneryBefore = marsBot.game.board.getGreeneries(marsBot.player).length;
-      marsBot['bonusResolver'].resolve(card);
-      expect(marsBot.game.board.getGreeneries(marsBot.player).length).to.be.gte(greeneryBefore);
+    it('first puts a plant on the corporation card, then spends it on a greenery', () => {
+      const {game, marsBot} = createAutomaGame();
+      const greeneries = () => game.board.getGreeneries(marsBot.player).length;
+
+      marsBot['bonusResolver'].resolve(createCorpBonusCard(BonusCardId.B23_RAPID_SPROUTING));
+      expect(greeneries()).to.eq(0);
+      expect(marsBot.getCorpState('plantOnCard')).to.eq(1);
+
+      marsBot['bonusResolver'].resolve(createCorpBonusCard(BonusCardId.B23_RAPID_SPROUTING));
+      expect(greeneries()).to.eq(1);
+      expect(game.getOxygenLevel()).to.eq(1);
+      expect(marsBot.getCorpState('plantOnCard')).to.eq(0);
     });
   });
 
   describe('B24 Supply & Demand', () => {
-    it('advances building track', () => {
+    it('takes up to 3 M€ from the corporation card', () => {
       const {marsBot} = createAutomaGame();
-      const card = createCorpBonusCard(BonusCardId.B24_SUPPLY_AND_DEMAND);
-      const trackBefore = marsBot.marsBotBoard.tracks[0].position;
-      marsBot['bonusResolver'].resolve(card);
-      expect(marsBot.marsBotBoard.tracks[0].position).to.be.gte(trackBefore + 1);
+      marsBot.setCorpState('mcOnCard', 5);
+      marsBot['bonusResolver'].resolve(createCorpBonusCard(BonusCardId.B24_SUPPLY_AND_DEMAND));
+      expect(marsBot.turnResolver.megacredits).to.eq(3);
+      expect(marsBot.getCorpState('mcOnCard')).to.eq(2);
+      expect(marsBot.marsBotBoard.tracks[4].position).to.eq(0);
+    });
+
+    it('with no M€ on the card advances the energy track', () => {
+      const {marsBot} = createAutomaGame();
+      marsBot['bonusResolver'].resolve(createCorpBonusCard(BonusCardId.B24_SUPPLY_AND_DEMAND));
+      expect(marsBot.marsBotBoard.tracks[4].position).to.be.greaterThan(0);
+      expect(marsBot.marsBotBoard.tracks[0].position).to.eq(0);
     });
   });
 
   describe('B25 Do It Right', () => {
-    it('advances science track', () => {
-      const {marsBot} = createAutomaGame();
-      const card = createCorpBonusCard(BonusCardId.B25_DO_IT_RIGHT);
-      const trackBefore = marsBot.marsBotBoard.tracks[3].position;
-      marsBot['bonusResolver'].resolve(card);
-      expect(marsBot.marsBotBoard.tracks[3].position).to.be.gte(trackBefore + 1);
+    it('raises the temperature 2 steps when it is 1 or 2 steps from a bonus', () => {
+      const {game, marsBot} = createAutomaGame();
+      setTemperature(game, -26);
+      marsBot['bonusResolver'].resolve(createCorpBonusCard(BonusCardId.B25_DO_IT_RIGHT));
+      expect(game.getTemperature()).to.eq(-22);
+    });
+
+    it('does nothing when no branch applies', () => {
+      const {game, marsBot} = createAutomaGame();
+      const tr = marsBot.player.terraformRating;
+      marsBot['bonusResolver'].resolve(createCorpBonusCard(BonusCardId.B25_DO_IT_RIGHT));
+      expect(game.getTemperature()).to.eq(-30);
+      expect(game.getOxygenLevel()).to.eq(0);
+      expect(marsBot.player.terraformRating).to.eq(tr);
+      expect(marsBot.marsBotBoard.tracks[3].position).to.eq(0);
+    });
+  });
+
+  describe('B26 Venusian Lobby', () => {
+    it('raises Venus, advances the Venus track and raises the furthest parameter', () => {
+      const [game] = testGame(1, {automaOption: true, venusNextExtension: true, boardName: BoardName.THARSIS});
+      const marsBot = game.automaHooks!.marsBot;
+      marsBot['bonusResolver'].resolve(createCorpBonusCard(BonusCardId.B26_VENUSIAN_LOBBY));
+      expect(game.getVenusScaleLevel()).to.eq(2);
+      expect(marsBot.marsBotBoard.tracks[7].position).to.eq(1);
+      // Everything is at its start, so oxygen goes first
+      expect(game.getOxygenLevel()).to.eq(1);
     });
   });
 
@@ -72,6 +109,16 @@ describe('Corp-Specific Bonus Cards (B22-B32)', () => {
   });
 
   describe('B28 Diversification', () => {
+    it('loses up to 4 M€ after advancing', () => {
+      const {marsBot} = createAutomaGame();
+      marsBot.turnResolver.advanceTrack = () => {};
+      marsBot.turnResolver.megacredits = 6;
+      marsBot['bonusResolver'].resolve(createCorpBonusCard(BonusCardId.B28_DIVERSIFICATION));
+      expect(marsBot.turnResolver.megacredits).to.eq(2);
+      marsBot['bonusResolver'].resolve(createCorpBonusCard(BonusCardId.B28_DIVERSIFICATION));
+      expect(marsBot.turnResolver.megacredits).to.eq(0);
+    });
+
     it('advances least-advanced track', () => {
       const {marsBot} = createAutomaGame();
       const card = createCorpBonusCard(BonusCardId.B28_DIVERSIFICATION);
@@ -82,6 +129,34 @@ describe('Corp-Specific Bonus Cards (B22-B32)', () => {
       const trackBefore = marsBot.marsBotBoard.tracks[leastIdx].position;
       marsBot['bonusResolver'].resolve(card);
       expect(marsBot.marsBotBoard.tracks[leastIdx].position).to.be.gte(trackBefore + 1);
+    });
+  });
+
+  describe('B29 Gray Eminence', () => {
+    function turmoilGame() {
+      const [game] = testGame(1, {automaOption: true, turmoilExtension: true, boardName: BoardName.THARSIS});
+      const marsBot = game.automaHooks!.marsBot;
+      return {game, marsBot, turmoil: game.turmoil!};
+    }
+    const botDelegates = (turmoil: Turmoil, marsBot: MarsBot) =>
+      turmoil.parties.map((party) => party.delegates.get(marsBot.player));
+
+    it('places 2 delegates, each in a party with the fewest MarsBot delegates', () => {
+      const {marsBot, turmoil} = turmoilGame();
+      const before = botDelegates(turmoil, marsBot);
+      expect(Math.max(...before)).to.eq(0);
+      marsBot['bonusResolver'].resolve(createCorpBonusCard(BonusCardId.B29_GRAY_EMINENCE));
+      const after = botDelegates(turmoil, marsBot);
+      expect(after.reduce((a, b) => a + b, 0)).to.eq(2);
+      expect(Math.max(...after)).to.eq(1);
+    });
+
+    it('gains 2 M€ for each delegate it cannot place', () => {
+      const {marsBot, turmoil} = turmoilGame();
+      turmoil.delegateReserve.remove(marsBot.player, turmoil.delegateReserve.get(marsBot.player) - 1);
+      marsBot['bonusResolver'].resolve(createCorpBonusCard(BonusCardId.B29_GRAY_EMINENCE));
+      expect(botDelegates(turmoil, marsBot).reduce((a, b) => a + b, 0)).to.eq(1);
+      expect(marsBot.turnResolver.megacredits).to.eq(2);
     });
   });
 
@@ -100,12 +175,12 @@ describe('Corp-Specific Bonus Cards (B22-B32)', () => {
   });
 
   describe('B31 Government Subsidy', () => {
-    it('gains 5 M€ and advances a track', () => {
+    it('raises TR 1 step', () => {
       const {marsBot} = createAutomaGame();
-      const card = createCorpBonusCard(BonusCardId.B31_GOVERNMENT_SUBSIDY);
-      const mcBefore = marsBot.turnResolver.megacredits;
-      marsBot['bonusResolver'].resolve(card);
-      expect(marsBot.turnResolver.megacredits).to.be.gte(mcBefore + 5);
+      const tr = marsBot.player.terraformRating;
+      marsBot['bonusResolver'].resolve(createCorpBonusCard(BonusCardId.B31_GOVERNMENT_SUBSIDY));
+      expect(marsBot.player.terraformRating).to.eq(tr + 1);
+      expect(marsBot.turnResolver.megacredits).to.eq(0);
     });
   });
 

@@ -9,6 +9,7 @@ import {DifficultyLevel, BonusCardId, TrackDefinition, getAutomaMaxGeneration} f
 import {Tag} from '../../common/cards/Tag';
 import {currentMcPerVP} from './MarsBotScoring';
 import {MarsBotBoard} from './MarsBotBoard';
+import {marsBotCardTags} from './MarsBotTags';
 import {MarsBotModel} from '../../common/models/MarsBotModel';
 import {MarsBotBonusCard, bonusCardDisplayName, createCorpBonusCard} from './MarsBotBonusCard';
 import {MarsBotBonusDeck} from './MarsBotBonusDeck';
@@ -468,7 +469,7 @@ export class MarsBot implements IMarsBot {
     let fewestIdx = 0;
     for (let i = 0; i < this.actionDeck.length; i++) {
       const card = this.actionDeck[i];
-      const tagCount = this.isProjectCard(card) ? (card as IProjectCard).tags.length : 0;
+      const tagCount = this.isProjectCard(card) ? marsBotCardTags(card as IProjectCard).length : 0;
       if (tagCount < fewestTags) {
         fewestTags = tagCount;
         fewestIdx = i;

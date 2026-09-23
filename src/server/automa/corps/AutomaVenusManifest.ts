@@ -4,19 +4,24 @@ import {CardName} from '../../../common/cards/CardName';
 import {BonusCardId} from '../../../common/automa/AutomaTypes';
 import {AutomaManifest} from './AutomaManifest';
 import {floaterAtRoundStart} from './BaseGameCorps';
+import {CardType} from '../../../common/cards/CardType';
+import {isIActionCard} from '../../cards/ICard';
 
 // ==== VENUS NEXT (C25-C28, C34) ====
 
 // C25 Viron (NamuWiki says "Byron")
 const VIRON: IMarsBotCorp = {
   name: CardName.VIRON,
-  description: 'Tag: Microbe. Each card resolved adds 1 floater. VP bonus equal to total cards resolved.',
+  description: 'Tag: Microbe. Each active card with an action adds 1 floater and scores 1 VP at game end.',
   tags: [Tag.MICROBE],
   effect: {
-    onProjectCardResolved(bot, _card) {
+    onProjectCardResolved(bot, card) {
+      if (card.type !== CardType.ACTIVE || !isIActionCard(card)) {
+        return;
+      }
       bot.addFloaters(1);
       bot.setCorpState('actionCardsPlayed', bot.getCorpState('actionCardsPlayed') + 1);
-      bot.game.log('MarsBot (Viron): card played, +1 floater');
+      bot.game.log('MarsBot (Viron): active card with an action played, +1 floater');
     },
     vpBonus(bot) {
       return bot.getCorpState('actionCardsPlayed');
@@ -47,7 +52,9 @@ const MORNINGSTAR: IMarsBotCorp = {
   description: 'Tags: 2 Venus. Setup: remove Lobbyists, add Venusian Lobby. Credit cubes on Venus track earn 1 MC each.',
   tags: [Tag.VENUS, Tag.VENUS],
   setup(bot) {
+    // With Venus Next the bonus deck's Lobbyists is B15
     bot.removeBonusCard(BonusCardId.B06_LOBBYISTS);
+    bot.removeBonusCard(BonusCardId.B15_LOBBYISTS_VENUS);
     bot.addBonusCardToBonusDeck(BonusCardId.B26_VENUSIAN_LOBBY);
     bot.game.log('MarsBot (Morningstar): Lobbyists removed, Venusian Lobby added');
   },

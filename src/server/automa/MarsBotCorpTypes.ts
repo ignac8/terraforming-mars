@@ -44,6 +44,8 @@ export type IMarsBotCorp = {
   beforeActionPhase?(bot: IMarsBot): void;
   /** Cubes seeded onto the bot's board tracks during setup. */
   readonly trackCubes?: ReadonlyArray<MarsBotTrackCube>;
+  /** M€ the bot gains per ocean next to a tile it places, when not the usual 2 (Lakefront). */
+  readonly oceanAdjacencyMc?: number;
 };
 
 export type MarsBotCorpEffect = {
