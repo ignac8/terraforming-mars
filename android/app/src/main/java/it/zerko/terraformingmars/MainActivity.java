@@ -11,6 +11,7 @@ import android.view.WindowManager;
 import android.webkit.ConsoleMessage;
 import android.webkit.WebChromeClient;
 import android.webkit.WebResourceRequest;
+import android.webkit.WebResourceResponse;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
@@ -96,6 +97,12 @@ public class MainActivity extends Activity {
           AppLog.e("No app can open " + uri, e);
         }
         return true;
+      }
+
+      @Override
+      public WebResourceResponse shouldInterceptRequest(WebView view, WebResourceRequest request) {
+        Uri uri = request.getUrl();
+        return isLocalServer(uri) ? null : OfflineRequests.answer(MainActivity.this, uri);
       }
 
       @Override

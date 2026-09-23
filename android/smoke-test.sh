@@ -49,6 +49,14 @@ done
 curl -fsS -o /dev/null "$BASE/assets/index.html" || die "GET /assets/index.html failed"
 curl -fsS -o /dev/null "$BASE/favicon.ico" || die "GET /favicon.ico failed"
 
+# The app has no network: OfflineRequests serves the Google Fonts stylesheet
+# for Ubuntu from its assets and answers anything else off the phone with a
+# 404, so a new off-device link in the page would go missing in the app.
+PAGE=$(curl -fsS "$BASE/") || die "GET / failed"
+OFF_DEVICE=$(grep -oE '(src|href)="(https?:)?//[^"]*"' <<< "$PAGE" \
+    | grep -vxF 'href="https://fonts.googleapis.com/css?family=Ubuntu&display=swap"' || true)
+[ -z "$OFF_DEVICE" ] || die "the page links off the phone, which the app answers with a 404: $OFF_DEVICE"
+
 CONFIG='{
   "players": [{"name": "Robot", "color": "blue", "beginner": false, "handicap": 0, "first": true}],
   "expansions": {"corpera": true, "promo": false, "venus": false, "colonies": false, "prelude": false,
