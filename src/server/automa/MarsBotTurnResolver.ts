@@ -310,7 +310,7 @@ export class MarsBotTurnResolver {
 
   // C-8/C-14: Gain `count` floaters. With Venus → floaters; without Venus but with Colonies →
   // Titan storage; without both → ignored (C-13).
-  private gainFloaters(count: number): void {
+  public gainFloaters(count: number): void {
     if (this.marsBotManager === undefined) {
       return;
     }

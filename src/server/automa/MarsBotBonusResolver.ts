@@ -163,7 +163,8 @@ export class MarsBotBonusResolver {
     let bestEntry: {card: IProjectCard, resource: CardResource, vp: number} | undefined;
     if (!isProtected) {
       for (const played of this.humanPlayer.playedCards) {
-        if (played.resourceCount && played.resourceCount > 0) {
+        // Pets and Bioengineering Enclosure protect their resources from opponents
+        if (played.resourceCount && played.resourceCount > 0 && played.protectedResources !== true) {
           if (played.resourceType === CardResource.ANIMAL || played.resourceType === CardResource.MICROBE) {
             const vp = played.getVictoryPoints(this.humanPlayer);
             if (bestEntry === undefined || vp > bestEntry.vp) {
@@ -185,9 +186,16 @@ export class MarsBotBonusResolver {
     } else {
       this.game.log('MarsBot\'s Invasive Species: no animal/microbe resources to remove');
     }
-    // MarsBot gains 5 MC regardless
-    this.turnResolver.gainMc(5);
-    this.game.log('MarsBot gains 5 MC from Invasive Species');
+    // a. With Venus Next or Colonies, MarsBot gains 2 M€ and 1 floater; b. otherwise 5 M€
+    const opts = this.game.gameOptions;
+    if (opts.venusNextExtension || opts.coloniesExtension) {
+      this.turnResolver.gainMc(2);
+      this.turnResolver.gainFloaters(1);
+      this.game.log('MarsBot gains 2 MC and 1 floater from Invasive Species');
+    } else {
+      this.turnResolver.gainMc(5);
+      this.game.log('MarsBot gains 5 MC from Invasive Species');
+    }
     // Card is NOT destroyed in base game
   }
 
@@ -835,9 +843,20 @@ export class MarsBotBonusResolver {
   }
 
   private resolveInvestors(): void {
-    // Utopia Invest: advance building (index 0) and space (index 1) tracks
-    this.turnResolver.advanceTrack(0);
-    this.turnResolver.advanceTrack(1);
-    this.game.log('MarsBot resolves Investors: advance building + space tracks');
+    // Utopia Invest: a. in an even generation, advance the least-advanced track and move the
+    // most-advanced track back 1 space; b. otherwise gain 1 M€ per space of the least-advanced
+    // track. Ties go to the upper track.
+    const marsBotBoard = this.turnResolver.marsBotBoard;
+    const leastIndex = marsBotBoard.getLeastAdvancedTrackIndex();
+    if (this.game.generation % 2 === 0) {
+      const mostIndex = marsBotBoard.getMostAdvancedTrackIndex();
+      this.turnResolver.advanceTrack(leastIndex);
+      marsBotBoard.tracks[mostIndex].regress();
+      this.game.log('MarsBot resolves Investors: advance least-advanced track, move most-advanced track back');
+    } else {
+      const amount = marsBotBoard.tracks[leastIndex].position;
+      this.turnResolver.gainMc(amount);
+      this.game.log('MarsBot resolves Investors: +${0} M€ (least-advanced track)', (b) => b.number(amount));
+    }
   }
 }

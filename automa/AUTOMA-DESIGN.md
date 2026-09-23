@@ -164,7 +164,7 @@ Human produces as normal. MarsBot skips production entirely.
 | Card | Name | Effect |
 |------|------|--------|
 | B01 | Meteor Shower | Human must lose 5 plants (or as many as possible). If lost ≥3 or effect blocked removal, destroy this card. |
-| B02 | Invasive Species | Human must remove highest-scoring animal/microbe from a card. MarsBot gains 5 MC regardless. |
+| B02 | Invasive Species | Remove 1 animal or microbe from the human's highest-scoring card (not Pets or Bioengineering Enclosure; nothing under Protected Habitats). MarsBot gains 2 MC and 1 floater with Venus Next or Colonies, otherwise 5 MC. |
 | B03 | Research and Development | MarsBot draws 1 project card and resolves it immediately. |
 | B04 | Overachievement | MarsBot claims a milestone if able. If fails AND gen ≥6, funds an award. If either succeeded, destroy card. Otherwise gain 5 MC. |
 | B05 | Expedited Construction | Place city adjacent to ≥2 greenery/ocean mix. If placed, destroy card. Normal city rules apply. |
