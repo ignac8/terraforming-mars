@@ -64,18 +64,19 @@ export class MarsBotCorpResolver {
     if (cube === undefined) {
       return false;
     }
-    if (marsBot.isCubeTriggered(trackIndex, position)) {
-      return false;
-    }
-
+    const firstVisit = !marsBot.isCubeTriggered(trackIndex, position);
     marsBot.markCubeTriggered(trackIndex, position);
 
     // Only the corp's own cubes reach its handler. The colony and trade fleet cubes below are
     // rule cubes that sit on the same tracks.
     const corp = marsBot.corp;
     const corpCube = corp?.trackCubes?.find((c) => c.trackIndex === trackIndex && c.position === position);
-    const replacedIcon = corpCube !== undefined &&
+    const triggers = firstVisit || corp?.trackCubesTriggerEveryAdvance === true;
+    const replacedIcon = corpCube !== undefined && triggers &&
       corp?.effect?.onTrackCubeTrigger?.(marsBot, trackIndex, position, corpCube.cubeType) === true;
+    if (!firstVisit) {
+      return replacedIcon;
+    }
 
     // Colony cubes (Pioneer4/Constructor): positions set by AutomaGameSetup
     // C-X3: deduct 5 MC then place a colony on a randomly selected eligible tile

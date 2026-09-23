@@ -45,6 +45,13 @@ export type IMarsBotCorp = {
   beforeActionPhase?(bot: IMarsBot): void;
   /** Cubes seeded onto the bot's board tracks during setup. */
   readonly trackCubes?: ReadonlyArray<MarsBotTrackCube>;
+  /**
+   * True when the corp's cubes trigger on every advance onto their space, not only the first.
+   *
+   * The whole-track white cubes of the corps that pay "whenever advancing" on a track. After a
+   * regression the space's icon still stays unresolved.
+   */
+  readonly trackCubesTriggerEveryAdvance?: boolean;
   /** M€ the bot gains per ocean next to a tile it places, when not the usual 2 (Lakefront). */
   readonly oceanAdjacencyMc?: number;
 };

@@ -13,6 +13,7 @@ import {
 import {Tag} from '../../../src/common/cards/Tag';
 import {IProjectCard} from '../../../src/server/cards/IProjectCard';
 import {BoardName} from '../../../src/common/boards/BoardName';
+import {Resource} from '../../../src/common/Resource';
 import {BonusCardId} from '../../../src/common/automa/AutomaTypes';
 import {MicroMills} from '../../../src/server/cards/base/MicroMills';
 import {IceCapMelting} from '../../../src/server/cards/base/IceCapMelting';
@@ -159,6 +160,21 @@ describe('Expansion MarsBot Corporations', () => {
 
       expect(marsBot.megacredits).to.eq(mc);
       expect(marsBot.markerSpaceIds).has.length(1);
+    });
+  });
+
+  describe('C20 Factorum', () => {
+    it('stores 1 M€ on every advance of the building track, re-advances included', () => {
+      const {marsBot} = createAutomaGame();
+      marsBot.setCorpAndSetup(getMarsBotCorp(CardName.FACTORUM)!);
+      marsBot.marsBotBoard.tracks[0].position = 3;
+      marsBot.advanceTrack(0);
+      marsBot.regressTrack(Resource.STEEL);
+      const mcOnCard = marsBot.getCorpState('mcOnCard');
+
+      marsBot.advanceTrack(0);
+
+      expect(marsBot.getCorpState('mcOnCard')).to.eq(mcOnCard + 1);
     });
   });
 

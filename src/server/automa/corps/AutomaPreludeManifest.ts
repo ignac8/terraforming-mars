@@ -157,6 +157,7 @@ const FACTORUM: IMarsBotCorp = {
   description: 'Tag: Power. White cubes on building track: each advance stores 1 MC on card. Each generation: add Supply and Demand to action deck.',
   tags: [Tag.POWER],
   trackCubes: whiteTrackCubes(0),
+  trackCubesTriggerEveryAdvance: true,
   effect: {
     onTrackCubeTrigger(bot, trackIndex, _position, cubeType) {
       if (cubeType === 'white' && trackIndex === 0) {
