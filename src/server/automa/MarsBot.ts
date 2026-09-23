@@ -26,6 +26,9 @@ import {selectRandomColony, placeColonyForMarsBot} from './colonies/MarsBotColon
 import {MarsBotCorpResolver} from './corps/MarsBotCorpResolver';
 import {getMarsBotCorp} from './corps/MarsBotCorpRegistry';
 import {SerializedAutomaState} from '../SerializedGame';
+import {SpaceId} from '../../common/Types';
+import {inplaceRemove} from '../../common/utils/utils';
+import {LogHelper} from '../LogHelper';
 
 /**
  * MarsBot: the automa manager. Owns the board, decks, and coordinates turns.
@@ -92,6 +95,9 @@ export class MarsBot implements IMarsBot {
 
   /** Shipping Board with 11 storage areas, one per colony tile (C-18). */
   public shippingBoard: MarsBotShippingBoard = new MarsBotShippingBoard();
+
+  /** Spaces holding one of MarsBot's player markers (Settlers) and no tile yet. */
+  public markerSpaceIds: Array<SpaceId> = [];
 
   constructor(
     public readonly game: IGame,
@@ -415,6 +421,23 @@ export class MarsBot implements IMarsBot {
     this.actionDeck = this.actionDeck.filter((c) => !('id' in c) || (c as MarsBotBonusCard).id !== bonusCardId);
   }
 
+  public resolveBonusCard(bonusCardId: BonusCardId): void {
+    const card = createCorpBonusCard(bonusCardId);
+    this.game.log('MarsBot resolves bonus card: ${0}', (b) => b.rawString(bonusCardDisplayName(card)));
+    this.bonusResolver.resolveEffect(card);
+  }
+
+  /** Puts one of MarsBot's player markers on `space`, which reserves the space for MarsBot. */
+  public placeMarker(space: Space): void {
+    space.player = this.player;
+    this.markerSpaceIds.push(space.id);
+    LogHelper.logBoardTileAction(this.player, space, 'player marker');
+  }
+
+  public removeMarker(space: Space): boolean {
+    return inplaceRemove(this.markerSpaceIds, space.id);
+  }
+
   public addBonusCardToBonusDeck(bonusCardId: BonusCardId): void {
     this.bonusDeck.drawPile.push(createCorpBonusCard(bonusCardId));
   }
@@ -629,6 +652,9 @@ export class MarsBot implements IMarsBot {
     if (this.colonyCubePositions.size > 0) {
       state.colonyCubePositions = Array.from(this.colonyCubePositions);
     }
+    if (this.markerSpaceIds.length > 0) {
+      state.markerSpaceIds = [...this.markerSpaceIds];
+    }
     return state;
   }
 
@@ -696,6 +722,9 @@ export class MarsBot implements IMarsBot {
     }
     if (state.shippingBoard !== undefined) {
       this.shippingBoard.restoreState(state.shippingBoard);
+    }
+    if (state.markerSpaceIds !== undefined) {
+      this.markerSpaceIds = [...state.markerSpaceIds];
     }
 
     // Restore action deck (project cards + bonus cards)

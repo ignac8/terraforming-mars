@@ -107,15 +107,31 @@ export class MarsBotTilePlacer {
   }
 
   /**
+   * Finds the space for one of MarsBot's player markers (Settlers): a land space that is not
+   * reserved and has neither a tile nor a marker.
+   *
+   * After the usual tiebreakers and before the random one, it prefers the space next to the most
+   * ocean-reserved spaces.
+   */
+  public findMarkerSpace(): Space | undefined {
+    const board = this.game.board;
+    const spaces = board.getAvailableSpacesOnLand(this.marsBot).filter((space) => space.player === undefined);
+    return this.selectBestSpace(spaces, () => 0,
+      (space) => board.getAdjacentSpaces(space).filter((s) => s.spaceType === SpaceType.OCEAN).length);
+  }
+
+  /**
    * Select the best space from candidates using:
    * 1. primaryScore function (type-specific)
    * 2. Tiebreaker 1: adjacent oceans
    * 3. Tiebreaker 2: number of placement bonus icons
-   * 4. Tiebreaker 3: random (using project deck card cost)
+   * 4. beforeRandomScore, when a card adds its own tiebreaker ahead of the random one
+   * 5. Tiebreaker 3: random (using project deck card cost)
    */
   private selectBestSpace(
     spaces: ReadonlyArray<Space>,
     primaryScore: (space: Space) => number,
+    beforeRandomScore: (space: Space) => number = () => 0,
   ): Space | undefined {
     if (spaces.length === 0) {
       return undefined;
@@ -129,6 +145,7 @@ export class MarsBotTilePlacer {
       primary: primaryScore(space),
       adjacentOceans: this.game.board.getAdjacentSpaces(space).filter(Board.isOceanSpace).length,
       bonusIcons: space.bonus.length,
+      beforeRandom: beforeRandomScore(space),
     }));
 
     // Sort by primary descending, then adjacent oceans descending, then bonus icons descending
@@ -136,7 +153,8 @@ export class MarsBotTilePlacer {
       reversed(compound(
         byKey('primary'),
         byKey('adjacentOceans'),
-        byKey('bonusIcons')));
+        byKey('bonusIcons'),
+        byKey('beforeRandom')));
     scored.sort(ranking);
 
     // Find all tied for best

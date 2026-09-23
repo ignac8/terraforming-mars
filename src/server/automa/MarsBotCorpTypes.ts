@@ -7,6 +7,7 @@ import {IGame} from '../IGame';
 import {IPlayer} from '../IPlayer';
 import {IProjectCard} from '../cards/IProjectCard';
 import {MarsBotBoard} from './MarsBotBoard';
+import {Space} from '../boards/Space';
 
 /** How the bot picks a card in the research draft. Each corp names one priority. */
 export type MarsBotDraftPriority =
@@ -61,8 +62,8 @@ export type MarsBotCorpEffect = {
   onProjectCardResolved?(bot: IMarsBot, card: IProjectCard): void;
   /** The human player played a card. */
   onHumanCardPlayed?(bot: IMarsBot, card: IProjectCard): void;
-  /** A tile landed on the board, placed by either side. */
-  onTilePlaced?(bot: IMarsBot, placedByMarsBot: boolean, tileType: TileType): void;
+  /** A tile landed on `space`, placed by either side. */
+  onTilePlaced?(bot: IMarsBot, placedByMarsBot: boolean, tileType: TileType, space: Space): void;
   /** Called once after the bot raises Venus, however many steps it moved. */
   onVenusRaised?(bot: IMarsBot): void;
   /** Called before the bot raises a global parameter. Returning true cancels that raise: the global parameter stays at its current value. */
@@ -116,6 +117,8 @@ export interface IMarsBot {
   addBonusCardToBonusDeck(bonusCardId: BonusCardId): void;
   /** Removes a bonus card from the bonus deck and from the action deck. */
   removeBonusCard(bonusCardId: BonusCardId): void;
+  /** Resolves a bonus card's effect right away, outside the action deck. The card is not discarded. */
+  resolveBonusCard(bonusCardId: BonusCardId): void;
   /** Discards the card with the fewest tags from the bot's action deck. */
   discardCardWithFewestTags(): void;
 
@@ -125,6 +128,8 @@ export interface IMarsBot {
   placeGreenery(): void;
   /** Places a colony on a randomly selected eligible tile (Colonies rule C-15b). Returns true if placed. */
   maybePlaceRandomColony(): boolean;
+  /** Takes the bot's player marker off `space`. True when the space had one. */
+  removeMarker(space: Space): boolean;
 
   /** Corp-specific counters, serialized with the bot. Missing keys read as 0. */
   getCorpState(key: string): number;
