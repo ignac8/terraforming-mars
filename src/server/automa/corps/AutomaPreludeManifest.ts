@@ -371,12 +371,12 @@ const SPIRE: IMarsBotCorp = {
 // C46 Tyco Magnetics
 const TYCO_MAGNETICS: IMarsBotCorp = {
   name: CardName.TYCHO_MAGNETICS,
-  description: 'Draft: Power > Science. Setup: add Interface Hyperlink to bonus deck.',
+  description: 'Draft: Power > Science. Setup: add Interface Hyperlink to the bottom of the bonus deck.',
   tags: [],
   draftPriority: {type: 'tags', tags: [Tag.POWER, Tag.SCIENCE]},
   setup(bot) {
-    bot.addBonusCardToBonusDeck(BonusCardId.B30_INTERFACE_HYPERLINK);
-    bot.game.log('MarsBot (Tyco Magnetics): Interface Hyperlink added to bonus deck');
+    bot.addBonusCardToBottomOfBonusDeck(BonusCardId.B30_INTERFACE_HYPERLINK);
+    bot.game.log('MarsBot (Tyco Magnetics): Interface Hyperlink added to the bottom of the bonus deck');
   },
 };
 
