@@ -80,6 +80,8 @@ export type Strategy = {
   standardProjectThreshold: number,
   /** Generations before the estimated end when awards may be funded. */
   awardWindow: number,
+  /** Fund an award only when leading MarsBot on it by more than this. */
+  awardLead: number,
   /** Penalty per MarsBot city next to a greenery we place. */
   feedBotCityPenalty: number,
   /** Extra M€ value per terraforming step, for strategies that rush the game end. */
@@ -94,9 +96,10 @@ export const DEFAULT_STRATEGY: Strategy = {
   standardProjectReserve: 0,
   productionWeight: 1,
   maxHand: 10,
-  cityValue: 5,
+  cityValue: 18,
   standardProjectThreshold: -4,
   awardWindow: 4,
+  awardLead: 2,
   feedBotCityPenalty: 2,
   rushBonus: 10,
   milestoneChase: 12,
@@ -831,7 +834,7 @@ export class ScriptedPlayer {
     const sub = menu.options[idx] as OrOptions;
     const unfunded = this.game.awards.filter((a) => !this.game.hasBeenFunded(a));
     let bestIdx = -1;
-    let bestMargin = 2;
+    let bestMargin = this.strategy.awardLead;
     unfunded.forEach((award: IAward, i: number) => {
       const margin = award.getScore(this.player) - marsBot.turnResolver.getMarsBotAwardValue(award);
       if (margin > bestMargin) {
