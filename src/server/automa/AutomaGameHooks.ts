@@ -218,6 +218,12 @@ export class AutomaGameHooks {
       this.marsBot.actionDeck.push(...extraCards);
       this.game.log('MarsBot spends 5 floaters for an extra card');
     }
+    this.onFloatersSpentForExtraCard();
+  }
+
+  /** Tells MarsBot's corp it spent floaters to keep an extra card (Stormcraft). */
+  private onFloatersSpentForExtraCard(): void {
+    this.marsBot.corp?.effect?.onFloatersSpentForExtraCard?.(this.marsBot);
   }
 
   /**
@@ -250,6 +256,7 @@ export class AutomaGameHooks {
         if (!isBrutal && canSpend) {
           this.marsBot.floaters -= 5;
           this.game.log('MarsBot spends 5 floaters to keep 4th drafted card');
+          this.onFloatersSpentForExtraCard();
         }
         // A corp with a draft priority chooses which card goes, so it stands in for the discard
         // below rather than happening on top of it.
@@ -268,6 +275,7 @@ export class AutomaGameHooks {
           const extra = this.game.projectDeck.drawN(this.game, 1);
           this.marsBot.actionDeck.push(...extra);
           this.game.log('MarsBot (Brutal) spends 5 floaters for a 5th card');
+          this.onFloatersSpentForExtraCard();
         }
         // Human gets their 4 drafted cards → buy phase
         humanPlayer.draftedCards = humanKept;
