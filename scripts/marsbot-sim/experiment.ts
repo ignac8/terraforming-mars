@@ -4,7 +4,7 @@
  *   npx tsx scripts/marsbot-sim/experiment.ts [gamesPerCell] [outDir]
  *
  * Study A: every human corporation against every MarsBot difficulty (MarsBot without a corporation).
- * Study B: MarsBot playing each of its 12 base-game corporations (Rulebook B) at Normal, plus a
+ * Study B: MarsBot playing each of its 12 base-game corporations (Rulebook B) at one difficulty, plus a
  *          no-corporation baseline, with the human corporation rotating.
  *
  * Seeds are shared across cells (game i of every cell uses seed i), so differences between cells
@@ -17,7 +17,10 @@ import {Difficulty, GameConfig, GameResult} from './runGame';
 import {BOT_BASE_CORPS, HUMAN_CORPS} from './corps';
 import {summarize} from './summarize';
 
-const DIFFICULTIES: ReadonlyArray<Difficulty> = ['easy', 'normal', 'hard', 'brutal'];
+const ALL_DIFFICULTIES: ReadonlyArray<Difficulty> = ['easy', 'normal', 'hard', 'brutal'];
+/** DIFFICULTIES=easy,normal limits study A; STUDY_B_DIFFICULTY sets study B's level (default normal). */
+const DIFFICULTIES = (process.env.DIFFICULTIES?.split(',') as Array<Difficulty> | undefined) ?? ALL_DIFFICULTIES;
+const STUDY_B_DIFFICULTY = (process.env.STUDY_B_DIFFICULTY ?? 'normal') as Difficulty;
 
 type StudyConfig = GameConfig & {study: 'A' | 'B'};
 
@@ -37,7 +40,7 @@ async function main() {
   for (const botCorp of [undefined, ...BOT_BASE_CORPS]) {
     const humanCorps = HUMAN_CORPS.filter((c) => c !== botCorp);
     for (let i = 0; i < perCell; i++) {
-      configs.push({study: 'B', seed: 1_000_000 + i, humanCorp: humanCorps[i % humanCorps.length], difficulty: 'normal', botCorp});
+      configs.push({study: 'B', seed: 1_000_000 + i, humanCorp: humanCorps[i % humanCorps.length], difficulty: STUDY_B_DIFFICULTY, botCorp});
     }
   }
 
