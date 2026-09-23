@@ -97,7 +97,10 @@ const VITOR: IMarsBotCorp = {
   },
   effect: {
     onProjectCardResolved(bot, card) {
-      if (card.getVictoryPoints(bot.player) > 0) {
+      // The VP printed on the card counts, not what it scores right now
+      const vp = card.metadata.victoryPoints;
+      const printedVp = typeof vp === 'object' ? vp.points : vp;
+      if (printedVp !== undefined && printedVp >= 0) {
         bot.gainMc(3);
         bot.game.log('MarsBot (Vitor): non-negative VP card, +3 M€');
       }
