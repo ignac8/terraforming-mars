@@ -22,6 +22,7 @@ import {selectRandomColony, placeColonyForMarsBot} from './colonies/MarsBotColon
 import {selectTradeColony, tradeWithColony} from './colonies/MarsBotTrader';
 import {inplaceShuffle} from '../utils/shuffle';
 import type {MarsBot} from './MarsBot';
+import {ACTION_DECK_BONUS_CARD_REMOVED} from './MarsBotCorpTypes';
 import {inplaceRemove, inplaceRemoveIf} from '../../common/utils/utils';
 
 /**
@@ -75,8 +76,13 @@ export class MarsBotBonusResolver {
       return false;
     }
     const destroyed = this.resolveEffect(card);
+    const bot = this.marsBotManager;
+    // A corporation's generation card that removes itself does not come back (Vitor's Overachievement)
+    if (destroyed && bot !== undefined && card.id === bot.corp?.actionDeckBonusCard) {
+      bot.setCorpState(ACTION_DECK_BONUS_CARD_REMOVED, 1);
+    }
     // A card that returns to the action deck every generation waits outside the bonus deck
-    if (!destroyed && this.marsBotManager?.returnsToActionDeck(card) !== true) {
+    if (!destroyed && bot?.returnsToActionDeck(card) !== true) {
       this.bonusDeck.discard(card);
     }
     return destroyed;

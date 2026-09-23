@@ -24,6 +24,9 @@ export type MarsBotTrackCube = {
   cubeType: CubeType;
 };
 
+/** Corp state key, set to 1 once the corp's `actionDeckBonusCard` removed itself from the game. */
+export const ACTION_DECK_BONUS_CARD_REMOVED = 'actionDeckBonusCardRemoved';
+
 /** Keys cube positions in maps, and in the set of cubes that already triggered. */
 export function trackCubeKey(trackIndex: number, position: number): string {
   return `${trackIndex}:${position}`;
@@ -50,6 +53,7 @@ export type IMarsBotCorp = {
    * The bonus card this corp puts in the action deck every generation.
    *
    * The card lives outside the bonus deck: after it resolves it waits for the next generation.
+   * Once its removal condition removes it (Vitor's Overachievement), it stays out of the game.
    */
   readonly actionDeckBonusCard?: BonusCardId;
   /** Cubes seeded onto the bot's board tracks during setup. */

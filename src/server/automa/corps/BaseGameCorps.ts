@@ -1,7 +1,7 @@
 /**
  * Shared helper functions for MarsBot corporation definitions.
  */
-import {IMarsBot, IMarsBotCorp, MarsBotTrackCube} from '../MarsBotCorpTypes';
+import {ACTION_DECK_BONUS_CARD_REMOVED, IMarsBot, IMarsBotCorp, MarsBotTrackCube} from '../MarsBotCorpTypes';
 import {BonusCardId, CubeType} from '../../../common/automa/AutomaTypes';
 
 /** M€ a silver resource cube is worth, which the bot gains on reaching a `credit` cube (Cheung Shing, Morningstar). */
@@ -17,6 +17,9 @@ export function bonusCardBeforeActionPhase(bonusCardId: BonusCardId, corpName: s
   return {
     actionDeckBonusCard: bonusCardId,
     beforeActionPhase: (bot) => {
+      if (bot.getCorpState(ACTION_DECK_BONUS_CARD_REMOVED) > 0) {
+        return;
+      }
       bot.addBonusCardToActionDeck(bonusCardId);
       bot.game.log(`MarsBot (${corpName}): ${bonusCardId} added to action deck`);
     },
