@@ -164,12 +164,12 @@ Human produces as normal. MarsBot skips production entirely.
 | Card | Name | Effect |
 |------|------|--------|
 | B01 | Meteor Shower | Human must lose 5 plants (or as many as possible). If lost ≥3 or effect blocked removal, destroy this card. |
-| B02 | Invasive Species | Human must remove highest-scoring animal/microbe from a card. MarsBot gains 5 MC regardless. |
+| B02 | Invasive Species | Remove 1 animal or microbe from the human's highest-scoring card (not Pets or Bioengineering Enclosure; nothing under Protected Habitats). MarsBot gains 2 MC and 1 floater with Venus Next or Colonies, otherwise 5 MC. |
 | B03 | Research and Development | MarsBot draws 1 project card and resolves it immediately. |
 | B04 | Overachievement | MarsBot claims a milestone if able. If fails AND gen ≥6, funds an award. If either succeeded, destroy card. Otherwise gain 5 MC. |
 | B05 | Expedited Construction | Place city adjacent to ≥2 greenery/ocean mix. If placed, destroy card. Normal city rules apply. |
 | B06 | Lobbyists | First applicable: (a) Temp 1-2 steps from bonus/completion → raise temp 2, destroy. (b) Oxygen 1-2 from bonus/completion → place greenery + raise oxygen twice, destroy. (c) Ocean space adjacent to 2+ oceans → place ocean, destroy. (d) Advance furthest-from-completion parameter (tie: oxygen > ocean > temp). |
-| B07 | Local Neural Instance | Place Neural Instance tile adjacent to no tiles, not on edge, not on/adjacent to reserved spaces. If can't, draw and resolve a project card. Destroy this card. |
+| B07 | Local Neural Instance | Place Neural Instance tile adjacent to no tiles, not on edge, not on/adjacent to reserved spaces. If placed, destroy card. If can't, draw and resolve a project card and discard this card as usual. |
 | B08 | Corporate Competition | If MarsBot has ≥5 MC, help position on closest funded award via helper actions: Landlord→place greenery, Banker→advance Track 1 or 3 (least advanced), Scientist→advance Track 4, Thermalist→advance Track 5, Miner→advance Track 2. Costs 5 MC if successful, discard. If no action possible, draw another bonus card and resolve, discarding both. |
 
 ### 2.11 Game End
@@ -552,7 +552,8 @@ icon printed on that space, is the corp card's business:
 - A corp whose card says the cube's effect happens *instead of* the icon returns `true` from
   `onTrackCubeTrigger`, and `advanceTrack` leaves the icon unresolved. Helion's white cubes (a card
   instead of the temperature step under them) are the only such case so far.
-- **Credit cubes**: MarsBot gains MC when advancing to this position.
+- **Credit cubes**: silver resource cubes. MarsBot gains 5 M€, the cube's value, when advancing to this position
+  (Cheung Shing, Morningstar: "은색 자원 큐브에 도달할 때마다, 해당 자원 큐브를 M€로써 획득").
 
 Some corps use `whiteTrackCubes(trackNum)` to replace ALL 18 positions on a track with white cubes.
 

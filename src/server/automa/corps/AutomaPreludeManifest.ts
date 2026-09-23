@@ -3,23 +3,24 @@ import {Tag} from '../../../common/cards/Tag';
 import {CardName} from '../../../common/cards/CardName';
 import {BonusCardId} from '../../../common/automa/AutomaTypes';
 import {AutomaManifest} from './AutomaManifest';
-import {whiteTrackCubes, bonusCardBeforeActionPhase, whiteLeastBlackSpaceHandler} from './BaseGameCorps';
+import {whiteTrackCubes, bonusCardBeforeActionPhase, whiteLeastBlackSpaceHandler, SILVER_CUBE_MC} from './BaseGameCorps';
+import {marsBotCardTags} from '../MarsBotTags';
 
 // ==== PRELUDE (C13-C17) ====
 
-// C13 Cheung Shing MARS — credit cubes on building track from position 4
+// C13 Cheung Shing MARS — silver resource cubes on building track from position 4
 const CHEUNG_SHING_MARS: IMarsBotCorp = {
   name: CardName.CHEUNG_SHING_MARS,
-  description: 'Tag: Building. Draft: Building. Credit cubes on building track from position 4; each earns 1 MC.',
+  description: 'Tag: Building. Draft: Building. Silver resource cubes on building track from position 4; each earns 5 MC.',
   tags: [Tag.BUILDING],
   draftPriority: {type: 'tags', tags: [Tag.BUILDING]},
-  // Credit cubes at positions 4-18 on building track (track 1)
+  // Silver resource cubes at positions 4-18 on building track (track 1)
   trackCubes: Array.from({length: 15}, (_, i) => ({trackIndex: 0, position: i + 4, cubeType: 'credit' as const})),
   effect: {
     onTrackCubeTrigger(bot, _trackIndex, _position, cubeType) {
       if (cubeType === 'credit') {
-        bot.gainMc(1);
-        bot.game.log('MarsBot (Cheung Shing): credit cube reached, +1 M€');
+        bot.gainMc(SILVER_CUBE_MC);
+        bot.game.log('MarsBot (Cheung Shing): silver resource cube reached, +5 M€');
       }
     },
   },
@@ -58,7 +59,7 @@ const ROBINSON_INDUSTRIES: IMarsBotCorp = {
     bot.gainMc(10);
     bot.game.log('MarsBot (Robinson Industries): +10 M€');
   },
-  beforeActionPhase: bonusCardBeforeActionPhase(BonusCardId.B28_DIVERSIFICATION, 'Robinson Industries'),
+  ...bonusCardBeforeActionPhase(BonusCardId.B28_DIVERSIFICATION, 'Robinson Industries'),
 };
 
 // C16 Valley Trust
@@ -66,6 +67,7 @@ const VALLEY_TRUST: IMarsBotCorp = {
   name: CardName.VALLEY_TRUST,
   description: 'Draft: Science. Setup: draw 1 card. White cubes on science track: draw and resolve a card each.',
   tags: [],
+  requiredExpansions: ['prelude'],
   draftPriority: {type: 'tags', tags: [Tag.SCIENCE]},
   setup(bot) {
     bot.drawProjectCardsToActionDeck(1); // "Obtain 1 card"
@@ -88,7 +90,7 @@ const VALLEY_TRUST: IMarsBotCorp = {
 // C17 Vitor — separates B04, adds it to action deck each gen
 const VITOR: IMarsBotCorp = {
   name: CardName.VITOR,
-  description: 'Setup: separate Overachievement from bonus deck. Cards with non-negative VP earn 3 MC. Each generation: add Overachievement to action deck.',
+  description: 'Setup: separate Overachievement from bonus deck. Cards with non-negative VP earn 3 MC. Each generation: add Overachievement to action deck, until it is removed.',
   tags: [],
   setup(bot) {
     bot.removeBonusCard(BonusCardId.B04_OVERACHIEVEMENT);
@@ -96,13 +98,16 @@ const VITOR: IMarsBotCorp = {
   },
   effect: {
     onProjectCardResolved(bot, card) {
-      if (card.getVictoryPoints(bot.player) > 0) {
+      // The VP printed on the card counts, not what it scores right now
+      const vp = card.metadata.victoryPoints;
+      const printedVp = typeof vp === 'object' ? vp.points : vp;
+      if (printedVp !== undefined && printedVp >= 0) {
         bot.gainMc(3);
         bot.game.log('MarsBot (Vitor): non-negative VP card, +3 M€');
       }
     },
   },
-  beforeActionPhase: bonusCardBeforeActionPhase(BonusCardId.B04_OVERACHIEVEMENT, 'Vitor'),
+  ...bonusCardBeforeActionPhase(BonusCardId.B04_OVERACHIEVEMENT, 'Vitor'),
 };
 
 // ==== PRELUDE 2 (C18, C20, C29, C40-C46) ====
@@ -110,17 +115,21 @@ const VITOR: IMarsBotCorp = {
 // C18 Acadian Community
 const ACADIAN_COMMUNITY: IMarsBotCorp = {
   name: CardName.ARCADIAN_COMMUNITIES,
-  description: 'Tag: Building. Setup: resolve Settlers immediately. Each generation: add Settlers to action deck.',
+  description: 'Tag: Building. Setup: resolve Settlers immediately. Each generation: add Settlers to action deck. ' +
+    'Spaces with its player markers are reserved for it. Each tile it places on one of them earns 3 MC.',
   tags: [Tag.BUILDING],
   setup(bot) {
-    bot.addBonusCardToActionDeck(BonusCardId.B22_SETTLERS);
-    bot.game.log('MarsBot (Acadian Community): Settlers resolved immediately');
+    bot.resolveBonusCard(BonusCardId.B22_SETTLERS);
   },
   effect: {
-    // Every time MarsBot places a tile on a space with its marker -> 3 MC
-    // Needs onTilePlaced hook
+    onTilePlaced(bot, placedByMarsBot, _tileType, space) {
+      if (placedByMarsBot && bot.removeMarker(space)) {
+        bot.gainMc(3);
+        bot.game.log('MarsBot (Acadian Community): tile on its player marker, +3 M€');
+      }
+    },
   },
-  beforeActionPhase: bonusCardBeforeActionPhase(BonusCardId.B22_SETTLERS, 'Acadian Community'),
+  ...bonusCardBeforeActionPhase(BonusCardId.B22_SETTLERS, 'Acadian Community'),
 };
 
 // C19 Astrodrill Enterprise — white+black cubes on space track
@@ -152,6 +161,7 @@ const FACTORUM: IMarsBotCorp = {
   description: 'Tag: Power. White cubes on building track: each advance stores 1 MC on card. Each generation: add Supply and Demand to action deck.',
   tags: [Tag.POWER],
   trackCubes: whiteTrackCubes(0),
+  trackCubesTriggerEveryAdvance: true,
   effect: {
     onTrackCubeTrigger(bot, trackIndex, _position, cubeType) {
       if (cubeType === 'white' && trackIndex === 0) {
@@ -161,7 +171,7 @@ const FACTORUM: IMarsBotCorp = {
       }
     },
   },
-  beforeActionPhase: bonusCardBeforeActionPhase(BonusCardId.B24_SUPPLY_AND_DEMAND, 'Factorum'),
+  ...bonusCardBeforeActionPhase(BonusCardId.B24_SUPPLY_AND_DEMAND, 'Factorum'),
 };
 
 // C29 Manutech — black cubes at #5/#12 on each track
@@ -242,21 +252,28 @@ const KUIPER_COOPERATIVE: IMarsBotCorp = {
 // C42 Nirgal Enterprises
 const NIRGAL_ENTERPRISES: IMarsBotCorp = {
   name: CardName.NIRGAL_ENTERPRISES,
-  description: 'Tags: Building, Power, Plant. Setup: remove Overachievement. Generations 2-5 and 10+: claim milestone. Generations 6-9: fund award.',
+  description: 'Tags: Building, Power, Plant. Setup: remove Overachievement. +2 in every award. Generations 2-5 and 10+: claim milestone. Generations 6-9: fund award.',
   tags: [Tag.BUILDING, Tag.POWER, Tag.PLANT],
   setup(bot) {
     bot.removeBonusCard(BonusCardId.B04_OVERACHIEVEMENT);
     bot.game.log('MarsBot (Nirgal): Overachievement removed from bonus deck');
   },
-  // effect: +2 in all corporate awards — needs award scoring integration
+  effect: {
+    awardScoreBonus() {
+      return 2;
+    },
+  },
+  // Gen 2-5 or 10+: claim milestone. Gen 6-9: fund award. Neither is a Failed Action when it can't.
   beforeActionPhase(bot) {
-    // Gen 2-5 or 10+: claim milestone. Gen 6-9: fund award.
-    if ((bot.game.generation >= 2 && bot.game.generation <= 5) || bot.game.generation >= 10) {
-      bot.game.log('MarsBot (Nirgal): attempt milestone claim');
-      // Milestone claiming is handled by the track action system
-    } else if (bot.game.generation >= 6 && bot.game.generation <= 9) {
-      bot.game.log('MarsBot (Nirgal): attempt award funding');
-      // Award funding is handled by the track action system
+    const generation = bot.game.generation;
+    if ((generation >= 2 && generation <= 5) || generation >= 10) {
+      if (!bot.maybeClaimMilestone()) {
+        bot.game.log('MarsBot (Nirgal): no milestone to claim');
+      }
+    } else if (generation >= 6 && generation <= 9) {
+      if (!bot.maybeFundAward()) {
+        bot.game.log('MarsBot (Nirgal): no award to fund');
+      }
     }
   },
 };
@@ -316,11 +333,12 @@ const SAGITTA: IMarsBotCorp = {
   effect: {
     // Tagless card: 10 MC instead of 5 (Failed Action). 1-tag card: +1 MC.
     onProjectCardResolved(bot, card) {
-      if (card.tags.length === 0) {
+      const tagCount = marsBotCardTags(card).length;
+      if (tagCount === 0) {
         // Failed action gives 10 instead of 5 — difference of 5 on top of normal
         bot.gainMc(5);
         bot.game.log('MarsBot (Sagitta): tagless card, +5 M€ extra (10 total)');
-      } else if (card.tags.length === 1) {
+      } else if (tagCount === 1) {
         bot.gainMc(1);
         bot.game.log('MarsBot (Sagitta): 1-tag card, +1 M€');
       }
@@ -336,7 +354,7 @@ const SPIRE: IMarsBotCorp = {
   draftPriority: {type: 'mostTags'},
   effect: {
     onProjectCardResolved(bot, card) {
-      const nonWildTags = card.tags.filter((t) => t !== Tag.WILD);
+      const nonWildTags = marsBotCardTags(card).filter((t) => t !== Tag.WILD);
       if (nonWildTags.length >= 2) {
         bot.setCorpState('scienceResources', bot.getCorpState('scienceResources') + 1);
         bot.game.log(`MarsBot (Spire): card with ${nonWildTags.length} tags, +1 science resource`);
@@ -357,12 +375,12 @@ const SPIRE: IMarsBotCorp = {
 // C46 Tyco Magnetics
 const TYCO_MAGNETICS: IMarsBotCorp = {
   name: CardName.TYCHO_MAGNETICS,
-  description: 'Draft: Power > Science. Setup: add Interface Hyperlink to bonus deck.',
+  description: 'Draft: Power > Science. Setup: add Interface Hyperlink to the bottom of the bonus deck.',
   tags: [],
   draftPriority: {type: 'tags', tags: [Tag.POWER, Tag.SCIENCE]},
   setup(bot) {
-    bot.addBonusCardToBonusDeck(BonusCardId.B30_INTERFACE_HYPERLINK);
-    bot.game.log('MarsBot (Tyco Magnetics): Interface Hyperlink added to bonus deck');
+    bot.addBonusCardToBottomOfBonusDeck(BonusCardId.B30_INTERFACE_HYPERLINK);
+    bot.game.log('MarsBot (Tyco Magnetics): Interface Hyperlink added to the bottom of the bonus deck');
   },
 };
 

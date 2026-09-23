@@ -1,4 +1,6 @@
 import {expect} from 'chai';
+import {setVenusScaleLevel} from '../../TestingUtils';
+import {MAX_VENUS_SCALE} from '../../../src/common/constants';
 import {CardName} from '../../../src/common/cards/CardName';
 import {testGame} from '../../TestGame';
 import {IGame} from '../../../src/server/IGame';
@@ -9,6 +11,14 @@ import {GlobalParameter} from '../../../src/common/GlobalParameter';
 import {TileType} from '../../../src/common/TileType';
 import {IProjectCard} from '../../../src/server/cards/IProjectCard';
 import {BoardName} from '../../../src/common/boards/BoardName';
+import {SpaceType} from '../../../src/common/boards/SpaceType';
+import {Birds} from '../../../src/server/cards/base/Birds';
+import {MarsUniversity} from '../../../src/server/cards/base/MarsUniversity';
+import {Asteroid} from '../../../src/server/cards/base/Asteroid';
+import {AICentral} from '../../../src/server/cards/base/AICentral';
+import {Tardigrades} from '../../../src/server/cards/base/Tardigrades';
+import {SearchForLife} from '../../../src/server/cards/base/SearchForLife';
+import {BribedCommittee} from '../../../src/server/cards/base/BribedCommittee';
 import {
   clearMarsBotCorpRegistry, restoreMarsBotCorpRegistry,
   getMarsBotCorp,
@@ -65,40 +75,45 @@ describe('Corp Effect Hooks', () => {
   });
 
   describe('C17 Vitor VP check', () => {
-    it('gains 3 M€ for positive VP cards', () => {
+    function vitorGain(card: IProjectCard): number {
       const {marsBot} = createAutomaGame();
       const corp = getMarsBotCorp(CardName.VITOR)!;
       marsBot.setCorpAndSetup(corp);
       const mcBefore = marsBot.turnResolver.megacredits;
-      corp.effect!.onProjectCardResolved!(marsBot, fakeCard('VP+', {cost: 10, victoryPoints: 1}));
-      expect(marsBot.turnResolver.megacredits).to.eq(mcBefore + 3);
+      corp.effect!.onProjectCardResolved!(marsBot, card);
+      return marsBot.turnResolver.megacredits - mcBefore;
+    }
+
+    it('gains 3 M€ for a card with printed VP', () => {
+      expect(vitorGain(new AICentral())).to.eq(3);
     });
 
-    it('does NOT gain M€ for 0 VP cards', () => {
-      const {marsBot} = createAutomaGame();
-      const corp = getMarsBotCorp(CardName.VITOR)!;
-      marsBot.setCorpAndSetup(corp);
-      const mcBefore = marsBot.turnResolver.megacredits;
-      corp.effect!.onProjectCardResolved!(marsBot, fakeCard('VP0', {cost: 10}));
-      expect(marsBot.turnResolver.megacredits).to.eq(mcBefore);
+    it('gains 3 M€ for a card with variable VP that scores nothing yet', () => {
+      expect(vitorGain(new Tardigrades())).to.eq(3);
+      expect(vitorGain(new SearchForLife())).to.eq(3);
+    });
+
+    it('does NOT gain M€ for cards without VP', () => {
+      expect(vitorGain(new Asteroid())).to.eq(0);
     });
 
     it('does NOT gain M€ for negative VP cards', () => {
-      const {marsBot} = createAutomaGame();
-      const corp = getMarsBotCorp(CardName.VITOR)!;
-      marsBot.setCorpAndSetup(corp);
-      const mcBefore = marsBot.turnResolver.megacredits;
-      corp.effect!.onProjectCardResolved!(marsBot, fakeCard('VP-', {cost: 10, victoryPoints: -1}));
-      expect(marsBot.turnResolver.megacredits).to.eq(mcBefore);
+      expect(vitorGain(new BribedCommittee())).to.eq(0);
     });
   });
 
   describe('C25 Viron floater + VP', () => {
-    it('gains floater and tracks action cards', () => {
+    it('gains a floater and counts the card only for active cards with an action', () => {
       const {marsBot} = createAutomaGame();
       const corp = getMarsBotCorp(CardName.VIRON)!;
       marsBot.setCorpAndSetup(corp);
-      corp.effect!.onProjectCardResolved!(marsBot, fakeCard('Card1', {tags: [Tag.BUILDING], cost: 5}));
+      corp.effect!.onProjectCardResolved!(marsBot, new Birds());
+      expect(marsBot.floaters).to.eq(1);
+      expect(marsBot.corpSpecificState.get('actionCardsPlayed')).to.eq(1);
+
+      // An active card with only an effect, and an event, count for nothing
+      corp.effect!.onProjectCardResolved!(marsBot, new MarsUniversity());
+      corp.effect!.onProjectCardResolved!(marsBot, new Asteroid());
       expect(marsBot.floaters).to.eq(1);
       expect(marsBot.corpSpecificState.get('actionCardsPlayed')).to.eq(1);
     });
@@ -113,13 +128,29 @@ describe('Corp Effect Hooks', () => {
   });
 
   describe('C28 Aphrodite onVenusRaised', () => {
-    it('gains 2 M€ when Venus raised', () => {
-      const {marsBot} = createAutomaGame();
-      const corp = getMarsBotCorp(CardName.APHRODITE)!;
-      marsBot.setCorpAndSetup(corp);
-      const mcBefore = marsBot.turnResolver.megacredits;
-      corp.effect!.onVenusRaised!(marsBot);
-      expect(marsBot.turnResolver.megacredits).to.eq(mcBefore + 2);
+    it('gains 2 M€ for every step Venus is raised', () => {
+      const [game, human] = testGame(1, {automaOption: true, venusNextExtension: true, boardName: BoardName.THARSIS});
+      const marsBot = game.automaHooks!.marsBot;
+      marsBot.setCorpAndSetup(getMarsBotCorp(CardName.APHRODITE)!);
+      const mc = marsBot.turnResolver.megacredits;
+
+      game.increaseVenusScaleLevel(human, 2);
+      expect(marsBot.turnResolver.megacredits).to.eq(mc + 4);
+
+      game.increaseVenusScaleLevel(marsBot.player, 1);
+      expect(marsBot.turnResolver.megacredits).to.eq(mc + 6);
+    });
+
+    it('gains nothing once Venus is maxed', () => {
+      const [game, human] = testGame(1, {automaOption: true, venusNextExtension: true, boardName: BoardName.THARSIS});
+      const marsBot = game.automaHooks!.marsBot;
+      marsBot.setCorpAndSetup(getMarsBotCorp(CardName.APHRODITE)!);
+      setVenusScaleLevel(game, MAX_VENUS_SCALE);
+      const mc = marsBot.turnResolver.megacredits;
+
+      game.increaseVenusScaleLevel(human, 2);
+
+      expect(marsBot.turnResolver.megacredits).to.eq(mc);
     });
   });
 
@@ -129,17 +160,22 @@ describe('Corp Effect Hooks', () => {
       const corp = getMarsBotCorp(CardName.THARSIS_REPUBLIC)!;
       marsBot.setCorpAndSetup(corp);
       const mcBefore = marsBot.turnResolver.megacredits;
-      corp.effect!.onTilePlaced!(marsBot, false, TileType.CITY);
+      corp.effect!.onTilePlaced!(marsBot, false, TileType.CITY, marsBot.game.board.spaces[0]);
       expect(marsBot.turnResolver.megacredits).to.eq(mcBefore + 2);
     });
 
-    it('advances event track when MarsBot places city', () => {
+    it('advances event track when MarsBot places city, without the 2 M€', () => {
       const {marsBot} = createAutomaGame();
       const corp = getMarsBotCorp(CardName.THARSIS_REPUBLIC)!;
       marsBot.setCorpAndSetup(corp);
+      marsBot.turnResolver.advanceTrack = (i) => {
+        marsBot.marsBotBoard.tracks[i].position++;
+      };
+      const mcBefore = marsBot.turnResolver.megacredits;
       const eventBefore = marsBot.marsBotBoard.tracks[2].position;
-      corp.effect!.onTilePlaced!(marsBot, true, TileType.CITY);
-      expect(marsBot.marsBotBoard.tracks[2].position).to.be.gte(eventBefore + 1);
+      corp.effect!.onTilePlaced!(marsBot, true, TileType.CITY, marsBot.game.board.spaces[0]);
+      expect(marsBot.marsBotBoard.tracks[2].position).to.eq(eventBefore + 1);
+      expect(marsBot.turnResolver.megacredits).to.eq(mcBefore);
     });
 
     it('does not trigger on greenery placement', () => {
@@ -147,7 +183,7 @@ describe('Corp Effect Hooks', () => {
       const corp = getMarsBotCorp(CardName.THARSIS_REPUBLIC)!;
       marsBot.setCorpAndSetup(corp);
       const mcBefore = marsBot.turnResolver.megacredits;
-      corp.effect!.onTilePlaced!(marsBot, false, TileType.GREENERY);
+      corp.effect!.onTilePlaced!(marsBot, false, TileType.GREENERY, marsBot.game.board.spaces[0]);
       expect(marsBot.turnResolver.megacredits).to.eq(mcBefore);
     });
   });
@@ -159,9 +195,20 @@ describe('Corp Effect Hooks', () => {
       marsBot.setCorpAndSetup(corp);
       expect(marsBot.corpSpecificState.get('whiteCubeOnCard')).to.eq(1);
       const buildingBefore = marsBot.marsBotBoard.tracks[0].position;
-      corp.effect!.onTilePlaced!(marsBot, false, TileType.OCEAN);
+      corp.effect!.onTilePlaced!(marsBot, false, TileType.OCEAN, marsBot.game.board.spaces[0]);
       expect(marsBot.corpSpecificState.get('whiteCubeOnCard')).to.eq(0);
       expect(marsBot.marsBotBoard.tracks[0].position).to.be.gte(buildingBefore + 1);
+    });
+
+    it('pays 3 M€ per adjacent ocean when MarsBot places a tile', () => {
+      const {game, marsBot} = createAutomaGame();
+      const ocean = game.board.getAvailableSpacesForOcean(marsBot.player)[0];
+      const land = game.board.getAdjacentSpaces(ocean).find((s) => s.spaceType === SpaceType.LAND)!;
+      game.simpleAddTile(marsBot.player, ocean, {tileType: TileType.OCEAN});
+      const tilePlacer = marsBot['bonusResolver']['tilePlacer'];
+      expect(tilePlacer.getOceanAdjacencyMC(land)).to.eq(2);
+      marsBot.setCorpAndSetup(getMarsBotCorp(CardName.LAKEFRONT_RESORTS)!);
+      expect(tilePlacer.getOceanAdjacencyMC(land)).to.eq(3);
     });
 
     it('ocean placed without white cube → place white cube', () => {
@@ -169,7 +216,7 @@ describe('Corp Effect Hooks', () => {
       const corp = getMarsBotCorp(CardName.LAKEFRONT_RESORTS)!;
       marsBot.setCorpAndSetup(corp);
       marsBot.corpSpecificState.set('whiteCubeOnCard', 0);
-      corp.effect!.onTilePlaced!(marsBot, false, TileType.OCEAN);
+      corp.effect!.onTilePlaced!(marsBot, false, TileType.OCEAN, marsBot.game.board.spaces[0]);
       expect(marsBot.corpSpecificState.get('whiteCubeOnCard')).to.eq(1);
     });
   });

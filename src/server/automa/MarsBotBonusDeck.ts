@@ -1,11 +1,12 @@
-import {MarsBotBonusCard, createBaseBonusCards, createCorpBonusCard} from './MarsBotBonusCard';
+import {MarsBotBonusCard, MarsBotBonusDeckCard, createBaseBonusCards, createCorpBonusCard} from './MarsBotBonusCard';
 import {BonusCardId} from '../../common/automa/AutomaTypes';
 import {Deck} from '../cards/Deck';
 import {Random} from '../../common/utils/Random';
+import {inplaceRemove} from '../../common/utils/utils';
 
 /** The MarsBot bonus card deck. */
-export class MarsBotBonusDeck extends Deck<MarsBotBonusCard> {
-  public constructor(deck: Array<MarsBotBonusCard>, discarded: Array<MarsBotBonusCard>, random: Random) {
+export class MarsBotBonusDeck extends Deck<MarsBotBonusDeckCard> {
+  public constructor(deck: Array<MarsBotBonusDeckCard>, discarded: Array<MarsBotBonusDeckCard>, random: Random) {
     super('marsbot', deck, discarded, random);
   }
 
@@ -66,14 +67,12 @@ export class MarsBotBonusDeck extends Deck<MarsBotBonusCard> {
 
   /** Find and remove a bonus card by ID from the draw pile. Returns the card or undefined. */
   public findAndRemove(bonusCardId: BonusCardId): MarsBotBonusCard | undefined {
-    const idx = this.drawPile.findIndex((c) => c.id === bonusCardId);
-    if (idx >= 0) {
-      return this.drawPile.splice(idx, 1)[0];
-    }
-    // Also check discard pile
-    const discardIdx = this.discardPile.findIndex((c) => c.id === bonusCardId);
-    if (discardIdx >= 0) {
-      return this.discardPile.splice(discardIdx, 1)[0];
+    for (const pile of [this.drawPile, this.discardPile]) {
+      const card = pile.find((c): c is MarsBotBonusCard => c.id === bonusCardId);
+      if (card !== undefined) {
+        inplaceRemove(pile, card);
+        return card;
+      }
     }
     return undefined;
   }

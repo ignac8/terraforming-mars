@@ -2,6 +2,8 @@ import {IGame} from '../../IGame';
 import {IColony} from '../../colonies/IColony';
 import {ColonyName} from '../../../common/colonies/ColonyName';
 import type {MarsBot} from '../MarsBot';
+import {comparing} from '../../../common/utils/Ordering';
+import {inplaceRemove, toName} from '../../../common/utils/utils';
 
 /**
  * Handles MarsBot colony placement logic (C-15b, C-16a, C-19, C-24a, C-24d).
@@ -29,14 +31,20 @@ export function eligibleColoniesForMarsBot(game: IGame, marsBot: MarsBot): Array
 /**
  * C-15b / C-16a: Randomly select a colony tile for MarsBot to build on.
  *
- * Method: flip 1 card from the project deck; use `(cost - 1) % eligible.length`
- * to pick the tile. Discard the flipped card.
- *
  * Returns the selected colony, or undefined if no eligible tiles.
  */
 export function selectRandomColony(game: IGame, marsBot: MarsBot): IColony | undefined {
-  const eligible = eligibleColoniesForMarsBot(game, marsBot);
-  if (eligible.length === 0) {
+  return pickByFlippedCard(game, eligibleColoniesForMarsBot(game, marsBot));
+}
+
+/**
+ * Picks one of `colonies` the C-15b way.
+ *
+ * Method: flip 1 card from the project deck; use `(cost - 1) % colonies.length`
+ * to pick the tile. Discard the flipped card.
+ */
+function pickByFlippedCard(game: IGame, colonies: ReadonlyArray<IColony>): IColony | undefined {
+  if (colonies.length === 0) {
     return undefined;
   }
 
@@ -47,12 +55,31 @@ export function selectRandomColony(game: IGame, marsBot: MarsBot): IColony | und
 
   const card = flipped[0];
   // Use positive modulo: cost=0 cards (e.g. IndenturedWorkers) would give -1 % N in JS
-  const n = eligible.length;
+  const n = colonies.length;
   const index = ((card.cost - 1) % n + n) % n;
   // Discard the flipped card back to the project deck discard pile
   game.projectDeck.discardPile.push(card);
 
-  return eligible[index];
+  return colonies[index];
+}
+
+/**
+ * Adds one of the colony tiles left out of the game to it, picked the C-15b way (Aridor's setup).
+ *
+ * Returns the added tile, or undefined when every tile is already in play.
+ */
+export function addRandomColonyTile(game: IGame): IColony | undefined {
+  const colony = pickByFlippedCard(game, game.discardedColonies);
+  if (colony === undefined) {
+    return undefined;
+  }
+  game.colonies.push(colony);
+  game.colonies.sort(comparing(toName));
+  inplaceRemove(game.discardedColonies, colony);
+  // C-1: every colony tile in a MarsBot game starts active, Titan, Enceladus and Miranda included
+  colony.isActive = true;
+  game.log('MarsBot added a new Colony tile: ${0}', (b) => b.colony(colony));
+  return colony;
 }
 
 /**

@@ -3,7 +3,6 @@ import {IPlayer} from '../IPlayer';
 import {IProjectCard} from '../cards/IProjectCard';
 import {Tag} from '../../common/cards/Tag';
 import {GlobalParameter} from '../../common/GlobalParameter';
-import {CardType} from '../../common/cards/CardType';
 import {ColonyName} from '../../common/colonies/ColonyName';
 import {
   TrackAction,
@@ -12,6 +11,7 @@ import {
   DifficultyLevel,
 } from '../../common/automa/AutomaTypes';
 import {MarsBotBoard} from './MarsBotBoard';
+import {marsBotCardTags} from './MarsBotTags';
 import {MarsBotTilePlacer} from './MarsBotTilePlacer';
 import {IMilestone} from '../milestones/IMilestone';
 import {IAward} from '../awards/IAward';
@@ -49,18 +49,12 @@ export class MarsBotTurnResolver {
   public resolveProjectCard(card: IProjectCard): void {
     this.game.log('MarsBot plays ${0}', (b) => b.card(card));
 
-    // Build the effective tag list: card.tags + Event tag if the card is an event type.
-    // In the physical game, event cards show the Event tag icon on the top-right.
-    // In the codebase, card.tags does NOT include Tag.EVENT for event-type cards.
-    const tags: Array<Tag> = [...card.tags];
-    if (card.type === CardType.EVENT && !tags.includes(Tag.EVENT)) {
-      tags.push(Tag.EVENT);
-    }
+    const tags = marsBotCardTags(card);
 
+    // A card with no tags is still played: its corp and player effects apply below.
     if (tags.length === 0) {
       this.game.log('MarsBot takes a Failed Action (card has no tags)');
       this.failedAction();
-      return;
     }
 
     // Resolve each tag left-to-right
@@ -172,11 +166,15 @@ export class MarsBotTurnResolver {
       return;
 
     case 'milestone':
-      this.tryClaimMilestone();
+      if (!this.maybeClaimMilestone()) {
+        this.failedAction();
+      }
       return;
 
     case 'award':
-      this.tryFundAward();
+      if (!this.maybeFundAward()) {
+        this.failedAction();
+      }
       return;
 
     case 'temperature':
@@ -310,7 +308,7 @@ export class MarsBotTurnResolver {
 
   // C-8/C-14: Gain `count` floaters. With Venus → floaters; without Venus but with Colonies →
   // Titan storage; without both → ignored (C-13).
-  private gainFloaters(count: number): void {
+  public gainFloaters(count: number): void {
     if (this.marsBotManager === undefined) {
       return;
     }
@@ -325,11 +323,11 @@ export class MarsBotTurnResolver {
 
   // ---- Milestones & Awards ----
 
-  private tryClaimMilestone(): void {
+  /** Claims the best milestone MarsBot meets. False when it meets none. */
+  public maybeClaimMilestone(): boolean {
     const claimable = this.getClaimableMilestones();
     if (claimable.length === 0) {
-      this.failedAction();
-      return;
+      return false;
     }
 
     // Tiebreakers: 1) one human also qualifies for, 2) one human is closest to, 3) leftmost (Hoverlord last)
@@ -369,6 +367,7 @@ export class MarsBotTurnResolver {
       this.megacredits = Math.max(0, this.megacredits - 12);
       this.game.log('MarsBot loses 12 MC (Briber)');
     }
+    return true;
   }
 
   private getClaimableMilestones(): Array<IMilestone> {
@@ -404,10 +403,10 @@ export class MarsBotTurnResolver {
     return milestone.canClaim(this.marsBot);
   }
 
-  private tryFundAward(): void {
+  /** Funds the unfunded award MarsBot leads the player by the most. False when it leads none. */
+  public maybeFundAward(): boolean {
     if (this.game.allAwardsFunded()) {
-      this.failedAction();
-      return;
+      return false;
     }
 
     const unfunded = this.game.awards.filter((a) => !this.game.hasBeenFunded(a));
@@ -428,19 +427,21 @@ export class MarsBotTurnResolver {
 
     if (bestAward === undefined || bestMargin <= 0) {
       // MarsBot is not ahead on any award
-      this.failedAction();
-      return;
+      return false;
     }
 
     this.game.fundAward(this.marsBot, bestAward);
     this.game.log('MarsBot funds award ${0}', (b) => b.rawString(bestAward.name));
+    return true;
   }
 
-  /** Get MarsBot's value for an award, with the easy difficulty handicap. */
+  /** Get MarsBot's value for an award, with the easy difficulty handicap and its corp's bonus (Nirgal). */
   public getMarsBotAwardValue(award: IAward): number {
     const offset = this.difficulty === 'easy' ? -5 : 0;
-    if (this.marsBotManager !== undefined) {
-      return marsBotAwardScore(award, this.marsBotManager) + offset;
+    const bot = this.marsBotManager;
+    if (bot !== undefined) {
+      const corpBonus = bot.corp?.effect?.awardScoreBonus?.(bot) ?? 0;
+      return marsBotAwardScore(award, bot) + offset + corpBonus;
     }
     return award.getScore(this.marsBot) + offset;
   }
@@ -468,6 +469,7 @@ export class MarsBotTurnResolver {
     const mc = this.difficulty === 'easy' ? FAILED_ACTION_MC_EASY : FAILED_ACTION_MC;
     this.gainMc(mc);
     this.game.log('MarsBot takes a Failed Action, gains ${0} MC', (b) => b.number(mc));
+    this.marsBotManager?.corp?.effect?.onFailedAction?.(this.marsBotManager);
   }
 
   /** Add M€ to MarsBot's supply and tell the corp about it (Mining Guild). */

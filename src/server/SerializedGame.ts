@@ -105,6 +105,8 @@ export type SerializedAutomaState = {
     colonyCubePositions?: Array<string>;
     hasSecondTradeFleet?: boolean;
     shippingBoard?: Record<string, number>;
+    /** Spaces holding one of the bot's player markers (Settlers) and no tile yet. */
+    markerSpaceIds?: Array<SpaceId>;
 
     // Older saved games hold megacredits and floaters under these names.
     mcSupply?: number;

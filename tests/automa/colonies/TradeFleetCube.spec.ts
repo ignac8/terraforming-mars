@@ -5,6 +5,8 @@ import {MarsBot} from '../../../src/server/automa/MarsBot';
 import {trackCubeKey} from '../../../src/server/automa/MarsBotCorpTypes';
 import {Tag} from '../../../src/common/cards/Tag';
 import {BoardName} from '../../../src/common/boards/BoardName';
+import {CardName} from '../../../src/common/cards/CardName';
+import {getMarsBotCorp} from '../../../src/server/automa/corps/MarsBotCorpRegistry';
 
 function getMarsBotFromGame(game: ReturnType<typeof testGame>[0]): MarsBot {
   return (game.automaHooks as AutomaGameHooks).marsBot;
@@ -55,6 +57,21 @@ describe('MarsBot Colonies — 2nd Trade Fleet Cube (C-6, C-27)', () => {
       marsBot.turnResolver.advanceTrack(eventTrackIdx);
     }
     expect(marsBot.hasSecondTradeFleet).to.be.true;
+  });
+
+  it('is not one of Helion\'s white cubes, so the space\'s printed TR still applies', () => {
+    const [game] = testGame(1, {automaOption: true, coloniesExtension: true, boardName: BoardName.THARSIS});
+    const marsBot = getMarsBotFromGame(game);
+    marsBot.setCorpAndSetup(getMarsBotCorp(CardName.HELION)!);
+    marsBot.marsBotBoard.tracks[2].position = 8; // Event 9: 3 TR under the Trade Fleet
+    const tr = marsBot.player.terraformRating;
+    const deckSize = game.projectDeck.drawPile.length;
+
+    marsBot.advanceTrack(2);
+
+    expect(marsBot.hasSecondTradeFleet).to.be.true;
+    expect(marsBot.player.terraformRating).to.eq(tr + 3);
+    expect(game.projectDeck.drawPile.length).to.eq(deckSize);
   });
 
   it('does NOT unlock 2nd trade fleet without coloniesExtension', () => {

@@ -1,10 +1,19 @@
 import {CardName} from '@/common/cards/CardName';
 import {BonusCardId} from '../../common/automa/AutomaTypes';
+import {IProjectCard} from '../cards/IProjectCard';
 
 export type MarsBotBonusCard = {
   readonly id: BonusCardId;
   readonly name: CardName;
 };
+
+/**
+ * A card in MarsBot's bonus deck: a bonus card, or a project card a corporation put there.
+ *
+ * Only bonus cards have an `id`. MarsBot plays a project card drawn from the bonus deck like one
+ * from its action deck.
+ */
+export type MarsBotBonusDeckCard = MarsBotBonusCard | (IProjectCard & {readonly id?: undefined});
 
 export function bonusCard(id: BonusCardId, name: CardName): MarsBotBonusCard {
   return {id, name};
@@ -30,7 +39,7 @@ export function createCorpBonusCard(id: BonusCardId): MarsBotBonusCard {
 }
 
 /** Card name without its ':automa' suffix, for log lines that print the name raw. */
-export function bonusCardDisplayName(card: MarsBotBonusCard): string {
+export function bonusCardDisplayName(card: MarsBotBonusDeckCard): string {
   return card.name.split(':')[0];
 }
 
