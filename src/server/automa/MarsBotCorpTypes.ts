@@ -74,6 +74,8 @@ export type MarsBotCorpEffect = {
   onColonyPlaced?(bot: IMarsBot): void;
   /** Extra victory points added at final scoring. */
   vpBonus?(bot: IMarsBot): number;
+  /** Points added to the bot's score in every award, when funding one and at final scoring. */
+  awardScoreBonus?(bot: IMarsBot): number;
 };
 
 /** The bot as corp handlers see it, implemented by the bot manager. */
@@ -121,6 +123,17 @@ export interface IMarsBot {
   resolveBonusCard(bonusCardId: BonusCardId): void;
   /** Discards the card with the fewest tags from the bot's action deck. */
   discardCardWithFewestTags(): void;
+
+  /**
+   * Claims the milestone the bot's milestone track action would claim. Returns false, without
+   * taking a Failed Action, when the bot cannot claim one.
+   */
+  maybeClaimMilestone(): boolean;
+  /**
+   * Funds the award the bot's award track action would fund. Returns false, without taking a
+   * Failed Action, when the bot cannot fund one.
+   */
+  maybeFundAward(): boolean;
 
   raiseTemperature(steps: 1 | 2 | 3): void;
   placeOcean(): void;

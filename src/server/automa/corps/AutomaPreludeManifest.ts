@@ -247,21 +247,28 @@ const KUIPER_COOPERATIVE: IMarsBotCorp = {
 // C42 Nirgal Enterprises
 const NIRGAL_ENTERPRISES: IMarsBotCorp = {
   name: CardName.NIRGAL_ENTERPRISES,
-  description: 'Tags: Building, Power, Plant. Setup: remove Overachievement. Generations 2-5 and 10+: claim milestone. Generations 6-9: fund award.',
+  description: 'Tags: Building, Power, Plant. Setup: remove Overachievement. +2 in every award. Generations 2-5 and 10+: claim milestone. Generations 6-9: fund award.',
   tags: [Tag.BUILDING, Tag.POWER, Tag.PLANT],
   setup(bot) {
     bot.removeBonusCard(BonusCardId.B04_OVERACHIEVEMENT);
     bot.game.log('MarsBot (Nirgal): Overachievement removed from bonus deck');
   },
-  // effect: +2 in all corporate awards — needs award scoring integration
+  effect: {
+    awardScoreBonus() {
+      return 2;
+    },
+  },
+  // Gen 2-5 or 10+: claim milestone. Gen 6-9: fund award. Neither is a Failed Action when it can't.
   beforeActionPhase(bot) {
-    // Gen 2-5 or 10+: claim milestone. Gen 6-9: fund award.
-    if ((bot.game.generation >= 2 && bot.game.generation <= 5) || bot.game.generation >= 10) {
-      bot.game.log('MarsBot (Nirgal): attempt milestone claim');
-      // Milestone claiming is handled by the track action system
-    } else if (bot.game.generation >= 6 && bot.game.generation <= 9) {
-      bot.game.log('MarsBot (Nirgal): attempt award funding');
-      // Award funding is handled by the track action system
+    const generation = bot.game.generation;
+    if ((generation >= 2 && generation <= 5) || generation >= 10) {
+      if (!bot.maybeClaimMilestone()) {
+        bot.game.log('MarsBot (Nirgal): no milestone to claim');
+      }
+    } else if (generation >= 6 && generation <= 9) {
+      if (!bot.maybeFundAward()) {
+        bot.game.log('MarsBot (Nirgal): no award to fund');
+      }
     }
   },
 };
