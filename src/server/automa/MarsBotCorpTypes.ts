@@ -129,10 +129,10 @@ export interface IMarsBot {
   /** Draws the top bonus card and resolves it. Does nothing when both bonus piles are empty. */
   maybeDrawAndResolveBonusCard(): void;
 
-  /** Draws project cards into the bot's action deck. */
+  /** Draws project cards and shuffles them into the bot's action deck. */
   drawProjectCardsToActionDeck(count: number): void;
   /**
-   * Puts a bonus card in the action deck, pulling it from the bonus deck when present.
+   * Shuffles a bonus card into the action deck, pulling it from the bonus deck when present.
    *
    * Does nothing when the action deck already holds it.
    */

@@ -422,7 +422,9 @@ export class MarsBot implements IMarsBot {
 
   public drawProjectCardsToActionDeck(count: number): void {
     const cards = this.game.projectDeck.drawN(this.game, count);
-    this.actionDeck.push(...cards);
+    for (const card of cards) {
+      this.shuffleIntoActionDeck(card);
+    }
   }
 
   public addBonusCardToActionDeck(bonusCardId: BonusCardId): void {
@@ -431,7 +433,12 @@ export class MarsBot implements IMarsBot {
     }
     // Take the card out of the bonus deck when it is there, otherwise create it
     const card = this.bonusDeck.findAndRemove(bonusCardId) ?? createCorpBonusCard(bonusCardId);
-    this.actionDeck.push(card);
+    this.shuffleIntoActionDeck(card);
+  }
+
+  /** Puts a card into the action deck at a random position. */
+  private shuffleIntoActionDeck(card: IProjectCard | MarsBotBonusCard): void {
+    this.actionDeck.splice(this.random.nextInt(this.actionDeck.length + 1), 0, card);
   }
 
   /** Whether a bonus card goes back into the action deck every generation, so it never belongs in the bonus deck. */

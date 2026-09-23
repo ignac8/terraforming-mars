@@ -9,6 +9,7 @@ import {BoardName} from '../../src/common/boards/BoardName';
 import {CardName} from '../../src/common/cards/CardName';
 import {GameOptions} from '../../src/server/game/GameOptions';
 import {getMarsBotCorp} from '../../src/server/automa/corps/MarsBotCorpRegistry';
+import {ConstRandom} from '../../src/common/utils/Random';
 
 function createAutomaGame(options: Partial<GameOptions> = {}): {game: IGame, marsBot: MarsBot} {
   const [game] = testGame(1, {automaOption: true, boardName: BoardName.THARSIS, ...options});
@@ -95,5 +96,31 @@ describe('MarsBot decks', () => {
     const restored = Game.deserialize(game.serialize()).automaHooks!.marsBot;
 
     expect(bonusDeckIds(restored)).does.not.include(BonusCardId.B16_GOVERNMENT_INTERVENTION);
+  });
+
+  it('shuffles a corporation\'s generation card into the action deck', () => {
+    const {marsBot} = createAutomaGame();
+    const corp = getMarsBotCorp(CardName.ECOLINE)!;
+    marsBot.setCorpAndSetup(corp);
+    // With the random draw at 0, the card goes on top instead of at the bottom
+    (marsBot as any).random = new ConstRandom(0);
+
+    corp.beforeActionPhase!(marsBot);
+
+    expect(marsBot.actionDeck).has.length(5);
+    expect(actionDeckIds(marsBot)[0]).eq(BonusCardId.B23_RAPID_SPROUTING);
+  });
+
+  it('shuffles Terralabs\' generation card into the action deck', () => {
+    const {game, marsBot} = createAutomaGame();
+    const corp = getMarsBotCorp(CardName.TERRALABS_RESEARCH)!;
+    marsBot.setCorpAndSetup(corp);
+    (marsBot as any).random = new ConstRandom(0);
+    const topCard = game.projectDeck.drawPile[game.projectDeck.drawPile.length - 1];
+
+    corp.beforeActionPhase!(marsBot);
+
+    expect(marsBot.actionDeck).has.length(5);
+    expect(marsBot.actionDeck[0]).eq(topCard);
   });
 });
