@@ -254,7 +254,7 @@ export class AutomaGameHooks {
         const canSpend = this.canSpendFloatersForExtraCard();
         const skipDiscard = isBrutal || canSpend;
         if (!isBrutal && canSpend) {
-          this.marsBot.floaters -= 5;
+          this.marsBot.spendFloaters(5);
           this.game.log('MarsBot spends 5 floaters to keep 4th drafted card');
           this.onFloatersSpentForExtraCard();
         }
@@ -271,7 +271,7 @@ export class AutomaGameHooks {
         this.marsBot.buildResearchActionDeckFromDraft(finalMarsBotCards, skipDiscard || draftPriority !== undefined);
         // Brutal: spend 5 floaters for a 5th card from project deck
         if (isBrutal && canSpend) {
-          this.marsBot.floaters -= 5;
+          this.marsBot.spendFloaters(5);
           const extra = this.game.projectDeck.drawN(this.game, 1);
           this.marsBot.actionDeck.push(...extra);
           this.game.log('MarsBot (Brutal) spends 5 floaters for a 5th card');

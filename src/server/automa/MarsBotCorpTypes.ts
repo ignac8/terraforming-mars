@@ -109,14 +109,19 @@ export interface IMarsBot {
 
   /** The bot's M€ pool. */
   megacredits: number;
-  /** Floaters stored by Venus corps. */
+  /** Floaters in the bot's floater pool, which it uses with Venus Next. */
   readonly floaters: number;
   /** Project cards the bot has drawn and resolved, in the order it played them. */
   readonly playedProjectCards: ReadonlyArray<IProjectCard>;
   /** How many times the bot has raised the temperature. */
   readonly temperatureRaises: number;
+  /**
+   * Adds floaters to the bot's floater pool with Venus Next.
+   *
+   * With Colonies and without Venus Next they go to its Titan storage area instead (C-14, C-23).
+   */
   addFloaters(count: number): void;
-  /** Removes floaters, stopping at zero. */
+  /** Removes floaters from where `addFloaters` puts them, stopping at zero. */
   spendFloaters(count: number): void;
 
   gainMc(amount: number): void;
