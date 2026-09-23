@@ -20,12 +20,9 @@ import {marsBotCardTags} from './MarsBotTags';
 import {MarsBotTurmoilHelper} from './turmoil/MarsBotTurmoilHelper';
 import {selectRandomColony, placeColonyForMarsBot} from './colonies/MarsBotColonyPlacer';
 import {selectTradeColony, tradeWithColony} from './colonies/MarsBotTrader';
-import {Tag} from '../../common/cards/Tag';
-import {marsBotCardTags} from './MarsBotTags';
 import {inplaceShuffle} from '../utils/shuffle';
 import type {MarsBot} from './MarsBot';
 import {inplaceRemove, inplaceRemoveIf} from '../../common/utils/utils';
-import {inplaceShuffle} from '../utils/shuffle';
 
 /**
  * The special tile each project card MarsBot can play shows, for Build, Build, Build (B27).
