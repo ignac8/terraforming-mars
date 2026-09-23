@@ -19,7 +19,7 @@ async function main() {
   const started = Date.now();
   const results = await runParallel(configs, (done) => {
     process.stderr.write(`${done}/${configs.length} games, ${((Date.now() - started) / 1000).toFixed(0)}s\n`);
-  });
+  }, process.env.LIVE);
   for (const variant of Object.keys(variants)) {
     const rs = results.filter((r) => (r as any).variant === variant);
     const n = rs.length;

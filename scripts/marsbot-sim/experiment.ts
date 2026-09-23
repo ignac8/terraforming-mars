@@ -49,7 +49,7 @@ async function main() {
       const secs = (Date.now() - started) / 1000;
       process.stderr.write(`${done}/${configs.length} games, ${secs.toFixed(0)}s\n`);
     }
-  }) as Array<GameResult & {study: 'A' | 'B'}>;
+  }, join(outDir, 'results.live.jsonl')) as Array<GameResult & {study: 'A' | 'B'}>;
 
   writeFileSync(join(outDir, 'results.jsonl'), results.map((r) => JSON.stringify(r)).join('\n') + '\n');
   const summary = summarize(results, (Date.now() - started) / 1000);
