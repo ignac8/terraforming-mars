@@ -18,6 +18,15 @@ import {TileType} from '../../src/common/TileType';
 import {Phase} from '../../src/common/Phase';
 import {SpaceType} from '../../src/common/boards/SpaceType';
 import {Board} from '../../src/server/boards/Board';
+import {Space} from '../../src/server/boards/Space';
+import {SpaceId} from '../../src/common/Types';
+import {IProjectCard} from '../../src/server/cards/IProjectCard';
+import {Algae} from '../../src/server/cards/base/Algae';
+import {Birds} from '../../src/server/cards/base/Birds';
+import {IceCapMelting} from '../../src/server/cards/base/IceCapMelting';
+import {MicroMills} from '../../src/server/cards/base/MicroMills';
+import {Mine} from '../../src/server/cards/base/Mine';
+import {Tardigrades} from '../../src/server/cards/base/Tardigrades';
 
 function createAutomaGame(difficulty: 'easy' | 'normal' | 'hard' | 'brutal' = 'normal'): {game: IGame, human: TestPlayer, marsBot: MarsBot} {
   const [game, human] = testGame(1, {automaOption: true, automaDifficulty: difficulty, boardName: BoardName.THARSIS});
@@ -373,6 +382,155 @@ describe('MarsBot Rules Compliance', () => {
       expect(tracks[0].position).to.eq(3);
       expect(tracks[2].position).to.eq(3);
       expect(tracks[4].position).to.eq(0);
+    });
+  });
+
+  describe('Corporate Competition helper actions for the other award sets (B09-B14)', () => {
+    function helper(marsBot: MarsBot, awardName: string): boolean {
+      return marsBot['bonusResolver']['tryHelperAction'](awardName);
+    }
+
+    /** Runs the helper and returns the indexes of the tracks it moved. */
+    function movedTracks(marsBot: MarsBot, awardName: string): Array<number> {
+      const before = marsBot.marsBotBoard.tracks.map((t) => t.position);
+      expect(helper(marsBot, awardName), awardName).is.true;
+      return marsBot.marsBotBoard.tracks.map((t, i) => t.position !== before[i] ? i : -1).filter((i) => i >= 0);
+    }
+
+    /** Runs the helper and returns the greenery it placed. */
+    function placedGreenery(game: IGame, marsBot: MarsBot, awardName: string): Space | undefined {
+      const before = game.board.getGreeneries(marsBot.player);
+      helper(marsBot, awardName);
+      return game.board.getGreeneries(marsBot.player).find((s) => !before.includes(s));
+    }
+
+    /** MarsBot cities on 10 and 12, so an unrestricted greenery goes on 11, next to both. */
+    function withTopCities(game: IGame, marsBot: MarsBot): void {
+      for (const id of ['10', '12']) {
+        game.simpleAddTile(marsBot.player, game.board.getSpaceOrThrow(id as SpaceId), {tileType: TileType.CITY});
+      }
+    }
+
+    function stackDeck(game: IGame, ...cardsFromTop: Array<IProjectCard>): void {
+      game.projectDeck.drawPile.push(...cardsFromTop.reverse());
+    }
+
+    it('Investor advances the Earth track', () => {
+      const {marsBot} = createAutomaGame();
+      expect(movedTracks(marsBot, 'Investor')).deep.eq([5]);
+    });
+
+    it('Promoter advances the event track', () => {
+      const {marsBot} = createAutomaGame();
+      expect(movedTracks(marsBot, 'Promoter')).deep.eq([2]);
+    });
+
+    it('Traveller advances the more advanced of the Earth and Jovian tracks', () => {
+      const {marsBot} = createAutomaGame();
+      const tracks = marsBot.marsBotBoard.tracks;
+      tracks[5].position = 3;
+      tracks[4].position = 1; // The Jovian tag is on the energy track.
+      expect(movedTracks(marsBot, 'Traveller')).deep.eq([5]);
+
+      tracks[4].position = 6;
+      expect(movedTracks(marsBot, 'Traveller')).deep.eq([4]);
+    });
+
+    it('Blacksmith advances the more advanced of the building and space tracks', () => {
+      const {marsBot} = createAutomaGame();
+      marsBot.marsBotBoard.tracks[0].position = 2;
+      marsBot.marsBotBoard.tracks[1].position = 5;
+      expect(movedTracks(marsBot, 'Blacksmith')).deep.eq([1]);
+    });
+
+    it('A. Zoologist advances the animal track', () => {
+      const {marsBot} = createAutomaGame();
+      expect(movedTracks(marsBot, 'A. Zoologist')).deep.eq([6]);
+    });
+
+    it('Magnate reveals cards until an automated one and plays it', () => {
+      const {game, marsBot} = createAutomaGame();
+      stackDeck(game, new Tardigrades(), new Mine());
+      expect(movedTracks(marsBot, 'Magnate')).deep.eq([0]);
+    });
+
+    it('Forecaster reveals cards until one with a requirement, plays it and gains 5 M€', () => {
+      const {game, marsBot} = createAutomaGame();
+      stackDeck(game, new Mine(), new Algae());
+      const mc = marsBot.turnResolver.megacredits;
+      expect(movedTracks(marsBot, 'Forecaster')).deep.eq([6]);
+      expect(marsBot.turnResolver.megacredits).eq(mc + 5);
+    });
+
+    it('Administrator plays a card with no tags, not an event, and gains 5 M€', () => {
+      const {game, marsBot} = createAutomaGame();
+      stackDeck(game, new IceCapMelting(), new MicroMills());
+      const mc = marsBot.turnResolver.megacredits;
+      expect(movedTracks(marsBot, 'Administrator')).is.empty;
+      // 5 M€ for the tagless card's Failed Action, 5 M€ from the card.
+      expect(marsBot.turnResolver.megacredits).eq(mc + 10);
+    });
+
+    it('Excentric removes an animal or microbe from the player\'s highest-scoring card', () => {
+      const {human, marsBot} = createAutomaGame();
+      expect(helper(marsBot, 'Excentric')).is.false;
+
+      const tardigrades = new Tardigrades();
+      tardigrades.resourceCount = 3; // 0 VP
+      const birds = new Birds();
+      birds.resourceCount = 2; // 2 VP
+      human.playedCards.push(tardigrades, birds);
+
+      expect(helper(marsBot, 'Excentric')).is.true;
+      expect(birds.resourceCount).eq(1);
+      expect(tardigrades.resourceCount).eq(3);
+    });
+
+    it('Desert Settler places its greenery on the four bottom rows', () => {
+      const {game, marsBot} = createAutomaGame();
+      withTopCities(game, marsBot);
+      game.simpleAddTile(marsBot.player, game.board.getSpaceOrThrow('48' as SpaceId), {tileType: TileType.CITY});
+      expect(placedGreenery(game, marsBot, 'Desert Settler')?.y).within(5, 8);
+    });
+
+    it('Estate Dealer places its greenery next to an ocean', () => {
+      const {game, human, marsBot} = createAutomaGame();
+      withTopCities(game, marsBot);
+      expect(helper(marsBot, 'Estate Dealer')).is.false;
+
+      game.simpleAddTile(marsBot.player, game.board.getSpaceOrThrow('40' as SpaceId), {tileType: TileType.CITY});
+      game.simpleAddTile(human, game.board.getSpaceOrThrow('32' as SpaceId), {tileType: TileType.OCEAN});
+      const space = placedGreenery(game, marsBot, 'Estate Dealer');
+      expect(game.board.getAdjacentSpaces(space!).some(Board.isOceanSpace)).is.true;
+    });
+
+    it('Suburbian and Edgedancer place their greenery on the edge of the map', () => {
+      for (const awardName of ['Suburbian', 'Edgedancer']) {
+        const {game, marsBot} = createAutomaGame();
+        withTopCities(game, marsBot);
+        const space = placedGreenery(game, marsBot, awardName);
+        expect(game.board.getEdges(), awardName).to.include(space);
+      }
+    });
+
+    it('Highlander places its greenery away from oceans', () => {
+      const {game, human, marsBot} = createAutomaGame();
+      withTopCities(game, marsBot);
+      game.simpleAddTile(human, game.board.getSpaceOrThrow('06' as SpaceId), {tileType: TileType.OCEAN});
+      const space = placedGreenery(game, marsBot, 'Highlander');
+      expect(space).is.not.undefined;
+      expect(game.board.getAdjacentSpaces(space!).some(Board.isOceanSpace)).is.false;
+    });
+
+    it('Founder places its city next to a special tile', () => {
+      const {game, human, marsBot} = createAutomaGame();
+      expect(helper(marsBot, 'Founder')).is.false;
+
+      const preserve = game.board.getSpaceOrThrow('30' as SpaceId);
+      game.simpleAddTile(human, preserve, {tileType: TileType.NATURAL_PRESERVE});
+      expect(helper(marsBot, 'Founder')).is.true;
+      const city = game.board.getCities(marsBot.player)[0];
+      expect(game.board.getAdjacentSpaces(city)).to.include(preserve);
     });
   });
 

@@ -24,10 +24,14 @@ export class MarsBotTilePlacer {
     private readonly humanPlayer: IPlayer,
   ) {}
 
-  /** Find the best space for MarsBot to place a greenery. Returns undefined if none available. */
-  public findGreenerySpace(): Space | undefined {
+  /**
+   * Find the best space for MarsBot to place a greenery. Returns undefined if none available.
+   *
+   * `where` limits the choice to the legal greenery spaces it accepts.
+   */
+  public findGreenerySpace(where: (space: Space) => boolean = () => true): Space | undefined {
     const board = this.game.board;
-    const spaces = board.getAvailableSpacesForGreenery(this.marsBot);
+    const spaces = board.getAvailableSpacesForGreenery(this.marsBot).filter(where);
     if (spaces.length === 0) {
       return undefined;
     }
@@ -41,10 +45,14 @@ export class MarsBotTilePlacer {
     });
   }
 
-  /** Find the best space for MarsBot to place a city. Returns undefined if none available. */
-  public findCitySpace(): Space | undefined {
+  /**
+   * Find the best space for MarsBot to place a city. Returns undefined if none available.
+   *
+   * `where` limits the choice to the legal city spaces it accepts.
+   */
+  public findCitySpace(where: (space: Space) => boolean = () => true): Space | undefined {
     const board = this.game.board;
-    const spaces = board.getAvailableSpacesForCity(this.marsBot);
+    const spaces = board.getAvailableSpacesForCity(this.marsBot).filter(where);
     if (spaces.length === 0) {
       return undefined;
     }
