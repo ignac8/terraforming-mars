@@ -3,13 +3,14 @@ import {Tag} from '../../../common/cards/Tag';
 import {CardName} from '../../../common/cards/CardName';
 import {AutomaManifest} from './AutomaManifest';
 import {whiteTrackCubes} from './BaseGameCorps';
+import {addRandomColonyTile} from '../colonies/MarsBotColonyPlacer';
 
 // ==== COLONIES (C30-C33) ====
 
 // C30 Aridor
 const ARIDOR: IMarsBotCorp = {
   name: CardName.ARIDOR,
-  description: 'Draft: least-advanced track tag. Setup: place 1 colony. White and black cubes across multiple tracks; each cube advances event track.',
+  description: 'Draft: least-advanced track tag. Setup: add 1 colony tile to the game. White and black cubes across multiple tracks; each cube advances event track.',
   tags: [],
   draftPriority: {type: 'leastAdvancedTrack'},
   trackCubes: [
@@ -24,12 +25,8 @@ const ARIDOR: IMarsBotCorp = {
     {trackIndex: 6, position: 6, cubeType: 'black'},
   ],
   setup(bot) {
-    // C-30: Place 1 colony using random selection (C-15b method)
-    const placed = bot.maybePlaceRandomColony();
-    if (placed) {
-      bot.game.log('MarsBot (Aridor): placed 1 colony (C-30)');
-    } else {
-      bot.game.log('MarsBot (Aridor): no eligible colony tile for setup (C-30)');
+    if (addRandomColonyTile(bot.game) === undefined) {
+      bot.game.log('MarsBot (Aridor): no colony tile left to add');
     }
   },
   effect: {
