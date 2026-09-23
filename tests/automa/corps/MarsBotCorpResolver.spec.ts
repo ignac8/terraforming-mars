@@ -14,6 +14,7 @@ import {Tag} from '../../../src/common/cards/Tag';
 import {CardName} from '../../../src/common/cards/CardName';
 import {SeededRandom} from '../../../src/common/utils/Random';
 import {BoardName} from '../../../src/common/boards/BoardName';
+import {DEFAULT_GAME_OPTIONS} from '../../../src/server/game/GameOptions';
 
 function createTestCorp(overrides: Partial<IMarsBotCorp> & {name: CardName}): IMarsBotCorp {
   return {
@@ -45,7 +46,7 @@ describe('MarsBotCorpResolver', () => {
   describe('selectCorp', () => {
     it('throws with empty registry', () => {
       const rng = new SeededRandom(42);
-      expect(() => MarsBotCorpResolver.selectCorp(CardName.ECOLINE, rng)).to.throw('No MarsBot corps registered');
+      expect(() => MarsBotCorpResolver.selectCorp(CardName.ECOLINE, DEFAULT_GAME_OPTIONS, rng)).to.throw('No MarsBot corps registered');
     });
 
     it('selects a corp from registry', () => {
@@ -53,7 +54,7 @@ describe('MarsBotCorpResolver', () => {
       registerMarsBotCorp(corpA);
 
       const rng = new SeededRandom(42);
-      const result = MarsBotCorpResolver.selectCorp(CardName.CREDICOR, rng);
+      const result = MarsBotCorpResolver.selectCorp(CardName.CREDICOR, DEFAULT_GAME_OPTIONS, rng);
       expect(result).to.not.be.undefined;
       expect(result!.name).to.eq(CardName.ECOLINE);
     });
@@ -66,9 +67,26 @@ describe('MarsBotCorpResolver', () => {
 
       const rng = new SeededRandom(42);
       // Human has EcoLine, so MarsBot should get Other Corp
-      const result = MarsBotCorpResolver.selectCorp(CardName.ECOLINE, rng);
+      const result = MarsBotCorpResolver.selectCorp(CardName.ECOLINE, DEFAULT_GAME_OPTIONS, rng);
       expect(result).to.not.be.undefined;
       expect(result!.name).to.eq(CardName.HELION);
+    });
+
+    it('skips a corp whose expansion is not in play', () => {
+      registerMarsBotCorp(createTestCorp({name: CardName.ECOLINE}));
+      registerMarsBotCorp(createTestCorp({name: CardName.APHRODITE, requiredExpansions: ['venus']}));
+      const lastCorp = {next: () => 0.99, nextInt: (n: number) => n - 1} as any;
+
+      expect(MarsBotCorpResolver.selectCorp(CardName.CREDICOR, DEFAULT_GAME_OPTIONS, lastCorp).name).to.eq(CardName.ECOLINE);
+    });
+
+    it('draws a corp when any one of its expansions is in play', () => {
+      registerMarsBotCorp(createTestCorp({name: CardName.ECOLINE}));
+      registerMarsBotCorp(createTestCorp({name: CardName.CELESTIC, requiredExpansions: ['venus', 'colonies']}));
+      const lastCorp = {next: () => 0.99, nextInt: (n: number) => n - 1} as any;
+      const withColonies = {...DEFAULT_GAME_OPTIONS, expansions: {...DEFAULT_GAME_OPTIONS.expansions, colonies: true}};
+
+      expect(MarsBotCorpResolver.selectCorp(CardName.CREDICOR, withColonies, lastCorp).name).to.eq(CardName.CELESTIC);
     });
 
     it('throws when only corp matches human', () => {
@@ -76,7 +94,7 @@ describe('MarsBotCorpResolver', () => {
       registerMarsBotCorp(corpA);
 
       const rng = new SeededRandom(42);
-      expect(() => MarsBotCorpResolver.selectCorp(CardName.ECOLINE, rng)).to.throw('No MarsBot corps registered');
+      expect(() => MarsBotCorpResolver.selectCorp(CardName.ECOLINE, DEFAULT_GAME_OPTIONS, rng)).to.throw('No MarsBot corps registered');
     });
   });
 

@@ -14,6 +14,7 @@ const VIRON: IMarsBotCorp = {
   name: CardName.VIRON,
   description: 'Tag: Microbe. Each active card with an action adds 1 floater and scores 1 VP at game end.',
   tags: [Tag.MICROBE],
+  requiredExpansions: ['venus', 'colonies'],
   effect: {
     onProjectCardResolved(bot, card) {
       if (card.type !== CardType.ACTIVE || !isIActionCard(card)) {
@@ -34,6 +35,7 @@ const CELESTIC: IMarsBotCorp = {
   name: CardName.CELESTIC,
   description: 'Tag: Venus. Draft: Venus > Jovian. Setup: +1 floater. Each Failed Action: +1 floater. Each round start: +1 floater.',
   tags: [Tag.VENUS],
+  requiredExpansions: ['venus', 'colonies'],
   draftPriority: {type: 'tags', tags: [Tag.VENUS, Tag.JOVIAN]},
   setup(bot) {
     bot.addFloaters(1);
@@ -53,6 +55,7 @@ const MORNINGSTAR: IMarsBotCorp = {
   name: CardName.MORNING_STAR_INC,
   description: 'Tags: 2 Venus. Setup: remove Lobbyists, add Venusian Lobby. Credit cubes on Venus track earn 1 MC each.',
   tags: [Tag.VENUS, Tag.VENUS],
+  requiredExpansions: ['venus'],
   setup(bot) {
     // With Venus Next the bonus deck's Lobbyists is B15
     bot.removeBonusCard(BonusCardId.B06_LOBBYISTS);
@@ -77,6 +80,7 @@ const APHRODITE: IMarsBotCorp = {
   name: CardName.APHRODITE,
   description: 'Tag: Plant. Draft: Plant > Animal > Venus. Whenever Venus is raised, earn 2 MC.',
   tags: [Tag.PLANT],
+  requiredExpansions: ['venus'],
   draftPriority: {type: 'tags', tags: [Tag.PLANT, Tag.ANIMAL, Tag.VENUS]},
   effect: {
     onVenusRaised(bot) {
@@ -91,6 +95,7 @@ const STORMCRAFT: IMarsBotCorp = {
   name: CardName.STORMCRAFT_INCORPORATED,
   description: 'Tag: Jovian. Setup: +1 floater. Each round start: +1 floater. Spending floaters for an extra card also raises temperature +1.',
   tags: [Tag.JOVIAN],
+  requiredExpansions: ['venus', 'colonies'],
   setup(bot) {
     bot.addFloaters(1);
     bot.game.log('MarsBot (Stormcraft): +1 floater');
