@@ -17,8 +17,13 @@ import {CardName} from '../../src/common/cards/CardName';
 import {DEFAULT_STRATEGY, ScriptedPlayer, Strategy} from './ScriptedPlayer';
 
 export type LookaheadOptions = {
-  /** Rollouts per candidate move. */
+  /** Rollouts per candidate move (flat search). */
   rollouts: number,
+  /**
+   * When set, use sequential halving with this many rollouts per decision instead of a flat
+   * search: every round plays each surviving move equally often, then drops the worse half.
+   */
+  budget?: number,
   /** How many of the heuristically best playable cards to consider. */
   maxCards: number,
 };
@@ -66,25 +71,42 @@ export class LookaheadPlayer extends ScriptedPlayer {
     this.searchStats.decisions++;
     this.decisionCounter++;
     const snapshot = JSON.stringify((this.game as Game).serialize());
+    const seedFor = (r: number) => this.seed * 1_000_003 + this.decisionCounter * 1009 + r;
 
-    let best: InputResponse | undefined;
-    let bestScore = -Infinity;
-    for (const candidate of candidates) {
-      let total = 0;
-      let count = 0;
-      for (let r = 0; r < this.options.rollouts; r++) {
-        const score = this.rollout(snapshot, candidate.response, this.seed * 1_000_003 + this.decisionCounter * 101 + r);
-        if (score !== undefined) {
-          total += score;
-          count++;
+    type Arm = {response: InputResponse, total: number, count: number};
+    let arms: Array<Arm> = candidates.map((c) => ({response: c.response, total: 0, count: 0}));
+    const play = (arm: Arm, r: number) => {
+      const score = this.rollout(snapshot, arm.response, seedFor(r));
+      if (score !== undefined) {
+        arm.total += score;
+        arm.count++;
+      }
+    };
+    const avg = (arm: Arm) => arm.count === 0 ? -Infinity : arm.total / arm.count;
+
+    if (this.options.budget === undefined) {
+      for (const arm of arms) {
+        for (let r = 0; r < this.options.rollouts; r++) {
+          play(arm, r);
         }
       }
-      if (count > 0 && total / count > bestScore) {
-        bestScore = total / count;
-        best = candidate.response;
+    } else {
+      const rounds = Math.max(1, Math.ceil(Math.log2(arms.length)));
+      let next = 0;
+      while (arms.length > 1) {
+        const perArm = Math.max(1, Math.floor(this.options.budget / (rounds * arms.length)));
+        // Same shuffles for every move in a round, so they are compared on equal luck.
+        for (let r = next; r < next + perArm; r++) {
+          for (const arm of arms) {
+            play(arm, r);
+          }
+        }
+        next += perArm;
+        arms = [...arms].sort((a, b) => avg(b) - avg(a)).slice(0, Math.ceil(arms.length / 2));
       }
     }
-    return best ?? super.respondMainAction(menu);
+    const best = [...arms].sort((a, b) => avg(b) - avg(a))[0];
+    return best !== undefined && best.count > 0 ? best.response : super.respondMainAction(menu);
   }
 
   /** Final (our VP - MarsBot VP) after making `move` in a copy of the game, or undefined if the copy broke. */
