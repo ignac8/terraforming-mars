@@ -29,7 +29,7 @@ const ECO_LINE: IMarsBotCorp = {
   name: CardName.ECOLINE,
   description: 'Each generation: add Rapid Sprouting bonus card to action deck.',
   tags: [],
-  beforeActionPhase: bonusCardBeforeActionPhase(BonusCardId.B23_RAPID_SPROUTING, 'Eco Line'),
+  ...bonusCardBeforeActionPhase(BonusCardId.B23_RAPID_SPROUTING, 'Eco Line'),
 };
 
 // ---- C03 Helion ----
@@ -77,6 +77,7 @@ const INTERPLANETARY_CINEMATICS: IMarsBotCorp = {
   description: 'Tags: 2 Events. White cubes on building and event tracks. Each advance on those tracks earns 2 MC.',
   tags: [Tag.EVENT, Tag.EVENT],
   trackCubes: [...whiteTrackCubes(0), ...whiteTrackCubes(2)],
+  trackCubesTriggerEveryAdvance: true,
   effect: {
     onTrackCubeTrigger(bot, trackIndex, _position, cubeType) {
       if (cubeType === 'white' && (trackIndex === 0 || trackIndex === 2)) {
@@ -95,7 +96,9 @@ const INVENTRIX: IMarsBotCorp = {
   description: 'Setup: remove Lobbyists. Effect: card with requirements gives 2 MC. Each generation: add Do It Right to action deck.',
   tags: [],
   setup(bot) {
+    // With Venus Next the bonus deck's Lobbyists is B15
     bot.removeBonusCard(BonusCardId.B06_LOBBYISTS);
+    bot.removeBonusCard(BonusCardId.B15_LOBBYISTS_VENUS);
     bot.game.log('MarsBot (Inventrix): Lobbyists removed from bonus deck');
   },
   effect: {
@@ -106,7 +109,7 @@ const INVENTRIX: IMarsBotCorp = {
       }
     },
   },
-  beforeActionPhase: bonusCardBeforeActionPhase(BonusCardId.B25_DO_IT_RIGHT, 'Inventrix'),
+  ...bonusCardBeforeActionPhase(BonusCardId.B25_DO_IT_RIGHT, 'Inventrix'),
 };
 
 // ---- C06 Mining Guild ----
@@ -154,8 +157,7 @@ const PHOBOLOG: IMarsBotCorp = {
     {trackIndex: 1, position: 15, cubeType: 'white'},
   ],
   setup(bot) {
-    // Draw 2 space cards from project deck and add to bonus deck
-    // This needs special handling — for now we add 2 project cards to action deck as approximation
+    bot.addProjectCardsToBonusDeck(Tag.SPACE, 2);
     bot.game.log('MarsBot (Phobolog): 2 space cards drawn and added to bonus deck');
   },
   effect: {
@@ -201,6 +203,7 @@ const TERACTOR: IMarsBotCorp = {
   tags: [],
   draftPriority: {type: 'tags', tags: [Tag.EARTH]},
   trackCubes: whiteTrackCubes(5),
+  trackCubesTriggerEveryAdvance: true,
   setup(bot) {
     bot.gainMc(25);
     bot.game.log('MarsBot (Teractor): +25 M€');
@@ -229,11 +232,12 @@ const THARSIS_REPUBLIC: IMarsBotCorp = {
   effect: {
     onTilePlaced(bot, placedByMarsBot, tileType) {
       if (tileType === TileType.CITY || tileType === TileType.CAPITAL) {
-        bot.gainMc(2);
-        bot.game.log('MarsBot (Tharsis Republic): city placed, +2 M€');
         if (placedByMarsBot) {
           bot.advanceTrack(2); // Event track = index 2
           bot.game.log('MarsBot (Tharsis Republic): MarsBot city, advance event track');
+        } else {
+          bot.gainMc(2);
+          bot.game.log('MarsBot (Tharsis Republic): player city placed, +2 M€');
         }
       }
     },
@@ -274,7 +278,7 @@ const THORGATE: IMarsBotCorp = {
 // Gen: from gen 2+, add 1 bonus card to action deck before action phase.
 const UNMI: IMarsBotCorp = {
   name: CardName.UNITED_NATIONS_MARS_INITIATIVE,
-  description: 'Setup: add Government Subsidy to bonus deck. From generation 2 onward, resolve 1 bonus card each generation.',
+  description: 'Setup: add Government Subsidy to bonus deck. From generation 2 onward, move 1 bonus card to the action deck each generation.',
   tags: [],
   setup(bot) {
     bot.addBonusCardToBonusDeck(BonusCardId.B31_GOVERNMENT_SUBSIDY);
@@ -282,7 +286,7 @@ const UNMI: IMarsBotCorp = {
   },
   beforeActionPhase(bot) {
     if (bot.game.generation >= 2) {
-      bot.maybeDrawAndResolveBonusCard();
+      bot.maybeMoveBonusCardToActionDeck();
       bot.game.log('MarsBot (UNMI): added 1 bonus card to action deck');
     }
   },

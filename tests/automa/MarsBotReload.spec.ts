@@ -6,6 +6,8 @@ import {MarsBot} from '../../src/server/automa/MarsBot';
 import {BoardName} from '../../src/common/boards/BoardName';
 import {GlobalParameter} from '../../src/common/GlobalParameter';
 import {Phase} from '../../src/common/Phase';
+import {createCorpBonusCard} from '../../src/server/automa/MarsBotBonusCard';
+import {BonusCardId} from '../../src/common/automa/AutomaTypes';
 
 function createAutomaGame(): {game: IGame, marsBot: MarsBot} {
   const [game] = testGame(1, {
@@ -69,5 +71,17 @@ describe('MarsBotReload', () => {
     expect(restoredSteps[GlobalParameter.TEMPERATURE]).eq(steps[GlobalParameter.TEMPERATURE]);
     expect(restoredSteps[GlobalParameter.OXYGEN]).eq(steps[GlobalParameter.OXYGEN]);
     expect(restoredSteps[GlobalParameter.VENUS]).eq(steps[GlobalParameter.VENUS]);
+  });
+
+  it('keeps MarsBot\'s player markers across a reload', () => {
+    const {game, marsBot} = createAutomaGame();
+    marsBot['bonusResolver'].resolve(createCorpBonusCard(BonusCardId.B22_SETTLERS));
+    const [id] = marsBot.markerSpaceIds;
+
+    const restored = Game.deserialize(game.serialize());
+
+    const restoredBot = restored.automaHooks!.marsBot;
+    expect(restoredBot.markerSpaceIds).to.deep.eq([id]);
+    expect(restored.board.getSpaceOrThrow(id).player).to.eq(restoredBot.player);
   });
 });

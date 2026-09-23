@@ -1,19 +1,28 @@
 /**
  * Shared helper functions for MarsBot corporation definitions.
  */
-import {IMarsBot, MarsBotTrackCube} from '../MarsBotCorpTypes';
+import {ACTION_DECK_BONUS_CARD_REMOVED, IMarsBot, IMarsBotCorp, MarsBotTrackCube} from '../MarsBotCorpTypes';
 import {BonusCardId, CubeType} from '../../../common/automa/AutomaTypes';
+
+/** M€ a silver resource cube is worth, which the bot gains on reaching a `credit` cube (Cheung Shing, Morningstar). */
+export const SILVER_CUBE_MC = 5;
 
 /** Generate white cubes for all 18 positions on a track (replaces transparent cubes). */
 export function whiteTrackCubes(trackIndex: number): MarsBotTrackCube[] {
   return Array.from({length: 18}, (_, i) => ({trackIndex, position: i + 1, cubeType: 'white' as const}));
 }
 
-/** Factory for the common "add bonus card to action deck before the action phase" pattern. */
-export function bonusCardBeforeActionPhase(bonusCardId: BonusCardId, corpName: string): (bot: IMarsBot) => void {
-  return (bot) => {
-    bot.addBonusCardToActionDeck(bonusCardId);
-    bot.game.log(`MarsBot (${corpName}): ${bonusCardId} added to action deck`);
+/** Corp fields for the common "add bonus card to action deck before the action phase" pattern. */
+export function bonusCardBeforeActionPhase(bonusCardId: BonusCardId, corpName: string): Pick<IMarsBotCorp, 'actionDeckBonusCard' | 'beforeActionPhase'> {
+  return {
+    actionDeckBonusCard: bonusCardId,
+    beforeActionPhase: (bot) => {
+      if (bot.getCorpState(ACTION_DECK_BONUS_CARD_REMOVED) > 0) {
+        return;
+      }
+      bot.addBonusCardToActionDeck(bonusCardId);
+      bot.game.log(`MarsBot (${corpName}): ${bonusCardId} added to action deck`);
+    },
   };
 }
 

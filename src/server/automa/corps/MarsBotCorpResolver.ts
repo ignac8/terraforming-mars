@@ -1,6 +1,7 @@
 import {IMarsBotCorp, trackCubeKey} from '../MarsBotCorpTypes';
 import {CardName} from '../../../common/cards/CardName';
 import {Random} from '../../../common/utils/Random';
+import {GameOptions} from '../../game/GameOptions';
 import {getAllMarsBotCorps} from './MarsBotCorpRegistry';
 import {selectRandomColony, placeColonyForMarsBot} from '../colonies/MarsBotColonyPlacer';
 import type {MarsBot} from '../MarsBot';
@@ -9,9 +10,10 @@ import type {MarsBot} from '../MarsBot';
  * Orchestrates MarsBot corporation lifecycle: selection, setup, cube triggers, per-gen effects.
  */
 export class MarsBotCorpResolver {
-  public static selectCorp(humanCorpName: CardName, rng: Random): IMarsBotCorp {
+  public static selectCorp(humanCorpName: CardName, gameOptions: GameOptions, rng: Random): IMarsBotCorp {
     const allCorps = getAllMarsBotCorps();
-    const eligible = allCorps.filter((c) => c.name !== humanCorpName);
+    const eligible = allCorps.filter((c) => c.name !== humanCorpName &&
+      (c.requiredExpansions === undefined || c.requiredExpansions.some((expansion) => gameOptions.expansions[expansion])));
     if (eligible.length === 0) {
       throw new Error('No MarsBot corps registered');
     }
@@ -64,15 +66,19 @@ export class MarsBotCorpResolver {
     if (cube === undefined) {
       return false;
     }
-    if (marsBot.isCubeTriggered(trackIndex, position)) {
-      return false;
-    }
-
+    const firstVisit = !marsBot.isCubeTriggered(trackIndex, position);
     marsBot.markCubeTriggered(trackIndex, position);
 
-    // Corp cube trigger
+    // Only the corp's own cubes reach its handler. The colony and trade fleet cubes below are
+    // rule cubes that sit on the same tracks.
     const corp = marsBot.corp;
-    const replacedIcon = corp?.effect?.onTrackCubeTrigger?.(marsBot, trackIndex, position, cube.cubeType) === true;
+    const corpCube = corp?.trackCubes?.find((c) => c.trackIndex === trackIndex && c.position === position);
+    const triggers = firstVisit || corp?.trackCubesTriggerEveryAdvance === true;
+    const replacedIcon = corpCube !== undefined && triggers &&
+      corp?.effect?.onTrackCubeTrigger?.(marsBot, trackIndex, position, corpCube.cubeType) === true;
+    if (!firstVisit) {
+      return replacedIcon;
+    }
 
     // Colony cubes (Pioneer4/Constructor): positions set by AutomaGameSetup
     // C-X3: deduct 5 MC then place a colony on a randomly selected eligible tile

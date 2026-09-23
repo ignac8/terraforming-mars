@@ -6,6 +6,11 @@ import {ColonyName} from '../../../src/common/colonies/ColonyName';
 import {BoardName} from '../../../src/common/boards/BoardName';
 import {MarsBotBoard} from '../../../src/server/automa/MarsBotBoard';
 import {Tag} from '../../../src/common/cards/Tag';
+import {CardName} from '../../../src/common/cards/CardName';
+import {getMarsBotCorp} from '../../../src/server/automa/corps/MarsBotCorpRegistry';
+import {SelectCard} from '../../../src/server/inputs/SelectCard';
+import {IProjectCard} from '../../../src/server/cards/IProjectCard';
+import {cast} from '../../../src/common/utils/utils';
 
 function getMarsBot(game: ReturnType<typeof testGame>[0]): MarsBot {
   return (game.automaHooks as AutomaGameHooks).marsBot;
@@ -104,6 +109,58 @@ describe('FloaterHandling (C-8, C-9, C-14, C-X2)', () => {
 
       // 5 should be spent, leaving 2
       expect(marsBot.shippingBoard.get(ColonyName.TITAN)).to.eq(2);
+    });
+  });
+
+  describe('C-23: corporation floaters', () => {
+    it('go to Titan storage without Venus Next', () => {
+      const [game] = testGame(1, {automaOption: true, coloniesExtension: true, boardName: BoardName.THARSIS});
+      const marsBot = getMarsBot(game);
+      const corp = getMarsBotCorp(CardName.CELESTIC)!;
+
+      corp.setup!(marsBot);
+      corp.roundStart!(marsBot);
+
+      expect(marsBot.shippingBoard.get(ColonyName.TITAN)).to.eq(2);
+      expect(marsBot.floaters).to.eq(0);
+    });
+
+    it('go to the floater pool with Venus Next', () => {
+      const [game] = testGame(1, {automaOption: true, coloniesExtension: true, venusNextExtension: true, boardName: BoardName.THARSIS});
+      const marsBot = getMarsBot(game);
+      const corp = getMarsBotCorp(CardName.CELESTIC)!;
+
+      corp.setup!(marsBot);
+      corp.roundStart!(marsBot);
+
+      expect(marsBot.floaters).to.eq(2);
+      expect(marsBot.shippingBoard.get(ColonyName.TITAN)).to.eq(0);
+    });
+
+    it('are spent from Titan storage without Venus Next', () => {
+      const [game] = testGame(1, {automaOption: true, coloniesExtension: true, boardName: BoardName.THARSIS});
+      const marsBot = getMarsBot(game);
+      marsBot.shippingBoard.add(ColonyName.TITAN, 3, marsBot);
+
+      marsBot.spendFloaters(2);
+
+      expect(marsBot.shippingBoard.get(ColonyName.TITAN)).to.eq(1);
+      expect(marsBot.floaters).to.eq(0);
+    });
+
+    it('keeping a 4th drafted card spends 5 floaters from Titan storage without Venus Next', () => {
+      const [game, human] = testGame(1, {automaOption: true, coloniesExtension: true, draftVariant: true, boardName: BoardName.THARSIS});
+      const marsBot = getMarsBot(game);
+      marsBot.shippingBoard.add(ColonyName.TITAN, 5, marsBot);
+
+      game.gotoResearchPhase();
+      for (let round = 0; round < 4; round++) {
+        const selectCard = cast(human.getWaitingFor(), SelectCard<IProjectCard>);
+        selectCard.cb([selectCard.cards[0]]);
+      }
+
+      expect(marsBot.shippingBoard.get(ColonyName.TITAN)).to.eq(0);
+      expect(marsBot.floaters).to.eq(0);
     });
   });
 

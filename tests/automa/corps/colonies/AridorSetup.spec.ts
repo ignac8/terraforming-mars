@@ -4,37 +4,53 @@ import {AutomaGameHooks} from '../../../../src/server/automa/AutomaGameHooks';
 import {MarsBot} from '../../../../src/server/automa/MarsBot';
 import {CardName} from '../../../../src/common/cards/CardName';
 import {Luna} from '../../../../src/server/colonies/Luna';
+import {Titan} from '../../../../src/server/colonies/Titan';
 import {BoardName} from '../../../../src/common/boards/BoardName';
+import {getMarsBotCorp} from '../../../../src/server/automa/corps/MarsBotCorpRegistry';
 
 function getMarsBot(game: ReturnType<typeof testGame>[0]): MarsBot {
   return (game.automaHooks as AutomaGameHooks).marsBot;
 }
 
-describe('AridorSetup (C-30)', () => {
-  it('places a colony during setup when Colonies extension is active', () => {
-    const [game] = testGame(1, {
-      automaOption: true,
-      automaCorpOption: true,
-      coloniesExtension: true,
-      boardName: BoardName.THARSIS,
-    });
+describe('AridorSetup', () => {
+  it('adds one colony tile to the game at setup without building a colony', () => {
+    const [game] = testGame(1, {automaOption: true, coloniesExtension: true, boardName: BoardName.THARSIS});
     const marsBot = getMarsBot(game);
-    const luna = new Luna();
-    game.colonies = [luna];
+    const inPlay = game.colonies.map((c) => c.name);
+    const outOfPlay = game.discardedColonies.length;
 
-    // Simulate Aridor setup
-    const corp = marsBot.corp;
-    if (corp !== undefined && corp.setup !== undefined) {
-      corp.setup(marsBot);
-    } else {
-      // Manually trigger setup context
-      marsBot.maybePlaceRandomColony();
-    }
+    marsBot.setCorpAndSetup(getMarsBotCorp(CardName.ARIDOR)!);
 
-    // Either a colony was placed or none was available
-    const totalColonies = game.colonies.reduce((s, c) => s + c.colonies.filter((id) => id === marsBot.player.id).length, 0);
-    // At least 0 (no eligible colony is valid); just ensure no crash
-    expect(totalColonies).to.be.greaterThanOrEqual(0);
+    expect(game.colonies).has.length(inPlay.length + 1);
+    const added = game.colonies.find((c) => !inPlay.includes(c.name))!;
+    expect(game.discardedColonies).has.length(outOfPlay - 1);
+    expect(game.discardedColonies).does.not.include(added);
+    expect(game.colonies.some((c) => c.colonies.includes(marsBot.player.id))).is.false;
+    expect(marsBot.shippingBoard.storage.size).to.eq(0);
+  });
+
+  it('starts the added tile active, as C-1 starts every colony tile in a MarsBot game', () => {
+    const [game] = testGame(1, {automaOption: true, coloniesExtension: true, boardName: BoardName.THARSIS});
+    const marsBot = getMarsBot(game);
+    const titan = new Titan();
+    game.discardedColonies = [titan];
+
+    marsBot.setCorpAndSetup(getMarsBotCorp(CardName.ARIDOR)!);
+
+    expect(game.colonies).includes(titan);
+    expect(titan.isActive).is.true;
+  });
+
+  it('adds nothing when every colony tile is already in play', () => {
+    const [game] = testGame(1, {automaOption: true, coloniesExtension: true, boardName: BoardName.THARSIS});
+    const marsBot = getMarsBot(game);
+    game.discardedColonies.length = 0;
+    const inPlay = game.colonies.length;
+
+    marsBot.setCorpAndSetup(getMarsBotCorp(CardName.ARIDOR)!);
+
+    expect(game.colonies).has.length(inPlay);
+    expect(game.colonies.some((c) => c.colonies.includes(marsBot.player.id))).is.false;
   });
 
   it('maybePlaceRandomColony returns true when eligible colony exists', () => {

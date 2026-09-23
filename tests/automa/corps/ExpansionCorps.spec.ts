@@ -8,10 +8,25 @@ import {
   clearMarsBotCorpRegistry, restoreMarsBotCorpRegistry,
   getMarsBotCorp,
   getAllMarsBotCorps,
+  registerMarsBotCorp,
 } from '../../../src/server/automa/corps/MarsBotCorpRegistry';
 import {Tag} from '../../../src/common/cards/Tag';
 import {IProjectCard} from '../../../src/server/cards/IProjectCard';
 import {BoardName} from '../../../src/common/boards/BoardName';
+import {Resource} from '../../../src/common/Resource';
+import {BonusCardId} from '../../../src/common/automa/AutomaTypes';
+import {MicroMills} from '../../../src/server/cards/base/MicroMills';
+import {IceCapMelting} from '../../../src/server/cards/base/IceCapMelting';
+import {Research} from '../../../src/server/cards/base/Research';
+import {createCorpBonusCard} from '../../../src/server/automa/MarsBotBonusCard';
+import {EcoLine} from '../../../src/server/cards/corporation/EcoLine';
+import {Space} from '../../../src/server/boards/Space';
+import {SpaceType} from '../../../src/common/boards/SpaceType';
+import {TileType} from '../../../src/common/TileType';
+import {SelectCard} from '../../../src/server/inputs/SelectCard';
+import {cast} from '../../../src/common/utils/utils';
+import {setTemperature} from '../../TestingUtils';
+import {MAX_TEMPERATURE} from '../../../src/common/constants';
 
 function createAutomaGame(): {game: IGame, human: TestPlayer, marsBot: MarsBot} {
   const [game, human] = testGame(1, {
@@ -65,13 +80,15 @@ describe('Expansion MarsBot Corporations', () => {
       expect(corp.trackCubes![14]).to.deep.include({trackIndex: 0, position: 18, cubeType: 'credit'});
     });
 
-    it('gains 1 M€ per credit cube reached', () => {
+    it('gains 5 M€, a silver resource cube, when the building track reaches a credit cube', () => {
       const {marsBot} = createAutomaGame();
-      const corp = getMarsBotCorp(CardName.CHEUNG_SHING_MARS)!;
-      marsBot.setCorpAndSetup(corp);
-      const mcBefore = marsBot.turnResolver.megacredits;
-      corp.effect!.onTrackCubeTrigger!(marsBot, 0, 4, 'credit');
-      expect(marsBot.turnResolver.megacredits).to.eq(mcBefore + 1);
+      marsBot.setCorpAndSetup(getMarsBotCorp(CardName.CHEUNG_SHING_MARS)!);
+      marsBot.marsBotBoard.tracks[0].position = 3;
+      const mc = marsBot.turnResolver.megacredits;
+
+      marsBot.advanceTrack(0);
+
+      expect(marsBot.turnResolver.megacredits).to.eq(mc + 5);
     });
   });
 
@@ -107,6 +124,65 @@ describe('Expansion MarsBot Corporations', () => {
   });
 
   // ---- Prelude 2 corps ----
+
+  describe('C18 Arcadian Communities', () => {
+    it('resolves Settlers at setup and puts one Settlers in the first action deck', () => {
+      const [game, human] = testGame(1, {automaOption: true, automaCorpOption: true, boardName: BoardName.THARSIS});
+      const marsBot = game.automaHooks!.marsBot;
+      const corp = getMarsBotCorp(CardName.ARCADIAN_COMMUNITIES)!;
+      clearMarsBotCorpRegistry();
+      registerMarsBotCorp(corp);
+      human.pickedCorporationCard = new EcoLine();
+
+      game.automaHooks!.handlePostCorporationSetup();
+
+      expect(marsBot.corp).to.eq(corp);
+      expect(marsBot.markerSpaceIds).has.length(1);
+      expect(game.board.getGreeneries(marsBot.player)).is.empty;
+      const settlers = marsBot.actionDeck.filter((c) => 'id' in c && c.id === BonusCardId.B22_SETTLERS);
+      expect(settlers).has.length(1);
+    });
+
+    it('gains 3 M€ when it places a tile on a space holding its marker', () => {
+      const {game, marsBot} = createAutomaGame();
+      marsBot.setCorpAndSetup(getMarsBotCorp(CardName.ARCADIAN_COMMUNITIES)!);
+      const marked = game.board.getSpaceOrThrow(marsBot.markerSpaceIds[0]);
+      const mc = marsBot.megacredits;
+
+      game.addCity(marsBot.player, marked);
+
+      expect(marsBot.megacredits).to.eq(mc + 3);
+      expect(marsBot.markerSpaceIds).is.empty;
+    });
+
+    it('gains nothing for a tile on an unmarked space', () => {
+      const {game, marsBot} = createAutomaGame();
+      marsBot.setCorpAndSetup(getMarsBotCorp(CardName.ARCADIAN_COMMUNITIES)!);
+      const unmarked = game.board.getAvailableSpacesForCity(marsBot.player)
+        .find((space) => space.player === undefined)!;
+      const mc = marsBot.megacredits;
+
+      game.addCity(marsBot.player, unmarked);
+
+      expect(marsBot.megacredits).to.eq(mc);
+      expect(marsBot.markerSpaceIds).has.length(1);
+    });
+  });
+
+  describe('C20 Factorum', () => {
+    it('stores 1 M€ on every advance of the building track, re-advances included', () => {
+      const {marsBot} = createAutomaGame();
+      marsBot.setCorpAndSetup(getMarsBotCorp(CardName.FACTORUM)!);
+      marsBot.marsBotBoard.tracks[0].position = 3;
+      marsBot.advanceTrack(0);
+      marsBot.regressTrack(Resource.STEEL);
+      const mcOnCard = marsBot.getCorpState('mcOnCard');
+
+      marsBot.advanceTrack(0);
+
+      expect(marsBot.getCorpState('mcOnCard')).to.eq(mcOnCard + 1);
+    });
+  });
 
   describe('C29 Manutech', () => {
     it('has black cubes at #5 and #12 on all 7 tracks', () => {
@@ -164,6 +240,74 @@ describe('Expansion MarsBot Corporations', () => {
     });
   });
 
+  describe('C42 Nirgal Enterprises', () => {
+    it('scores 2 more in every award', () => {
+      const {game, marsBot} = createAutomaGame();
+      const scores = () => game.awards.map((award) => marsBot.turnResolver.getMarsBotAwardValue(award));
+      const before = scores();
+
+      marsBot.corp = getMarsBotCorp(CardName.NIRGAL_ENTERPRISES)!;
+
+      expect(scores()).to.deep.eq(before.map((score) => score + 2));
+    });
+
+    it('wins a funded award at final scoring with its +2', () => {
+      const {game, human, marsBot} = createAutomaGame();
+      marsBot.corp = getMarsBotCorp(CardName.NIRGAL_ENTERPRISES)!;
+      game.fundAward(human, game.awards.find((a) => a.name === 'Scientist')!);
+      human.tagsForTest = {science: 2};
+
+      expect(marsBot.getVictoryPoints().awards).to.eq(5);
+    });
+
+    it('claims a milestone before the action phase in generations 2-5 and 10+', () => {
+      for (const generation of [2, 5, 10, 14]) {
+        const {game, marsBot} = createAutomaGame();
+        marsBot.corp = getMarsBotCorp(CardName.NIRGAL_ENTERPRISES)!;
+        marsBot.marsBotBoard.tracks[0].position = 8; // 8 building tags: Builder
+        (game as any).generation = generation;
+
+        marsBot.corp.beforeActionPhase!(marsBot);
+
+        expect(game.claimedMilestones.map((m) => [m.player, m.milestone.name]), `generation ${generation}`)
+          .to.deep.eq([[marsBot.player, 'Builder']]);
+        expect(game.fundedAwards, `generation ${generation}`).is.empty;
+      }
+    });
+
+    it('funds an award before the action phase in generations 6-9', () => {
+      for (const generation of [6, 9]) {
+        const {game, marsBot} = createAutomaGame();
+        marsBot.corp = getMarsBotCorp(CardName.NIRGAL_ENTERPRISES)!;
+        marsBot.marsBotBoard.tracks[0].position = 8;
+        (game as any).generation = generation;
+
+        marsBot.corp.beforeActionPhase!(marsBot);
+
+        expect(game.fundedAwards.map((a) => a.player), `generation ${generation}`).to.deep.eq([marsBot.player]);
+        expect(game.claimedMilestones, `generation ${generation}`).is.empty;
+      }
+    });
+
+    it('takes no Failed Action when it cannot claim or fund', () => {
+      const {game, human, marsBot} = createAutomaGame();
+      marsBot.corp = getMarsBotCorp(CardName.NIRGAL_ENTERPRISES)!;
+      for (const award of game.awards.slice(0, 3)) {
+        game.fundAward(human, award);
+      }
+      const mc = marsBot.turnResolver.megacredits;
+
+      (game as any).generation = 3; // No milestone is met.
+      marsBot.corp.beforeActionPhase!(marsBot);
+      (game as any).generation = 7; // Every award slot is taken.
+      marsBot.corp.beforeActionPhase!(marsBot);
+
+      expect(game.claimedMilestones).is.empty;
+      expect(game.fundedAwards).has.length(3);
+      expect(marsBot.turnResolver.megacredits).to.eq(mc);
+    });
+  });
+
   describe('C43 Paladin Shipping', () => {
     it('collects cubes and pairs them for temperature raise', () => {
       const {marsBot} = createAutomaGame();
@@ -197,6 +341,23 @@ describe('Expansion MarsBot Corporations', () => {
       const mcBefore = marsBot.turnResolver.megacredits;
       corp.effect!.onProjectCardResolved!(marsBot, fakeCard('Tagless', {cost: 5}));
       expect(marsBot.turnResolver.megacredits).to.eq(mcBefore + 5);
+    });
+
+    it('pays 10 M€ in all for a tagless card MarsBot plays', () => {
+      const {marsBot} = createAutomaGame();
+      marsBot.setCorpAndSetup(getMarsBotCorp(CardName.SAGITTA_FRONTIER_SERVICES)!);
+      const mcBefore = marsBot.turnResolver.megacredits;
+      marsBot.turnResolver.resolveProjectCard(new MicroMills());
+      expect(marsBot.turnResolver.megacredits).to.eq(mcBefore + 10);
+    });
+
+    it('counts the Event tag, so an event with no printed tags pays 1 M€', () => {
+      const {marsBot} = createAutomaGame();
+      const corp = getMarsBotCorp(CardName.SAGITTA_FRONTIER_SERVICES)!;
+      marsBot.setCorpAndSetup(corp);
+      const mcBefore = marsBot.turnResolver.megacredits;
+      corp.effect!.onProjectCardResolved!(marsBot, new IceCapMelting());
+      expect(marsBot.turnResolver.megacredits).to.eq(mcBefore + 1);
     });
 
     it('gains 1 M€ for 1-tag cards', () => {
@@ -251,6 +412,91 @@ describe('Expansion MarsBot Corporations', () => {
       marsBot.turnResolver.megacredits = 10;
       corp.effect!.onHumanCardPlayed!(marsBot, fakeCard('MicrobeCard', {tags: [Tag.MICROBE], cost: 5}));
       expect(marsBot.turnResolver.megacredits).to.eq(6);
+    });
+  });
+
+  describe('C22 Philares', () => {
+    /** An empty land space with no tile within two spaces of it. */
+    function quietSpace(game: IGame, marsBot: MarsBot): Space {
+      const board = game.board;
+      return board.getAvailableSpacesOnLand(marsBot.player).find((space) => {
+        const adj = board.getAdjacentSpaces(space);
+        return adj.length === 6 && adj.every((s) => s.spaceType === SpaceType.LAND &&
+          board.getAdjacentSpaces(s).every((t) => t.tile === undefined));
+      })!;
+    }
+
+    function createPhilaresGame(): {game: IGame, human: TestPlayer, marsBot: MarsBot} {
+      const {game, human, marsBot} = createAutomaGame();
+      marsBot.setCorpAndSetup(getMarsBotCorp(CardName.PHILARES)!);
+      marsBot.setCorpState('scienceResources', 0);
+      return {game, human, marsBot};
+    }
+
+    it('setup places a greenery, resolves Local Neural Instance and removes it', () => {
+      const {game, marsBot} = createAutomaGame();
+      marsBot.addBonusCardToActionDeck(BonusCardId.B07_LOCAL_NEURAL_INSTANCE);
+
+      marsBot.setCorpAndSetup(getMarsBotCorp(CardName.PHILARES)!);
+
+      expect(game.board.getGreeneries(marsBot.player)).has.length(1);
+      expect(marsBot.neuralInstanceSpace?.tile?.tileType).to.eq(TileType.NEURAL_INSTANCE);
+      expect(marsBot.getCorpState('scienceResources')).to.eq(1);
+      const bonusIds = [...marsBot.bonusDeck.drawPile, ...marsBot.bonusDeck.discardPile].map((c) => c.id);
+      expect(bonusIds).does.not.include(BonusCardId.B07_LOCAL_NEURAL_INSTANCE);
+      expect(bonusIds).includes(BonusCardId.B27_BUILD_BUILD_BUILD);
+      expect(marsBot.actionDeck.some((c) => 'id' in c && c.id === BonusCardId.B07_LOCAL_NEURAL_INSTANCE)).is.false;
+    });
+
+    it('gains a science resource when MarsBot places a tile next to the player\'s tile', () => {
+      const {game, human, marsBot} = createPhilaresGame();
+      const space = quietSpace(game, marsBot);
+      game.simpleAddTile(human, game.board.getAdjacentSpaces(space)[0], {tileType: TileType.GREENERY});
+
+      game.addCity(marsBot.player, space);
+
+      expect(marsBot.getCorpState('scienceResources')).to.eq(1);
+    });
+
+    it('gains a science resource when the player places a tile next to MarsBot\'s tile', () => {
+      const {game, human, marsBot} = createPhilaresGame();
+      const space = quietSpace(game, marsBot);
+      game.simpleAddTile(marsBot.player, game.board.getAdjacentSpaces(space)[0], {tileType: TileType.GREENERY});
+
+      game.addCity(human, space);
+
+      expect(marsBot.getCorpState('scienceResources')).to.eq(1);
+    });
+
+    it('gains one science resource for each of the other side\'s tiles the new tile touches', () => {
+      const {game, human, marsBot} = createPhilaresGame();
+      const space = quietSpace(game, marsBot);
+      const [first, second] = game.board.getAdjacentSpaces(space);
+      game.simpleAddTile(human, first, {tileType: TileType.GREENERY});
+      game.simpleAddTile(human, second, {tileType: TileType.GREENERY});
+
+      game.addCity(marsBot.player, space);
+
+      expect(marsBot.getCorpState('scienceResources')).to.eq(2);
+    });
+
+    it('spends 4 science resources to advance the most advanced track that is not maxed', () => {
+      const {game, human, marsBot} = createPhilaresGame();
+      marsBot.setCorpState('scienceResources', 3);
+      const tracks = marsBot.marsBotBoard.tracks;
+      tracks[0].position = tracks[0].definition.layout.length - 1;
+      tracks[1].position = 10;
+      const advanced: Array<number> = [];
+      marsBot.turnResolver.advanceTrack = (i) => {
+        advanced.push(i);
+      };
+      const space = quietSpace(game, marsBot);
+      game.simpleAddTile(human, game.board.getAdjacentSpaces(space)[0], {tileType: TileType.GREENERY});
+
+      game.addCity(marsBot.player, space);
+
+      expect(advanced).to.deep.eq([1]);
+      expect(marsBot.getCorpState('scienceResources')).to.eq(0);
     });
   });
 
@@ -310,6 +556,90 @@ describe('Expansion MarsBot Corporations', () => {
       corp.roundStart!(marsBot);
       expect(marsBot.floaters).to.eq(2);
     });
+
+    it('gains 1 more floater with each Failed Action', () => {
+      const {marsBot} = createAutomaGame();
+      marsBot.corp = getMarsBotCorp(CardName.CELESTIC)!;
+      const mc = marsBot.turnResolver.megacredits;
+
+      marsBot.turnResolver.resolveProjectCard(new MicroMills()); // No tags: a Failed Action
+
+      expect(marsBot.floaters).to.eq(1);
+      expect(marsBot.turnResolver.megacredits).to.eq(mc + 5);
+    });
+  });
+
+  describe('C34 Stormcraft', () => {
+    function createVenusGame(draftVariant: boolean): {game: IGame, human: TestPlayer, marsBot: MarsBot} {
+      const [game, human] = testGame(1, {
+        automaOption: true,
+        automaDifficulty: 'normal',
+        venusNextExtension: true,
+        draftVariant,
+        boardName: BoardName.THARSIS,
+      });
+      const marsBot = game.automaHooks!.marsBot;
+      marsBot.corp = getMarsBotCorp(CardName.STORMCRAFT_INCORPORATED)!;
+      // Hoverlord gone, so MarsBot may spend its floaters on an extra card.
+      game.milestones = game.milestones.filter((m) => m.name !== 'Hoverlord');
+      marsBot.floaters = 5;
+      return {game, human, marsBot};
+    }
+
+    it('raises the temperature when it spends floaters for an extra card', () => {
+      const {game, marsBot} = createVenusGame(false);
+      game.generation = 2;
+      const temperature = game.getTemperature();
+
+      game.automaHooks!.handleResearchPhase();
+
+      expect(marsBot.floaters).to.eq(1); // 5 + 1 at round start - 5
+      expect(game.getTemperature()).to.eq(temperature + 2);
+    });
+
+    it('raises the temperature when it spends floaters to keep a 4th drafted card', () => {
+      const {game, human, marsBot} = createVenusGame(true);
+      const temperature = game.getTemperature();
+
+      game.gotoResearchPhase();
+      for (let round = 0; round < 4; round++) {
+        const selectCard = cast(human.getWaitingFor(), SelectCard<IProjectCard>);
+        selectCard.cb([selectCard.cards[0]]);
+      }
+
+      expect(marsBot.floaters).to.eq(1);
+      expect(game.getTemperature()).to.eq(temperature + 2);
+    });
+
+    it('counts its temperature step among the ones MarsBot raised', () => {
+      const {game, marsBot} = createVenusGame(false);
+      game.generation = 2;
+
+      game.automaHooks!.handleResearchPhase();
+
+      expect(marsBot.temperatureRaises).to.eq(1);
+    });
+
+    it('counts no temperature step once the temperature is maxed', () => {
+      const {game, marsBot} = createVenusGame(false);
+      setTemperature(game, MAX_TEMPERATURE);
+      game.generation = 2;
+
+      game.automaHooks!.handleResearchPhase();
+
+      expect(marsBot.temperatureRaises).to.eq(0);
+    });
+
+    it('does not raise the temperature without spending floaters', () => {
+      const {game, marsBot} = createVenusGame(false);
+      marsBot.floaters = 0;
+      game.generation = 2;
+      const temperature = game.getTemperature();
+
+      game.automaHooks!.handleResearchPhase();
+
+      expect(game.getTemperature()).to.eq(temperature);
+    });
   });
 
   describe('C27 Morningstar', () => {
@@ -332,7 +662,7 @@ describe('Expansion MarsBot Corporations', () => {
       expect(marsBot.hasCubeAt(7, 10)).to.be.undefined;
     });
 
-    it('pays 1 M€ when the Venus track reaches a credit cube', () => {
+    it('pays 5 M€, a silver resource cube, when the Venus track reaches a credit cube', () => {
       const {marsBot} = createVenusAutomaGame();
       marsBot.setCorpAndSetup(getMarsBotCorp(CardName.MORNING_STAR_INC)!);
       marsBot.marsBotBoard.tracks[7].position = 4;
@@ -340,7 +670,17 @@ describe('Expansion MarsBot Corporations', () => {
 
       marsBot.advanceTrack(7);
 
-      expect(marsBot.turnResolver.megacredits).to.eq(mc + 1);
+      expect(marsBot.turnResolver.megacredits).to.eq(mc + 5);
+    });
+
+    it('removes the Venus Next Lobbyists from the bonus deck', () => {
+      const {marsBot} = createVenusAutomaGame();
+      const deck = marsBot['bonusDeck'];
+      const ids = () => [...deck.drawPile, ...deck.discardPile, ...marsBot.actionDeck].map((c) => (c as {id?: BonusCardId}).id);
+      expect(ids()).to.include(BonusCardId.B15_LOBBYISTS_VENUS);
+      marsBot.setCorpAndSetup(getMarsBotCorp(CardName.MORNING_STAR_INC)!);
+      expect(ids()).to.not.include(BonusCardId.B15_LOBBYISTS_VENUS);
+      expect(ids()).to.include(BonusCardId.B26_VENUSIAN_LOBBY);
     });
   });
 
@@ -401,6 +741,29 @@ describe('Expansion MarsBot Corporations', () => {
     it('has 6 starting tags (3 Space + 3 Event)', () => {
       const corp = getMarsBotCorp(CardName.POLYPHEMOS)!;
       expect(corp.tags).to.deep.eq([Tag.SPACE, Tag.SPACE, Tag.SPACE, Tag.EVENT, Tag.EVENT, Tag.EVENT]);
+    });
+
+    it('discards the project card with the fewest tags before the action phase, never a bonus card', () => {
+      const {game, marsBot} = createAutomaGame();
+      const corp = getMarsBotCorp(CardName.POLYPHEMOS)!;
+      const iceCapMelting = new IceCapMelting(); // Its Event tag only
+      const bonus = createCorpBonusCard(BonusCardId.B03_RESEARCH_AND_DEVELOPMENT);
+      marsBot.actionDeck = [bonus, new Research(), iceCapMelting];
+
+      corp.beforeActionPhase!(marsBot);
+
+      expect(marsBot.actionDeck.map((c) => c.name)).to.deep.eq([bonus.name, CardName.RESEARCH]);
+      expect(game.projectDeck.discardPile).to.include(iceCapMelting);
+    });
+
+    it('discards nothing when the action deck holds no project card', () => {
+      const {marsBot} = createAutomaGame();
+      const corp = getMarsBotCorp(CardName.POLYPHEMOS)!;
+      marsBot.actionDeck = [createCorpBonusCard(BonusCardId.B03_RESEARCH_AND_DEVELOPMENT)];
+
+      corp.beforeActionPhase!(marsBot);
+
+      expect(marsBot.actionDeck).has.length(1);
     });
   });
 });

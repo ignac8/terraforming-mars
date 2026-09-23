@@ -3,14 +3,16 @@ import {Tag} from '../../../common/cards/Tag';
 import {CardName} from '../../../common/cards/CardName';
 import {AutomaManifest} from './AutomaManifest';
 import {whiteTrackCubes} from './BaseGameCorps';
+import {addRandomColonyTile} from '../colonies/MarsBotColonyPlacer';
 
 // ==== COLONIES (C30-C33) ====
 
 // C30 Aridor
 const ARIDOR: IMarsBotCorp = {
   name: CardName.ARIDOR,
-  description: 'Draft: least-advanced track tag. Setup: place 1 colony. White and black cubes across multiple tracks; each cube advances event track.',
+  description: 'Draft: least-advanced track tag. Setup: add 1 colony tile to the game. White and black cubes across multiple tracks; each cube advances event track.',
   tags: [],
+  requiredExpansions: ['colonies'],
   draftPriority: {type: 'leastAdvancedTrack'},
   trackCubes: [
     {trackIndex: 0, position: 3, cubeType: 'white'},
@@ -24,12 +26,8 @@ const ARIDOR: IMarsBotCorp = {
     {trackIndex: 6, position: 6, cubeType: 'black'},
   ],
   setup(bot) {
-    // C-30: Place 1 colony using random selection (C-15b method)
-    const placed = bot.maybePlaceRandomColony();
-    if (placed) {
-      bot.game.log('MarsBot (Aridor): placed 1 colony (C-30)');
-    } else {
-      bot.game.log('MarsBot (Aridor): no eligible colony tile for setup (C-30)');
+    if (addRandomColonyTile(bot.game) === undefined) {
+      bot.game.log('MarsBot (Aridor): no colony tile left to add');
     }
   },
   effect: {
@@ -60,14 +58,14 @@ const ARCLIGHT: IMarsBotCorp = {
 // C32 Polyphemos
 const POLYPHEMOS: IMarsBotCorp = {
   name: CardName.POLYPHEMOS,
-  description: 'Tags: 3 Space, 3 Event. Setup: +25 MC. Each generation: discard the card with fewest tags from the action deck.',
+  description: 'Tags: 3 Space, 3 Event. Setup: +25 MC. Each generation: discard the project card with fewest tags from the action deck.',
   tags: [Tag.SPACE, Tag.SPACE, Tag.SPACE, Tag.EVENT, Tag.EVENT, Tag.EVENT],
   setup(bot) {
     bot.gainMc(25);
     bot.game.log('MarsBot (Polyphemos): +25 M€');
   },
   beforeActionPhase(bot) {
-    bot.discardCardWithFewestTags();
+    bot.maybeDiscardProjectCardWithFewestTags();
   },
 };
 
@@ -76,6 +74,7 @@ const POSEIDON: IMarsBotCorp = {
   name: CardName.POSEIDON,
   description: 'Setup: place 1 colony. Colony placement advances least-advanced track.',
   tags: [],
+  requiredExpansions: ['colonies'],
   setup(bot) {
     // C-33: Place 1 colony using random selection (C-15b method)
     const placed = bot.maybePlaceRandomColony();

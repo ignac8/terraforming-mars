@@ -5,9 +5,9 @@ import {Resource} from '../../common/Resource';
 import {CardResource} from '../../common/CardResource';
 import {GlobalParameter} from '../../common/GlobalParameter';
 import {TileType} from '../../common/TileType';
-import {Board} from '../boards/Board';
+import {Board, isSpecialTileSpace} from '../boards/Board';
 import * as constants from '../../common/constants';
-import {MarsBotBonusCard, bonusCardDisplayName} from './MarsBotBonusCard';
+import {MarsBotBonusCard, MarsBotBonusDeckCard, bonusCardDisplayName} from './MarsBotBonusCard';
 import {MarsBotBonusDeck} from './MarsBotBonusDeck';
 import {MarsBotTilePlacer} from './MarsBotTilePlacer';
 import {MarsBotTurnResolver} from './MarsBotTurnResolver';
@@ -15,10 +15,37 @@ import {IProjectCard} from '../cards/IProjectCard';
 import {CardType} from '../../common/cards/CardType';
 import {Space} from '../boards/Space';
 import {CardName} from '../../common/cards/CardName';
+import {Tag} from '../../common/cards/Tag';
+import {marsBotCardTags} from './MarsBotTags';
 import {MarsBotTurmoilHelper} from './turmoil/MarsBotTurmoilHelper';
 import {selectRandomColony, placeColonyForMarsBot} from './colonies/MarsBotColonyPlacer';
 import {selectTradeColony, tradeWithColony} from './colonies/MarsBotTrader';
+import {inplaceShuffle} from '../utils/shuffle';
 import type {MarsBot} from './MarsBot';
+import {ACTION_DECK_BONUS_CARD_REMOVED} from './MarsBotCorpTypes';
+import {inplaceRemove, inplaceRemoveIf} from '../../common/utils/utils';
+
+/**
+ * The special tile each project card MarsBot can play shows, for Build, Build, Build (B27).
+ *
+ * Capital and New Holland are left out: their tiles are cities, and a city can't go next to the
+ * player's city.
+ */
+const SPECIAL_TILES: ReadonlyMap<CardName, TileType> = new Map([
+  [CardName.COMMERCIAL_DISTRICT, TileType.COMMERCIAL_DISTRICT],
+  [CardName.ECOLOGICAL_ZONE, TileType.ECOLOGICAL_ZONE],
+  [CardName.INDUSTRIAL_CENTER, TileType.INDUSTRIAL_CENTER],
+  [CardName.LAVA_FLOWS, TileType.LAVA_FLOWS],
+  [CardName.MINING_AREA, TileType.MINING_AREA],
+  [CardName.MINING_RIGHTS, TileType.MINING_RIGHTS],
+  [CardName.MOHOLE_AREA, TileType.MOHOLE_AREA],
+  [CardName.NATURAL_PRESERVE, TileType.NATURAL_PRESERVE],
+  [CardName.NUCLEAR_ZONE, TileType.NUCLEAR_ZONE],
+  [CardName.RESTRICTED_AREA, TileType.RESTRICTED_AREA],
+  [CardName.DEIMOS_DOWN_PROMO, TileType.DEIMOS_DOWN],
+  [CardName.GREAT_DAM_PROMO, TileType.GREAT_DAM],
+  [CardName.MAGNETIC_FIELD_GENERATORS_PROMO, TileType.MAGNETIC_FIELD_GENERATORS],
+]);
 
 /**
  * Resolves MarsBot bonus cards (B01–B08).
@@ -42,16 +69,31 @@ export class MarsBotBonusResolver {
     this.tilePlacer = tilePlacer;
   }
 
-  public resolve(card: MarsBotBonusCard): boolean {
+  public resolve(card: MarsBotBonusDeckCard): boolean {
+    if (card.id === undefined) {
+      // A project card from the bonus deck is played, so it leaves the bonus deck
+      this.turnResolver.resolveProjectCard(card);
+      return false;
+    }
     const destroyed = this.resolveEffect(card);
-    if (!destroyed) {
+    const bot = this.marsBotManager;
+    // A corporation's generation card that removes itself does not come back (Vitor's Overachievement)
+    if (destroyed && bot !== undefined && card.id === bot.corp?.actionDeckBonusCard) {
+      bot.setCorpState(ACTION_DECK_BONUS_CARD_REMOVED, 1);
+    }
+    // A card that returns to the action deck every generation waits outside the bonus deck
+    if (!destroyed && bot?.returnsToActionDeck(card) !== true) {
       this.bonusDeck.discard(card);
     }
     return destroyed;
   }
 
-  /** Resolve a bonus card's effect. Returns true if the card was destroyed and must not be discarded. */
-  private resolveEffect(card: MarsBotBonusCard): boolean {
+  /**
+   * Resolve a bonus card's effect.
+   *
+   * Returns true when the card must not be discarded: it was destroyed, or it went back into the bonus deck.
+   */
+  public resolveEffect(card: MarsBotBonusCard): boolean {
     switch (card.id) {
     case BonusCardId.B01_METEOR_SHOWER:
       return this.resolveMeteorShower();
@@ -113,8 +155,7 @@ export class MarsBotBonusResolver {
       this.resolveVenusianLobby();
       return false;
     case BonusCardId.B27_BUILD_BUILD_BUILD:
-      this.resolveBuildBuildBuild();
-      return false;
+      return this.resolveBuildBuildBuild(card);
     case BonusCardId.B28_DIVERSIFICATION:
       this.resolveDiversification();
       return false;
@@ -122,8 +163,7 @@ export class MarsBotBonusResolver {
       this.resolveGrayEminence();
       return false;
     case BonusCardId.B30_INTERFACE_HYPERLINK:
-      this.resolveInterfaceHyperlink();
-      return false;
+      return this.resolveInterfaceHyperlink();
     case BonusCardId.B31_GOVERNMENT_SUBSIDY:
       this.resolveGovernmentSubsidy();
       return false;
@@ -156,6 +196,25 @@ export class MarsBotBonusResolver {
 
   // B02: Invasive Species
   private resolveInvasiveSpecies(): void {
+    this.maybeRemoveAnimalOrMicrobe('Invasive Species');
+    // a. With Venus Next or Colonies, MarsBot gains 2 M€ and 1 floater; b. otherwise 5 M€
+    const opts = this.game.gameOptions;
+    if (opts.venusNextExtension || opts.coloniesExtension) {
+      this.turnResolver.gainMc(2);
+      this.turnResolver.gainFloaters(1);
+      this.game.log('MarsBot gains 2 MC and 1 floater from Invasive Species');
+    } else {
+      this.turnResolver.gainMc(5);
+      this.game.log('MarsBot gains 5 MC from Invasive Species');
+    }
+    // Card is NOT destroyed in base game
+  }
+
+  /**
+   * Removes 1 animal or microbe from the player's highest-scoring card (Invasive Species, and
+   * Corporate Competition's Excentric). False when no card has one MarsBot may remove.
+   */
+  private maybeRemoveAnimalOrMicrobe(source: string): boolean {
     // Protected Habitat blocks animal/microbe removal
     const isProtected = this.humanPlayer.playedCards.has(CardName.PROTECTED_HABITATS);
 
@@ -163,7 +222,8 @@ export class MarsBotBonusResolver {
     let bestEntry: {card: IProjectCard, resource: CardResource, vp: number} | undefined;
     if (!isProtected) {
       for (const played of this.humanPlayer.playedCards) {
-        if (played.resourceCount && played.resourceCount > 0) {
+        // Pets and Bioengineering Enclosure protect their resources from opponents
+        if (played.resourceCount && played.resourceCount > 0 && played.protectedResources !== true) {
           if (played.resourceType === CardResource.ANIMAL || played.resourceType === CardResource.MICROBE) {
             const vp = played.getVictoryPoints(this.humanPlayer);
             if (bestEntry === undefined || vp > bestEntry.vp) {
@@ -178,17 +238,16 @@ export class MarsBotBonusResolver {
       if (card.resourceCount !== undefined) {
         card.resourceCount--;
       }
-      this.game.log('MarsBot\'s Invasive Species: removed 1 ${0} from ${1}',
-        (b) => b.rawString(resource).card(card));
-    } else if (isProtected) {
-      this.game.log('MarsBot\'s Invasive Species: blocked by Protected Habitats');
-    } else {
-      this.game.log('MarsBot\'s Invasive Species: no animal/microbe resources to remove');
+      this.game.log('MarsBot\'s ${0}: removed 1 ${1} from ${2}',
+        (b) => b.rawString(source).rawString(resource).card(card));
+      return true;
     }
-    // MarsBot gains 5 MC regardless
-    this.turnResolver.gainMc(5);
-    this.game.log('MarsBot gains 5 MC from Invasive Species');
-    // Card is NOT destroyed in base game
+    if (isProtected) {
+      this.game.log('MarsBot\'s ${0}: blocked by Protected Habitats', (b) => b.rawString(source));
+    } else {
+      this.game.log('MarsBot\'s ${0}: no animal/microbe resources to remove', (b) => b.rawString(source));
+    }
+    return false;
   }
 
   // B03: Research and Development
@@ -222,16 +281,20 @@ export class MarsBotBonusResolver {
     if (!claimed && this.game.generation >= 6) {
       // Try to fund an award
       if (!this.game.allAwardsFunded()) {
+        // Fund the award MarsBot leads by the most (ties go to the leftmost)
         const unfunded = this.game.awards.filter((a) => !this.game.hasBeenFunded(a));
+        let best: {award: typeof unfunded[number], lead: number} | undefined;
         for (const a of unfunded) {
-          const marsBotVal = this.turnResolver.getMarsBotAwardValue(a);
-          const humanVal = a.getScore(this.humanPlayer);
-          if (marsBotVal > humanVal) {
-            this.game.fundAward(this.marsBot, a);
-            this.game.log('MarsBot funds award ${0} (Overachievement)', (b) => b.rawString(a.name));
-            claimed = true;
-            break;
+          const lead = this.turnResolver.getMarsBotAwardValue(a) - a.getScore(this.humanPlayer);
+          if (lead > 0 && (best === undefined || lead > best.lead)) {
+            best = {award: a, lead};
           }
+        }
+        if (best !== undefined) {
+          const a = best.award;
+          this.game.fundAward(this.marsBot, a);
+          this.game.log('MarsBot funds award ${0} (Overachievement)', (b) => b.rawString(a.name));
+          claimed = true;
         }
       }
     }
@@ -268,6 +331,16 @@ export class MarsBotBonusResolver {
     }
 
     // (c) B06: Ocean adjacent to 2+ oceans
+    if (this.lobbyistsOceanBranch()) {
+      return true;
+    }
+
+    this.advanceFurthestParameter();
+    return false;
+  }
+
+  /** Lobbyists branch (c): an ocean space next to 2+ oceans takes an ocean. */
+  private lobbyistsOceanBranch(source: string = 'Lobbyists'): boolean {
     const oceanSpaces = this.game.board.getAvailableSpacesForOcean(this.marsBot);
     const adjacentTo2Oceans = oceanSpaces.filter((s) => {
       const adj = this.game.board.getAdjacentSpaces(s);
@@ -276,16 +349,14 @@ export class MarsBotBonusResolver {
     if (adjacentTo2Oceans.length > 0 && this.game.canAddOcean()) {
       const space = adjacentTo2Oceans[0];
       if (this.interceptsRaise(GlobalParameter.OCEANS)) {
-        this.game.log('MarsBot skips the ocean (Lobbyists), card destroyed');
+        this.game.log(`MarsBot skips the ocean (${source})`);
         return true;
       }
       this.game.addOcean(this.marsBot, space);
       this.turnResolver.gainMc(this.tilePlacer.getTotalPlacementMC(space));
-      this.game.log('MarsBot places ocean (Lobbyists), card destroyed');
+      this.game.log(`MarsBot places ocean (${source})`);
       return true;
     }
-
-    this.advanceFurthestParameter();
     return false;
   }
 
@@ -317,7 +388,7 @@ export class MarsBotBonusResolver {
   }
 
   /** Lobbyists shared branch (a): temperature 1-2 steps from bonus or completion. */
-  private lobbyistsTempBranch(): boolean {
+  private lobbyistsTempBranch(source: string = 'Lobbyists'): boolean {
     const temp = this.game.getTemperature();
     const tempBonusTargets = [constants.TEMPERATURE_BONUS_FOR_HEAT_1, constants.TEMPERATURE_BONUS_FOR_HEAT_2, constants.TEMPERATURE_FOR_OCEAN_BONUS, constants.MAX_TEMPERATURE];
     const tempStepsToNextBonus = tempBonusTargets
@@ -327,7 +398,7 @@ export class MarsBotBonusResolver {
     if (tempStepsToNextBonus >= 1 && tempStepsToNextBonus <= 2 && temp < constants.MAX_TEMPERATURE) {
       if (!this.interceptsRaise(GlobalParameter.TEMPERATURE)) {
         this.game.increaseTemperature(this.marsBot, 2);
-        this.game.log('MarsBot raises temperature 2 steps (Lobbyists), card destroyed');
+        this.game.log(`MarsBot raises temperature 2 steps (${source})`);
       }
       return true;
     }
@@ -335,7 +406,7 @@ export class MarsBotBonusResolver {
   }
 
   /** Lobbyists shared branch (b): oxygen 1-2 steps from bonus or completion. */
-  private lobbyistsOxygenBranch(): boolean {
+  private lobbyistsOxygenBranch(source: string = 'Lobbyists'): boolean {
     const oxy = this.game.getOxygenLevel();
     const oxyStepsToMax = constants.MAX_OXYGEN_LEVEL - oxy;
     const oxyBonusAt8 = oxy < constants.OXYGEN_LEVEL_FOR_TEMPERATURE_BONUS;
@@ -350,7 +421,7 @@ export class MarsBotBonusResolver {
         if (this.game.getOxygenLevel() < constants.MAX_OXYGEN_LEVEL && !this.interceptsRaise(GlobalParameter.OXYGEN)) {
           this.game.increaseOxygenLevel(this.marsBot, 1);
         }
-        this.game.log('MarsBot places greenery and raises oxygen twice (Lobbyists), card destroyed');
+        this.game.log(`MarsBot places greenery and raises oxygen twice (${source})`);
         return true;
       }
     }
@@ -364,9 +435,9 @@ export class MarsBotBonusResolver {
     const venusComplete = venus >= constants.MAX_VENUS_SCALE;
 
     if (isEvenGen || venusComplete) {
-      this.withoutTRGain(() => this.advanceFurthestParameter(false));
+      this.withoutTRorMcGain(() => this.advanceFurthestParameter(false));
     } else if (venus < constants.MAX_VENUS_SCALE) {
-      this.withoutTRGain(() => this.game.increaseVenusScaleLevel(this.marsBot, 1));
+      this.withoutTRorMcGain(() => this.game.increaseVenusScaleLevel(this.marsBot, 1));
     }
   }
 
@@ -379,34 +450,40 @@ export class MarsBotBonusResolver {
     return new MarsBotTurmoilHelper(this.game);
   }
 
-  /** Execute an action and reverse any TR gained (for Government Intervention). */
-  private withoutTRGain(action: () => void): void {
+  /** Execute an action and reverse any TR or M€ gained (for Government Intervention). */
+  private withoutTRorMcGain(action: () => void): void {
     const trBefore = this.marsBot.terraformRating;
+    const mcBefore = this.turnResolver.megacredits;
     action();
     const trGained = this.marsBot.terraformRating - trBefore;
     if (trGained > 0) {
       this.marsBot.decreaseTerraformRating(trGained);
       this.game.log('MarsBot does not receive TR from Government Intervention');
     }
+    if (this.turnResolver.megacredits > mcBefore) {
+      this.turnResolver.megacredits = mcBefore;
+      this.game.log('MarsBot does not receive M€ from Government Intervention');
+    }
   }
 
-  // B07: Local Neural Instance
+  // B07: Local Neural Instance. The card is removed only once its tile is placed.
   private resolveLocalNeuralInstance(): boolean {
     const space = this.tilePlacer.findNeuralInstanceSpace();
     if (space !== undefined) {
       this.game.simpleAddTile(this.marsBot, space, {tileType: TileType.NEURAL_INSTANCE});
+      this.game.automaHooks?.handleTilePlaced(this.marsBot, TileType.NEURAL_INSTANCE, space);
       this.onNeuralInstancePlaced?.(space);
       this.game.log('MarsBot places Neural Instance tile');
-    } else {
-      // Can't place: draw and resolve a project card
-      const drawnCard = this.game.projectDeck.draw(this.game);
-      if (drawnCard !== undefined) {
-        this.game.log('MarsBot draws and resolves ${0} (Neural Instance fallback)', (b) => b.card(drawnCard));
-        this.turnResolver.resolveProjectCard(drawnCard);
-      }
+      this.game.log('Local Neural Instance is destroyed');
+      return true;
     }
-    this.game.log('Local Neural Instance is destroyed');
-    return true;
+    // Can't place: draw and resolve a project card
+    const drawnCard = this.game.projectDeck.draw(this.game);
+    if (drawnCard !== undefined) {
+      this.game.log('MarsBot draws and resolves ${0} (Neural Instance fallback)', (b) => b.card(drawnCard));
+      this.turnResolver.resolveProjectCard(drawnCard);
+    }
+    return false;
   }
 
   // B08: Corporate Competition
@@ -423,13 +500,19 @@ export class MarsBotBonusResolver {
       return;
     }
 
-    // Find closest funded award (smallest margin human leads by, or smallest margin MarsBot leads by)
+    // The closest award is the one the player leads by the least or is tied on. If MarsBot
+    // leads every funded award, it is the one with the smallest gap.
     let resolved = false;
     const sorted = funded.map((a) => {
       const humanVal = a.getScore(this.humanPlayer);
       const marsBotVal = this.turnResolver.getMarsBotAwardValue(a);
       return {award: a, margin: humanVal - marsBotVal};
-    }).sort((a, b) => a.margin - b.margin); // Smallest margin first (MarsBot most competitive)
+    }).sort((a, b) => {
+      if ((a.margin >= 0) !== (b.margin >= 0)) {
+        return a.margin >= 0 ? -1 : 1;
+      }
+      return Math.abs(a.margin) - Math.abs(b.margin);
+    });
 
     for (const {award} of sorted) {
       if (this.tryHelperAction(award.name)) {
@@ -446,11 +529,31 @@ export class MarsBotBonusResolver {
   }
 
   private tryHelperAction(awardName: string): boolean {
+    const marsBotBoard = this.turnResolver.marsBotBoard;
+    const board = this.game.board;
     const advance = (trackIndex: number) => {
       this.turnResolver.advanceTrack(trackIndex); return true;
     };
-    const placeGreenery = () => {
-      const space = this.tilePlacer.findGreenerySpace();
+    const advanceTrackOf = (tag: Tag) => {
+      const trackIndex = marsBotBoard.tagToTrack[tag];
+      return trackIndex === undefined ? false : advance(trackIndex);
+    };
+    // Advances the less or the more advanced of two tags' tracks, the upper track when tied.
+    const advanceTrackOfEither = (tags: [Tag, Tag], pick: 'less' | 'more') => {
+      const position = (trackIndex: number) => marsBotBoard.tracks[trackIndex].position;
+      const trackIndexes = tags.map((tag) => marsBotBoard.tagToTrack[tag])
+        .filter((trackIndex) => trackIndex !== undefined)
+        .sort((a, b) => a - b);
+      if (trackIndexes.length === 0) {
+        return false;
+      }
+      return advance(trackIndexes.reduce((best, trackIndex) => {
+        const better = pick === 'less' ? position(trackIndex) < position(best) : position(trackIndex) > position(best);
+        return better ? trackIndex : best;
+      }));
+    };
+    const placeGreenery = (where?: (space: Space) => boolean) => {
+      const space = this.tilePlacer.findGreenerySpace(where);
       if (space) {
         const raiseOxygen = this.game.getOxygenLevel() >= constants.MAX_OXYGEN_LEVEL ||
           !this.interceptsRaise(GlobalParameter.OXYGEN);
@@ -460,8 +563,8 @@ export class MarsBotBonusResolver {
       }
       return false;
     };
-    const placeCity = () => {
-      const space = this.tilePlacer.findCitySpace();
+    const placeCity = (where?: (space: Space) => boolean) => {
+      const space = this.tilePlacer.findCitySpace(where);
       if (space) {
         this.game.addCity(this.marsBot, space);
         this.turnResolver.gainMc(this.tilePlacer.getTotalPlacementMC(space));
@@ -469,7 +572,8 @@ export class MarsBotBonusResolver {
       }
       return false;
     };
-    const revealAndResolveCard = (filter: (card: IProjectCard) => boolean) => {
+    // Reveals cards until one passes `filter`, plays it, then gains `mc`.
+    const revealAndResolveCard = (filter: (card: IProjectCard) => boolean, mc: number = 0) => {
       for (let i = 0; i < 20; i++) { // safety limit
         const card = this.game.projectDeck.draw(this.game);
         if (card === undefined) {
@@ -478,67 +582,68 @@ export class MarsBotBonusResolver {
         if (filter(card)) {
           this.game.log('MarsBot reveals ${0} (Corporate Competition)', (b) => b.card(card));
           this.turnResolver.resolveProjectCard(card);
+          this.turnResolver.gainMc(mc);
           return true;
         }
         this.game.projectDeck.discardPile.push(card);
       }
       return false;
     };
-    const advanceLeastOf = (t1: number, t2: number) => {
-      const pos1 = this.turnResolver.marsBotBoard.tracks[t1].position;
-      const pos2 = this.turnResolver.marsBotBoard.tracks[t2].position;
-      return advance(pos1 <= pos2 ? t1 : t2);
-    };
-    const marsBotBoard = this.turnResolver.marsBotBoard;
+    const nextToOcean = (space: Space) => board.getAdjacentSpaces(space).some(Board.isOceanSpace);
+    const nextToSpecialTile = (space: Space) => board.getAdjacentSpaces(space).some(isSpecialTileSpace);
+    const onEdge = (space: Space) => board.getEdges().includes(space);
+    const inFourBottomRows = (space: Space) => space.y >= 5 && space.y <= 8;
 
     switch (awardName) {
-    // Tharsis: Building=0, Space=1, Event=2, Science=3, Energy=4, Earth=5, Plant=6
+    // Tharsis (B08)
     case 'Landlord': return placeGreenery();
-    case 'Banker': return advanceLeastOf(0, 4);
-    case 'Scientist': return advance(3);
-    case 'Thermalist': return advance(4);
-    case 'Miner': return advance(1);
-    // Hellas
+    case 'Banker': return advanceTrackOfEither([Tag.BUILDING, Tag.EVENT], 'less');
+    case 'Scientist': return advanceTrackOf(Tag.SCIENCE);
+    case 'Thermalist': return advanceTrackOf(Tag.POWER);
+    case 'Miner': return advanceTrackOf(Tag.SPACE);
+    // Hellas (B09)
     case 'Cultivator': return placeGreenery();
-    case 'Magnate': return revealAndResolveCard((c) => c.type !== CardType.EVENT);
-    case 'Space Baron': return advance(1);
-    case 'Excentric': return false;
-    case 'Contractor': return advance(0);
-    // Elysium
+    case 'Magnate': return revealAndResolveCard((c) => c.type === CardType.AUTOMATED);
+    case 'Space Baron': return advanceTrackOf(Tag.SPACE);
+    case 'Excentric': return this.maybeRemoveAnimalOrMicrobe('Corporate Competition');
+    case 'Contractor': return advanceTrackOf(Tag.BUILDING);
+    // Elysium (B10)
     case 'Celebrity': return revealAndResolveCard((c) => c.cost >= 20);
-    case 'Industrialist': return advance(4);
-    case 'Desert Settler': return placeGreenery();
-    case 'Estate Dealer': return placeGreenery();
+    case 'Industrialist': return advanceTrackOf(Tag.POWER);
+    case 'Desert Settler': return placeGreenery(inFourBottomRows);
+    case 'Estate Dealer': return placeGreenery(nextToOcean);
     case 'Benefactor': { this.marsBot.increaseTerraformRating(2); return true; }
-    // Terra Cimmeria
-    case 'Electrician': return advance(4);
-    case 'Founder': return placeCity();
-    case 'Mogul': { const idx = marsBotBoard.getMostAdvancedTrackIndex(); return advance(idx); }
-    case 'Zoologist': return advance(6);
-    case 'Forecaster': return revealAndResolveCard((c) => c.requirements !== undefined);
-    // Utopia Planitia
-    case 'Suburbian': return placeGreenery();
-    case 'Investor': return advance(0);
-    case 'Botanist': return advance(6);
+    // Utopia Planitia (B11). The board here has Edgedancer where the card has Suburbian.
+    case 'Suburbian':
+    case 'Edgedancer': return placeGreenery(onEdge);
+    case 'Investor': return advanceTrackOf(Tag.EARTH);
+    case 'Botanist': return advanceTrackOf(Tag.PLANT);
     case 'Incorporator': return revealAndResolveCard((c) => c.cost <= 10);
     case 'Metropolist': return placeCity();
-    // Vastitas Borealis
-    case 'Traveller': return advance(0);
+    // Terra Cimmeria (B12)
+    case 'Electrician': return advanceTrackOf(Tag.POWER);
+    case 'Founder': return placeCity(nextToSpecialTile);
+    case 'Mogul': return advance(marsBotBoard.getMostAdvancedTrackIndex());
+    case 'A. Zoologist':
+    case 'Zoologist': return advanceTrackOf(Tag.ANIMAL);
+    case 'Forecaster': return revealAndResolveCard((c) => c.requirements.length > 0, 5);
+    // Vastitas Borealis (B13). Traveller follows B14, the card for random awards.
+    case 'Traveller': return advanceTrackOfEither([Tag.EARTH, Tag.JOVIAN], 'more');
     case 'Landscaper': return placeGreenery();
-    case 'Highlander': return placeGreenery();
-    case 'Promoter': return advance(4);
-    case 'Blacksmith': return advanceLeastOf(0, 1);
-    // Modular (page 16)
-    case 'Administrator': return revealAndResolveCard((c) => c.tags.length === 0);
-    case 'Biologist': return advance(6);
-    case 'Collector': { const idx = marsBotBoard.getLeastAdvancedTrackIndex(); return advance(idx); }
+    case 'Highlander': return placeGreenery((space) => !nextToOcean(space));
+    case 'Promoter': return advanceTrackOf(Tag.EVENT);
+    case 'Blacksmith': return advanceTrackOfEither([Tag.BUILDING, Tag.SPACE], 'more');
+    // Milestones and awards (B14)
+    case 'Administrator': return revealAndResolveCard((c) => marsBotCardTags(c).length === 0, 5);
+    case 'Biologist': return advanceTrackOf(Tag.MICROBE);
+    case 'Collector': return advance(marsBotBoard.getLeastAdvancedTrackIndex());
     case 'Constructor': return placeCity();
-    case 'Manufacturer': return advanceLeastOf(0, 4);
+    case 'Manufacturer': return advanceTrackOfEither([Tag.BUILDING, Tag.POWER], 'less');
     case 'Politician': return false;
-    case 'Supplier': return advance(4);
-    case 'Visionary': { const idx2 = marsBotBoard.getLeastAdvancedTrackIndex(true); return advance(idx2); }
+    case 'Supplier': return advanceTrackOf(Tag.POWER);
+    case 'Visionary': return advance(marsBotBoard.getLeastAdvancedTrackIndex(true));
     // Venus Next: added to ALL Corporate Competition variants
-    case 'Venuphile': return marsBotBoard.tracks.length > 7 ? advance(7) : false;
+    case 'Venuphile': return advanceTrackOf(Tag.VENUS);
     default:
       return false;
     }
@@ -594,7 +699,7 @@ export class MarsBotBonusResolver {
     // C-16c/d: Draw from bonus deck (excluding B18 itself), discard without resolving
     // Temporarily remove B18 from discard so it isn't reshuffled back in
     const b18Idx = this.bonusDeck.discardPile.findIndex((c) => c.id === BonusCardId.B18_OUTER_SYSTEM_FOOTHOLD);
-    let b18Card: MarsBotBonusCard | undefined;
+    let b18Card: MarsBotBonusDeckCard | undefined;
     if (b18Idx >= 0) {
       [b18Card] = this.bonusDeck.discardPile.splice(b18Idx, 1);
     }
@@ -710,36 +815,67 @@ export class MarsBotBonusResolver {
     this.game.log(`MarsBot resolves ${cardName}: placed greenery`);
   }
 
+  // Arcadian Communities: a player marker, not a tile, on a space that is not reserved
   private resolveSettlers(): void {
-    this.resolvePlaceGreeneryCard('Settlers');
+    const space = this.tilePlacer.findMarkerSpace();
+    if (space === undefined || this.marsBotManager === undefined) {
+      this.game.log('MarsBot resolves Settlers: no space left for a player marker');
+      return;
+    }
+    this.marsBotManager.placeMarker(space);
   }
 
+  // Ecoline: a. spend the plant on the corp card to place a greenery; b. otherwise put a plant there
   private resolveRapidSprouting(): void {
-    this.resolvePlaceGreeneryCard('Rapid Sprouting');
+    const bot = this.marsBotManager;
+    if (bot === undefined) {
+      return;
+    }
+    if (bot.getCorpState('plantOnCard') > 0) {
+      bot.setCorpState('plantOnCard', 0);
+      this.resolvePlaceGreeneryCard('Rapid Sprouting');
+    } else {
+      bot.setCorpState('plantOnCard', 1);
+      this.game.log('MarsBot resolves Rapid Sprouting: 1 plant on the corporation card');
+    }
   }
 
+  // Factorum: take up to 3 M€ from the corp card; with none taken, advance the energy track
   private resolveSupplyAndDemand(): void {
-    // Factorum: advance building track (index 0)
-    this.turnResolver.advanceTrack(0);
-    this.game.log('MarsBot resolves Supply & Demand: advance building track');
+    const bot = this.marsBotManager;
+    const taken = Math.min(3, bot?.getCorpState('mcOnCard') ?? 0);
+    if (bot !== undefined && taken > 0) {
+      bot.setCorpState('mcOnCard', bot.getCorpState('mcOnCard') - taken);
+      this.turnResolver.gainMc(taken);
+      this.game.log('MarsBot resolves Supply & Demand: takes ${0} M€ from the corporation card', (b) => b.number(taken));
+    } else {
+      this.turnResolver.advanceTrack(4);
+      this.game.log('MarsBot resolves Supply & Demand: advance energy track');
+    }
   }
 
+  // Inventrix: the first of Lobbyists' temperature, oxygen and ocean branches that applies
   private resolveDoItRight(): void {
-    // Inventrix: advance science track (index 3)
-    this.turnResolver.advanceTrack(3);
-    this.game.log('MarsBot resolves Do It Right: advance science track');
+    if (this.lobbyistsTempBranch('Do It Right') ||
+      this.lobbyistsOxygenBranch('Do It Right') ||
+      this.lobbyistsOceanBranch('Do It Right')) {
+      return;
+    }
+    this.game.log('MarsBot resolves Do It Right: no effect');
   }
 
   private resolveVenusianLobby(): void {
     if (this.game.gameOptions.venusNextExtension) {
-      // Venus track is track 8 (index 7) when Venus expansion is enabled
-      // If Venus track exists on the board, advance it
+      // Morningstar: raise Venus 1 step and advance the Venus track (index 7), then raise the
+      // global parameter furthest from its maximum
+      if (this.game.getVenusScaleLevel() < constants.MAX_VENUS_SCALE && !this.interceptsRaise(GlobalParameter.VENUS)) {
+        this.game.increaseVenusScaleLevel(this.marsBot, 1);
+      }
       if (this.turnResolver.marsBotBoard.tracks.length > 7) {
         this.turnResolver.advanceTrack(7);
-        this.game.log('MarsBot resolves Venusian Lobby: advance Venus track');
-      } else {
-        this.game.log('MarsBot resolves Venusian Lobby: no Venus track available');
       }
+      this.game.log('MarsBot resolves Venusian Lobby: raise Venus, advance Venus track');
+      this.advanceFurthestParameter();
     } else {
       // Without Venus, advance least-advanced track
       const leastIdx = this.turnResolver.marsBotBoard.getLeastAdvancedTrackIndex();
@@ -748,18 +884,56 @@ export class MarsBotBonusResolver {
     }
   }
 
-  private resolveBuildBuildBuild(): void {
-    // Philares: place city tile
-    this.turnResolver.placeCity();
-    this.game.log('MarsBot resolves Build Build Build: placed city');
+  // Philares: a. a city next to the player's greenery, then lose 5 M€; b. the special tile of a
+  // card MarsBot played next to the player's city, then lose that card and 3 M€; c. gain 3 M€
+  // and shuffle this card back into the bonus deck
+  private resolveBuildBuildBuild(card: MarsBotBonusCard): boolean {
+    const citySpace = this.tilePlacer.findCitySpaceNextToHumanGreenery();
+    if (citySpace !== undefined) {
+      this.game.addCity(this.marsBot, citySpace);
+      this.turnResolver.gainMc(this.tilePlacer.getTotalPlacementMC(citySpace));
+      const lost = this.loseMc(5);
+      this.game.log('MarsBot resolves Build Build Build: city next to the player\'s greenery, loses ${0} M€', (b) => b.number(lost));
+      return false;
+    }
+
+    const bot = this.marsBotManager;
+    const played = bot?.playedProjectCards.find((c) => SPECIAL_TILES.has(c.name));
+    const tileType = played === undefined ? undefined : SPECIAL_TILES.get(played.name);
+    const specialSpace = tileType === undefined ? undefined : this.tilePlacer.findSpecialTileSpaceNextToHumanCity();
+    if (bot !== undefined && played !== undefined && tileType !== undefined && specialSpace !== undefined) {
+      this.game.addTile(this.marsBot, specialSpace, {tileType, card: played.name});
+      this.turnResolver.gainMc(this.tilePlacer.getTotalPlacementMC(specialSpace));
+      inplaceRemove(bot.playedProjectCards, played);
+      inplaceRemoveIf(this.game.projectDeck.discardPile, (c) => c.name === played.name);
+      const lost = this.loseMc(3);
+      this.game.log('MarsBot resolves Build Build Build: ${0} tile next to the player\'s city, removes the card and loses ${1} M€',
+        (b) => b.card(played).number(lost));
+      return false;
+    }
+
+    this.turnResolver.gainMc(3);
+    this.bonusDeck.drawPile.push(card);
+    inplaceShuffle(this.bonusDeck.drawPile, this.game.rng);
+    this.game.log('MarsBot resolves Build Build Build: +3 M€, card shuffled back into the bonus deck');
+    return true;
+  }
+
+  /** Takes up to `amount` M€ from MarsBot and returns how much it lost. */
+  private loseMc(amount: number): number {
+    const lost = Math.min(amount, this.turnResolver.megacredits);
+    this.turnResolver.megacredits -= lost;
+    return lost;
   }
 
   private resolveDiversification(): void {
-    // Robinson Industries: advance least-advanced track
+    // Robinson Industries: advance least-advanced track, then lose up to 4 M€
     const marsBotBoard = this.turnResolver.marsBotBoard;
     const leastIndex = marsBotBoard.getLeastAdvancedTrackIndex();
     this.turnResolver.advanceTrack(leastIndex);
-    this.game.log('MarsBot resolves Diversification: advance least-advanced track');
+    const lost = Math.min(4, this.turnResolver.megacredits);
+    this.turnResolver.megacredits -= lost;
+    this.game.log('MarsBot resolves Diversification: advance least-advanced track, lose ${0} M€', (b) => b.number(lost));
   }
 
   // B21: Party Politics (T-7, T-8)
@@ -799,45 +973,67 @@ export class MarsBotBonusResolver {
       this.game.log('MarsBot resolves Gray Eminence: Turmoil not active');
       return;
     }
-    if (!turmoil.hasDelegatesInReserve(this.marsBot)) {
-      this.game.log('MarsBot resolves Gray Eminence: no delegates in reserve');
-      return;
-    }
-    // Gray Eminence: same T-7 priority logic as Party Politics, but no T-8 second-delegate check
-    const partyName = this.turmoilHelper().selectParty();
-    if (partyName !== undefined) {
+    // Up to 2 delegates, each to the party with the fewest MarsBot delegates, then the fewest
+    // player delegates, then a random one. 2 M€ for each delegate it can't place.
+    for (let i = 0; i < 2; i++) {
+      if (!turmoil.hasDelegatesInReserve(this.marsBot)) {
+        this.turnResolver.gainMc(2);
+        this.game.log('MarsBot resolves Gray Eminence: no delegate in reserve, +2 M€');
+        continue;
+      }
+      const partyName = this.turmoilHelper().selectGrayEminenceParty();
       turmoil.sendDelegateToParty(this.marsBot, partyName, this.game);
       this.game.log('MarsBot places delegate in ${0} (Gray Eminence)', (b) => b.partyName(partyName));
     }
   }
 
-  private resolveInterfaceHyperlink(): void {
-    // Tyco Magnetics: advance energy (index 4) or science (index 3) track — whichever is least advanced
+  // B30: Interface Hyperlink (Tycho Magnetics): draw 1 card per space of the energy track, play
+  // the 2 best and discard the rest. The card is destroyed once it plays a card.
+  private resolveInterfaceHyperlink(): boolean {
     const marsBotBoard = this.turnResolver.marsBotBoard;
-    const energyPos = marsBotBoard.tracks[4].position; // Energy = track 5
-    const sciencePos = marsBotBoard.tracks[3].position; // Science = track 4
-    if (energyPos <= sciencePos) {
-      this.turnResolver.advanceTrack(4); // Energy track = index 4
-      this.game.log('MarsBot resolves Interface Hyperlink: advance energy track');
-    } else {
-      this.turnResolver.advanceTrack(3); // Science track = index 3
-      this.game.log('MarsBot resolves Interface Hyperlink: advance science track');
+    const energyTrack = marsBotBoard.tagToTrack[Tag.POWER];
+    const count = energyTrack === undefined ? 0 : marsBotBoard.tracks[energyTrack].position;
+    const drawn = this.game.projectDeck.drawN(this.game, count);
+    if (drawn.length === 0) {
+      this.game.log('MarsBot resolves Interface Hyperlink: no cards to draw');
+      return false;
     }
+    // Science cards first, then the most expensive, then the most tags, then at random
+    const science = (card: IProjectCard) => marsBotCardTags(card).includes(Tag.SCIENCE) ? 1 : 0;
+    const tagCount = (card: IProjectCard) => marsBotCardTags(card).filter((tag) => tag !== Tag.WILD).length;
+    inplaceShuffle(drawn, this.game.rng);
+    drawn.sort((a, b) => science(b) - science(a) || b.cost - a.cost || tagCount(b) - tagCount(a));
+    const discarded = drawn.splice(2);
+    this.game.projectDeck.discard(...discarded);
+    for (const card of drawn) {
+      this.game.log('MarsBot draws and resolves ${0} (Interface Hyperlink)', (b) => b.card(card));
+      this.turnResolver.resolveProjectCard(card);
+    }
+    this.game.log('Interface Hyperlink is destroyed');
+    return true;
   }
 
   private resolveGovernmentSubsidy(): void {
-    // UNMI: gain 5 MC and advance any track (least-advanced)
-    this.turnResolver.gainMc(5);
-    const marsBotBoard = this.turnResolver.marsBotBoard;
-    const leastIndex = marsBotBoard.getLeastAdvancedTrackIndex();
-    this.turnResolver.advanceTrack(leastIndex);
-    this.game.log('MarsBot resolves Government Subsidy: +5 M€, advance least-advanced track');
+    // UNMI: raise TR 1 step
+    this.marsBot.increaseTerraformRating(1);
+    this.game.log('MarsBot resolves Government Subsidy: +1 TR');
   }
 
   private resolveInvestors(): void {
-    // Utopia Invest: advance building (index 0) and space (index 1) tracks
-    this.turnResolver.advanceTrack(0);
-    this.turnResolver.advanceTrack(1);
-    this.game.log('MarsBot resolves Investors: advance building + space tracks');
+    // Utopia Invest: a. in an even generation, advance the least-advanced track and move the
+    // most-advanced track back 1 space; b. otherwise gain 1 M€ per space of the least-advanced
+    // track. Ties go to the upper track.
+    const marsBotBoard = this.turnResolver.marsBotBoard;
+    const leastIndex = marsBotBoard.getLeastAdvancedTrackIndex();
+    if (this.game.generation % 2 === 0) {
+      const mostIndex = marsBotBoard.getMostAdvancedTrackIndex();
+      this.turnResolver.advanceTrack(leastIndex);
+      marsBotBoard.tracks[mostIndex].regress();
+      this.game.log('MarsBot resolves Investors: advance least-advanced track, move most-advanced track back');
+    } else {
+      const amount = marsBotBoard.tracks[leastIndex].position;
+      this.turnResolver.gainMc(amount);
+      this.game.log('MarsBot resolves Investors: +${0} M€ (least-advanced track)', (b) => b.number(amount));
+    }
   }
 }

@@ -20,6 +20,7 @@ import {Resource} from '../../common/Resource';
 import {SelectOption} from '../inputs/SelectOption';
 import {IColony} from '../colonies/IColony';
 import {ColonyName} from '../../common/colonies/ColonyName';
+import {Space} from '../boards/Space';
 
 /**
  * All automa (MarsBot) hooks into the Game lifecycle.
@@ -217,6 +218,12 @@ export class AutomaGameHooks {
       this.marsBot.actionDeck.push(...extraCards);
       this.game.log('MarsBot spends 5 floaters for an extra card');
     }
+    this.onFloatersSpentForExtraCard();
+  }
+
+  /** Tells MarsBot's corp it spent floaters to keep an extra card (Stormcraft). */
+  private onFloatersSpentForExtraCard(): void {
+    this.marsBot.corp?.effect?.onFloatersSpentForExtraCard?.(this.marsBot);
   }
 
   /**
@@ -247,8 +254,9 @@ export class AutomaGameHooks {
         const canSpend = this.canSpendFloatersForExtraCard();
         const skipDiscard = isBrutal || canSpend;
         if (!isBrutal && canSpend) {
-          this.marsBot.floaters -= 5;
+          this.marsBot.spendFloaters(5);
           this.game.log('MarsBot spends 5 floaters to keep 4th drafted card');
+          this.onFloatersSpentForExtraCard();
         }
         // A corp with a draft priority chooses which card goes, so it stands in for the discard
         // below rather than happening on top of it.
@@ -263,10 +271,11 @@ export class AutomaGameHooks {
         this.marsBot.buildResearchActionDeckFromDraft(finalMarsBotCards, skipDiscard || draftPriority !== undefined);
         // Brutal: spend 5 floaters for a 5th card from project deck
         if (isBrutal && canSpend) {
-          this.marsBot.floaters -= 5;
+          this.marsBot.spendFloaters(5);
           const extra = this.game.projectDeck.drawN(this.game, 1);
           this.marsBot.actionDeck.push(...extra);
           this.game.log('MarsBot (Brutal) spends 5 floaters for a 5th card');
+          this.onFloatersSpentForExtraCard();
         }
         // Human gets their 4 drafted cards → buy phase
         humanPlayer.draftedCards = humanKept;
@@ -326,7 +335,7 @@ export class AutomaGameHooks {
       return;
     }
 
-    const corp = MarsBotCorpResolver.selectCorp(humanCorpName, this.game.rng);
+    const corp = MarsBotCorpResolver.selectCorp(humanCorpName, this.game.gameOptions, this.game.rng);
     if (corp === undefined) {
       this.game.log('No MarsBot corporations available');
       return;
@@ -530,21 +539,21 @@ export class AutomaGameHooks {
   }
 
   /** Called when any player places a tile. Notifies MarsBot's corp. */
-  public handleTilePlaced(player: IPlayer, tileType: TileType): void {
+  public handleTilePlaced(player: IPlayer, tileType: TileType, space: Space): void {
     const corp = this.marsBot.corp;
     if (corp?.effect?.onTilePlaced === undefined) {
       return;
     }
-    corp.effect.onTilePlaced(this.marsBot, player === this.marsBot.player, tileType);
+    corp.effect.onTilePlaced(this.marsBot, player === this.marsBot.player, tileType, space);
   }
 
-  /** Called when Venus scale is raised. Notifies MarsBot's corp. */
-  public handleVenusRaised(): void {
+  /** Called when either player raises the Venus scale by `steps`. Notifies MarsBot's corp. */
+  public handleVenusRaised(steps: number): void {
     const corp = this.marsBot.corp;
     if (corp?.effect?.onVenusRaised === undefined) {
       return;
     }
-    corp.effect.onVenusRaised(this.marsBot);
+    corp.effect.onVenusRaised(this.marsBot, steps);
   }
 
   // ---- Card interaction hooks ----

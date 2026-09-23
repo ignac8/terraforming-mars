@@ -5,14 +5,17 @@ import {BonusCardId} from '../../../common/automa/AutomaTypes';
 import {TileType} from '../../../common/TileType';
 import {AutomaManifest} from './AutomaManifest';
 import {bonusCardBeforeActionPhase} from './BaseGameCorps';
+import {Turmoil} from '../../turmoil/Turmoil';
+import {DELEGATES_PER_PLAYER} from '../../../common/constants';
 
 // ==== TURMOIL (C35-C39) ====
 
 // C35 Lakefront Resorts
 const LAKEFRONT_RESORTS: IMarsBotCorp = {
   name: CardName.LAKEFRONT_RESORTS,
-  description: 'Setup: 1 white cube on card. Oceans alternate between removing the cube (advance building track) and placing it back.',
+  description: 'Setup: 1 white cube on card. Oceans alternate between removing the cube (advance building track) and placing it back. Ocean adjacency pays 3 MC.',
   tags: [],
+  oceanAdjacencyMc: 3,
   setup(bot) {
     bot.setCorpState('whiteCubeOnCard', 1);
     bot.game.log('MarsBot (Lakefront): 1 white cube on card');
@@ -63,14 +66,20 @@ const PRISTAR: IMarsBotCorp = {
 // C37 Septem Tribus
 const SEPTEM_TRIBUS: IMarsBotCorp = {
   name: CardName.SEPTUM_TRIBUS,
-  description: 'Setup: remove Party Politics, add Gray Eminence to bonus deck. Each generation: add Gray Eminence to action deck.',
+  description: 'Setup: remove Party Politics, add Gray Eminence to bonus deck, and add all delegates of an unused colour to MarsBot\'s reserve. Each generation: add Gray Eminence to action deck.',
   tags: [],
+  requiredExpansions: ['turmoil'],
   setup(bot) {
     bot.removeBonusCard(BonusCardId.B21_PARTY_POLITICS);
     bot.addBonusCardToBonusDeck(BonusCardId.B29_GRAY_EMINENCE);
     bot.game.log('MarsBot (Septem Tribus): Party Politics removed, Gray Eminence added');
+    // The unused colour's delegates count as MarsBot's own.
+    Turmoil.ifTurmoil(bot.game, (turmoil) => {
+      turmoil.delegateReserve.add(bot.player, DELEGATES_PER_PLAYER);
+      bot.game.log(`MarsBot (Septem Tribus): ${DELEGATES_PER_PLAYER} more delegates in reserve`);
+    });
   },
-  beforeActionPhase: bonusCardBeforeActionPhase(BonusCardId.B29_GRAY_EMINENCE, 'Septem Tribus'),
+  ...bonusCardBeforeActionPhase(BonusCardId.B29_GRAY_EMINENCE, 'Septem Tribus'),
 };
 
 // C38 Terralabs
@@ -95,7 +104,7 @@ const UTOPIA_INVEST: IMarsBotCorp = {
   name: CardName.UTOPIA_INVEST,
   description: 'Tags: Building, Space. Each generation: add Investors bonus card to action deck.',
   tags: [Tag.BUILDING, Tag.SPACE],
-  beforeActionPhase: bonusCardBeforeActionPhase(BonusCardId.B32_INVESTORS, 'Utopia Invest'),
+  ...bonusCardBeforeActionPhase(BonusCardId.B32_INVESTORS, 'Utopia Invest'),
 };
 
 export const AUTOMA_TURMOIL_MANIFEST: AutomaManifest = {
