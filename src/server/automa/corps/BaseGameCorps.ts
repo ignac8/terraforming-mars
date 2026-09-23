@@ -1,7 +1,7 @@
 /**
  * Shared helper functions for MarsBot corporation definitions.
  */
-import {IMarsBot, MarsBotTrackCube} from '../MarsBotCorpTypes';
+import {IMarsBot, IMarsBotCorp, MarsBotTrackCube} from '../MarsBotCorpTypes';
 import {BonusCardId, CubeType} from '../../../common/automa/AutomaTypes';
 
 /** Generate white cubes for all 18 positions on a track (replaces transparent cubes). */
@@ -9,11 +9,14 @@ export function whiteTrackCubes(trackIndex: number): MarsBotTrackCube[] {
   return Array.from({length: 18}, (_, i) => ({trackIndex, position: i + 1, cubeType: 'white' as const}));
 }
 
-/** Factory for the common "add bonus card to action deck before the action phase" pattern. */
-export function bonusCardBeforeActionPhase(bonusCardId: BonusCardId, corpName: string): (bot: IMarsBot) => void {
-  return (bot) => {
-    bot.addBonusCardToActionDeck(bonusCardId);
-    bot.game.log(`MarsBot (${corpName}): ${bonusCardId} added to action deck`);
+/** Corp fields for the common "add bonus card to action deck before the action phase" pattern. */
+export function bonusCardBeforeActionPhase(bonusCardId: BonusCardId, corpName: string): Pick<IMarsBotCorp, 'actionDeckBonusCard' | 'beforeActionPhase'> {
+  return {
+    actionDeckBonusCard: bonusCardId,
+    beforeActionPhase: (bot) => {
+      bot.addBonusCardToActionDeck(bonusCardId);
+      bot.game.log(`MarsBot (${corpName}): ${bonusCardId} added to action deck`);
+    },
   };
 }
 

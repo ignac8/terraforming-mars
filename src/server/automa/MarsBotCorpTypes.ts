@@ -43,6 +43,12 @@ export type IMarsBotCorp = {
   roundStart?(bot: IMarsBot): void;
   /** A corp action taken every generation, right before the action phase. */
   beforeActionPhase?(bot: IMarsBot): void;
+  /**
+   * The bonus card this corp puts in the action deck every generation.
+   *
+   * The card lives outside the bonus deck: after it resolves it waits for the next generation.
+   */
+  readonly actionDeckBonusCard?: BonusCardId;
   /** Cubes seeded onto the bot's board tracks during setup. */
   readonly trackCubes?: ReadonlyArray<MarsBotTrackCube>;
   /**
@@ -125,7 +131,11 @@ export interface IMarsBot {
 
   /** Draws project cards into the bot's action deck. */
   drawProjectCardsToActionDeck(count: number): void;
-  /** Puts a bonus card in the action deck, pulling it from the bonus deck when present. */
+  /**
+   * Puts a bonus card in the action deck, pulling it from the bonus deck when present.
+   *
+   * Does nothing when the action deck already holds it.
+   */
   addBonusCardToActionDeck(bonusCardId: BonusCardId): void;
   addBonusCardToBonusDeck(bonusCardId: BonusCardId): void;
   /** Removes a bonus card from the bonus deck and from the action deck. */

@@ -29,7 +29,7 @@ const ECO_LINE: IMarsBotCorp = {
   name: CardName.ECOLINE,
   description: 'Each generation: add Rapid Sprouting bonus card to action deck.',
   tags: [],
-  beforeActionPhase: bonusCardBeforeActionPhase(BonusCardId.B23_RAPID_SPROUTING, 'Eco Line'),
+  ...bonusCardBeforeActionPhase(BonusCardId.B23_RAPID_SPROUTING, 'Eco Line'),
 };
 
 // ---- C03 Helion ----
@@ -109,7 +109,7 @@ const INVENTRIX: IMarsBotCorp = {
       }
     },
   },
-  beforeActionPhase: bonusCardBeforeActionPhase(BonusCardId.B25_DO_IT_RIGHT, 'Inventrix'),
+  ...bonusCardBeforeActionPhase(BonusCardId.B25_DO_IT_RIGHT, 'Inventrix'),
 };
 
 // ---- C06 Mining Guild ----

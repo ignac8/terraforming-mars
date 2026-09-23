@@ -70,7 +70,8 @@ export class MarsBotBonusResolver {
 
   public resolve(card: MarsBotBonusCard): boolean {
     const destroyed = this.resolveEffect(card);
-    if (!destroyed) {
+    // A card that returns to the action deck every generation waits outside the bonus deck
+    if (!destroyed && this.marsBotManager?.returnsToActionDeck(card) !== true) {
       this.bonusDeck.discard(card);
     }
     return destroyed;

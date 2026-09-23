@@ -30,6 +30,14 @@ import {SpaceId} from '../../common/Types';
 import {inplaceRemove} from '../../common/utils/utils';
 import {LogHelper} from '../LogHelper';
 
+/** Expansion bonus cards set aside at setup: each generation they go back into the action deck. */
+const SET_ASIDE_BONUS_CARDS: ReadonlySet<BonusCardId> = new Set([
+  BonusCardId.B16_GOVERNMENT_INTERVENTION,
+  BonusCardId.B19_SHIPPING_LINES,
+  BonusCardId.B20_EXTENDED_SHIPPING_LINES,
+  BonusCardId.B21_PARTY_POLITICS,
+]);
+
 /**
  * MarsBot: the automa manager. Owns the board, decks, and coordinates turns.
  *
@@ -418,9 +426,17 @@ export class MarsBot implements IMarsBot {
   }
 
   public addBonusCardToActionDeck(bonusCardId: BonusCardId): void {
+    if (this.actionDeck.some((c) => !this.isProjectCard(c) && c.id === bonusCardId)) {
+      return;
+    }
     // Take the card out of the bonus deck when it is there, otherwise create it
     const card = this.bonusDeck.findAndRemove(bonusCardId) ?? createCorpBonusCard(bonusCardId);
     this.actionDeck.push(card);
+  }
+
+  /** Whether a bonus card goes back into the action deck every generation, so it never belongs in the bonus deck. */
+  public returnsToActionDeck(card: MarsBotBonusCard): boolean {
+    return SET_ASIDE_BONUS_CARDS.has(card.id) || card.id === this.corp?.actionDeckBonusCard;
   }
 
   public removeBonusCard(bonusCardId: BonusCardId): void {
@@ -757,6 +773,9 @@ export class MarsBot implements IMarsBot {
     if (state.bonusDeckDiscardPile !== undefined) {
       this.bonusDeck.discardPile = state.bonusDeckDiscardPile.map((id) => createCorpBonusCard(id as BonusCardId));
     }
+    // Older saves discarded these to the bonus deck after they resolved
+    this.bonusDeck.drawPile = this.bonusDeck.drawPile.filter((c) => !this.returnsToActionDeck(c));
+    this.bonusDeck.discardPile = this.bonusDeck.discardPile.filter((c) => !this.returnsToActionDeck(c));
 
     // Restore played project cards
     if (state.playedProjectCardNames !== undefined) {

@@ -78,7 +78,7 @@ const SEPTEM_TRIBUS: IMarsBotCorp = {
       bot.game.log(`MarsBot (Septem Tribus): ${DELEGATES_PER_PLAYER} more delegates in reserve`);
     });
   },
-  beforeActionPhase: bonusCardBeforeActionPhase(BonusCardId.B29_GRAY_EMINENCE, 'Septem Tribus'),
+  ...bonusCardBeforeActionPhase(BonusCardId.B29_GRAY_EMINENCE, 'Septem Tribus'),
 };
 
 // C38 Terralabs
@@ -103,7 +103,7 @@ const UTOPIA_INVEST: IMarsBotCorp = {
   name: CardName.UTOPIA_INVEST,
   description: 'Tags: Building, Space. Each generation: add Investors bonus card to action deck.',
   tags: [Tag.BUILDING, Tag.SPACE],
-  beforeActionPhase: bonusCardBeforeActionPhase(BonusCardId.B32_INVESTORS, 'Utopia Invest'),
+  ...bonusCardBeforeActionPhase(BonusCardId.B32_INVESTORS, 'Utopia Invest'),
 };
 
 export const AUTOMA_TURMOIL_MANIFEST: AutomaManifest = {

@@ -59,7 +59,7 @@ const ROBINSON_INDUSTRIES: IMarsBotCorp = {
     bot.gainMc(10);
     bot.game.log('MarsBot (Robinson Industries): +10 M€');
   },
-  beforeActionPhase: bonusCardBeforeActionPhase(BonusCardId.B28_DIVERSIFICATION, 'Robinson Industries'),
+  ...bonusCardBeforeActionPhase(BonusCardId.B28_DIVERSIFICATION, 'Robinson Industries'),
 };
 
 // C16 Valley Trust
@@ -103,7 +103,7 @@ const VITOR: IMarsBotCorp = {
       }
     },
   },
-  beforeActionPhase: bonusCardBeforeActionPhase(BonusCardId.B04_OVERACHIEVEMENT, 'Vitor'),
+  ...bonusCardBeforeActionPhase(BonusCardId.B04_OVERACHIEVEMENT, 'Vitor'),
 };
 
 // ==== PRELUDE 2 (C18, C20, C29, C40-C46) ====
@@ -125,7 +125,7 @@ const ACADIAN_COMMUNITY: IMarsBotCorp = {
       }
     },
   },
-  beforeActionPhase: bonusCardBeforeActionPhase(BonusCardId.B22_SETTLERS, 'Acadian Community'),
+  ...bonusCardBeforeActionPhase(BonusCardId.B22_SETTLERS, 'Acadian Community'),
 };
 
 // C19 Astrodrill Enterprise — white+black cubes on space track
@@ -167,7 +167,7 @@ const FACTORUM: IMarsBotCorp = {
       }
     },
   },
-  beforeActionPhase: bonusCardBeforeActionPhase(BonusCardId.B24_SUPPLY_AND_DEMAND, 'Factorum'),
+  ...bonusCardBeforeActionPhase(BonusCardId.B24_SUPPLY_AND_DEMAND, 'Factorum'),
 };
 
 // C29 Manutech — black cubes at #5/#12 on each track
