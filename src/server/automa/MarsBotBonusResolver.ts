@@ -460,7 +460,7 @@ export class MarsBotBonusResolver {
     }
   }
 
-  // B07: Local Neural Instance
+  // B07: Local Neural Instance. The card is removed only once its tile is placed.
   private resolveLocalNeuralInstance(): boolean {
     const space = this.tilePlacer.findNeuralInstanceSpace();
     if (space !== undefined) {
@@ -468,16 +468,16 @@ export class MarsBotBonusResolver {
       this.game.automaHooks?.handleTilePlaced(this.marsBot, TileType.NEURAL_INSTANCE, space);
       this.onNeuralInstancePlaced?.(space);
       this.game.log('MarsBot places Neural Instance tile');
-    } else {
-      // Can't place: draw and resolve a project card
-      const drawnCard = this.game.projectDeck.draw(this.game);
-      if (drawnCard !== undefined) {
-        this.game.log('MarsBot draws and resolves ${0} (Neural Instance fallback)', (b) => b.card(drawnCard));
-        this.turnResolver.resolveProjectCard(drawnCard);
-      }
+      this.game.log('Local Neural Instance is destroyed');
+      return true;
     }
-    this.game.log('Local Neural Instance is destroyed');
-    return true;
+    // Can't place: draw and resolve a project card
+    const drawnCard = this.game.projectDeck.draw(this.game);
+    if (drawnCard !== undefined) {
+      this.game.log('MarsBot draws and resolves ${0} (Neural Instance fallback)', (b) => b.card(drawnCard));
+      this.turnResolver.resolveProjectCard(drawnCard);
+    }
+    return false;
   }
 
   // B08: Corporate Competition

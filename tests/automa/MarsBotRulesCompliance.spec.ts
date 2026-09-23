@@ -299,6 +299,35 @@ describe('MarsBot Rules Compliance', () => {
     });
   });
 
+  describe('B07 Local Neural Instance', () => {
+    function neuralInstance() {
+      return createBaseBonusCards().find((c) => c.id === BonusCardId.B07_LOCAL_NEURAL_INSTANCE)!;
+    }
+
+    it('is removed once its tile is placed', () => {
+      const {marsBot} = createAutomaGame();
+
+      const destroyed = marsBot['bonusResolver'].resolve(neuralInstance());
+
+      expect(marsBot.neuralInstanceSpace?.tile?.tileType).to.eq(TileType.NEURAL_INSTANCE);
+      expect(destroyed).to.be.true;
+      expect(marsBot.bonusDeck.discardPile.map((c) => c.id)).does.not.include(BonusCardId.B07_LOCAL_NEURAL_INSTANCE);
+    });
+
+    it('goes to the bonus discard pile when its tile cannot be placed', () => {
+      const {game, marsBot} = createAutomaGame();
+      marsBot.turnResolver.tilePlacer.findNeuralInstanceSpace = () => undefined;
+      const discarded = game.projectDeck.discardPile.length;
+
+      const destroyed = marsBot['bonusResolver'].resolve(neuralInstance());
+
+      expect(marsBot.neuralInstanceSpace).to.be.undefined;
+      expect(game.projectDeck.discardPile).has.length(discarded + 1); // The project card it resolved instead
+      expect(destroyed).to.be.false;
+      expect(marsBot.bonusDeck.discardPile.map((c) => c.id)).to.include(BonusCardId.B07_LOCAL_NEURAL_INSTANCE);
+    });
+  });
+
   describe('Rule 2.10: B08 Corporate Competition', () => {
     it('fails when MarsBot has <5 MC', () => {
       const {game, human, marsBot} = createAutomaGame();
