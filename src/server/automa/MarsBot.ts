@@ -388,6 +388,14 @@ export class MarsBot implements IMarsBot {
     this.bonusResolver.resolve(bonusCard);
   }
 
+  public maybeClaimMilestone(): boolean {
+    return this.turnResolver.maybeClaimMilestone();
+  }
+
+  public maybeFundAward(): boolean {
+    return this.turnResolver.maybeFundAward();
+  }
+
   public raiseTemperature(steps: 1 | 2 | 3): void {
     this.game.increaseTemperature(this.player, steps);
   }
