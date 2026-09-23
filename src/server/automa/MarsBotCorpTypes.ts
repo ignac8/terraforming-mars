@@ -163,8 +163,12 @@ export interface IMarsBot {
   removeBonusCard(bonusCardId: BonusCardId): void;
   /** Resolves a bonus card's effect right away, outside the action deck. The card is not discarded. */
   resolveBonusCard(bonusCardId: BonusCardId): void;
-  /** Discards the card with the fewest tags from the bot's action deck. */
-  discardCardWithFewestTags(): void;
+  /**
+   * Discards the project card with the fewest tags from the bot's action deck, the first one on a tie.
+   *
+   * Bonus cards are never chosen: with no project card in the action deck nothing is discarded.
+   */
+  maybeDiscardProjectCardWithFewestTags(): void;
 
   /**
    * Claims the milestone the bot's milestone track action would claim. Returns false, without

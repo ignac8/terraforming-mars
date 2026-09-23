@@ -562,25 +562,20 @@ export class MarsBot implements IMarsBot {
     return true;
   }
 
-  public discardCardWithFewestTags(): void {
-    if (this.actionDeck.length === 0) {
-      return;
-    }
-    let fewestTags = Infinity;
-    let fewestIdx = 0;
-    for (let i = 0; i < this.actionDeck.length; i++) {
-      const card = this.actionDeck[i];
-      const tagCount = this.isProjectCard(card) ? marsBotCardTags(card as IProjectCard).length : 0;
-      if (tagCount < fewestTags) {
-        fewestTags = tagCount;
-        fewestIdx = i;
+  public maybeDiscardProjectCardWithFewestTags(): void {
+    let fewest: IProjectCard | undefined;
+    for (const card of this.actionDeck) {
+      if (this.isProjectCard(card) && (fewest === undefined || marsBotCardTags(card).length < marsBotCardTags(fewest).length)) {
+        fewest = card;
       }
     }
-    const discarded = this.actionDeck.splice(fewestIdx, 1)[0];
-    if (this.isProjectCard(discarded)) {
-      this.game.projectDeck.discardPile.push(discarded as IProjectCard);
+    if (fewest === undefined) {
+      return;
     }
-    this.game.log('MarsBot (Polyphemos): discarded card with fewest tags from action deck');
+    const discarded = fewest;
+    inplaceRemove(this.actionDeck, discarded);
+    this.game.projectDeck.discardPile.push(discarded);
+    this.game.log('MarsBot (Polyphemos): discarded ${0}, the project card with the fewest tags, from its action deck', (b) => b.card(discarded));
   }
 
   /** Check if a cube exists at a given track position. */
