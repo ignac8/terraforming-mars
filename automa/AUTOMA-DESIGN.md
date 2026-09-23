@@ -169,7 +169,7 @@ Human produces as normal. MarsBot skips production entirely.
 | B04 | Overachievement | MarsBot claims a milestone if able. If fails AND gen ≥6, funds an award. If either succeeded, destroy card. Otherwise gain 5 MC. |
 | B05 | Expedited Construction | Place city adjacent to ≥2 greenery/ocean mix. If placed, destroy card. Normal city rules apply. |
 | B06 | Lobbyists | First applicable: (a) Temp 1-2 steps from bonus/completion → raise temp 2, destroy. (b) Oxygen 1-2 from bonus/completion → place greenery + raise oxygen twice, destroy. (c) Ocean space adjacent to 2+ oceans → place ocean, destroy. (d) Advance furthest-from-completion parameter (tie: oxygen > ocean > temp). |
-| B07 | Local Neural Instance | Place Neural Instance tile adjacent to no tiles, not on edge, not on/adjacent to reserved spaces. If can't, draw and resolve a project card. Destroy this card. |
+| B07 | Local Neural Instance | Place Neural Instance tile adjacent to no tiles, not on edge, not on/adjacent to reserved spaces. If placed, destroy card. If can't, draw and resolve a project card and discard this card as usual. |
 | B08 | Corporate Competition | If MarsBot has ≥5 MC, help position on closest funded award via helper actions: Landlord→place greenery, Banker→advance Track 1 or 3 (least advanced), Scientist→advance Track 4, Thermalist→advance Track 5, Miner→advance Track 2. Costs 5 MC if successful, discard. If no action possible, draw another bonus card and resolve, discarding both. |
 
 ### 2.11 Game End
