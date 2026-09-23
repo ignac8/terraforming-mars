@@ -4,6 +4,9 @@
 import {IMarsBot, IMarsBotCorp, MarsBotTrackCube} from '../MarsBotCorpTypes';
 import {BonusCardId, CubeType} from '../../../common/automa/AutomaTypes';
 
+/** M€ a silver resource cube is worth, which the bot gains on reaching a `credit` cube (Cheung Shing, Morningstar). */
+export const SILVER_CUBE_MC = 5;
+
 /** Generate white cubes for all 18 positions on a track (replaces transparent cubes). */
 export function whiteTrackCubes(trackIndex: number): MarsBotTrackCube[] {
   return Array.from({length: 18}, (_, i) => ({trackIndex, position: i + 1, cubeType: 'white' as const}));
