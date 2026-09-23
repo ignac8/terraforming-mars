@@ -137,6 +137,7 @@ export interface IMarsBot {
    * Does nothing when the action deck already holds it.
    */
   addBonusCardToActionDeck(bonusCardId: BonusCardId): void;
+  /** Shuffles a bonus card into the bonus deck's draw pile. */
   addBonusCardToBonusDeck(bonusCardId: BonusCardId): void;
   /** Removes a bonus card from the bonus deck and from the action deck. */
   removeBonusCard(bonusCardId: BonusCardId): void;
