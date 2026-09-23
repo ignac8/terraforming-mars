@@ -5,6 +5,8 @@ import {MarsBot} from '../../../src/server/automa/MarsBot';
 import {MarsBotCorpResolver} from '../../../src/server/automa/corps/MarsBotCorpResolver';
 import {Luna} from '../../../src/server/colonies/Luna';
 import {BoardName} from '../../../src/common/boards/BoardName';
+import {CardName} from '../../../src/common/cards/CardName';
+import {getMarsBotCorp} from '../../../src/server/automa/corps/MarsBotCorpRegistry';
 
 function getMarsBot(game: ReturnType<typeof testGame>[0]): MarsBot {
   return (game.automaHooks as AutomaGameHooks).marsBot;
@@ -36,6 +38,21 @@ describe('ColonyCubeTrigger (C-X3)', () => {
     expect(luna.colonies).to.include(marsBot.player.id);
     // And shippingBoard should have 2 resources
     expect(marsBot.shippingBoard.get(luna.name)).to.eq(2);
+  });
+
+  it('is not one of the corp\'s cubes, so Point Luna\'s black cube effect stays off it', () => {
+    const [game] = testGame(1, {automaOption: true, coloniesExtension: true, boardName: BoardName.THARSIS});
+    const marsBot = getMarsBot(game);
+    const luna = new Luna();
+    game.colonies = [luna];
+    registerColonyCube(marsBot, 1, 7);
+    marsBot.setCorpAndSetup(getMarsBotCorp(CardName.POINT_LUNA)!);
+    marsBot.marsBotBoard.tracks[1].position = 6;
+
+    marsBot.advanceTrack(1);
+
+    expect(luna.colonies).to.include(marsBot.player.id);
+    expect(marsBot.marsBotBoard.tracks[1].position).to.eq(7);
   });
 
   it('failed action when no eligible colonies for colony cube', () => {

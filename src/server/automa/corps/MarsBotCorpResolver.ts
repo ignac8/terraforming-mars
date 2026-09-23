@@ -70,9 +70,12 @@ export class MarsBotCorpResolver {
 
     marsBot.markCubeTriggered(trackIndex, position);
 
-    // Corp cube trigger
+    // Only the corp's own cubes reach its handler. The colony and trade fleet cubes below are
+    // rule cubes that sit on the same tracks.
     const corp = marsBot.corp;
-    const replacedIcon = corp?.effect?.onTrackCubeTrigger?.(marsBot, trackIndex, position, cube.cubeType) === true;
+    const corpCube = corp?.trackCubes?.find((c) => c.trackIndex === trackIndex && c.position === position);
+    const replacedIcon = corpCube !== undefined &&
+      corp?.effect?.onTrackCubeTrigger?.(marsBot, trackIndex, position, corpCube.cubeType) === true;
 
     // Colony cubes (Pioneer4/Constructor): positions set by AutomaGameSetup
     // C-X3: deduct 5 MC then place a colony on a randomly selected eligible tile
