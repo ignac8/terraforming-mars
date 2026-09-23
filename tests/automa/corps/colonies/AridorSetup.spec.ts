@@ -4,6 +4,7 @@ import {AutomaGameHooks} from '../../../../src/server/automa/AutomaGameHooks';
 import {MarsBot} from '../../../../src/server/automa/MarsBot';
 import {CardName} from '../../../../src/common/cards/CardName';
 import {Luna} from '../../../../src/server/colonies/Luna';
+import {Titan} from '../../../../src/server/colonies/Titan';
 import {BoardName} from '../../../../src/common/boards/BoardName';
 import {getMarsBotCorp} from '../../../../src/server/automa/corps/MarsBotCorpRegistry';
 
@@ -26,6 +27,18 @@ describe('AridorSetup', () => {
     expect(game.discardedColonies).does.not.include(added);
     expect(game.colonies.some((c) => c.colonies.includes(marsBot.player.id))).is.false;
     expect(marsBot.shippingBoard.storage.size).to.eq(0);
+  });
+
+  it('starts the added tile active, as C-1 starts every colony tile in a MarsBot game', () => {
+    const [game] = testGame(1, {automaOption: true, coloniesExtension: true, boardName: BoardName.THARSIS});
+    const marsBot = getMarsBot(game);
+    const titan = new Titan();
+    game.discardedColonies = [titan];
+
+    marsBot.setCorpAndSetup(getMarsBotCorp(CardName.ARIDOR)!);
+
+    expect(game.colonies).includes(titan);
+    expect(titan.isActive).is.true;
   });
 
   it('adds nothing when every colony tile is already in play', () => {
