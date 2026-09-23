@@ -1491,7 +1491,7 @@ export class Game implements IGame, Logger {
 
     this.triggerForAllCards((p, c) => c.onTilePlaced?.(p, player, space, BoardType.MARS));
 
-    this.automaHooks?.handleTilePlaced(player, tile.tileType);
+    this.automaHooks?.handleTilePlaced(player, tile.tileType, space);
 
     if (initialTileType !== undefined) {
       AresHandler.ifAres(this, () => {

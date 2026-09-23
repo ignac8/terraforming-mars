@@ -139,7 +139,7 @@ describe('Corp Effect Hooks', () => {
       const corp = getMarsBotCorp(CardName.THARSIS_REPUBLIC)!;
       marsBot.setCorpAndSetup(corp);
       const mcBefore = marsBot.turnResolver.megacredits;
-      corp.effect!.onTilePlaced!(marsBot, false, TileType.CITY);
+      corp.effect!.onTilePlaced!(marsBot, false, TileType.CITY, marsBot.game.board.spaces[0]);
       expect(marsBot.turnResolver.megacredits).to.eq(mcBefore + 2);
     });
 
@@ -152,7 +152,7 @@ describe('Corp Effect Hooks', () => {
       };
       const mcBefore = marsBot.turnResolver.megacredits;
       const eventBefore = marsBot.marsBotBoard.tracks[2].position;
-      corp.effect!.onTilePlaced!(marsBot, true, TileType.CITY);
+      corp.effect!.onTilePlaced!(marsBot, true, TileType.CITY, marsBot.game.board.spaces[0]);
       expect(marsBot.marsBotBoard.tracks[2].position).to.eq(eventBefore + 1);
       expect(marsBot.turnResolver.megacredits).to.eq(mcBefore);
     });
@@ -162,7 +162,7 @@ describe('Corp Effect Hooks', () => {
       const corp = getMarsBotCorp(CardName.THARSIS_REPUBLIC)!;
       marsBot.setCorpAndSetup(corp);
       const mcBefore = marsBot.turnResolver.megacredits;
-      corp.effect!.onTilePlaced!(marsBot, false, TileType.GREENERY);
+      corp.effect!.onTilePlaced!(marsBot, false, TileType.GREENERY, marsBot.game.board.spaces[0]);
       expect(marsBot.turnResolver.megacredits).to.eq(mcBefore);
     });
   });
@@ -174,7 +174,7 @@ describe('Corp Effect Hooks', () => {
       marsBot.setCorpAndSetup(corp);
       expect(marsBot.corpSpecificState.get('whiteCubeOnCard')).to.eq(1);
       const buildingBefore = marsBot.marsBotBoard.tracks[0].position;
-      corp.effect!.onTilePlaced!(marsBot, false, TileType.OCEAN);
+      corp.effect!.onTilePlaced!(marsBot, false, TileType.OCEAN, marsBot.game.board.spaces[0]);
       expect(marsBot.corpSpecificState.get('whiteCubeOnCard')).to.eq(0);
       expect(marsBot.marsBotBoard.tracks[0].position).to.be.gte(buildingBefore + 1);
     });
@@ -195,7 +195,7 @@ describe('Corp Effect Hooks', () => {
       const corp = getMarsBotCorp(CardName.LAKEFRONT_RESORTS)!;
       marsBot.setCorpAndSetup(corp);
       marsBot.corpSpecificState.set('whiteCubeOnCard', 0);
-      corp.effect!.onTilePlaced!(marsBot, false, TileType.OCEAN);
+      corp.effect!.onTilePlaced!(marsBot, false, TileType.OCEAN, marsBot.game.board.spaces[0]);
       expect(marsBot.corpSpecificState.get('whiteCubeOnCard')).to.eq(1);
     });
   });

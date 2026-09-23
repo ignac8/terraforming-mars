@@ -111,15 +111,19 @@ const VITOR: IMarsBotCorp = {
 // C18 Acadian Community
 const ACADIAN_COMMUNITY: IMarsBotCorp = {
   name: CardName.ARCADIAN_COMMUNITIES,
-  description: 'Tag: Building. Setup: resolve Settlers immediately. Each generation: add Settlers to action deck.',
+  description: 'Tag: Building. Setup: resolve Settlers immediately. Each generation: add Settlers to action deck. ' +
+    'Spaces with its player markers are reserved for it. Each tile it places on one of them earns 3 MC.',
   tags: [Tag.BUILDING],
   setup(bot) {
-    bot.addBonusCardToActionDeck(BonusCardId.B22_SETTLERS);
-    bot.game.log('MarsBot (Acadian Community): Settlers resolved immediately');
+    bot.resolveBonusCard(BonusCardId.B22_SETTLERS);
   },
   effect: {
-    // Every time MarsBot places a tile on a space with its marker -> 3 MC
-    // Needs onTilePlaced hook
+    onTilePlaced(bot, placedByMarsBot, _tileType, space) {
+      if (placedByMarsBot && bot.removeMarker(space)) {
+        bot.gainMc(3);
+        bot.game.log('MarsBot (Acadian Community): tile on its player marker, +3 M€');
+      }
+    },
   },
   beforeActionPhase: bonusCardBeforeActionPhase(BonusCardId.B22_SETTLERS, 'Acadian Community'),
 };

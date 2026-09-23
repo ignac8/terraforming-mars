@@ -7,6 +7,7 @@ import {MarsBot} from '../../../src/server/automa/MarsBot';
 import {createCorpBonusCard} from '../../../src/server/automa/MarsBotBonusCard';
 import {BonusCardId} from '../../../src/common/automa/AutomaTypes';
 import {BoardName} from '../../../src/common/boards/BoardName';
+import {SpaceType} from '../../../src/common/boards/SpaceType';
 import {setTemperature} from '../../TestingUtils';
 import {Turmoil} from '../../../src/server/turmoil/Turmoil';
 import {
@@ -31,6 +32,39 @@ describe('Corp-Specific Bonus Cards (B22-B32)', () => {
 
   afterEach(() => {
     restoreMarsBotCorpRegistry();
+  });
+
+  describe('B22 Settlers', () => {
+    it('puts a player marker on a free land space instead of a tile', () => {
+      const {game, human, marsBot} = createAutomaGame();
+      marsBot['bonusResolver'].resolve(createCorpBonusCard(BonusCardId.B22_SETTLERS));
+
+      expect(marsBot.markerSpaceIds).has.length(1);
+      const space = game.board.getSpaceOrThrow(marsBot.markerSpaceIds[0]);
+      expect(space.spaceType).to.eq(SpaceType.LAND);
+      expect(space.tile).is.undefined;
+      expect(space.player).to.eq(marsBot.player);
+      expect(game.board.getGreeneries(marsBot.player)).is.empty;
+      expect(game.board.getAvailableSpacesOnLand(human)).does.not.include(space);
+    });
+
+    it('prefers the space next to the most ocean-reserved spaces before the random tiebreak', () => {
+      const {marsBot} = createAutomaGame();
+      marsBot['bonusResolver'].resolve(createCorpBonusCard(BonusCardId.B22_SETTLERS));
+
+      // Of the empty Tharsis spaces with two bonus icons, only these two touch three ocean-reserved spaces.
+      expect(marsBot.markerSpaceIds[0]).to.be.oneOf(['35', '36']);
+    });
+
+    it('never picks a space that already has a marker', () => {
+      const {marsBot} = createAutomaGame();
+      marsBot['bonusResolver'].resolve(createCorpBonusCard(BonusCardId.B22_SETTLERS));
+      marsBot['bonusResolver'].resolve(createCorpBonusCard(BonusCardId.B22_SETTLERS));
+      marsBot['bonusResolver'].resolve(createCorpBonusCard(BonusCardId.B22_SETTLERS));
+
+      expect(marsBot.markerSpaceIds.slice(0, 2)).to.have.members(['35', '36']);
+      expect(new Set(marsBot.markerSpaceIds).size).to.eq(3);
+    });
   });
 
   describe('B23 Rapid Sprouting', () => {

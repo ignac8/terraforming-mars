@@ -8,6 +8,7 @@ import {
   clearMarsBotCorpRegistry, restoreMarsBotCorpRegistry,
   getMarsBotCorp,
   getAllMarsBotCorps,
+  registerMarsBotCorp,
 } from '../../../src/server/automa/corps/MarsBotCorpRegistry';
 import {Tag} from '../../../src/common/cards/Tag';
 import {IProjectCard} from '../../../src/server/cards/IProjectCard';
@@ -15,6 +16,7 @@ import {BoardName} from '../../../src/common/boards/BoardName';
 import {BonusCardId} from '../../../src/common/automa/AutomaTypes';
 import {MicroMills} from '../../../src/server/cards/base/MicroMills';
 import {IceCapMelting} from '../../../src/server/cards/base/IceCapMelting';
+import {EcoLine} from '../../../src/server/cards/corporation/EcoLine';
 
 function createAutomaGame(): {game: IGame, human: TestPlayer, marsBot: MarsBot} {
   const [game, human] = testGame(1, {
@@ -110,6 +112,50 @@ describe('Expansion MarsBot Corporations', () => {
   });
 
   // ---- Prelude 2 corps ----
+
+  describe('C18 Arcadian Communities', () => {
+    it('resolves Settlers at setup and puts one Settlers in the first action deck', () => {
+      const [game, human] = testGame(1, {automaOption: true, automaCorpOption: true, boardName: BoardName.THARSIS});
+      const marsBot = game.automaHooks!.marsBot;
+      const corp = getMarsBotCorp(CardName.ARCADIAN_COMMUNITIES)!;
+      clearMarsBotCorpRegistry();
+      registerMarsBotCorp(corp);
+      human.pickedCorporationCard = new EcoLine();
+
+      game.automaHooks!.handlePostCorporationSetup();
+
+      expect(marsBot.corp).to.eq(corp);
+      expect(marsBot.markerSpaceIds).has.length(1);
+      expect(game.board.getGreeneries(marsBot.player)).is.empty;
+      const settlers = marsBot.actionDeck.filter((c) => 'id' in c && c.id === BonusCardId.B22_SETTLERS);
+      expect(settlers).has.length(1);
+    });
+
+    it('gains 3 M€ when it places a tile on a space holding its marker', () => {
+      const {game, marsBot} = createAutomaGame();
+      marsBot.setCorpAndSetup(getMarsBotCorp(CardName.ARCADIAN_COMMUNITIES)!);
+      const marked = game.board.getSpaceOrThrow(marsBot.markerSpaceIds[0]);
+      const mc = marsBot.megacredits;
+
+      game.addCity(marsBot.player, marked);
+
+      expect(marsBot.megacredits).to.eq(mc + 3);
+      expect(marsBot.markerSpaceIds).is.empty;
+    });
+
+    it('gains nothing for a tile on an unmarked space', () => {
+      const {game, marsBot} = createAutomaGame();
+      marsBot.setCorpAndSetup(getMarsBotCorp(CardName.ARCADIAN_COMMUNITIES)!);
+      const unmarked = game.board.getAvailableSpacesForCity(marsBot.player)
+        .find((space) => space.player === undefined)!;
+      const mc = marsBot.megacredits;
+
+      game.addCity(marsBot.player, unmarked);
+
+      expect(marsBot.megacredits).to.eq(mc);
+      expect(marsBot.markerSpaceIds).has.length(1);
+    });
+  });
 
   describe('C29 Manutech', () => {
     it('has black cubes at #5 and #12 on all 7 tracks', () => {

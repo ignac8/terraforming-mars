@@ -20,6 +20,7 @@ import {Resource} from '../../common/Resource';
 import {SelectOption} from '../inputs/SelectOption';
 import {IColony} from '../colonies/IColony';
 import {ColonyName} from '../../common/colonies/ColonyName';
+import {Space} from '../boards/Space';
 
 /**
  * All automa (MarsBot) hooks into the Game lifecycle.
@@ -530,12 +531,12 @@ export class AutomaGameHooks {
   }
 
   /** Called when any player places a tile. Notifies MarsBot's corp. */
-  public handleTilePlaced(player: IPlayer, tileType: TileType): void {
+  public handleTilePlaced(player: IPlayer, tileType: TileType, space: Space): void {
     const corp = this.marsBot.corp;
     if (corp?.effect?.onTilePlaced === undefined) {
       return;
     }
-    corp.effect.onTilePlaced(this.marsBot, player === this.marsBot.player, tileType);
+    corp.effect.onTilePlaced(this.marsBot, player === this.marsBot.player, tileType, space);
   }
 
   /** Called when Venus scale is raised. Notifies MarsBot's corp. */

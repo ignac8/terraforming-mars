@@ -51,7 +51,7 @@ export class MarsBotBonusResolver {
   }
 
   /** Resolve a bonus card's effect. Returns true if the card was destroyed and must not be discarded. */
-  private resolveEffect(card: MarsBotBonusCard): boolean {
+  public resolveEffect(card: MarsBotBonusCard): boolean {
     switch (card.id) {
     case BonusCardId.B01_METEOR_SHOWER:
       return this.resolveMeteorShower();
@@ -420,6 +420,7 @@ export class MarsBotBonusResolver {
     const space = this.tilePlacer.findNeuralInstanceSpace();
     if (space !== undefined) {
       this.game.simpleAddTile(this.marsBot, space, {tileType: TileType.NEURAL_INSTANCE});
+      this.game.automaHooks?.handleTilePlaced(this.marsBot, TileType.NEURAL_INSTANCE, space);
       this.onNeuralInstancePlaced?.(space);
       this.game.log('MarsBot places Neural Instance tile');
     } else {
@@ -741,8 +742,14 @@ export class MarsBotBonusResolver {
     this.game.log(`MarsBot resolves ${cardName}: placed greenery`);
   }
 
+  // Arcadian Communities: a player marker, not a tile, on a space that is not reserved
   private resolveSettlers(): void {
-    this.resolvePlaceGreeneryCard('Settlers');
+    const space = this.tilePlacer.findMarkerSpace();
+    if (space === undefined || this.marsBotManager === undefined) {
+      this.game.log('MarsBot resolves Settlers: no space left for a player marker');
+      return;
+    }
+    this.marsBotManager.placeMarker(space);
   }
 
   // Ecoline: a. spend the plant on the corp card to place a greenery; b. otherwise put a plant there
