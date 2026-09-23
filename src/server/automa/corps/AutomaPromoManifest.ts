@@ -3,6 +3,7 @@ import {Tag} from '../../../common/cards/Tag';
 import {CardName} from '../../../common/cards/CardName';
 import {BonusCardId} from '../../../common/automa/AutomaTypes';
 import {AutomaManifest} from './AutomaManifest';
+import {Space} from '../../boards/Space';
 
 // ==== PROMO (C21-C24) ====
 
@@ -35,26 +36,40 @@ const PHARMACY_UNION: IMarsBotCorp = {
 // C22 Philares
 const PHILARES: IMarsBotCorp = {
   name: CardName.PHILARES,
-  description: 'Setup: place greenery, +1 science resource, add Build Build Build to bonus deck. Spend 4 science resources to advance most-advanced track.',
+  description: 'Setup: place greenery, +1 science resource, resolve and remove Local Neural Instance, add Build Build Build to bonus deck. ' +
+    'Each new adjacency between its tile and the player\'s tile: +1 science resource. ' +
+    'Spend 4 science resources to advance the most-advanced track that is not maxed.',
   tags: [],
   setup(bot) {
     bot.placeGreenery();
     bot.setCorpState('scienceResources', 1);
-    // B07 Local Neural Instance resolved and removed during setup
-    // B27 Build Build Build added to bonus deck
+    bot.removeBonusCard(BonusCardId.B07_LOCAL_NEURAL_INSTANCE);
+    bot.resolveBonusCard(BonusCardId.B07_LOCAL_NEURAL_INSTANCE);
     bot.addBonusCardToBonusDeck(BonusCardId.B27_BUILD_BUILD_BUILD);
-    bot.game.log('MarsBot (Philares): placed greenery, +1 science resource, B07 resolved, B27 added');
+    bot.game.log('MarsBot (Philares): placed greenery, +1 science resource, Local Neural Instance removed, B27 added');
   },
   effect: {
-    // When adjacent to player tile: +1 science. Spend 4 -> advance most advanced non-maxed track.
-    onProjectCardResolved(bot, _card) {
-      // Simplified: accumulate science resources
-      const science = bot.getCorpState('scienceResources');
-      if (science >= 4) {
-        bot.setCorpState('scienceResources', science - 4);
-        const trackIdx = bot.marsBotBoard.getMostAdvancedTrackIndex();
-        bot.advanceTrack(trackIdx);
-        bot.game.log('MarsBot (Philares): spent 4 science, advance most-advanced track');
+    // Oceans belong to no one, so they never make an adjacency
+    onTilePlaced(bot, placedByMarsBot, _tileType, space) {
+      if (space.player === undefined) {
+        return;
+      }
+      const otherSide = (s: Space) => placedByMarsBot ? s.player !== bot.player : s.player === bot.player;
+      const adjacencies = bot.game.board.getAdjacentSpaces(space)
+        .filter((s) => s.tile !== undefined && s.player !== undefined && otherSide(s)).length;
+      if (adjacencies === 0) {
+        return;
+      }
+      bot.setCorpState('scienceResources', bot.getCorpState('scienceResources') + adjacencies);
+      bot.game.log('MarsBot (Philares): +${0} science resource(s) from new adjacencies with the player', (b) => b.number(adjacencies));
+      while (bot.getCorpState('scienceResources') >= 4) {
+        const trackIndex = bot.marsBotBoard.getMostAdvancedNonMaxedTrackIndex();
+        if (trackIndex === undefined) {
+          return;
+        }
+        bot.setCorpState('scienceResources', bot.getCorpState('scienceResources') - 4);
+        bot.game.log('MarsBot (Philares): spends 4 science resources to advance its most-advanced track');
+        bot.advanceTrack(trackIndex);
       }
     },
   },
