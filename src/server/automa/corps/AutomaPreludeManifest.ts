@@ -3,24 +3,24 @@ import {Tag} from '../../../common/cards/Tag';
 import {CardName} from '../../../common/cards/CardName';
 import {BonusCardId} from '../../../common/automa/AutomaTypes';
 import {AutomaManifest} from './AutomaManifest';
-import {whiteTrackCubes, bonusCardBeforeActionPhase, whiteLeastBlackSpaceHandler} from './BaseGameCorps';
+import {whiteTrackCubes, bonusCardBeforeActionPhase, whiteLeastBlackSpaceHandler, SILVER_CUBE_MC} from './BaseGameCorps';
 import {marsBotCardTags} from '../MarsBotTags';
 
 // ==== PRELUDE (C13-C17) ====
 
-// C13 Cheung Shing MARS — credit cubes on building track from position 4
+// C13 Cheung Shing MARS — silver resource cubes on building track from position 4
 const CHEUNG_SHING_MARS: IMarsBotCorp = {
   name: CardName.CHEUNG_SHING_MARS,
-  description: 'Tag: Building. Draft: Building. Credit cubes on building track from position 4; each earns 1 MC.',
+  description: 'Tag: Building. Draft: Building. Silver resource cubes on building track from position 4; each earns 5 MC.',
   tags: [Tag.BUILDING],
   draftPriority: {type: 'tags', tags: [Tag.BUILDING]},
-  // Credit cubes at positions 4-18 on building track (track 1)
+  // Silver resource cubes at positions 4-18 on building track (track 1)
   trackCubes: Array.from({length: 15}, (_, i) => ({trackIndex: 0, position: i + 4, cubeType: 'credit' as const})),
   effect: {
     onTrackCubeTrigger(bot, _trackIndex, _position, cubeType) {
       if (cubeType === 'credit') {
-        bot.gainMc(1);
-        bot.game.log('MarsBot (Cheung Shing): credit cube reached, +1 M€');
+        bot.gainMc(SILVER_CUBE_MC);
+        bot.game.log('MarsBot (Cheung Shing): silver resource cube reached, +5 M€');
       }
     },
   },

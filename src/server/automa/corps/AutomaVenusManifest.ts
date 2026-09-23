@@ -3,7 +3,7 @@ import {Tag} from '../../../common/cards/Tag';
 import {CardName} from '../../../common/cards/CardName';
 import {BonusCardId} from '../../../common/automa/AutomaTypes';
 import {AutomaManifest} from './AutomaManifest';
-import {floaterAtRoundStart} from './BaseGameCorps';
+import {floaterAtRoundStart, SILVER_CUBE_MC} from './BaseGameCorps';
 import {CardType} from '../../../common/cards/CardType';
 import {isIActionCard} from '../../cards/ICard';
 
@@ -53,7 +53,7 @@ const CELESTIC: IMarsBotCorp = {
 // C27 Morningstar Inc.
 const MORNINGSTAR: IMarsBotCorp = {
   name: CardName.MORNING_STAR_INC,
-  description: 'Tags: 2 Venus. Setup: remove Lobbyists, add Venusian Lobby. Credit cubes on Venus track earn 1 MC each.',
+  description: 'Tags: 2 Venus. Setup: remove Lobbyists, add Venusian Lobby. Silver resource cubes on Venus track earn 5 MC each.',
   tags: [Tag.VENUS, Tag.VENUS],
   requiredExpansions: ['venus'],
   setup(bot) {
@@ -63,13 +63,13 @@ const MORNINGSTAR: IMarsBotCorp = {
     bot.addBonusCardToBonusDeck(BonusCardId.B26_VENUSIAN_LOBBY);
     bot.game.log('MarsBot (Morningstar): Lobbyists removed, Venusian Lobby added');
   },
-  // Credit cubes on the Venus track (index 7, present only on the Venus board) at positions 5-9 and 11-12.
+  // Silver resource cubes on the Venus track (index 7, present only on the Venus board) at positions 5-9 and 11-12.
   trackCubes: [5, 6, 7, 8, 9, 11, 12].map((position) => ({trackIndex: 7, position, cubeType: 'credit' as const})),
   effect: {
     onTrackCubeTrigger(bot, _trackIndex, _position, cubeType) {
       if (cubeType === 'credit') {
-        bot.gainMc(1);
-        bot.game.log('MarsBot (Morningstar): credit cube, +1 M€');
+        bot.gainMc(SILVER_CUBE_MC);
+        bot.game.log('MarsBot (Morningstar): silver resource cube, +5 M€');
       }
     },
   },

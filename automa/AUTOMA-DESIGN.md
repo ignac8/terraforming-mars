@@ -552,7 +552,8 @@ icon printed on that space, is the corp card's business:
 - A corp whose card says the cube's effect happens *instead of* the icon returns `true` from
   `onTrackCubeTrigger`, and `advanceTrack` leaves the icon unresolved. Helion's white cubes (a card
   instead of the temperature step under them) are the only such case so far.
-- **Credit cubes**: MarsBot gains MC when advancing to this position.
+- **Credit cubes**: silver resource cubes. MarsBot gains 5 M€, the cube's value, when advancing to this position
+  (Cheung Shing, Morningstar: "은색 자원 큐브에 도달할 때마다, 해당 자원 큐브를 M€로써 획득").
 
 Some corps use `whiteTrackCubes(trackNum)` to replace ALL 18 positions on a track with white cubes.
 

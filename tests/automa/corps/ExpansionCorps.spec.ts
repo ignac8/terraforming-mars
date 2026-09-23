@@ -78,13 +78,15 @@ describe('Expansion MarsBot Corporations', () => {
       expect(corp.trackCubes![14]).to.deep.include({trackIndex: 0, position: 18, cubeType: 'credit'});
     });
 
-    it('gains 1 M€ per credit cube reached', () => {
+    it('gains 5 M€, a silver resource cube, when the building track reaches a credit cube', () => {
       const {marsBot} = createAutomaGame();
-      const corp = getMarsBotCorp(CardName.CHEUNG_SHING_MARS)!;
-      marsBot.setCorpAndSetup(corp);
-      const mcBefore = marsBot.turnResolver.megacredits;
-      corp.effect!.onTrackCubeTrigger!(marsBot, 0, 4, 'credit');
-      expect(marsBot.turnResolver.megacredits).to.eq(mcBefore + 1);
+      marsBot.setCorpAndSetup(getMarsBotCorp(CardName.CHEUNG_SHING_MARS)!);
+      marsBot.marsBotBoard.tracks[0].position = 3;
+      const mc = marsBot.turnResolver.megacredits;
+
+      marsBot.advanceTrack(0);
+
+      expect(marsBot.turnResolver.megacredits).to.eq(mc + 5);
     });
   });
 
@@ -658,7 +660,7 @@ describe('Expansion MarsBot Corporations', () => {
       expect(marsBot.hasCubeAt(7, 10)).to.be.undefined;
     });
 
-    it('pays 1 M€ when the Venus track reaches a credit cube', () => {
+    it('pays 5 M€, a silver resource cube, when the Venus track reaches a credit cube', () => {
       const {marsBot} = createVenusAutomaGame();
       marsBot.setCorpAndSetup(getMarsBotCorp(CardName.MORNING_STAR_INC)!);
       marsBot.marsBotBoard.tracks[7].position = 4;
@@ -666,7 +668,7 @@ describe('Expansion MarsBot Corporations', () => {
 
       marsBot.advanceTrack(7);
 
-      expect(marsBot.turnResolver.megacredits).to.eq(mc + 1);
+      expect(marsBot.turnResolver.megacredits).to.eq(mc + 5);
     });
 
     it('removes the Venus Next Lobbyists from the bonus deck', () => {
