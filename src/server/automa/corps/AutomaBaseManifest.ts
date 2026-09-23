@@ -77,6 +77,7 @@ const INTERPLANETARY_CINEMATICS: IMarsBotCorp = {
   description: 'Tags: 2 Events. White cubes on building and event tracks. Each advance on those tracks earns 2 MC.',
   tags: [Tag.EVENT, Tag.EVENT],
   trackCubes: [...whiteTrackCubes(0), ...whiteTrackCubes(2)],
+  trackCubesTriggerEveryAdvance: true,
   effect: {
     onTrackCubeTrigger(bot, trackIndex, _position, cubeType) {
       if (cubeType === 'white' && (trackIndex === 0 || trackIndex === 2)) {
@@ -203,6 +204,7 @@ const TERACTOR: IMarsBotCorp = {
   tags: [],
   draftPriority: {type: 'tags', tags: [Tag.EARTH]},
   trackCubes: whiteTrackCubes(5),
+  trackCubesTriggerEveryAdvance: true,
   setup(bot) {
     bot.gainMc(25);
     bot.game.log('MarsBot (Teractor): +25 M€');

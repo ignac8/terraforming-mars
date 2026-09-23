@@ -12,6 +12,7 @@ import {Tag} from '../../../src/common/cards/Tag';
 import {IProjectCard} from '../../../src/server/cards/IProjectCard';
 import {CardName} from '../../../src/common/cards/CardName';
 import {BoardName} from '../../../src/common/boards/BoardName';
+import {Resource} from '../../../src/common/Resource';
 
 function createAutomaGame(): {game: IGame, human: TestPlayer, marsBot: MarsBot} {
   const [game, human] = testGame(1, {
@@ -151,6 +152,21 @@ describe('Base Game MarsBot Corporations', () => {
       const corp = getMarsBotCorp(CardName.TERACTOR)!;
       expect(corp.draftPriority).to.deep.eq({type: 'tags', tags: [Tag.EARTH]});
     });
+
+    it('pays again when the Earth track re-advances after a regression, without the icon', () => {
+      const {marsBot} = createAutomaGame();
+      marsBot.setCorpAndSetup(getMarsBotCorp(CardName.TERACTOR)!);
+      marsBot.marsBotBoard.tracks[5].position = 3;
+      marsBot.advanceTrack(5); // Earth 4: 3 TR
+      marsBot.regressTrack(Resource.HEAT);
+      const mc = marsBot.turnResolver.megacredits;
+      const tr = marsBot.player.terraformRating;
+
+      marsBot.advanceTrack(5);
+
+      expect(marsBot.turnResolver.megacredits).to.eq(mc + 2);
+      expect(marsBot.player.terraformRating).to.eq(tr);
+    });
   });
 
   describe('C11 Thorgate', () => {
@@ -261,6 +277,23 @@ describe('Base Game MarsBot Corporations', () => {
     it('has 2 Event starting tags', () => {
       const corp = getMarsBotCorp(CardName.INTERPLANETARY_CINEMATICS)!;
       expect(corp.tags).to.deep.eq([Tag.EVENT, Tag.EVENT]);
+    });
+
+    it('pays on every advance of the building and event tracks, re-advances included', () => {
+      const {marsBot} = createAutomaGame();
+      marsBot.setCorpAndSetup(getMarsBotCorp(CardName.INTERPLANETARY_CINEMATICS)!);
+      marsBot.marsBotBoard.tracks[0].position = 3;
+      marsBot.marsBotBoard.tracks[2].position = 10;
+      marsBot.advanceTrack(0);
+      marsBot.advanceTrack(2);
+      marsBot.regressTrack(Resource.STEEL);
+      marsBot.regressTrack(Resource.MEGACREDITS);
+      const mc = marsBot.turnResolver.megacredits;
+
+      marsBot.advanceTrack(0);
+      marsBot.advanceTrack(2);
+
+      expect(marsBot.turnResolver.megacredits).to.eq(mc + 4);
     });
   });
 
