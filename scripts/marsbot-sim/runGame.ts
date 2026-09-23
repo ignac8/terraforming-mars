@@ -41,6 +41,10 @@ export type GameResult = GameConfig & {
   generationLimit: boolean,
   human: {tr: number, milestones: number, awards: number, greenery: number, city: number, cards: number, cardsPlayed: number},
   bot: {tr: number, milestones: number, awards: number, greenery: number, city: number, mcToVP: number, cardVP: number, other: number},
+  /** MarsBot's score if the game had ended after each generation (index 0 = after generation 1). */
+  botVPByGeneration: Array<number>,
+  /** The scripted player's score after each generation. */
+  humanVPByGeneration: Array<number>,
   scriptStats: ScriptedPlayer['stats'],
   searchStats?: LookaheadPlayer['searchStats'],
   error?: string,
@@ -158,6 +162,8 @@ export function runGame(config: GameConfig): GameResult {
       cardVP: botVP.cardVP,
       other: botVP.total - botVP.terraformRating - botVP.milestones - botVP.awards - botVP.greenery - botVP.cityAdjacentGreenery - botVP.mcToVP - botVP.cardVP,
     },
+    botVPByGeneration: [...marsBot.vpByGeneration],
+    humanVPByGeneration: [...human.victoryPointsByGeneration],
     scriptStats: script.stats,
     searchStats: script instanceof LookaheadPlayer ? script.searchStats : undefined,
     error,
