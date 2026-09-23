@@ -419,7 +419,7 @@ describe('MarsBot Deep Rules Tests', () => {
       for (let i = 0; i < remaining; i++) {
         marsBot.bonusDeck.discard(marsBot.bonusDeck.draw(game)!);
       }
-      const reshuffled: string[] = [];
+      const reshuffled: Array<string | undefined> = [];
       for (let i = 0; i < 10; i++) {
         const c = marsBot.bonusDeck.draw(game);
         if (c === undefined) {

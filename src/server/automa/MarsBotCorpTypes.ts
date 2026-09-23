@@ -100,6 +100,8 @@ export interface IMarsBot {
   readonly game: IGame;
   /** The neutral player that holds the bot's terraform rating and owns its tiles. */
   readonly player: IPlayer;
+  /** The human opponent. */
+  readonly humanPlayer: IPlayer;
   readonly marsBotBoard: MarsBotBoard;
 
   /** The bot's M€ pool. */
@@ -143,6 +145,12 @@ export interface IMarsBot {
   addBonusCardToBonusDeck(bonusCardId: BonusCardId): void;
   /** Puts a bonus card at the bottom of the bonus deck's draw pile. */
   addBonusCardToBottomOfBonusDeck(bonusCardId: BonusCardId): void;
+  /**
+   * Reveals project cards until `count` of them carry `tag`, and shuffles those into the bonus deck.
+   *
+   * The other revealed cards are discarded.
+   */
+  addProjectCardsToBonusDeck(tag: Tag, count: number): void;
   /** Removes a bonus card from the bonus deck and from the action deck. */
   removeBonusCard(bonusCardId: BonusCardId): void;
   /** Resolves a bonus card's effect right away, outside the action deck. The card is not discarded. */

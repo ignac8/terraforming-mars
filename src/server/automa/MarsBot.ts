@@ -11,7 +11,7 @@ import {currentMcPerVP} from './MarsBotScoring';
 import {MarsBotBoard} from './MarsBotBoard';
 import {marsBotCardTags} from './MarsBotTags';
 import {MarsBotModel} from '../../common/models/MarsBotModel';
-import {MarsBotBonusCard, bonusCardDisplayName, createCorpBonusCard} from './MarsBotBonusCard';
+import {MarsBotBonusCard, MarsBotBonusDeckCard, bonusCardDisplayName, createCorpBonusCard} from './MarsBotBonusCard';
 import {MarsBotBonusDeck} from './MarsBotBonusDeck';
 import {MarsBotBonusResolver} from './MarsBotBonusResolver';
 import {MarsBotTilePlacer} from './MarsBotTilePlacer';
@@ -404,6 +404,14 @@ export class MarsBot implements IMarsBot {
     return this.turnResolver.maybeFundAward();
   }
 
+  public addProjectCardsToBonusDeck(tag: Tag, count: number): void {
+    const cards = this.game.projectDeck.drawByConditionOrThrow(this.game, count, (card) => marsBotCardTags(card).includes(tag));
+    for (const card of cards) {
+      this.shuffleIntoBonusDeck(card);
+      this.game.log('MarsBot adds ${0} to its bonus deck', (b) => b.card(card));
+    }
+  }
+
   public maybeMoveBonusCardToActionDeck(): void {
     const bonusCard = this.bonusDeck.draw(this.game);
     if (bonusCard === undefined) {
@@ -450,7 +458,10 @@ export class MarsBot implements IMarsBot {
   }
 
   /** Whether a bonus card goes back into the action deck every generation, so it never belongs in the bonus deck. */
-  public returnsToActionDeck(card: MarsBotBonusCard): boolean {
+  public returnsToActionDeck(card: MarsBotBonusDeckCard): boolean {
+    if (card.id === undefined) {
+      return false;
+    }
     return SET_ASIDE_BONUS_CARDS.has(card.id) || card.id === this.corp?.actionDeckBonusCard;
   }
 
@@ -478,8 +489,13 @@ export class MarsBot implements IMarsBot {
   }
 
   public addBonusCardToBonusDeck(bonusCardId: BonusCardId): void {
+    this.shuffleIntoBonusDeck(createCorpBonusCard(bonusCardId));
+  }
+
+  /** Puts a card into the bonus deck's draw pile at a random position. */
+  private shuffleIntoBonusDeck(card: MarsBotBonusDeckCard): void {
     const drawPile = this.bonusDeck.drawPile;
-    drawPile.splice(this.random.nextInt(drawPile.length + 1), 0, createCorpBonusCard(bonusCardId));
+    drawPile.splice(this.random.nextInt(drawPile.length + 1), 0, card);
   }
 
   public addBonusCardToBottomOfBonusDeck(bonusCardId: BonusCardId): void {
@@ -658,8 +674,8 @@ export class MarsBot implements IMarsBot {
       goesFirst: this.goesFirst,
       difficulty: this.difficulty,
       actionDeckCardNames: this.actionDeck.map((c) => this.isProjectCard(c) ? c.name : (c as MarsBotBonusCard).id),
-      bonusDeckDrawPile: this.bonusDeck.drawPile.map((c) => c.id),
-      bonusDeckDiscardPile: this.bonusDeck.discardPile.map((c) => c.id),
+      bonusDeckDrawPile: this.bonusDeck.drawPile.map((c) => c.id ?? c.name),
+      bonusDeckDiscardPile: this.bonusDeck.discardPile.map((c) => c.id ?? c.name),
       neuralInstanceSpaceId: this.neuralInstanceSpace?.id,
       playedProjectCardNames: this.playedProjectCards.map((c) => c.name),
       marsBotPlayerId: this.player.id,
@@ -774,25 +790,15 @@ export class MarsBot implements IMarsBot {
 
     // Restore action deck (project cards + bonus cards)
     if (state.actionDeckCardNames !== undefined) {
-      this.actionDeck = [];
-      for (const name of state.actionDeckCardNames) {
-        if (Object.values(BonusCardId).includes(name as BonusCardId)) {
-          this.actionDeck.push(createCorpBonusCard(name as BonusCardId));
-        } else {
-          const card = newCard(name as CardName);
-          if (card !== undefined) {
-            this.actionDeck.push(card as IProjectCard);
-          }
-        }
-      }
+      this.actionDeck = this.deserializeDeckCards(state.actionDeckCardNames);
     }
 
-    // Restore bonus deck
+    // Restore bonus deck (bonus cards + project cards a corporation put there)
     if (state.bonusDeckDrawPile !== undefined) {
-      this.bonusDeck.drawPile = state.bonusDeckDrawPile.map((id) => createCorpBonusCard(id as BonusCardId));
+      this.bonusDeck.drawPile = this.deserializeDeckCards(state.bonusDeckDrawPile);
     }
     if (state.bonusDeckDiscardPile !== undefined) {
-      this.bonusDeck.discardPile = state.bonusDeckDiscardPile.map((id) => createCorpBonusCard(id as BonusCardId));
+      this.bonusDeck.discardPile = this.deserializeDeckCards(state.bonusDeckDiscardPile);
     }
     // Older saves discarded these to the bonus deck after they resolved
     this.bonusDeck.drawPile = this.bonusDeck.drawPile.filter((c) => !this.returnsToActionDeck(c));
@@ -817,6 +823,22 @@ export class MarsBot implements IMarsBot {
   }
 
   // ---- Utilities ----
+
+  /** Rebuilds serialized deck cards: bonus cards are stored by id, project cards by name. */
+  private deserializeDeckCards(names: ReadonlyArray<string>): Array<IProjectCard | MarsBotBonusCard> {
+    const cards: Array<IProjectCard | MarsBotBonusCard> = [];
+    for (const name of names) {
+      if (Object.values(BonusCardId).includes(name as BonusCardId)) {
+        cards.push(createCorpBonusCard(name as BonusCardId));
+      } else {
+        const card = newCard(name as CardName);
+        if (card !== undefined) {
+          cards.push(card as IProjectCard);
+        }
+      }
+    }
+    return cards;
+  }
 
   /** Type guard to distinguish project cards from bonus cards in the action deck. */
   private isProjectCard(card: IProjectCard | MarsBotBonusCard): card is IProjectCard {
