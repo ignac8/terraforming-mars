@@ -469,6 +469,7 @@ export class MarsBotTurnResolver {
     const mc = this.difficulty === 'easy' ? FAILED_ACTION_MC_EASY : FAILED_ACTION_MC;
     this.gainMc(mc);
     this.game.log('MarsBot takes a Failed Action, gains ${0} MC', (b) => b.number(mc));
+    this.marsBotManager?.corp?.effect?.onFailedAction?.(this.marsBotManager);
   }
 
   /** Add M€ to MarsBot's supply and tell the corp about it (Mining Guild). */

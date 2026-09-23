@@ -32,7 +32,7 @@ const VIRON: IMarsBotCorp = {
 // C26 Celestic
 const CELESTIC: IMarsBotCorp = {
   name: CardName.CELESTIC,
-  description: 'Tag: Venus. Draft: Venus > Jovian. Setup: +1 floater. Each round start: +1 floater.',
+  description: 'Tag: Venus. Draft: Venus > Jovian. Setup: +1 floater. Each Failed Action: +1 floater. Each round start: +1 floater.',
   tags: [Tag.VENUS],
   draftPriority: {type: 'tags', tags: [Tag.VENUS, Tag.JOVIAN]},
   setup(bot) {
@@ -40,8 +40,10 @@ const CELESTIC: IMarsBotCorp = {
     bot.game.log('MarsBot (Celestic): +1 floater');
   },
   effect: {
-    // Failed action -> +1 additional floater (on top of normal failed action)
-    // This would need to hook into the failed action handler
+    onFailedAction(bot) {
+      bot.addFloaters(1);
+      bot.game.log('MarsBot (Celestic): Failed Action, +1 floater');
+    },
   },
   roundStart: floaterAtRoundStart('Celestic'),
 };
@@ -92,6 +94,12 @@ const STORMCRAFT: IMarsBotCorp = {
   setup(bot) {
     bot.addFloaters(1);
     bot.game.log('MarsBot (Stormcraft): +1 floater');
+  },
+  effect: {
+    onFloatersSpentForExtraCard(bot) {
+      bot.raiseTemperature(1);
+      bot.game.log('MarsBot (Stormcraft): floaters spent for an extra card, temperature +1');
+    },
   },
   roundStart: floaterAtRoundStart('Stormcraft'),
 };

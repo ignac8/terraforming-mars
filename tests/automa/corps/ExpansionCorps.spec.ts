@@ -20,6 +20,8 @@ import {EcoLine} from '../../../src/server/cards/corporation/EcoLine';
 import {Space} from '../../../src/server/boards/Space';
 import {SpaceType} from '../../../src/common/boards/SpaceType';
 import {TileType} from '../../../src/common/TileType';
+import {SelectCard} from '../../../src/server/inputs/SelectCard';
+import {cast} from '../../../src/common/utils/utils';
 
 function createAutomaGame(): {game: IGame, human: TestPlayer, marsBot: MarsBot} {
   const [game, human] = testGame(1, {
@@ -531,6 +533,71 @@ describe('Expansion MarsBot Corporations', () => {
       marsBot.setCorpAndSetup(corp);
       corp.roundStart!(marsBot);
       expect(marsBot.floaters).to.eq(2);
+    });
+
+    it('gains 1 more floater with each Failed Action', () => {
+      const {marsBot} = createAutomaGame();
+      marsBot.corp = getMarsBotCorp(CardName.CELESTIC)!;
+      const mc = marsBot.turnResolver.megacredits;
+
+      marsBot.turnResolver.resolveProjectCard(new MicroMills()); // No tags: a Failed Action
+
+      expect(marsBot.floaters).to.eq(1);
+      expect(marsBot.turnResolver.megacredits).to.eq(mc + 5);
+    });
+  });
+
+  describe('C34 Stormcraft', () => {
+    function createVenusGame(draftVariant: boolean): {game: IGame, human: TestPlayer, marsBot: MarsBot} {
+      const [game, human] = testGame(1, {
+        automaOption: true,
+        automaDifficulty: 'normal',
+        venusNextExtension: true,
+        draftVariant,
+        boardName: BoardName.THARSIS,
+      });
+      const marsBot = game.automaHooks!.marsBot;
+      marsBot.corp = getMarsBotCorp(CardName.STORMCRAFT_INCORPORATED)!;
+      // Hoverlord gone, so MarsBot may spend its floaters on an extra card.
+      game.milestones = game.milestones.filter((m) => m.name !== 'Hoverlord');
+      marsBot.floaters = 5;
+      return {game, human, marsBot};
+    }
+
+    it('raises the temperature when it spends floaters for an extra card', () => {
+      const {game, marsBot} = createVenusGame(false);
+      game.generation = 2;
+      const temperature = game.getTemperature();
+
+      game.automaHooks!.handleResearchPhase();
+
+      expect(marsBot.floaters).to.eq(1); // 5 + 1 at round start - 5
+      expect(game.getTemperature()).to.eq(temperature + 2);
+    });
+
+    it('raises the temperature when it spends floaters to keep a 4th drafted card', () => {
+      const {game, human, marsBot} = createVenusGame(true);
+      const temperature = game.getTemperature();
+
+      game.gotoResearchPhase();
+      for (let round = 0; round < 4; round++) {
+        const selectCard = cast(human.getWaitingFor(), SelectCard<IProjectCard>);
+        selectCard.cb([selectCard.cards[0]]);
+      }
+
+      expect(marsBot.floaters).to.eq(1);
+      expect(game.getTemperature()).to.eq(temperature + 2);
+    });
+
+    it('does not raise the temperature without spending floaters', () => {
+      const {game, marsBot} = createVenusGame(false);
+      marsBot.floaters = 0;
+      game.generation = 2;
+      const temperature = game.getTemperature();
+
+      game.automaHooks!.handleResearchPhase();
+
+      expect(game.getTemperature()).to.eq(temperature);
     });
   });
 

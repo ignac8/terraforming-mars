@@ -72,6 +72,10 @@ export type MarsBotCorpEffect = {
   onMcGained?(bot: IMarsBot, amount: number): void;
   /** Fired when MarsBot places a colony on any tile (Colonies rule C-33). */
   onColonyPlaced?(bot: IMarsBot): void;
+  /** The bot took a Failed Action, after gaining its M€ for it. */
+  onFailedAction?(bot: IMarsBot): void;
+  /** The bot spent floaters to keep an extra card in the research phase. */
+  onFloatersSpentForExtraCard?(bot: IMarsBot): void;
   /** Extra victory points added at final scoring. */
   vpBonus?(bot: IMarsBot): number;
   /** Points added to the bot's score in every award, when funding one and at final scoring. */
