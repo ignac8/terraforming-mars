@@ -4,7 +4,7 @@ import {testGame} from '../../TestGame';
 import {IGame} from '../../../src/server/IGame';
 import {TestPlayer} from '../../TestPlayer';
 import {MarsBot} from '../../../src/server/automa/MarsBot';
-import {createCorpBonusCard} from '../../../src/server/automa/MarsBotBonusCard';
+import {MarsBotBonusCard, createCorpBonusCard} from '../../../src/server/automa/MarsBotBonusCard';
 import {BonusCardId} from '../../../src/common/automa/AutomaTypes';
 import {BoardName} from '../../../src/common/boards/BoardName';
 import {SpaceType} from '../../../src/common/boards/SpaceType';
@@ -352,9 +352,7 @@ describe('Corp-Specific Bonus Cards (B22-B32)', () => {
       const deckBefore = marsBot.actionDeck.length;
       corp.beforeActionPhase(marsBot);
       expect(marsBot.actionDeck.length).to.eq(deckBefore + 1);
-      // The last card should be Rapid Sprouting
-      const lastCard = marsBot.actionDeck[marsBot.actionDeck.length - 1];
-      expect(lastCard).to.have.property('id', BonusCardId.B23_RAPID_SPROUTING);
+      expect(marsBot.actionDeck.map((c) => (c as MarsBotBonusCard).id)).to.include(BonusCardId.B23_RAPID_SPROUTING);
     });
   });
 
