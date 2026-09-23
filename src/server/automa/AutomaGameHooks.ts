@@ -335,7 +335,7 @@ export class AutomaGameHooks {
       return;
     }
 
-    const corp = MarsBotCorpResolver.selectCorp(humanCorpName, this.game.rng);
+    const corp = MarsBotCorpResolver.selectCorp(humanCorpName, this.game.gameOptions, this.game.rng);
     if (corp === undefined) {
       this.game.log('No MarsBot corporations available');
       return;

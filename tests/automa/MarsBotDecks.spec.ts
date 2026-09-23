@@ -9,6 +9,7 @@ import {BoardName} from '../../src/common/boards/BoardName';
 import {CardName} from '../../src/common/cards/CardName';
 import {GameOptions} from '../../src/server/game/GameOptions';
 import {getMarsBotCorp} from '../../src/server/automa/corps/MarsBotCorpRegistry';
+import {MarsBotCorpResolver} from '../../src/server/automa/corps/MarsBotCorpResolver';
 import {ConstRandom} from '../../src/common/utils/Random';
 import {IProjectCard} from '../../src/server/cards/IProjectCard';
 import {Mine} from '../../src/server/cards/base/Mine';
@@ -267,5 +268,34 @@ describe('MarsBot decks', () => {
 
     cast(human.popWaitingFor(), undefined);
     expect(human.megaCredits).eq(2);
+  });
+
+  it('marks the corporations that need an expansion', () => {
+    const required = (name: CardName) => getMarsBotCorp(name)!.requiredExpansions;
+
+    expect(required(CardName.VALLEY_TRUST)).deep.eq(['prelude']);
+    expect(required(CardName.VIRON)).deep.eq(['venus', 'colonies']);
+    expect(required(CardName.CELESTIC)).deep.eq(['venus', 'colonies']);
+    expect(required(CardName.MORNING_STAR_INC)).deep.eq(['venus']);
+    expect(required(CardName.APHRODITE)).deep.eq(['venus']);
+    expect(required(CardName.ARIDOR)).deep.eq(['colonies']);
+    expect(required(CardName.POSEIDON)).deep.eq(['colonies']);
+    expect(required(CardName.STORMCRAFT_INCORPORATED)).deep.eq(['venus', 'colonies']);
+    expect(required(CardName.SEPTUM_TRIBUS)).deep.eq(['turmoil']);
+    expect(required(CardName.CREDICOR)).is.undefined;
+  });
+
+  it('never gives MarsBot a corporation whose expansion is out of play', () => {
+    const {game} = createAutomaGame();
+    const expansionCorps = [
+      CardName.VALLEY_TRUST, CardName.VIRON, CardName.CELESTIC, CardName.MORNING_STAR_INC, CardName.APHRODITE,
+      CardName.ARIDOR, CardName.POSEIDON, CardName.STORMCRAFT_INCORPORATED, CardName.SEPTUM_TRIBUS,
+    ];
+
+    for (let i = 0; i < 46; i++) {
+      const rng = {next: () => 0, nextInt: (n: number) => i % n} as any;
+      const corp = MarsBotCorpResolver.selectCorp(CardName.CREDICOR, game.gameOptions, rng);
+      expect(expansionCorps).does.not.include(corp.name);
+    }
   });
 });

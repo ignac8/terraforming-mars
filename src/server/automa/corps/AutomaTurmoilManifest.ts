@@ -68,6 +68,7 @@ const SEPTEM_TRIBUS: IMarsBotCorp = {
   name: CardName.SEPTUM_TRIBUS,
   description: 'Setup: remove Party Politics, add Gray Eminence to bonus deck, and add all delegates of an unused colour to MarsBot\'s reserve. Each generation: add Gray Eminence to action deck.',
   tags: [],
+  requiredExpansions: ['turmoil'],
   setup(bot) {
     bot.removeBonusCard(BonusCardId.B21_PARTY_POLITICS);
     bot.addBonusCardToBonusDeck(BonusCardId.B29_GRAY_EMINENCE);

@@ -8,6 +8,7 @@ import {IPlayer} from '../IPlayer';
 import {IProjectCard} from '../cards/IProjectCard';
 import {MarsBotBoard} from './MarsBotBoard';
 import {Space} from '../boards/Space';
+import {Expansion} from '../../common/cards/GameModule';
 
 /** How the bot picks a card in the research draft. Each corp names one priority. */
 export type MarsBotDraftPriority =
@@ -35,6 +36,8 @@ export type IMarsBotCorp = {
   readonly description: string;
   /** Tags printed on the corp card. They count toward the bot's tag totals for the whole game. */
   readonly tags: ReadonlyArray<Tag>;
+  /** Expansions the corp card is marked with. The bot only draws it when at least one of them is in play. */
+  readonly requiredExpansions?: ReadonlyArray<Expansion>;
   readonly draftPriority?: MarsBotDraftPriority;
   /** Runs once, right after the bot's corporation is chosen. */
   setup?(bot: IMarsBot): void;

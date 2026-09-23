@@ -12,6 +12,7 @@ const ARIDOR: IMarsBotCorp = {
   name: CardName.ARIDOR,
   description: 'Draft: least-advanced track tag. Setup: add 1 colony tile to the game. White and black cubes across multiple tracks; each cube advances event track.',
   tags: [],
+  requiredExpansions: ['colonies'],
   draftPriority: {type: 'leastAdvancedTrack'},
   trackCubes: [
     {trackIndex: 0, position: 3, cubeType: 'white'},
@@ -73,6 +74,7 @@ const POSEIDON: IMarsBotCorp = {
   name: CardName.POSEIDON,
   description: 'Setup: place 1 colony. Colony placement advances least-advanced track.',
   tags: [],
+  requiredExpansions: ['colonies'],
   setup(bot) {
     // C-33: Place 1 colony using random selection (C-15b method)
     const placed = bot.maybePlaceRandomColony();

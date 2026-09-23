@@ -1,6 +1,7 @@
 import {IMarsBotCorp, trackCubeKey} from '../MarsBotCorpTypes';
 import {CardName} from '../../../common/cards/CardName';
 import {Random} from '../../../common/utils/Random';
+import {GameOptions} from '../../game/GameOptions';
 import {getAllMarsBotCorps} from './MarsBotCorpRegistry';
 import {selectRandomColony, placeColonyForMarsBot} from '../colonies/MarsBotColonyPlacer';
 import type {MarsBot} from '../MarsBot';
@@ -9,9 +10,10 @@ import type {MarsBot} from '../MarsBot';
  * Orchestrates MarsBot corporation lifecycle: selection, setup, cube triggers, per-gen effects.
  */
 export class MarsBotCorpResolver {
-  public static selectCorp(humanCorpName: CardName, rng: Random): IMarsBotCorp {
+  public static selectCorp(humanCorpName: CardName, gameOptions: GameOptions, rng: Random): IMarsBotCorp {
     const allCorps = getAllMarsBotCorps();
-    const eligible = allCorps.filter((c) => c.name !== humanCorpName);
+    const eligible = allCorps.filter((c) => c.name !== humanCorpName &&
+      (c.requiredExpansions === undefined || c.requiredExpansions.some((expansion) => gameOptions.expansions[expansion])));
     if (eligible.length === 0) {
       throw new Error('No MarsBot corps registered');
     }

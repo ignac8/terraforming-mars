@@ -67,6 +67,7 @@ const VALLEY_TRUST: IMarsBotCorp = {
   name: CardName.VALLEY_TRUST,
   description: 'Draft: Science. Setup: draw 1 card. White cubes on science track: draw and resolve a card each.',
   tags: [],
+  requiredExpansions: ['prelude'],
   draftPriority: {type: 'tags', tags: [Tag.SCIENCE]},
   setup(bot) {
     bot.drawProjectCardsToActionDeck(1); // "Obtain 1 card"
