@@ -58,14 +58,14 @@ const ARCLIGHT: IMarsBotCorp = {
 // C32 Polyphemos
 const POLYPHEMOS: IMarsBotCorp = {
   name: CardName.POLYPHEMOS,
-  description: 'Tags: 3 Space, 3 Event. Setup: +25 MC. Each generation: discard the card with fewest tags from the action deck.',
+  description: 'Tags: 3 Space, 3 Event. Setup: +25 MC. Each generation: discard the project card with fewest tags from the action deck.',
   tags: [Tag.SPACE, Tag.SPACE, Tag.SPACE, Tag.EVENT, Tag.EVENT, Tag.EVENT],
   setup(bot) {
     bot.gainMc(25);
     bot.game.log('MarsBot (Polyphemos): +25 M€');
   },
   beforeActionPhase(bot) {
-    bot.discardCardWithFewestTags();
+    bot.maybeDiscardProjectCardWithFewestTags();
   },
 };
 

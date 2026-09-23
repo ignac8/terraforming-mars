@@ -17,6 +17,8 @@ import {Resource} from '../../../src/common/Resource';
 import {BonusCardId} from '../../../src/common/automa/AutomaTypes';
 import {MicroMills} from '../../../src/server/cards/base/MicroMills';
 import {IceCapMelting} from '../../../src/server/cards/base/IceCapMelting';
+import {Research} from '../../../src/server/cards/base/Research';
+import {createCorpBonusCard} from '../../../src/server/automa/MarsBotBonusCard';
 import {EcoLine} from '../../../src/server/cards/corporation/EcoLine';
 import {Space} from '../../../src/server/boards/Space';
 import {SpaceType} from '../../../src/common/boards/SpaceType';
@@ -739,6 +741,29 @@ describe('Expansion MarsBot Corporations', () => {
     it('has 6 starting tags (3 Space + 3 Event)', () => {
       const corp = getMarsBotCorp(CardName.POLYPHEMOS)!;
       expect(corp.tags).to.deep.eq([Tag.SPACE, Tag.SPACE, Tag.SPACE, Tag.EVENT, Tag.EVENT, Tag.EVENT]);
+    });
+
+    it('discards the project card with the fewest tags before the action phase, never a bonus card', () => {
+      const {game, marsBot} = createAutomaGame();
+      const corp = getMarsBotCorp(CardName.POLYPHEMOS)!;
+      const iceCapMelting = new IceCapMelting(); // Its Event tag only
+      const bonus = createCorpBonusCard(BonusCardId.B03_RESEARCH_AND_DEVELOPMENT);
+      marsBot.actionDeck = [bonus, new Research(), iceCapMelting];
+
+      corp.beforeActionPhase!(marsBot);
+
+      expect(marsBot.actionDeck.map((c) => c.name)).to.deep.eq([bonus.name, CardName.RESEARCH]);
+      expect(game.projectDeck.discardPile).to.include(iceCapMelting);
+    });
+
+    it('discards nothing when the action deck holds no project card', () => {
+      const {marsBot} = createAutomaGame();
+      const corp = getMarsBotCorp(CardName.POLYPHEMOS)!;
+      marsBot.actionDeck = [createCorpBonusCard(BonusCardId.B03_RESEARCH_AND_DEVELOPMENT)];
+
+      corp.beforeActionPhase!(marsBot);
+
+      expect(marsBot.actionDeck).has.length(1);
     });
   });
 });
