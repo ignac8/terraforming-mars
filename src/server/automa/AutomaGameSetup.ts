@@ -130,12 +130,24 @@ export class AutomaGameSetup {
         }
       }
       marsBot.buildInitialActionDeck();
+      AutomaGameSetup.activateColonyTiles(game);
       AutomaGameSetup.placeColonyCubes(game, marsBot);
       AutomaGameSetup.place2ndTradeFleetCube(game, marsBot);
       game.log('MarsBot is ready with ${0} difficulty', (b) => b.rawString(gameOptions.automaDifficulty));
     }
 
     return new AutomaGameHooks(game, marsBot);
+  }
+
+  /**
+   * C-1: Starts every colony tile in play active, Titan, Enceladus and Miranda included.
+   *
+   * Their trackers already sit on the second step.
+   */
+  private static activateColonyTiles(game: IGame): void {
+    for (const colony of game.colonies) {
+      colony.isActive = true;
+    }
   }
 
   /**
