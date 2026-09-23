@@ -13,6 +13,10 @@ import {SpaceType} from '../../../src/common/boards/SpaceType';
 import {Birds} from '../../../src/server/cards/base/Birds';
 import {MarsUniversity} from '../../../src/server/cards/base/MarsUniversity';
 import {Asteroid} from '../../../src/server/cards/base/Asteroid';
+import {AICentral} from '../../../src/server/cards/base/AICentral';
+import {Tardigrades} from '../../../src/server/cards/base/Tardigrades';
+import {SearchForLife} from '../../../src/server/cards/base/SearchForLife';
+import {BribedCommittee} from '../../../src/server/cards/base/BribedCommittee';
 import {
   clearMarsBotCorpRegistry, restoreMarsBotCorpRegistry,
   getMarsBotCorp,
@@ -69,31 +73,30 @@ describe('Corp Effect Hooks', () => {
   });
 
   describe('C17 Vitor VP check', () => {
-    it('gains 3 M€ for positive VP cards', () => {
+    function vitorGain(card: IProjectCard): number {
       const {marsBot} = createAutomaGame();
       const corp = getMarsBotCorp(CardName.VITOR)!;
       marsBot.setCorpAndSetup(corp);
       const mcBefore = marsBot.turnResolver.megacredits;
-      corp.effect!.onProjectCardResolved!(marsBot, fakeCard('VP+', {cost: 10, victoryPoints: 1}));
-      expect(marsBot.turnResolver.megacredits).to.eq(mcBefore + 3);
+      corp.effect!.onProjectCardResolved!(marsBot, card);
+      return marsBot.turnResolver.megacredits - mcBefore;
+    }
+
+    it('gains 3 M€ for a card with printed VP', () => {
+      expect(vitorGain(new AICentral())).to.eq(3);
     });
 
-    it('does NOT gain M€ for 0 VP cards', () => {
-      const {marsBot} = createAutomaGame();
-      const corp = getMarsBotCorp(CardName.VITOR)!;
-      marsBot.setCorpAndSetup(corp);
-      const mcBefore = marsBot.turnResolver.megacredits;
-      corp.effect!.onProjectCardResolved!(marsBot, fakeCard('VP0', {cost: 10}));
-      expect(marsBot.turnResolver.megacredits).to.eq(mcBefore);
+    it('gains 3 M€ for a card with variable VP that scores nothing yet', () => {
+      expect(vitorGain(new Tardigrades())).to.eq(3);
+      expect(vitorGain(new SearchForLife())).to.eq(3);
+    });
+
+    it('does NOT gain M€ for cards without VP', () => {
+      expect(vitorGain(new Asteroid())).to.eq(0);
     });
 
     it('does NOT gain M€ for negative VP cards', () => {
-      const {marsBot} = createAutomaGame();
-      const corp = getMarsBotCorp(CardName.VITOR)!;
-      marsBot.setCorpAndSetup(corp);
-      const mcBefore = marsBot.turnResolver.megacredits;
-      corp.effect!.onProjectCardResolved!(marsBot, fakeCard('VP-', {cost: 10, victoryPoints: -1}));
-      expect(marsBot.turnResolver.megacredits).to.eq(mcBefore);
+      expect(vitorGain(new BribedCommittee())).to.eq(0);
     });
   });
 
