@@ -123,4 +123,14 @@ describe('MarsBot decks', () => {
     expect(marsBot.actionDeck).has.length(5);
     expect(marsBot.actionDeck[0]).eq(topCard);
   });
+
+  it('shuffles UNMI\'s Government Subsidy into the bonus deck', () => {
+    const {marsBot} = createAutomaGame();
+    (marsBot as any).random = new ConstRandom(0);
+
+    marsBot.setCorpAndSetup(getMarsBotCorp(CardName.UNITED_NATIONS_MARS_INITIATIVE)!);
+
+    // The top of the bonus deck is the end of the draw pile
+    expect(marsBot.bonusDeck.drawPile[0].id).eq(BonusCardId.B31_GOVERNMENT_SUBSIDY);
+  });
 });

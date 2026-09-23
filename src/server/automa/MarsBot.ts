@@ -470,7 +470,8 @@ export class MarsBot implements IMarsBot {
   }
 
   public addBonusCardToBonusDeck(bonusCardId: BonusCardId): void {
-    this.bonusDeck.drawPile.push(createCorpBonusCard(bonusCardId));
+    const drawPile = this.bonusDeck.drawPile;
+    drawPile.splice(this.random.nextInt(drawPile.length + 1), 0, createCorpBonusCard(bonusCardId));
   }
 
   public getCorpState(key: string): number {
