@@ -13,6 +13,13 @@ import {Space} from '../../../src/server/boards/Space';
 import {NuclearZone} from '../../../src/server/cards/base/NuclearZone';
 import {Capital} from '../../../src/server/cards/base/Capital';
 import {setTemperature} from '../../TestingUtils';
+import {IProjectCard} from '../../../src/server/cards/IProjectCard';
+import {SearchForLife} from '../../../src/server/cards/base/SearchForLife';
+import {Tardigrades} from '../../../src/server/cards/base/Tardigrades';
+import {Asteroid} from '../../../src/server/cards/base/Asteroid';
+import {GiantIceAsteroid} from '../../../src/server/cards/base/GiantIceAsteroid';
+import {Mine} from '../../../src/server/cards/base/Mine';
+import {PowerPlant} from '../../../src/server/cards/base/PowerPlant';
 import {Turmoil} from '../../../src/server/turmoil/Turmoil';
 import {
   clearMarsBotCorpRegistry, restoreMarsBotCorpRegistry,
@@ -262,16 +269,54 @@ describe('Corp-Specific Bonus Cards (B22-B32)', () => {
   });
 
   describe('B30 Interface Hyperlink', () => {
-    it('advances energy or science track (least advanced)', () => {
-      const {marsBot} = createAutomaGame();
-      const card = createCorpBonusCard(BonusCardId.B30_INTERFACE_HYPERLINK);
-      const energyBefore = marsBot.marsBotBoard.tracks[4].position;
-      const scienceBefore = marsBot.marsBotBoard.tracks[3].position;
-      marsBot['bonusResolver'].resolve(card);
-      // One of them should have advanced
-      const energyAfter = marsBot.marsBotBoard.tracks[4].position;
-      const scienceAfter = marsBot.marsBotBoard.tracks[3].position;
-      expect(energyAfter + scienceAfter).to.be.gt(energyBefore + scienceBefore);
+    function hyperlinkGame(energy: number, topCards: Array<IProjectCard>) {
+      const {game, marsBot} = createAutomaGame();
+      marsBot.marsBotBoard.tracks[4].position = energy;
+      // The top of the project deck is the end of the draw pile
+      game.projectDeck.drawPile.push(...[...topCards].reverse());
+      const played: Array<IProjectCard> = [];
+      marsBot.turnResolver.resolveProjectCard = (card) => {
+        played.push(card);
+      };
+      return {game, marsBot, played};
+    }
+
+    it('draws a card per energy space and plays the science card and the most expensive one', () => {
+      const searchForLife = new SearchForLife();
+      const tardigrades = new Tardigrades();
+      const asteroid = new Asteroid();
+      const giantIceAsteroid = new GiantIceAsteroid();
+      const {game, marsBot, played} = hyperlinkGame(4, [tardigrades, asteroid, giantIceAsteroid, searchForLife]);
+
+      const destroyed = marsBot['bonusResolver'].resolve(createCorpBonusCard(BonusCardId.B30_INTERFACE_HYPERLINK));
+
+      expect(played).deep.eq([searchForLife, giantIceAsteroid]);
+      expect(game.projectDeck.discardPile).to.include.members([tardigrades, asteroid]);
+      expect(destroyed).is.true;
+      expect(marsBot.bonusDeck.discardPile.map((c) => c.id)).to.not.include(BonusCardId.B30_INTERFACE_HYPERLINK);
+    });
+
+    it('breaks a cost tie toward the card with more tags', () => {
+      const mine = new Mine();
+      const powerPlant = new PowerPlant();
+      const searchForLife = new SearchForLife();
+      const {marsBot, played} = hyperlinkGame(3, [mine, powerPlant, searchForLife]);
+
+      marsBot['bonusResolver'].resolve(createCorpBonusCard(BonusCardId.B30_INTERFACE_HYPERLINK));
+
+      expect(played).deep.eq([searchForLife, powerPlant]);
+    });
+
+    it('does nothing and stays in the game with the energy track at 0', () => {
+      const {game, marsBot, played} = hyperlinkGame(0, []);
+      const deckSize = game.projectDeck.drawPile.length;
+
+      const destroyed = marsBot['bonusResolver'].resolve(createCorpBonusCard(BonusCardId.B30_INTERFACE_HYPERLINK));
+
+      expect(played).is.empty;
+      expect(game.projectDeck.drawPile).has.length(deckSize);
+      expect(destroyed).is.false;
+      expect(marsBot.bonusDeck.discardPile.map((c) => c.id)).to.include(BonusCardId.B30_INTERFACE_HYPERLINK);
     });
   });
 

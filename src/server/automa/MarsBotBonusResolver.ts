@@ -20,6 +20,9 @@ import {marsBotCardTags} from './MarsBotTags';
 import {MarsBotTurmoilHelper} from './turmoil/MarsBotTurmoilHelper';
 import {selectRandomColony, placeColonyForMarsBot} from './colonies/MarsBotColonyPlacer';
 import {selectTradeColony, tradeWithColony} from './colonies/MarsBotTrader';
+import {Tag} from '../../common/cards/Tag';
+import {marsBotCardTags} from './MarsBotTags';
+import {inplaceShuffle} from '../utils/shuffle';
 import type {MarsBot} from './MarsBot';
 import {inplaceRemove, inplaceRemoveIf} from '../../common/utils/utils';
 import {inplaceShuffle} from '../utils/shuffle';
@@ -152,8 +155,7 @@ export class MarsBotBonusResolver {
       this.resolveGrayEminence();
       return false;
     case BonusCardId.B30_INTERFACE_HYPERLINK:
-      this.resolveInterfaceHyperlink();
-      return false;
+      return this.resolveInterfaceHyperlink();
     case BonusCardId.B31_GOVERNMENT_SUBSIDY:
       this.resolveGovernmentSubsidy();
       return false;
@@ -977,18 +979,30 @@ export class MarsBotBonusResolver {
     }
   }
 
-  private resolveInterfaceHyperlink(): void {
-    // Tyco Magnetics: advance energy (index 4) or science (index 3) track — whichever is least advanced
+  // B30: Interface Hyperlink (Tycho Magnetics): draw 1 card per space of the energy track, play
+  // the 2 best and discard the rest. The card is destroyed once it plays a card.
+  private resolveInterfaceHyperlink(): boolean {
     const marsBotBoard = this.turnResolver.marsBotBoard;
-    const energyPos = marsBotBoard.tracks[4].position; // Energy = track 5
-    const sciencePos = marsBotBoard.tracks[3].position; // Science = track 4
-    if (energyPos <= sciencePos) {
-      this.turnResolver.advanceTrack(4); // Energy track = index 4
-      this.game.log('MarsBot resolves Interface Hyperlink: advance energy track');
-    } else {
-      this.turnResolver.advanceTrack(3); // Science track = index 3
-      this.game.log('MarsBot resolves Interface Hyperlink: advance science track');
+    const energyTrack = marsBotBoard.tagToTrack[Tag.POWER];
+    const count = energyTrack === undefined ? 0 : marsBotBoard.tracks[energyTrack].position;
+    const drawn = this.game.projectDeck.drawN(this.game, count);
+    if (drawn.length === 0) {
+      this.game.log('MarsBot resolves Interface Hyperlink: no cards to draw');
+      return false;
     }
+    // Science cards first, then the most expensive, then the most tags, then at random
+    const science = (card: IProjectCard) => marsBotCardTags(card).includes(Tag.SCIENCE) ? 1 : 0;
+    const tagCount = (card: IProjectCard) => marsBotCardTags(card).filter((tag) => tag !== Tag.WILD).length;
+    inplaceShuffle(drawn, this.game.rng);
+    drawn.sort((a, b) => science(b) - science(a) || b.cost - a.cost || tagCount(b) - tagCount(a));
+    const discarded = drawn.splice(2);
+    this.game.projectDeck.discard(...discarded);
+    for (const card of drawn) {
+      this.game.log('MarsBot draws and resolves ${0} (Interface Hyperlink)', (b) => b.card(card));
+      this.turnResolver.resolveProjectCard(card);
+    }
+    this.game.log('Interface Hyperlink is destroyed');
+    return true;
   }
 
   private resolveGovernmentSubsidy(): void {

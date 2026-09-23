@@ -152,4 +152,15 @@ describe('MarsBot decks', () => {
     expect(marsBot.bonusDeck.drawPile).has.length(bonusCards - 1);
     expect(marsBot.bonusDeck.discardPile).is.empty;
   });
+
+  it('puts Tycho Magnetics\' Interface Hyperlink at the bottom of the bonus deck', () => {
+    const {marsBot} = createAutomaGame();
+    // A shuffle would put the card on top with this random draw
+    (marsBot as any).random = new ConstRandom(0.99);
+
+    marsBot.setCorpAndSetup(getMarsBotCorp(CardName.TYCHO_MAGNETICS)!);
+
+    // The top of the bonus deck is the end of the draw pile
+    expect(marsBot.bonusDeck.drawPile[0].id).eq(BonusCardId.B30_INTERFACE_HYPERLINK);
+  });
 });

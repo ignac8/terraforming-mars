@@ -482,6 +482,11 @@ export class MarsBot implements IMarsBot {
     drawPile.splice(this.random.nextInt(drawPile.length + 1), 0, createCorpBonusCard(bonusCardId));
   }
 
+  public addBonusCardToBottomOfBonusDeck(bonusCardId: BonusCardId): void {
+    // The deck draws from the end of the draw pile
+    this.bonusDeck.drawPile.unshift(createCorpBonusCard(bonusCardId));
+  }
+
   public getCorpState(key: string): number {
     return this.corpSpecificState.get(key) ?? 0;
   }
