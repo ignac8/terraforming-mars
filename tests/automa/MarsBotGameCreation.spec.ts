@@ -2,6 +2,7 @@ import {expect} from 'chai';
 import {testGame} from '../TestGame';
 import {BoardName} from '../../src/common/boards/BoardName';
 import {ApiCreateGame} from '../../src/server/routes/ApiCreateGame';
+import {ColonyName} from '../../src/common/colonies/ColonyName';
 
 describe('MarsBotGameCreation', () => {
   describe('Server-side expansion gating', () => {
@@ -24,6 +25,29 @@ describe('MarsBotGameCreation', () => {
       expect(game.gameOptions.coloniesExtension).to.be.true;
       // C-1: 2-player setup = 5 colonies active
       expect(game.colonies.length).to.eq(5);
+    });
+
+    it('starts Titan, Enceladus and Miranda active on their second step (C-1)', () => {
+      const customColoniesList = [ColonyName.TITAN, ColonyName.ENCELADUS, ColonyName.MIRANDA, ColonyName.LUNA, ColonyName.CERES];
+      const [game] = testGame(1, {
+        automaOption: true,
+        coloniesExtension: true,
+        customColoniesList,
+        boardName: BoardName.THARSIS,
+      });
+
+      for (const colony of game.colonies) {
+        expect(colony.isActive, colony.name).to.be.true;
+        expect(colony.trackPosition, colony.name).to.eq(1);
+      }
+    });
+
+    it('leaves Titan, Enceladus and Miranda inactive outside automa games', () => {
+      const customColoniesList = [ColonyName.TITAN, ColonyName.ENCELADUS, ColonyName.MIRANDA, ColonyName.LUNA, ColonyName.CERES];
+      const [game] = testGame(2, {coloniesExtension: true, customColoniesList});
+
+      const inactive = game.colonies.filter((c) => !c.isActive).map((c) => c.name);
+      expect(inactive).to.have.members([ColonyName.TITAN, ColonyName.ENCELADUS, ColonyName.MIRANDA]);
     });
 
     it('automa game supports Turmoil', () => {
