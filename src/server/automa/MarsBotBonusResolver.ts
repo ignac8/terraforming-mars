@@ -7,7 +7,7 @@ import {GlobalParameter} from '../../common/GlobalParameter';
 import {TileType} from '../../common/TileType';
 import {Board, isSpecialTileSpace} from '../boards/Board';
 import * as constants from '../../common/constants';
-import {MarsBotBonusCard, bonusCardDisplayName} from './MarsBotBonusCard';
+import {MarsBotBonusCard, MarsBotBonusDeckCard, bonusCardDisplayName} from './MarsBotBonusCard';
 import {MarsBotBonusDeck} from './MarsBotBonusDeck';
 import {MarsBotTilePlacer} from './MarsBotTilePlacer';
 import {MarsBotTurnResolver} from './MarsBotTurnResolver';
@@ -71,7 +71,12 @@ export class MarsBotBonusResolver {
     this.tilePlacer = tilePlacer;
   }
 
-  public resolve(card: MarsBotBonusCard): boolean {
+  public resolve(card: MarsBotBonusDeckCard): boolean {
+    if (card.id === undefined) {
+      // A project card from the bonus deck is played, so it leaves the bonus deck
+      this.turnResolver.resolveProjectCard(card);
+      return false;
+    }
     const destroyed = this.resolveEffect(card);
     // A card that returns to the action deck every generation waits outside the bonus deck
     if (!destroyed && this.marsBotManager?.returnsToActionDeck(card) !== true) {
@@ -691,7 +696,7 @@ export class MarsBotBonusResolver {
     // C-16c/d: Draw from bonus deck (excluding B18 itself), discard without resolving
     // Temporarily remove B18 from discard so it isn't reshuffled back in
     const b18Idx = this.bonusDeck.discardPile.findIndex((c) => c.id === BonusCardId.B18_OUTER_SYSTEM_FOOTHOLD);
-    let b18Card: MarsBotBonusCard | undefined;
+    let b18Card: MarsBotBonusDeckCard | undefined;
     if (b18Idx >= 0) {
       [b18Card] = this.bonusDeck.discardPile.splice(b18Idx, 1);
     }

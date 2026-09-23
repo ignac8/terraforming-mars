@@ -157,8 +157,7 @@ const PHOBOLOG: IMarsBotCorp = {
     {trackIndex: 1, position: 15, cubeType: 'white'},
   ],
   setup(bot) {
-    // Draw 2 space cards from project deck and add to bonus deck
-    // This needs special handling — for now we add 2 project cards to action deck as approximation
+    bot.addProjectCardsToBonusDeck(Tag.SPACE, 2);
     bot.game.log('MarsBot (Phobolog): 2 space cards drawn and added to bonus deck');
   },
   effect: {

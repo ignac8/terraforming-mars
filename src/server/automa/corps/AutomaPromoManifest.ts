@@ -4,6 +4,11 @@ import {CardName} from '../../../common/cards/CardName';
 import {BonusCardId} from '../../../common/automa/AutomaTypes';
 import {AutomaManifest} from './AutomaManifest';
 import {Space} from '../../boards/Space';
+import {SelectOption} from '../../inputs/SelectOption';
+import {OrOptions} from '../../inputs/OrOptions';
+import {message} from '../../logs/MessageBuilder';
+import {Resource} from '../../../common/Resource';
+import {CardResource} from '../../../common/CardResource';
 
 // ==== PROMO (C21-C24) ====
 
@@ -15,6 +20,7 @@ const PHARMACY_UNION: IMarsBotCorp = {
   draftPriority: {type: 'tags', tags: [Tag.SCIENCE]},
   setup(bot) {
     bot.removeBonusCard(BonusCardId.B01_METEOR_SHOWER);
+    bot.addProjectCardsToBonusDeck(Tag.SCIENCE, 1);
     bot.game.log('MarsBot (Pharmacy Union): Meteor Shower removed, science card added to bonus deck');
   },
   effect: {
@@ -102,12 +108,13 @@ const RECYCLONE: IMarsBotCorp = {
 // C24 Splice
 const SPLICE: IMarsBotCorp = {
   name: CardName.SPLICE,
-  description: 'Tag: Plant. Draft: Microbe. Setup: +8 MC, remove R&D. Microbe cards earn 4 MC. When human plays a Microbe card, earn 2 MC.',
+  description: 'Tag: Plant. Draft: Microbe. Setup: +8 MC, remove R&D, add a Microbe card to bonus deck. Microbe cards earn 4 MC. When human plays a Microbe card, earn 2 MC and the human gains 2 MC or adds a microbe to that card.',
   tags: [Tag.PLANT],
   draftPriority: {type: 'tags', tags: [Tag.MICROBE]},
   setup(bot) {
     bot.gainMc(8);
     bot.removeBonusCard(BonusCardId.B03_RESEARCH_AND_DEVELOPMENT);
+    bot.addProjectCardsToBonusDeck(Tag.MICROBE, 1);
     bot.game.log('MarsBot (Splice): +8 M€, R&D removed, microbe card added to bonus deck');
   },
   effect: {
@@ -118,9 +125,26 @@ const SPLICE: IMarsBotCorp = {
       }
     },
     onHumanCardPlayed(bot, card) {
-      if (card.tags.includes(Tag.MICROBE)) {
-        bot.gainMc(2);
-        bot.game.log('MarsBot (Splice): human played microbe, +2 M€');
+      if (!card.tags.includes(Tag.MICROBE)) {
+        return;
+      }
+      bot.gainMc(2);
+      bot.game.log('MarsBot (Splice): human played microbe, +2 M€');
+
+      // The player gains 2 M€, or adds a microbe to the card they played
+      const human = bot.humanPlayer;
+      const gainMC = new SelectOption(message('Gain ${0} M€', (b) => b.number(2)), 'Gain M€').andThen(() => {
+        human.stock.add(Resource.MEGACREDITS, 2, {log: true});
+        return undefined;
+      });
+      if (card.resourceType === CardResource.MICROBE) {
+        const addMicrobe = new SelectOption('Add a microbe resource to this card', 'Add microbe').andThen(() => {
+          human.addResourceTo(card, {log: true});
+          return undefined;
+        });
+        human.defer(new OrOptions(addMicrobe, gainMC));
+      } else {
+        gainMC.cb(undefined);
       }
     },
   },

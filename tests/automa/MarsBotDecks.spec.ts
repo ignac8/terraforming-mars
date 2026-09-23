@@ -10,10 +10,26 @@ import {CardName} from '../../src/common/cards/CardName';
 import {GameOptions} from '../../src/server/game/GameOptions';
 import {getMarsBotCorp} from '../../src/server/automa/corps/MarsBotCorpRegistry';
 import {ConstRandom} from '../../src/common/utils/Random';
+import {IProjectCard} from '../../src/server/cards/IProjectCard';
+import {Mine} from '../../src/server/cards/base/Mine';
+import {Asteroid} from '../../src/server/cards/base/Asteroid';
+import {GiantIceAsteroid} from '../../src/server/cards/base/GiantIceAsteroid';
+import {SearchForLife} from '../../src/server/cards/base/SearchForLife';
+import {Tardigrades} from '../../src/server/cards/base/Tardigrades';
+import {IndustrialMicrobes} from '../../src/server/cards/base/IndustrialMicrobes';
+import {OrOptions} from '../../src/server/inputs/OrOptions';
+import {cast} from '../../src/common/utils/utils';
+import {runAllActions} from '../TestingUtils';
+import {TestPlayer} from '../TestPlayer';
 
-function createAutomaGame(options: Partial<GameOptions> = {}): {game: IGame, marsBot: MarsBot} {
-  const [game] = testGame(1, {automaOption: true, boardName: BoardName.THARSIS, ...options});
-  return {game, marsBot: game.automaHooks!.marsBot};
+function createAutomaGame(options: Partial<GameOptions> = {}): {game: IGame, human: TestPlayer, marsBot: MarsBot} {
+  const [game, human] = testGame(1, {automaOption: true, boardName: BoardName.THARSIS, ...options});
+  return {game, human, marsBot: game.automaHooks!.marsBot};
+}
+
+/** Puts `cards` on top of the project deck, the first one on top. */
+function stackProjectDeck(game: IGame, cards: Array<IProjectCard>) {
+  game.projectDeck.drawPile.push(...[...cards].reverse());
 }
 
 function bonusDeckIds(marsBot: MarsBot): Array<string> {
@@ -162,5 +178,94 @@ describe('MarsBot decks', () => {
 
     // The top of the bonus deck is the end of the draw pile
     expect(marsBot.bonusDeck.drawPile[0].id).eq(BonusCardId.B30_INTERFACE_HYPERLINK);
+  });
+
+  it('puts Phobolog\'s first 2 space cards in the bonus deck and discards the others it reveals', () => {
+    const {game, marsBot} = createAutomaGame();
+    const mine = new Mine();
+    const asteroid = new Asteroid();
+    const giantIceAsteroid = new GiantIceAsteroid();
+    stackProjectDeck(game, [mine, asteroid, giantIceAsteroid]);
+    const bonusCards = marsBot.bonusDeck.drawPile.length;
+
+    marsBot.setCorpAndSetup(getMarsBotCorp(CardName.PHOBOLOG)!);
+
+    expect(marsBot.bonusDeck.drawPile).has.length(bonusCards + 2);
+    expect(marsBot.bonusDeck.drawPile).to.include.members([asteroid, giantIceAsteroid]);
+    expect(game.projectDeck.discardPile).to.include(mine);
+  });
+
+  it('puts a science card in Pharmacy Union\'s bonus deck', () => {
+    const {game, marsBot} = createAutomaGame();
+    const searchForLife = new SearchForLife();
+    stackProjectDeck(game, [new Mine(), searchForLife]);
+
+    marsBot.setCorpAndSetup(getMarsBotCorp(CardName.PHARMACY_UNION)!);
+
+    expect(marsBot.bonusDeck.drawPile).to.include(searchForLife);
+    expect(bonusDeckIds(marsBot)).does.not.include(BonusCardId.B01_METEOR_SHOWER);
+  });
+
+  it('puts a microbe card in Splice\'s bonus deck', () => {
+    const {game, marsBot} = createAutomaGame();
+    const tardigrades = new Tardigrades();
+    stackProjectDeck(game, [new Mine(), tardigrades]);
+
+    marsBot.setCorpAndSetup(getMarsBotCorp(CardName.SPLICE)!);
+
+    expect(marsBot.bonusDeck.drawPile).to.include(tardigrades);
+    expect(bonusDeckIds(marsBot)).does.not.include(BonusCardId.B03_RESEARCH_AND_DEVELOPMENT);
+  });
+
+  it('plays a project card drawn from the bonus deck like any other card', () => {
+    const {game, marsBot} = createAutomaGame();
+    const asteroid = new Asteroid();
+    marsBot.bonusDeck.drawPile.push(asteroid);
+    const spaceTrack = marsBot.marsBotBoard.tracks[1].position;
+
+    marsBot.maybeDrawAndResolveBonusCard();
+
+    expect(marsBot.marsBotBoard.tracks[1].position).is.greaterThan(spaceTrack);
+    expect(game.projectDeck.discardPile).to.include(asteroid);
+    expect(marsBot.bonusDeck.discardPile).to.not.include(asteroid);
+  });
+
+  it('keeps project cards in the bonus deck across a reload', () => {
+    const {game, marsBot} = createAutomaGame();
+    marsBot.bonusDeck.drawPile.push(new Asteroid());
+    marsBot.bonusDeck.discardPile.push(new Tardigrades());
+
+    const restored = Game.deserialize(game.serialize()).automaHooks!.marsBot;
+
+    expect(restored.bonusDeck.drawPile.map((c) => c.name)).deep.eq(marsBot.bonusDeck.drawPile.map((c) => c.name));
+    expect(restored.bonusDeck.discardPile.map((c) => c.name)).deep.eq([CardName.TARDIGRADES]);
+  });
+
+  it('lets the player add a microbe to the microbe card they play against Splice', () => {
+    const {game, human, marsBot} = createAutomaGame();
+    marsBot.setCorpAndSetup(getMarsBotCorp(CardName.SPLICE)!);
+    const botMegacredits = marsBot.megacredits;
+    const tardigrades = new Tardigrades();
+
+    human.playCard(tardigrades);
+    runAllActions(game);
+    const orOptions = cast(human.popWaitingFor(), OrOptions);
+    orOptions.options[0].cb();
+    runAllActions(game);
+
+    expect(tardigrades.resourceCount).eq(1);
+    expect(human.megaCredits).eq(0);
+    expect(marsBot.megacredits).eq(botMegacredits + 2);
+  });
+
+  it('gives the player 2 M€ for a microbe card that holds no microbes against Splice', () => {
+    const {game, human, marsBot} = createAutomaGame();
+    marsBot.setCorpAndSetup(getMarsBotCorp(CardName.SPLICE)!);
+
+    human.playCard(new IndustrialMicrobes());
+    runAllActions(game);
+
+    cast(human.popWaitingFor(), undefined);
+    expect(human.megaCredits).eq(2);
   });
 });
