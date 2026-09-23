@@ -404,6 +404,14 @@ export class MarsBot implements IMarsBot {
     return this.turnResolver.maybeFundAward();
   }
 
+  public maybeMoveBonusCardToActionDeck(): void {
+    const bonusCard = this.bonusDeck.draw(this.game);
+    if (bonusCard === undefined) {
+      return;
+    }
+    this.shuffleIntoActionDeck(bonusCard);
+  }
+
   public raiseTemperature(steps: 1 | 2 | 3): void {
     this.game.increaseTemperature(this.player, steps);
   }

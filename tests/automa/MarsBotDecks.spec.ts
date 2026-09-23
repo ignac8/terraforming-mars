@@ -133,4 +133,23 @@ describe('MarsBot decks', () => {
     // The top of the bonus deck is the end of the draw pile
     expect(marsBot.bonusDeck.drawPile[0].id).eq(BonusCardId.B31_GOVERNMENT_SUBSIDY);
   });
+
+  it('moves a bonus card into UNMI\'s action deck from generation 2', () => {
+    const {game, marsBot} = createAutomaGame();
+    const corp = getMarsBotCorp(CardName.UNITED_NATIONS_MARS_INITIATIVE)!;
+    marsBot.setCorpAndSetup(corp);
+    const topBonusCard = marsBot.bonusDeck.drawPile[marsBot.bonusDeck.drawPile.length - 1];
+    const bonusCards = marsBot.bonusDeck.drawPile.length;
+
+    corp.beforeActionPhase!(marsBot);
+    expect(marsBot.actionDeck).has.length(4);
+
+    game.generation = 2;
+    corp.beforeActionPhase!(marsBot);
+
+    expect(marsBot.actionDeck).has.length(5);
+    expect(marsBot.actionDeck).includes(topBonusCard);
+    expect(marsBot.bonusDeck.drawPile).has.length(bonusCards - 1);
+    expect(marsBot.bonusDeck.discardPile).is.empty;
+  });
 });

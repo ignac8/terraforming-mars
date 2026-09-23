@@ -279,7 +279,7 @@ const THORGATE: IMarsBotCorp = {
 // Gen: from gen 2+, add 1 bonus card to action deck before action phase.
 const UNMI: IMarsBotCorp = {
   name: CardName.UNITED_NATIONS_MARS_INITIATIVE,
-  description: 'Setup: add Government Subsidy to bonus deck. From generation 2 onward, resolve 1 bonus card each generation.',
+  description: 'Setup: add Government Subsidy to bonus deck. From generation 2 onward, move 1 bonus card to the action deck each generation.',
   tags: [],
   setup(bot) {
     bot.addBonusCardToBonusDeck(BonusCardId.B31_GOVERNMENT_SUBSIDY);
@@ -287,7 +287,7 @@ const UNMI: IMarsBotCorp = {
   },
   beforeActionPhase(bot) {
     if (bot.game.generation >= 2) {
-      bot.maybeDrawAndResolveBonusCard();
+      bot.maybeMoveBonusCardToActionDeck();
       bot.game.log('MarsBot (UNMI): added 1 bonus card to action deck');
     }
   },
