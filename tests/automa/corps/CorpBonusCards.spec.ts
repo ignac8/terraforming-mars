@@ -110,14 +110,52 @@ describe('Corp-Specific Bonus Cards (B22-B32)', () => {
   });
 
   describe('B32 Investors', () => {
-    it('advances building and space tracks', () => {
-      const {marsBot} = createAutomaGame();
-      const card = createCorpBonusCard(BonusCardId.B32_INVESTORS);
-      const buildingBefore = marsBot.marsBotBoard.tracks[0].position;
-      const spaceBefore = marsBot.marsBotBoard.tracks[1].position;
-      marsBot['bonusResolver'].resolve(card);
-      expect(marsBot.marsBotBoard.tracks[0].position).to.be.gte(buildingBefore + 1);
-      expect(marsBot.marsBotBoard.tracks[1].position).to.be.gte(spaceBefore + 1);
+    function setTracks(marsBot: MarsBot, positions: Array<number>) {
+      positions.forEach((position, i) => {
+        marsBot.marsBotBoard.tracks[i].position = position;
+      });
+    }
+
+    it('in an even generation advances the least-advanced track and moves the most-advanced one back', () => {
+      const {game, marsBot} = createAutomaGame();
+      game.generation = 2;
+      setTracks(marsBot, [5, 3, 1, 4, 4, 6, 2]);
+
+      marsBot['bonusResolver'].resolve(createCorpBonusCard(BonusCardId.B32_INVESTORS));
+
+      expect(marsBot.marsBotBoard.tracks.map((t) => t.position)).deep.eq([5, 3, 2, 4, 4, 5, 2]);
+      expect(marsBot.turnResolver.megacredits).to.eq(0);
+    });
+
+    it('does not re-trigger the space it moved the most-advanced track back from', () => {
+      const {game, marsBot} = createAutomaGame();
+      game.generation = 2;
+      setTracks(marsBot, [5, 3, 1, 4, 4, 6, 2]);
+
+      marsBot['bonusResolver'].resolve(createCorpBonusCard(BonusCardId.B32_INVESTORS));
+
+      expect(marsBot.marsBotBoard.tracks[5].regressedPositions.has(6)).is.true;
+    });
+
+    it('breaks ties toward the upper track', () => {
+      const {game, marsBot} = createAutomaGame();
+      game.generation = 4;
+      setTracks(marsBot, [4, 1, 1, 4, 2, 2, 3]);
+
+      marsBot['bonusResolver'].resolve(createCorpBonusCard(BonusCardId.B32_INVESTORS));
+
+      expect(marsBot.marsBotBoard.tracks.map((t) => t.position)).deep.eq([3, 2, 1, 4, 2, 2, 3]);
+    });
+
+    it('in an odd generation gains 1 M€ per space of the least-advanced track and moves nothing', () => {
+      const {game, marsBot} = createAutomaGame();
+      game.generation = 3;
+      setTracks(marsBot, [5, 3, 2, 4, 4, 6, 3]);
+
+      marsBot['bonusResolver'].resolve(createCorpBonusCard(BonusCardId.B32_INVESTORS));
+
+      expect(marsBot.marsBotBoard.tracks.map((t) => t.position)).deep.eq([5, 3, 2, 4, 4, 6, 3]);
+      expect(marsBot.turnResolver.megacredits).to.eq(2);
     });
   });
 

@@ -15,6 +15,9 @@ import {SeededRandom} from '../../src/common/utils/Random';
 import {BoardName} from '../../src/common/boards/BoardName';
 import {Tag} from '../../src/common/cards/Tag';
 import {TileType} from '../../src/common/TileType';
+import {Pets} from '../../src/server/cards/base/Pets';
+import {Birds} from '../../src/server/cards/base/Birds';
+import {ColonyName} from '../../src/common/colonies/ColonyName';
 
 function createAutomaGame(difficulty: 'easy' | 'normal' | 'hard' | 'brutal' = 'normal'): {game: IGame, human: TestPlayer, marsBot: MarsBot} {
   const [game, human] = testGame(1, {automaOption: true, automaDifficulty: difficulty, boardName: BoardName.THARSIS});
@@ -144,6 +147,44 @@ describe('MarsBot Deep Rules Tests', () => {
 
       bonusResolver.resolve(b02);
       expect(marsBot.turnResolver.megacredits).to.eq(5);
+    });
+
+    function invasiveSpecies() {
+      return createBaseBonusCards().find((c) => c.id === BonusCardId.B02_INVASIVE_SPECIES)!;
+    }
+
+    it('skips Pets, whose animals cannot be removed', () => {
+      const {human, marsBot} = createAutomaGame();
+      const pets = new Pets();
+      pets.resourceCount = 6; // 3 VP
+      const birds = new Birds();
+      birds.resourceCount = 1; // 1 VP
+      human.playedCards.push(pets, birds);
+
+      marsBot['bonusResolver'].resolve(invasiveSpecies());
+
+      expect(pets.resourceCount).to.eq(6);
+      expect(birds.resourceCount).to.eq(0);
+    });
+
+    it('with Venus Next gains 2 M€ and 1 floater instead of 5 M€', () => {
+      const [game] = testGame(1, {automaOption: true, venusNextExtension: true, boardName: BoardName.THARSIS});
+      const marsBot = game.automaHooks!.marsBot;
+
+      marsBot['bonusResolver'].resolve(invasiveSpecies());
+
+      expect(marsBot.turnResolver.megacredits).to.eq(2);
+      expect(marsBot.floaters).to.eq(1);
+    });
+
+    it('with Colonies and no Venus Next puts the floater in Titan storage', () => {
+      const [game] = testGame(1, {automaOption: true, coloniesExtension: true, boardName: BoardName.THARSIS});
+      const marsBot = game.automaHooks!.marsBot;
+
+      marsBot['bonusResolver'].resolve(invasiveSpecies());
+
+      expect(marsBot.turnResolver.megacredits).to.eq(2);
+      expect(marsBot.shippingBoard.storage.get(ColonyName.TITAN)).to.eq(1);
     });
   });
 
