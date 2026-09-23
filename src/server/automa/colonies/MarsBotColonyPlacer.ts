@@ -2,7 +2,6 @@ import {IGame} from '../../IGame';
 import {IColony} from '../../colonies/IColony';
 import {ColonyName} from '../../../common/colonies/ColonyName';
 import type {MarsBot} from '../MarsBot';
-import {ColoniesHandler} from '../../colonies/ColoniesHandler';
 import {comparing} from '../../../common/utils/Ordering';
 import {inplaceRemove, toName} from '../../../common/utils/utils';
 
@@ -77,12 +76,8 @@ export function addRandomColonyTile(game: IGame): IColony | undefined {
   game.colonies.push(colony);
   game.colonies.sort(comparing(toName));
   inplaceRemove(game.discardedColonies, colony);
-  // As with the human Aridor, a tile like Titan only starts active when a card in play can use it
-  const activated = game.players.some((player) =>
-    Array.from(player.tableau).some((card) => ColoniesHandler.cardActivatesColony(colony, card)));
-  if (activated) {
-    colony.isActive = true;
-  }
+  // C-1: every colony tile in a MarsBot game starts active, Titan, Enceladus and Miranda included
+  colony.isActive = true;
   game.log('MarsBot added a new Colony tile: ${0}', (b) => b.colony(colony));
   return colony;
 }
