@@ -1480,9 +1480,7 @@ export class Game implements IGame, Logger {
 
   public simpleAddTile(player: IPlayer, space: Space, tile: Tile) {
     space.tile = tile;
-    if (tile.tileType === TileType.OCEAN ||
-      tile.tileType === TileType.MARTIAN_NATURE_WONDERS ||
-      tile.tileType === TileType.REY_SKYWALKER) {
+    if (tile.tileType === TileType.OCEAN) {
       space.player = undefined;
     } else {
       space.player = player;
@@ -1842,15 +1840,6 @@ export class Game implements IGame, Logger {
     game.tradeEmbargo = d.tradeEmbargo ?? false;
     game.beholdTheEmperor = d.beholdTheEmperor ?? false;
     game.globalsPerGeneration = d.globalsPerGeneration;
-
-    // TODO(kberg): Remove this migration code by 2026-08-01
-    for (const generation of game.globalsPerGeneration) {
-      const asany = generation as any;
-      if (asany['moon-logistics']) {
-        generation['moon-logistic'] = asany['moon-logistics'];
-        delete asany['moon-logistics'];
-      }
-    }
     game.verminInEffect = d.verminInEffect;
     game.exploitationOfVenusInEffect = d.exploitationOfVenusInEffect;
     // Still in Draft or Research of generation 1
