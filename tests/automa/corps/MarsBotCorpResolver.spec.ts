@@ -212,6 +212,28 @@ describe('MarsBotCorpResolver', () => {
       expect(triggerCount).to.eq(1); // Should not re-trigger
     });
 
+    it('hands the corp only its own cubes, not the rule cubes on the tracks', () => {
+      const {marsBot} = createAutomaGame();
+      let triggerCount = 0;
+      marsBot.corp = createTestCorp({
+        name: CardName.ECOLINE,
+        trackCubes: [{trackIndex: 1, position: 3, cubeType: 'white'}],
+        effect: {
+          onTrackCubeTrigger: () => {
+            triggerCount++;
+          },
+        },
+      });
+      marsBot.trackCubePositions.set('1:3', {trackIndex: 1, position: 3, cubeType: 'white'});
+      marsBot.trackCubePositions.set('2:9', {trackIndex: 2, position: 9, cubeType: 'white'});
+
+      MarsBotCorpResolver.onTrackAdvanced(marsBot, 2, 9);
+      expect(triggerCount).to.eq(0);
+
+      MarsBotCorpResolver.onTrackAdvanced(marsBot, 1, 3);
+      expect(triggerCount).to.eq(1);
+    });
+
     it('does not trigger when no cube at position', () => {
       const {marsBot} = createAutomaGame();
       let triggered = false;
