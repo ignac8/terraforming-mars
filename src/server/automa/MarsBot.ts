@@ -29,6 +29,7 @@ import {SerializedAutomaState} from '../SerializedGame';
 import {SpaceId} from '../../common/Types';
 import {inplaceRemove} from '../../common/utils/utils';
 import {LogHelper} from '../LogHelper';
+import {ColonyName} from '../../common/colonies/ColonyName';
 
 /** Expansion bonus cards set aside at setup: each generation they go back into the action deck. */
 const SET_ASIDE_BONUS_CARDS: ReadonlySet<BonusCardId> = new Set([
@@ -520,11 +521,25 @@ export class MarsBot implements IMarsBot {
   }
 
   public addFloaters(count: number): void {
-    this.floaters += count;
+    if (this.usesTitanStorageForFloaters()) {
+      this.shippingBoard.add(ColonyName.TITAN, count, this);
+    } else {
+      this.floaters += count;
+    }
   }
 
   public spendFloaters(count: number): void {
-    this.floaters = Math.max(0, this.floaters - count);
+    if (this.usesTitanStorageForFloaters()) {
+      this.shippingBoard.spend(ColonyName.TITAN, count);
+    } else {
+      this.floaters = Math.max(0, this.floaters - count);
+    }
+  }
+
+  /** True when MarsBot keeps its floaters in the Titan storage area: Colonies without Venus Next (C-14, C-23). */
+  private usesTitanStorageForFloaters(): boolean {
+    const opts = this.game.gameOptions;
+    return opts.coloniesExtension && !opts.venusNextExtension;
   }
 
   public gainMc(amount: number): void {
