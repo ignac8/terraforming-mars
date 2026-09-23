@@ -11,6 +11,7 @@ seat on this phone against the bot.
 APK
 ├── lib/<abi>/libnode.so          nodejs-mobile v18.20.4 (a Node.js built for Android)
 ├── lib/<abi>/libnative-lib.so    JNI glue: NodeRuntime.startNode() → node::Start()
+├── assets/fonts/                 the Ubuntu font the page links from Google Fonts (see below)
 └── assets/nodejs-project.zip     unzipped into the app's files dir on first launch:
     ├── main.js                   launcher: polyfills, env, chdir, require('./server.js')
     ├── server.js                 the game server, esbuild-bundled into one file
@@ -29,6 +30,15 @@ APK
   saved games (`/games-overview?serverId=offline`, one join link per seat),
   the admin panel (`/admin?serverId=offline`, with the stats and metrics
   pages for debugging) and the diagnostics bundle.
+- The WebView never goes to the network. A page draws nothing until its
+  stylesheets load, and the game's `index.html` links the Ubuntu font from
+  Google Fonts, so on a connection that does not answer every page change
+  hung until the network timed out. `OfflineRequests` answers every request
+  that is not for the local server: the Google Fonts stylesheet and font
+  files come from `assets/fonts/` (what Google Fonts serves a current
+  Chrome, under the Ubuntu Font Licence in `UFL.txt`), anything else gets an
+  empty 404 at once and a line in the app log. `smoke-test.sh` fails when
+  the page links anything else off the phone.
 - The server runs the code of the game checkout, configured through the
   environment the launcher sets: `HOST=127.0.0.1`, `LOCAL_FS_DB` (the
   JSON-files database), `NODE_ENV=production`, `SERVER_ID=offline` (fixed,
