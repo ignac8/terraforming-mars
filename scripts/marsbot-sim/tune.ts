@@ -8,12 +8,14 @@ import {HUMAN_CORPS} from './corps';
 const variants: Record<string, Partial<Strategy> & {lookahead?: Partial<LookaheadOptions>}> = JSON.parse(process.argv[2] ?? '{"default": {}}');
 const gamesPerVariant = Number(process.argv[3] ?? 120);
 const seedBase = Number(process.argv[4] ?? 100000);
+/** Shifts the corporation rotation so a rerun of seeds seedBase+k keeps the corporation they had in a run from 100000. */
+const corpOffset = Number(process.argv[5] ?? 0);
 
 async function main() {
   const configs: Array<GameConfig & {variant: string}> = [];
   for (const [variant, {lookahead, ...strategy}] of Object.entries(variants)) {
     for (let i = 0; i < gamesPerVariant; i++) {
-      configs.push({variant, seed: seedBase + i, humanCorp: HUMAN_CORPS[i % HUMAN_CORPS.length], difficulty: (process.env.DIFF ?? 'normal') as GameConfig['difficulty'], strategy, lookahead});
+      configs.push({variant, seed: seedBase + i, humanCorp: HUMAN_CORPS[(i + corpOffset) % HUMAN_CORPS.length], difficulty: (process.env.DIFF ?? 'normal') as GameConfig['difficulty'], strategy, lookahead});
     }
   }
   const started = Date.now();
