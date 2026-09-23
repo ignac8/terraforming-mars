@@ -80,8 +80,8 @@ export type MarsBotCorpEffect = {
   onHumanCardPlayed?(bot: IMarsBot, card: IProjectCard): void;
   /** A tile landed on `space`, placed by either side. */
   onTilePlaced?(bot: IMarsBot, placedByMarsBot: boolean, tileType: TileType, space: Space): void;
-  /** Called once after the bot raises Venus, however many steps it moved. */
-  onVenusRaised?(bot: IMarsBot): void;
+  /** Called after either player raises Venus, with the number of steps it actually moved. */
+  onVenusRaised?(bot: IMarsBot, steps: number): void;
   /** Called before the bot raises a global parameter. Returning true cancels that raise: the global parameter stays at its current value. */
   interceptGlobalParameterRaise?(bot: IMarsBot, parameter: GlobalParameter): boolean;
   /** The bot's M€ supply just grew by this amount. */

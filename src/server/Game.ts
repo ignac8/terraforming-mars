@@ -1348,7 +1348,7 @@ export class Game implements IGame, Logger {
 
     this.venusScaleLevel += steps * 2;
 
-    this.automaHooks?.handleVenusRaised();
+    this.automaHooks?.handleVenusRaised(steps);
 
     return steps;
   }

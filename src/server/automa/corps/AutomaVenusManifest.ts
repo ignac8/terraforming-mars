@@ -78,14 +78,15 @@ const MORNINGSTAR: IMarsBotCorp = {
 // C28 Aphrodite
 const APHRODITE: IMarsBotCorp = {
   name: CardName.APHRODITE,
-  description: 'Tag: Plant. Draft: Plant > Animal > Venus. Whenever Venus is raised, earn 2 MC.',
+  description: 'Tag: Plant. Draft: Plant > Animal > Venus. Whenever Venus is raised, earn 2 MC per step.',
   tags: [Tag.PLANT],
   requiredExpansions: ['venus'],
   draftPriority: {type: 'tags', tags: [Tag.PLANT, Tag.ANIMAL, Tag.VENUS]},
   effect: {
-    onVenusRaised(bot) {
-      bot.gainMc(2);
-      bot.game.log('MarsBot (Aphrodite): Venus raised, +2 M€');
+    onVenusRaised(bot, steps) {
+      const mc = 2 * steps;
+      bot.gainMc(mc);
+      bot.game.log('MarsBot (Aphrodite): Venus raised ${0} step(s), +${1} M€', (b) => b.number(steps).number(mc));
     },
   },
 };

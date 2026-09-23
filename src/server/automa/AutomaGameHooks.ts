@@ -547,13 +547,13 @@ export class AutomaGameHooks {
     corp.effect.onTilePlaced(this.marsBot, player === this.marsBot.player, tileType, space);
   }
 
-  /** Called when Venus scale is raised. Notifies MarsBot's corp. */
-  public handleVenusRaised(): void {
+  /** Called when either player raises the Venus scale by `steps`. Notifies MarsBot's corp. */
+  public handleVenusRaised(steps: number): void {
     const corp = this.marsBot.corp;
     if (corp?.effect?.onVenusRaised === undefined) {
       return;
     }
-    corp.effect.onVenusRaised(this.marsBot);
+    corp.effect.onVenusRaised(this.marsBot, steps);
   }
 
   // ---- Card interaction hooks ----

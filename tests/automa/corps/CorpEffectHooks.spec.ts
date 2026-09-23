@@ -1,4 +1,6 @@
 import {expect} from 'chai';
+import {setVenusScaleLevel} from '../../TestingUtils';
+import {MAX_VENUS_SCALE} from '../../../src/common/constants';
 import {CardName} from '../../../src/common/cards/CardName';
 import {testGame} from '../../TestGame';
 import {IGame} from '../../../src/server/IGame';
@@ -126,13 +128,29 @@ describe('Corp Effect Hooks', () => {
   });
 
   describe('C28 Aphrodite onVenusRaised', () => {
-    it('gains 2 M€ when Venus raised', () => {
-      const {marsBot} = createAutomaGame();
-      const corp = getMarsBotCorp(CardName.APHRODITE)!;
-      marsBot.setCorpAndSetup(corp);
-      const mcBefore = marsBot.turnResolver.megacredits;
-      corp.effect!.onVenusRaised!(marsBot);
-      expect(marsBot.turnResolver.megacredits).to.eq(mcBefore + 2);
+    it('gains 2 M€ for every step Venus is raised', () => {
+      const [game, human] = testGame(1, {automaOption: true, venusNextExtension: true, boardName: BoardName.THARSIS});
+      const marsBot = game.automaHooks!.marsBot;
+      marsBot.setCorpAndSetup(getMarsBotCorp(CardName.APHRODITE)!);
+      const mc = marsBot.turnResolver.megacredits;
+
+      game.increaseVenusScaleLevel(human, 2);
+      expect(marsBot.turnResolver.megacredits).to.eq(mc + 4);
+
+      game.increaseVenusScaleLevel(marsBot.player, 1);
+      expect(marsBot.turnResolver.megacredits).to.eq(mc + 6);
+    });
+
+    it('gains nothing once Venus is maxed', () => {
+      const [game, human] = testGame(1, {automaOption: true, venusNextExtension: true, boardName: BoardName.THARSIS});
+      const marsBot = game.automaHooks!.marsBot;
+      marsBot.setCorpAndSetup(getMarsBotCorp(CardName.APHRODITE)!);
+      setVenusScaleLevel(game, MAX_VENUS_SCALE);
+      const mc = marsBot.turnResolver.megacredits;
+
+      game.increaseVenusScaleLevel(human, 2);
+
+      expect(marsBot.turnResolver.megacredits).to.eq(mc);
     });
   });
 
