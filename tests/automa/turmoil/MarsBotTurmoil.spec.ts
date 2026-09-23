@@ -794,6 +794,22 @@ describe('MarsBot C37 Septem Tribus — Turmoil interaction (Rules-covered: C37)
     expect(hasBonusCard(marsBot.actionDeck, BonusCardId.B21_PARTY_POLITICS)).to.be.false;
   });
 
+  it('C37: adds all delegates of an unused colour to MarsBot\'s reserve', () => {
+    const {game, marsBot} = createTurmoilGame();
+    marsBot.setCorpAndSetup(getMarsBotCorp(CardName.SEPTUM_TRIBUS)!);
+
+    expect(Turmoil.getTurmoil(game).getAvailableDelegateCount(marsBot.player)).to.equal(2 * DELEGATES_PER_PLAYER);
+  });
+
+  it('C37: sets up without Turmoil', () => {
+    const [game] = testGame(1, {automaOption: true, boardName: BoardName.THARSIS});
+    const marsBot = game.automaHooks!.marsBot;
+
+    marsBot.setCorpAndSetup(getMarsBotCorp(CardName.SEPTUM_TRIBUS)!);
+
+    expect(game.turmoil).to.be.undefined;
+  });
+
   it('C37: B29 (Gray Eminence) is in the bonusDeck after Septem Tribus setup', () => {
     const {marsBot} = createTurmoilGame();
     const septumTribus = getMarsBotCorp(CardName.SEPTUM_TRIBUS)!;

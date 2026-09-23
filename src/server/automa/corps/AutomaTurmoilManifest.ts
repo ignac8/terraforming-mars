@@ -5,6 +5,8 @@ import {BonusCardId} from '../../../common/automa/AutomaTypes';
 import {TileType} from '../../../common/TileType';
 import {AutomaManifest} from './AutomaManifest';
 import {bonusCardBeforeActionPhase} from './BaseGameCorps';
+import {Turmoil} from '../../turmoil/Turmoil';
+import {DELEGATES_PER_PLAYER} from '../../../common/constants';
 
 // ==== TURMOIL (C35-C39) ====
 
@@ -64,12 +66,17 @@ const PRISTAR: IMarsBotCorp = {
 // C37 Septem Tribus
 const SEPTEM_TRIBUS: IMarsBotCorp = {
   name: CardName.SEPTUM_TRIBUS,
-  description: 'Setup: remove Party Politics, add Gray Eminence to bonus deck. Each generation: add Gray Eminence to action deck.',
+  description: 'Setup: remove Party Politics, add Gray Eminence to bonus deck, and add all delegates of an unused colour to MarsBot\'s reserve. Each generation: add Gray Eminence to action deck.',
   tags: [],
   setup(bot) {
     bot.removeBonusCard(BonusCardId.B21_PARTY_POLITICS);
     bot.addBonusCardToBonusDeck(BonusCardId.B29_GRAY_EMINENCE);
     bot.game.log('MarsBot (Septem Tribus): Party Politics removed, Gray Eminence added');
+    // The unused colour's delegates count as MarsBot's own.
+    Turmoil.ifTurmoil(bot.game, (turmoil) => {
+      turmoil.delegateReserve.add(bot.player, DELEGATES_PER_PLAYER);
+      bot.game.log(`MarsBot (Septem Tribus): ${DELEGATES_PER_PLAYER} more delegates in reserve`);
+    });
   },
   beforeActionPhase: bonusCardBeforeActionPhase(BonusCardId.B29_GRAY_EMINENCE, 'Septem Tribus'),
 };
