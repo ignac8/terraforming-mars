@@ -50,6 +50,7 @@ import {PathfindersExpansion} from './pathfinders/PathfindersExpansion';
 import {ColoniesHandler} from './colonies/ColoniesHandler';
 import {MonsInsurance} from './cards/promo/MonsInsurance';
 import {InputResponse} from '../common/inputs/InputResponse';
+import {InputError} from './inputs/InputError';
 import {Tags} from './player/Tags';
 import {Colonies} from './player/Colonies';
 import {Production} from './player/Production';
@@ -1075,6 +1076,39 @@ export class Player implements IPlayer {
     return [];
   }
 
+  /**
+   * Offers every unclaimed milestone, whether or not this player can claim it.
+   *
+   * Tournament games use this so the action list never hints that a milestone
+   * is in reach. Picking one the player does not qualify for or cannot afford
+   * is rejected with an `InputError` and leaves the game unchanged.
+   */
+  private tournamentMilestoneOption(): OrOptions | undefined {
+    if (this.game.allMilestonesClaimed()) {
+      return undefined;
+    }
+    const milestones = this.game.milestones.filter((milestone) => !this.game.milestoneClaimed(milestone));
+    if (milestones.length === 0) {
+      return undefined;
+    }
+    const milestoneOption = new OrOptions().setTitle('Claim a milestone');
+    milestoneOption.options = milestones.map(
+      (milestone) => new SelectOption(milestone.name, 'Claim - ' + '('+ milestone.name + ')').andThen(() => {
+        if (!milestone.canClaim(this)) {
+          throw new InputError('You do not meet the requirement for this milestone.');
+        }
+        const cost = this.milestoneCost();
+        if (cost > 0 && !this.canAfford(cost)) {
+          throw new InputError('You do not have enough M€ to claim this milestone.');
+        }
+        this.claimMilestone(milestone);
+        return undefined;
+      }));
+    // Always listed, so never preselected: clicking through a turn must not claim one.
+    milestoneOption.eligibleForDefault = false;
+    return milestoneOption;
+  }
+
   private claimMilestone(milestone: IMilestone) {
     if (this.game.milestoneClaimed(milestone)) {
       throw new Error(milestone.name + ' is already claimed');
@@ -1566,7 +1600,8 @@ export class Player implements IPlayer {
       .setTitle(this.actionsTakenThisRound === 0 ? 'Take your first action' : 'Take your next action')
       .setButtonLabel('Take action');
 
-    const claimableMilestones = this.claimableMilestones();
+    // Tournament games list milestones further down, just above passing.
+    const claimableMilestones = this.game.gameOptions.tournamentExpansion ? [] : this.claimableMilestones();
     if (claimableMilestones.length > 0) {
       const milestoneOption = new OrOptions().setTitle('Claim a milestone');
       milestoneOption.options = claimableMilestones.map(
@@ -1663,6 +1698,14 @@ export class Player implements IPlayer {
 
     // Standard Projects
     action.options.push(this.getStandardProjectOption());
+
+    // Claim a milestone, in tournament games
+    if (this.game.gameOptions.tournamentExpansion) {
+      const milestoneOption = this.tournamentMilestoneOption();
+      if (milestoneOption !== undefined) {
+        action.options.push(milestoneOption);
+      }
+    }
 
     // Pass
     action.options.push(this.passOption());

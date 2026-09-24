@@ -19,6 +19,27 @@ import {SelectInitialCards} from '../src/server/inputs/SelectInitialCards';
 import {IProjectCard} from '../src/server/cards/IProjectCard';
 import {cast, toName} from '../src/common/utils/utils';
 import {runAllActions} from './TestingUtils';
+import {OrOptions} from '../src/server/inputs/OrOptions';
+import {TestPlayer} from './TestPlayer';
+import {Server} from '../src/server/models/ServerModel';
+
+const claimTitle = 'Claim a milestone';
+
+function milestoneOption(player: TestPlayer): OrOptions | undefined {
+  const actions = cast(player.getActions(), OrOptions);
+  const option = actions.options.find((o) => o.title === claimTitle);
+  return option === undefined ? undefined : cast(option, OrOptions);
+}
+
+function claimThroughInput(player: TestPlayer, milestoneName: string) {
+  player.popWaitingFor();
+  const actions = cast(player.getActions(), OrOptions);
+  player.setWaitingFor(actions);
+  const index = actions.options.findIndex((o) => o.title === claimTitle);
+  const milestones = cast(actions.options[index], OrOptions);
+  const milestoneIndex = milestones.options.findIndex((o) => o.title === milestoneName);
+  player.process({type: 'or', index, response: {type: 'or', index: milestoneIndex, response: {type: 'option'}}});
+}
 
 describe('TournamentMode', () => {
   it('Deals one shared pool of 5 tournament corporations to every player', () => {
@@ -263,5 +284,97 @@ describe('TournamentMode', () => {
     applyTournamentPreset(options);
 
     expect(options.escapeVelocity).to.deep.eq(escapeVelocity);
+  });
+
+  it('Offers every unclaimed milestone to a player who cannot claim any', () => {
+    const [game, player] = testGame(2, {tournamentExpansion: true});
+    player.megaCredits = 0;
+
+    const option = milestoneOption(player);
+
+    expect(option?.options.map((o) => o.title)).deep.eq(game.milestones.map((m) => m.name));
+  });
+
+  it('Lists the milestone action just above passing', () => {
+    const [/* game */, player] = testGame(2, {tournamentExpansion: true});
+
+    const titles = cast(player.getActions(), OrOptions).options.map((o) => o.title);
+
+    expect(titles.indexOf(claimTitle)).eq(titles.indexOf('Pass for this generation') - 1);
+  });
+
+  it('Never preselects the milestone action', () => {
+    const [/* game */, player] = testGame(2, {tournamentExpansion: true});
+    player.setTerraformRating(35);
+    player.megaCredits = 8;
+
+    expect(milestoneOption(player)?.eligibleForDefault).is.false;
+  });
+
+  it('Rejects a milestone the player does not qualify for', () => {
+    const [game, player] = testGame(2, {tournamentExpansion: true});
+    player.setTerraformRating(34);
+    player.megaCredits = 20;
+
+    expect(() => claimThroughInput(player, 'Terraformer')).to.throw(/You do not meet the requirement for this milestone/);
+    runAllActions(game);
+
+    expect(game.claimedMilestones).is.empty;
+    expect(player.megaCredits).eq(20);
+    expect(player.getWaitingFor()).is.not.undefined;
+  });
+
+  it('Rejects a milestone the player cannot afford', () => {
+    const [game, player] = testGame(2, {tournamentExpansion: true});
+    player.setTerraformRating(35);
+    player.megaCredits = 7;
+
+    expect(() => claimThroughInput(player, 'Terraformer')).to.throw(/You do not have enough M€ to claim this milestone/);
+    runAllActions(game);
+
+    expect(game.claimedMilestones).is.empty;
+    expect(player.megaCredits).eq(7);
+    expect(player.getWaitingFor()).is.not.undefined;
+  });
+
+  it('Claims a milestone the player qualifies for and can afford', () => {
+    const [game, player] = testGame(2, {tournamentExpansion: true});
+    player.setTerraformRating(35);
+    player.megaCredits = 8;
+
+    claimThroughInput(player, 'Terraformer');
+    runAllActions(game);
+
+    expect(game.claimedMilestones.map((c) => c.milestone.name)).deep.eq(['Terraformer']);
+    expect(player.megaCredits).eq(0);
+    expect(milestoneOption(player)?.options.map((o) => o.title)).does.not.include('Terraformer');
+  });
+
+  it('Stops offering milestones once three are claimed', () => {
+    const [game, player, player2] = testGame(2, {tournamentExpansion: true});
+    for (const milestone of game.milestones.slice(0, 3)) {
+      game.claimedMilestones.push({player: player2, milestone});
+    }
+
+    expect(milestoneOption(player)).is.undefined;
+  });
+
+  it('Hides which milestones a player could claim on the board', () => {
+    const [tournamentGame, player] = testGame(2, {tournamentExpansion: true});
+    player.setTerraformRating(35);
+    const terraformer = Server.getMilestones(tournamentGame).find((m) => m.name === 'Terraformer');
+    expect(terraformer?.scores.find((s) => s.color === player.color)?.claimable).is.false;
+
+    const [standardGame, standardPlayer] = testGame(2, {}, '2');
+    standardPlayer.setTerraformRating(35);
+    const standardTerraformer = Server.getMilestones(standardGame).find((m) => m.name === 'Terraformer');
+    expect(standardTerraformer?.scores.find((s) => s.color === standardPlayer.color)?.claimable).is.true;
+  });
+
+  it('Standard games still only offer claimable milestones', () => {
+    const [/* game */, player] = testGame(2);
+    player.megaCredits = 0;
+
+    expect(milestoneOption(player)).is.undefined;
   });
 });

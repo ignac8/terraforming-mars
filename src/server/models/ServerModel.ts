@@ -153,7 +153,8 @@ export class Server {
         scores = game.players.map((player) => ({
           color: player.color,
           score: milestone.getScore(player),
-          claimable: milestone.canClaim(player),
+          // Tournament games leave spotting a claimable milestone to the players.
+          claimable: !game.gameOptions.tournamentExpansion && milestone.canClaim(player),
         }));
       }
 

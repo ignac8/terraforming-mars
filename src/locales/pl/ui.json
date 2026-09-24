@@ -473,6 +473,8 @@
   "Players": "Gracze",
   "Goes First?": "Gracz rozpoczynający?",
   "Claim a milestone": "Wybierz tytuł",
+  "You do not meet the requirement for this milestone.": "Nie spełniasz wymagania tego tytułu.",
+  "You do not have enough M€ to claim this milestone.": "Nie masz dość M€, aby zdobyć ten tytuł.",
   "Build colony": "Wybuduj kolonie",
   "Place any final greenery from plants": "Wybierz końcowe obszary zieleni",
   "Don't place a greenery": "Nie umieszczaj zieleni",

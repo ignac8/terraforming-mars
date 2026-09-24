@@ -67,6 +67,12 @@ this branch go live on the instance within about a minute (see the deploy repo).
 - **Robotic Workforce cannot copy corporation cards** (organizer ruling 2026-07-12,
   not yet in the written regulations). Official rules allow copying building-tag
   corporations, but the fused corp+prelude production boxes made that too strong.
+- **Milestones give no hints** (organizer request relayed 2026-09-24): as at a physical
+  table, players must notice for themselves that they can claim a milestone. Tournament
+  games always offer "Claim a milestone" with every unclaimed milestone (until three are
+  claimed), listed just above "Pass for this generation" and never preselected; picking one the player does not qualify for or cannot
+  afford shows an error and changes nothing. The milestone board no longer outlines
+  claimable scores. Awards are unchanged.
 - Card purchase cost 3 M€ (standard). Ecological Zone uses the English-edition
   requirement (own greenery) — already how this codebase implements it.
 - The physical tournaments also use a 120-minute table limit; this instance is for
@@ -119,7 +125,9 @@ The printed tournament cards (Polish) are the authoritative source for these val
    `addOcean`/`addGreenery`/`addCity` and the Place*Tile deferred actions (used by
    UNMI:tournament). Skips only the printed space bonuses; adjacency rewards and
    global effects still apply. `RoboticWorkforceBase` excludes corporation cards
-   from copying in tournament games.
+   from copying in tournament games. `Player.getActions` offers every unclaimed
+   milestone in tournament games and rejects ineligible picks with an `InputError`;
+   `Server.getMilestones` never marks a score claimable.
 5. **Initial draft** — with the module on, the initial draft is a single pack of 10
    cards passed in one constant direction ('before'), matching the regulation (gen 2
    passes opposite).
