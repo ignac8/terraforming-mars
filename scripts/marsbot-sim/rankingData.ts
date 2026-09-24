@@ -12,7 +12,7 @@ import {ALL_AUTOMA_MANIFESTS} from '../../src/server/automa/corps/AllAutomaManif
 
 type Row = GameResult & {draft: boolean};
 
-const PACE_GENERATIONS = [8, 10, 12, 14, 16];
+const PACE_GENERATIONS = [6, 8, 10, 12, 14];
 const MANIFEST_LABELS = ['Base', 'Prelude', 'Promo', 'Venus', 'Colonies', 'Turmoil'];
 
 function mean(xs: ReadonlyArray<number>): number {
@@ -106,7 +106,7 @@ function main() {
         };
       });
     return {draft, corps};
-  });
+  }).filter((v) => v.corps.length > 0);
 
   const out = JSON.stringify({games: rows.length, paceGenerations: PACE_GENERATIONS, variants}, null, 1);
   if (process.argv[3] !== undefined) {

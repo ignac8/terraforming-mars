@@ -1,8 +1,10 @@
 /**
  * Ranks MarsBot's corporations: every corporation plays the same seeds at one difficulty against
- * an opponent that only passes, with the draft on and off, under the fork's default game setup.
+ * an opponent that only passes, under the fork's default game setup (draft on).
  *
  *   npx tsx scripts/marsbot-sim/corpRanking.ts [gamesPerCorp] [outDir]
+ *
+ * DRAFT=both also plays every seed with the draft off.
  *
  * Game i of every corporation uses seed i, so the corporations are compared on the same deals.
  */
@@ -15,6 +17,7 @@ import {GameOptions} from '../../src/server/game/GameOptions';
 import {getAllMarsBotCorps} from '../../src/server/automa/corps/MarsBotCorpRegistry';
 
 const DIFFICULTY = (process.env.DIFFICULTY ?? 'normal') as Difficulty;
+const DRAFTS = process.env.DRAFT === 'both' ? [true, false] : [true];
 
 /** The create-game form's defaults for a MarsBot game (defaultCreateGameModel.ts). */
 export const FORK_DEFAULTS: Partial<GameOptions> = {
@@ -36,7 +39,7 @@ export type RankingConfig = GameConfig & {draft: boolean};
 export function buildConfigs(perCorp: number): Array<RankingConfig> {
   const corps: Array<CardName | undefined> = [undefined, ...getAllMarsBotCorps().map((c) => c.name as CardName)];
   const configs: Array<RankingConfig> = [];
-  for (const draft of [true, false]) {
+  for (const draft of DRAFTS) {
     for (const botCorp of corps) {
       for (let i = 0; i < perCorp; i++) {
         configs.push({
@@ -72,13 +75,18 @@ async function main() {
   process.stderr.write(`${configs.length} games to play (${done.size} already done)\n`);
 
   const started = Date.now();
-  let lastReport = 0;
-  await runParallel(configs, (n) => {
-    if (n - lastReport >= 2000 || n === configs.length) {
-      lastReport = n;
-      process.stderr.write(`${n}/${configs.length} games, ${((Date.now() - started) / 1000).toFixed(0)}s\n`);
-    }
-  }, liveFile) as Array<GameResult & {draft: boolean}>;
+  // Workers leak memory from game to game (about 0.35 MB each), so each batch gets fresh ones.
+  const BATCH = 8000;
+  for (let from = 0; from < configs.length; from += BATCH) {
+    const batch = configs.slice(from, from + BATCH);
+    let lastReport = 0;
+    await runParallel(batch, (n) => {
+      if (n - lastReport >= 2000 || n === batch.length) {
+        lastReport = n;
+        process.stderr.write(`${from + n}/${configs.length} games, ${((Date.now() - started) / 1000).toFixed(0)}s\n`);
+      }
+    }, liveFile) as Array<GameResult & {draft: boolean}>;
+  }
   writeFileSync(join(outDir, 'config.json'), JSON.stringify({perCorp, difficulty: DIFFICULTY, options: FORK_DEFAULTS,
     humanCorp: CardName.BEGINNER_CORPORATION, seconds: (Date.now() - started) / 1000}, null, 2));
 }
