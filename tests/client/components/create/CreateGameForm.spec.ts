@@ -193,12 +193,13 @@ describe('CreateGameForm', () => {
     }
   });
   it('requires enough custom corporations for every player', async () => {
-    const tooFew = await serializeTwoPlayerGameSettings((model) => model.customCorporations = cardNames(3));
+    // Tournament rules are on by default, and they deal 5 corporations to each player.
+    const tooFew = await serializeTwoPlayerGameSettings((model) => model.customCorporations = cardNames(9));
     expect(tooFew.config).is.undefined;
-    expect(tooFew.alerts).deep.eq(['Must select at least 4 corporations']);
+    expect(tooFew.alerts).deep.eq(['Must select at least 10 corporations']);
 
-    const enough = await serializeTwoPlayerGameSettings((model) => model.customCorporations = cardNames(4));
-    expect(enough.config?.customCorporationsList).has.length(4);
+    const enough = await serializeTwoPlayerGameSettings((model) => model.customCorporations = cardNames(10));
+    expect(enough.config?.customCorporationsList).has.length(10);
     expect(enough.alerts).is.empty;
   });
 
