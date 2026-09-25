@@ -15,6 +15,19 @@ import {GlobalParameter} from '../GlobalParameter';
 import {Tag} from '../cards/Tag';
 import {MarsBotModel} from './MarsBotModel';
 
+export type DeckSizeModel = {
+  drawPile: number;
+  discardPile: number;
+};
+
+// Sizes of the decks other than the project deck. A deck is undefined when its expansion is not in the game.
+export type OtherDeckSizesModel = {
+  corporations: DeckSizeModel;
+  preludes: DeckSizeModel | undefined;
+  ceos: DeckSizeModel | undefined;
+  globalEvents: DeckSizeModel | undefined;
+};
+
 // Common data about a game not assocaited with a player (eg the temperature.)
 export type GameModel = {
   aresData: AresData | undefined;
@@ -23,6 +36,7 @@ export type GameModel = {
   discardedColonies: ReadonlyArray<ColonyName>;
   deckSize: number;
   discardPileSize: number;
+  otherDeckSizes: OtherDeckSizesModel;
   expectedPurgeTimeMs: number;
   gameAge: number;
   gameOptions: GameOptionsModel;
