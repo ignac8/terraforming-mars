@@ -121,6 +121,7 @@ export class Server {
       game: this.getGameModel(player.game),
       id: player.id,
       password: player.password,
+      color: player.color,
       runId: runId,
       pickedCorporationCard: player.pickedCorporationCard ? cardsToModel(player, [player.pickedCorporationCard]) : [],
       preludeCardsInHand: cardsToModel(player, player.preludeCardsInHand),
