@@ -113,21 +113,24 @@ export class MarsBotTurnResolver {
       return;
     }
 
+    // A cube's effect can move this track on again, so the log keeps the space reached here.
+    const position = track.position;
+
     // Cube trigger — fires BEFORE track icon resolution (corp cubes, colony cubes, trade fleet cube)
     if (this.marsBotManager !== undefined &&
-        MarsBotCorpResolver.onTrackAdvanced(this.marsBotManager, trackIndex, track.position)) {
+        MarsBotCorpResolver.onTrackAdvanced(this.marsBotManager, trackIndex, position)) {
       this.game.log('MarsBot: ${0} track to ${1}, icon replaced by a corp cube',
-        (b) => b.rawString(name).number(track.position));
+        (b) => b.rawString(name).number(position));
       return;
     }
 
     if (result.type === 'action') {
       this.game.log('MarsBot: ${0} track to ${1}, action: ${2}',
-        (b) => b.rawString(name).number(track.position).rawString(result.action));
+        (b) => b.rawString(name).number(position).rawString(result.action));
       this.resolveTrackAction(result.action, trackIndex);
     } else {
       this.game.log('MarsBot: ${0} track to ${1}',
-        (b) => b.rawString(name).number(track.position));
+        (b) => b.rawString(name).number(position));
     }
   }
 
