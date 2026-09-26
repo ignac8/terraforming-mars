@@ -95,6 +95,10 @@ export class RemoveResourcesFromCard extends DeferredAction<Response> {
     }
     if (marsBotOption !== undefined) {
       options.push(marsBotOption);
+      // Default to MarsBot rather than to a card, which is usually the human's own.
+      if (selectCard !== undefined) {
+        selectCard.eligibleForDefault = false;
+      }
     }
 
     if (this.mandatory) {

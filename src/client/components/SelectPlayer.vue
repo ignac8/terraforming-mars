@@ -47,8 +47,10 @@ export default defineComponent({
     },
   },
   data(): DataModel {
+    // Against MarsBot every player choice is an attack, so it defaults to MarsBot.
+    const marsBotColor = this.playerView.game?.marsBot?.color;
     return {
-      selectedPlayer: undefined,
+      selectedPlayer: marsBotColor !== undefined && this.playerinput.players.includes(marsBotColor) ? marsBotColor : undefined,
     };
   },
   components: {
