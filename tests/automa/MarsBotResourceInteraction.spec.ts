@@ -9,6 +9,12 @@ import {ProtectedHabitats} from '../../src/server/cards/base/ProtectedHabitats';
 import {AsteroidDeflectionSystem} from '../../src/server/cards/promo/AsteroidDeflectionSystem';
 import {SponsoredAcademies} from '../../src/server/cards/venusNext/SponsoredAcademies';
 import {BonusCardId} from '../../src/common/automa/AutomaTypes';
+import {Predators} from '../../src/server/cards/base/Predators';
+import {Fish} from '../../src/server/cards/base/Fish';
+import {Virus} from '../../src/server/cards/base/Virus';
+import {OrOptions} from '../../src/server/inputs/OrOptions';
+import {runAllActions} from '../TestingUtils';
+import {cast} from '../../src/common/utils/utils';
 
 function createAutomaGame(): {game: IGame, human: TestPlayer, marsBot: MarsBot} {
   const [game, human] = testGame(1, {automaOption: true, automaDifficulty: 'normal', boardName: BoardName.THARSIS});
@@ -248,6 +254,42 @@ describe('MarsBot Resource Interaction (rules page 4-5)', () => {
       const mcBefore = marsBot.turnResolver.megacredits;
       human.playCard(new SponsoredAcademies());
       expect(marsBot.turnResolver.megacredits).to.eq(mcBefore + 1);
+    });
+  });
+
+  describe('MarsBot is the default target when removing resources', () => {
+    it('removing a card resource defaults to MarsBot, not the human\'s own card', () => {
+      const {game, human, marsBot} = createAutomaGame();
+      marsBot.turnResolver.megacredits = 10;
+      const fish = new Fish();
+      human.playedCards.push(fish);
+      human.addResourceTo(fish, 2);
+      const predators = new Predators();
+      human.playedCards.push(predators);
+
+      predators.action(human);
+      runAllActions(game);
+      const orOptions = cast(human.popWaitingFor(), OrOptions);
+      const model = orOptions.toModel(human);
+
+      expect(model.initialIdx).is.not.undefined;
+      expect(orOptions.options[model.initialIdx!].title).eq('Remove 1 from MarsBot MC supply');
+    });
+
+    it('Virus defaults to removing plants from MarsBot, not the human\'s own animals', () => {
+      const {human, marsBot} = createAutomaGame();
+      marsBot.turnResolver.megacredits = 10;
+      const fish = new Fish();
+      human.playedCards.push(fish);
+      human.addResourceTo(fish, 2);
+
+      const orOptions = cast(new Virus().play(human), OrOptions);
+      const model = orOptions.toModel(human);
+
+      expect(model.initialIdx).is.not.undefined;
+      const defaultOption = model.options[model.initialIdx!];
+      expect(defaultOption.type).eq('option');
+      expect(JSON.stringify(defaultOption.title)).contains('Remove ${0} plants from ${1}').and.contains(marsBot.player.color);
     });
   });
 });
