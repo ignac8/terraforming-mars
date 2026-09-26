@@ -50,10 +50,13 @@ export class HiredRaiders extends Card implements IProjectCard {
         const amountStolen = Math.min(2, target.steel);
         const optionTitle = message('Steal ${0} steel from ${1}', (b) => b.number(amountStolen).player(target).getMessage());
 
-        availableActions.options.push(new SelectOption(optionTitle).andThen(() => {
+        const option = new SelectOption(optionTitle).andThen(() => {
           target.attack(player, Resource.STEEL, 2, {stealing: true, log: true});
           return undefined;
-        }));
+        });
+        // MarsBot pays steel out of its M€ supply, so default to taking 3 M€ from it.
+        option.eligibleForDefault = target !== player.game.automaHooks?.marsBotPlayer;
+        availableActions.options.push(option);
       }
 
       if (target.megaCredits > 0) {
