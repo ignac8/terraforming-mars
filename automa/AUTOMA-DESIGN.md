@@ -446,7 +446,7 @@ interface MarsBotState {
 | MarsBotFixes.spec.ts | 32 | isSoloMode, placement bonuses blocked, heat bonus MC, difficulty levels, event tags, chain actions |
 | MarsBotDraft.spec.ts | 12 | Drafting variant: 4-round pile swap, card counts, MarsBot deck building from draft |
 | MarsBotLimitations.spec.ts | 16 | Award resources+production comparison, hard mode card VP, serialization/deserialization |
-| MarsBotResourceInteraction.spec.ts | 58 | Remove/Steal from MC supply, production decrease → track regression, resource addition ignored, MarsBot as the default target of every card that hurts another player |
+| MarsBotResourceInteraction.spec.ts | 60 | Remove/Steal from MC supply, production decrease → track regression, resource addition ignored, MarsBot as the default target of every card that hurts another player |
 | MarsBotGameEnd.spec.ts | 22 | VP breakdown model, instantWin, award VP |
 | MarsBotIntegration.spec.ts | 25 | Player identity, getPassedPlayers, award/milestone funding, tag counting scenarios |
 | MarsBotAwardCrash.spec.ts | 13 | calculateVictoryPoints crash fix, AwardScorer with MarsBot |
@@ -492,7 +492,7 @@ All rules from Rulebook A (base game) and Rulebook B (corporations) are implemen
 - Remove/Steal resources from MarsBot → deducts from mcSupply (via `MarsBotStock` override)
 - Decrease production on MarsBot → regresses corresponding track (via `MarsBotProduction` override)
 - MarsBot is in human's opponents list so cards targeting opponents can see MarsBot
-- Choosing whom to remove resources, production or a delegate from defaults to MarsBot (`SelectPlayer.vue`, `SelectDelegate.vue`, and `RemoveResourcesFromCard` marking the card choice ineligible as the default), and the delegate list names MarsBot like the player list does
+- Choosing whom to remove resources, production or a delegate from defaults to MarsBot (`SelectPlayer.vue`, `SelectDelegate.vue`, and `RemoveResourcesFromCard` marking the card choice ineligible as the default), and the delegate list names MarsBot like the player list does. Sabotage and Hired Raiders default to the M€ option against MarsBot, since it pays every resource out of its M€ supply and M€ takes the most
 - Award comparison for Thermalist/Miner uses human resources + production (page 8)
 - Hard mode card VP tracked via `playedProjectCards` array
 - Serialization/deserialization of MarsBot state (track positions, MC, decks, etc.)

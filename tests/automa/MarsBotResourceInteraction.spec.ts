@@ -13,6 +13,8 @@ import {Livestock} from '../../src/server/cards/base/Livestock';
 import {Tardigrades} from '../../src/server/cards/base/Tardigrades';
 import {Flooding} from '../../src/server/cards/base/Flooding';
 import {LawSuit} from '../../src/server/cards/promo/LawSuit';
+import {Sabotage} from '../../src/server/cards/base/Sabotage';
+import {HiredRaiders} from '../../src/server/cards/base/HiredRaiders';
 import {CardName} from '../../src/common/cards/CardName';
 import {Units} from '../../src/common/Units';
 import {SpaceType} from '../../src/common/boards/SpaceType';
@@ -369,6 +371,28 @@ describe('MarsBot Resource Interaction (rules page 4-5)', () => {
 
       expect(marsBot.turnResolver.megacredits).eq(16);
       expect(human.megaCredits).gte(20);
+    });
+
+    // MarsBot pays every resource out of its M€ supply, so the M€ option takes the most from it.
+    it('Sabotage defaults to removing 7 M€ from MarsBot', () => {
+      const {human, marsBot} = createAutomaGame();
+      marsBot.turnResolver.megacredits = 20;
+
+      takeDefault(cast(new Sabotage().play(human), OrOptions), human, marsBot);
+
+      expect(marsBot.turnResolver.megacredits).eq(13);
+    });
+
+    it('Hired Raiders defaults to stealing 3 M€ from MarsBot', () => {
+      const {human, marsBot} = createAutomaGame();
+      marsBot.turnResolver.megacredits = 20;
+      human.megaCredits = 0;
+
+      takeDefault(cast(new HiredRaiders().play(human), OrOptions), human, marsBot);
+
+      expect(marsBot.turnResolver.megacredits).eq(17);
+      expect(human.megaCredits).eq(3);
+      expect(human.steel).eq(0);
     });
 
     it('Law Suit defaults to MarsBot', () => {
