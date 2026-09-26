@@ -14,6 +14,7 @@ import {CardName} from '../../../src/common/cards/CardName';
 import {BoardName} from '../../../src/common/boards/BoardName';
 import {Resource} from '../../../src/common/Resource';
 import {DEFAULT_GAME_OPTIONS} from '../../../src/server/game/GameOptions';
+import {SolarWindPower} from '../../../src/server/cards/base/SolarWindPower';
 
 function createAutomaGame(): {game: IGame, human: TestPlayer, marsBot: MarsBot} {
   const [game, human] = testGame(1, {
@@ -198,6 +199,23 @@ describe('Base Game MarsBot Corporations', () => {
       marsBot.setCorpAndSetup(corp);
       // Energy = track 5 (Power/Jovian tag)
       expect(marsBot.marsBotBoard.tracks[4].position).to.be.gte(1);
+    });
+
+    it('logs the space it reached when the drawn card moves the same track on', () => {
+      const {game, marsBot} = createAutomaGame();
+      marsBot.setCorpAndSetup(getMarsBotCorp(CardName.THORGATE)!);
+      // Solar Wind Power's first tag is ignored and its power tag moves the energy track past the cube.
+      game.projectDeck.drawPile.push(new SolarWindPower());
+      marsBot.marsBotBoard.tracks[4].position = 5; // Energy 6: an icon under a white cube
+      const logsBefore = game.gameLog.length;
+
+      marsBot.advanceTrack(4);
+
+      const positions = game.gameLog.slice(logsBefore)
+        .filter((log) => log.message.startsWith('MarsBot: ${0} track to ${1}') && log.data[0].value === 'power')
+        .map((log) => log.data[1].value);
+      // The card's step to 7 resolves inside the cube, then the step to 6 and the advance icon there.
+      expect(positions).to.deep.eq(['7', '6', '8']);
     });
   });
 

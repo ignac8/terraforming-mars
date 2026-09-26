@@ -2,6 +2,7 @@ import {expect} from 'chai';
 import {testGame} from '../TestGame';
 import {Game} from '../../src/server/Game';
 import {IGame} from '../../src/server/IGame';
+import {SerializedGame} from '../../src/server/SerializedGame';
 import {MarsBot} from '../../src/server/automa/MarsBot';
 import {BoardName} from '../../src/common/boards/BoardName';
 import {GlobalParameter} from '../../src/common/GlobalParameter';
@@ -83,5 +84,30 @@ describe('MarsBotReload', () => {
     const restoredBot = restored.automaHooks!.marsBot;
     expect(restoredBot.markerSpaceIds).to.deep.eq([id]);
     expect(restored.board.getSpaceOrThrow(id).player).to.eq(restoredBot.player);
+  });
+
+  it('saves MarsBot\'s corporation before the player\'s first action', () => {
+    const [game, human] = testGame(1, {
+      automaOption: true,
+      automaCorpOption: true,
+      automaDifficulty: 'easy',
+      boardName: BoardName.THARSIS,
+      skipInitialCardSelection: false,
+    });
+    const saves: Array<SerializedGame> = [];
+    game.save = () => {
+      saves.push(game.serialize());
+    };
+
+    human.process({type: 'initialCards', responses: [
+      {type: 'card', cards: [human.dealtCorporationCards[0].name]},
+      {type: 'card', cards: []},
+    ]});
+
+    const corp = game.automaHooks!.marsBot.corp;
+    expect(corp).is.not.undefined;
+    // A server restart before the player's next action reloads the latest save.
+    const restored = Game.deserialize(saves[saves.length - 1]);
+    expect(restored.automaHooks!.marsBot.corp).to.eq(corp);
   });
 });
