@@ -9,6 +9,24 @@ import {ProtectedHabitats} from '../../src/server/cards/base/ProtectedHabitats';
 import {AsteroidDeflectionSystem} from '../../src/server/cards/promo/AsteroidDeflectionSystem';
 import {SponsoredAcademies} from '../../src/server/cards/venusNext/SponsoredAcademies';
 import {BonusCardId} from '../../src/common/automa/AutomaTypes';
+import {Livestock} from '../../src/server/cards/base/Livestock';
+import {Tardigrades} from '../../src/server/cards/base/Tardigrades';
+import {Flooding} from '../../src/server/cards/base/Flooding';
+import {LawSuit} from '../../src/server/cards/promo/LawSuit';
+import {Sabotage} from '../../src/server/cards/base/Sabotage';
+import {HiredRaiders} from '../../src/server/cards/base/HiredRaiders';
+import {CardName} from '../../src/common/cards/CardName';
+import {Units} from '../../src/common/Units';
+import {SpaceType} from '../../src/common/boards/SpaceType';
+import {PlayerInput} from '../../src/server/PlayerInput';
+import {OrOptions} from '../../src/server/inputs/OrOptions';
+import {SelectOption} from '../../src/server/inputs/SelectOption';
+import {SelectPlayer} from '../../src/server/inputs/SelectPlayer';
+import {SelectSpace} from '../../src/server/inputs/SelectSpace';
+import {newProjectCard} from '../../src/server/createCard';
+import {isIActionCard} from '../../src/server/cards/ICard';
+import {addGreenery, runAllActions} from '../TestingUtils';
+import {cast} from '../../src/common/utils/utils';
 
 function createAutomaGame(): {game: IGame, human: TestPlayer, marsBot: MarsBot} {
   const [game, human] = testGame(1, {automaOption: true, automaDifficulty: 'normal', boardName: BoardName.THARSIS});
@@ -248,6 +266,143 @@ describe('MarsBot Resource Interaction (rules page 4-5)', () => {
       const mcBefore = marsBot.turnResolver.megacredits;
       human.playCard(new SponsoredAcademies());
       expect(marsBot.turnResolver.megacredits).to.eq(mcBefore + 1);
+    });
+  });
+
+  describe('MarsBot is the default target of every card that hurts another player', () => {
+    /**
+     * Picks what the client preselects, the way a player who just clicks the button would:
+     * OrOptions' initialIdx, and MarsBot in a SelectPlayer (SelectPlayer.vue preselects it).
+     */
+    function takeDefault(input: PlayerInput, human: TestPlayer, marsBot: MarsBot): PlayerInput | undefined {
+      if (input instanceof OrOptions) {
+        const option = input.options[input.toModel(human).initialIdx ?? 0];
+        return takeDefault(option, human, marsBot);
+      }
+      if (input instanceof SelectPlayer) {
+        expect(input.players, 'MarsBot is a choice').to.include(marsBot.player);
+        return input.cb(marsBot.player);
+      }
+      if (input instanceof SelectOption) {
+        return input.cb(undefined);
+      }
+      throw new Error(`The default choice is a ${input.constructor.name}`);
+    }
+
+    /** MarsBot's M€ plus the positions of all its tracks: removing, stealing or decreasing production lowers it. */
+    function marsBotHoldings(marsBot: MarsBot): number {
+      return marsBot.turnResolver.megacredits + marsBot.marsBotBoard.tracks.reduce((sum, track) => sum + track.position, 0);
+    }
+
+    const cards: Array<{name: CardName, action?: boolean}> = [
+      // Remove plants
+      {name: CardName.ASTEROID}, {name: CardName.BIG_ASTEROID}, {name: CardName.COMET}, {name: CardName.DEIMOS_DOWN},
+      {name: CardName.DEIMOS_DOWN_PROMO}, {name: CardName.GIANT_ICE_ASTEROID}, {name: CardName.MINING_EXPEDITION},
+      {name: CardName.SMALL_ASTEROID}, {name: CardName.IMPACTOR_SWARM}, {name: CardName.AERIAL_LENSES},
+      // Remove or steal other resources
+      {name: CardName.SABOTAGE}, {name: CardName.HIRED_RAIDERS}, {name: CardName.AIR_RAID}, {name: CardName.SPECIAL_PERMIT},
+      {name: CardName.COMET_FOR_VENUS}, {name: CardName.VIRUS},
+      // Remove card resources
+      {name: CardName.PREDATORS, action: true}, {name: CardName.ANTS, action: true},
+      // Decrease production
+      {name: CardName.HACKERS}, {name: CardName.ENERGY_TAPPING}, {name: CardName.POWER_SUPPLY_CONSORTIUM},
+      {name: CardName.ASTEROID_MINING_CONSORTIUM}, {name: CardName.GREAT_ESCARPMENT_CONSORTIUM}, {name: CardName.HEAT_TRAPPERS},
+      {name: CardName.CLOUD_SEEDING}, {name: CardName.BIOMASS_COMBUSTORS}, {name: CardName.BIRDS}, {name: CardName.FISH},
+      {name: CardName.SMALL_ANIMALS}, {name: CardName.HERBIVORES}, {name: CardName.SUBZERO_SALT_FISH},
+    ];
+
+    for (const {name, action} of cards) {
+      it(name, () => {
+        const [game, human] = testGame(1, {
+          automaOption: true, automaDifficulty: 'normal', boardName: BoardName.THARSIS,
+          venusNextExtension: true, coloniesExtension: true, turmoilExtension: true, promoCardsOption: true, prelude2Expansion: true,
+        });
+        const marsBot = game.automaHooks!.marsBot;
+        marsBot.turnResolver.megacredits = 20;
+        for (const track of marsBot.marsBotBoard.tracks) {
+          track.advance();
+          track.advance();
+        }
+        // The human has something of everything to lose too, so each prompt offers both targets.
+        human.stock.adjust(Units.of({megacredits: 30, steel: 5, titanium: 5, plants: 5, energy: 5, heat: 5}));
+        human.production.adjust(Units.of({megacredits: 3, steel: 3, titanium: 3, plants: 3, energy: 3, heat: 3}));
+        const resourceCards = [new Livestock(), new Tardigrades()];
+        for (const resourceCard of resourceCards) {
+          human.playedCards.push(resourceCard);
+          human.addResourceTo(resourceCard, 3);
+        }
+        const holdingsBefore = marsBotHoldings(marsBot);
+
+        const card = newProjectCard(name)!;
+        human.playedCards.push(card);
+        let input = action && isIActionCard(card) ? card.action(human) : card.play(human);
+        for (let i = 0; i < 5; i++) {
+          if (input === undefined) {
+            runAllActions(game);
+            input = human.popWaitingFor();
+          }
+          if (input === undefined) {
+            break;
+          }
+          input = input instanceof SelectSpace ? input.cb(input.spaces[0]) : takeDefault(input, human, marsBot);
+        }
+        runAllActions(game);
+
+        expect(marsBotHoldings(marsBot), 'MarsBot lost something').lt(holdingsBefore);
+        expect(resourceCards.map((c) => c.resourceCount), 'the human\'s cards kept their resources').deep.eq([3, 3]);
+      });
+    }
+
+    it('Flooding defaults to the adjacent MarsBot tile\'s owner', () => {
+      const {game, human, marsBot} = createAutomaGame();
+      marsBot.turnResolver.megacredits = 20;
+      human.megaCredits = 20;
+      const ocean = game.board.getAvailableSpacesForOcean(human)
+        .find((space) => game.board.getAdjacentSpaces(space).some((s) => s.spaceType === SpaceType.LAND && s.tile === undefined))!;
+      const land = game.board.getAdjacentSpaces(ocean).find((s) => s.spaceType === SpaceType.LAND && s.tile === undefined)!;
+      addGreenery(marsBot.player, land.id);
+
+      new Flooding().play(human);
+      runAllActions(game);
+      cast(human.popWaitingFor(), SelectSpace).cb(ocean);
+      runAllActions(game);
+      takeDefault(cast(human.popWaitingFor(), OrOptions), human, marsBot);
+      runAllActions(game);
+
+      expect(marsBot.turnResolver.megacredits).eq(16);
+      expect(human.megaCredits).gte(20);
+    });
+
+    // MarsBot pays every resource out of its M€ supply, so the M€ option takes the most from it.
+    it('Sabotage defaults to removing 7 M€ from MarsBot', () => {
+      const {human, marsBot} = createAutomaGame();
+      marsBot.turnResolver.megacredits = 20;
+
+      takeDefault(cast(new Sabotage().play(human), OrOptions), human, marsBot);
+
+      expect(marsBot.turnResolver.megacredits).eq(13);
+    });
+
+    it('Hired Raiders defaults to stealing 3 M€ from MarsBot', () => {
+      const {human, marsBot} = createAutomaGame();
+      marsBot.turnResolver.megacredits = 20;
+      human.megaCredits = 0;
+
+      takeDefault(cast(new HiredRaiders().play(human), OrOptions), human, marsBot);
+
+      expect(marsBot.turnResolver.megacredits).eq(17);
+      expect(human.megaCredits).eq(3);
+      expect(human.steel).eq(0);
+    });
+
+    it('Law Suit defaults to MarsBot', () => {
+      const {human, marsBot} = createAutomaGame();
+      marsBot.turnResolver.megacredits = 20;
+      human.removingPlayers.push(marsBot.player.id);
+
+      takeDefault(new LawSuit().play(human)!, human, marsBot);
+
+      expect(marsBot.turnResolver.megacredits).eq(17);
     });
   });
 });
