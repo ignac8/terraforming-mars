@@ -5,6 +5,7 @@ import SelectPlayer from '@/client/components/SelectPlayer.vue';
 import {SelectPlayerModel} from '@/common/models/PlayerInputModel';
 import {PlayerViewModel, PublicPlayerModel} from '@/common/models/PlayerModel';
 import {InputResponse} from '@/common/inputs/InputResponse';
+import {Color} from '@/common/Color';
 
 describe('SelectPlayer', () => {
   let wrapper: VueWrapper<any>;
@@ -81,6 +82,47 @@ describe('SelectPlayer', () => {
     expect(wrapper.vm.$data.selectedPlayer).eq('blue');
     clickButton();
     expect(response).deep.eq({type: 'player', player: 'blue'});
+  });
+
+  it('nothing is selected by default outside a MarsBot game', async () => {
+    await wrapper.vm.$nextTick();
+    expect(wrapper.vm.$data.selectedPlayer).is.undefined;
+  });
+
+  describe('MarsBot game', () => {
+    function mountWithMarsBot(colors: Array<Color>): VueWrapper<any> {
+      return mount(SelectPlayer, {
+        ...globalConfig,
+        props: {
+          playerView: {
+            players: [{name: 'alpha', color: 'blue'}],
+            game: {marsBot: {name: 'MarsBot', color: 'bronze'}},
+          } as unknown as PlayerViewModel,
+          playerinput: {type: 'player', title: '', buttonLabel: '', players: colors} as SelectPlayerModel,
+          onsave: (r: InputResponse) => {
+            response = r;
+          },
+          showsave: true,
+          showtitle: true,
+        },
+      });
+    }
+
+    it('MarsBot is selected by default and shown by name', async () => {
+      const marsBotWrapper = mountWithMarsBot(['blue', 'bronze']);
+      await marsBotWrapper.vm.$nextTick();
+
+      expect(marsBotWrapper.vm.$data.selectedPlayer).eq('bronze');
+      expect(marsBotWrapper.findAll('label span').map((s) => s.text())).deep.eq(['alpha', 'MarsBot']);
+      marsBotWrapper.find('button').trigger('click');
+      expect(response).deep.eq({type: 'player', player: 'bronze'});
+    });
+
+    it('nothing is selected by default when MarsBot is not a choice', async () => {
+      const marsBotWrapper = mountWithMarsBot(['blue']);
+      await marsBotWrapper.vm.$nextTick();
+      expect(marsBotWrapper.vm.$data.selectedPlayer).is.undefined;
+    });
   });
 
   async function clickInput(input: DOMWrapper<Element>) {

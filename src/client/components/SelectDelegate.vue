@@ -5,7 +5,7 @@
       <input type="radio" v-model="selectedPlayer" :value="player" >
       <i class="form-icon"></i>
       <span v-if="player === 'NEUTRAL'" >Neutral</span>
-      <SelectPlayerRow v-else :player="playerView.players.find((otherPlayer) => otherPlayer.color === player)"/>
+      <SelectPlayerRow v-else :player="playerView.players.find((otherPlayer) => otherPlayer.color === player)" :fallbackName="playerView.game?.marsBot?.name" />
     </label>
     <AppButton v-if="showsave === true" size="big" @click="saveData" :title="$t(playerinput.buttonLabel)" />
   </div>
@@ -47,8 +47,10 @@ export default defineComponent({
     },
   },
   data(): DataModel {
+    // Removing a delegate against MarsBot defaults to one of MarsBot's.
+    const marsBotColor = this.playerView.game?.marsBot?.color;
     return {
-      selectedPlayer: undefined,
+      selectedPlayer: marsBotColor !== undefined && this.playerinput.players.includes(marsBotColor) ? marsBotColor : undefined,
     };
   },
   components: {
