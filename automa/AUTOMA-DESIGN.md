@@ -446,7 +446,7 @@ interface MarsBotState {
 | MarsBotFixes.spec.ts | 32 | isSoloMode, placement bonuses blocked, heat bonus MC, difficulty levels, event tags, chain actions |
 | MarsBotDraft.spec.ts | 12 | Drafting variant: 4-round pile swap, card counts, MarsBot deck building from draft |
 | MarsBotLimitations.spec.ts | 16 | Award resources+production comparison, hard mode card VP, serialization/deserialization |
-| MarsBotResourceInteraction.spec.ts | 27 | Remove/Steal from MC supply, production decrease → track regression, resource addition ignored, MarsBot as the default removal target |
+| MarsBotResourceInteraction.spec.ts | 58 | Remove/Steal from MC supply, production decrease → track regression, resource addition ignored, MarsBot as the default target of every card that hurts another player |
 | MarsBotGameEnd.spec.ts | 22 | VP breakdown model, instantWin, award VP |
 | MarsBotIntegration.spec.ts | 25 | Player identity, getPassedPlayers, award/milestone funding, tag counting scenarios |
 | MarsBotAwardCrash.spec.ts | 13 | calculateVictoryPoints crash fix, AwardScorer with MarsBot |
