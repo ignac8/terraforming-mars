@@ -322,7 +322,8 @@ export class AutomaGameHooks {
   }
 
   /**
-   * Called after the human picks their corporation in generation 1.
+   * Called once the human has played their corporation in generation 1, before the first
+   * action phase starts (see handleBeforeActionPhase).
    * Selects and sets up MarsBot's corporation if the corp option is enabled.
    */
   public handlePostCorporationSetup(): void {
@@ -349,10 +350,13 @@ export class AutomaGameHooks {
 
   /**
    * Called before the action phase each generation.
-   * Resolves beforeActionPhase per-gen effects (gen 2+ only).
+   * In generation 1 MarsBot picks its corporation here: the first action saves the game, so a
+   * corporation picked after that is lost when the server restarts before the next save.
+   * Later generations resolve the corporation's beforeActionPhase effect.
    */
   public handleBeforeActionPhase(): void {
     if (this.game.generation <= 1) {
+      this.handlePostCorporationSetup();
       return;
     }
     const corp = this.marsBot.corp;

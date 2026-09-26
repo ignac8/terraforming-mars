@@ -717,7 +717,6 @@ export class Game implements IGame, Logger {
         }
         somePlayer.playCorporationCard(somePlayer.pickedCorporationCard);
       }
-      this.automaHooks?.handlePostCorporationSetup();
     }
   }
 
