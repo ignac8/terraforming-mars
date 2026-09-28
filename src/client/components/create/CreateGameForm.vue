@@ -311,6 +311,7 @@
                               <label for="customPreludes-checkbox">
                                   <span v-i18n>Custom Preludes list</span>
                                   <span v-if="customPreludes.length">&nbsp;({{ customPreludes.length }})</span>
+                                  <span v-if="tooFewCustomPreludes || preludeDrawingCards.length > 0" class="create-game-custom-preludes-warning" @click.prevent="showCustomPreludesWarning">&nbsp;&#9888;&#xFE0E;</span>
                               </label>
                             </template>
 
@@ -496,22 +497,22 @@
                                 </div>
                             </div>
                         </div>
+                    </div>
+                </div>
 
-                        <div class="create-game-action-row">
-                            <div class="create-game-action">
-                                <AppButton title="Create game" size="big" @click="createGame"/>
-                                <AppButton title="Reset" size="big" @click="resetSettings"/>
+                <div class="create-game-action-row">
+                    <div class="create-game-action">
+                        <AppButton title="Create game" size="big" @click="createGame"/>
+                        <AppButton title="Reset" size="big" @click="resetSettings"/>
 
-                                <label>
-                                    <div class="btn btn-primary btn-action btn-lg"><i class="icon icon-upload"></i></div>
-                                    <input style="display: none" type="file" accept=".json" id="settings-file" ref="file" @change="uploadSettings()">
-                                </label>
+                        <label>
+                            <div class="btn btn-primary btn-action btn-lg"><i class="icon icon-upload"></i></div>
+                            <input style="display: none" type="file" accept=".json" id="settings-file" ref="file" @change="uploadSettings()">
+                        </label>
 
-                                <label>
-                                    <div @click="downloadSettings()" class="btn btn-primary btn-action btn-lg"><i class="icon icon-download"></i></div>
-                                </label>
-                            </div>
-                        </div>
+                        <label>
+                            <div @click="downloadSettings()" class="btn btn-primary btn-action btn-lg"><i class="icon icon-download"></i></div>
+                        </label>
                     </div>
                 </div>
             </div>
@@ -610,11 +611,12 @@ import {CreateGameModel} from './CreateGameModel';
 import {paths} from '@/common/app/paths';
 import {JSONProcessor} from './JSONProcessor';
 import {defaultCreateGameModel} from './defaultCreateGameModel';
+import {preludeDrawingCards} from './preludeDrawingCards';
 import {CreateGameSettingsStorage} from './CreateGameSettingsStorage';
 import {getColony} from '@/client/colonies/ClientColonyManifest';
 import {RULEBOOK_URLS, WIKI, WIKI_URLS} from '@/client/utils/WikiLinks';
 import {setDocumentTitle} from '@/client/utils/documentTitle';
-import {sanitizeEscapeVelocityOptions} from '@/common/game/escapeVelocity';
+import {hasNegativeEscapeVelocityOption, sanitizeEscapeVelocityOptions} from '@/common/game/escapeVelocity';
 
 const REVISED_COUNT_ALGORITHM = false;
 const createGameSettingsStorage = new CreateGameSettingsStorage();
@@ -756,6 +758,12 @@ export default defineComponent({
     wikiUrls(): typeof RULEBOOK_URLS & typeof WIKI_URLS {
       return {...RULEBOOK_URLS, ...WIKI_URLS};
     },
+    tooFewCustomPreludes(): boolean {
+      return this.customPreludes.length > 0 && this.customPreludes.length < this.playersCount * this.startingPreludes;
+    },
+    preludeDrawingCards(): Array<CardName> {
+      return preludeDrawingCards(this);
+    },
     typedRefs(): Refs {
       return this.$refs as Refs;
     },
@@ -836,6 +844,17 @@ export default defineComponent({
         }
       });
       return processor;
+    },
+    showCustomPreludesWarning() {
+      const root = vueRoot(this);
+      if (this.tooFewCustomPreludes) {
+        root.showAlert('Custom Preludes list', translateTextWithParams('Must select at least ${0} Preludes', [String(this.playersCount * this.startingPreludes)]));
+        return;
+      }
+      const cards = this.preludeDrawingCards.map((card) => '<br>&bull; ' + translateText(card)).join('');
+      const message = translateText('These cards draw extra preludes, so your custom Preludes list may run out:') + cards +
+        `<br><br><a href="${WIKI_URLS.customPreludes}" target="_blank">${translateText('Learn more')}</a>`;
+      root.showAlert('Custom Preludes list', message);
     },
     showSettingsLoadResult(title: string, processor: JSONProcessor) {
       const root = vueRoot(this);
@@ -1107,6 +1126,17 @@ export default defineComponent({
       const startingPreludes = this.startingPreludes;
       let clonedGamedId: undefined | GameId = undefined;
 
+      const escapeVelocity = {
+        thresholdMinutes: this.escapeVelocityThreshold,
+        bonusSectionsPerAction: this.escapeVelocityBonusSeconds,
+        penaltyPeriodMinutes: this.escapeVelocityPeriod,
+        penaltyVPPerPeriod: this.escapeVelocityPenalty,
+      };
+      if (this.escapeVelocityMode && hasNegativeEscapeVelocityOption(escapeVelocity)) {
+        window.alert(translateText('Escape Velocity values cannot be negative'));
+        return undefined;
+      }
+
       // Check custom colony count
       if (customColonies.length > 0) {
         const playersCount = players.length;
@@ -1327,13 +1357,7 @@ export default defineComponent({
         moonStandardProjectVariant: this.moonStandardProjectVariant,
         moonStandardProjectVariant1: this.moonStandardProjectVariant1,
         altVenusBoard: this.altVenusBoard,
-        escapeVelocity: this.escapeVelocityMode ?
-          sanitizeEscapeVelocityOptions({
-            thresholdMinutes: this.escapeVelocityThreshold,
-            bonusSectionsPerAction: this.escapeVelocityBonusSeconds,
-            penaltyPeriodMinutes: this.escapeVelocityPeriod,
-            penaltyVPPerPeriod: this.escapeVelocityPenalty,
-          }) : undefined,
+        escapeVelocity: this.escapeVelocityMode ? sanitizeEscapeVelocityOptions(escapeVelocity) : undefined,
         twoCorpsVariant,
         startingCeos,
         startingPreludes,
