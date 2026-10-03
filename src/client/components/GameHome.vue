@@ -1,6 +1,6 @@
 <template>
   <div id="game-home" class="game-home-container">
-    <h1><span v-i18n>Terraforming Mars</span> [<span v-i18n>game id:</span> <span>{{getGameId()}}</span>]</h1>
+    <h1><HomeLink>Terraforming Mars</HomeLink> [<span v-i18n>game id:</span> <span>{{getGameId()}}</span>]</h1>
     <h4><span v-i18n>Instructions: To start the game, separately copy and share the links with all players, and then click on your name.</span><br><span v-i18n>Save this page in case you or one of your opponents loses a link.</span></h4>
     <h4 v-if="game !== undefined && game.gameOptions.playerPasswords"><span v-i18n>The first person to open a player link receives a password. From then on, only the player with that password can use that player page.</span></h4>
     <ul>
@@ -38,6 +38,7 @@ import {defineComponent} from 'vue';
 import {SimpleGameModel} from '@/common/models/SimpleGameModel';
 import AppButton from '@/client/components/common/AppButton.vue';
 import PurgeWarning from '@/client/components/common/PurgeWarning.vue';
+import HomeLink from '@/client/components/common/HomeLink.vue';
 import {playerColorClass} from '@/common/utils/utils';
 import GameSetupDetail from '@/client/components/GameSetupDetail.vue';
 import {ParticipantId} from '@/common/Types';
@@ -71,6 +72,7 @@ export default defineComponent({
     },
   },
   components: {
+    HomeLink,
     AppButton,
     GameSetupDetail,
     PurgeWarning,
