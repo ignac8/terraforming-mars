@@ -1,3 +1,4 @@
+import {AutomaGameSetup} from '../automa/AutomaGameSetup';
 import {Game} from '../Game';
 import {IGame} from '../IGame';
 import {GameId, isPlayerId} from '../../common/Types';
@@ -27,6 +28,11 @@ export class Cloner {
         serialized,
         [GameSetup.neutralPlayerFor(serializedGameId).id],
         [GameSetup.neutralPlayerFor(newGameId).id]);
+      // MarsBot's ID is also derived from the game ID, and it isn't serialized either.
+      Cloner.replacePlayerIds(
+        serialized,
+        [AutomaGameSetup.createMarsBotPlayer(serializedGameId).id],
+        [AutomaGameSetup.createMarsBotPlayer(newGameId).id]);
     }
     serialized.id = newGameId;
 
