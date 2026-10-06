@@ -1,16 +1,17 @@
 import {paths} from '@/common/app/paths';
 import {LogMessage} from '@/common/logs/LogMessage';
-import {ParticipantId} from '@/common/Types';
+import {ViewModel} from '@/common/models/PlayerModel';
+import {passwordParam} from '@/client/utils/playerPassword';
 
 let abortController: AbortController | undefined;
 
-export async function fetchLogs(id: ParticipantId, generation: number): Promise<Array<LogMessage> | undefined> {
+export async function fetchLogs(view: ViewModel, generation: number): Promise<Array<LogMessage> | undefined> {
   // Aborts any pending request for a previous generation before starting the new one.
   // If the past call is complete, .abort() does nothing.
   abortController?.abort();
   abortController = new AbortController();
 
-  const url = `${paths.API_GAME_LOGS}?id=${id}&generation=${generation}`;
+  const url = `${paths.API_GAME_LOGS}?id=${view.id}&generation=${generation}${passwordParam(view)}`;
 
   try {
     const resp = await fetch(url, {signal: abortController.signal});

@@ -76,6 +76,16 @@ describe('LogPanel', () => {
     expect(wrapper.exists()).to.be.true;
   });
 
+  it('sends the seat password with the log request', async () => {
+    const wrapper = shallowMount(LogPanel, {
+      ...globalConfig,
+      props: {viewModel: fakeViewModel({password: 'secret'} as any)},
+    });
+    await flushLogs(wrapper);
+
+    expect(fetchCalls[fetchCalls.length - 1]).includes('&password=secret');
+  });
+
   it('emits spaceClicked when a log message emits spaceClicked', async () => {
     const wrapper = shallowMount(LogPanel, {
       ...globalConfig,
