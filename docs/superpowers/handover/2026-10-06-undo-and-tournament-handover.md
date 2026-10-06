@@ -220,3 +220,58 @@ These came from the advisor and were not checked:
    needs explicit confirmation and organizer communication first.
 4. Only after the deploy: create `automa-undo` off `automa` and write the undo
    spec.
+
+---
+
+## 7. Review results (added 2026-10-06, later the same day)
+
+Three independent review agents re-checked everything above. Their reports and repro tests are kept
+outside the repo at `/home/mzerko/terraforming-mars/.claude/reviews/2026-10-06/`:
+`review-undo.md`, `review-tournament.md`, `polish-i18n.md` and `repros/`.
+
+**Tournament:** the original spec and plan were written against a stale local `tournament`
+(279 commits behind origin). The branch was rebuilt on `origin/tournament` (`ec52b8f39`), and the spec
+was rewritten (`b563f0615`) with the user's decisions. The old plan is invalid and must be rewritten
+in place after spec approval.
+
+**Undo: corrections to section 3.** The review's verdicts held on `refs/remotes/upstream/main`
+and `refs/remotes/origin/automa`:
+
+- **REFUTED: the guard was "lost in the reorg".** `3d793a3ec`/`81aab7b84` were never in our history.
+  They exist only on `remotes/nwai90/ux_improvements`, a fork that split off in 2021. The
+  hidden-information guard has to be designed from scratch.
+- **CONFIRMED (repro): save race.** If undo arrives before the action's save settles, it goes back
+  two actions and leaves a zombie top row. A failed Postgres save, whose error is swallowed, does
+  the same.
+- **MISSED: Postgres saves are not real transactions.** BEGIN, INSERT and COMMIT run on `pg.Pool.query`
+  and can land on different connections. This is inferred, and it is a production bug even with undo
+  off. The fix is `pool.connect()`.
+- **#7461 Anubis:** the cause is broken object identity after deserialize
+  (`pendingInitialActions` holds different instances than the tableau), not an unserialized flag.
+  Vitor's check breaks the same way. A deep-equal harness cannot catch this, so it needs identity
+  invariants plus a behavioural oracle.
+- **The `-2` arithmetic is correct where undo is reachable.** It relies on deserialize re-saving,
+  which also makes `saveConflictUndoCount` meaningless as a race metric.
+- **MISSED: LocalFilesystem undo and admin rollback do nothing.** This is a dev-only backend.
+- **MISSED, automa (measured): reloading changes the game RNG.** The MarsBot constructor shuffles its
+  bonus deck during deserialize, so undo or reload re-rolls future randomness and the bot's play.
+- **MISSED: concurrent requests (multiple tabs) mutate stale Game objects.** This needs a per-game
+  lock. A pending save must be a per-game chain with ids assigned synchronously, and restore must
+  delete rows by id.
+- **The End turn prompt must come before `playerIsFinishedTakingActions`.** MarsBot's turn runs
+  synchronously inside the human's request (`origin/automa:Game.ts:1143-1155`). An "End turn" option
+  already exists in the game: it skips the second action and is removed by `fastModeOption`. The undo
+  design has to fit around it.
+- **A fuzz input resolver already exists.** `scripts/marsbot-sim/ScriptedPlayer.ts` on
+  `origin/claude/marsbot-simulator` handles 18 input types.
+- **The hidden-info guard can't rely on the RNG alone.** Deck draws don't consume RNG. Hook the deck
+  draws, Underworld identify/excavate, MarsBot draws and opponents' inputs. Colony draws aren't a
+  mid-game reveal.
+- **Timer:** on current upstream (`6b49ca5cb`), undo gives back the thinking time spent on the
+  undone action. This needs an explicit decision.
+- **Open question:** can a saved game have MarsBot as active player in ACTION phase (`52e9cdc73`)?
+- **`load_game` rollback** needs no auth and accepts a spectator id. This is tracked separately as
+  the memory `load-game-rollback-hole`.
+
+**Polish:** about 55% coverage (1994/4424 live phrases missing). `npm run lint:i18n` only finds
+duplicate keys, not missing strings. Automa/MarsBot strings have no translation in any locale.
