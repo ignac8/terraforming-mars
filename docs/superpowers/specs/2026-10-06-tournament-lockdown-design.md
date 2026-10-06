@@ -1,77 +1,70 @@
-# Tournament lockdown: force undo off and clear custom card pools
+# Tournament lockdown: enforce tournament rules on game creation
 
-Date: 2026-10-06
-Branch: `tournament-lockdown` (off `tournament`)
+Date: 2026-10-06 (revised the same day after an independent review)
+Branch: `tournament-lockdown`, based on `origin/tournament` at `ec52b8f39` (2026-10-05)
+
+> **Revision note.** The first version of this spec was written against local
+> `tournament` (`5a1405c4d`, 2026-07-19), which was 279 commits behind
+> `origin/tournament`. That is the branch the VPS deploys. An independent
+> review found that version stale and wrong in several places. This version is
+> re-derived from current code. Every line number below refers to `ec52b8f39`.
 
 ## Intent
 
-Tournament games must be played on identical, prescribed rules. Two levers that
-change the game are currently left to whoever fills in the create-game form:
+The tournament rules already fix undo, the card and corporation pools, and the
+other options listed below. This change adds no new rules. It stops whoever
+fills in the create-game form, or calls the API, from overriding rules that are
+already set. So no organizer confirmation is needed (user decision, 2026-10-06).
 
-1. **Undo** — `undoOption` is settable, so one tournament table can take actions
-   back and another cannot.
-2. **Custom card and corporation pools** — `customCorporationsList`,
-   `bannedCards`, `includedCards`, `customColoniesList`, `customPreludes` and
-   `customCeos` are all settable, so the card pool itself can differ between
-   tables.
+## Decisions (user, 2026-10-06)
 
-Both must be forced off for tournament games and must not be settable in the
-form.
+| Option | Tournament games |
+| --- | --- |
+| Undo (`undoOption`) | forced **off** |
+| Corporation pool | 5 drawn at random from the fork's full tournament corporation set. The July "draw 5 from an organizer-supplied list" feature (`558fc6ca4`) is **removed** |
+| `customCorporationsList` | forced empty, and ignored by tournament dealing |
+| `bannedCards`, `includedCards` | forced empty: the full Base + Corporate Era deck, no bans |
+| `customPreludes`, `customCeos`, `customColoniesList` | forced empty |
+| TR boost (per-player `handicap`) | forced **0** |
+| Fast mode (`fastModeOption`) | forced **off** |
+| Show other players' VP (`showOtherPlayersVP`) | forced **off** |
+| Player passwords (`playerPasswords`) | forced **on** |
+| Board, first player, timers, escape velocity, player count | stay settable |
+| Cloned / seeded games ("Set Predefined Game") | **left as is** (known bypass, accepted) |
+| `PUT /load_game` rollback bypass | **out of scope**. It gets a separate fix for all games |
+| Non-tournament games on the tournament site | still allowed (the checkbox stays free) |
 
-This is deliberately narrow. It changes which options a tournament game is
-allowed to use; it changes no game logic.
+## Why this is also a fix, not only hardening
 
-## Existing pattern this follows
-
-`applyTournamentPreset` in `src/server/game/GameOptions.ts` already forces the
-options tournament regulations prescribe, and its doc comment states the rule
-this spec obeys:
-
-> The create game form locks the same options, but the client is not trusted.
-
-So every option is pinned twice: the server overwrites it in
-`applyTournamentPreset`, and the client disables its control. The server side is
-what actually enforces; the client side exists so the form does not display
-values that will be silently discarded.
-
-`ApiCreateGame.ts:172` is the single call site, applying the preset whenever
-`gameOptions.tournamentExpansion` is set.
-
-## Scope
-
-**In scope**
-
-- Force `undoOption = false` for tournament games.
-- Clear all six custom card/corporation/colony/prelude/CEO pool overrides.
-- Disable the four always-rendered form controls when tournament is selected.
-  The other three are already hidden by the expansion they depend on.
-- Reset those controls when tournament is toggled on, so the form does not keep
-  stale selections that the server would discard.
-- Correct the `applyTournamentPreset` doc comment, which currently claims undo
-  and the corporation pool are left untouched.
-
-**Out of scope**
-
-- Any change to undo's behaviour or correctness. That is the separate
-  `automa-undo` work, on a different branch.
-- Player count, timers and escape velocity, which remain settable as they are
-  today.
+The first spec claimed `customPreludes`, `customCeos` and `includedCards` are
+inert when their expansion is off. That is false. The review ran
+`testGame(2, {tournamentExpansion: true, customPreludes: [DONATION],
+customCeos: [FLOYD], includedCards: [ADVERTISING]})` and found Donation in the
+prelude deck, Floyd in the CEO deck and the promo card Advertising in the
+project deck. So a game creator can put arbitrary cards into a tournament game
+**today**. Only `customColoniesList` really is inert: colony dealing sits
+behind `coloniesExtension`. All six are cleared anyway, so that safety doesn't
+depend on any other option.
 
 ## Design
 
-### Server: `src/server/game/GameOptions.ts`
+There are two enforcement layers, as for the existing tournament options:
 
-`applyTournamentPreset` gains two things.
+- The **server is authoritative**. It covers `applyTournamentPreset`, the create
+  route, and tournament dealing in `Game.newInstance`.
+- The **client mirrors the server** so the form never shows a value the server
+  will replace. The preset's doc comment says it: "the client is not trusted".
 
-Undo is forced off alongside the existing variant forcing:
+### Server
+
+**1. `applyTournamentPreset`** (`src/server/game/GameOptions.ts:97-154`). Add
+these lines after `options.twoCorpsVariant = false;`:
 
 ```ts
 options.undoOption = false;
-```
-
-And every custom pool override is cleared:
-
-```ts
+options.fastModeOption = false;
+options.showOtherPlayersVP = false;
+options.playerPasswords = true;
 options.customCorporationsList = [];
 options.bannedCards = [];
 options.includedCards = [];
@@ -80,90 +73,59 @@ options.customPreludes = [];
 options.customCeos = [];
 ```
 
-Three of those six (`customColoniesList`, `customPreludes`, `customCeos`) are
-already inert for tournament games, because the preset turns the colonies,
-prelude and CEO expansions off and the lists are only read when their expansion
-is enabled. They are cleared regardless. The preset's purpose is to produce a
-known-good `GameOptions` from untrusted input, so it should not depend on
-another field's value to stay safe. If a later change enables one of those
-expansions for tournaments, the pool override must not quietly come back to
-life.
+Correct the doc comment above the function (lines 88-96) so it lists what is
+forced. Drop the "stay untouched" claims for undo and the corporation pool.
 
-#### `customCorporationsList` is a deliberate behaviour change
+**2. Remove custom pool sampling from tournament dealing**
+(`src/server/Game.ts:394-402`). Today `custom` filters `customCorporationsList`
+down to tournament corporations and uses it when non-empty. Replace that with
+"candidates are always every tournament corporation". Then the capability no
+longer exists below the preset, and `testGame` and any future code path can't
+reintroduce it. Leave the log line ("Tournament corporation pool: …") as is.
 
-Clearing `customCorporationsList` removes a capability that works today and is
-covered by a test. Under current tournament rules the list, when supplied,
-*becomes* the corporation pool, filtered down to tournament corporations:
-`tests/TournamentMode.spec.ts:46` asserts that passing
-`[TERACTOR_TOURNAMENT, ECOLINE_TOURNAMENT, PHOBOLOG]` deals a pool of exactly
-the two tournament corporations. The preset's doc comment deliberately exempted
-the override for that reason.
+**3. The create route** (`src/server/routes/ApiCreateGame.ts`) needs two
+changes.
 
-That exemption is being withdrawn on purpose. The corporation pool is a property
-of this fork, not of whoever fills in the create-game form: the fork defines
-which `:tournament` corporations exist, and tournament games deal five of them
-at random to a shared pool. Nobody creating a game may narrow or redirect that
-set.
-
-The existing test is therefore rewritten rather than deleted. It keeps its
-subject but inverts its claim: `customCorporationsList` is ignored under
-tournament rules, and the pool is dealt from the fork's tournament corporations
-regardless of what was passed in.
-
-Note what this does *not* change: the pool stays five corporations drawn at
-random per game. If tournament rules should instead pin the same five
-corporations for every table, that is a different change — a deterministic pool,
-not a locked override — and it is not in this spec.
-
-The doc comment's last line currently reads:
-
-> Player count, timers, undo and the corporation pool override stay untouched.
-
-It becomes:
-
-> Player count and timers stay untouched.
+- `validateCustomLists` (line 97) runs at line 126, *before* the preset at line
+  210. So a tournament request with a short custom list gets a 400 for a list
+  that would be thrown away anyway. Return early from `validateCustomLists`
+  when `gameReq.expansions.tournament === true`.
+- Handicap is per player, not a `GameOptions` field, so the preset can't reach
+  it. In the player construction (lines 133-141), pass `0` instead of
+  `Number(p.handicap)` when `gameReq.expansions.tournament === true`.
 
 ### Client: `src/client/components/create/CreateGameForm.vue`
 
-Four checkboxes gain `:disabled="expansions.tournament"`, matching the roughly
-twenty controls already locked this way:
+**4. Disable the locked controls** with `:disabled="expansions.tournament"`,
+matching the roughly twenty controls already locked this way:
 
-| Line | Control | Why it needs disabling |
-| --- | --- | --- |
-| 243 | `undo-checkbox` | always rendered |
-| 308 | `customCorps-checkbox` | always rendered |
-| 330 | `bannedCards-checkbox` | always rendered |
-| 335 | `includedCards-checkbox` | always rendered |
+| Line | Control |
+| --- | --- |
+| 238 | `undo-checkbox` |
+| 303 | `customCorps-checkbox` |
+| 325 | `bannedCards-checkbox` |
+| 330 | `includedCards-checkbox` |
+| 437 | `realTimeVP-checkbox` (show other players' VP) |
+| 442 | `fastMode-checkbox` |
+| 447 | `playerPasswords-checkbox` |
+| 483 | per-player `player-handicap` number input |
 
-The other three filter toggles need no `:disabled` attribute, because they are
-already conditionally rendered on the expansion the tournament preset turns off:
+The prelude, CEO and colony list toggles sit inside
+`<template v-if="expansions.prelude|ceo|colonies">` blocks that the tournament
+locks turn off, so they aren't rendered and need no attribute.
 
-| Line | Control | Wrapped in |
-| --- | --- | --- |
-| 315 | `customPreludes-checkbox` | `<template v-if="expansions.prelude">` |
-| 323 | `customCeos-checkbox` | `<template v-if="expansions.ceo">` |
-| 341 | `customColonies-checkbox` | `<template v-if="expansions.colonies">` |
-
-The watcher already sets `expansions.prelude`, `expansions.ceo` and
-`expansions.colonies` to false when tournament is switched on, so those three
-controls disappear from the form. Adding `:disabled` to a control that is not
-rendered would be dead markup.
-
-The six filter components (`CorporationsFilter`, `PreludesFilter`,
-`ColoniesFilter`, `CeosFilter` and two `CardsFilter` instances) need no change.
-Each is rendered under `v-if` on its `show*` flag, so clearing the flag removes
-the panel.
-
-Disappearing is not the same as being cleared, which is why the watcher work
-below is not optional: a form where prelude was enabled and preludes were chosen
-keeps `showPreludesList` true and `customPreludes` populated after the checkbox
-vanishes, and would still post them.
-
-The existing `'expansions.tournament'` watcher, which already resets expansion
-checkboxes when tournament is switched on, is extended to reset this group too:
+**5. One lock method, applied on every path that sets form state.** Move the
+whole body of the `'expansions.tournament'` watcher (lines 674-704) into a
+method `applyTournamentLocks()`. Add the new fields to it:
 
 ```ts
 this.undoOption = false;
+this.fastModeOption = false;
+this.showOtherPlayersVP = false;
+this.playerPasswords = true;
+for (const player of this.players) {
+  player.handicap = 0;
+}
 this.showCorporationList = false;
 this.showPreludesList = false;
 this.showColoniesList = false;
@@ -178,90 +140,96 @@ this.bannedCards = [];
 this.includedCards = [];
 ```
 
-Clearing the backing arrays as well as the flags matters: the flags only control
-panel visibility, and a previously chosen list would otherwise still be posted
-in `newGameConfig`. The server would discard it, but the form would have
-misrepresented the game about to be created.
+The watcher alone is not enough. The review checked all three paths below. Each
+calls `applyTournamentLocks()` when `expansions.tournament` is true:
 
-### Translation impact
+| Path | Why the watcher misses it | Hook |
+| --- | --- | --- |
+| First load | `defaultCreateGameModel` starts with `tournament: true`, and a non-immediate watcher never fires. Without a hook, the defaults would show `playerPasswords: false` greyed out | make the watcher `immediate: true` |
+| Restore saved settings (`applySettings`, line 889) | `JSONProcessor` writes the saved shape (`expansions: {tournament: true, prelude: true, …}`, `undoOption: true`, custom lists) straight in. The watcher doesn't fire, and the later `nextTick` callback resets `solarPhaseOption` again | call at the end of the existing `nextTick` callback, after the `solarPhaseOption` line |
+| Reset (`resetSettings`, line 926) | `Object.assign` with the defaults keeps `tournament` true, so the watcher doesn't fire | call inside the existing `nextTick` callback |
 
-None. This change adds no user-facing text: it disables existing controls and
-clears existing values. The roughly twenty controls already locked by the
-tournament preset carry no explanatory tooltip, so adding one here would be
-inconsistent as well as new translation debt. Polish translation gaps are a
-separate piece of work and are not coupled to this spec.
+The restore path must re-apply the **whole** lock set, including
+`expansions.prelude` and the other expansions. Re-applying only the new fields
+would leave a restored tournament form with Prelude still on.
+
+### Docs: `tournament/PLAN.md`
+
+Items 3 and 6 still say the corporation pool override and undo "stay free".
+Update them to match this spec.
 
 ## Testing
 
-Server tests go in `tests/TournamentMode.spec.ts`, which already holds
-`applyTournamentPreset forces the regulation options` at line 195 and is the
-natural home for these.
+Server tests use mocha (`tests/TournamentMode.spec.ts`,
+`tests/routes/ApiCreateGame.spec.ts`). Client tests use vitest
+(`npm run test:client`).
 
-1. Extend the existing `applyTournamentPreset forces the regulation options`
-   test with `expect(options.undoOption).is.false` and an emptiness assertion
-   for each of the six pool arrays, seeding each one populated in the input
-   options so the assertions can fail.
-2. Rewrite `customCorporationsList becomes the pool, filtered to tournament
-   corporations` (line 46) to assert the opposite: with
-   `customCorporationsList` supplied, a tournament game still deals five
-   corporations drawn from the fork's full tournament set, and the supplied list
-   has no effect.
-3. Keep `Deals one shared pool of 5 tournament corporations to every player`
-   (line 23) passing unchanged — it pins the behaviour the lockdown falls back
-   to, so it becomes the load-bearing test for the corporation pool.
-4. Assert the preset leaves player count and timer options untouched, pinning
-   the boundary the corrected doc comment now claims.
+1. **Preset forces the new fields.** Extend
+   `applyTournamentPreset forces the regulation options` (line 241). Seed every
+   newly locked field with a non-default value and assert each forced value.
+2. **Classify every option.** Add a test that lists every `GameOptions` key as
+   either *forced* or *passthrough*. It fails when a new key appears in neither
+   list. That catches upstream merges that add an option the preset silently
+   lets through. `playerPasswords` was exactly such a case.
+3. **Pool sampling removed.** Replace
+   `customCorporationsList becomes the pool…` (line 68) and
+   `…sampled down to 5` (line 80) with one test,
+   `customCorporationsList is ignored under tournament rules`. Calling
+   `testGame` directly, it checks that every player is dealt 5 corporations,
+   all `:tournament`, regardless of the list. This works because dealing no
+   longer reads the list.
+4. **Create route, end to end.** In `tests/routes/ApiCreateGame.spec.ts`, POST
+   a tournament game with `undoOption: true`, fast mode, VP, passwords off, a
+   handicap of 3, and all six lists populated, including a too-short
+   `customCorporationsList`. Assert a 2xx, then assert the created game's
+   options and each player's handicap. This is the only test that catches the
+   preset call being moved or skipped.
+5. **In-flight games.** `testGame(2, {tournamentExpansion: true,
+   undoOption: true})`, then serialize and deserialize, keeps `undoOption`.
+   This pins "no migration on load". Don't assign to `game.gameOptions`: it is
+   `Readonly` and fails `build:test`.
+6. **Client: first load.** Mount the form with no saved settings. Assert
+   `playerPasswords` is true, `undoOption` false, and the `disabled` attribute
+   is present on `#undo-checkbox`, `#playerPasswords-checkbox` and
+   `#fastMode-checkbox`.
+7. **Client: toggle.** Set tournament false, then true. Asserting `true` on
+   something already `true` never fires the watcher. Seed every locked field
+   first, then assert all are cleared and forced, including handicaps.
+8. **Client: toggle off.** With tournament off, the `disabled` attribute is
+   absent from `#undo-checkbox`, so the control is usable again.
+9. **Client: restore.** Save settings in the real shape, then mount and assert
+   the locks: `expansions: {...DEFAULT_EXPANSIONS, tournament: true,
+   prelude: true}`, `undoOption: true`, and populated `customCorporationsList`,
+   `customPreludes`, `bannedCards` and `includedCards`. Assert
+   `expansions.prelude === false` as well. Add a second case with only the
+   legacy flat `tournamentExpansion: true` key and no `expansions` key, which
+   is the upload format.
+10. **Client: reset.** With tournament on, call `resetSettings()` and assert
+    the locks.
 
-Client test, in `tests/client/components/create/CreateGameForm.spec.ts`:
+## Verification
 
-5. Toggling tournament on clears the six `show*` flags, empties the six arrays
-   and sets `undoOption` false.
+The worktree has no `node_modules` or `src/genfiles`. Run `npm ci` and one
+`npm run build` before any test. After that, per the project rule, run
+`npm run lint`, `npm run build` and `npm run test` before the final commit.
 
-The server tests are the ones that matter for enforcement; the client test
-guards the display promise.
+## Delivery
 
-## Verification before deploy
+- The VPS auto-deploys `origin/tournament` about a minute after a push. Pushing
+  `tournament-lockdown` deploys nothing. Delivery means merging
+  `tournament-lockdown` into `tournament` and pushing. That step needs explicit
+  user approval at the time, and a check that no tournament round is in
+  progress.
+- Games already running keep the options they were created with. There is no
+  migration.
+- The UX text "Undo is now in best effort support…" is `v-if="undoOption"`, so
+  it disappears once undo is forced off.
 
-Per the project's standing rule, all three of lint, build and tests run before
-commit — build catches strict TypeScript errors that lint alone misses:
+## Out of scope
 
-```
-npm run lint
-npm run build
-npm run test
-```
-
-## Deployment
-
-This branch ships to the tournament site before any `automa-undo` work begins.
-Deployment goes through `ignac8/terraforming-mars-deploy` on the Hetzner VPS.
-
-Two things to confirm at deploy time rather than assume:
-
-- Games already in progress carry their own serialized `GameOptions`, so an
-  in-flight tournament game created with undo enabled keeps it. The lock applies
-  to newly created games. If existing games must also lose undo, that is a
-  separate data migration and is not part of this spec.
-- The deploy window should avoid an active tournament round.
-
-## Flags for the organizers
-
-Two judgement calls belong to the tournament organizers, not to this change:
-
-1. **This reverses a documented decision.** The preset's comment explicitly said
-   undo and the corporation pool were left to the table. Removing both is a
-   rules change and the standing rule is that rules changes are confirmed with
-   organizers first.
-2. **Prescribing a corporation pool becomes impossible.** Organizers can
-   currently supply `customCorporationsList` to fix exactly which tournament
-   corporations are in play. After this change every tournament game deals five
-   at random from the fork's full tournament set, and there is no way to narrow
-   it. This is the intended outcome — the pool belongs to the fork, not to the
-   game's creator — but it removes a working tool and organizers should hear it
-   before the deploy, not after.
-3. **Banning cards becomes impossible.** Forcing `bannedCards` and
-   `includedCards` empty means tournament games always use the complete official
-   base + Corporate Era pool. If organizers ever ban a card by convention, this
-   removes the mechanism. Worth raising explicitly before deploy.
-
-None of these block implementation. All three should be communicated.
+- **`PUT /load_game` with `rollbackCount`.** It needs no auth and accepts a
+  spectator id, so anyone can roll any game back. It gets a separate fix for
+  all games: require the server id.
+- **Cloned / seeded tournament games.** `Cloner.clone` uses the source game's
+  options and skips the preset. The user chose to leave this as is.
+- **The undo redesign.** That lives on `automa-undo`, after this change ships.
