@@ -1,6 +1,6 @@
 <template>
   <div id="game-end" class="game_end_cont">
-      <h1 v-i18n>{{ constants.APP_NAME }} - Game finished!</h1>
+      <h1><HomeLink>{{ constants.APP_NAME }} - Game finished!</HomeLink></h1>
       <div class="game_end">
           <div v-if="isAutomaGame && game.marsBot">
               <div v-if="game.marsBot.instantWin" class="game_end_fail">
@@ -302,6 +302,7 @@ import PlanetaryTracks from '@/client/components/pathfinders/PlanetaryTracks.vue
 import DeltaProjectBoard from '@/client/components/delta/DeltaProjectBoard.vue';
 import LogPanel from '@/client/components/logpanel/LogPanel.vue';
 import AppButton from '@/client/components/common/AppButton.vue';
+import HomeLink from '@/client/components/common/HomeLink.vue';
 import VictoryPointChart, {DataSet} from '@/client/components/gameend/VictoryPointChart.vue';
 import {playerColorClass} from '@/common/utils/utils';
 import {Timer} from '@/common/Timer';
@@ -449,6 +450,7 @@ export default defineComponent({
     };
   },
   components: {
+    HomeLink,
     Board,
     LogPanel,
     AppButton,

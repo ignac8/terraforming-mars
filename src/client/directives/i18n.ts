@@ -23,6 +23,11 @@ export function setTranslationContext(playerView: PlayerViewModel) {
   for (const player of playerView.players) {
     context.players.set(player.color, player.name);
   }
+  // MarsBot is not in the player list, so without this its color would show instead of its name.
+  const marsBot = playerView.game?.marsBot;
+  if (marsBot !== undefined) {
+    context.players.set(marsBot.color, marsBot.name);
+  }
 }
 
 export function translateMessage(message: Message): string {
