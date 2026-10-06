@@ -54,4 +54,19 @@ describe('LoadGameForm', () => {
 
     expect(urls).deep.eq(['load_game?serverId=abc%2F1']);
   });
+
+  it('sends an empty server id when the page has none', () => {
+    const urls: Array<string> = [];
+    global.fetch = (url) => {
+      urls.push(String(url));
+      return new Promise(() => {});
+    };
+    window.history.replaceState(null, '', '/load');
+    const wrapper = mount();
+
+    wrapper.setData({gameId: 'g123', rollbackCount: 1});
+    (wrapper.vm as any).loadGame();
+
+    expect(urls).deep.eq(['load_game?serverId=']);
+  });
 });
