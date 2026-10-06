@@ -95,10 +95,6 @@ export class ApiCreateGame extends Handler {
    * CreateGameForm.
    */
   public validateCustomLists(gameReq: NewGameConfig): void {
-    // Tournament games discard every custom list, so there is nothing to validate.
-    if (gameReq.expansions?.tournament === true) {
-      return;
-    }
     const playerCount = gameReq.players.length;
 
     function validate(list: ReadonlyArray<unknown> | undefined, perPlayerCount: number, type: string): void {
@@ -127,14 +123,17 @@ export class ApiCreateGame extends Handler {
     const body = await readBody(req);
     try {
       const gameReq = JSON.parse(body) as NewGameConfig;
-      this.validateCustomLists(gameReq);
+      const tournament = Boolean(gameReq.expansions?.tournament);
+      // Tournament games discard every custom list, so there is nothing to validate.
+      if (!tournament) {
+        this.validateCustomLists(gameReq);
+      }
       if (gameReq.escapeVelocity !== undefined && hasNegativeEscapeVelocityOption(gameReq.escapeVelocity)) {
         throw RouteError.badRequest('Escape Velocity values cannot be negative.');
       }
       const gameId = safeCast(generateRandomId('g'), isGameId);
       const spectatorId = safeCast(generateRandomId('s'), isSpectatorId);
       // TR boost is per player, so applyTournamentPreset cannot reach it.
-      const tournament = gameReq.expansions?.tournament === true;
       const players = gameReq.players.map((p) => {
         return new Player(
           p.name,
@@ -207,7 +206,7 @@ export class ApiCreateGame extends Handler {
         twoCorpsVariant: gameReq.twoCorpsVariant,
         underworldExpansion: gameReq.expansions.underworld,
         deltaProjectExpansion: gameReq.expansions.deltaProject,
-        tournamentExpansion: gameReq.expansions.tournament,
+        tournamentExpansion: tournament,
         undoOption: gameReq.undoOption,
         venusNextExtension: gameReq.expansions.venus,
       };
