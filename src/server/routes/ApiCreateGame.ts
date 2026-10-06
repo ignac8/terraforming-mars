@@ -95,6 +95,10 @@ export class ApiCreateGame extends Handler {
    * CreateGameForm.
    */
   public validateCustomLists(gameReq: NewGameConfig): void {
+    // Tournament games discard every custom list, so there is nothing to validate.
+    if (gameReq.expansions?.tournament === true) {
+      return;
+    }
     const playerCount = gameReq.players.length;
 
     function validate(list: ReadonlyArray<unknown> | undefined, perPlayerCount: number, type: string): void {
@@ -129,12 +133,14 @@ export class ApiCreateGame extends Handler {
       }
       const gameId = safeCast(generateRandomId('g'), isGameId);
       const spectatorId = safeCast(generateRandomId('s'), isSpectatorId);
+      // TR boost is per player, so applyTournamentPreset cannot reach it.
+      const tournament = gameReq.expansions?.tournament === true;
       const players = gameReq.players.map((p) => {
         return new Player(
           p.name,
           p.color,
           p.beginner,
-          Number(p.handicap), // For some reason handicap is coming up a string.
+          tournament ? 0 : Number(p.handicap), // For some reason handicap is coming up a string.
           safeCast(generateRandomId('p'), isPlayerId),
         );
       });

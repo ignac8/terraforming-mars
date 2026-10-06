@@ -393,9 +393,9 @@ export class Game implements IGame, Logger {
     // tournament corporations, and several players may pick the same one.
     let tournamentPool: ReadonlyArray<CardName> | undefined;
     if (gameOptions.tournamentExpansion) {
-      const tournamentCorps = CardManifest.keys(TOURNAMENT_CARD_MANIFEST.corporationCards);
-      const custom = [...new Set(gameOptions.customCorporationsList)].filter((name) => tournamentCorps.includes(name));
-      const candidates = custom.length > 0 ? custom : [...tournamentCorps];
+      // The pool is always drawn from every tournament corporation; game
+      // creators cannot narrow it.
+      const candidates = [...CardManifest.keys(TOURNAMENT_CARD_MANIFEST.corporationCards)];
       inplaceShuffle(candidates, rng);
       tournamentPool = candidates.slice(0, constants.TOURNAMENT_CORPORATION_POOL_SIZE);
       game.log('Tournament corporation pool: ${0}', (b) => b.rawString(tournamentPool?.join(', ') ?? ''));

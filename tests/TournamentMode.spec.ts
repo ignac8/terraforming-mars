@@ -6,6 +6,7 @@ import {CardResource} from '../src/common/CardResource';
 import {Tag} from '../src/common/cards/Tag';
 import {newCorporationCard} from '../src/server/createCard';
 import {BoardName} from '../src/common/boards/BoardName';
+import {ColonyName} from '../src/common/colonies/ColonyName';
 import {DEFAULT_GAME_OPTIONS, GameOptions, applyTournamentPreset} from '../src/server/game/GameOptions';
 import {DEFAULT_ESCAPE_VELOCITY_THRESHOLD} from '../src/common/constants';
 import {newInitialDraft} from '../src/server/Draft';
@@ -65,40 +66,25 @@ describe('TournamentMode', () => {
     }
   });
 
-  it('customCorporationsList becomes the pool, filtered to tournament corporations', () => {
+  it('customCorporationsList is ignored under tournament rules', () => {
     const [/* game */, p1, p2, p3] = testGame(3, {
       tournamentExpansion: true,
       customCorporationsList: [CardName.TERACTOR_TOURNAMENT, CardName.ECOLINE_TOURNAMENT, CardName.PHOBOLOG],
     });
 
     for (const player of [p1, p2, p3]) {
-      expect(player.dealtCorporationCards.map(toName).sort()).deep.eq(
-        [CardName.ECOLINE_TOURNAMENT, CardName.TERACTOR_TOURNAMENT]);
+      expect(player.dealtCorporationCards).has.length(5);
+      for (const name of player.dealtCorporationCards.map(toName)) {
+        expect(name).to.match(/:tournament$/);
+      }
     }
   });
 
-  it('customCorporationsList larger than the pool size is sampled down to 5', () => {
-    const custom = [
-      CardName.TERACTOR_TOURNAMENT,
-      CardName.ECOLINE_TOURNAMENT,
-      CardName.CREDICOR_TOURNAMENT,
-      CardName.INVENTRIX_TOURNAMENT,
-      CardName.PHOBOLOG_TOURNAMENT,
-      CardName.MANUTECH_TOURNAMENT,
-      CardName.RECYCLON_TOURNAMENT,
-      CardName.ECOTEC_TOURNAMENT,
-    ];
-    const [/* game */, p1, p2] = testGame(2, {
-      tournamentExpansion: true,
-      customCorporationsList: custom,
-    });
+  it('A serialized tournament game keeps the undoOption it was created with', () => {
+    // There is no load-time migration: running games keep their options.
+    const [game] = testGame(2, {tournamentExpansion: true, undoOption: true});
 
-    const names = (cards: ReadonlyArray<{name: CardName}>) => cards.map(toName).sort();
-    expect(p1.dealtCorporationCards).has.length(5);
-    expect(names(p2.dealtCorporationCards)).deep.eq(names(p1.dealtCorporationCards));
-    for (const name of p1.dealtCorporationCards.map(toName)) {
-      expect(custom).includes(name);
-    }
+    expect(Game.deserialize(game.serialize()).gameOptions.undoOption).is.true;
   });
 
   it('Two players may play the same corporation', () => {
@@ -249,6 +235,16 @@ describe('TournamentMode', () => {
       initialDraftVariant: false,
       solarPhaseOption: true,
       boardName: BoardName.AMAZONIS,
+      undoOption: true,
+      fastModeOption: true,
+      showOtherPlayersVP: true,
+      playerPasswords: false,
+      customCorporationsList: [CardName.TERACTOR_TOURNAMENT],
+      bannedCards: [CardName.MINE],
+      includedCards: [CardName.MINE],
+      customColoniesList: [ColonyName.EUROPA],
+      customPreludes: [CardName.DONATION],
+      customCeos: [CardName.FLOYD],
       expansions: {...DEFAULT_GAME_OPTIONS.expansions, venus: true, prelude: true, tournament: true},
     };
 
@@ -265,6 +261,16 @@ describe('TournamentMode', () => {
     expect(options.initialDraftVariant).is.true;
     expect(options.solarPhaseOption).is.false;
     expect(options.boardName).to.eq(BoardName.THARSIS);
+    expect(options.undoOption).is.false;
+    expect(options.fastModeOption).is.false;
+    expect(options.showOtherPlayersVP).is.false;
+    expect(options.playerPasswords).is.true;
+    expect(options.customCorporationsList).is.empty;
+    expect(options.bannedCards).is.empty;
+    expect(options.includedCards).is.empty;
+    expect(options.customColoniesList).is.empty;
+    expect(options.customPreludes).is.empty;
+    expect(options.customCeos).is.empty;
   });
 
   it('applyTournamentPreset keeps escape velocity', () => {
@@ -284,6 +290,40 @@ describe('TournamentMode', () => {
     applyTournamentPreset(options);
 
     expect(options.escapeVelocity).to.deep.eq(escapeVelocity);
+  });
+
+  it('applyTournamentPreset classifies every game option', () => {
+    // Every GameOptions key is either forced by the tournament preset or
+    // deliberately left to the game creator. A new key in neither list
+    // fails here, so an upstream option cannot slip past the preset.
+    const forced = [
+      'altVenusBoard', 'aresExtension', 'aresExtremeVariant', 'bannedCards',
+      'ceoExtension', 'ceosDraftVariant', 'coloniesExtension', 'communityCardsOption',
+      'corporateEra', 'customCeos', 'customColoniesList', 'customCorporationsList',
+      'customPreludes', 'deltaProjectExpansion', 'draftVariant', 'expansions',
+      'fastModeOption', 'includeFanMA', 'includedCards', 'initialDraftVariant',
+      'modularMA', 'moonExpansion', 'moonStandardProjectVariant',
+      'moonStandardProjectVariant1', 'pathfindersExpansion', 'playerPasswords',
+      'politicalAgendasExtension', 'prelude2Expansion', 'preludeDraftVariant',
+      'preludeExtension', 'promoCardsOption', 'randomMA', 'requiresMoonTrackCompletion',
+      'requiresVenusTrackCompletion', 'showOtherPlayersVP', 'shuffleMapOption',
+      'solarPhaseOption', 'starWarsExpansion', 'turmoilExtension', 'twoCorpsVariant',
+      'underworldExpansion', 'undoOption', 'venusNextExtension',
+    ];
+    const passthrough = [
+      'aresHazards', // inert: Ares is forced off
+      'boardName', // clamped to Tharsis/Hellas/Elysium, otherwise free
+      'clonedGamedId', // cloning is out of scope (user decision)
+      'escapeVelocity', // tournament games may use the clock
+      'removeNegativeGlobalEventsOption', // inert: Turmoil is forced off
+      'showTimers',
+      'soloTR',
+      'startingCeos', // inert: CEOs are forced off
+      'startingCorporations', // inert: tournament dealing always uses the pool size
+      'startingPreludes', // inert: Prelude is forced off
+      'tournamentExpansion',
+    ];
+    expect([...forced, ...passthrough].sort()).deep.eq(Object.keys(DEFAULT_GAME_OPTIONS).sort());
   });
 
   it('Offers every unclaimed milestone to a player who cannot claim any', () => {
