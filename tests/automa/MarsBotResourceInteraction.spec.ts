@@ -395,6 +395,41 @@ describe('MarsBot Resource Interaction (rules page 4-5)', () => {
       expect(human.steel).eq(0);
     });
 
+    // Rulebook A FAQ: Lawsuit steals 3 resources from MarsBot.
+    it('Law Suit can be played after Meteor Shower removes plants', () => {
+      const {human, marsBot} = createAutomaGame();
+      human.plants = 10;
+      expect(new LawSuit().canPlay(human)).is.false;
+
+      marsBot['bonusResolver']['resolveMeteorShower']();
+
+      expect(human.plants).eq(5);
+      expect(new LawSuit().canPlay(human)).is.true;
+    });
+
+    it('Law Suit can be played after Invasive Species removes a microbe', () => {
+      const {human, marsBot} = createAutomaGame();
+      const tardigrades = new Tardigrades();
+      human.playedCards.push(tardigrades);
+      tardigrades.resourceCount = 4;
+
+      marsBot['bonusResolver']['resolveInvasiveSpecies']();
+
+      expect(tardigrades.resourceCount).eq(3);
+      expect(new LawSuit().canPlay(human)).is.true;
+    });
+
+    it('Law Suit stays unplayable when Protected Habitats blocks Meteor Shower', () => {
+      const {human, marsBot} = createAutomaGame();
+      human.plants = 10;
+      human.playedCards.push(new ProtectedHabitats());
+
+      marsBot['bonusResolver']['resolveMeteorShower']();
+
+      expect(human.plants).eq(10);
+      expect(new LawSuit().canPlay(human)).is.false;
+    });
+
     it('Law Suit defaults to MarsBot', () => {
       const {human, marsBot} = createAutomaGame();
       marsBot.turnResolver.megacredits = 20;

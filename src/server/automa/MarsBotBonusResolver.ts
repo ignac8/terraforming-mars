@@ -184,7 +184,8 @@ export class MarsBotBonusResolver {
     }
     const plantsLost = Math.min(5, this.humanPlayer.plants);
     if (plantsLost > 0) {
-      this.humanPlayer.stock.deduct(Resource.PLANTS, plantsLost);
+      // Coming from MarsBot, so the player may Law Suit it.
+      this.humanPlayer.stock.deduct(Resource.PLANTS, plantsLost, {from: {player: this.marsBot}});
       this.game.log('MarsBot\'s Meteor Shower: ${0} loses ${1} plants', (b) => b.player(this.humanPlayer).number(plantsLost));
     }
     if (plantsLost >= 3) {
@@ -235,9 +236,7 @@ export class MarsBotBonusResolver {
     }
     if (bestEntry !== undefined) {
       const {card, resource} = bestEntry;
-      if (card.resourceCount !== undefined) {
-        card.resourceCount--;
-      }
+      this.humanPlayer.removeResourceFrom(card, 1, {removingPlayer: this.marsBot, log: false});
       this.game.log('MarsBot\'s ${0}: removed 1 ${1} from ${2}',
         (b) => b.rawString(source).rawString(resource).card(card));
       return true;
