@@ -675,6 +675,9 @@ export default defineComponent({
       handler(value: boolean) {
         if (value === true) {
           this.applyTournamentLocks();
+        } else if (!this.uploading) {
+          // Tournament rules force passwords on; switching them off must not leave that behind.
+          this.playerPasswords = defaultCreateGameModel().playerPasswords;
         }
       },
       immediate: true,
@@ -915,10 +918,14 @@ export default defineComponent({
       const component: CreateGameModel = this;
       const refs = this.typedRefs;
       const processor = new JSONProcessor(component);
+      const previousPlayerPasswords = this.playerPasswords;
       this.uploading = true;
       try {
+        // A save without this key must restore to the default rather than to the tournament lock.
+        this.playerPasswords = defaultCreateGameModel().playerPasswords;
         processor.applyJSON(json);
       } catch (e) {
+        this.playerPasswords = previousPlayerPasswords;
         this.uploading = false;
         throw e;
       }

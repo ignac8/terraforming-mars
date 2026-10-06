@@ -148,6 +148,47 @@ describe('CreateGameForm', () => {
     expect(wrapper.find('#undo-checkbox').attributes('disabled')).is.undefined;
   });
 
+  it('does not keep tournament player passwords when tournament is switched off', async () => {
+    const wrapper = shallowMount(CreateGameForm, {...globalConfig});
+    await wrapper.vm.$nextTick();
+    const vm = wrapper.vm as any;
+    expect(vm.playerPasswords).eq(true);
+
+    vm.expansions.tournament = false;
+    await wrapper.vm.$nextTick();
+
+    expect(vm.playerPasswords).eq(false);
+  });
+
+  it('restores player passwords from a saved non-tournament config', async () => {
+    new CreateGameSettingsStorage(localStorage).saveSettings(createNewGameConfig({
+      expansions: {...DEFAULT_EXPANSIONS, tournament: false},
+      playerPasswords: true,
+    }));
+
+    const wrapper = shallowMount(CreateGameForm, {...globalConfig});
+    await wrapper.vm.$nextTick();
+    await wrapper.vm.$nextTick();
+
+    const vm = wrapper.vm as any;
+    expect(vm.expansions.tournament).eq(false);
+    expect(vm.playerPasswords).eq(true);
+  });
+
+  it('defaults player passwords off when restoring a saved non-tournament config without the key', async () => {
+    new CreateGameSettingsStorage(localStorage).saveSettings(createNewGameConfig({
+      expansions: {...DEFAULT_EXPANSIONS, tournament: false},
+    }));
+
+    const wrapper = shallowMount(CreateGameForm, {...globalConfig});
+    await wrapper.vm.$nextTick();
+    await wrapper.vm.$nextTick();
+
+    const vm = wrapper.vm as any;
+    expect(vm.expansions.tournament).eq(false);
+    expect(vm.playerPasswords).eq(false);
+  });
+
   it('applies tournament locks when restoring saved tournament settings', async () => {
     new CreateGameSettingsStorage(localStorage).saveSettings(createNewGameConfig({
       players: [
@@ -285,6 +326,8 @@ describe('CreateGameForm', () => {
       ],
     }))).throws('Colors are duplicated');
     expect((wrapper.vm as any).uploading).eq(false);
+    // The failed restore must not leave the tournament password lock cleared.
+    expect((wrapper.vm as any).playerPasswords).eq(true);
   });
 
   it('saves current settings before creating a game', async () => {
