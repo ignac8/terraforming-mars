@@ -314,7 +314,11 @@ export class Game implements IGame, Logger {
     const projectDeck = new ProjectDeck(gameCards.getProjectCards(), [], rng);
     projectDeck.shuffle();
 
-    const corporationDeck = new CorporationDeck(gameCards.getCorporationCards(), [], rng);
+    let corporationCards = gameCards.getCorporationCards();
+    if (gameOptions.automaOption) {
+      corporationCards = AutomaGameSetup.filterCorporationCards(corporationCards);
+    }
+    const corporationDeck = new CorporationDeck(corporationCards, [], rng);
     corporationDeck.shuffle();
 
     let preludeCards = gameCards.getPreludeCards();

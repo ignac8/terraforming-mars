@@ -3,6 +3,8 @@ import {testGame} from '../TestGame';
 import {BoardName} from '../../src/common/boards/BoardName';
 import {ApiCreateGame} from '../../src/server/routes/ApiCreateGame';
 import {ColonyName} from '../../src/common/colonies/ColonyName';
+import {CardName} from '../../src/common/cards/CardName';
+import {IGame} from '../../src/server/IGame';
 
 describe('MarsBotGameCreation', () => {
   describe('Server-side expansion gating', () => {
@@ -67,6 +69,46 @@ describe('MarsBotGameCreation', () => {
         boardName: BoardName.THARSIS,
       });
       expect(game.gameOptions.aresExtension).to.be.false;
+    });
+
+    // Rulebook A, p.11: "You may not use this corporation against MarsBot."
+    it('automa game leaves Mons Insurance out of the corporation deck', () => {
+      const corporations = (game: IGame) => [
+        ...game.corporationDeck.drawPile,
+        ...game.corporationDeck.discardPile,
+        ...game.players.flatMap((player) => player.dealtCorporationCards),
+      ].map((card) => card.name);
+      const [automaGame] = testGame(1, {
+        automaOption: true,
+        promoCardsOption: true,
+        boardName: BoardName.THARSIS,
+        skipInitialCardSelection: false,
+      });
+      const [game] = testGame(2, {promoCardsOption: true, skipInitialCardSelection: false});
+
+      expect(corporations(automaGame)).to.not.include(CardName.MONS_INSURANCE);
+      expect(corporations(game)).to.include(CardName.MONS_INSURANCE);
+    });
+
+    // Both would ask MarsBot to choose, and nobody answers for it.
+    it('automa game forces the alternate Venus board off', () => {
+      const [game] = testGame(1, {
+        automaOption: true,
+        venusNextExtension: true,
+        altVenusBoard: true,
+        boardName: BoardName.THARSIS,
+      });
+      expect(game.gameOptions.altVenusBoard).to.be.false;
+    });
+
+    it('automa game uses the standard political agendas', () => {
+      const [game] = testGame(1, {
+        automaOption: true,
+        turmoilExtension: true,
+        politicalAgendasExtension: 'Chairman',
+        boardName: BoardName.THARSIS,
+      });
+      expect(game.gameOptions.politicalAgendasExtension).to.eq('Standard');
     });
 
     it('automa game forces Moon off', () => {

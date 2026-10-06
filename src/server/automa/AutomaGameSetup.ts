@@ -36,6 +36,9 @@ export class AutomaGameSetup {
     gameOptions.underworldExpansion = false;
     gameOptions.communityCardsOption = false;
     gameOptions.solarPhaseOption = false; // Venus Solar Phase Step 2 replaced by Government Intervention card
+    // The alternate Venus board's bonuses and the Chairman's agenda choice would ask MarsBot to choose.
+    gameOptions.altVenusBoard = false;
+    gameOptions.politicalAgendasExtension = 'Standard';
     gameOptions.boardName = BoardName.THARSIS;
   }
 
@@ -66,6 +69,11 @@ export class AutomaGameSetup {
       return cards.filter((c) => c.name !== CardName.RECESSION);
     }
     return cards;
+  }
+
+  /** Rulebook A, p.11: "Mons Insurance - You may not use this corporation against MarsBot." */
+  public static filterCorporationCards<T extends ICard>(cards: Array<T>): Array<T> {
+    return cards.filter((c) => c.name !== CardName.MONS_INSURANCE);
   }
 
   /** Create the MarsBot player instance for the game engine. */
