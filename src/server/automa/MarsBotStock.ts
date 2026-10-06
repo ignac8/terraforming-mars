@@ -107,6 +107,18 @@ export class MarsBotStock extends Stock {
       super.steal(resource, qty, thief, options);
       return;
     }
+    // Ecoline/Ecotec FAQ: plants on the corp card can be stolen. Excess is lost, NOT taken from MC supply.
+    const plantResources = this.marsBotRef.getCorpState('plantResources');
+    if (resource === Resource.PLANTS && plantResources > 0) {
+      const stolen = Math.min(qty, plantResources);
+      this.marsBotRef.setCorpState('plantResources', plantResources - stolen);
+      thief.stock.add(resource, stolen);
+      if (options?.log) {
+        this.player.game.log('${0} steals ${1} plant resources from MarsBot\'s corp card',
+          (b) => b.player(thief).number(stolen));
+      }
+      return;
+    }
     const qtyToSteal = Math.min(this.marsBotRef.turnResolver.megacredits, qty);
     if (qtyToSteal > 0) {
       this.marsBotRef.turnResolver.megacredits -= qtyToSteal;

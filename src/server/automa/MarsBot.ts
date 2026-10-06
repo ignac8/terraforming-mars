@@ -779,6 +779,12 @@ export class MarsBot implements IMarsBot {
     }
     if (state.corpSpecificState !== undefined) {
       this.corpSpecificState = new Map(Object.entries(state.corpSpecificState).map(([k, v]) => [k, v as number]));
+      // Older saves kept Ecoline's plant under its own key, where the player couldn't reach it
+      const plantOnCard = this.corpSpecificState.get('plantOnCard');
+      if (plantOnCard !== undefined) {
+        this.corpSpecificState.delete('plantOnCard');
+        this.corpSpecificState.set('plantResources', plantOnCard);
+      }
     }
     const floaters = state.floaters ?? state.floaterCount;
     if (floaters !== undefined) {

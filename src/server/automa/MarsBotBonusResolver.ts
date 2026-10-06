@@ -436,7 +436,9 @@ export class MarsBotBonusResolver {
     if (isEvenGen || venusComplete) {
       this.withoutTRorMcGain(() => this.advanceFurthestParameter(false));
     } else if (venus < constants.MAX_VENUS_SCALE) {
-      this.withoutTRorMcGain(() => this.game.increaseVenusScaleLevel(this.marsBot, 1));
+      // FAQ (rulebook B, p.3): Aphrodite's 2 M€ per Venus step still applies, and raising
+      // Venus pays MarsBot no other M€.
+      this.withoutTRGain(() => this.game.increaseVenusScaleLevel(this.marsBot, 1));
     }
   }
 
@@ -449,16 +451,21 @@ export class MarsBotBonusResolver {
     return new MarsBotTurmoilHelper(this.game);
   }
 
-  /** Execute an action and reverse any TR or M€ gained (for Government Intervention). */
-  private withoutTRorMcGain(action: () => void): void {
+  /** Execute an action and reverse any TR gained (for Government Intervention). */
+  private withoutTRGain(action: () => void): void {
     const trBefore = this.marsBot.terraformRating;
-    const mcBefore = this.turnResolver.megacredits;
     action();
     const trGained = this.marsBot.terraformRating - trBefore;
     if (trGained > 0) {
       this.marsBot.decreaseTerraformRating(trGained);
       this.game.log('MarsBot does not receive TR from Government Intervention');
     }
+  }
+
+  /** Execute an action and reverse any TR or M€ gained (for Government Intervention). */
+  private withoutTRorMcGain(action: () => void): void {
+    const mcBefore = this.turnResolver.megacredits;
+    this.withoutTRGain(action);
     if (this.turnResolver.megacredits > mcBefore) {
       this.turnResolver.megacredits = mcBefore;
       this.game.log('MarsBot does not receive M€ from Government Intervention');
@@ -827,11 +834,11 @@ export class MarsBotBonusResolver {
     if (bot === undefined) {
       return;
     }
-    if (bot.getCorpState('plantOnCard') > 0) {
-      bot.setCorpState('plantOnCard', 0);
+    if (bot.getCorpState('plantResources') > 0) {
+      bot.setCorpState('plantResources', 0);
       this.resolvePlaceGreeneryCard('Rapid Sprouting');
     } else {
-      bot.setCorpState('plantOnCard', 1);
+      bot.setCorpState('plantResources', 1);
       this.game.log('MarsBot resolves Rapid Sprouting: 1 plant on the corporation card');
     }
   }

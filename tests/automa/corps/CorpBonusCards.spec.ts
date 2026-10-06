@@ -85,12 +85,12 @@ describe('Corp-Specific Bonus Cards (B22-B32)', () => {
 
       marsBot['bonusResolver'].resolve(createCorpBonusCard(BonusCardId.B23_RAPID_SPROUTING));
       expect(greeneries()).to.eq(0);
-      expect(marsBot.getCorpState('plantOnCard')).to.eq(1);
+      expect(marsBot.getCorpState('plantResources')).to.eq(1);
 
       marsBot['bonusResolver'].resolve(createCorpBonusCard(BonusCardId.B23_RAPID_SPROUTING));
       expect(greeneries()).to.eq(1);
       expect(game.getOxygenLevel()).to.eq(1);
-      expect(marsBot.getCorpState('plantOnCard')).to.eq(0);
+      expect(marsBot.getCorpState('plantResources')).to.eq(0);
     });
   });
 
