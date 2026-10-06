@@ -5,6 +5,7 @@ import {GameLogs} from './GameLogs';
 import {Request} from '../Request';
 import {Response} from '../Response';
 import {RouteError} from './RouteError';
+import {isPlayerId} from '../../common/Types';
 
 export class ApiGameLogs extends Handler {
   public static readonly INSTANCE = new ApiGameLogs();
@@ -18,6 +19,11 @@ export class ApiGameLogs extends Handler {
     const game = await ctx.gameLoader.getGame(id);
     if (game === undefined) {
       throw RouteError.notFound('game not found');
+    }
+    // A player's log carries private lines (cards bought and drawn), so it needs
+    // the same seat password as the player page. The spectator log has none.
+    if (isPlayerId(id)) {
+      this.checkPlayerPassword(game.getPlayerById(id), ctx);
     }
     const logs = this.gameLogs.getLogsForGameView(id, game, generation);
     responses.writeJson(res, ctx, logs);

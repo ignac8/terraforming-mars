@@ -90,9 +90,12 @@ export type GameOptions = {
  * Forces the game options the tournament regulations prescribe. The create
  * game form locks the same options, but the client is not trusted.
  *
- * Base + Corporate Era only, draft everywhere, an official board, and none
- * of the rule-changing variants. Player count, timers, undo and the
- * corporation pool override stay untouched.
+ * Base + Corporate Era only, draft everywhere, an official board, none of
+ * the rule-changing variants, undo and fast mode off, other players' VP
+ * hidden, player passwords on, and no custom card, corporation, prelude, CEO
+ * or colony lists. Board choice, timers and escape velocity stay with the
+ * game creator. Per-player TR boost is zeroed in ApiCreateGame, since it is
+ * not a game option.
  */
 export function applyTournamentPreset(options: GameOptions): void {
   options.corporateEra = true;
@@ -147,6 +150,16 @@ export function applyTournamentPreset(options: GameOptions): void {
   options.moonStandardProjectVariant = false;
   options.moonStandardProjectVariant1 = false;
   options.twoCorpsVariant = false;
+  options.undoOption = false;
+  options.fastModeOption = false;
+  options.showOtherPlayersVP = false;
+  options.playerPasswords = true;
+  options.customCorporationsList = [];
+  options.bannedCards = [];
+  options.includedCards = [];
+  options.customColoniesList = [];
+  options.customPreludes = [];
+  options.customCeos = [];
   const officialBoards = [BoardName.THARSIS, BoardName.HELLAS, BoardName.ELYSIUM];
   if (!officialBoards.includes(options.boardName)) {
     options.boardName = BoardName.THARSIS;

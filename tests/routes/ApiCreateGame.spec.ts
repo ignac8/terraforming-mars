@@ -202,6 +202,78 @@ describe('ApiCreateGame', () => {
     expect(res.content).contains('at least 6 CEOs');
   });
 
+  it('forces tournament locks on a created tournament game', async () => {
+    const config = {
+      ...newGameConfigForTest(),
+      players: [
+        {name: 'a', color: 'red', beginner: false, handicap: 3, first: true},
+        {name: 'b', color: 'blue', beginner: false, handicap: 5, first: false},
+      ],
+      expansions: {...newGameConfigForTest().expansions, tournament: true},
+      undoOption: true,
+      fastModeOption: true,
+      showOtherPlayersVP: true,
+      playerPasswords: false,
+      startingCorporations: 5,
+      // Too short for 2 players × 5: must not be rejected, since it is discarded.
+      customCorporationsList: [CardName.TERACTOR_TOURNAMENT],
+      bannedCards: [CardName.MINE],
+      includedCards: [CardName.MINE],
+      customPreludes: [CardName.DONATION],
+      customCeos: [CardName.FLOYD],
+    };
+    await postConfig(config);
+
+    expect(res.statusCode).eq(statusCode.ok);
+    const model = JSON.parse(res.content) as SimpleGameModel;
+    const game = await scaffolding.ctx.gameLoader.getGame(model.id);
+    expect(game).is.not.undefined;
+    const options = game!.gameOptions;
+    expect(options.undoOption).is.false;
+    expect(options.fastModeOption).is.false;
+    expect(options.showOtherPlayersVP).is.false;
+    expect(options.playerPasswords).is.true;
+    expect(options.customCorporationsList).is.empty;
+    expect(options.bannedCards).is.empty;
+    expect(options.includedCards).is.empty;
+    expect(options.customPreludes).is.empty;
+    expect(options.customCeos).is.empty;
+    expect(game!.players.map((p) => p.handicap)).deep.eq([0, 0]);
+  });
+
+  it('treats a truthy non-boolean tournament flag as a tournament game', async () => {
+    const config = {
+      ...newGameConfigForTest(),
+      players: [
+        {name: 'a', color: 'red', beginner: false, handicap: 3, first: true},
+        {name: 'b', color: 'blue', beginner: false, handicap: 0, first: false},
+      ],
+      expansions: {...newGameConfigForTest().expansions, tournament: 1 as unknown as boolean},
+      undoOption: true,
+    };
+    await postConfig(config);
+
+    expect(res.statusCode).eq(statusCode.ok);
+    const model = JSON.parse(res.content) as SimpleGameModel;
+    const game = await scaffolding.ctx.gameLoader.getGame(model.id);
+    expect(game!.gameOptions.tournamentExpansion).is.true;
+    expect(game!.gameOptions.undoOption).is.false;
+    expect(game!.players.map((p) => p.handicap)).deep.eq([0, 0]);
+  });
+
+  it('keeps handicap in non-tournament games', async () => {
+    const config = {
+      ...newGameConfigForTest(),
+      players: [{name: 'a', color: 'red', beginner: false, handicap: 3, first: true}],
+    };
+    await postConfig(config);
+
+    expect(res.statusCode).eq(statusCode.ok);
+    const model = JSON.parse(res.content) as SimpleGameModel;
+    const game = await scaffolding.ctx.gameLoader.getGame(model.id);
+    expect(game!.players[0].handicap).eq(3);
+  });
+
   async function createdEscapeVelocity(escapeVelocity: object) {
     await postConfig({...newGameConfigForTest(), escapeVelocity});
     expect(res.statusCode).eq(statusCode.ok);

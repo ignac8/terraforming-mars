@@ -3,6 +3,7 @@ import {ApiPlayer} from '../../src/server/routes/ApiPlayer';
 import {ApiWaitingFor} from '../../src/server/routes/ApiWaitingFor';
 import {ApiSpectator} from '../../src/server/routes/ApiSpectator';
 import {PlayerInput} from '../../src/server/routes/PlayerInput';
+import {ApiGameLogs} from '../../src/server/routes/ApiGameLogs';
 import {Game} from '../../src/server/Game';
 import {IGame} from '../../src/server/IGame';
 import {TestPlayer} from '../TestPlayer';
@@ -98,6 +99,33 @@ describe('player passwords', () => {
     await scaffolding.post(PlayerInput.INSTANCE, res);
 
     expect(res.statusCode).eq(statusCode.unauthorized);
+  });
+
+  it('game logs are gated too', async () => {
+    await getPlayer('');
+
+    scaffolding.url = '/api/game/logs?id=' + player.id;
+    await scaffolding.get(ApiGameLogs.INSTANCE, res);
+
+    expect(res.statusCode).eq(statusCode.unauthorized);
+  });
+
+  it('the claimant reads game logs with the password', async () => {
+    const model = await getPlayer('');
+
+    scaffolding.url = '/api/game/logs?id=' + player.id + '&password=' + model.password;
+    await scaffolding.get(ApiGameLogs.INSTANCE, res);
+
+    expect(res.statusCode).eq(statusCode.ok);
+  });
+
+  it('a spectator reads game logs without a password', async () => {
+    await getPlayer('');
+
+    scaffolding.url = '/api/game/logs?id=spectatorid';
+    await scaffolding.get(ApiGameLogs.INSTANCE, res);
+
+    expect(res.statusCode).eq(statusCode.ok);
   });
 
   it('an opponent cannot read this seat password from their own player page', async () => {

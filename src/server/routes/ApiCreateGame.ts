@@ -123,18 +123,23 @@ export class ApiCreateGame extends Handler {
     const body = await readBody(req);
     try {
       const gameReq = JSON.parse(body) as NewGameConfig;
-      this.validateCustomLists(gameReq);
+      const tournament = Boolean(gameReq.expansions?.tournament);
+      // Tournament games discard every custom list, so there is nothing to validate.
+      if (!tournament) {
+        this.validateCustomLists(gameReq);
+      }
       if (gameReq.escapeVelocity !== undefined && hasNegativeEscapeVelocityOption(gameReq.escapeVelocity)) {
         throw RouteError.badRequest('Escape Velocity values cannot be negative.');
       }
       const gameId = safeCast(generateRandomId('g'), isGameId);
       const spectatorId = safeCast(generateRandomId('s'), isSpectatorId);
+      // TR boost is per player, so applyTournamentPreset cannot reach it.
       const players = gameReq.players.map((p) => {
         return new Player(
           p.name,
           p.color,
           p.beginner,
-          Number(p.handicap), // For some reason handicap is coming up a string.
+          tournament ? 0 : Number(p.handicap), // For some reason handicap is coming up a string.
           safeCast(generateRandomId('p'), isPlayerId),
         );
       });
@@ -201,7 +206,7 @@ export class ApiCreateGame extends Handler {
         twoCorpsVariant: gameReq.twoCorpsVariant,
         underworldExpansion: gameReq.expansions.underworld,
         deltaProjectExpansion: gameReq.expansions.deltaProject,
-        tournamentExpansion: gameReq.expansions.tournament,
+        tournamentExpansion: tournament,
         undoOption: gameReq.undoOption,
         venusNextExtension: gameReq.expansions.venus,
       };

@@ -72,6 +72,183 @@ describe('CreateGameForm', () => {
     expect(wrapper.exists()).to.be.true;
   });
 
+  function expectTournamentLocks(vm: any) {
+    expect(vm.undoOption).eq(false);
+    expect(vm.fastModeOption).eq(false);
+    expect(vm.showOtherPlayersVP).eq(false);
+    expect(vm.playerPasswords).eq(true);
+    for (const player of vm.players) {
+      expect(player.handicap).eq(0);
+    }
+    for (const flag of ['showCorporationList', 'showPreludesList', 'showColoniesList',
+      'showCeosList', 'showBannedCards', 'showIncludedCards']) {
+      expect(vm[flag], flag).eq(false);
+    }
+    for (const list of ['customCorporations', 'customPreludes', 'customColonies',
+      'customCeos', 'bannedCards', 'includedCards']) {
+      expect(vm[list], list).is.empty;
+    }
+    expect(vm.expansions.prelude).eq(false);
+  }
+
+  function seedLockedFields(vm: any) {
+    vm.undoOption = true;
+    vm.fastModeOption = true;
+    vm.showOtherPlayersVP = true;
+    vm.playerPasswords = false;
+    vm.players[0].handicap = 4;
+    vm.showCorporationList = true;
+    vm.showBannedCards = true;
+    vm.showIncludedCards = true;
+    vm.customCorporations = ['Teractor'];
+    vm.customPreludes = ['Donation'];
+    vm.customColonies = ['Europa'];
+    vm.customCeos = ['Floyd'];
+    vm.bannedCards = ['Mine'];
+    vm.includedCards = ['Mine'];
+  }
+
+  it('applies tournament locks on first load', async () => {
+    const wrapper = shallowMount(CreateGameForm, {...globalConfig});
+    await wrapper.vm.$nextTick();
+
+    expectTournamentLocks(wrapper.vm as any);
+    for (const id of ['#undo-checkbox', '#customCorps-checkbox', '#bannedCards-checkbox',
+      '#includedCards-checkbox', '#realTimeVP-checkbox', '#fastMode-checkbox',
+      '#playerPasswords-checkbox']) {
+      expect(wrapper.find(id).attributes('disabled'), id).is.not.undefined;
+    }
+  });
+
+  it('applies tournament locks when tournament is switched back on', async () => {
+    const wrapper = shallowMount(CreateGameForm, {...globalConfig});
+    await wrapper.vm.$nextTick();
+    const vm = wrapper.vm as any;
+
+    vm.expansions.tournament = false;
+    await wrapper.vm.$nextTick();
+    vm.expansions.prelude = true;
+    seedLockedFields(vm);
+    await wrapper.vm.$nextTick();
+
+    vm.expansions.tournament = true;
+    await wrapper.vm.$nextTick();
+
+    expectTournamentLocks(vm);
+  });
+
+  it('re-enables the undo control when tournament is switched off', async () => {
+    const wrapper = shallowMount(CreateGameForm, {...globalConfig});
+    await wrapper.vm.$nextTick();
+    expect(wrapper.find('#undo-checkbox').attributes('disabled')).is.not.undefined;
+
+    (wrapper.vm as any).expansions.tournament = false;
+    await wrapper.vm.$nextTick();
+
+    expect(wrapper.find('#undo-checkbox').attributes('disabled')).is.undefined;
+  });
+
+  it('does not keep tournament player passwords when tournament is switched off', async () => {
+    const wrapper = shallowMount(CreateGameForm, {...globalConfig});
+    await wrapper.vm.$nextTick();
+    const vm = wrapper.vm as any;
+    expect(vm.playerPasswords).eq(true);
+
+    vm.expansions.tournament = false;
+    await wrapper.vm.$nextTick();
+
+    expect(vm.playerPasswords).eq(false);
+  });
+
+  it('restores player passwords from a saved non-tournament config', async () => {
+    new CreateGameSettingsStorage(localStorage).saveSettings(createNewGameConfig({
+      expansions: {...DEFAULT_EXPANSIONS, tournament: false},
+      playerPasswords: true,
+    }));
+
+    const wrapper = shallowMount(CreateGameForm, {...globalConfig});
+    await wrapper.vm.$nextTick();
+    await wrapper.vm.$nextTick();
+
+    const vm = wrapper.vm as any;
+    expect(vm.expansions.tournament).eq(false);
+    expect(vm.playerPasswords).eq(true);
+  });
+
+  it('defaults player passwords off when restoring a saved non-tournament config without the key', async () => {
+    new CreateGameSettingsStorage(localStorage).saveSettings(createNewGameConfig({
+      expansions: {...DEFAULT_EXPANSIONS, tournament: false},
+    }));
+
+    const wrapper = shallowMount(CreateGameForm, {...globalConfig});
+    await wrapper.vm.$nextTick();
+    await wrapper.vm.$nextTick();
+
+    const vm = wrapper.vm as any;
+    expect(vm.expansions.tournament).eq(false);
+    expect(vm.playerPasswords).eq(false);
+  });
+
+  it('applies tournament locks when restoring saved tournament settings', async () => {
+    new CreateGameSettingsStorage(localStorage).saveSettings(createNewGameConfig({
+      players: [
+        {name: 'Alice', color: 'red', beginner: false, handicap: 3, first: false},
+        {name: 'Bob', color: 'blue', beginner: false, handicap: 0, first: true},
+      ],
+      expansions: {...DEFAULT_EXPANSIONS, tournament: true, prelude: true},
+      undoOption: true,
+      fastModeOption: true,
+      showOtherPlayersVP: true,
+      playerPasswords: false,
+      customCorporationsList: ['Teractor'],
+      customPreludes: ['Donation'],
+      bannedCards: ['Mine'],
+      includedCards: ['Mine'],
+    }));
+
+    const wrapper = shallowMount(CreateGameForm, {...globalConfig});
+    await wrapper.vm.$nextTick();
+    await wrapper.vm.$nextTick();
+
+    expectTournamentLocks(wrapper.vm as any);
+  });
+
+  it('applies tournament locks when restoring the legacy flat tournament key', async () => {
+    new CreateGameSettingsStorage(localStorage).saveSettings({
+      players: [
+        {name: 'Alice', color: 'red', beginner: false, handicap: 3, first: true},
+        {name: 'Bob', color: 'blue', beginner: false, handicap: 0, first: false},
+      ],
+      tournamentExpansion: true,
+      solarPhaseOption: false,
+      undoOption: true,
+      customCorporationsList: ['Teractor'],
+    } as unknown as NewGameConfig);
+
+    const wrapper = shallowMount(CreateGameForm, {...globalConfig});
+    await wrapper.vm.$nextTick();
+    await wrapper.vm.$nextTick();
+
+    const vm = wrapper.vm as any;
+    // The defaults have empty names, so this proves the saved settings were applied.
+    expect(vm.players[0].name).eq('Alice');
+    expect(vm.expansions.tournament).eq(true);
+    expectTournamentLocks(vm);
+  });
+
+  it('applies tournament locks after Reset', async () => {
+    const wrapper = shallowMount(CreateGameForm, {...globalConfig});
+    await wrapper.vm.$nextTick();
+    const vm = wrapper.vm as any;
+    seedLockedFields(vm);
+
+    vm.resetSettings();
+    await wrapper.vm.$nextTick();
+    await wrapper.vm.$nextTick();
+
+    expectTournamentLocks(vm);
+  });
+
   it('restores the last saved game settings on load', async () => {
     new CreateGameSettingsStorage(localStorage).saveSettings(createNewGameConfig({
       expansions: {...DEFAULT_EXPANSIONS, venus: true},
@@ -152,6 +329,8 @@ describe('CreateGameForm', () => {
       ],
     }))).throws('Colors are duplicated');
     expect((wrapper.vm as any).uploading).eq(false);
+    // The failed restore must not leave the tournament password lock cleared.
+    expect((wrapper.vm as any).playerPasswords).eq(true);
   });
 
   it('saves current settings before creating a game', async () => {

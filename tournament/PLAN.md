@@ -117,8 +117,8 @@ The printed tournament cards (Polish) are the authoritative source for these val
 2. **Cards** — 16 standalone classes (see table) + `TournamentCardManifest`.
    Nirgal's free-milestones/awards check in `Player.ts` extended to the tournament name.
 3. **Shared corporation pool** — in `Game.newGame`, when the module is on: draw 5
-   tournament corps once (or use `customCorporationsList` as the pool if set — creator
-   override), then give every player fresh per-player instances of those same cards.
+   tournament corps once from the full tournament set (no creator override), then give
+   every player fresh per-player instances of those same cards.
    Duplicate corporations across players are supported; name→owner reverse lookups were
    audited (`RemoveResourcesFromCard` now resolves the owner by card instance).
 4. **Engine** — `Game.addTile(..., {grantSpaceBonuses: false})` threaded through
@@ -133,9 +133,10 @@ The printed tournament cards (Polish) are the authoritative source for these val
    passes opposite).
 6. **Create-game UI** — "Tournament rules" checkbox, ON by default, forces + locks
    incompatible options (expansions, draft toggles, fan boards, rule variants); board
-   limited to Tharsis/Hellas/Elysium; player count, colors, undo, timers and the
-   corporation pool override stay free. Server-side `applyTournamentPreset()` clamps the
-   same rules in `ApiCreateGame` (UI is not trusted).
+   limited to Tharsis/Hellas/Elysium; player count, colors, board, timers and escape
+   velocity stay free; undo, fast mode, other players' VP, player passwords (forced on),
+   TR boost and every custom card/corporation/prelude/CEO/colony list are forced and locked.
+   Server-side `applyTournamentPreset()` clamps the same rules in `ApiCreateGame` (UI is not trusted).
 7. **i18n** — Polish strings for all new texts in `src/locales/pl.json` (wording from
    the printed cards).
 8. **Tests** — `tests/cards/tournament/` per-card specs + shared-pool dealing +

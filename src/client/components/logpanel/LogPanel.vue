@@ -123,7 +123,7 @@ export default defineComponent({
     },
     getLogsForGeneration(generation: number, scrollPosition?: ScrollPosition): void {
       const messages = this.messages;
-      fetchLogs(this.viewModel.id, generation)
+      fetchLogs(this.viewModel, generation)
         .then((data) => {
           if (!data) {
             return;

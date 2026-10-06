@@ -235,7 +235,7 @@
                                 <span v-i18n>Beginner Options</span>
                             </label> -->
 
-                            <input type="checkbox" v-model="undoOption" id="undo-checkbox">
+                            <input type="checkbox" v-model="undoOption" id="undo-checkbox" :disabled="expansions.tournament">
                             <label for="undo-checkbox">
                                 <span v-i18n>Allow undo</span>&nbsp;<a :href="wikiUrls.allowUndo" class="tooltip" v-i18n data-tooltip="Link opens in a new tab/window" target="_blank">&#9432;</a>
                             </label>
@@ -300,7 +300,7 @@
 
                             <div class="create-game-subsection-label" v-i18n>Filter</div>
 
-                            <input type="checkbox" v-model="showCorporationList" id="customCorps-checkbox">
+                            <input type="checkbox" v-model="showCorporationList" id="customCorps-checkbox" :disabled="expansions.tournament">
                             <label for="customCorps-checkbox">
                                 <span v-i18n>Custom Corporation list</span>
                                 <span v-if="customCorporations.length">&nbsp;({{ customCorporations.length }})</span>
@@ -322,12 +322,12 @@
                               </label>
                             </template>
 
-                            <input type="checkbox" v-model="showBannedCards" id="bannedCards-checkbox">
+                            <input type="checkbox" v-model="showBannedCards" id="bannedCards-checkbox" :disabled="expansions.tournament">
                             <label for="bannedCards-checkbox">
                                 <span v-i18n>Exclude some cards</span>
                             </label>
 
-                            <input type="checkbox" v-model="showIncludedCards" id="includedCards-checkbox">
+                            <input type="checkbox" v-model="showIncludedCards" id="includedCards-checkbox" :disabled="expansions.tournament">
                             <label for="includedCards-checkbox">
                                 <span v-i18n>Include some cards</span>
                             </label>
@@ -434,17 +434,17 @@
                               </label>
                             </template>
 
-                            <input type="checkbox" name="showOtherPlayersVP" v-model="showOtherPlayersVP" id="realTimeVP-checkbox">
+                            <input type="checkbox" name="showOtherPlayersVP" v-model="showOtherPlayersVP" id="realTimeVP-checkbox" :disabled="expansions.tournament">
                             <label for="realTimeVP-checkbox">
                                 <span v-i18n>Show real-time VP</span>&nbsp;<a :href="wikiUrls.showRealtimeVP" class="tooltip" v-i18n data-tooltip="Link opens in a new tab/window" target="_blank">&#9432;</a>
                             </label>
 
-                            <input type="checkbox" v-model="fastModeOption" id="fastMode-checkbox">
+                            <input type="checkbox" v-model="fastModeOption" id="fastMode-checkbox" :disabled="expansions.tournament">
                             <label for="fastMode-checkbox">
                                 <span v-i18n>Fast mode</span>&nbsp;<a :href="wikiUrls.fastMode" class="tooltip" v-i18n data-tooltip="Link opens in a new tab/window" target="_blank">&#9432;</a>
                             </label>
 
-                            <input type="checkbox" name="playerPasswords" v-model="playerPasswords" id="playerPasswords-checkbox">
+                            <input type="checkbox" name="playerPasswords" v-model="playerPasswords" id="playerPasswords-checkbox" :disabled="expansions.tournament">
                             <label for="playerPasswords-checkbox" title="The first person to open a player link claims that seat. From then on only they can use it.">
                                 <span v-i18n>Player passwords</span>
                             </label>
@@ -480,7 +480,7 @@
                                                   </label>
 
                                                   <label class="form-label">
-                                                      <input type="number" class="form-input form-inline player-handicap" value="0" min="0" :max="10" v-model.number="newPlayer.handicap" >
+                                                      <input type="number" class="form-input form-inline player-handicap" value="0" min="0" :max="10" v-model.number="newPlayer.handicap" :disabled="expansions.tournament">
                                                       <i class="form-icon"></i><span v-i18n>TR Boost</span>&nbsp;<a :href="wikiUrls.trBoost" class="tooltip" v-i18n data-tooltip="Link opens in a new tab/window" target="_blank">&#9432;</a>
                                                   </label>
                                               <!-- </template> -->
@@ -671,37 +671,16 @@ export default defineComponent({
       this.expansions.promo = value;
       this.solarPhaseOption = value;
     },
-    'expansions.tournament': function(value: boolean) {
-      if (value === true) {
-        this.allOfficialExpansions = false;
-        this.expansions.corpera = true;
-        this.expansions.prelude = false;
-        this.expansions.prelude2 = false;
-        this.expansions.venus = false;
-        this.expansions.colonies = false;
-        this.expansions.turmoil = false;
-        this.expansions.promo = false;
-        this.expansions.ares = false;
-        this.expansions.community = false;
-        this.expansions.moon = false;
-        this.expansions.pathfinders = false;
-        this.expansions.ceo = false;
-        this.expansions.starwars = false;
-        this.expansions.underworld = false;
-        this.expansions.deltaProject = false;
-        this.draftVariant = true;
-        this.initialDraft = true;
-        this.solarPhaseOption = false;
-        this.randomMA = RandomMAOptionType.NONE;
-        this.includeFanMA = false;
-        this.modularMA = false;
-        this.shuffleMapOption = false;
-        this.aresExtremeVariant = false;
-        this.startingCorporations = 5;
-        if (!this.tournamentBoards.includes(this.board)) {
-          this.board = BoardName.THARSIS;
+    'expansions.tournament': {
+      handler(value: boolean) {
+        if (value === true) {
+          this.applyTournamentLocks();
+        } else if (!this.uploading) {
+          // Tournament rules force passwords on; switching them off must not leave that behind.
+          this.playerPasswords = defaultCreateGameModel().playerPasswords;
         }
-      }
+      },
+      immediate: true,
     },
     'expansions.venus': function(value: boolean) {
       this.solarPhaseOption = value;
@@ -871,6 +850,55 @@ export default defineComponent({
     },
   },
   methods: {
+    applyTournamentLocks(): void {
+      this.allOfficialExpansions = false;
+      this.expansions.corpera = true;
+      this.expansions.prelude = false;
+      this.expansions.prelude2 = false;
+      this.expansions.venus = false;
+      this.expansions.colonies = false;
+      this.expansions.turmoil = false;
+      this.expansions.promo = false;
+      this.expansions.ares = false;
+      this.expansions.community = false;
+      this.expansions.moon = false;
+      this.expansions.pathfinders = false;
+      this.expansions.ceo = false;
+      this.expansions.starwars = false;
+      this.expansions.underworld = false;
+      this.expansions.deltaProject = false;
+      this.draftVariant = true;
+      this.initialDraft = true;
+      this.solarPhaseOption = false;
+      this.randomMA = RandomMAOptionType.NONE;
+      this.includeFanMA = false;
+      this.modularMA = false;
+      this.shuffleMapOption = false;
+      this.aresExtremeVariant = false;
+      this.startingCorporations = 5;
+      if (!this.tournamentBoards.includes(this.board)) {
+        this.board = BoardName.THARSIS;
+      }
+      this.undoOption = false;
+      this.fastModeOption = false;
+      this.showOtherPlayersVP = false;
+      this.playerPasswords = true;
+      for (const player of this.players) {
+        player.handicap = 0;
+      }
+      this.showCorporationList = false;
+      this.showPreludesList = false;
+      this.showColoniesList = false;
+      this.showCeosList = false;
+      this.showBannedCards = false;
+      this.showIncludedCards = false;
+      this.customCorporations = [];
+      this.customPreludes = [];
+      this.customColonies = [];
+      this.customCeos = [];
+      this.bannedCards = [];
+      this.includedCards = [];
+    },
     restoreLastSettings() {
       const settings = createGameSettingsStorage.loadSettings();
       if (settings === undefined) {
@@ -890,10 +918,14 @@ export default defineComponent({
       const component: CreateGameModel = this;
       const refs = this.typedRefs;
       const processor = new JSONProcessor(component);
+      const previousPlayerPasswords = this.playerPasswords;
       this.uploading = true;
       try {
+        // A save without this key must restore to the default rather than to the tournament lock.
+        this.playerPasswords = defaultCreateGameModel().playerPasswords;
         processor.applyJSON(json);
       } catch (e) {
+        this.playerPasswords = previousPlayerPasswords;
         this.uploading = false;
         throw e;
       }
@@ -909,6 +941,9 @@ export default defineComponent({
             component.seed = Math.random();
           }
           component.solarPhaseOption = Boolean(processor.solarPhaseOption);
+          if (component.expansions.tournament) {
+            this.applyTournamentLocks();
+          }
         } finally {
           this.uploading = false;
         }
@@ -936,6 +971,9 @@ export default defineComponent({
         }
         if (refs.cardsFilter2) {
           refs.cardsFilter2.selected = [];
+        }
+        if (this.expansions.tournament) {
+          this.applyTournamentLocks();
         }
       });
     },
