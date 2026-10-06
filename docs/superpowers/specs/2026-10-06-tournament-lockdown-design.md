@@ -43,7 +43,8 @@ values that will be silently discarded.
 
 - Force `undoOption = false` for tournament games.
 - Clear all six custom card/corporation/colony/prelude/CEO pool overrides.
-- Disable the seven corresponding form controls when tournament is selected.
+- Disable the four always-rendered form controls when tournament is selected.
+  The other three are already hidden by the expansion they depend on.
 - Reset those controls when tournament is toggled on, so the form does not keep
   stale selections that the server would discard.
 - Correct the `applyTournamentPreset` doc comment, which currently claims undo
@@ -124,23 +125,39 @@ It becomes:
 
 ### Client: `src/client/components/create/CreateGameForm.vue`
 
-Seven checkboxes gain `:disabled="expansions.tournament"`, matching the roughly
+Four checkboxes gain `:disabled="expansions.tournament"`, matching the roughly
 twenty controls already locked this way:
 
-| Line | Control |
-| --- | --- |
-| 243 | `undo-checkbox` |
-| 308 | `customCorps-checkbox` |
-| 315 | `customPreludes-checkbox` |
-| 323 | `customCeos-checkbox` |
-| 330 | `bannedCards-checkbox` |
-| 335 | `includedCards-checkbox` |
-| 341 | `customColonies-checkbox` |
+| Line | Control | Why it needs disabling |
+| --- | --- | --- |
+| 243 | `undo-checkbox` | always rendered |
+| 308 | `customCorps-checkbox` | always rendered |
+| 330 | `bannedCards-checkbox` | always rendered |
+| 335 | `includedCards-checkbox` | always rendered |
+
+The other three filter toggles need no `:disabled` attribute, because they are
+already conditionally rendered on the expansion the tournament preset turns off:
+
+| Line | Control | Wrapped in |
+| --- | --- | --- |
+| 315 | `customPreludes-checkbox` | `<template v-if="expansions.prelude">` |
+| 323 | `customCeos-checkbox` | `<template v-if="expansions.ceo">` |
+| 341 | `customColonies-checkbox` | `<template v-if="expansions.colonies">` |
+
+The watcher already sets `expansions.prelude`, `expansions.ceo` and
+`expansions.colonies` to false when tournament is switched on, so those three
+controls disappear from the form. Adding `:disabled` to a control that is not
+rendered would be dead markup.
 
 The six filter components (`CorporationsFilter`, `PreludesFilter`,
 `ColoniesFilter`, `CeosFilter` and two `CardsFilter` instances) need no change.
-Each is rendered under `v-if` on its `show*` flag, so disabling the toggle and
-clearing the flag removes the panel.
+Each is rendered under `v-if` on its `show*` flag, so clearing the flag removes
+the panel.
+
+Disappearing is not the same as being cleared, which is why the watcher work
+below is not optional: a form where prelude was enabled and preludes were chosen
+keeps `showPreludesList` true and `customPreludes` populated after the checkbox
+vanishes, and would still post them.
 
 The existing `'expansions.tournament'` watcher, which already resets expansion
 checkboxes when tournament is switched on, is extended to reset this group too:
