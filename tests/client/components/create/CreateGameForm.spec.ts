@@ -220,6 +220,7 @@ describe('CreateGameForm', () => {
         {name: 'Bob', color: 'blue', beginner: false, handicap: 0, first: false},
       ],
       tournamentExpansion: true,
+      solarPhaseOption: false,
       undoOption: true,
       customCorporationsList: ['Teractor'],
     } as unknown as NewGameConfig);
@@ -229,6 +230,8 @@ describe('CreateGameForm', () => {
     await wrapper.vm.$nextTick();
 
     const vm = wrapper.vm as any;
+    // The defaults have empty names, so this proves the saved settings were applied.
+    expect(vm.players[0].name).eq('Alice');
     expect(vm.expansions.tournament).eq(true);
     expectTournamentLocks(vm);
   });
