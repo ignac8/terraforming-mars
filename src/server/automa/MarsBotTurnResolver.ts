@@ -1,6 +1,8 @@
 import {IGame} from '../IGame';
 import {IPlayer} from '../IPlayer';
 import {IProjectCard} from '../cards/IProjectCard';
+import {ICard} from '../cards/ICard';
+import {CardName} from '../../common/cards/CardName';
 import {Tag} from '../../common/cards/Tag';
 import {GlobalParameter} from '../../common/GlobalParameter';
 import {ColonyName} from '../../common/colonies/ColonyName';
@@ -86,12 +88,27 @@ export class MarsBotTurnResolver {
     this.marsBotManager?.corp?.effect?.onProjectCardResolved?.(this.marsBotManager, card);
 
     // Notify human player's effect cards (Solar Logistics, Saturn Systems, etc.)
-    for (const effectCard of this.humanPlayer.playedCards) {
-      this.humanPlayer.defer(effectCard.onCardPlayedByAnyPlayer?.(this.humanPlayer, card, this.marsBot));
-    }
+    this.notifyPlayerCards(card);
 
     // Card goes to MarsBot's played pile (for Hard mode scoring)
     this.game.projectDeck.discardPile.push(card);
+  }
+
+  /**
+   * Runs the player's "when any player plays a card" effects for a card MarsBot resolved.
+   *
+   * MarsBot keeps no resources on its cards, so the effects see the card without a resource
+   * type. Otherwise Splice asks MarsBot to pick between M€ and a microbe on the card, and
+   * nobody answers for MarsBot.
+   */
+  public notifyPlayerCards(card: ICard, onlyCards?: ReadonlyArray<CardName>): void {
+    const played: ICard = Object.create(card, {resourceType: {value: undefined}});
+    for (const effectCard of this.humanPlayer.playedCards) {
+      if (onlyCards !== undefined && !onlyCards.includes(effectCard.name)) {
+        continue;
+      }
+      this.humanPlayer.defer(effectCard.onCardPlayedByAnyPlayer?.(this.humanPlayer, played, this.marsBot));
+    }
   }
 
   // ---- Track Advancement ----
@@ -100,8 +117,12 @@ export class MarsBotTurnResolver {
     return this.marsBotBoard.tracks[trackIndex]?.definition.tags[0] ?? `Track ${trackIndex}`;
   }
 
-  /** Advance a track by index. Handles chain actions. */
-  public advanceTrack(trackIndex: number): void {
+  /**
+   * Advance a track by index. Handles chain actions.
+   *
+   * Returns false when the track was already at its end, which is a Failed Action instead.
+   */
+  public advanceTrack(trackIndex: number): boolean {
     const track = this.marsBotBoard.tracks[trackIndex];
     const name = this.trackName(trackIndex);
 
@@ -110,7 +131,7 @@ export class MarsBotTurnResolver {
     if (result.type === 'maxed') {
       this.game.log('MarsBot: ${0} track at max, Failed Action', (b) => b.rawString(name));
       this.failedAction();
-      return;
+      return false;
     }
 
     // A cube's effect can move this track on again, so the log keeps the space reached here.
@@ -121,7 +142,7 @@ export class MarsBotTurnResolver {
         MarsBotCorpResolver.onTrackAdvanced(this.marsBotManager, trackIndex, position)) {
       this.game.log('MarsBot: ${0} track to ${1}, icon replaced by a corp cube',
         (b) => b.rawString(name).number(position));
-      return;
+      return true;
     }
 
     if (result.type === 'action') {
@@ -132,6 +153,27 @@ export class MarsBotTurnResolver {
       this.game.log('MarsBot: ${0} track to ${1}',
         (b) => b.rawString(name).number(position));
     }
+    return true;
+  }
+
+  /**
+   * Advance the track for a tag, for a track or bonus effect that names the tag.
+   * Returns false when no track takes that tag.
+   *
+   * FAQ (rulebook B, p.3): a microbe advancement resolves the player's Pharmacy Union or
+   * Splice as if a card with a microbe tag was played. Plant and animal advances on the
+   * shared track don't, and other cards (Saturn Systems) only react to played cards.
+   */
+  public advanceTrackOfTag(tag: Tag): boolean {
+    const trackIndex = this.marsBotBoard.tagToTrack[tag];
+    if (trackIndex === undefined) {
+      return false;
+    }
+    if (this.advanceTrack(trackIndex) && tag === Tag.MICROBE) {
+      const microbeCard = {tags: [Tag.MICROBE]} as Partial<ICard> as ICard;
+      this.notifyPlayerCards(microbeCard, [CardName.PHARMACY_UNION, CardName.SPLICE]);
+    }
+    return true;
   }
 
   /** Resolve an action icon on a track position. */
@@ -152,10 +194,7 @@ export class MarsBotTurnResolver {
       if (!isNaN(numericIndex)) {
         this.advanceTrack(numericIndex);
       } else {
-        const tagIndex = this.marsBotBoard.tagToTrack[value as Tag];
-        if (tagIndex !== undefined) {
-          this.advanceTrack(tagIndex);
-        }
+        this.advanceTrackOfTag(value as Tag);
       }
       return;
     }

@@ -42,11 +42,8 @@ export class MarsBotCorpResolver {
     // 2b. FAQ: trigger human corp callbacks for MarsBot's starting tags
     // e.g., if human plays Saturn Systems and MarsBot has Jovian starting tag
     if (corp.tags.length > 0) {
-      const humanPlayer = marsBot.humanPlayer;
       const fakeCard = {tags: [...corp.tags], name: corp.name} as any;
-      for (const effectCard of humanPlayer.playedCards) {
-        humanPlayer.defer(effectCard.onCardPlayedByAnyPlayer?.(humanPlayer, fakeCard, marsBot.player));
-      }
+      marsBot.turnResolver.notifyPlayerCards(fakeCard);
     }
 
     // 3. Call corp-specific setup

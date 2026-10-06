@@ -489,6 +489,7 @@ describe('Expansion MarsBot Corporations', () => {
       const advanced: Array<number> = [];
       marsBot.turnResolver.advanceTrack = (i) => {
         advanced.push(i);
+        return true;
       };
       const space = quietSpace(game, marsBot);
       game.simpleAddTile(human, game.board.getAdjacentSpaces(space)[0], {tileType: TileType.GREENERY});

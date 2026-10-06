@@ -219,7 +219,7 @@ describe('Corp-Specific Bonus Cards (B22-B32)', () => {
   describe('B28 Diversification', () => {
     it('loses up to 4 M€ after advancing', () => {
       const {marsBot} = createAutomaGame();
-      marsBot.turnResolver.advanceTrack = () => {};
+      marsBot.turnResolver.advanceTrack = () => true;
       marsBot.turnResolver.megacredits = 6;
       marsBot['bonusResolver'].resolve(createCorpBonusCard(BonusCardId.B28_DIVERSIFICATION));
       expect(marsBot.turnResolver.megacredits).to.eq(2);

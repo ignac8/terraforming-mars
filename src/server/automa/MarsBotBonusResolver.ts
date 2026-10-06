@@ -534,10 +534,7 @@ export class MarsBotBonusResolver {
     const advance = (trackIndex: number) => {
       this.turnResolver.advanceTrack(trackIndex); return true;
     };
-    const advanceTrackOf = (tag: Tag) => {
-      const trackIndex = marsBotBoard.tagToTrack[tag];
-      return trackIndex === undefined ? false : advance(trackIndex);
-    };
+    const advanceTrackOf = (tag: Tag) => this.turnResolver.advanceTrackOfTag(tag);
     // Advances the less or the more advanced of two tags' tracks, the upper track when tied.
     const advanceTrackOfEither = (tags: [Tag, Tag], pick: 'less' | 'more') => {
       const position = (trackIndex: number) => marsBotBoard.tracks[trackIndex].position;

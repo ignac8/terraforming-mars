@@ -170,6 +170,7 @@ describe('Corp Effect Hooks', () => {
       marsBot.setCorpAndSetup(corp);
       marsBot.turnResolver.advanceTrack = (i) => {
         marsBot.marsBotBoard.tracks[i].position++;
+        return true;
       };
       const mcBefore = marsBot.turnResolver.megacredits;
       const eventBefore = marsBot.marsBotBoard.tracks[2].position;
