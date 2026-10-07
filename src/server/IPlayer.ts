@@ -199,6 +199,13 @@ export interface IPlayer {
   // password may read or act on it. Only ever sent to the seat's own player.
   password?: Password;
 
+  /**
+   * When this player was given their current input request. Used to throttle bots.
+   *
+   * Not serialized: reloading the game asks for input again, which resets it.
+   */
+  inputRequestedAt?: number;
+
   setup(game: IGame): void;
 
   getTitaniumValue(): number;
