@@ -536,14 +536,14 @@ describe('MarsBot Turmoil — Global Events solo resolution (T-10/T-10b)', () =>
 
 describe('MarsBot Turmoil — Automatic skips (T-5 T-9 T-11a)', () => {
   it('T-9: MarsBot does NOT lose TR during Turmoil TR Revision', () => {
-    // endGeneration() calls game.players.forEach(p => p.decreaseTerraformRating())
+    // runTurmoilPhase() calls game.players.forEach(p => p.decreaseTerraformRating())
     // MarsBot is NOT in game.players, so it never loses TR.
     const {game, marsBot} = createTurmoilGame();
     const turmoil = Turmoil.getTurmoil(game);
     const trBefore = marsBot.player.terraformRating;
 
     game.phase = Phase.SOLAR;
-    turmoil.endGeneration(game);
+    turmoil.runTurmoilPhase(game);
     runAllActions(game);
 
     // MarsBot should be unchanged (no TR loss from TR revision step)
@@ -614,7 +614,7 @@ describe('MarsBot Turmoil — Chairman rules (T-11b T-11c)', () => {
     expect(marsBotPlayer.terraformRating).to.equal(trBefore + 1);
   });
 
-  it('T-11b: MarsBot gains 1 TR when it becomes chairman via full endGeneration', () => {
+  it('T-11b: MarsBot gains 1 TR when it becomes chairman via full runTurmoilPhase', () => {
     const {game, marsBot} = createTurmoilGame();
     const turmoil = Turmoil.getTurmoil(game);
     const marsBotPlayer = marsBot.player;
@@ -628,7 +628,7 @@ describe('MarsBot Turmoil — Chairman rules (T-11b T-11c)', () => {
 
     const trBefore = marsBotPlayer.terraformRating;
     game.phase = Phase.SOLAR;
-    turmoil.endGeneration(game);
+    turmoil.runTurmoilPhase(game);
     runAllActions(game);
 
     // MarsBot should have gained +1 TR for becoming chairman (and NOT lost TR from step 1)
@@ -678,7 +678,7 @@ describe('MarsBot Turmoil — Chairman rules (T-11b T-11c)', () => {
     const marsBotPlayer = marsBot.player;
 
     game.phase = Phase.SOLAR;
-    turmoil.endGeneration(game);
+    turmoil.runTurmoilPhase(game);
     runAllActions(game);
 
     // MarsBot should NOT be in usedFreeDelegateAction (it never used the lobby action)

@@ -4,7 +4,6 @@ import {Board} from '../boards/Board';
 import {MoonExpansion} from '../moon/MoonExpansion';
 import {PathfindersExpansion} from '../pathfinders/PathfindersExpansion';
 import {DeltaProjectExpansion} from '../delta/DeltaProjectExpansion';
-import {Turmoil} from '../turmoil/Turmoil';
 import {VictoryPointsBreakdownBuilder} from './VictoryPointsBreakdownBuilder';
 import {rankedTiers} from '../../common/utils/utils';
 import {FundedAward} from '../awards/FundedAward';
@@ -68,12 +67,9 @@ export function calculateVictoryPoints(player: IPlayer) {
 
   // Turmoil Victory Points
   const includeTurmoilVP = player.game.gameIsOver() || player.game.phase === Phase.END;
-
-  Turmoil.ifTurmoil(player.game, (turmoil) => {
-    if (includeTurmoilVP) {
-      builder.setVictoryPoints('victoryPoints', turmoil.getVictoryPoints(player), 'Turmoil Points');
-    }
-  });
+  if (player.game.turmoil && includeTurmoilVP) {
+    builder.setVictoryPoints('victoryPoints', player.game.turmoil.getVictoryPoints(player), 'Turmoil Points');
+  }
 
   const coloniesVP = player.colonies.getVictoryPoints();
   if (coloniesVP > 0) {
