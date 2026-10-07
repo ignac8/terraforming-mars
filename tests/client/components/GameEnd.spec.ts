@@ -66,4 +66,20 @@ describe('GameEnd', () => {
     expect(text).to.include('(20 vs 20)');
     expect(text).to.include('Tie goes to MarsBot!');
   });
+
+  it('starts the MarsBot detail column with its own VP sources, not a spacer', () => {
+    const marsBot = fakeMarsBot(8);
+    marsBot.vpBreakdown!.neuralInstance = 5;
+    marsBot.vpBreakdown!.mcToVP = 3;
+    marsBot.mcPerVP = 8;
+    const wrapper = shallowMount(GameEnd, {
+      ...globalConfig,
+      props: {
+        participant: fakePlayerViewModel({game: fakeGameModel({marsBot})}),
+      },
+    });
+    const column = wrapper.findAll('.game-end-column').find((c) => c.find('.game-end-player').exists() && c.find('.game-end-player').text() === 'MarsBot');
+    const rows = column!.findAll('.game-end-column-row');
+    expect(rows.map((row) => row.text())).to.deep.eq(['5Neural Instance', '3MC to VP (8 MC/VP)', '']);
+  });
 });
