@@ -320,9 +320,6 @@ export default defineComponent({
     Phase(): typeof Phase {
       return Phase;
     },
-    preferences(): typeof getPreferences {
-      return getPreferences;
-    },
     playerColorClass(): typeof playerColorClass {
       return playerColorClass;
     },

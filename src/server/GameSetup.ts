@@ -3,7 +3,9 @@ import {BoardName} from '../common/boards/BoardName';
 import {ElysiumBoard} from './boards/ElysiumBoard';
 import {IGame} from './IGame';
 import {GameOptions} from './game/GameOptions';
-import {GameId, isPlayerId, safeCast} from '../common/Types';
+import {GameId, SpaceId, isPlayerId, safeCast} from '../common/Types';
+import {SpaceType} from '../common/boards/SpaceType';
+import {SerializedBoard} from './boards/SerializedBoard';
 import {HellasBoard} from './boards/HellasBoard';
 import {TharsisBoard} from './boards/TharsisBoard';
 import {IPlayer} from './IPlayer';
@@ -21,6 +23,7 @@ import {TerraCimmeriaNovaBoard} from './boards/TerraCimmeriaNovaBoard';
 import {Board} from './boards/Board';
 import {Space} from './boards/Space';
 import {HollandiaBoard} from './boards/HollandiaBoard';
+import {AmazonisPlanitiaBoard} from './boards/AmazonisPlanitiaBoard';
 
 type BoardFactory = (new (spaces: ReadonlyArray<Space>) => MarsBoard) & {newInstance: (gameOptions: GameOptions, rng: Random) => MarsBoard};
 
@@ -46,6 +49,7 @@ const boards: Record<BoardName, BoardFactory> = {
   [BoardName.TERRA_CIMMERIA]: TerraCimmeriaBoard,
   [BoardName.VASTITAS_BOREALIS]: VastitasBorealisBoard,
   [BoardName.HOLLANDIA]: HollandiaBoard,
+  [BoardName.AMAZONIS_PLANITIA]: AmazonisPlanitiaBoard,
 } satisfies Record<BoardName, BoardFactory>;
 
 export class GameSetup {
@@ -56,6 +60,7 @@ export class GameSetup {
 
   public static deserializeBoard(players: Array<IPlayer>, gameOptions: GameOptions, d: SerializedGame) {
     const playersForBoard = players.length !== 1 ? players : [players[0], GameSetup.neutralPlayerFor(d.id)];
+    migrateColonySpaceIds(d.board);
     const deserialized = Board.deserialize(d.board, playersForBoard).spaces;
     const Factory: BoardFactory = boards[gameOptions.boardName];
     return new Factory(deserialized);
@@ -97,5 +102,15 @@ export class GameSetup {
 
     placeCityAndForest(game, 'top');
     placeCityAndForest(game, 'bottom');
+  }
+}
+
+// TODO(kberg): Remove after 2028-01-01
+// Mars colony spaces used to have bare two-digit ids ('01', '02', '69'-'78'). They now lead with 'c'.
+function migrateColonySpaceIds(board: SerializedBoard): void {
+  for (const space of board.spaces) {
+    if (space.spaceType === SpaceType.COLONY && !space.id.startsWith('c')) {
+      space.id = `c${space.id}` as SpaceId;
+    }
   }
 }

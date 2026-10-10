@@ -79,9 +79,11 @@ export const awardNames = [
   'Electrician',
   'Founder',
   'Incorporator',
+  'Innovator',
   'Investor',
   'Metropolist',
   'Mogul',
+  'Physicist',
   'Politician',
   'Suburbian', // Matches Edgedancer.
   // 'Zoologist', // Most animal and microbe resources. Currently Zoologist2
@@ -93,7 +95,7 @@ export const AWARD_RENAMES = new Map<string, AwardName>([
   // When renaming an award add the old name here (like the example below), and add a TODO (like the example below)
   // And remember to add a test in spec.ts.
 
-  // TODO(yournamehere): remove after 2026-04-05
+  // TODO(yournamehere): remove after YYYY-MM-DD
   // ['EdgeLord', 'Excavator'],
 ]);
 

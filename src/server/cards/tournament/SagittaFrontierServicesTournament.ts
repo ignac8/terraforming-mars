@@ -7,6 +7,9 @@ import {ICorporationCard} from '../corporation/ICorporationCard';
 import {IPlayer} from '../../IPlayer';
 import {ICard} from '../ICard';
 
+const HELP_TEXT = `*  Event tags count as tags for Sagitta Frontier Services [ref](https://boardgamegeek.com/thread/3154781/article/42964845#42964845)
+*  Wild tags do not count for Sagitta Frontier Services. [ref](https://boardgamegeek.com/thread/2031069/article/43202892#43202892)` as const;
+
 export class SagittaFrontierServicesTournament extends SagittaFrontierServices implements ICorporationCard {
   constructor() {
     super({
@@ -26,6 +29,7 @@ export class SagittaFrontierServicesTournament extends SagittaFrontierServices i
           b.effect(undefined, (eb) => eb.emptyTag().asterix().startEffect.megacredits(1));
         }),
         description: 'You start with 35 M€. Increase your energy and plant production 1 step each, and your M€ production 4 steps. Draw a card that has no tag.',
+        helpText: HELP_TEXT,
       },
     });
   }

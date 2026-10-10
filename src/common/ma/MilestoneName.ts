@@ -46,7 +46,7 @@ export const milestoneNames = [
   'T. Collector',
   'Firestarter',
   'Terra Pioneer',
-  'Spacefarer', // TODO(kberg): Rename to T. Spacefarer
+  'T. Spacefarer',
   'Gambler',
 
   // Terra Cimmeria Nova
@@ -85,6 +85,7 @@ export const milestoneNames = [
   'Legend4',
   'Lobbyist',
   'Merchant',
+  'Merchant3',
   'Metallurgist', // Same as Smith
   'Philantropist',
   'Pioneer4',
@@ -107,8 +108,11 @@ const MILESTONE_RENAMES = new Map<string, MilestoneName>([
   // When renaming an award add the old name here (like the example below), and add a TODO (like the example below)
   // And remember to add a test in spec.ts.
 
-  // TODO(yournamehere): remove after 2021-04-05
+  // TODO(yournamehere): remove after YYYY-MM-DD
   // ['Electrician', 'V. Electrician'],
+
+  // TODO(kberg): remove after 2026-12-01
+  ['Spacefarer', 'T. Spacefarer'],
 ]);
 
 export function maybeRenamedMilestone(name: string): MilestoneName {

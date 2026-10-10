@@ -1,9 +1,11 @@
 import {expect} from 'chai';
+import * as constants from '@/common/constants';
 import {TharsisBoard} from '../../src/server/boards/TharsisBoard';
 import {Player} from '../../src/server/Player';
 import {TileType} from '../../src/common/TileType';
 import {Space} from '../../src/server/boards/Space';
 import {SpaceType} from '../../src/common/boards/SpaceType';
+import {SpaceBonus} from '../../src/common/boards/SpaceBonus';
 import {TestPlayer} from '../TestPlayer';
 import {Board} from '../../src/server/boards/Board';
 import {SerializedBoard} from '../../src/server/boards/SerializedBoard';
@@ -33,15 +35,15 @@ describe('Board', () => {
   });
 
   it('getSpace', () => {
-    expect(board.getSpaceOrThrow('01').spaceType).eq(SpaceType.COLONY);
-    expect(board.getSpaceOrThrow('01').id).eq('01');
+    expect(board.getSpaceOrThrow('c01').spaceType).eq(SpaceType.COLONY);
+    expect(board.getSpaceOrThrow('c01').id).eq('c01');
     expect(() => board.getSpaceOrThrow(NamedMoonSpaces.LUNA_TRADE_STATION).id).to.throw(Error, /Can't find space with id m01/);
   });
 
   it('getAdjacentSpaces', () => {
     const expectedAdjacentSpaces: Map<string, Array<string>> = new Map([
-      ['01', []],
-      ['02', []],
+      ['c01', []],
+      ['c02', []],
       ['03', ['04', '09', '08']],
       ['04', ['05', '10', '09', '03']],
       ['05', ['06', '11', '10', '04']],
@@ -103,7 +105,7 @@ describe('Board', () => {
       ['61', ['55', '56', '62', '60']],
       ['62', ['56', '57', '63', '61']],
       ['63', ['57', '58', '62']],
-      ['69', []],
+      ['c69', []],
     ]);
     board.spaces.forEach((space) => {
       const expected = expectedAdjacentSpaces.get(space.id);
@@ -239,7 +241,7 @@ describe('Board', () => {
     const boardJson: SerializedBoard = {
       'spaces': [
         {
-          'id': '01',
+          'id': 'c01',
           'spaceType': SpaceType.COLONY, 'bonus': [],
           'x': -1, 'y': -1, 'player': 'p-name-1-id',
           'tile': {'tileType': 2},
@@ -267,7 +269,7 @@ describe('Board', () => {
     const player2 = new Player('name-2', 'yellow', false, 0, 'p-name-2-id');
 
     const board = new TestBoard(Board.deserialize(boardJson, [player1, player2]).spaces);
-    expect(board.getSpaceOrThrow('01').player).eq(player1);
+    expect(board.getSpaceOrThrow('c01').player).eq(player1);
     expect(board.getSpaceOrThrow('03').player).eq(player2);
   });
 
@@ -303,6 +305,22 @@ describe('Board', () => {
     expect(board.getSpaceOrThrow('04').tile).is.undefined;
     expect(board.getSpaceOrThrow('04').cube).eq('rey-skywalker');
     expect(board.getSpaceOrThrow('05').cube).eq('martian-nature-wonders');
+  });
+
+  it('deserialize migrates 3MC temperature bonus to 4MC', () => {
+    const boardJson: SerializedBoard = {
+      'spaces': [
+        {
+          'id': '03',
+          'spaceType': SpaceType.LAND, 'bonus': [SpaceBonus._TEMPERATURE_3MC, SpaceBonus.STEEL],
+          'x': 4, 'y': 0,
+        },
+      ],
+    };
+
+    const board = new TestBoard(Board.deserialize(boardJson, []).spaces);
+
+    expect(board.getSpaceOrThrow('03').bonus).deep.eq([SpaceBonus.TEMPERATURE_4MC, SpaceBonus.STEEL]);
   });
 
   it('serialize cubes', () => {
@@ -353,4 +371,11 @@ describe('Board', () => {
       expect(spaceIds).to.have.members(run.spaces);
     });
   }
+
+  it('standard board still uses original parameter limits (regression)', () => {
+    const [stdGame] = testGame(2);
+    expect(stdGame.max.temperature).to.eq(constants.MAX_TEMPERATURE);
+    expect(stdGame.max.oxygen).to.eq(constants.MAX_OXYGEN_LEVEL);
+    expect(stdGame.max.oceans).to.eq(constants.MAX_OCEAN_TILES);
+  });
 });
