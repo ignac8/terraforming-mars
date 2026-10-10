@@ -23,6 +23,7 @@ import {Player} from '../src/server/Player';
 import {RandomMAOptionType} from '../src/common/ma/RandomMAOptionType';
 import {SpaceBonus} from '../src/common/boards/SpaceBonus';
 import {TileType} from '../src/common/TileType';
+import {SelectResource} from '../src/server/inputs/SelectResource';
 import {IColony} from '../src/server/colonies/IColony';
 import {IAward} from '../src/server/awards/IAward';
 import {SerializedGame} from '../src/server/SerializedGame';
@@ -34,6 +35,9 @@ import {TiredEarth} from '../src/server/cards/pathfinders/TiredEarth';
 import {Tag} from '../src/common/cards/Tag';
 import {restoreTestDatabase, setTestDatabase} from './testing/setup';
 import {InMemoryDatabase} from './testing/InMemoryDatabase';
+import {Spacefarer} from '../src/server/milestones/terraCimmeria/Spacefarer';
+import {SpaceName} from '../src/common/boards/SpaceName';
+import {SpaceType} from '../src/common/boards/SpaceType';
 
 describe('Game', () => {
   it('should initialize with right defaults', () => {
@@ -750,6 +754,21 @@ describe('Game', () => {
     expect(player.titanium).eq(1);
   });
 
+  it('grants the standard resource space bonus', () => {
+    const player = TestPlayer.BLUE.newPlayer();
+    const game = Game.newInstance('gameid', [player], player, 'spectatorid');
+    const space = game.board.getAvailableSpacesOnLand(player)[0];
+    space.bonus = [SpaceBonus.STANDARD_RESOURCE];
+
+    game.addTile(player, space, {tileType: TileType.GREENERY});
+    runAllActions(game);
+
+    const selectResource = cast(player.popWaitingFor(), SelectResource);
+    expect(selectResource.include).to.have.members(['megacredits', 'steel', 'titanium', 'plants', 'energy', 'heat']);
+    selectResource.process({type: 'resource', resource: 'titanium'});
+    expect(player.titanium).eq(1);
+  });
+
   it('Ocean upgrade tiles can be placed on ocean spaces without Ares or Pathfinders', () => {
     const player = TestPlayer.BLUE.newPlayer();
     const game = Game.newInstance('game-ocean-upgrade', [player], player, 'spectatorid');
@@ -792,6 +811,7 @@ describe('Game', () => {
       'rng',
       'underworldDraftEnabled',
       'doubleDownPrelude',
+      'max',
     ];
     const serializedValuesNotInGame: Array<keyof SerializedGame> = [
       'seed',
@@ -849,6 +869,34 @@ describe('Game', () => {
       penaltyPeriodMinutes: 2,
       penaltyVPPerPeriod: 1,
     });
+  });
+
+  it('deserializing a game with legacy colony space ids', () => {
+    const player = TestPlayer.BLUE.newPlayer();
+    const game = Game.newInstance('gameid', [player], player, 'spectatorid', {pathfindersExpansion: true});
+    const serialized = game.serialize();
+
+    const legacy = (id: SpaceId) => id.startsWith('c') ? id.substring(1) as SpaceId : id;
+    serialized.board.spaces = serialized.board.spaces.map((space) => ({...space, id: legacy(space.id)}));
+    expect(serialized.board.spaces.map((space) => space.id)).includes('01');
+    expect(serialized.board.spaces.map((space) => space.id)).includes('75');
+
+    const deserialized = Game.deserialize(serialized);
+
+    expect(deserialized.board.spaces.map((space) => space.id)).deep.eq(game.board.spaces.map((space) => space.id));
+    expect(deserialized.board.getSpaceOrThrow(SpaceName.GANYMEDE_COLONY).spaceType).eq(SpaceType.COLONY);
+    expect(deserialized.board.getSpaceOrThrow(SpaceName.CERES_SPACEPORT).spaceType).eq(SpaceType.COLONY);
+  });
+
+  it('deserializing a game with St. Joseph cathedrals on legacy colony space ids', () => {
+    const player = TestPlayer.BLUE.newPlayer();
+    const game = Game.newInstance('gameid', [player], player, 'spectatorid', {pathfindersExpansion: true});
+    const serialized = game.serialize();
+    serialized.stJosephCathedrals = ['75', '31'];
+
+    const deserialized = Game.deserialize(serialized);
+
+    expect(deserialized.stJosephCathedrals).deep.eq([SpaceName.CERES_SPACEPORT, '31']);
   });
 
   it('deserializing a game with awards', () => {
@@ -951,44 +999,32 @@ describe('Game', () => {
     }]);
   });
 
-  // it('deserializing a game with renamed milestones', () => {
-  //   const player = TestPlayer.BLUE.newPlayer();
-  //   const player2 = TestPlayer.RED.newPlayer();
-  //   const game = Game.newInstance('gameid', [player, player2], player, 'spectatorid');
-  //   const electrician = new Electrician();
-  //   const collector = new Collector();
+  it('deserializing a game with renamed milestones', () => {
+    const player = TestPlayer.BLUE.newPlayer();
+    const player2 = TestPlayer.RED.newPlayer();
+    const game = Game.newInstance('gameid', [player, player2], player, 'spectatorid');
+    const spacefarer = new Spacefarer();
 
-  //   game.milestones.unshift(electrician, collector);
+    game.milestones.unshift(spacefarer);
 
-  //   game.claimedMilestones.push({
-  //     milestone: electrician,
-  //     player: player,
-  //   });
-  //   game.claimedMilestones.push({
-  //     milestone: collector,
-  //     player: player,
-  //   });
+    game.claimedMilestones.push({
+      milestone: spacefarer,
+      player: player,
+    });
 
-  //   const serialized = game.serialize();
-  //   expect(serialized.milestones[0]).eq('V. Electrician');
-  //   expect(serialized.claimedMilestones[0].name).eq('V. Electrician');
-  //   expect(serialized.milestones[1]).eq('T. Collector');
-  //   expect(serialized.claimedMilestones[1].name).eq('T. Collector');
+    const serialized = game.serialize();
+    expect(serialized.milestones[0]).eq('T. Spacefarer');
+    expect(serialized.claimedMilestones[0].name).eq('T. Spacefarer');
 
-  //   serialized.milestones[0] = 'Electrician' as any;
-  //   serialized.claimedMilestones[0].name = 'Electrician' as any;
-  //   serialized.milestones[1] = 'Collector' as any;
-  //   serialized.claimedMilestones[1].name = 'Collector' as any;
+    serialized.milestones[0] = 'Spacefarer' as any;
+    serialized.claimedMilestones[0].name = 'Spacefarer' as any;
 
-  //   const deserialized = Game.deserialize(serialized);
-  //   expect(deserialized.milestones[0]).deep.eq(electrician);
-  //   expect(deserialized.milestones[1]).deep.eq(collector);
-  //   expect(deserialized.claimedMilestones).has.length(2);
-  //   expect(deserialized.claimedMilestones[0].milestone.name).eq('V. Electrician');
-  //   expect(deserialized.claimedMilestones[0].player.id).eq('p-blue-id');
-  //   expect(deserialized.claimedMilestones[1].milestone.name).eq('T. Collector');
-  //   expect(deserialized.claimedMilestones[1].player.id).eq('p-blue-id');
-  // });
+    const deserialized = Game.deserialize(serialized);
+    expect(deserialized.milestones[0]).deep.eq(spacefarer);
+    expect(deserialized.claimedMilestones).has.length(1);
+    expect(deserialized.claimedMilestones[0].milestone.name).eq('T. Spacefarer');
+    expect(deserialized.claimedMilestones[0].player.id).eq('p-blue-id');
+  });
 
   // https://github.com/terraforming-mars/terraforming-mars/issues/5572
   it('dealing with milestones accidentally claimed twice', () => {

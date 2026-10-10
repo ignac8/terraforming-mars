@@ -61,10 +61,10 @@
 
 // text shadows
 each(@players, {
-@c: ~"player_@{value}";
-.player_shadow_color_@{value} {
-  text-shadow: -1px -1px 6px @@c, 1px 1px 1px #333a;
-}
+  @c: ~"player_@{value}";
+  .player_shadow_color_@{value} {
+    text-shadow: -1px -1px 6px @@c, 1px 1px 1px #333a;
+  }
 })
 
 .game-title {
@@ -498,7 +498,7 @@ each(@players, {
       colonizer, minimalist, terran, tropicalist,
       curator, tourist, a-engineer, a-zoologist,
 
-      t-collector, firestarter, terra-pioneer, spacefarer, gambler,
+      t-collector, firestarter, terra-pioneer, t-spacefarer, gambler,
       biologist, t-politician, urbanist, warmonger,
       incorporator, manufacturer, politician,
 
@@ -514,15 +514,18 @@ each(@players, {
 
       builder7, legend4, pioneer4, metallurgist, spacefarer4, tactician4,
       terraformer29, terran5, trader, tycoon10, suburbian, briber, merchant,
+
+      // Amazonis Planitia milestone/award additions.
+      merchant3, innovator, physicist,
     ;
     each(@ma-name, {
-    .ma-name--@{value} {
-      background-image: url("assets/ma/@{value}.png");
-      // Images are expected to be 140px x 83px
+      .ma-name--@{value} {
+        background-image: url("assets/ma/@{value}.png");
+        // Images are expected to be 140px x 83px
       // background-size: 200px;
       // background-position: -30px -5px;
       }
-    })
+      })
 
     .ma-description {
       display: inline-block;
