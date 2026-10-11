@@ -594,7 +594,7 @@ export class MarsBotBonusResolver {
     };
     const nextToOcean = (space: Space) => board.getAdjacentSpaces(space).some(Board.isOceanSpace);
     const nextToSpecialTile = (space: Space) => board.getAdjacentSpaces(space).some(isSpecialTileSpace);
-    const onEdge = (space: Space) => board.getEdges().includes(space);
+    const onEdge = (space: Space) => space.edge;
     const inFourBottomRows = (space: Space) => space.y >= 5 && space.y <= 8;
 
     switch (awardName) {

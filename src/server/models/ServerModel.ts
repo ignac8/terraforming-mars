@@ -395,8 +395,6 @@ export class Server {
       }
 
       const model: SpaceModel = {
-        x: space.x,
-        y: space.y,
         id: space.id,
         spaceType: space.spaceType,
         bonus: space.bonus,

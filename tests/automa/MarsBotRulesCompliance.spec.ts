@@ -538,7 +538,7 @@ describe('MarsBot Rules Compliance', () => {
         const {game, marsBot} = createAutomaGame();
         withTopCities(game, marsBot);
         const space = placedGreenery(game, marsBot, awardName);
-        expect(game.board.getEdges(), awardName).to.include(space);
+        expect(space?.edge, awardName).is.true;
       }
     });
 
