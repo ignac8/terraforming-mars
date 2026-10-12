@@ -109,6 +109,8 @@ export type SerializedAutomaState = {
     destroyedBonusCards?: number;
     colonyCubePositions?: Array<string>;
     hasSecondTradeFleet?: boolean;
+    /** The "trackIndex:position" of the 2nd Trade Fleet cube; older saves lack it and have it on Event 9 or Energy 9. */
+    tradeFleetCubeKey?: string;
     shippingBoard?: Record<string, number>;
     /** Spaces holding one of the bot's player markers (Settlers) and no tile yet. */
     markerSpaceIds?: Array<SpaceId>;

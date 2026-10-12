@@ -24,6 +24,8 @@ import {Space} from '../../../src/server/boards/Space';
 import {SpaceType} from '../../../src/common/boards/SpaceType';
 import {TileType} from '../../../src/common/TileType';
 import {SelectCard} from '../../../src/server/inputs/SelectCard';
+import {HeadStart} from '../../../src/server/cards/promo/HeadStart';
+import {OrOptions} from '../../../src/server/inputs/OrOptions';
 import {Biofuels} from '../../../src/server/cards/prelude/Biofuels';
 import {IPreludeCard} from '../../../src/server/cards/prelude/IPreludeCard';
 import {cast} from '../../../src/common/utils/utils';
@@ -169,6 +171,32 @@ describe('Expansion MarsBot Corporations', () => {
       human.process({type: 'card', cards: [biofuels.name]});
       runAllActions(game);
 
+      expect(marsBot.beforeActionPhasePending).is.false;
+      expect(settlers()).has.length(1);
+    });
+
+    it('resolves the before-action-phase box before the actions Head Start grants', () => {
+      const [game, human] = testGame(1, {automaOption: true, automaCorpOption: true, preludeExtension: true, boardName: BoardName.THARSIS});
+      const marsBot = game.automaHooks!.marsBot;
+      const corp = getMarsBotCorp(CardName.ARCADIAN_COMMUNITIES)!;
+      clearMarsBotCorpRegistry();
+      registerMarsBotCorp(corp);
+      human.pickedCorporationCard = new EcoLine();
+      const headStart = new HeadStart();
+      const biofuels = new Biofuels();
+      human.preludeCardsInHand = [headStart, biofuels];
+      const settlers = () => marsBot.actionDeck.filter((c) => 'id' in c && c.id === BonusCardId.B22_SETTLERS);
+
+      game.automaHooks!.handlePostCorporationSetup();
+      human.takeAction();
+      runAllActions(game);
+      expect(settlers()).has.length(0);
+      human.process({type: 'card', cards: [headStart.name]});
+      runAllActions(game);
+
+      // The player has not taken either of Head Start's actions yet, and the box has resolved
+      expect(human.actionsTakenThisRound).to.eq(1);
+      expect(human.getWaitingFor()).is.instanceOf(OrOptions);
       expect(marsBot.beforeActionPhasePending).is.false;
       expect(settlers()).has.length(1);
     });

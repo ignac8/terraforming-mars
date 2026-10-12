@@ -22,6 +22,8 @@ import {Geologist} from '../../src/server/milestones/modular/Geologist';
 import {Founder} from '../../src/server/awards/modular/Founder';
 import {Suburbian} from '../../src/server/awards/modular/Suburbian';
 import {Highlander} from '../../src/server/awards/modular/Highlander';
+import {CardName} from '../../src/common/cards/CardName';
+import {getMarsBotCorp} from '../../src/server/automa/corps/MarsBotCorpRegistry';
 
 type Pred = (space: Space) => boolean;
 
@@ -433,6 +435,20 @@ describe('MarsBot special placement hexes', () => {
       expect(s.marsBot.turnResolver.megacredits).to.eq(4 + s.placer.getTotalPlacementMC(placed[placed.length - 1]));
     });
 
+    it('does not charge M€ for an ocean its corporation swallows', () => {
+      s.marsBot.setCorpAndSetup(getMarsBotCorp(CardName.PRISTAR)!);
+      s.marsBot.setCorpState('whiteCubeOnCard', 1);
+      s.marsBot.turnResolver.megacredits = 10;
+      const tr = s.marsBot.player.terraformRating;
+
+      s.game.addCity(s.marsBot.player, southPole);
+
+      expect(s.game.board.getOceanSpaces()).has.length(0);
+      // Pristar's own +6 M€ and +1 TR, and nothing paid for the hex
+      expect(s.marsBot.turnResolver.megacredits).to.eq(16);
+      expect(s.marsBot.player.terraformRating).to.eq(tr + 1);
+    });
+
     it('does nothing when MarsBot cannot pay', () => {
       s.marsBot.turnResolver.megacredits = 5;
       const tr = s.marsBot.player.terraformRating;
@@ -504,6 +520,16 @@ describe('MarsBot special placement hexes', () => {
 
       expect(builtColonies()).to.eq(1);
       expect(s.marsBot.turnResolver.megacredits).to.eq(2);
+    });
+
+    it('does not charge M€ when the project deck has no card to pick the colony', () => {
+      s.marsBot.turnResolver.megacredits = 7;
+      s.game.projectDeck.drawN = () => [];
+
+      s.game.addCity(s.marsBot.player, msl);
+
+      expect(builtColonies()).to.eq(0);
+      expect(s.marsBot.turnResolver.megacredits).to.eq(7);
     });
 
     it('does nothing when MarsBot cannot pay', () => {
@@ -582,6 +608,19 @@ describe('MarsBot special placement hexes', () => {
       expect(s.game.getTemperature()).to.eq(temperature + 2);
       expect(s.marsBot.player.terraformRating).to.eq(tr + 1);
       expect(s.marsBot.turnResolver.megacredits).to.eq(2);
+    });
+
+    it('does not charge M€ for a temperature raise its corporation swallows', () => {
+      s.marsBot.setCorpAndSetup(getMarsBotCorp(CardName.PRISTAR)!);
+      s.marsBot.setCorpState('whiteCubeOnCard', 1);
+      s.marsBot.turnResolver.megacredits = 6;
+      const temperature = s.game.getTemperature();
+
+      s.game.addCity(s.marsBot.player, northPole);
+
+      expect(s.game.getTemperature()).to.eq(temperature);
+      // Pristar's own +6 M€, and nothing paid for the hex
+      expect(s.marsBot.turnResolver.megacredits).to.eq(12);
     });
 
     it('does nothing when MarsBot cannot pay', () => {

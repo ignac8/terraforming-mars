@@ -362,9 +362,15 @@ export class MarsBotTilePlacer {
     return SPECIAL_HEX_COSTS.get(bonus) ?? 0;
   }
 
-  /** True when MarsBot has the M€ for `bonus` and there is still something to get for it. */
+  /**
+   * True when MarsBot has the M€ for `bonus` and there is still something to get for it. Never once
+   * the game is decided: the final greeneries don't trigger the hex.
+   */
   private canGetSpecialBonus(bonus: SpaceBonus): boolean {
     const game = this.game;
+    if (game.isDoneWithFinalProduction()) {
+      return false;
+    }
     // The M€ supply only: megaCredits also counts the Luna storage area
     if ((game.automaHooks?.marsBot.megacredits ?? 0) < this.specialHexCost(bonus)) {
       return false;
@@ -385,7 +391,8 @@ export class MarsBotTilePlacer {
 
   /**
    * Called once MarsBot has placed a tile on `space`. On the hexes that cost M€, MarsBot pays for
-   * the bonus and gets it when it can. Otherwise it neither pays nor gets anything.
+   * the bonus and gets it when it can. Otherwise it neither pays nor gets anything, which includes
+   * a bonus its corporation swallows (Pristar) or one that finds no colony to build.
    */
   public resolveSpecialHex(space: Space): void {
     const bonus = this.specialBonus(space);
@@ -393,22 +400,33 @@ export class MarsBotTilePlacer {
     if (bonus === undefined || marsBot === undefined || !this.canGetSpecialBonus(bonus)) {
       return;
     }
-    marsBot.turnResolver.megacredits -= this.specialHexCost(bonus);
+    const game = this.game;
+    let resolved = false;
     switch (bonus) {
-    case SpaceBonus.OCEAN:
+    case SpaceBonus.OCEAN: {
+      const oceans = game.board.getOceanSpaces().length;
       marsBot.turnResolver.placeOcean();
+      resolved = game.board.getOceanSpaces().length > oceans;
       break;
-    case SpaceBonus.TEMPERATURE_4MC:
+    }
+    case SpaceBonus.TEMPERATURE_4MC: {
+      const temperature = game.getTemperature();
       marsBot.turnResolver.raiseTemperature(1);
+      resolved = game.getTemperature() > temperature;
       break;
+    }
     case SpaceBonus.COLONY: {
       // The way Expedited Construction picks and builds one.
-      const colony = selectRandomColony(this.game, marsBot);
+      const colony = selectRandomColony(game, marsBot);
       if (colony !== undefined) {
         placeColonyForMarsBot(colony, marsBot);
+        resolved = true;
       }
       break;
     }
+    }
+    if (resolved) {
+      marsBot.turnResolver.megacredits -= this.specialHexCost(bonus);
     }
   }
 

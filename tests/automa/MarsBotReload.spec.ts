@@ -11,6 +11,8 @@ import {createCorpBonusCard} from '../../src/server/automa/MarsBotBonusCard';
 import {BonusCardId} from '../../src/common/automa/AutomaTypes';
 import {CardName} from '../../src/common/cards/CardName';
 import {Asteroid} from '../../src/server/cards/base/Asteroid';
+import {Research} from '../../src/server/cards/base/Research';
+import {Tag} from '../../src/common/cards/Tag';
 
 function createAutomaGame(): {game: IGame, marsBot: MarsBot} {
   const [game] = testGame(1, {
@@ -176,5 +178,50 @@ describe('MarsBotReload', () => {
 
     expect(restored.automaHooks!.marsBot.playedProjectCards.map((c) => c.name)).deep.eq([CardName.ASTEROID]);
     expect(restored.projectDeck.discardPile.map((c) => c.name)).does.not.include(CardName.ASTEROID);
+  });
+
+  it('removes every card MarsBot played from the project piles in older saves', () => {
+    const {game, marsBot} = createAutomaGame();
+    const cards = [new Asteroid(), new Research()];
+    cards.forEach((card) => marsBot.turnResolver.resolveProjectCard(card));
+    game.projectDeck.discardPile.push(new Asteroid(), new Research());
+
+    const restored = Game.deserialize(game.serialize());
+
+    const piles = [...restored.projectDeck.discardPile, ...restored.projectDeck.drawPile].map((c) => c.name);
+    expect(piles).does.not.include(CardName.ASTEROID);
+    expect(piles).does.not.include(CardName.RESEARCH);
+  });
+
+  it('removes cards MarsBot played from the project draw pile in older saves', () => {
+    const {game, marsBot} = createAutomaGame();
+    const asteroid = new Asteroid();
+    marsBot.turnResolver.resolveProjectCard(asteroid);
+    // An older save may have reshuffled the resolved card into the draw pile
+    game.projectDeck.drawPile.push(new Asteroid());
+
+    const restored = Game.deserialize(game.serialize());
+
+    expect(restored.automaHooks!.marsBot.playedProjectCards.map((c) => c.name)).deep.eq([CardName.ASTEROID]);
+    expect(restored.projectDeck.drawPile.map((c) => c.name)).does.not.include(CardName.ASTEROID);
+  });
+
+  it('records the whole card when a corporation ignores its first tags, and keeps it across a reload', () => {
+    const {game, marsBot} = createAutomaGame();
+    const card = new Asteroid();
+    const tags = [...card.tags];
+    expect(tags).deep.eq([Tag.SPACE]);
+    game.projectDeck.drawPile.push(card);
+    const space = marsBot.marsBotBoard.tagToTrack[Tag.SPACE]!;
+
+    marsBot.maybeDrawAndResolveProjectCardIgnoringFirstNTags(1);
+
+    // The Space tag is ignored, so its track stays put
+    expect(marsBot.marsBotBoard.tracks[space].position).to.eq(0);
+
+    expect(marsBot.playedProjectCards).deep.eq([card]);
+    expect(marsBot.playedProjectCards[0].tags).deep.eq(tags);
+    const restored = Game.deserialize(game.serialize());
+    expect(restored.automaHooks!.marsBot.playedProjectCards[0].tags).deep.eq(tags);
   });
 });

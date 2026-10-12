@@ -107,6 +107,7 @@ describe('MarsBot Colonies — 2nd Trade Fleet Cube (C-6, C-27)', () => {
     const marsBot = getMarsBotFromGame(game);
     const state = marsBot.serialize();
     state.trackCubePositions = [{trackIndex: 2, position: 9, cubeType: 'white'}];
+    delete state.tradeFleetCubeKey;
 
     marsBot.restoreState(state);
 
@@ -114,6 +115,69 @@ describe('MarsBot Colonies — 2nd Trade Fleet Cube (C-6, C-27)', () => {
     marsBot.marsBotBoard.tracks[2].position = 8;
     marsBot.advanceTrack(2);
     expect(marsBot.hasSecondTradeFleet).to.be.true;
+  });
+
+  it('keeps the Event track cube of an old Helion save, where Energy 9 holds Helion\'s own cube', () => {
+    const [game] = testGame(1, {automaOption: true, coloniesExtension: true, boardName: BoardName.THARSIS});
+    const marsBot = getMarsBotFromGame(game);
+    marsBot.setCorpAndSetup(getMarsBotCorp(CardName.HELION)!);
+    const state = marsBot.serialize();
+    // An old save: the fleet cube on Event 9, Helion's cube on Energy 9, and no recorded fleet key
+    state.trackCubePositions = [
+      ...state.trackCubePositions!,
+      {trackIndex: 2, position: 9, cubeType: 'white'},
+    ];
+    delete state.tradeFleetCubeKey;
+
+    marsBot.restoreState(state);
+
+    expect(marsBot.tradeFleetCubeKey).to.eq('2:9');
+    marsBot.marsBotBoard.tracks[2].position = 8;
+    marsBot.advanceTrack(2);
+    expect(marsBot.hasSecondTradeFleet).to.be.true;
+  });
+
+  it('keeps the Energy track cube of a save from after the move when a corporation has white cubes on Event 9', () => {
+    const [game] = testGame(1, {automaOption: true, coloniesExtension: true, boardName: BoardName.THARSIS});
+    const marsBot = getMarsBotFromGame(game);
+    const state = marsBot.serialize();
+    state.trackCubePositions = [
+      ...state.trackCubePositions!,
+      {trackIndex: 2, position: 9, cubeType: 'white'},
+    ];
+    delete state.tradeFleetCubeKey;
+
+    marsBot.restoreState(state);
+
+    expect(marsBot.tradeFleetCubeKey).to.eq('4:9');
+  });
+
+  it('keeps a new Helion game working: one shared cube on Energy 9, saved and restored', () => {
+    const [game] = testGame(1, {automaOption: true, coloniesExtension: true, boardName: BoardName.THARSIS});
+    const marsBot = getMarsBotFromGame(game);
+    marsBot.setCorpAndSetup(getMarsBotCorp(CardName.HELION)!);
+    const state = marsBot.serialize();
+    expect(state.tradeFleetCubeKey).to.eq('4:9');
+
+    marsBot.restoreState(state);
+
+    expect(marsBot.tradeFleetCubeKey).to.eq('4:9');
+    marsBot.marsBotBoard.tracks[4].position = 8;
+    marsBot.advanceTrack(4);
+    expect(marsBot.hasSecondTradeFleet).to.be.true;
+  });
+
+  it('serializes and restores the fleet cube key', () => {
+    const [game] = testGame(1, {automaOption: true, coloniesExtension: true, boardName: BoardName.THARSIS});
+    const marsBot = getMarsBotFromGame(game);
+    marsBot.tradeFleetCubeKey = '2:9';
+
+    const state = marsBot.serialize();
+    expect(state.tradeFleetCubeKey).to.eq('2:9');
+
+    marsBot.tradeFleetCubeKey = '4:9';
+    marsBot.restoreState(state);
+    expect(marsBot.tradeFleetCubeKey).to.eq('2:9');
   });
 
   it('does NOT unlock 2nd trade fleet without coloniesExtension', () => {

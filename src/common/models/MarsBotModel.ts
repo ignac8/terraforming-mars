@@ -25,6 +25,7 @@ export type MarsBotVPModel = {
   vermin: number;
   colonyVP: number; // With automaColonyVP: 1 VP per 2 colonies
   turmoilVP: number; // T-13: 1 VP per party leader or chairman position
+  corpVP: number; // VP the corporation adds at the end (Viron)
   total: number;
   detailsMilestones: ReadonlyArray<MADetail>;
   detailsAwards: ReadonlyArray<MADetail>;

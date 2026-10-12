@@ -114,6 +114,24 @@ describe('MarsBot colony storage as stock resources (C-25)', () => {
       expect(() => choose(or, 2, human, 0)).to.throw(/too low/);
     });
 
+    it('gives the thief only what is left when two steals are queued', () => {
+      const {game, human, marsBot} = createAutomaGame();
+      marsBot.turnResolver.megacredits = 3;
+      marsBot.shippingBoard.storage.set(ColonyName.CERES, 3);
+
+      marsBot.player.stock.steal(Resource.STEEL, 4, human);
+      marsBot.player.stock.steal(Resource.STEEL, 4, human);
+      // 2 from storage and 2 from the supply leaves 1 in each
+      choose(prompt(game, human), 0, human, 2);
+      expect(human.steel).eq(4);
+      // The second steal was sized for 6 in stock: it can only take the 2 that remain
+      choose(prompt(game, human), 0, human, 3);
+
+      expect(marsBot.shippingBoard.get(ColonyName.CERES)).eq(0);
+      expect(marsBot.turnResolver.megacredits).eq(0);
+      expect(human.steel).eq(6);
+    });
+
     it('offers a single mixed option when only one split is possible', () => {
       const {game, human, marsBot} = createAutomaGame();
       marsBot.turnResolver.megacredits = 1;

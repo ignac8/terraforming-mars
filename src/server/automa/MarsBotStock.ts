@@ -136,12 +136,12 @@ export class MarsBotStock extends Stock {
     if (total <= 0) {
       return;
     }
-    // Thief gains the actual resource type (plants, steel, etc.)
-    this.removeFromSources(resource, total, thief, -total, {from: {player: thief}}, (fromStorage) => {
-      thief.stock.add(resource, total);
+    // Thief gains the actual resource type (plants, steel, etc.), as much as was left to take
+    this.removeFromSources(resource, total, thief, -total, {from: {player: thief}}, (fromStorage, removed) => {
+      thief.stock.add(resource, removed);
       if (options?.log) {
         this.player.game.log('${0} steals ${1} ${2} from MarsBot (${3} MC deducted, ${4} from colony storage)',
-          (b) => b.player(thief).number(total).rawString(resource).number(total - fromStorage).number(fromStorage));
+          (b) => b.player(thief).number(removed).rawString(resource).number(removed - fromStorage).number(fromStorage));
       }
     });
   }
@@ -151,7 +151,8 @@ export class MarsBotStock extends Stock {
    * the colony storage area that holds `resource`. The taker picks the source when it matters
    * (BGG 3599965 and 3398852 allow either, and mixing within one removal). `hookAmount` is what
    * Law Suit and Crash Site Cleanup are told was removed. `done` gets the amount that came from
-   * storage, once the choice is made. It may run later, after the taker answers.
+   * storage and the amount actually removed, once the choice is made. It may run later, after the
+   * taker answers, when another removal may have emptied the supply or the area since.
    */
   private removeFromSources(
     resource: Resource,
@@ -159,7 +160,7 @@ export class MarsBotStock extends Stock {
     taker: IPlayer,
     hookAmount: number,
     options: {log?: boolean, from?: From} | undefined,
-    done: ((fromStorage: number) => void) | undefined,
+    done: ((fromStorage: number, removed: number) => void) | undefined,
   ): void {
     const supply = this.supply;
     const storage = this.storage(resource);
@@ -167,9 +168,12 @@ export class MarsBotStock extends Stock {
     // The storage part must make up what the supply cannot cover, and cannot exceed either bound.
     const lo = Math.max(0, total - supply);
     const hi = Math.min(total, storage);
-    const apply = (fromStorage: number) => {
-      this.removeFromSupply(resource, total - fromStorage, hookAmount, options, fromStorage);
-      done?.(fromStorage);
+    const apply = (chosenFromStorage: number) => {
+      // What is left now, which an earlier queued removal may have cut down
+      const fromStorage = Math.min(chosenFromStorage, this.storage(resource));
+      const fromSupply = Math.min(total - chosenFromStorage, this.supply);
+      this.removeFromSupply(resource, total - chosenFromStorage, hookAmount, options, chosenFromStorage);
+      done?.(fromStorage, fromSupply + fromStorage);
     };
     if (lo === hi) {
       apply(lo);

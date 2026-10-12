@@ -27,7 +27,7 @@ import {MarsBotCorpResolver} from './corps/MarsBotCorpResolver';
 import {getMarsBotCorp} from './corps/MarsBotCorpRegistry';
 import {SerializedAutomaState} from '../SerializedGame';
 import {SpaceId} from '../../common/Types';
-import {inplaceRemove, inplaceRemoveIf} from '../../common/utils/utils';
+import {inplaceRemove} from '../../common/utils/utils';
 import {LogHelper} from '../LogHelper';
 import {ColonyName} from '../../common/colonies/ColonyName';
 
@@ -106,8 +106,8 @@ export class MarsBot implements IMarsBot {
 
   /**
    * Track-cube key for the 2nd Trade Fleet position (Colonies, C-6).
-   * Set in constructor when coloniesExtension is enabled; undefined otherwise.
-   * Recomputed on restore — not serialized.
+   * Set in constructor when coloniesExtension is enabled; undefined otherwise. Saved with the
+   * game, because games from before the cube moved to the Energy track keep it on the Event track.
    */
   public tradeFleetCubeKey: string | undefined = undefined;
 
@@ -394,10 +394,7 @@ export class MarsBot implements IMarsBot {
     if (cards.length === 0) {
       return;
     }
-    const card = cards[0];
-    // Use Object.create to preserve prototype (methods like getVictoryPoints)
-    const mockCard = Object.create(card, {tags: {value: card.tags.slice(n)}}) as IProjectCard;
-    this.turnResolver.resolveProjectCard(mockCard);
+    this.turnResolver.resolveProjectCard(cards[0], n);
   }
 
   public maybeDrawAndResolveBonusCard(): void {
@@ -596,7 +593,9 @@ export class MarsBot implements IMarsBot {
 
   /**
    * Games saved before the Trade Fleet cube moved to the Energy track have it on space 9 of the
-   * Event track. Keep using that cube so those games still unlock the 2nd Trade Fleet.
+   * Event track, and don't record where it is. Keep using that cube so those games still unlock
+   * the 2nd Trade Fleet. Energy 9 can't settle it when the corporation is Helion, whose own white
+   * cube sits there, so the Event track decides then.
    */
   private keepLegacyTradeFleetCube(hasSecondTradeFleet: boolean): void {
     const eventTrack = this.marsBotBoard.tagToTrack[Tag.EVENT];
@@ -604,7 +603,8 @@ export class MarsBot implements IMarsBot {
       return;
     }
     const legacyKey = trackCubeKey(eventTrack, 9);
-    if (!this.trackCubePositions.has(this.tradeFleetCubeKey) && this.trackCubePositions.get(legacyKey)?.cubeType === 'white') {
+    const energyCube = this.trackCubePositions.has(this.tradeFleetCubeKey) && this.corp?.name !== CardName.HELION;
+    if (!energyCube && this.trackCubePositions.get(legacyKey)?.cubeType === 'white') {
       this.tradeFleetCubeKey = legacyKey;
     }
   }
@@ -735,6 +735,9 @@ export class MarsBot implements IMarsBot {
     if (this.hasSecondTradeFleet) {
       state.hasSecondTradeFleet = true;
     }
+    if (this.tradeFleetCubeKey !== undefined) {
+      state.tradeFleetCubeKey = this.tradeFleetCubeKey;
+    }
     if (this.shippingBoard.storage.size > 0) {
       state.shippingBoard = this.shippingBoard.serialize();
     }
@@ -808,7 +811,11 @@ export class MarsBot implements IMarsBot {
         this.trackCubePositions.set(trackCubeKey(cube.trackIndex, cube.position), cube);
       }
     }
-    this.keepLegacyTradeFleetCube(state.hasSecondTradeFleet === true);
+    if (state.tradeFleetCubeKey !== undefined) {
+      this.tradeFleetCubeKey = state.tradeFleetCubeKey;
+    } else {
+      this.keepLegacyTradeFleetCube(state.hasSecondTradeFleet === true);
+    }
     if (state.triggeredCubePositions !== undefined) {
       this.triggeredCubePositions = new Set(state.triggeredCubePositions);
     }
@@ -870,9 +877,11 @@ export class MarsBot implements IMarsBot {
         }
       }
       // Older saves also left every resolved card in the project discard pile, where it could be
-      // reshuffled and drawn again
+      // reshuffled and drawn again. A reshuffle may already have moved some into the draw pile.
       const played = new Set<string>(this.playedProjectCards.map((c) => c.name));
-      inplaceRemoveIf(this.game.projectDeck.discardPile, (c) => played.has(c.name));
+      for (const pile of [this.game.projectDeck.discardPile, this.game.projectDeck.drawPile]) {
+        pile.splice(0, pile.length, ...pile.filter((c) => !played.has(c.name)));
+      }
     }
 
     // Restore colony cube positions

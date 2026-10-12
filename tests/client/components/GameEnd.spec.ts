@@ -24,6 +24,7 @@ function fakeMarsBot(total: number): MarsBotModel {
       vermin: 0,
       colonyVP: 0,
       turmoilVP: 0,
+      corpVP: 0,
       total,
       detailsMilestones: [],
       detailsAwards: [],
@@ -82,5 +83,42 @@ describe('GameEnd', () => {
     const column = wrapper.findAll('.game-end-column').find((c) => c.find('.game-end-player').exists() && c.find('.game-end-player').text() === 'MarsBot');
     const rows = column!.findAll('.game-end-column-row');
     expect(rows.map((row) => row.text())).to.deep.eq(['5Neural Instance', '3MC to VP (8 MC/VP)', '']);
+  });
+
+  it('adds the VP without a column of their own to the MarsBot row, so it sums to the total', () => {
+    const marsBot = fakeMarsBot(0);
+    const vp = marsBot.vpBreakdown!;
+    Object.assign(vp, {
+      terraformRating: 20, milestones: 5, awards: 5, greenery: 4, cityAdjacentGreenery: 3,
+      neuralInstance: 2, mcToVP: 3, cardVP: 4, vermin: -1, colonyVP: 2, turmoilVP: 3, corpVP: 6,
+    });
+    vp.total = 20 + 5 + 5 + 4 + 3 + 2 + 3 + 4 - 1 + 2 + 3 + 6;
+    const wrapper = shallowMount(GameEnd, {
+      ...globalConfig,
+      props: {
+        participant: fakePlayerViewModel({game: fakeGameModel({marsBot})}),
+      },
+    });
+    const row = wrapper.findAll('tbody tr').find((r) => r.text().includes('MarsBot (normal)'))!;
+    const cells = row.findAll('td').map((td) => td.text());
+    // Name, TR, milestones, awards, greenery, cities, other, total, M€, actions
+    const [tr, milestones, awards, greenery, cities, other, total] = cells.slice(1, 8).map(Number);
+    expect(other).to.eq(2 + 3 + 4 - 1 + 2 + 3 + 6);
+    expect(tr + milestones + awards + greenery + cities + other).to.eq(total);
+  });
+
+  it('lists the colony, Turmoil and corporation VP in the MarsBot detail column', () => {
+    const marsBot = fakeMarsBot(0);
+    marsBot.corpName = 'Viron' as MarsBotModel['corpName'];
+    Object.assign(marsBot.vpBreakdown!, {colonyVP: 2, turmoilVP: 3, corpVP: 6});
+    const wrapper = shallowMount(GameEnd, {
+      ...globalConfig,
+      props: {
+        participant: fakePlayerViewModel({game: fakeGameModel({marsBot})}),
+      },
+    });
+    const column = wrapper.findAll('.game-end-column').find((c) => c.find('.game-end-player').exists() && c.find('.game-end-player').text() === 'MarsBot');
+    const rows = column!.findAll('.game-end-column-row').map((row) => row.text());
+    expect(rows).to.include.members(['2Colonies', '3Turmoil', '6Corporation (Viron)']);
   });
 });

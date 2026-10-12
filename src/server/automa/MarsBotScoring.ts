@@ -21,6 +21,7 @@ export interface MarsBotVPBreakdown {
   vermin: number;
   colonyVP: number; // With automaColonyVP: 1 VP per 2 colonies
   turmoilVP: number; // T-13: 1 VP per party leader or chairman position
+  corpVP: number; // VP the corporation adds at the end (Viron)
   total: number;
   detailsMilestones: Array<MADetail>;
   detailsAwards: Array<MADetail>;
@@ -81,6 +82,7 @@ export class MarsBotScoring {
       vermin,
       colonyVP,
       turmoilVP,
+      corpVP: this.corpVpBonus,
       total: tr + milestoneResult.total + awardResult.total + greenery + cityAdjacentGreenery + neuralInstance + mcToVP + cardVP + vermin + colonyVP + turmoilVP + this.corpVpBonus,
       detailsMilestones: milestoneResult.details,
       detailsAwards: awardResult.details,

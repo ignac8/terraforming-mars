@@ -79,13 +79,13 @@ export class MarsBotShippingBoard {
 
   /**
    * C-12: While ≥5 resources in the storage area, remove 5 and advance the indicated track.
-   * Does NOT apply to Titan (checked in add() before calling this).
+   * Does NOT apply to Titan (checked in add() before calling this), nor once the game is decided.
    */
   private checkOverflow(colonyName: ColonyName, marsBot: MarsBot): void {
     const tag = COLONY_STORAGE_TAG[colonyName];
-    if (tag === undefined) {
+    if (tag === undefined || marsBot.game.isDoneWithFinalProduction()) {
       return;
-    } // No track mapping — no overflow
+    } // No track mapping or the game is decided — no overflow
 
     while ((this.storage.get(colonyName) ?? 0) >= 5) {
       const current = this.storage.get(colonyName) ?? 0;

@@ -1464,6 +1464,12 @@ export class Player implements IPlayer {
       const headStartIsInEffect = this.headStartIsInEffect();
       this.game.inDoubleDown = false;
 
+      if (headStartIsInEffect && game.automaHooks?.handleActionPhaseStart()) {
+        // Head Start's actions come before the preludes finish, but MarsBot's corporation still goes first
+        this.takeAction();
+        return;
+      }
+
       if (!headStartIsInEffect) {
         // Prelude cards have to be played first
         if (this.preludeCardsInHand.length > 0) {
