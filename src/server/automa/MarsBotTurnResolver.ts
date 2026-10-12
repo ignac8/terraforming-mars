@@ -20,6 +20,7 @@ import {IAward} from '../awards/IAward';
 import {Resource} from '../../common/Resource';
 import * as constants from '../../common/constants';
 import {MarsBotCorpResolver} from './corps/MarsBotCorpResolver';
+import {placeColonyForMarsBot, selectRandomColony} from './colonies/MarsBotColonyPlacer';
 import {marsBotCanClaimMilestone, marsBotAwardScore} from './MarsBotMilestoneAwardEval';
 import type {MarsBot} from './MarsBot';
 
@@ -260,6 +261,10 @@ export class MarsBotTurnResolver {
       }
       this.raiseVenus(2);
       return;
+
+    case 'colony':
+      this.placeColony();
+      return;
     }
   }
 
@@ -361,6 +366,21 @@ export class MarsBotTurnResolver {
       this.marsBotManager.shippingBoard.add(ColonyName.TITAN, count, this.marsBotManager);
       this.game.log('MarsBot gains ${0} floater token(s) in Titan storage (C-14)', (b) => b.number(count));
     }
+  }
+
+  // Utopia Planitia's colony icon: build like Outer System Foothold, ignored without Colonies.
+  private placeColony(): void {
+    if (!this.game.gameOptions.coloniesExtension || this.marsBotManager === undefined) {
+      return;
+    }
+    const colony = selectRandomColony(this.game, this.marsBotManager);
+    if (colony === undefined) {
+      this.game.log('MarsBot: no colony tile to build on, Failed Action');
+      this.failedAction();
+      return;
+    }
+    placeColonyForMarsBot(colony, this.marsBotManager);
+    this.game.log('MarsBot places a colony on ${0}', (b) => b.colony(colony));
   }
 
   // ---- Milestones & Awards ----

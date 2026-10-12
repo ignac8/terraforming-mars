@@ -79,6 +79,7 @@ const ACTION_ICONS: Partial<Record<TrackAction, string>> = {
   'venus2': 'V2',
   'floater': 'F',
   'floater2': 'F2',
+  'colony': 'Co',
   'tr1': '1', 'tr2': '2', 'tr3': '3', 'tr4': '4',
   'tr5': '5', 'tr6': '6', 'tr7': '7', 'tr8': '8',
 };
@@ -96,6 +97,7 @@ const ACTION_LABELS: Partial<Record<TrackAction, string>> = {
   'venus2': 'Raise Venus 2 steps',
   'floater': 'Gain 1 floater',
   'floater2': 'Gain 2 floaters',
+  'colony': 'Place colony',
   'tr1': 'Raise TR +1', 'tr2': 'Raise TR +2', 'tr3': 'Raise TR +3', 'tr4': 'Raise TR +4',
   'tr5': 'Raise TR +5', 'tr6': 'Raise TR +6', 'tr7': 'Raise TR +7', 'tr8': 'Raise TR +8',
 };
