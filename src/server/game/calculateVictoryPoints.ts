@@ -13,6 +13,12 @@ import {CardName} from '../../common/cards/CardName';
 export function calculateVictoryPoints(player: IPlayer) {
   const builder = new VictoryPointsBreakdownBuilder();
 
+  // Turmoil Victory Points, first so they head the end-game card list
+  const includeTurmoilVP = player.game.gameIsOver() || player.game.phase === Phase.END;
+  if (player.game.turmoil && includeTurmoilVP) {
+    builder.setVictoryPoints('victoryPoints', player.game.turmoil.getVictoryPoints(player), 'Turmoil Points');
+  }
+
   // Victory points from cards
   let playerOwnsVermin = false; // For Vermin
   let negativeVP = 0; // For Underworld.
@@ -64,12 +70,6 @@ export function calculateVictoryPoints(player: IPlayer) {
       }
     }
   });
-
-  // Turmoil Victory Points
-  const includeTurmoilVP = player.game.gameIsOver() || player.game.phase === Phase.END;
-  if (player.game.turmoil && includeTurmoilVP) {
-    builder.setVictoryPoints('victoryPoints', player.game.turmoil.getVictoryPoints(player), 'Turmoil Points');
-  }
 
   const coloniesVP = player.colonies.getVictoryPoints();
   if (coloniesVP > 0) {

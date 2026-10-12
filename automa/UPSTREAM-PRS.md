@@ -71,6 +71,8 @@ These ride along with whichever automa PR needs them:
 - `SerializedGame.ts`, `game/GameOptions.ts`, `common/game/NewGameConfig.ts`,
   `routes/ApiCreateGame.ts`, `models/ServerModel.ts`, create-form files: new automa state and
   the `automaColonyVP` option.
+- `game/calculateVictoryPoints.ts`: Turmoil Points come first in `detailsCards`, matching
+  MarsBot's end-game column (fork display choice, not needed upstream).
 
 ## Blocked (everything else)
 

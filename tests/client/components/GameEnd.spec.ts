@@ -119,6 +119,7 @@ describe('GameEnd', () => {
     });
     const column = wrapper.findAll('.game-end-column').find((c) => c.find('.game-end-player').exists() && c.find('.game-end-player').text() === 'MarsBot');
     const rows = column!.findAll('.game-end-column-row').map((row) => row.text());
-    expect(rows).to.include.members(['2Colonies', '3Turmoil', '6Corporation (Viron)']);
+    expect(rows[0]).to.eq('3Turmoil Points');
+    expect(rows).to.include.members(['2Colonies', '6Corporation (Viron)']);
   });
 });

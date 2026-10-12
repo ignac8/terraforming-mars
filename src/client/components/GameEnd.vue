@@ -183,6 +183,10 @@
                       <div class="game-end-winer-scorebreak-player-title">
                           <div :class="'game-end-player ' + getEndGamePlayerRowColorClass(game.marsBot.color)">{{ game.marsBot.name }}</div>
                       </div>
+                      <div v-if="game.marsBot.vpBreakdown.turmoilVP" class="game-end-column-row">
+                        <div class="game-end-column-vp">{{game.marsBot.vpBreakdown.turmoilVP}}</div>
+                        <div class="game-end-column-text" v-i18n>Turmoil Points</div>
+                      </div>
                       <div v-if="game.marsBot.vpBreakdown.neuralInstance > 0" class="game-end-column-row">
                         <div class="game-end-column-vp">{{game.marsBot.vpBreakdown.neuralInstance}}</div>
                         <div class="game-end-column-text" v-i18n>Neural Instance</div>
@@ -202,10 +206,6 @@
                       <div v-if="game.marsBot.vpBreakdown.colonyVP" class="game-end-column-row">
                         <div class="game-end-column-vp">{{game.marsBot.vpBreakdown.colonyVP}}</div>
                         <div class="game-end-column-text" v-i18n>Colonies</div>
-                      </div>
-                      <div v-if="game.marsBot.vpBreakdown.turmoilVP" class="game-end-column-row">
-                        <div class="game-end-column-vp">{{game.marsBot.vpBreakdown.turmoilVP}}</div>
-                        <div class="game-end-column-text" v-i18n>Turmoil</div>
                       </div>
                       <div v-if="game.marsBot.vpBreakdown.corpVP" class="game-end-column-row">
                         <div class="game-end-column-vp">{{game.marsBot.vpBreakdown.corpVP}}</div>
