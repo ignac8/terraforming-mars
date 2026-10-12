@@ -4,7 +4,7 @@
 
 MarsBot is an automated opponent for solo play. Instead of the standard solo mode (race to complete terraforming within a generation limit), the player competes head-to-head against MarsBot for victory points. MarsBot acts as a second player using a card-driven track system instead of playing actual project cards.
 
-**Scope**: Base game on Tharsis map + Prelude/Prelude2 + Venus Next + Colonies + Turmoil expansions + 46 MarsBot corporation cards (Rulebook B). Other expansions (Ares, Moon, Pathfinders, CEOs, Star Wars, Underworld, Community Cards) are server-side gated off.
+**Scope**: Base game on the six official maps (Tharsis, Hellas, Elysium, Utopia Planitia, Terra Cimmeria Nova, Vastitas Borealis Nova) + Prelude/Prelude2 + Venus Next + Colonies + Turmoil expansions + 46 MarsBot corporation cards (Rulebook B). Other expansions (Ares, Moon, Pathfinders, CEOs, Star Wars, Underworld, Community Cards) are server-side gated off.
 
 ---
 
@@ -253,7 +253,9 @@ src/server/automa/
 ├── MarsBotTags.ts          # Override tag counting to use track positions
 ├── MarsBotStock.ts         # Override stock/production: resource getters → mcSupply, removal → MC deduction, production → track regression
 ├── boards/
-│   └── TharsisMarsBot.ts   # Tharsis track layouts and milestone/award data
+│   ├── MarsBotBoards.ts    # Board registry keyed by map
+│   ├── <Map>MarsBot.ts     # Track tags and layouts, one file per official map
+│   └── VenusMarsBot.ts     # Venus track, added to any map with Venus Next
 └── corps/
     ├── MarsBotCorpRegistry.ts   # Map-based registry for all corps
     ├── MarsBotCorpResolver.ts   # Corp selection, setup, cube triggers, per-gen effects
@@ -481,8 +483,8 @@ interface MarsBotState {
 - Destroyed bonus cards never return (page 6) ✓
 
 ### Known Limitations
-- Venus Next, Colonies, and Turmoil expansion-dependent features are now fully implemented (Tharsis only for Colonies' 2nd Trade Fleet)
-- Only Tharsis map supported (other official maps need MarsBot board data: track layouts, milestone criteria, award formulas)
+- Venus Next, Colonies, and Turmoil expansion-dependent features are implemented on every official map
+- Rulebook PDFs print track and tag references as icons that `pdftotext` drops. Read rules from rendered pages (`pdftoppm`), not extracted text
 - Fan-made expansions (Ares, Community, Pathfinders, CEOs, Star Wars, Underworld, The Moon) will NOT be supported
 - Corp card data from NamuWiki may have inaccuracies — needs verification against physical cards
 
@@ -515,7 +517,7 @@ All rules from Rulebook A (base game) and Rulebook B (corporations) are implemen
 | **Tile placer** | `src/server/automa/MarsBotTilePlacer.ts` | `findGreenerySpace()`, `findCitySpace()`, `findOceanSpace()`, `getTotalPlacementMC()` |
 | **Tag override** | `src/server/automa/MarsBotTags.ts` | `rawCount()` returns track positions |
 | **Scoring** | `src/server/automa/MarsBotScoring.ts` | `calculate()` → `MarsBotVPBreakdown` |
-| **Board data** | `src/server/automa/boards/TharsisMarsBot.ts` | Track layouts, award formulas, milestone criteria |
+| **Board data** | `src/server/automa/boards/MarsBotBoards.ts` | Track tags and layouts per map |
 | Game flow | `src/server/Game.ts` | `automaHooks?.` at ~15 hook points |
 | Award scoring | `src/server/awards/AwardScorer.ts` | Includes MarsBot track values |
 | VP calculation | `src/server/game/calculateVictoryPoints.ts` | Includes MarsBot in award comparison |
@@ -598,7 +600,8 @@ Corps may add associated bonus cards to the bonus deck or action deck:
 
 Unsupported expansions are force-disabled on the server:
 - Venus Next, Colonies, Turmoil, Ares, Moon, Pathfinders, CEOs, Star Wars, Underworld, Community Cards
-- Board forced to Tharsis
+- Maps without a MarsBot board fall back to Tharsis (`MARSBOT_BOARD_NAMES` in `src/common/automa/MarsBotBoards.ts`); random boards only draw from MarsBot maps
+- With the Milestones & Awards expansion (`modularMA`) MarsBot uses the Tharsis board on any map (rulebook C, p.13)
 - "All" button in game creation enables only compatible expansions (Corporate Era, Prelude, Prelude 2, Promos)
 
 ### 8.3 Venus Track Actions
@@ -683,12 +686,12 @@ No 2nd place VP in 2-player automa games (same as standard 2-player TM rules). O
 - [x] i18n support for all player-visible text
 - [x] 7700+ tests
 - [x] Venus Next — full expansion support (board, floater track action, milestones/awards/scoring, Government Intervention card)
-- [x] Colonies — full expansion support (Tharsis only): MarsBot Shipping Board with 11 storage areas, colony placement (B17 Expedited Construction Colonies, B18 Outer System Foothold), trading (B19 Shipping Lines, B20 Extended Shipping Lines), 2nd Trade Fleet unlock at credits-track position 9, player-trade colony bonus hook, Europa special handling (ocean tile / TR / MC), Pluto card-resource handling, Aridor/Poseidon corp ongoing effects, Pioneer/Constructor cube colony-build trigger
+- [x] Colonies — full expansion support: MarsBot Shipping Board with 11 storage areas (tags as printed on the board: Enceladus Microbe, Miranda Animal, Pluto Science), colony placement (B17 Expedited Construction Colonies, B18 Outer System Foothold, Utopia Planitia's colony track icon), trading (B19 Shipping Lines, B20 Extended Shipping Lines), 2nd Trade Fleet unlock at Energy track position 9, player-trade colony bonus hook, Europa special handling (ocean tile / TR / MC), Pluto card-resource handling, Aridor/Poseidon corp ongoing effects, Pioneer/Constructor cube colony-build trigger
 - [x] Turmoil — full expansion support: 7 delegates in reserve, MarsBot starts at 10 TR (or 13 with extra-difficulty), Party Politics (B21) with 6-tier narrowing priority and divisible-by-3 second-delegate trigger, Gray Eminence (B29) using same delegate priority, Election/Revolution global events solo-resolution for automa, Chairman gives MarsBot +1 TR, no Lobby placement, 1 VP per Party Leader / Chairman owned, Septem Tribus replaces Party Politics with Gray Eminence in deck
 - [x] Milestones & Awards expansion — all modular milestones/awards have MarsBot eval functions (Rulebook C pages 13-16)
 
 ### Not Yet Implemented (Official Expansions Only)
-- [ ] Other official maps — Hellas, Elysium, Utopia Planitia, Terra Cimmeria, Vastitas Borealis (milestone/award evals done, but track layouts still needed from physical boards). Note: 2nd Trade Fleet for Vastitas Borealis must use the Energy track (currently uses Event/credits track for Tharsis)
+- [x] Other official maps — Hellas, Elysium, Utopia Planitia, Terra Cimmeria Nova, Vastitas Borealis Nova. Track layouts transcribed from photos of the physical boards and checked by two independent readings. Tag pairings per rulebook C p.8
 - [x] Turmoil difficulty options T-14 and T-15 are independent settings in the create-game form (`automaTurmoilTRReduction`: 10 or 7; `automaTurmoilSetupDelegates`: 0 to 2), matching the rulebook's "one of the following ways"
 - [ ] Promos — Some promo cards may need special MarsBot interaction handling
 - [ ] Physical card verification — Corp effects from NamuWiki need verification against physical Automa expansion cards
