@@ -1411,7 +1411,8 @@ export class Game implements IGame, Logger {
       // grantSpaceBonuses: false skips the printed space bonuses the same way
       // covering an existing tile does. Adjacency rewards (like the ocean
       // 2 M€) and other placement effects still apply.
-      this.grantPlacementBonuses(player, space, coveringExistingTile || options?.grantSpaceBonuses === false, arcadianCommunityBonus);
+      this.grantPlacementBonuses(player, space, coveringExistingTile || options?.grantSpaceBonuses === false);
+      this.grantTilePlacementBonuses(player, space, arcadianCommunityBonus);
 
       AresHandler.ifAres(this, (aresData) => {
         AresHandler.maybeIncrementMilestones(aresData, player, space, hazardSeverity(initialTileType));
@@ -1446,7 +1447,7 @@ export class Game implements IGame, Logger {
     }
   }
 
-  public grantPlacementBonuses(player: IPlayer, space: Space, coveringExistingTile: boolean = false, arcadianCommunityBonus: boolean = false) {
+  public grantPlacementBonuses(player: IPlayer, space: Space, coveringExistingTile: boolean = false) {
     if (!coveringExistingTile) {
       this.grantSpaceBonuses(player, space);
     }
@@ -1457,23 +1458,29 @@ export class Game implements IGame, Logger {
       player.stock.add(Resource.MEGACREDITS, oceanAdjacencyBonus);
       this.log('${0} gained ${1} M€ from ${2} ocean(s)', (b) => b.player(player).number(oceanAdjacencyBonus).number(adjacentOceanCount));
     }
+  }
 
+  /**
+   * Bonuses that only apply when a tile is actually placed.
+   *
+   * Mars Nomads moves a token rather than placing a tile, so it collects the placement
+   * bonuses above without these.
+   */
+  private grantTilePlacementBonuses(player: IPlayer, space: Space, arcadianCommunityBonus: boolean) {
     // TODO(kberg): these might not apply for some bonuses, e.g. Frontier Town.
     // https://boardgamegeek.com/thread/3344366/article/44658730#44658730
-    if (space.tile !== undefined) {
-      AresHandler.ifAres(this, () => {
-        AresHandler.earnAdjacencyBonuses(player, space);
-      });
+    AresHandler.ifAres(this, () => {
+      AresHandler.earnAdjacencyBonuses(player, space);
+    });
 
-      TurmoilHandler.resolveTilePlacementBonuses(player, space.spaceType);
+    TurmoilHandler.resolveTilePlacementBonuses(player, space.spaceType);
 
-      if (arcadianCommunityBonus) {
-        this.defer(new GainResourcesDeferred(player, Resource.MEGACREDITS, {count: 3}));
-      }
+    if (arcadianCommunityBonus) {
+      this.defer(new GainResourcesDeferred(player, Resource.MEGACREDITS, {count: 3}));
+    }
 
-      if (space.undergroundResources === 'place6mc') {
-        this.defer(new GainResourcesDeferred(player, Resource.MEGACREDITS, {count: 6}));
-      }
+    if (space.undergroundResources === 'place6mc') {
+      this.defer(new GainResourcesDeferred(player, Resource.MEGACREDITS, {count: 6}));
     }
   }
 
