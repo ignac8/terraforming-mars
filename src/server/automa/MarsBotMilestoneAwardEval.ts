@@ -1,4 +1,6 @@
 import {Tag} from '../../common/cards/Tag';
+import {BoardName} from '../../common/boards/BoardName';
+import {marsBotMapSet} from '../../common/automa/MarsBotMADescriptions';
 import {IMilestone} from '../milestones/IMilestone';
 import {IAward} from '../awards/IAward';
 import {IMarsBot} from './MarsBotCorpTypes';
@@ -33,4 +35,13 @@ export function marsBotMarsTrackPositions(bot: IMarsBot): Array<number> {
   return bot.marsBotBoard.tracks
     .filter((track) => !track.definition.tags.includes(Tag.VENUS))
     .map((track) => track.position);
+}
+
+/**
+ * Whether the game plays `boardName`'s own milestone and award set. Then the rulebook's map
+ * rules apply. With random or modular milestones and awards MarsBot follows the modular
+ * rules, which are written against the Tharsis board whatever map the game is played on.
+ */
+export function marsBotUsesMapSet(bot: IMarsBot, boardName: BoardName): boolean {
+  return marsBotMapSet(bot.game.gameOptions) === boardName;
 }

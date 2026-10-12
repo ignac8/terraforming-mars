@@ -1,6 +1,7 @@
 import {expect} from 'chai';
 import {RimSettler} from '../../src/server/milestones/RimSettler';
 import {TestPlayer} from '../TestPlayer';
+import {testGame} from '../TestGame';
 import {IMarsBot} from '../../src/server/automa/MarsBotCorpTypes';
 import {MarsBotBoard} from '../../src/server/automa/MarsBotBoard';
 import {THARSIS_MARSBOT_BOARD} from '../../src/server/automa/boards/TharsisMarsBot';
@@ -19,7 +20,7 @@ describe('RimSettler', () => {
 
   it('MarsBot claims it at space 5 of its Jovian track', () => {
     const board = new MarsBotBoard(THARSIS_MARSBOT_BOARD);
-    const bot = {marsBotBoard: board} as unknown as IMarsBot;
+    const bot = {game: testGame(1)[0], marsBotBoard: board} as unknown as IMarsBot;
     for (let i = 0; i < 4; i++) {
       board.tracks[4].advance();
     }

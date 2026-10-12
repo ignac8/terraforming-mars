@@ -119,6 +119,8 @@ export interface IMarsBot {
   readonly playedProjectCards: ReadonlyArray<IProjectCard>;
   /** How many times the bot has raised the temperature. */
   readonly temperatureRaises: number;
+  /** How many bonus cards have been destroyed while the bot resolved them. */
+  readonly destroyedBonusCards: number;
   /**
    * Adds floaters to the bot's floater pool with Venus Next.
    *

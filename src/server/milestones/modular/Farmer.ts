@@ -3,7 +3,8 @@ import {IPlayer} from '../../IPlayer';
 import {CardResource} from '../../../common/CardResource';
 import {Tag} from '../../../common/cards/Tag';
 import {IMarsBot} from '../../automa/MarsBotCorpTypes';
-import {marsBotTrackPosition} from '../../automa/MarsBotMilestoneAwardEval';
+import {BoardName} from '../../../common/boards/BoardName';
+import {marsBotTrackPosition, marsBotUsesMapSet} from '../../automa/MarsBotMilestoneAwardEval';
 
 export class Farmer extends BaseMilestone {
   constructor() {
@@ -16,8 +17,15 @@ export class Farmer extends BaseMilestone {
     return player.getResourceCount(CardResource.MICROBE) + player.getResourceCount(CardResource.ANIMAL);
   }
 
-  /** MarsBot has no card resources. It farms by reaching space 7 on its bio track. */
+  /**
+   * MarsBot has no card resources. On Vastitas Borealis it farms by reaching space 6 of its
+   * Science track (shared with Microbe) or of its bio track. The Milestones & Awards
+   * expansion asks for space 7 of the bio track.
+   */
   public marsBotCanClaim(bot: IMarsBot): boolean {
+    if (marsBotUsesMapSet(bot, BoardName.VASTITAS_BOREALIS_NOVA)) {
+      return marsBotTrackPosition(bot, Tag.MICROBE) >= 6 || marsBotTrackPosition(bot, Tag.PLANT) >= 6;
+    }
     return marsBotTrackPosition(bot, Tag.PLANT) >= 7;
   }
 }

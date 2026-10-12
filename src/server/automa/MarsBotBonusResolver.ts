@@ -94,6 +94,15 @@ export class MarsBotBonusResolver {
    * Returns true when the card must not be discarded: it was destroyed, or it went back into the bonus deck.
    */
   public resolveEffect(card: MarsBotBonusCard): boolean {
+    const keep = this.applyEffect(card);
+    // Only a destroyed card counts for the Land Specialist milestone, not one shuffled back into the deck.
+    if (keep && this.marsBotManager !== undefined && !this.bonusDeck.drawPile.includes(card)) {
+      this.marsBotManager.destroyedBonusCards++;
+    }
+    return keep;
+  }
+
+  private applyEffect(card: MarsBotBonusCard): boolean {
     switch (card.id) {
     case BonusCardId.B01_METEOR_SHOWER:
       return this.resolveMeteorShower();

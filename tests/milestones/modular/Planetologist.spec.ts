@@ -34,7 +34,7 @@ describe('Planetologist', () => {
   it('MarsBot claims it with two of power, earth and Venus tracks at space 3', () => {
     const milestone = new Planetologist();
     const board = new MarsBotBoard([...THARSIS_MARSBOT_BOARD, VENUS_MARSBOT_TRACK]);
-    const bot = {marsBotBoard: board} as unknown as IMarsBot;
+    const bot = {game: testGame(1)[0], marsBotBoard: board} as unknown as IMarsBot;
     for (let i = 0; i < 3; i++) {
       board.tracks[4].advance();
     }

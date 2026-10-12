@@ -80,6 +80,9 @@ export class MarsBot implements IMarsBot {
   /** Number of times MarsBot raised temperature (for Thawer milestone). */
   public temperatureRaises: number = 0;
 
+  /** Number of bonus cards destroyed while resolving (for the Land Specialist milestone). */
+  public destroyedBonusCards: number = 0;
+
   /** Whether colony cubes are placed (Pioneer4/Constructor in game). */
   public hasColonyCubes: boolean = false;
 
@@ -737,6 +740,9 @@ export class MarsBot implements IMarsBot {
     if (this.temperatureRaises > 0) {
       state.temperatureRaises = this.temperatureRaises;
     }
+    if (this.destroyedBonusCards > 0) {
+      state.destroyedBonusCards = this.destroyedBonusCards;
+    }
     if (this.colonyCubePositions.size > 0) {
       state.colonyCubePositions = Array.from(this.colonyCubePositions);
     }
@@ -811,6 +817,9 @@ export class MarsBot implements IMarsBot {
     }
     if (state.temperatureRaises !== undefined) {
       this.temperatureRaises = state.temperatureRaises;
+    }
+    if (state.destroyedBonusCards !== undefined) {
+      this.destroyedBonusCards = state.destroyedBonusCards;
     }
     if (state.hasSecondTradeFleet === true) {
       this.hasSecondTradeFleet = true;

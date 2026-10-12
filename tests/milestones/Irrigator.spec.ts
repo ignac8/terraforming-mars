@@ -28,7 +28,7 @@ describe('Irrigator', () => {
 
   it('Coastguard: MarsBot needs 4 tiles adjacent to oceans where a player needs 3', () => {
     const coastguard = new Coastguard();
-    const bot = {player} as unknown as IMarsBot;
+    const bot = {game: player.game, player} as unknown as IMarsBot;
     addCity(player, '09');
     addGreenery(player, '20');
     addCity(player, '11');

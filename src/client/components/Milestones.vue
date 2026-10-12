@@ -20,6 +20,7 @@
                     :showScores="showScores"
                     :showDescription="showDescription"
                     :isAutoma="isAutoma"
+                    :automaMapSet="automaMapSet"
                   />
               </div>
             </span>
@@ -33,6 +34,7 @@ import {defineComponent} from 'vue';
 import {MAX_MILESTONES, MILESTONE_COST} from '@/common/constants';
 import Milestone from '@/client/components/Milestone.vue';
 import {ClaimedMilestoneModel} from '@/common/models/ClaimedMilestoneModel';
+import {BoardName} from '@/common/boards/BoardName';
 import {Preferences, PreferencesManager} from '@/client/utils/PreferencesManager';
 
 export default defineComponent({
@@ -49,6 +51,10 @@ export default defineComponent({
     isAutoma: {
       type: Boolean,
       default: false,
+    },
+    automaMapSet: {
+      type: String as () => BoardName,
+      default: undefined,
     },
     preferences: {
       type: Object as () => Readonly<Preferences>,

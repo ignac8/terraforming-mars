@@ -102,6 +102,7 @@ export type SerializedAutomaState = {
     /** The bot player's global parameter steps; older saves lack them and keep zeros. */
     globalParameterSteps?: Partial<Record<GlobalParameter, number>>;
     temperatureRaises?: number;
+    destroyedBonusCards?: number;
     colonyCubePositions?: Array<string>;
     hasSecondTradeFleet?: boolean;
     shippingBoard?: Record<string, number>;

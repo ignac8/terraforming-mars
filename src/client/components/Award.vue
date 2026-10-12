@@ -38,7 +38,8 @@ import {FundedAwardModel, AwardScore} from '@/common/models/FundedAwardModel';
 import {getAward} from '@/client/MilestoneAwardManifest';
 import {playerSymbol} from '@/client/utils/playerSymbol';
 import {Color} from '@/common/Color';
-import {MARSBOT_AWARD_DESCRIPTIONS} from '@/common/automa/MarsBotMADescriptions';
+import {marsBotAwardRule} from '@/common/automa/MarsBotMADescriptions';
+import {BoardName} from '@/common/boards/BoardName';
 import {fitTextWhenReady} from '@/client/utils/textFit';
 import {comparing, reversed} from '@/common/utils/Ordering';
 
@@ -63,6 +64,11 @@ export default defineComponent({
     isAutoma: {
       type: Boolean,
       default: false,
+    },
+    // The map whose own awards are in play, when the game plays a map's set.
+    automaMapSet: {
+      type: String as () => BoardName,
+      default: undefined,
     },
   },
   mounted() {
@@ -97,7 +103,7 @@ export default defineComponent({
       return getAward(this.award.name).description;
     },
     automaRule(): string | undefined {
-      return MARSBOT_AWARD_DESCRIPTIONS[this.award.name];
+      return marsBotAwardRule(this.award.name, this.automaMapSet);
     },
   },
 });

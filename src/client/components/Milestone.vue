@@ -36,7 +36,8 @@ import {ClaimedMilestoneModel, MilestoneScore} from '@/common/models/ClaimedMile
 import {getMilestone} from '@/client/MilestoneAwardManifest';
 import {playerSymbol} from '@/client/utils/playerSymbol';
 import {Color} from '@/common/Color';
-import {MARSBOT_MILESTONE_DESCRIPTIONS} from '@/common/automa/MarsBotMADescriptions';
+import {marsBotMilestoneRule} from '@/common/automa/MarsBotMADescriptions';
+import {BoardName} from '@/common/boards/BoardName';
 import {fitTextWhenReady} from '@/client/utils/textFit';
 import {comparing, reversed} from '@/common/utils/Ordering';
 
@@ -61,6 +62,11 @@ export default defineComponent({
     isAutoma: {
       type: Boolean,
       default: false,
+    },
+    // The map whose own milestones are in play, when the game plays a map's set.
+    automaMapSet: {
+      type: String as () => BoardName,
+      default: undefined,
     },
   },
   mounted() {
@@ -108,7 +114,7 @@ export default defineComponent({
       return getMilestone(this.milestone.name).description;
     },
     automaRule(): string | undefined {
-      return MARSBOT_MILESTONE_DESCRIPTIONS[this.milestone.name];
+      return marsBotMilestoneRule(this.milestone.name, this.automaMapSet);
     },
   },
 });
