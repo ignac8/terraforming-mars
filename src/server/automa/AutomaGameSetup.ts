@@ -5,8 +5,9 @@ import {GameOptions} from '../game/GameOptions';
 import {GameId, isPlayerId, safeCast} from '../../common/Types';
 import {Random} from '../../common/utils/Random';
 import {MarsBot} from './MarsBot';
-import {THARSIS_MARSBOT_BOARD, THARSIS_MARSBOT_BOARD_WITH_VENUS} from './boards/TharsisMarsBot';
+import {MARSBOT_BOARDS} from './boards/MarsBotBoards';
 import {TrackDefinition, MARSBOT_STARTING_TR} from '../../common/automa/AutomaTypes';
+import {MARSBOT_BOARD_NAMES} from '../../common/automa/MarsBotBoards';
 import {BoardName} from '../../common/boards/BoardName';
 import {AutomaGameHooks} from './AutomaGameHooks';
 import {MarsBotTags} from './MarsBotTags';
@@ -39,14 +40,16 @@ export class AutomaGameSetup {
     // The alternate Venus board's bonuses and the Chairman's agenda choice would ask MarsBot to choose.
     gameOptions.altVenusBoard = false;
     gameOptions.politicalAgendasExtension = 'Standard';
-    gameOptions.boardName = BoardName.THARSIS;
+    if (!MARSBOT_BOARD_NAMES.includes(gameOptions.boardName)) {
+      gameOptions.boardName = BoardName.THARSIS;
+    }
   }
 
   /** Filter milestones unsupported against MarsBot. */
   public static filterMilestones(milestones: Array<IMilestone>, gameOptions: GameOptions): Array<IMilestone> {
     const unsupported: Array<string> = ['Terraformer29'];
     if (!gameOptions.venusNextExtension) {
-      unsupported.push('Planetologist', 'Trader', 'Merchant');
+      unsupported.push('Planetologist', 'Trader', 'Tradesman');
     }
     if (!gameOptions.turmoilExtension) {
       unsupported.push('Lobbyist');
@@ -82,19 +85,23 @@ export class AutomaGameSetup {
     return new Player('MarsBot', 'bronze', false, 0, playerId);
   }
 
+  /** The map whose MarsBot board this game uses. The Milestones & Awards expansion always uses Tharsis's (rulebook C, p.13). */
+  public static marsBotBoardName(gameOptions: GameOptions): BoardName {
+    return gameOptions.modularMA ? BoardName.THARSIS : gameOptions.boardName;
+  }
+
   /** Get the MarsBot board data for the selected map. */
   public static getBoardData(boardName: BoardName, venusEnabled: boolean): ReadonlyArray<TrackDefinition> {
-    switch (boardName) {
-    case BoardName.THARSIS:
-      return venusEnabled ? THARSIS_MARSBOT_BOARD_WITH_VENUS : THARSIS_MARSBOT_BOARD;
-    default:
-      throw new Error(`Automa board data not available for ${boardName}. Only Tharsis is currently supported.`);
+    const boards = MARSBOT_BOARDS[boardName];
+    if (boards === undefined) {
+      throw new Error(`No MarsBot board for ${boardName}`);
     }
+    return venusEnabled ? boards.withVenus : boards.base;
   }
 
   /** Set up MarsBot and return the AutomaGameHooks instance for Game.ts to use. */
   public static setup(game: IGame, humanPlayer: IPlayer, gameOptions: GameOptions, rng: Random, existingPlayer?: IPlayer): AutomaGameHooks {
-    const boardData = AutomaGameSetup.getBoardData(gameOptions.boardName, gameOptions.venusNextExtension);
+    const boardData = AutomaGameSetup.getBoardData(AutomaGameSetup.marsBotBoardName(gameOptions), gameOptions.venusNextExtension);
     const marsBotPlayer = existingPlayer ?? AutomaGameSetup.createMarsBotPlayer(game.id);
 
     // Set MarsBot player's game reference
@@ -194,7 +201,7 @@ export class AutomaGameSetup {
   }
 
   /**
-   * C-6: Place the 2nd Trade Fleet cube on the credits track (Event track) at position 9.
+   * C-6: Place the 2nd Trade Fleet cube on space 9 of the Energy track.
    * When triggered (C-27), MarsBot unlocks the 2nd trade fleet and Extended Shipping Lines.
    */
   private static place2ndTradeFleetCube(game: IGame, marsBot: MarsBot): void {
@@ -210,7 +217,7 @@ export class AutomaGameSetup {
     const trackIndex = parseInt(trackStr);
     const position = parseInt(posStr);
     marsBot.trackCubePositions.set(key, {trackIndex, position, cubeType: 'white'});
-    game.log('MarsBot: 2nd Trade Fleet cube placed on credits track position ${0} (C-6)', (b) => b.number(position));
+    game.log('MarsBot: 2nd Trade Fleet cube placed on Energy track position ${0} (C-6)', (b) => b.number(position));
   }
 
   /**

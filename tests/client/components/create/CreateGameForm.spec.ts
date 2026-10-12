@@ -91,6 +91,29 @@ describe('CreateGameForm', () => {
     expect(vm.expansions.ceo).to.be.false;
   });
 
+  it('offers MarsBot colony VP only with Colonies, off by default', async () => {
+    const wrapper = shallowMount(CreateGameForm, {...globalConfig});
+    const vm = wrapper.vm as any;
+
+    expect(vm.automaColonyVP).to.be.false;
+    expect(wrapper.find('#automa-colony-vp-checkbox').exists()).to.be.true;
+
+    vm.expansions.colonies = false;
+    await vm.$nextTick();
+    expect(wrapper.find('#automa-colony-vp-checkbox').exists()).to.be.false;
+  });
+
+  it('sends MarsBot colony VP only when it is on and Colonies are in the game', async () => {
+    const wrapper = shallowMount(CreateGameForm, {...globalConfig});
+    const vm = wrapper.vm as any;
+
+    expect(vm.newGameConfig.automaColonyVP).to.be.false;
+    vm.automaColonyVP = true;
+    expect(vm.newGameConfig.automaColonyVP).to.be.true;
+    vm.expansions.colonies = false;
+    expect(vm.newGameConfig.automaColonyVP).to.be.false;
+  });
+
   it('default (automa-on) state disables options incompatible with automa', () => {
     const wrapper = shallowMount(CreateGameForm, {...globalConfig});
     const vm = wrapper.vm as any;

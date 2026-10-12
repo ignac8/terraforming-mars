@@ -87,4 +87,5 @@ export type NewGameConfig = {
   automaTurmoilTRReduction?: 7 | 10;
   automaTurmoilSetupDelegates?: 0 | 1 | 2;
   automaNoGenerationLimit?: boolean;
+  automaColonyVP?: boolean;
 }

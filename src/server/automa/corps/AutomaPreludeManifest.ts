@@ -4,7 +4,7 @@ import {CardName} from '../../../common/cards/CardName';
 import {BonusCardId} from '../../../common/automa/AutomaTypes';
 import {AutomaManifest} from './AutomaManifest';
 import {whiteTrackCubes, bonusCardBeforeActionPhase, whiteLeastBlackSpaceHandler, SILVER_CUBE_MC} from './BaseGameCorps';
-import {marsBotCardTags} from '../MarsBotTags';
+import {marsBotCardTags, printedVictoryPoints} from '../MarsBotTags';
 
 // ==== PRELUDE (C13-C17) ====
 
@@ -99,8 +99,7 @@ const VITOR: IMarsBotCorp = {
   effect: {
     onProjectCardResolved(bot, card) {
       // The VP printed on the card counts, not what it scores right now
-      const vp = card.metadata.victoryPoints;
-      const printedVp = typeof vp === 'object' ? vp.points : vp;
+      const printedVp = printedVictoryPoints(card);
       if (printedVp !== undefined && printedVp >= 0) {
         bot.gainMc(3);
         bot.game.log('MarsBot (Vitor): non-negative VP card, +3 M€');
@@ -205,10 +204,11 @@ const ECOTEC: IMarsBotCorp = {
     bot.game.log('MarsBot (Ecotec): 2 plant resources on card');
   },
   effect: {
-    onProjectCardResolved(bot, card) {
-      if (card.tags.some((t) => t === Tag.PLANT || t === Tag.MICROBE || t === Tag.ANIMAL)) {
+    // Per tag, so a card with two plant tags adds two plants (rulebook B, p.1 card C40)
+    onTagResolved(bot, tag) {
+      if (tag === Tag.PLANT || tag === Tag.MICROBE || tag === Tag.ANIMAL) {
         bot.setCorpState('plantResources', bot.getCorpState('plantResources') + 1);
-        bot.game.log('MarsBot (Ecotec): Plant/Microbe/Animal card, +1 plant resource on card');
+        bot.game.log('MarsBot (Ecotec): Plant/Microbe/Animal tag, +1 plant resource on card');
       }
     },
   },

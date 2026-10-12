@@ -9,6 +9,12 @@ import {testGame} from '../TestGame';
 import {Builder} from '../../src/server/milestones/Builder';
 import {Banker} from '../../src/server/awards/Banker';
 import {Scientist} from '../../src/server/awards/Scientist';
+import {Magnate} from '../../src/server/awards/Magnate';
+import {IProjectCard} from '../../src/server/cards/IProjectCard';
+import {Asteroid} from '../../src/server/cards/base/Asteroid';
+import {Algae} from '../../src/server/cards/base/Algae';
+import {Tardigrades} from '../../src/server/cards/base/Tardigrades';
+import {Mine} from '../../src/server/cards/base/Mine';
 
 /**
  * A bot whose player reads tags off the tracks, the way the game wires it. The dispatchers
@@ -71,5 +77,13 @@ describe('MarsBotMilestoneAwardEval', () => {
     const {bot} = createBot();
 
     expect(marsBotTrackPosition(bot, Tag.WILD)).to.eq(0);
+  });
+
+  it('Magnate counts only green cards in the played pile (BGG 3534424)', () => {
+    const playedProjectCards: Array<IProjectCard> = [new Asteroid(), new Algae(), new Tardigrades(), new Mine()];
+    const bot = {...createBot().bot, playedProjectCards} as unknown as IMarsBot;
+
+    // Asteroid is an event, Tardigrades an active (blue) card; Algae and Mine are green
+    expect(marsBotAwardScore(new Magnate(), bot)).to.eq(2);
   });
 });

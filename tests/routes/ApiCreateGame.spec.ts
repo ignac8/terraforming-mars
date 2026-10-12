@@ -136,6 +136,19 @@ describe('ApiCreateGame', () => {
     expect(game!.players[0].name).eq('Robot');
   });
 
+  it('passes the MarsBot colony VP option on to the game', async () => {
+    for (const automaColonyVP of [true, false]) {
+      const config = newGameConfigForTest();
+      config.expansions.colonies = true;
+      await postConfig({...config, automaOption: true, automaColonyVP});
+      expect(res.statusCode).eq(statusCode.ok);
+      const model = JSON.parse(res.content) as SimpleGameModel;
+      const game = await scaffolding.ctx.gameLoader.getGame(model.id);
+      expect(game!.gameOptions.automaColonyVP).eq(automaColonyVP);
+      res = new MockResponse();
+    }
+  });
+
   it('red rover solo game', async () => {
     const post = scaffolding.post(apiCreateGame, res);
     const emit = Promise.resolve().then(() => {

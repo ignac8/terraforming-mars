@@ -1464,6 +1464,12 @@ export class Player implements IPlayer {
       const headStartIsInEffect = this.headStartIsInEffect();
       this.game.inDoubleDown = false;
 
+      if (headStartIsInEffect && game.automaHooks?.handleActionPhaseStart()) {
+        // Head Start's actions come before the preludes finish, but MarsBot's corporation still goes first
+        this.takeAction();
+        return;
+      }
+
       if (!headStartIsInEffect) {
         // Prelude cards have to be played first
         if (this.preludeCardsInHand.length > 0) {
@@ -1499,6 +1505,11 @@ export class Player implements IPlayer {
           return;
         } else {
           game.phase = Phase.ACTION;
+          // MarsBot's corporation resolves its before-action-phase box once the preludes are done
+          if (game.automaHooks?.handleActionPhaseStart()) {
+            this.takeAction();
+            return;
+          }
         }
 
         if (game.hasPassedThisActionPhase(this) || (this.allOtherPlayersHavePassed() === false && this.actionsTakenThisRound >= this.availableActionsThisRound)) {

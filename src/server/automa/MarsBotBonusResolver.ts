@@ -14,6 +14,9 @@ import {MarsBotTurnResolver} from './MarsBotTurnResolver';
 import {IProjectCard} from '../cards/IProjectCard';
 import {CardType} from '../../common/cards/CardType';
 import {Space} from '../boards/Space';
+import {SpaceType} from '../../common/boards/SpaceType';
+import {BoardName} from '../../common/boards/BoardName';
+import {marsBotUsesMapSet} from './MarsBotMilestoneAwardEval';
 import {CardName} from '../../common/cards/CardName';
 import {Tag} from '../../common/cards/Tag';
 import {marsBotCardTags} from './MarsBotTags';
@@ -23,7 +26,7 @@ import {selectTradeColony, tradeWithColony} from './colonies/MarsBotTrader';
 import {inplaceShuffle} from '../utils/shuffle';
 import type {MarsBot} from './MarsBot';
 import {ACTION_DECK_BONUS_CARD_REMOVED} from './MarsBotCorpTypes';
-import {inplaceRemove, inplaceRemoveIf} from '../../common/utils/utils';
+import {inplaceRemove} from '../../common/utils/utils';
 
 /**
  * The special tile each project card MarsBot can play shows, for Build, Build, Build (B27).
@@ -46,6 +49,9 @@ const SPECIAL_TILES: ReadonlyMap<CardName, TileType> = new Map([
   [CardName.GREAT_DAM_PROMO, TileType.GREAT_DAM],
   [CardName.MAGNETIC_FIELD_GENERATORS_PROMO, TileType.MAGNETIC_FIELD_GENERATORS],
 ]);
+
+/** The Corporate Competition helpers that don't cost MarsBot 5 M€ (rulebook C, p.12). */
+const FREE_HELPER_AWARDS: ReadonlyArray<string> = ['Forecaster'];
 
 /**
  * Resolves MarsBot bonus cards (B01–B08).
@@ -77,6 +83,11 @@ export class MarsBotBonusResolver {
     }
     const destroyed = this.resolveEffect(card);
     const bot = this.marsBotManager;
+    // Only a destroyed card counts for the Land Specialist milestone, not one shuffled back into the deck.
+    // A corporation's setup resolves and removes its cards without this (Philares), so it isn't in resolveEffect.
+    if (destroyed && bot !== undefined && !this.bonusDeck.drawPile.includes(card)) {
+      bot.destroyedBonusCards++;
+    }
     // A corporation's generation card that removes itself does not come back (Vitor's Overachievement)
     if (destroyed && bot !== undefined && card.id === bot.corp?.actionDeckBonusCard) {
       bot.setCorpState(ACTION_DECK_BONUS_CARD_REMOVED, 1);
@@ -94,6 +105,10 @@ export class MarsBotBonusResolver {
    * Returns true when the card must not be discarded: it was destroyed, or it went back into the bonus deck.
    */
   public resolveEffect(card: MarsBotBonusCard): boolean {
+    return this.applyEffect(card);
+  }
+
+  private applyEffect(card: MarsBotBonusCard): boolean {
     switch (card.id) {
     case BonusCardId.B01_METEOR_SHOWER:
       return this.resolveMeteorShower();
@@ -260,45 +275,10 @@ export class MarsBotBonusResolver {
 
   // B04: Overachievement
   private resolveOverachievement(): boolean {
-    // Try to claim a milestone
-    const claimable = this.game.milestones.filter((m) =>
-      !this.game.milestoneClaimed(m) && !this.game.allMilestonesClaimed(),
-    );
-    let claimed = false;
-    if (!this.game.allMilestonesClaimed()) {
-      // Use MarsBot's track-based milestone criteria
-      for (const m of claimable) {
-        if (this.turnResolver.marsBotMeetsMilestone(m)) {
-          this.game.claimedMilestones.push({player: this.marsBot, milestone: m});
-          this.game.log('MarsBot claims milestone ${0} (Overachievement)', (b) => b.rawString(m.name));
-          claimed = true;
-          break;
-        }
-      }
-    }
-
-    if (!claimed && this.game.generation >= 6) {
-      // Try to fund an award
-      if (!this.game.allAwardsFunded()) {
-        // Fund the award MarsBot leads by the most (ties go to the leftmost)
-        const unfunded = this.game.awards.filter((a) => !this.game.hasBeenFunded(a));
-        let best: {award: typeof unfunded[number], lead: number} | undefined;
-        for (const a of unfunded) {
-          const lead = this.turnResolver.getMarsBotAwardValue(a) - a.getScore(this.humanPlayer);
-          if (lead > 0 && (best === undefined || lead > best.lead)) {
-            best = {award: a, lead};
-          }
-        }
-        if (best !== undefined) {
-          const a = best.award;
-          this.game.fundAward(this.marsBot, a);
-          this.game.log('MarsBot funds award ${0} (Overachievement)', (b) => b.rawString(a.name));
-          claimed = true;
-        }
-      }
-    }
-
-    if (claimed) {
+    // Claim a milestone; failing that, from generation 6 on, fund an award
+    const done = this.turnResolver.maybeClaimMilestone() ||
+      (this.game.generation >= 6 && this.turnResolver.maybeFundAward());
+    if (done) {
       this.game.log('Overachievement is destroyed');
       return true;
     }
@@ -340,23 +320,22 @@ export class MarsBotBonusResolver {
 
   /** Lobbyists branch (c): an ocean space next to 2+ oceans takes an ocean. */
   private lobbyistsOceanBranch(source: string = 'Lobbyists'): boolean {
-    const oceanSpaces = this.game.board.getAvailableSpacesForOcean(this.marsBot);
-    const adjacentTo2Oceans = oceanSpaces.filter((s) => {
-      const adj = this.game.board.getAdjacentSpaces(s);
-      return adj.filter((a) => Board.isOceanSpace(a) && a.tile !== undefined).length >= 2;
-    });
-    if (adjacentTo2Oceans.length > 0 && this.game.canAddOcean()) {
-      const space = adjacentTo2Oceans[0];
-      if (this.interceptsRaise(GlobalParameter.OCEANS)) {
-        this.game.log(`MarsBot skips the ocean (${source})`);
-        return true;
-      }
-      this.game.addOcean(this.marsBot, space);
-      this.turnResolver.gainMc(this.tilePlacer.getTotalPlacementMC(space));
-      this.game.log(`MarsBot places ocean (${source})`);
+    if (!this.game.canAddOcean()) {
+      return false;
+    }
+    const space = this.tilePlacer.findOceanSpace((s) =>
+      this.game.board.getAdjacentSpaces(s).filter((a) => Board.isOceanSpace(a) && a.tile !== undefined).length >= 2);
+    if (space === undefined) {
+      return false;
+    }
+    if (this.interceptsRaise(GlobalParameter.OCEANS)) {
+      this.game.log(`MarsBot skips the ocean (${source})`);
       return true;
     }
-    return false;
+    this.game.addOcean(this.marsBot, space);
+    this.turnResolver.gainMc(this.tilePlacer.getTotalPlacementMC(space));
+    this.game.log(`MarsBot places ocean (${source})`);
+    return true;
   }
 
   private resolveLobbyistsVenus(): boolean {
@@ -433,9 +412,15 @@ export class MarsBotBonusResolver {
     const isEvenGen = this.game.generation % 2 === 0;
     const venusComplete = venus >= constants.MAX_VENUS_SCALE;
 
+    // Only the first effect that is possible is evaluated: with every Martian parameter at its
+    // maximum, an even generation falls through to raising Venus (rulebook C, p.3)
+    let advanced = false;
     if (isEvenGen || venusComplete) {
-      this.withoutTRorMcGain(() => this.advanceFurthestParameter(false));
-    } else if (venus < constants.MAX_VENUS_SCALE) {
+      this.withoutTRorMcGain(() => {
+        advanced = this.advanceFurthestParameter(false);
+      });
+    }
+    if (!advanced && venus < constants.MAX_VENUS_SCALE) {
       // FAQ (rulebook B, p.3): Aphrodite's 2 M€ per Venus step still applies, and raising
       // Venus pays MarsBot no other M€.
       this.withoutTRGain(() => this.game.increaseVenusScaleLevel(this.marsBot, 1));
@@ -477,13 +462,15 @@ export class MarsBotBonusResolver {
     const space = this.tilePlacer.findNeuralInstanceSpace();
     if (space !== undefined) {
       this.game.simpleAddTile(this.marsBot, space, {tileType: TileType.NEURAL_INSTANCE});
+      this.turnResolver.gainMc(this.tilePlacer.getTotalPlacementMC(space));
       this.game.automaHooks?.handleTilePlaced(this.marsBot, TileType.NEURAL_INSTANCE, space);
       this.onNeuralInstancePlaced?.(space);
       this.game.log('MarsBot places Neural Instance tile');
       this.game.log('Local Neural Instance is destroyed');
       return true;
     }
-    // Can't place: draw and resolve a project card
+    // Can't place: draw and resolve a project card. The card is not destroyed; designer ruling,
+    // BGG thread 3350125 (njshaw2, confirmed by TDaver).
     const drawnCard = this.game.projectDeck.draw(this.game);
     if (drawnCard !== undefined) {
       this.game.log('MarsBot draws and resolves ${0} (Neural Instance fallback)', (b) => b.card(drawnCard));
@@ -494,14 +481,11 @@ export class MarsBotBonusResolver {
 
   // B08: Corporate Competition
   private resolveCorporateCompetition(): void {
-    if (this.turnResolver.megacredits < 5) {
-      // Not enough MC, draw another bonus card
-      this.drawAndResolveAnotherBonus();
-      return;
-    }
-
-    const funded = this.game.awards.filter((a) => this.game.hasBeenFunded(a));
+    const canPay = this.turnResolver.megacredits >= 5;
+    const funded = this.game.awards.filter((a) => this.game.hasBeenFunded(a) &&
+      (canPay || FREE_HELPER_AWARDS.includes(a.name)));
     if (funded.length === 0) {
+      // Not enough MC or nothing funded, draw another bonus card
       this.drawAndResolveAnotherBonus();
       return;
     }
@@ -510,7 +494,7 @@ export class MarsBotBonusResolver {
     // leads every funded award, it is the one with the smallest gap.
     let resolved = false;
     const sorted = funded.map((a) => {
-      const humanVal = a.getScore(this.humanPlayer);
+      const humanVal = this.turnResolver.getHumanAwardValueForComparison(a);
       const marsBotVal = this.turnResolver.getMarsBotAwardValue(a);
       return {award: a, margin: humanVal - marsBotVal};
     }).sort((a, b) => {
@@ -522,9 +506,13 @@ export class MarsBotBonusResolver {
 
     for (const {award} of sorted) {
       if (this.tryHelperAction(award.name)) {
-        this.turnResolver.megacredits -= 5;
+        if (FREE_HELPER_AWARDS.includes(award.name)) {
+          this.game.log('MarsBot resolves Corporate Competition on ${0}', (b) => b.rawString(award.name));
+        } else {
+          this.turnResolver.megacredits -= 5;
+          this.game.log('MarsBot resolves Corporate Competition on ${0}, loses 5 MC', (b) => b.rawString(award.name));
+        }
         resolved = true;
-        this.game.log('MarsBot resolves Corporate Competition on ${0}, loses 5 MC', (b) => b.rawString(award.name));
         break;
       }
     }
@@ -593,6 +581,12 @@ export class MarsBotBonusResolver {
       return false;
     };
     const nextToOcean = (space: Space) => board.getAdjacentSpaces(space).some(Board.isOceanSpace);
+    // Vastitas Borealis' Highlander also keeps away from the spaces reserved for an ocean (rulebook C, p.12).
+    // The modular Highlander only looks at placed oceans (p.16).
+    const vastitasRules = this.marsBotManager !== undefined &&
+      marsBotUsesMapSet(this.marsBotManager, BoardName.VASTITAS_BOREALIS_NOVA);
+    const nextToReservedOcean = (space: Space) =>
+      board.getAdjacentSpaces(space).some((s) => s.spaceType === SpaceType.OCEAN);
     const nextToSpecialTile = (space: Space) => board.getAdjacentSpaces(space).some(isSpecialTileSpace);
     const onEdge = (space: Space) => space.edge;
     const inFourBottomRows = (space: Space) => space.y >= 5 && space.y <= 8;
@@ -629,11 +623,11 @@ export class MarsBotBonusResolver {
     case 'Mogul': return advance(marsBotBoard.getMostAdvancedTrackIndex());
     case 'A. Zoologist':
     case 'Zoologist': return advanceTrackOf(Tag.ANIMAL);
-    case 'Forecaster': return revealAndResolveCard((c) => c.requirements.length > 0, 5);
+    case 'Forecaster': return revealAndResolveCard((c) => c.requirements.length > 0);
     // Vastitas Borealis (B13). Traveller follows B14, the card for random awards.
     case 'Traveller': return advanceTrackOfEither([Tag.EARTH, Tag.JOVIAN], 'more');
     case 'Landscaper': return placeGreenery();
-    case 'Highlander': return placeGreenery((space) => !nextToOcean(space));
+    case 'Highlander': return placeGreenery((space) => !nextToOcean(space) && !(vastitasRules && nextToReservedOcean(space)));
     case 'Promoter': return advanceTrackOf(Tag.EVENT);
     case 'Blacksmith': return advanceTrackOfEither([Tag.BUILDING, Tag.SPACE], 'more');
     // Milestones and awards (B14)
@@ -755,16 +749,19 @@ export class MarsBotBonusResolver {
     // Both cards are discarded (original was already discarded by caller)
   }
 
-  /** Advance the global parameter furthest from completion. Tie: oxygen > ocean > temperature. */
-  private advanceFurthestParameter(allowCorpIntercept: boolean = true): void {
-    const tempProgress = (this.game.getTemperature() - constants.MIN_TEMPERATURE) /
-      (constants.MAX_TEMPERATURE - constants.MIN_TEMPERATURE);
-    const oxyProgress = this.game.getOxygenLevel() / constants.MAX_OXYGEN_LEVEL;
-    const oceanSpaces = this.game.board.getOceanSpaces().length;
-    const oceanProgress = oceanSpaces / constants.MAX_OCEAN_TILES;
+  /**
+   * Advance the global parameter furthest from completion, measured in steps remaining
+   * (a temperature step is 2 degrees). Tie: oxygen > ocean > temperature.
+   *
+   * Returns false when every parameter is already complete.
+   */
+  private advanceFurthestParameter(allowCorpIntercept: boolean = true): boolean {
+    const tempRemaining = (constants.MAX_TEMPERATURE - this.game.getTemperature()) / 2;
+    const oxyRemaining = constants.MAX_OXYGEN_LEVEL - this.game.getOxygenLevel();
+    const oceanRemaining = constants.MAX_OCEAN_TILES - this.game.board.getOceanSpaces().length;
 
-    const params: Array<{name: string, progress: number, action: () => boolean}> = [
-      {name: 'oxygen', progress: oxyProgress, action: () => {
+    const params: Array<{name: string, remaining: number, action: () => boolean}> = [
+      {name: 'oxygen', remaining: oxyRemaining, action: () => {
         if (this.game.getOxygenLevel() < constants.MAX_OXYGEN_LEVEL) {
           if (allowCorpIntercept && this.interceptsRaise(GlobalParameter.OXYGEN)) {
             return true;
@@ -774,7 +771,7 @@ export class MarsBotBonusResolver {
         }
         return false;
       }},
-      {name: 'ocean', progress: oceanProgress, action: () => {
+      {name: 'ocean', remaining: oceanRemaining, action: () => {
         if (this.game.canAddOcean()) {
           const space = this.tilePlacer.findOceanSpace();
           if (space) {
@@ -788,7 +785,7 @@ export class MarsBotBonusResolver {
         }
         return false;
       }},
-      {name: 'temperature', progress: tempProgress, action: () => {
+      {name: 'temperature', remaining: tempRemaining, action: () => {
         if (this.game.getTemperature() < constants.MAX_TEMPERATURE) {
           if (allowCorpIntercept && this.interceptsRaise(GlobalParameter.TEMPERATURE)) {
             return true;
@@ -800,15 +797,17 @@ export class MarsBotBonusResolver {
       }},
     ];
 
-    // Sort by progress ascending (furthest from completion first), tie order preserved (oxy > ocean > temp)
-    params.sort((a, b) => a.progress - b.progress);
+    // Most steps remaining first, tie order preserved (oxy > ocean > temp). Furthest from
+    // completion counts steps, not the fraction done.
+    params.sort((a, b) => b.remaining - a.remaining);
 
     for (const p of params) {
       if (p.action()) {
         this.game.log('MarsBot advances ${0} (furthest from completion)', (b) => b.rawString(p.name));
-        return;
+        return true;
       }
     }
+    return false;
   }
 
   // ---- Corp-Specific Bonus Cards (B22-B32) ----
@@ -908,7 +907,6 @@ export class MarsBotBonusResolver {
       this.game.addTile(this.marsBot, specialSpace, {tileType, card: played.name});
       this.turnResolver.gainMc(this.tilePlacer.getTotalPlacementMC(specialSpace));
       inplaceRemove(bot.playedProjectCards, played);
-      inplaceRemoveIf(this.game.projectDeck.discardPile, (c) => c.name === played.name);
       const lost = this.loseMc(3);
       this.game.log('MarsBot resolves Build Build Build: ${0} tile next to the player\'s city, removes the card and loses ${1} M€',
         (b) => b.card(played).number(lost));

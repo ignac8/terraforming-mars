@@ -7,6 +7,7 @@ import {Space} from '../boards/Space';
 import {Board} from '../boards/Board';
 import {MADetail} from '../../common/game/VictoryPointsBreakdown';
 import {Turmoil} from '../turmoil/Turmoil';
+import {printedVictoryPoints} from './MarsBotTags';
 
 export interface MarsBotVPBreakdown {
   terraformRating: number;
@@ -18,7 +19,9 @@ export interface MarsBotVPBreakdown {
   mcToVP: number;
   cardVP: number; // Only in Hard/Brutal mode
   vermin: number;
+  colonyVP: number; // With automaColonyVP: 1 VP per 2 colonies
   turmoilVP: number; // T-13: 1 VP per party leader or chairman position
+  corpVP: number; // VP the corporation adds at the end (Viron)
   total: number;
   detailsMilestones: Array<MADetail>;
   detailsAwards: Array<MADetail>;
@@ -64,6 +67,7 @@ export class MarsBotScoring {
     const mcToVP = this.calculateMCtoVP();
     const cardVP = this.calculateCardVP();
     const vermin = this.calculateVerminPenalty(cities);
+    const colonyVP = this.calculateColonyVP();
     const turmoilVP = this.calculateTurmoilVP();
 
     return {
@@ -76,8 +80,10 @@ export class MarsBotScoring {
       mcToVP,
       cardVP,
       vermin,
+      colonyVP,
       turmoilVP,
-      total: tr + milestoneResult.total + awardResult.total + greenery + cityAdjacentGreenery + neuralInstance + mcToVP + cardVP + vermin + turmoilVP + this.corpVpBonus,
+      corpVP: this.corpVpBonus,
+      total: tr + milestoneResult.total + awardResult.total + greenery + cityAdjacentGreenery + neuralInstance + mcToVP + cardVP + vermin + colonyVP + turmoilVP + this.corpVpBonus,
       detailsMilestones: milestoneResult.details,
       detailsAwards: awardResult.details,
     };
@@ -149,15 +155,28 @@ export class MarsBotScoring {
     return -1 * cities.length;
   }
 
-  /** Hard/Brutal mode: 1 VP per card with non-negative VP icon in MarsBot's played pile. */
+  /** Hard/Brutal mode: 1 VP per card with a non-negative VP icon in MarsBot's played pile. */
   private calculateCardVP(): number {
     if (this.difficulty !== 'hard' && this.difficulty !== 'brutal') {
       return 0;
     }
+    // Designer ruling, BGG thread 3386410 (TDaver): a card with no VP icon doesn't count, one
+    // with a conditional or per-resource icon does, and a negative icon doesn't.
     return this.playedProjectCards.filter((card) => {
-      const vp = card.getVictoryPoints(this.marsBot);
-      return vp >= 0;
+      const vp = printedVictoryPoints(card);
+      return vp !== undefined && vp >= 0;
     }).length;
+  }
+
+  /**
+   * Optional (automaColonyVP): each of MarsBot's colonies is worth half a VP, rounded down.
+   * The rulebook doesn't score them; BGG thread 3408751, the designer's intent.
+   */
+  private calculateColonyVP(): number {
+    if (!this.game.gameOptions.automaColonyVP) {
+      return 0;
+    }
+    return Math.floor(this.marsBot.getColoniesCount() / 2);
   }
 
   /** T-13: 1 VP for each Party Leader or Chairman position MarsBot holds. */

@@ -225,21 +225,20 @@ describe('MarsBotTrader (C-17, C-20, C-22, C-24b)', () => {
         expect(marsBot.shippingBoard.get(ColonyName.PLUTO)).to.eq(storeBefore + 2);
       });
 
-      it('Pluto storage maps to Event (MC) track via COLONY_STORAGE_TAG (C-26)', () => {
-        // COLONY_STORAGE_TAG[PLUTO] = Tag.EVENT which corresponds to the credits/MC track
-        expect(COLONY_STORAGE_TAG[ColonyName.PLUTO]).to.eq(Tag.EVENT);
+      it('Pluto storage maps to the Science track via COLONY_STORAGE_TAG (C-26)', () => {
+        expect(COLONY_STORAGE_TAG[ColonyName.PLUTO]).to.eq(Tag.SCIENCE);
       });
 
-      it('Pluto overflow advances Event track (C-26, C-12)', () => {
+      it('Pluto overflow advances Science track (C-26, C-12)', () => {
         const [game] = testGame(1, {automaOption: true, coloniesExtension: true, boardName: BoardName.THARSIS});
         const marsBot = getMarsBot(game);
         const pluto = new Pluto();
         game.colonies = [pluto];
-        const eventTrackIdx = marsBot.marsBotBoard.tagToTrack[Tag.EVENT]!;
-        const before = marsBot.marsBotBoard.tracks[eventTrackIdx].position;
-        // Add 5 to Pluto → overflow → advance Event track
+        const scienceTrackIdx = marsBot.marsBotBoard.tagToTrack[Tag.SCIENCE]!;
+        const before = marsBot.marsBotBoard.tracks[scienceTrackIdx].position;
+        // Add 5 to Pluto → overflow → advance Science track
         marsBot.shippingBoard.add(ColonyName.PLUTO, 5, marsBot);
-        expect(marsBot.marsBotBoard.tracks[eventTrackIdx].position).to.be.greaterThan(before);
+        expect(marsBot.marsBotBoard.tracks[scienceTrackIdx].position).to.be.greaterThan(before);
         expect(marsBot.shippingBoard.get(ColonyName.PLUTO)).to.eq(0);
       });
     });

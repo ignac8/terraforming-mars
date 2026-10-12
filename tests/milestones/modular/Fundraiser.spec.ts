@@ -40,7 +40,7 @@ describe('Fundraiser', () => {
 
   it('MarsBot claims it at space 8 of its M€ track', () => {
     const board = new MarsBotBoard(THARSIS_MARSBOT_BOARD);
-    const bot = {marsBotBoard: board} as unknown as IMarsBot;
+    const bot = {game: testGame(1)[0], marsBotBoard: board} as unknown as IMarsBot;
     for (let i = 0; i < 7; i++) {
       board.tracks[2].advance();
     }

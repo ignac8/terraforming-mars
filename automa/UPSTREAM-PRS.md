@@ -44,6 +44,34 @@ the discard accordingly. The old `destroyedBonusCards` serialize/restore/milesto
 plumbing was dead code (it scanned piles a destroyed card can never be in) and was
 removed.
 
+Since 2026-10-12 `MarsBot.destroyedBonusCards` is back as a plain counter, for Utopia
+Planitia's Specialist milestone ("3 or more MarsBot bonus cards are destroyed").
+`resolve()` increments it when a card is destroyed rather than shuffled back into the
+bonus deck. Corp setup resolves (Philares) go through `resolveBonusCard` and don't
+count. It is serialized like the other MarsBot counters.
+
+## Shared engine files touched by the boards and rules batch (2026-10-12)
+
+These ride along with whichever automa PR needs them:
+
+- `boards/Board.ts`: MarsBot pays no placement-bonus costs (`computeAdditionalCosts`).
+- `boards/TerraCimmeriaNovaBoard.ts`, `boards/VastitasBorealisNovaBoard.ts`: MarsBot can
+  always use the MSL and Viking hexes.
+- `Game.ts`: oxygen's temperature bonus with temperature maxed calls
+  `automaHooks.handleUnresolvableTerraformingBonus` (Failed Action for MarsBot).
+- `Player.ts`: generation 1 calls `automaHooks.handleActionPhaseStart` once preludes are
+  done, so MarsBot's before-action-phase box resolves after them.
+- `milestones/IMilestone.ts`, `Terraformer.ts`, `amazonisPlanitia/Minimalist.ts`: optional
+  `remaining(player)` for MarsBot's "closest to meeting" milestone tiebreaker.
+- Map milestones and awards (`RimSettler`, `Irrigator`/`Coastguard`, `Smith`, `Tradesman`,
+  `LandSpecialist`, modular `Engineer`, `Farmer`, `Fundraiser`, `Planetologist`,
+  `awards/modular/Founder`, `awards/Magnate`): `marsBotCanClaim` / `marsBotScore` with map
+  rules keyed by `marsBotMapSet`.
+- `deferredActions/RemoveResourcesFromCard.ts`: MarsBot's colony storage as a target (C-25).
+- `SerializedGame.ts`, `game/GameOptions.ts`, `common/game/NewGameConfig.ts`,
+  `routes/ApiCreateGame.ts`, `models/ServerModel.ts`, create-form files: new automa state and
+  the `automaColonyVP` option.
+
 ## Blocked (everything else)
 
 All remaining modules import `MarsBot` directly: `MarsBotStock`, `MarsBotScoring`,

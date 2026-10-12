@@ -1,5 +1,6 @@
 import {ColonyName} from '../../../common/colonies/ColonyName';
 import {Tag} from '../../../common/cards/Tag';
+import {Resource} from '../../../common/Resource';
 import type {MarsBot} from '../MarsBot';
 
 /**
@@ -7,25 +8,38 @@ import type {MarsBot} from '../MarsBot';
  * undefined means the colony is exempt from C-12 overflow (Titan = floaters, exempt per C-23)
  * or has no storage at all (Europa, C-24d).
  *
- * Track-to-tag mapping for Tharsis:
- *   Building(0)=BUILDING, Space(1)=SPACE, Event(2)=EVENT, Science(3)=SCIENCE,
- *   Energy(4)=POWER, Earth(5)=EARTH, Plant(6)=PLANT
+ * The tags are the ones printed on each storage area of the Shipping Board. The track a tag
+ * advances depends on the map (on Vastitas Borealis, microbes advance the Science track).
  *
  * C-25: Resources on Ceres/Luna/Io/Enceladus/Ganymede/Callisto/Miranda/Triton are considered
  * resources of the indicated type for player-card purposes.
  */
 export const COLONY_STORAGE_TAG: Partial<Record<ColonyName, Tag>> = {
-  [ColonyName.CERES]: Tag.BUILDING,   // Steel → Building track
-  [ColonyName.LUNA]: Tag.EVENT,        // Megacredits → Event (credits) track
-  [ColonyName.IO]: Tag.EARTH,          // Heat → Earth track
-  [ColonyName.ENCELADUS]: Tag.PLANT,  // Microbes → Plant track (biome resource)
-  [ColonyName.GANYMEDE]: Tag.PLANT,   // Plants → Plant track
-  [ColonyName.CALLISTO]: Tag.POWER,   // Energy → Energy track
-  [ColonyName.MIRANDA]: Tag.PLANT,    // Animals → Plant track (biome resource)
-  [ColonyName.TRITON]: Tag.SPACE,     // Titanium → Space track
-  // Titan: floaters — exempt from C-12 (C-23); no entry here, handled in add()
+  [ColonyName.CERES]: Tag.BUILDING,   // Steel
+  [ColonyName.LUNA]: Tag.EVENT,       // Megacredits
+  [ColonyName.IO]: Tag.EARTH,         // Heat
+  [ColonyName.ENCELADUS]: Tag.MICROBE,
+  [ColonyName.GANYMEDE]: Tag.PLANT,
+  [ColonyName.CALLISTO]: Tag.POWER,   // Energy
+  [ColonyName.MIRANDA]: Tag.ANIMAL,
+  [ColonyName.TRITON]: Tag.SPACE,     // Titanium
+  // Titan: floaters, exempt from C-12 (C-23); no entry here, handled in add()
   // Europa: no storage (C-24d); no entry here, handled in add()
-  [ColonyName.PLUTO]: Tag.EVENT,      // Card-equivalent (C-26) → MC → Event track
+  [ColonyName.PLUTO]: Tag.SCIENCE,    // Cards (C-26)
+};
+
+/**
+ * The storage area that holds each standard resource for the player's steal and remove effects
+ * (C-25). Mirrors the resource printed on each area: Ceres steel, Triton titanium, Io heat,
+ * Callisto energy, Ganymede plants, Luna M€.
+ */
+export const COLONY_STORAGE_FOR_RESOURCE: Record<Resource, ColonyName> = {
+  [Resource.MEGACREDITS]: ColonyName.LUNA,
+  [Resource.STEEL]: ColonyName.CERES,
+  [Resource.TITANIUM]: ColonyName.TRITON,
+  [Resource.PLANTS]: ColonyName.GANYMEDE,
+  [Resource.ENERGY]: ColonyName.CALLISTO,
+  [Resource.HEAT]: ColonyName.IO,
 };
 
 /**
@@ -65,21 +79,20 @@ export class MarsBotShippingBoard {
 
   /**
    * C-12: While ≥5 resources in the storage area, remove 5 and advance the indicated track.
-   * Does NOT apply to Titan (checked in add() before calling this).
+   * Does NOT apply to Titan (checked in add() before calling this), nor once the game is decided.
    */
   private checkOverflow(colonyName: ColonyName, marsBot: MarsBot): void {
     const tag = COLONY_STORAGE_TAG[colonyName];
-    if (tag === undefined) {
+    if (tag === undefined || marsBot.game.isDoneWithFinalProduction()) {
       return;
-    } // No track mapping — no overflow
+    } // No track mapping or the game is decided — no overflow
 
     while ((this.storage.get(colonyName) ?? 0) >= 5) {
       const current = this.storage.get(colonyName) ?? 0;
       this.storage.set(colonyName, current - 5);
-      const trackIndex = marsBot.marsBotBoard.tagToTrack[tag];
-      if (trackIndex !== undefined) {
-        marsBot.turnResolver.advanceTrack(trackIndex);
-      }
+      // Not "resolving a tag" for MarsBot's corp (BGG thread 3535330), but a microbe advance
+      // still resolves the player's Pharmacy Union or Splice (rulebook B, p.4 FAQ)
+      marsBot.turnResolver.advanceTrackOfTag(tag);
     }
   }
 

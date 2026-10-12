@@ -127,7 +127,7 @@
                           <td v-if="game.moon !== undefined">-</td>
                           <td v-if="game.moon !== undefined">-</td>
                           <td v-if="game.pathfinders !== undefined">-</td>
-                          <td>{{game.marsBot.vpBreakdown.neuralInstance + game.marsBot.vpBreakdown.mcToVP + game.marsBot.vpBreakdown.vermin}}</td>
+                          <td>{{marsBotOtherVP}}</td>
                           <td v-if="game.gameOptions.escapeVelocity">-</td>
                           <td class="game-end-total">{{game.marsBot.vpBreakdown.total}}</td>
                           <td class="game-end-mc">{{game.marsBot.megacredits}}</td>
@@ -198,6 +198,18 @@
                       <div v-if="game.marsBot.vpBreakdown.vermin" class="game-end-column-row">
                         <div class="game-end-column-vp">{{game.marsBot.vpBreakdown.vermin}}</div>
                         <div class="game-end-column-text" v-i18n>Vermin</div>
+                      </div>
+                      <div v-if="game.marsBot.vpBreakdown.colonyVP" class="game-end-column-row">
+                        <div class="game-end-column-vp">{{game.marsBot.vpBreakdown.colonyVP}}</div>
+                        <div class="game-end-column-text" v-i18n>Colonies</div>
+                      </div>
+                      <div v-if="game.marsBot.vpBreakdown.turmoilVP" class="game-end-column-row">
+                        <div class="game-end-column-vp">{{game.marsBot.vpBreakdown.turmoilVP}}</div>
+                        <div class="game-end-column-text" v-i18n>Turmoil</div>
+                      </div>
+                      <div v-if="game.marsBot.vpBreakdown.corpVP" class="game-end-column-row">
+                        <div class="game-end-column-vp">{{game.marsBot.vpBreakdown.corpVP}}</div>
+                        <div class="game-end-column-text"><span v-i18n>Corporation</span> ({{game.marsBot.corpName}})</div>
                       </div>
                       <div class="game-end-column-row">
                         <div class="game-end-column-vp">&nbsp;</div>
@@ -369,6 +381,14 @@ export default defineComponent({
     },
     isAutomaGame(): boolean {
       return this.game.marsBot !== undefined;
+    },
+    /** Every MarsBot VP source that has no column of its own, so the row adds up to the total. */
+    marsBotOtherVP(): number {
+      const vp = this.game.marsBot?.vpBreakdown;
+      if (vp === undefined) {
+        return 0;
+      }
+      return vp.neuralInstance + vp.mcToVP + vp.cardVP + vp.vermin + vp.colonyVP + vp.turmoilVP + vp.corpVP;
     },
     automaHumanWins(): boolean {
       if (!this.game.marsBot?.vpBreakdown) {

@@ -233,6 +233,42 @@ describe('MarsBotScoring', () => {
     });
   });
 
+  describe('Colony VP (automaColonyVP)', () => {
+    /** An automa game where MarsBot owns `count` colonies, spread over the colony tiles. */
+    function colonyGame(count: number, options: {automaColonyVP?: boolean, coloniesExtension?: boolean} = {}) {
+      const [colonyGame] = testGame(1, {automaOption: true, coloniesExtension: true, ...options});
+      const bot = colonyGame.automaHooks!.marsBot;
+      for (let i = 0; i < count; i++) {
+        colonyGame.colonies[i % colonyGame.colonies.length].colonies.push(bot.player.id);
+      }
+      return {game: colonyGame, bot};
+    }
+
+    it('scores 1 VP for every 2 colonies, rounded down', () => {
+      const expected = [[0, 0], [1, 0], [2, 1], [3, 1], [4, 2], [5, 2]];
+      for (const [colonies, vp] of expected) {
+        const {bot} = colonyGame(colonies, {automaColonyVP: true});
+        expect(bot.getVictoryPoints().colonyVP, `${colonies} colonies`).to.eq(vp);
+      }
+    });
+
+    it('adds to the total', () => {
+      const without = colonyGame(4);
+      const withOption = colonyGame(4, {automaColonyVP: true});
+      expect(withOption.bot.getVictoryPoints().total).to.eq(without.bot.getVictoryPoints().total + 2);
+    });
+
+    it('is off by default', () => {
+      const {bot} = colonyGame(4);
+      expect(bot.getVictoryPoints().colonyVP).to.eq(0);
+    });
+
+    it('scores nothing without Colonies', () => {
+      const {bot} = colonyGame(0, {automaColonyVP: true, coloniesExtension: false});
+      expect(bot.getVictoryPoints().colonyVP).to.eq(0);
+    });
+  });
+
   describe('Total VP', () => {
     it('combines all VP sources', () => {
       marsBot.setTerraformRating(25);

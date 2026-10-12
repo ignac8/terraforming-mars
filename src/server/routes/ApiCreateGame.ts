@@ -22,6 +22,7 @@ import {RouteError} from './RouteError';
 import {isProduction} from '@/server/utils/server';
 import {CEO_CARDS_DEALT_PER_PLAYER} from '../../common/constants';
 import {hasNegativeEscapeVelocityOption, sanitizeEscapeVelocityOptions} from '../../common/game/escapeVelocity';
+import {MARSBOT_BOARD_NAMES} from '../../common/automa/MarsBotBoards';
 
 function parseQuotaConfig(struct: any): QuotaConfig {
   let {limit} = struct;
@@ -156,7 +157,13 @@ export class ApiCreateGame extends Handler {
         }
       }
 
-      const boards = ApiCreateGame.boardOptions(gameReq.board);
+      let boards = ApiCreateGame.boardOptions(gameReq.board);
+      if (gameReq.automaOption === true) {
+        boards = boards.filter((name) => MARSBOT_BOARD_NAMES.includes(name));
+        if (boards.length === 0) {
+          boards = [BoardName.THARSIS];
+        }
+      }
       gameReq.board = boards[Math.floor(Math.random() * boards.length)];
 
       const gameOptions: GameOptions = {
@@ -218,6 +225,7 @@ export class ApiCreateGame extends Handler {
         automaTurmoilTRReduction: gameReq.automaTurmoilTRReduction ?? 10,
         automaTurmoilSetupDelegates: gameReq.automaTurmoilSetupDelegates ?? 0,
         automaNoGenerationLimit: gameReq.automaNoGenerationLimit ?? false,
+        automaColonyVP: gameReq.automaColonyVP ?? false,
       };
 
       let game: IGame;

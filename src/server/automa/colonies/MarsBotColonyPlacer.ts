@@ -98,14 +98,13 @@ export function placeColonyForMarsBot(colony: IColony, marsBot: MarsBot): void {
 
   // C-24a: Europa — place an ocean tile instead of 2 resources
   if (colonyName === ColonyName.EUROPA) {
-    // Check both conditions before touching the colony
+    // The colony is placed either way (no build bonus, the ocean is the reward). Only the ocean
+    // gives way to a Failed Action when none fits (rulebook C, p.5).
+    directAddColony(colony, marsBot);
     if (!game.canAddOcean() || marsBot.turnResolver.tilePlacer.findOceanSpace() === undefined) {
-      // Failed Action: ocean can't be placed
       marsBot.turnResolver.failedAction();
       return;
     }
-    // Add colony for ownership tracking (no build bonus — ocean is the reward, C-24a)
-    directAddColony(colony, marsBot);
     // placeOcean handles tile placement, TR gain, and placement bonuses
     marsBot.turnResolver.placeOcean();
     return;

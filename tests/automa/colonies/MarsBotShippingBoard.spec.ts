@@ -22,11 +22,11 @@ describe('MarsBotShippingBoard (C-18)', () => {
     it('COLONY_STORAGE_TAG maps Io to EARTH', () => {
       expect(COLONY_STORAGE_TAG[ColonyName.IO]).to.eq(Tag.EARTH);
     });
-    it('COLONY_STORAGE_TAG maps Enceladus to PLANT (biome)', () => {
-      expect(COLONY_STORAGE_TAG[ColonyName.ENCELADUS]).to.eq(Tag.PLANT);
+    it('COLONY_STORAGE_TAG maps Enceladus to MICROBE', () => {
+      expect(COLONY_STORAGE_TAG[ColonyName.ENCELADUS]).to.eq(Tag.MICROBE);
     });
-    it('COLONY_STORAGE_TAG maps Miranda to PLANT (biome)', () => {
-      expect(COLONY_STORAGE_TAG[ColonyName.MIRANDA]).to.eq(Tag.PLANT);
+    it('COLONY_STORAGE_TAG maps Miranda to ANIMAL', () => {
+      expect(COLONY_STORAGE_TAG[ColonyName.MIRANDA]).to.eq(Tag.ANIMAL);
     });
     it('COLONY_STORAGE_TAG maps Ganymede to PLANT', () => {
       expect(COLONY_STORAGE_TAG[ColonyName.GANYMEDE]).to.eq(Tag.PLANT);
@@ -37,8 +37,8 @@ describe('MarsBotShippingBoard (C-18)', () => {
     it('COLONY_STORAGE_TAG maps Triton to SPACE', () => {
       expect(COLONY_STORAGE_TAG[ColonyName.TRITON]).to.eq(Tag.SPACE);
     });
-    it('COLONY_STORAGE_TAG maps Pluto to EVENT (C-26)', () => {
-      expect(COLONY_STORAGE_TAG[ColonyName.PLUTO]).to.eq(Tag.EVENT);
+    it('COLONY_STORAGE_TAG maps Pluto to SCIENCE (C-26)', () => {
+      expect(COLONY_STORAGE_TAG[ColonyName.PLUTO]).to.eq(Tag.SCIENCE);
     });
     it('COLONY_STORAGE_TAG has no entry for Titan (exempt from C-12, C-23)', () => {
       expect(COLONY_STORAGE_TAG[ColonyName.TITAN]).to.be.undefined;

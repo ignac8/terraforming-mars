@@ -63,6 +63,7 @@
               <div class="setup-item" v-i18n>Solo:</div>
               <div v-if="gameOptions.automaNoGenerationLimit" class="game-config generic" v-i18n>No generation limit</div>
               <div v-else class="game-config generic" v-i18n>{{ lastSoloGeneration }} Gens</div>
+              <div v-if="gameOptions.automaColonyVP" class="game-config generic" v-i18n>Colonies 1/2 VP</div>
               <div v-if="gameOptions.soloTR" class="game-config generic" v-i18n>63 TR</div>
               <div v-else class="game-config generic" v-i18n>TR all</div>
             </li>

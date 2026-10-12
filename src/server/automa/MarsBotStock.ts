@@ -7,6 +7,13 @@ import {From, isFromPlayer} from '../logs/From';
 import {MarsBot} from './MarsBot';
 import {CrashSiteCleanup} from '../cards/promo/CrashSiteCleanup';
 import {LawSuit} from '../cards/promo/LawSuit';
+import {COLONY_STORAGE_FOR_RESOURCE} from './colonies/MarsBotShippingBoard';
+import {OrOptions} from '../inputs/OrOptions';
+import {SelectOption} from '../inputs/SelectOption';
+import {SelectAmount} from '../inputs/SelectAmount';
+import {PlayerInput} from '../PlayerInput';
+import {Priority} from '../deferredActions/Priority';
+import {message} from '../logs/MessageBuilder';
 
 /**
  * Override Stock for MarsBot's player.
@@ -15,7 +22,10 @@ import {LawSuit} from '../cards/promo/LawSuit';
  * - "Remove" resources → remove from MarsBot's MC supply
  * - "Steal" resources → take from MarsBot's MC supply as if they were the resource type
  *
- * All resource removals are converted to MC deductions from megacredits.
+ * All resource removals are converted to MC deductions from megacredits, except that the
+ * matching colony storage area (Ceres steel, Triton titanium, Io heat, Callisto energy,
+ * Ganymede plants, Luna M€) counts as that resource too (C-25). When a player removes or steals
+ * and both the MC supply and that area hold something, the player chooses the source or splits.
  * Resource additions (from game engine bonuses) are ignored since MarsBot
  * doesn't use resources — MC is tracked separately in turnResolver.megacredits.
  */
@@ -25,19 +35,28 @@ export class MarsBotStock extends Stock {
   public setMarsBot(marsBot: MarsBot): void {
     this.marsBotRef = marsBot;
 
-    // Per automa rules, all MarsBot resources are its MC supply.
-    // Cards check target.steel > 0 etc. to decide if stealing is possible.
+    // Per automa rules, all MarsBot resources are its MC supply, plus the colony storage area
+    // that holds the resource (C-25). Cards check target.steel > 0 etc. to decide if stealing
+    // is possible.
     const stock = this;
-    const mcProp = {
-      get() {
-        return stock.marsBotRef?.turnResolver.megacredits ?? 0;
-      },
-      set() { /* no-op: MarsBotStock.add() handles mutations via megacredits */ },
-      configurable: true,
-    };
     for (const resource of ALL_RESOURCES) {
-      Object.defineProperty(this, resource, mcProp);
+      Object.defineProperty(this, resource, {
+        get() {
+          return stock.supply + stock.storage(resource);
+        },
+        set() { /* no-op: MarsBotStock.add() handles mutations via megacredits */ },
+        configurable: true,
+      });
     }
+  }
+
+  /** MarsBot's MC supply, which is what it spends. The resource getters add colony storage on top. */
+  private get supply(): number {
+    return this.marsBotRef?.turnResolver.megacredits ?? 0;
+  }
+
+  private storage(resource: Resource): number {
+    return this.marsBotRef?.shippingBoard.get(COLONY_STORAGE_FOR_RESOURCE[resource]) ?? 0;
   }
 
   /** MarsBot has megacredits, not separate resource pools. */
@@ -78,20 +97,14 @@ export class MarsBotStock extends Stock {
         }
       }
 
-      // All other resources → deduct from MC supply
-      const mc = Math.min(-amount, this.marsBotRef.turnResolver.megacredits);
-      this.marsBotRef.turnResolver.megacredits -= mc;
-
-      if (options?.log) {
-        this.player.game.log('MarsBot loses ${0} MC (${1} removed)',
-          (b) => b.number(mc).rawString(resource));
+      // A player removing from MarsBot chooses between its MC supply and the matching colony
+      // storage area (C-25). Anything else (events, MarsBot itself) comes out of the MC supply.
+      const taker = isFromPlayer(options?.from) && options.from.player !== this.player ? options.from.player : undefined;
+      if (taker !== undefined && this.storage(resource) > 0) {
+        this.removeFromSources(resource, -amount, taker, amount, options, undefined);
+        return;
       }
-
-      // Trigger hooks that Stock.add() normally fires (bypassed by this override)
-      if (isFromPlayer(options?.from)) {
-        LawSuit.resourceHook(this.player, amount, options.from.player);
-        CrashSiteCleanup.resourceHook(this.player, resource, amount, options.from.player);
-      }
+      this.removeFromSupply(resource, -amount, amount, options);
     }
     // Positive amounts (resource gains from placement bonuses etc.) are ignored
     // MarsBot gets MC from turnResolver.megacredits via tile placement calculations
@@ -119,15 +132,127 @@ export class MarsBotStock extends Stock {
       }
       return;
     }
-    const qtyToSteal = Math.min(this.marsBotRef.turnResolver.megacredits, qty);
-    if (qtyToSteal > 0) {
-      this.marsBotRef.turnResolver.megacredits -= qtyToSteal;
-      // Thief gains the actual resource type (plants, steel, etc.)
-      thief.stock.add(resource, qtyToSteal);
+    const total = Math.min(this.supply + this.storage(resource), qty);
+    if (total <= 0) {
+      return;
+    }
+    // Thief gains the actual resource type (plants, steel, etc.), as much as was left to take
+    this.removeFromSources(resource, total, thief, -total, {from: {player: thief}}, (fromStorage, removed) => {
+      thief.stock.add(resource, removed);
       if (options?.log) {
-        this.player.game.log('${0} steals ${1} ${2} from MarsBot (${3} MC deducted)',
-          (b) => b.player(thief).number(qtyToSteal).rawString(resource).number(qtyToSteal));
+        this.player.game.log('${0} steals ${1} ${2} from MarsBot (${3} MC deducted, ${4} from colony storage)',
+          (b) => b.player(thief).number(removed).rawString(resource).number(removed - fromStorage).number(fromStorage));
       }
+    });
+  }
+
+  /**
+   * Remove up to `wanted` of `resource` from MarsBot on behalf of `taker`, from the MC supply and
+   * the colony storage area that holds `resource`. The taker picks the source when it matters
+   * (BGG 3599965 and 3398852 allow either, and mixing within one removal). `hookAmount` is what
+   * Law Suit and Crash Site Cleanup are told was removed. `done` gets the amount that came from
+   * storage and the amount actually removed, once the choice is made. It may run later, after the
+   * taker answers, when another removal may have emptied the supply or the area since.
+   */
+  private removeFromSources(
+    resource: Resource,
+    wanted: number,
+    taker: IPlayer,
+    hookAmount: number,
+    options: {log?: boolean, from?: From} | undefined,
+    done: ((fromStorage: number, removed: number) => void) | undefined,
+  ): void {
+    const supply = this.supply;
+    const storage = this.storage(resource);
+    const total = Math.min(wanted, supply + storage);
+    // The storage part must make up what the supply cannot cover, and cannot exceed either bound.
+    const lo = Math.max(0, total - supply);
+    const hi = Math.min(total, storage);
+    const apply = (chosenFromStorage: number) => {
+      // What is left now, which an earlier queued removal may have cut down
+      const fromStorage = Math.min(chosenFromStorage, this.storage(resource));
+      const fromSupply = Math.min(total - chosenFromStorage, this.supply);
+      this.removeFromSupply(resource, total - chosenFromStorage, hookAmount, options, chosenFromStorage);
+      done?.(fromStorage, fromSupply + fromStorage);
+    };
+    if (lo === hi) {
+      apply(lo);
+      return;
+    }
+
+    const colony = COLONY_STORAGE_FOR_RESOURCE[resource];
+    const choices: Array<PlayerInput> = [];
+    if (lo === 0) {
+      choices.push(new SelectOption(message('Take ${0} from MarsBot\'s M€ supply', (b) => b.number(total)))
+        .andThen(() => {
+          apply(0);
+          return undefined;
+        }));
+    }
+    if (hi === total) {
+      choices.push(new SelectOption(message('Take ${0} from MarsBot\'s ${1} colony storage', (b) => b.number(total).rawString(colony)))
+        .andThen(() => {
+          apply(total);
+          return undefined;
+        }));
+    }
+    const splitMin = Math.max(1, lo);
+    const splitMax = Math.min(total - 1, hi);
+    if (splitMin === splitMax) {
+      choices.push(new SelectOption(message('Take ${0} from MarsBot\'s ${1} colony storage and ${2} from its M€ supply',
+        (b) => b.number(splitMin).rawString(colony).number(total - splitMin)))
+        .andThen(() => {
+          apply(splitMin);
+          return undefined;
+        }));
+    } else if (splitMin < splitMax) {
+      choices.push(new SelectAmount(
+        message('Take how many from MarsBot\'s ${0} colony storage? The rest comes from its M€ supply', (b) => b.rawString(colony)),
+        'Take', splitMin, splitMax)
+        .andThen((fromStorage) => {
+          apply(fromStorage);
+          return undefined;
+        }));
+    }
+    taker.defer(() => new OrOptions(...choices).setTitle(
+      message('Take ${0} ${1} from MarsBot', (b) => b.number(total).rawString(resource))), Priority.BEFORE_OPPONENT_TRIGGER);
+  }
+
+  /**
+   * Take `amount - fromStorage` out of the MC supply (never below 0), and `fromStorage` out of
+   * the colony storage area, then fire the hooks Stock.add() normally fires (bypassed by this
+   * override).
+   */
+  public removeFromSupply(
+    resource: Resource,
+    amount: number,
+    hookAmount: number,
+    options?: {log?: boolean, from?: From},
+    fromStorage: number = 0,
+  ): void {
+    const marsBot = this.marsBotRef;
+    if (marsBot === undefined) {
+      return;
+    }
+    const mc = Math.min(amount, marsBot.turnResolver.megacredits);
+    marsBot.turnResolver.megacredits -= mc;
+    if (fromStorage > 0) {
+      marsBot.shippingBoard.spend(COLONY_STORAGE_FOR_RESOURCE[resource], fromStorage);
+    }
+
+    if (options?.log) {
+      this.player.game.log('MarsBot loses ${0} MC (${1} removed)',
+        (b) => b.number(mc).rawString(resource));
+      if (fromStorage > 0) {
+        this.player.game.log('MarsBot loses ${0} ${1} from its ${2} colony storage',
+          (b) => b.number(fromStorage).rawString(resource).rawString(COLONY_STORAGE_FOR_RESOURCE[resource]));
+      }
+    }
+
+    const from = options?.from;
+    if (isFromPlayer(from)) {
+      LawSuit.resourceHook(this.player, hookAmount, from.player);
+      CrashSiteCleanup.resourceHook(this.player, resource, hookAmount, from.player);
     }
   }
 }

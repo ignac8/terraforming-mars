@@ -24,8 +24,12 @@ import {Space} from '../../../src/server/boards/Space';
 import {SpaceType} from '../../../src/common/boards/SpaceType';
 import {TileType} from '../../../src/common/TileType';
 import {SelectCard} from '../../../src/server/inputs/SelectCard';
+import {HeadStart} from '../../../src/server/cards/promo/HeadStart';
+import {OrOptions} from '../../../src/server/inputs/OrOptions';
+import {Biofuels} from '../../../src/server/cards/prelude/Biofuels';
+import {IPreludeCard} from '../../../src/server/cards/prelude/IPreludeCard';
 import {cast} from '../../../src/common/utils/utils';
-import {setTemperature} from '../../TestingUtils';
+import {runAllActions, setTemperature} from '../../TestingUtils';
 import {MAX_TEMPERATURE} from '../../../src/common/constants';
 
 function createAutomaGame(): {game: IGame, human: TestPlayer, marsBot: MarsBot} {
@@ -135,12 +139,66 @@ describe('Expansion MarsBot Corporations', () => {
       human.pickedCorporationCard = new EcoLine();
 
       game.automaHooks!.handlePostCorporationSetup();
+      // The corp's before-action-phase box waits for the player's preludes
+      game.automaHooks!.handleActionPhaseStart();
 
       expect(marsBot.corp).to.eq(corp);
       expect(marsBot.markerSpaceIds).has.length(1);
       expect(game.board.getGreeneries(marsBot.player)).is.empty;
       const settlers = marsBot.actionDeck.filter((c) => 'id' in c && c.id === BonusCardId.B22_SETTLERS);
       expect(settlers).has.length(1);
+    });
+
+    it('holds the before-action-phase box until the player has played their preludes', () => {
+      const [game, human] = testGame(1, {automaOption: true, automaCorpOption: true, preludeExtension: true, boardName: BoardName.THARSIS});
+      const marsBot = game.automaHooks!.marsBot;
+      const corp = getMarsBotCorp(CardName.ARCADIAN_COMMUNITIES)!;
+      clearMarsBotCorpRegistry();
+      registerMarsBotCorp(corp);
+      human.pickedCorporationCard = new EcoLine();
+      const biofuels = new Biofuels();
+      human.preludeCardsInHand = [biofuels];
+      const settlers = () => marsBot.actionDeck.filter((c) => 'id' in c && c.id === BonusCardId.B22_SETTLERS);
+
+      game.automaHooks!.handlePostCorporationSetup();
+      expect(marsBot.beforeActionPhasePending).is.true;
+      human.takeAction();
+      runAllActions(game);
+
+      // The player is choosing a prelude: the box has not resolved
+      cast(human.getWaitingFor(), SelectCard<IPreludeCard>);
+      expect(settlers()).has.length(0);
+      human.process({type: 'card', cards: [biofuels.name]});
+      runAllActions(game);
+
+      expect(marsBot.beforeActionPhasePending).is.false;
+      expect(settlers()).has.length(1);
+    });
+
+    it('resolves the before-action-phase box before the actions Head Start grants', () => {
+      const [game, human] = testGame(1, {automaOption: true, automaCorpOption: true, preludeExtension: true, boardName: BoardName.THARSIS});
+      const marsBot = game.automaHooks!.marsBot;
+      const corp = getMarsBotCorp(CardName.ARCADIAN_COMMUNITIES)!;
+      clearMarsBotCorpRegistry();
+      registerMarsBotCorp(corp);
+      human.pickedCorporationCard = new EcoLine();
+      const headStart = new HeadStart();
+      const biofuels = new Biofuels();
+      human.preludeCardsInHand = [headStart, biofuels];
+      const settlers = () => marsBot.actionDeck.filter((c) => 'id' in c && c.id === BonusCardId.B22_SETTLERS);
+
+      game.automaHooks!.handlePostCorporationSetup();
+      human.takeAction();
+      runAllActions(game);
+      expect(settlers()).has.length(0);
+      human.process({type: 'card', cards: [headStart.name]});
+      runAllActions(game);
+
+      // The player has not taken either of Head Start's actions yet, and the box has resolved
+      expect(human.actionsTakenThisRound).to.eq(1);
+      expect(human.getWaitingFor()).is.instanceOf(OrOptions);
+      expect(marsBot.beforeActionPhasePending).is.false;
+      expect(settlers()).has.length(1);
     });
 
     it('gains 3 M€ when it places a tile on a space holding its marker', () => {
@@ -205,18 +263,26 @@ describe('Expansion MarsBot Corporations', () => {
   });
 
   describe('C40 Ecotec', () => {
-    it('starts with 2 plant resources on card', () => {
+    it('starts with 2 plants from the Setup box and 1 from its starting plant tag', () => {
       const {marsBot} = createAutomaGame();
       const corp = getMarsBotCorp(CardName.ECOTEC)!;
       marsBot.setCorpAndSetup(corp);
-      expect(marsBot.corpSpecificState.get('plantResources')).to.eq(2);
+      expect(marsBot.corpSpecificState.get('plantResources')).to.eq(3);
     });
 
-    it('gains plant resource when plant/microbe/animal card played', () => {
+    it('gains a plant resource per plant, microbe or animal tag', () => {
       const {marsBot} = createAutomaGame();
       const corp = getMarsBotCorp(CardName.ECOTEC)!;
       marsBot.setCorpAndSetup(corp);
-      corp.effect!.onProjectCardResolved!(marsBot, fakeCard('PlantCard', {tags: [Tag.PLANT], cost: 5}));
+      marsBot.turnResolver.resolveProjectCard(fakeCard('PlantCard', {tags: [Tag.PLANT, Tag.MICROBE, Tag.SPACE], cost: 5}));
+      expect(marsBot.corpSpecificState.get('plantResources')).to.eq(5);
+    });
+
+    it('ignores other tags', () => {
+      const {marsBot} = createAutomaGame();
+      const corp = getMarsBotCorp(CardName.ECOTEC)!;
+      marsBot.setCorpAndSetup(corp);
+      marsBot.turnResolver.resolveProjectCard(fakeCard('SpaceCard', {tags: [Tag.SPACE, Tag.BUILDING], cost: 5}));
       expect(marsBot.corpSpecificState.get('plantResources')).to.eq(3);
     });
 
@@ -446,6 +512,12 @@ describe('Expansion MarsBot Corporations', () => {
       expect(bonusIds).does.not.include(BonusCardId.B07_LOCAL_NEURAL_INSTANCE);
       expect(bonusIds).includes(BonusCardId.B27_BUILD_BUILD_BUILD);
       expect(marsBot.actionDeck.some((c) => 'id' in c && c.id === BonusCardId.B07_LOCAL_NEURAL_INSTANCE)).is.false;
+    });
+
+    it('setup does not count Local Neural Instance as a destroyed bonus card', () => {
+      const {marsBot} = createPhilaresGame();
+
+      expect(marsBot.destroyedBonusCards).to.eq(0);
     });
 
     it('gains a science resource when MarsBot places a tile next to the player\'s tile', () => {

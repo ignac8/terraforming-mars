@@ -246,7 +246,8 @@ describe('MarsBot decks', () => {
     marsBot.maybeDrawAndResolveBonusCard();
 
     expect(marsBot.marsBotBoard.tracks[1].position).is.greaterThan(spaceTrack);
-    expect(game.projectDeck.discardPile).to.include(asteroid);
+    expect(marsBot.playedProjectCards).to.include(asteroid);
+    expect(game.projectDeck.discardPile).to.not.include(asteroid);
     expect(marsBot.bonusDeck.discardPile).to.not.include(asteroid);
   });
 

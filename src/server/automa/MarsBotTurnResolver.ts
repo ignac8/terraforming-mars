@@ -20,7 +20,8 @@ import {IAward} from '../awards/IAward';
 import {Resource} from '../../common/Resource';
 import * as constants from '../../common/constants';
 import {MarsBotCorpResolver} from './corps/MarsBotCorpResolver';
-import {marsBotCanClaimMilestone, marsBotAwardScore} from './MarsBotMilestoneAwardEval';
+import {placeColonyForMarsBot, selectRandomColony} from './colonies/MarsBotColonyPlacer';
+import {marsBotCanClaimMilestone, marsBotAwardScore, milestoneRemaining} from './MarsBotMilestoneAwardEval';
 import type {MarsBot} from './MarsBot';
 
 /**
@@ -47,10 +48,18 @@ export class MarsBotTurnResolver {
 
   // ---- Project Card Resolution ----
 
-  /** Resolve a project card: advance tracks based on tags. */
-  public resolveProjectCard(card: IProjectCard): void {
-    this.game.log('MarsBot plays ${0}', (b) => b.card(card));
+  /**
+   * Resolve a project card: advance tracks based on tags. The first `ignoredTags` tags are skipped,
+   * but the whole card goes to the played pile.
+   */
+  public resolveProjectCard(original: IProjectCard, ignoredTags: number = 0): void {
+    this.game.log('MarsBot plays ${0}', (b) => b.card(original));
+    // Every resolved project card goes to MarsBot's played pile (rulebook A, p.5), not the project
+    // discard pile, so it can't be drawn again
+    this.marsBotManager?.playedProjectCards.push(original);
 
+    // Object.create keeps the prototype (methods like getVictoryPoints)
+    const card = ignoredTags === 0 ? original : Object.create(original, {tags: {value: original.tags.slice(ignoredTags)}}) as IProjectCard;
     const tags = marsBotCardTags(card);
 
     // A card with no tags is still played: its corp and player effects apply below.
@@ -62,6 +71,7 @@ export class MarsBotTurnResolver {
     // Resolve each tag left-to-right
     let advancedAny = false;
     for (const tag of tags) {
+      this.marsBotManager?.corp?.effect?.onTagResolved?.(this.marsBotManager, tag);
       if (tag === Tag.WILD) {
         // Prelude rule: advance the least-advanced track, topmost if tied
         const leastIndex = this.marsBotBoard.getLeastAdvancedTrackIndex();
@@ -89,9 +99,6 @@ export class MarsBotTurnResolver {
 
     // Notify human player's effect cards (Solar Logistics, Saturn Systems, etc.)
     this.notifyPlayerCards(card);
-
-    // Card goes to MarsBot's played pile (for Hard mode scoring)
-    this.game.projectDeck.discardPile.push(card);
   }
 
   /**
@@ -260,12 +267,16 @@ export class MarsBotTurnResolver {
       }
       this.raiseVenus(2);
       return;
+
+    case 'colony':
+      this.placeColony();
+      return;
     }
   }
 
   // ---- Terraforming Actions ----
 
-  private raiseTemperature(steps: number): void {
+  public raiseTemperature(steps: number): void {
     if (this.game.getTemperature() >= constants.MAX_TEMPERATURE) {
       this.failedAction();
       return;
@@ -363,42 +374,28 @@ export class MarsBotTurnResolver {
     }
   }
 
+  // Utopia Planitia's colony icon: build like Outer System Foothold, ignored without Colonies.
+  private placeColony(): void {
+    if (!this.game.gameOptions.coloniesExtension || this.marsBotManager === undefined) {
+      return;
+    }
+    const colony = selectRandomColony(this.game, this.marsBotManager);
+    if (colony === undefined) {
+      this.game.log('MarsBot: no colony tile to build on, Failed Action');
+      this.failedAction();
+      return;
+    }
+    placeColonyForMarsBot(colony, this.marsBotManager);
+    this.game.log('MarsBot places a colony on ${0}', (b) => b.colony(colony));
+  }
+
   // ---- Milestones & Awards ----
 
   /** Claims the best milestone MarsBot meets. False when it meets none. */
   public maybeClaimMilestone(): boolean {
-    const claimable = this.getClaimableMilestones();
-    if (claimable.length === 0) {
+    const best = this.selectMilestone(this.getClaimableMilestones());
+    if (best === undefined) {
       return false;
-    }
-
-    // Tiebreakers: 1) one human also qualifies for, 2) one human is closest to, 3) leftmost (Hoverlord last)
-    // Sort so Hoverlord is last in "leftmost" priority when tied
-    const sorted = claimable.sort((a, b) => {
-      if (a.name === 'Hoverlord') {
-        return 1;
-      }
-      if (b.name === 'Hoverlord') {
-        return -1;
-      }
-      return 0;
-    });
-    let best = sorted[0]; // Default: leftmost (Hoverlord pushed to end)
-
-    // Tiebreaker 1: prefer milestones the human also qualifies for
-    const humanAlsoQualifies = sorted.filter((m) => m.canClaim(this.humanPlayer));
-    if (humanAlsoQualifies.length > 0) {
-      best = humanAlsoQualifies[0];
-    } else {
-      // Tiebreaker 2: whichever the human is closest to meeting
-      let bestCloseness = -Infinity;
-      for (const m of sorted) {
-        const closeness = this.humanMilestoneCloseness(m);
-        if (closeness > bestCloseness) {
-          bestCloseness = closeness;
-          best = m;
-        }
-      }
     }
 
     this.game.claimedMilestones.push({player: this.marsBot, milestone: best});
@@ -412,7 +409,40 @@ export class MarsBotTurnResolver {
     return true;
   }
 
-  private getClaimableMilestones(): Array<IMilestone> {
+  /**
+   * Picks the milestone to claim from those MarsBot meets, by the tiebreakers on page 8:
+   * 1) one the human also meets, 2) the one the human is closest to meeting, 3) leftmost
+   * (Hoverlord last).
+   */
+  public selectMilestone(claimable: ReadonlyArray<IMilestone>): IMilestone | undefined {
+    const sorted = claimable.toSorted((a, b) => {
+      if (a.name === 'Hoverlord') {
+        return 1;
+      }
+      if (b.name === 'Hoverlord') {
+        return -1;
+      }
+      return 0;
+    });
+
+    const humanAlsoQualifies = sorted.filter((m) => m.canClaim(this.humanPlayer));
+    if (humanAlsoQualifies.length > 0) {
+      return humanAlsoQualifies[0];
+    }
+
+    let best: IMilestone | undefined;
+    let bestRemaining = Infinity;
+    for (const m of sorted) {
+      const remaining = milestoneRemaining(m, this.humanPlayer);
+      if (best === undefined || remaining < bestRemaining) {
+        bestRemaining = remaining;
+        best = m;
+      }
+    }
+    return best;
+  }
+
+  public getClaimableMilestones(): Array<IMilestone> {
     if (this.game.allMilestonesClaimed()) {
       return [];
     }
@@ -422,19 +452,6 @@ export class MarsBotTurnResolver {
       }
       return this.marsBotMeetsMilestone(m);
     });
-  }
-
-  /** Estimate how close the human player is to meeting a milestone (higher = closer). */
-  private humanMilestoneCloseness(milestone: IMilestone): number {
-    const name = milestone.name;
-    switch (name) {
-    case 'Terraformer': return this.humanPlayer.terraformRating; // closer to 35
-    case 'Mayor': return this.game.board.getCities(this.humanPlayer).length;
-    case 'Gardener': return this.game.board.getGreeneries(this.humanPlayer).length;
-    case 'Builder': return this.humanPlayer.tags.count(Tag.BUILDING, 'raw'); // closer to 8
-    case 'Planner': return this.humanPlayer.cardsInHand.length + this.humanPlayer.playedCards.length; // closer to 16
-    default: return 0;
-    }
   }
 
   /** Check if MarsBot meets a milestone. */
@@ -492,11 +509,13 @@ export class MarsBotTurnResolver {
    * Per rules page 8: "MarsBot considers your current number of resources plus your production"
    * for resource-based awards like Thermalist (heat) and Miner (steel+titanium).
    */
-  private getHumanAwardValueForComparison(award: IAward): number {
+  public getHumanAwardValueForComparison(award: IAward): number {
     const name = award.name;
     switch (name) {
     case 'Thermalist':
-      return this.humanPlayer.heat + this.humanPlayer.production.get(Resource.HEAT);
+      // Heat resources + energy resources (they become heat) + heat production. Energy
+      // production doesn't count; designer ruling, BGG thread 3350125 (TDaver).
+      return this.humanPlayer.heat + this.humanPlayer.energy + this.humanPlayer.production.get(Resource.HEAT);
     case 'Miner':
       return this.humanPlayer.steel + this.humanPlayer.titanium +
         this.humanPlayer.production.get(Resource.STEEL) + this.humanPlayer.production.get(Resource.TITANIUM);
