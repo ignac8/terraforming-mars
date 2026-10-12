@@ -23,7 +23,7 @@ import {selectTradeColony, tradeWithColony} from './colonies/MarsBotTrader';
 import {inplaceShuffle} from '../utils/shuffle';
 import type {MarsBot} from './MarsBot';
 import {ACTION_DECK_BONUS_CARD_REMOVED} from './MarsBotCorpTypes';
-import {inplaceRemove, inplaceRemoveIf} from '../../common/utils/utils';
+import {inplaceRemove} from '../../common/utils/utils';
 
 /**
  * The special tile each project card MarsBot can play shows, for Build, Build, Build (B27).
@@ -406,9 +406,15 @@ export class MarsBotBonusResolver {
     const isEvenGen = this.game.generation % 2 === 0;
     const venusComplete = venus >= constants.MAX_VENUS_SCALE;
 
+    // Only the first effect that is possible is evaluated: with every Martian parameter at its
+    // maximum, an even generation falls through to raising Venus (rulebook C, p.3)
+    let advanced = false;
     if (isEvenGen || venusComplete) {
-      this.withoutTRorMcGain(() => this.advanceFurthestParameter(false));
-    } else if (venus < constants.MAX_VENUS_SCALE) {
+      this.withoutTRorMcGain(() => {
+        advanced = this.advanceFurthestParameter(false);
+      });
+    }
+    if (!advanced && venus < constants.MAX_VENUS_SCALE) {
       // FAQ (rulebook B, p.3): Aphrodite's 2 M€ per Venus step still applies, and raising
       // Venus pays MarsBot no other M€.
       this.withoutTRGain(() => this.game.increaseVenusScaleLevel(this.marsBot, 1));
@@ -457,7 +463,8 @@ export class MarsBotBonusResolver {
       this.game.log('Local Neural Instance is destroyed');
       return true;
     }
-    // Can't place: draw and resolve a project card
+    // Can't place: draw and resolve a project card. The card is not destroyed; designer ruling,
+    // BGG thread 3350125 (njshaw2, confirmed by TDaver).
     const drawnCard = this.game.projectDeck.draw(this.game);
     if (drawnCard !== undefined) {
       this.game.log('MarsBot draws and resolves ${0} (Neural Instance fallback)', (b) => b.card(drawnCard));
@@ -484,7 +491,7 @@ export class MarsBotBonusResolver {
     // leads every funded award, it is the one with the smallest gap.
     let resolved = false;
     const sorted = funded.map((a) => {
-      const humanVal = a.getScore(this.humanPlayer);
+      const humanVal = this.turnResolver.getHumanAwardValueForComparison(a);
       const marsBotVal = this.turnResolver.getMarsBotAwardValue(a);
       return {award: a, margin: humanVal - marsBotVal};
     }).sort((a, b) => {
@@ -729,16 +736,19 @@ export class MarsBotBonusResolver {
     // Both cards are discarded (original was already discarded by caller)
   }
 
-  /** Advance the global parameter furthest from completion. Tie: oxygen > ocean > temperature. */
-  private advanceFurthestParameter(allowCorpIntercept: boolean = true): void {
-    const tempProgress = (this.game.getTemperature() - constants.MIN_TEMPERATURE) /
-      (constants.MAX_TEMPERATURE - constants.MIN_TEMPERATURE);
-    const oxyProgress = this.game.getOxygenLevel() / constants.MAX_OXYGEN_LEVEL;
-    const oceanSpaces = this.game.board.getOceanSpaces().length;
-    const oceanProgress = oceanSpaces / constants.MAX_OCEAN_TILES;
+  /**
+   * Advance the global parameter furthest from completion, measured in steps remaining
+   * (a temperature step is 2 degrees). Tie: oxygen > ocean > temperature.
+   *
+   * Returns false when every parameter is already complete.
+   */
+  private advanceFurthestParameter(allowCorpIntercept: boolean = true): boolean {
+    const tempRemaining = (constants.MAX_TEMPERATURE - this.game.getTemperature()) / 2;
+    const oxyRemaining = constants.MAX_OXYGEN_LEVEL - this.game.getOxygenLevel();
+    const oceanRemaining = constants.MAX_OCEAN_TILES - this.game.board.getOceanSpaces().length;
 
-    const params: Array<{name: string, progress: number, action: () => boolean}> = [
-      {name: 'oxygen', progress: oxyProgress, action: () => {
+    const params: Array<{name: string, remaining: number, action: () => boolean}> = [
+      {name: 'oxygen', remaining: oxyRemaining, action: () => {
         if (this.game.getOxygenLevel() < constants.MAX_OXYGEN_LEVEL) {
           if (allowCorpIntercept && this.interceptsRaise(GlobalParameter.OXYGEN)) {
             return true;
@@ -748,7 +758,7 @@ export class MarsBotBonusResolver {
         }
         return false;
       }},
-      {name: 'ocean', progress: oceanProgress, action: () => {
+      {name: 'ocean', remaining: oceanRemaining, action: () => {
         if (this.game.canAddOcean()) {
           const space = this.tilePlacer.findOceanSpace();
           if (space) {
@@ -762,7 +772,7 @@ export class MarsBotBonusResolver {
         }
         return false;
       }},
-      {name: 'temperature', progress: tempProgress, action: () => {
+      {name: 'temperature', remaining: tempRemaining, action: () => {
         if (this.game.getTemperature() < constants.MAX_TEMPERATURE) {
           if (allowCorpIntercept && this.interceptsRaise(GlobalParameter.TEMPERATURE)) {
             return true;
@@ -774,15 +784,17 @@ export class MarsBotBonusResolver {
       }},
     ];
 
-    // Sort by progress ascending (furthest from completion first), tie order preserved (oxy > ocean > temp)
-    params.sort((a, b) => a.progress - b.progress);
+    // Most steps remaining first, tie order preserved (oxy > ocean > temp). Furthest from
+    // completion counts steps, not the fraction done.
+    params.sort((a, b) => b.remaining - a.remaining);
 
     for (const p of params) {
       if (p.action()) {
         this.game.log('MarsBot advances ${0} (furthest from completion)', (b) => b.rawString(p.name));
-        return;
+        return true;
       }
     }
+    return false;
   }
 
   // ---- Corp-Specific Bonus Cards (B22-B32) ----
@@ -882,7 +894,6 @@ export class MarsBotBonusResolver {
       this.game.addTile(this.marsBot, specialSpace, {tileType, card: played.name});
       this.turnResolver.gainMc(this.tilePlacer.getTotalPlacementMC(specialSpace));
       inplaceRemove(bot.playedProjectCards, played);
-      inplaceRemoveIf(this.game.projectDeck.discardPile, (c) => c.name === played.name);
       const lost = this.loseMc(3);
       this.game.log('MarsBot resolves Build Build Build: ${0} tile next to the player\'s city, removes the card and loses ${1} M€',
         (b) => b.card(played).number(lost));

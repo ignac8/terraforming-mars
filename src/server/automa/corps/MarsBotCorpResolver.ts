@@ -31,24 +31,26 @@ export class MarsBotCorpResolver {
       }
     }
 
-    // 2. Resolve starting tags — advance tracks like project card tags
+    // 2. Call corp-specific setup (rulebook B, p.1: the Setup box resolves before the starting tags)
+    if (corp.setup !== undefined) {
+      corp.setup(marsBot);
+    }
+
+    // 3. Resolve starting tags — advance tracks like project card tags. The corp's ongoing effect
+    // is already active, so its tag effects see them (Ecotec: "including the starting tag").
     for (const tag of corp.tags) {
       const trackIndex = marsBot.marsBotBoard.tagToTrack[tag];
       if (trackIndex !== undefined) {
         marsBot.turnResolver.advanceTrack(trackIndex);
       }
+      corp.effect?.onTagResolved?.(marsBot, tag);
     }
 
-    // 2b. FAQ: trigger human corp callbacks for MarsBot's starting tags
+    // 3b. FAQ: trigger human corp callbacks for MarsBot's starting tags
     // e.g., if human plays Saturn Systems and MarsBot has Jovian starting tag
     if (corp.tags.length > 0) {
       const fakeCard = {tags: [...corp.tags], name: corp.name} as any;
       marsBot.turnResolver.notifyPlayerCards(fakeCard);
-    }
-
-    // 3. Call corp-specific setup
-    if (corp.setup !== undefined) {
-      corp.setup(marsBot);
     }
   }
 

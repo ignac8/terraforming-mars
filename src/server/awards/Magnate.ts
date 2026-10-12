@@ -12,7 +12,10 @@ export class Magnate implements IAward {
       .filter((card) => card.type === CardType.AUTOMATED).length;
   }
 
-  /** MarsBot counts the green cards in its own played pile. */
+  /**
+   * MarsBot counts the green cards in its own played pile. Rulebook C's "blue and green" is a
+   * typo; designer ruling, BGG thread 3534424 (TDaver).
+   */
   public marsBotScore(bot: IMarsBot): number {
     return bot.playedProjectCards.filter((card) => card.type === CardType.AUTOMATED).length;
   }

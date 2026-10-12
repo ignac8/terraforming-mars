@@ -7,6 +7,7 @@ import {Space} from '../boards/Space';
 import {Board} from '../boards/Board';
 import {MADetail} from '../../common/game/VictoryPointsBreakdown';
 import {Turmoil} from '../turmoil/Turmoil';
+import {printedVictoryPoints} from './MarsBotTags';
 
 export interface MarsBotVPBreakdown {
   terraformRating: number;
@@ -149,14 +150,16 @@ export class MarsBotScoring {
     return -1 * cities.length;
   }
 
-  /** Hard/Brutal mode: 1 VP per card with non-negative VP icon in MarsBot's played pile. */
+  /** Hard/Brutal mode: 1 VP per card with a non-negative VP icon in MarsBot's played pile. */
   private calculateCardVP(): number {
     if (this.difficulty !== 'hard' && this.difficulty !== 'brutal') {
       return 0;
     }
+    // Designer ruling, BGG thread 3386410 (TDaver): a card with no VP icon doesn't count, one
+    // with a conditional or per-resource icon does, and a negative icon doesn't.
     return this.playedProjectCards.filter((card) => {
-      const vp = card.getVictoryPoints(this.marsBot);
-      return vp >= 0;
+      const vp = printedVictoryPoints(card);
+      return vp !== undefined && vp >= 0;
     }).length;
   }
 

@@ -20,6 +20,7 @@ import {Resource} from '../../common/Resource';
 import {SelectOption} from '../inputs/SelectOption';
 import {IColony} from '../colonies/IColony';
 import {ColonyName} from '../../common/colonies/ColonyName';
+import {CardResource} from '../../common/CardResource';
 import {Space} from '../boards/Space';
 
 /**
@@ -80,6 +81,7 @@ export class AutomaGameHooks {
    */
   public handleStartActions(player: IPlayer): boolean {
     if (player === this.marsBot.player) {
+      this.handleActionPhaseStart();
       this.marsBot.takeTurn();
       return true;
     }
@@ -209,13 +211,11 @@ export class AutomaGameHooks {
     if (opts.coloniesExtension && !opts.venusNextExtension) {
       // C-9/C-X2: Spend 5 from Titan storage (floaters) for extra card
       this.marsBot.shippingBoard.spend(ColonyName.TITAN, 5);
-      const extraCards = this.game.projectDeck.drawN(this.game, 1);
-      this.marsBot.actionDeck.push(...extraCards);
+      this.marsBot.drawProjectCardsToActionDeck(1);
       this.game.log('MarsBot spends 5 Titan floaters for an extra card (C-9)');
     } else {
       this.marsBot.floaters -= 5;
-      const extraCards = this.game.projectDeck.drawN(this.game, 1);
-      this.marsBot.actionDeck.push(...extraCards);
+      this.marsBot.drawProjectCardsToActionDeck(1);
       this.game.log('MarsBot spends 5 floaters for an extra card');
     }
     this.onFloatersSpentForExtraCard();
@@ -272,8 +272,7 @@ export class AutomaGameHooks {
         // Brutal: spend 5 floaters for a 5th card from project deck
         if (isBrutal && canSpend) {
           this.marsBot.spendFloaters(5);
-          const extra = this.game.projectDeck.drawN(this.game, 1);
-          this.marsBot.actionDeck.push(...extra);
+          this.marsBot.drawProjectCardsToActionDeck(1);
           this.game.log('MarsBot (Brutal) spends 5 floaters for a 5th card');
           this.onFloatersSpentForExtraCard();
         }
@@ -344,8 +343,23 @@ export class AutomaGameHooks {
 
     this.marsBot.setCorpAndSetup(corp);
 
-    // Corp before-action-phase effects run now for gen 1
-    corp.beforeActionPhase?.(this.marsBot);
+    // The corp's before-action-phase box waits for the player's preludes: it resolves before any
+    // action of the action phase, and the preludes are the player's first action here. Designer
+    // ruling, BGG thread 3738284.
+    this.marsBot.beforeActionPhasePending = corp.beforeActionPhase !== undefined;
+  }
+
+  /**
+   * Resolves the corp's before-action-phase box that generation 1 held back for the player's
+   * preludes. Returns true when it ran.
+   */
+  public handleActionPhaseStart(): boolean {
+    if (!this.marsBot.beforeActionPhasePending) {
+      return false;
+    }
+    this.marsBot.beforeActionPhasePending = false;
+    this.marsBot.corp?.beforeActionPhase?.(this.marsBot);
+    return true;
   }
 
   /**
@@ -481,30 +495,69 @@ export class AutomaGameHooks {
 
   // ---- Resource removal targeting ----
 
-  /** Check if MarsBot MC supply is a valid target for card resource removal. */
-  public hasRemoveResourceTarget(player: IPlayer, source: string): boolean {
+  /**
+   * The colony storage area that holds `resourceType` for the player's cards (rulebook C, p.5):
+   * Enceladus holds microbes and Miranda animals.
+   */
+  private storageHolding(resourceType: CardResource | undefined): ColonyName | undefined {
+    switch (resourceType) {
+    case CardResource.MICROBE: return ColonyName.ENCELADUS;
+    case CardResource.ANIMAL: return ColonyName.MIRANDA;
+    default: return undefined;
+    }
+  }
+
+  /** Check if MarsBot's M€ supply or colony storage is a valid target for card resource removal. */
+  public hasRemoveResourceTarget(player: IPlayer, source: string, resourceType?: CardResource): boolean {
     if (source === 'self') {
       return false;
     }
     const marsBot = this.marsBot.player;
-    return marsBot !== player && marsBot.stock.megacredits > 0;
+    if (marsBot === player) {
+      return false;
+    }
+    const storage = this.storageHolding(resourceType);
+    return marsBot.stock.megacredits > 0 || (storage !== undefined && this.marsBot.shippingBoard.get(storage) > 0);
   }
 
-  /** Get a SelectOption for targeting MarsBot MC supply, or undefined if not available. */
-  public getRemoveResourceOption(player: IPlayer, count: number, source: string, cb: () => void): SelectOption | undefined {
-    if (!this.hasRemoveResourceTarget(player, source)) {
-      return undefined;
+  /**
+   * The ways to remove card resources from MarsBot: its M€ supply, and the colony storage area
+   * holding that resource. The player picks one, and may mix by removing again (BGG 3599965).
+   */
+  public getRemoveResourceOptions(player: IPlayer, count: number, source: string, cb: () => void, resourceType?: CardResource): Array<SelectOption> {
+    if (!this.hasRemoveResourceTarget(player, source, resourceType)) {
+      return [];
     }
-    return new SelectOption(`Remove ${count} from MarsBot MC supply`)
-      .andThen(() => {
-        this.executeRemoveResource(player, count, cb);
-        return undefined;
-      });
+    const options: Array<SelectOption> = [];
+    if (this.marsBot.player.stock.megacredits > 0) {
+      options.push(new SelectOption(`Remove ${count} from MarsBot MC supply`)
+        .andThen(() => {
+          this.executeRemoveResource(player, count, cb);
+          return undefined;
+        }));
+    }
+    const storage = this.storageHolding(resourceType);
+    if (storage !== undefined && this.marsBot.shippingBoard.get(storage) > 0) {
+      options.push(new SelectOption(`Remove ${count} ${resourceType} from MarsBot's ${storage} colony storage`)
+        .andThen(() => {
+          this.executeRemoveStorageResource(storage, count, cb);
+          return undefined;
+        }));
+    }
+    return options;
   }
 
   /** Deduct from MarsBot MC supply as if card resources were removed. */
-  public executeRemoveResource(player: IPlayer, count: number, cb: () => void): void {
+  private executeRemoveResource(player: IPlayer, count: number, cb: () => void): void {
     this.marsBot.player.stock.deduct(Resource.MEGACREDITS, count, {log: true, from: {player}});
+    cb();
+  }
+
+  /** Remove resources from a colony storage area, losing any excess. */
+  private executeRemoveStorageResource(storage: ColonyName, count: number, cb: () => void): void {
+    const removed = Math.min(count, this.marsBot.shippingBoard.get(storage));
+    this.marsBot.shippingBoard.spend(storage, removed);
+    this.game.log('${0} resources removed from MarsBot\'s ${1} colony storage', (b) => b.number(removed).rawString(storage));
     cb();
   }
 

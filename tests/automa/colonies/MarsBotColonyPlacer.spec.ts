@@ -166,7 +166,7 @@ describe('MarsBotColonyPlacer (C-15b, C-16a, C-19, C-24a)', () => {
       expect(europa.colonies).to.include(marsBot.player.id);
     });
 
-    it('failed action if ocean maxed', () => {
+    it('places the colony and takes a failed action if ocean maxed', () => {
       const [game] = testGame(1, {automaOption: true, coloniesExtension: true, boardName: BoardName.THARSIS});
       const marsBot = getMarsBot(game);
       const europa = new Europa();
@@ -179,7 +179,7 @@ describe('MarsBotColonyPlacer (C-15b, C-16a, C-19, C-24a)', () => {
       placeColonyForMarsBot(europa, marsBot);
       // Should be a failed action (gains MC)
       expect(marsBot.turnResolver.megacredits).to.be.greaterThan(mcBefore);
-      expect(europa.colonies).to.not.include(marsBot.player.id);
+      expect(europa.colonies).to.include(marsBot.player.id);
     });
   });
 

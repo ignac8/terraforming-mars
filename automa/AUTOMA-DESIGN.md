@@ -168,8 +168,8 @@ Human produces as normal. MarsBot skips production entirely.
 | B03 | Research and Development | MarsBot draws 1 project card and resolves it immediately. |
 | B04 | Overachievement | MarsBot claims a milestone if able. If fails AND gen ≥6, funds an award. If either succeeded, destroy card. Otherwise gain 5 MC. |
 | B05 | Expedited Construction | Place city adjacent to ≥2 greenery/ocean mix. If placed, destroy card. Normal city rules apply. |
-| B06 | Lobbyists | First applicable: (a) Temp 1-2 steps from bonus/completion → raise temp 2, destroy. (b) Oxygen 1-2 from bonus/completion → place greenery + raise oxygen twice, destroy. (c) Ocean space adjacent to 2+ oceans → place ocean, destroy. (d) Advance furthest-from-completion parameter (tie: oxygen > ocean > temp). |
-| B07 | Local Neural Instance | Place Neural Instance tile adjacent to no tiles, not on edge, not on/adjacent to reserved spaces. If placed, destroy card. If can't, draw and resolve a project card and discard this card as usual. |
+| B06 | Lobbyists | First applicable: (a) Temp 1-2 steps from bonus/completion → raise temp 2, destroy. (b) Oxygen 1-2 from bonus/completion → place greenery + raise oxygen twice, destroy. (c) Ocean space adjacent to 2+ oceans → place ocean, destroy. (d) Advance the parameter with the most steps remaining (a temperature step is 2°C; tie: oxygen > ocean > temp). |
+| B07 | Local Neural Instance | Place Neural Instance tile adjacent to no tiles, not on edge, not on/adjacent to reserved spaces. If placed, destroy card. If can't, draw and resolve a project card and discard this card as usual; it is not destroyed (designer ruling, BGG thread 3350125). |
 | B08 | Corporate Competition | If MarsBot has ≥5 MC, help position on closest funded award via helper actions: Landlord→place greenery, Banker→advance Track 1 or 3 (least advanced), Scientist→advance Track 4, Thermalist→advance Track 5, Miner→advance Track 2. Costs 5 MC if successful, discard. If no action possible, draw another bonus card and resolve, discarding both. |
 
 ### 2.11 Game End
@@ -212,7 +212,7 @@ client hides the "of N" generation cap for such games.
 **Normal:** Default rules.
 
 **Hard:**
-- MarsBot gains 1 VP for each card in played pile with non-negative VP icon.
+- MarsBot gains 1 VP for each card in played pile with a non-negative VP icon. A card with no VP icon doesn't count, one with a conditional or per-resource icon does (BGG thread 3386410).
 - On MarsBot's first turn each gen, if it has 8 MC and meets milestone conditions (3+ milestones if none claimed, 2+ if one claimed, any if two claimed), claim and lose 8 MC.
 
 **Brutal:**
@@ -329,7 +329,7 @@ MarsBotTurnResolver.resolveProjectCard(card):
     trackIndex = board.getTrackIndexForTag(tag)
     if undefined → skip (unmapped, e.g. Venus tag)
     advanceTrack(trackIndex)
-  card → project discard pile
+  card → MarsBot's played pile (not the project discard pile)
 
 advanceTrack(trackIndex):
   if position >= 18 → failedAction()

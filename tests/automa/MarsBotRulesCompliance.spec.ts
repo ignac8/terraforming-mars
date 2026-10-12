@@ -315,14 +315,14 @@ describe('MarsBot Rules Compliance', () => {
     });
 
     it('goes to the bonus discard pile when its tile cannot be placed', () => {
-      const {game, marsBot} = createAutomaGame();
+      const {marsBot} = createAutomaGame();
       marsBot.turnResolver.tilePlacer.findNeuralInstanceSpace = () => undefined;
-      const discarded = game.projectDeck.discardPile.length;
+      const played = marsBot.playedProjectCards.length;
 
       const destroyed = marsBot['bonusResolver'].resolve(neuralInstance());
 
       expect(marsBot.neuralInstanceSpace).to.be.undefined;
-      expect(game.projectDeck.discardPile).has.length(discarded + 1); // The project card it resolved instead
+      expect(marsBot.playedProjectCards).has.length(played + 1); // The project card it resolved instead
       expect(destroyed).to.be.false;
       expect(marsBot.bonusDeck.discardPile.map((c) => c.id)).to.include(BonusCardId.B07_LOCAL_NEURAL_INSTANCE);
     });
@@ -383,7 +383,7 @@ describe('MarsBot Rules Compliance', () => {
       }
       marsBot.turnResolver.getMarsBotAwardValue = () => 10;
       const b08 = createBaseBonusCards().find((c) => c.id === BonusCardId.B08_CORPORATE_COMPETITION)!;
-      return {game, marsBot, b08};
+      return {game, human, marsBot, b08};
     }
 
     it('competes for the award the player leads by the least, over one MarsBot leads', () => {
@@ -400,6 +400,18 @@ describe('MarsBot Rules Compliance', () => {
       // Scientist moves the science track; Miner would have moved the space track
       expect(marsBot.marsBotBoard.tracks[3].position).to.be.greaterThan(0);
       expect(marsBot.marsBotBoard.tracks[1].position).to.eq(0);
+    });
+
+    it('measures the player\'s Thermalist by heat, energy and heat production', () => {
+      const {game, human, marsBot, b08} = setup({Scientist: 2});
+      game.fundAward(human, game.awards.find((a) => a.name === 'Thermalist')!);
+      // 10 for the comparison, 0 for the final count
+      human.energy = 1;
+      human.production.override({heat: 9, energy: 0, megacredits: 0, steel: 0, titanium: 0, plants: 0});
+      marsBot['bonusResolver'].resolve(b08);
+      // The tie on Thermalist is closer than Scientist's lead of 2
+      expect(marsBot.marsBotBoard.tracks[4].position).to.be.greaterThan(0);
+      expect(marsBot.marsBotBoard.tracks[3].position).to.eq(0);
     });
 
     it('for Banker advances the less-advanced of the building and event tracks', () => {

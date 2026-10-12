@@ -138,8 +138,9 @@ describe('Corp-Specific Bonus Cards (B22-B32)', () => {
       marsBot['bonusResolver'].resolve(createCorpBonusCard(BonusCardId.B26_VENUSIAN_LOBBY));
       expect(game.getVenusScaleLevel()).to.eq(2);
       expect(marsBot.marsBotBoard.tracks[7].position).to.eq(1);
-      // Everything is at its start, so oxygen goes first
-      expect(game.getOxygenLevel()).to.eq(1);
+      // Everything is at its start, and temperature has the most steps left (19, against 14 and 9)
+      expect(game.getTemperature()).to.eq(-28);
+      expect(game.getOxygenLevel()).to.eq(0);
     });
   });
 
@@ -177,7 +178,6 @@ describe('Corp-Specific Bonus Cards (B22-B32)', () => {
       game.simpleAddTile(human, city, {tileType: TileType.CITY});
       const nuclearZone = new NuclearZone();
       marsBot.playedProjectCards.push(nuclearZone);
-      game.projectDeck.discardPile.push(nuclearZone);
       marsBot.megacredits = 10;
 
       marsBot['bonusResolver'].resolve(createCorpBonusCard(BonusCardId.B27_BUILD_BUILD_BUILD));
@@ -187,7 +187,6 @@ describe('Corp-Specific Bonus Cards (B22-B32)', () => {
       expect(space.player).to.eq(marsBot.player);
       expect(game.board.getAdjacentSpaces(space)).includes(city);
       expect(marsBot.playedProjectCards).does.not.include(nuclearZone);
-      expect(game.projectDeck.discardPile).does.not.include(nuclearZone);
       const placementMc = marsBot['tilePlacer'].getTotalPlacementMC(space);
       expect(marsBot.megacredits).to.eq(10 + placementMc - 3);
     });

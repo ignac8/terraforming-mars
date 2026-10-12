@@ -78,6 +78,8 @@ export type MarsBotCorpEffect = {
    * a card instead of the temperature step under them), and the icon is then left unresolved.
    */
   onTrackCubeTrigger?(bot: IMarsBot, trackIndex: number, position: number, cubeType: CubeType): boolean | void;
+  /** The bot resolved a tag, on a project card or as one of its corp's starting tags. */
+  onTagResolved?(bot: IMarsBot, tag: Tag): void;
   /** The bot drew and resolved a project card. */
   onProjectCardResolved?(bot: IMarsBot, card: IProjectCard): void;
   /** The human player played a card. */

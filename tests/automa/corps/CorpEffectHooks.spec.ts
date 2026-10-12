@@ -268,17 +268,21 @@ describe('Corp Effect Hooks', () => {
   });
 
   describe('C06 Mining Guild card countdown', () => {
-    it('card starts at 10', () => {
+    it('card starts at 10, and the M€ its starting tags earn count down from it', () => {
       const {marsBot} = createAutomaGame();
       const corp = getMarsBotCorp(CardName.MINING_GUILD)!;
+      const mcBefore = marsBot.turnResolver.megacredits;
       marsBot.setCorpAndSetup(corp);
-      expect(marsBot.corpSpecificState.get('mcOnCard')).to.eq(10);
+      const earned = marsBot.turnResolver.megacredits - mcBefore;
+      expect(earned).is.greaterThan(0);
+      expect(marsBot.corpSpecificState.get('mcOnCard')).to.eq(10 - earned);
     });
 
     it('earning M€ counts down the card, bot keeps the earnings', () => {
       const {marsBot} = createAutomaGame();
       const corp = getMarsBotCorp(CardName.MINING_GUILD)!;
       marsBot.setCorpAndSetup(corp);
+      marsBot.corpSpecificState.set('mcOnCard', 10);
       // 5 MC earned: card counts down 10 → 5
       corp.effect!.onMcGained!(marsBot, 5);
       expect(marsBot.corpSpecificState.get('mcOnCard')).to.eq(5);
@@ -300,6 +304,7 @@ describe('Corp Effect Hooks', () => {
     it('Mining Guild counts down through turnResolver.gainMc', () => {
       const {marsBot} = createAutomaGame();
       marsBot.setCorpAndSetup(getMarsBotCorp(CardName.MINING_GUILD)!);
+      marsBot.corpSpecificState.set('mcOnCard', 10);
       const mcBefore = marsBot.turnResolver.megacredits;
       marsBot.turnResolver.gainMc(4);
       expect(marsBot.turnResolver.megacredits).to.eq(mcBefore + 4);
@@ -344,11 +349,11 @@ describe('Corp Effect Hooks', () => {
       const {marsBot} = createAutomaGame();
       const corp = getMarsBotCorp(CardName.ECOTEC)!;
       marsBot.setCorpAndSetup(corp);
-      // Ecotec starts with 2 plant resources
-      expect(marsBot.corpSpecificState.get('plantResources')).to.eq(2);
+      // Ecotec starts with 2 plant resources and 1 more from its starting plant tag
+      expect(marsBot.corpSpecificState.get('plantResources')).to.eq(3);
       const mcBefore = marsBot.turnResolver.megacredits;
-      // Remove 3 plants — should take 2 from card, excess lost, NOT from MC supply
-      marsBot.player.stock.add('plants' as any, -3);
+      // Remove 4 plants — should take 3 from card, excess lost, NOT from MC supply
+      marsBot.player.stock.add('plants' as any, -4);
       expect(marsBot.corpSpecificState.get('plantResources')).to.eq(0);
       expect(marsBot.turnResolver.megacredits).to.eq(mcBefore); // No MC deducted
     });

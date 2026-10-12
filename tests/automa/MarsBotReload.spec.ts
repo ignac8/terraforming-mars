@@ -9,6 +9,8 @@ import {GlobalParameter} from '../../src/common/GlobalParameter';
 import {Phase} from '../../src/common/Phase';
 import {createCorpBonusCard} from '../../src/server/automa/MarsBotBonusCard';
 import {BonusCardId} from '../../src/common/automa/AutomaTypes';
+import {CardName} from '../../src/common/cards/CardName';
+import {Asteroid} from '../../src/server/cards/base/Asteroid';
 
 function createAutomaGame(): {game: IGame, marsBot: MarsBot} {
   const [game] = testGame(1, {
@@ -50,6 +52,25 @@ describe('MarsBotReload', () => {
     const restored = Game.deserialize(game.serialize());
 
     expect(restored.automaHooks!.marsBot.firstTurnCheckedGeneration).to.eq(3);
+  });
+
+  it('keeps a before-action-phase box that still waits for the preludes across a reload', () => {
+    const {game, marsBot} = createAutomaGame();
+    marsBot.beforeActionPhasePending = true;
+
+    const restored = Game.deserialize(game.serialize());
+
+    expect(restored.automaHooks!.marsBot.beforeActionPhasePending).is.true;
+  });
+
+  it('has no before-action-phase box waiting in older saves', () => {
+    const {game} = createAutomaGame();
+    const serialized = game.serialize();
+    delete serialized.automaState!.beforeActionPhasePending;
+
+    const restored = Game.deserialize(serialized);
+
+    expect(restored.automaHooks!.marsBot.beforeActionPhasePending).is.false;
   });
 
   it('treats the first-turn check as done for the current generation in older saves', () => {
@@ -130,5 +151,30 @@ describe('MarsBotReload', () => {
     // A server restart before the player's next action reloads the latest save.
     const restored = Game.deserialize(saves[saves.length - 1]);
     expect(restored.automaHooks!.marsBot.corp).to.eq(corp);
+  });
+
+  it('keeps the cards MarsBot resolved out of the project discard pile across a reload', () => {
+    const {game, marsBot} = createAutomaGame();
+    const asteroid = new Asteroid();
+    marsBot.turnResolver.resolveProjectCard(asteroid);
+
+    const restored = Game.deserialize(game.serialize());
+
+    const restoredBot = restored.automaHooks!.marsBot;
+    expect(restoredBot.playedProjectCards.map((c) => c.name)).deep.eq([CardName.ASTEROID]);
+    expect(restored.projectDeck.discardPile.map((c) => c.name)).does.not.include(CardName.ASTEROID);
+  });
+
+  it('removes cards MarsBot played from the project discard pile in older saves', () => {
+    const {game, marsBot} = createAutomaGame();
+    const asteroid = new Asteroid();
+    marsBot.turnResolver.resolveProjectCard(asteroid);
+    // Older saves also left the resolved card in the project discard pile
+    game.projectDeck.discardPile.push(asteroid);
+
+    const restored = Game.deserialize(game.serialize());
+
+    expect(restored.automaHooks!.marsBot.playedProjectCards.map((c) => c.name)).deep.eq([CardName.ASTEROID]);
+    expect(restored.projectDeck.discardPile.map((c) => c.name)).does.not.include(CardName.ASTEROID);
   });
 });

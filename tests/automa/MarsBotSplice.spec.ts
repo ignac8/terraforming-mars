@@ -16,7 +16,8 @@ import {IndustrialMicrobes} from '../../src/server/cards/base/IndustrialMicrobes
 import {SulphurEatingBacteria} from '../../src/server/cards/venusNext/SulphurEatingBacteria';
 import {OrOptions} from '../../src/server/inputs/OrOptions';
 import {MarsBotCorpResolver} from '../../src/server/automa/corps/MarsBotCorpResolver';
-import {getAllMarsBotCorps} from '../../src/server/automa/corps/MarsBotCorpRegistry';
+import {ColonyName} from '../../src/common/colonies/ColonyName';
+import {getAllMarsBotCorps, getMarsBotCorp} from '../../src/server/automa/corps/MarsBotCorpRegistry';
 import {runAllActions} from '../TestingUtils';
 import {cast} from '../../src/common/utils/utils';
 
@@ -173,6 +174,30 @@ describe('MarsBot and the player\'s Pharmacy Union', () => {
 
     expect(pharmacyUnion.resourceCount).to.eq(1);
     expect(marsBot.player.getWaitingFor()).is.undefined;
+  });
+
+  it('adds a disease when Enceladus storage overflows into the microbe track (C-12)', () => {
+    const {game, human, marsBot} = createAutomaGame();
+    const pharmacyUnion = new PharmacyUnion();
+    human.playedCards.push(pharmacyUnion);
+
+    marsBot.shippingBoard.add(ColonyName.ENCELADUS, 5, marsBot);
+    runAllActions(game);
+
+    expect(pharmacyUnion.resourceCount).to.eq(1);
+  });
+
+  it('does not resolve MarsBot\'s own corp when a colony storage overflow advances a track (BGG 3535330)', () => {
+    const {marsBot} = createAutomaGame();
+    marsBot.setCorpAndSetup(getMarsBotCorp(CardName.ARKLIGHT)!);
+    const mc = marsBot.turnResolver.megacredits;
+
+    marsBot.shippingBoard.add(ColonyName.GANYMEDE, 5, marsBot);
+
+    // Only the plant track's own icons pay M€, not Arklight's "plant or animal" effect
+    const plantTrack = marsBot.marsBotBoard.tracks[marsBot.marsBotBoard.tagToTrack[Tag.PLANT]!];
+    expect(plantTrack.position).is.greaterThan(0);
+    expect(marsBot.turnResolver.megacredits - mc).is.lessThan(2);
   });
 });
 

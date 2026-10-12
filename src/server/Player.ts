@@ -1499,6 +1499,11 @@ export class Player implements IPlayer {
           return;
         } else {
           game.phase = Phase.ACTION;
+          // MarsBot's corporation resolves its before-action-phase box once the preludes are done
+          if (game.automaHooks?.handleActionPhaseStart()) {
+            this.takeAction();
+            return;
+          }
         }
 
         if (game.hasPassedThisActionPhase(this) || (this.allOtherPlayersHavePassed() === false && this.actionsTakenThisRound >= this.availableActionsThisRound)) {

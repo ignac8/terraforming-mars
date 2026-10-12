@@ -210,6 +210,35 @@ describe('MarsBot Deep Rules Tests', () => {
       expect(marsBot.player.terraformRating).to.eq(tr);
       expect(marsBot.turnResolver.megacredits).to.eq(mc);
     });
+
+    it('raises Venus instead when every Martian parameter is complete on an even generation', () => {
+      const [game] = testGame(1, {automaOption: true, venusNextExtension: true, boardName: BoardName.THARSIS});
+      const marsBot = game.automaHooks!.marsBot;
+      game.generation = 2;
+      setOxygenLevel(game, 14);
+      maxOutOceans(game.players[0]);
+      setTemperature(game, 8);
+      const venus = game.getVenusScaleLevel();
+
+      marsBot['bonusResolver'].resolve(createCorpBonusCard(BonusCardId.B16_GOVERNMENT_INTERVENTION));
+
+      expect(game.getVenusScaleLevel()).to.eq(venus + 2);
+    });
+
+    it('advances the parameter with the most steps remaining, not the lowest fraction done', () => {
+      const [game] = testGame(1, {automaOption: true, venusNextExtension: true, boardName: BoardName.THARSIS});
+      const marsBot = game.automaHooks!.marsBot;
+      game.generation = 2;
+      // Oxygen 7 is 50% done with 7 steps left, temperature -10 is 52% done with 9 steps left
+      setOxygenLevel(game, 7);
+      maxOutOceans(game.players[0]);
+      setTemperature(game, -10);
+
+      marsBot['bonusResolver'].resolve(createCorpBonusCard(BonusCardId.B16_GOVERNMENT_INTERVENTION));
+
+      expect(game.getTemperature()).to.eq(-8);
+      expect(game.getOxygenLevel()).to.eq(7);
+    });
   });
 
   // ---- Page 8: MarsBot does NOT pay for milestones or awards ----
@@ -296,11 +325,9 @@ describe('MarsBot Deep Rules Tests', () => {
       expect(destroyed).to.be.true;
     });
 
-    it('option (d): advance furthest parameter — oxygen > ocean > temp priority', () => {
+    it('option (d): advance furthest parameter, measured in steps remaining', () => {
       const {game, human, marsBot} = createAutomaGame();
-      // All at 0% — tied. Priority: oxygen > ocean > temp
-      // So should raise oxygen (place greenery? no — option d advances the parameter directly)
-      // Actually looking at the code, advanceFurthestParameter raises oxygen via increaseOxygenLevel
+      // From the start temperature has 19 steps left, oxygen 14 and oceans 9
 
       const cards = createBaseBonusCards();
       const b06 = cards.find((c) => c.id === BonusCardId.B06_LOBBYISTS)!;
@@ -308,26 +335,26 @@ describe('MarsBot Deep Rules Tests', () => {
       const bonusDeck = MarsBotBonusDeck.createBase(new SeededRandom(99));
       const bonusResolver = new MarsBotBonusResolver(game, marsBot.player, human, marsBot.turnResolver, bonusDeck, tilePlacer);
 
-      const oxyBefore = game.getOxygenLevel();
+      const tempBefore = game.getTemperature();
       const destroyed = bonusResolver.resolve(b06);
-      // With all at 0, none of a/b/c apply, so option d fires
-      // Priority: oxygen first
-      expect(game.getOxygenLevel()).to.eq(oxyBefore + 1);
+      // None of a/b/c apply, so option d fires
+      expect(game.getTemperature()).to.eq(tempBefore + 2);
       expect(destroyed).to.be.false; // Option d does NOT destroy
     });
   });
 
   // ---- Page 5: Card placed in played pile after resolution ----
 
-  describe('Card goes to discard after resolution (page 5)', () => {
-    it('project card goes to project discard pile', () => {
+  describe('Card goes to the played pile after resolution (page 5)', () => {
+    it('project card goes to MarsBot\'s played pile, not the project discard pile', () => {
       const {game, marsBot} = createAutomaGame();
       const discardBefore = game.projectDeck.discardPile.length;
 
       const card = mockCard([Tag.BUILDING]);
       marsBot.turnResolver.resolveProjectCard(card);
 
-      expect(game.projectDeck.discardPile.length).to.eq(discardBefore + 1);
+      expect(game.projectDeck.discardPile.length).to.eq(discardBefore);
+      expect(marsBot.playedProjectCards).to.include(card);
     });
   });
 

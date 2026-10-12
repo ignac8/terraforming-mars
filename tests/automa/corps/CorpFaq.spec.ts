@@ -61,9 +61,9 @@ describe('MarsBot corporation FAQ', () => {
       const {human, marsBot} = createAutomaGame(CardName.ECOTEC);
       marsBot.turnResolver.megacredits = 20;
 
-      marsBot.player.stock.steal(Resource.PLANTS, 3, human);
+      marsBot.player.stock.steal(Resource.PLANTS, 4, human);
 
-      expect(human.plants).eq(2);
+      expect(human.plants).eq(3);
       expect(marsBot.getCorpState('plantResources')).eq(0);
       expect(marsBot.turnResolver.megacredits).eq(20);
     });

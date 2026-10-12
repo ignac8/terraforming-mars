@@ -51,7 +51,8 @@ export class MarsBotTurnResolver {
   /** Resolve a project card: advance tracks based on tags. */
   public resolveProjectCard(card: IProjectCard): void {
     this.game.log('MarsBot plays ${0}', (b) => b.card(card));
-    // Every resolved project card goes to MarsBot's played pile (for Hard mode scoring)
+    // Every resolved project card goes to MarsBot's played pile (rulebook A, p.5), not the project
+    // discard pile, so it can't be drawn again
     this.marsBotManager?.playedProjectCards.push(card);
 
     const tags = marsBotCardTags(card);
@@ -65,6 +66,7 @@ export class MarsBotTurnResolver {
     // Resolve each tag left-to-right
     let advancedAny = false;
     for (const tag of tags) {
+      this.marsBotManager?.corp?.effect?.onTagResolved?.(this.marsBotManager, tag);
       if (tag === Tag.WILD) {
         // Prelude rule: advance the least-advanced track, topmost if tied
         const leastIndex = this.marsBotBoard.getLeastAdvancedTrackIndex();
@@ -92,8 +94,6 @@ export class MarsBotTurnResolver {
 
     // Notify human player's effect cards (Solar Logistics, Saturn Systems, etc.)
     this.notifyPlayerCards(card);
-
-    this.game.projectDeck.discardPile.push(card);
   }
 
   /**
@@ -504,11 +504,13 @@ export class MarsBotTurnResolver {
    * Per rules page 8: "MarsBot considers your current number of resources plus your production"
    * for resource-based awards like Thermalist (heat) and Miner (steel+titanium).
    */
-  private getHumanAwardValueForComparison(award: IAward): number {
+  public getHumanAwardValueForComparison(award: IAward): number {
     const name = award.name;
     switch (name) {
     case 'Thermalist':
-      return this.humanPlayer.heat + this.humanPlayer.production.get(Resource.HEAT);
+      // Heat resources + energy resources (they become heat) + heat production. Energy
+      // production doesn't count; designer ruling, BGG thread 3350125 (TDaver).
+      return this.humanPlayer.heat + this.humanPlayer.energy + this.humanPlayer.production.get(Resource.HEAT);
     case 'Miner':
       return this.humanPlayer.steel + this.humanPlayer.titanium +
         this.humanPlayer.production.get(Resource.STEEL) + this.humanPlayer.production.get(Resource.TITANIUM);

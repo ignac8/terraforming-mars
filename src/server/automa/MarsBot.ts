@@ -27,7 +27,7 @@ import {MarsBotCorpResolver} from './corps/MarsBotCorpResolver';
 import {getMarsBotCorp} from './corps/MarsBotCorpRegistry';
 import {SerializedAutomaState} from '../SerializedGame';
 import {SpaceId} from '../../common/Types';
-import {inplaceRemove} from '../../common/utils/utils';
+import {inplaceRemove, inplaceRemoveIf} from '../../common/utils/utils';
 import {LogHelper} from '../LogHelper';
 import {ColonyName} from '../../common/colonies/ColonyName';
 
@@ -61,6 +61,12 @@ export class MarsBot implements IMarsBot {
 
   /** Whether MarsBot goes first this generation (alternates each gen, human first in gen 1). */
   public goesFirst: boolean = false;
+
+  /**
+   * Whether the corp's "before the action phase" box still waits for the player's preludes.
+   * Generation 1 only: later generations resolve it as the action phase starts.
+   */
+  public beforeActionPhasePending: boolean = false;
 
   /** The last generation whose first-turn milestone check (Hard mode) has run. */
   public firstTurnCheckedGeneration: number = 0;
@@ -711,6 +717,7 @@ export class MarsBot implements IMarsBot {
       neuralInstanceSpaceId: this.neuralInstanceSpace?.id,
       playedProjectCardNames: this.playedProjectCards.map((c) => c.name),
       firstTurnCheckedGeneration: this.firstTurnCheckedGeneration,
+      beforeActionPhasePending: this.beforeActionPhasePending,
       marsBotPlayerId: this.player.id,
       terraformRating: this.player.terraformRating,
       globalParameterSteps: {...this.player.globalParameterSteps},
@@ -781,6 +788,7 @@ export class MarsBot implements IMarsBot {
     this.goesFirst = state.goesFirst;
     // Older saves lack it: assume the check for the current generation already ran
     this.firstTurnCheckedGeneration = state.firstTurnCheckedGeneration ?? this.game.generation;
+    this.beforeActionPhasePending = state.beforeActionPhasePending ?? false;
 
     // Restore neural instance
     if (state.neuralInstanceSpaceId) {
@@ -861,6 +869,10 @@ export class MarsBot implements IMarsBot {
           this.playedProjectCards.push(card as IProjectCard);
         }
       }
+      // Older saves also left every resolved card in the project discard pile, where it could be
+      // reshuffled and drawn again
+      const played = new Set<string>(this.playedProjectCards.map((c) => c.name));
+      inplaceRemoveIf(this.game.projectDeck.discardPile, (c) => played.has(c.name));
     }
 
     // Restore colony cube positions

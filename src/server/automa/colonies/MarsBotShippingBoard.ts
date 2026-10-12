@@ -75,10 +75,9 @@ export class MarsBotShippingBoard {
     while ((this.storage.get(colonyName) ?? 0) >= 5) {
       const current = this.storage.get(colonyName) ?? 0;
       this.storage.set(colonyName, current - 5);
-      const trackIndex = marsBot.marsBotBoard.tagToTrack[tag];
-      if (trackIndex !== undefined) {
-        marsBot.turnResolver.advanceTrack(trackIndex);
-      }
+      // Not "resolving a tag" for MarsBot's corp (BGG thread 3535330), but a microbe advance
+      // still resolves the player's Pharmacy Union or Splice (rulebook B, p.4 FAQ)
+      marsBot.turnResolver.advanceTrackOfTag(tag);
     }
   }
 

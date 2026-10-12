@@ -91,6 +91,8 @@ export type SerializedAutomaState = {
     playedProjectCardNames: Array<string>;
     /** The last generation whose Hard mode first-turn milestone check has run; older saves lack it. */
     firstTurnCheckedGeneration?: number;
+    /** Whether the corp's before-action-phase box waits for the player's preludes; older saves lack it. */
+    beforeActionPhasePending?: boolean;
     marsBotPlayerId: string;
     // Corporation framework
     corpId?: string;
