@@ -97,6 +97,14 @@ describe('MarsBot boards', () => {
     expect(trackOf(BoardName.VASTITAS_BOREALIS_NOVA, Tag.JOVIAN)).eq(5);
   });
 
+  it('uses the Tharsis board with the Milestones & Awards expansion, whatever the map', () => {
+    const [game] = testGame(1, {automaOption: true, boardName: BoardName.HELLAS, modularMA: true});
+    const marsBot = getMarsBot(game);
+    expect(game.gameOptions.boardName).eq(BoardName.HELLAS);
+    // Jovian sits on the Energy track on Tharsis, on the Science track on Hellas
+    expect(marsBot.marsBotBoard.tagToTrack[Tag.JOVIAN]).eq(4);
+  });
+
   it('Enceladus microbes advance the Science track on Vastitas Borealis', () => {
     const [game] = testGame(1, {automaOption: true, coloniesExtension: true, boardName: BoardName.VASTITAS_BOREALIS_NOVA});
     const marsBot = getMarsBot(game);

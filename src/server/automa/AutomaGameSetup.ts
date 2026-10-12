@@ -85,6 +85,11 @@ export class AutomaGameSetup {
     return new Player('MarsBot', 'bronze', false, 0, playerId);
   }
 
+  /** The map whose MarsBot board this game uses. The Milestones & Awards expansion always uses Tharsis's (rulebook C, p.13). */
+  public static marsBotBoardName(gameOptions: GameOptions): BoardName {
+    return gameOptions.modularMA ? BoardName.THARSIS : gameOptions.boardName;
+  }
+
   /** Get the MarsBot board data for the selected map. */
   public static getBoardData(boardName: BoardName, venusEnabled: boolean): ReadonlyArray<TrackDefinition> {
     const boards = MARSBOT_BOARDS[boardName];
@@ -96,7 +101,7 @@ export class AutomaGameSetup {
 
   /** Set up MarsBot and return the AutomaGameHooks instance for Game.ts to use. */
   public static setup(game: IGame, humanPlayer: IPlayer, gameOptions: GameOptions, rng: Random, existingPlayer?: IPlayer): AutomaGameHooks {
-    const boardData = AutomaGameSetup.getBoardData(gameOptions.boardName, gameOptions.venusNextExtension);
+    const boardData = AutomaGameSetup.getBoardData(AutomaGameSetup.marsBotBoardName(gameOptions), gameOptions.venusNextExtension);
     const marsBotPlayer = existingPlayer ?? AutomaGameSetup.createMarsBotPlayer(game.id);
 
     // Set MarsBot player's game reference
