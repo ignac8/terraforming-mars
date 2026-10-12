@@ -365,7 +365,8 @@ export class MarsBotTilePlacer {
   /** True when MarsBot has the M€ for `bonus` and there is still something to get for it. */
   private canGetSpecialBonus(bonus: SpaceBonus): boolean {
     const game = this.game;
-    if (this.marsBot.megaCredits < this.specialHexCost(bonus)) {
+    // The M€ supply only: megaCredits also counts the Luna storage area
+    if ((game.automaHooks?.marsBot.megacredits ?? 0) < this.specialHexCost(bonus)) {
       return false;
     }
     switch (bonus) {

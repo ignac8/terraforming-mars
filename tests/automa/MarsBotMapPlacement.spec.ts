@@ -9,6 +9,7 @@ import {MarsBot} from '../../src/server/automa/MarsBot';
 import {MarsBotTilePlacer} from '../../src/server/automa/MarsBotTilePlacer';
 import {Luna} from '../../src/server/colonies/Luna';
 import {Ceres} from '../../src/server/colonies/Ceres';
+import {ColonyName} from '../../src/common/colonies/ColonyName';
 import {BoardName} from '../../src/common/boards/BoardName';
 import {SpaceBonus} from '../../src/common/boards/SpaceBonus';
 import {SpaceType} from '../../src/common/boards/SpaceType';
@@ -391,6 +392,14 @@ describe('MarsBot special placement hexes', () => {
 
     it('counts as a space without rewards with 5 M€', () => {
       s.marsBot.turnResolver.megacredits = 5;
+      const other = rival();
+
+      expectWins(s.game, s.placer, other, southPole);
+    });
+
+    it('does not count M€ in the Luna storage towards the cost', () => {
+      s.marsBot.turnResolver.megacredits = 5;
+      s.marsBot.shippingBoard.storage.set(ColonyName.LUNA, 3);
       const other = rival();
 
       expectWins(s.game, s.placer, other, southPole);

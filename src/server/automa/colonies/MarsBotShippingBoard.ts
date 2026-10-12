@@ -1,5 +1,6 @@
 import {ColonyName} from '../../../common/colonies/ColonyName';
 import {Tag} from '../../../common/cards/Tag';
+import {Resource} from '../../../common/Resource';
 import type {MarsBot} from '../MarsBot';
 
 /**
@@ -25,6 +26,20 @@ export const COLONY_STORAGE_TAG: Partial<Record<ColonyName, Tag>> = {
   // Titan: floaters, exempt from C-12 (C-23); no entry here, handled in add()
   // Europa: no storage (C-24d); no entry here, handled in add()
   [ColonyName.PLUTO]: Tag.SCIENCE,    // Cards (C-26)
+};
+
+/**
+ * The storage area that holds each standard resource for the player's steal and remove effects
+ * (C-25). Mirrors the resource printed on each area: Ceres steel, Triton titanium, Io heat,
+ * Callisto energy, Ganymede plants, Luna M€.
+ */
+export const COLONY_STORAGE_FOR_RESOURCE: Record<Resource, ColonyName> = {
+  [Resource.MEGACREDITS]: ColonyName.LUNA,
+  [Resource.STEEL]: ColonyName.CERES,
+  [Resource.TITANIUM]: ColonyName.TRITON,
+  [Resource.PLANTS]: ColonyName.GANYMEDE,
+  [Resource.ENERGY]: ColonyName.CALLISTO,
+  [Resource.HEAT]: ColonyName.IO,
 };
 
 /**

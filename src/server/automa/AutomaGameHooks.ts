@@ -4,6 +4,7 @@ import {Color} from '../../common/Color';
 import {TileType} from '../../common/TileType';
 import {PlayerId} from '../../common/Types';
 import {MarsBot} from './MarsBot';
+import {MarsBotStock} from './MarsBotStock';
 import {MarsBotModel} from '../../common/models/MarsBotModel';
 import {getAutomaMaxGeneration} from '../../common/automa/AutomaTypes';
 import {SelectCard} from '../inputs/SelectCard';
@@ -517,7 +518,7 @@ export class AutomaGameHooks {
       return false;
     }
     const storage = this.storageHolding(resourceType);
-    return marsBot.stock.megacredits > 0 || (storage !== undefined && this.marsBot.shippingBoard.get(storage) > 0);
+    return this.marsBot.megacredits > 0 || (storage !== undefined && this.marsBot.shippingBoard.get(storage) > 0);
   }
 
   /**
@@ -529,7 +530,7 @@ export class AutomaGameHooks {
       return [];
     }
     const options: Array<SelectOption> = [];
-    if (this.marsBot.player.stock.megacredits > 0) {
+    if (this.marsBot.megacredits > 0) {
       options.push(new SelectOption(`Remove ${count} from MarsBot MC supply`)
         .andThen(() => {
           this.executeRemoveResource(player, count, cb);
@@ -549,7 +550,8 @@ export class AutomaGameHooks {
 
   /** Deduct from MarsBot MC supply as if card resources were removed. */
   private executeRemoveResource(player: IPlayer, count: number, cb: () => void): void {
-    this.marsBot.player.stock.deduct(Resource.MEGACREDITS, count, {log: true, from: {player}});
+    // The supply only: stock.deduct() would offer the colony storage areas too.
+    (this.marsBot.player.stock as MarsBotStock).removeFromSupply(Resource.MEGACREDITS, count, -count, {log: true, from: {player}});
     cb();
   }
 
