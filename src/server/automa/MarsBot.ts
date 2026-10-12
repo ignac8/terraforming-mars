@@ -129,11 +129,11 @@ export class MarsBot implements IMarsBot {
     } else {
       this.bonusDeck = MarsBotBonusDeck.createBase(random);
     }
-    // C-6: Compute 2nd Trade Fleet cube position for Colonies (Event track pos 9)
+    // C-6: the 2nd Trade Fleet starts on space 9 of the Energy track, on every map
     if (opts.coloniesExtension) {
-      const eventTrackIdx = this.marsBotBoard.tagToTrack[Tag.EVENT];
-      if (eventTrackIdx !== undefined) {
-        this.tradeFleetCubeKey = trackCubeKey(eventTrackIdx, 9);
+      const energyTrackIdx = this.marsBotBoard.tagToTrack[Tag.POWER];
+      if (energyTrackIdx !== undefined) {
+        this.tradeFleetCubeKey = trackCubeKey(energyTrackIdx, 9);
       }
     }
     this.tilePlacer = new MarsBotTilePlacer(game, player, humanPlayer);
@@ -583,6 +583,21 @@ export class MarsBot implements IMarsBot {
     return this.trackCubePositions.get(trackCubeKey(trackIndex, position));
   }
 
+  /**
+   * Games saved before the Trade Fleet cube moved to the Energy track have it on space 9 of the
+   * Event track. Keep using that cube so those games still unlock the 2nd Trade Fleet.
+   */
+  private keepLegacyTradeFleetCube(hasSecondTradeFleet: boolean): void {
+    const eventTrack = this.marsBotBoard.tagToTrack[Tag.EVENT];
+    if (hasSecondTradeFleet || this.tradeFleetCubeKey === undefined || eventTrack === undefined) {
+      return;
+    }
+    const legacyKey = trackCubeKey(eventTrack, 9);
+    if (!this.trackCubePositions.has(this.tradeFleetCubeKey) && this.trackCubePositions.get(legacyKey)?.cubeType === 'white') {
+      this.tradeFleetCubeKey = legacyKey;
+    }
+  }
+
   /** Check if a cube at this position has already been triggered. */
   public isCubeTriggered(trackIndex: number, position: number): boolean {
     return this.triggeredCubePositions.has(trackCubeKey(trackIndex, position));
@@ -774,6 +789,7 @@ export class MarsBot implements IMarsBot {
         this.trackCubePositions.set(trackCubeKey(cube.trackIndex, cube.position), cube);
       }
     }
+    this.keepLegacyTradeFleetCube(state.hasSecondTradeFleet === true);
     if (state.triggeredCubePositions !== undefined) {
       this.triggeredCubePositions = new Set(state.triggeredCubePositions);
     }
