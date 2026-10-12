@@ -12,4 +12,8 @@ export class Minimalist implements IMilestone {
   public canClaim(player: IPlayer): boolean {
     return this.getScore(player) <= 2;
   }
+
+  public remaining(player: IPlayer): number {
+    return Math.max(0, this.getScore(player) - 2);
+  }
 }

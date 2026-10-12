@@ -21,7 +21,7 @@ import {Resource} from '../../common/Resource';
 import * as constants from '../../common/constants';
 import {MarsBotCorpResolver} from './corps/MarsBotCorpResolver';
 import {placeColonyForMarsBot, selectRandomColony} from './colonies/MarsBotColonyPlacer';
-import {marsBotCanClaimMilestone, marsBotAwardScore} from './MarsBotMilestoneAwardEval';
+import {marsBotCanClaimMilestone, marsBotAwardScore, milestoneRemaining} from './MarsBotMilestoneAwardEval';
 import type {MarsBot} from './MarsBot';
 
 /**
@@ -51,6 +51,8 @@ export class MarsBotTurnResolver {
   /** Resolve a project card: advance tracks based on tags. */
   public resolveProjectCard(card: IProjectCard): void {
     this.game.log('MarsBot plays ${0}', (b) => b.card(card));
+    // Every resolved project card goes to MarsBot's played pile (for Hard mode scoring)
+    this.marsBotManager?.playedProjectCards.push(card);
 
     const tags = marsBotCardTags(card);
 
@@ -91,7 +93,6 @@ export class MarsBotTurnResolver {
     // Notify human player's effect cards (Solar Logistics, Saturn Systems, etc.)
     this.notifyPlayerCards(card);
 
-    // Card goes to MarsBot's played pile (for Hard mode scoring)
     this.game.projectDeck.discardPile.push(card);
   }
 
@@ -387,38 +388,9 @@ export class MarsBotTurnResolver {
 
   /** Claims the best milestone MarsBot meets. False when it meets none. */
   public maybeClaimMilestone(): boolean {
-    const claimable = this.getClaimableMilestones();
-    if (claimable.length === 0) {
+    const best = this.selectMilestone(this.getClaimableMilestones());
+    if (best === undefined) {
       return false;
-    }
-
-    // Tiebreakers: 1) one human also qualifies for, 2) one human is closest to, 3) leftmost (Hoverlord last)
-    // Sort so Hoverlord is last in "leftmost" priority when tied
-    const sorted = claimable.sort((a, b) => {
-      if (a.name === 'Hoverlord') {
-        return 1;
-      }
-      if (b.name === 'Hoverlord') {
-        return -1;
-      }
-      return 0;
-    });
-    let best = sorted[0]; // Default: leftmost (Hoverlord pushed to end)
-
-    // Tiebreaker 1: prefer milestones the human also qualifies for
-    const humanAlsoQualifies = sorted.filter((m) => m.canClaim(this.humanPlayer));
-    if (humanAlsoQualifies.length > 0) {
-      best = humanAlsoQualifies[0];
-    } else {
-      // Tiebreaker 2: whichever the human is closest to meeting
-      let bestCloseness = -Infinity;
-      for (const m of sorted) {
-        const closeness = this.humanMilestoneCloseness(m);
-        if (closeness > bestCloseness) {
-          bestCloseness = closeness;
-          best = m;
-        }
-      }
     }
 
     this.game.claimedMilestones.push({player: this.marsBot, milestone: best});
@@ -432,7 +404,40 @@ export class MarsBotTurnResolver {
     return true;
   }
 
-  private getClaimableMilestones(): Array<IMilestone> {
+  /**
+   * Picks the milestone to claim from those MarsBot meets, by the tiebreakers on page 8:
+   * 1) one the human also meets, 2) the one the human is closest to meeting, 3) leftmost
+   * (Hoverlord last).
+   */
+  public selectMilestone(claimable: ReadonlyArray<IMilestone>): IMilestone | undefined {
+    const sorted = claimable.toSorted((a, b) => {
+      if (a.name === 'Hoverlord') {
+        return 1;
+      }
+      if (b.name === 'Hoverlord') {
+        return -1;
+      }
+      return 0;
+    });
+
+    const humanAlsoQualifies = sorted.filter((m) => m.canClaim(this.humanPlayer));
+    if (humanAlsoQualifies.length > 0) {
+      return humanAlsoQualifies[0];
+    }
+
+    let best: IMilestone | undefined;
+    let bestRemaining = Infinity;
+    for (const m of sorted) {
+      const remaining = milestoneRemaining(m, this.humanPlayer);
+      if (best === undefined || remaining < bestRemaining) {
+        bestRemaining = remaining;
+        best = m;
+      }
+    }
+    return best;
+  }
+
+  public getClaimableMilestones(): Array<IMilestone> {
     if (this.game.allMilestonesClaimed()) {
       return [];
     }
@@ -442,19 +447,6 @@ export class MarsBotTurnResolver {
       }
       return this.marsBotMeetsMilestone(m);
     });
-  }
-
-  /** Estimate how close the human player is to meeting a milestone (higher = closer). */
-  private humanMilestoneCloseness(milestone: IMilestone): number {
-    const name = milestone.name;
-    switch (name) {
-    case 'Terraformer': return this.humanPlayer.terraformRating; // closer to 35
-    case 'Mayor': return this.game.board.getCities(this.humanPlayer).length;
-    case 'Gardener': return this.game.board.getGreeneries(this.humanPlayer).length;
-    case 'Builder': return this.humanPlayer.tags.count(Tag.BUILDING, 'raw'); // closer to 8
-    case 'Planner': return this.humanPlayer.cardsInHand.length + this.humanPlayer.playedCards.length; // closer to 16
-    default: return 0;
-    }
   }
 
   /** Check if MarsBot meets a milestone. */

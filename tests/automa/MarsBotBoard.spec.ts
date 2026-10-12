@@ -143,15 +143,19 @@ describe('MarsBotBoard', () => {
       expect(track.peek()).to.be.undefined;
     });
 
-    it('peek after regression still shows the layout action', () => {
+    it('peek skips the action on a regressed space', () => {
       const track = new MarsBotTrack(THARSIS_MARSBOT_BOARD[0]);
       track.advance(); // pos 1
       track.advance(); // pos 2 (ocean)
       track.regress(); // back to pos 1, pos 2 is regressed
 
-      // peek looks at pos 2 which has 'ocean' in layout.
-      // peek does NOT check regression markers, it shows the raw layout.
-      expect(track.peek()).to.eq('ocean');
+      // Advancing onto pos 2 ignores its action, so there is nothing ahead to peek at.
+      expect(track.peek()).to.be.undefined;
+
+      track.advance(); // re-advance to pos 2, clears the marker
+      track.regress();
+      track.advance();
+      expect(track.peek()).to.be.undefined;
     });
   });
 

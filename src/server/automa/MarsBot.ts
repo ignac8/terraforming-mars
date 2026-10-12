@@ -62,6 +62,9 @@ export class MarsBot implements IMarsBot {
   /** Whether MarsBot goes first this generation (alternates each gen, human first in gen 1). */
   public goesFirst: boolean = false;
 
+  /** The last generation whose first-turn milestone check (Hard mode) has run. */
+  public firstTurnCheckedGeneration: number = 0;
+
   /** Cards MarsBot has played (for Hard mode VP scoring). */
   public playedProjectCards: Array<IProjectCard> = [];
 
@@ -154,11 +157,11 @@ export class MarsBot implements IMarsBot {
 
   // ---- Setup ----
 
-  /** Build MarsBot's initial action deck: 3 project cards + 1 bonus card (+ 3 extra with Prelude). */
+  /** Build MarsBot's initial action deck: 3 project cards (4 on Brutal) + 1 bonus card (+ 3 extra with Prelude). */
   public buildInitialActionDeck(): void {
     const opts = this.game.gameOptions;
     // Prelude: MarsBot gets 3 extra project cards instead of Prelude cards
-    const numProjectCards = opts.preludeExtension ? 6 : 3;
+    const numProjectCards = (this.difficulty === 'brutal' ? 4 : 3) + (opts.preludeExtension ? 3 : 0);
     const projectCards = this.game.projectDeck.drawN(this.game, numProjectCards);
     const bonusCard = this.bonusDeck.draw(this.game);
     const deck: Array<IProjectCard | MarsBotBonusCard> = [...projectCards];
@@ -265,6 +268,14 @@ export class MarsBot implements IMarsBot {
 
   /** Execute one MarsBot action (called when it's MarsBot's turn). */
   public takeTurn(): void {
+    // Hard mode: the milestone check comes before the first turn of each generation resolves
+    if (this.firstTurnCheckedGeneration !== this.game.generation) {
+      this.firstTurnCheckedGeneration = this.game.generation;
+      if (this.difficulty === 'hard' || this.difficulty === 'brutal') {
+        this.hardModeFirstTurnMilestone();
+      }
+    }
+
     if (this.actionDeck.length === 0) {
       this.game.playerHasPassed(this.player);
       this.game.log('MarsBot passed');
@@ -278,18 +289,11 @@ export class MarsBot implements IMarsBot {
     }
 
     if (this.isProjectCard(card)) {
-      const projectCard = card as IProjectCard;
-      this.playedProjectCards.push(projectCard);
-      this.turnResolver.resolveProjectCard(projectCard);
+      this.turnResolver.resolveProjectCard(card as IProjectCard);
     } else {
       const bonusCard = card as MarsBotBonusCard;
       this.game.log('MarsBot plays bonus card: ${0}', (b) => b.rawString(bonusCardDisplayName(bonusCard)));
       this.bonusResolver.resolve(bonusCard);
-    }
-
-    // Hard mode: first turn milestone check
-    if (this.difficulty === 'hard' || this.difficulty === 'brutal') {
-      this.hardModeFirstTurnMilestone();
     }
 
     // Signal that MarsBot's turn is done
@@ -299,9 +303,6 @@ export class MarsBot implements IMarsBot {
   /** Hard mode: on first turn of each gen, if 8 MC and meets milestone conditions, claim.
    * MarsBot starts at 0 MC and accumulates from failed actions (5 MC each) and placement bonuses. */
   private hardModeFirstTurnMilestone(): void {
-    if (this.player.actionsTakenThisRound !== 0) {
-      return;
-    }
     if (this.turnResolver.megacredits < 8) {
       return;
     }
@@ -317,7 +318,7 @@ export class MarsBot implements IMarsBot {
     const shouldClaim = claimedCount < 3 && claimedCount + canClaimCount >= 3;
 
     if (shouldClaim) {
-      const toClaim = unclaimed.find((m) => this.turnResolver.marsBotMeetsMilestone(m));
+      const toClaim = this.turnResolver.selectMilestone(this.turnResolver.getClaimableMilestones());
       if (toClaim) {
         this.game.claimedMilestones.push({player: this.player, milestone: toClaim});
         this.turnResolver.megacredits -= 8;
@@ -343,6 +344,7 @@ export class MarsBot implements IMarsBot {
         if (space) {
           // Do NOT raise oxygen or award TR for final greenery
           this.game.addGreenery(this.player, space, false);
+          this.turnResolver.gainMc(this.tilePlacer.getTotalPlacementMC(space));
           track.advance(); // Move tracker forward
           this.game.log('MarsBot places final greenery (${0} track)', (b) => b.rawString(track.definition.tags[0]));
         }
@@ -708,6 +710,7 @@ export class MarsBot implements IMarsBot {
       bonusDeckDiscardPile: this.bonusDeck.discardPile.map((c) => c.id ?? c.name),
       neuralInstanceSpaceId: this.neuralInstanceSpace?.id,
       playedProjectCardNames: this.playedProjectCards.map((c) => c.name),
+      firstTurnCheckedGeneration: this.firstTurnCheckedGeneration,
       marsBotPlayerId: this.player.id,
       terraformRating: this.player.terraformRating,
       globalParameterSteps: {...this.player.globalParameterSteps},
@@ -776,6 +779,8 @@ export class MarsBot implements IMarsBot {
 
     // Restore first player
     this.goesFirst = state.goesFirst;
+    // Older saves lack it: assume the check for the current generation already ran
+    this.firstTurnCheckedGeneration = state.firstTurnCheckedGeneration ?? this.game.generation;
 
     // Restore neural instance
     if (state.neuralInstanceSpaceId) {

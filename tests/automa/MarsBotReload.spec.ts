@@ -42,6 +42,27 @@ describe('MarsBotReload', () => {
     expect(steps[GlobalParameter.OCEANS]).to.eq(0);
   });
 
+  it('keeps the Hard mode first-turn check generation across a reload', () => {
+    const {game, marsBot} = createAutomaGame();
+    game.generation = 4;
+    marsBot.firstTurnCheckedGeneration = 3;
+
+    const restored = Game.deserialize(game.serialize());
+
+    expect(restored.automaHooks!.marsBot.firstTurnCheckedGeneration).to.eq(3);
+  });
+
+  it('treats the first-turn check as done for the current generation in older saves', () => {
+    const {game} = createAutomaGame();
+    game.generation = 4;
+    const serialized = game.serialize();
+    delete serialized.automaState!.firstTurnCheckedGeneration;
+
+    const restored = Game.deserialize(serialized);
+
+    expect(restored.automaHooks!.marsBot.firstTurnCheckedGeneration).to.eq(4);
+  });
+
   it('reads older saves without those fields', () => {
     const {game, marsBot} = createAutomaGame();
     const serialized = game.serialize();

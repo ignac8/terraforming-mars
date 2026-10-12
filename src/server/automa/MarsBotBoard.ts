@@ -46,9 +46,9 @@ export class MarsBotTrack {
     return false;
   }
 
-  /** Get the action at the next position without advancing. Returns undefined if at max or no action. */
+  /** Get the action at the next position without advancing. Returns undefined if at max, no action, or the action is skipped after a regression. */
   public peek(): TrackAction | undefined {
-    if (!this.canAdvance()) {
+    if (!this.canAdvance() || this.regressedPositions.has(this.position + 1)) {
       return undefined;
     }
     return this.definition.layout[this.position + 1];

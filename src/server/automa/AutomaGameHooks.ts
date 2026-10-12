@@ -413,10 +413,22 @@ export class AutomaGameHooks {
     if (player !== this.marsBot.player) {
       return false;
     }
-    if (this.game.canAddOcean()) {
-      this.marsBot.placeOcean();
-    }
+    // With no ocean left to place this is a Failed Action
+    this.marsBot.placeOcean();
     return true;
+  }
+
+  /**
+   * Called when a raise earns a terraforming bonus that can't be resolved, such as the
+   * oxygen bonus step when the temperature is already at its maximum. MarsBot takes a
+   * Failed Action (rulebook A, p.9).
+   */
+  public handleUnresolvableTerraformingBonus(player: IPlayer): void {
+    if (player !== this.marsBot.player) {
+      return;
+    }
+    this.game.log('MarsBot cannot resolve the terraforming bonus, Failed Action');
+    this.marsBot.turnResolver.failedAction();
   }
 
   // ---- Utility ----

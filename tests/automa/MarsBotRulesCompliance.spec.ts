@@ -565,12 +565,15 @@ describe('MarsBot Rules Compliance', () => {
 
   describe('B04 Overachievement award', () => {
     it('funds the award MarsBot leads by the most', () => {
-      const {game, marsBot} = createAutomaGame();
+      const {game, human, marsBot} = createAutomaGame();
       game.generation = 6;
-      const leads: Record<string, number> = {Scientist: 1, Miner: 4};
+      const leads: Record<string, number> = {Scientist: 1};
       for (const award of game.awards) {
         award.getScore = () => 10 - (leads[award.name] ?? -1);
       }
+      // Miner and Thermalist compare the player's resources plus production
+      human.steel = 6; // leads Miner by 4
+      human.heat = 11;
       marsBot.turnResolver.getMarsBotAwardValue = () => 10;
       const b04 = createBaseBonusCards().find((c) => c.id === BonusCardId.B04_OVERACHIEVEMENT)!;
 

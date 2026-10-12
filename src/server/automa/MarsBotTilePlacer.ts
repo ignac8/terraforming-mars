@@ -148,9 +148,13 @@ export class MarsBotTilePlacer {
     return this.selectBestSpace(eligible, () => 0);
   }
 
-  /** Find the best space for MarsBot to place an ocean. Returns undefined if none available. */
-  public findOceanSpace(): Space | undefined {
-    const spaces = this.game.board.getAvailableSpacesForOcean(this.marsBot);
+  /**
+   * Find the best space for MarsBot to place an ocean. Returns undefined if none available.
+   *
+   * `where` limits the choice to the ocean spaces it accepts.
+   */
+  public findOceanSpace(where: (space: Space) => boolean = () => true): Space | undefined {
+    const spaces = this.game.board.getAvailableSpacesForOcean(this.marsBot).filter(where);
     if (spaces.length === 0) {
       return undefined;
     }
@@ -340,11 +344,15 @@ export class MarsBotTilePlacer {
     }
   }
 
-  /** Break a tie by flipping a project card and counting through spaces. */
+  /**
+   * Break a tie by flipping a project card and counting through spaces: cost 1 is the first space,
+   * and a cost of 0 counts back to the last.
+   */
   private randomTiebreak(spaces: ReadonlyArray<Space>): Space {
     const card = this.game.projectDeck.drawOrThrow(this.game);
     this.game.projectDeck.discard(card);
-    return spaces[card.cost % spaces.length];
+    const n = spaces.length;
+    return spaces[((card.cost - 1) % n + n) % n];
   }
 
   /** Calculate MC MarsBot gains from placement bonuses (1 MC per icon covered). */

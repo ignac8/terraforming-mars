@@ -89,6 +89,8 @@ export type SerializedAutomaState = {
     bonusDeckDiscardPile: Array<string>;
     neuralInstanceSpaceId: string | undefined;
     playedProjectCardNames: Array<string>;
+    /** The last generation whose Hard mode first-turn milestone check has run; older saves lack it. */
+    firstTurnCheckedGeneration?: number;
     marsBotPlayerId: string;
     // Corporation framework
     corpId?: string;

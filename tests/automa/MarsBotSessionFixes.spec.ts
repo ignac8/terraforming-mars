@@ -11,6 +11,8 @@ import {Phase} from '../../src/common/Phase';
 import {Resource} from '../../src/common/Resource';
 import {getMcPerVP} from '../../src/server/automa/MarsBotScoring';
 import {BonusCardId} from '../../src/common/automa/AutomaTypes';
+import {createBaseBonusCards} from '../../src/server/automa/MarsBotBonusCard';
+import {inplaceRemove} from '../../src/common/utils/utils';
 import {GlobalParameter} from '../../src/common/GlobalParameter';
 import {Mayor} from '../../src/server/milestones/Mayor';
 import {Gardener} from '../../src/server/milestones/Gardener';
@@ -695,10 +697,10 @@ describe('MarsBotSessionFixes', () => {
   });
 });
 
-function createVenusAutomaGame(): {game: IGame, human: TestPlayer, marsBot: MarsBot} {
+function createVenusAutomaGame(difficulty: 'normal' | 'hard' = 'normal'): {game: IGame, human: TestPlayer, marsBot: MarsBot} {
   const [game, human] = testGame(1, {
     automaOption: true,
-    automaDifficulty: 'normal',
+    automaDifficulty: difficulty,
     boardName: BoardName.THARSIS,
     venusNextExtension: true,
   });
@@ -821,6 +823,43 @@ describe('MarsBotVenusNext', () => {
     game.automaHooks!.handleResearchPhase();
     // Non-draft: should have spent 5 floaters and drawn 1 extra card
     expect(marsBot.floaters).to.eq(5);
+  });
+
+  describe('Hoverlord is considered last among tied milestones', () => {
+    // MarsBot meets Terraformer and Hoverlord; the player is 7 away from both.
+    function setUpTie(difficulty: 'normal' | 'hard' = 'normal') {
+      const {game, human, marsBot} = createVenusAutomaGame(difficulty);
+      const hoverlord = game.milestones.find((m) => m.name === 'Hoverlord')!;
+      inplaceRemove(game.milestones, hoverlord);
+      game.milestones.unshift(hoverlord); // leftmost
+      marsBot.player.setTerraformRating(35);
+      marsBot.floaters = 7;
+      human.setTerraformRating(28);
+      return {game, human, marsBot};
+    }
+
+    it('Hard mode first-turn claim', () => {
+      const {game, human, marsBot} = setUpTie('hard');
+      for (const name of ['Mayor', 'Gardener']) {
+        const milestone = game.milestones.find((m) => m.name === name)!;
+        game.claimedMilestones.push({player: human, milestone});
+      }
+      marsBot.turnResolver.megacredits = 8;
+      marsBot.actionDeck = [];
+
+      marsBot.takeTurn();
+
+      expect(game.claimedMilestones[2].milestone.name).to.eq('Terraformer');
+    });
+
+    it('B04 Overachievement', () => {
+      const {game, marsBot} = setUpTie();
+      const b04 = createBaseBonusCards().find((c) => c.id === BonusCardId.B04_OVERACHIEVEMENT)!;
+
+      marsBot['bonusResolver'].resolve(b04);
+
+      expect(game.claimedMilestones.map((c) => c.milestone.name)).deep.eq(['Terraformer']);
+    });
   });
 
   it('Hoverlord milestone tiebreaker: considered last', () => {

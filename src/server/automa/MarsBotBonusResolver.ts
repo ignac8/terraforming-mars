@@ -269,45 +269,10 @@ export class MarsBotBonusResolver {
 
   // B04: Overachievement
   private resolveOverachievement(): boolean {
-    // Try to claim a milestone
-    const claimable = this.game.milestones.filter((m) =>
-      !this.game.milestoneClaimed(m) && !this.game.allMilestonesClaimed(),
-    );
-    let claimed = false;
-    if (!this.game.allMilestonesClaimed()) {
-      // Use MarsBot's track-based milestone criteria
-      for (const m of claimable) {
-        if (this.turnResolver.marsBotMeetsMilestone(m)) {
-          this.game.claimedMilestones.push({player: this.marsBot, milestone: m});
-          this.game.log('MarsBot claims milestone ${0} (Overachievement)', (b) => b.rawString(m.name));
-          claimed = true;
-          break;
-        }
-      }
-    }
-
-    if (!claimed && this.game.generation >= 6) {
-      // Try to fund an award
-      if (!this.game.allAwardsFunded()) {
-        // Fund the award MarsBot leads by the most (ties go to the leftmost)
-        const unfunded = this.game.awards.filter((a) => !this.game.hasBeenFunded(a));
-        let best: {award: typeof unfunded[number], lead: number} | undefined;
-        for (const a of unfunded) {
-          const lead = this.turnResolver.getMarsBotAwardValue(a) - a.getScore(this.humanPlayer);
-          if (lead > 0 && (best === undefined || lead > best.lead)) {
-            best = {award: a, lead};
-          }
-        }
-        if (best !== undefined) {
-          const a = best.award;
-          this.game.fundAward(this.marsBot, a);
-          this.game.log('MarsBot funds award ${0} (Overachievement)', (b) => b.rawString(a.name));
-          claimed = true;
-        }
-      }
-    }
-
-    if (claimed) {
+    // Claim a milestone; failing that, from generation 6 on, fund an award
+    const done = this.turnResolver.maybeClaimMilestone() ||
+      (this.game.generation >= 6 && this.turnResolver.maybeFundAward());
+    if (done) {
       this.game.log('Overachievement is destroyed');
       return true;
     }
@@ -349,23 +314,22 @@ export class MarsBotBonusResolver {
 
   /** Lobbyists branch (c): an ocean space next to 2+ oceans takes an ocean. */
   private lobbyistsOceanBranch(source: string = 'Lobbyists'): boolean {
-    const oceanSpaces = this.game.board.getAvailableSpacesForOcean(this.marsBot);
-    const adjacentTo2Oceans = oceanSpaces.filter((s) => {
-      const adj = this.game.board.getAdjacentSpaces(s);
-      return adj.filter((a) => Board.isOceanSpace(a) && a.tile !== undefined).length >= 2;
-    });
-    if (adjacentTo2Oceans.length > 0 && this.game.canAddOcean()) {
-      const space = adjacentTo2Oceans[0];
-      if (this.interceptsRaise(GlobalParameter.OCEANS)) {
-        this.game.log(`MarsBot skips the ocean (${source})`);
-        return true;
-      }
-      this.game.addOcean(this.marsBot, space);
-      this.turnResolver.gainMc(this.tilePlacer.getTotalPlacementMC(space));
-      this.game.log(`MarsBot places ocean (${source})`);
+    if (!this.game.canAddOcean()) {
+      return false;
+    }
+    const space = this.tilePlacer.findOceanSpace((s) =>
+      this.game.board.getAdjacentSpaces(s).filter((a) => Board.isOceanSpace(a) && a.tile !== undefined).length >= 2);
+    if (space === undefined) {
+      return false;
+    }
+    if (this.interceptsRaise(GlobalParameter.OCEANS)) {
+      this.game.log(`MarsBot skips the ocean (${source})`);
       return true;
     }
-    return false;
+    this.game.addOcean(this.marsBot, space);
+    this.turnResolver.gainMc(this.tilePlacer.getTotalPlacementMC(space));
+    this.game.log(`MarsBot places ocean (${source})`);
+    return true;
   }
 
   private resolveLobbyistsVenus(): boolean {
@@ -486,6 +450,7 @@ export class MarsBotBonusResolver {
     const space = this.tilePlacer.findNeuralInstanceSpace();
     if (space !== undefined) {
       this.game.simpleAddTile(this.marsBot, space, {tileType: TileType.NEURAL_INSTANCE});
+      this.turnResolver.gainMc(this.tilePlacer.getTotalPlacementMC(space));
       this.game.automaHooks?.handleTilePlaced(this.marsBot, TileType.NEURAL_INSTANCE, space);
       this.onNeuralInstancePlaced?.(space);
       this.game.log('MarsBot places Neural Instance tile');

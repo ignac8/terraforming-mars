@@ -1282,7 +1282,11 @@ export class Game implements IGame, Logger {
     }
     if (this.oxygenLevel < constants.OXYGEN_LEVEL_FOR_TEMPERATURE_BONUS &&
       this.oxygenLevel + steps >= constants.OXYGEN_LEVEL_FOR_TEMPERATURE_BONUS) {
-      this.increaseTemperature(player, 1);
+      if (this.temperature >= this.max.temperature) {
+        this.automaHooks?.handleUnresolvableTerraformingBonus(player);
+      } else {
+        this.increaseTemperature(player, 1);
+      }
     }
 
     this.oxygenLevel += steps;
