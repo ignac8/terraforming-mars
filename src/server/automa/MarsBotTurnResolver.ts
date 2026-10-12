@@ -270,7 +270,7 @@ export class MarsBotTurnResolver {
 
   // ---- Terraforming Actions ----
 
-  private raiseTemperature(steps: number): void {
+  public raiseTemperature(steps: number): void {
     if (this.game.getTemperature() >= constants.MAX_TEMPERATURE) {
       this.failedAction();
       return;

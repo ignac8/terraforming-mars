@@ -542,8 +542,11 @@ export class AutomaGameHooks {
     return true;
   }
 
-  /** Called when any player places a tile. Notifies MarsBot's corp. */
+  /** Called when any player places a tile. Settles MarsBot's special hexes and notifies its corp. */
   public handleTilePlaced(player: IPlayer, tileType: TileType, space: Space): void {
+    if (player === this.marsBot.player) {
+      this.marsBot.turnResolver.tilePlacer.resolveSpecialHex(space);
+    }
     const corp = this.marsBot.corp;
     if (corp?.effect?.onTilePlaced === undefined) {
       return;

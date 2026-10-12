@@ -47,7 +47,7 @@ export class VastitasBorealisNovaBoard extends MarsBoard {
 
   public override getAvailableSpacesOnLand(player: IPlayer, canAffordOptions?: CanAffordOptions) {
     return super.getAvailableSpacesOnLand(player, canAffordOptions).filter((space) => {
-      if (space.bonus.includes(SpaceBonus.DELEGATE)) {
+      if (space.bonus.includes(SpaceBonus.DELEGATE) && !player.game.automaHooks?.isAutomaPlayer(player)) {
         const turmoil = player.game.turmoil;
         return !turmoil || turmoil.hasDelegatesInReserve(player);
       }
