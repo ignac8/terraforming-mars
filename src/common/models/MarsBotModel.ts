@@ -23,6 +23,7 @@ export type MarsBotVPModel = {
   mcToVP: number;
   cardVP: number;
   vermin: number;
+  colonyVP: number; // With automaColonyVP: 1 VP per 2 colonies
   turmoilVP: number; // T-13: 1 VP per party leader or chairman position
   total: number;
   detailsMilestones: ReadonlyArray<MADetail>;

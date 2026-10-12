@@ -344,6 +344,48 @@ describe('Corp Effect Hooks', () => {
     });
   });
 
+  describe('starting tags resolve as a revealed card (rulebook B, setup step 4)', () => {
+    /** Runs setup for `corp` as is and with its ongoing effect removed, in identical games. */
+    function setupWithAndWithoutEffect(name: CardName) {
+      const corp = getMarsBotCorp(name)!;
+      const run = (c: typeof corp) => {
+        const {marsBot} = createAutomaGame();
+        marsBot.setCorpAndSetup(c);
+        return {
+          mc: marsBot.turnResolver.megacredits,
+          tr: marsBot.player.terraformRating,
+          events: marsBot.marsBotBoard.tracks[2].position,
+        };
+      };
+      return {withEffect: run(corp), without: run({...corp, effect: undefined})};
+    }
+
+    it('Arclight earns 2 M€ for its Animal starting tag', () => {
+      const {withEffect, without} = setupWithAndWithoutEffect(CardName.ARKLIGHT);
+      expect(withEffect.mc).to.eq(without.mc + 2);
+    });
+
+    it('Pharmacy Union raises its TR for its Science starting tag', () => {
+      const {withEffect, without} = setupWithAndWithoutEffect(CardName.PHARMACY_UNION);
+      expect(withEffect.tr).to.eq(without.tr + 1);
+    });
+
+    it('Saturn Systems advances the event track for its Jovian starting tag', () => {
+      const {withEffect, without} = setupWithAndWithoutEffect(CardName.SATURN_SYSTEMS);
+      expect(withEffect.events).to.be.greaterThan(without.events);
+    });
+
+    it('the starting tags make one card, so a corp with several tags is not paid per tag', () => {
+      const {withEffect, without} = setupWithAndWithoutEffect(CardName.SAGITTA_FRONTIER_SERVICES);
+      expect(withEffect.mc).to.eq(without.mc);
+    });
+
+    it('a corp without starting tags gets no card resolved', () => {
+      const {withEffect, without} = setupWithAndWithoutEffect(CardName.CREDICOR);
+      expect(withEffect).to.deep.eq(without);
+    });
+  });
+
   describe('Ecoline/Ecotec plant targeting (FAQ)', () => {
     it('plant removal targets plantResources on corp card when present', () => {
       const {marsBot} = createAutomaGame();

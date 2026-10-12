@@ -14,6 +14,13 @@ import {SpaceBonus} from '../../src/common/boards/SpaceBonus';
 import {SpaceType} from '../../src/common/boards/SpaceType';
 import {TileType} from '../../src/common/TileType';
 import {GameOptions} from '../../src/server/game/GameOptions';
+import {RandomMAOptionType} from '../../src/common/ma/RandomMAOptionType';
+import {IMilestone} from '../../src/server/milestones/IMilestone';
+import {IAward} from '../../src/server/awards/IAward';
+import {Geologist} from '../../src/server/milestones/modular/Geologist';
+import {Founder} from '../../src/server/awards/modular/Founder';
+import {Suburbian} from '../../src/server/awards/modular/Suburbian';
+import {Highlander} from '../../src/server/awards/modular/Highlander';
 
 type Pred = (space: Space) => boolean;
 
@@ -273,6 +280,84 @@ describe('MarsBot tile placement tiebreakers by map', () => {
       const [rich, poor] = pair(s.game, hasIcons(2), hasIcons(1));
       expectWins(s.game, s.placer, rich, poor);
     });
+  });
+});
+
+describe('MarsBot tile placement with the Milestones & Awards expansion', () => {
+  const MODULAR: Partial<GameOptions> = {randomMA: RandomMAOptionType.UNLIMITED, modularMA: true};
+
+  /** The Vastitas Borealis board played with the Tharsis aid, and exactly these milestones and awards in play. */
+  function modularSetup(milestones: Array<IMilestone> = [], awards: Array<IAward> = [], boardName = BoardName.VASTITAS_BOREALIS_NOVA): Setup {
+    const s = setup(boardName, MODULAR);
+    s.game.milestones = milestones;
+    s.game.awards = awards;
+    placeSomeOceans(s);
+    return s;
+  }
+
+  it('uses the Tharsis tiebreakers and no map icon, whatever the map', () => {
+    const s = modularSetup();
+    const [wet, rich] = pair(s.game,
+      (sp) => hasIcons(1)(sp) && !sp.edge,
+      (sp) => hasIcons(2)(sp) && !sp.edge,
+      (w, l) => oceansNextTo(s.game, w) > oceansNextTo(s.game, l));
+    expectWins(s.game, s.placer, wet, rich);
+
+    const [volcanic, flat] = pair(s.game,
+      (sp) => nextToVolcano(s.game, sp) && hasIcons(1)(sp),
+      (sp) => !nextToVolcano(s.game, sp) && hasIcons(1)(sp));
+    expectTie(s.game, s.placer, volcanic, flat);
+  });
+
+  it('Geologist counts volcanic spaces and the spaces next to them as one more reward icon', () => {
+    const s = modularSetup([new Geologist()]);
+    const [volcanic, flat] = pair(s.game,
+      (sp) => nextToVolcano(s.game, sp) && hasIcons(1)(sp),
+      (sp) => !nextToVolcano(s.game, sp) && hasIcons(1)(sp));
+    expectWins(s.game, s.placer, volcanic, flat);
+  });
+
+  it('Geologist does not count twice on a map that already does', () => {
+    const s = setup(BoardName.VASTITAS_BOREALIS_NOVA);
+    s.game.milestones = [new Geologist()];
+    expect([...s.placer['extraIcons']()]).deep.eq(['volcanic']);
+  });
+
+  it('Founder counts the spaces next to a special tile as one more reward icon', () => {
+    const s = modularSetup([], [new Founder()]);
+    const preserve = plainSpaces(s.game).find((sp) => !sp.edge && s.game.board.getAdjacentSpaces(sp).length === 6)!;
+    s.game.simpleAddTile(s.marsBot.player, preserve, {tileType: TileType.NATURAL_PRESERVE});
+    const next = (sp: Space) => s.game.board.getAdjacentSpaces(sp).includes(preserve);
+    const [near, far] = pair(s.game,
+      (sp) => next(sp) && hasIcons(1)(sp),
+      (sp) => !next(sp) && hasIcons(1)(sp));
+    expectWins(s.game, s.placer, near, far);
+  });
+
+  it('Suburbian counts edge spaces as one more reward icon', () => {
+    const s = modularSetup([], [new Suburbian()]);
+    const [edge, inland] = pair(s.game, (sp) => sp.edge && hasIcons(1)(sp), (sp) => !sp.edge && hasIcons(1)(sp));
+    expectWins(s.game, s.placer, edge, inland);
+  });
+
+  it('Highlander puts ocean adjacency after the reward icons', () => {
+    const s = modularSetup([], [new Highlander()]);
+    const [rich, wet] = pair(s.game, hasIcons(2), hasIcons(1), (w, l) => oceansNextTo(s.game, w) < oceansNextTo(s.game, l));
+    expectWins(s.game, s.placer, rich, wet);
+
+    s.game.awards = [];
+    expectWins(s.game, s.placer, wet, rich);
+  });
+
+  it('Highlander moves ocean adjacency after the reward icons on a map with its own tiebreakers', () => {
+    const s = setup(BoardName.ELYSIUM);
+    s.game.awards = [new Highlander()];
+    placeSomeOceans(s);
+    const [rich, wet] = pair(s.game, hasIcons(2), hasIcons(1), (w, l) => oceansNextTo(s.game, w) < oceansNextTo(s.game, l));
+    expectWins(s.game, s.placer, rich, wet);
+
+    s.game.awards = [];
+    expectWins(s.game, s.placer, wet, rich);
   });
 });
 

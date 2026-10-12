@@ -1,21 +1,21 @@
 import {MilestoneName} from '../ma/MilestoneName';
 import {AwardName} from '../ma/AwardName';
 import {BoardName} from '../boards/BoardName';
-import {RandomMAOptionType} from '../ma/RandomMAOptionType';
 
 type MapSetOptions = {
   readonly boardName: BoardName;
-  readonly randomMA: RandomMAOptionType;
   readonly modularMA: boolean;
 };
 
 /**
- * The map whose own milestone and award set the game plays, or undefined with random or
- * modular ones. The Milestones & Awards expansion has its own MarsBot rules, written against
- * the Tharsis board whatever map the game is played on.
+ * The map whose rules MarsBot follows for its milestones and awards, or undefined with the
+ * Milestones & Awards expansion. That expansion has its own MarsBot rules, written against the
+ * Tharsis board whatever map the game is played on. With random milestones and awards the map's
+ * rules still apply to each of the map's own milestones and awards that come up, because the
+ * overrides are keyed by map and name; any other one uses the generic rule.
  */
 export function marsBotMapSet(options: MapSetOptions): BoardName | undefined {
-  return !options.modularMA && options.randomMA === RandomMAOptionType.NONE ? options.boardName : undefined;
+  return options.modularMA ? undefined : options.boardName;
 }
 
 /** MarsBot-specific descriptions for how milestones are evaluated. */
@@ -58,16 +58,20 @@ export const MARSBOT_MILESTONE_DESCRIPTIONS: Partial<Record<MilestoneName, strin
   'Hydrologist': '4 oceans placed',
   'Landshaper': '1+ city, 1+ greenery, Building track ≥ 5',
   'Legend4': '4 red cards in played pile',
+  'Lobbyist': 'Chairman and 2+ Party Leaders',
   'Merchant': 'All tracks ≥ 2 (except Venus)',
   'Metallurgist': 'Building + Space tracks ≥ 9',
   'Philantropist': '5 cards with non-negative VP',
+  'Pioneer4': '4+ colonies (cubes on Space #7, #10 and Energy #8 each build a colony)',
   'Planetologist': 'Two of Energy, Earth and Venus tracks ≥ 3',
   'Producer': 'Any 3 tracks (except Venus) ≥ 16',
   'Researcher': 'Science track ≥ 4',
   'Spacefarer4': 'Space track ≥ 4',
+  'Sponsor': '3 cards costing 20+ MC in played pile (events included)',
   'Tactician4': '30+ MC',
   'Terran5': 'Earth track ≥ 5',
   'Thawer': 'Raised temperature 5+ times',
+  'Trader': 'Bio, Earth and Venus tracks ≥ 2',
   'Tycoon10': '10 blue/green cards in played pile',
 };
 
@@ -82,6 +86,7 @@ export const MARSBOT_MAP_MILESTONE_DESCRIPTIONS: Partial<Record<BoardName, Parti
     'Planetologist': 'Earth/Jovian + Venus tracks ≥ 5',
   },
   [BoardName.VASTITAS_BOREALIS_NOVA]: {
+    'Agronomist': 'Plant/Animal track ≥ 4',
     'Engineer': 'Earth/Jovian + Energy/City tracks ≥ 10',
     'Farmer': 'Science/Microbe track or Bio track ≥ 6',
   },
@@ -123,7 +128,9 @@ export const MARSBOT_AWARD_DESCRIPTIONS: Partial<Record<AwardName, string>> = {
   'Promoter': 'Event track',
   // Modular
   'Administrator': 'Cards without tags in played pile + 2',
+  'Biologist': 'Bio track + 5',
   'Collector': 'Tracks at space 3+',
+  'Constructor': 'Cities + colonies (cubes on Space #7, #10 and Energy #8 each build a colony)',
   'Politician': 'Always 5',
   'Visionary': 'Lowest track × 2 (second lowest with Venus)',
 };

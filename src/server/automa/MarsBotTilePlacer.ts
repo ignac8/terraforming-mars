@@ -29,10 +29,29 @@ const MAP_TIEBREAKERS: Partial<Record<BoardName, ReadonlyArray<TiebreakerName>>>
  * Spaces that count as one more reward icon when tiebreaking. The icons are still worth 1 M€ each
  * only when they are printed on the space.
  */
-const EXTRA_ICON: Partial<Record<BoardName, (board: Board, space: Space) => boolean>> = {
-  [BoardName.UTOPIA_PLANITIA]: (_board, space) => space.edge,
-  [BoardName.VASTITAS_BOREALIS_NOVA]: (board, space) =>
-    space.volcanic === true || board.getAdjacentSpaces(space).some((s) => s.volcanic === true),
+type ExtraIcon = 'edge' | 'volcanic' | 'specialTile';
+const EXTRA_ICON_SPACES: Record<ExtraIcon, (board: Board, space: Space) => boolean> = {
+  edge: (_board, space) => space.edge,
+  volcanic: (board, space) => space.volcanic === true || board.getAdjacentSpaces(space).some((s) => s.volcanic === true),
+  specialTile: (board, space) => board.getAdjacentSpaces(space).some(isSpecialTileSpace),
+};
+
+/** What each map's player aid adds. */
+const MAP_EXTRA_ICON: Partial<Record<BoardName, ExtraIcon>> = {
+  [BoardName.UTOPIA_PLANITIA]: 'edge',
+  [BoardName.VASTITAS_BOREALIS_NOVA]: 'volcanic',
+};
+
+/**
+ * What a milestone or award of the Milestones & Awards expansion adds while it is in play
+ * (rulebook C, pp.13-15). Where the map above already adds the same, it counts once.
+ */
+const MILESTONE_EXTRA_ICON: Record<string, ExtraIcon> = {
+  'Geologist': 'volcanic',
+};
+const AWARD_EXTRA_ICON: Record<string, ExtraIcon> = {
+  'Founder': 'specialTile',
+  'Suburbian': 'edge',
 };
 
 /**
@@ -68,6 +87,52 @@ export class MarsBotTilePlacer {
     private readonly marsBot: IPlayer,
     private readonly humanPlayer: IPlayer,
   ) {}
+
+  /**
+   * The map whose player aid MarsBot reads its tiebreakers from. The Milestones & Awards expansion
+   * plays against the Tharsis board and reference card whatever the map (rulebook C, p.13).
+   */
+  private mapName(): BoardName {
+    const options = this.game.gameOptions;
+    return options.modularMA ? BoardName.THARSIS : options.boardName;
+  }
+
+  /** The spaces that count as one more reward icon: the map's and those of the milestones and awards in play. */
+  private extraIcons(): ReadonlySet<ExtraIcon> {
+    const extra = new Set<ExtraIcon>();
+    const fromMap = MAP_EXTRA_ICON[this.mapName()];
+    if (fromMap !== undefined) {
+      extra.add(fromMap);
+    }
+    for (const milestone of this.game.milestones) {
+      if (milestone.name in MILESTONE_EXTRA_ICON) {
+        extra.add(MILESTONE_EXTRA_ICON[milestone.name]);
+      }
+    }
+    for (const award of this.game.awards) {
+      if (award.name in AWARD_EXTRA_ICON) {
+        extra.add(AWARD_EXTRA_ICON[award.name]);
+      }
+    }
+    return extra;
+  }
+
+  /**
+   * The map's tiebreakers. With the Highlander award in play, "adjacent to ocean" comes after the
+   * reward icons (rulebook C, p.15).
+   */
+  private tiebreakerNames(): ReadonlyArray<TiebreakerName> {
+    const names = MAP_TIEBREAKERS[this.mapName()] ?? DEFAULT_TIEBREAKERS;
+    if (!this.game.awards.some((award) => award.name === 'Highlander')) {
+      return names;
+    }
+    const reordered: Array<TiebreakerName> = names.filter((name) => name !== 'oceans');
+    if (reordered.length === names.length) {
+      return names;
+    }
+    reordered.splice(reordered.indexOf('icons') + 1, 0, 'oceans');
+    return reordered;
+  }
 
   /**
    * Find the best space for MarsBot to place a greenery. Returns undefined if none available.
@@ -218,10 +283,10 @@ export class MarsBotTilePlacer {
       return spaces[0];
     }
 
-    const names = MAP_TIEBREAKERS[this.game.gameOptions.boardName] ?? DEFAULT_TIEBREAKERS;
+    const extraIcons = this.extraIcons();
     const tiebreakers = [
       mostOf(primaryScore),
-      ...names.map((name) => this.tiebreaker(name)),
+      ...this.tiebreakerNames().map((name) => this.tiebreaker(name, extraIcons)),
       mostOf(beforeRandomScore),
     ];
 
@@ -236,13 +301,13 @@ export class MarsBotTilePlacer {
     return this.randomTiebreak(tied);
   }
 
-  private tiebreaker(name: TiebreakerName): Tiebreaker {
+  private tiebreaker(name: TiebreakerName, extraIcons: ReadonlySet<ExtraIcon>): Tiebreaker {
     const board = this.game.board;
     switch (name) {
     case 'oceans':
       return mostOf((space) => this.adjacentOceans(space));
     case 'icons':
-      return mostOf((space) => this.tiebreakIcons(space));
+      return mostOf((space) => this.tiebreakIcons(space, extraIcons));
     case 'polarRegion':
       return preferring((space) => space.y >= board.bottomRow - 1);
     case 'southernRegion':
@@ -262,14 +327,16 @@ export class MarsBotTilePlacer {
   }
 
   /** The reward icons MarsBot tiebreaks on: what the space gives it, plus whatever the map adds. */
-  private tiebreakIcons(space: Space): number {
+  private tiebreakIcons(space: Space, extraIcons: ReadonlySet<ExtraIcon>): number {
     const bonus = this.specialBonus(space);
     let icons = this.placementIcons(space);
     if (bonus !== undefined) {
       icons = this.canGetSpecialBonus(bonus) ? SPECIAL_HEX_ICONS : 0;
     }
-    if (EXTRA_ICON[this.game.gameOptions.boardName]?.(this.game.board, space)) {
-      icons++;
+    for (const extra of extraIcons) {
+      if (EXTRA_ICON_SPACES[extra](this.game.board, space)) {
+        icons++;
+      }
     }
     return icons;
   }

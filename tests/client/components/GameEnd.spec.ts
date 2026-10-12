@@ -22,6 +22,7 @@ function fakeMarsBot(total: number): MarsBotModel {
       mcToVP: 0,
       cardVP: 0,
       vermin: 0,
+      colonyVP: 0,
       turmoilVP: 0,
       total,
       detailsMilestones: [],

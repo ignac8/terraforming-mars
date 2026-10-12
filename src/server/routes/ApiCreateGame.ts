@@ -225,6 +225,7 @@ export class ApiCreateGame extends Handler {
         automaTurmoilTRReduction: gameReq.automaTurmoilTRReduction ?? 10,
         automaTurmoilSetupDelegates: gameReq.automaTurmoilSetupDelegates ?? 0,
         automaNoGenerationLimit: gameReq.automaNoGenerationLimit ?? false,
+        automaColonyVP: gameReq.automaColonyVP ?? false,
       };
 
       let game: IGame;

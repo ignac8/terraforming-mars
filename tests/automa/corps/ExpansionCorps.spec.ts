@@ -486,6 +486,12 @@ describe('Expansion MarsBot Corporations', () => {
       expect(marsBot.actionDeck.some((c) => 'id' in c && c.id === BonusCardId.B07_LOCAL_NEURAL_INSTANCE)).is.false;
     });
 
+    it('setup does not count Local Neural Instance as a destroyed bonus card', () => {
+      const {marsBot} = createPhilaresGame();
+
+      expect(marsBot.destroyedBonusCards).to.eq(0);
+    });
+
     it('gains a science resource when MarsBot places a tile next to the player\'s tile', () => {
       const {game, human, marsBot} = createPhilaresGame();
       const space = quietSpace(game, marsBot);

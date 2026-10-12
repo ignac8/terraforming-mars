@@ -1,5 +1,7 @@
 import {IMarsBotCorp, trackCubeKey} from '../MarsBotCorpTypes';
 import {CardName} from '../../../common/cards/CardName';
+import {CardType} from '../../../common/cards/CardType';
+import {IProjectCard} from '../../cards/IProjectCard';
 import {Random} from '../../../common/utils/Random';
 import {GameOptions} from '../../game/GameOptions';
 import {getAllMarsBotCorps} from './MarsBotCorpRegistry';
@@ -36,8 +38,9 @@ export class MarsBotCorpResolver {
       corp.setup(marsBot);
     }
 
-    // 3. Resolve starting tags — advance tracks like project card tags. The corp's ongoing effect
-    // is already active, so its tag effects see them (Ecotec: "including the starting tag").
+    // 3. Resolve starting tags as if they were shown on a revealed card (rulebook B, setup step 4):
+    // advance tracks, then run the corp's own and the human's card effects. The corp's ongoing
+    // effect is already active, so it sees them (Ecotec: "including the starting tag").
     for (const tag of corp.tags) {
       const trackIndex = marsBot.marsBotBoard.tagToTrack[tag];
       if (trackIndex !== undefined) {
@@ -46,11 +49,14 @@ export class MarsBotCorpResolver {
       corp.effect?.onTagResolved?.(marsBot, tag);
     }
 
-    // 3b. FAQ: trigger human corp callbacks for MarsBot's starting tags
-    // e.g., if human plays Saturn Systems and MarsBot has Jovian starting tag
     if (corp.tags.length > 0) {
-      const fakeCard = {tags: [...corp.tags], name: corp.name} as any;
-      marsBot.turnResolver.notifyPlayerCards(fakeCard);
+      // The starting tags stand in for the tags of a project card, so effects that trigger on a
+      // card's tags (Arclight, Pharmacy Union, Saturn Systems) fire for them too.
+      const tagsCard = {name: corp.name, type: CardType.CORPORATION, tags: [...corp.tags], cost: 0, requirements: [], metadata: {}} as unknown as IProjectCard;
+      corp.effect?.onProjectCardResolved?.(marsBot, tagsCard);
+      // FAQ: trigger human corp callbacks for MarsBot's starting tags
+      // e.g., if human plays Saturn Systems and MarsBot has Jovian starting tag
+      marsBot.turnResolver.notifyPlayerCards(tagsCard);
     }
   }
 

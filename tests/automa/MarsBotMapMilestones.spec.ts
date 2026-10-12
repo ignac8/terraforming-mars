@@ -6,6 +6,7 @@ import {MarsBot} from '../../src/server/automa/MarsBot';
 import {marsBotAwardScore, marsBotCanClaimMilestone} from '../../src/server/automa/MarsBotMilestoneAwardEval';
 import {AutomaGameSetup} from '../../src/server/automa/AutomaGameSetup';
 import {BonusCardId} from '../../src/common/automa/AutomaTypes';
+import {createCorpBonusCard} from '../../src/server/automa/MarsBotBonusCard';
 import {marsBotAwardRule, marsBotMapSet, marsBotMilestoneRule} from '../../src/common/automa/MarsBotMADescriptions';
 import {BoardName} from '../../src/common/boards/BoardName';
 import {Tag} from '../../src/common/cards/Tag';
@@ -25,11 +26,12 @@ import {Engineer} from '../../src/server/milestones/modular/Engineer';
 import {Farmer} from '../../src/server/milestones/modular/Farmer';
 import {Fundraiser} from '../../src/server/milestones/modular/Fundraiser';
 import {Planetologist} from '../../src/server/milestones/modular/Planetologist';
+import {Merchant} from '../../src/server/milestones/modular/Merchant';
 import {Founder} from '../../src/server/awards/modular/Founder';
 import {Traveller} from '../../src/server/awards/modular/Traveller';
 
 // The Milestones & Awards expansion plays against the Tharsis board and its own rules.
-const MODULAR: Partial<GameOptions> = {randomMA: RandomMAOptionType.LIMITED, modularMA: true};
+const MODULAR: Partial<GameOptions> = {randomMA: RandomMAOptionType.UNLIMITED, modularMA: true};
 
 function createGame(options: Partial<GameOptions>) {
   const [game, human] = testGame(1, {automaOption: true, ...options});
@@ -38,6 +40,11 @@ function createGame(options: Partial<GameOptions>) {
 
 function setTrack(marsBot: MarsBot, tag: Tag, position: number): void {
   marsBot.marsBotBoard.tracks[marsBot.marsBotBoard.tagToTrack[tag]!].position = position;
+}
+
+/** Resolves a bonus card the way a turn does, from the action deck. */
+function resolveFromDeck(marsBot: MarsBot, id: BonusCardId): void {
+  marsBot['bonusResolver'].resolve(createCorpBonusCard(id));
 }
 
 function claims(milestone: IMilestone, marsBot: MarsBot): boolean {
@@ -170,15 +177,23 @@ describe('MarsBot map milestones and awards', () => {
       const {marsBot} = createGame({boardName: BoardName.UTOPIA_PLANITIA});
       expect(marsBot.destroyedBonusCards).to.eq(0);
 
-      marsBot.resolveBonusCard(BonusCardId.B07_LOCAL_NEURAL_INSTANCE);
+      resolveFromDeck(marsBot, BonusCardId.B07_LOCAL_NEURAL_INSTANCE);
 
       expect(marsBot.destroyedBonusCards).to.eq(1);
+    });
+
+    it('does not count a bonus card a corporation resolves and removes in setup', () => {
+      const {marsBot} = createGame({boardName: BoardName.UTOPIA_PLANITIA});
+
+      marsBot.resolveBonusCard(BonusCardId.B07_LOCAL_NEURAL_INSTANCE);
+
+      expect(marsBot.destroyedBonusCards).to.eq(0);
     });
 
     it('does not count a bonus card shuffled back into the bonus deck', () => {
       const {marsBot} = createGame({boardName: BoardName.UTOPIA_PLANITIA});
 
-      marsBot.resolveBonusCard(BonusCardId.B27_BUILD_BUILD_BUILD);
+      resolveFromDeck(marsBot, BonusCardId.B27_BUILD_BUILD_BUILD);
 
       expect(marsBot.destroyedBonusCards).to.eq(0);
     });
@@ -186,7 +201,7 @@ describe('MarsBot map milestones and awards', () => {
     it('does not count a bonus card that stays in play', () => {
       const {marsBot} = createGame({boardName: BoardName.UTOPIA_PLANITIA});
 
-      marsBot.resolveBonusCard(BonusCardId.B02_INVASIVE_SPECIES);
+      resolveFromDeck(marsBot, BonusCardId.B02_INVASIVE_SPECIES);
 
       expect(marsBot.destroyedBonusCards).to.eq(0);
     });
@@ -298,12 +313,35 @@ describe('MarsBot map milestones and awards', () => {
     });
   });
 
+  describe('modular milestone filtering', () => {
+    it('keeps Merchant without Venus Next, it needs no Venus track', () => {
+      const names = (venus: boolean) => AutomaGameSetup.filterMilestones(
+        [new Merchant(), new Planetologist(), new Tradesman()], {venusNextExtension: venus} as GameOptions).map((m) => m.name);
+      expect(names(false)).to.deep.eq(['Merchant']);
+      expect(names(true)).to.deep.eq(['Merchant', 'Planetologist', 'Tradesman']);
+    });
+  });
+
   describe('descriptions', () => {
     it('a map set uses its own wording', () => {
       expect(marsBotMilestoneRule('Rim Settler', BoardName.HELLAS)).to.eq('Science/Jovian track ≥ 6');
       expect(marsBotMilestoneRule('Fundraiser', BoardName.TERRA_CIMMERIA_NOVA)).to.eq('Event track ≥ 10');
       expect(marsBotMilestoneRule('Farmer', BoardName.VASTITAS_BOREALIS_NOVA)).to.eq('Science/Microbe track or Bio track ≥ 6');
       expect(marsBotAwardRule('Traveller', BoardName.VASTITAS_BOREALIS_NOVA)).to.eq('Earth/Jovian track + 5');
+    });
+
+    it('Agronomist counts the Plant/Animal track on Vastitas Borealis, the Bio track elsewhere', () => {
+      expect(marsBotMilestoneRule('Agronomist', BoardName.VASTITAS_BOREALIS_NOVA)).to.eq('Plant/Animal track ≥ 4');
+      expect(marsBotMilestoneRule('Agronomist')).to.eq('Bio track ≥ 4');
+    });
+
+    it('describes the rest of the Milestones & Awards expansion', () => {
+      for (const name of ['Trader', 'Sponsor', 'Lobbyist', 'Pioneer4'] as const) {
+        expect(marsBotMilestoneRule(name), name).is.a('string');
+      }
+      for (const name of ['Biologist', 'Constructor'] as const) {
+        expect(marsBotAwardRule(name), name).is.a('string');
+      }
     });
 
     it('the modular wording is the default', () => {
@@ -316,11 +354,24 @@ describe('MarsBot map milestones and awards', () => {
       expect(marsBotMilestoneRule('Energizer', BoardName.HELLAS)).to.eq('Energy track ≥ 6');
     });
 
-    it('only a fixed map set counts as a map set', () => {
-      const options = {boardName: BoardName.HELLAS, randomMA: RandomMAOptionType.NONE, modularMA: false};
+    it('the map set applies unless the Milestones & Awards expansion is on', () => {
+      const options = {boardName: BoardName.HELLAS, modularMA: false};
       expect(marsBotMapSet(options)).to.eq(BoardName.HELLAS);
       expect(marsBotMapSet({...options, modularMA: true})).is.undefined;
-      expect(marsBotMapSet({...options, randomMA: RandomMAOptionType.UNLIMITED})).is.undefined;
+    });
+
+    it('random milestones and awards still use the map rule of the map\'s own milestone', () => {
+      const {marsBot} = createGame({boardName: BoardName.HELLAS, randomMA: RandomMAOptionType.UNLIMITED});
+      setTrack(marsBot, Tag.JOVIAN, 6);
+      expect(claims(new RimSettler(), marsBot)).is.true;
+      setTrack(marsBot, Tag.JOVIAN, 5);
+      expect(claims(new RimSettler(), marsBot)).is.false;
+    });
+
+    it('random milestones from another map use the generic rule', () => {
+      const {marsBot} = createGame({boardName: BoardName.HELLAS, randomMA: RandomMAOptionType.UNLIMITED});
+      setTrack(marsBot, Tag.EVENT, 8);
+      expect(claims(new Fundraiser(), marsBot)).is.true;
     });
 
     it('modular games play the Tharsis board', () => {

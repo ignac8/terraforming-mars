@@ -243,6 +243,13 @@
                               <label for="automa-no-generation-limit-checkbox">
                                 <span v-i18n>No generation limit</span>&nbsp;<span class="tooltip" v-i18n data-tooltip="The game goes on until Mars is terraformed. MarsBot no longer wins when the last generation ends.">&#9432;</span>
                               </label>
+                              <template v-if="expansions.colonies">
+                                <br>
+                                <input type="checkbox" v-model="automaColonyVP" id="automa-colony-vp-checkbox">
+                                <label for="automa-colony-vp-checkbox">
+                                  <span v-i18n>MarsBot colonies score 1/2 VP each</span>&nbsp;<span class="tooltip" v-i18n data-tooltip="At game end MarsBot gets 1 VP for every 2 colonies it owns. This is how the designer intended it, but the rulebook leaves it out.">&#9432;</span>
+                                </label>
+                              </template>
                               <template v-if="expansions.turmoil">
                                 <br>
                                 <label for="automa-turmoil-tr">
@@ -856,6 +863,7 @@ export default defineComponent({
         automaTurmoilTRReduction: this.automaTurmoilTRReduction,
         automaTurmoilSetupDelegates: this.automaTurmoilSetupDelegates,
         automaNoGenerationLimit: this.automaNoGenerationLimit,
+        automaColonyVP: this.automaColonyVP && this.expansions.colonies,
       };
     },
     validationErrors(): ValidationErrors {

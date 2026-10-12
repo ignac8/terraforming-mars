@@ -14,6 +14,9 @@ import {MarsBotTurnResolver} from './MarsBotTurnResolver';
 import {IProjectCard} from '../cards/IProjectCard';
 import {CardType} from '../../common/cards/CardType';
 import {Space} from '../boards/Space';
+import {SpaceType} from '../../common/boards/SpaceType';
+import {BoardName} from '../../common/boards/BoardName';
+import {marsBotUsesMapSet} from './MarsBotMilestoneAwardEval';
 import {CardName} from '../../common/cards/CardName';
 import {Tag} from '../../common/cards/Tag';
 import {marsBotCardTags} from './MarsBotTags';
@@ -47,6 +50,9 @@ const SPECIAL_TILES: ReadonlyMap<CardName, TileType> = new Map([
   [CardName.MAGNETIC_FIELD_GENERATORS_PROMO, TileType.MAGNETIC_FIELD_GENERATORS],
 ]);
 
+/** The Corporate Competition helpers that don't cost MarsBot 5 M€ (rulebook C, p.12). */
+const FREE_HELPER_AWARDS: ReadonlyArray<string> = ['Forecaster'];
+
 /**
  * Resolves MarsBot bonus cards (B01–B08).
  */
@@ -77,6 +83,11 @@ export class MarsBotBonusResolver {
     }
     const destroyed = this.resolveEffect(card);
     const bot = this.marsBotManager;
+    // Only a destroyed card counts for the Land Specialist milestone, not one shuffled back into the deck.
+    // A corporation's setup resolves and removes its cards without this (Philares), so it isn't in resolveEffect.
+    if (destroyed && bot !== undefined && !this.bonusDeck.drawPile.includes(card)) {
+      bot.destroyedBonusCards++;
+    }
     // A corporation's generation card that removes itself does not come back (Vitor's Overachievement)
     if (destroyed && bot !== undefined && card.id === bot.corp?.actionDeckBonusCard) {
       bot.setCorpState(ACTION_DECK_BONUS_CARD_REMOVED, 1);
@@ -94,12 +105,7 @@ export class MarsBotBonusResolver {
    * Returns true when the card must not be discarded: it was destroyed, or it went back into the bonus deck.
    */
   public resolveEffect(card: MarsBotBonusCard): boolean {
-    const keep = this.applyEffect(card);
-    // Only a destroyed card counts for the Land Specialist milestone, not one shuffled back into the deck.
-    if (keep && this.marsBotManager !== undefined && !this.bonusDeck.drawPile.includes(card)) {
-      this.marsBotManager.destroyedBonusCards++;
-    }
-    return keep;
+    return this.applyEffect(card);
   }
 
   private applyEffect(card: MarsBotBonusCard): boolean {
@@ -475,14 +481,11 @@ export class MarsBotBonusResolver {
 
   // B08: Corporate Competition
   private resolveCorporateCompetition(): void {
-    if (this.turnResolver.megacredits < 5) {
-      // Not enough MC, draw another bonus card
-      this.drawAndResolveAnotherBonus();
-      return;
-    }
-
-    const funded = this.game.awards.filter((a) => this.game.hasBeenFunded(a));
+    const canPay = this.turnResolver.megacredits >= 5;
+    const funded = this.game.awards.filter((a) => this.game.hasBeenFunded(a) &&
+      (canPay || FREE_HELPER_AWARDS.includes(a.name)));
     if (funded.length === 0) {
+      // Not enough MC or nothing funded, draw another bonus card
       this.drawAndResolveAnotherBonus();
       return;
     }
@@ -503,9 +506,13 @@ export class MarsBotBonusResolver {
 
     for (const {award} of sorted) {
       if (this.tryHelperAction(award.name)) {
-        this.turnResolver.megacredits -= 5;
+        if (FREE_HELPER_AWARDS.includes(award.name)) {
+          this.game.log('MarsBot resolves Corporate Competition on ${0}', (b) => b.rawString(award.name));
+        } else {
+          this.turnResolver.megacredits -= 5;
+          this.game.log('MarsBot resolves Corporate Competition on ${0}, loses 5 MC', (b) => b.rawString(award.name));
+        }
         resolved = true;
-        this.game.log('MarsBot resolves Corporate Competition on ${0}, loses 5 MC', (b) => b.rawString(award.name));
         break;
       }
     }
@@ -574,6 +581,12 @@ export class MarsBotBonusResolver {
       return false;
     };
     const nextToOcean = (space: Space) => board.getAdjacentSpaces(space).some(Board.isOceanSpace);
+    // Vastitas Borealis' Highlander also keeps away from the spaces reserved for an ocean (rulebook C, p.12).
+    // The modular Highlander only looks at placed oceans (p.16).
+    const vastitasRules = this.marsBotManager !== undefined &&
+      marsBotUsesMapSet(this.marsBotManager, BoardName.VASTITAS_BOREALIS_NOVA);
+    const nextToReservedOcean = (space: Space) =>
+      board.getAdjacentSpaces(space).some((s) => s.spaceType === SpaceType.OCEAN);
     const nextToSpecialTile = (space: Space) => board.getAdjacentSpaces(space).some(isSpecialTileSpace);
     const onEdge = (space: Space) => space.edge;
     const inFourBottomRows = (space: Space) => space.y >= 5 && space.y <= 8;
@@ -610,11 +623,11 @@ export class MarsBotBonusResolver {
     case 'Mogul': return advance(marsBotBoard.getMostAdvancedTrackIndex());
     case 'A. Zoologist':
     case 'Zoologist': return advanceTrackOf(Tag.ANIMAL);
-    case 'Forecaster': return revealAndResolveCard((c) => c.requirements.length > 0, 5);
+    case 'Forecaster': return revealAndResolveCard((c) => c.requirements.length > 0);
     // Vastitas Borealis (B13). Traveller follows B14, the card for random awards.
     case 'Traveller': return advanceTrackOfEither([Tag.EARTH, Tag.JOVIAN], 'more');
     case 'Landscaper': return placeGreenery();
-    case 'Highlander': return placeGreenery((space) => !nextToOcean(space));
+    case 'Highlander': return placeGreenery((space) => !nextToOcean(space) && !(vastitasRules && nextToReservedOcean(space)));
     case 'Promoter': return advanceTrackOf(Tag.EVENT);
     case 'Blacksmith': return advanceTrackOfEither([Tag.BUILDING, Tag.SPACE], 'more');
     // Milestones and awards (B14)

@@ -49,7 +49,7 @@ export class AutomaGameSetup {
   public static filterMilestones(milestones: Array<IMilestone>, gameOptions: GameOptions): Array<IMilestone> {
     const unsupported: Array<string> = ['Terraformer29'];
     if (!gameOptions.venusNextExtension) {
-      unsupported.push('Planetologist', 'Trader', 'Tradesman', 'Merchant');
+      unsupported.push('Planetologist', 'Trader', 'Tradesman');
     }
     if (!gameOptions.turmoilExtension) {
       unsupported.push('Lobbyist');

@@ -103,6 +103,7 @@ describe('ApiGame', () => {
           'automaTurmoilTRReduction': 10,
           'automaTurmoilSetupDelegates': 0,
           'automaNoGenerationLimit': false,
+          'automaColonyVP': false,
 
           'aresHazards': true,
           'customCeos': [],

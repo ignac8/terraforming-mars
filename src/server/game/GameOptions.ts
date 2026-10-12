@@ -95,6 +95,8 @@ export type GameOptions = {
    * megacredits convert at the table's last row (1 MC per VP) from then on.
    */
   automaNoGenerationLimit?: boolean;
+  /** With Colonies, MarsBot scores 1 VP for every 2 colonies it owns at game end (designer intent, BGG thread 3408751). */
+  automaColonyVP?: boolean;
 }
 
 export const DEFAULT_GAME_OPTIONS: GameOptions = {
@@ -172,4 +174,5 @@ export const DEFAULT_GAME_OPTIONS: GameOptions = {
   automaTurmoilTRReduction: 10,
   automaTurmoilSetupDelegates: 0,
   automaNoGenerationLimit: false,
+  automaColonyVP: false,
 };
