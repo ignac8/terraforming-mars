@@ -7,25 +7,24 @@ import type {MarsBot} from '../MarsBot';
  * undefined means the colony is exempt from C-12 overflow (Titan = floaters, exempt per C-23)
  * or has no storage at all (Europa, C-24d).
  *
- * Track-to-tag mapping for Tharsis:
- *   Building(0)=BUILDING, Space(1)=SPACE, Event(2)=EVENT, Science(3)=SCIENCE,
- *   Energy(4)=POWER, Earth(5)=EARTH, Plant(6)=PLANT
+ * The tags are the ones printed on each storage area of the Shipping Board. The track a tag
+ * advances depends on the map (on Vastitas Borealis, microbes advance the Science track).
  *
  * C-25: Resources on Ceres/Luna/Io/Enceladus/Ganymede/Callisto/Miranda/Triton are considered
  * resources of the indicated type for player-card purposes.
  */
 export const COLONY_STORAGE_TAG: Partial<Record<ColonyName, Tag>> = {
-  [ColonyName.CERES]: Tag.BUILDING,   // Steel → Building track
-  [ColonyName.LUNA]: Tag.EVENT,        // Megacredits → Event (credits) track
-  [ColonyName.IO]: Tag.EARTH,          // Heat → Earth track
-  [ColonyName.ENCELADUS]: Tag.PLANT,  // Microbes → Plant track (biome resource)
-  [ColonyName.GANYMEDE]: Tag.PLANT,   // Plants → Plant track
-  [ColonyName.CALLISTO]: Tag.POWER,   // Energy → Energy track
-  [ColonyName.MIRANDA]: Tag.PLANT,    // Animals → Plant track (biome resource)
-  [ColonyName.TRITON]: Tag.SPACE,     // Titanium → Space track
-  // Titan: floaters — exempt from C-12 (C-23); no entry here, handled in add()
+  [ColonyName.CERES]: Tag.BUILDING,   // Steel
+  [ColonyName.LUNA]: Tag.EVENT,       // Megacredits
+  [ColonyName.IO]: Tag.EARTH,         // Heat
+  [ColonyName.ENCELADUS]: Tag.MICROBE,
+  [ColonyName.GANYMEDE]: Tag.PLANT,
+  [ColonyName.CALLISTO]: Tag.POWER,   // Energy
+  [ColonyName.MIRANDA]: Tag.ANIMAL,
+  [ColonyName.TRITON]: Tag.SPACE,     // Titanium
+  // Titan: floaters, exempt from C-12 (C-23); no entry here, handled in add()
   // Europa: no storage (C-24d); no entry here, handled in add()
-  [ColonyName.PLUTO]: Tag.EVENT,      // Card-equivalent (C-26) → MC → Event track
+  [ColonyName.PLUTO]: Tag.SCIENCE,    // Cards (C-26)
 };
 
 /**
