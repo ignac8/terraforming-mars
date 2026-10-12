@@ -177,8 +177,8 @@
 
                             <div v-for="boardName in boards" :key="boardName">
                               <div v-if="boardName==='utopia planitia'" class="create-game-subsection-label" v-i18n>Fan-made</div>
-                              <input type="radio" :value="boardName" name="board" v-model="board" :id="boardName+'-checkbox'" :disabled="automaOption && boardName !== 'tharsis'">
-                              <label :for="boardName+'-checkbox'" class="expansion-button" :class="{'automa-disabled': automaOption && boardName !== 'tharsis'}">
+                              <input type="radio" :value="boardName" name="board" v-model="board" :id="boardName+'-checkbox'" :disabled="isBoardDisabledForAutoma(boardName)">
+                              <label :for="boardName+'-checkbox'" class="expansion-button" :class="{'automa-disabled': isBoardDisabledForAutoma(boardName)}">
                                   <span :class="getBoardColorClass(boardName)">&#x2B22;</span>
                                   <span class="capitalized" v-i18n>{{ boardName }}</span>
                                   <template v-if="boardName !== RandomBoardOption.OFFICIAL && boardName !== RandomBoardOption.ALL">
@@ -655,6 +655,7 @@ import {getColony} from '@/client/colonies/ClientColonyManifest';
 import {RULEBOOK_URLS, WIKI, WIKI_URLS} from '@/client/utils/WikiLinks';
 import {setDocumentTitle} from '@/client/utils/documentTitle';
 import {sanitizeEscapeVelocityOptions} from '@/common/game/escapeVelocity';
+import {isMarsBotBoardChoice} from '@/common/automa/MarsBotBoards';
 import {validateNewGameConfig, validationDetails, ValidationErrors} from '@/common/game/validateNewGameConfig';
 import ValidationErrorsPopup from './ValidationErrorsPopup.vue';
 
@@ -742,7 +743,9 @@ export default defineComponent({
     },
     automaOption(value: boolean) {
       if (value) {
-        this.board = 'tharsis' as any;
+        if (!isMarsBotBoardChoice(this.board)) {
+          this.board = BoardName.THARSIS;
+        }
         this.initialDraft = false;
         this.randomFirstPlayer = false;
         this.includeFanMA = false;
@@ -1096,6 +1099,9 @@ export default defineComponent({
         this.moonStandardProjectVariant = false;
         this.moonStandardProjectVariant1 = false;
       }
+    },
+    isBoardDisabledForAutoma(boardName: BoardNameType): boolean {
+      return this.automaOption && !isMarsBotBoardChoice(boardName);
     },
     getBoardColorClass(boardName: BoardName | BoardNameType): string {
       switch (boardName) {
