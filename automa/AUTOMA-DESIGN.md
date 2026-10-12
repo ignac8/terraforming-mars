@@ -106,7 +106,7 @@ When the cube lands on an icon, perform the action immediately:
 | **Advance (▶)** | Move cube 1 more space (may trigger another action) |
 | **+Track N** | Advance that other track's cube 1 space (may trigger action) |
 | **TR N** | Gain N terraform rating |
-| **M (Milestone)** | Claim an unclaimed milestone MarsBot qualifies for (free). Tiebreakers: 1) one you also qualify for, 2) one you're closest to, 3) leftmost |
+| **M (Milestone)** | Claim an unclaimed milestone MarsBot qualifies for (free). Tiebreakers: 1) one you also qualify for, 2) one you're closest to (smallest distance to its threshold), 3) leftmost. Hoverlord goes last |
 | **A (Award)** | Fund the award MarsBot is most ahead of you in (free). Tiebreaker: leftmost |
 | **Temperature** | Raise temperature 1 step. Gain 1 TR. |
 | **Greenery** | Place greenery tile + raise oxygen 1 step + gain 1 TR. Adjacent to own cities (max), away from your cities (min). Then standard tiebreakers. |
@@ -122,7 +122,9 @@ When the cube lands on an icon, perform the action immediately:
 **Tiebreakers** (after type-specific adjacency rules):
 1. Adjacent to as many oceans as possible.
 2. Cover the most placement bonus icons.
-3. Random: Flip a card from the project deck, use its cost to count through tied spaces (top-left, going right, then down). Place on the final space. Discard the flipped card.
+3. Random: Flip a card from the project deck, use its cost to count through tied spaces (top-left, going right, then down). Place on the final space. Discard the flipped card. A cost of 1 is the first space; a cost of 0 or an exact multiple of the count is the last (Nick Shaw, BGG thread 3342916).
+
+Steps 1-2 are the Tharsis order. Each map's player aid has its own (`MAP_TIEBREAKERS` in `MarsBotTilePlacer.ts`): Hellas adds the polar region, Elysium the southern region, Terra Cimmeria spaces next to special tiles (the Neural Instance counts), Utopia counts edge spaces as +1 icon, Vastitas counts volcanic and nearby spaces as +1 icon. With the Milestones & Awards expansion MarsBot uses the Tharsis order on any map, plus the expansion's own modifiers when those are in play: Geologist (volcanic +1), Founder (next to special tiles +1), Suburbian (edge +1), Highlander (oceans after icons). Special hexes (Hellas South Pole, Vastitas North Pole, Terra Cimmeria MSL, Vastitas Viking) count as 2.5 icons when MarsBot can pay for them and pay out their bonus.
 
 **Placement Bonuses**:
 - Adjacent to ocean: MarsBot gains 2 MC per adjacent ocean.
@@ -153,7 +155,9 @@ When the cube lands on an icon, perform the action immediately:
 | Thermalist | Track 5 position + 5 |
 | Miner | Track 2 position + 5 |
 
-When comparing awards for resources (Thermalist, Miner), MarsBot considers your current resources + your production.
+When comparing awards for resources (Thermalist, Miner), MarsBot considers your current resources + your production. For Thermalist that is heat + energy resources + heat production, not energy production (Dávid Turczi, BGG thread 3350125). Corporate Competition compares the same way.
+
+Other maps have their own milestone and award rules for MarsBot (rulebook C pp.9-12). They apply whenever that map's own milestone or award is in play, random M&A included; the rest use the expansion's generic rules (`marsBotMapSet` in `src/common/automa/MarsBotMADescriptions.ts`).
 
 ### 2.9 Production Phase
 
@@ -686,7 +690,7 @@ No 2nd place VP in 2-player automa games (same as standard 2-player TM rules). O
 - [x] i18n support for all player-visible text
 - [x] 7700+ tests
 - [x] Venus Next — full expansion support (board, floater track action, milestones/awards/scoring, Government Intervention card)
-- [x] Colonies — full expansion support: MarsBot Shipping Board with 11 storage areas (tags as printed on the board: Enceladus Microbe, Miranda Animal, Pluto Science), colony placement (B17 Expedited Construction Colonies, B18 Outer System Foothold, Utopia Planitia's colony track icon), trading (B19 Shipping Lines, B20 Extended Shipping Lines), 2nd Trade Fleet unlock at Energy track position 9, player-trade colony bonus hook, Europa special handling (ocean tile / TR / MC), Pluto card-resource handling, Aridor/Poseidon corp ongoing effects, Pioneer/Constructor cube colony-build trigger
+- [x] Colonies — full expansion support: MarsBot Shipping Board with 11 storage areas (tags as printed on the board: Enceladus Microbe, Miranda Animal, Pluto Science), colony placement (B17 Expedited Construction Colonies, B18 Outer System Foothold, Utopia Planitia's colony track icon), trading (B19 Shipping Lines, B20 Extended Shipping Lines), 2nd Trade Fleet unlock at Energy track position 9, player-trade colony bonus hook, Europa special handling (ocean tile / TR / MC), Pluto card-resource handling, Aridor/Poseidon corp ongoing effects, Pioneer/Constructor cube colony-build trigger. Optional `automaColonyVP` game option (off by default): MarsBot scores 1/2 VP per colony, which the designer says he meant to print but forgot (BGG thread 3408751)
 - [x] Turmoil — full expansion support: 7 delegates in reserve, MarsBot starts at 10 TR (or 13 with extra-difficulty), Party Politics (B21) with 6-tier narrowing priority and divisible-by-3 second-delegate trigger, Gray Eminence (B29) using same delegate priority, Election/Revolution global events solo-resolution for automa, Chairman gives MarsBot +1 TR, no Lobby placement, 1 VP per Party Leader / Chairman owned, Septem Tribus replaces Party Politics with Gray Eminence in deck
 - [x] Milestones & Awards expansion — all modular milestones/awards have MarsBot eval functions (Rulebook C pages 13-16)
 
