@@ -551,6 +551,9 @@ MarsBot can play with a corporation card (optional, toggle `automaCorpOption` in
 - **IMarsBot**: The bot as corp handlers see it (IPlayer-style: game/player/board references plus operations like advanceTrack, gainMc, placeOcean/City/Greenery, drawAndResolveProjectCard, raiseTR). Implemented by `MarsBot` itself.
 - **MarsBotCorpEffect**: Hooks for onTrackCubeTrigger, onProjectCardResolved, onHumanCardPlayed, onTilePlaced, onVenusRaised, onGlobalParameterRaised, onMcGained, vpBonus. Card hooks receive the real `IProjectCard`.
 - **Draft priority types**: tags (standard), mostExpensive (Credicor), leastAdvancedTrack (Aridor), mostTags (Spire)
+- **Draft discard**: the first card the priority doesn't protect. When a tag priority (tags, leastAdvancedTrack)
+  protects all of them, the card with the fewest matches goes (Nick, BGG 3398289, over rulebook B p.2);
+  Credicor and Spire then discard nothing
 
 ### 7.3 Track Cubes
 
@@ -561,7 +564,8 @@ icon printed on that space, is the corp card's business:
   (black cubes, credit cubes, and the white cubes of IC, Teractor, Phobolog, Thorgate, Valley Trust and the rest).
 - A corp whose card says the cube's effect happens *instead of* the icon returns `true` from
   `onTrackCubeTrigger`, and `advanceTrack` leaves the icon unresolved. Helion's white cubes (a card
-  instead of the temperature step under them) are the only such case so far.
+  instead of the temperature step under them) are the only such case so far, and only on a temperature
+  icon: on the Nova boards' city icons the city still resolves.
 - **Credit cubes**: silver resource cubes. MarsBot gains 5 M€, the cube's value, when advancing to this position
   (Cheung Shing, Morningstar: "은색 자원 큐브에 도달할 때마다, 해당 자원 큐브를 M€로써 획득").
 
