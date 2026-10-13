@@ -378,8 +378,8 @@ export class MarsBotTurnResolver {
     this.game.log('MarsBot raises Venus ${0} step(s)', (b) => b.number(taken));
   }
 
-  // C-8/C-14: Gain `count` floaters. With Venus → floaters; without Venus but with Colonies →
-  // Titan storage; without both → ignored (C-13).
+  // C-8/C-14: Gain `count` floaters. With Venus → floaters; without Venus but with Colonies and
+  // Titan dealt → Titan storage; otherwise ignored (C-13; Nick, BGG 3341542).
   public gainFloaters(count: number): void {
     if (this.marsBotManager === undefined) {
       return;
@@ -387,7 +387,7 @@ export class MarsBotTurnResolver {
     if (this.game.gameOptions.venusNextExtension) {
       this.marsBotManager.floaters += count;
       this.game.log('MarsBot gains ${0} floater(s)', (b) => b.number(count));
-    } else if (this.game.gameOptions.coloniesExtension) {
+    } else if (this.game.gameOptions.coloniesExtension && this.game.colonies.some((colony) => colony.name === ColonyName.TITAN)) {
       this.marsBotManager.shippingBoard.add(ColonyName.TITAN, count, this.marsBotManager);
       this.game.log('MarsBot gains ${0} floater token(s) in Titan storage (C-14)', (b) => b.number(count));
     }

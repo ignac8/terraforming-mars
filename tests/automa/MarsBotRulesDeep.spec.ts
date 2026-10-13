@@ -232,13 +232,30 @@ describe('MarsBot Deep Rules Tests', () => {
     });
 
     it('with Colonies and no Venus Next puts the floater in Titan storage', () => {
-      const [game] = testGame(1, {automaOption: true, coloniesExtension: true, boardName: BoardName.THARSIS});
+      const [game] = testGame(1, {
+        automaOption: true, coloniesExtension: true, boardName: BoardName.THARSIS,
+        customColoniesList: [ColonyName.TITAN, ColonyName.CERES, ColonyName.LUNA, ColonyName.IO, ColonyName.GANYMEDE],
+      });
       const marsBot = game.automaHooks!.marsBot;
 
       marsBot['bonusResolver'].resolve(invasiveSpecies());
 
       expect(marsBot.turnResolver.megacredits).to.eq(2);
       expect(marsBot.shippingBoard.storage.get(ColonyName.TITAN)).to.eq(1);
+    });
+
+    // Nick, BGG 3341542: without Venus Next and Titan the floater is ignored; the card's 2 M€ stays
+    it('with Colonies, no Venus Next and no Titan gains 2 M€ and ignores the floater', () => {
+      const [game] = testGame(1, {
+        automaOption: true, coloniesExtension: true, boardName: BoardName.THARSIS,
+        customColoniesList: [ColonyName.CALLISTO, ColonyName.CERES, ColonyName.LUNA, ColonyName.IO, ColonyName.GANYMEDE],
+      });
+      const marsBot = game.automaHooks!.marsBot;
+
+      marsBot['bonusResolver'].resolve(invasiveSpecies());
+
+      expect(marsBot.turnResolver.megacredits).to.eq(2);
+      expect(marsBot.shippingBoard.storage.get(ColonyName.TITAN) ?? 0).to.eq(0);
     });
   });
 
