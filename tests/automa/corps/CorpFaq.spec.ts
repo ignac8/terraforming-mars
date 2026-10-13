@@ -116,6 +116,29 @@ describe('MarsBot corporation FAQ', () => {
       expect(marsBot.turnResolver.megacredits).eq(17);
     });
 
+    it('counts the card\'s plants for Crash Site Cleanup and Law Suit when the player destroys them', () => {
+      const {game, human, marsBot} = createAutomaGame(CardName.ECOLINE);
+      rapidSprouting(marsBot);
+      marsBot.turnResolver.megacredits = 20;
+
+      marsBot.player.stock.add(Resource.PLANTS, -3, {from: {player: human}});
+      chooseSource(game, human, 0);
+
+      expect(game.someoneHasRemovedOtherPlayersPlants).is.true;
+      expect(marsBot.player.removingPlayers).to.include(human.id);
+    });
+
+    it('counts the card\'s plants for Crash Site Cleanup and Law Suit when the player steals them', () => {
+      const {game, human, marsBot} = createAutomaGame(CardName.ECOTEC);
+
+      marsBot.player.stock.steal(Resource.PLANTS, 4, human);
+      runAllActions(game);
+
+      expect(marsBot.getCorpState('plantResources')).eq(0);
+      expect(game.someoneHasRemovedOtherPlayersPlants).is.true;
+      expect(marsBot.player.removingPlayers).to.include(human.id);
+    });
+
     it('reads an Ecoline plant from older saves', () => {
       const {game} = createAutomaGame(CardName.ECOLINE);
       const serialized = JSON.parse(JSON.stringify(game.serialize()));

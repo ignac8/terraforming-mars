@@ -89,6 +89,9 @@ export class MarsBotStock extends Stock {
         if (options?.log) {
           this.player.game.log('MarsBot loses ${0} plant resources from corp card', (b) => b.number(removed));
         }
+        if (taker !== undefined) {
+          this.fireRemovalHooks(resource, -removed, taker);
+        }
       };
       // A player removing from MarsBot chooses between its MC supply and the matching colony
       // storage area (C-25). Anything else (events, MarsBot itself) comes out of the MC supply.
@@ -124,6 +127,7 @@ export class MarsBotStock extends Stock {
     const fromCard = () => {
       const stolen = this.takePlantsFromCard(qty);
       thief.stock.add(resource, stolen);
+      this.fireRemovalHooks(resource, -stolen, thief);
       if (options?.log) {
         this.player.game.log('${0} steals ${1} plant resources from MarsBot\'s corp card',
           (b) => b.player(thief).number(stolen));
@@ -297,9 +301,14 @@ export class MarsBotStock extends Stock {
 
     const from = options?.from;
     if (isFromPlayer(from)) {
-      LawSuit.resourceHook(this.player, hookAmount, from.player);
-      CrashSiteCleanup.resourceHook(this.player, resource, hookAmount, from.player);
+      this.fireRemovalHooks(resource, hookAmount, from.player);
     }
+  }
+
+  /** Tells Law Suit and Crash Site Cleanup that `remover` took `-amount` of `resource` from MarsBot. */
+  private fireRemovalHooks(resource: Resource, amount: number, remover: IPlayer): void {
+    LawSuit.resourceHook(this.player, amount, remover);
+    CrashSiteCleanup.resourceHook(this.player, resource, amount, remover);
   }
 }
 
