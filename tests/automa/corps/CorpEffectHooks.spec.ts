@@ -15,6 +15,7 @@ import {TileType} from '../../../src/common/TileType';
 import {IProjectCard} from '../../../src/server/cards/IProjectCard';
 import {BoardName} from '../../../src/common/boards/BoardName';
 import {SpaceType} from '../../../src/common/boards/SpaceType';
+import {Space} from '../../../src/server/boards/Space';
 import {Birds} from '../../../src/server/cards/base/Birds';
 import {MarsUniversity} from '../../../src/server/cards/base/MarsUniversity';
 import {Asteroid} from '../../../src/server/cards/base/Asteroid';
@@ -216,25 +217,50 @@ describe('Corp Effect Hooks', () => {
     });
 
     // FAQ (rulebook B, p.3): Lakefront overrides Government Intervention's "no M€", but not its "no TR"
-    it('keeps the M€ but not the TR from its advance during Government Intervention', () => {
-      const {game, marsBot} = createAutomaGame();
-      marsBot.setCorpAndSetup(getMarsBotCorp(CardName.LAKEFRONT_RESORTS)!);
-      setTemperature(game, MAX_TEMPERATURE);
-      setOxygenLevel(game, MAX_OXYGEN_LEVEL);
-      game.generation = 2;
-      marsBot.advanceTrack = () => {
-        marsBot.gainMc(4);
-        marsBot.raiseTR(1);
-      };
-      const mcBefore = marsBot.megacredits;
-      const trBefore = marsBot.player.terraformRating;
+    describe('during Government Intervention', () => {
+      // Government Intervention places an ocean, whose Lakefront cube advances the building track
+      function interventionWithBuildingAt(position: number) {
+        const {game, marsBot} = createAutomaGame();
+        marsBot.setCorpAndSetup(getMarsBotCorp(CardName.LAKEFRONT_RESORTS)!);
+        setTemperature(game, MAX_TEMPERATURE);
+        setOxygenLevel(game, MAX_OXYGEN_LEVEL);
+        game.generation = 2;
+        marsBot.marsBotBoard.tracks[0].position = position;
+        return {game, marsBot, mcBefore: marsBot.megacredits, trBefore: marsBot.player.terraformRating};
+      }
 
-      marsBot['bonusResolver'].resolve(createCorpBonusCard(BonusCardId.B16_GOVERNMENT_INTERVENTION));
+      function resolveIntervention(marsBot: MarsBot) {
+        marsBot['bonusResolver'].resolve(createCorpBonusCard(BonusCardId.B16_GOVERNMENT_INTERVENTION));
+      }
 
-      expect(game.board.getOceanSpaces()).has.length(1);
-      expect(marsBot.corpSpecificState.get('whiteCubeOnCard')).to.eq(0);
-      expect(marsBot.megacredits).to.eq(mcBefore + 4);
-      expect(marsBot.player.terraformRating).to.eq(trBefore);
+      it('keeps the M€ from its building-track advance', () => {
+        // Tharsis building #8 is a greenery; oxygen is maxed, so it pays M€ and no TR
+        const {game, marsBot, mcBefore} = interventionWithBuildingAt(7);
+        const placer = marsBot.turnResolver.tilePlacer;
+        let greenery: Space | undefined;
+        const find = placer.findGreenerySpace.bind(placer);
+        placer.findGreenerySpace = (where) => greenery = find(where);
+
+        resolveIntervention(marsBot);
+
+        expect(game.board.getOceanSpaces()).has.length(1);
+        expect(marsBot.corpSpecificState.get('whiteCubeOnCard')).to.eq(0);
+        expect(marsBot.marsBotBoard.tracks[0].position).to.eq(8);
+        const greeneryMc = placer.getTotalPlacementMC(greenery!);
+        expect(greeneryMc).to.be.greaterThan(0);
+        expect(marsBot.megacredits).to.eq(mcBefore + greeneryMc);
+      });
+
+      it('still loses the TR from its building-track advance', () => {
+        // Tharsis building #5 is 2 TR
+        const {game, marsBot, trBefore} = interventionWithBuildingAt(4);
+
+        resolveIntervention(marsBot);
+
+        expect(game.board.getOceanSpaces()).has.length(1);
+        expect(marsBot.marsBotBoard.tracks[0].position).to.eq(5);
+        expect(marsBot.player.terraformRating).to.eq(trBefore);
+      });
     });
 
     it('ocean placed without white cube → place white cube', () => {

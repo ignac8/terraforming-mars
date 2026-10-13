@@ -3,7 +3,7 @@ import {IParty} from '../../turmoil/parties/IParty';
 import {PartyName} from '../../../common/turmoil/PartyName';
 import {IPlayer} from '../../IPlayer';
 import {IGame} from '../../IGame';
-import {pickByFlippedCard} from '../colonies/MarsBotColonyPlacer';
+import {pickByFlippedCard} from '../MarsBotCardFlip';
 
 /** Picks the party for MarsBot's delegates and places them (T-7). */
 export class MarsBotTurmoilHelper {

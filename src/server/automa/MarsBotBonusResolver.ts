@@ -22,7 +22,8 @@ import {CardName} from '../../common/cards/CardName';
 import {Tag} from '../../common/cards/Tag';
 import {marsBotCardTags} from './MarsBotTags';
 import {MarsBotTurmoilHelper} from './turmoil/MarsBotTurmoilHelper';
-import {pickByFlippedCard, selectRandomColony, placeColonyForMarsBot} from './colonies/MarsBotColonyPlacer';
+import {selectRandomColony, placeColonyForMarsBot} from './colonies/MarsBotColonyPlacer';
+import {pickByFlippedCard} from './MarsBotCardFlip';
 import {selectTradeColony, tradeWithColony} from './colonies/MarsBotTrader';
 import {inplaceShuffle} from '../utils/shuffle';
 import type {MarsBot} from './MarsBot';
@@ -626,25 +627,17 @@ export class MarsBotBonusResolver {
       return false;
     };
     // Reveals cards until one passes `filter`, plays it, then gains `mc`. The discards reshuffle
-    // as usual, and it gives up only once every card in the deck has been seen.
+    // as usual, and it gives up only once every card in the deck has been seen. It stops before
+    // drawing from an empty deck, so it never throws.
     const revealAndResolveCard = (filter: (card: IProjectCard) => boolean, mc: number = 0) => {
-      const deck = this.game.projectDeck;
-      const seen = new Set<IProjectCard>();
-      while (seen.size < deck.size()) {
-        const card = deck.draw(this.game);
-        if (card === undefined) {
-          return false;
-        }
-        if (filter(card)) {
-          this.game.log('MarsBot reveals ${0} (Corporate Competition)', (b) => b.card(card));
-          this.turnResolver.resolveProjectCard(card);
-          this.turnResolver.gainMc(mc);
-          return true;
-        }
-        seen.add(card);
-        deck.discard(card);
+      const [card] = this.game.projectDeck.drawByConditionOrThrow(this.game, 1, filter);
+      if (card === undefined) {
+        return false;
       }
-      return false;
+      this.game.log('MarsBot reveals ${0} (Corporate Competition)', (b) => b.card(card));
+      this.turnResolver.resolveProjectCard(card);
+      this.turnResolver.gainMc(mc);
+      return true;
     };
     const nextToOcean = (space: Space) => board.getAdjacentSpaces(space).some(Board.isOceanSpace);
     // Vastitas Borealis' Highlander also keeps away from the spaces reserved for an ocean (rulebook C, p.12).

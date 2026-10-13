@@ -543,7 +543,7 @@ export class MarsBot implements IMarsBot {
     // The setup bonus card is dealt before the corporation is chosen (rulebook A setup step 3).
     // When the corp destroys that card, the bonus deck deals a replacement, so the first action
     // deck keeps its bonus card. A set-aside expansion card (Party Politics) gets none.
-    const dealt = this.actionDeck.find((c) => !this.isProjectCard(c) && c.id === bonusCardId) as MarsBotBonusCard | undefined;
+    const dealt = this.actionDeck.find((c): c is MarsBotBonusCard => !this.isProjectCard(c) && c.id === bonusCardId);
     if (dealt === undefined) {
       return;
     }
