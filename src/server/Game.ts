@@ -40,6 +40,7 @@ import {PlaceOceanTile} from './deferredActions/PlaceOceanTile';
 import {PlaceCityTile} from './deferredActions/PlaceCityTile';
 import {PlaceGreeneryTile} from './deferredActions/PlaceGreeneryTile';
 import {PlaceTile} from './deferredActions/PlaceTile';
+import {PlaceTilesInAnyOrder} from './deferredActions/PlaceTilesInAnyOrder';
 import {RemoveColonyFromGame} from './deferredActions/RemoveColonyFromGame';
 import {GainResourcesDeferred} from './deferredActions/GainResourcesDeferred';
 import {SerializedGame} from './SerializedGame';
@@ -106,7 +107,7 @@ export function setGameLog(f: () => Array<LogMessage>) {
 
 function placesTile(action: IDeferredAction<any>): boolean {
   return action instanceof PlaceOceanTile || action instanceof PlaceCityTile ||
-    action instanceof PlaceGreeneryTile || action instanceof PlaceTile;
+    action instanceof PlaceGreeneryTile || action instanceof PlaceTile || action instanceof PlaceTilesInAnyOrder;
 }
 
 export class Game implements IGame, Logger {

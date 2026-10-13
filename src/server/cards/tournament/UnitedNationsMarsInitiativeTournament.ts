@@ -3,9 +3,7 @@ import {IPlayer} from '../../IPlayer';
 import {Tag} from '../../../common/cards/Tag';
 import {CardName} from '../../../common/cards/CardName';
 import {CardRenderer} from '../render/CardRenderer';
-import {PlaceOceanTile} from '../../deferredActions/PlaceOceanTile';
-import {PlaceCityTile} from '../../deferredActions/PlaceCityTile';
-import {PlaceGreeneryTile} from '../../deferredActions/PlaceGreeneryTile';
+import {PlaceTilesInAnyOrder} from '../../deferredActions/PlaceTilesInAnyOrder';
 import {DiscardCards} from '../../deferredActions/DiscardCards';
 import {ICorporationCard} from '../corporation/ICorporationCard';
 
@@ -33,15 +31,9 @@ export class UnitedNationsMarsInitiativeTournament extends UnitedNationsMarsInit
 
   public override bespokePlay(player: IPlayer) {
     const game = player.game;
-    game.defer(new PlaceOceanTile(player, {title: 'Select space for ocean tile (no placement bonus)', grantSpaceBonuses: false}))
+    game.defer(new PlaceTilesInAnyOrder(player, ['ocean', 'city', 'greenery']))
       .andThen(() => {
-        game.defer(new PlaceCityTile(player, {title: 'Select space for city tile (no placement bonus)', grantSpaceBonuses: false}))
-          .andThen(() => {
-            game.defer(new PlaceGreeneryTile(player, 'greenery', {grantSpaceBonuses: false}))
-              .andThen(() => {
-                game.defer(new DiscardCards(player, 3, 3, 'Select 3 cards to discard'));
-              });
-          });
+        game.defer(new DiscardCards(player, 3, 3, 'Select 3 cards to discard'));
       });
     return undefined;
   }

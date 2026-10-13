@@ -3,11 +3,36 @@ import {testGame} from '../../TestGame';
 import {UnitedNationsMarsInitiativeTournament} from '../../../src/server/cards/tournament/UnitedNationsMarsInitiativeTournament';
 import {SelectSpace} from '../../../src/server/inputs/SelectSpace';
 import {SelectCard} from '../../../src/server/inputs/SelectCard';
+import {OrOptions} from '../../../src/server/inputs/OrOptions';
 import {cast} from '../../../src/common/utils/utils';
 import {TileType} from '../../../src/common/TileType';
 import {fakeCard, runAllActions} from '../../TestingUtils';
 import {RecyclonTournament} from '../../../src/server/cards/tournament/RecyclonTournament';
 import {Phase} from '../../../src/common/Phase';
+import {TestPlayer} from '../../TestPlayer';
+import {IGame} from '../../../src/server/IGame';
+
+const OCEAN = 'Place an ocean tile';
+const CITY = 'Place a city tile';
+const GREENERY = 'Place a greenery tile';
+
+function chooseTile(player: TestPlayer, game: IGame, title: string) {
+  const orOptions = cast(player.popWaitingFor(), OrOptions);
+  const option = orOptions.options.find((o) => o.title === title);
+  expect(option, title).is.not.undefined;
+  option!.cb(undefined);
+  runAllActions(game);
+}
+
+// Through Player.process, as the client sends it, so the research phase continuation runs.
+function processTile(player: TestPlayer, title: string | undefined) {
+  if (title !== undefined) {
+    const orOptions = cast(player.getWaitingFor(), OrOptions);
+    player.process({type: 'or', index: orOptions.options.findIndex((o) => o.title === title), response: {type: 'option'}});
+  }
+  const selectSpace = cast(player.getWaitingFor(), SelectSpace);
+  player.process({type: 'space', spaceId: selectSpace.spaces[0].id});
+}
 
 describe('UnitedNationsMarsInitiativeTournament', () => {
   it('Places ocean, city and greenery without map bonuses, then discards 3', () => {
@@ -24,6 +49,7 @@ describe('UnitedNationsMarsInitiativeTournament', () => {
     const handSizeBeforePlacements = player.cardsInHand.length;
 
     // Ocean: raises the ocean count and TR, but grants nothing from the space.
+    chooseTile(player, game, OCEAN);
     const selectOcean = cast(player.popWaitingFor(), SelectSpace);
     const oceanSpace = selectOcean.spaces.find((space) => space.bonus.length > 0) ?? selectOcean.spaces[0];
     selectOcean.cb(oceanSpace);
@@ -35,6 +61,7 @@ describe('UnitedNationsMarsInitiativeTournament', () => {
     expect(player.megaCredits).to.eq(25);
 
     // City: next to the new ocean — the 2 M€ adjacency reward still pays.
+    chooseTile(player, game, CITY);
     const selectCity = cast(player.popWaitingFor(), SelectSpace);
     const oceanNeighbors = game.board.getAdjacentSpaces(oceanSpace);
     const citySpace = selectCity.spaces.find((space) => oceanNeighbors.includes(space));
@@ -44,7 +71,7 @@ describe('UnitedNationsMarsInitiativeTournament', () => {
     expect(citySpace!.tile?.tileType).to.eq(TileType.CITY);
     expect(player.megaCredits).to.eq(27);
 
-    // Greenery: raises oxygen and TR.
+    // Greenery, the last tile, needs no choice. It raises oxygen and TR.
     const selectGreenery = cast(player.popWaitingFor(), SelectSpace);
     const greenerySpace = selectGreenery.spaces.find((space) => space.bonus.length > 0) ?? selectGreenery.spaces[0];
     const greeneryOceans = game.board.getAdjacentSpaces(greenerySpace).filter((space) => space.tile?.tileType === TileType.OCEAN).length;
@@ -69,6 +96,53 @@ describe('UnitedNationsMarsInitiativeTournament', () => {
     expect(player.cardsInHand).has.length(2);
   });
 
+  it('Lets the player choose the order of the three tiles', () => {
+    const [game, player] = testGame(2);
+
+    player.playCorporationCard(new UnitedNationsMarsInitiativeTournament());
+    runAllActions(game);
+
+    const first = cast(player.getWaitingFor(), OrOptions);
+    expect(first.options.map((o) => o.title)).to.have.members([OCEAN, CITY, GREENERY]);
+
+    // A city first: a greenery placed after it must go next to it.
+    chooseTile(player, game, CITY);
+    const selectCity = cast(player.popWaitingFor(), SelectSpace);
+    const citySpace = selectCity.spaces[0];
+    selectCity.cb(citySpace);
+    runAllActions(game);
+    expect(citySpace.tile?.tileType).to.eq(TileType.CITY);
+
+    const second = cast(player.getWaitingFor(), OrOptions);
+    expect(second.options.map((o) => o.title)).to.have.members([OCEAN, GREENERY]);
+    chooseTile(player, game, GREENERY);
+    const selectGreenery = cast(player.popWaitingFor(), SelectSpace);
+    const cityNeighbors = game.board.getAdjacentSpaces(citySpace);
+    expect(selectGreenery.spaces.every((space) => cityNeighbors.includes(space))).is.true;
+    selectGreenery.cb(selectGreenery.spaces[0]);
+    runAllActions(game);
+
+    // The ocean is the only tile left, so it goes straight to the space.
+    const selectOcean = cast(player.popWaitingFor(), SelectSpace);
+    selectOcean.cb(selectOcean.spaces[0]);
+    runAllActions(game);
+
+    expect(game.board.getOceanSpaces()).has.length(1);
+    expect(game.board.getCities()).has.length(1);
+    expect(game.board.getGreeneries()).has.length(1);
+  });
+
+  it('A greenery placed first can go anywhere', () => {
+    const [game, player] = testGame(2);
+
+    player.playCorporationCard(new UnitedNationsMarsInitiativeTournament());
+    runAllActions(game);
+
+    chooseTile(player, game, GREENERY);
+    const selectGreenery = cast(player.popWaitingFor(), SelectSpace);
+    expect(selectGreenery.spaces).to.have.length.greaterThan(20);
+  });
+
   it('Discards the whole hand when it holds fewer than 3 cards', () => {
     const card = new UnitedNationsMarsInitiativeTournament();
     const [game, player] = testGame(2);
@@ -77,7 +151,10 @@ describe('UnitedNationsMarsInitiativeTournament', () => {
     player.playCorporationCard(card);
     runAllActions(game);
 
-    for (const _ of [0, 1, 2]) {
+    for (const title of [OCEAN, CITY, undefined]) {
+      if (title !== undefined) {
+        chooseTile(player, game, title);
+      }
       const selectSpace = cast(player.popWaitingFor(), SelectSpace);
       selectSpace.cb(selectSpace.spaces[0]);
       runAllActions(game);
@@ -97,23 +174,20 @@ describe('UnitedNationsMarsInitiativeTournament', () => {
     p2.playCorporationCard(new RecyclonTournament());
     p3.playCorporationCard(new UnitedNationsMarsInitiativeTournament());
 
-    expect(p1.getWaitingFor()).instanceOf(SelectSpace);
+    expect(p1.getWaitingFor()).instanceOf(OrOptions);
     expect(p2.getWaitingFor()).is.undefined;
     expect(p3.getWaitingFor()).is.undefined;
 
-    for (const tile of ['ocean', 'city', 'greenery']) {
-      const selectSpace = cast(p1.getWaitingFor(), SelectSpace);
-      p1.process({type: 'space', spaceId: selectSpace.spaces[0].id});
-      if (tile !== 'greenery') {
-        expect(p3.getWaitingFor()).is.undefined;
-      }
-    }
+    processTile(p1, OCEAN);
+    expect(p3.getWaitingFor()).is.undefined;
+    processTile(p1, CITY);
+    expect(p3.getWaitingFor()).is.undefined;
+    processTile(p1, undefined);
     expect(game.phase).eq(Phase.RESEARCH);
 
-    for (const _ of ['ocean', 'city', 'greenery']) {
-      const selectSpace = cast(p3.getWaitingFor(), SelectSpace);
-      p3.process({type: 'space', spaceId: selectSpace.spaces[0].id});
-    }
+    processTile(p3, GREENERY);
+    processTile(p3, OCEAN);
+    processTile(p3, undefined);
 
     expect(game.board.getOceanSpaces()).has.length(2);
     expect(game.board.getCities()).has.length(2);
