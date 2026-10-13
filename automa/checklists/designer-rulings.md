@@ -25,6 +25,7 @@ Thread links: `https://boardgamegeek.com/thread/<id>`.
 | Production decrease | One track space per production step | 3355768 |
 | Corporate Competition (B14) | The missing Venuphile helper is an omission, include it | 3641200 |
 | Brutal | 4 starting project cards, keeps all 4 in research | 3406056 |
+| Expedited Construction (B05, B17 a) | Any space next to 2+ greenery/ocean tiles, then the usual city rule, so 2 greeneries beat 3 oceans. The card's wording wins over the rulebook's "most tiles of these types" (Dávid; the printed card agrees) | 3350125 |
 | Colony VP (optional) | Designer meant MarsBot's colonies to score 1/2 VP each but forgot to print it. Behind the `automaColonyVP` game option | 3408751 |
 
 ## No designer ruling: our reading
@@ -38,4 +39,3 @@ Thread links: `https://boardgamegeek.com/thread/<id>`.
 | Hard mode first-turn milestone | Costs 8 MC only, no Briber surcharge | Rulebook A p.11 says only "loses 8 MC" |
 | Storage overflow timing | Immediate, also on the player's turn | Matches the Philares ruling (3513998); Dávid doubts it after game end |
 | Mining Guild setup | Starting Building tags already count down the card (8 MC left) | Rulebook B setup step 4: ongoing effects active |
-| Expedited Construction city placement | Rulebook wording | Dávid says the card text wins (3350125); check against the physical card |

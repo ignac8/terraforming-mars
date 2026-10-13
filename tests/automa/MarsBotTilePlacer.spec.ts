@@ -132,6 +132,31 @@ describe('MarsBotTilePlacer', () => {
     expect(adjacent).to.include.members([first.id, second.id]);
   });
 
+  // The card: any space next to 2+ greenery/ocean tiles, then the usual city rule, so 2 greeneries
+  // beat 3 oceans (TDaver, BGG 3350125)
+  it('findExpeditedConstructionCitySpace picks among the eligible spaces by the usual city rule', () => {
+    const x = inlandSpace();
+    const xArea = [x, ...game.board.getAdjacentSpaces(x)];
+    for (const s of game.board.getAdjacentSpaces(x).slice(0, 3)) {
+      game.simpleAddTile(human, s, {tileType: TileType.OCEAN});
+    }
+    const y = game.board.getAvailableSpacesOnLand(marsBot).find((space) => {
+      const adj = game.board.getAdjacentSpaces(space);
+      return adj.length === 6 && adj.every((s) => s.spaceType === SpaceType.LAND && s.tile === undefined) &&
+        [space, ...adj].every((s) => game.board.getAdjacentSpaces(s).every((n) => !xArea.includes(n)));
+    })!;
+    const yAdj = game.board.getAdjacentSpaces(y);
+    // Two opposite neighbours, so only Y touches both
+    const shareOnlyY = (p: Space, q: Space) =>
+      game.board.getAdjacentSpaces(p).filter((s) => s !== y && game.board.getAdjacentSpaces(q).includes(s)).length === 0;
+    const p = yAdj[0];
+    const q = yAdj.find((s) => s !== p && !game.board.getAdjacentSpaces(p).includes(s) && shareOnlyY(p, s))!;
+    game.simpleAddTile(human, p, {tileType: TileType.GREENERY});
+    game.simpleAddTile(human, q, {tileType: TileType.GREENERY});
+
+    expect(tilePlacer.findExpeditedConstructionCitySpace()).to.eq(y);
+  });
+
   it('findNeuralInstanceSpace avoids the spaces next to the one reserved for Noctis City', () => {
     // 30 and 39 border Noctis City and cover two bonus icons each, more than any space the
     // tile may go on, so the tiebreakers alone would choose one of them.

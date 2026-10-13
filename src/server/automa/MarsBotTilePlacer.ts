@@ -177,19 +177,15 @@ export class MarsBotTilePlacer {
   /**
    * Find the best space for MarsBot to place a city next to at least two greenery or ocean tiles.
    * This is what the Expedited Construction bonus card (B05) asks for.
+   *
+   * Among those spaces the usual city rule picks, so 2 greeneries beat 3 oceans. The card's
+   * wording wins over the rulebook's "most tiles of these types" (TDaver, BGG 3350125).
    */
   public findExpeditedConstructionCitySpace(): Space | undefined {
     const board = this.game.board;
     const adjacentGreeneryOrOcean = (space: Space) => board.getAdjacentSpaces(space)
       .filter((s) => Board.isGreenerySpace(s) || Board.isOceanSpace(s)).length;
-
-    const eligible = board.getAvailableSpacesForCity(this.marsBot)
-      .filter((space) => adjacentGreeneryOrOcean(space) >= 2);
-    if (eligible.length === 0) {
-      return undefined;
-    }
-
-    return this.selectBestSpace(eligible, adjacentGreeneryOrOcean);
+    return this.findCitySpace((space) => adjacentGreeneryOrOcean(space) >= 2);
   }
 
   /**
