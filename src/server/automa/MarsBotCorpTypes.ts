@@ -170,16 +170,21 @@ export interface IMarsBot {
   gainMc(amount: number): void;
   /** Positive steps raise the bot's TR, negative steps lower it. */
   raiseTR(steps: number): void;
+  /** Advances a track and resolves the space it reaches. Does nothing once the game has ended. */
   advanceTrack(trackIndex: number): void;
 
   /**
    * Draws the top project card and resolves it as a bot action. The deck reshuffles its
-   * discard pile when it runs out, so the bot does nothing only when both piles are empty.
+   * discard pile when it runs out, so the bot does nothing only when both piles are empty, or
+   * once the game has ended.
    */
   maybeDrawAndResolveProjectCard(): void;
   /** Same, but only the card's first tag resolves: the others are ignored. */
   maybeDrawAndResolveProjectCardFirstTagOnly(): void;
-  /** Draws the top bonus card and resolves it. Does nothing when both bonus piles are empty. */
+  /**
+   * Draws the top bonus card and resolves it. Does nothing when both bonus piles are empty, or
+   * once the game has ended.
+   */
   maybeDrawAndResolveBonusCard(): void;
   /** Draws the top bonus card and shuffles it into the action deck. Does nothing when both bonus piles are empty. */
   maybeMoveBonusCardToActionDeck(): void;
