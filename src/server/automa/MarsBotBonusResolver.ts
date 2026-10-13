@@ -988,12 +988,12 @@ export class MarsBotBonusResolver {
     }
   }
 
-  // B30: Interface Hyperlink (Tycho Magnetics): draw 1 card per space of the energy track, play
-  // the 2 best and discard the rest. The card is destroyed once it plays a card.
+  // B30: Interface Hyperlink (Tycho Magnetics): draw 1 card per space of the energy track, at least
+  // 2, play the 2 best and discard the rest. The card is destroyed once it plays a card.
   private resolveInterfaceHyperlink(): boolean {
     const marsBotBoard = this.turnResolver.marsBotBoard;
     const energyTrack = marsBotBoard.tagToTrack[Tag.POWER];
-    const count = energyTrack === undefined ? 0 : marsBotBoard.tracks[energyTrack].position;
+    const count = Math.max(2, energyTrack === undefined ? 0 : marsBotBoard.tracks[energyTrack].position);
     const drawn = this.game.projectDeck.drawN(this.game, count);
     if (drawn.length === 0) {
       this.game.log('MarsBot resolves Interface Hyperlink: no cards to draw');

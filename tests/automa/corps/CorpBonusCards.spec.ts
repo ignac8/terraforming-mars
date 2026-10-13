@@ -306,16 +306,16 @@ describe('Corp-Specific Bonus Cards (B22-B32)', () => {
       expect(played).deep.eq([searchForLife, powerPlant]);
     });
 
-    it('does nothing and stays in the game with the energy track at 0', () => {
-      const {game, marsBot, played} = hyperlinkGame(0, []);
-      const deckSize = game.projectDeck.drawPile.length;
+    it('draws at least 2 cards, even with the energy track at 0', () => {
+      const mine = new Mine();
+      const searchForLife = new SearchForLife();
+      const {marsBot, played} = hyperlinkGame(0, [mine, searchForLife]);
 
       const destroyed = marsBot['bonusResolver'].resolve(createCorpBonusCard(BonusCardId.B30_INTERFACE_HYPERLINK));
 
-      expect(played).is.empty;
-      expect(game.projectDeck.drawPile).has.length(deckSize);
-      expect(destroyed).is.false;
-      expect(marsBot.bonusDeck.discardPile.map((c) => c.id)).to.include(BonusCardId.B30_INTERFACE_HYPERLINK);
+      expect(played).deep.eq([searchForLife, mine]);
+      expect(destroyed).is.true;
+      expect(marsBot.bonusDeck.discardPile.map((c) => c.id)).to.not.include(BonusCardId.B30_INTERFACE_HYPERLINK);
     });
   });
 
