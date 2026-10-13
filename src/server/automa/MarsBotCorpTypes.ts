@@ -179,7 +179,10 @@ export interface IMarsBot {
    * The other revealed cards are discarded.
    */
   addProjectCardsToBonusDeck(tag: Tag, count: number): void;
-  /** Removes a bonus card from the bonus deck and from the action deck. */
+  /**
+   * Removes a bonus card from the bonus deck and from the action deck, for a corp's setup. When it
+   * was the bonus card dealt at setup, the bonus deck deals a replacement into the action deck.
+   */
   removeBonusCard(bonusCardId: BonusCardId): void;
   /** Resolves a bonus card's effect right away, outside the action deck. The card is not discarded. */
   resolveBonusCard(bonusCardId: BonusCardId): void;

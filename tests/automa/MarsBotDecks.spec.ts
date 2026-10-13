@@ -186,6 +186,55 @@ describe('MarsBot decks', () => {
     expect(marsBot.bonusDeck.drawPile).has.length(bonusCards + 2);
   });
 
+  describe('a corporation destroying the setup bonus card', () => {
+    /** Swaps the dealt setup bonus card for `id`, as if the bonus deck had dealt that one. */
+    function dealSetupCard(marsBot: MarsBot, id: BonusCardId) {
+      const dealt = marsBot.actionDeck.find((c) => 'id' in c)! as MarsBotBonusCard;
+      marsBot.actionDeck = marsBot.actionDeck.filter((c) => c !== dealt);
+      marsBot.bonusDeck.drawPile.push(dealt);
+      marsBot.actionDeck.push(marsBot.bonusDeck.findAndRemove(id)!);
+    }
+
+    // Our reading of rulebook A setup step 3 and Inventrix's "destroy Lobbyists": the card is
+    // destroyed and the bonus deck deals a replacement, so generation 1 keeps 4 cards.
+    it('deals a replacement from the bonus deck (Inventrix)', () => {
+      const {marsBot} = createAutomaGame();
+      dealSetupCard(marsBot, BonusCardId.B06_LOBBYISTS);
+      const deckSize = marsBot.actionDeck.length;
+      const bonusCards = marsBot.bonusDeck.drawPile.length;
+
+      marsBot.setCorpAndSetup(getMarsBotCorp(CardName.INVENTRIX)!);
+
+      expect(marsBot.actionDeck).has.length(deckSize);
+      const ids = actionDeckIds(marsBot).filter((id) => id !== undefined);
+      expect(ids).has.length(1);
+      expect(ids).does.not.include(BonusCardId.B06_LOBBYISTS);
+      expect(bonusDeckIds(marsBot)).does.not.include(BonusCardId.B06_LOBBYISTS);
+      expect(marsBot.bonusDeck.drawPile).has.length(bonusCards - 1);
+    });
+
+    it('deals no replacement when the dealt card is another one', () => {
+      const {marsBot} = createAutomaGame();
+      dealSetupCard(marsBot, BonusCardId.B02_INVASIVE_SPECIES);
+      const before = actionDeckIds(marsBot);
+
+      marsBot.setCorpAndSetup(getMarsBotCorp(CardName.INVENTRIX)!);
+
+      expect(actionDeckIds(marsBot)).to.have.members(before);
+    });
+
+    it('keeps the replacement across a reload', () => {
+      const {game, marsBot} = createAutomaGame();
+      dealSetupCard(marsBot, BonusCardId.B06_LOBBYISTS);
+      marsBot.setCorpAndSetup(getMarsBotCorp(CardName.INVENTRIX)!);
+      const ids = actionDeckIds(marsBot);
+
+      const restored = Game.deserialize(game.serialize()).automaHooks!.marsBot;
+
+      expect(actionDeckIds(restored)).deep.eq(ids);
+    });
+  });
+
   it('moves a bonus card into UNMI\'s action deck from generation 2', () => {
     const {game, marsBot} = createAutomaGame();
     const corp = getMarsBotCorp(CardName.UNITED_NATIONS_MARS_INITIATIVE)!;
