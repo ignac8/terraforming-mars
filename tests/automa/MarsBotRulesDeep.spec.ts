@@ -17,6 +17,11 @@ import {Tag} from '../../src/common/cards/Tag';
 import {TileType} from '../../src/common/TileType';
 import {Pets} from '../../src/server/cards/base/Pets';
 import {Birds} from '../../src/server/cards/base/Birds';
+import {Ants} from '../../src/server/cards/base/Ants';
+import {Fish} from '../../src/server/cards/base/Fish';
+import {Tardigrades} from '../../src/server/cards/base/Tardigrades';
+import {Mine} from '../../src/server/cards/base/Mine';
+import {GHGProducingBacteria} from '../../src/server/cards/base/GHGProducingBacteria';
 import {ColonyName} from '../../src/common/colonies/ColonyName';
 import {fakeCard, maxOutOceans, setOxygenLevel, setTemperature, setVenusScaleLevel} from '../TestingUtils';
 import {FAILED_ACTION_MC} from '../../src/common/automa/AutomaTypes';
@@ -170,6 +175,50 @@ describe('MarsBot Deep Rules Tests', () => {
 
       expect(pets.resourceCount).to.eq(6);
       expect(birds.resourceCount).to.eq(0);
+    });
+
+    // BGG 3360797 (TDaver): the cube worth the most VP, cards scoring per resource first
+    it('removes the cube worth the most VP, not the card scoring the most', () => {
+      const {human, marsBot} = createAutomaGame();
+      const ants = new Ants();
+      ants.resourceCount = 4; // 2 VP, 1/2 VP per microbe
+      const birds = new Birds();
+      birds.resourceCount = 1; // 1 VP per animal
+      human.playedCards.push(ants, birds);
+
+      marsBot['bonusResolver'].resolve(invasiveSpecies());
+
+      expect(birds.resourceCount).to.eq(0);
+      expect(ants.resourceCount).to.eq(4);
+    });
+
+    it('takes a scoring cube before one on a card that scores no VP', () => {
+      const {human, marsBot} = createAutomaGame();
+      const bacteria = new GHGProducingBacteria();
+      bacteria.resourceCount = 3;
+      const tardigrades = new Tardigrades();
+      tardigrades.resourceCount = 3; // 0 VP now, 1/4 VP per microbe
+      human.playedCards.push(bacteria, tardigrades);
+
+      marsBot['bonusResolver'].resolve(invasiveSpecies());
+
+      expect(tardigrades.resourceCount).to.eq(2);
+      expect(bacteria.resourceCount).to.eq(3);
+    });
+
+    it('breaks a tie by flipping a project card', () => {
+      const {game, human, marsBot} = createAutomaGame();
+      const birds = new Birds();
+      birds.resourceCount = 1;
+      const fish = new Fish();
+      fish.resourceCount = 1;
+      human.playedCards.push(birds, fish);
+      game.projectDeck.drawPile.push(new Mine()); // Cost 4 counts to the 2nd of 2
+
+      marsBot['bonusResolver'].resolve(invasiveSpecies());
+
+      expect(birds.resourceCount).to.eq(1);
+      expect(fish.resourceCount).to.eq(0);
     });
 
     it('with Venus Next gains 2 M€ and 1 floater instead of 5 M€', () => {

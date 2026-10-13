@@ -604,7 +604,7 @@ describe('MarsBot Rules Compliance', () => {
       expect(game.projectDeck.size()).eq(8);
     });
 
-    it('Excentric removes an animal or microbe from the player\'s highest-scoring card', () => {
+    it('Excentric removes an animal or microbe worth the most VP', () => {
       const {human, marsBot} = createAutomaGame();
       expect(helper(marsBot, 'Excentric')).is.false;
 

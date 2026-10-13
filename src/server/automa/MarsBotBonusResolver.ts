@@ -12,6 +12,7 @@ import {MarsBotBonusDeck} from './MarsBotBonusDeck';
 import {MarsBotTilePlacer} from './MarsBotTilePlacer';
 import {MarsBotTurnResolver} from './MarsBotTurnResolver';
 import {IProjectCard} from '../cards/IProjectCard';
+import {ICard} from '../cards/ICard';
 import {CardType} from '../../common/cards/CardType';
 import {Space} from '../boards/Space';
 import {SpaceType} from '../../common/boards/SpaceType';
@@ -21,7 +22,7 @@ import {CardName} from '../../common/cards/CardName';
 import {Tag} from '../../common/cards/Tag';
 import {marsBotCardTags} from './MarsBotTags';
 import {MarsBotTurmoilHelper} from './turmoil/MarsBotTurmoilHelper';
-import {selectRandomColony, placeColonyForMarsBot} from './colonies/MarsBotColonyPlacer';
+import {pickByFlippedCard, selectRandomColony, placeColonyForMarsBot} from './colonies/MarsBotColonyPlacer';
 import {selectTradeColony, tradeWithColony} from './colonies/MarsBotTrader';
 import {inplaceShuffle} from '../utils/shuffle';
 import type {MarsBot} from './MarsBot';
@@ -227,33 +228,27 @@ export class MarsBotBonusResolver {
   }
 
   /**
-   * Removes 1 animal or microbe from the player's highest-scoring card (Invasive Species, and
-   * Corporate Competition's Excentric). False when no card has one MarsBot may remove.
+   * Removes the player's animal or microbe worth the most VP (Invasive Species, and Corporate
+   * Competition's Excentric). False when no card has one MarsBot may remove.
+   *
+   * Cards that score their resources come first, then the rest; a tie goes to a flipped project
+   * card (BGG 3360797).
    */
   private maybeRemoveAnimalOrMicrobe(source: string): boolean {
     // Protected Habitat blocks animal/microbe removal
     const isProtected = this.humanPlayer.playedCards.has(CardName.PROTECTED_HABITATS);
 
-    // Find highest-scoring animal/microbe on human's cards
-    let bestEntry: {card: IProjectCard, resource: CardResource, vp: number} | undefined;
-    if (!isProtected) {
-      for (const played of this.humanPlayer.playedCards) {
-        // Pets and Bioengineering Enclosure protect their resources from opponents
-        if (played.resourceCount && played.resourceCount > 0 && played.protectedResources !== true) {
-          if (played.resourceType === CardResource.ANIMAL || played.resourceType === CardResource.MICROBE) {
-            const vp = played.getVictoryPoints(this.humanPlayer);
-            if (bestEntry === undefined || vp > bestEntry.vp) {
-              bestEntry = {card: played as IProjectCard, resource: played.resourceType, vp};
-            }
-          }
-        }
-      }
-    }
-    if (bestEntry !== undefined) {
-      const {card, resource} = bestEntry;
+    // Pets and Bioengineering Enclosure protect their resources from opponents
+    const candidates = isProtected ? [] : this.humanPlayer.playedCards.filter((played) =>
+      (played.resourceCount ?? 0) > 0 && played.protectedResources !== true &&
+      (played.resourceType === CardResource.ANIMAL || played.resourceType === CardResource.MICROBE));
+    if (candidates.length > 0) {
+      const best = Math.max(...candidates.map(vpPerResource));
+      const tied = candidates.filter((played) => vpPerResource(played) === best);
+      const card = tied.length > 1 ? pickByFlippedCard(this.game, tied) ?? tied[0] : tied[0];
       this.humanPlayer.removeResourceFrom(card, 1, {removingPlayer: this.marsBot, log: false});
       this.game.log('MarsBot\'s ${0}: removed 1 ${1} from ${2}',
-        (b) => b.rawString(source).rawString(resource).card(card));
+        (b) => b.rawString(source).rawString(card.resourceType ?? '').card(card));
       return true;
     }
     if (isProtected) {
@@ -1095,4 +1090,13 @@ export class MarsBotBonusResolver {
       this.game.log('MarsBot resolves Investors: +${0} M€ (least-advanced track)', (b) => b.number(amount));
     }
   }
+}
+
+/** The VP one resource on `card` is worth, or 0 when the card doesn't score its resources (Vermin included). */
+function vpPerResource(card: ICard): number {
+  const vp = card.victoryPoints;
+  if (typeof vp === 'object' && vp.resourcesHere !== undefined) {
+    return (vp.each ?? 1) / (vp.per ?? 1);
+  }
+  return 0;
 }
