@@ -90,6 +90,27 @@ describe('MarsBotTilePlacer', () => {
     expect(game.board.getAdjacentSpaces(space).some((s) => s.id === '18')).is.false;
   });
 
+  // "Effectively it wants the greatest net gain of points" (njshaw2, BGG 3350125 and 3411375)
+  it('findGreenerySpace scores MarsBot\'s adjacent cities minus the human\'s', () => {
+    const a = inlandSpace();
+    const adj = game.board.getAdjacentSpaces(a);
+    // A: 2 MarsBot cities and 2 human cities, net 0
+    game.simpleAddTile(marsBot, adj[0], {tileType: TileType.CITY});
+    game.simpleAddTile(marsBot, adj[3], {tileType: TileType.CITY});
+    game.simpleAddTile(human, adj[1], {tileType: TileType.CITY});
+    game.simpleAddTile(human, adj[4], {tileType: TileType.CITY});
+    // B: 1 MarsBot city and no human city, net +1
+    const cityCount = (space: Space, player: TestPlayer) =>
+      game.board.getAdjacentSpaces(space).filter((s) => s.tile?.tileType === TileType.CITY && s.player === player).length;
+    const b = game.board.getAvailableSpacesForGreenery(marsBot)
+      .find((s) => s !== a && cityCount(s, marsBot) === 1 && cityCount(s, human) === 0)!;
+    expect(b).is.not.undefined;
+
+    const space = tilePlacer.findGreenerySpace((s) => s === a || s === b);
+
+    expect(space).to.eq(b);
+  });
+
   it('findExpeditedConstructionCitySpace returns undefined on an empty board', () => {
     cast(tilePlacer.findExpeditedConstructionCitySpace(), undefined);
   });

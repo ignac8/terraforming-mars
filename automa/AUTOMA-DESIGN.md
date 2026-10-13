@@ -109,13 +109,13 @@ When the cube lands on an icon, perform the action immediately:
 | **M (Milestone)** | Claim an unclaimed milestone MarsBot qualifies for (free). Tiebreakers: 1) one you also qualify for, 2) one you're closest to (smallest distance to its threshold), 3) leftmost. Hoverlord goes last |
 | **A (Award)** | Fund the award MarsBot is most ahead of you in (free). Tiebreaker: leftmost |
 | **Temperature** | Raise temperature 1 step. Gain 1 TR. |
-| **Greenery** | Place greenery tile + raise oxygen 1 step + gain 1 TR. Adjacent to own cities (max), away from your cities (min). Then standard tiebreakers. |
+| **Greenery** | Place greenery tile + raise oxygen 1 step + gain 1 TR. Maximise MarsBot's adjacent cities minus your adjacent cities. Then standard tiebreakers. |
 | **Ocean** | Place ocean on any ocean-reserved space. Standard tiebreakers. |
 | **City** | Place city adjacent to most existing greenery. Standard city rules (not adjacent to other cities). Then standard tiebreakers. |
 
 ### 2.7 Tile Placement Rules
 
-**Greenery**: Adjacent to as many MarsBot cities as possible, minimizing adjacency to human cities. Must follow normal greenery rules (next to own tiles when possible, not on reserved spaces).
+**Greenery**: Maximise MarsBot's adjacent cities minus the human's adjacent cities (BGG 3350125, 3411375). Must follow normal greenery rules (next to own tiles when possible, not on reserved spaces).
 
 **City**: Adjacent to as much existing greenery as possible. Standard city rules (not adjacent to other cities, not on reserved spaces).
 
