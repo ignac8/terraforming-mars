@@ -171,21 +171,30 @@ export class MarsBotTurnResolver {
   /**
    * Advance the track for a tag, for a track or bonus effect that names the tag.
    * Returns false when no track takes that tag.
-   *
-   * FAQ (rulebook B, p.3): a microbe advancement resolves the player's Pharmacy Union or
-   * Splice as if a card with a microbe tag was played. Plant and animal advances on the
-   * shared track don't, and other cards (Saturn Systems) only react to played cards.
    */
   public advanceTrackOfTag(tag: Tag): boolean {
     const trackIndex = this.marsBotBoard.tagToTrack[tag];
     if (trackIndex === undefined) {
       return false;
     }
-    if (this.advanceTrack(trackIndex) && tag === Tag.MICROBE) {
-      const microbeCard = {tags: [Tag.MICROBE]} as Partial<ICard> as ICard;
-      this.notifyPlayerCards(microbeCard, [CardName.PHARMACY_UNION, CardName.SPLICE]);
+    if (this.advanceTrack(trackIndex)) {
+      this.notifyTagAdvance(tag);
     }
     return true;
+  }
+
+  /**
+   * Tells the player's cards about an advance that names `tag`, as if a card with that tag was played.
+   *
+   * A microbe advance resolves Pharmacy Union or Splice (FAQ, rulebook B p.3), and a Jovian one
+   * Saturn Systems (TDaver, BGG 3356105). The other tags on a shared track don't count.
+   */
+  public notifyTagAdvance(tag: Tag): void {
+    const cards = tag === Tag.MICROBE ? [CardName.PHARMACY_UNION, CardName.SPLICE] :
+      tag === Tag.JOVIAN ? [CardName.SATURN_SYSTEMS] : [];
+    if (cards.length > 0) {
+      this.notifyPlayerCards({tags: [tag]} as Partial<ICard> as ICard, cards);
+    }
   }
 
   /** Resolve an action icon on a track position. */

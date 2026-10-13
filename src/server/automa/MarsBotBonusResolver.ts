@@ -590,7 +590,8 @@ export class MarsBotBonusResolver {
       return trackIndex !== undefined && marsBotBoard.tracks[trackIndex].canAdvance() &&
         this.turnResolver.advanceTrackOfTag(tag);
     };
-    // Advances the less or the more advanced of two tags' tracks, the upper track when tied.
+    // Advances the less or the more advanced of two tags' tracks, the upper track when tied. The
+    // player's cards see an advance of each named tag on that track (Saturn Systems for Traveller).
     const advanceTrackOfEither = (tags: [Tag, Tag], pick: 'less' | 'more') => {
       const position = (trackIndex: number) => marsBotBoard.tracks[trackIndex].position;
       const trackIndexes = tags.map((tag) => marsBotBoard.tagToTrack[tag])
@@ -599,10 +600,19 @@ export class MarsBotBonusResolver {
       if (trackIndexes.length === 0) {
         return false;
       }
-      return advance(trackIndexes.reduce((best, trackIndex) => {
+      const chosen = trackIndexes.reduce((best, trackIndex) => {
         const better = pick === 'less' ? position(trackIndex) < position(best) : position(trackIndex) > position(best);
         return better ? trackIndex : best;
-      }));
+      });
+      if (!advance(chosen)) {
+        return false;
+      }
+      for (const tag of tags) {
+        if (marsBotBoard.tagToTrack[tag] === chosen) {
+          this.turnResolver.notifyTagAdvance(tag);
+        }
+      }
+      return true;
     };
     const placeCity = (where?: (space: Space) => boolean) => {
       const space = this.tilePlacer.findCitySpace(where);
