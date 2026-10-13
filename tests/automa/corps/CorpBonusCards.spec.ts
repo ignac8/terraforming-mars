@@ -258,6 +258,18 @@ describe('Corp-Specific Bonus Cards (B22-B32)', () => {
       expect(Math.max(...after)).to.eq(1);
     });
 
+    it('breaks the last tie by flipping a project card and counting through the parties by its cost', () => {
+      const {game, marsBot, turmoil} = turmoilGame();
+      game.projectDeck.drawPile.push(new Mine(), new Capital()); // Capital (26) first, then Mine (4)
+      const discarded = game.projectDeck.discardPile.length;
+
+      marsBot['bonusResolver'].resolve(createCorpBonusCard(BonusCardId.B29_GRAY_EMINENCE));
+
+      // 26 counts to the 2nd of 6 tied parties; 4 counts to the 4th of the 5 left
+      expect(botDelegates(turmoil, marsBot)).deep.eq([0, 1, 0, 0, 1, 0]);
+      expect(game.projectDeck.discardPile.length).to.eq(discarded + 2);
+    });
+
     it('gains 2 M€ for each delegate it cannot place', () => {
       const {marsBot, turmoil} = turmoilGame();
       turmoil.delegateReserve.remove(marsBot.player, turmoil.delegateReserve.get(marsBot.player) - 1);

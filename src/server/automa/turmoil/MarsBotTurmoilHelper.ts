@@ -3,6 +3,7 @@ import {IParty} from '../../turmoil/parties/IParty';
 import {PartyName} from '../../../common/turmoil/PartyName';
 import {IPlayer} from '../../IPlayer';
 import {IGame} from '../../IGame';
+import {pickByFlippedCard} from '../colonies/MarsBotColonyPlacer';
 
 /** Picks the party for MarsBot's delegates and places them (T-7). */
 export class MarsBotTurmoilHelper {
@@ -65,7 +66,7 @@ export class MarsBotTurmoilHelper {
 
   /**
    * Chooses the party for a Gray Eminence delegate (Septem Tribus): the fewest MarsBot
-   * delegates, then the fewest player delegates, then a random party.
+   * delegates, then the fewest player delegates, then a random party by flipping a project card.
    */
   public selectGrayEminenceParty(): PartyName {
     let candidates = this.turmoil.parties;
@@ -73,7 +74,10 @@ export class MarsBotTurmoilHelper {
     candidates = candidates.filter((party) => party.delegates.get(this.marsBotPlayer) === fewestMarsBot);
     const fewestHuman = Math.min(...candidates.map((party) => party.delegates.get(this.humanPlayer)));
     candidates = candidates.filter((party) => party.delegates.get(this.humanPlayer) === fewestHuman);
-    return candidates[this.game.rng.nextInt(candidates.length)].name;
+    if (candidates.length === 1) {
+      return candidates[0].name;
+    }
+    return (pickByFlippedCard(this.game, candidates) ?? candidates[0]).name;
   }
 
   /**
