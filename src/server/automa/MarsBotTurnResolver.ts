@@ -134,6 +134,8 @@ export class MarsBotTurnResolver {
   public advanceTrack(trackIndex: number): boolean {
     const track = this.marsBotBoard.tracks[trackIndex];
     const name = this.trackName(trackIndex);
+    // Moving back up after a regression retriggers nothing (rulebook B, p.3)
+    const reAdvance = track.regressedPositions.has(track.position + 1);
 
     const result = track.advance();
 
@@ -151,16 +153,17 @@ export class MarsBotTurnResolver {
         MarsBotCorpResolver.onTrackAdvanced(this.marsBotManager, trackIndex, position)) {
       this.game.log('MarsBot: ${0} track to ${1}, icon replaced by a corp cube',
         (b) => b.rawString(name).number(position));
-      return true;
-    }
-
-    if (result.type === 'action') {
+    } else if (result.type === 'action') {
       this.game.log('MarsBot: ${0} track to ${1}, action: ${2}',
         (b) => b.rawString(name).number(position).rawString(result.action));
       this.resolveTrackAction(result.action, trackIndex);
     } else {
       this.game.log('MarsBot: ${0} track to ${1}',
         (b) => b.rawString(name).number(position));
+    }
+
+    if (this.marsBotManager !== undefined && !reAdvance) {
+      this.marsBotManager.corp?.effect?.afterTrackSpaceResolved?.(this.marsBotManager, trackIndex, position);
     }
     return true;
   }

@@ -252,13 +252,46 @@ describe('Expansion MarsBot Corporations', () => {
       }
     });
 
-    it('black cube triggers advance on same track', () => {
+    it('reaching #5 advances the same track one more space', () => {
       const {marsBot} = createAutomaGame();
-      const corp = getMarsBotCorp(CardName.MANUTECH)!;
-      marsBot.setCorpAndSetup(corp);
-      const track1Before = marsBot.marsBotBoard.tracks[0].position;
-      corp.effect!.onTrackCubeTrigger!(marsBot, 0, 5, 'black');
-      expect(marsBot.marsBotBoard.tracks[0].position).to.be.gte(track1Before + 1);
+      marsBot.setCorpAndSetup(getMarsBotCorp(CardName.MANUTECH)!);
+      marsBot.marsBotBoard.tracks[0].position = 4;
+
+      marsBot.advanceTrack(0);
+
+      expect(marsBot.marsBotBoard.tracks[0].position).to.eq(6);
+    });
+
+    it('resolves the #5 space before advancing to #6 and resolving that', () => {
+      const {marsBot} = createAutomaGame();
+      marsBot.setCorpAndSetup(getMarsBotCorp(CardName.MANUTECH)!);
+      marsBot.marsBotBoard.tracks[0].position = 4; // Building #5: tr2, #6: temperature
+      const resolved: Array<string> = [];
+      const resolveTrackAction = marsBot.turnResolver['resolveTrackAction'].bind(marsBot.turnResolver);
+      marsBot.turnResolver['resolveTrackAction'] = (action, trackIndex) => {
+        resolved.push(action);
+        resolveTrackAction(action, trackIndex);
+      };
+
+      marsBot.advanceTrack(0);
+
+      // C29: "after resolving the effect, advance it another space, and resolve that one as well"
+      expect(resolved).to.deep.eq(['tr2', 'temperature']);
+    });
+
+    it('does not advance again when the track re-reaches #5 after a regression', () => {
+      const {marsBot} = createAutomaGame();
+      marsBot.setCorpAndSetup(getMarsBotCorp(CardName.MANUTECH)!);
+      marsBot.marsBotBoard.tracks[0].position = 4;
+      marsBot.advanceTrack(0);
+      marsBot.regressTrack(Resource.STEEL);
+      marsBot.regressTrack(Resource.STEEL);
+      expect(marsBot.marsBotBoard.tracks[0].position).to.eq(4);
+
+      marsBot.advanceTrack(0);
+
+      // Rulebook B p.3: moving back up does not retrigger a corporation trigger
+      expect(marsBot.marsBotBoard.tracks[0].position).to.eq(5);
     });
   });
 

@@ -173,20 +173,20 @@ const FACTORUM: IMarsBotCorp = {
   ...bonusCardBeforeActionPhase(BonusCardId.B24_SUPPLY_AND_DEMAND, 'Factorum'),
 };
 
-// C29 Manutech — black cubes at #5/#12 on each track
+// C29 Manutech — black reminder cubes at #5/#12 on each track
 const MANUTECH: IMarsBotCorp = {
   name: CardName.MANUTECH,
-  description: 'Tag: Building. Black cubes at positions 5 and 12 on every track. Hitting a black cube advances that same track 1 extra step.',
+  description: 'Tag: Building. When any track (including Venus) reaches #5 or #12, after resolving that space, advance it one more space and resolve that one too.',
   tags: [Tag.BUILDING],
   trackCubes: Array.from({length: 7}, (_, i) => [
     {trackIndex: i, position: 5, cubeType: 'black' as const},
     {trackIndex: i, position: 12, cubeType: 'black' as const},
   ]).flat(),
   effect: {
-    onTrackCubeTrigger(bot, trackIndex, _position, cubeType) {
-      if (cubeType === 'black') {
-        bot.advanceTrack(trackIndex); // Advance same track 1 more
-        bot.game.log(`MarsBot (Manutech): black cube on track ${trackIndex} — advance 1 more`);
+    afterTrackSpaceResolved(bot, trackIndex, position) {
+      if (position === 5 || position === 12) {
+        bot.game.log(`MarsBot (Manutech): track ${trackIndex + 1} reached #${position}, advance 1 more`);
+        bot.advanceTrack(trackIndex);
       }
     },
   },
