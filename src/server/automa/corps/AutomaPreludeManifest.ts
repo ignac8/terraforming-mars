@@ -109,7 +109,7 @@ const VITOR: IMarsBotCorp = {
   ...bonusCardBeforeActionPhase(BonusCardId.B04_OVERACHIEVEMENT, 'Vitor'),
 };
 
-// ==== PRELUDE 2 (C18, C20, C29, C40-C46) ====
+// ==== PROMO, VENUS NEXT AND PRELUDE 2 (C18-C20, C29, C40-C46) ====
 
 // C18 Acadian Community
 const ACADIAN_COMMUNITY: IMarsBotCorp = {
@@ -196,7 +196,7 @@ const MANUTECH: IMarsBotCorp = {
 // C40 Ecotec
 const ECOTEC: IMarsBotCorp = {
   name: CardName.ECOTEC,
-  description: 'Tag: Plant. Draft: Plant > Microbe > Animal. Setup: 2 plant resources on card. Plant/Microbe/Animal cards add 1 plant resource; spend 5 to advance plant track.',
+  description: 'Tag: Plant. Draft: Plant > Microbe > Animal. Setup: 2 plant resources on card. Each Plant, Microbe or Animal tag (starting tag included) adds 1. Before the action phase, at 5+, spend 5 to advance plant track.',
   tags: [Tag.PLANT],
   draftPriority: {type: 'tags', tags: [Tag.PLANT, Tag.MICROBE, Tag.ANIMAL]},
   trackCubes: whiteTrackCubes(6),

@@ -74,7 +74,7 @@ const HELION: IMarsBotCorp = {
 // Effect: each advance on building (track 1) or event (track 3), earn 2 MC.
 const INTERPLANETARY_CINEMATICS: IMarsBotCorp = {
   name: CardName.INTERPLANETARY_CINEMATICS,
-  description: 'Tags: 2 Events. White cubes on building and event tracks. Each advance on those tracks earns 2 MC.',
+  description: 'Tags: 2 Events. White cubes on building and event tracks. Each advance on those tracks, starting tags included, earns 2 MC.',
   tags: [Tag.EVENT, Tag.EVENT],
   trackCubes: [...whiteTrackCubes(0), ...whiteTrackCubes(2)],
   trackCubesTriggerEveryAdvance: true,
@@ -117,7 +117,7 @@ const INVENTRIX: IMarsBotCorp = {
 // Effect: when earning MC, deduct from card first. When card empty, refill 10 + advance building track.
 const MINING_GUILD: IMarsBotCorp = {
   name: CardName.MINING_GUILD,
-  description: 'Tags: 2 Building. Setup: 10 MC on card. MC MarsBot earns comes off this card; when empty, refill 10 MC and advance building track.',
+  description: 'Tags: 2 Building. Setup: 10 MC on card. Until the building track reaches #18, MC MarsBot earns comes off this card; when empty, refill 10 MC and advance building track.',
   tags: [Tag.BUILDING, Tag.BUILDING],
   setup(bot) {
     bot.setCorpState('mcOnCard', 10);
@@ -126,7 +126,7 @@ const MINING_GUILD: IMarsBotCorp = {
   effect: {
     // The card is a countdown: M€ MarsBot earns is removed from the card, but the
     // bot keeps the earnings. When the card empties, refill 10 M€ and advance the
-    // building track. (NamuWiki card text; verify against the physical card.)
+    // building track.
     onMcGained(bot, amount) {
       if (bot.marsBotBoard.tracks[0].position >= 18) {
         return;
@@ -175,7 +175,7 @@ const PHOBOLOG: IMarsBotCorp = {
 // Effect: anyone plays Jovian -> advance event track (index 2).
 const SATURN_SYSTEMS: IMarsBotCorp = {
   name: CardName.SATURN_SYSTEMS,
-  description: 'Tags: Jovian, 3 Space. Draft: Jovian > Space. When anyone plays a Jovian tag, advance event track.',
+  description: 'Tags: Jovian, 3 Space. Draft: Jovian > Space. When you play a Jovian card or MarsBot resolves a Jovian tag (starting tag included), advance event track.',
   tags: [Tag.JOVIAN, Tag.SPACE, Tag.SPACE, Tag.SPACE],
   draftPriority: {type: 'tags', tags: [Tag.JOVIAN, Tag.SPACE]},
   effect: {
@@ -219,10 +219,10 @@ const TERACTOR: IMarsBotCorp = {
 };
 
 // ---- C10 Tharsis Republic ----
-// Draft: City. Setup: place 1 city. Effect: any city placement gives +2 MC; MarsBot city also advances event track.
+// Draft: City. Setup: place 1 city. Effect: the player's city gives +2 MC; MarsBot's city advances event track.
 const THARSIS_REPUBLIC: IMarsBotCorp = {
   name: CardName.THARSIS_REPUBLIC,
-  description: 'Draft: City. Setup: place 1 city. Any city placement gives 2 MC; MarsBot city also advances event track.',
+  description: 'Draft: City. Setup: place 1 city. When you place a city, MarsBot gains 2 MC. When MarsBot places a city (setup included), advance its event track.',
   tags: [],
   draftPriority: {type: 'tags', tags: [Tag.CITY]},
   setup(bot) {
