@@ -618,10 +618,13 @@ export class MarsBotBonusResolver {
       }
       return false;
     };
-    // Reveals cards until one passes `filter`, plays it, then gains `mc`.
+    // Reveals cards until one passes `filter`, plays it, then gains `mc`. The discards reshuffle
+    // as usual, and it gives up only once every card in the deck has been seen.
     const revealAndResolveCard = (filter: (card: IProjectCard) => boolean, mc: number = 0) => {
-      for (let i = 0; i < 20; i++) { // safety limit
-        const card = this.game.projectDeck.draw(this.game);
+      const deck = this.game.projectDeck;
+      const seen = new Set<IProjectCard>();
+      while (seen.size < deck.size()) {
+        const card = deck.draw(this.game);
         if (card === undefined) {
           return false;
         }
@@ -631,7 +634,8 @@ export class MarsBotBonusResolver {
           this.turnResolver.gainMc(mc);
           return true;
         }
-        this.game.projectDeck.discardPile.push(card);
+        seen.add(card);
+        deck.discard(card);
       }
       return false;
     };

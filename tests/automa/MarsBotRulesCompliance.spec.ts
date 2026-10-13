@@ -585,6 +585,25 @@ describe('MarsBot Rules Compliance', () => {
       expect(marsBot.turnResolver.megacredits).eq(mc + 10);
     });
 
+    // Our reading: "reveal until" has no cap short of the whole deck
+    it('Administrator keeps revealing past 20 cards', () => {
+      const {game, marsBot} = createAutomaGame();
+      const microMills = new MicroMills();
+      stackDeck(game, ...Array.from({length: 25}, () => new Mine()), microMills);
+
+      expect(helper(marsBot, 'Administrator')).is.true;
+      expect(marsBot.playedProjectCards).to.include(microMills);
+    });
+
+    it('Administrator gives up once the whole deck is seen without a match', () => {
+      const {game, marsBot} = createAutomaGame();
+      game.projectDeck.drawPile.splice(0, game.projectDeck.drawPile.length, ...Array.from({length: 5}, () => new Mine()));
+      game.projectDeck.discardPile.splice(0, game.projectDeck.discardPile.length, ...Array.from({length: 3}, () => new Mine()));
+
+      expect(helper(marsBot, 'Administrator')).is.false;
+      expect(game.projectDeck.size()).eq(8);
+    });
+
     it('Excentric removes an animal or microbe from the player\'s highest-scoring card', () => {
       const {human, marsBot} = createAutomaGame();
       expect(helper(marsBot, 'Excentric')).is.false;
