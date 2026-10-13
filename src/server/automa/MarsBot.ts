@@ -341,21 +341,32 @@ export class MarsBot implements IMarsBot {
 
   // ---- Final Greenery ----
 
-  /** Place final greenery tiles for MarsBot (tracks with greenery as next action). */
+  /**
+   * Place final greenery tiles for MarsBot (tracks with greenery as next action).
+   *
+   * The tracker moves onto the greenery and the corp's cubes there trigger (IC, Teractor, Helion's
+   * black cubes), but nothing chains from that space (BGG 3385156). With no legal space the
+   * tracker stays and MarsBot takes a Failed Action (rulebook A p.8, BGG 3404826).
+   */
   public placeFinalGreeneries(): void {
-    for (const track of this.marsBotBoard.tracks) {
-      const nextAction = track.peek();
-      if (nextAction === 'greenery') {
-        const space = this.tilePlacer.findGreenerySpace();
-        if (space) {
-          // Do NOT raise oxygen or award TR for final greenery
-          this.game.addGreenery(this.player, space, false);
-          this.turnResolver.gainMc(this.tilePlacer.getTotalPlacementMC(space));
-          track.advance(); // Move tracker forward
-          this.game.log('MarsBot places final greenery (${0} track)', (b) => b.rawString(track.definition.tags[0]));
-        }
+    this.marsBotBoard.tracks.forEach((track, trackIndex) => {
+      if (track.peek() !== 'greenery') {
+        return;
       }
-    }
+      const name = track.definition.tags[0];
+      const space = this.tilePlacer.findGreenerySpace();
+      if (space === undefined) {
+        this.game.log('MarsBot: no space for a final greenery (${0} track)', (b) => b.rawString(name));
+        this.turnResolver.failedAction();
+        return;
+      }
+      // Do NOT raise oxygen or award TR for final greenery
+      this.game.addGreenery(this.player, space, false);
+      this.turnResolver.gainMc(this.tilePlacer.getTotalPlacementMC(space));
+      track.advance();
+      this.game.log('MarsBot places final greenery (${0} track)', (b) => b.rawString(name));
+      MarsBotCorpResolver.onTrackAdvanced(this, trackIndex, track.position, true);
+    });
   }
 
   // ---- Corporation ----

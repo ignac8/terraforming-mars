@@ -67,9 +67,10 @@ export class MarsBotCorpResolver {
    * Called when a track advances to a new position. Checks for cube triggers.
    *
    * Returns true when a corp cube replaced the icon printed on that space, so the caller
-   * leaves the icon unresolved.
+   * leaves the icon unresolved. With `corpCubesOnly` the colony and trade fleet cubes stay
+   * untouched, for the final greenery move after the game has ended.
    */
-  public static onTrackAdvanced(marsBot: MarsBot, trackIndex: number, position: number): boolean {
+  public static onTrackAdvanced(marsBot: MarsBot, trackIndex: number, position: number, corpCubesOnly: boolean = false): boolean {
     const cube = marsBot.hasCubeAt(trackIndex, position);
     if (cube === undefined) {
       return false;
@@ -84,7 +85,7 @@ export class MarsBotCorpResolver {
     const triggers = firstVisit || corp?.trackCubesTriggerEveryAdvance === true;
     const replacedIcon = corpCube !== undefined && triggers &&
       corp?.effect?.onTrackCubeTrigger?.(marsBot, trackIndex, position, corpCube.cubeType) === true;
-    if (!firstVisit) {
+    if (!firstVisit || corpCubesOnly) {
       return replacedIcon;
     }
 

@@ -10,6 +10,12 @@ import {SpaceBonus} from '../../src/common/boards/SpaceBonus';
 import {Phase} from '../../src/common/Phase';
 import {getAutomaMaxGeneration} from '../../src/common/automa/AutomaTypes';
 import {GameOptions} from '../../src/server/game/GameOptions';
+import {FAILED_ACTION_MC} from '../../src/common/automa/AutomaTypes';
+import {CardName} from '../../src/common/cards/CardName';
+import {getMarsBotCorp} from '../../src/server/automa/corps/MarsBotCorpRegistry';
+import {MAX_TEMPERATURE} from '../../src/common/constants';
+import {setTemperature} from '../TestingUtils';
+import {Space} from '../../src/server/boards/Space';
 
 // Once the game is decided, the final greeneries are only worth their VP: the special hexes give
 // nothing, and nothing overflows on the Shipping Board.
@@ -122,5 +128,62 @@ describe('MarsBot final greenery', () => {
     endGame(game);
 
     expect(icons()).to.eq(0);
+  });
+
+  describe('the tracker move onto the greenery', () => {
+    // Tharsis Earth track: #12 is a greenery icon
+    const EARTH = 5;
+
+    function finalGreenery(corp: CardName | undefined) {
+      const {game, marsBot} = setup(BoardName.THARSIS);
+      if (corp !== undefined) {
+        marsBot.setCorpAndSetup(getMarsBotCorp(corp)!);
+      }
+      marsBot.marsBotBoard.tracks[EARTH].position = 11;
+      endGame(game);
+      const mc = marsBot.turnResolver.megacredits;
+      let placed: Space | undefined;
+      const placer = marsBot.turnResolver.tilePlacer;
+      const find = placer.findGreenerySpace.bind(placer);
+      placer.findGreenerySpace = (where) => placed = find(where);
+      return {game, marsBot, mc, placementMc: () => placer.getTotalPlacementMC(placed!)};
+    }
+
+    it('fires Teractor\'s Earth track cube', () => {
+      const {marsBot, mc, placementMc} = finalGreenery(CardName.TERACTOR);
+
+      marsBot.placeFinalGreeneries();
+
+      expect(marsBot.marsBotBoard.tracks[EARTH].position).to.eq(12);
+      expect(marsBot.turnResolver.megacredits).to.eq(mc + placementMc() + 2);
+    });
+
+    it('takes a Failed Action for Helion\'s black cube with the temperature maxed', () => {
+      const {game, marsBot, mc, placementMc} = finalGreenery(CardName.HELION);
+      setTemperature(game, MAX_TEMPERATURE);
+
+      marsBot.placeFinalGreeneries();
+
+      expect(marsBot.turnResolver.megacredits).to.eq(mc + placementMc() + FAILED_ACTION_MC);
+    });
+
+    it('does not chain into Manutech\'s extra advance (BGG 3385156)', () => {
+      const {marsBot} = finalGreenery(CardName.MANUTECH);
+
+      marsBot.placeFinalGreeneries();
+
+      expect(marsBot.marsBotBoard.tracks[EARTH].position).to.eq(12);
+    });
+
+    it('with no legal space takes a Failed Action and leaves the tracker (BGG 3404826)', () => {
+      const {game, marsBot, mc} = finalGreenery(CardName.TERACTOR);
+      marsBot.turnResolver.tilePlacer.findGreenerySpace = () => undefined;
+
+      marsBot.placeFinalGreeneries();
+
+      expect(marsBot.marsBotBoard.tracks[EARTH].position).to.eq(11);
+      expect(marsBot.turnResolver.megacredits).to.eq(mc + FAILED_ACTION_MC);
+      expect(game.board.getGreeneries(marsBot.player)).to.have.length(0);
+    });
   });
 });
