@@ -524,10 +524,20 @@ export class MarsBotBonusResolver {
   private tryHelperAction(awardName: string): boolean {
     const marsBotBoard = this.turnResolver.marsBotBoard;
     const board = this.game.board;
+    // A helper that would advance a maxed track is impossible, so MarsBot skips its award
+    // instead of taking a Failed Action (rulebook A, p.7).
     const advance = (trackIndex: number) => {
-      this.turnResolver.advanceTrack(trackIndex); return true;
+      if (!marsBotBoard.tracks[trackIndex].canAdvance()) {
+        return false;
+      }
+      this.turnResolver.advanceTrack(trackIndex);
+      return true;
     };
-    const advanceTrackOf = (tag: Tag) => this.turnResolver.advanceTrackOfTag(tag);
+    const advanceTrackOf = (tag: Tag) => {
+      const trackIndex = marsBotBoard.tagToTrack[tag];
+      return trackIndex !== undefined && marsBotBoard.tracks[trackIndex].canAdvance() &&
+        this.turnResolver.advanceTrackOfTag(tag);
+    };
     // Advances the less or the more advanced of two tags' tracks, the upper track when tied.
     const advanceTrackOfEither = (tags: [Tag, Tag], pick: 'less' | 'more') => {
       const position = (trackIndex: number) => marsBotBoard.tracks[trackIndex].position;

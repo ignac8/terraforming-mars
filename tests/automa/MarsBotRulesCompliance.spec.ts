@@ -415,6 +415,38 @@ describe('MarsBot Rules Compliance', () => {
       expect(marsBot.marsBotBoard.tracks[3].position).to.eq(0);
     });
 
+    // Rulebook A, p.7: it ignores a funded award whose helping action is impossible
+    it('skips an award whose track is maxed and helps the next closest one', () => {
+      const {marsBot, b08} = setup({Scientist: 0, Banker: 3});
+      const tracks = marsBot.marsBotBoard.tracks;
+      tracks[3].position = tracks[3].definition.layout.length - 1;
+      marsBot['bonusResolver'].resolve(b08);
+      // Banker advances the building track, the upper of the two tied tracks
+      expect(tracks[0].position).to.eq(1);
+      expect(marsBot.turnResolver.megacredits).to.eq(5);
+    });
+
+    it('draws another bonus card without a Failed Action when no helper can resolve', () => {
+      const {marsBot, b08} = setup({Scientist: 0});
+      const tracks = marsBot.marsBotBoard.tracks;
+      tracks[3].position = tracks[3].definition.layout.length - 1;
+      marsBot.bonusDeck.drawPile.push(createCorpBonusCard(BonusCardId.B31_GOVERNMENT_SUBSIDY));
+      const tr = marsBot.player.terraformRating;
+      marsBot['bonusResolver'].resolve(b08);
+      expect(marsBot.player.terraformRating).to.eq(tr + 1);
+      expect(marsBot.turnResolver.megacredits).to.eq(10);
+    });
+
+    it('skips Mogul when the most advanced track is maxed', () => {
+      const {marsBot} = createAutomaGame();
+      const tracks = marsBot.marsBotBoard.tracks;
+      tracks[2].position = tracks[2].definition.layout.length - 1;
+      tracks[0].position = 3;
+      expect(marsBot['bonusResolver']['tryHelperAction']('Mogul')).is.false;
+      expect(tracks[0].position).to.eq(3);
+      expect(marsBot.turnResolver.megacredits).to.eq(0);
+    });
+
     it('for Banker advances the less-advanced of the building and event tracks', () => {
       const {marsBot, b08} = setup({Banker: 1});
       const tracks = marsBot.marsBotBoard.tracks;
