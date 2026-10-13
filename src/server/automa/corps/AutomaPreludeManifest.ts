@@ -325,20 +325,20 @@ const PALADIN_SHIPPING: IMarsBotCorp = {
 // C44 Sagitta
 const SAGITTA: IMarsBotCorp = {
   name: CardName.SAGITTA_FRONTIER_SERVICES,
-  description: 'Tags: Power, Event. Setup: +8 MC. Tagless cards earn 10 MC instead of 5. 1-tag cards earn 1 extra MC.',
+  description: 'Tags: Power, Event. Setup: +8 MC. Tagless cards pay double the Failed Action (10 MC instead of 5). 1-tag cards earn 1 extra MC.',
   tags: [Tag.POWER, Tag.EVENT],
   setup(bot) {
     bot.gainMc(8);
     bot.game.log('MarsBot (Sagitta): +8 M€');
   },
   effect: {
-    // Tagless card: 10 MC instead of 5 (Failed Action). 1-tag card: +1 MC.
+    // Tagless card: double the Failed Action (10 MC instead of 5, 6 instead of 3 on Easy). 1-tag card: +1 MC.
     onProjectCardResolved(bot, card) {
       const tagCount = marsBotCardTags(card).length;
       if (tagCount === 0) {
-        // Failed action gives 10 instead of 5 — difference of 5 on top of normal
-        bot.gainMc(5);
-        bot.game.log('MarsBot (Sagitta): tagless card, +5 M€ extra (10 total)');
+        const extra = bot.failedActionMc;
+        bot.gainMc(extra);
+        bot.game.log('MarsBot (Sagitta): tagless card, Failed Action pays ${0} M€ more', (b) => b.number(extra));
       } else if (tagCount === 1) {
         bot.gainMc(1);
         bot.game.log('MarsBot (Sagitta): 1-tag card, +1 M€');

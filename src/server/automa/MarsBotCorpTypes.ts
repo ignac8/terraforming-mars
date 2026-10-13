@@ -121,6 +121,8 @@ export interface IMarsBot {
 
   /** The bot's M€ pool. */
   megacredits: number;
+  /** The M€ a Failed Action pays at the game's difficulty. */
+  readonly failedActionMc: number;
   /** M€ that Government Intervention lets the bot keep. Undefined outside Government Intervention. */
   mcKeptThroughIntervention: number | undefined;
   /** Floaters in the bot's floater pool, which it uses with Venus Next. */

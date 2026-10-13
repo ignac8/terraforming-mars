@@ -15,7 +15,7 @@ import {Tag} from '../../../src/common/cards/Tag';
 import {IProjectCard} from '../../../src/server/cards/IProjectCard';
 import {BoardName} from '../../../src/common/boards/BoardName';
 import {Resource} from '../../../src/common/Resource';
-import {BonusCardId} from '../../../src/common/automa/AutomaTypes';
+import {BonusCardId, DifficultyLevel} from '../../../src/common/automa/AutomaTypes';
 import {MicroMills} from '../../../src/server/cards/base/MicroMills';
 import {IceCapMelting} from '../../../src/server/cards/base/IceCapMelting';
 import {Research} from '../../../src/server/cards/base/Research';
@@ -33,10 +33,10 @@ import {cast} from '../../../src/common/utils/utils';
 import {runAllActions, setTemperature} from '../../TestingUtils';
 import {MAX_TEMPERATURE} from '../../../src/common/constants';
 
-function createAutomaGame(): {game: IGame, human: TestPlayer, marsBot: MarsBot} {
+function createAutomaGame(automaDifficulty: DifficultyLevel = 'normal'): {game: IGame, human: TestPlayer, marsBot: MarsBot} {
   const [game, human] = testGame(1, {
     automaOption: true,
-    automaDifficulty: 'normal',
+    automaDifficulty,
     boardName: BoardName.THARSIS,
   });
   expect(game.automaHooks?.marsBot).to.not.be.undefined;
@@ -497,6 +497,15 @@ describe('Expansion MarsBot Corporations', () => {
       const mcBefore = marsBot.turnResolver.megacredits;
       marsBot.turnResolver.resolveProjectCard(new MicroMills());
       expect(marsBot.turnResolver.megacredits).to.eq(mcBefore + 10);
+    });
+
+    // Our reading: the tagless card pays double whatever the Failed Action pays (3 M€ on Easy)
+    it('pays double the Easy Failed Action for a tagless card', () => {
+      const {marsBot} = createAutomaGame('easy');
+      marsBot.setCorpAndSetup(getMarsBotCorp(CardName.SAGITTA_FRONTIER_SERVICES)!);
+      const mcBefore = marsBot.turnResolver.megacredits;
+      marsBot.turnResolver.resolveProjectCard(new MicroMills());
+      expect(marsBot.turnResolver.megacredits).to.eq(mcBefore + 6);
     });
 
     it('counts the Event tag, so an event with no printed tags pays 1 M€', () => {

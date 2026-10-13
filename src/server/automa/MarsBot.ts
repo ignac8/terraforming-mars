@@ -401,6 +401,10 @@ export class MarsBot implements IMarsBot {
     this.turnResolver.megacredits = mc;
   }
 
+  public get failedActionMc(): number {
+    return this.turnResolver.failedActionMc;
+  }
+
   public advanceTrack(trackIndex: number): void {
     this.turnResolver.advanceTrack(trackIndex);
   }

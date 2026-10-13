@@ -536,8 +536,13 @@ export class MarsBotTurnResolver {
 
   // ---- Utilities ----
 
+  /** The M€ a Failed Action pays at this difficulty. */
+  public get failedActionMc(): number {
+    return this.difficulty === 'easy' ? FAILED_ACTION_MC_EASY : FAILED_ACTION_MC;
+  }
+
   public failedAction(): void {
-    const mc = this.difficulty === 'easy' ? FAILED_ACTION_MC_EASY : FAILED_ACTION_MC;
+    const mc = this.failedActionMc;
     this.gainMc(mc);
     this.game.log('MarsBot takes a Failed Action, gains ${0} MC', (b) => b.number(mc));
     this.marsBotManager?.corp?.effect?.onFailedAction?.(this.marsBotManager);
