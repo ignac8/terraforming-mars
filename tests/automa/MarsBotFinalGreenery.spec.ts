@@ -187,6 +187,62 @@ describe('MarsBot final greenery', () => {
     });
   });
 
+  // Once the game has ended nothing chains: only the final greenery move itself advances a tracker
+  // (user decision, following BGG 3385156 and 3513998). Gains still happen.
+  describe('no chains after the game has ended', () => {
+    const ENERGY = 4;
+    const PLANT = 6;
+    const EVENT = 2;
+
+    /** Every tracker at 0, so only `trackIndex` at `position` has a final greenery ahead (Tharsis). */
+    function finalGreeneryOn(corp: CardName, trackIndex: number, position: number, options: Partial<GameOptions> = {}) {
+      const {game, marsBot} = setup(BoardName.THARSIS, options);
+      marsBot.setCorpAndSetup(getMarsBotCorp(corp)!);
+      marsBot.marsBotBoard.tracks.forEach((track) => track.position = 0);
+      marsBot.marsBotBoard.tracks[trackIndex].position = position;
+      endGame(game);
+      return {
+        game,
+        marsBot,
+        tracks: () => marsBot.marsBotBoard.tracks.map((track) => track.position),
+        played: marsBot.playedProjectCards.length,
+        deck: game.projectDeck.size(),
+        tr: marsBot.player.terraformRating,
+        temperature: game.getTemperature(),
+      };
+    }
+
+    it('Thorgate\'s white cube draws no card but still raises the temperature', () => {
+      const {game, marsBot, tracks, played, deck, tr, temperature} = finalGreeneryOn(CardName.THORGATE, ENERGY, 9);
+      const expected = tracks();
+      expected[ENERGY] = 10;
+
+      marsBot.placeFinalGreeneries();
+
+      expect(tracks()).deep.eq(expected);
+      expect(marsBot.playedProjectCards).has.length(played);
+      expect(game.projectDeck.size()).to.eq(deck);
+      expect(game.getTemperature()).to.eq(temperature + 2);
+      expect(marsBot.player.terraformRating).to.eq(tr + 1);
+      expect(game.board.getGreeneries(marsBot.player)).has.length(1);
+    });
+
+    for (const position of [2, 5]) {
+      it(`Aridor's black cube at plant #${position + 1} does not advance the event track`, () => {
+        const {game, marsBot, tracks, tr} = finalGreeneryOn(CardName.ARIDOR, PLANT, position, {coloniesExtension: true});
+        const expected = tracks();
+        expected[PLANT] = position + 1;
+
+        marsBot.placeFinalGreeneries();
+
+        expect(tracks()).deep.eq(expected);
+        expect(expected[EVENT]).to.eq(0);
+        expect(marsBot.player.terraformRating).to.eq(tr);
+        expect(game.board.getGreeneries(marsBot.player)).has.length(1);
+      });
+    }
+  });
+
   // "probably not after the end of the game" (TDaver, BGG 3513998)
   it('Philares advances no track from an adjacency made after the game has ended', () => {
     const {game, marsBot} = setup(BoardName.THARSIS);

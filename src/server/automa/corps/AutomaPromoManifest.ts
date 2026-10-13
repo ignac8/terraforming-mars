@@ -68,7 +68,8 @@ const PHILARES: IMarsBotCorp = {
       }
       bot.setCorpState('scienceResources', bot.getCorpState('scienceResources') + adjacencies);
       bot.game.log('MarsBot (Philares): +${0} science resource(s) from new adjacencies with the player', (b) => b.number(adjacencies));
-      // No track advances once the game has ended (TDaver, BGG 3513998)
+      // No track advances once the game has ended (TDaver, BGG 3513998), so the science
+      // resources stay unspent rather than paying for an advance that doesn't happen
       if (bot.game.isDoneWithFinalProduction()) {
         return;
       }

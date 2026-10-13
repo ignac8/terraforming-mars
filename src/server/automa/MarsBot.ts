@@ -358,8 +358,10 @@ export class MarsBot implements IMarsBot {
    * Place final greenery tiles for MarsBot (tracks with greenery as next action).
    *
    * The tracker moves onto the greenery and the corp's cubes there trigger (IC, Teractor, Helion's
-   * black cubes), but nothing chains from that space (BGG 3385156). With no legal space the
-   * tracker stays and MarsBot takes a Failed Action (rulebook A p.8, BGG 3404826).
+   * black cubes), but nothing chains from that space (BGG 3385156): the game has ended, so a
+   * cube's own track advances and card draws do nothing (Thorgate keeps its temperature step,
+   * Aridor's event track stays put). With no legal space the tracker stays and MarsBot takes a
+   * Failed Action (rulebook A p.8, BGG 3404826).
    */
   public placeFinalGreeneries(): void {
     this.marsBotBoard.tracks.forEach((track, trackIndex) => {
@@ -410,6 +412,9 @@ export class MarsBot implements IMarsBot {
   }
 
   public maybeDrawAndResolveProjectCard(): void {
+    if (this.gameHasEnded()) {
+      return;
+    }
     const cards = this.game.projectDeck.drawN(this.game, 1);
     if (cards.length === 0) {
       return;
@@ -418,6 +423,9 @@ export class MarsBot implements IMarsBot {
   }
 
   public maybeDrawAndResolveProjectCardFirstTagOnly(): void {
+    if (this.gameHasEnded()) {
+      return;
+    }
     const cards = this.game.projectDeck.drawN(this.game, 1);
     if (cards.length === 0) {
       return;
@@ -425,7 +433,22 @@ export class MarsBot implements IMarsBot {
     this.turnResolver.resolveProjectCard(cards[0], true);
   }
 
+  /**
+   * Once the game has ended MarsBot draws and resolves no more cards, like its tracks advance no
+   * more (MarsBotTurnResolver.advanceTrack).
+   */
+  private gameHasEnded(): boolean {
+    if (!this.game.isDoneWithFinalProduction()) {
+      return false;
+    }
+    this.game.log('MarsBot: the game has ended, it draws no card');
+    return true;
+  }
+
   public maybeDrawAndResolveBonusCard(): void {
+    if (this.gameHasEnded()) {
+      return;
+    }
     const bonusCard = this.bonusDeck.draw(this.game);
     if (bonusCard === undefined) {
       return;

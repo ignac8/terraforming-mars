@@ -130,10 +130,17 @@ export class MarsBotTurnResolver {
    * Advance a track by index. Handles chain actions.
    *
    * Returns false when the track was already at its end, which is a Failed Action instead.
+   *
+   * Once the game has ended no track advances and nothing fails: only the final greenery moves a
+   * tracker, which MarsBot.placeFinalGreeneries does without this.
    */
   public advanceTrack(trackIndex: number): boolean {
     const track = this.marsBotBoard.tracks[trackIndex];
     const name = this.trackName(trackIndex);
+    if (this.game.isDoneWithFinalProduction()) {
+      this.game.log('MarsBot: the game has ended, ${0} track does not advance', (b) => b.rawString(name));
+      return false;
+    }
     // Moving back up after a regression retriggers nothing (rulebook B, p.3)
     const reAdvance = track.regressedPositions.has(track.position + 1);
 
