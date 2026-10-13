@@ -117,6 +117,12 @@ export class MarsBot implements IMarsBot {
   /** Shipping Board with 11 storage areas, one per colony tile (C-18). */
   public shippingBoard: MarsBotShippingBoard = new MarsBotShippingBoard();
 
+  /**
+   * True while Government Intervention raises Venus: its global parameter bonuses pay MarsBot no
+   * MC. Only set during that synchronous raise, so never saved.
+   */
+  public bonusMcBlocked: boolean = false;
+
   /** Spaces holding one of MarsBot's player markers (Settlers) and no tile yet. */
   public markerSpaceIds: Array<SpaceId> = [];
 

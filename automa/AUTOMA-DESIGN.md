@@ -132,6 +132,7 @@ Steps 1-2 are the Tharsis order. Each map's player aid has its own (`MAP_TIEBREA
 
 **Terraforming Bonuses**:
 - Temperature at -24°C or -20°C (heat bonus): MarsBot gains 2 MC instead.
+- Venus at 8% (card bonus): MarsBot gains 2 MC instead of a card (BGG 3358342, 3424237, 3733436). Not from Government Intervention.
 - Temperature/oxygen reaching a bonus step that grants another terraforming action: resolve it immediately (Failed Action if can't).
 - All terraforming raises grant TR as normal.
 
@@ -237,6 +238,7 @@ Key design decisions:
 - `isSoloMode()` returns false for automa (behaves as 2-player game)
 - Placement bonuses from game engine are blocked for MarsBot (gets MC via `turnResolver.mcSupply` instead)
 - Temperature heat bonuses at -24°C/-20°C intercepted to give MarsBot 2 MC instead of heat production
+- The Venus 8% card bonus is intercepted the same way: 2 MC instead of a card
 - Venus track actions ignored without Failed Action when Venus expansion not enabled
 - `AwardScorer` includes MarsBot's track-based values for proper award comparison
 
@@ -293,6 +295,7 @@ Game.ts has `automaHooks?: AutomaGameHooks` with thin `this.automaHooks?.method(
 | `gotoProductionPhase()` | `handleProductionPhase()` | Skip production for MarsBot |
 | `takeNextFinalGreeneryAction()` | `handleFinalGreenery()` | MarsBot final greenery |
 | `increaseTemperature()` | `handleTemperatureHeatBonus()` | 2 MC instead of heat prod |
+| `increaseVenusScaleLevel()` | `handleVenusCardBonus()` | 2 MC instead of a card |
 | `addTile()` | `shouldGrantPlacementBonuses()` | Block normal bonuses for MarsBot |
 | `allPlayersHavePassed()` | `allPlayersHavePassed()` | Include MarsBot |
 | `getPassedPlayers()` | `getPassedPlayerColor()` | Resolve MarsBot color |

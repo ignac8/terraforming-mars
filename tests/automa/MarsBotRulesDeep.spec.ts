@@ -18,7 +18,7 @@ import {TileType} from '../../src/common/TileType';
 import {Pets} from '../../src/server/cards/base/Pets';
 import {Birds} from '../../src/server/cards/base/Birds';
 import {ColonyName} from '../../src/common/colonies/ColonyName';
-import {fakeCard, maxOutOceans, setOxygenLevel, setTemperature} from '../TestingUtils';
+import {fakeCard, maxOutOceans, setOxygenLevel, setTemperature, setVenusScaleLevel} from '../TestingUtils';
 import {FAILED_ACTION_MC} from '../../src/common/automa/AutomaTypes';
 import {MAX_TEMPERATURE} from '../../src/common/constants';
 import {SpaceId} from '../../src/common/Types';
@@ -856,6 +856,39 @@ describe('MarsBot Deep Rules Tests', () => {
       game.increaseTemperature(marsBot.player, 1);
 
       expect(marsBot.turnResolver.megacredits).to.eq(FAILED_ACTION_MC);
+    });
+  });
+
+  // The Venus 8% card bonus is 2 M€ for MarsBot, like the heat production bonus on the
+  // temperature track (BGG 3358342 TDaver, 3424237 and 3733436 njshaw2)
+  describe('Venus 8% card bonus', () => {
+    function venusGame() {
+      const [game] = testGame(1, {automaOption: true, venusNextExtension: true, boardName: BoardName.THARSIS});
+      const marsBot = game.automaHooks!.marsBot;
+      setVenusScaleLevel(game, 6);
+      return {game, marsBot, hand: marsBot.player.cardsInHand.length, deck: game.projectDeck.drawPile.length};
+    }
+
+    it('gains MarsBot 2 M€ instead of a card', () => {
+      const {game, marsBot, hand, deck} = venusGame();
+
+      (marsBot.turnResolver as any).raiseVenus(1);
+
+      expect(game.getVenusScaleLevel()).to.eq(8);
+      expect(marsBot.turnResolver.megacredits).to.eq(2);
+      expect(marsBot.player.cardsInHand).has.length(hand);
+      expect(game.projectDeck.drawPile).has.length(deck);
+    });
+
+    it('gains nothing from Government Intervention, which pays no M€ from bonuses', () => {
+      const {game, marsBot, hand} = venusGame();
+      game.generation = 3;
+
+      marsBot['bonusResolver'].resolve(createCorpBonusCard(BonusCardId.B16_GOVERNMENT_INTERVENTION));
+
+      expect(game.getVenusScaleLevel()).to.eq(8);
+      expect(marsBot.turnResolver.megacredits).to.eq(0);
+      expect(marsBot.player.cardsInHand).has.length(hand);
     });
   });
 });

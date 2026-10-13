@@ -422,8 +422,20 @@ export class MarsBotBonusResolver {
     }
     if (!advanced && venus < constants.MAX_VENUS_SCALE) {
       // FAQ (rulebook B, p.3): Aphrodite's 2 M€ per Venus step still applies, and raising
-      // Venus pays MarsBot no other M€.
-      this.withoutTRGain(() => this.game.increaseVenusScaleLevel(this.marsBot, 1));
+      // Venus pays MarsBot no other M€, so the 8% bonus pays nothing.
+      const bot = this.marsBotManager;
+      this.withoutTRGain(() => {
+        if (bot !== undefined) {
+          bot.bonusMcBlocked = true;
+        }
+        try {
+          this.game.increaseVenusScaleLevel(this.marsBot, 1);
+        } finally {
+          if (bot !== undefined) {
+            bot.bonusMcBlocked = false;
+          }
+        }
+      });
     }
   }
 

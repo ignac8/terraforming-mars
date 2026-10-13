@@ -10,6 +10,7 @@ import {Resource} from '../../../src/common/Resource';
 import {BonusCardId} from '../../../src/common/automa/AutomaTypes';
 import {createCorpBonusCard} from '../../../src/server/automa/MarsBotBonusCard';
 import {getMarsBotCorp} from '../../../src/server/automa/corps/MarsBotCorpRegistry';
+import {setVenusScaleLevel} from '../../TestingUtils';
 
 // Rulebook B, p.3, corporation FAQ.
 function createAutomaGame(corpName: CardName): {game: IGame, human: TestPlayer, marsBot: MarsBot} {
@@ -102,6 +103,18 @@ describe('MarsBot corporation FAQ', () => {
 
       expect(game.getVenusScaleLevel()).eq(2);
       expect(marsBot.player.terraformRating).eq(tr);
+      expect(marsBot.turnResolver.megacredits).eq(mc + 2);
+    });
+
+    it('gains Aphrodite\'s M€ but not the Venus 8% bonus', () => {
+      const {game, marsBot} = createAutomaGame(CardName.APHRODITE);
+      game.generation = 3;
+      setVenusScaleLevel(game, 6);
+      const mc = marsBot.turnResolver.megacredits;
+
+      marsBot['bonusResolver'].resolve(createCorpBonusCard(BonusCardId.B16_GOVERNMENT_INTERVENTION));
+
+      expect(game.getVenusScaleLevel()).eq(8);
       expect(marsBot.turnResolver.megacredits).eq(mc + 2);
     });
   });
