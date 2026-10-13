@@ -92,7 +92,7 @@ export type MarsBotCorpEffect = {
   interceptGlobalParameterRaise?(bot: IMarsBot, parameter: GlobalParameter): boolean;
   /** The bot's M€ supply just grew by this amount. */
   onMcGained?(bot: IMarsBot, amount: number): void;
-  /** Fired when MarsBot places a colony on any tile (Colonies rule C-33). */
+  /** Either player built a colony (Poseidon, C33). */
   onColonyPlaced?(bot: IMarsBot): void;
   /** The bot took a Failed Action, after gaining its M€ for it. */
   onFailedAction?(bot: IMarsBot): void;

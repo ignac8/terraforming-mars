@@ -73,7 +73,7 @@ const POLYPHEMOS: IMarsBotCorp = {
 // C33 Poseidon
 const POSEIDON: IMarsBotCorp = {
   name: CardName.POSEIDON,
-  description: 'Setup: place 1 colony. Colony placement advances least-advanced track.',
+  description: 'Setup: place 1 colony. Each colony you or MarsBot build (setup included) advances MarsBot\'s least-advanced track.',
   tags: [],
   requiredExpansions: ['colonies'],
   setup(bot) {
@@ -85,7 +85,7 @@ const POSEIDON: IMarsBotCorp = {
       bot.game.log('MarsBot (Poseidon): no eligible colony tile for setup (C-33)');
     }
   },
-  // C-33: each colony placement advances the least-advanced track
+  // C-33: each colony either player builds advances the least-advanced track
   effect: {
     onColonyPlaced(bot) {
       bot.advanceTrack(bot.marsBotBoard.getLeastAdvancedTrackIndex());

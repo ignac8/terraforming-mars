@@ -102,6 +102,7 @@ export abstract class Colony implements IColony {
         card.onColonyAddedByAnyPlayer?.(cardOwner, player);
       }
     }
+    player.game.automaHooks?.handleColonyBuilt(player);
 
     if (this.name === ColonyName.LEAVITT) {
       player.triggerOnNonCardTagAdded(Tag.SCIENCE);

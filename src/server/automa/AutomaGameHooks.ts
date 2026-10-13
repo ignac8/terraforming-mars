@@ -621,6 +621,17 @@ export class AutomaGameHooks {
     corp.effect.onTilePlaced(this.marsBot, player === this.marsBot.player, tileType, space);
   }
 
+  /**
+   * Called when `player` builds a colony through the normal colony rules. MarsBot builds its
+   * colonies without them and notifies its corp itself, so only the human's colonies arrive here.
+   */
+  public handleColonyBuilt(player: IPlayer): void {
+    if (player === this.marsBot.player) {
+      return;
+    }
+    this.marsBot.corp?.effect?.onColonyPlaced?.(this.marsBot);
+  }
+
   /** Called when either player raises the Venus scale by `steps`. Notifies MarsBot's corp. */
   public handleVenusRaised(steps: number): void {
     const corp = this.marsBot.corp;
