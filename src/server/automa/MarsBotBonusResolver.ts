@@ -427,6 +427,18 @@ export class MarsBotBonusResolver {
     }
   }
 
+  /**
+   * Advances a track for a bonus card. A maxed track stays put: a bonus card that can't resolve
+   * takes no Failed Action (rulebook A p.5; BGG 3599965, 3623553).
+   */
+  private maybeAdvanceTrack(trackIndex: number): void {
+    if (!this.turnResolver.marsBotBoard.tracks[trackIndex].canAdvance()) {
+      this.game.log('MarsBot: track ${0} at max, no effect', (b) => b.number(trackIndex + 1));
+      return;
+    }
+    this.turnResolver.advanceTrack(trackIndex);
+  }
+
   /** Pristar: true when the corp consumes its cube to skip this raise. */
   private interceptsRaise(parameter: GlobalParameter): boolean {
     return this.marsBotManager?.interceptsParameterRaise(parameter) ?? false;
@@ -865,7 +877,7 @@ export class MarsBotBonusResolver {
       this.turnResolver.gainMc(taken);
       this.game.log('MarsBot resolves Supply & Demand: takes ${0} M€ from the corporation card', (b) => b.number(taken));
     } else {
-      this.turnResolver.advanceTrack(4);
+      this.maybeAdvanceTrack(4);
       this.game.log('MarsBot resolves Supply & Demand: advance energy track');
     }
   }
@@ -888,14 +900,14 @@ export class MarsBotBonusResolver {
         this.game.increaseVenusScaleLevel(this.marsBot, 1);
       }
       if (this.turnResolver.marsBotBoard.tracks.length > 7) {
-        this.turnResolver.advanceTrack(7);
+        this.maybeAdvanceTrack(7);
       }
       this.game.log('MarsBot resolves Venusian Lobby: raise Venus, advance Venus track');
       this.advanceFurthestParameter();
     } else {
       // Without Venus, advance least-advanced track
       const leastIdx = this.turnResolver.marsBotBoard.getLeastAdvancedTrackIndex();
-      this.turnResolver.advanceTrack(leastIdx);
+      this.maybeAdvanceTrack(leastIdx);
       this.game.log('MarsBot resolves Venusian Lobby: advance least-advanced track (no Venus)');
     }
   }
@@ -945,7 +957,7 @@ export class MarsBotBonusResolver {
     // Robinson Industries: advance least-advanced track, then lose up to 4 M€
     const marsBotBoard = this.turnResolver.marsBotBoard;
     const leastIndex = marsBotBoard.getLeastAdvancedTrackIndex();
-    this.turnResolver.advanceTrack(leastIndex);
+    this.maybeAdvanceTrack(leastIndex);
     const lost = Math.min(4, this.turnResolver.megacredits);
     this.turnResolver.megacredits -= lost;
     this.game.log('MarsBot resolves Diversification: advance least-advanced track, lose ${0} M€', (b) => b.number(lost));
@@ -1042,7 +1054,7 @@ export class MarsBotBonusResolver {
     const leastIndex = marsBotBoard.getLeastAdvancedTrackIndex();
     if (this.game.generation % 2 === 0) {
       const mostIndex = marsBotBoard.getMostAdvancedTrackIndex();
-      this.turnResolver.advanceTrack(leastIndex);
+      this.maybeAdvanceTrack(leastIndex);
       marsBotBoard.tracks[mostIndex].regress();
       this.game.log('MarsBot resolves Investors: advance least-advanced track, move most-advanced track back');
     } else {

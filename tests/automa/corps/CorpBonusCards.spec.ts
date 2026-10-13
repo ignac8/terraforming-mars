@@ -404,6 +404,56 @@ describe('Corp-Specific Bonus Cards (B22-B32)', () => {
     });
   });
 
+  // A bonus card that can't resolve takes no Failed Action (rulebook A p.5 B.a; BGG 3599965 and
+  // 3623553, njshaw2). Project cards still do.
+  describe('advancing a maxed track', () => {
+    function maxTracks(marsBot: MarsBot) {
+      for (const track of marsBot.marsBotBoard.tracks) {
+        track.position = track.definition.layout.length - 1;
+      }
+    }
+
+    it('B24 Supply & Demand takes no Failed Action', () => {
+      const {marsBot} = createAutomaGame();
+      maxTracks(marsBot);
+      marsBot['bonusResolver'].resolve(createCorpBonusCard(BonusCardId.B24_SUPPLY_AND_DEMAND));
+      expect(marsBot.turnResolver.megacredits).to.eq(0);
+    });
+
+    it('B26 Venusian Lobby takes no Failed Action', () => {
+      const [game] = testGame(1, {automaOption: true, venusNextExtension: true, boardName: BoardName.THARSIS});
+      const marsBot = game.automaHooks!.marsBot;
+      maxTracks(marsBot);
+      marsBot['bonusResolver'].resolve(createCorpBonusCard(BonusCardId.B26_VENUSIAN_LOBBY));
+      expect(game.getVenusScaleLevel()).to.eq(2);
+      expect(marsBot.turnResolver.megacredits).to.eq(0);
+    });
+
+    it('B28 Diversification takes no Failed Action', () => {
+      const {marsBot} = createAutomaGame();
+      maxTracks(marsBot);
+      marsBot.turnResolver.megacredits = 4;
+      marsBot['bonusResolver'].resolve(createCorpBonusCard(BonusCardId.B28_DIVERSIFICATION));
+      expect(marsBot.turnResolver.megacredits).to.eq(0);
+    });
+
+    it('B32 Investors takes no Failed Action and still moves the most-advanced track back', () => {
+      const {game, marsBot} = createAutomaGame();
+      game.generation = 2;
+      maxTracks(marsBot);
+      marsBot['bonusResolver'].resolve(createCorpBonusCard(BonusCardId.B32_INVESTORS));
+      expect(marsBot.turnResolver.megacredits).to.eq(0);
+      expect(marsBot.marsBotBoard.tracks[0].position).to.eq(17);
+    });
+
+    it('a project card tag still takes the Failed Action', () => {
+      const {marsBot} = createAutomaGame();
+      maxTracks(marsBot);
+      marsBot.turnResolver.advanceTrack(0);
+      expect(marsBot.turnResolver.megacredits).to.eq(5);
+    });
+  });
+
   describe('createCorpBonusCard', () => {
     it('creates a card with correct ID and name', () => {
       const card = createCorpBonusCard(BonusCardId.B23_RAPID_SPROUTING);
