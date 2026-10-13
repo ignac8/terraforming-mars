@@ -210,13 +210,36 @@ describe('MarsBotDraftResolver', () => {
       expect(kept).to.deep.eq([buildingCard, earthCard, plantCard]);
     });
 
-    it('discards nothing when every card carries a priority tag', () => {
+    // Nick, BGG 3398289: "it will always end up discarding one card from those drafted", which
+    // overrides rulebook B p.2's 5-card deck
+    it('discards the card with the fewest priority matches when every card carries one', () => {
       const drafted = [buildingCard, spaceCard, buildingAndSpaceCard];
 
       const {kept, discarded} = resolver(keepOrder).discardAfterDraft(drafted, priority);
 
-      expect(discarded).is.empty;
-      expect(kept).to.deep.eq(drafted);
+      expect(discarded).to.deep.eq([spaceCard]);
+      expect(kept).to.deep.eq([buildingCard, buildingAndSpaceCard]);
+    });
+
+    it('breaks a tie among the fewest matches by the shuffled order', () => {
+      const drafted = [spaceCard, buildingCard, expensiveSpaceCard];
+
+      expect(resolver(keepOrder).discardAfterDraft(drafted, priority).discarded).to.deep.eq([spaceCard]);
+      expect(resolver(reverseOrder).discardAfterDraft(drafted, priority).discarded).to.deep.eq([expensiveSpaceCard]);
+    });
+
+    it('drafting on the least advanced track discards the card with the fewest of its tags when all match', () => {
+      const marsBotBoard = new MarsBotBoard(THARSIS_MARSBOT_BOARD);
+      // Leave track 0 (Building and Microbe) behind
+      for (let i = 1; i < marsBotBoard.tracks.length; i++) {
+        marsBotBoard.tracks[i].advance();
+      }
+      const drafted = [buildingCard, buildingAndSpaceCard, scienceAndBuildingCard];
+
+      const {discarded} = new MarsBotDraftResolver(marsBotBoard, keepOrder)
+        .discardAfterDraft(drafted, {type: 'leastAdvancedTrack'});
+
+      expect(discarded).to.deep.eq([buildingCard]);
     });
 
     it('discards only the first card when none of them match', () => {
