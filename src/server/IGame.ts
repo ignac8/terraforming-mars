@@ -47,6 +47,11 @@ export interface GlobalParameterMaximums {
   readonly venus: number;
 }
 
+export type ResearchSnapshot = {
+  readonly discardPileSize: number;
+  readonly players: ReadonlyMap<PlayerId, {cards: number, megacredits: number}>;
+};
+
 export interface IGame extends Logger {
   readonly id: GameId;
   readonly name: string;
@@ -168,6 +173,10 @@ export interface IGame extends Logger {
   playerHasPassed(player: IPlayer): void;
   hasResearched(player: IPlayer): boolean;
   playerIsFinishedWithResearchPhase(player: IPlayer): void;
+  /** In tournament games, what other players see before this research phase's purchases, until everyone has chosen. */
+  readonly researchSnapshot: ResearchSnapshot | undefined;
+  /** Logs a research purchase now, or once every player has chosen while purchases are hidden. */
+  logResearchPurchase(log: () => void): void;
   /**
    * Called when a player has finished taking actions. It sets up
    * the next player, or moves to the production phase.

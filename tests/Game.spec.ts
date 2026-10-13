@@ -813,6 +813,8 @@ describe('Game', () => {
       'max',
       'tilePlacer',
       'waitingTilePlacers',
+      'researchSnapshot',
+      'heldResearchLogs',
     ];
     const serializedValuesNotInGame: Array<keyof SerializedGame> = [
       'seed',

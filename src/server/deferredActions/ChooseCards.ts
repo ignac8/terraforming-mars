@@ -96,15 +96,21 @@ export function keep(player: IPlayer, cards: ReadonlyArray<IProjectCard>, discar
     LogHelper.logDrawnCards(player, cards);
     break;
   case LogType.BOUGHT_VERBOSE:
-    if (cards.length === 0) {
-      player.game.log('${0} bought no cards', (b) => b.player(player));
-    } else {
-      player.game.log('${0} bought ${1}', (b) => b.player(player).cards(cards));
-    }
+    player.game.logResearchPurchase(() => {
+      if (cards.length === 0) {
+        player.game.log('${0} bought no cards', (b) => b.player(player));
+      } else {
+        player.game.log('${0} bought ${1}', (b) => b.player(player).cards(cards));
+      }
+    });
     break;
   case LogType.DREW:
   case LogType.BOUGHT:
-    player.game.log('${0} ${1} ${2} card(s)', (b) => b.player(player).string(logType).number(cards.length));
+    if (logType === LogType.BOUGHT) {
+      player.game.logResearchPurchase(() => player.game.log('${0} ${1} ${2} card(s)', (b) => b.player(player).string(logType).number(cards.length)));
+    } else {
+      player.game.log('${0} ${1} ${2} card(s)', (b) => b.player(player).string(logType).number(cards.length));
+    }
     if (logType === LogType.BOUGHT) {
       if (cards.length > 0) {
         player.game.log('You bought ${0}', (b) => b.cards(cards), {reservedFor: player});
