@@ -11,6 +11,7 @@ import {OrOptions} from '../../src/server/inputs/OrOptions';
 import {PlayerInput} from '../../src/server/PlayerInput';
 import {StealResources} from '../../src/server/deferredActions/StealResources';
 import {RemoveResourcesFromCard} from '../../src/server/deferredActions/RemoveResourcesFromCard';
+import {RemoveAnyPlants} from '../../src/server/deferredActions/RemoveAnyPlants';
 import {HiredRaiders} from '../../src/server/cards/base/HiredRaiders';
 import {Tardigrades} from '../../src/server/cards/base/Tardigrades';
 import {Units} from '../../src/common/Units';
@@ -30,6 +31,11 @@ describe('MarsBot colony storage as stock resources (C-25)', () => {
 
   function titleOf(input: PlayerInput): string {
     return typeof input.title === 'string' ? input.title : input.title.message;
+  }
+
+  /** The values filled into an option's message. */
+  function valuesOf(input: PlayerInput): Array<string> {
+    return typeof input.title === 'string' ? [] : input.title.data.map((d) => String(d.value));
   }
 
   /** Runs the deferred actions and returns the choice they ask the human for. */
@@ -443,6 +449,42 @@ describe('MarsBot colony storage as stock resources (C-25)', () => {
       expect(marsBot.shippingBoard.get(ColonyName.GANYMEDE)).eq(4);
       expect(marsBot.turnResolver.megacredits).eq(10);
       expect(human.popWaitingFor()).is.undefined;
+    });
+
+    it('makes MarsBot a target for plant removal when only its corp card has plants', () => {
+      const {game, human, marsBot} = createAutomaGame();
+      marsBot.turnResolver.megacredits = 0;
+      marsBot.corpSpecificState.set('plantResources', 2);
+
+      game.defer(new RemoveAnyPlants(human, 3));
+      const or = prompt(game, human);
+      const target = or.options.findIndex((o) => valuesOf(o)[1] === marsBot.player.color);
+      expect(target).is.not.eq(-1);
+      expect(valuesOf(or.options[target])[0]).eq('2');
+      choose(or, target, human);
+      runAllActions(game);
+
+      expect(marsBot.corpSpecificState.get('plantResources')).eq(0);
+      expect(human.popWaitingFor()).is.undefined;
+    });
+
+    it('can remove more than the M€ supply holds, and labels each source with what it gives', () => {
+      const {game, human, marsBot} = createAutomaGame();
+      marsBot.turnResolver.megacredits = 1;
+      marsBot.corpSpecificState.set('plantResources', 2);
+
+      game.defer(new RemoveAnyPlants(human, 3));
+      const targets = prompt(game, human);
+      const target = targets.options.findIndex((o) => valuesOf(o)[1] === marsBot.player.color);
+      expect(valuesOf(targets.options[target])[0]).eq('3');
+      choose(targets, target, human);
+      const or = prompt(game, human);
+      // 2 plants come off the card, 1 M€ out of the supply
+      expect(or.options.map((o) => valuesOf(o)[1])).deep.eq(['2', '1']);
+      choose(or, 0, human);
+
+      expect(marsBot.corpSpecificState.get('plantResources')).eq(0);
+      expect(marsBot.turnResolver.megacredits).eq(1);
     });
 
     it('offers the Ganymede storage once the corp card is out of plants', () => {

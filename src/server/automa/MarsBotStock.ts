@@ -36,13 +36,14 @@ export class MarsBotStock extends Stock {
     this.marsBotRef = marsBot;
 
     // Per automa rules, all MarsBot resources are its MC supply, plus the colony storage area
-    // that holds the resource (C-25). Cards check target.steel > 0 etc. to decide if stealing
-    // is possible.
+    // that holds the resource (C-25), plus for plants the ones on Ecoline's or Ecotec's card
+    // (rulebook B, p.3 FAQ). Cards check target.steel > 0 etc. to decide if stealing is possible,
+    // and cap the amount by it. MarsBot's scoring never reads these.
     const stock = this;
     for (const resource of ALL_RESOURCES) {
       Object.defineProperty(this, resource, {
         get() {
-          return stock.supply + stock.storage(resource);
+          return stock.supply + stock.storage(resource) + stock.plantsOnCard(resource);
         },
         set() { /* no-op: MarsBotStock.add() handles mutations via megacredits */ },
         configurable: true,
@@ -157,8 +158,12 @@ export class MarsBotStock extends Stock {
   }
 
   /** Ecoline/Ecotec keep plants on their corporation card, which the player's cards can target. */
+  private plantsOnCard(resource: Resource): number {
+    return resource === Resource.PLANTS ? this.marsBotRef?.getCorpState('plantResources') ?? 0 : 0;
+  }
+
   private hasPlantsOnCard(resource: Resource): boolean {
-    return resource === Resource.PLANTS && (this.marsBotRef?.getCorpState('plantResources') ?? 0) > 0;
+    return this.plantsOnCard(resource) > 0;
   }
 
   /** Takes up to `wanted` plants off the corporation card and returns how many it took. The excess is lost. */
@@ -180,11 +185,14 @@ export class MarsBotStock extends Stock {
    */
   private choosePlantSource(taker: IPlayer, verb: 'Remove' | 'Steal', wanted: number, fromCard: () => void, fromStock: () => void): void {
     const colony = COLONY_STORAGE_FOR_RESOURCE[Resource.PLANTS];
+    // What each source can give, which the labels show
+    const fromCardAmount = Math.min(wanted, this.plantsOnCard(Resource.PLANTS));
+    const fromStockAmount = Math.min(wanted, this.supply + this.storage(Resource.PLANTS));
     const stockOption = this.storage(Resource.PLANTS) > 0 ?
-      message('${0} ${1} from MarsBot\'s M€ supply or its ${2} colony storage', (b) => b.rawString(verb).number(wanted).rawString(colony)) :
-      message('${0} ${1} from MarsBot\'s M€ supply', (b) => b.rawString(verb).number(wanted));
+      message('${0} ${1} from MarsBot\'s M€ supply or its ${2} colony storage', (b) => b.rawString(verb).number(fromStockAmount).rawString(colony)) :
+      message('${0} ${1} from MarsBot\'s M€ supply', (b) => b.rawString(verb).number(fromStockAmount));
     taker.defer(() => new OrOptions(
-      new SelectOption(message('${0} ${1} plants from MarsBot\'s corporation card (the rest is lost)', (b) => b.rawString(verb).number(wanted)))
+      new SelectOption(message('${0} ${1} plants from MarsBot\'s corporation card (the rest is lost)', (b) => b.rawString(verb).number(fromCardAmount)))
         .andThen(() => {
           fromCard();
           return undefined;
