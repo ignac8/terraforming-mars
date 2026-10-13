@@ -182,6 +182,7 @@ Human produces as normal. MarsBot skips production entirely.
 - **Round 20**: MarsBot instantly wins (human loses).
 - **Terraforming complete**: Finish the round. Both players may place final greenery tiles in turn order.
   - MarsBot places final greenery for each track where the next space ahead has a greenery action. Advance the tracker and perform the greenery action.
+  - The tracker move fires MarsBot's corp cubes on that space, but nothing chains from it. The optional `automaFinalGreeneryNoCorpEffects` game option (off by default) skips the corp cubes; the designers call it a difficulty modifier and leave it to the players.
 - Score with these MarsBot exceptions:
   1. Awards: Use MarsBot's track-based evaluation (section 2.8).
   2. MarsBot does NOT gain VP from played cards.

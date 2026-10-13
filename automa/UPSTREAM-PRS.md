@@ -78,7 +78,8 @@ These ride along with whichever automa PR needs them:
 - `SerializedGame.ts`, `game/GameOptions.ts`, `common/game/NewGameConfig.ts`,
   `routes/ApiCreateGame.ts`, `models/ServerModel.ts`, create-form files: new automa state and
   the `automaColonyVP` option (MarsBot's leftover shipping-board resources and Venus floaters score
-  1/2 VP each).
+  1/2 VP each) and the `automaFinalGreeneryNoCorpEffects` option (final greeneries skip MarsBot's
+  corp cubes; `GameSetupDetail.vue` shows it too).
 - `ma/MilestoneAwardSelector.ts`: random milestones and awards in an automa game draw only from
   the ones `AutomaGameSetup.supportsMilestone` / `supportsAward` accept: the six MarsBot maps'
   sets, Venus Next's, and the Milestones & Awards expansion's listed by name (not by the

@@ -243,6 +243,11 @@
                               <label for="automa-no-generation-limit-checkbox">
                                 <span v-i18n>No generation limit</span>&nbsp;<span class="tooltip" v-i18n data-tooltip="The game goes on until Mars is terraformed. MarsBot no longer wins when the last generation ends.">&#9432;</span>
                               </label>
+                              <br>
+                              <input type="checkbox" v-model="automaFinalGreeneryNoCorpEffects" id="automa-final-greenery-no-corp-checkbox">
+                              <label for="automa-final-greenery-no-corp-checkbox">
+                                <span v-i18n>Final greeneries skip MarsBot's corporation</span>&nbsp;<span class="tooltip" v-i18n data-tooltip="At game end, MarsBot's tracker moving onto a final greenery triggers none of its corporation's effects, such as Teractor's 2 M€ or Helion's black cube. This makes MarsBot a little weaker. The designers leave it up to you.">&#9432;</span>
+                              </label>
                               <template v-if="expansions.colonies">
                                 <br>
                                 <input type="checkbox" v-model="automaColonyVP" id="automa-colony-vp-checkbox">
@@ -864,6 +869,7 @@ export default defineComponent({
         automaTurmoilSetupDelegates: this.automaTurmoilSetupDelegates,
         automaNoGenerationLimit: this.automaNoGenerationLimit,
         automaColonyVP: this.automaColonyVP && this.expansions.colonies,
+        automaFinalGreeneryNoCorpEffects: this.automaFinalGreeneryNoCorpEffects,
       };
     },
     validationErrors(): ValidationErrors {

@@ -359,7 +359,8 @@ export class MarsBot implements IMarsBot {
    * Place final greenery tiles for MarsBot (tracks with greenery as next action).
    *
    * The tracker moves onto the greenery and the corp's cubes there trigger (IC, Teractor, Helion's
-   * black cubes), but nothing chains from that space (BGG 3385156): the game has ended, so a
+   * black cubes) unless automaFinalGreeneryNoCorpEffects is on (the designers leave it to the
+   * players). Nothing chains from that space (BGG 3385156): the game has ended, so a
    * cube's own track advances and card draws do nothing (Thorgate keeps its temperature step,
    * Aridor's event track stays put). With no legal space the tracker stays and MarsBot takes a
    * Failed Action (rulebook A p.8, BGG 3404826).
@@ -381,7 +382,9 @@ export class MarsBot implements IMarsBot {
       this.turnResolver.gainMc(this.tilePlacer.getTotalPlacementMC(space));
       track.advance();
       this.game.log('MarsBot places final greenery (${0} track)', (b) => b.rawString(name));
-      MarsBotCorpResolver.onTrackAdvanced(this, trackIndex, track.position, true);
+      if (!this.game.gameOptions.automaFinalGreeneryNoCorpEffects) {
+        MarsBotCorpResolver.onTrackAdvanced(this, trackIndex, track.position, true);
+      }
     });
   }
 

@@ -64,6 +64,7 @@
               <div v-if="gameOptions.automaNoGenerationLimit" class="game-config generic" v-i18n>No generation limit</div>
               <div v-else class="game-config generic" v-i18n>{{ lastSoloGeneration }} Gens</div>
               <div v-if="gameOptions.automaColonyVP" class="game-config generic" v-i18n>Leftover resources 1/2 VP</div>
+              <div v-if="gameOptions.automaFinalGreeneryNoCorpEffects" class="game-config generic" v-i18n>Final greeneries skip corp</div>
               <div v-if="gameOptions.soloTR" class="game-config generic" v-i18n>63 TR</div>
               <div v-else class="game-config generic" v-i18n>TR all</div>
             </li>

@@ -166,6 +166,7 @@ const TEMPLATE_EXPECTED: CreateGameModel = {
   automaTurmoilSetupDelegates: 0,
   automaNoGenerationLimit: false,
   automaColonyVP: false,
+  automaFinalGreeneryNoCorpEffects: false,
 };
 
 const cases: Array<Case> = [

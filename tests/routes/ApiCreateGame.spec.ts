@@ -149,6 +149,17 @@ describe('ApiCreateGame', () => {
     }
   });
 
+  it('passes the MarsBot final greenery option on to the game', async () => {
+    for (const automaFinalGreeneryNoCorpEffects of [true, false]) {
+      await postConfig({...newGameConfigForTest(), automaOption: true, automaFinalGreeneryNoCorpEffects});
+      expect(res.statusCode).eq(statusCode.ok);
+      const model = JSON.parse(res.content) as SimpleGameModel;
+      const game = await scaffolding.ctx.gameLoader.getGame(model.id);
+      expect(game!.gameOptions.automaFinalGreeneryNoCorpEffects).eq(automaFinalGreeneryNoCorpEffects);
+      res = new MockResponse();
+    }
+  });
+
   it('red rover solo game', async () => {
     const post = scaffolding.post(apiCreateGame, res);
     const emit = Promise.resolve().then(() => {

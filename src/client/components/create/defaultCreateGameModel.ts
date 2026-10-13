@@ -86,5 +86,6 @@ export function defaultCreateGameModel(): CreateGameModel {
     automaTurmoilSetupDelegates: 0,
     automaNoGenerationLimit: false,
     automaColonyVP: false,
+    automaFinalGreeneryNoCorpEffects: false,
   };
 }

@@ -133,8 +133,8 @@ describe('MarsBot final greenery', () => {
     // Tharsis Earth track: #12 is a greenery icon
     const EARTH = 5;
 
-    function finalGreenery(corp: CardName | undefined) {
-      const {game, marsBot} = setup(BoardName.THARSIS);
+    function finalGreenery(corp: CardName | undefined, options: Partial<GameOptions> = {}) {
+      const {game, marsBot} = setup(BoardName.THARSIS, options);
       if (corp !== undefined) {
         marsBot.setCorpAndSetup(getMarsBotCorp(corp)!);
       }
@@ -155,6 +155,15 @@ describe('MarsBot final greenery', () => {
 
       expect(marsBot.marsBotBoard.tracks[EARTH].position).to.eq(12);
       expect(marsBot.turnResolver.megacredits).to.eq(mc + placementMc() + 2);
+    });
+
+    it('skips the corp cubes with automaFinalGreeneryNoCorpEffects', () => {
+      const {marsBot, mc, placementMc} = finalGreenery(CardName.TERACTOR, {automaFinalGreeneryNoCorpEffects: true});
+
+      marsBot.placeFinalGreeneries();
+
+      expect(marsBot.marsBotBoard.tracks[EARTH].position).to.eq(12);
+      expect(marsBot.turnResolver.megacredits).to.eq(mc + placementMc());
     });
 
     it('gains nothing from Helion\'s black cube with the temperature maxed', () => {

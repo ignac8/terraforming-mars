@@ -494,6 +494,7 @@ export class Server {
       automaTurmoilSetupDelegates: options.automaTurmoilSetupDelegates ?? 0,
       automaNoGenerationLimit: options.automaNoGenerationLimit ?? false,
       automaColonyVP: options.automaColonyVP ?? false,
+      automaFinalGreeneryNoCorpEffects: options.automaFinalGreeneryNoCorpEffects ?? false,
 
       // These are only supplied for the JSON, and
       // some of them can be a bit large.

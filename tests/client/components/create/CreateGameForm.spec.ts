@@ -91,6 +91,16 @@ describe('CreateGameForm', () => {
     expect(vm.expansions.ceo).to.be.false;
   });
 
+  it('offers skipping MarsBot\'s corporation at final greeneries, off by default', () => {
+    const wrapper = shallowMount(CreateGameForm, {...globalConfig});
+    const vm = wrapper.vm as any;
+
+    expect(wrapper.find('#automa-final-greenery-no-corp-checkbox').exists()).to.be.true;
+    expect(vm.newGameConfig.automaFinalGreeneryNoCorpEffects).to.be.false;
+    vm.automaFinalGreeneryNoCorpEffects = true;
+    expect(vm.newGameConfig.automaFinalGreeneryNoCorpEffects).to.be.true;
+  });
+
   it('offers MarsBot colony VP only with Colonies, off by default', async () => {
     const wrapper = shallowMount(CreateGameForm, {...globalConfig});
     const vm = wrapper.vm as any;
