@@ -186,4 +186,20 @@ describe('MarsBot final greenery', () => {
       expect(game.board.getGreeneries(marsBot.player)).to.have.length(0);
     });
   });
+
+  // "probably not after the end of the game" (TDaver, BGG 3513998)
+  it('Philares advances no track from an adjacency made after the game has ended', () => {
+    const {game, marsBot} = setup(BoardName.THARSIS);
+    marsBot.setCorpAndSetup(getMarsBotCorp(CardName.PHILARES)!);
+    const human = game.players[0];
+    const next = game.board.getAvailableSpacesOnLand(human)
+      .find((s) => game.board.getAdjacentSpaces(s).some((a) => a.tile !== undefined && a.player === marsBot.player))!;
+    marsBot.setCorpState('scienceResources', 3);
+    endGame(game);
+    const tracks = marsBot.marsBotBoard.tracks.map((track) => track.position);
+
+    game.addGreenery(human, next, false);
+
+    expect(marsBot.marsBotBoard.tracks.map((track) => track.position)).deep.eq(tracks);
+  });
 });

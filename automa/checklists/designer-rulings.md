@@ -26,6 +26,7 @@ Thread links: `https://boardgamegeek.com/thread/<id>`.
 | Corporate Competition (B14) | The missing Venuphile helper is an omission, include it | 3641200 |
 | Brutal | 4 starting project cards, keeps all 4 in research | 3406056 |
 | Expedited Construction (B05, B17 a) | Any space next to 2+ greenery/ocean tiles, then the usual city rule, so 2 greeneries beat 3 oceans. The card's wording wins over the rulebook's "most tiles of these types" (Dávid; the printed card agrees) | 3350125 |
+| Philares (C22) | Spends its science resources the moment it has 4, on either player's turn, but advances no track after the game has ended (final greeneries). "Probably not after the end of the game" (Dávid) | 3513998 |
 | Colony VP (optional) | Designer meant MarsBot's colonies to score 1/2 VP each but forgot to print it. Behind the `automaColonyVP` game option | 3408751 |
 
 ## No designer ruling: our reading
@@ -37,5 +38,5 @@ Thread links: `https://boardgamegeek.com/thread/<id>`.
 | Venus milestones without Venus Next | Removed for both players | User decision; BGG players ignore or swap |
 | Milestone tiebreak "closest to meeting" | Smallest distance to the threshold | Community consensus (3527204) |
 | Hard mode first-turn milestone | Costs 8 MC only, no Briber surcharge | Rulebook A p.11 says only "loses 8 MC" |
-| Storage overflow timing | Immediate, also on the player's turn | Matches the Philares ruling (3513998); Dávid doubts it after game end |
+| Storage overflow timing | Immediate, also on the player's turn, but not after the game has ended | Matches the Philares ruling (3513998), which also stops at game end |
 | Mining Guild setup | Starting Building tags already count down the card (8 MC left) | Rulebook B setup step 4: ongoing effects active |
