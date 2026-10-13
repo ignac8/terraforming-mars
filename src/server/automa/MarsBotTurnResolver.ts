@@ -49,18 +49,20 @@ export class MarsBotTurnResolver {
   // ---- Project Card Resolution ----
 
   /**
-   * Resolve a project card: advance tracks based on tags. The first `ignoredTags` tags are skipped,
-   * but the whole card goes to the played pile.
+   * Resolve a project card: advance tracks based on tags. With `firstTagOnly` the other tags are
+   * ignored (Thorgate), but the whole card goes to the played pile.
    */
-  public resolveProjectCard(original: IProjectCard, ignoredTags: number = 0): void {
+  public resolveProjectCard(original: IProjectCard, firstTagOnly: boolean = false): void {
     this.game.log('MarsBot plays ${0}', (b) => b.card(original));
     // Every resolved project card goes to MarsBot's played pile (rulebook A, p.5), not the project
     // discard pile, so it can't be drawn again
     this.marsBotManager?.playedProjectCards.push(original);
 
-    // Object.create keeps the prototype (methods like getVictoryPoints)
-    const card = ignoredTags === 0 ? original : Object.create(original, {tags: {value: original.tags.slice(ignoredTags)}}) as IProjectCard;
-    const tags = marsBotCardTags(card);
+    const allTags = marsBotCardTags(original);
+    const tags = firstTagOnly ? allTags.slice(0, 1) : allTags;
+    // Effects below see only the resolved tags. Object.create keeps the prototype (methods like
+    // getVictoryPoints).
+    const card = firstTagOnly ? Object.create(original, {tags: {value: tags}}) as IProjectCard : original;
 
     // A card with no tags is still played: its corp and player effects apply below.
     if (tags.length === 0) {
@@ -128,10 +130,19 @@ export class MarsBotTurnResolver {
    * Advance a track by index. Handles chain actions.
    *
    * Returns false when the track was already at its end, which is a Failed Action instead.
+   *
+   * Once the game has ended no track advances and nothing fails: only the final greenery moves a
+   * tracker, which MarsBot.placeFinalGreeneries does without this.
    */
   public advanceTrack(trackIndex: number): boolean {
     const track = this.marsBotBoard.tracks[trackIndex];
     const name = this.trackName(trackIndex);
+    if (this.game.isDoneWithFinalProduction()) {
+      this.game.log('MarsBot: the game has ended, ${0} track does not advance', (b) => b.rawString(name));
+      return false;
+    }
+    // Moving back up after a regression retriggers nothing (rulebook B, p.3)
+    const reAdvance = track.regressedPositions.has(track.position + 1);
 
     const result = track.advance();
 
@@ -149,10 +160,7 @@ export class MarsBotTurnResolver {
         MarsBotCorpResolver.onTrackAdvanced(this.marsBotManager, trackIndex, position)) {
       this.game.log('MarsBot: ${0} track to ${1}, icon replaced by a corp cube',
         (b) => b.rawString(name).number(position));
-      return true;
-    }
-
-    if (result.type === 'action') {
+    } else if (result.type === 'action') {
       this.game.log('MarsBot: ${0} track to ${1}, action: ${2}',
         (b) => b.rawString(name).number(position).rawString(result.action));
       this.resolveTrackAction(result.action, trackIndex);
@@ -160,27 +168,40 @@ export class MarsBotTurnResolver {
       this.game.log('MarsBot: ${0} track to ${1}',
         (b) => b.rawString(name).number(position));
     }
+
+    if (this.marsBotManager !== undefined && !reAdvance) {
+      this.marsBotManager.corp?.effect?.afterTrackSpaceResolved?.(this.marsBotManager, trackIndex, position);
+    }
     return true;
   }
 
   /**
    * Advance the track for a tag, for a track or bonus effect that names the tag.
    * Returns false when no track takes that tag.
-   *
-   * FAQ (rulebook B, p.3): a microbe advancement resolves the player's Pharmacy Union or
-   * Splice as if a card with a microbe tag was played. Plant and animal advances on the
-   * shared track don't, and other cards (Saturn Systems) only react to played cards.
    */
   public advanceTrackOfTag(tag: Tag): boolean {
     const trackIndex = this.marsBotBoard.tagToTrack[tag];
     if (trackIndex === undefined) {
       return false;
     }
-    if (this.advanceTrack(trackIndex) && tag === Tag.MICROBE) {
-      const microbeCard = {tags: [Tag.MICROBE]} as Partial<ICard> as ICard;
-      this.notifyPlayerCards(microbeCard, [CardName.PHARMACY_UNION, CardName.SPLICE]);
+    if (this.advanceTrack(trackIndex)) {
+      this.notifyTagAdvance(tag);
     }
     return true;
+  }
+
+  /**
+   * Tells the player's cards about an advance that names `tag`, as if a card with that tag was played.
+   *
+   * A microbe advance resolves Pharmacy Union or Splice (FAQ, rulebook B p.3), and a Jovian one
+   * Saturn Systems (TDaver, BGG 3356105). The other tags on a shared track don't count.
+   */
+  public notifyTagAdvance(tag: Tag): void {
+    const cards = tag === Tag.MICROBE ? [CardName.PHARMACY_UNION, CardName.SPLICE] :
+      tag === Tag.JOVIAN ? [CardName.SATURN_SYSTEMS] : [];
+    if (cards.length > 0) {
+      this.notifyPlayerCards({tags: [tag]} as Partial<ICard> as ICard, cards);
+    }
   }
 
   /** Resolve an action icon on a track position. */
@@ -276,23 +297,26 @@ export class MarsBotTurnResolver {
 
   // ---- Terraforming Actions ----
 
-  public raiseTemperature(steps: number): void {
+  /**
+   * Raises the temperature, or takes a Failed Action when it is already at its maximum. The steps
+   * resolve one at a time, so Pristar's cube cancels only the first (BGG 3431297, 3432237).
+   */
+  public raiseTemperature(steps: 1 | 2): void {
     if (this.game.getTemperature() >= constants.MAX_TEMPERATURE) {
       this.failedAction();
       return;
     }
-    if (this.interceptsRaise(GlobalParameter.TEMPERATURE)) {
+    const taken = this.interceptsRaise(GlobalParameter.TEMPERATURE) ? steps - 1 : steps;
+    if (taken === 0) {
       return;
     }
-    const increment = steps as 1 | 2;
-    this.game.increaseTemperature(this.marsBot, increment);
+    const before = this.game.getTemperature();
+    this.game.increaseTemperature(this.marsBot, taken as 1 | 2);
+    const raised = (this.game.getTemperature() - before) / 2;
     if (this.marsBotManager) {
-      this.marsBotManager.temperatureRaises += steps;
+      this.marsBotManager.temperatureRaises += raised;
     }
-    this.game.log('MarsBot raises temperature ${0} step(s)', (b) => b.number(steps));
-    // Temperature bonuses at -24C and -20C: MarsBot gains 2 MC instead of heat production
-    // This is handled by the game engine granting heat production; we override in MarsBot's production
-    // Since MarsBot doesn't use production, we grant 2 MC for each heat bonus step hit.
+    this.game.log('MarsBot raises temperature ${0} step(s)', (b) => b.number(raised));
   }
 
   public placeGreenery(): void {
@@ -347,20 +371,22 @@ export class MarsBotTurnResolver {
     this.game.log('MarsBot places city');
   }
 
-  private raiseVenus(steps: number): void {
+  /** Like raiseTemperature: Pristar's cube cancels only the first step. */
+  private raiseVenus(steps: 1 | 2): void {
     if (this.game.getVenusScaleLevel() >= constants.MAX_VENUS_SCALE) {
       this.failedAction();
       return;
     }
-    if (this.interceptsRaise(GlobalParameter.VENUS)) {
+    const taken = this.interceptsRaise(GlobalParameter.VENUS) ? steps - 1 : steps;
+    if (taken === 0) {
       return;
     }
-    this.game.increaseVenusScaleLevel(this.marsBot, steps as 1 | 2);
-    this.game.log('MarsBot raises Venus ${0} step(s)', (b) => b.number(steps));
+    this.game.increaseVenusScaleLevel(this.marsBot, taken as 1 | 2);
+    this.game.log('MarsBot raises Venus ${0} step(s)', (b) => b.number(taken));
   }
 
-  // C-8/C-14: Gain `count` floaters. With Venus → floaters; without Venus but with Colonies →
-  // Titan storage; without both → ignored (C-13).
+  // C-8/C-14: Gain `count` floaters. With Venus → floaters; without Venus but with Colonies and
+  // Titan dealt → Titan storage; otherwise ignored (C-13; Nick, BGG 3341542).
   public gainFloaters(count: number): void {
     if (this.marsBotManager === undefined) {
       return;
@@ -368,7 +394,7 @@ export class MarsBotTurnResolver {
     if (this.game.gameOptions.venusNextExtension) {
       this.marsBotManager.floaters += count;
       this.game.log('MarsBot gains ${0} floater(s)', (b) => b.number(count));
-    } else if (this.game.gameOptions.coloniesExtension) {
+    } else if (this.game.gameOptions.coloniesExtension && this.game.colonies.some((colony) => colony.name === ColonyName.TITAN)) {
       this.marsBotManager.shippingBoard.add(ColonyName.TITAN, count, this.marsBotManager);
       this.game.log('MarsBot gains ${0} floater token(s) in Titan storage (C-14)', (b) => b.number(count));
     }
@@ -526,8 +552,13 @@ export class MarsBotTurnResolver {
 
   // ---- Utilities ----
 
+  /** The M€ a Failed Action pays at this difficulty. */
+  public get failedActionMc(): number {
+    return this.difficulty === 'easy' ? FAILED_ACTION_MC_EASY : FAILED_ACTION_MC;
+  }
+
   public failedAction(): void {
-    const mc = this.difficulty === 'easy' ? FAILED_ACTION_MC_EASY : FAILED_ACTION_MC;
+    const mc = this.failedActionMc;
     this.gainMc(mc);
     this.game.log('MarsBot takes a Failed Action, gains ${0} MC', (b) => b.number(mc));
     this.marsBotManager?.corp?.effect?.onFailedAction?.(this.marsBotManager);

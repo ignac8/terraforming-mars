@@ -201,15 +201,52 @@ describe('MarsBot and the player\'s Pharmacy Union', () => {
   });
 });
 
+// TDaver, BGG 3356105: an explicit Jovian advance triggers Saturn Systems, "a Jovian bump, yes,
+// but an Power bump ... wouldn't, even though the Jovian and the Power tag are tracked on the same row"
 describe('MarsBot track advances and the player\'s Saturn Systems', () => {
-  it('a Jovian track advance from a bonus card does not raise M€ production', () => {
+  it('Traveller advancing the Jovian track raises M€ production', () => {
     const {game, human, marsBot} = createAutomaGame();
     human.playedCards.push(new SaturnSystems());
 
+    helperAction(marsBot, 'Traveller'); // Tied at 0, so the upper track: Power/Jovian
+    runAllActions(game);
+
+    expect(marsBot.marsBotBoard.tracks[marsBot.marsBotBoard.tagToTrack[Tag.JOVIAN]!].position).is.greaterThan(0);
+    expect(human.production.megacredits).to.eq(1);
+  });
+
+  it('Traveller advancing the Earth track does not', () => {
+    const {game, human, marsBot} = createAutomaGame();
+    human.playedCards.push(new SaturnSystems());
+    marsBot.marsBotBoard.tracks[marsBot.marsBotBoard.tagToTrack[Tag.EARTH]!].position = 1;
+
     helperAction(marsBot, 'Traveller');
-    helperAction(marsBot, 'Biologist');
     runAllActions(game);
 
     expect(human.production.megacredits).to.eq(0);
+  });
+
+  it('a Power or microbe advance on a shared row does not', () => {
+    const {game, human, marsBot} = createAutomaGame();
+    human.playedCards.push(new SaturnSystems());
+    marsBot.marsBotBoard.tracks[marsBot.marsBotBoard.tagToTrack[Tag.BUILDING]!].position = 1;
+
+    helperAction(marsBot, 'Manufacturer'); // The less advanced of Building and Power/Jovian
+    helperAction(marsBot, 'Biologist');
+    runAllActions(game);
+
+    expect(marsBot.marsBotBoard.tracks[marsBot.marsBotBoard.tagToTrack[Tag.POWER]!].position).is.greaterThan(0);
+    expect(human.production.megacredits).to.eq(0);
+  });
+
+  it('Traveller on Vastitas Borealis advances the Earth/Jovian row, a Jovian bump', () => {
+    const [game, human] = testGame(1, {automaOption: true, boardName: BoardName.VASTITAS_BOREALIS_NOVA});
+    const marsBot = game.automaHooks!.marsBot;
+    human.playedCards.push(new SaturnSystems());
+
+    helperAction(marsBot, 'Traveller');
+    runAllActions(game);
+
+    expect(human.production.megacredits).to.eq(1);
   });
 });

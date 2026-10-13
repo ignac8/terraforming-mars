@@ -15,7 +15,7 @@ import {CardResource} from '../../../common/CardResource';
 // C21 Pharmacy Union
 const PHARMACY_UNION: IMarsBotCorp = {
   name: CardName.PHARMACY_UNION,
-  description: 'Tag: Science. Draft: Science. Setup: remove Meteor Shower. Science cards give +1 TR. When human plays a Microbe card, lose 4 MC.',
+  description: 'Tag: Science. Draft: Science. Setup: remove Meteor Shower; shuffle a revealed Science card into the bonus deck. Science cards (starting tag included) give +1 TR. When human plays a Microbe card, lose 4 MC.',
   tags: [Tag.SCIENCE],
   draftPriority: {type: 'tags', tags: [Tag.SCIENCE]},
   setup(bot) {
@@ -44,7 +44,7 @@ const PHILARES: IMarsBotCorp = {
   name: CardName.PHILARES,
   description: 'Setup: place greenery, +1 science resource, resolve and remove Local Neural Instance, add Build Build Build to bonus deck. ' +
     'Each new adjacency between its tile and the player\'s tile: +1 science resource. ' +
-    'Spend 4 science resources to advance the most-advanced track that is not maxed.',
+    'Spend 4 science resources to advance the most-advanced track that is not maxed, but not after the game has ended.',
   tags: [],
   setup(bot) {
     bot.placeGreenery();
@@ -68,6 +68,11 @@ const PHILARES: IMarsBotCorp = {
       }
       bot.setCorpState('scienceResources', bot.getCorpState('scienceResources') + adjacencies);
       bot.game.log('MarsBot (Philares): +${0} science resource(s) from new adjacencies with the player', (b) => b.number(adjacencies));
+      // No track advances once the game has ended (TDaver, BGG 3513998), so the science
+      // resources stay unspent rather than paying for an advance that doesn't happen
+      if (bot.game.isDoneWithFinalProduction()) {
+        return;
+      }
       while (bot.getCorpState('scienceResources') >= 4) {
         const trackIndex = bot.marsBotBoard.getMostAdvancedNonMaxedTrackIndex();
         if (trackIndex === undefined) {

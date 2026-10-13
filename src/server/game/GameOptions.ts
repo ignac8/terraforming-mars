@@ -95,7 +95,10 @@ export type GameOptions = {
    * megacredits convert at the table's last row (1 MC per VP) from then on.
    */
   automaNoGenerationLimit?: boolean;
-  /** With Colonies, MarsBot scores 1 VP for every 2 colonies it owns at game end (designer intent, BGG thread 3408751). */
+  /**
+   * With Colonies, MarsBot scores 1 VP for every 2 resources left on its shipping board and floaters on the
+   * Venus board at game end (designer intent, BGG threads 3408751, 3373832).
+   */
   automaColonyVP?: boolean;
 }
 

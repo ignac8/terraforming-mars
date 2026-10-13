@@ -17,8 +17,13 @@ import {Tag} from '../../src/common/cards/Tag';
 import {TileType} from '../../src/common/TileType';
 import {Pets} from '../../src/server/cards/base/Pets';
 import {Birds} from '../../src/server/cards/base/Birds';
+import {Ants} from '../../src/server/cards/base/Ants';
+import {Fish} from '../../src/server/cards/base/Fish';
+import {Tardigrades} from '../../src/server/cards/base/Tardigrades';
+import {Mine} from '../../src/server/cards/base/Mine';
+import {GHGProducingBacteria} from '../../src/server/cards/base/GHGProducingBacteria';
 import {ColonyName} from '../../src/common/colonies/ColonyName';
-import {fakeCard, maxOutOceans, setOxygenLevel, setTemperature} from '../TestingUtils';
+import {fakeCard, maxOutOceans, setOxygenLevel, setTemperature, setVenusScaleLevel} from '../TestingUtils';
 import {FAILED_ACTION_MC} from '../../src/common/automa/AutomaTypes';
 import {MAX_TEMPERATURE} from '../../src/common/constants';
 import {SpaceId} from '../../src/common/Types';
@@ -172,6 +177,50 @@ describe('MarsBot Deep Rules Tests', () => {
       expect(birds.resourceCount).to.eq(0);
     });
 
+    // BGG 3360797 (TDaver): the cube worth the most VP, cards scoring per resource first
+    it('removes the cube worth the most VP, not the card scoring the most', () => {
+      const {human, marsBot} = createAutomaGame();
+      const ants = new Ants();
+      ants.resourceCount = 4; // 2 VP, 1/2 VP per microbe
+      const birds = new Birds();
+      birds.resourceCount = 1; // 1 VP per animal
+      human.playedCards.push(ants, birds);
+
+      marsBot['bonusResolver'].resolve(invasiveSpecies());
+
+      expect(birds.resourceCount).to.eq(0);
+      expect(ants.resourceCount).to.eq(4);
+    });
+
+    it('takes a scoring cube before one on a card that scores no VP', () => {
+      const {human, marsBot} = createAutomaGame();
+      const bacteria = new GHGProducingBacteria();
+      bacteria.resourceCount = 3;
+      const tardigrades = new Tardigrades();
+      tardigrades.resourceCount = 3; // 0 VP now, 1/4 VP per microbe
+      human.playedCards.push(bacteria, tardigrades);
+
+      marsBot['bonusResolver'].resolve(invasiveSpecies());
+
+      expect(tardigrades.resourceCount).to.eq(2);
+      expect(bacteria.resourceCount).to.eq(3);
+    });
+
+    it('breaks a tie by flipping a project card', () => {
+      const {game, human, marsBot} = createAutomaGame();
+      const birds = new Birds();
+      birds.resourceCount = 1;
+      const fish = new Fish();
+      fish.resourceCount = 1;
+      human.playedCards.push(birds, fish);
+      game.projectDeck.drawPile.push(new Mine()); // Cost 4 counts to the 2nd of 2
+
+      marsBot['bonusResolver'].resolve(invasiveSpecies());
+
+      expect(birds.resourceCount).to.eq(1);
+      expect(fish.resourceCount).to.eq(0);
+    });
+
     it('with Venus Next gains 2 M€ and 1 floater instead of 5 M€', () => {
       const [game] = testGame(1, {automaOption: true, venusNextExtension: true, boardName: BoardName.THARSIS});
       const marsBot = game.automaHooks!.marsBot;
@@ -183,13 +232,30 @@ describe('MarsBot Deep Rules Tests', () => {
     });
 
     it('with Colonies and no Venus Next puts the floater in Titan storage', () => {
-      const [game] = testGame(1, {automaOption: true, coloniesExtension: true, boardName: BoardName.THARSIS});
+      const [game] = testGame(1, {
+        automaOption: true, coloniesExtension: true, boardName: BoardName.THARSIS,
+        customColoniesList: [ColonyName.TITAN, ColonyName.CERES, ColonyName.LUNA, ColonyName.IO, ColonyName.GANYMEDE],
+      });
       const marsBot = game.automaHooks!.marsBot;
 
       marsBot['bonusResolver'].resolve(invasiveSpecies());
 
       expect(marsBot.turnResolver.megacredits).to.eq(2);
       expect(marsBot.shippingBoard.storage.get(ColonyName.TITAN)).to.eq(1);
+    });
+
+    // Nick, BGG 3341542: without Venus Next and Titan the floater is ignored; the card's 2 M€ stays
+    it('with Colonies, no Venus Next and no Titan gains 2 M€ and ignores the floater', () => {
+      const [game] = testGame(1, {
+        automaOption: true, coloniesExtension: true, boardName: BoardName.THARSIS,
+        customColoniesList: [ColonyName.CALLISTO, ColonyName.CERES, ColonyName.LUNA, ColonyName.IO, ColonyName.GANYMEDE],
+      });
+      const marsBot = game.automaHooks!.marsBot;
+
+      marsBot['bonusResolver'].resolve(invasiveSpecies());
+
+      expect(marsBot.turnResolver.megacredits).to.eq(2);
+      expect(marsBot.shippingBoard.storage.get(ColonyName.TITAN) ?? 0).to.eq(0);
     });
   });
 
@@ -757,7 +823,7 @@ describe('MarsBot Deep Rules Tests', () => {
       const {marsBot} = createAutomaGame();
 
       marsBot.maybeDrawAndResolveProjectCard();
-      marsBot.maybeDrawAndResolveProjectCardIgnoringFirstNTags(1);
+      marsBot.maybeDrawAndResolveProjectCardFirstTagOnly();
 
       expect(marsBot.playedProjectCards).to.have.length(2);
     });
@@ -856,6 +922,39 @@ describe('MarsBot Deep Rules Tests', () => {
       game.increaseTemperature(marsBot.player, 1);
 
       expect(marsBot.turnResolver.megacredits).to.eq(FAILED_ACTION_MC);
+    });
+  });
+
+  // The Venus 8% card bonus is 2 M€ for MarsBot, like the heat production bonus on the
+  // temperature track (BGG 3358342 TDaver, 3424237 and 3733436 njshaw2)
+  describe('Venus 8% card bonus', () => {
+    function venusGame() {
+      const [game] = testGame(1, {automaOption: true, venusNextExtension: true, boardName: BoardName.THARSIS});
+      const marsBot = game.automaHooks!.marsBot;
+      setVenusScaleLevel(game, 6);
+      return {game, marsBot, hand: marsBot.player.cardsInHand.length, deck: game.projectDeck.drawPile.length};
+    }
+
+    it('gains MarsBot 2 M€ instead of a card', () => {
+      const {game, marsBot, hand, deck} = venusGame();
+
+      (marsBot.turnResolver as any).raiseVenus(1);
+
+      expect(game.getVenusScaleLevel()).to.eq(8);
+      expect(marsBot.turnResolver.megacredits).to.eq(2);
+      expect(marsBot.player.cardsInHand).has.length(hand);
+      expect(game.projectDeck.drawPile).has.length(deck);
+    });
+
+    it('gains nothing from Government Intervention, which pays no M€ from bonuses', () => {
+      const {game, marsBot, hand} = venusGame();
+      game.generation = 3;
+
+      marsBot['bonusResolver'].resolve(createCorpBonusCard(BonusCardId.B16_GOVERNMENT_INTERVENTION));
+
+      expect(game.getVenusScaleLevel()).to.eq(8);
+      expect(marsBot.turnResolver.megacredits).to.eq(0);
+      expect(marsBot.player.cardsInHand).has.length(hand);
     });
   });
 });

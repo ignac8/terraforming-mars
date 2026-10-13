@@ -17,6 +17,11 @@ import {Tag} from '../../common/cards/Tag';
 import {ICard} from '../cards/ICard';
 import {IMilestone} from '../milestones/IMilestone';
 import {IAward} from '../awards/IAward';
+import {MilestoneName} from '../../common/ma/MilestoneName';
+import {AwardName} from '../../common/ma/AwardName';
+import {milestoneManifest} from '../milestones/Milestones';
+import {awardManifest} from '../awards/Awards';
+import {MAManifest} from '../ma/MAManifest';
 import {trackCubeKey} from './MarsBotCorpTypes';
 import {DELEGATES_PER_PLAYER} from '../../common/constants';
 
@@ -45,25 +50,43 @@ export class AutomaGameSetup {
     }
   }
 
-  /** Filter milestones unsupported against MarsBot. */
-  public static filterMilestones(milestones: Array<IMilestone>, gameOptions: GameOptions): Array<IMilestone> {
-    const unsupported: Array<string> = ['Terraformer29'];
+  /**
+   * Whether MarsBot can play against a milestone in this game.
+   *
+   * The automa rules cover the milestones of the maps with a MarsBot board, of the Milestones &
+   * Awards expansion and of Venus Next. A few of those still need an expansion that isn't in play.
+   */
+  public static supportsMilestone(name: MilestoneName, gameOptions: GameOptions): boolean {
+    const unsupported: Array<MilestoneName> = [];
     if (!gameOptions.venusNextExtension) {
       unsupported.push('Planetologist', 'Trader', 'Tradesman');
     }
     if (!gameOptions.turmoilExtension) {
       unsupported.push('Lobbyist');
     }
-    return milestones.filter((m) => !unsupported.includes(m.name));
+    return coveredByAutomaRules(name, milestoneManifest, MODULAR_MILESTONES) && !unsupported.includes(name);
+  }
+
+  /**
+   * Whether MarsBot can play against an award in this game: the awards the automa rules cover, and
+   * Venuphile only with Venus Next. Each has a Corporate Competition helper except Politician,
+   * which Corporate Competition skips.
+   */
+  public static supportsAward(name: AwardName, gameOptions: GameOptions): boolean {
+    if (name === 'Venuphile' && !gameOptions.venusNextExtension) {
+      return false;
+    }
+    return coveredByAutomaRules(name, awardManifest, MODULAR_AWARDS);
+  }
+
+  /** Filter milestones unsupported against MarsBot. */
+  public static filterMilestones(milestones: Array<IMilestone>, gameOptions: GameOptions): Array<IMilestone> {
+    return milestones.filter((m) => AutomaGameSetup.supportsMilestone(m.name, gameOptions));
   }
 
   /** Filter awards unsupported against MarsBot. */
   public static filterAwards(awards: Array<IAward>, gameOptions: GameOptions): Array<IAward> {
-    const unsupported: Array<string> = [];
-    if (!gameOptions.venusNextExtension) {
-      unsupported.push('Venuphile');
-    }
-    return unsupported.length > 0 ? awards.filter((a) => !unsupported.includes(a.name)) : awards;
+    return awards.filter((a) => AutomaGameSetup.supportsAward(a.name, gameOptions));
   }
 
   /** Filter out cards not supported against MarsBot (e.g., Recession). */
@@ -244,4 +267,36 @@ export class AutomaGameSetup {
     turmoil.sendDelegateToParty(marsBotPlayer, party.name, game);
     game.log('MarsBot: extra setup delegate placed in ${0} (T-15)', (b) => b.partyName(party.name));
   }
+}
+
+/**
+ * The Milestones & Awards expansion's milestones that rulebook C (p.13-14) gives MarsBot a rule
+ * for. Terraformer is "not supported against the automa". Listed by name, so a milestone upstream
+ * adds to the random pool is not dealt against MarsBot.
+ */
+const MODULAR_MILESTONES: ReadonlyArray<MilestoneName> = [
+  'Briber', 'Builder7', 'Coastguard', 'Diversifier', 'Ecologist', 'Energizer', 'Engineer', 'Farmer',
+  'Fundraiser', 'Gardener', 'Generalist', 'Geologist', 'Hydrologist', 'Landshaper', 'Legend4', 'Lobbyist',
+  'Mayor', 'Merchant', 'Metallurgist', 'Philantropist', 'Pioneer4', 'Planetologist', 'Planner', 'Producer',
+  'Researcher', 'Rim Settler', 'Spacefarer4', 'Sponsor', 'Tactician4', 'Terran5', 'Thawer', 'Trader',
+  'Tycoon10',
+];
+
+/** The Milestones & Awards expansion's awards that rulebook C (p.14-16) gives MarsBot a rule for. */
+const MODULAR_AWARDS: ReadonlyArray<AwardName> = [
+  'Administrator', 'Banker', 'Benefactor', 'Biologist', 'Botanist', 'Celebrity', 'Collector', 'Constructor',
+  'Contractor', 'Cultivator', 'Electrician', 'Estate Dealer', 'Excentric', 'Forecaster', 'Founder',
+  'Highlander', 'Incorporator', 'Industrialist', 'Investor', 'Landlord', 'Landscaper', 'Magnate',
+  'Manufacturer', 'Metropolist', 'Miner', 'Mogul', 'Politician', 'Promoter', 'Scientist', 'Space Baron',
+  'Suburbian', 'Thermalist', 'Traveller', 'Visionary',
+];
+
+/**
+ * Whether the automa rulebooks give MarsBot a rule for a milestone or award: it belongs to a map
+ * with a MarsBot board, to the Milestones & Awards expansion or to Venus Next.
+ */
+function coveredByAutomaRules<T extends string>(name: T, manifest: MAManifest<T, unknown>, modular: ReadonlyArray<T>): boolean {
+  return MARSBOT_BOARD_NAMES.some((board) => manifest.boards[board].includes(name)) ||
+    modular.includes(name) ||
+    manifest.expansions.venus.includes(name);
 }

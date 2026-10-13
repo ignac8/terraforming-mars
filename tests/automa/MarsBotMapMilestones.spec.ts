@@ -11,6 +11,12 @@ import {marsBotAwardRule, marsBotMapSet, marsBotMilestoneRule} from '../../src/c
 import {BoardName} from '../../src/common/boards/BoardName';
 import {Tag} from '../../src/common/cards/Tag';
 import {RandomMAOptionType} from '../../src/common/ma/RandomMAOptionType';
+import {getCandidates} from '../../src/server/ma/MilestoneAwardSelector';
+import {milestoneManifest} from '../../src/server/milestones/Milestones';
+import {awardManifest} from '../../src/server/awards/Awards';
+import {MilestoneName} from '../../src/common/ma/MilestoneName';
+import {AwardName} from '../../src/common/ma/AwardName';
+import {MARSBOT_BOARD_NAMES} from '../../src/common/automa/MarsBotBoards';
 import {SpaceType} from '../../src/common/boards/SpaceType';
 import {Space} from '../../src/server/boards/Space';
 import {TileType} from '../../src/common/TileType';
@@ -322,6 +328,81 @@ describe('MarsBot map milestones and awards', () => {
     });
   });
 
+  // Our reading: random milestones and awards deal only those the automa rules support
+  describe('random milestones and awards', () => {
+    it('leaves out the ones the automa rules do not cover', () => {
+      const [game] = testGame(1, {automaOption: true, randomMA: RandomMAOptionType.UNLIMITED, includeFanMA: true, venusNextExtension: true});
+      const [milestones, awards] = getCandidates(game.gameOptions);
+
+      expect(milestones).to.include.members(['Terraformer', 'Polar Explorer', 'Hoverlord']);
+      for (const name of ['Minimalist', 'Tropicalist', 'Economizer', 'Capitalist']) {
+        expect(milestones).to.not.include(name);
+      }
+      expect(awards).to.include.members(['Landlord', 'Desert Settler', 'Venuphile']);
+      for (const name of ['Curator', 'Tourist', 'Urbanist', 'Warmonger', 'Innovator', 'Physicist']) {
+        expect(awards).to.not.include(name);
+      }
+    });
+
+    const ALL_EXPANSIONS = {venusNextExtension: true, turmoilExtension: true} as GameOptions;
+
+    it('supports exactly the milestones and awards rulebook C gives MarsBot a rule for', () => {
+      const milestones = (Object.keys(milestoneManifest.all) as Array<MilestoneName>)
+        .filter((name) => AutomaGameSetup.supportsMilestone(name, ALL_EXPANSIONS));
+      const awards = (Object.keys(awardManifest.all) as Array<AwardName>)
+        .filter((name) => AutomaGameSetup.supportsAward(name, ALL_EXPANSIONS));
+
+      expect(milestones).to.have.members([
+        'Agronomist', 'Architect', 'Briber', 'Builder', 'Builder7', 'C. Forester', 'Coastguard', 'Diversifier',
+        'Ecologist', 'Energizer', 'Engineer', 'Farmer', 'Fundraiser', 'Gardener', 'Generalist', 'Geologist',
+        'Hoverlord', 'Hydrologist', 'Land Specialist', 'Landshaper', 'Legend', 'Legend4', 'Lobbyist', 'Mayor',
+        'Merchant', 'Metallurgist', 'Philantropist', 'Pioneer', 'Pioneer4', 'Planetologist', 'Planner',
+        'Polar Explorer', 'Producer', 'Researcher', 'Rim Settler', 'Smith', 'Spacefarer4', 'Specialist', 'Sponsor',
+        'Tactician', 'Tactician4', 'Terraformer', 'Terran5', 'Thawer', 'Trader', 'Tradesman', 'Tycoon', 'Tycoon10',
+        'V. Spacefarer',
+      ]);
+      expect(awards).to.have.members([
+        'A. Zoologist', 'Administrator', 'Banker', 'Benefactor', 'Biologist', 'Blacksmith', 'Botanist', 'Celebrity',
+        'Collector', 'Constructor', 'Contractor', 'Cultivator', 'Desert Settler', 'Edgedancer', 'Electrician',
+        'Estate Dealer', 'Excentric', 'Forecaster', 'Founder', 'Highlander', 'Incorporator', 'Industrialist',
+        'Investor', 'Landlord', 'Landscaper', 'Magnate', 'Manufacturer', 'Metropolist', 'Miner', 'Mogul',
+        'Politician', 'Promoter', 'Scientist', 'Space Baron', 'Suburbian', 'Thermalist', 'Traveller', 'Venuphile',
+        'Visionary',
+      ]);
+    });
+
+    // A milestone or award upstream adds to the random pool gets no MarsBot rule
+    it('does not support a new milestone or award just because it can be dealt at random', () => {
+      const milestones = milestoneManifest.all as Record<string, unknown>;
+      const awards = awardManifest.all as Record<string, unknown>;
+      milestones['New Milestone'] = {...milestoneManifest.all['Mayor'], random: 'both'};
+      awards['New Award'] = {...awardManifest.all['Landlord'], random: 'both'};
+      try {
+        expect(AutomaGameSetup.supportsMilestone('New Milestone' as MilestoneName, ALL_EXPANSIONS)).is.false;
+        expect(AutomaGameSetup.supportsAward('New Award' as AwardName, ALL_EXPANSIONS)).is.false;
+      } finally {
+        delete milestones['New Milestone'];
+        delete awards['New Award'];
+      }
+    });
+
+    it('still deals 5 of each, all supported', () => {
+      for (const modularMA of [false, true]) {
+        for (let i = 0; i < 10; i++) {
+          const [game] = testGame(1, {automaOption: true, randomMA: RandomMAOptionType.UNLIMITED, includeFanMA: true, modularMA});
+          expect(game.milestones, `modular ${modularMA}`).has.length(5);
+          expect(game.awards, `modular ${modularMA}`).has.length(5);
+          for (const milestone of game.milestones) {
+            expect(AutomaGameSetup.supportsMilestone(milestone.name, game.gameOptions), milestone.name).is.true;
+          }
+          for (const award of game.awards) {
+            expect(AutomaGameSetup.supportsAward(award.name, game.gameOptions), award.name).is.true;
+          }
+        }
+      }
+    });
+  });
+
   describe('descriptions', () => {
     it('a map set uses its own wording', () => {
       expect(marsBotMilestoneRule('Rim Settler', BoardName.HELLAS)).to.eq('Science/Jovian track ≥ 6');
@@ -341,6 +422,29 @@ describe('MarsBot map milestones and awards', () => {
       }
       for (const name of ['Biologist', 'Constructor'] as const) {
         expect(marsBotAwardRule(name), name).is.a('string');
+      }
+    });
+
+    // The descriptions are the "MarsBot: ..." hints on the board's milestones and awards
+    it('describe every milestone and award MarsBot plays against', () => {
+      const options = {venusNextExtension: true, turmoilExtension: true} as GameOptions;
+      for (const board of MARSBOT_BOARD_NAMES) {
+        for (const name of milestoneManifest.boards[board]) {
+          expect(marsBotMilestoneRule(name, board), `${board} ${name}`).is.a('string');
+        }
+        for (const name of awardManifest.boards[board]) {
+          expect(marsBotAwardRule(name, board), `${board} ${name}`).is.a('string');
+        }
+      }
+      for (const name of Object.keys(milestoneManifest.all) as Array<MilestoneName>) {
+        if (AutomaGameSetup.supportsMilestone(name, options)) {
+          expect(marsBotMilestoneRule(name), name).is.a('string');
+        }
+      }
+      for (const name of Object.keys(awardManifest.all) as Array<AwardName>) {
+        if (AutomaGameSetup.supportsAward(name, options)) {
+          expect(marsBotAwardRule(name), name).is.a('string');
+        }
       }
     });
 

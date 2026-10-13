@@ -1,4 +1,4 @@
-import {IMarsBotCorp, trackCubeKey} from '../MarsBotCorpTypes';
+import {IMarsBotCorp, corpTrackCubes, trackCubeKey} from '../MarsBotCorpTypes';
 import {CardName} from '../../../common/cards/CardName';
 import {CardType} from '../../../common/cards/CardType';
 import {IProjectCard} from '../../cards/IProjectCard';
@@ -26,11 +26,10 @@ export class MarsBotCorpResolver {
    * Run corp setup: place track cubes, resolve starting tags, call setup box.
    */
   public static setupCorp(corp: IMarsBotCorp, marsBot: MarsBot): void {
-    // 1. Place track cubes
-    if (corp.trackCubes !== undefined) {
-      for (const cube of corp.trackCubes) {
-        marsBot.trackCubePositions.set(trackCubeKey(cube.trackIndex, cube.position), cube);
-      }
+    // 1. Place track cubes, skipping tracks this game's board lacks (Venus without Venus Next).
+    // A save keeps the positions, so a restored game never re-resolves them.
+    for (const cube of corpTrackCubes(corp, marsBot.marsBotBoard)) {
+      marsBot.trackCubePositions.set(trackCubeKey(cube.trackIndex, cube.position), cube);
     }
 
     // 2. Call corp-specific setup (rulebook B, p.1: the Setup box resolves before the starting tags)
@@ -64,9 +63,10 @@ export class MarsBotCorpResolver {
    * Called when a track advances to a new position. Checks for cube triggers.
    *
    * Returns true when a corp cube replaced the icon printed on that space, so the caller
-   * leaves the icon unresolved.
+   * leaves the icon unresolved. With `corpCubesOnly` the colony and trade fleet cubes stay
+   * untouched, for the final greenery move after the game has ended.
    */
-  public static onTrackAdvanced(marsBot: MarsBot, trackIndex: number, position: number): boolean {
+  public static onTrackAdvanced(marsBot: MarsBot, trackIndex: number, position: number, corpCubesOnly: boolean = false): boolean {
     const cube = marsBot.hasCubeAt(trackIndex, position);
     if (cube === undefined) {
       return false;
@@ -77,11 +77,12 @@ export class MarsBotCorpResolver {
     // Only the corp's own cubes reach its handler. The colony and trade fleet cubes below are
     // rule cubes that sit on the same tracks.
     const corp = marsBot.corp;
-    const corpCube = corp?.trackCubes?.find((c) => c.trackIndex === trackIndex && c.position === position);
+    const corpCube = corp === undefined ? undefined :
+      corpTrackCubes(corp, marsBot.marsBotBoard).find((c) => c.trackIndex === trackIndex && c.position === position);
     const triggers = firstVisit || corp?.trackCubesTriggerEveryAdvance === true;
     const replacedIcon = corpCube !== undefined && triggers &&
       corp?.effect?.onTrackCubeTrigger?.(marsBot, trackIndex, position, corpCube.cubeType) === true;
-    if (!firstVisit) {
+    if (!firstVisit || corpCubesOnly) {
       return replacedIcon;
     }
 

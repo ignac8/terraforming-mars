@@ -117,6 +117,19 @@ export class MarsBot implements IMarsBot {
   /** Shipping Board with 11 storage areas, one per colony tile (C-18). */
   public shippingBoard: MarsBotShippingBoard = new MarsBotShippingBoard();
 
+  /**
+   * True while Government Intervention raises Venus: its global parameter bonuses pay MarsBot no
+   * MC. Only set during that synchronous raise, so never saved.
+   */
+  public bonusMcBlocked: boolean = false;
+
+  /**
+   * M€ that Government Intervention lets MarsBot keep while it resolves (Lakefront Resorts' advance).
+   *
+   * Undefined outside Government Intervention's no-M€ window, which is synchronous, so never saved.
+   */
+  public mcKeptThroughIntervention: number | undefined = undefined;
+
   /** Spaces holding one of MarsBot's player markers (Settlers) and no tile yet. */
   public markerSpaceIds: Array<SpaceId> = [];
 
@@ -341,21 +354,34 @@ export class MarsBot implements IMarsBot {
 
   // ---- Final Greenery ----
 
-  /** Place final greenery tiles for MarsBot (tracks with greenery as next action). */
+  /**
+   * Place final greenery tiles for MarsBot (tracks with greenery as next action).
+   *
+   * The tracker moves onto the greenery and the corp's cubes there trigger (IC, Teractor, Helion's
+   * black cubes), but nothing chains from that space (BGG 3385156): the game has ended, so a
+   * cube's own track advances and card draws do nothing (Thorgate keeps its temperature step,
+   * Aridor's event track stays put). With no legal space the tracker stays and MarsBot takes a
+   * Failed Action (rulebook A p.8, BGG 3404826).
+   */
   public placeFinalGreeneries(): void {
-    for (const track of this.marsBotBoard.tracks) {
-      const nextAction = track.peek();
-      if (nextAction === 'greenery') {
-        const space = this.tilePlacer.findGreenerySpace();
-        if (space) {
-          // Do NOT raise oxygen or award TR for final greenery
-          this.game.addGreenery(this.player, space, false);
-          this.turnResolver.gainMc(this.tilePlacer.getTotalPlacementMC(space));
-          track.advance(); // Move tracker forward
-          this.game.log('MarsBot places final greenery (${0} track)', (b) => b.rawString(track.definition.tags[0]));
-        }
+    this.marsBotBoard.tracks.forEach((track, trackIndex) => {
+      if (track.peek() !== 'greenery') {
+        return;
       }
-    }
+      const name = track.definition.tags[0];
+      const space = this.tilePlacer.findGreenerySpace();
+      if (space === undefined) {
+        this.game.log('MarsBot: no space for a final greenery (${0} track)', (b) => b.rawString(name));
+        this.turnResolver.failedAction();
+        return;
+      }
+      // Do NOT raise oxygen or award TR for final greenery
+      this.game.addGreenery(this.player, space, false);
+      this.turnResolver.gainMc(this.tilePlacer.getTotalPlacementMC(space));
+      track.advance();
+      this.game.log('MarsBot places final greenery (${0} track)', (b) => b.rawString(name));
+      MarsBotCorpResolver.onTrackAdvanced(this, trackIndex, track.position, true);
+    });
   }
 
   // ---- Corporation ----
@@ -377,11 +403,18 @@ export class MarsBot implements IMarsBot {
     this.turnResolver.megacredits = mc;
   }
 
+  public get failedActionMc(): number {
+    return this.turnResolver.failedActionMc;
+  }
+
   public advanceTrack(trackIndex: number): void {
     this.turnResolver.advanceTrack(trackIndex);
   }
 
   public maybeDrawAndResolveProjectCard(): void {
+    if (this.gameHasEnded()) {
+      return;
+    }
     const cards = this.game.projectDeck.drawN(this.game, 1);
     if (cards.length === 0) {
       return;
@@ -389,15 +422,33 @@ export class MarsBot implements IMarsBot {
     this.turnResolver.resolveProjectCard(cards[0]);
   }
 
-  public maybeDrawAndResolveProjectCardIgnoringFirstNTags(n: number): void {
+  public maybeDrawAndResolveProjectCardFirstTagOnly(): void {
+    if (this.gameHasEnded()) {
+      return;
+    }
     const cards = this.game.projectDeck.drawN(this.game, 1);
     if (cards.length === 0) {
       return;
     }
-    this.turnResolver.resolveProjectCard(cards[0], n);
+    this.turnResolver.resolveProjectCard(cards[0], true);
+  }
+
+  /**
+   * Once the game has ended MarsBot draws and resolves no more cards, like its tracks advance no
+   * more (MarsBotTurnResolver.advanceTrack).
+   */
+  private gameHasEnded(): boolean {
+    if (!this.game.isDoneWithFinalProduction()) {
+      return false;
+    }
+    this.game.log('MarsBot: the game has ended, it draws no card');
+    return true;
   }
 
   public maybeDrawAndResolveBonusCard(): void {
+    if (this.gameHasEnded()) {
+      return;
+    }
     const bonusCard = this.bonusDeck.draw(this.game);
     if (bonusCard === undefined) {
       return;
@@ -429,10 +480,21 @@ export class MarsBot implements IMarsBot {
     this.shuffleIntoActionDeck(bonusCard);
   }
 
-  public raiseTemperature(steps: 1 | 2 | 3): void {
-    const before = this.game.getTemperature();
-    this.game.increaseTemperature(this.player, steps);
-    this.temperatureRaises += (this.game.getTemperature() - before) / 2;
+  public returnSetupBonusCardToBonusDeck(): void {
+    const kept: Array<IProjectCard | MarsBotBonusCard> = [];
+    for (const card of this.actionDeck) {
+      if (this.isProjectCard(card) || this.returnsToActionDeck(card)) {
+        kept.push(card);
+      } else {
+        this.shuffleIntoBonusDeck(card);
+        this.game.log('MarsBot returns ${0} to its bonus deck', (b) => b.rawString(bonusCardDisplayName(card)));
+      }
+    }
+    this.actionDeck = kept;
+  }
+
+  public raiseTemperature(steps: 1 | 2): void {
+    this.turnResolver.raiseTemperature(steps);
   }
 
   public placeOcean(): void {
@@ -478,8 +540,18 @@ export class MarsBot implements IMarsBot {
 
   public removeBonusCard(bonusCardId: BonusCardId): void {
     this.bonusDeck.removeById(bonusCardId);
-    // Also remove from the action deck if present (e.g. initial deck before corp setup runs)
-    this.actionDeck = this.actionDeck.filter((c) => !('id' in c) || (c as MarsBotBonusCard).id !== bonusCardId);
+    // The setup bonus card is dealt before the corporation is chosen (rulebook A setup step 3).
+    // When the corp destroys that card, the bonus deck deals a replacement, so the first action
+    // deck keeps its bonus card. A set-aside expansion card (Party Politics) gets none.
+    const dealt = this.actionDeck.find((c): c is MarsBotBonusCard => !this.isProjectCard(c) && c.id === bonusCardId);
+    if (dealt === undefined) {
+      return;
+    }
+    inplaceRemove(this.actionDeck, dealt);
+    if (!this.returnsToActionDeck(dealt)) {
+      this.maybeMoveBonusCardToActionDeck();
+      this.game.log('MarsBot replaces the destroyed setup bonus card with one from its bonus deck');
+    }
   }
 
   public resolveBonusCard(bonusCardId: BonusCardId): void {

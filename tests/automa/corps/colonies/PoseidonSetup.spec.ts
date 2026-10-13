@@ -63,4 +63,30 @@ describe('PoseidonSetup (C-33)', () => {
     const newLeastAdvancedPos = marsBot.marsBotBoard.tracks[leastIdx].position;
     expect(newLeastAdvancedPos).to.eq(beforePos + 1);
   });
+
+  it('the player building a colony advances MarsBot\'s least-advanced track too', () => {
+    const [game, human] = testGame(1, {automaOption: true, coloniesExtension: true, boardName: BoardName.THARSIS});
+    const marsBot = getMarsBot(game);
+    const luna = new Luna();
+    game.colonies = [luna];
+    marsBot.corp = AUTOMA_COLONIES_MANIFEST.corps[CardName.POSEIDON];
+    const leastIdx = marsBot.marsBotBoard.getLeastAdvancedTrackIndex();
+    const beforePos = marsBot.marsBotBoard.tracks[leastIdx].position;
+
+    luna.addColony(human);
+
+    expect(marsBot.marsBotBoard.tracks[leastIdx].position).to.eq(beforePos + 1);
+  });
+
+  it('fires once when MarsBot builds a colony', () => {
+    const [game] = testGame(1, {automaOption: true, coloniesExtension: true, boardName: BoardName.THARSIS});
+    const marsBot = getMarsBot(game);
+    game.colonies = [new Luna()];
+    let fired = 0;
+    marsBot.corp = {...AUTOMA_COLONIES_MANIFEST.corps[CardName.POSEIDON]!, effect: {onColonyPlaced: () => fired++}};
+
+    marsBot.maybePlaceRandomColony();
+
+    expect(fired).to.eq(1);
+  });
 });

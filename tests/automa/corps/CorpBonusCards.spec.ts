@@ -6,13 +6,14 @@ import {TestPlayer} from '../../TestPlayer';
 import {MarsBot} from '../../../src/server/automa/MarsBot';
 import {MarsBotBonusCard, createCorpBonusCard} from '../../../src/server/automa/MarsBotBonusCard';
 import {BonusCardId} from '../../../src/common/automa/AutomaTypes';
+import {Tag} from '../../../src/common/cards/Tag';
 import {BoardName} from '../../../src/common/boards/BoardName';
 import {SpaceType} from '../../../src/common/boards/SpaceType';
 import {TileType} from '../../../src/common/TileType';
 import {Space} from '../../../src/server/boards/Space';
 import {NuclearZone} from '../../../src/server/cards/base/NuclearZone';
 import {Capital} from '../../../src/server/cards/base/Capital';
-import {setTemperature} from '../../TestingUtils';
+import {fakeCard, setTemperature} from '../../TestingUtils';
 import {IProjectCard} from '../../../src/server/cards/IProjectCard';
 import {SearchForLife} from '../../../src/server/cards/base/SearchForLife';
 import {Tardigrades} from '../../../src/server/cards/base/Tardigrades';
@@ -91,6 +92,20 @@ describe('Corp-Specific Bonus Cards (B22-B32)', () => {
       expect(greeneries()).to.eq(1);
       expect(game.getOxygenLevel()).to.eq(1);
       expect(marsBot.getCorpState('plantResources')).to.eq(0);
+    });
+
+    // The plant is spent anyway (our reading), and a bonus card that can't resolve is not a Failed Action
+    // (rulebook A, p.5)
+    it('spends the plant and takes no Failed Action when no greenery can be placed', () => {
+      const {game, marsBot} = createAutomaGame();
+      marsBot.setCorpState('plantResources', 1);
+      marsBot['bonusResolver']['tilePlacer'].findGreenerySpace = () => undefined;
+
+      marsBot['bonusResolver'].resolve(createCorpBonusCard(BonusCardId.B23_RAPID_SPROUTING));
+
+      expect(game.board.getGreeneries(marsBot.player)).is.empty;
+      expect(marsBot.getCorpState('plantResources')).to.eq(0);
+      expect(marsBot.turnResolver.megacredits).to.eq(0);
     });
   });
 
@@ -258,6 +273,18 @@ describe('Corp-Specific Bonus Cards (B22-B32)', () => {
       expect(Math.max(...after)).to.eq(1);
     });
 
+    it('breaks the last tie by flipping a project card and counting through the parties by its cost', () => {
+      const {game, marsBot, turmoil} = turmoilGame();
+      game.projectDeck.drawPile.push(new Mine(), new Capital()); // Capital (26) first, then Mine (4)
+      const discarded = game.projectDeck.discardPile.length;
+
+      marsBot['bonusResolver'].resolve(createCorpBonusCard(BonusCardId.B29_GRAY_EMINENCE));
+
+      // 26 counts to the 2nd of 6 tied parties; 4 counts to the 4th of the 5 left
+      expect(botDelegates(turmoil, marsBot)).deep.eq([0, 1, 0, 0, 1, 0]);
+      expect(game.projectDeck.discardPile.length).to.eq(discarded + 2);
+    });
+
     it('gains 2 M€ for each delegate it cannot place', () => {
       const {marsBot, turmoil} = turmoilGame();
       turmoil.delegateReserve.remove(marsBot.player, turmoil.delegateReserve.get(marsBot.player) - 1);
@@ -306,16 +333,28 @@ describe('Corp-Specific Bonus Cards (B22-B32)', () => {
       expect(played).deep.eq([searchForLife, powerPlant]);
     });
 
-    it('does nothing and stays in the game with the energy track at 0', () => {
-      const {game, marsBot, played} = hyperlinkGame(0, []);
-      const deckSize = game.projectDeck.drawPile.length;
+    // Our reading: a wild tag counts as a tag
+    it('counts wild tags in the tag tiebreak', () => {
+      const building = fakeCard({cost: 4, tags: [Tag.BUILDING]});
+      const twoWild = fakeCard({cost: 4, tags: [Tag.WILD, Tag.WILD]});
+      const searchForLife = new SearchForLife();
+      const {marsBot, played} = hyperlinkGame(3, [building, twoWild, searchForLife]);
+
+      marsBot['bonusResolver'].resolve(createCorpBonusCard(BonusCardId.B30_INTERFACE_HYPERLINK));
+
+      expect(played).deep.eq([searchForLife, twoWild]);
+    });
+
+    it('draws at least 2 cards, even with the energy track at 0', () => {
+      const mine = new Mine();
+      const searchForLife = new SearchForLife();
+      const {marsBot, played} = hyperlinkGame(0, [mine, searchForLife]);
 
       const destroyed = marsBot['bonusResolver'].resolve(createCorpBonusCard(BonusCardId.B30_INTERFACE_HYPERLINK));
 
-      expect(played).is.empty;
-      expect(game.projectDeck.drawPile).has.length(deckSize);
-      expect(destroyed).is.false;
-      expect(marsBot.bonusDeck.discardPile.map((c) => c.id)).to.include(BonusCardId.B30_INTERFACE_HYPERLINK);
+      expect(played).deep.eq([searchForLife, mine]);
+      expect(destroyed).is.true;
+      expect(marsBot.bonusDeck.discardPile.map((c) => c.id)).to.not.include(BonusCardId.B30_INTERFACE_HYPERLINK);
     });
   });
 
@@ -376,6 +415,56 @@ describe('Corp-Specific Bonus Cards (B22-B32)', () => {
 
       expect(marsBot.marsBotBoard.tracks.map((t) => t.position)).deep.eq([5, 3, 2, 4, 4, 6, 3]);
       expect(marsBot.turnResolver.megacredits).to.eq(2);
+    });
+  });
+
+  // A bonus card that can't resolve takes no Failed Action (rulebook A p.5 B.a; BGG 3599965 and
+  // 3623553, njshaw2). Project cards still do.
+  describe('advancing a maxed track', () => {
+    function maxTracks(marsBot: MarsBot) {
+      for (const track of marsBot.marsBotBoard.tracks) {
+        track.position = track.definition.layout.length - 1;
+      }
+    }
+
+    it('B24 Supply & Demand takes no Failed Action', () => {
+      const {marsBot} = createAutomaGame();
+      maxTracks(marsBot);
+      marsBot['bonusResolver'].resolve(createCorpBonusCard(BonusCardId.B24_SUPPLY_AND_DEMAND));
+      expect(marsBot.turnResolver.megacredits).to.eq(0);
+    });
+
+    it('B26 Venusian Lobby takes no Failed Action', () => {
+      const [game] = testGame(1, {automaOption: true, venusNextExtension: true, boardName: BoardName.THARSIS});
+      const marsBot = game.automaHooks!.marsBot;
+      maxTracks(marsBot);
+      marsBot['bonusResolver'].resolve(createCorpBonusCard(BonusCardId.B26_VENUSIAN_LOBBY));
+      expect(game.getVenusScaleLevel()).to.eq(2);
+      expect(marsBot.turnResolver.megacredits).to.eq(0);
+    });
+
+    it('B28 Diversification takes no Failed Action', () => {
+      const {marsBot} = createAutomaGame();
+      maxTracks(marsBot);
+      marsBot.turnResolver.megacredits = 4;
+      marsBot['bonusResolver'].resolve(createCorpBonusCard(BonusCardId.B28_DIVERSIFICATION));
+      expect(marsBot.turnResolver.megacredits).to.eq(0);
+    });
+
+    it('B32 Investors takes no Failed Action and still moves the most-advanced track back', () => {
+      const {game, marsBot} = createAutomaGame();
+      game.generation = 2;
+      maxTracks(marsBot);
+      marsBot['bonusResolver'].resolve(createCorpBonusCard(BonusCardId.B32_INVESTORS));
+      expect(marsBot.turnResolver.megacredits).to.eq(0);
+      expect(marsBot.marsBotBoard.tracks[0].position).to.eq(17);
+    });
+
+    it('a project card tag still takes the Failed Action', () => {
+      const {marsBot} = createAutomaGame();
+      maxTracks(marsBot);
+      marsBot.turnResolver.advanceTrack(0);
+      expect(marsBot.turnResolver.megacredits).to.eq(5);
     });
   });
 

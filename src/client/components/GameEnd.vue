@@ -203,9 +203,9 @@
                         <div class="game-end-column-vp">{{game.marsBot.vpBreakdown.vermin}}</div>
                         <div class="game-end-column-text" v-i18n>Vermin</div>
                       </div>
-                      <div v-if="game.marsBot.vpBreakdown.colonyVP" class="game-end-column-row">
-                        <div class="game-end-column-vp">{{game.marsBot.vpBreakdown.colonyVP}}</div>
-                        <div class="game-end-column-text" v-i18n>Colonies</div>
+                      <div v-if="game.marsBot.vpBreakdown.leftoverResourcesVP" class="game-end-column-row">
+                        <div class="game-end-column-vp">{{game.marsBot.vpBreakdown.leftoverResourcesVP}}</div>
+                        <div class="game-end-column-text" v-i18n>Leftover resources</div>
                       </div>
                       <div v-if="game.marsBot.vpBreakdown.corpVP" class="game-end-column-row">
                         <div class="game-end-column-vp">{{game.marsBot.vpBreakdown.corpVP}}</div>
@@ -388,7 +388,7 @@ export default defineComponent({
       if (vp === undefined) {
         return 0;
       }
-      return vp.neuralInstance + vp.mcToVP + vp.cardVP + vp.vermin + vp.colonyVP + vp.turmoilVP + vp.corpVP;
+      return vp.neuralInstance + vp.mcToVP + vp.cardVP + vp.vermin + vp.leftoverResourcesVP + vp.turmoilVP + vp.corpVP;
     },
     automaHumanWins(): boolean {
       if (!this.game.marsBot?.vpBreakdown) {

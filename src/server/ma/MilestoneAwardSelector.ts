@@ -10,6 +10,7 @@ import {AwardName, awardNames} from '../../common/ma/AwardName';
 import {synergies} from './MilestoneAwardSynergies';
 import {isCompatible, MAManifest} from './MAManifest';
 import {intersection} from '../../common/utils/utils';
+import {AutomaGameSetup} from '../automa/AutomaGameSetup';
 
 type DrawnMilestonesAndAwards = {
   milestones: Array<MilestoneName>,
@@ -129,10 +130,15 @@ export const BOARDS_WITHOUT_VOLCANIC_SPACES: ReadonlyArray<BoardName> = [
  * exported for tests
  */
 export function getCandidates(gameOptions: GameOptions): [Array<MilestoneName>, Array<AwardName>] {
-  function include<T extends string>(name: T, manifest: MAManifest<T, any>): boolean {
+  function include<T extends string>(
+    name: T, manifest: MAManifest<T, any>, supportedByAutoma: (name: T, gameOptions: GameOptions) => boolean): boolean {
     // Never include deprecated MAs in random candidates.  They generally have "more official" versions that will be
     // considered for inclusion.
     if (manifest.all[name].deprecated) {
+      return false;
+    }
+    // Against MarsBot, deal only what the automa rules support
+    if (gameOptions.automaOption && !supportedByAutoma(name, gameOptions)) {
       return false;
     }
 
@@ -169,8 +175,8 @@ export function getCandidates(gameOptions: GameOptions): [Array<MilestoneName>, 
     return true;
   }
 
-  const candidateMilestones = milestoneNames.filter((name) => include(name, milestoneManifest));
-  const candidateAwards = awardNames.filter((name) => include(name, awardManifest));
+  const candidateMilestones = milestoneNames.filter((name) => include(name, milestoneManifest, AutomaGameSetup.supportsMilestone));
+  const candidateAwards = awardNames.filter((name) => include(name, awardManifest, AutomaGameSetup.supportsAward));
 
   return [candidateMilestones, candidateAwards];
 }

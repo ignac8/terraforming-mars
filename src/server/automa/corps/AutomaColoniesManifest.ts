@@ -10,18 +10,19 @@ import {addRandomColonyTile} from '../colonies/MarsBotColonyPlacer';
 // C30 Aridor
 const ARIDOR: IMarsBotCorp = {
   name: CardName.ARIDOR,
-  description: 'Draft: least-advanced track tag. Setup: add 1 colony tile to the game. White and black cubes across multiple tracks; each cube advances event track.',
+  description: 'Draft: tags on the least-advanced track, each counting alike. Setup: add 1 colony tile to the game. White and black cubes across multiple tracks; each cube advances event track.',
   tags: [],
   requiredExpansions: ['colonies'],
   draftPriority: {type: 'leastAdvancedTrack'},
+  // The card names the Jovian and city tracks, which sit on different rows from map to map
   trackCubes: [
     {trackIndex: 0, position: 3, cubeType: 'white'},
     {trackIndex: 1, position: 3, cubeType: 'white'},
     {trackIndex: 3, position: 3, cubeType: 'white'},
     {trackIndex: 4, position: 3, cubeType: 'white'},
-    {trackIndex: 4, position: 6, cubeType: 'white'},
+    {trackTag: Tag.JOVIAN, position: 6, cubeType: 'white'},
     {trackIndex: 5, position: 3, cubeType: 'black'},
-    {trackIndex: 5, position: 6, cubeType: 'black'},
+    {trackTag: Tag.CITY, position: 6, cubeType: 'black'},
     {trackIndex: 6, position: 3, cubeType: 'black'},
     {trackIndex: 6, position: 6, cubeType: 'black'},
   ],
@@ -41,15 +42,16 @@ const ARIDOR: IMarsBotCorp = {
 // C31 Arclight
 const ARCLIGHT: IMarsBotCorp = {
   name: CardName.ARKLIGHT,
-  description: 'Tag: Animal. Draft: Animal > Plant. White cubes on plant track. Plant or Animal cards earn 2 MC.',
+  description: 'Tag: Animal. Draft: Animal > Plant. White cubes on plant track. Each Plant or Animal tag resolved (starting tag included) earns 2 MC.',
   tags: [Tag.ANIMAL],
   draftPriority: {type: 'tags', tags: [Tag.ANIMAL, Tag.PLANT]},
   trackCubes: whiteTrackCubes(6),
   effect: {
-    onProjectCardResolved(bot, card) {
-      if (card.tags.some((t) => t === Tag.PLANT || t === Tag.ANIMAL)) {
+    // Per tag, so a card with a plant and an animal tag earns 4 M€
+    onTagResolved(bot, tag) {
+      if (tag === Tag.PLANT || tag === Tag.ANIMAL) {
         bot.gainMc(2);
-        bot.game.log('MarsBot (Arclight): Plant/Animal card, +2 M€');
+        bot.game.log('MarsBot (Arclight): Plant/Animal tag, +2 M€');
       }
     },
   },
@@ -72,7 +74,7 @@ const POLYPHEMOS: IMarsBotCorp = {
 // C33 Poseidon
 const POSEIDON: IMarsBotCorp = {
   name: CardName.POSEIDON,
-  description: 'Setup: place 1 colony. Colony placement advances least-advanced track.',
+  description: 'Setup: place 1 colony. Each colony you or MarsBot build (setup included) advances MarsBot\'s least-advanced track.',
   tags: [],
   requiredExpansions: ['colonies'],
   setup(bot) {
@@ -84,7 +86,7 @@ const POSEIDON: IMarsBotCorp = {
       bot.game.log('MarsBot (Poseidon): no eligible colony tile for setup (C-33)');
     }
   },
-  // C-33: each colony placement advances the least-advanced track
+  // C-33: each colony either player builds advances the least-advanced track
   effect: {
     onColonyPlaced(bot) {
       bot.advanceTrack(bot.marsBotBoard.getLeastAdvancedTrackIndex());

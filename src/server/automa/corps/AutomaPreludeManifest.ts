@@ -109,7 +109,7 @@ const VITOR: IMarsBotCorp = {
   ...bonusCardBeforeActionPhase(BonusCardId.B04_OVERACHIEVEMENT, 'Vitor'),
 };
 
-// ==== PRELUDE 2 (C18, C20, C29, C40-C46) ====
+// ==== PROMO, VENUS NEXT AND PRELUDE 2 (C18-C20, C29, C40-C46) ====
 
 // C18 Acadian Community
 const ACADIAN_COMMUNITY: IMarsBotCorp = {
@@ -173,20 +173,21 @@ const FACTORUM: IMarsBotCorp = {
   ...bonusCardBeforeActionPhase(BonusCardId.B24_SUPPLY_AND_DEMAND, 'Factorum'),
 };
 
-// C29 Manutech — black cubes at #5/#12 on each track
+// C29 Manutech — black reminder cubes at #5/#12 on each track
 const MANUTECH: IMarsBotCorp = {
   name: CardName.MANUTECH,
-  description: 'Tag: Building. Black cubes at positions 5 and 12 on every track. Hitting a black cube advances that same track 1 extra step.',
+  description: 'Tag: Building. When any track (including Venus) reaches #5 or #12, after resolving that space, advance it one more space and resolve that one too.',
   tags: [Tag.BUILDING],
-  trackCubes: Array.from({length: 7}, (_, i) => [
+  // Track 7 is Venus. Setup leaves out cubes for tracks the bot does not have.
+  trackCubes: Array.from({length: 8}, (_, i) => [
     {trackIndex: i, position: 5, cubeType: 'black' as const},
     {trackIndex: i, position: 12, cubeType: 'black' as const},
   ]).flat(),
   effect: {
-    onTrackCubeTrigger(bot, trackIndex, _position, cubeType) {
-      if (cubeType === 'black') {
-        bot.advanceTrack(trackIndex); // Advance same track 1 more
-        bot.game.log(`MarsBot (Manutech): black cube on track ${trackIndex} — advance 1 more`);
+    afterTrackSpaceResolved(bot, trackIndex, position) {
+      if (position === 5 || position === 12) {
+        bot.game.log(`MarsBot (Manutech): track ${trackIndex + 1} reached #${position}, advance 1 more`);
+        bot.advanceTrack(trackIndex);
       }
     },
   },
@@ -195,7 +196,7 @@ const MANUTECH: IMarsBotCorp = {
 // C40 Ecotec
 const ECOTEC: IMarsBotCorp = {
   name: CardName.ECOTEC,
-  description: 'Tag: Plant. Draft: Plant > Microbe > Animal. Setup: 2 plant resources on card. Plant/Microbe/Animal cards add 1 plant resource; spend 5 to advance plant track.',
+  description: 'Tag: Plant. Draft: Plant > Microbe > Animal. Setup: 2 plant resources on card. Each Plant, Microbe or Animal tag (starting tag included) adds 1. Before the action phase, at 5+, spend 5 to advance plant track. Your cards may remove or steal plants from this card instead of from MarsBot\'s MC.',
   tags: [Tag.PLANT],
   draftPriority: {type: 'tags', tags: [Tag.PLANT, Tag.MICROBE, Tag.ANIMAL]},
   trackCubes: whiteTrackCubes(6),
@@ -324,20 +325,20 @@ const PALADIN_SHIPPING: IMarsBotCorp = {
 // C44 Sagitta
 const SAGITTA: IMarsBotCorp = {
   name: CardName.SAGITTA_FRONTIER_SERVICES,
-  description: 'Tags: Power, Event. Setup: +8 MC. Tagless cards earn 10 MC instead of 5. 1-tag cards earn 1 extra MC.',
+  description: 'Tags: Power, Event. Setup: +8 MC. Tagless cards pay double the Failed Action (10 MC instead of 5). 1-tag cards earn 1 extra MC.',
   tags: [Tag.POWER, Tag.EVENT],
   setup(bot) {
     bot.gainMc(8);
     bot.game.log('MarsBot (Sagitta): +8 M€');
   },
   effect: {
-    // Tagless card: 10 MC instead of 5 (Failed Action). 1-tag card: +1 MC.
+    // Tagless card: double the Failed Action (10 MC instead of 5, 6 instead of 3 on Easy). 1-tag card: +1 MC.
     onProjectCardResolved(bot, card) {
       const tagCount = marsBotCardTags(card).length;
       if (tagCount === 0) {
-        // Failed action gives 10 instead of 5 — difference of 5 on top of normal
-        bot.gainMc(5);
-        bot.game.log('MarsBot (Sagitta): tagless card, +5 M€ extra (10 total)');
+        const extra = bot.failedActionMc;
+        bot.gainMc(extra);
+        bot.game.log('MarsBot (Sagitta): tagless card, Failed Action pays ${0} M€ more', (b) => b.number(extra));
       } else if (tagCount === 1) {
         bot.gainMc(1);
         bot.game.log('MarsBot (Sagitta): 1-tag card, +1 M€');
@@ -354,10 +355,10 @@ const SPIRE: IMarsBotCorp = {
   draftPriority: {type: 'mostTags'},
   effect: {
     onProjectCardResolved(bot, card) {
-      const nonWildTags = marsBotCardTags(card).filter((t) => t !== Tag.WILD);
-      if (nonWildTags.length >= 2) {
+      const tagCount = marsBotCardTags(card).length;
+      if (tagCount >= 2) {
         bot.setCorpState('scienceResources', bot.getCorpState('scienceResources') + 1);
-        bot.game.log(`MarsBot (Spire): card with ${nonWildTags.length} tags, +1 science resource`);
+        bot.game.log(`MarsBot (Spire): card with ${tagCount} tags, +1 science resource`);
       }
     },
   },

@@ -419,6 +419,24 @@ export class AutomaGameHooks {
   }
 
   /**
+   * Handle the Venus 8% card bonus for MarsBot: 2 MC instead of a card, as for the heat production
+   * bonus on the temperature track (BGG 3358342, 3424237, 3733436). Government Intervention pays
+   * no MC from bonuses. Returns true if handled.
+   */
+  public handleVenusCardBonus(player: IPlayer): boolean {
+    if (player !== this.marsBot.player) {
+      return false;
+    }
+    if (this.marsBot.bonusMcBlocked) {
+      this.game.log('MarsBot gains no MC for the Venus card bonus (Government Intervention)');
+      return true;
+    }
+    this.marsBot.gainMc(2);
+    this.game.log('MarsBot gains 2 MC (Venus card bonus)');
+    return true;
+  }
+
+  /**
    * Handle the temperature ocean bonus at 0C for MarsBot, which places the ocean
    * itself rather than being asked for a space it could never choose.
    *
@@ -619,6 +637,17 @@ export class AutomaGameHooks {
       return;
     }
     corp.effect.onTilePlaced(this.marsBot, player === this.marsBot.player, tileType, space);
+  }
+
+  /**
+   * Called when `player` builds a colony through the normal colony rules. MarsBot builds its
+   * colonies without them and notifies its corp itself, so only the human's colonies arrive here.
+   */
+  public handleColonyBuilt(player: IPlayer): void {
+    if (player === this.marsBot.player) {
+      return;
+    }
+    this.marsBot.corp?.effect?.onColonyPlaced?.(this.marsBot);
   }
 
   /** Called when either player raises the Venus scale by `steps`. Notifies MarsBot's corp. */

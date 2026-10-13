@@ -2,6 +2,7 @@ import {expect} from 'chai';
 import {CardName} from '../../../src/common/cards/CardName';
 import {testGame} from '../../TestGame';
 import {IGame} from '../../../src/server/IGame';
+import {Game} from '../../../src/server/Game';
 import {TestPlayer} from '../../TestPlayer';
 import {MarsBot} from '../../../src/server/automa/MarsBot';
 import {
@@ -14,7 +15,7 @@ import {Tag} from '../../../src/common/cards/Tag';
 import {IProjectCard} from '../../../src/server/cards/IProjectCard';
 import {BoardName} from '../../../src/common/boards/BoardName';
 import {Resource} from '../../../src/common/Resource';
-import {BonusCardId} from '../../../src/common/automa/AutomaTypes';
+import {BonusCardId, DifficultyLevel, FAILED_ACTION_MC} from '../../../src/common/automa/AutomaTypes';
 import {MicroMills} from '../../../src/server/cards/base/MicroMills';
 import {IceCapMelting} from '../../../src/server/cards/base/IceCapMelting';
 import {Research} from '../../../src/server/cards/base/Research';
@@ -32,10 +33,10 @@ import {cast} from '../../../src/common/utils/utils';
 import {runAllActions, setTemperature} from '../../TestingUtils';
 import {MAX_TEMPERATURE} from '../../../src/common/constants';
 
-function createAutomaGame(): {game: IGame, human: TestPlayer, marsBot: MarsBot} {
+function createAutomaGame(automaDifficulty: DifficultyLevel = 'normal'): {game: IGame, human: TestPlayer, marsBot: MarsBot} {
   const [game, human] = testGame(1, {
     automaOption: true,
-    automaDifficulty: 'normal',
+    automaDifficulty,
     boardName: BoardName.THARSIS,
   });
   expect(game.automaHooks?.marsBot).to.not.be.undefined;
@@ -243,22 +244,118 @@ describe('Expansion MarsBot Corporations', () => {
   });
 
   describe('C29 Manutech', () => {
-    it('has black cubes at #5 and #12 on all 7 tracks', () => {
+    function createVenusGame(): MarsBot {
+      const [game] = testGame(1, {automaOption: true, venusNextExtension: true, boardName: BoardName.THARSIS});
+      return game.automaHooks!.marsBot;
+    }
+
+    it('has black cubes at #5 and #12 on all 8 tracks, Venus included', () => {
       const corp = getMarsBotCorp(CardName.MANUTECH)!;
-      expect(corp.trackCubes!.length).to.eq(14); // 7 tracks × 2 positions
-      for (let t = 0; t < 7; t++) {
-        expect(corp.trackCubes!.some((c) => c.trackIndex === t && c.position === 5)).to.be.true;
-        expect(corp.trackCubes!.some((c) => c.trackIndex === t && c.position === 12)).to.be.true;
+      expect(corp.trackCubes!.length).to.eq(16); // 8 tracks × 2 positions
+      for (let t = 0; t < 8; t++) {
+        expect(corp.trackCubes).to.deep.include({trackIndex: t, position: 5, cubeType: 'black'});
+        expect(corp.trackCubes).to.deep.include({trackIndex: t, position: 12, cubeType: 'black'});
       }
     });
 
-    it('black cube triggers advance on same track', () => {
+    it('places no cubes on the Venus track without Venus Next', () => {
       const {marsBot} = createAutomaGame();
-      const corp = getMarsBotCorp(CardName.MANUTECH)!;
-      marsBot.setCorpAndSetup(corp);
-      const track1Before = marsBot.marsBotBoard.tracks[0].position;
-      corp.effect!.onTrackCubeTrigger!(marsBot, 0, 5, 'black');
-      expect(marsBot.marsBotBoard.tracks[0].position).to.be.gte(track1Before + 1);
+      expect(marsBot.marsBotBoard.tracks).to.have.length(7);
+
+      marsBot.setCorpAndSetup(getMarsBotCorp(CardName.MANUTECH)!);
+
+      expect([...marsBot.trackCubePositions.values()].filter((c) => c.trackIndex === 7)).is.empty;
+    });
+
+    it('places its reminder cubes on the Venus track with Venus Next', () => {
+      const marsBot = createVenusGame();
+
+      marsBot.setCorpAndSetup(getMarsBotCorp(CardName.MANUTECH)!);
+
+      expect(marsBot.hasCubeAt(7, 5)?.cubeType).to.eq('black');
+      expect(marsBot.hasCubeAt(7, 12)?.cubeType).to.eq('black');
+    });
+
+    it('advances the Venus track one more space when it reaches #5', () => {
+      const marsBot = createVenusGame();
+      marsBot.setCorpAndSetup(getMarsBotCorp(CardName.MANUTECH)!);
+      marsBot.marsBotBoard.tracks[7].position = 4;
+
+      marsBot.advanceTrack(7);
+
+      expect(marsBot.marsBotBoard.tracks[7].position).to.eq(6);
+    });
+
+    // Our reading: the extra advance off the end of the Venus track is a Failed Action
+    it('takes a Failed Action for the extra advance when Venus reaches #12, its last space', () => {
+      const marsBot = createVenusGame();
+      marsBot.setCorpAndSetup(getMarsBotCorp(CardName.MANUTECH)!);
+      marsBot.marsBotBoard.tracks[7].position = 11;
+      const mc = marsBot.turnResolver.megacredits;
+      const tr = marsBot.player.terraformRating;
+
+      marsBot.advanceTrack(7);
+
+      expect(marsBot.marsBotBoard.tracks[7].position).to.eq(12);
+      expect(marsBot.player.terraformRating).to.eq(tr + 5);
+      expect(marsBot.turnResolver.megacredits).to.eq(mc + FAILED_ACTION_MC);
+    });
+
+    it('a save from before the Venus cubes still loads and advances Venus at #5', () => {
+      const marsBot = createVenusGame();
+      marsBot.setCorpAndSetup(getMarsBotCorp(CardName.MANUTECH)!);
+      const serialized = marsBot.game.serialize();
+      const state = serialized.automaState!;
+      state.trackCubePositions = state.trackCubePositions!.filter((c) => c.trackIndex !== 7);
+
+      const restored = Game.deserialize(serialized).automaHooks!.marsBot;
+      expect(restored.hasCubeAt(7, 5)).is.undefined;
+      restored.marsBotBoard.tracks[7].position = 4;
+      restored.advanceTrack(7);
+
+      expect(restored.marsBotBoard.tracks[7].position).to.eq(6);
+    });
+
+    it('reaching #5 advances the same track one more space', () => {
+      const {marsBot} = createAutomaGame();
+      marsBot.setCorpAndSetup(getMarsBotCorp(CardName.MANUTECH)!);
+      marsBot.marsBotBoard.tracks[0].position = 4;
+
+      marsBot.advanceTrack(0);
+
+      expect(marsBot.marsBotBoard.tracks[0].position).to.eq(6);
+    });
+
+    it('resolves the #5 space before advancing to #6 and resolving that', () => {
+      const {marsBot} = createAutomaGame();
+      marsBot.setCorpAndSetup(getMarsBotCorp(CardName.MANUTECH)!);
+      marsBot.marsBotBoard.tracks[0].position = 4; // Building #5: tr2, #6: temperature
+      const resolved: Array<string> = [];
+      const resolveTrackAction = marsBot.turnResolver['resolveTrackAction'].bind(marsBot.turnResolver);
+      marsBot.turnResolver['resolveTrackAction'] = (action, trackIndex) => {
+        resolved.push(action);
+        resolveTrackAction(action, trackIndex);
+      };
+
+      marsBot.advanceTrack(0);
+
+      // C29: "after resolving the effect, advance it another space, and resolve that one as well"
+      expect(resolved).to.deep.eq(['tr2', 'temperature']);
+    });
+
+    it('does not advance again when the track re-reaches #5 after a regression', () => {
+      const {marsBot} = createAutomaGame();
+      marsBot.setCorpAndSetup(getMarsBotCorp(CardName.MANUTECH)!);
+      marsBot.marsBotBoard.tracks[0].position = 4;
+      marsBot.advanceTrack(0);
+      marsBot.regressTrack(Resource.STEEL);
+      marsBot.regressTrack(Resource.STEEL);
+      expect(marsBot.marsBotBoard.tracks[0].position).to.eq(4);
+
+      marsBot.advanceTrack(0);
+
+      // Rulebook B p.3: moving back up does not retrigger a corporation trigger
+      expect(marsBot.marsBotBoard.tracks[0].position).to.eq(5);
     });
   });
 
@@ -417,6 +514,15 @@ describe('Expansion MarsBot Corporations', () => {
       expect(marsBot.turnResolver.megacredits).to.eq(mcBefore + 10);
     });
 
+    // Our reading: the tagless card pays double whatever the Failed Action pays (3 M€ on Easy)
+    it('pays double the Easy Failed Action for a tagless card', () => {
+      const {marsBot} = createAutomaGame('easy');
+      marsBot.setCorpAndSetup(getMarsBotCorp(CardName.SAGITTA_FRONTIER_SERVICES)!);
+      const mcBefore = marsBot.turnResolver.megacredits;
+      marsBot.turnResolver.resolveProjectCard(new MicroMills());
+      expect(marsBot.turnResolver.megacredits).to.eq(mcBefore + 6);
+    });
+
     it('counts the Event tag, so an event with no printed tags pays 1 M€', () => {
       const {marsBot} = createAutomaGame();
       const corp = getMarsBotCorp(CardName.SAGITTA_FRONTIER_SERVICES)!;
@@ -447,6 +553,15 @@ describe('Expansion MarsBot Corporations', () => {
       const corp = getMarsBotCorp(CardName.SPIRE)!;
       marsBot.setCorpAndSetup(corp);
       corp.effect!.onProjectCardResolved!(marsBot, fakeCard('TwoTags', {tags: [Tag.BUILDING, Tag.SPACE], cost: 10}));
+      expect(marsBot.corpSpecificState.get('scienceResources')).to.eq(1);
+    });
+
+    // Our reading: a wild tag counts as a tag
+    it('counts a wild tag toward the 2 tags', () => {
+      const {marsBot} = createAutomaGame();
+      const corp = getMarsBotCorp(CardName.SPIRE)!;
+      marsBot.setCorpAndSetup(corp);
+      corp.effect!.onProjectCardResolved!(marsBot, fakeCard('WildAndBuilding', {tags: [Tag.WILD, Tag.BUILDING], cost: 10}));
       expect(marsBot.corpSpecificState.get('scienceResources')).to.eq(1);
     });
 
@@ -578,8 +693,7 @@ describe('Expansion MarsBot Corporations', () => {
       const corp = getMarsBotCorp(CardName.RECYCLON)!;
       expect(corp.trackCubes!.length).to.eq(6);
       for (const cube of corp.trackCubes!) {
-        expect(cube.trackIndex).to.eq(0);
-        expect(cube.cubeType).to.eq('white');
+        expect(cube).to.deep.include({trackIndex: 0, cubeType: 'white'});
       }
     });
 

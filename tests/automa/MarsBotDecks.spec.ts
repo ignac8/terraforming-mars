@@ -170,6 +170,71 @@ describe('MarsBot decks', () => {
     expect(marsBot.bonusDeck.drawPile[0].id).eq(BonusCardId.B31_GOVERNMENT_SUBSIDY);
   });
 
+  it('shuffles the setup bonus card back into the bonus deck for UNMI, keeping the expansion cards', () => {
+    const {marsBot} = createAutomaGame({venusNextExtension: true, turmoilExtension: true});
+    const expansionCards = [BonusCardId.B16_GOVERNMENT_INTERVENTION, BonusCardId.B21_PARTY_POLITICS];
+    const setupCard = marsBot.actionDeck.find((c) => 'id' in c && !expansionCards.includes(c.id as BonusCardId))!;
+    expect(setupCard).is.not.undefined;
+    const bonusCards = marsBot.bonusDeck.drawPile.length;
+
+    marsBot.setCorpAndSetup(getMarsBotCorp(CardName.UNITED_NATIONS_MARS_INITIATIVE)!);
+
+    // C12: "Do not add a bonus card to MarsBot's action deck during setup."
+    expect(actionDeckIds(marsBot).filter((id) => id !== undefined)).to.have.members(expansionCards);
+    expect(marsBot.bonusDeck.drawPile).includes(setupCard);
+    // The setup card and Government Subsidy
+    expect(marsBot.bonusDeck.drawPile).has.length(bonusCards + 2);
+  });
+
+  describe('a corporation destroying the setup bonus card', () => {
+    /** Swaps the dealt setup bonus card for `id`, as if the bonus deck had dealt that one. */
+    function dealSetupCard(marsBot: MarsBot, id: BonusCardId) {
+      const dealt = marsBot.actionDeck.find((c) => 'id' in c)! as MarsBotBonusCard;
+      marsBot.actionDeck = marsBot.actionDeck.filter((c) => c !== dealt);
+      marsBot.bonusDeck.drawPile.push(dealt);
+      marsBot.actionDeck.push(marsBot.bonusDeck.findAndRemove(id)!);
+    }
+
+    // Our reading of rulebook A setup step 3 and Inventrix's "destroy Lobbyists": the card is
+    // destroyed and the bonus deck deals a replacement, so generation 1 keeps 4 cards.
+    it('deals a replacement from the bonus deck (Inventrix)', () => {
+      const {marsBot} = createAutomaGame();
+      dealSetupCard(marsBot, BonusCardId.B06_LOBBYISTS);
+      const deckSize = marsBot.actionDeck.length;
+      const bonusCards = marsBot.bonusDeck.drawPile.length;
+
+      marsBot.setCorpAndSetup(getMarsBotCorp(CardName.INVENTRIX)!);
+
+      expect(marsBot.actionDeck).has.length(deckSize);
+      const ids = actionDeckIds(marsBot).filter((id) => id !== undefined);
+      expect(ids).has.length(1);
+      expect(ids).does.not.include(BonusCardId.B06_LOBBYISTS);
+      expect(bonusDeckIds(marsBot)).does.not.include(BonusCardId.B06_LOBBYISTS);
+      expect(marsBot.bonusDeck.drawPile).has.length(bonusCards - 1);
+    });
+
+    it('deals no replacement when the dealt card is another one', () => {
+      const {marsBot} = createAutomaGame();
+      dealSetupCard(marsBot, BonusCardId.B02_INVASIVE_SPECIES);
+      const before = actionDeckIds(marsBot);
+
+      marsBot.setCorpAndSetup(getMarsBotCorp(CardName.INVENTRIX)!);
+
+      expect(actionDeckIds(marsBot)).to.have.members(before);
+    });
+
+    it('keeps the replacement across a reload', () => {
+      const {game, marsBot} = createAutomaGame();
+      dealSetupCard(marsBot, BonusCardId.B06_LOBBYISTS);
+      marsBot.setCorpAndSetup(getMarsBotCorp(CardName.INVENTRIX)!);
+      const ids = actionDeckIds(marsBot);
+
+      const restored = Game.deserialize(game.serialize()).automaHooks!.marsBot;
+
+      expect(actionDeckIds(restored)).deep.eq(ids);
+    });
+  });
+
   it('moves a bonus card into UNMI\'s action deck from generation 2', () => {
     const {game, marsBot} = createAutomaGame();
     const corp = getMarsBotCorp(CardName.UNITED_NATIONS_MARS_INITIATIVE)!;
@@ -178,12 +243,13 @@ describe('MarsBot decks', () => {
     const bonusCards = marsBot.bonusDeck.drawPile.length;
 
     corp.beforeActionPhase!(marsBot);
-    expect(marsBot.actionDeck).has.length(4);
+    // The 3 project cards: UNMI keeps the setup bonus card out
+    expect(marsBot.actionDeck).has.length(3);
 
     game.generation = 2;
     corp.beforeActionPhase!(marsBot);
 
-    expect(marsBot.actionDeck).has.length(5);
+    expect(marsBot.actionDeck).has.length(4);
     expect(marsBot.actionDeck).includes(topBonusCard);
     expect(marsBot.bonusDeck.drawPile).has.length(bonusCards - 1);
     expect(marsBot.bonusDeck.discardPile).is.empty;

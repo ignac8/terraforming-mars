@@ -90,6 +90,27 @@ describe('MarsBotTilePlacer', () => {
     expect(game.board.getAdjacentSpaces(space).some((s) => s.id === '18')).is.false;
   });
 
+  // "Effectively it wants the greatest net gain of points" (njshaw2, BGG 3350125 and 3411375)
+  it('findGreenerySpace scores MarsBot\'s adjacent cities minus the human\'s', () => {
+    const a = inlandSpace();
+    const adj = game.board.getAdjacentSpaces(a);
+    // A: 2 MarsBot cities and 2 human cities, net 0
+    game.simpleAddTile(marsBot, adj[0], {tileType: TileType.CITY});
+    game.simpleAddTile(marsBot, adj[3], {tileType: TileType.CITY});
+    game.simpleAddTile(human, adj[1], {tileType: TileType.CITY});
+    game.simpleAddTile(human, adj[4], {tileType: TileType.CITY});
+    // B: 1 MarsBot city and no human city, net +1
+    const cityCount = (space: Space, player: TestPlayer) =>
+      game.board.getAdjacentSpaces(space).filter((s) => s.tile?.tileType === TileType.CITY && s.player === player).length;
+    const b = game.board.getAvailableSpacesForGreenery(marsBot)
+      .find((s) => s !== a && cityCount(s, marsBot) === 1 && cityCount(s, human) === 0)!;
+    expect(b).is.not.undefined;
+
+    const space = tilePlacer.findGreenerySpace((s) => s === a || s === b);
+
+    expect(space).to.eq(b);
+  });
+
   it('findExpeditedConstructionCitySpace returns undefined on an empty board', () => {
     cast(tilePlacer.findExpeditedConstructionCitySpace(), undefined);
   });
@@ -109,6 +130,31 @@ describe('MarsBotTilePlacer', () => {
 
     const adjacent = game.board.getAdjacentSpaces(space).map(toID);
     expect(adjacent).to.include.members([first.id, second.id]);
+  });
+
+  // The card: any space next to 2+ greenery/ocean tiles, then the usual city rule, so 2 greeneries
+  // beat 3 oceans (TDaver, BGG 3350125)
+  it('findExpeditedConstructionCitySpace picks among the eligible spaces by the usual city rule', () => {
+    const x = inlandSpace();
+    const xArea = [x, ...game.board.getAdjacentSpaces(x)];
+    for (const s of game.board.getAdjacentSpaces(x).slice(0, 3)) {
+      game.simpleAddTile(human, s, {tileType: TileType.OCEAN});
+    }
+    const y = game.board.getAvailableSpacesOnLand(marsBot).find((space) => {
+      const adj = game.board.getAdjacentSpaces(space);
+      return adj.length === 6 && adj.every((s) => s.spaceType === SpaceType.LAND && s.tile === undefined) &&
+        [space, ...adj].every((s) => game.board.getAdjacentSpaces(s).every((n) => !xArea.includes(n)));
+    })!;
+    const yAdj = game.board.getAdjacentSpaces(y);
+    // Two opposite neighbours, so only Y touches both
+    const shareOnlyY = (p: Space, q: Space) =>
+      game.board.getAdjacentSpaces(p).filter((s) => s !== y && game.board.getAdjacentSpaces(q).includes(s)).length === 0;
+    const p = yAdj[0];
+    const q = yAdj.find((s) => s !== p && !game.board.getAdjacentSpaces(p).includes(s) && shareOnlyY(p, s))!;
+    game.simpleAddTile(human, p, {tileType: TileType.GREENERY});
+    game.simpleAddTile(human, q, {tileType: TileType.GREENERY});
+
+    expect(tilePlacer.findExpeditedConstructionCitySpace()).to.eq(y);
   });
 
   it('findNeuralInstanceSpace avoids the spaces next to the one reserved for Noctis City', () => {

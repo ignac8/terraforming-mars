@@ -12,6 +12,9 @@ import {SelectCard} from '../../../src/server/inputs/SelectCard';
 import {IProjectCard} from '../../../src/server/cards/IProjectCard';
 import {cast} from '../../../src/common/utils/utils';
 
+const WITH_TITAN = [ColonyName.TITAN, ColonyName.CERES, ColonyName.LUNA, ColonyName.IO, ColonyName.GANYMEDE];
+const WITHOUT_TITAN = [ColonyName.CALLISTO, ColonyName.CERES, ColonyName.LUNA, ColonyName.IO, ColonyName.GANYMEDE];
+
 function getMarsBot(game: ReturnType<typeof testGame>[0]): MarsBot {
   return (game.automaHooks as AutomaGameHooks).marsBot;
 }
@@ -19,7 +22,7 @@ function getMarsBot(game: ReturnType<typeof testGame>[0]): MarsBot {
 describe('FloaterHandling (C-8, C-9, C-14, C-X2)', () => {
   describe('C-14: floater track action without Venus Next', () => {
     it('adds to Titan storage instead of floaters (1 floater)', () => {
-      const [game] = testGame(1, {automaOption: true, coloniesExtension: true, boardName: BoardName.THARSIS});
+      const [game] = testGame(1, {automaOption: true, coloniesExtension: true, customColoniesList: WITH_TITAN, boardName: BoardName.THARSIS});
       const marsBot = getMarsBot(game);
       const titanBefore = marsBot.shippingBoard.get(ColonyName.TITAN);
       const floatersBefore = marsBot.floaters;
@@ -31,13 +34,25 @@ describe('FloaterHandling (C-8, C-9, C-14, C-X2)', () => {
     });
 
     it('adds to Titan storage instead of floaters (2 floaters)', () => {
-      const [game] = testGame(1, {automaOption: true, coloniesExtension: true, boardName: BoardName.THARSIS});
+      const [game] = testGame(1, {automaOption: true, coloniesExtension: true, customColoniesList: WITH_TITAN, boardName: BoardName.THARSIS});
       const marsBot = getMarsBot(game);
       const titanBefore = marsBot.shippingBoard.get(ColonyName.TITAN);
 
       marsBot.turnResolver['resolveTrackAction']('floater2', 0);
 
       expect(marsBot.shippingBoard.get(ColonyName.TITAN)).to.eq(titanBefore + 2);
+    });
+
+    // Nick, BGG 3341542: "If you're not using the Titan colony, *and* not using Venus Next, floaters can
+    // also be ignored"
+    it('is ignored when Titan is not one of the dealt colonies', () => {
+      const [game] = testGame(1, {automaOption: true, coloniesExtension: true, customColoniesList: WITHOUT_TITAN, boardName: BoardName.THARSIS});
+      const marsBot = getMarsBot(game);
+
+      marsBot.turnResolver['resolveTrackAction']('floater2', 0);
+
+      expect(marsBot.shippingBoard.get(ColonyName.TITAN)).to.eq(0);
+      expect(marsBot.floaters).to.eq(0);
     });
 
     it('C-13: without Venus or Colonies, floater track action is ignored', () => {
@@ -184,7 +199,7 @@ describe('FloaterHandling (C-8, C-9, C-14, C-X2)', () => {
 
   describe('C-14: Titan storage overflow NOT triggered for floaters', () => {
     it('Titan storage can hold more than 5 without triggering C-12', () => {
-      const [game] = testGame(1, {automaOption: true, coloniesExtension: true, boardName: BoardName.THARSIS});
+      const [game] = testGame(1, {automaOption: true, coloniesExtension: true, customColoniesList: WITH_TITAN, boardName: BoardName.THARSIS});
       const marsBot = getMarsBot(game);
       const board: MarsBotBoard = marsBot.marsBotBoard;
       const eventIdx = board.tagToTrack[Tag.EVENT]!;

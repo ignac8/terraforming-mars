@@ -27,13 +27,14 @@ const CREDICOR: IMarsBotCorp = {
 // Gen effect: before action phase, add Rapid Sprouting (B23) to action deck.
 const ECO_LINE: IMarsBotCorp = {
   name: CardName.ECOLINE,
-  description: 'Each generation: add Rapid Sprouting bonus card to action deck.',
+  description: 'Each generation: add Rapid Sprouting bonus card to action deck. Your cards may remove or steal the plant on this card instead of from MarsBot\'s MC.',
   tags: [],
   ...bonusCardBeforeActionPhase(BonusCardId.B23_RAPID_SPROUTING, 'Eco Line'),
 };
 
 // ---- C03 Helion ----
-// White cubes: instead of raising temp, draw 1 card and resolve it.
+// White cubes: instead of raising temp, draw 1 card and resolve it. A white cube on another icon
+// (the Nova boards' cities) replaces nothing, so that icon resolves too.
 // Black cubes: temperature rises by 1.
 const HELION: IMarsBotCorp = {
   name: CardName.HELION,
@@ -54,11 +55,11 @@ const HELION: IMarsBotCorp = {
     {trackIndex: 5, position: 14, cubeType: 'black'},
   ],
   effect: {
-    onTrackCubeTrigger(bot, _trackIndex, _position, cubeType) {
+    onTrackCubeTrigger(bot, trackIndex, position, cubeType) {
       if (cubeType === 'white') {
         bot.maybeDrawAndResolveProjectCard();
         bot.game.log('MarsBot (Helion): white cube — drew and resolved card instead of temp raise');
-        return true; // The temperature icon under the cube stays unresolved.
+        return bot.marsBotBoard.tracks[trackIndex].definition.layout[position] === 'temperature';
       }
       if (cubeType === 'black') {
         bot.raiseTemperature(1);
@@ -74,7 +75,7 @@ const HELION: IMarsBotCorp = {
 // Effect: each advance on building (track 1) or event (track 3), earn 2 MC.
 const INTERPLANETARY_CINEMATICS: IMarsBotCorp = {
   name: CardName.INTERPLANETARY_CINEMATICS,
-  description: 'Tags: 2 Events. White cubes on building and event tracks. Each advance on those tracks earns 2 MC.',
+  description: 'Tags: 2 Events. White cubes on building and event tracks. Each advance on those tracks, starting tags included, earns 2 MC.',
   tags: [Tag.EVENT, Tag.EVENT],
   trackCubes: [...whiteTrackCubes(0), ...whiteTrackCubes(2)],
   trackCubesTriggerEveryAdvance: true,
@@ -117,27 +118,35 @@ const INVENTRIX: IMarsBotCorp = {
 // Effect: when earning MC, deduct from card first. When card empty, refill 10 + advance building track.
 const MINING_GUILD: IMarsBotCorp = {
   name: CardName.MINING_GUILD,
-  description: 'Tags: 2 Building. Setup: 10 MC on card. MC MarsBot earns comes off this card; when empty, refill 10 MC and advance building track.',
+  description: 'Tags: 2 Building. Setup: 10 MC on card. Until the building track reaches #18, MC MarsBot earns comes off this card; when empty, refill 10 MC, advance building track, and take the rest of the MC off the refilled card.',
   tags: [Tag.BUILDING, Tag.BUILDING],
   setup(bot) {
     bot.setCorpState('mcOnCard', 10);
     bot.game.log('MarsBot (Mining Guild): 10 M€ placed on card');
   },
   effect: {
-    // The card is a countdown: M€ MarsBot earns is removed from the card, but the
-    // bot keeps the earnings. When the card empties, refill 10 M€ and advance the
-    // building track. (NamuWiki card text; verify against the physical card.)
+    // The card is a countdown: M€ MarsBot earns is removed from the card, but the bot keeps the
+    // earnings. Each time the card empties, refill 10 M€ and advance the building track, and the
+    // rest of the gain comes off the refilled card. Once the game has ended the card stops, like
+    // Philares (BGG 3513998).
     onMcGained(bot, amount) {
-      if (bot.marsBotBoard.tracks[0].position >= 18) {
+      if (bot.game.isDoneWithFinalProduction()) {
         return;
-      } // Building track maxed, the card stops
-      const mcOnCard = bot.getCorpState('mcOnCard') - Math.min(amount, bot.getCorpState('mcOnCard'));
-      if (mcOnCard <= 0) {
+      }
+      let remaining = amount;
+      // Building track at #18: the card stops. The advance can reach it mid-gain.
+      while (remaining > 0 && bot.marsBotBoard.tracks[0].position < 18) {
+        const mcOnCard = bot.getCorpState('mcOnCard');
+        const taken = Math.min(remaining, mcOnCard);
+        remaining -= taken;
+        if (mcOnCard - taken > 0) {
+          bot.setCorpState('mcOnCard', mcOnCard - taken);
+          return;
+        }
+        // Refill first: M€ the advance earns re-enters here and comes off the refilled card
         bot.setCorpState('mcOnCard', 10);
-        bot.advanceTrack(0); // Building track = index 0
         bot.game.log('MarsBot (Mining Guild): card empty, refill 10 M€ + advance building track');
-      } else {
-        bot.setCorpState('mcOnCard', mcOnCard);
+        bot.advanceTrack(0); // Building track = index 0
       }
     },
   },
@@ -175,7 +184,7 @@ const PHOBOLOG: IMarsBotCorp = {
 // Effect: anyone plays Jovian -> advance event track (index 2).
 const SATURN_SYSTEMS: IMarsBotCorp = {
   name: CardName.SATURN_SYSTEMS,
-  description: 'Tags: Jovian, 3 Space. Draft: Jovian > Space. When anyone plays a Jovian tag, advance event track.',
+  description: 'Tags: Jovian, 3 Space. Draft: Jovian > Space. When you play a Jovian card or MarsBot resolves a Jovian tag (starting tag included), advance event track.',
   tags: [Tag.JOVIAN, Tag.SPACE, Tag.SPACE, Tag.SPACE],
   draftPriority: {type: 'tags', tags: [Tag.JOVIAN, Tag.SPACE]},
   effect: {
@@ -219,10 +228,10 @@ const TERACTOR: IMarsBotCorp = {
 };
 
 // ---- C10 Tharsis Republic ----
-// Draft: City. Setup: place 1 city. Effect: any city placement gives +2 MC; MarsBot city also advances event track.
+// Draft: City. Setup: place 1 city. Effect: the player's city gives +2 MC; MarsBot's city advances event track.
 const THARSIS_REPUBLIC: IMarsBotCorp = {
   name: CardName.THARSIS_REPUBLIC,
-  description: 'Draft: City. Setup: place 1 city. Any city placement gives 2 MC; MarsBot city also advances event track.',
+  description: 'Draft: City. Setup: place 1 city. When you place a city, MarsBot gains 2 MC. When MarsBot places a city (setup included), advance its event track.',
   tags: [],
   draftPriority: {type: 'tags', tags: [Tag.CITY]},
   setup(bot) {
@@ -246,10 +255,10 @@ const THARSIS_REPUBLIC: IMarsBotCorp = {
 
 // ---- C11 Thorgate ----
 // Tag: Power. Draft: Power. Setup: +10 MC, white cubes on energy track.
-// Effect: white cube resolves card (ignore first tag) then temperature +1.
+// Effect: white cube draws a card and resolves only its first tag, then temperature +1.
 const THORGATE: IMarsBotCorp = {
   name: CardName.THORGATE,
-  description: 'Tag: Power. Draft: Power. Setup: +10 MC, white cubes on energy track. White cube: resolve card (ignore first tag) then temperature +1.',
+  description: 'Tag: Power. Draft: Power. Setup: +10 MC, white cubes on energy track. White cube: draw a project card and resolve only its first tag, then raise temperature 1 step.',
   tags: [Tag.POWER],
   draftPriority: {type: 'tags', tags: [Tag.POWER]},
   trackCubes: [
@@ -265,22 +274,24 @@ const THORGATE: IMarsBotCorp = {
   effect: {
     onTrackCubeTrigger(bot, _trackIndex, _position, cubeType) {
       if (cubeType === 'white') {
-        bot.maybeDrawAndResolveProjectCardIgnoringFirstNTags(1);
+        bot.maybeDrawAndResolveProjectCardFirstTagOnly();
         bot.raiseTemperature(1);
-        bot.game.log('MarsBot (Thorgate): white cube — resolved card (first tag ignored) + temp +1');
+        bot.game.log('MarsBot (Thorgate): white cube — resolved card (first tag only) + temp +1');
       }
     },
   },
 };
 
 // ---- C12 UNMI ----
-// Setup: add Government Subsidy (B31) to bonus deck.
-// Gen: from gen 2+, add 1 bonus card to action deck before action phase.
+// Setup: add Government Subsidy (B31) to bonus deck, and take the bonus card dealt at setup back
+// out of the action deck. Gen: from gen 2+, add 1 bonus card to action deck before action phase.
 const UNMI: IMarsBotCorp = {
   name: CardName.UNITED_NATIONS_MARS_INITIATIVE,
-  description: 'Setup: add Government Subsidy to bonus deck. From generation 2 onward, move 1 bonus card to the action deck each generation.',
+  description: 'Setup: add Government Subsidy to bonus deck; no bonus card in the starting action deck. From generation 2 onward, move 1 bonus card to the action deck each generation.',
   tags: [],
   setup(bot) {
+    // The setup bonus card was dealt before the corporation was chosen (rulebook A setup step 3)
+    bot.returnSetupBonusCardToBonusDeck();
     bot.addBonusCardToBonusDeck(BonusCardId.B31_GOVERNMENT_SUBSIDY);
     bot.game.log('MarsBot (UNMI): Government Subsidy added to bonus deck');
   },

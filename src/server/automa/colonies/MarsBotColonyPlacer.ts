@@ -4,6 +4,7 @@ import {ColonyName} from '../../../common/colonies/ColonyName';
 import type {MarsBot} from '../MarsBot';
 import {comparing} from '../../../common/utils/Ordering';
 import {inplaceRemove, toName} from '../../../common/utils/utils';
+import {pickByFlippedCard} from '../MarsBotCardFlip';
 
 /**
  * Handles MarsBot colony placement logic (C-15b, C-16a, C-19, C-24a, C-24d).
@@ -35,32 +36,6 @@ export function eligibleColoniesForMarsBot(game: IGame, marsBot: MarsBot): Array
  */
 export function selectRandomColony(game: IGame, marsBot: MarsBot): IColony | undefined {
   return pickByFlippedCard(game, eligibleColoniesForMarsBot(game, marsBot));
-}
-
-/**
- * Picks one of `colonies` the C-15b way.
- *
- * Method: flip 1 card from the project deck; use `(cost - 1) % colonies.length`
- * to pick the tile. Discard the flipped card.
- */
-function pickByFlippedCard(game: IGame, colonies: ReadonlyArray<IColony>): IColony | undefined {
-  if (colonies.length === 0) {
-    return undefined;
-  }
-
-  const flipped = game.projectDeck.drawN(game, 1);
-  if (flipped.length === 0) {
-    return undefined;
-  }
-
-  const card = flipped[0];
-  // Use positive modulo: cost=0 cards (e.g. IndenturedWorkers) would give -1 % N in JS
-  const n = colonies.length;
-  const index = ((card.cost - 1) % n + n) % n;
-  // Discard the flipped card back to the project deck discard pile
-  game.projectDeck.discardPile.push(card);
-
-  return colonies[index];
 }
 
 /**

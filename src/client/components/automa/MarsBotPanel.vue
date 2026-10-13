@@ -17,7 +17,7 @@
       <span class="marsbot-stat" v-if="model.vpBreakdown?.mcToVP"><span v-i18n>MC to VP</span>: <b>{{ model.vpBreakdown.mcToVP }}</b></span>
       <span class="marsbot-stat" v-if="model.vpBreakdown?.cardVP"><span v-i18n>Cards</span>: <b>{{ model.vpBreakdown.cardVP }}</b></span>
       <span class="marsbot-stat" v-if="model.vpBreakdown?.vermin"><span v-i18n>Vermin</span>: <b>{{ model.vpBreakdown.vermin }}</b></span>
-      <span class="marsbot-stat" v-if="model.vpBreakdown?.colonyVP"><span v-i18n>Colonies</span>: <b>{{ model.vpBreakdown.colonyVP }}</b></span>
+      <span class="marsbot-stat" v-if="model.vpBreakdown?.leftoverResourcesVP"><span v-i18n>Leftover resources</span>: <b>{{ model.vpBreakdown.leftoverResourcesVP }}</b></span>
       <span class="marsbot-stat" v-if="model.vpBreakdown?.turmoilVP"><span v-i18n>Turmoil</span>: <b>{{ model.vpBreakdown.turmoilVP }}</b></span>
       <span class="marsbot-stat" v-if="model.vpBreakdown?.corpVP"><span v-i18n>Corporation</span>: <b>{{ model.vpBreakdown.corpVP }}</b></span>
       <span class="marsbot-stat"><span v-i18n>MC</span>: <b>{{ model.megacredits }}</b></span>
