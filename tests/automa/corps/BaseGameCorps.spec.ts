@@ -343,8 +343,7 @@ describe('Base Game MarsBot Corporations', () => {
       const corp = getMarsBotCorp(CardName.PHOBOLOG)!;
       expect(corp.trackCubes).to.have.length(4);
       for (const cube of corp.trackCubes!) {
-        expect(cube.trackIndex).to.eq(1);
-        expect(cube.cubeType).to.eq('white');
+        expect(cube).to.deep.include({trackIndex: 1, cubeType: 'white'});
       }
     });
 

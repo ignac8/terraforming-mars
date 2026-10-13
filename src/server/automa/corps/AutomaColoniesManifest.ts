@@ -14,14 +14,15 @@ const ARIDOR: IMarsBotCorp = {
   tags: [],
   requiredExpansions: ['colonies'],
   draftPriority: {type: 'leastAdvancedTrack'},
+  // The card names the Jovian and city tracks, which sit on different rows from map to map
   trackCubes: [
     {trackIndex: 0, position: 3, cubeType: 'white'},
     {trackIndex: 1, position: 3, cubeType: 'white'},
     {trackIndex: 3, position: 3, cubeType: 'white'},
     {trackIndex: 4, position: 3, cubeType: 'white'},
-    {trackIndex: 4, position: 6, cubeType: 'white'},
+    {trackTag: Tag.JOVIAN, position: 6, cubeType: 'white'},
     {trackIndex: 5, position: 3, cubeType: 'black'},
-    {trackIndex: 5, position: 6, cubeType: 'black'},
+    {trackTag: Tag.CITY, position: 6, cubeType: 'black'},
     {trackIndex: 6, position: 3, cubeType: 'black'},
     {trackIndex: 6, position: 6, cubeType: 'black'},
   ],

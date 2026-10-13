@@ -253,8 +253,8 @@ describe('Expansion MarsBot Corporations', () => {
       const corp = getMarsBotCorp(CardName.MANUTECH)!;
       expect(corp.trackCubes!.length).to.eq(16); // 8 tracks × 2 positions
       for (let t = 0; t < 8; t++) {
-        expect(corp.trackCubes!.some((c) => c.trackIndex === t && c.position === 5)).to.be.true;
-        expect(corp.trackCubes!.some((c) => c.trackIndex === t && c.position === 12)).to.be.true;
+        expect(corp.trackCubes).to.deep.include({trackIndex: t, position: 5, cubeType: 'black'});
+        expect(corp.trackCubes).to.deep.include({trackIndex: t, position: 12, cubeType: 'black'});
       }
     });
 
@@ -693,8 +693,7 @@ describe('Expansion MarsBot Corporations', () => {
       const corp = getMarsBotCorp(CardName.RECYCLON)!;
       expect(corp.trackCubes!.length).to.eq(6);
       for (const cube of corp.trackCubes!) {
-        expect(cube.trackIndex).to.eq(0);
-        expect(cube.cubeType).to.eq('white');
+        expect(cube).to.deep.include({trackIndex: 0, cubeType: 'white'});
       }
     });
 

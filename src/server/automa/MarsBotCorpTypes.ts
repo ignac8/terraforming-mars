@@ -24,6 +24,31 @@ export type MarsBotTrackCube = {
   cubeType: CubeType;
 };
 
+/**
+ * A corp cube printed on the track of a tag (Aridor's "Jovian track #6"), wherever that tag's
+ * track sits on the map's MarsBot board.
+ */
+export type MarsBotTagTrackCube = {
+  trackTag: Tag;
+  position: number;
+  cubeType: CubeType;
+};
+
+/**
+ * The corp's cubes on this board: tag-named cubes go to the track that carries the tag, and cubes
+ * on a track the board lacks (Venus without Venus Next) are left out.
+ */
+export function corpTrackCubes(corp: IMarsBotCorp, marsBotBoard: MarsBotBoard): Array<MarsBotTrackCube> {
+  const cubes: Array<MarsBotTrackCube> = [];
+  for (const cube of corp.trackCubes ?? []) {
+    const trackIndex = 'trackTag' in cube ? marsBotBoard.tagToTrack[cube.trackTag] : cube.trackIndex;
+    if (trackIndex !== undefined && trackIndex < marsBotBoard.tracks.length) {
+      cubes.push({trackIndex, position: cube.position, cubeType: cube.cubeType});
+    }
+  }
+  return cubes;
+}
+
 /** Corp state key, set to 1 once the corp's `actionDeckBonusCard` removed itself from the game. */
 export const ACTION_DECK_BONUS_CARD_REMOVED = 'actionDeckBonusCardRemoved';
 
@@ -56,8 +81,8 @@ export type IMarsBotCorp = {
    * Once its removal condition removes it (Vitor's Overachievement), it stays out of the game.
    */
   readonly actionDeckBonusCard?: BonusCardId;
-  /** Cubes seeded onto the bot's board tracks during setup. */
-  readonly trackCubes?: ReadonlyArray<MarsBotTrackCube>;
+  /** Cubes seeded onto the bot's board tracks during setup. Read them through corpTrackCubes. */
+  readonly trackCubes?: ReadonlyArray<MarsBotTrackCube | MarsBotTagTrackCube>;
   /**
    * True when the corp's cubes trigger on every advance onto their space, not only the first.
    *
