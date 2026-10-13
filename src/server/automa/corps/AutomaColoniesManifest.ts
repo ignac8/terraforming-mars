@@ -41,15 +41,16 @@ const ARIDOR: IMarsBotCorp = {
 // C31 Arclight
 const ARCLIGHT: IMarsBotCorp = {
   name: CardName.ARKLIGHT,
-  description: 'Tag: Animal. Draft: Animal > Plant. White cubes on plant track. Plant or Animal cards earn 2 MC.',
+  description: 'Tag: Animal. Draft: Animal > Plant. White cubes on plant track. Each Plant or Animal tag resolved (starting tag included) earns 2 MC.',
   tags: [Tag.ANIMAL],
   draftPriority: {type: 'tags', tags: [Tag.ANIMAL, Tag.PLANT]},
   trackCubes: whiteTrackCubes(6),
   effect: {
-    onProjectCardResolved(bot, card) {
-      if (card.tags.some((t) => t === Tag.PLANT || t === Tag.ANIMAL)) {
+    // Per tag, so a card with a plant and an animal tag earns 4 M€
+    onTagResolved(bot, tag) {
+      if (tag === Tag.PLANT || tag === Tag.ANIMAL) {
         bot.gainMc(2);
-        bot.game.log('MarsBot (Arclight): Plant/Animal card, +2 M€');
+        bot.game.log('MarsBot (Arclight): Plant/Animal tag, +2 M€');
       }
     },
   },

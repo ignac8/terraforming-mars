@@ -267,6 +267,29 @@ describe('Corp Effect Hooks', () => {
     });
   });
 
+  describe('C31 Arklight', () => {
+    /** M€ Arklight's effect adds when MarsBot resolves `card`, against the same game without the effect. */
+    function arklightGain(card: IProjectCard): number {
+      const corp = getMarsBotCorp(CardName.ARKLIGHT)!;
+      const run = (c: typeof corp) => {
+        const {marsBot} = createAutomaGame();
+        marsBot.setCorpAndSetup(c);
+        const mcBefore = marsBot.turnResolver.megacredits;
+        marsBot.turnResolver.resolveProjectCard(card);
+        return marsBot.turnResolver.megacredits - mcBefore;
+      };
+      return run(corp) - run({...corp, effect: undefined});
+    }
+
+    it('earns 2 M€ per plant or animal tag, not per card', () => {
+      expect(arklightGain(fakeCard('PlantAnimal', {tags: [Tag.PLANT, Tag.ANIMAL]}))).to.eq(4);
+    });
+
+    it('earns nothing for a microbe tag', () => {
+      expect(arklightGain(fakeCard('Microbe', {tags: [Tag.MICROBE]}))).to.eq(0);
+    });
+  });
+
   describe('C06 Mining Guild card countdown', () => {
     it('card starts at 10, and the M€ its starting tags earn count down from it', () => {
       const {marsBot} = createAutomaGame();
