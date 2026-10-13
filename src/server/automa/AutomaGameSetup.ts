@@ -278,7 +278,7 @@ const MODULAR_MILESTONES: ReadonlyArray<MilestoneName> = [
   'Briber', 'Builder7', 'Coastguard', 'Diversifier', 'Ecologist', 'Energizer', 'Engineer', 'Farmer',
   'Fundraiser', 'Gardener', 'Generalist', 'Geologist', 'Hydrologist', 'Landshaper', 'Legend4', 'Lobbyist',
   'Mayor', 'Merchant', 'Metallurgist', 'Philantropist', 'Pioneer4', 'Planetologist', 'Planner', 'Producer',
-  'Researcher', 'Rim Settler', 'Spacefarer4', 'Sponsor', 'Tactician4', 'Terran5', 'Thawer', 'Trader',
+  'Researcher', 'Rim Settler', 'Spacefarer4', 'Sponsor', 'Tactician4', 'Terran', 'Terran5', 'Thawer', 'Trader',
   'Tycoon10',
 ];
 

@@ -74,6 +74,7 @@ export const MARSBOT_MILESTONE_DESCRIPTIONS: Partial<Record<MilestoneName, strin
   'Spacefarer4': 'Space track ≥ 4',
   'Sponsor': '3 cards costing 20+ MC in played pile (events included)',
   'Tactician4': '30+ MC',
+  'Terran': 'Earth track ≥ 5',
   'Terran5': 'Earth track ≥ 5',
   'Thawer': 'Raised temperature 5+ times',
   'Trader': 'Bio, Earth and Venus tracks ≥ 2',

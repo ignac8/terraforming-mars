@@ -358,7 +358,7 @@ describe('MarsBot map milestones and awards', () => {
         'Hoverlord', 'Hydrologist', 'Land Specialist', 'Landshaper', 'Legend', 'Legend4', 'Lobbyist', 'Mayor',
         'Merchant', 'Metallurgist', 'Philantropist', 'Pioneer', 'Pioneer4', 'Planetologist', 'Planner',
         'Polar Explorer', 'Producer', 'Researcher', 'Rim Settler', 'Smith', 'Spacefarer4', 'Specialist', 'Sponsor',
-        'Tactician', 'Tactician4', 'Terraformer', 'Terran5', 'Thawer', 'Trader', 'Tradesman', 'Tycoon', 'Tycoon10',
+        'Tactician', 'Tactician4', 'Terraformer', 'Terran', 'Terran5', 'Thawer', 'Trader', 'Tradesman', 'Tycoon', 'Tycoon10',
         'V. Spacefarer',
       ]);
       expect(awards).to.have.members([
