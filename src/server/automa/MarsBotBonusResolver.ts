@@ -730,9 +730,8 @@ export class MarsBotBonusResolver {
 
     const colony = selectTradeColony(this.game, marsBot);
     if (colony === undefined) {
-      // No tradeable colony: Failed Action
-      this.turnResolver.failedAction();
-      this.game.log(`MarsBot ${cardName}: no tradeable colony — Failed Action (C-17)`);
+      // A bonus card that can't resolve is not a Failed Action (rulebook A, p.5)
+      this.game.log(`MarsBot ${cardName}: no tradeable colony, no effect (C-17)`);
       return;
     }
 
