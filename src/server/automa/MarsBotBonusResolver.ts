@@ -861,18 +861,18 @@ export class MarsBotBonusResolver {
   }
 
   // Ecoline: a. spend the plant on the corp card to place a greenery; b. otherwise put a plant there.
-  // With no greenery space the plant stays, and a bonus card that can't resolve is not a Failed Action.
+  // With no greenery space the plant is spent anyway, and a bonus card that can't resolve is not a Failed Action.
   private resolveRapidSprouting(): void {
     const bot = this.marsBotManager;
     if (bot === undefined) {
       return;
     }
     if (bot.getCorpState('plantResources') > 0) {
+      bot.setCorpState('plantResources', 0);
       if (this.maybePlaceGreenery()) {
-        bot.setCorpState('plantResources', 0);
         this.game.log('MarsBot resolves Rapid Sprouting: placed greenery');
       } else {
-        this.game.log('MarsBot resolves Rapid Sprouting: no greenery space, no effect');
+        this.game.log('MarsBot resolves Rapid Sprouting: no greenery space, plant spent');
       }
     } else {
       bot.setCorpState('plantResources', 1);
