@@ -201,8 +201,11 @@ export interface IMarsBot {
    */
   maybeFundAward(): boolean;
 
-  /** Raises the temperature. The steps it actually moves count toward `temperatureRaises`. */
-  raiseTemperature(steps: 1 | 2 | 3): void;
+  /**
+   * Raises the temperature. The steps it actually moves count toward `temperatureRaises`. When the
+   * temperature is already at its maximum, the bot takes a Failed Action instead.
+   */
+  raiseTemperature(steps: 1 | 2): void;
   placeOcean(): void;
   placeCity(): void;
   placeGreenery(): void;
