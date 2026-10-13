@@ -31,6 +31,7 @@ export const MARSBOT_MILESTONE_DESCRIPTIONS: Partial<Record<MilestoneName, strin
   'Tactician': '35+ MC',
   'Energizer': 'Energy track ≥ 6',
   'Rim Settler': 'Energy track ≥ 5',
+  'Polar Explorer': '3+ tiles in the two bottom rows',
   // Elysium
   'Generalist': 'All tracks ≥ 2 (except Venus)',
   'Specialist': 'Any track ≥ 10',
@@ -45,9 +46,13 @@ export const MARSBOT_MILESTONE_DESCRIPTIONS: Partial<Record<MilestoneName, strin
   'Land Specialist': '3+ bonus cards destroyed',
   'Tradesman': 'Energy, Earth and Venus tracks ≥ 2',
   'Smith': 'Building + Space tracks ≥ 7',
+  'Pioneer': '3+ colonies',
   // Vastitas Borealis Nova
   'Agronomist': 'Bio track ≥ 4',
   'V. Spacefarer': 'Space track ≥ 5',
+  'Geologist': '3+ tiles on or next to volcanic areas',
+  // Venus Next
+  'Hoverlord': '7+ floaters on its Venus board',
   // Modular
   'Briber': '20+ MC (loses 12 MC on claim)',
   'Builder7': 'Building track ≥ 7',
@@ -110,6 +115,8 @@ export const MARSBOT_AWARD_DESCRIPTIONS: Partial<Record<AwardName, string>> = {
   'Celebrity': 'Cards costing 20+ MC (including events)',
   'Industrialist': 'Energy track + 5',
   'Benefactor': 'TR minus 15',
+  'Desert Settler': 'Tiles south of the equator (unchanged)',
+  'Estate Dealer': 'Tiles next to ocean (unchanged)',
   // Terra Cimmeria
   'Electrician': 'Energy track',
   'Founder': 'Tiles next to special tiles (Neural Instance counts for MarsBot)',
@@ -121,11 +128,17 @@ export const MARSBOT_AWARD_DESCRIPTIONS: Partial<Record<AwardName, string>> = {
   'Investor': 'Earth/City track',
   'Botanist': 'Bio track minus 2',
   'Incorporator': 'Cards costing 10 MC or less (including events)',
+  'Metropolist': 'Cities owned (unchanged)',
+  'Suburbian': 'Tiles on the edge of the board (unchanged)',
   // Vastitas Borealis Nova
   'Traveller': 'Higher of Earth or Jovian track + 5',
   'Manufacturer': 'Building + Energy track',
   'Blacksmith': 'Building OR Space track (higher)',
   'Promoter': 'Event track',
+  'Landscaper': 'Largest group of connected tiles (unchanged)',
+  'Highlander': 'Tiles not next to ocean (unchanged)',
+  // Venus Next
+  'Venuphile': 'Venus track',
   // Modular
   'Administrator': 'Cards without tags in played pile + 2',
   'Biologist': 'Bio track + 5',

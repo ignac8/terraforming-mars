@@ -16,6 +16,7 @@ import {milestoneManifest} from '../../src/server/milestones/Milestones';
 import {awardManifest} from '../../src/server/awards/Awards';
 import {MilestoneName} from '../../src/common/ma/MilestoneName';
 import {AwardName} from '../../src/common/ma/AwardName';
+import {MARSBOT_BOARD_NAMES} from '../../src/common/automa/MarsBotBoards';
 import {SpaceType} from '../../src/common/boards/SpaceType';
 import {Space} from '../../src/server/boards/Space';
 import {TileType} from '../../src/common/TileType';
@@ -421,6 +422,29 @@ describe('MarsBot map milestones and awards', () => {
       }
       for (const name of ['Biologist', 'Constructor'] as const) {
         expect(marsBotAwardRule(name), name).is.a('string');
+      }
+    });
+
+    // The descriptions are the "MarsBot: ..." hints on the board's milestones and awards
+    it('describe every milestone and award MarsBot plays against', () => {
+      const options = {venusNextExtension: true, turmoilExtension: true} as GameOptions;
+      for (const board of MARSBOT_BOARD_NAMES) {
+        for (const name of milestoneManifest.boards[board]) {
+          expect(marsBotMilestoneRule(name, board), `${board} ${name}`).is.a('string');
+        }
+        for (const name of awardManifest.boards[board]) {
+          expect(marsBotAwardRule(name, board), `${board} ${name}`).is.a('string');
+        }
+      }
+      for (const name of Object.keys(milestoneManifest.all) as Array<MilestoneName>) {
+        if (AutomaGameSetup.supportsMilestone(name, options)) {
+          expect(marsBotMilestoneRule(name), name).is.a('string');
+        }
+      }
+      for (const name of Object.keys(awardManifest.all) as Array<AwardName>) {
+        if (AutomaGameSetup.supportsAward(name, options)) {
+          expect(marsBotAwardRule(name), name).is.a('string');
+        }
       }
     });
 
