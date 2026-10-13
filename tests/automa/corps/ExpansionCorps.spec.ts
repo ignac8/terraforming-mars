@@ -15,7 +15,7 @@ import {Tag} from '../../../src/common/cards/Tag';
 import {IProjectCard} from '../../../src/server/cards/IProjectCard';
 import {BoardName} from '../../../src/common/boards/BoardName';
 import {Resource} from '../../../src/common/Resource';
-import {BonusCardId, DifficultyLevel} from '../../../src/common/automa/AutomaTypes';
+import {BonusCardId, DifficultyLevel, FAILED_ACTION_MC} from '../../../src/common/automa/AutomaTypes';
 import {MicroMills} from '../../../src/server/cards/base/MicroMills';
 import {IceCapMelting} from '../../../src/server/cards/base/IceCapMelting';
 import {Research} from '../../../src/server/cards/base/Research';
@@ -284,6 +284,21 @@ describe('Expansion MarsBot Corporations', () => {
       marsBot.advanceTrack(7);
 
       expect(marsBot.marsBotBoard.tracks[7].position).to.eq(6);
+    });
+
+    // Our reading: the extra advance off the end of the Venus track is a Failed Action
+    it('takes a Failed Action for the extra advance when Venus reaches #12, its last space', () => {
+      const marsBot = createVenusGame();
+      marsBot.setCorpAndSetup(getMarsBotCorp(CardName.MANUTECH)!);
+      marsBot.marsBotBoard.tracks[7].position = 11;
+      const mc = marsBot.turnResolver.megacredits;
+      const tr = marsBot.player.terraformRating;
+
+      marsBot.advanceTrack(7);
+
+      expect(marsBot.marsBotBoard.tracks[7].position).to.eq(12);
+      expect(marsBot.player.terraformRating).to.eq(tr + 5);
+      expect(marsBot.turnResolver.megacredits).to.eq(mc + FAILED_ACTION_MC);
     });
 
     it('a save from before the Venus cubes still loads and advances Venus at #5', () => {
