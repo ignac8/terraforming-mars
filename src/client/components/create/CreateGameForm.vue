@@ -176,15 +176,16 @@
                             <h4 v-i18n>Board</h4>
 
                             <div v-for="boardName in boards" :key="boardName">
-                              <div v-if="boardName==='utopia planitia'" class="create-game-subsection-label" v-i18n>Fan-made</div>
                               <input type="radio" :value="boardName" name="board" v-model="board" :id="boardName+'-checkbox'" :disabled="isBoardDisabledForAutoma(boardName)">
                               <label :for="boardName+'-checkbox'" class="expansion-button" :class="{'automa-disabled': isBoardDisabledForAutoma(boardName)}">
                                   <span :class="getBoardColorClass(boardName)">&#x2B22;</span>
                                   <span class="capitalized" v-i18n>{{ boardName }}</span>
+                                  <template v-if="boardName === BoardName.AMAZONIS_PLANITIA">&nbsp;<span title="In development">(dev)</span></template>
                                   <template v-if="boardName !== RandomBoardOption.OFFICIAL && boardName !== RandomBoardOption.ALL">
                                     &nbsp;<a :href="boardHref(boardName)" class="tooltip" v-i18n data-tooltip="Link opens in a new tab/window" target="_blank">&#9432;</a>
                                   </template>
                               </label>
+                              <div v-if="boardName === RandomBoardOption.OFFICIAL" class="create-game-subsection-label" v-i18n>Fan-made</div>
                             </div>
                         </div>
 
@@ -948,6 +949,9 @@ export default defineComponent({
     typedRefs(): Refs {
       return this.$refs as Refs;
     },
+    BoardName(): typeof BoardName {
+      return BoardName;
+    },
     RandomBoardOption(): typeof RandomBoardOption {
       return RandomBoardOption;
     },
@@ -1187,10 +1191,14 @@ export default defineComponent({
         return 'create-game-board-hexagon create-game-vastitas-borealis-nova';
       case BoardName.AMAZONIS:
         return 'create-game-board-hexagon create-game-amazonis';
+      case BoardName.AMAZONIS_PLANITIA:
+        return 'create-game-board-hexagon create-game-amazonis-planitia';
       case BoardName.ARABIA_TERRA:
         return 'create-game-board-hexagon create-game-arabia-terra';
       case BoardName.TERRA_CIMMERIA:
         return 'create-game-board-hexagon create-game-terra-cimmeria';
+      case BoardName.TERRA_CIMMERIA_NOVA:
+        return 'create-game-board-hexagon create-game-terra-cimmeria-nova';
       case BoardName.VASTITAS_BOREALIS:
         return 'create-game-board-hexagon create-game-vastitas-borealis';
       case BoardName.HOLLANDIA:
