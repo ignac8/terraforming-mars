@@ -74,6 +74,8 @@ These ride along with whichever automa PR needs them:
   `routes/ApiCreateGame.ts`, `models/ServerModel.ts`, create-form files: new automa state and
   the `automaColonyVP` option (MarsBot's leftover shipping-board resources and Venus floaters score
   1/2 VP each).
+- `ma/MilestoneAwardSelector.ts`: random milestones and awards in an automa game draw only from
+  the ones `AutomaGameSetup.supportsMilestone` / `supportsAward` accept.
 - `game/calculateVictoryPoints.ts`: Turmoil Points come first in `detailsCards`, matching
   MarsBot's end-game column (fork display choice, not needed upstream).
 
