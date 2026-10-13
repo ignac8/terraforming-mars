@@ -23,6 +23,8 @@ import {runAllActions} from './TestingUtils';
 import {OrOptions} from '../src/server/inputs/OrOptions';
 import {TestPlayer} from './TestPlayer';
 import {Server} from '../src/server/models/ServerModel';
+import {Phase} from '../src/common/Phase';
+import {IGame} from '../src/server/IGame';
 
 const claimTitle = 'Claim a milestone';
 
@@ -416,5 +418,82 @@ describe('TournamentMode', () => {
     player.megaCredits = 0;
 
     expect(milestoneOption(player)).is.undefined;
+  });
+
+  // Buying is simultaneous, so nobody may see what another player bought before choosing their own.
+  describe('Hides research purchases until every player has chosen', () => {
+    function seen(viewer: TestPlayer | undefined, player: TestPlayer) {
+      const players = viewer === undefined ?
+        Server.getSpectatorModel(player.game).players :
+        Server.getPlayerModel(viewer).players;
+      const model = players.find((p) => p.color === player.color)!;
+      return {cards: model.cardsInHandNbr, megacredits: model.megacredits};
+    }
+
+    function boughtLogs(game: IGame) {
+      return game.gameLog.filter((m) => m.message.includes('card(s)') && m.data.some((d) => d.value === 'bought'));
+    }
+
+    function chooseInitialCards(player: TestPlayer, cards: number) {
+      const corporation = player.dealtCorporationCards[0].name;
+      const projects = player.dealtProjectCards.slice(0, cards).map(toName);
+      player.process({type: 'initialCards', responses: [{type: 'card', cards: [corporation]}, {type: 'card', cards: projects}]});
+    }
+
+    it('in the first generation', () => {
+      const [game, p1, p2] = testGame(2, {tournamentExpansion: true, skipInitialCardSelection: false});
+      const discardPileSize = game.projectDeck.discardPile.length;
+
+      chooseInitialCards(p1, 3);
+
+      expect(game.projectDeck.discardPile.length).gt(discardPileSize);
+      expect(Server.getGameModel(game).discardPileSize).eq(discardPileSize);
+      expect(seen(p2, p1).cards).eq(0);
+      expect(seen(undefined, p1).cards).eq(0);
+      expect(seen(p1, p1).cards).eq(3);
+
+      chooseInitialCards(p2, 2);
+      runAllActions(game);
+
+      expect(seen(p2, p1).cards).eq(3);
+      expect(seen(undefined, p2).cards).eq(2);
+      expect(Server.getGameModel(game).discardPileSize).eq(game.projectDeck.discardPile.length);
+    });
+
+    it('in later research phases, with the buy log held back', () => {
+      const [game, p1, p2] = testGame(2, {tournamentExpansion: true});
+      p1.megaCredits = 20;
+      p2.megaCredits = 20;
+      game.gotoResearchPhase();
+      const discardPileSize = game.projectDeck.discardPile.length;
+
+      const p1Cards = cast(p1.getWaitingFor(), SelectCard);
+      p1.process({type: 'card', cards: p1Cards.cards.slice(0, 2).map(toName)});
+
+      expect(Server.getGameModel(game).discardPileSize).eq(discardPileSize);
+      expect(seen(p2, p1)).deep.eq({cards: 0, megacredits: 20});
+      expect(seen(undefined, p1)).deep.eq({cards: 0, megacredits: 20});
+      expect(seen(p1, p1)).deep.eq({cards: 2, megacredits: 14});
+      expect(boughtLogs(game)).is.empty;
+
+      const p2Cards = cast(p2.getWaitingFor(), SelectCard);
+      p2.process({type: 'card', cards: p2Cards.cards.slice(0, 1).map(toName)});
+
+      expect(game.phase).eq(Phase.ACTION);
+      expect(seen(p2, p1)).deep.eq({cards: 2, megacredits: 14});
+      expect(boughtLogs(game)).has.length(2);
+    });
+
+    it('not in other games', () => {
+      const [game, p1, p2] = testGame(2);
+      p1.megaCredits = 20;
+      game.gotoResearchPhase();
+
+      const p1Cards = cast(p1.getWaitingFor(), SelectCard);
+      p1.process({type: 'card', cards: p1Cards.cards.slice(0, 2).map(toName)});
+
+      expect(seen(p2, p1)).deep.eq({cards: 2, megacredits: 14});
+      expect(boughtLogs(game)).has.length(1);
+    });
   });
 });

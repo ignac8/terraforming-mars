@@ -73,7 +73,7 @@ import {CorporationDeck, PreludeDeck, ProjectDeck, CeoDeck} from './cards/Deck';
 import {Logger} from './logs/Logger';
 import {addDays, stringToNumber} from './database/utils';
 import {Tag} from '../common/cards/Tag';
-import {GlobalParameterMaximums, IGame, Score} from './IGame';
+import {GlobalParameterMaximums, IGame, ResearchSnapshot, Score} from './IGame';
 import {MarsBoard} from './boards/MarsBoard';
 import {UnderworldData} from './underworld/UnderworldData';
 import {UnderworldExpansion} from './underworld/UnderworldExpansion';
@@ -159,6 +159,14 @@ export class Game implements IGame, Logger {
    */
   public tilePlacer: IPlayer | undefined = undefined;
   public readonly waitingTilePlacers: Array<IPlayer> = [];
+  /**
+   * Tournament games hide research purchases until every player has chosen: other players see each
+   * hand size and M€, and the project discard pile (unbought cards land there), as they were when the
+   * phase began, and the public buy log lines wait. Not serialized, so a reload in the middle of the
+   * phase shows what was already bought.
+   */
+  public researchSnapshot: ResearchSnapshot | undefined = undefined;
+  public readonly heldResearchLogs: Array<() => void> = [];
   /** The first player of this generation. */
   public first: IPlayer;
 
@@ -735,6 +743,7 @@ export class Game implements IGame, Logger {
     player.pickedCorporationCard = corporationCard;
     const players = this.playersInGenerationOrder;
     if (players.every((p) => p.pickedCorporationCard !== undefined)) {
+      this.revealResearchPurchases();
       for (const p of players) {
         // This if cluase is necessary because `every` above doesn't help.
         if (p.pickedCorporationCard) {
@@ -789,6 +798,7 @@ export class Game implements IGame, Logger {
 
   public gotoInitialResearchPhase(): void {
     this.phase = Phase.RESEARCH;
+    this.hideResearchPurchases();
 
     this.save();
 
@@ -805,6 +815,7 @@ export class Game implements IGame, Logger {
 
   public gotoResearchPhase(): void {
     this.phase = Phase.RESEARCH;
+    this.hideResearchPurchases();
     this.researchedPlayers.clear();
     this.save();
     this.players.forEach((player) => {
@@ -1091,6 +1102,30 @@ export class Game implements IGame, Logger {
     return this.researchedPlayers.has(player.id);
   }
 
+  private hideResearchPurchases(): void {
+    if (this.gameOptions.tournamentExpansion) {
+      this.researchSnapshot = {
+        discardPileSize: this.projectDeck.discardPile.length,
+        players: new Map(this.players.map((p) => [p.id, {cards: p.cardsInHand.length, megacredits: p.megaCredits}])),
+      };
+    }
+  }
+
+  private revealResearchPurchases(): void {
+    this.researchSnapshot = undefined;
+    for (const log of this.heldResearchLogs.splice(0)) {
+      log();
+    }
+  }
+
+  public logResearchPurchase(log: () => void): void {
+    if (this.researchSnapshot === undefined) {
+      log();
+    } else {
+      this.heldResearchLogs.push(log);
+    }
+  }
+
   public playerIsFinishedWithResearchPhase(player: IPlayer): void {
     if (this.deferredActions.hasActionFor(player, placesTile)) {
       const placer = this.tilePlacer;
@@ -1112,6 +1147,7 @@ export class Game implements IGame, Logger {
       this.researchedPlayers.add(player.id);
       if (this.researchedPlayers.size === this.players.length) {
         this.researchedPlayers.clear();
+        this.revealResearchPurchases();
         this.phase = Phase.ACTION;
         this.passedPlayers.clear();
         this.potentiallyChangeFirstPlayer();

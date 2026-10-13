@@ -70,7 +70,8 @@ export class Server {
       awards: this.getAwards(game),
       colonies: coloniesToModel(game, game.colonies, false, true),
       deckSize: game.projectDeck.drawPile.length,
-      discardPileSize: game.projectDeck.discardPile.length,
+      // Unbought cards are discarded as each player chooses, so the size waits like the purchases do.
+      discardPileSize: game.researchSnapshot?.discardPileSize ?? game.projectDeck.discardPile.length,
       otherDeckSizes: this.getOtherDeckSizes(game),
       discardedColonies: game.discardedColonies.map(toName),
       expectedPurgeTimeMs: game.expectedPurgeTimeMs(),
@@ -229,6 +230,8 @@ export class Server {
   public static getPlayer(player: IPlayer, modelIsForThisPlayer: boolean): PublicPlayerModel {
     const game = player.game;
     const useHandicap = game.players.some((p) => p.handicap !== 0);
+    // Research purchases another player made this phase stay hidden until everyone has chosen.
+    const beforeResearch = modelIsForThisPlayer ? undefined : game.researchSnapshot?.players.get(player.id);
     const model: PublicPlayerModel = {
       actionsTakenThisRound: player.actionsTakenThisRound,
       actionsTakenThisGame: player.actionsTakenThisGame,
@@ -237,7 +240,7 @@ export class Server {
       availableBlueCardActionCount: player.getPlayableActionCards().length,
       cardCost: player.cardCost,
       cardDiscount: player.colonies.cardDiscount,
-      cardsInHandNbr: player.cardsInHand.length,
+      cardsInHandNbr: beforeResearch?.cards ?? player.cardsInHand.length,
       citiesCount: game.board.getCities(player).length,
       coloniesCount: player.getColoniesCount(),
       color: player.color,
@@ -251,7 +254,7 @@ export class Server {
       influence: game.turmoil?.getInfluence(player) ?? 0,
       isActive: player.id === game.activePlayer.id,
       lastCardPlayed: player.lastCardPlayed,
-      megacredits: player.megaCredits,
+      megacredits: beforeResearch?.megacredits ?? player.megaCredits,
       megacreditProduction: player.production.megacredits,
       name: player.name,
       needsToDraft: player.needsToDraft,
