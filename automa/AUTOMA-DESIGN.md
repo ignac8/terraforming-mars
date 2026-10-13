@@ -493,7 +493,6 @@ interface MarsBotState {
 - Venus Next, Colonies, and Turmoil expansion-dependent features are implemented on every official map
 - Rulebook PDFs print track and tag references as icons that `pdftotext` drops. Read rules from rendered pages (`pdftoppm`), not extracted text
 - Fan-made expansions (Ares, Community, Pathfinders, CEOs, Star Wars, Underworld, The Moon) will NOT be supported
-- Corp card data from NamuWiki may have inaccuracies — needs verification against physical cards
 
 ### Implemented Rules
 All rules from Rulebook A (base game) and Rulebook B (corporations) are implemented:
@@ -580,19 +579,19 @@ Corps may add associated bonus cards to the bonus deck or action deck:
 
 ### 7.5 All 46 Corporations
 
-**Base Game (C01-C12)**: Credicor, Eco Line, Helion, IC, Inventrix, Mining Guild, Phobolog, Saturn Systems, Teractor, Tharsis Republic, Thorgate, UNMI
+**Base Game (C01-C12)**: Credicor, Ecoline, Helion, Interplanetary Cinematics, Inventrix, Mining Guild, Phobolog, Saturn Systems, Teractor, Tharsis Republic, Thorgate, United Nations Mars Initiative
 
-**Prelude (C13-C17)**: Cheung Shing, Point Luna, Robinson Industries, Valley Trust, Vitor
+**Prelude (C13-C17)**: Cheung Shing Mars, Point Luna, Robinson Industries, Valley Trust, Vitor
 
-**Prelude 2 (C18-C19, C40-C46)**: Acadian Community, Astrodrill, Ecotec, Kuiper Cooperative, Nirgal Enterprises, Paladin Shipping, Sagitta, Spire, Tyco Magnetics
+**Prelude 2 (C40, C42-C45)**: Ecotec, Nirgal Enterprises, Palladin Shipping, Sagitta Frontier Services, Spire
 
-**Promo (C20-C24)**: Factorum, Pharmacy Union, Philares, Recyclone, Splice
+**Promo (C18-C24, C41, C46)**: Arcadian Communities, Astrodrill, Factorum, Pharmacy Union, Philares, Recyclon, Splice, Kuiper Cooperative, Tycho Magnetics
 
-**Venus (C25-C28, C34)**: Viron, Celestic, Morningstar, Aphrodite, Stormcraft
+**Venus (C25-C29, C34)**: Viron, Celestic, Morning Star Inc., Aphrodite, Manutech, Stormcraft Incorporated
 
-**Colonies (C30-C33)**: Aridor, Arclight, Polyphemos, Poseidon
+**Colonies (C30-C33)**: Aridor, Arklight, Polyphemos, Poseidon
 
-**Turmoil (C35-C39)**: Lakefront Resorts, Pristar, Septem Tribus, Terralabs, Utopia Invest
+**Turmoil (C35-C39)**: Lakefront Resorts, Pristar, Septem Tribus, TerraLabs, Utopia Invest
 
 ---
 
@@ -704,13 +703,13 @@ No 2nd place VP in 2-player automa games (same as standard 2-player TM rules). O
 ### Not Yet Implemented (Official Expansions Only)
 - [x] Other official maps — Hellas, Elysium, Utopia Planitia, Terra Cimmeria Nova, Vastitas Borealis Nova. Track layouts transcribed from photos of the physical boards and checked by two independent readings. Tag pairings per rulebook C p.8
 - [x] Turmoil difficulty options T-14 and T-15 are independent settings in the create-game form (`automaTurmoilTRReduction`: 10 or 7; `automaTurmoilSetupDelegates`: 0 to 2), matching the rulebook's "one of the following ways"
-- [ ] Physical card verification — Corp effects from NamuWiki need verification against physical Automa expansion cards
+- [x] Physical card verification: all 32 bonus cards and 46 corporations checked against scans of the physical cards (2026-10-13), and the code against every designer post on BGG. Card text: `automa/checklists/automa-cards.md`; rulings and our readings: `automa/checklists/designer-rulings.md`
 
 ---
 
 ## 11. Data Verification Note
 
-Corporation card data was extracted from NamuWiki (Korean wiki). This data may not be 100% accurate — effects should be verified against physical Automa expansion cards when available. The NamuWiki PDF is stored at `automa/Terraforming Mars_Automa - NamuWiki.pdf` for reference.
+The corporation data was first taken from NamuWiki (Korean wiki). On 2026-10-13 every card was checked against scans of the physical cards (tm.hadronikle.com, Automa filter). Two independent readings of the scans agreed on every word, tag and draft priority. The printed text is in `automa/checklists/automa-cards.md` and replaces NamuWiki as the source. When a card and the rulebook disagree, the card wins (Dávid Turczi, BGG thread 3350125).
 
 ---
 
