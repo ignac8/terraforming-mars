@@ -124,6 +124,64 @@ describe('CreateGameForm', () => {
     expect(vm.newGameConfig.automaColonyVP).to.be.false;
   });
 
+  it('groups the MarsBot options in their own column after Multiplayer Options, solo only', async () => {
+    const wrapper = shallowMount(CreateGameForm, {...globalConfig});
+    const vm = wrapper.vm as any;
+
+    const headings = wrapper.findAll('.create-game-page-column h4').map((h) => h.text());
+    expect(headings.indexOf('MarsBot Options')).to.eq(headings.indexOf('Multiplayer Options') + 1);
+    const column = wrapper.findAll('.create-game-page-column').find((c) => c.find('h4').text() === 'MarsBot Options');
+    for (const id of ['automa-checkbox', 'automa-difficulty', 'automa-corp-checkbox', 'automa-no-generation-limit-checkbox',
+      'automa-final-greenery-no-corp-checkbox', 'automa-colony-vp-checkbox', 'automa-turmoil-tr', 'automa-turmoil-delegates']) {
+      expect(column?.find('#' + id).exists(), id).to.be.true;
+    }
+
+    vm.playersCount = 2;
+    await vm.$nextTick();
+    expect(wrapper.findAll('.create-game-page-column h4').map((h) => h.text())).to.not.include('MarsBot Options');
+  });
+
+  it('Easiest sets every MarsBot option to its easiest value', () => {
+    const wrapper = shallowMount(CreateGameForm, {...globalConfig});
+    const vm = wrapper.vm as any;
+
+    expect(vm.automaDifficultyChoice).to.eq('normal');
+    vm.automaDifficultyChoice = 'easiest';
+    expect(vm.automaDifficulty).to.eq('easy');
+    expect(vm.automaCorpOption).to.be.false;
+    expect(vm.automaNoGenerationLimit).to.be.true;
+    expect(vm.automaFinalGreeneryNoCorpEffects).to.be.true;
+    expect(vm.automaColonyVP).to.be.false;
+    expect(vm.automaTurmoilTRReduction).to.eq(10);
+    expect(vm.automaTurmoilSetupDelegates).to.eq(0);
+    expect(vm.automaDifficultyChoice).to.eq('easiest');
+
+    // Changing any one option leaves the preset, and the dropdown shows the plain difficulty again.
+    vm.automaCorpOption = true;
+    expect(vm.automaDifficultyChoice).to.eq('easy');
+  });
+
+  it('Hardest sets every MarsBot option to its hardest value', () => {
+    const wrapper = shallowMount(CreateGameForm, {...globalConfig});
+    const vm = wrapper.vm as any;
+
+    vm.automaDifficultyChoice = 'hardest';
+    expect(vm.automaDifficulty).to.eq('brutal');
+    expect(vm.automaCorpOption).to.be.true;
+    expect(vm.automaNoGenerationLimit).to.be.false;
+    expect(vm.automaFinalGreeneryNoCorpEffects).to.be.false;
+    expect(vm.automaColonyVP).to.be.true;
+    expect(vm.automaTurmoilTRReduction).to.eq(7);
+    expect(vm.automaTurmoilSetupDelegates).to.eq(2);
+    expect(vm.automaDifficultyChoice).to.eq('hardest');
+
+    // A plain difficulty changes only the difficulty.
+    vm.automaDifficultyChoice = 'hard';
+    expect(vm.automaDifficulty).to.eq('hard');
+    expect(vm.automaTurmoilSetupDelegates).to.eq(2);
+    expect(vm.automaDifficultyChoice).to.eq('hard');
+  });
+
   it('default (automa-on) state disables options incompatible with automa', () => {
     const wrapper = shallowMount(CreateGameForm, {...globalConfig});
     const vm = wrapper.vm as any;

@@ -217,71 +217,11 @@
                                 <span v-i18n>World Government Terraforming</span>&nbsp;<a :href="wikiUrls.worldGovernmentTerraforming" class="tooltip" v-i18n data-tooltip="Link opens in a new tab/window" target="_blank">&#9432;</a>
                             </label>
 
-                            <template v-if="playersCount === 1">
-                            <input type="checkbox" v-model="automaOption" id="automa-checkbox">
-                            <label for="automa-checkbox">
-                                <span v-i18n>MarsBot (Automa)</span>
-                            </label>
-
-                            <template v-if="automaOption">
-                              <label for="automa-difficulty">
-                                <span v-i18n>Difficulty:</span>&nbsp;
-                                <select v-model="automaDifficulty" id="automa-difficulty">
-                                  <option value="easy" v-i18n>Easy</option>
-                                  <option value="normal" v-i18n>Normal</option>
-                                  <option value="hard" v-i18n>Hard</option>
-                                  <option value="brutal" v-i18n>Brutal</option>
-                                </select>
-                              </label>
-                              <br>
-                              <input type="checkbox" v-model="automaCorpOption" id="automa-corp-checkbox">
-                              <label for="automa-corp-checkbox">
-                                <span v-i18n>MarsBot Corporation</span>
-                              </label>
-                              <br>
-                              <input type="checkbox" v-model="automaNoGenerationLimit" id="automa-no-generation-limit-checkbox">
-                              <label for="automa-no-generation-limit-checkbox">
-                                <span v-i18n>No generation limit</span>&nbsp;<span class="tooltip" v-i18n data-tooltip="The game goes on until Mars is terraformed. MarsBot no longer wins when the last generation ends.">&#9432;</span>
-                              </label>
-                              <br>
-                              <input type="checkbox" v-model="automaFinalGreeneryNoCorpEffects" id="automa-final-greenery-no-corp-checkbox">
-                              <label for="automa-final-greenery-no-corp-checkbox">
-                                <span v-i18n>Final greeneries skip MarsBot's corporation</span>&nbsp;<span class="tooltip" v-i18n data-tooltip="At game end, MarsBot's tracker moving onto a final greenery triggers none of its corporation's effects, such as Teractor's 2 M€ or Helion's black cube. This makes MarsBot a little weaker. The designers leave it up to you.">&#9432;</span>
-                              </label>
-                              <template v-if="expansions.colonies">
-                                <br>
-                                <input type="checkbox" v-model="automaColonyVP" id="automa-colony-vp-checkbox">
-                                <label for="automa-colony-vp-checkbox">
-                                  <span v-i18n>MarsBot's leftover resources score 1/2 VP each</span>&nbsp;<span class="tooltip" v-i18n data-tooltip="At game end MarsBot gets 1 VP for every 2 resources left on its Colonies shipping board and floaters on its Venus board. This is how the designer intended it, but the rulebook leaves it out.">&#9432;</span>
-                                </label>
-                              </template>
-                              <template v-if="expansions.turmoil">
-                                <br>
-                                <label for="automa-turmoil-tr">
-                                  <span v-i18n>MarsBot starting TR:</span>&nbsp;
-                                  <select v-model.number="automaTurmoilTRReduction" id="automa-turmoil-tr">
-                                    <option :value="10" v-i18n>10 (rulebook)</option>
-                                    <option :value="7" v-i18n>13 (harder)</option>
-                                  </select>
-                                </label>
-                                <br>
-                                <label for="automa-turmoil-delegates">
-                                  <span v-i18n>MarsBot delegates seeded at setup:</span>&nbsp;
-                                  <select v-model.number="automaTurmoilSetupDelegates" id="automa-turmoil-delegates">
-                                    <option :value="0">0</option>
-                                    <option :value="1">1</option>
-                                    <option :value="2">2</option>
-                                  </select>
-                                </label>
-                              </template>
-                            </template>
-
-                            <template v-if="!automaOption">
+                            <template v-if="playersCount === 1 && !automaOption">
                             <input type="checkbox" v-model="soloTR" id="soloTR-checkbox">
                             <label for="soloTR-checkbox">
                                 <span v-i18n>63 TR solo mode</span>&nbsp;<a :href="wikiUrls.trSoloMode" class="tooltip" v-i18n data-tooltip="Link opens in a new tab/window" target="_blank">&#9432;</a>
                             </label>
-                            </template>
                             </template>
 
                             <!-- <input type="checkbox" v-model="beginnerOption" id="beginnerOption-checkbox">
@@ -499,6 +439,70 @@
                             </label>
                         </div>
 
+                        <div class="create-game-page-column" v-if="playersCount === 1">
+                            <h4 v-i18n>MarsBot Options</h4>
+
+                            <input type="checkbox" v-model="automaOption" id="automa-checkbox">
+                            <label for="automa-checkbox">
+                                <span v-i18n>MarsBot (Automa)</span>
+                            </label>
+
+                            <template v-if="automaOption">
+                              <label for="automa-difficulty">
+                                <span v-i18n>Difficulty:</span>&nbsp;
+                                <select v-model="automaDifficultyChoice" id="automa-difficulty">
+                                  <option value="easiest" v-i18n>Easiest</option>
+                                  <option value="easy" v-i18n>Easy</option>
+                                  <option value="normal" v-i18n>Normal</option>
+                                  <option value="hard" v-i18n>Hard</option>
+                                  <option value="brutal" v-i18n>Brutal</option>
+                                  <option value="hardest" v-i18n>Hardest</option>
+                                </select>
+                              </label>
+
+                              <input type="checkbox" v-model="automaCorpOption" id="automa-corp-checkbox">
+                              <label for="automa-corp-checkbox">
+                                <span v-i18n>MarsBot Corporation</span>
+                              </label>
+
+                              <input type="checkbox" v-model="automaNoGenerationLimit" id="automa-no-generation-limit-checkbox">
+                              <label for="automa-no-generation-limit-checkbox">
+                                <span v-i18n>No generation limit</span>&nbsp;<span class="tooltip" v-i18n data-tooltip="The game goes on until Mars is terraformed. MarsBot no longer wins when the last generation ends.">&#9432;</span>
+                              </label>
+
+                              <input type="checkbox" v-model="automaFinalGreeneryNoCorpEffects" id="automa-final-greenery-no-corp-checkbox">
+                              <label for="automa-final-greenery-no-corp-checkbox">
+                                <span v-i18n>Final greeneries skip MarsBot's corporation</span>&nbsp;<span class="tooltip" v-i18n data-tooltip="At game end, MarsBot's tracker moving onto a final greenery triggers none of its corporation's effects, such as Teractor's 2 M€ or Helion's black cube. This makes MarsBot a little weaker. The designers leave it up to you.">&#9432;</span>
+                              </label>
+
+                              <template v-if="expansions.colonies">
+                                <input type="checkbox" v-model="automaColonyVP" id="automa-colony-vp-checkbox">
+                                <label for="automa-colony-vp-checkbox">
+                                  <span v-i18n>MarsBot's leftover resources score 1/2 VP each</span>&nbsp;<span class="tooltip" v-i18n data-tooltip="At game end MarsBot gets 1 VP for every 2 resources left on its Colonies shipping board and floaters on its Venus board. This is how the designer intended it, but the rulebook leaves it out.">&#9432;</span>
+                                </label>
+                              </template>
+
+                              <template v-if="expansions.turmoil">
+                                <label for="automa-turmoil-tr">
+                                  <span v-i18n>MarsBot starting TR:</span>&nbsp;
+                                  <select v-model.number="automaTurmoilTRReduction" id="automa-turmoil-tr">
+                                    <option :value="10" v-i18n>10 (rulebook)</option>
+                                    <option :value="7" v-i18n>13 (harder)</option>
+                                  </select>
+                                </label>
+
+                                <label for="automa-turmoil-delegates">
+                                  <span v-i18n>MarsBot delegates seeded at setup:</span>&nbsp;
+                                  <select v-model.number="automaTurmoilSetupDelegates" id="automa-turmoil-delegates">
+                                    <option :value="0">0</option>
+                                    <option :value="1">1</option>
+                                    <option :value="2">2</option>
+                                  </select>
+                                </label>
+                              </template>
+                            </template>
+                        </div>
+
                         <div class="create-game-players-cont">
                             <div class="create-game-page-column">
                                 <h4 v-i18n>Players</h4>
@@ -684,6 +688,34 @@ type FormModel = {
   previousViewport: string;
 };
 
+type MarsBotSettings = Pick<CreateGameModel,
+  'automaDifficulty' | 'automaCorpOption' | 'automaNoGenerationLimit' | 'automaFinalGreeneryNoCorpEffects' |
+  'automaColonyVP' | 'automaTurmoilTRReduction' | 'automaTurmoilSetupDelegates'>;
+type MarsBotPreset = 'easiest' | 'hardest';
+type AutomaDifficultyChoice = CreateGameModel['automaDifficulty'] | MarsBotPreset;
+
+// Every MarsBot setting at its easiest or hardest end, picked from the Difficulty dropdown.
+const MARSBOT_PRESETS: Record<MarsBotPreset, MarsBotSettings> = {
+  easiest: {
+    automaDifficulty: 'easy',
+    automaCorpOption: false,
+    automaNoGenerationLimit: true,
+    automaFinalGreeneryNoCorpEffects: true,
+    automaColonyVP: false,
+    automaTurmoilTRReduction: 10,
+    automaTurmoilSetupDelegates: 0,
+  },
+  hardest: {
+    automaDifficulty: 'brutal',
+    automaCorpOption: true,
+    automaNoGenerationLimit: false,
+    automaFinalGreeneryNoCorpEffects: false,
+    automaColonyVP: true,
+    automaTurmoilTRReduction: 7,
+    automaTurmoilSetupDelegates: 2,
+  },
+};
+
 export default defineComponent({
   name: 'CreateGameForm',
   data(): CreateGameModel & FormModel {
@@ -809,6 +841,30 @@ export default defineComponent({
   computed: {
     wikiUrls(): typeof RULEBOOK_URLS & typeof WIKI_URLS {
       return {...RULEBOOK_URLS, ...WIKI_URLS};
+    },
+    /** The Difficulty dropdown. It reads Easiest or Hardest only while every MarsBot setting still matches that preset. */
+    automaDifficultyChoice: {
+      get(): AutomaDifficultyChoice {
+        const current: MarsBotSettings = {
+          automaDifficulty: this.automaDifficulty,
+          automaCorpOption: this.automaCorpOption,
+          automaNoGenerationLimit: this.automaNoGenerationLimit,
+          automaFinalGreeneryNoCorpEffects: this.automaFinalGreeneryNoCorpEffects,
+          automaColonyVP: this.automaColonyVP,
+          automaTurmoilTRReduction: this.automaTurmoilTRReduction,
+          automaTurmoilSetupDelegates: this.automaTurmoilSetupDelegates,
+        };
+        const preset = (['easiest', 'hardest'] as const).find((name) =>
+          (Object.keys(current) as Array<keyof MarsBotSettings>).every((key) => current[key] === MARSBOT_PRESETS[name][key]));
+        return preset ?? this.automaDifficulty;
+      },
+      set(choice: AutomaDifficultyChoice) {
+        if (choice === 'easiest' || choice === 'hardest') {
+          Object.assign(this, MARSBOT_PRESETS[choice]);
+        } else {
+          this.automaDifficulty = choice;
+        }
+      },
     },
     /**
      * The game settings, as they'd be sent to the server.
