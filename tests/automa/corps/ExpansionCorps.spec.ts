@@ -2,6 +2,7 @@ import {expect} from 'chai';
 import {CardName} from '../../../src/common/cards/CardName';
 import {testGame} from '../../TestGame';
 import {IGame} from '../../../src/server/IGame';
+import {Game} from '../../../src/server/Game';
 import {TestPlayer} from '../../TestPlayer';
 import {MarsBot} from '../../../src/server/automa/MarsBot';
 import {
@@ -243,13 +244,61 @@ describe('Expansion MarsBot Corporations', () => {
   });
 
   describe('C29 Manutech', () => {
-    it('has black cubes at #5 and #12 on all 7 tracks', () => {
+    function createVenusGame(): MarsBot {
+      const [game] = testGame(1, {automaOption: true, venusNextExtension: true, boardName: BoardName.THARSIS});
+      return game.automaHooks!.marsBot;
+    }
+
+    it('has black cubes at #5 and #12 on all 8 tracks, Venus included', () => {
       const corp = getMarsBotCorp(CardName.MANUTECH)!;
-      expect(corp.trackCubes!.length).to.eq(14); // 7 tracks × 2 positions
-      for (let t = 0; t < 7; t++) {
+      expect(corp.trackCubes!.length).to.eq(16); // 8 tracks × 2 positions
+      for (let t = 0; t < 8; t++) {
         expect(corp.trackCubes!.some((c) => c.trackIndex === t && c.position === 5)).to.be.true;
         expect(corp.trackCubes!.some((c) => c.trackIndex === t && c.position === 12)).to.be.true;
       }
+    });
+
+    it('places no cubes on the Venus track without Venus Next', () => {
+      const {marsBot} = createAutomaGame();
+      expect(marsBot.marsBotBoard.tracks).to.have.length(7);
+
+      marsBot.setCorpAndSetup(getMarsBotCorp(CardName.MANUTECH)!);
+
+      expect([...marsBot.trackCubePositions.values()].filter((c) => c.trackIndex === 7)).is.empty;
+    });
+
+    it('places its reminder cubes on the Venus track with Venus Next', () => {
+      const marsBot = createVenusGame();
+
+      marsBot.setCorpAndSetup(getMarsBotCorp(CardName.MANUTECH)!);
+
+      expect(marsBot.hasCubeAt(7, 5)?.cubeType).to.eq('black');
+      expect(marsBot.hasCubeAt(7, 12)?.cubeType).to.eq('black');
+    });
+
+    it('advances the Venus track one more space when it reaches #5', () => {
+      const marsBot = createVenusGame();
+      marsBot.setCorpAndSetup(getMarsBotCorp(CardName.MANUTECH)!);
+      marsBot.marsBotBoard.tracks[7].position = 4;
+
+      marsBot.advanceTrack(7);
+
+      expect(marsBot.marsBotBoard.tracks[7].position).to.eq(6);
+    });
+
+    it('a save from before the Venus cubes still loads and advances Venus at #5', () => {
+      const marsBot = createVenusGame();
+      marsBot.setCorpAndSetup(getMarsBotCorp(CardName.MANUTECH)!);
+      const serialized = marsBot.game.serialize();
+      const state = serialized.automaState!;
+      state.trackCubePositions = state.trackCubePositions!.filter((c) => c.trackIndex !== 7);
+
+      const restored = Game.deserialize(serialized).automaHooks!.marsBot;
+      expect(restored.hasCubeAt(7, 5)).is.undefined;
+      restored.marsBotBoard.tracks[7].position = 4;
+      restored.advanceTrack(7);
+
+      expect(restored.marsBotBoard.tracks[7].position).to.eq(6);
     });
 
     it('reaching #5 advances the same track one more space', () => {

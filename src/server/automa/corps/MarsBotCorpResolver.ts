@@ -26,9 +26,12 @@ export class MarsBotCorpResolver {
    * Run corp setup: place track cubes, resolve starting tags, call setup box.
    */
   public static setupCorp(corp: IMarsBotCorp, marsBot: MarsBot): void {
-    // 1. Place track cubes
+    // 1. Place track cubes, skipping tracks this game's board lacks (Venus without Venus Next)
     if (corp.trackCubes !== undefined) {
       for (const cube of corp.trackCubes) {
+        if (cube.trackIndex >= marsBot.marsBotBoard.tracks.length) {
+          continue;
+        }
         marsBot.trackCubePositions.set(trackCubeKey(cube.trackIndex, cube.position), cube);
       }
     }

@@ -178,7 +178,8 @@ const MANUTECH: IMarsBotCorp = {
   name: CardName.MANUTECH,
   description: 'Tag: Building. When any track (including Venus) reaches #5 or #12, after resolving that space, advance it one more space and resolve that one too.',
   tags: [Tag.BUILDING],
-  trackCubes: Array.from({length: 7}, (_, i) => [
+  // Track 7 is Venus. Setup leaves out cubes for tracks the bot does not have.
+  trackCubes: Array.from({length: 8}, (_, i) => [
     {trackIndex: i, position: 5, cubeType: 'black' as const},
     {trackIndex: i, position: 12, cubeType: 'black' as const},
   ]).flat(),
