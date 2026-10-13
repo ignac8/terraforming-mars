@@ -33,7 +33,8 @@ const ECO_LINE: IMarsBotCorp = {
 };
 
 // ---- C03 Helion ----
-// White cubes: instead of raising temp, draw 1 card and resolve it.
+// White cubes: instead of raising temp, draw 1 card and resolve it. A white cube on another icon
+// (the Nova boards' cities) replaces nothing, so that icon resolves too.
 // Black cubes: temperature rises by 1.
 const HELION: IMarsBotCorp = {
   name: CardName.HELION,
@@ -54,11 +55,11 @@ const HELION: IMarsBotCorp = {
     {trackIndex: 5, position: 14, cubeType: 'black'},
   ],
   effect: {
-    onTrackCubeTrigger(bot, _trackIndex, _position, cubeType) {
+    onTrackCubeTrigger(bot, trackIndex, position, cubeType) {
       if (cubeType === 'white') {
         bot.maybeDrawAndResolveProjectCard();
         bot.game.log('MarsBot (Helion): white cube — drew and resolved card instead of temp raise');
-        return true; // The temperature icon under the cube stays unresolved.
+        return bot.marsBotBoard.tracks[trackIndex].definition.layout[position] === 'temperature';
       }
       if (cubeType === 'black') {
         bot.raiseTemperature(1);
