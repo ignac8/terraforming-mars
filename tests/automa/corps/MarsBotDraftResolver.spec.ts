@@ -131,6 +131,34 @@ describe('MarsBotDraftResolver', () => {
 
       expect(picked).to.eq(buildingCard);
     });
+
+    // Our reading: Aridor's priority is a track, not an ordered tag list, so both tags on a
+    // shared track match alike and more matches win.
+    describe('on a track with two tags (Tharsis power/Jovian)', () => {
+      const powerCard = fakeCard({tags: [Tag.POWER]});
+      const jovianCard = fakeCard({tags: [Tag.JOVIAN]});
+      const twoJovianCard = fakeCard({tags: [Tag.JOVIAN, Tag.JOVIAN]});
+
+      function energyBehind(shuffler: Shuffler): MarsBotDraftResolver {
+        const marsBotBoard = new MarsBotBoard(THARSIS_MARSBOT_BOARD);
+        marsBotBoard.tracks.forEach((track, i) => {
+          if (i !== 4) {
+            track.advance();
+          }
+        });
+        expect(marsBotBoard.definitions[marsBotBoard.getLeastAdvancedTrackIndex()].tags).deep.eq([Tag.POWER, Tag.JOVIAN]);
+        return new MarsBotDraftResolver(marsBotBoard, shuffler);
+      }
+
+      it('ties a card with either tag, broken at random', () => {
+        expect(energyBehind(keepOrder).pickCard([jovianCard, powerCard], priority)).to.eq(jovianCard);
+        expect(energyBehind(reverseOrder).pickCard([jovianCard, powerCard], priority)).to.eq(powerCard);
+      });
+
+      it('prefers the card with more of the track\'s tags', () => {
+        expect(energyBehind(keepOrder).pickCard([powerCard, twoJovianCard], priority)).to.eq(twoJovianCard);
+      });
+    });
   });
 
   describe('pickCard, mostTags priority', () => {

@@ -10,7 +10,7 @@ import {addRandomColonyTile} from '../colonies/MarsBotColonyPlacer';
 // C30 Aridor
 const ARIDOR: IMarsBotCorp = {
   name: CardName.ARIDOR,
-  description: 'Draft: least-advanced track tag. Setup: add 1 colony tile to the game. White and black cubes across multiple tracks; each cube advances event track.',
+  description: 'Draft: tags on the least-advanced track, each counting alike. Setup: add 1 colony tile to the game. White and black cubes across multiple tracks; each cube advances event track.',
   tags: [],
   requiredExpansions: ['colonies'],
   draftPriority: {type: 'leastAdvancedTrack'},
