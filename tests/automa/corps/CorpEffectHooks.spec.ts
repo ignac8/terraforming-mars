@@ -1,5 +1,6 @@
 import {expect} from 'chai';
-import {setVenusScaleLevel} from '../../TestingUtils';
+import {setTemperature, setVenusScaleLevel} from '../../TestingUtils';
+import {BonusCardId} from '../../../src/common/automa/AutomaTypes';
 import {MAX_VENUS_SCALE} from '../../../src/common/constants';
 import {CardName} from '../../../src/common/cards/CardName';
 import {testGame} from '../../TestGame';
@@ -364,6 +365,51 @@ describe('Corp Effect Hooks', () => {
       (game as any).generation = 2; // even generation → furthest-parameter branch
       (marsBot as any).bonusResolver.resolveGovernmentIntervention();
       expect(marsBot.corpSpecificState.get('whiteCubeOnCard')).to.eq(1);
+    });
+  });
+
+  // A 2-step raise resolves one step at a time, so Pristar's cube cancels only the first step
+  // (BGG threads 3431297 and 3432237, TDaver)
+  describe('C36 Pristar on a 2-step raise', () => {
+    function pristarGame(venus: boolean = false) {
+      const [game] = testGame(1, {automaOption: true, venusNextExtension: venus, boardName: BoardName.THARSIS});
+      const marsBot = game.automaHooks!.marsBot;
+      marsBot.setCorpAndSetup(getMarsBotCorp(CardName.PRISTAR)!);
+      marsBot.corpSpecificState.set('whiteCubeOnCard', 1);
+      return {game, marsBot, tr: marsBot.player.terraformRating, mc: marsBot.turnResolver.megacredits};
+    }
+
+    it('temperature2 icon raises the second step', () => {
+      const {game, marsBot, tr, mc} = pristarGame();
+      setTemperature(game, -30);
+      marsBot.turnResolver.raiseTemperature(2);
+      expect(game.getTemperature()).to.eq(-28);
+      expect(marsBot.player.terraformRating).to.eq(tr + 2);
+      expect(marsBot.turnResolver.megacredits).to.eq(mc + 6);
+      expect(marsBot.temperatureRaises).to.eq(1);
+    });
+
+    it('venus2 icon raises the second step', () => {
+      const {game, marsBot, tr} = pristarGame(true);
+      (marsBot.turnResolver as any).raiseVenus(2);
+      expect(game.getVenusScaleLevel()).to.eq(2);
+      expect(marsBot.player.terraformRating).to.eq(tr + 2);
+    });
+
+    it('Lobbyists temperature branch raises the second step', () => {
+      const {game, marsBot, tr} = pristarGame();
+      setTemperature(game, -28);
+      marsBot.resolveBonusCard(BonusCardId.B06_LOBBYISTS);
+      expect(game.getTemperature()).to.eq(-26);
+      expect(marsBot.player.terraformRating).to.eq(tr + 2);
+    });
+
+    it('Lobbyists (Venus) Venus branch raises the second step', () => {
+      const {game, marsBot, tr} = pristarGame(true);
+      setVenusScaleLevel(game, 4);
+      marsBot.resolveBonusCard(BonusCardId.B15_LOBBYISTS_VENUS);
+      expect(game.getVenusScaleLevel()).to.eq(6);
+      expect(marsBot.player.terraformRating).to.eq(tr + 2);
     });
   });
 

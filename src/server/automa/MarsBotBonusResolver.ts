@@ -354,10 +354,10 @@ export class MarsBotBonusResolver {
       .map((v) => (v - venus) / 2)
       .reduce((min, s) => Math.min(min, s), Infinity);
     if (venusStepsToNextBonus >= 1 && venusStepsToNextBonus <= 2 && venus < constants.MAX_VENUS_SCALE) {
-      if (!this.interceptsRaise(GlobalParameter.VENUS)) {
-        this.game.increaseVenusScaleLevel(this.marsBot, 2);
-        this.game.log('MarsBot raises Venus 2 steps (Lobbyists Venus)');
-      }
+      // Pristar's cube cancels only the first of the 2 steps
+      const steps = this.interceptsRaise(GlobalParameter.VENUS) ? 1 : 2;
+      this.game.increaseVenusScaleLevel(this.marsBot, steps);
+      this.game.log('MarsBot raises Venus ${0} step(s) (Lobbyists Venus)', (b) => b.number(steps));
       return false;
     }
 
@@ -374,10 +374,10 @@ export class MarsBotBonusResolver {
       .map((t) => (t - temp) / 2)
       .reduce((min, s) => Math.min(min, s), Infinity);
     if (tempStepsToNextBonus >= 1 && tempStepsToNextBonus <= 2 && temp < constants.MAX_TEMPERATURE) {
-      if (!this.interceptsRaise(GlobalParameter.TEMPERATURE)) {
-        this.game.increaseTemperature(this.marsBot, 2);
-        this.game.log(`MarsBot raises temperature 2 steps (${source})`);
-      }
+      // Pristar's cube cancels only the first of the 2 steps
+      const steps = this.interceptsRaise(GlobalParameter.TEMPERATURE) ? 1 : 2;
+      this.game.increaseTemperature(this.marsBot, steps);
+      this.game.log(`MarsBot raises temperature ${steps} step(s) (${source})`);
       return true;
     }
     return false;

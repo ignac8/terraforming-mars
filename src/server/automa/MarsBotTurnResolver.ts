@@ -281,23 +281,26 @@ export class MarsBotTurnResolver {
 
   // ---- Terraforming Actions ----
 
-  public raiseTemperature(steps: number): void {
+  /**
+   * Raises the temperature, or takes a Failed Action when it is already at its maximum. The steps
+   * resolve one at a time, so Pristar's cube cancels only the first (BGG 3431297, 3432237).
+   */
+  public raiseTemperature(steps: 1 | 2): void {
     if (this.game.getTemperature() >= constants.MAX_TEMPERATURE) {
       this.failedAction();
       return;
     }
-    if (this.interceptsRaise(GlobalParameter.TEMPERATURE)) {
+    const taken = this.interceptsRaise(GlobalParameter.TEMPERATURE) ? steps - 1 : steps;
+    if (taken === 0) {
       return;
     }
-    const increment = steps as 1 | 2;
-    this.game.increaseTemperature(this.marsBot, increment);
+    const before = this.game.getTemperature();
+    this.game.increaseTemperature(this.marsBot, taken as 1 | 2);
+    const raised = (this.game.getTemperature() - before) / 2;
     if (this.marsBotManager) {
-      this.marsBotManager.temperatureRaises += steps;
+      this.marsBotManager.temperatureRaises += raised;
     }
-    this.game.log('MarsBot raises temperature ${0} step(s)', (b) => b.number(steps));
-    // Temperature bonuses at -24C and -20C: MarsBot gains 2 MC instead of heat production
-    // This is handled by the game engine granting heat production; we override in MarsBot's production
-    // Since MarsBot doesn't use production, we grant 2 MC for each heat bonus step hit.
+    this.game.log('MarsBot raises temperature ${0} step(s)', (b) => b.number(raised));
   }
 
   public placeGreenery(): void {
@@ -352,16 +355,18 @@ export class MarsBotTurnResolver {
     this.game.log('MarsBot places city');
   }
 
-  private raiseVenus(steps: number): void {
+  /** Like raiseTemperature: Pristar's cube cancels only the first step. */
+  private raiseVenus(steps: 1 | 2): void {
     if (this.game.getVenusScaleLevel() >= constants.MAX_VENUS_SCALE) {
       this.failedAction();
       return;
     }
-    if (this.interceptsRaise(GlobalParameter.VENUS)) {
+    const taken = this.interceptsRaise(GlobalParameter.VENUS) ? steps - 1 : steps;
+    if (taken === 0) {
       return;
     }
-    this.game.increaseVenusScaleLevel(this.marsBot, steps as 1 | 2);
-    this.game.log('MarsBot raises Venus ${0} step(s)', (b) => b.number(steps));
+    this.game.increaseVenusScaleLevel(this.marsBot, taken as 1 | 2);
+    this.game.log('MarsBot raises Venus ${0} step(s)', (b) => b.number(taken));
   }
 
   // C-8/C-14: Gain `count` floaters. With Venus → floaters; without Venus but with Colonies →
