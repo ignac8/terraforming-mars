@@ -532,6 +532,15 @@ describe('Expansion MarsBot Corporations', () => {
       expect(marsBot.corpSpecificState.get('scienceResources')).to.eq(1);
     });
 
+    // Our reading: a wild tag counts as a tag
+    it('counts a wild tag toward the 2 tags', () => {
+      const {marsBot} = createAutomaGame();
+      const corp = getMarsBotCorp(CardName.SPIRE)!;
+      marsBot.setCorpAndSetup(corp);
+      corp.effect!.onProjectCardResolved!(marsBot, fakeCard('WildAndBuilding', {tags: [Tag.WILD, Tag.BUILDING], cost: 10}));
+      expect(marsBot.corpSpecificState.get('scienceResources')).to.eq(1);
+    });
+
     it('does not gain science for 1-tag cards', () => {
       const {marsBot} = createAutomaGame();
       const corp = getMarsBotCorp(CardName.SPIRE)!;

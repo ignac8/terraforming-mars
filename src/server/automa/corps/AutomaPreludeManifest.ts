@@ -355,10 +355,10 @@ const SPIRE: IMarsBotCorp = {
   draftPriority: {type: 'mostTags'},
   effect: {
     onProjectCardResolved(bot, card) {
-      const nonWildTags = marsBotCardTags(card).filter((t) => t !== Tag.WILD);
-      if (nonWildTags.length >= 2) {
+      const tagCount = marsBotCardTags(card).length;
+      if (tagCount >= 2) {
         bot.setCorpState('scienceResources', bot.getCorpState('scienceResources') + 1);
-        bot.game.log(`MarsBot (Spire): card with ${nonWildTags.length} tags, +1 science resource`);
+        bot.game.log(`MarsBot (Spire): card with ${tagCount} tags, +1 science resource`);
       }
     },
   },

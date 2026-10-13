@@ -1055,7 +1055,7 @@ export class MarsBotBonusResolver {
     }
     // Science cards first, then the most expensive, then the most tags, then at random
     const science = (card: IProjectCard) => marsBotCardTags(card).includes(Tag.SCIENCE) ? 1 : 0;
-    const tagCount = (card: IProjectCard) => marsBotCardTags(card).filter((tag) => tag !== Tag.WILD).length;
+    const tagCount = (card: IProjectCard) => marsBotCardTags(card).length;
     inplaceShuffle(drawn, this.game.rng);
     drawn.sort((a, b) => science(b) - science(a) || b.cost - a.cost || tagCount(b) - tagCount(a));
     const discarded = drawn.splice(2);

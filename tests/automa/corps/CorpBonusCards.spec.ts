@@ -6,13 +6,14 @@ import {TestPlayer} from '../../TestPlayer';
 import {MarsBot} from '../../../src/server/automa/MarsBot';
 import {MarsBotBonusCard, createCorpBonusCard} from '../../../src/server/automa/MarsBotBonusCard';
 import {BonusCardId} from '../../../src/common/automa/AutomaTypes';
+import {Tag} from '../../../src/common/cards/Tag';
 import {BoardName} from '../../../src/common/boards/BoardName';
 import {SpaceType} from '../../../src/common/boards/SpaceType';
 import {TileType} from '../../../src/common/TileType';
 import {Space} from '../../../src/server/boards/Space';
 import {NuclearZone} from '../../../src/server/cards/base/NuclearZone';
 import {Capital} from '../../../src/server/cards/base/Capital';
-import {setTemperature} from '../../TestingUtils';
+import {fakeCard, setTemperature} from '../../TestingUtils';
 import {IProjectCard} from '../../../src/server/cards/IProjectCard';
 import {SearchForLife} from '../../../src/server/cards/base/SearchForLife';
 import {Tardigrades} from '../../../src/server/cards/base/Tardigrades';
@@ -330,6 +331,18 @@ describe('Corp-Specific Bonus Cards (B22-B32)', () => {
       marsBot['bonusResolver'].resolve(createCorpBonusCard(BonusCardId.B30_INTERFACE_HYPERLINK));
 
       expect(played).deep.eq([searchForLife, powerPlant]);
+    });
+
+    // Our reading: a wild tag counts as a tag
+    it('counts wild tags in the tag tiebreak', () => {
+      const building = fakeCard({cost: 4, tags: [Tag.BUILDING]});
+      const twoWild = fakeCard({cost: 4, tags: [Tag.WILD, Tag.WILD]});
+      const searchForLife = new SearchForLife();
+      const {marsBot, played} = hyperlinkGame(3, [building, twoWild, searchForLife]);
+
+      marsBot['bonusResolver'].resolve(createCorpBonusCard(BonusCardId.B30_INTERFACE_HYPERLINK));
+
+      expect(played).deep.eq([searchForLife, twoWild]);
     });
 
     it('draws at least 2 cards, even with the energy track at 0', () => {
