@@ -8,6 +8,7 @@ import {ColonyName} from '../../src/common/colonies/ColonyName';
 import {CardResource} from '../../src/common/CardResource';
 import {Resource} from '../../src/common/Resource';
 import {OrOptions} from '../../src/server/inputs/OrOptions';
+import {SelectAmount} from '../../src/server/inputs/SelectAmount';
 import {PlayerInput} from '../../src/server/PlayerInput';
 import {StealResources} from '../../src/server/deferredActions/StealResources';
 import {RemoveResourcesFromCard} from '../../src/server/deferredActions/RemoveResourcesFromCard';
@@ -44,12 +45,22 @@ describe('MarsBot colony storage as stock resources (C-25)', () => {
     return cast(human.popWaitingFor(), OrOptions);
   }
 
-  function choose(or: OrOptions, index: number, human: TestPlayer, amount?: number) {
-    or.options[index].process(amount === undefined ? {type: 'option'} : {type: 'amount', amount}, human);
+  function choose(or: OrOptions, index: number, human: TestPlayer) {
+    or.options[index].process({type: 'option'}, human);
+  }
+
+  /** Runs the deferred actions and returns the field asking how many come from the colony storage. */
+  function storagePrompt(game: IGame, human: TestPlayer): SelectAmount {
+    runAllActions(game);
+    return cast(human.popWaitingFor(), SelectAmount);
+  }
+
+  function takeFromStorage(game: IGame, human: TestPlayer, amount: number) {
+    storagePrompt(game, human).process({type: 'amount', amount});
   }
 
   describe('stealing', () => {
-    it('asks the player to pick the M€ supply or the Ceres storage', () => {
+    it('asks how many come from the Ceres storage, starting with all of them', () => {
       const {game, human, marsBot} = createAutomaGame();
       marsBot.turnResolver.megacredits = 10;
       marsBot.shippingBoard.storage.set(ColonyName.CERES, 3);
@@ -58,34 +69,31 @@ describe('MarsBot colony storage as stock resources (C-25)', () => {
 
       // Nothing happens until the player answers
       expect(human.steel).eq(0);
-      const or = prompt(game, human);
-      expect(or.options.map(titleOf)).deep.eq([
-        'Take ${0} from MarsBot\'s M€ supply',
-        'Take ${0} from MarsBot\'s ${1} colony storage',
-        'Take ${0} from MarsBot\'s ${1} colony storage and ${2} from its M€ supply',
-      ]);
+      const amount = storagePrompt(game, human);
+      expect(titleOf(amount)).eq('Take ${0} ${1} from MarsBot: how many from its ${2} colony storage? The rest comes from its M€ supply');
+      expect(amount.toModel()).deep.include({type: 'amount', min: 0, max: 2, maxByDefault: true});
     });
 
-    it('takes from the Ceres storage when the player chooses it', () => {
+    it('takes from the Ceres storage when the player chooses all of it', () => {
       const {game, human, marsBot} = createAutomaGame();
       marsBot.turnResolver.megacredits = 10;
       marsBot.shippingBoard.storage.set(ColonyName.CERES, 3);
 
       marsBot.player.stock.steal(Resource.STEEL, 2, human);
-      choose(prompt(game, human), 1, human);
+      takeFromStorage(game, human, 2);
 
       expect(marsBot.shippingBoard.get(ColonyName.CERES)).eq(1);
       expect(marsBot.turnResolver.megacredits).eq(10);
       expect(human.steel).eq(2);
     });
 
-    it('takes from the M€ supply when the player chooses it', () => {
+    it('takes from the M€ supply when the player chooses 0', () => {
       const {game, human, marsBot} = createAutomaGame();
       marsBot.turnResolver.megacredits = 10;
       marsBot.shippingBoard.storage.set(ColonyName.CERES, 3);
 
       marsBot.player.stock.steal(Resource.STEEL, 2, human);
-      choose(prompt(game, human), 0, human);
+      takeFromStorage(game, human, 0);
 
       expect(marsBot.shippingBoard.get(ColonyName.CERES)).eq(3);
       expect(marsBot.turnResolver.megacredits).eq(8);
@@ -98,26 +106,25 @@ describe('MarsBot colony storage as stock resources (C-25)', () => {
       marsBot.shippingBoard.storage.set(ColonyName.CERES, 3);
 
       marsBot.player.stock.steal(Resource.STEEL, 3, human);
-      const or = prompt(game, human);
-      expect(titleOf(or.options[2])).eq('Take how many from MarsBot\'s ${0} colony storage? The rest comes from its M€ supply');
-      expect(or.options[2].toModel(human)).deep.include({type: 'amount', min: 1, max: 2});
-      choose(or, 2, human, 2);
+      const amount = storagePrompt(game, human);
+      expect(amount.toModel()).deep.include({min: 0, max: 3});
+      amount.process({type: 'amount', amount: 2});
 
       expect(marsBot.shippingBoard.get(ColonyName.CERES)).eq(1);
       expect(marsBot.turnResolver.megacredits).eq(9);
       expect(human.steel).eq(3);
     });
 
-    it('rejects a split outside what the steal allows', () => {
+    it('rejects an amount outside what the steal allows', () => {
       const {game, human, marsBot} = createAutomaGame();
       marsBot.turnResolver.megacredits = 10;
       marsBot.shippingBoard.storage.set(ColonyName.CERES, 3);
 
       marsBot.player.stock.steal(Resource.STEEL, 3, human);
-      const or = prompt(game, human);
+      const amount = storagePrompt(game, human);
 
-      expect(() => choose(or, 2, human, 3)).to.throw(/too high/);
-      expect(() => choose(or, 2, human, 0)).to.throw(/too low/);
+      expect(() => amount.process({type: 'amount', amount: 4})).to.throw(/too high/);
+      expect(() => amount.process({type: 'amount', amount: -1})).to.throw(/too low/);
     });
 
     it('gives the thief only what is left when two steals are queued', () => {
@@ -128,30 +135,27 @@ describe('MarsBot colony storage as stock resources (C-25)', () => {
       marsBot.player.stock.steal(Resource.STEEL, 4, human);
       marsBot.player.stock.steal(Resource.STEEL, 4, human);
       // 2 from storage and 2 from the supply leaves 1 in each
-      choose(prompt(game, human), 0, human, 2);
+      takeFromStorage(game, human, 2);
       expect(human.steel).eq(4);
       // The second steal was sized for 6 in stock: it can only take the 2 that remain
-      choose(prompt(game, human), 0, human, 3);
+      takeFromStorage(game, human, 3);
 
       expect(marsBot.shippingBoard.get(ColonyName.CERES)).eq(0);
       expect(marsBot.turnResolver.megacredits).eq(0);
       expect(human.steel).eq(6);
     });
 
-    it('offers a single mixed option when only one split is possible', () => {
+    it('starts the field at what the supply cannot cover', () => {
       const {game, human, marsBot} = createAutomaGame();
       marsBot.turnResolver.megacredits = 1;
       marsBot.shippingBoard.storage.set(ColonyName.CERES, 5);
 
       marsBot.player.stock.steal(Resource.STEEL, 4, human);
-      const or = prompt(game, human);
+      const amount = storagePrompt(game, human);
 
-      // The supply covers 1, so at least 3 must come from storage: all 4, or exactly 3 + 1
-      expect(or.options.map(titleOf)).deep.eq([
-        'Take ${0} from MarsBot\'s ${1} colony storage',
-        'Take ${0} from MarsBot\'s ${1} colony storage and ${2} from its M€ supply',
-      ]);
-      choose(or, 1, human);
+      // The supply covers 1, so at least 3 must come from storage
+      expect(amount.toModel()).deep.include({min: 3, max: 4});
+      amount.process({type: 'amount', amount: 3});
       expect(marsBot.shippingBoard.get(ColonyName.CERES)).eq(2);
       expect(marsBot.turnResolver.megacredits).eq(0);
       expect(human.steel).eq(4);
@@ -225,7 +229,7 @@ describe('MarsBot colony storage as stock resources (C-25)', () => {
         human.stock.override(Units.EMPTY);
 
         marsBot.player.stock.steal(resource, 2, human);
-        choose(prompt(game, human), 1, human);
+        takeFromStorage(game, human, 2);
 
         expect(marsBot.shippingBoard.get(colony)).eq(2);
         expect(marsBot.turnResolver.megacredits).eq(10);
@@ -254,8 +258,7 @@ describe('MarsBot colony storage as stock resources (C-25)', () => {
       const cardOptions = cast(new HiredRaiders().play(human), OrOptions);
       const steelOption = cardOptions.options.find((o) => titleOf(o).includes('steel'))!;
       steelOption.cb(undefined);
-      const or = prompt(game, human);
-      choose(or, 1, human);
+      takeFromStorage(game, human, 2);
 
       expect(marsBot.shippingBoard.get(ColonyName.CERES)).eq(3);
       expect(human.steel).eq(2);
@@ -297,9 +300,7 @@ describe('MarsBot colony storage as stock resources (C-25)', () => {
       marsBot.shippingBoard.storage.set(ColonyName.TRITON, 4);
 
       marsBot.player.attack(human, Resource.TITANIUM, 3, {log: true});
-      runAllActions(game);
-      const or = cast(human.popWaitingFor(), OrOptions);
-      choose(or, 1, human);
+      takeFromStorage(game, human, 3);
 
       expect(marsBot.shippingBoard.get(ColonyName.TRITON)).eq(1);
       expect(marsBot.turnResolver.megacredits).eq(10);
@@ -312,8 +313,7 @@ describe('MarsBot colony storage as stock resources (C-25)', () => {
       marsBot.shippingBoard.storage.set(ColonyName.LUNA, 4);
 
       marsBot.player.attack(human, Resource.MEGACREDITS, 4, {log: true});
-      runAllActions(game);
-      choose(cast(human.popWaitingFor(), OrOptions), 1, human);
+      takeFromStorage(game, human, 4);
 
       expect(marsBot.shippingBoard.get(ColonyName.LUNA)).eq(0);
       expect(marsBot.turnResolver.megacredits).eq(10);
@@ -325,8 +325,7 @@ describe('MarsBot colony storage as stock resources (C-25)', () => {
       marsBot.shippingBoard.storage.set(ColonyName.TRITON, 4);
 
       marsBot.player.attack(human, Resource.TITANIUM, 3, {log: true});
-      runAllActions(game);
-      choose(cast(human.popWaitingFor(), OrOptions), 0, human);
+      takeFromStorage(game, human, 0);
 
       expect(marsBot.shippingBoard.get(ColonyName.TRITON)).eq(4);
       expect(marsBot.turnResolver.megacredits).eq(7);
@@ -414,7 +413,7 @@ describe('MarsBot colony storage as stock resources (C-25)', () => {
 
       marsBot.player.stock.steal(Resource.PLANTS, 2, human);
       choose(prompt(game, human), 1, human);
-      choose(prompt(game, human), 1, human);
+      takeFromStorage(game, human, 2);
 
       expect(marsBot.corpSpecificState.get('plantResources')).eq(3);
       expect(marsBot.shippingBoard.get(ColonyName.GANYMEDE)).eq(2);
@@ -494,7 +493,7 @@ describe('MarsBot colony storage as stock resources (C-25)', () => {
       marsBot.corpSpecificState.set('plantResources', 0);
 
       marsBot.player.stock.steal(Resource.PLANTS, 2, human);
-      choose(prompt(game, human), 1, human);
+      takeFromStorage(game, human, 2);
 
       expect(marsBot.shippingBoard.get(ColonyName.GANYMEDE)).eq(2);
       expect(human.plants).eq(2);
@@ -508,7 +507,7 @@ describe('MarsBot colony storage as stock resources (C-25)', () => {
       marsBot.shippingBoard.storage.set(ColonyName.CERES, 3);
 
       marsBot.player.stock.steal(Resource.STEEL, 2, human);
-      choose(prompt(game, human), 1, human);
+      takeFromStorage(game, human, 2);
 
       expect(marsBot.shippingBoard.serialize()).deep.eq({[ColonyName.CERES]: 1});
     });

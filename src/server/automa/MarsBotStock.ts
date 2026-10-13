@@ -11,7 +11,6 @@ import {COLONY_STORAGE_FOR_RESOURCE} from './colonies/MarsBotShippingBoard';
 import {OrOptions} from '../inputs/OrOptions';
 import {SelectOption} from '../inputs/SelectOption';
 import {SelectAmount} from '../inputs/SelectAmount';
-import {PlayerInput} from '../PlayerInput';
 import {Priority} from '../deferredActions/Priority';
 import {message} from '../logs/MessageBuilder';
 
@@ -239,41 +238,15 @@ export class MarsBotStock extends Stock {
     }
 
     const colony = COLONY_STORAGE_FOR_RESOURCE[resource];
-    const choices: Array<PlayerInput> = [];
-    if (lo === 0) {
-      choices.push(new SelectOption(message('Take ${0} from MarsBot\'s M€ supply', (b) => b.number(total)))
-        .andThen(() => {
-          apply(0);
-          return undefined;
-        }));
-    }
-    if (hi === total) {
-      choices.push(new SelectOption(message('Take ${0} from MarsBot\'s ${1} colony storage', (b) => b.number(total).rawString(colony)))
-        .andThen(() => {
-          apply(total);
-          return undefined;
-        }));
-    }
-    const splitMin = Math.max(1, lo);
-    const splitMax = Math.min(total - 1, hi);
-    if (splitMin === splitMax) {
-      choices.push(new SelectOption(message('Take ${0} from MarsBot\'s ${1} colony storage and ${2} from its M€ supply',
-        (b) => b.number(splitMin).rawString(colony).number(total - splitMin)))
-        .andThen(() => {
-          apply(splitMin);
-          return undefined;
-        }));
-    } else if (splitMin < splitMax) {
-      choices.push(new SelectAmount(
-        message('Take how many from MarsBot\'s ${0} colony storage? The rest comes from its M€ supply', (b) => b.rawString(colony)),
-        'Take', splitMin, splitMax)
-        .andThen((fromStorage) => {
-          apply(fromStorage);
-          return undefined;
-        }));
-    }
-    taker.defer(() => new OrOptions(...choices).setTitle(
-      message('Take ${0} ${1} from MarsBot', (b) => b.number(total).rawString(resource))), Priority.BEFORE_OPPONENT_TRIGGER);
+    // One field for how many come from storage, starting at the most; the rest comes from M€
+    taker.defer(() => new SelectAmount(
+      message('Take ${0} ${1} from MarsBot: how many from its ${2} colony storage? The rest comes from its M€ supply',
+        (b) => b.number(total).rawString(resource).rawString(colony)),
+      'Take', lo, hi, true)
+      .andThen((fromStorage) => {
+        apply(fromStorage);
+        return undefined;
+      }), Priority.BEFORE_OPPONENT_TRIGGER);
   }
 
   /**
