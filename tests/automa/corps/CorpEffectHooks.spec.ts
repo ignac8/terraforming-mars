@@ -312,15 +312,47 @@ describe('Corp Effect Hooks', () => {
       expect(marsBot.corpSpecificState.get('mcOnCard')).to.eq(5);
     });
 
-    it('when card empties, refill + advance building track', () => {
+    // Our reading: the card ticks for every 10 M€ MarsBot gains (njshaw2, BGG 3553988), so what
+    // is left of a gain after the card empties comes off the refilled card.
+    function miningGuild(mcOnCard: number, building: number) {
       const {marsBot} = createAutomaGame();
-      const corp = getMarsBotCorp(CardName.MINING_GUILD)!;
-      marsBot.setCorpAndSetup(corp);
-      marsBot.corpSpecificState.set('mcOnCard', 2);
-      const buildingBefore = marsBot.marsBotBoard.tracks[0].position;
-      corp.effect!.onMcGained!(marsBot, 5);
-      expect(marsBot.corpSpecificState.get('mcOnCard')).to.eq(10); // Refilled
-      expect(marsBot.marsBotBoard.tracks[0].position).to.be.gte(buildingBefore + 1);
+      marsBot.setCorpAndSetup(getMarsBotCorp(CardName.MINING_GUILD)!);
+      marsBot.corpSpecificState.set('mcOnCard', mcOnCard);
+      marsBot.marsBotBoard.tracks[0].position = building;
+      return marsBot;
+    }
+
+    it('when card empties, refill, advance building track, and take the rest off the refilled card', () => {
+      // Tharsis building #3 has no icon
+      const marsBot = miningGuild(2, 2);
+      marsBot.turnResolver.gainMc(5);
+      expect(marsBot.corpSpecificState.get('mcOnCard')).to.eq(7);
+      expect(marsBot.marsBotBoard.tracks[0].position).to.eq(3);
+    });
+
+    it('a gain that empties the card several times advances once per emptying', () => {
+      // Tharsis building #3 and #4 have no icon, #5 gives TR
+      const marsBot = miningGuild(2, 2);
+      marsBot.turnResolver.gainMc(25);
+      expect(marsBot.corpSpecificState.get('mcOnCard')).to.eq(7);
+      expect(marsBot.marsBotBoard.tracks[0].position).to.eq(5);
+    });
+
+    it('stops once the building track reaches #18', () => {
+      const marsBot = miningGuild(2, 17);
+      marsBot.turnResolver.gainMc(15);
+      expect(marsBot.corpSpecificState.get('mcOnCard')).to.eq(10);
+      expect(marsBot.marsBotBoard.tracks[0].position).to.eq(18);
+    });
+
+    it('takes the M€ the building track advance earns off the refilled card', () => {
+      // Tharsis building #2 places an ocean, which pays M€
+      const marsBot = miningGuild(1, 1);
+      const mc = marsBot.turnResolver.megacredits;
+      marsBot.turnResolver.gainMc(1);
+      const earnedByAdvance = marsBot.turnResolver.megacredits - mc - 1;
+      expect(earnedByAdvance).is.greaterThan(0);
+      expect(marsBot.corpSpecificState.get('mcOnCard')).to.eq(10 - earnedByAdvance);
     });
   });
 

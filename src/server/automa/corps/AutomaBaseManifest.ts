@@ -117,27 +117,31 @@ const INVENTRIX: IMarsBotCorp = {
 // Effect: when earning MC, deduct from card first. When card empty, refill 10 + advance building track.
 const MINING_GUILD: IMarsBotCorp = {
   name: CardName.MINING_GUILD,
-  description: 'Tags: 2 Building. Setup: 10 MC on card. Until the building track reaches #18, MC MarsBot earns comes off this card; when empty, refill 10 MC and advance building track.',
+  description: 'Tags: 2 Building. Setup: 10 MC on card. Until the building track reaches #18, MC MarsBot earns comes off this card; when empty, refill 10 MC, advance building track, and take the rest of the MC off the refilled card.',
   tags: [Tag.BUILDING, Tag.BUILDING],
   setup(bot) {
     bot.setCorpState('mcOnCard', 10);
     bot.game.log('MarsBot (Mining Guild): 10 M€ placed on card');
   },
   effect: {
-    // The card is a countdown: M€ MarsBot earns is removed from the card, but the
-    // bot keeps the earnings. When the card empties, refill 10 M€ and advance the
-    // building track.
+    // The card is a countdown: M€ MarsBot earns is removed from the card, but the bot keeps the
+    // earnings. Each time the card empties, refill 10 M€ and advance the building track, and the
+    // rest of the gain comes off the refilled card.
     onMcGained(bot, amount) {
-      if (bot.marsBotBoard.tracks[0].position >= 18) {
-        return;
-      } // Building track maxed, the card stops
-      const mcOnCard = bot.getCorpState('mcOnCard') - Math.min(amount, bot.getCorpState('mcOnCard'));
-      if (mcOnCard <= 0) {
+      let remaining = amount;
+      // Building track at #18: the card stops. The advance can reach it mid-gain.
+      while (remaining > 0 && bot.marsBotBoard.tracks[0].position < 18) {
+        const mcOnCard = bot.getCorpState('mcOnCard');
+        const taken = Math.min(remaining, mcOnCard);
+        remaining -= taken;
+        if (mcOnCard - taken > 0) {
+          bot.setCorpState('mcOnCard', mcOnCard - taken);
+          return;
+        }
+        // Refill first: M€ the advance earns re-enters here and comes off the refilled card
         bot.setCorpState('mcOnCard', 10);
-        bot.advanceTrack(0); // Building track = index 0
         bot.game.log('MarsBot (Mining Guild): card empty, refill 10 M€ + advance building track');
-      } else {
-        bot.setCorpState('mcOnCard', mcOnCard);
+        bot.advanceTrack(0); // Building track = index 0
       }
     },
   },
