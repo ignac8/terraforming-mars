@@ -697,7 +697,6 @@ No 2nd place VP in 2-player automa games (same as standard 2-player TM rules). O
 ### Not Yet Implemented (Official Expansions Only)
 - [x] Other official maps — Hellas, Elysium, Utopia Planitia, Terra Cimmeria Nova, Vastitas Borealis Nova. Track layouts transcribed from photos of the physical boards and checked by two independent readings. Tag pairings per rulebook C p.8
 - [x] Turmoil difficulty options T-14 and T-15 are independent settings in the create-game form (`automaTurmoilTRReduction`: 10 or 7; `automaTurmoilSetupDelegates`: 0 to 2), matching the rulebook's "one of the following ways"
-- [ ] Promos — Some promo cards may need special MarsBot interaction handling
 - [ ] Physical card verification — Corp effects from NamuWiki need verification against physical Automa expansion cards
 
 ---
