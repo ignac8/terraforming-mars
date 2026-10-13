@@ -1,6 +1,7 @@
 import {expect} from 'chai';
 import {setOxygenLevel, setTemperature, setVenusScaleLevel} from '../../TestingUtils';
-import {BonusCardId} from '../../../src/common/automa/AutomaTypes';
+import {BonusCardId, getAutomaMaxGeneration} from '../../../src/common/automa/AutomaTypes';
+import {Phase} from '../../../src/common/Phase';
 import {MAX_OXYGEN_LEVEL, MAX_TEMPERATURE, MAX_VENUS_SCALE} from '../../../src/common/constants';
 import {CardName} from '../../../src/common/cards/CardName';
 import {testGame} from '../../TestGame';
@@ -366,6 +367,21 @@ describe('Corp Effect Hooks', () => {
       marsBot.turnResolver.gainMc(15);
       expect(marsBot.corpSpecificState.get('mcOnCard')).to.eq(10);
       expect(marsBot.marsBotBoard.tracks[0].position).to.eq(18);
+    });
+
+    // Our reading, like Philares (TDaver, BGG 3513998): nothing advances after the game has ended
+    it('stops counting down once the game has ended', () => {
+      const marsBot = miningGuild(2, 2);
+      marsBot.game.generation = getAutomaMaxGeneration(marsBot.game.gameOptions.preludeExtension);
+      marsBot.game.phase = Phase.PRODUCTION;
+      expect(marsBot.game.isDoneWithFinalProduction()).is.true;
+      const mc = marsBot.turnResolver.megacredits;
+
+      marsBot.turnResolver.gainMc(5);
+
+      expect(marsBot.turnResolver.megacredits).to.eq(mc + 5);
+      expect(marsBot.corpSpecificState.get('mcOnCard')).to.eq(2);
+      expect(marsBot.marsBotBoard.tracks[0].position).to.eq(2);
     });
 
     it('takes the M€ the building track advance earns off the refilled card', () => {

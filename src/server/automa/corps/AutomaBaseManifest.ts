@@ -127,8 +127,12 @@ const MINING_GUILD: IMarsBotCorp = {
   effect: {
     // The card is a countdown: M€ MarsBot earns is removed from the card, but the bot keeps the
     // earnings. Each time the card empties, refill 10 M€ and advance the building track, and the
-    // rest of the gain comes off the refilled card.
+    // rest of the gain comes off the refilled card. Once the game has ended the card stops, like
+    // Philares (BGG 3513998).
     onMcGained(bot, amount) {
+      if (bot.game.isDoneWithFinalProduction()) {
+        return;
+      }
       let remaining = amount;
       // Building track at #18: the card stops. The advance can reach it mid-gain.
       while (remaining > 0 && bot.marsBotBoard.tracks[0].position < 18) {
