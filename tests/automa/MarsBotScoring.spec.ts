@@ -248,7 +248,7 @@ describe('MarsBotScoring', () => {
         const {bot} = leftoverGame({automaColonyVP: true});
         bot.shippingBoard.storage.set(ColonyName.CERES, Math.min(cubes, 4));
         bot.shippingBoard.storage.set(ColonyName.LUNA, Math.max(0, cubes - 4));
-        expect(bot.getVictoryPoints().colonyVP, `${cubes} resources`).to.eq(vp);
+        expect(bot.getVictoryPoints().leftoverResourcesVP, `${cubes} resources`).to.eq(vp);
       }
     });
 
@@ -256,7 +256,7 @@ describe('MarsBotScoring', () => {
       const {bot} = leftoverGame({automaColonyVP: true, venusNextExtension: true});
       bot.shippingBoard.storage.set(ColonyName.CERES, 2);
       bot.floaters = 3;
-      expect(bot.getVictoryPoints().colonyVP).to.eq(2);
+      expect(bot.getVictoryPoints().leftoverResourcesVP).to.eq(2);
     });
 
     it('does not score MarsBot\'s colonies', () => {
@@ -264,7 +264,7 @@ describe('MarsBotScoring', () => {
       for (let i = 0; i < 4; i++) {
         game.colonies[i].colonies.push(bot.player.id);
       }
-      expect(bot.getVictoryPoints().colonyVP).to.eq(0);
+      expect(bot.getVictoryPoints().leftoverResourcesVP).to.eq(0);
     });
 
     it('adds to the total', () => {
@@ -279,13 +279,13 @@ describe('MarsBotScoring', () => {
     it('is off by default', () => {
       const {bot} = leftoverGame();
       bot.shippingBoard.storage.set(ColonyName.CERES, 4);
-      expect(bot.getVictoryPoints().colonyVP).to.eq(0);
+      expect(bot.getVictoryPoints().leftoverResourcesVP).to.eq(0);
     });
 
     it('scores nothing without Colonies', () => {
       const {bot} = leftoverGame({automaColonyVP: true, coloniesExtension: false, venusNextExtension: true});
       bot.floaters = 4;
-      expect(bot.getVictoryPoints().colonyVP).to.eq(0);
+      expect(bot.getVictoryPoints().leftoverResourcesVP).to.eq(0);
     });
   });
 

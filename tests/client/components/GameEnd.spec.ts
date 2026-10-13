@@ -22,7 +22,7 @@ function fakeMarsBot(total: number): MarsBotModel {
       mcToVP: 0,
       cardVP: 0,
       vermin: 0,
-      colonyVP: 0,
+      leftoverResourcesVP: 0,
       turmoilVP: 0,
       corpVP: 0,
       total,
@@ -90,7 +90,7 @@ describe('GameEnd', () => {
     const vp = marsBot.vpBreakdown!;
     Object.assign(vp, {
       terraformRating: 20, milestones: 5, awards: 5, greenery: 4, cityAdjacentGreenery: 3,
-      neuralInstance: 2, mcToVP: 3, cardVP: 4, vermin: -1, colonyVP: 2, turmoilVP: 3, corpVP: 6,
+      neuralInstance: 2, mcToVP: 3, cardVP: 4, vermin: -1, leftoverResourcesVP: 2, turmoilVP: 3, corpVP: 6,
     });
     vp.total = 20 + 5 + 5 + 4 + 3 + 2 + 3 + 4 - 1 + 2 + 3 + 6;
     const wrapper = shallowMount(GameEnd, {
@@ -110,7 +110,7 @@ describe('GameEnd', () => {
   it('lists the leftover resources, Turmoil and corporation VP in the MarsBot detail column', () => {
     const marsBot = fakeMarsBot(0);
     marsBot.corpName = 'Viron' as MarsBotModel['corpName'];
-    Object.assign(marsBot.vpBreakdown!, {colonyVP: 2, turmoilVP: 3, corpVP: 6});
+    Object.assign(marsBot.vpBreakdown!, {leftoverResourcesVP: 2, turmoilVP: 3, corpVP: 6});
     const wrapper = shallowMount(GameEnd, {
       ...globalConfig,
       props: {
