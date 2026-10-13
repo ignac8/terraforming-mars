@@ -157,13 +157,13 @@ describe('MarsBot final greenery', () => {
       expect(marsBot.turnResolver.megacredits).to.eq(mc + placementMc() + 2);
     });
 
-    it('takes a Failed Action for Helion\'s black cube with the temperature maxed', () => {
+    it('gains nothing from Helion\'s black cube with the temperature maxed', () => {
       const {game, marsBot, mc, placementMc} = finalGreenery(CardName.HELION);
       setTemperature(game, MAX_TEMPERATURE);
 
       marsBot.placeFinalGreeneries();
 
-      expect(marsBot.turnResolver.megacredits).to.eq(mc + placementMc() + FAILED_ACTION_MC);
+      expect(marsBot.turnResolver.megacredits).to.eq(mc + placementMc());
     });
 
     it('does not chain into Manutech\'s extra advance (BGG 3385156)', () => {

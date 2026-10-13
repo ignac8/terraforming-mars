@@ -19,7 +19,6 @@ import {PowerPlant} from '../../../src/server/cards/base/PowerPlant';
 import {SolarWindPower} from '../../../src/server/cards/base/SolarWindPower';
 import {setTemperature} from '../../TestingUtils';
 import {MAX_TEMPERATURE} from '../../../src/common/constants';
-import {FAILED_ACTION_MC} from '../../../src/common/automa/AutomaTypes';
 
 function createAutomaGame(boardName: BoardName = BoardName.THARSIS): {game: IGame, human: TestPlayer, marsBot: MarsBot} {
   const [game, human] = testGame(1, {
@@ -322,9 +321,8 @@ describe('Base Game MarsBot Corporations', () => {
       expect(game.getTemperature()).to.eq(temperature + 2);
     });
 
-    // Our reading: a corp effect raising a maxed temperature gains MarsBot nothing, which is a
-    // Failed Action like the track icons (njshaw2's "no benefit" test, BGG 3350125)
-    it('black cube with the temperature maxed is a Failed Action', () => {
+    // A corp effect is a reaction, not an action, so no Failed Action (Nick)
+    it('black cube with the temperature maxed does nothing', () => {
       const {game, marsBot} = createAutomaGame();
       marsBot.setCorpAndSetup(getMarsBotCorp(CardName.HELION)!);
       setTemperature(game, MAX_TEMPERATURE);
@@ -334,7 +332,7 @@ describe('Base Game MarsBot Corporations', () => {
       marsBot.advanceTrack(5);
 
       expect(game.getTemperature()).to.eq(MAX_TEMPERATURE);
-      expect(marsBot.turnResolver.megacredits).to.eq(mc + FAILED_ACTION_MC);
+      expect(marsBot.turnResolver.megacredits).to.eq(mc);
     });
   });
 

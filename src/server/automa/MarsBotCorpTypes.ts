@@ -239,8 +239,8 @@ export interface IMarsBot {
   maybeFundAward(): boolean;
 
   /**
-   * Raises the temperature. The steps it actually moves count toward `temperatureRaises`. When the
-   * temperature is already at its maximum, the bot takes a Failed Action instead.
+   * Raises the temperature for a corp effect. The steps it actually moves count toward
+   * `temperatureRaises`. Unlike a track icon, a maxed temperature does nothing, with no Failed Action.
    */
   raiseTemperature(steps: 1 | 2): void;
   placeOcean(): void;

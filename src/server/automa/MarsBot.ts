@@ -3,6 +3,7 @@ import {IPlayer} from '../IPlayer';
 import {IProjectCard} from '../cards/IProjectCard';
 import {Resource} from '../../common/Resource';
 import {GlobalParameter} from '../../common/GlobalParameter';
+import * as constants from '../../common/constants';
 import {CardName} from '../../common/cards/CardName';
 import {newCard} from '../createCard';
 import {DifficultyLevel, BonusCardId, TrackDefinition, getAutomaMaxGeneration} from '../../common/automa/AutomaTypes';
@@ -494,6 +495,10 @@ export class MarsBot implements IMarsBot {
   }
 
   public raiseTemperature(steps: 1 | 2): void {
+    // A corp effect is a reaction, not an action, so a maxed temperature is no Failed Action (Nick)
+    if (this.game.getTemperature() >= constants.MAX_TEMPERATURE) {
+      return;
+    }
     this.turnResolver.raiseTemperature(steps);
   }
 
