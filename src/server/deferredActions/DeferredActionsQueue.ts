@@ -15,6 +15,10 @@ export class DeferredActionsQueue {
     this.queue.push(action);
   }
 
+  public hasActionFor(player: IPlayer, predicate: (action: IDeferredAction<any>) => boolean): boolean {
+    return this.queue.some((action) => action.player.id === player.id && predicate(action));
+  }
+
   public runAllFor(player: IPlayer, cb: () => void): void {
     let b: IDeferredAction | undefined;
     let j = -1;

@@ -6,6 +6,8 @@ import {SelectCard} from '../../../src/server/inputs/SelectCard';
 import {cast} from '../../../src/common/utils/utils';
 import {TileType} from '../../../src/common/TileType';
 import {fakeCard, runAllActions} from '../../TestingUtils';
+import {RecyclonTournament} from '../../../src/server/cards/tournament/RecyclonTournament';
+import {Phase} from '../../../src/common/Phase';
 
 describe('UnitedNationsMarsInitiativeTournament', () => {
   it('Places ocean, city and greenery without map bonuses, then discards 3', () => {
@@ -82,5 +84,40 @@ describe('UnitedNationsMarsInitiativeTournament', () => {
     }
 
     expect(player.cardsInHand).is.empty;
+  });
+
+  // Corporations are played at setup, where every player resolves their own choices at once. Two
+  // owners must not place on the shared board at the same time: the first in turn order places all
+  // three tiles, then the next one does.
+  it('A second owner places their tiles only after the first has finished', () => {
+    const [game, p1, p2, p3] = testGame(3, {tournamentExpansion: true});
+    game.phase = Phase.RESEARCH;
+
+    p1.playCorporationCard(new UnitedNationsMarsInitiativeTournament());
+    p2.playCorporationCard(new RecyclonTournament());
+    p3.playCorporationCard(new UnitedNationsMarsInitiativeTournament());
+
+    expect(p1.getWaitingFor()).instanceOf(SelectSpace);
+    expect(p2.getWaitingFor()).is.undefined;
+    expect(p3.getWaitingFor()).is.undefined;
+
+    for (const tile of ['ocean', 'city', 'greenery']) {
+      const selectSpace = cast(p1.getWaitingFor(), SelectSpace);
+      p1.process({type: 'space', spaceId: selectSpace.spaces[0].id});
+      if (tile !== 'greenery') {
+        expect(p3.getWaitingFor()).is.undefined;
+      }
+    }
+    expect(game.phase).eq(Phase.RESEARCH);
+
+    for (const _ of ['ocean', 'city', 'greenery']) {
+      const selectSpace = cast(p3.getWaitingFor(), SelectSpace);
+      p3.process({type: 'space', spaceId: selectSpace.spaces[0].id});
+    }
+
+    expect(game.board.getOceanSpaces()).has.length(2);
+    expect(game.board.getCities()).has.length(2);
+    expect(game.board.getGreeneries()).has.length(2);
+    expect(game.phase).eq(Phase.ACTION);
   });
 });

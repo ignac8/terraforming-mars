@@ -31,12 +31,15 @@ import {PlayerId, GameId, SpectatorId, SpaceId} from '../common/Types';
 import {PlayerInput} from './PlayerInput';
 import {CardResource} from '../common/CardResource';
 import {Resource} from '../common/Resource';
-import {AndThen, DeferredAction, SimpleDeferredAction} from './deferredActions/DeferredAction';
+import {AndThen, DeferredAction, IDeferredAction, SimpleDeferredAction} from './deferredActions/DeferredAction';
 import {Priority} from './deferredActions/Priority';
 import {DeferredActionsQueue} from './deferredActions/DeferredActionsQueue';
 import {SelectPaymentDeferred} from './deferredActions/SelectPaymentDeferred';
 import {SelectInitialCards} from './inputs/SelectInitialCards';
 import {PlaceOceanTile} from './deferredActions/PlaceOceanTile';
+import {PlaceCityTile} from './deferredActions/PlaceCityTile';
+import {PlaceGreeneryTile} from './deferredActions/PlaceGreeneryTile';
+import {PlaceTile} from './deferredActions/PlaceTile';
 import {RemoveColonyFromGame} from './deferredActions/RemoveColonyFromGame';
 import {GainResourcesDeferred} from './deferredActions/GainResourcesDeferred';
 import {SerializedGame} from './SerializedGame';
@@ -101,6 +104,11 @@ export function setGameLog(f: () => Array<LogMessage>) {
   createGameLog = f;
 }
 
+function placesTile(action: IDeferredAction<any>): boolean {
+  return action instanceof PlaceOceanTile || action instanceof PlaceCityTile ||
+    action instanceof PlaceGreeneryTile || action instanceof PlaceTile;
+}
+
 export class Game implements IGame, Logger {
   public readonly id: GameId;
   public readonly name: string;
@@ -143,6 +151,13 @@ export class Game implements IGame, Logger {
   private donePlayers = new Set<PlayerId>();
   private passedPlayers = new Set<PlayerId>();
   private researchedPlayers = new Set<PlayerId>();
+  /**
+   * Players resolve their research phase choices at the same time, but tile placements share the
+   * board (two tournament UNMI owners at setup). One player places at a time, the rest wait in
+   * generation order. Not serialized, like the deferred actions it waits on.
+   */
+  public tilePlacer: IPlayer | undefined = undefined;
+  public readonly waitingTilePlacers: Array<IPlayer> = [];
   /** The first player of this generation. */
   public first: IPlayer;
 
@@ -1076,7 +1091,23 @@ export class Game implements IGame, Logger {
   }
 
   public playerIsFinishedWithResearchPhase(player: IPlayer): void {
+    if (this.deferredActions.hasActionFor(player, placesTile)) {
+      const placer = this.tilePlacer;
+      if (placer !== undefined) {
+        this.waitingTilePlacers.push(player);
+        this.log('${0} places tiles after ${1}', (b) => b.player(player).player(placer));
+        return;
+      }
+      this.tilePlacer = player;
+    }
     this.deferredActions.runAllFor(player, () => {
+      if (this.tilePlacer === player) {
+        this.tilePlacer = undefined;
+        const next = this.waitingTilePlacers.shift();
+        if (next !== undefined) {
+          this.playerIsFinishedWithResearchPhase(next);
+        }
+      }
       this.researchedPlayers.add(player.id);
       if (this.researchedPlayers.size === this.players.length) {
         this.researchedPlayers.clear();
