@@ -28,6 +28,8 @@ import {IceCapMelting} from '../../src/server/cards/base/IceCapMelting';
 import {MicroMills} from '../../src/server/cards/base/MicroMills';
 import {Mine} from '../../src/server/cards/base/Mine';
 import {Tardigrades} from '../../src/server/cards/base/Tardigrades';
+import {Ceres} from '../../src/server/colonies/Ceres';
+import {trackCubeKey} from '../../src/server/automa/MarsBotCorpTypes';
 
 function createAutomaGame(difficulty: 'easy' | 'normal' | 'hard' | 'brutal' = 'normal'): {game: IGame, human: TestPlayer, marsBot: MarsBot} {
   const [game, human] = testGame(1, {automaOption: true, automaDifficulty: difficulty, boardName: BoardName.THARSIS});
@@ -369,6 +371,27 @@ describe('MarsBot Rules Compliance', () => {
       // Track advance may trigger actions that grant additional MC, so just verify 5 was deducted
       expect(marsBot.turnResolver.megacredits).to.be.lte(mcBefore - 5 + 10); // At most 10 MC gained from track actions
       expect(marsBot.turnResolver.megacredits).to.be.lt(mcBefore); // Overall MC decreased
+    });
+
+    it('takes no more than MarsBot has when the helper itself cost M€ (colony cube, C-X3)', () => {
+      const [game, human] = testGame(1, {automaOption: true, coloniesExtension: true, boardName: BoardName.THARSIS});
+      const marsBot = game.automaHooks!.marsBot;
+      const ceres = new Ceres();
+      game.colonies = [ceres];
+      game.fundAward(human, game.awards.find((a) => a.name === 'Miner')!);
+      // A colony cube on space track #7, where Miner's helper takes the tracker
+      const key = trackCubeKey(1, 7);
+      marsBot.hasColonyCubes = true;
+      marsBot.colonyCubePositions = new Set([key]);
+      marsBot.trackCubePositions.set(key, {trackIndex: 1, position: 7, cubeType: 'black'});
+      marsBot.marsBotBoard.tracks[1].position = 6;
+      marsBot.turnResolver.megacredits = 5;
+
+      marsBot['bonusResolver'].resolve(createBaseBonusCards().find((c) => c.id === BonusCardId.B08_CORPORATE_COMPETITION)!);
+
+      expect(marsBot.marsBotBoard.tracks[1].position).to.eq(7);
+      expect(ceres.colonies).includes(marsBot.player.id);
+      expect(marsBot.turnResolver.megacredits).to.eq(0);
     });
   });
 

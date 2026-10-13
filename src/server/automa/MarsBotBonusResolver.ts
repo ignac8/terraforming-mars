@@ -560,8 +560,10 @@ export class MarsBotBonusResolver {
         if (FREE_HELPER_AWARDS.includes(award.name)) {
           this.game.log('MarsBot resolves Corporate Competition on ${0}', (b) => b.rawString(award.name));
         } else {
-          this.turnResolver.megacredits -= 5;
-          this.game.log('MarsBot resolves Corporate Competition on ${0}, loses 5 MC', (b) => b.rawString(award.name));
+          // A helper can itself cost M€ (a colony cube), so MarsBot may have less than 5 left
+          const lost = Math.min(5, this.turnResolver.megacredits);
+          this.turnResolver.megacredits -= lost;
+          this.game.log('MarsBot resolves Corporate Competition on ${0}, loses ${1} MC', (b) => b.rawString(award.name).number(lost));
         }
         resolved = true;
         break;
