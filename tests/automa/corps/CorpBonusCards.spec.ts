@@ -92,6 +92,19 @@ describe('Corp-Specific Bonus Cards (B22-B32)', () => {
       expect(game.getOxygenLevel()).to.eq(1);
       expect(marsBot.getCorpState('plantResources')).to.eq(0);
     });
+
+    // A bonus card that can't resolve is not a Failed Action (rulebook A, p.5)
+    it('keeps the plant and takes no Failed Action when no greenery can be placed', () => {
+      const {game, marsBot} = createAutomaGame();
+      marsBot.setCorpState('plantResources', 1);
+      marsBot['bonusResolver']['tilePlacer'].findGreenerySpace = () => undefined;
+
+      marsBot['bonusResolver'].resolve(createCorpBonusCard(BonusCardId.B23_RAPID_SPROUTING));
+
+      expect(game.board.getGreeneries(marsBot.player)).is.empty;
+      expect(marsBot.getCorpState('plantResources')).to.eq(1);
+      expect(marsBot.turnResolver.megacredits).to.eq(0);
+    });
   });
 
   describe('B24 Supply & Demand', () => {

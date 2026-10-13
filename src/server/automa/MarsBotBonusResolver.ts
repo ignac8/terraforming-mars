@@ -432,6 +432,23 @@ export class MarsBotBonusResolver {
     return this.marsBotManager?.interceptsParameterRaise(parameter) ?? false;
   }
 
+  /**
+   * Places a MarsBot greenery on a space that passes `where` and raises oxygen.
+   *
+   * Returns false, with no Failed Action, when no such space is left.
+   */
+  private maybePlaceGreenery(where?: (space: Space) => boolean): boolean {
+    const space = this.tilePlacer.findGreenerySpace(where);
+    if (space === undefined) {
+      return false;
+    }
+    const raiseOxygen = this.game.getOxygenLevel() >= constants.MAX_OXYGEN_LEVEL ||
+      !this.interceptsRaise(GlobalParameter.OXYGEN);
+    this.game.addGreenery(this.marsBot, space, raiseOxygen);
+    this.turnResolver.gainMc(this.tilePlacer.getTotalPlacementMC(space));
+    return true;
+  }
+
   private turmoilHelper(): MarsBotTurmoilHelper {
     return new MarsBotTurmoilHelper(this.game);
   }
@@ -552,17 +569,6 @@ export class MarsBotBonusResolver {
         return better ? trackIndex : best;
       }));
     };
-    const placeGreenery = (where?: (space: Space) => boolean) => {
-      const space = this.tilePlacer.findGreenerySpace(where);
-      if (space) {
-        const raiseOxygen = this.game.getOxygenLevel() >= constants.MAX_OXYGEN_LEVEL ||
-          !this.interceptsRaise(GlobalParameter.OXYGEN);
-        this.game.addGreenery(this.marsBot, space, raiseOxygen);
-        this.turnResolver.gainMc(this.tilePlacer.getTotalPlacementMC(space));
-        return true;
-      }
-      return false;
-    };
     const placeCity = (where?: (space: Space) => boolean) => {
       const space = this.tilePlacer.findCitySpace(where);
       if (space) {
@@ -602,13 +608,13 @@ export class MarsBotBonusResolver {
 
     switch (awardName) {
     // Tharsis (B08)
-    case 'Landlord': return placeGreenery();
+    case 'Landlord': return this.maybePlaceGreenery();
     case 'Banker': return advanceTrackOfEither([Tag.BUILDING, Tag.EVENT], 'less');
     case 'Scientist': return advanceTrackOf(Tag.SCIENCE);
     case 'Thermalist': return advanceTrackOf(Tag.POWER);
     case 'Miner': return advanceTrackOf(Tag.SPACE);
     // Hellas (B09)
-    case 'Cultivator': return placeGreenery();
+    case 'Cultivator': return this.maybePlaceGreenery();
     case 'Magnate': return revealAndResolveCard((c) => c.type === CardType.AUTOMATED);
     case 'Space Baron': return advanceTrackOf(Tag.SPACE);
     case 'Excentric': return this.maybeRemoveAnimalOrMicrobe('Corporate Competition');
@@ -616,12 +622,12 @@ export class MarsBotBonusResolver {
     // Elysium (B10)
     case 'Celebrity': return revealAndResolveCard((c) => c.cost >= 20);
     case 'Industrialist': return advanceTrackOf(Tag.POWER);
-    case 'Desert Settler': return placeGreenery(inFourBottomRows);
-    case 'Estate Dealer': return placeGreenery(nextToOcean);
+    case 'Desert Settler': return this.maybePlaceGreenery(inFourBottomRows);
+    case 'Estate Dealer': return this.maybePlaceGreenery(nextToOcean);
     case 'Benefactor': { this.marsBot.increaseTerraformRating(2); return true; }
     // Utopia Planitia (B11). The board here has Edgedancer where the card has Suburbian.
     case 'Suburbian':
-    case 'Edgedancer': return placeGreenery(onEdge);
+    case 'Edgedancer': return this.maybePlaceGreenery(onEdge);
     case 'Investor': return advanceTrackOf(Tag.EARTH);
     case 'Botanist': return advanceTrackOf(Tag.PLANT);
     case 'Incorporator': return revealAndResolveCard((c) => c.cost <= 10);
@@ -635,8 +641,8 @@ export class MarsBotBonusResolver {
     case 'Forecaster': return revealAndResolveCard((c) => c.requirements.length > 0);
     // Vastitas Borealis (B13). Traveller follows B14, the card for random awards.
     case 'Traveller': return advanceTrackOfEither([Tag.EARTH, Tag.JOVIAN], 'more');
-    case 'Landscaper': return placeGreenery();
-    case 'Highlander': return placeGreenery((space) => !nextToOcean(space) && !(vastitasRules && nextToReservedOcean(space)));
+    case 'Landscaper': return this.maybePlaceGreenery();
+    case 'Highlander': return this.maybePlaceGreenery((space) => !nextToOcean(space) && !(vastitasRules && nextToReservedOcean(space)));
     case 'Promoter': return advanceTrackOf(Tag.EVENT);
     case 'Blacksmith': return advanceTrackOfEither([Tag.BUILDING, Tag.SPACE], 'more');
     // Milestones and awards (B14)
@@ -820,11 +826,6 @@ export class MarsBotBonusResolver {
 
   // ---- Corp-Specific Bonus Cards (B22-B32) ----
 
-  private resolvePlaceGreeneryCard(cardName: string): void {
-    this.turnResolver.placeGreenery();
-    this.game.log(`MarsBot resolves ${cardName}: placed greenery`);
-  }
-
   // Arcadian Communities: a player marker, not a tile, on a space that is not reserved
   private resolveSettlers(): void {
     const space = this.tilePlacer.findMarkerSpace();
@@ -835,15 +836,20 @@ export class MarsBotBonusResolver {
     this.marsBotManager.placeMarker(space);
   }
 
-  // Ecoline: a. spend the plant on the corp card to place a greenery; b. otherwise put a plant there
+  // Ecoline: a. spend the plant on the corp card to place a greenery; b. otherwise put a plant there.
+  // With no greenery space the plant stays, and a bonus card that can't resolve is not a Failed Action.
   private resolveRapidSprouting(): void {
     const bot = this.marsBotManager;
     if (bot === undefined) {
       return;
     }
     if (bot.getCorpState('plantResources') > 0) {
-      bot.setCorpState('plantResources', 0);
-      this.resolvePlaceGreeneryCard('Rapid Sprouting');
+      if (this.maybePlaceGreenery()) {
+        bot.setCorpState('plantResources', 0);
+        this.game.log('MarsBot resolves Rapid Sprouting: placed greenery');
+      } else {
+        this.game.log('MarsBot resolves Rapid Sprouting: no greenery space, no effect');
+      }
     } else {
       bot.setCorpState('plantResources', 1);
       this.game.log('MarsBot resolves Rapid Sprouting: 1 plant on the corporation card');
