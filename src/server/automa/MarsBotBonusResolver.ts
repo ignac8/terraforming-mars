@@ -482,9 +482,8 @@ export class MarsBotBonusResolver {
   // B08: Corporate Competition
   private resolveCorporateCompetition(): void {
     const canPay = this.turnResolver.megacredits >= 5;
-    const funded = this.game.awards.filter((a) => this.game.hasBeenFunded(a) &&
-      (canPay || FREE_HELPER_AWARDS.includes(a.name)));
-    if (funded.length === 0) {
+    const funded = this.game.awards.filter((a) => this.game.hasBeenFunded(a));
+    if (!canPay || funded.length === 0) {
       // Not enough MC or nothing funded, draw another bonus card
       this.drawAndResolveAnotherBonus();
       return;

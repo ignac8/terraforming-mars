@@ -8,7 +8,7 @@ import {MarsBotTurnResolver} from '../../src/server/automa/MarsBotTurnResolver';
 import {MarsBotBonusDeck} from '../../src/server/automa/MarsBotBonusDeck';
 import {MarsBotBonusResolver} from '../../src/server/automa/MarsBotBonusResolver';
 import {MarsBotTilePlacer} from '../../src/server/automa/MarsBotTilePlacer';
-import {createBaseBonusCards} from '../../src/server/automa/MarsBotBonusCard';
+import {createBaseBonusCards, createCorpBonusCard} from '../../src/server/automa/MarsBotBonusCard';
 import {THARSIS_MARSBOT_BOARD} from '../../src/server/automa/boards/TharsisMarsBot';
 import {TrackAction, TrackDefinition, BonusCardId} from '../../src/common/automa/AutomaTypes';
 import {SeededRandom} from '../../src/common/utils/Random';
@@ -504,17 +504,34 @@ describe('MarsBot Rules Compliance', () => {
       expect(marsBot.turnResolver.megacredits).eq(mc);
     });
 
-    it('Forecaster in a full Corporate Competition costs nothing, even with under 5 M€', () => {
+    it('Forecaster in a full Corporate Competition costs nothing', () => {
       const [game, human] = testGame(1, {automaOption: true, boardName: BoardName.TERRA_CIMMERIA_NOVA});
       const marsBot = game.automaHooks!.marsBot;
       game.fundAward(human, game.awards.find((a) => a.name === 'Forecaster')!);
       stackDeck(game, new Mine(), new Algae());
-      marsBot.turnResolver.megacredits = 2;
+      marsBot.turnResolver.megacredits = 5;
 
       marsBot['bonusResolver'].resolve(createBaseBonusCards().find((c) => c.id === BonusCardId.B08_CORPORATE_COMPETITION)!);
 
       expect(marsBot.marsBotBoard.tracks[6].position).to.be.greaterThan(0);
-      expect(marsBot.turnResolver.megacredits).eq(2);
+      expect(marsBot.turnResolver.megacredits).eq(5);
+    });
+
+    // B12: "If MarsBot has at least 5 MC" has no exception for Forecaster
+    it('Forecaster in a full Corporate Competition still needs 5 M€', () => {
+      const [game, human] = testGame(1, {automaOption: true, boardName: BoardName.TERRA_CIMMERIA_NOVA});
+      const marsBot = game.automaHooks!.marsBot;
+      game.fundAward(human, game.awards.find((a) => a.name === 'Forecaster')!);
+      stackDeck(game, new Mine(), new Algae());
+      marsBot.bonusDeck.drawPile.push(createCorpBonusCard(BonusCardId.B31_GOVERNMENT_SUBSIDY));
+      marsBot.turnResolver.megacredits = 4;
+      const tr = marsBot.player.terraformRating;
+
+      marsBot['bonusResolver'].resolve(createBaseBonusCards().find((c) => c.id === BonusCardId.B08_CORPORATE_COMPETITION)!);
+
+      expect(marsBot.marsBotBoard.tracks[6].position).to.eq(0);
+      expect(marsBot.player.terraformRating).to.eq(tr + 1);
+      expect(marsBot.turnResolver.megacredits).eq(4);
     });
 
     it('other helpers still need 5 M€ in Corporate Competition', () => {
