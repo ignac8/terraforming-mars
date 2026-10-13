@@ -11,6 +11,7 @@ import {marsBotAwardRule, marsBotMapSet, marsBotMilestoneRule} from '../../src/c
 import {BoardName} from '../../src/common/boards/BoardName';
 import {Tag} from '../../src/common/cards/Tag';
 import {RandomMAOptionType} from '../../src/common/ma/RandomMAOptionType';
+import {getCandidates} from '../../src/server/ma/MilestoneAwardSelector';
 import {SpaceType} from '../../src/common/boards/SpaceType';
 import {Space} from '../../src/server/boards/Space';
 import {TileType} from '../../src/common/TileType';
@@ -319,6 +320,39 @@ describe('MarsBot map milestones and awards', () => {
         [new Merchant(), new Planetologist(), new Tradesman()], {venusNextExtension: venus} as GameOptions).map((m) => m.name);
       expect(names(false)).to.deep.eq(['Merchant']);
       expect(names(true)).to.deep.eq(['Merchant', 'Planetologist', 'Tradesman']);
+    });
+  });
+
+  // Our reading: random milestones and awards deal only those the automa rules support
+  describe('random milestones and awards', () => {
+    it('leaves out the ones the automa rules do not cover', () => {
+      const [game] = testGame(1, {automaOption: true, randomMA: RandomMAOptionType.UNLIMITED, includeFanMA: true, venusNextExtension: true});
+      const [milestones, awards] = getCandidates(game.gameOptions);
+
+      expect(milestones).to.include.members(['Terraformer', 'Polar Explorer', 'Hoverlord']);
+      for (const name of ['Minimalist', 'Tropicalist', 'Economizer', 'Capitalist']) {
+        expect(milestones).to.not.include(name);
+      }
+      expect(awards).to.include.members(['Landlord', 'Desert Settler', 'Venuphile']);
+      for (const name of ['Curator', 'Tourist', 'Urbanist', 'Warmonger', 'Innovator', 'Physicist']) {
+        expect(awards).to.not.include(name);
+      }
+    });
+
+    it('still deals 5 of each, all supported', () => {
+      for (const modularMA of [false, true]) {
+        for (let i = 0; i < 10; i++) {
+          const [game] = testGame(1, {automaOption: true, randomMA: RandomMAOptionType.UNLIMITED, includeFanMA: true, modularMA});
+          expect(game.milestones, `modular ${modularMA}`).has.length(5);
+          expect(game.awards, `modular ${modularMA}`).has.length(5);
+          for (const milestone of game.milestones) {
+            expect(AutomaGameSetup.supportsMilestone(milestone.name, game.gameOptions), milestone.name).is.true;
+          }
+          for (const award of game.awards) {
+            expect(AutomaGameSetup.supportsAward(award.name, game.gameOptions), award.name).is.true;
+          }
+        }
+      }
     });
   });
 

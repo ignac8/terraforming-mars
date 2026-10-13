@@ -17,6 +17,11 @@ import {Tag} from '../../common/cards/Tag';
 import {ICard} from '../cards/ICard';
 import {IMilestone} from '../milestones/IMilestone';
 import {IAward} from '../awards/IAward';
+import {MilestoneName} from '../../common/ma/MilestoneName';
+import {AwardName} from '../../common/ma/AwardName';
+import {milestoneManifest} from '../milestones/Milestones';
+import {awardManifest} from '../awards/Awards';
+import {MAManifest} from '../ma/MAManifest';
 import {trackCubeKey} from './MarsBotCorpTypes';
 import {DELEGATES_PER_PLAYER} from '../../common/constants';
 
@@ -45,25 +50,42 @@ export class AutomaGameSetup {
     }
   }
 
-  /** Filter milestones unsupported against MarsBot. */
-  public static filterMilestones(milestones: Array<IMilestone>, gameOptions: GameOptions): Array<IMilestone> {
-    const unsupported: Array<string> = ['Terraformer29'];
+  /**
+   * Whether MarsBot can play against a milestone in this game.
+   *
+   * The automa rules cover the milestones of the maps with a MarsBot board, of the Milestones &
+   * Awards expansion and of Venus Next. A few of those still need an expansion that isn't in play.
+   */
+  public static supportsMilestone(name: MilestoneName, gameOptions: GameOptions): boolean {
+    const unsupported: Array<MilestoneName> = ['Terraformer29'];
     if (!gameOptions.venusNextExtension) {
       unsupported.push('Planetologist', 'Trader', 'Tradesman');
     }
     if (!gameOptions.turmoilExtension) {
       unsupported.push('Lobbyist');
     }
-    return milestones.filter((m) => !unsupported.includes(m.name));
+    return coveredByAutomaRules(name, milestoneManifest) && !unsupported.includes(name);
+  }
+
+  /**
+   * Whether MarsBot can play against an award in this game: the awards the automa rules cover, each
+   * with its Corporate Competition helper, and Venuphile only with Venus Next.
+   */
+  public static supportsAward(name: AwardName, gameOptions: GameOptions): boolean {
+    if (name === 'Venuphile' && !gameOptions.venusNextExtension) {
+      return false;
+    }
+    return coveredByAutomaRules(name, awardManifest);
+  }
+
+  /** Filter milestones unsupported against MarsBot. */
+  public static filterMilestones(milestones: Array<IMilestone>, gameOptions: GameOptions): Array<IMilestone> {
+    return milestones.filter((m) => AutomaGameSetup.supportsMilestone(m.name, gameOptions));
   }
 
   /** Filter awards unsupported against MarsBot. */
   public static filterAwards(awards: Array<IAward>, gameOptions: GameOptions): Array<IAward> {
-    const unsupported: Array<string> = [];
-    if (!gameOptions.venusNextExtension) {
-      unsupported.push('Venuphile');
-    }
-    return unsupported.length > 0 ? awards.filter((a) => !unsupported.includes(a.name)) : awards;
+    return awards.filter((a) => AutomaGameSetup.supportsAward(a.name, gameOptions));
   }
 
   /** Filter out cards not supported against MarsBot (e.g., Recession). */
@@ -244,4 +266,14 @@ export class AutomaGameSetup {
     turmoil.sendDelegateToParty(marsBotPlayer, party.name, game);
     game.log('MarsBot: extra setup delegate placed in ${0} (T-15)', (b) => b.partyName(party.name));
   }
+}
+
+/**
+ * Whether the automa rulebooks give MarsBot a rule for a milestone or award: it belongs to a map
+ * with a MarsBot board, to the Milestones & Awards expansion or to Venus Next.
+ */
+function coveredByAutomaRules<T extends string>(name: T, manifest: MAManifest<T, unknown>): boolean {
+  return MARSBOT_BOARD_NAMES.some((board) => manifest.boards[board].includes(name)) ||
+    manifest.all[name].random !== undefined ||
+    manifest.expansions.venus.includes(name);
 }
