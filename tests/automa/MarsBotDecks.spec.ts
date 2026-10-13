@@ -170,6 +170,22 @@ describe('MarsBot decks', () => {
     expect(marsBot.bonusDeck.drawPile[0].id).eq(BonusCardId.B31_GOVERNMENT_SUBSIDY);
   });
 
+  it('shuffles the setup bonus card back into the bonus deck for UNMI, keeping the expansion cards', () => {
+    const {marsBot} = createAutomaGame({venusNextExtension: true, turmoilExtension: true});
+    const expansionCards = [BonusCardId.B16_GOVERNMENT_INTERVENTION, BonusCardId.B21_PARTY_POLITICS];
+    const setupCard = marsBot.actionDeck.find((c) => 'id' in c && !expansionCards.includes(c.id as BonusCardId))!;
+    expect(setupCard).is.not.undefined;
+    const bonusCards = marsBot.bonusDeck.drawPile.length;
+
+    marsBot.setCorpAndSetup(getMarsBotCorp(CardName.UNITED_NATIONS_MARS_INITIATIVE)!);
+
+    // C12: "Do not add a bonus card to MarsBot's action deck during setup."
+    expect(actionDeckIds(marsBot).filter((id) => id !== undefined)).to.have.members(expansionCards);
+    expect(marsBot.bonusDeck.drawPile).includes(setupCard);
+    // The setup card and Government Subsidy
+    expect(marsBot.bonusDeck.drawPile).has.length(bonusCards + 2);
+  });
+
   it('moves a bonus card into UNMI\'s action deck from generation 2', () => {
     const {game, marsBot} = createAutomaGame();
     const corp = getMarsBotCorp(CardName.UNITED_NATIONS_MARS_INITIATIVE)!;
@@ -178,12 +194,13 @@ describe('MarsBot decks', () => {
     const bonusCards = marsBot.bonusDeck.drawPile.length;
 
     corp.beforeActionPhase!(marsBot);
-    expect(marsBot.actionDeck).has.length(4);
+    // The 3 project cards: UNMI keeps the setup bonus card out
+    expect(marsBot.actionDeck).has.length(3);
 
     game.generation = 2;
     corp.beforeActionPhase!(marsBot);
 
-    expect(marsBot.actionDeck).has.length(5);
+    expect(marsBot.actionDeck).has.length(4);
     expect(marsBot.actionDeck).includes(topBonusCard);
     expect(marsBot.bonusDeck.drawPile).has.length(bonusCards - 1);
     expect(marsBot.bonusDeck.discardPile).is.empty;

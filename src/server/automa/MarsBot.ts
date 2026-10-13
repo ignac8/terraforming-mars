@@ -429,6 +429,19 @@ export class MarsBot implements IMarsBot {
     this.shuffleIntoActionDeck(bonusCard);
   }
 
+  public returnSetupBonusCardToBonusDeck(): void {
+    const kept: Array<IProjectCard | MarsBotBonusCard> = [];
+    for (const card of this.actionDeck) {
+      if (this.isProjectCard(card) || this.returnsToActionDeck(card)) {
+        kept.push(card);
+      } else {
+        this.shuffleIntoBonusDeck(card);
+        this.game.log('MarsBot returns ${0} to its bonus deck', (b) => b.rawString(bonusCardDisplayName(card)));
+      }
+    }
+    this.actionDeck = kept;
+  }
+
   public raiseTemperature(steps: 1 | 2 | 3): void {
     const before = this.game.getTemperature();
     this.game.increaseTemperature(this.player, steps);

@@ -149,6 +149,12 @@ export interface IMarsBot {
   /** Draws the top bonus card and shuffles it into the action deck. Does nothing when both bonus piles are empty. */
   maybeMoveBonusCardToActionDeck(): void;
 
+  /**
+   * Takes the bonus card dealt at setup out of the action deck and shuffles it back into the bonus
+   * deck's draw pile. The expansion cards set aside for the action deck stay (UNMI, C12).
+   */
+  returnSetupBonusCardToBonusDeck(): void;
+
   /** Draws project cards and shuffles them into the bot's action deck. */
   drawProjectCardsToActionDeck(count: number): void;
   /**
