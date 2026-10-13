@@ -246,10 +246,10 @@ const THARSIS_REPUBLIC: IMarsBotCorp = {
 
 // ---- C11 Thorgate ----
 // Tag: Power. Draft: Power. Setup: +10 MC, white cubes on energy track.
-// Effect: white cube resolves card (ignore first tag) then temperature +1.
+// Effect: white cube draws a card and resolves only its first tag, then temperature +1.
 const THORGATE: IMarsBotCorp = {
   name: CardName.THORGATE,
-  description: 'Tag: Power. Draft: Power. Setup: +10 MC, white cubes on energy track. White cube: resolve card (ignore first tag) then temperature +1.',
+  description: 'Tag: Power. Draft: Power. Setup: +10 MC, white cubes on energy track. White cube: draw a project card and resolve only its first tag, then raise temperature 1 step.',
   tags: [Tag.POWER],
   draftPriority: {type: 'tags', tags: [Tag.POWER]},
   trackCubes: [
@@ -265,9 +265,9 @@ const THORGATE: IMarsBotCorp = {
   effect: {
     onTrackCubeTrigger(bot, _trackIndex, _position, cubeType) {
       if (cubeType === 'white') {
-        bot.maybeDrawAndResolveProjectCardIgnoringFirstNTags(1);
+        bot.maybeDrawAndResolveProjectCardFirstTagOnly();
         bot.raiseTemperature(1);
-        bot.game.log('MarsBot (Thorgate): white cube — resolved card (first tag ignored) + temp +1');
+        bot.game.log('MarsBot (Thorgate): white cube — resolved card (first tag only) + temp +1');
       }
     },
   },

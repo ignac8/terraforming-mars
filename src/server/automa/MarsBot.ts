@@ -389,12 +389,12 @@ export class MarsBot implements IMarsBot {
     this.turnResolver.resolveProjectCard(cards[0]);
   }
 
-  public maybeDrawAndResolveProjectCardIgnoringFirstNTags(n: number): void {
+  public maybeDrawAndResolveProjectCardFirstTagOnly(): void {
     const cards = this.game.projectDeck.drawN(this.game, 1);
     if (cards.length === 0) {
       return;
     }
-    this.turnResolver.resolveProjectCard(cards[0], n);
+    this.turnResolver.resolveProjectCard(cards[0], true);
   }
 
   public maybeDrawAndResolveBonusCard(): void {

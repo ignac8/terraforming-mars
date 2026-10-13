@@ -12,6 +12,7 @@ import {BonusCardId} from '../../src/common/automa/AutomaTypes';
 import {CardName} from '../../src/common/cards/CardName';
 import {Asteroid} from '../../src/server/cards/base/Asteroid';
 import {Research} from '../../src/server/cards/base/Research';
+import {Greenhouses} from '../../src/server/cards/base/Greenhouses';
 import {Tag} from '../../src/common/cards/Tag';
 
 function createAutomaGame(): {game: IGame, marsBot: MarsBot} {
@@ -206,18 +207,20 @@ describe('MarsBotReload', () => {
     expect(restored.projectDeck.drawPile.map((c) => c.name)).does.not.include(CardName.ASTEROID);
   });
 
-  it('records the whole card when a corporation ignores its first tags, and keeps it across a reload', () => {
+  it('records the whole card when a corporation resolves only its first tag, and keeps it across a reload', () => {
     const {game, marsBot} = createAutomaGame();
-    const card = new Asteroid();
+    const card = new Greenhouses();
     const tags = [...card.tags];
-    expect(tags).deep.eq([Tag.SPACE]);
+    expect(tags).deep.eq([Tag.PLANT, Tag.BUILDING]);
     game.projectDeck.drawPile.push(card);
-    const space = marsBot.marsBotBoard.tagToTrack[Tag.SPACE]!;
+    const plant = marsBot.marsBotBoard.tagToTrack[Tag.PLANT]!;
+    const building = marsBot.marsBotBoard.tagToTrack[Tag.BUILDING]!;
 
-    marsBot.maybeDrawAndResolveProjectCardIgnoringFirstNTags(1);
+    marsBot.maybeDrawAndResolveProjectCardFirstTagOnly();
 
-    // The Space tag is ignored, so its track stays put
-    expect(marsBot.marsBotBoard.tracks[space].position).to.eq(0);
+    // Thorgate (C11): "ignoring all except its first tag", so only the Plant tag moves a track
+    expect(marsBot.marsBotBoard.tracks[plant].position).to.eq(1);
+    expect(marsBot.marsBotBoard.tracks[building].position).to.eq(0);
 
     expect(marsBot.playedProjectCards).deep.eq([card]);
     expect(marsBot.playedProjectCards[0].tags).deep.eq(tags);

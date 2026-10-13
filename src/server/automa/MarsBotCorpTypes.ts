@@ -142,8 +142,8 @@ export interface IMarsBot {
    * discard pile when it runs out, so the bot does nothing only when both piles are empty.
    */
   maybeDrawAndResolveProjectCard(): void;
-  /** Same, but the card's first n tags are ignored while resolving. */
-  maybeDrawAndResolveProjectCardIgnoringFirstNTags(n: number): void;
+  /** Same, but only the card's first tag resolves: the others are ignored. */
+  maybeDrawAndResolveProjectCardFirstTagOnly(): void;
   /** Draws the top bonus card and resolves it. Does nothing when both bonus piles are empty. */
   maybeDrawAndResolveBonusCard(): void;
   /** Draws the top bonus card and shuffles it into the action deck. Does nothing when both bonus piles are empty. */

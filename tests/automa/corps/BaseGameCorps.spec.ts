@@ -14,6 +14,8 @@ import {CardName} from '../../../src/common/cards/CardName';
 import {BoardName} from '../../../src/common/boards/BoardName';
 import {Resource} from '../../../src/common/Resource';
 import {DEFAULT_GAME_OPTIONS} from '../../../src/server/game/GameOptions';
+import {Asteroid} from '../../../src/server/cards/base/Asteroid';
+import {PowerPlant} from '../../../src/server/cards/base/PowerPlant';
 import {SolarWindPower} from '../../../src/server/cards/base/SolarWindPower';
 
 function createAutomaGame(): {game: IGame, human: TestPlayer, marsBot: MarsBot} {
@@ -201,11 +203,37 @@ describe('Base Game MarsBot Corporations', () => {
       expect(marsBot.marsBotBoard.tracks[4].position).to.be.gte(1);
     });
 
+    it('resolves only the first tag of the card it draws', () => {
+      const {game, marsBot} = createAutomaGame();
+      marsBot.setCorpAndSetup(getMarsBotCorp(CardName.THORGATE)!);
+      // Science, Space, Power: "ignoring all except its first tag" leaves Science
+      game.projectDeck.drawPile.push(new SolarWindPower());
+      marsBot.marsBotBoard.tracks[3].position = 1; // Science 2 has no icon
+      const expected = marsBot.marsBotBoard.tracks.map((t) => t.position);
+      expected[3] = 2;
+
+      marsBot.maybeDrawAndResolveProjectCardFirstTagOnly();
+
+      expect(marsBot.marsBotBoard.tracks.map((t) => t.position)).to.deep.eq(expected);
+    });
+
+    it('resolves an event\'s first printed tag, not its Event tag', () => {
+      const {game, marsBot} = createAutomaGame();
+      game.projectDeck.drawPile.push(new Asteroid());
+      marsBot.marsBotBoard.tracks[1].position = 1; // Space 2 has no icon
+      const expected = marsBot.marsBotBoard.tracks.map((t) => t.position);
+      expected[1] = 2;
+
+      marsBot.maybeDrawAndResolveProjectCardFirstTagOnly();
+
+      expect(marsBot.marsBotBoard.tracks.map((t) => t.position)).to.deep.eq(expected);
+    });
+
     it('logs the space it reached when the drawn card moves the same track on', () => {
       const {game, marsBot} = createAutomaGame();
       marsBot.setCorpAndSetup(getMarsBotCorp(CardName.THORGATE)!);
-      // Solar Wind Power's first tag is ignored and its power tag moves the energy track past the cube.
-      game.projectDeck.drawPile.push(new SolarWindPower());
+      // Power Plant's first tag is Power, which moves the energy track past the cube. Its Building tag is ignored.
+      game.projectDeck.drawPile.push(new PowerPlant());
       marsBot.marsBotBoard.tracks[4].position = 5; // Energy 6: an icon under a white cube
       const logsBefore = game.gameLog.length;
 

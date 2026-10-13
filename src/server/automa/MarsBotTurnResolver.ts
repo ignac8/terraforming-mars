@@ -49,18 +49,20 @@ export class MarsBotTurnResolver {
   // ---- Project Card Resolution ----
 
   /**
-   * Resolve a project card: advance tracks based on tags. The first `ignoredTags` tags are skipped,
-   * but the whole card goes to the played pile.
+   * Resolve a project card: advance tracks based on tags. With `firstTagOnly` the other tags are
+   * ignored (Thorgate), but the whole card goes to the played pile.
    */
-  public resolveProjectCard(original: IProjectCard, ignoredTags: number = 0): void {
+  public resolveProjectCard(original: IProjectCard, firstTagOnly: boolean = false): void {
     this.game.log('MarsBot plays ${0}', (b) => b.card(original));
     // Every resolved project card goes to MarsBot's played pile (rulebook A, p.5), not the project
     // discard pile, so it can't be drawn again
     this.marsBotManager?.playedProjectCards.push(original);
 
-    // Object.create keeps the prototype (methods like getVictoryPoints)
-    const card = ignoredTags === 0 ? original : Object.create(original, {tags: {value: original.tags.slice(ignoredTags)}}) as IProjectCard;
-    const tags = marsBotCardTags(card);
+    const allTags = marsBotCardTags(original);
+    const tags = firstTagOnly ? allTags.slice(0, 1) : allTags;
+    // Effects below see only the resolved tags. Object.create keeps the prototype (methods like
+    // getVictoryPoints).
+    const card = firstTagOnly ? Object.create(original, {tags: {value: tags}}) as IProjectCard : original;
 
     // A card with no tags is still played: its corp and player effects apply below.
     if (tags.length === 0) {

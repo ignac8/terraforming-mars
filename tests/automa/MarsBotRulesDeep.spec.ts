@@ -757,7 +757,7 @@ describe('MarsBot Deep Rules Tests', () => {
       const {marsBot} = createAutomaGame();
 
       marsBot.maybeDrawAndResolveProjectCard();
-      marsBot.maybeDrawAndResolveProjectCardIgnoringFirstNTags(1);
+      marsBot.maybeDrawAndResolveProjectCardFirstTagOnly();
 
       expect(marsBot.playedProjectCards).to.have.length(2);
     });
