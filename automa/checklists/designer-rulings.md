@@ -34,7 +34,7 @@ Thread links: `https://boardgamegeek.com/thread/<id>`.
 | Venus 8% card bonus | MarsBot gains 2 MC instead of a card, as for the heat production bonus. Not from Government Intervention, which pays no MC from bonuses | 3358342, 3424237, 3733436 |
 | Greenery placement | The greatest net gain: MarsBot's adjacent cities minus yours, then the placement tiebreakers (Nick) | 3350125, 3411375 |
 | Ecoline/Ecotec plants on the corp card | The player chooses: the plants on the card (excess lost) or the usual sources, never both. "You can remove either 2mc or that 1 plant" (Dávid) | 3341536 |
-| Colony VP (optional) | Designer meant MarsBot's colonies to score 1/2 VP each but forgot to print it. Behind the `automaColonyVP` game option | 3408751 |
+| Leftover resources VP (optional) | The resources left on MarsBot's Colonies shipping board and its Venus-board floaters score 1/2 VP each, rounded down; its colonies don't. The designers meant it but forgot to print it (Dávid). Behind the `automaColonyVP` game option, whose key stays for saved games | 3408751, 3373832 |
 
 ## No designer ruling: our reading
 

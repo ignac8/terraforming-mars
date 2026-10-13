@@ -107,7 +107,7 @@ describe('GameEnd', () => {
     expect(tr + milestones + awards + greenery + cities + other).to.eq(total);
   });
 
-  it('lists the colony, Turmoil and corporation VP in the MarsBot detail column', () => {
+  it('lists the leftover resources, Turmoil and corporation VP in the MarsBot detail column', () => {
     const marsBot = fakeMarsBot(0);
     marsBot.corpName = 'Viron' as MarsBotModel['corpName'];
     Object.assign(marsBot.vpBreakdown!, {colonyVP: 2, turmoilVP: 3, corpVP: 6});
@@ -120,6 +120,6 @@ describe('GameEnd', () => {
     const column = wrapper.findAll('.game-end-column').find((c) => c.find('.game-end-player').exists() && c.find('.game-end-player').text() === 'MarsBot');
     const rows = column!.findAll('.game-end-column-row').map((row) => row.text());
     expect(rows[0]).to.eq('3Turmoil Points');
-    expect(rows).to.include.members(['2Colonies', '6Corporation (Viron)']);
+    expect(rows).to.include.members(['2Leftover resources', '6Corporation (Viron)']);
   });
 });

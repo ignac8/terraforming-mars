@@ -205,7 +205,7 @@
                       </div>
                       <div v-if="game.marsBot.vpBreakdown.colonyVP" class="game-end-column-row">
                         <div class="game-end-column-vp">{{game.marsBot.vpBreakdown.colonyVP}}</div>
-                        <div class="game-end-column-text" v-i18n>Colonies</div>
+                        <div class="game-end-column-text" v-i18n>Leftover resources</div>
                       </div>
                       <div v-if="game.marsBot.vpBreakdown.corpVP" class="game-end-column-row">
                         <div class="game-end-column-vp">{{game.marsBot.vpBreakdown.corpVP}}</div>

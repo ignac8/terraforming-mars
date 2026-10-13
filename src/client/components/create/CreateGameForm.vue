@@ -247,7 +247,7 @@
                                 <br>
                                 <input type="checkbox" v-model="automaColonyVP" id="automa-colony-vp-checkbox">
                                 <label for="automa-colony-vp-checkbox">
-                                  <span v-i18n>MarsBot colonies score 1/2 VP each</span>&nbsp;<span class="tooltip" v-i18n data-tooltip="At game end MarsBot gets 1 VP for every 2 colonies it owns. This is how the designer intended it, but the rulebook leaves it out.">&#9432;</span>
+                                  <span v-i18n>MarsBot's leftover resources score 1/2 VP each</span>&nbsp;<span class="tooltip" v-i18n data-tooltip="At game end MarsBot gets 1 VP for every 2 resources left on its Colonies shipping board and floaters on its Venus board. This is how the designer intended it, but the rulebook leaves it out.">&#9432;</span>
                                 </label>
                               </template>
                               <template v-if="expansions.turmoil">
