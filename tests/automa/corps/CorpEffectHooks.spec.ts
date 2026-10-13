@@ -1,12 +1,13 @@
 import {expect} from 'chai';
-import {setTemperature, setVenusScaleLevel} from '../../TestingUtils';
+import {setOxygenLevel, setTemperature, setVenusScaleLevel} from '../../TestingUtils';
 import {BonusCardId} from '../../../src/common/automa/AutomaTypes';
-import {MAX_VENUS_SCALE} from '../../../src/common/constants';
+import {MAX_OXYGEN_LEVEL, MAX_TEMPERATURE, MAX_VENUS_SCALE} from '../../../src/common/constants';
 import {CardName} from '../../../src/common/cards/CardName';
 import {testGame} from '../../TestGame';
 import {IGame} from '../../../src/server/IGame';
 import {TestPlayer} from '../../TestPlayer';
 import {MarsBot} from '../../../src/server/automa/MarsBot';
+import {createCorpBonusCard} from '../../../src/server/automa/MarsBotBonusCard';
 import {Tag} from '../../../src/common/cards/Tag';
 import {GlobalParameter} from '../../../src/common/GlobalParameter';
 import {TileType} from '../../../src/common/TileType';
@@ -211,6 +212,28 @@ describe('Corp Effect Hooks', () => {
       expect(tilePlacer.getOceanAdjacencyMC(land)).to.eq(2);
       marsBot.setCorpAndSetup(getMarsBotCorp(CardName.LAKEFRONT_RESORTS)!);
       expect(tilePlacer.getOceanAdjacencyMC(land)).to.eq(3);
+    });
+
+    // FAQ (rulebook B, p.3): Lakefront overrides Government Intervention's "no M€", but not its "no TR"
+    it('keeps the M€ but not the TR from its advance during Government Intervention', () => {
+      const {game, marsBot} = createAutomaGame();
+      marsBot.setCorpAndSetup(getMarsBotCorp(CardName.LAKEFRONT_RESORTS)!);
+      setTemperature(game, MAX_TEMPERATURE);
+      setOxygenLevel(game, MAX_OXYGEN_LEVEL);
+      game.generation = 2;
+      marsBot.advanceTrack = () => {
+        marsBot.gainMc(4);
+        marsBot.raiseTR(1);
+      };
+      const mcBefore = marsBot.megacredits;
+      const trBefore = marsBot.player.terraformRating;
+
+      marsBot['bonusResolver'].resolve(createCorpBonusCard(BonusCardId.B16_GOVERNMENT_INTERVENTION));
+
+      expect(game.board.getOceanSpaces()).has.length(1);
+      expect(marsBot.corpSpecificState.get('whiteCubeOnCard')).to.eq(0);
+      expect(marsBot.megacredits).to.eq(mcBefore + 4);
+      expect(marsBot.player.terraformRating).to.eq(trBefore);
     });
 
     it('ocean placed without white cube → place white cube', () => {

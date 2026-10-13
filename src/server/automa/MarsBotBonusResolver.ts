@@ -488,12 +488,28 @@ export class MarsBotBonusResolver {
     }
   }
 
-  /** Execute an action and reverse any TR or M€ gained (for Government Intervention). */
+  /**
+   * Execute an action and reverse any TR or M€ gained (for Government Intervention).
+   *
+   * M€ that Lakefront Resorts' advance brings in stays (rulebook B, p.3).
+   */
   private withoutTRorMcGain(action: () => void): void {
+    const bot = this.marsBotManager;
     const mcBefore = this.turnResolver.megacredits;
-    this.withoutTRGain(action);
-    if (this.turnResolver.megacredits > mcBefore) {
-      this.turnResolver.megacredits = mcBefore;
+    if (bot !== undefined) {
+      bot.mcKeptThroughIntervention = 0;
+    }
+    let kept = 0;
+    try {
+      this.withoutTRGain(action);
+    } finally {
+      kept = bot?.mcKeptThroughIntervention ?? 0;
+      if (bot !== undefined) {
+        bot.mcKeptThroughIntervention = undefined;
+      }
+    }
+    if (this.turnResolver.megacredits > mcBefore + kept) {
+      this.turnResolver.megacredits = mcBefore + kept;
       this.game.log('MarsBot does not receive M€ from Government Intervention');
     }
   }

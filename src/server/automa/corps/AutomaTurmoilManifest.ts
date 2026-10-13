@@ -25,7 +25,12 @@ const LAKEFRONT_RESORTS: IMarsBotCorp = {
         const cube = bot.getCorpState('whiteCubeOnCard');
         if (cube > 0) {
           bot.setCorpState('whiteCubeOnCard', 0);
+          const mcBefore = bot.megacredits;
           bot.advanceTrack(0); // Building track = index 0
+          // FAQ (rulebook B, p.3): this overrides Government Intervention's "no M€", but not its "no TR"
+          if (bot.mcKeptThroughIntervention !== undefined) {
+            bot.mcKeptThroughIntervention += Math.max(0, bot.megacredits - mcBefore);
+          }
           bot.game.log('MarsBot (Lakefront): ocean placed, removed cube, advance building track');
         } else {
           bot.setCorpState('whiteCubeOnCard', 1);

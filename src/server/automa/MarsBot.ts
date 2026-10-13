@@ -123,6 +123,13 @@ export class MarsBot implements IMarsBot {
    */
   public bonusMcBlocked: boolean = false;
 
+  /**
+   * M€ that Government Intervention lets MarsBot keep while it resolves (Lakefront Resorts' advance).
+   *
+   * Undefined outside Government Intervention's no-M€ window, which is synchronous, so never saved.
+   */
+  public mcKeptThroughIntervention: number | undefined = undefined;
+
   /** Spaces holding one of MarsBot's player markers (Settlers) and no tile yet. */
   public markerSpaceIds: Array<SpaceId> = [];
 
