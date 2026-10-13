@@ -10,7 +10,9 @@ import {Resource} from '../../../src/common/Resource';
 import {BonusCardId} from '../../../src/common/automa/AutomaTypes';
 import {createCorpBonusCard} from '../../../src/server/automa/MarsBotBonusCard';
 import {getMarsBotCorp} from '../../../src/server/automa/corps/MarsBotCorpRegistry';
-import {setVenusScaleLevel} from '../../TestingUtils';
+import {runAllActions, setVenusScaleLevel} from '../../TestingUtils';
+import {OrOptions} from '../../../src/server/inputs/OrOptions';
+import {cast} from '../../../src/common/utils/utils';
 
 // Rulebook B, p.3, corporation FAQ.
 function createAutomaGame(corpName: CardName): {game: IGame, human: TestPlayer, marsBot: MarsBot} {
@@ -20,6 +22,13 @@ function createAutomaGame(corpName: CardName): {game: IGame, human: TestPlayer, 
   return {game, human, marsBot};
 }
 
+/** Answers the player's choice between the plants on MarsBot's corporation card (0) and its other sources (1). */
+function chooseSource(game: IGame, human: TestPlayer, index: number): void {
+  runAllActions(game);
+  cast(human.popWaitingFor(), OrOptions).options[index].process({type: 'option'}, human);
+  runAllActions(game);
+}
+
 function rapidSprouting(marsBot: MarsBot): void {
   marsBot['bonusResolver'].resolve(createCorpBonusCard(BonusCardId.B23_RAPID_SPROUTING));
 }
@@ -27,14 +36,39 @@ function rapidSprouting(marsBot: MarsBot): void {
 describe('MarsBot corporation FAQ', () => {
   describe('Ecoline and Ecotec: the player may destroy or steal the plants on the corporation card', () => {
     it('destroys Ecoline\'s plant, and the excess is lost', () => {
-      const {human, marsBot} = createAutomaGame(CardName.ECOLINE);
+      const {game, human, marsBot} = createAutomaGame(CardName.ECOLINE);
       rapidSprouting(marsBot);
       marsBot.turnResolver.megacredits = 20;
 
       marsBot.player.stock.add(Resource.PLANTS, -3, {from: {player: human}});
+      chooseSource(game, human, 0);
 
       expect(marsBot.getCorpState('plantResources')).eq(0);
       expect(marsBot.turnResolver.megacredits).eq(20);
+    });
+
+    // "you can remove either 2mc or that 1 plant. You cannot remove 1 MC and 1 plant" (TDaver, BGG 3341536)
+    it('lets the player destroy from the M€ supply instead, leaving the plant', () => {
+      const {game, human, marsBot} = createAutomaGame(CardName.ECOLINE);
+      rapidSprouting(marsBot);
+      marsBot.turnResolver.megacredits = 20;
+
+      marsBot.player.stock.add(Resource.PLANTS, -3, {from: {player: human}});
+      chooseSource(game, human, 1);
+
+      expect(marsBot.getCorpState('plantResources')).eq(1);
+      expect(marsBot.turnResolver.megacredits).eq(17);
+    });
+
+    it('takes the plant without asking when the M€ supply is empty', () => {
+      const {game, human, marsBot} = createAutomaGame(CardName.ECOLINE);
+      rapidSprouting(marsBot);
+
+      marsBot.player.stock.add(Resource.PLANTS, -3, {from: {player: human}});
+      runAllActions(game);
+
+      expect(human.popWaitingFor()).is.undefined;
+      expect(marsBot.getCorpState('plantResources')).eq(0);
     });
 
     it('Rapid Sprouting spends a plant the player left on Ecoline', () => {
@@ -47,11 +81,12 @@ describe('MarsBot corporation FAQ', () => {
     });
 
     it('steals Ecoline\'s plant, and the excess is lost', () => {
-      const {human, marsBot} = createAutomaGame(CardName.ECOLINE);
+      const {game, human, marsBot} = createAutomaGame(CardName.ECOLINE);
       rapidSprouting(marsBot);
       marsBot.turnResolver.megacredits = 20;
 
       marsBot.player.stock.steal(Resource.PLANTS, 3, human);
+      chooseSource(game, human, 0);
 
       expect(human.plants).eq(1);
       expect(marsBot.getCorpState('plantResources')).eq(0);
@@ -59,10 +94,11 @@ describe('MarsBot corporation FAQ', () => {
     });
 
     it('steals Ecotec\'s plants, and the excess is lost', () => {
-      const {human, marsBot} = createAutomaGame(CardName.ECOTEC);
+      const {game, human, marsBot} = createAutomaGame(CardName.ECOTEC);
       marsBot.turnResolver.megacredits = 20;
 
       marsBot.player.stock.steal(Resource.PLANTS, 4, human);
+      chooseSource(game, human, 0);
 
       expect(human.plants).eq(3);
       expect(marsBot.getCorpState('plantResources')).eq(0);

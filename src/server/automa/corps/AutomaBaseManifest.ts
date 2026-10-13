@@ -27,7 +27,7 @@ const CREDICOR: IMarsBotCorp = {
 // Gen effect: before action phase, add Rapid Sprouting (B23) to action deck.
 const ECO_LINE: IMarsBotCorp = {
   name: CardName.ECOLINE,
-  description: 'Each generation: add Rapid Sprouting bonus card to action deck.',
+  description: 'Each generation: add Rapid Sprouting bonus card to action deck. Your cards may remove or steal the plant on this card instead of from MarsBot\'s MC.',
   tags: [],
   ...bonusCardBeforeActionPhase(BonusCardId.B23_RAPID_SPROUTING, 'Eco Line'),
 };

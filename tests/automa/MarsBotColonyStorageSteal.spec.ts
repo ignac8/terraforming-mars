@@ -377,13 +377,20 @@ describe('MarsBot colony storage as stock resources (C-25)', () => {
   });
 
   describe('Ecoline and Ecotec plants', () => {
-    it('steals plants from the corp card first, without asking', () => {
+    // FAQ (rulebook B, p.3): the player may target the corporation card; TDaver, BGG 3341536
+    it('lets the player steal plants from the corp card', () => {
       const {game, human, marsBot} = createAutomaGame();
       marsBot.turnResolver.megacredits = 10;
       marsBot.shippingBoard.storage.set(ColonyName.GANYMEDE, 4);
       marsBot.corpSpecificState.set('plantResources', 3);
 
       marsBot.player.stock.steal(Resource.PLANTS, 2, human);
+      const or = prompt(game, human);
+      expect(or.options.map(titleOf)).deep.eq([
+        '${0} ${1} plants from MarsBot\'s corporation card (the rest is lost)',
+        '${0} ${1} from MarsBot\'s M€ supply or its ${2} colony storage',
+      ]);
+      choose(or, 0, human);
 
       expect(marsBot.corpSpecificState.get('plantResources')).eq(1);
       expect(marsBot.shippingBoard.get(ColonyName.GANYMEDE)).eq(4);
@@ -393,13 +400,42 @@ describe('MarsBot colony storage as stock resources (C-25)', () => {
       expect(human.popWaitingFor()).is.undefined;
     });
 
-    it('removes plants from the corp card first, without asking', () => {
+    it('lets the player steal from the Ganymede storage instead, leaving the corp card', () => {
+      const {game, human, marsBot} = createAutomaGame();
+      marsBot.turnResolver.megacredits = 10;
+      marsBot.shippingBoard.storage.set(ColonyName.GANYMEDE, 4);
+      marsBot.corpSpecificState.set('plantResources', 3);
+
+      marsBot.player.stock.steal(Resource.PLANTS, 2, human);
+      choose(prompt(game, human), 1, human);
+      choose(prompt(game, human), 1, human);
+
+      expect(marsBot.corpSpecificState.get('plantResources')).eq(3);
+      expect(marsBot.shippingBoard.get(ColonyName.GANYMEDE)).eq(2);
+      expect(human.plants).eq(2);
+    });
+
+    it('takes a removal that no player makes off the corp card, without asking', () => {
+      const {game, human, marsBot} = createAutomaGame();
+      marsBot.turnResolver.megacredits = 10;
+      marsBot.corpSpecificState.set('plantResources', 3);
+
+      marsBot.player.stock.add(Resource.PLANTS, -2);
+      runAllActions(game);
+
+      expect(human.popWaitingFor()).is.undefined;
+      expect(marsBot.corpSpecificState.get('plantResources')).eq(1);
+      expect(marsBot.turnResolver.megacredits).eq(10);
+    });
+
+    it('lets the player remove plants from the corp card', () => {
       const {game, human, marsBot} = createAutomaGame();
       marsBot.turnResolver.megacredits = 10;
       marsBot.shippingBoard.storage.set(ColonyName.GANYMEDE, 4);
       marsBot.corpSpecificState.set('plantResources', 3);
 
       marsBot.player.attack(human, Resource.PLANTS, 5, {log: true});
+      choose(prompt(game, human), 0, human);
       runAllActions(game);
 
       // The excess is lost

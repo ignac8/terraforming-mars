@@ -196,7 +196,7 @@ const MANUTECH: IMarsBotCorp = {
 // C40 Ecotec
 const ECOTEC: IMarsBotCorp = {
   name: CardName.ECOTEC,
-  description: 'Tag: Plant. Draft: Plant > Microbe > Animal. Setup: 2 plant resources on card. Each Plant, Microbe or Animal tag (starting tag included) adds 1. Before the action phase, at 5+, spend 5 to advance plant track.',
+  description: 'Tag: Plant. Draft: Plant > Microbe > Animal. Setup: 2 plant resources on card. Each Plant, Microbe or Animal tag (starting tag included) adds 1. Before the action phase, at 5+, spend 5 to advance plant track. Your cards may remove or steal plants from this card instead of from MarsBot\'s MC.',
   tags: [Tag.PLANT],
   draftPriority: {type: 'tags', tags: [Tag.PLANT, Tag.MICROBE, Tag.ANIMAL]},
   trackCubes: whiteTrackCubes(6),

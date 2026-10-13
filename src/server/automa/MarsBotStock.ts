@@ -83,28 +83,29 @@ export class MarsBotStock extends Stock {
     }
 
     if (amount < 0) {
-      // Ecoline/Ecotec FAQ: plants on corp card can be targeted. Excess is lost, NOT from MC supply.
-      if (resource === Resource.PLANTS && this.marsBotRef.corpSpecificState.has('plantResources')) {
-        const plantResources = this.marsBotRef.corpSpecificState.get('plantResources') ?? 0;
-        if (plantResources > 0) {
-          const removed = Math.min(-amount, plantResources);
-          this.marsBotRef.corpSpecificState.set('plantResources', plantResources - removed);
-          if (options?.log) {
-            this.player.game.log('MarsBot loses ${0} plant resources from corp card',
-              (b) => b.number(removed));
-          }
-          return; // Plants from corp card — excess is lost, NOT from MC supply
+      const taker = isFromPlayer(options?.from) && options.from.player !== this.player ? options.from.player : undefined;
+      const fromCard = () => {
+        const removed = this.takePlantsFromCard(-amount);
+        if (options?.log) {
+          this.player.game.log('MarsBot loses ${0} plant resources from corp card', (b) => b.number(removed));
         }
-      }
-
+      };
       // A player removing from MarsBot chooses between its MC supply and the matching colony
       // storage area (C-25). Anything else (events, MarsBot itself) comes out of the MC supply.
-      const taker = isFromPlayer(options?.from) && options.from.player !== this.player ? options.from.player : undefined;
-      if (taker !== undefined && this.storage(resource) > 0) {
-        this.removeFromSources(resource, -amount, taker, amount, options, undefined);
-        return;
+      const fromStock = () => {
+        if (taker !== undefined && this.storage(resource) > 0) {
+          this.removeFromSources(resource, -amount, taker, amount, options, undefined);
+        } else {
+          this.removeFromSupply(resource, -amount, amount, options);
+        }
+      };
+      if (!this.hasPlantsOnCard(resource)) {
+        fromStock();
+      } else if (taker !== undefined && this.supply + this.storage(resource) > 0) {
+        this.choosePlantSource(taker, 'Remove', -amount, fromCard, fromStock);
+      } else {
+        fromCard();
       }
-      this.removeFromSupply(resource, -amount, amount, options);
     }
     // Positive amounts (resource gains from placement bonuses etc.) are ignored
     // MarsBot gets MC from turnResolver.megacredits via tile placement calculations
@@ -120,30 +121,75 @@ export class MarsBotStock extends Stock {
       super.steal(resource, qty, thief, options);
       return;
     }
-    // Ecoline/Ecotec FAQ: plants on the corp card can be stolen. Excess is lost, NOT taken from MC supply.
-    const plantResources = this.marsBotRef.getCorpState('plantResources');
-    if (resource === Resource.PLANTS && plantResources > 0) {
-      const stolen = Math.min(qty, plantResources);
-      this.marsBotRef.setCorpState('plantResources', plantResources - stolen);
+    const fromCard = () => {
+      const stolen = this.takePlantsFromCard(qty);
       thief.stock.add(resource, stolen);
       if (options?.log) {
         this.player.game.log('${0} steals ${1} plant resources from MarsBot\'s corp card',
           (b) => b.player(thief).number(stolen));
       }
-      return;
-    }
-    const total = Math.min(this.supply + this.storage(resource), qty);
-    if (total <= 0) {
-      return;
-    }
-    // Thief gains the actual resource type (plants, steel, etc.), as much as was left to take
-    this.removeFromSources(resource, total, thief, -total, {from: {player: thief}}, (fromStorage, removed) => {
-      thief.stock.add(resource, removed);
-      if (options?.log) {
-        this.player.game.log('${0} steals ${1} ${2} from MarsBot (${3} MC deducted, ${4} from colony storage)',
-          (b) => b.player(thief).number(removed).rawString(resource).number(removed - fromStorage).number(fromStorage));
+    };
+    const fromStock = () => {
+      const total = Math.min(this.supply + this.storage(resource), qty);
+      if (total <= 0) {
+        return;
       }
-    });
+      // Thief gains the actual resource type (plants, steel, etc.), as much as was left to take
+      this.removeFromSources(resource, total, thief, -total, {from: {player: thief}}, (fromStorage, removed) => {
+        thief.stock.add(resource, removed);
+        if (options?.log) {
+          this.player.game.log('${0} steals ${1} ${2} from MarsBot (${3} MC deducted, ${4} from colony storage)',
+            (b) => b.player(thief).number(removed).rawString(resource).number(removed - fromStorage).number(fromStorage));
+        }
+      });
+    };
+    if (!this.hasPlantsOnCard(resource)) {
+      fromStock();
+    } else if (this.supply + this.storage(resource) > 0) {
+      this.choosePlantSource(thief, 'Steal', qty, fromCard, fromStock);
+    } else {
+      fromCard();
+    }
+  }
+
+  /** Ecoline/Ecotec keep plants on their corporation card, which the player's cards can target. */
+  private hasPlantsOnCard(resource: Resource): boolean {
+    return resource === Resource.PLANTS && (this.marsBotRef?.getCorpState('plantResources') ?? 0) > 0;
+  }
+
+  /** Takes up to `wanted` plants off the corporation card and returns how many it took. The excess is lost. */
+  private takePlantsFromCard(wanted: number): number {
+    const marsBot = this.marsBotRef;
+    if (marsBot === undefined) {
+      return 0;
+    }
+    const plants = marsBot.getCorpState('plantResources');
+    const taken = Math.min(wanted, plants);
+    marsBot.setCorpState('plantResources', plants - taken);
+    return taken;
+  }
+
+  /**
+   * FAQ (rulebook B, p.3): the player may remove or steal the plants on Ecoline's or Ecotec's card,
+   * and the excess is lost. The player picks the card or the usual sources, never both: "you can
+   * remove either 2mc or that 1 plant" (TDaver, BGG 3341536).
+   */
+  private choosePlantSource(taker: IPlayer, verb: 'Remove' | 'Steal', wanted: number, fromCard: () => void, fromStock: () => void): void {
+    const colony = COLONY_STORAGE_FOR_RESOURCE[Resource.PLANTS];
+    const stockOption = this.storage(Resource.PLANTS) > 0 ?
+      message('${0} ${1} from MarsBot\'s M€ supply or its ${2} colony storage', (b) => b.rawString(verb).number(wanted).rawString(colony)) :
+      message('${0} ${1} from MarsBot\'s M€ supply', (b) => b.rawString(verb).number(wanted));
+    taker.defer(() => new OrOptions(
+      new SelectOption(message('${0} ${1} plants from MarsBot\'s corporation card (the rest is lost)', (b) => b.rawString(verb).number(wanted)))
+        .andThen(() => {
+          fromCard();
+          return undefined;
+        }),
+      new SelectOption(stockOption).andThen(() => {
+        fromStock();
+        return undefined;
+      }),
+    ).setTitle(message('${0} ${1} plants from MarsBot', (b) => b.rawString(verb).number(wanted))), Priority.BEFORE_OPPONENT_TRIGGER);
   }
 
   /**
