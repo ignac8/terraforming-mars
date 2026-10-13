@@ -344,164 +344,166 @@
 
                         </div>
 
-                        <div class="create-game-page-column" v-if="playersCount > 1 || automaOption">
-                            <h4 v-i18n>Multiplayer Options</h4>
+                        <div class="create-game-page-column-stack">
+                            <div class="create-game-page-column" v-if="playersCount > 1 || automaOption">
+                                <h4 v-i18n>Multiplayer Options</h4>
 
-                            <div class="create-game-page-column-row">
-                                <div>
-                                <input type="checkbox" name="draftVariant" v-model="draftVariant" id="draft-checkbox">
-                                <label for="draft-checkbox">
-                                    <span v-i18n>Draft variant</span>
-                                </label>
+                                <div class="create-game-page-column-row">
+                                    <div>
+                                    <input type="checkbox" name="draftVariant" v-model="draftVariant" id="draft-checkbox">
+                                    <label for="draft-checkbox">
+                                        <span v-i18n>Draft variant</span>
+                                    </label>
+                                    </div>
+
+                                    <div>
+                                    <input type="checkbox" name="initialDraft" v-model="initialDraft" id="initialDraft-checkbox" :disabled="automaOption">
+                                    <label for="initialDraft-checkbox" :class="{'automa-disabled': automaOption}">
+                                        <span v-i18n>Initial Draft variant</span>&nbsp;<a :href="wikiUrls.initialDraft" class="tooltip" v-i18n data-tooltip="Link opens in a new tab/window" target="_blank">&#9432;</a>
+                                    </label>
+                                    </div>
+                                </div>
+                                <div class="create-game-page-column-row" v-if="initialDraft">
+                                  <div v-if="expansions.prelude">
+                                    <input type="checkbox" name="preludeDraft" v-model="preludeDraftVariant" id="preludeDraft-checkbox">
+                                    <label for="preludeDraft-checkbox">
+                                      <span v-i18n>Prelude Draft</span>
+                                    </label>
+                                  </div>
+
+                                  <div v-if="expansions.ceo">
+                                    <input type="checkbox" name="ceosDraft" v-model="ceosDraftVariant" id="ceosDraft-checkbox">
+                                    <label for="ceosDraft-checkbox">
+                                      <span v-i18n>CEO Draft</span>
+                                    </label>
+                                  </div>
                                 </div>
 
-                                <div>
-                                <input type="checkbox" name="initialDraft" v-model="initialDraft" id="initialDraft-checkbox" :disabled="automaOption">
-                                <label for="initialDraft-checkbox" :class="{'automa-disabled': automaOption}">
-                                    <span v-i18n>Initial Draft variant</span>&nbsp;<a :href="wikiUrls.initialDraft" class="tooltip" v-i18n data-tooltip="Link opens in a new tab/window" target="_blank">&#9432;</a>
+                                <input type="checkbox" v-model="randomFirstPlayer" id="randomFirstPlayer-checkbox" :disabled="automaOption">
+                                <label for="randomFirstPlayer-checkbox" :class="{'automa-disabled': automaOption}">
+                                    <span v-i18n>Random first player</span>
                                 </label>
-                                </div>
-                            </div>
-                            <div class="create-game-page-column-row" v-if="initialDraft">
-                              <div v-if="expansions.prelude">
-                                <input type="checkbox" name="preludeDraft" v-model="preludeDraftVariant" id="preludeDraft-checkbox">
-                                <label for="preludeDraft-checkbox">
-                                  <span v-i18n>Prelude Draft</span>
+
+                                <input type="checkbox" name="randomMAToggle" id="randomMA-checkbox" @change="randomMAToggle()">
+                                <label for="randomMA-checkbox">
+                                    <span v-i18n>Random Milestones/Awards</span>&nbsp;<a :href="wikiUrls.randomMilestonesAndAwards" class="tooltip" v-i18n data-tooltip="Link opens in a new tab/window" target="_blank">&#9432;</a>
                                 </label>
-                              </div>
 
-                              <div v-if="expansions.ceo">
-                                <input type="checkbox" name="ceosDraft" v-model="ceosDraftVariant" id="ceosDraft-checkbox">
-                                <label for="ceosDraft-checkbox">
-                                  <span v-i18n>CEO Draft</span>
-                                </label>
-                              </div>
-                            </div>
+                                <div class="create-game-page-column-row" v-if="isRandomMAEnabled">
+                                    <div>
+                                    <input type="radio" name="randomMAOption" v-model="randomMA" :value="getRandomMaOptionType('limited')" id="limitedRandomMA-radio">
+                                    <label class="label-randomMAOption" for="limitedRandomMA-radio">
+                                        <span v-i18n>{{ getRandomMaOptionType('limited') }}</span>
+                                    </label>
+                                    </div>
 
-                            <input type="checkbox" v-model="randomFirstPlayer" id="randomFirstPlayer-checkbox" :disabled="automaOption">
-                            <label for="randomFirstPlayer-checkbox" :class="{'automa-disabled': automaOption}">
-                                <span v-i18n>Random first player</span>
-                            </label>
-
-                            <input type="checkbox" name="randomMAToggle" id="randomMA-checkbox" @change="randomMAToggle()">
-                            <label for="randomMA-checkbox">
-                                <span v-i18n>Random Milestones/Awards</span>&nbsp;<a :href="wikiUrls.randomMilestonesAndAwards" class="tooltip" v-i18n data-tooltip="Link opens in a new tab/window" target="_blank">&#9432;</a>
-                            </label>
-
-                            <div class="create-game-page-column-row" v-if="isRandomMAEnabled">
-                                <div>
-                                <input type="radio" name="randomMAOption" v-model="randomMA" :value="getRandomMaOptionType('limited')" id="limitedRandomMA-radio">
-                                <label class="label-randomMAOption" for="limitedRandomMA-radio">
-                                    <span v-i18n>{{ getRandomMaOptionType('limited') }}</span>
-                                </label>
+                                    <div>
+                                    <input type="radio" name="randomMAOption" v-model="randomMA" :value="getRandomMaOptionType('full')" id="unlimitedRandomMA-radio">
+                                    <label class="label-randomMAOption" for="unlimitedRandomMA-radio">
+                                        <span v-i18n>{{ getRandomMaOptionType('full') }}</span>
+                                    </label>
+                                    </div>
+                                    <div>
+                                      <input type="checkbox" name="modularMA" v-model="modularMA" id="modularMA-checkbox">
+                                       <label for="modularMA-checkbox">
+                                        <span v-i18n>Official Random α</span>
+                                      </label>
+                                    </div>
                                 </div>
 
-                                <div>
-                                <input type="radio" name="randomMAOption" v-model="randomMA" :value="getRandomMaOptionType('full')" id="unlimitedRandomMA-radio">
-                                <label class="label-randomMAOption" for="unlimitedRandomMA-radio">
-                                    <span v-i18n>{{ getRandomMaOptionType('full') }}</span>
-                                </label>
+                                <div v-if="modularMA">
+                                  The new Milestones and Awards are still in active development.<br>
+                                  Please don't report anything unless it breaks the game.<br>
+                                  These are <b>always fully random</b>.
                                 </div>
-                                <div>
-                                  <input type="checkbox" name="modularMA" v-model="modularMA" id="modularMA-checkbox">
-                                   <label for="modularMA-checkbox">
-                                    <span v-i18n>Official Random α</span>
+                                <template v-if="expansions.venus">
+                                    <input type="checkbox" v-model="requiresVenusTrackCompletion" id="requiresVenusTrackCompletion-checkbox" :disabled="automaOption">
+                                    <label for="requiresVenusTrackCompletion-checkbox" :class="{'automa-disabled': automaOption}">
+                                        <span v-i18n>Mandatory Venus Terraforming</span> &nbsp;<a :href="wikiUrls.venusTerraforming" class="tooltip" v-i18n data-tooltip="Link opens in a new tab/window" target="_blank">&#9432;</a>
+                                    </label>
+                                </template>
+
+                                <template v-if="randomMA !== RandomMAOptionType.NONE">
+                                  <input type="checkbox" v-model="includeFanMA" id="fanMA-checkbox" :disabled="automaOption">
+                                  <label for="fanMA-checkbox" :class="{'automa-disabled': automaOption}">
+                                      <span v-i18n>Include fan Milestones/Awards</span>
                                   </label>
-                                </div>
+                                </template>
+
+                                <input type="checkbox" name="showOtherPlayersVP" v-model="showOtherPlayersVP" id="realTimeVP-checkbox">
+                                <label for="realTimeVP-checkbox">
+                                    <span v-i18n>Show real-time VP</span>&nbsp;<a :href="wikiUrls.showRealtimeVP" class="tooltip" v-i18n data-tooltip="Link opens in a new tab/window" target="_blank">&#9432;</a>
+                                </label>
+
+                                <input type="checkbox" v-model="fastModeOption" id="fastMode-checkbox" :disabled="automaOption">
+                                <label for="fastMode-checkbox" :class="{'automa-disabled': automaOption}">
+                                    <span v-i18n>Fast mode</span>&nbsp;<a :href="wikiUrls.fastMode" class="tooltip" v-i18n data-tooltip="Link opens in a new tab/window" target="_blank">&#9432;</a>
+                                </label>
                             </div>
 
-                            <div v-if="modularMA">
-                              The new Milestones and Awards are still in active development.<br>
-                              Please don't report anything unless it breaks the game.<br>
-                              These are <b>always fully random</b>.
+                            <div class="create-game-page-column" v-if="playersCount === 1">
+                                <h4 v-i18n>MarsBot Options</h4>
+
+                                <input type="checkbox" v-model="automaOption" id="automa-checkbox">
+                                <label for="automa-checkbox">
+                                    <span v-i18n>MarsBot (Automa)</span>
+                                </label>
+
+                                <template v-if="automaOption">
+                                  <label for="automa-difficulty">
+                                    <span v-i18n>Difficulty:</span>&nbsp;
+                                    <select v-model="automaDifficultyChoice" id="automa-difficulty">
+                                      <option value="easiest" v-i18n>Easiest</option>
+                                      <option value="easy" v-i18n>Easy</option>
+                                      <option value="normal" v-i18n>Normal</option>
+                                      <option value="hard" v-i18n>Hard</option>
+                                      <option value="brutal" v-i18n>Brutal</option>
+                                      <option value="hardest" v-i18n>Hardest</option>
+                                    </select>
+                                  </label>
+
+                                  <input type="checkbox" v-model="automaCorpOption" id="automa-corp-checkbox">
+                                  <label for="automa-corp-checkbox">
+                                    <span v-i18n>MarsBot Corporation</span>
+                                  </label>
+
+                                  <input type="checkbox" v-model="automaNoGenerationLimit" id="automa-no-generation-limit-checkbox">
+                                  <label for="automa-no-generation-limit-checkbox">
+                                    <span v-i18n>No generation limit</span>&nbsp;<span class="tooltip" v-i18n data-tooltip="The game goes on until Mars is terraformed. MarsBot no longer wins when the last generation ends.">&#9432;</span>
+                                  </label>
+
+                                  <input type="checkbox" v-model="automaFinalGreeneryNoCorpEffects" id="automa-final-greenery-no-corp-checkbox">
+                                  <label for="automa-final-greenery-no-corp-checkbox">
+                                    <span v-i18n>Final greeneries skip MarsBot's corporation</span>&nbsp;<span class="tooltip" v-i18n data-tooltip="At game end, MarsBot's tracker moving onto a final greenery triggers none of its corporation's effects, such as Teractor's 2 M€ or Helion's black cube. This makes MarsBot a little weaker. The designers leave it up to you.">&#9432;</span>
+                                  </label>
+
+                                  <template v-if="expansions.colonies">
+                                    <input type="checkbox" v-model="automaColonyVP" id="automa-colony-vp-checkbox">
+                                    <label for="automa-colony-vp-checkbox">
+                                      <span v-i18n>MarsBot's leftover resources score 1/2 VP each</span>&nbsp;<span class="tooltip" v-i18n data-tooltip="At game end MarsBot gets 1 VP for every 2 resources left on its Colonies shipping board and floaters on its Venus board. This is how the designer intended it, but the rulebook leaves it out.">&#9432;</span>
+                                    </label>
+                                  </template>
+
+                                  <template v-if="expansions.turmoil">
+                                    <label for="automa-turmoil-tr">
+                                      <span v-i18n>MarsBot starting TR:</span>&nbsp;
+                                      <select v-model.number="automaTurmoilTRReduction" id="automa-turmoil-tr">
+                                        <option :value="10" v-i18n>10 (rulebook)</option>
+                                        <option :value="7" v-i18n>13 (harder)</option>
+                                      </select>
+                                    </label>
+
+                                    <label for="automa-turmoil-delegates">
+                                      <span v-i18n>MarsBot delegates seeded at setup:</span>&nbsp;
+                                      <select v-model.number="automaTurmoilSetupDelegates" id="automa-turmoil-delegates">
+                                        <option :value="0">0</option>
+                                        <option :value="1">1</option>
+                                        <option :value="2">2</option>
+                                      </select>
+                                    </label>
+                                  </template>
+                                </template>
                             </div>
-                            <template v-if="expansions.venus">
-                                <input type="checkbox" v-model="requiresVenusTrackCompletion" id="requiresVenusTrackCompletion-checkbox" :disabled="automaOption">
-                                <label for="requiresVenusTrackCompletion-checkbox" :class="{'automa-disabled': automaOption}">
-                                    <span v-i18n>Mandatory Venus Terraforming</span> &nbsp;<a :href="wikiUrls.venusTerraforming" class="tooltip" v-i18n data-tooltip="Link opens in a new tab/window" target="_blank">&#9432;</a>
-                                </label>
-                            </template>
-
-                            <template v-if="randomMA !== RandomMAOptionType.NONE">
-                              <input type="checkbox" v-model="includeFanMA" id="fanMA-checkbox" :disabled="automaOption">
-                              <label for="fanMA-checkbox" :class="{'automa-disabled': automaOption}">
-                                  <span v-i18n>Include fan Milestones/Awards</span>
-                              </label>
-                            </template>
-
-                            <input type="checkbox" name="showOtherPlayersVP" v-model="showOtherPlayersVP" id="realTimeVP-checkbox">
-                            <label for="realTimeVP-checkbox">
-                                <span v-i18n>Show real-time VP</span>&nbsp;<a :href="wikiUrls.showRealtimeVP" class="tooltip" v-i18n data-tooltip="Link opens in a new tab/window" target="_blank">&#9432;</a>
-                            </label>
-
-                            <input type="checkbox" v-model="fastModeOption" id="fastMode-checkbox" :disabled="automaOption">
-                            <label for="fastMode-checkbox" :class="{'automa-disabled': automaOption}">
-                                <span v-i18n>Fast mode</span>&nbsp;<a :href="wikiUrls.fastMode" class="tooltip" v-i18n data-tooltip="Link opens in a new tab/window" target="_blank">&#9432;</a>
-                            </label>
-                        </div>
-
-                        <div class="create-game-page-column" v-if="playersCount === 1">
-                            <h4 v-i18n>MarsBot Options</h4>
-
-                            <input type="checkbox" v-model="automaOption" id="automa-checkbox">
-                            <label for="automa-checkbox">
-                                <span v-i18n>MarsBot (Automa)</span>
-                            </label>
-
-                            <template v-if="automaOption">
-                              <label for="automa-difficulty">
-                                <span v-i18n>Difficulty:</span>&nbsp;
-                                <select v-model="automaDifficultyChoice" id="automa-difficulty">
-                                  <option value="easiest" v-i18n>Easiest</option>
-                                  <option value="easy" v-i18n>Easy</option>
-                                  <option value="normal" v-i18n>Normal</option>
-                                  <option value="hard" v-i18n>Hard</option>
-                                  <option value="brutal" v-i18n>Brutal</option>
-                                  <option value="hardest" v-i18n>Hardest</option>
-                                </select>
-                              </label>
-
-                              <input type="checkbox" v-model="automaCorpOption" id="automa-corp-checkbox">
-                              <label for="automa-corp-checkbox">
-                                <span v-i18n>MarsBot Corporation</span>
-                              </label>
-
-                              <input type="checkbox" v-model="automaNoGenerationLimit" id="automa-no-generation-limit-checkbox">
-                              <label for="automa-no-generation-limit-checkbox">
-                                <span v-i18n>No generation limit</span>&nbsp;<span class="tooltip" v-i18n data-tooltip="The game goes on until Mars is terraformed. MarsBot no longer wins when the last generation ends.">&#9432;</span>
-                              </label>
-
-                              <input type="checkbox" v-model="automaFinalGreeneryNoCorpEffects" id="automa-final-greenery-no-corp-checkbox">
-                              <label for="automa-final-greenery-no-corp-checkbox">
-                                <span v-i18n>Final greeneries skip MarsBot's corporation</span>&nbsp;<span class="tooltip" v-i18n data-tooltip="At game end, MarsBot's tracker moving onto a final greenery triggers none of its corporation's effects, such as Teractor's 2 M€ or Helion's black cube. This makes MarsBot a little weaker. The designers leave it up to you.">&#9432;</span>
-                              </label>
-
-                              <template v-if="expansions.colonies">
-                                <input type="checkbox" v-model="automaColonyVP" id="automa-colony-vp-checkbox">
-                                <label for="automa-colony-vp-checkbox">
-                                  <span v-i18n>MarsBot's leftover resources score 1/2 VP each</span>&nbsp;<span class="tooltip" v-i18n data-tooltip="At game end MarsBot gets 1 VP for every 2 resources left on its Colonies shipping board and floaters on its Venus board. This is how the designer intended it, but the rulebook leaves it out.">&#9432;</span>
-                                </label>
-                              </template>
-
-                              <template v-if="expansions.turmoil">
-                                <label for="automa-turmoil-tr">
-                                  <span v-i18n>MarsBot starting TR:</span>&nbsp;
-                                  <select v-model.number="automaTurmoilTRReduction" id="automa-turmoil-tr">
-                                    <option :value="10" v-i18n>10 (rulebook)</option>
-                                    <option :value="7" v-i18n>13 (harder)</option>
-                                  </select>
-                                </label>
-
-                                <label for="automa-turmoil-delegates">
-                                  <span v-i18n>MarsBot delegates seeded at setup:</span>&nbsp;
-                                  <select v-model.number="automaTurmoilSetupDelegates" id="automa-turmoil-delegates">
-                                    <option :value="0">0</option>
-                                    <option :value="1">1</option>
-                                    <option :value="2">2</option>
-                                  </select>
-                                </label>
-                              </template>
-                            </template>
                         </div>
 
                         <div class="create-game-players-cont">

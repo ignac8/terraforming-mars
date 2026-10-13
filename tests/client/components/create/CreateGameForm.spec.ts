@@ -124,21 +124,26 @@ describe('CreateGameForm', () => {
     expect(vm.newGameConfig.automaColonyVP).to.be.false;
   });
 
-  it('groups the MarsBot options in their own column after Multiplayer Options, solo only', async () => {
+  it('groups the MarsBot options under Multiplayer Options, solo only', async () => {
     const wrapper = shallowMount(CreateGameForm, {...globalConfig});
     const vm = wrapper.vm as any;
+    const stackHeadings = () => wrapper.findAll('.create-game-page-column-stack > .create-game-page-column > h4').map((h) => h.text());
 
-    const headings = wrapper.findAll('.create-game-page-column h4').map((h) => h.text());
-    expect(headings.indexOf('MarsBot Options')).to.eq(headings.indexOf('Multiplayer Options') + 1);
+    expect(stackHeadings()).to.deep.eq(['Multiplayer Options', 'MarsBot Options']);
     const column = wrapper.findAll('.create-game-page-column').find((c) => c.find('h4').text() === 'MarsBot Options');
     for (const id of ['automa-checkbox', 'automa-difficulty', 'automa-corp-checkbox', 'automa-no-generation-limit-checkbox',
       'automa-final-greenery-no-corp-checkbox', 'automa-colony-vp-checkbox', 'automa-turmoil-tr', 'automa-turmoil-delegates']) {
       expect(column?.find('#' + id).exists(), id).to.be.true;
     }
 
+    // Solo without MarsBot hides Multiplayer Options, but the MarsBot switch stays.
+    vm.automaOption = false;
+    await vm.$nextTick();
+    expect(stackHeadings()).to.deep.eq(['MarsBot Options']);
+
     vm.playersCount = 2;
     await vm.$nextTick();
-    expect(wrapper.findAll('.create-game-page-column h4').map((h) => h.text())).to.not.include('MarsBot Options');
+    expect(stackHeadings()).to.deep.eq(['Multiplayer Options']);
   });
 
   it('Easiest sets every MarsBot option to its easiest value', () => {
