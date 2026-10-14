@@ -93,10 +93,10 @@ export class MarsBot implements IMarsBot {
   /** Number of bonus cards destroyed while resolving (for the Land Specialist milestone). */
   public destroyedBonusCards: number = 0;
 
-  /** Whether colony cubes are placed (Pioneer4/Constructor in game). */
+  /** Whether colony cubes are placed (modular Pioneer/Constructor in game). */
   public hasColonyCubes: boolean = false;
 
-  /** Colony cube positions (set by AutomaGameSetup when Pioneer4/Constructor in game). */
+  /** Colony cube positions (set by AutomaGameSetup when modular Pioneer/Constructor in game). */
   public colonyCubePositions: Set<string> = new Set();
 
   /** Corp-specific state (M€ on card, resources, cubes, etc.). */

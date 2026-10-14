@@ -660,13 +660,11 @@ describe('MarsBot Rules Compliance', () => {
       expect(game.board.getAdjacentSpaces(space!).some(Board.isOceanSpace)).is.true;
     });
 
-    it('Suburbian and Edgedancer place their greenery on the edge of the map', () => {
-      for (const awardName of ['Suburbian', 'Edgedancer']) {
-        const {game, marsBot} = createAutomaGame();
-        withTopCities(game, marsBot);
-        const space = placedGreenery(game, marsBot, awardName);
-        expect(space?.edge, awardName).is.true;
-      }
+    it('Suburbian places its greenery on the edge of the map', () => {
+      const {game, marsBot} = createAutomaGame();
+      withTopCities(game, marsBot);
+      const space = placedGreenery(game, marsBot, 'Suburbian');
+      expect(space?.edge).is.true;
     });
 
     it('Highlander places its greenery away from oceans', () => {

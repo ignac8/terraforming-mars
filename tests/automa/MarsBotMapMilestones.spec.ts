@@ -1,6 +1,7 @@
 import {expect} from 'chai';
 import {testGame} from '../TestGame';
 import {Game} from '../../src/server/Game';
+import {IGame} from '../../src/server/IGame';
 import {GameOptions} from '../../src/server/game/GameOptions';
 import {MarsBot} from '../../src/server/automa/MarsBot';
 import {marsBotAwardScore, marsBotCanClaimMilestone} from '../../src/server/automa/MarsBotMilestoneAwardEval';
@@ -33,6 +34,7 @@ import {Farmer} from '../../src/server/milestones/modular/Farmer';
 import {Fundraiser} from '../../src/server/milestones/modular/Fundraiser';
 import {Planetologist} from '../../src/server/milestones/modular/Planetologist';
 import {Merchant} from '../../src/server/milestones/modular/Merchant';
+import {Pioneer} from '../../src/server/milestones/arabiaTerra/Pioneer';
 import {Founder} from '../../src/server/awards/modular/Founder';
 import {Traveller} from '../../src/server/awards/modular/Traveller';
 
@@ -356,14 +358,14 @@ describe('MarsBot map milestones and awards', () => {
         'Agronomist', 'Architect', 'Briber', 'Builder', 'Builder7', 'C. Forester', 'Coastguard', 'Diversifier',
         'Ecologist', 'Energizer', 'Engineer', 'Farmer', 'Fundraiser', 'Gardener', 'Generalist', 'Geologist',
         'Hoverlord', 'Hydrologist', 'Land Specialist', 'Landshaper', 'Legend', 'Legend4', 'Lobbyist', 'Mayor',
-        'Merchant', 'Metallurgist', 'Philantropist', 'Pioneer', 'Pioneer4', 'Planetologist', 'Planner',
+        'Merchant', 'Metallurgist', 'Philantropist', 'Pioneer', 'Planetologist', 'Planner',
         'Polar Explorer', 'Producer', 'Researcher', 'Rim Settler', 'Smith', 'Spacefarer4', 'Specialist', 'Sponsor',
         'Tactician', 'Tactician4', 'Terraformer', 'Terran', 'Terran5', 'Thawer', 'Trader', 'Tradesman', 'Tycoon', 'Tycoon10',
         'V. Spacefarer',
       ]);
       expect(awards).to.have.members([
         'A. Zoologist', 'Administrator', 'Banker', 'Benefactor', 'Biologist', 'Blacksmith', 'Botanist', 'Celebrity',
-        'Collector', 'Constructor', 'Contractor', 'Cultivator', 'Desert Settler', 'Edgedancer', 'Electrician',
+        'Collector', 'Constructor', 'Contractor', 'Cultivator', 'Desert Settler', 'Electrician',
         'Estate Dealer', 'Excentric', 'Forecaster', 'Founder', 'Highlander', 'Incorporator', 'Industrialist',
         'Investor', 'Landlord', 'Landscaper', 'Magnate', 'Manufacturer', 'Metropolist', 'Miner', 'Mogul',
         'Politician', 'Promoter', 'Scientist', 'Space Baron', 'Suburbian', 'Thermalist', 'Traveller', 'Venuphile',
@@ -417,7 +419,7 @@ describe('MarsBot map milestones and awards', () => {
     });
 
     it('describes the rest of the Milestones & Awards expansion', () => {
-      for (const name of ['Trader', 'Sponsor', 'Lobbyist', 'Pioneer4'] as const) {
+      for (const name of ['Trader', 'Sponsor', 'Lobbyist', 'Pioneer'] as const) {
         expect(marsBotMilestoneRule(name), name).is.a('string');
       }
       for (const name of ['Biologist', 'Constructor'] as const) {
@@ -480,6 +482,38 @@ describe('MarsBot map milestones and awards', () => {
 
     it('modular games play the Tharsis board', () => {
       expect(AutomaGameSetup.marsBotBoardName({boardName: BoardName.HELLAS, ...MODULAR} as GameOptions)).to.eq(BoardName.THARSIS);
+    });
+  });
+
+  describe('Pioneer colony cubes', () => {
+    /** Deals `Pioneer` as the only milestone and reruns the cube setup. */
+    function dealPioneer(game: IGame, marsBot: MarsBot): void {
+      game.milestones = [new Pioneer()];
+      game.awards = [];
+      marsBot.hasColonyCubes = false;
+      marsBot.colonyCubePositions = new Set();
+      (AutomaGameSetup as any).placeColonyCubes(game, marsBot);
+    }
+
+    it('Utopia Planitia\'s own Pioneer places no colony cubes', () => {
+      const {game, marsBot} = createGame({boardName: BoardName.UTOPIA_PLANITIA});
+      expect(game.milestones.map((m) => m.name)).to.include('Pioneer');
+      expect(marsBot.hasColonyCubes).is.false;
+      expect(marsBotMilestoneRule('Pioneer', BoardName.UTOPIA_PLANITIA)).to.eq('4+ colonies');
+    });
+
+    it('the modular Pioneer places colony cubes', () => {
+      const {game, marsBot} = createGame({boardName: BoardName.UTOPIA_PLANITIA, ...MODULAR});
+      dealPioneer(game, marsBot);
+      expect(marsBot.hasColonyCubes).is.true;
+      expect(marsBot.colonyCubePositions.size).to.eq(3);
+      expect(marsBotMilestoneRule('Pioneer')).to.match(/^4\+ colonies \(cubes/);
+    });
+
+    it('Pioneer dealt at random on another map places colony cubes', () => {
+      const {game, marsBot} = createGame({boardName: BoardName.THARSIS, randomMA: RandomMAOptionType.LIMITED});
+      dealPioneer(game, marsBot);
+      expect(marsBot.hasColonyCubes).is.true;
     });
   });
 });

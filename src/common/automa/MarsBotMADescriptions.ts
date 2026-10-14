@@ -46,7 +46,6 @@ export const MARSBOT_MILESTONE_DESCRIPTIONS: Partial<Record<MilestoneName, strin
   'Land Specialist': '3+ bonus cards destroyed',
   'Tradesman': 'Energy, Earth and Venus tracks ≥ 2',
   'Smith': 'Building + Space tracks ≥ 7',
-  'Pioneer': '3+ colonies',
   // Vastitas Borealis Nova
   'Agronomist': 'Bio track ≥ 4',
   'V. Spacefarer': 'Space track ≥ 5',
@@ -67,7 +66,7 @@ export const MARSBOT_MILESTONE_DESCRIPTIONS: Partial<Record<MilestoneName, strin
   'Merchant': 'All tracks ≥ 2 (except Venus)',
   'Metallurgist': 'Building + Space tracks ≥ 9',
   'Philantropist': '5 cards with non-negative VP',
-  'Pioneer4': '4+ colonies (cubes on Space #7, #10 and Energy #8 each build a colony)',
+  'Pioneer': '4+ colonies (cubes on Space #7, #10 and Energy #8 each build a colony)',
   'Planetologist': 'Two of Energy, Earth and Venus tracks ≥ 3',
   'Producer': 'Any 3 tracks (except Venus) ≥ 16',
   'Researcher': 'Science track ≥ 4',
@@ -85,6 +84,9 @@ export const MARSBOT_MILESTONE_DESCRIPTIONS: Partial<Record<MilestoneName, strin
 export const MARSBOT_MAP_MILESTONE_DESCRIPTIONS: Partial<Record<BoardName, Partial<Record<MilestoneName, string>>>> = {
   [BoardName.HELLAS]: {
     'Rim Settler': 'Science/Jovian track ≥ 6',
+  },
+  [BoardName.UTOPIA_PLANITIA]: {
+    'Pioneer': '4+ colonies',
   },
   [BoardName.TERRA_CIMMERIA_NOVA]: {
     'Coastguard': '3+ tiles adjacent to ocean',
@@ -125,7 +127,6 @@ export const MARSBOT_AWARD_DESCRIPTIONS: Partial<Record<AwardName, string>> = {
   'A. Zoologist': 'Bio track + 5',
   'Forecaster': 'Every 7 MC = 1 card with requirement',
   // Utopia Planitia
-  'Edgedancer': 'Tiles on the edge of the board (unchanged)',
   'Investor': 'Earth/City track',
   'Botanist': 'Bio track minus 2',
   'Incorporator': 'Cards costing 10 MC or less (including events)',

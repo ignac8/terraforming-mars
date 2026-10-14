@@ -669,9 +669,8 @@ export class MarsBotBonusResolver {
     case 'Desert Settler': return this.maybePlaceGreenery(inFourBottomRows);
     case 'Estate Dealer': return this.maybePlaceGreenery(nextToOcean);
     case 'Benefactor': { this.marsBot.increaseTerraformRating(2); return true; }
-    // Utopia Planitia (B11). The board here has Edgedancer where the card has Suburbian.
-    case 'Suburbian':
-    case 'Edgedancer': return this.maybePlaceGreenery(onEdge);
+    // Utopia Planitia (B11)
+    case 'Suburbian': return this.maybePlaceGreenery(onEdge);
     case 'Investor': return advanceTrackOf(Tag.EARTH);
     case 'Botanist': return advanceTrackOf(Tag.PLANT);
     case 'Incorporator': return revealAndResolveCard((c) => c.cost <= 10);

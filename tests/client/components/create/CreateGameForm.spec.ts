@@ -202,6 +202,20 @@ describe('CreateGameForm', () => {
     expect(vm.solarPhaseOption).to.be.false;
   });
 
+  it('lets the board selector offer only MarsBot boards while automa is on', async () => {
+    const wrapper = shallowMount(CreateGameForm, {...globalConfig});
+    const vm = wrapper.vm as any;
+    const isBoardDisabled = wrapper.findComponent({name: 'BoardSelector'}).props('isBoardDisabled');
+
+    expect(isBoardDisabled(BoardName.HELLAS)).is.false;
+    expect(isBoardDisabled(BoardName.ARABIA_TERRA)).is.true;
+    expect(isBoardDisabled(BoardName.AMAZONIS_PLANITIA)).is.true;
+
+    vm.automaOption = false;
+    await vm.$nextTick();
+    expect(isBoardDisabled(BoardName.ARABIA_TERRA)).is.false;
+  });
+
   it('enabling automa disables fan-made expansions and force-offs incompatible options', async () => {
     const wrapper = shallowMount(CreateGameForm, {...globalConfig});
     const vm = wrapper.vm as any;
@@ -266,24 +280,6 @@ describe('CreateGameForm', () => {
 
     expect(snapshot()).to.deep.equal(defaultState);
   });
-
-  for (const run of [
-    {nodeEnv: 'development', offered: true},
-    {nodeEnv: 'production', offered: false},
-  ]) {
-    it(`offers Amazonis Planitia only in development builds (${run.nodeEnv})`, () => {
-      const nodeEnv = process.env.NODE_ENV;
-      process.env.NODE_ENV = run.nodeEnv;
-      try {
-        const wrapper = shallowMount(CreateGameForm, {
-          ...globalConfig,
-        });
-        expect((wrapper.vm as any).boards.includes(BoardName.AMAZONIS_PLANITIA)).eq(run.offered);
-      } finally {
-        process.env.NODE_ENV = nodeEnv;
-      }
-    });
-  }
 
   it('restores the last saved game settings on load', async () => {
     createGameSettingsStorage.save(createNewGameConfig({

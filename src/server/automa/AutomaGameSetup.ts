@@ -8,6 +8,7 @@ import {MarsBot} from './MarsBot';
 import {MARSBOT_BOARDS} from './boards/MarsBotBoards';
 import {TrackDefinition, MARSBOT_STARTING_TR} from '../../common/automa/AutomaTypes';
 import {MARSBOT_BOARD_NAMES} from '../../common/automa/MarsBotBoards';
+import {marsBotMapSet} from '../../common/automa/MarsBotMADescriptions';
 import {BoardName} from '../../common/boards/BoardName';
 import {AutomaGameHooks} from './AutomaGameHooks';
 import {MarsBotTags} from './MarsBotTags';
@@ -189,13 +190,15 @@ export class AutomaGameSetup {
   }
 
   /**
-   * Pioneer4 milestone and Constructor award place colony cubes on MarsBot's tracks.
+   * The modular Pioneer milestone and Constructor award place colony cubes on MarsBot's tracks.
    * When MarsBot reaches these positions, it loses 5 MC and builds a colony (if Colonies enabled).
+   * Utopia Planitia's own Pioneer has no cubes.
    */
   private static placeColonyCubes(game: IGame, marsBot: MarsBot): void {
-    const hasPioneer4 = game.milestones.some((m) => m.name === 'Pioneer4');
+    const hasModularPioneer = game.milestones.some((m) => m.name === 'Pioneer') &&
+      marsBotMapSet(game.gameOptions) !== BoardName.UTOPIA_PLANITIA;
     const hasConstructor = game.awards.some((a) => a.name === 'Constructor');
-    if (!hasPioneer4 && !hasConstructor) {
+    if (!hasModularPioneer && !hasConstructor) {
       return;
     }
 
@@ -277,7 +280,7 @@ export class AutomaGameSetup {
 const MODULAR_MILESTONES: ReadonlyArray<MilestoneName> = [
   'Briber', 'Builder7', 'Coastguard', 'Diversifier', 'Ecologist', 'Energizer', 'Engineer', 'Farmer',
   'Fundraiser', 'Gardener', 'Generalist', 'Geologist', 'Hydrologist', 'Landshaper', 'Legend4', 'Lobbyist',
-  'Mayor', 'Merchant', 'Metallurgist', 'Philantropist', 'Pioneer4', 'Planetologist', 'Planner', 'Producer',
+  'Mayor', 'Merchant', 'Metallurgist', 'Philantropist', 'Pioneer', 'Planetologist', 'Planner', 'Producer',
   'Researcher', 'Rim Settler', 'Spacefarer4', 'Sponsor', 'Tactician4', 'Terran', 'Terran5', 'Thawer', 'Trader',
   'Tycoon10',
 ];

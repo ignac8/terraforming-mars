@@ -86,7 +86,7 @@ export class MarsBotCorpResolver {
       return replacedIcon;
     }
 
-    // Colony cubes (Pioneer4/Constructor): positions set by AutomaGameSetup
+    // Colony cubes (modular Pioneer/Constructor): positions set by AutomaGameSetup
     // C-X3: deduct 5 MC then place a colony on a randomly selected eligible tile
     if (marsBot.hasColonyCubes && marsBot.colonyCubePositions.has(trackCubeKey(trackIndex, position))) {
       const cost = 5;
