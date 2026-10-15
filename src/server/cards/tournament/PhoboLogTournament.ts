@@ -15,7 +15,7 @@ export class PhoboLogTournament extends CorporationCard implements ICorporationC
 
       behavior: {
         stock: {titanium: 10},
-        titanumValue: 1,
+        titaniumValue: 1,
         production: {plants: 1},
         tr: 1,
       },
