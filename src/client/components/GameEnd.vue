@@ -62,7 +62,7 @@
               </a>
             </div>
           </div>
-          <div v-if="!isAutomaGame && (!isSoloGame || game.isSoloModeWin)" class="game-end-winer-announcement">
+          <div v-if="!isAutomaGame && (!isSoloGame || game.isSoloModeWin)" class="game-end-winner-announcement">
               <span v-for="p in winners" :key="p.color"><span :class="'log-player ' + getEndGamePlayerRowColorClass(p.color)">{{ p.name }}</span></span> <span v-i18n>won!</span>
           </div>
           <div class="game_end_victory_points">
@@ -147,7 +147,7 @@
                 />
               <div class="game-end-flexrow">
                   <div v-for="p in playersInPlace" :key="p.color" class="game-end-column">
-                      <div class="game-end-winer-scorebreak-player-title">
+                      <div class="game-end-winner-scorebreak-player-title">
                           <div :class="'game-end-player ' + getEndGamePlayerRowColorClass(p.color)"><a :href="'player?id='+p.id+'&noredirect'">{{p.name}}</a></div>
                       </div>
                       <div v-for="v in p.victoryPointsBreakdown.detailsCards" :key="v.cardName">
@@ -180,7 +180,7 @@
                       </div>
                   </div>
                   <div v-if="isAutomaGame && game.marsBot?.vpBreakdown" class="game-end-column">
-                      <div class="game-end-winer-scorebreak-player-title">
+                      <div class="game-end-winner-scorebreak-player-title">
                           <div :class="'game-end-player ' + getEndGamePlayerRowColorClass(game.marsBot.color)">{{ game.marsBot.name }}</div>
                       </div>
                       <div v-if="game.marsBot.vpBreakdown.turmoilVP" class="game-end-column-row">
@@ -509,7 +509,7 @@ export default defineComponent({
     translateAwardDetails(data: MADetail): string {
       if ( ! data.messageArgs || data.messageArgs.length < 3) {
         console.error( // data.message: ${0} place for ${1} award (funded by ${2})
-          `Award detail has not enought data.
+          `Award detail has not enough data.
           It must contain at least 3 arguments:
           1) a Player's place in the race for the award
           2) translatable Award name
