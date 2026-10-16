@@ -73,7 +73,8 @@ import {CorporationDeck, PreludeDeck, ProjectDeck, CeoDeck} from './cards/Deck';
 import {Logger} from './logs/Logger';
 import {addDays, stringToNumber} from './database/utils';
 import {Tag} from '../common/cards/Tag';
-import {GlobalParameterMaximums, IGame, ResearchSnapshot, Score} from './IGame';
+import {IGame, ResearchSnapshot, Score} from './IGame';
+import {GlobalParameterMaximums} from '../common/boards/GlobalParameterMaximums';
 import {MarsBoard} from './boards/MarsBoard';
 import {UnderworldData} from './underworld/UnderworldData';
 import {UnderworldExpansion} from './underworld/UnderworldExpansion';
@@ -389,7 +390,7 @@ export class Game implements IGame, Logger {
 
     // Must configure this before solo placement.
     if (gameOptions.underworldExpansion) {
-      game.underworldData = UnderworldExpansion.initialize(rng);
+      game.underworldData = UnderworldExpansion.initialize(rng, gameOptions.boardName === BoardName.AMAZONIS_PLANITIA);
     }
 
     // and 2 neutral cities and forests on board
@@ -660,12 +661,13 @@ export class Game implements IGame, Logger {
 
     // Only add 2 more generations when using the track completion option
     // and not the solo TR option.
-    //
-    // isSoloModeWin backs this up.
     if (options.moonExpansion) {
       if (!options.soloTR && options.requiresMoonTrackCompletion) {
         lastGeneration += 2;
       }
+    }
+    if (!options.soloTR && options.boardName === BoardName.AMAZONIS_PLANITIA) {
+      lastGeneration += 1;
     }
     return lastGeneration;
   }
@@ -1628,7 +1630,7 @@ export class Game implements IGame, Logger {
       break;
     case SpaceBonus.DELEGATE:
       if (this.turmoil) {
-        this.defer(new SendDelegateToArea(player));
+        this.defer(new SendDelegateToArea(player, undefined, {count}));
       }
       break;
     case SpaceBonus.COLONY:
