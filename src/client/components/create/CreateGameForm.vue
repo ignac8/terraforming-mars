@@ -117,7 +117,7 @@
                                     <span v-i18n>Agendas</span>&nbsp;<a href="https://www.notion.so/Political-Agendas-8c6b0b018a884692be29b3ef44b340a9" class="tooltip" v-i18n data-tooltip="Link opens in a new tab/window" target="_blank">&#9432;</a>
                                 </label>
 
-                                <div class="create-game-page-column-row" v-if="isPoliticalAgendasExtensionEnabled() && !automaOption">
+                                <div class="create-game-page-column-row" v-if="isPoliticalAgendasExtensionEnabled && !automaOption">
                                     <div>
                                     <input type="radio" name="agendaStyle" v-model="politicalAgendasExtension" :value="getPoliticalAgendasExtensionAgendaStyle('random')" id="randomAgendaStyle-radio">
                                     <label class="label-agendaStyle agendaStyle-random" for="randomAgendaStyle-radio">
@@ -172,24 +172,9 @@
                             </label>
                         </div>
 
-                        <div class="create-game-page-column" v-if="!marsBotOnly">
-                            <h4 v-i18n>Board</h4>
-
-                            <div v-for="boardName in boards" :key="boardName">
-                              <div v-if="boardName==='utopia planitia'" class="create-game-subsection-label" v-i18n>Fan-made</div>
-                              <input type="radio" :value="boardName" name="board" v-model="board" :id="boardName+'-checkbox'" :disabled="automaOption && boardName !== 'tharsis'">
-                              <label :for="boardName+'-checkbox'" class="expansion-button" :class="{'automa-disabled': automaOption && boardName !== 'tharsis'}">
-                                  <span :class="getBoardColorClass(boardName)">&#x2B22;</span>
-                                  <span class="capitalized" v-i18n>{{ boardName }}</span>
-                                  <template v-if="boardName !== RandomBoardOption.OFFICIAL && boardName !== RandomBoardOption.ALL">
-                                    &nbsp;<a :href="boardHref(boardName)" class="tooltip" v-i18n data-tooltip="Link opens in a new tab/window" target="_blank">&#9432;</a>
-                                  </template>
-                              </label>
-                            </div>
-                        </div>
-
                         <div class="create-game-page-column">
                             <h4 v-i18n>Options</h4>
+                            <BoardSelector v-model:board="board" v-model:shuffleMap="shuffleMapOption" :isBoardDisabled="isBoardDisabledForAutoma" />
 
                             <label for="startingCorpNum-checkbox">
                             <input type="number" class="create-game-corporations-count" value="2" min="1" :max="6" v-model="startingCorporations" id="startingCorpNum-checkbox">
@@ -217,61 +202,11 @@
                                 <span v-i18n>World Government Terraforming</span>&nbsp;<a :href="wikiUrls.worldGovernmentTerraforming" class="tooltip" v-i18n data-tooltip="Link opens in a new tab/window" target="_blank">&#9432;</a>
                             </label>
 
-                            <template v-if="playersCount === 1">
-                            <template v-if="!marsBotOnly">
-                            <input type="checkbox" v-model="automaOption" id="automa-checkbox">
-                            <label for="automa-checkbox">
-                                <span v-i18n>MarsBot (Automa)</span>
-                            </label>
-                            </template>
-
-                            <template v-if="automaOption">
-                              <label for="automa-difficulty">
-                                <span v-i18n>Difficulty:</span>&nbsp;
-                                <select v-model="automaDifficulty" id="automa-difficulty">
-                                  <option value="easy" v-i18n>Easy</option>
-                                  <option value="normal" v-i18n>Normal</option>
-                                  <option value="hard" v-i18n>Hard</option>
-                                  <option value="brutal" v-i18n>Brutal</option>
-                                </select>
-                              </label>
-                              <br>
-                              <input type="checkbox" v-model="automaCorpOption" id="automa-corp-checkbox">
-                              <label for="automa-corp-checkbox">
-                                <span v-i18n>MarsBot Corporation</span>
-                              </label>
-                              <br>
-                              <input type="checkbox" v-model="automaNoGenerationLimit" id="automa-no-generation-limit-checkbox">
-                              <label for="automa-no-generation-limit-checkbox">
-                                <span v-i18n>No generation limit</span>&nbsp;<span class="tooltip" v-i18n data-tooltip="The game goes on until Mars is terraformed. MarsBot no longer wins when the last generation ends.">&#9432;</span>
-                              </label>
-                              <template v-if="expansions.turmoil">
-                                <br>
-                                <label for="automa-turmoil-tr">
-                                  <span v-i18n>MarsBot starting TR:</span>&nbsp;
-                                  <select v-model.number="automaTurmoilTRReduction" id="automa-turmoil-tr">
-                                    <option :value="10" v-i18n>10 (rulebook)</option>
-                                    <option :value="7" v-i18n>13 (harder)</option>
-                                  </select>
-                                </label>
-                                <br>
-                                <label for="automa-turmoil-delegates">
-                                  <span v-i18n>MarsBot delegates seeded at setup:</span>&nbsp;
-                                  <select v-model.number="automaTurmoilSetupDelegates" id="automa-turmoil-delegates">
-                                    <option :value="0">0</option>
-                                    <option :value="1">1</option>
-                                    <option :value="2">2</option>
-                                  </select>
-                                </label>
-                              </template>
-                            </template>
-
-                            <template v-if="!automaOption">
+                            <template v-if="playersCount === 1 && !automaOption">
                             <input type="checkbox" v-model="soloTR" id="soloTR-checkbox">
                             <label for="soloTR-checkbox">
                                 <span v-i18n>63 TR solo mode</span>&nbsp;<a :href="wikiUrls.trSoloMode" class="tooltip" v-i18n data-tooltip="Link opens in a new tab/window" target="_blank">&#9432;</a>
                             </label>
-                            </template>
                             </template>
 
                             <!-- <input type="checkbox" v-model="beginnerOption" id="beginnerOption-checkbox">
@@ -279,16 +214,6 @@
                                 <span v-i18n>Beginner Options</span>
                             </label> -->
 
-                            <input type="checkbox" v-model="undoOption" id="undo-checkbox">
-                            <label for="undo-checkbox">
-                                <span v-i18n>Allow undo</span>&nbsp;<a :href="wikiUrls.allowUndo" class="tooltip" v-i18n data-tooltip="Link opens in a new tab/window" target="_blank">&#9432;</a>
-                            </label>
-                            <div v-if="undoOption">
-                              <span v-i18n>Undo is now in best effort support.</span>
-                              <a href="https://github.com/terraforming-mars/terraforming-mars/discussions/7647" target="_blank">&#9432;</a>
-                              <br>
-                              <span v-i18n>No effort will be spent to fix it.</span>
-                            </div>
                             <input type="checkbox" v-model="showTimers" id="timer-checkbox">
                             <label for="timer-checkbox">
                                 <span v-i18n>Show timers</span>
@@ -327,11 +252,16 @@
                                     <span v-i18n>Merger</span>&nbsp;<a :href="wikiUrls.merger" class="tooltip" v-i18n data-tooltip="Link opens in a new tab/window" target="_blank">&#9432;</a>
                               </label>
                             </template>
-
-                            <input type="checkbox" v-model="shuffleMapOption" id="shuffleMap-checkbox">
-                            <label for="shuffleMap-checkbox">
-                                    <span v-i18n>Randomize board tiles</span>&nbsp;<a :href="wikiUrls.randomizeBoardTiles" class="tooltip" v-i18n data-tooltip="Link opens in a new tab/window" target="_blank">&#9432;</a>
+                                                        <input type="checkbox" v-model="undoOption" id="undo-checkbox">
+                            <label for="undo-checkbox">
+                                <span v-i18n>Allow undo</span>&nbsp;<a :href="wikiUrls.allowUndo" class="tooltip" v-i18n data-tooltip="Link opens in a new tab/window" target="_blank">&#9432;</a>
                             </label>
+                            <div v-if="undoOption">
+                              <span v-i18n>Undo is now in best effort support.</span>
+                              <a href="https://github.com/terraforming-mars/terraforming-mars/discussions/7647" target="_blank">&#9432;</a>
+                              <br>
+                              <span v-i18n>No effort will be spent to fix it.</span>
+                            </div>
 
                             <input type="checkbox" v-model="seededGame" id="seeded-checkbox">
                             <label for="seeded-checkbox">
@@ -393,100 +323,168 @@
 
                         </div>
 
-                        <div class="create-game-page-column" v-if="playersCount > 1 || automaOption">
-                            <h4 v-i18n>Multiplayer Options</h4>
+                        <div class="create-game-page-column-stack">
+                            <div class="create-game-page-column" v-if="playersCount > 1 || automaOption">
+                                <h4 v-i18n>Multiplayer Options</h4>
 
-                            <div class="create-game-page-column-row">
-                                <div>
-                                <input type="checkbox" name="draftVariant" v-model="draftVariant" id="draft-checkbox">
-                                <label for="draft-checkbox">
-                                    <span v-i18n>Draft variant</span>
-                                </label>
+                                <div class="create-game-page-column-row">
+                                    <div>
+                                    <input type="checkbox" name="draftVariant" v-model="draftVariant" id="draft-checkbox">
+                                    <label for="draft-checkbox">
+                                        <span v-i18n>Draft variant</span>
+                                    </label>
+                                    </div>
+
+                                    <div>
+                                    <input type="checkbox" name="initialDraft" v-model="initialDraft" id="initialDraft-checkbox" :disabled="automaOption">
+                                    <label for="initialDraft-checkbox" :class="{'automa-disabled': automaOption}">
+                                        <span v-i18n>Initial Draft variant</span>&nbsp;<a :href="wikiUrls.initialDraft" class="tooltip" v-i18n data-tooltip="Link opens in a new tab/window" target="_blank">&#9432;</a>
+                                    </label>
+                                    </div>
+                                </div>
+                                <div class="create-game-page-column-row" v-if="initialDraft">
+                                  <div v-if="expansions.prelude">
+                                    <input type="checkbox" name="preludeDraft" v-model="preludeDraftVariant" id="preludeDraft-checkbox">
+                                    <label for="preludeDraft-checkbox">
+                                      <span v-i18n>Prelude Draft</span>
+                                    </label>
+                                  </div>
+
+                                  <div v-if="expansions.ceo">
+                                    <input type="checkbox" name="ceosDraft" v-model="ceosDraftVariant" id="ceosDraft-checkbox">
+                                    <label for="ceosDraft-checkbox">
+                                      <span v-i18n>CEO Draft</span>
+                                    </label>
+                                  </div>
                                 </div>
 
-                                <div>
-                                <input type="checkbox" name="initialDraft" v-model="initialDraft" id="initialDraft-checkbox" :disabled="automaOption">
-                                <label for="initialDraft-checkbox" :class="{'automa-disabled': automaOption}">
-                                    <span v-i18n>Initial Draft variant</span>&nbsp;<a :href="wikiUrls.initialDraft" class="tooltip" v-i18n data-tooltip="Link opens in a new tab/window" target="_blank">&#9432;</a>
+                                <input type="checkbox" v-model="randomFirstPlayer" id="randomFirstPlayer-checkbox" :disabled="automaOption">
+                                <label for="randomFirstPlayer-checkbox" :class="{'automa-disabled': automaOption}">
+                                    <span v-i18n>Random first player</span>
                                 </label>
-                                </div>
-                            </div>
-                            <div class="create-game-page-column-row" v-if="initialDraft">
-                              <div v-if="expansions.prelude">
-                                <input type="checkbox" name="preludeDraft" v-model="preludeDraftVariant" id="preludeDraft-checkbox">
-                                <label for="preludeDraft-checkbox">
-                                  <span v-i18n>Prelude Draft</span>
+
+                                <input type="checkbox" name="randomMAToggle" id="randomMA-checkbox" @change="randomMAToggle()">
+                                <label for="randomMA-checkbox">
+                                    <span v-i18n>Random Milestones/Awards</span>&nbsp;<a :href="wikiUrls.randomMilestonesAndAwards" class="tooltip" v-i18n data-tooltip="Link opens in a new tab/window" target="_blank">&#9432;</a>
                                 </label>
-                              </div>
 
-                              <div v-if="expansions.ceo">
-                                <input type="checkbox" name="ceosDraft" v-model="ceosDraftVariant" id="ceosDraft-checkbox">
-                                <label for="ceosDraft-checkbox">
-                                  <span v-i18n>CEO Draft</span>
-                                </label>
-                              </div>
-                            </div>
+                                <div class="create-game-page-column-row" v-if="isRandomMAEnabled">
+                                    <div>
+                                    <input type="radio" name="randomMAOption" v-model="randomMA" :value="getRandomMaOptionType('limited')" id="limitedRandomMA-radio">
+                                    <label class="label-randomMAOption" for="limitedRandomMA-radio">
+                                        <span v-i18n>{{ getRandomMaOptionType('limited') }}</span>
+                                    </label>
+                                    </div>
 
-                            <input type="checkbox" v-model="randomFirstPlayer" id="randomFirstPlayer-checkbox" :disabled="automaOption">
-                            <label for="randomFirstPlayer-checkbox" :class="{'automa-disabled': automaOption}">
-                                <span v-i18n>Random first player</span>
-                            </label>
-
-                            <input type="checkbox" name="randomMAToggle" id="randomMA-checkbox" @change="randomMAToggle()">
-                            <label for="randomMA-checkbox">
-                                <span v-i18n>Random Milestones/Awards</span>&nbsp;<a :href="wikiUrls.randomMilestonesAndAwards" class="tooltip" v-i18n data-tooltip="Link opens in a new tab/window" target="_blank">&#9432;</a>
-                            </label>
-
-                            <div class="create-game-page-column-row" v-if="isRandomMAEnabled()">
-                                <div>
-                                <input type="radio" name="randomMAOption" v-model="randomMA" :value="getRandomMaOptionType('limited')" id="limitedRandomMA-radio">
-                                <label class="label-randomMAOption" for="limitedRandomMA-radio">
-                                    <span v-i18n>{{ getRandomMaOptionType('limited') }}</span>
-                                </label>
+                                    <div>
+                                    <input type="radio" name="randomMAOption" v-model="randomMA" :value="getRandomMaOptionType('full')" id="unlimitedRandomMA-radio">
+                                    <label class="label-randomMAOption" for="unlimitedRandomMA-radio">
+                                        <span v-i18n>{{ getRandomMaOptionType('full') }}</span>
+                                    </label>
+                                    </div>
+                                    <div>
+                                      <input type="checkbox" name="modularMA" v-model="modularMA" id="modularMA-checkbox">
+                                       <label for="modularMA-checkbox">
+                                        <span v-i18n>Official Random α</span>
+                                      </label>
+                                    </div>
                                 </div>
 
-                                <div>
-                                <input type="radio" name="randomMAOption" v-model="randomMA" :value="getRandomMaOptionType('full')" id="unlimitedRandomMA-radio">
-                                <label class="label-randomMAOption" for="unlimitedRandomMA-radio">
-                                    <span v-i18n>{{ getRandomMaOptionType('full') }}</span>
-                                </label>
+                                <div v-if="modularMA">
+                                  The new Milestones and Awards are still in active development.<br>
+                                  Please don't report anything unless it breaks the game.<br>
+                                  These are <b>always fully random</b>.
                                 </div>
-                                <div>
-                                  <input type="checkbox" name="modularMA" v-model="modularMA" id="modularMA-checkbox">
-                                   <label for="modularMA-checkbox">
-                                    <span v-i18n>Official Random α</span>
+                                <template v-if="expansions.venus">
+                                    <input type="checkbox" v-model="requiresVenusTrackCompletion" id="requiresVenusTrackCompletion-checkbox" :disabled="automaOption">
+                                    <label for="requiresVenusTrackCompletion-checkbox" :class="{'automa-disabled': automaOption}">
+                                        <span v-i18n>Mandatory Venus Terraforming</span> &nbsp;<a :href="wikiUrls.venusTerraforming" class="tooltip" v-i18n data-tooltip="Link opens in a new tab/window" target="_blank">&#9432;</a>
+                                    </label>
+                                </template>
+
+                                <template v-if="randomMA !== RandomMAOptionType.NONE">
+                                  <input type="checkbox" v-model="includeFanMA" id="fanMA-checkbox" :disabled="automaOption">
+                                  <label for="fanMA-checkbox" :class="{'automa-disabled': automaOption}">
+                                      <span v-i18n>Include fan Milestones/Awards</span>
                                   </label>
-                                </div>
-                            </div>
+                                </template>
 
-                            <div v-if="modularMA">
-                              The new Milestones and Awards are still in active development.<br>
-                              Please don't report anything unless it breaks the game.<br>
-                              These are <b>always fully random</b>.
-                            </div>
-                            <template v-if="expansions.venus">
-                                <input type="checkbox" v-model="requiresVenusTrackCompletion" id="requiresVenusTrackCompletion-checkbox" :disabled="automaOption">
-                                <label for="requiresVenusTrackCompletion-checkbox" :class="{'automa-disabled': automaOption}">
-                                    <span v-i18n>Mandatory Venus Terraforming</span> &nbsp;<a :href="wikiUrls.venusTerraforming" class="tooltip" v-i18n data-tooltip="Link opens in a new tab/window" target="_blank">&#9432;</a>
+                                <input type="checkbox" name="showOtherPlayersVP" v-model="showOtherPlayersVP" id="realTimeVP-checkbox">
+                                <label for="realTimeVP-checkbox">
+                                    <span v-i18n>Show real-time VP</span>&nbsp;<a :href="wikiUrls.showRealtimeVP" class="tooltip" v-i18n data-tooltip="Link opens in a new tab/window" target="_blank">&#9432;</a>
                                 </label>
-                            </template>
 
-                            <template v-if="randomMA !== RandomMAOptionType.NONE">
-                              <input type="checkbox" v-model="includeFanMA" id="fanMA-checkbox" :disabled="automaOption">
-                              <label for="fanMA-checkbox" :class="{'automa-disabled': automaOption}">
-                                  <span v-i18n>Include fan Milestones/Awards</span>
-                              </label>
-                            </template>
+                                <input type="checkbox" v-model="fastModeOption" id="fastMode-checkbox" :disabled="automaOption">
+                                <label for="fastMode-checkbox" :class="{'automa-disabled': automaOption}">
+                                    <span v-i18n>Fast mode</span>&nbsp;<a :href="wikiUrls.fastMode" class="tooltip" v-i18n data-tooltip="Link opens in a new tab/window" target="_blank">&#9432;</a>
+                                </label>
+                            </div>
 
-                            <input type="checkbox" name="showOtherPlayersVP" v-model="showOtherPlayersVP" id="realTimeVP-checkbox">
-                            <label for="realTimeVP-checkbox">
-                                <span v-i18n>Show real-time VP</span>&nbsp;<a :href="wikiUrls.showRealtimeVP" class="tooltip" v-i18n data-tooltip="Link opens in a new tab/window" target="_blank">&#9432;</a>
-                            </label>
+                            <div class="create-game-page-column" v-if="playersCount === 1">
+                                <h4 v-i18n>MarsBot Options</h4>
 
-                            <input type="checkbox" v-model="fastModeOption" id="fastMode-checkbox" :disabled="automaOption">
-                            <label for="fastMode-checkbox" :class="{'automa-disabled': automaOption}">
-                                <span v-i18n>Fast mode</span>&nbsp;<a :href="wikiUrls.fastMode" class="tooltip" v-i18n data-tooltip="Link opens in a new tab/window" target="_blank">&#9432;</a>
-                            </label>
+                                <template v-if="!marsBotOnly">
+                                <input type="checkbox" v-model="automaOption" id="automa-checkbox">
+                                <label for="automa-checkbox">
+                                    <span v-i18n>MarsBot (Automa)</span>
+                                </label>
+                                </template>
+
+                                <template v-if="automaOption">
+                                  <label for="automa-difficulty">
+                                    <span v-i18n>Difficulty:</span>&nbsp;
+                                    <select v-model="automaDifficultyChoice" id="automa-difficulty">
+                                      <option value="easiest" v-i18n>Easiest</option>
+                                      <option value="easy" v-i18n>Easy</option>
+                                      <option value="normal" v-i18n>Normal</option>
+                                      <option value="hard" v-i18n>Hard</option>
+                                      <option value="brutal" v-i18n>Brutal</option>
+                                      <option value="hardest" v-i18n>Hardest</option>
+                                    </select>
+                                  </label>
+
+                                  <input type="checkbox" v-model="automaCorpOption" id="automa-corp-checkbox">
+                                  <label for="automa-corp-checkbox">
+                                    <span v-i18n>MarsBot Corporation</span>
+                                  </label>
+
+                                  <input type="checkbox" v-model="automaNoGenerationLimit" id="automa-no-generation-limit-checkbox">
+                                  <label for="automa-no-generation-limit-checkbox">
+                                    <span v-i18n>No generation limit</span>&nbsp;<span class="tooltip" v-i18n data-tooltip="The game goes on until Mars is terraformed. MarsBot no longer wins when the last generation ends.">&#9432;</span>
+                                  </label>
+
+                                  <input type="checkbox" v-model="automaFinalGreeneryNoCorpEffects" id="automa-final-greenery-no-corp-checkbox">
+                                  <label for="automa-final-greenery-no-corp-checkbox">
+                                    <span v-i18n>Final greeneries skip MarsBot's corporation</span>&nbsp;<span class="tooltip" v-i18n data-tooltip="At game end, MarsBot's tracker moving onto a final greenery triggers none of its corporation's effects, such as Teractor's 2 M€ or Helion's black cube. This makes MarsBot a little weaker. The designers leave it up to you.">&#9432;</span>
+                                  </label>
+
+                                  <template v-if="expansions.colonies">
+                                    <input type="checkbox" v-model="automaColonyVP" id="automa-colony-vp-checkbox">
+                                    <label for="automa-colony-vp-checkbox">
+                                      <span v-i18n>MarsBot's leftover resources score 1/2 VP each</span>&nbsp;<span class="tooltip" v-i18n data-tooltip="At game end MarsBot gets 1 VP for every 2 resources left on its Colonies shipping board and floaters on its Venus board. This is how the designer intended it, but the rulebook leaves it out.">&#9432;</span>
+                                    </label>
+                                  </template>
+
+                                  <template v-if="expansions.turmoil">
+                                    <label for="automa-turmoil-tr">
+                                      <span v-i18n>MarsBot starting TR:</span>&nbsp;
+                                      <select v-model.number="automaTurmoilTRReduction" id="automa-turmoil-tr">
+                                        <option :value="10" v-i18n>10 (rulebook)</option>
+                                        <option :value="7" v-i18n>13 (harder)</option>
+                                      </select>
+                                    </label>
+
+                                    <label for="automa-turmoil-delegates">
+                                      <span v-i18n>MarsBot delegates seeded at setup:</span>&nbsp;
+                                      <select v-model.number="automaTurmoilSetupDelegates" id="automa-turmoil-delegates">
+                                        <option :value="0">0</option>
+                                        <option :value="1">1</option>
+                                        <option :value="2">2</option>
+                                      </select>
+                                    </label>
+                                  </template>
+                                </template>
+                            </div>
                         </div>
 
                         <div class="create-game-players-cont">
@@ -495,7 +493,7 @@
                             </div>
                             <div class="container">
                                 <div class="columns">
-                                  <template v-for="(newPlayer, index) in getPlayers()" :key="index">
+                                  <template v-for="(newPlayer, index) in getPlayers" :key="index">
                                     <div>
                                       <div :class="'form-group col6 create-game-player '+getPlayerContainerColorClass(newPlayer.color)">
                                           <div>
@@ -513,7 +511,7 @@
                                           </div>
                                           <div>
                                               <!-- <template v-if="beginnerOption"> -->
-                                                  <label v-if="isBeginnerToggleEnabled()" class="form-switch form-inline create-game-beginner-option-label">
+                                                  <label v-if="isBeginnerToggleEnabled" class="form-switch form-inline create-game-beginner-option-label">
                                                       <input type="checkbox" v-model="newPlayer.beginner">
                                                       <i class="form-icon"></i> <span v-i18n>Beginner?</span>&nbsp;<a :href="wikiUrls.beginnerCorporation" class="tooltip" v-i18n data-tooltip="Link opens in a new tab/window" target="_blank">&#9432;</a>
                                                   </label>
@@ -535,22 +533,24 @@
                                 </div>
                             </div>
                         </div>
+                    </div>
+                </div>
 
-                        <div class="create-game-action-row">
-                            <div class="create-game-action">
-                                <AppButton title="Create game" size="big" @click="createGame"/>
-                                <AppButton title="Reset" size="big" @click="resetSettings"/>
+                <div class="create-game-action-row">
+                    <div class="create-game-action">
+                        <label>
+                            <div class="btn btn-primary btn-action btn-lg"><i class="icon icon-upload"></i></div>
+                            <input style="display: none" type="file" accept=".json" id="settings-file" ref="file" @change="uploadSettings()">
+                        </label>
 
-                                <label>
-                                    <div class="btn btn-primary btn-action btn-lg"><i class="icon icon-upload"></i></div>
-                                    <input style="display: none" type="file" accept=".json" id="settings-file" ref="file" @change="uploadSettings()">
-                                </label>
+                        <label>
+                            <div @click="downloadSettings()" class="btn btn-primary btn-action btn-lg"><i class="icon icon-download"></i></div>
+                        </label>
 
-                                <label>
-                                    <div @click="downloadSettings()" class="btn btn-primary btn-action btn-lg"><i class="icon icon-download"></i></div>
-                                </label>
-                            </div>
-                        </div>
+                        <AppButton class="create-game-action-gap" title="Reset" size="big" @click="resetSettings"/>
+                        <AppButton class="create-game-action-gap" title="Create game" size="big" @click="createGame" :disabled="hasBlockingValidationErrors"/>
+                        <span v-if="hasBlockingValidationErrors" class="create-game-custom-preludes-warning create-game-validation-blocker" @click="showValidationErrors = true">&#9888;&#xFE0E;</span>
+                        <span v-else-if="hasValidationProblems" class="create-game-validation-warning" @click="showValidationErrors = true">&#9888;&#xFE0F;</span>
                     </div>
                 </div>
             </div>
@@ -618,6 +618,7 @@
               />
             </div>
           <PreferencesIcon/>
+          <ValidationErrorsPopup v-if="showValidationErrors" :errors="validationErrors" @close="showValidationErrors = false"/>
         </div>
 </template>
 
@@ -626,10 +627,10 @@ import * as constants from '@/common/constants';
 
 import {defineComponent, nextTick} from 'vue';
 import {Color, PLAYER_COLORS} from '@/common/Color';
-import {BoardName} from '@/common/boards/BoardName';
-import {RandomBoardOption} from '@/common/boards/RandomBoardOption';
 import {CardName} from '@/common/cards/CardName';
 import CeosFilter from '@/client/components/create/CeosFilter.vue';
+import {BoardName} from '@/common/boards/BoardName';
+import BoardSelector from '@/client/components/create/BoardSelector.vue';
 import CorporationsFilter from '@/client/components/create/CorporationsFilter.vue';
 import PreludesFilter from '@/client/components/create/PreludesFilter.vue';
 import {translateText, translateTextWithParams} from '@/client/directives/i18n';
@@ -649,15 +650,14 @@ import {CreateGameModel} from './CreateGameModel';
 import {paths} from '@/common/app/paths';
 import {JSONProcessor} from './JSONProcessor';
 import {defaultCreateGameModel} from './defaultCreateGameModel';
-import {CreateGameSettingsStorage} from './CreateGameSettingsStorage';
+import {createGameSettingsStorage} from './createGameSettingsStorage';
 import {getColony} from '@/client/colonies/ClientColonyManifest';
-import {RULEBOOK_URLS, WIKI, WIKI_URLS} from '@/client/utils/WikiLinks';
+import {RULEBOOK_URLS, WIKI_URLS} from '@/client/utils/WikiLinks';
 import {setDocumentTitle} from '@/client/utils/documentTitle';
 import {sanitizeEscapeVelocityOptions} from '@/common/game/escapeVelocity';
-
-const REVISED_COUNT_ALGORITHM = false;
-const createGameSettingsStorage = new CreateGameSettingsStorage();
-
+import {isMarsBotBoardChoice} from '@/common/automa/MarsBotBoards';
+import {validateNewGameConfig, validationDetails, ValidationErrors} from '@/common/game/validateNewGameConfig';
+import ValidationErrorsPopup from './ValidationErrorsPopup.vue';
 
 type Refs = {
   file: HTMLInputElement;
@@ -666,9 +666,38 @@ type Refs = {
 };
 
 type FormModel = {
+  showValidationErrors: boolean;
   preludeToggled: boolean;
   uploading: boolean;
   previousViewport: string;
+};
+
+type MarsBotSettings = Pick<CreateGameModel,
+  'automaDifficulty' | 'automaCorpOption' | 'automaNoGenerationLimit' | 'automaFinalGreeneryNoCorpEffects' |
+  'automaColonyVP' | 'automaTurmoilTRReduction' | 'automaTurmoilSetupDelegates'>;
+type MarsBotPreset = 'easiest' | 'hardest';
+type AutomaDifficultyChoice = CreateGameModel['automaDifficulty'] | MarsBotPreset;
+
+// Every MarsBot setting at its easiest or hardest end, picked from the Difficulty dropdown.
+const MARSBOT_PRESETS: Record<MarsBotPreset, MarsBotSettings> = {
+  easiest: {
+    automaDifficulty: 'easy',
+    automaCorpOption: false,
+    automaNoGenerationLimit: true,
+    automaFinalGreeneryNoCorpEffects: true,
+    automaColonyVP: false,
+    automaTurmoilTRReduction: 10,
+    automaTurmoilSetupDelegates: 0,
+  },
+  hardest: {
+    automaDifficulty: 'brutal',
+    automaCorpOption: true,
+    automaNoGenerationLimit: false,
+    automaFinalGreeneryNoCorpEffects: false,
+    automaColonyVP: true,
+    automaTurmoilTRReduction: 7,
+    automaTurmoilSetupDelegates: 2,
+  },
 };
 
 export default defineComponent({
@@ -676,6 +705,7 @@ export default defineComponent({
   data(): CreateGameModel & FormModel {
     return {
       ...defaultCreateGameModel(),
+      showValidationErrors: false,
       preludeToggled: false,
       uploading: false,
       previousViewport: '',
@@ -686,9 +716,11 @@ export default defineComponent({
     CardsFilter,
     CeosFilter,
     ColoniesFilter,
+    BoardSelector,
     CorporationsFilter,
     PreludesFilter,
     PreferencesIcon,
+    ValidationErrorsPopup,
   },
   watch: {
     allOfficialExpansions(value: boolean) {
@@ -748,7 +780,9 @@ export default defineComponent({
         return;
       }
       if (value) {
-        this.board = 'tharsis' as any;
+        if (!isMarsBotBoardChoice(this.board)) {
+          this.board = BoardName.THARSIS;
+        }
         this.initialDraft = false;
         this.randomFirstPlayer = false;
         this.includeFanMA = false;
@@ -812,11 +846,111 @@ export default defineComponent({
     wikiUrls(): typeof RULEBOOK_URLS & typeof WIKI_URLS {
       return {...RULEBOOK_URLS, ...WIKI_URLS};
     },
+    /** The Difficulty dropdown. It reads Easiest or Hardest only while every MarsBot setting still matches that preset. */
+    automaDifficultyChoice: {
+      get(): AutomaDifficultyChoice {
+        const current: MarsBotSettings = {
+          automaDifficulty: this.automaDifficulty,
+          automaCorpOption: this.automaCorpOption,
+          automaNoGenerationLimit: this.automaNoGenerationLimit,
+          automaFinalGreeneryNoCorpEffects: this.automaFinalGreeneryNoCorpEffects,
+          automaColonyVP: this.automaColonyVP,
+          automaTurmoilTRReduction: this.automaTurmoilTRReduction,
+          automaTurmoilSetupDelegates: this.automaTurmoilSetupDelegates,
+        };
+        const preset = (['easiest', 'hardest'] as const).find((name) =>
+          (Object.keys(current) as Array<keyof MarsBotSettings>).every((key) => current[key] === MARSBOT_PRESETS[name][key]));
+        return preset ?? this.automaDifficulty;
+      },
+      set(choice: AutomaDifficultyChoice) {
+        if (choice === 'easiest' || choice === 'hardest') {
+          Object.assign(this, MARSBOT_PRESETS[choice]);
+        } else {
+          this.automaDifficulty = choice;
+        }
+      },
+    },
+    /**
+     * The game settings, as they'd be sent to the server.
+     *
+     * serializeSettings finishes the players and the escape velocity values, and checks the cloned game.
+     */
+    newGameConfig(): NewGameConfig {
+      return {
+        players: this.players.slice(0, this.playersCount),
+        expansions: this.expansions,
+        draftVariant: this.draftVariant,
+        showOtherPlayersVP: this.showOtherPlayersVP,
+        customCorporationsList: this.customCorporations,
+        customColoniesList: this.customColonies,
+        customCeos: this.customCeos,
+        customPreludes: this.customPreludes,
+        bannedCards: this.bannedCards,
+        includedCards: this.includedCards,
+        board: this.board,
+        seed: this.seed,
+        solarPhaseOption: this.solarPhaseOption,
+        aresExtremeVariant: this.aresExtremeVariant,
+        politicalAgendasExtension: this.politicalAgendasExtension,
+        undoOption: this.undoOption,
+        showTimers: this.showTimers,
+        fastModeOption: this.fastModeOption,
+        removeNegativeGlobalEventsOption: this.removeNegativeGlobalEventsOption,
+        includeFanMA: this.includeFanMA,
+        modularMA: this.modularMA,
+        startingCorporations: this.startingCorporations,
+        soloTR: this.soloTR,
+        clonedGamedId: this.seededGame ? this.clonedGameId : undefined,
+        initialDraft: this.initialDraft,
+        preludeDraftVariant: this.preludeDraftVariant ?? false,
+        ceosDraftVariant: this.ceosDraftVariant ?? false,
+        randomMA: this.randomMA,
+        shuffleMapOption: this.shuffleMapOption,
+        randomFirstPlayer: this.randomFirstPlayer,
+        requiresVenusTrackCompletion: this.requiresVenusTrackCompletion,
+        requiresMoonTrackCompletion: this.requiresMoonTrackCompletion,
+        moonStandardProjectVariant: this.moonStandardProjectVariant,
+        moonStandardProjectVariant1: this.moonStandardProjectVariant1,
+        altVenusBoard: this.altVenusBoard,
+        // Not sanitized, so validation can catch negative values.
+        escapeVelocity: this.escapeVelocityMode ? {
+          thresholdMinutes: this.escapeVelocityThreshold,
+          bonusSectionsPerAction: this.escapeVelocityBonusSeconds,
+          penaltyPeriodMinutes: this.escapeVelocityPeriod,
+          penaltyVPPerPeriod: this.escapeVelocityPenalty,
+        } : undefined,
+        twoCorpsVariant: this.twoCorpsVariant,
+        startingCeos: this.startingCeos,
+        startingPreludes: this.startingPreludes,
+        automaOption: this.automaOption,
+        automaDifficulty: this.automaDifficulty,
+        automaCorpOption: this.automaCorpOption,
+        automaTurmoilTRReduction: this.automaTurmoilTRReduction,
+        automaTurmoilSetupDelegates: this.automaTurmoilSetupDelegates,
+        automaNoGenerationLimit: this.automaNoGenerationLimit,
+        automaColonyVP: this.automaColonyVP && this.expansions.colonies,
+        automaFinalGreeneryNoCorpEffects: this.automaFinalGreeneryNoCorpEffects,
+      };
+    },
+    validationErrors(): ValidationErrors {
+      return validateNewGameConfig(this.newGameConfig, {
+        getCardCompatibility: (name) => getCard(name)?.compatibility ?? [],
+        getColonyExpansion: (name) => {
+          return getColony(name)?.expansion;
+        },
+      });
+    },
+    hasValidationProblems(): boolean {
+      return Object.values(this.validationErrors).some((value) => Array.isArray(value) ? value.length > 0 : Boolean(value));
+    },
+    hasBlockingValidationErrors(): boolean {
+      return (Object.keys(validationDetails) as Array<keyof ValidationErrors>).some((key) => {
+        const value = this.validationErrors[key];
+        return validationDetails[key].blocking && (Array.isArray(value) ? value.length > 0 : Boolean(value));
+      });
+    },
     typedRefs(): Refs {
       return this.$refs as Refs;
-    },
-    RandomBoardOption(): typeof RandomBoardOption {
-      return RandomBoardOption;
     },
     RandomMAOptionType(): typeof RandomMAOptionType {
       return RandomMAOptionType;
@@ -827,27 +961,22 @@ export default defineComponent({
     PLAYER_COLORS(): typeof PLAYER_COLORS {
       return PLAYER_COLORS;
     },
-    boards() {
-      return [
-        BoardName.THARSIS,
-        BoardName.HELLAS,
-        BoardName.ELYSIUM,
-        RandomBoardOption.OFFICIAL,
-        BoardName.UTOPIA_PLANITIA,
-        BoardName.VASTITAS_BOREALIS_NOVA,
-        BoardName.TERRA_CIMMERIA_NOVA,
-        BoardName.ARABIA_TERRA,
-        BoardName.AMAZONIS,
-        BoardName.TERRA_CIMMERIA,
-        BoardName.VASTITAS_BOREALIS,
-        BoardName.HOLLANDIA,
-        RandomBoardOption.ALL,
-      ];
+    getPlayers(): Array<NewPlayerModel> {
+      return this.players.slice(0, this.playersCount);
+    },
+    isRandomMAEnabled(): Boolean {
+      return this.randomMA !== RandomMAOptionType.NONE;
+    },
+    isPoliticalAgendasExtensionEnabled(): Boolean {
+      return this.politicalAgendasExtension !== 'Standard';
+    },
+    isBeginnerToggleEnabled(): Boolean {
+      return !(this.initialDraft || this.expansions.prelude || this.expansions.venus || this.expansions.colonies || this.expansions.turmoil);
     },
   },
   methods: {
     restoreLastSettings() {
-      const settings = createGameSettingsStorage.loadSettings();
+      const settings = createGameSettingsStorage.load();
       if (settings === undefined) {
         return;
       }
@@ -857,8 +986,8 @@ export default defineComponent({
           this.showSettingsLoadResult('Restore settings', processor);
         }
       } catch (e) {
-        // TODO(rusliksu): show the restore error in the UI instead of logging only to the console.
         console.warn('Could not restore create game settings:', e);
+        vueRoot(this).showAlert('Restore settings', 'Error restoring settings ' + e);
       }
     },
     applySettings(json: JSONObject): JSONProcessor {
@@ -899,7 +1028,7 @@ export default defineComponent({
       }
     },
     resetSettings() {
-      createGameSettingsStorage.clearSettings();
+      createGameSettingsStorage.clear();
       Object.assign(this, defaultCreateGameModel(), {
         preludeToggled: false,
         uploading: false,
@@ -969,12 +1098,6 @@ export default defineComponent({
     updateCustomCeos(customCeos: Array<CardName>) {
       this.customCeos = customCeos;
     },
-    getPlayers(): Array<NewPlayerModel> {
-      return this.players.slice(0, this.playersCount);
-    },
-    isRandomMAEnabled(): Boolean {
-      return this.randomMA !== RandomMAOptionType.NONE;
-    },
     randomMAToggle() {
       if (this.randomMA === RandomMAOptionType.NONE) {
         this.randomMA = RandomMAOptionType.LIMITED;
@@ -990,9 +1113,6 @@ export default defineComponent({
       } else {
         return RandomMAOptionType.NONE;
       }
-    },
-    isPoliticalAgendasExtensionEnabled(): Boolean {
-      return this.politicalAgendasExtension !== 'Standard';
     },
     politicalAgendasExtensionToggle() {
       if (this.politicalAgendasExtension === 'Standard') {
@@ -1010,9 +1130,6 @@ export default defineComponent({
         console.warn('AgendaStyle not found');
         return 'Standard';
       }
-    },
-    isBeginnerToggleEnabled(): Boolean {
-      return !(this.initialDraft || this.expansions.prelude || this.expansions.venus || this.expansions.colonies || this.expansions.turmoil);
     },
     getPlayersCountText(count: number): string {
       if (count === 1) {
@@ -1032,55 +1149,14 @@ export default defineComponent({
         this.moonStandardProjectVariant1 = false;
       }
     },
-    getBoardColorClass(boardName: BoardName | BoardNameType): string {
-      switch (boardName) {
-      case BoardName.THARSIS:
-        return 'create-game-board-hexagon create-game-tharsis';
-      case BoardName.HELLAS:
-        return 'create-game-board-hexagon create-game-hellas';
-      case BoardName.ELYSIUM:
-        return 'create-game-board-hexagon create-game-elysium';
-      case BoardName.UTOPIA_PLANITIA:
-        return 'create-game-board-hexagon create-game-utopia-planitia';
-      case BoardName.VASTITAS_BOREALIS_NOVA:
-        return 'create-game-board-hexagon create-game-vastitas-borealis-nova';
-      case BoardName.AMAZONIS:
-        return 'create-game-board-hexagon create-game-amazonis';
-      case BoardName.ARABIA_TERRA:
-        return 'create-game-board-hexagon create-game-arabia-terra';
-      case BoardName.TERRA_CIMMERIA:
-        return 'create-game-board-hexagon create-game-terra-cimmeria';
-      case BoardName.VASTITAS_BOREALIS:
-        return 'create-game-board-hexagon create-game-vastitas-borealis';
-      case BoardName.HOLLANDIA:
-        return 'create-game-board-hexagon create-game-hollandia';
-      default:
-        return 'create-game-board-hexagon create-game-random';
-      }
+    isBoardDisabledForAutoma(boardName: BoardNameType): boolean {
+      return this.automaOption && !isMarsBotBoardChoice(boardName);
     },
     getPlayerCubeColorClass(color: Color): string {
       return playerColorClass(color, 'bg');
     },
     getPlayerContainerColorClass(color: Color): string {
       return playerColorClass(color, 'bg_transparent');
-    },
-    boardHref(boardName: BoardName | RandomBoardOption) {
-      const options: Record<BoardName | RandomBoardOption, string> = {
-        [BoardName.THARSIS]: 'tharsis',
-        [BoardName.HELLAS]: 'hellas',
-        [BoardName.ELYSIUM]: 'elysium',
-        [BoardName.ARABIA_TERRA]: 'arabia-terra',
-        [BoardName.UTOPIA_PLANITIA]: 'utopia-planitia',
-        [BoardName.VASTITAS_BOREALIS_NOVA]: 'vastitas-borealis-nova',
-        [BoardName.VASTITAS_BOREALIS]: 'vastitas-borealis',
-        [BoardName.AMAZONIS]: 'amazonis-planatia',
-        [BoardName.TERRA_CIMMERIA]: 'terra-cimmeria',
-        [BoardName.TERRA_CIMMERIA_NOVA]: 'terra-cimmeria-nova',
-        [BoardName.HOLLANDIA]: 'hollandia',
-        [RandomBoardOption.OFFICIAL]: '',
-        [RandomBoardOption.ALL]: '',
-      };
-      return `${WIKI}/Maps#${options[boardName]}`;
     },
     async serializeSettings(): Promise<NewGameConfig | undefined> {
       let players = this.players.slice(0, this.playersCount);
@@ -1130,186 +1206,7 @@ export default defineComponent({
         return player;
       });
 
-      const draftVariant = this.draftVariant;
-      const initialDraft = this.initialDraft;
-      const randomMA = this.randomMA;
-      const showOtherPlayersVP = this.showOtherPlayersVP;
-      const solarPhaseOption = this.solarPhaseOption;
-      const shuffleMapOption = this.shuffleMapOption;
-      const customColonies = this.customColonies;
-      const customCorporations = this.customCorporations;
-      const customPreludes = this.customPreludes;
-      const bannedCards = this.bannedCards;
-      const includedCards = this.includedCards;
-      const board = this.board;
-      const seed = this.seed;
-      const politicalAgendasExtension = this.politicalAgendasExtension;
-      const undoOption = this.undoOption;
-      const showTimers = this.showTimers;
-      const fastModeOption = this.fastModeOption;
-      const removeNegativeGlobalEventsOption = this.removeNegativeGlobalEventsOption;
-      const includeFanMA = this.includeFanMA;
-      const startingCorporations = this.startingCorporations;
-      const soloTR = this.soloTR;
-      const randomFirstPlayer = this.randomFirstPlayer;
-      const requiresVenusTrackCompletion = this.requiresVenusTrackCompletion;
-      const twoCorpsVariant = this.twoCorpsVariant;
-      const customCeos = this.customCeos;
-      const startingCeos = this.startingCeos;
-      const startingPreludes = this.startingPreludes;
       let clonedGamedId: undefined | GameId = undefined;
-
-      // Check custom colony count
-      if (customColonies.length > 0) {
-        const playersCount = players.length;
-        let neededColoniesCount = playersCount + 2;
-        if (playersCount === 1) {
-          neededColoniesCount = 4;
-        } else if (playersCount === 2) {
-          neededColoniesCount = 5;
-        }
-
-        if (customColonies.length < neededColoniesCount) {
-          window.alert(translateTextWithParams('Must select at least ${0} colonies', [neededColoniesCount.toString()]));
-          return undefined;
-        }
-
-        let valid = true;
-        for (const colonyName of customColonies) {
-          const colony = getColony(colonyName);
-          if (colony.expansion !== undefined && !this.expansions[colony.expansion]) {
-            valid = false;
-            break;
-          }
-        }
-        if (valid === false) {
-          const confirm = window.confirm(translateText(
-            'Some of the colonies you selected need expansions you have not enabled. Using them might break your game. Press OK to continue or Cancel to change your selections.'));
-          if (confirm === false) {
-            return undefined;
-          }
-        }
-      }
-
-      if (players.length === 1 && this.expansions.corpera === false && !this.automaOption) {
-        const confirm = window.confirm(translateText(
-          'We do not recommend playing a solo game without the Corporate Era. Press OK if you want to play without it.'));
-        if (confirm === false) {
-          return undefined;
-        }
-      }
-
-      // Check Prelude 2 + Pathfinders infinite energy production
-      let energyProductionBug = true;
-      if (customCorporations.length > 0 && !customCorporations.includes(CardName.THORGATE)) {
-        energyProductionBug = false;
-      }
-      if (this.bannedCards.includes(CardName.STANDARD_TECHNOLOGY)) {
-        energyProductionBug = false;
-      }
-
-      if (this.bannedCards.includes(CardName.SUITABLE_INFRASTRUCTURE)) {
-        energyProductionBug = false;
-      } else {
-        if (this.expansions.prelude2 === false && !this.includedCards.includes(CardName.SUITABLE_INFRASTRUCTURE)) {
-          energyProductionBug = false;
-        }
-      }
-
-      if (this.bannedCards.includes(CardName.HIGH_TEMP_SUPERCONDUCTORS)) {
-        energyProductionBug = false;
-      } else {
-        if (this.expansions.pathfinders === false && !this.includedCards.includes(CardName.HIGH_TEMP_SUPERCONDUCTORS)) {
-          energyProductionBug = false;
-        }
-      }
-
-      if (energyProductionBug === true) {
-        const confirm = window.confirm(translateText(
-          'It is possible with ThorGate, Standard Technology, Suitable Infrastructure, and High Temp. Superconductors for a player to have infinite energy production. Press OK to continue or Cancel to change your selections.'));
-        if (confirm === false) {
-          return undefined;
-        }
-      }
-
-      // Check custom corp count
-      if (customCorporations.length > 0) {
-        let neededCorpsCount = players.length * startingCorporations;
-        if (REVISED_COUNT_ALGORITHM) {
-          if (this.twoCorpsVariant) {
-            // Add an additional 4 for the Merger prelude
-            // Everyone-Merger needs an additional 4 corps per player
-            //  NB: This will not cover the case when no custom corp list is set!
-            //  It _can_ come about if  the number of corps included in all expansions is still not enough.
-            neededCorpsCount = (players.length * startingCorporations) + (players.length * 4);
-          } else {
-            neededCorpsCount = players.length * startingCorporations;
-            // Merger Prelude alone needs 4 additional preludes
-            if (this.expansions.prelude && this.expansions.promo) {
-              neededCorpsCount += 4;
-            }
-          }
-        }
-        if (customCorporations.length < neededCorpsCount) {
-          window.alert(translateTextWithParams('Must select at least ${0} corporations', [neededCorpsCount.toString()]));
-          return undefined;
-        }
-        let valid = true;
-        for (const corp of customCorporations) {
-          const card = getCard(corp);
-          for (const module of card?.compatibility ?? []) {
-            if (!this.expansions[module]) {
-              valid = false;
-            }
-          }
-        }
-        if (valid === false) {
-          const confirm = window.confirm(translateText(
-            'Some of the corps you selected need expansions you have not enabled. Using them might break your game. Press OK to continue or Cancel to change your selections.'));
-          if (confirm === false) {
-            return undefined;
-          }
-        }
-      } else {
-        customCorporations.length = 0;
-      }
-
-      // TODO(kberg): this is a direct copy of the code right above.
-      // Check custom prelude count
-      if (customPreludes.length > 0) {
-        const requiredPreludeCount = players.length * startingPreludes;
-        if (customPreludes.length < requiredPreludeCount) {
-          window.alert(translateTextWithParams('Must select at least ${0} Preludes', [requiredPreludeCount.toString()]));
-          return undefined;
-        }
-        let valid = true;
-        for (const prelude of customPreludes) {
-          const card = getCard(prelude);
-          for (const module of card?.compatibility ?? []) {
-            if (!this.expansions[module]) {
-              valid = false;
-            }
-          }
-        }
-        if (valid === false) {
-          const confirm = window.confirm(translateText(
-            'Some of the Preludes you selected need expansions you have not enabled. Using them might break your game. Press OK to continue or Cancel to change your selections.'));
-          if (confirm === false) {
-            return undefined;
-          }
-        }
-      } else {
-        customPreludes.length = 0;
-      }
-
-      // Check custom CEO count. The server deals at least CEO_CARDS_DEALT_PER_PLAYER CEOs to each player.
-      if (customCeos.length > 0) {
-        const requiredCeoCount = players.length * Math.max(startingCeos, constants.CEO_CARDS_DEALT_PER_PLAYER);
-        if (customCeos.length < requiredCeoCount) {
-          window.alert(translateTextWithParams('Must select at least ${0} CEOs', [requiredCeoCount.toString()]));
-          return undefined;
-        }
-      }
 
       // Clone game checks
       if (this.clonedGameId !== undefined && this.seededGame) {
@@ -1341,68 +1238,24 @@ export default defineComponent({
         clonedGamedId = undefined;
       }
 
+      const config = this.newGameConfig;
       return {
+        ...config,
         players,
-        expansions: this.expansions,
-        draftVariant,
-        showOtherPlayersVP,
-        customCorporationsList: customCorporations,
-        customColoniesList: customColonies,
-        customCeos: customCeos,
-        customPreludes,
-        bannedCards,
-        includedCards,
-        board,
-        seed,
-        solarPhaseOption,
-        aresExtremeVariant: this.aresExtremeVariant,
-        politicalAgendasExtension: politicalAgendasExtension,
-        undoOption,
-        showTimers,
-        fastModeOption,
-        removeNegativeGlobalEventsOption,
-        includeFanMA,
-        modularMA: this.modularMA,
-        startingCorporations,
-        soloTR,
         clonedGamedId,
-        initialDraft,
-        preludeDraftVariant: this.preludeDraftVariant ?? false,
-        ceosDraftVariant: this.ceosDraftVariant ?? false,
-        randomMA,
-        shuffleMapOption,
-        // beginnerOption,
-        randomFirstPlayer,
-        requiresVenusTrackCompletion,
-        requiresMoonTrackCompletion: this.requiresMoonTrackCompletion,
-        moonStandardProjectVariant: this.moonStandardProjectVariant,
-        moonStandardProjectVariant1: this.moonStandardProjectVariant1,
-        altVenusBoard: this.altVenusBoard,
-        escapeVelocity: this.escapeVelocityMode ?
-          sanitizeEscapeVelocityOptions({
-            thresholdMinutes: this.escapeVelocityThreshold,
-            bonusSectionsPerAction: this.escapeVelocityBonusSeconds,
-            penaltyPeriodMinutes: this.escapeVelocityPeriod,
-            penaltyVPPerPeriod: this.escapeVelocityPenalty,
-          }) : undefined,
-        twoCorpsVariant,
-        startingCeos,
-        startingPreludes,
-        automaOption: this.automaOption,
-        automaDifficulty: this.automaDifficulty,
-        automaCorpOption: this.automaCorpOption,
-        automaTurmoilTRReduction: this.automaTurmoilTRReduction,
-        automaTurmoilSetupDelegates: this.automaTurmoilSetupDelegates,
-        automaNoGenerationLimit: this.automaNoGenerationLimit,
+        escapeVelocity: config.escapeVelocity === undefined ? undefined : sanitizeEscapeVelocityOptions(config.escapeVelocity),
       };
     },
     async createGame() {
+      if (this.hasBlockingValidationErrors) {
+        return;
+      }
       const newGameConfig = await this.serializeSettings();
 
       if (newGameConfig === undefined) {
         return;
       }
-      createGameSettingsStorage.saveSettings(newGameConfig);
+      createGameSettingsStorage.save(newGameConfig);
       const onSuccess = (json: any) => {
         if (json.players.length === 1) {
           window.location.href = 'player?id=' + json.players[0].id;

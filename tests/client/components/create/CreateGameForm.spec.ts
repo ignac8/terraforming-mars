@@ -2,7 +2,7 @@ import {mount, shallowMount} from '@vue/test-utils';
 import {globalConfig} from '../getLocalVue';
 import {expect} from 'chai';
 import CreateGameForm from '@/client/components/create/CreateGameForm.vue';
-import {CreateGameSettingsStorage} from '@/client/components/create/CreateGameSettingsStorage';
+import {createGameSettingsStorage} from '@/client/components/create/createGameSettingsStorage';
 import {FakeLocalStorage} from '../FakeLocalStorage';
 import {BoardName} from '@/common/boards/BoardName';
 import {DEFAULT_EXPANSIONS} from '@/common/cards/GameModule';
@@ -11,6 +11,8 @@ import {defineComponent} from 'vue';
 import {NewGameConfig} from '@/common/game/NewGameConfig';
 import {CardName} from '@/common/cards/CardName';
 import {CreateGameModel} from '@/client/components/create/CreateGameModel';
+import {ValidationErrors} from '@/common/game/validateNewGameConfig';
+import {ColonyName} from '@/common/colonies/ColonyName';
 
 // Minimal serialized Create Game payload used by settings restore tests.
 function createNewGameConfig(overrides: JSONObject = {}):  NewGameConfig {
@@ -39,30 +41,16 @@ function cardNames(count: number): Array<CardName> {
 }
 
 /*
- * Serializes a two-player game's settings after `setup` adjusts the form.
- *
- * Accepts every confirmation and collects every alert.
+ * Returns the validation errors for a two-player game after `setup` adjusts the form.
  */
-async function serializeTwoPlayerGameSettings(setup: (model: CreateGameModel) => void): Promise<{config: NewGameConfig | undefined, alerts: Array<string>}> {
-  const originalAlert = global.alert;
-  const originalConfirm = global.confirm;
-  const alerts: Array<string> = [];
-  global.alert = ((message: string) => alerts.push(message)) as typeof alert;
-  global.confirm = (() => true) as typeof confirm;
-
-  try {
-    const wrapper = shallowMount(CreateGameForm, {
-      ...globalConfig,
-    });
-    const model = wrapper.vm as unknown as CreateGameModel;
-    model.playersCount = 2;
-    setup(model);
-    const config = await (wrapper.vm as any).serializeSettings();
-    return {config, alerts};
-  } finally {
-    global.alert = originalAlert;
-    global.confirm = originalConfirm;
-  }
+function validateTwoPlayerGame(setup: (model: CreateGameModel) => void): ValidationErrors {
+  const wrapper = shallowMount(CreateGameForm, {
+    ...globalConfig,
+  });
+  const model = wrapper.vm as unknown as CreateGameModel;
+  model.playersCount = 2;
+  setup(model);
+  return (wrapper.vm as any).validationErrors;
 }
 
 describe('CreateGameForm', () => {
@@ -103,6 +91,102 @@ describe('CreateGameForm', () => {
     expect(vm.expansions.ceo).to.be.false;
   });
 
+  it('offers skipping MarsBot\'s corporation at final greeneries, off by default', () => {
+    const wrapper = shallowMount(CreateGameForm, {...globalConfig});
+    const vm = wrapper.vm as any;
+
+    expect(wrapper.find('#automa-final-greenery-no-corp-checkbox').exists()).to.be.true;
+    expect(vm.newGameConfig.automaFinalGreeneryNoCorpEffects).to.be.false;
+    vm.automaFinalGreeneryNoCorpEffects = true;
+    expect(vm.newGameConfig.automaFinalGreeneryNoCorpEffects).to.be.true;
+  });
+
+  it('offers MarsBot colony VP only with Colonies, off by default', async () => {
+    const wrapper = shallowMount(CreateGameForm, {...globalConfig});
+    const vm = wrapper.vm as any;
+
+    expect(vm.automaColonyVP).to.be.false;
+    expect(wrapper.find('#automa-colony-vp-checkbox').exists()).to.be.true;
+
+    vm.expansions.colonies = false;
+    await vm.$nextTick();
+    expect(wrapper.find('#automa-colony-vp-checkbox').exists()).to.be.false;
+  });
+
+  it('sends MarsBot colony VP only when it is on and Colonies are in the game', async () => {
+    const wrapper = shallowMount(CreateGameForm, {...globalConfig});
+    const vm = wrapper.vm as any;
+
+    expect(vm.newGameConfig.automaColonyVP).to.be.false;
+    vm.automaColonyVP = true;
+    expect(vm.newGameConfig.automaColonyVP).to.be.true;
+    vm.expansions.colonies = false;
+    expect(vm.newGameConfig.automaColonyVP).to.be.false;
+  });
+
+  it('groups the MarsBot options under Multiplayer Options, solo only', async () => {
+    const wrapper = shallowMount(CreateGameForm, {...globalConfig});
+    const vm = wrapper.vm as any;
+    const stackHeadings = () => wrapper.findAll('.create-game-page-column-stack > .create-game-page-column > h4').map((h) => h.text());
+
+    expect(stackHeadings()).to.deep.eq(['Multiplayer Options', 'MarsBot Options']);
+    const column = wrapper.findAll('.create-game-page-column').find((c) => c.find('h4').text() === 'MarsBot Options');
+    for (const id of ['automa-checkbox', 'automa-difficulty', 'automa-corp-checkbox', 'automa-no-generation-limit-checkbox',
+      'automa-final-greenery-no-corp-checkbox', 'automa-colony-vp-checkbox', 'automa-turmoil-tr', 'automa-turmoil-delegates']) {
+      expect(column?.find('#' + id).exists(), id).to.be.true;
+    }
+
+    // Solo without MarsBot hides Multiplayer Options, but the MarsBot switch stays.
+    vm.automaOption = false;
+    await vm.$nextTick();
+    expect(stackHeadings()).to.deep.eq(['MarsBot Options']);
+
+    vm.playersCount = 2;
+    await vm.$nextTick();
+    expect(stackHeadings()).to.deep.eq(['Multiplayer Options']);
+  });
+
+  it('Easiest sets every MarsBot option to its easiest value', () => {
+    const wrapper = shallowMount(CreateGameForm, {...globalConfig});
+    const vm = wrapper.vm as any;
+
+    expect(vm.automaDifficultyChoice).to.eq('normal');
+    vm.automaDifficultyChoice = 'easiest';
+    expect(vm.automaDifficulty).to.eq('easy');
+    expect(vm.automaCorpOption).to.be.false;
+    expect(vm.automaNoGenerationLimit).to.be.true;
+    expect(vm.automaFinalGreeneryNoCorpEffects).to.be.true;
+    expect(vm.automaColonyVP).to.be.false;
+    expect(vm.automaTurmoilTRReduction).to.eq(10);
+    expect(vm.automaTurmoilSetupDelegates).to.eq(0);
+    expect(vm.automaDifficultyChoice).to.eq('easiest');
+
+    // Changing any one option leaves the preset, and the dropdown shows the plain difficulty again.
+    vm.automaCorpOption = true;
+    expect(vm.automaDifficultyChoice).to.eq('easy');
+  });
+
+  it('Hardest sets every MarsBot option to its hardest value', () => {
+    const wrapper = shallowMount(CreateGameForm, {...globalConfig});
+    const vm = wrapper.vm as any;
+
+    vm.automaDifficultyChoice = 'hardest';
+    expect(vm.automaDifficulty).to.eq('brutal');
+    expect(vm.automaCorpOption).to.be.true;
+    expect(vm.automaNoGenerationLimit).to.be.false;
+    expect(vm.automaFinalGreeneryNoCorpEffects).to.be.false;
+    expect(vm.automaColonyVP).to.be.true;
+    expect(vm.automaTurmoilTRReduction).to.eq(7);
+    expect(vm.automaTurmoilSetupDelegates).to.eq(2);
+    expect(vm.automaDifficultyChoice).to.eq('hardest');
+
+    // A plain difficulty changes only the difficulty.
+    vm.automaDifficultyChoice = 'hard';
+    expect(vm.automaDifficulty).to.eq('hard');
+    expect(vm.automaTurmoilSetupDelegates).to.eq(2);
+    expect(vm.automaDifficultyChoice).to.eq('hard');
+  });
+
   it('default (automa-on) state disables options incompatible with automa', () => {
     const wrapper = shallowMount(CreateGameForm, {...globalConfig});
     const vm = wrapper.vm as any;
@@ -116,6 +200,20 @@ describe('CreateGameForm', () => {
     expect(vm.showColoniesList).to.be.false;
     expect(vm.customColonies).to.deep.equal([]);
     expect(vm.solarPhaseOption).to.be.false;
+  });
+
+  it('lets the board selector offer only MarsBot boards while automa is on', async () => {
+    const wrapper = shallowMount(CreateGameForm, {...globalConfig});
+    const vm = wrapper.vm as any;
+    const isBoardDisabled = wrapper.findComponent({name: 'BoardSelector'}).props('isBoardDisabled');
+
+    expect(isBoardDisabled(BoardName.HELLAS)).is.false;
+    expect(isBoardDisabled(BoardName.ARABIA_TERRA)).is.true;
+    expect(isBoardDisabled(BoardName.AMAZONIS_PLANITIA)).is.true;
+
+    vm.automaOption = false;
+    await vm.$nextTick();
+    expect(isBoardDisabled(BoardName.ARABIA_TERRA)).is.false;
   });
 
   it('enabling automa disables fan-made expansions and force-offs incompatible options', async () => {
@@ -184,7 +282,7 @@ describe('CreateGameForm', () => {
   });
 
   it('restores the last saved game settings on load', async () => {
-    new CreateGameSettingsStorage(localStorage).saveSettings(createNewGameConfig({
+    createGameSettingsStorage.save(createNewGameConfig({
       expansions: {...DEFAULT_EXPANSIONS, venus: true},
     }));
 
@@ -207,7 +305,7 @@ describe('CreateGameForm', () => {
     process.env.TM_MARSBOT_ONLY = '1';
     try {
       // Two players, MarsBot off: the saved settings must not win over the switch.
-      new CreateGameSettingsStorage(localStorage).saveSettings(createNewGameConfig({automaOption: false}));
+      createGameSettingsStorage.save(createNewGameConfig({automaOption: false}));
 
       const wrapper = shallowMount(CreateGameForm, {...globalConfig});
       await wrapper.vm.$nextTick();
@@ -216,14 +314,14 @@ describe('CreateGameForm', () => {
       expect(vm.playersCount).eq(1);
       expect(vm.automaOption).eq(true);
       expect(wrapper.find('.create-game').classes()).to.include('create-game--marsbot-only');
-      // Nothing to choose from: no player count, no MarsBot toggle, no board, no first player.
+      // Nothing to choose from: no player count, no MarsBot toggle, no first player.
       expect(wrapper.findAll('input[name="playersCount"]')).has.length(0);
       expect(wrapper.find('#automa-checkbox').exists()).eq(false);
-      expect(wrapper.findAll('input[name="board"]')).has.length(0);
       expect(wrapper.findAll('input[name="firstIndex"]')).has.length(0);
       expect(wrapper.find('.discord-invite').exists()).eq(false);
-      // What MarsBot itself allows stays: its difficulty, draft, undo.
+      // What MarsBot itself allows stays: its difficulty, the board (MarsBot plays several maps), draft, undo.
       expect(wrapper.find('#automa-difficulty').exists()).eq(true);
+      expect(wrapper.findComponent({name: 'BoardSelector'}).exists()).eq(true);
       expect(wrapper.find('#draft-checkbox').exists()).eq(true);
       expect(wrapper.find('#undo-checkbox').exists()).eq(true);
 
@@ -256,7 +354,7 @@ describe('CreateGameForm', () => {
       alerts.push({title, message});
     };
 
-    new CreateGameSettingsStorage(localStorage).saveSettings(createNewGameConfig({
+    createGameSettingsStorage.save(createNewGameConfig({
       customPreludes: ['Bad Prelude Name'],
     }));
 
@@ -270,8 +368,7 @@ describe('CreateGameForm', () => {
   });
 
   it('resets the form and clears saved settings', async () => {
-    const settingsStorage = new CreateGameSettingsStorage(localStorage);
-    settingsStorage.saveSettings(createNewGameConfig());
+    createGameSettingsStorage.save(createNewGameConfig());
 
     const wrapper = shallowMount(CreateGameForm, {
       ...globalConfig,
@@ -285,7 +382,7 @@ describe('CreateGameForm', () => {
 
     expect((wrapper.vm as any).board).eq(BoardName.THARSIS);
     expect((wrapper.vm as any).draftVariant).eq(true);
-    expect(settingsStorage.loadSettings()).eq(undefined);
+    expect(createGameSettingsStorage.load()).eq(undefined);
     expect(wrapper.findAllComponents({name: 'AppButton'}).map((button) => button.props('title'))).includes('Reset');
   });
 
@@ -321,7 +418,7 @@ describe('CreateGameForm', () => {
 
       await (wrapper.vm as any).createGame();
 
-      const savedSettings = new CreateGameSettingsStorage(localStorage).loadSettings();
+      const savedSettings = createGameSettingsStorage.load();
       expect(savedSettings?.board).eq(BoardName.ELYSIUM);
       expect((savedSettings?.players as Array<{name: string}>).map((player) => player.name)).deep.eq(['Alice', 'Bob']);
     } finally {
@@ -329,61 +426,43 @@ describe('CreateGameForm', () => {
       global.alert = originalAlert;
     }
   });
-  it('requires enough custom corporations for every player', async () => {
-    const tooFew = await serializeTwoPlayerGameSettings((model) => model.customCorporations = cardNames(3));
-    expect(tooFew.config).is.undefined;
-    expect(tooFew.alerts).deep.eq(['Must select at least 4 corporations']);
-
-    const enough = await serializeTwoPlayerGameSettings((model) => model.customCorporations = cardNames(4));
-    expect(enough.config?.customCorporationsList).has.length(4);
-    expect(enough.alerts).is.empty;
+  it('validates the form settings', () => {
+    expect(validateTwoPlayerGame((model) => model.customCorporations = cardNames(3)).notEnoughCorporations).eq(4);
+    expect(validateTwoPlayerGame((model) => model.customCorporations = cardNames(4)).notEnoughCorporations).eq(0);
   });
 
-  it('requires enough custom preludes for every player', async () => {
-    const tooFew = await serializeTwoPlayerGameSettings((model) => model.customPreludes = cardNames(7));
-    expect(tooFew.config).is.undefined;
-    expect(tooFew.alerts).deep.eq(['Must select at least 8 Preludes']);
-
-    const enough = await serializeTwoPlayerGameSettings((model) => model.customPreludes = cardNames(8));
-    expect(enough.config?.customPreludes).has.length(8);
-    expect(enough.alerts).is.empty;
+  it('ignores unknown colony names when validating', () => {
+    const errors = validateTwoPlayerGame((model) => model.customColonies = ['Unknown Colony' as ColonyName]);
+    expect(errors.coloniesMissingExpansions).deep.eq([]);
   });
 
-  it('requires enough custom CEOs for every player', async () => {
-    const tooFew = await serializeTwoPlayerGameSettings((model) => model.customCeos = cardNames(5));
-    expect(tooFew.config).is.undefined;
-    expect(tooFew.alerts).deep.eq(['Must select at least 6 CEOs']);
-
-    const enough = await serializeTwoPlayerGameSettings((model) => model.customCeos = cardNames(6));
-    expect(enough.config?.customCeos).has.length(6);
-    expect(enough.alerts).is.empty;
-  });
-
-  it('requires enough custom CEOs for more than the minimum starting CEOs', async () => {
-    const tooFew = await serializeTwoPlayerGameSettings((model) => {
-      model.startingCeos = 4;
-      model.customCeos = cardNames(7);
+  it('disables Create game when there is a blocking error', async () => {
+    const wrapper = shallowMount(CreateGameForm, {
+      ...globalConfig,
     });
-    expect(tooFew.config).is.undefined;
-    expect(tooFew.alerts).deep.eq(['Must select at least 8 CEOs']);
-  });
+    const createGameButton = () => wrapper.findAllComponents({name: 'AppButton'}).find((button) => button.props('title') === 'Create game');
+    expect(createGameButton()?.props('disabled')).is.false;
+    expect(wrapper.find('.create-game-custom-preludes-warning').exists()).is.false;
 
-  it('requires the minimum number of custom CEOs even with fewer starting CEOs', async () => {
-    const tooFew = await serializeTwoPlayerGameSettings((model) => {
-      model.startingCeos = 1;
-      model.customCeos = cardNames(5);
-    });
-    expect(tooFew.config).is.undefined;
-    expect(tooFew.alerts).deep.eq(['Must select at least 6 CEOs']);
+    (wrapper.vm as any).playersCount = 2;
+    (wrapper.vm as any).customCorporations = cardNames(3);
+    await wrapper.vm.$nextTick();
+
+    expect(createGameButton()?.props('disabled')).is.true;
+    expect(wrapper.find('.create-game-custom-preludes-warning').exists()).is.true;
   });
 
   it('replaces a cleared escape velocity field with its default', async () => {
-    const {config} = await serializeTwoPlayerGameSettings((model) => {
-      model.escapeVelocityMode = true;
-      model.escapeVelocityThreshold = 35;
-      // A cleared number input binds as an empty string.
-      model.escapeVelocityPeriod = '' as unknown as number;
+    const wrapper = shallowMount(CreateGameForm, {
+      ...globalConfig,
     });
+    const model = wrapper.vm as unknown as CreateGameModel;
+    model.playersCount = 2;
+    model.escapeVelocityMode = true;
+    model.escapeVelocityThreshold = 35;
+    // A cleared number input binds as an empty string.
+    model.escapeVelocityPeriod = '' as unknown as number;
+    const config: NewGameConfig | undefined = await (wrapper.vm as any).serializeSettings();
     expect(config?.escapeVelocity).deep.eq({
       thresholdMinutes: 35,
       bonusSectionsPerAction: 2,

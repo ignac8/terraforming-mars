@@ -24,6 +24,31 @@ export type MarsBotTrackCube = {
   cubeType: CubeType;
 };
 
+/**
+ * A corp cube printed on the track of a tag (Aridor's "Jovian track #6"), wherever that tag's
+ * track sits on the map's MarsBot board.
+ */
+export type MarsBotTagTrackCube = {
+  trackTag: Tag;
+  position: number;
+  cubeType: CubeType;
+};
+
+/**
+ * The corp's cubes on this board: tag-named cubes go to the track that carries the tag, and cubes
+ * on a track the board lacks (Venus without Venus Next) are left out.
+ */
+export function corpTrackCubes(corp: IMarsBotCorp, marsBotBoard: MarsBotBoard): Array<MarsBotTrackCube> {
+  const cubes: Array<MarsBotTrackCube> = [];
+  for (const cube of corp.trackCubes ?? []) {
+    const trackIndex = 'trackTag' in cube ? marsBotBoard.tagToTrack[cube.trackTag] : cube.trackIndex;
+    if (trackIndex !== undefined && trackIndex < marsBotBoard.tracks.length) {
+      cubes.push({trackIndex, position: cube.position, cubeType: cube.cubeType});
+    }
+  }
+  return cubes;
+}
+
 /** Corp state key, set to 1 once the corp's `actionDeckBonusCard` removed itself from the game. */
 export const ACTION_DECK_BONUS_CARD_REMOVED = 'actionDeckBonusCardRemoved';
 
@@ -56,8 +81,8 @@ export type IMarsBotCorp = {
    * Once its removal condition removes it (Vitor's Overachievement), it stays out of the game.
    */
   readonly actionDeckBonusCard?: BonusCardId;
-  /** Cubes seeded onto the bot's board tracks during setup. */
-  readonly trackCubes?: ReadonlyArray<MarsBotTrackCube>;
+  /** Cubes seeded onto the bot's board tracks during setup. Read them through corpTrackCubes. */
+  readonly trackCubes?: ReadonlyArray<MarsBotTrackCube | MarsBotTagTrackCube>;
   /**
    * True when the corp's cubes trigger on every advance onto their space, not only the first.
    *
@@ -78,6 +103,14 @@ export type MarsBotCorpEffect = {
    * a card instead of the temperature step under them), and the icon is then left unresolved.
    */
   onTrackCubeTrigger?(bot: IMarsBot, trackIndex: number, position: number, cubeType: CubeType): boolean | void;
+  /**
+   * The bot's track reached `position` and that space finished resolving, its icon included.
+   *
+   * Not called when the track moves back onto a space it regressed from.
+   */
+  afterTrackSpaceResolved?(bot: IMarsBot, trackIndex: number, position: number): void;
+  /** The bot resolved a tag, on a project card or as one of its corp's starting tags. */
+  onTagResolved?(bot: IMarsBot, tag: Tag): void;
   /** The bot drew and resolved a project card. */
   onProjectCardResolved?(bot: IMarsBot, card: IProjectCard): void;
   /** The human player played a card. */
@@ -90,7 +123,7 @@ export type MarsBotCorpEffect = {
   interceptGlobalParameterRaise?(bot: IMarsBot, parameter: GlobalParameter): boolean;
   /** The bot's M€ supply just grew by this amount. */
   onMcGained?(bot: IMarsBot, amount: number): void;
-  /** Fired when MarsBot places a colony on any tile (Colonies rule C-33). */
+  /** Either player built a colony (Poseidon, C33). */
   onColonyPlaced?(bot: IMarsBot): void;
   /** The bot took a Failed Action, after gaining its M€ for it. */
   onFailedAction?(bot: IMarsBot): void;
@@ -113,12 +146,18 @@ export interface IMarsBot {
 
   /** The bot's M€ pool. */
   megacredits: number;
+  /** The M€ a Failed Action pays at the game's difficulty. */
+  readonly failedActionMc: number;
+  /** M€ that Government Intervention lets the bot keep. Undefined outside Government Intervention. */
+  mcKeptThroughIntervention: number | undefined;
   /** Floaters in the bot's floater pool, which it uses with Venus Next. */
   readonly floaters: number;
   /** Project cards the bot has drawn and resolved, in the order it played them. */
   readonly playedProjectCards: ReadonlyArray<IProjectCard>;
   /** How many times the bot has raised the temperature. */
   readonly temperatureRaises: number;
+  /** How many bonus cards have been destroyed while the bot resolved them. */
+  readonly destroyedBonusCards: number;
   /**
    * Adds floaters to the bot's floater pool with Venus Next.
    *
@@ -131,19 +170,30 @@ export interface IMarsBot {
   gainMc(amount: number): void;
   /** Positive steps raise the bot's TR, negative steps lower it. */
   raiseTR(steps: number): void;
+  /** Advances a track and resolves the space it reaches. Does nothing once the game has ended. */
   advanceTrack(trackIndex: number): void;
 
   /**
    * Draws the top project card and resolves it as a bot action. The deck reshuffles its
-   * discard pile when it runs out, so the bot does nothing only when both piles are empty.
+   * discard pile when it runs out, so the bot does nothing only when both piles are empty, or
+   * once the game has ended.
    */
   maybeDrawAndResolveProjectCard(): void;
-  /** Same, but the card's first n tags are ignored while resolving. */
-  maybeDrawAndResolveProjectCardIgnoringFirstNTags(n: number): void;
-  /** Draws the top bonus card and resolves it. Does nothing when both bonus piles are empty. */
+  /** Same, but only the card's first tag resolves: the others are ignored. */
+  maybeDrawAndResolveProjectCardFirstTagOnly(): void;
+  /**
+   * Draws the top bonus card and resolves it. Does nothing when both bonus piles are empty, or
+   * once the game has ended.
+   */
   maybeDrawAndResolveBonusCard(): void;
   /** Draws the top bonus card and shuffles it into the action deck. Does nothing when both bonus piles are empty. */
   maybeMoveBonusCardToActionDeck(): void;
+
+  /**
+   * Takes the bonus card dealt at setup out of the action deck and shuffles it back into the bonus
+   * deck's draw pile. The expansion cards set aside for the action deck stay (UNMI, C12).
+   */
+  returnSetupBonusCardToBonusDeck(): void;
 
   /** Draws project cards and shuffles them into the bot's action deck. */
   drawProjectCardsToActionDeck(count: number): void;
@@ -163,7 +213,10 @@ export interface IMarsBot {
    * The other revealed cards are discarded.
    */
   addProjectCardsToBonusDeck(tag: Tag, count: number): void;
-  /** Removes a bonus card from the bonus deck and from the action deck. */
+  /**
+   * Removes a bonus card from the bonus deck and from the action deck, for a corp's setup. When it
+   * was the bonus card dealt at setup, the bonus deck deals a replacement into the action deck.
+   */
   removeBonusCard(bonusCardId: BonusCardId): void;
   /** Resolves a bonus card's effect right away, outside the action deck. The card is not discarded. */
   resolveBonusCard(bonusCardId: BonusCardId): void;
@@ -185,8 +238,11 @@ export interface IMarsBot {
    */
   maybeFundAward(): boolean;
 
-  /** Raises the temperature. The steps it actually moves count toward `temperatureRaises`. */
-  raiseTemperature(steps: 1 | 2 | 3): void;
+  /**
+   * Raises the temperature for a corp effect. The steps it actually moves count toward
+   * `temperatureRaises`. Unlike a track icon, a maxed temperature does nothing, with no Failed Action.
+   */
+  raiseTemperature(steps: 1 | 2): void;
   placeOcean(): void;
   placeCity(): void;
   placeGreenery(): void;

@@ -9,6 +9,8 @@ import {TileType} from '../../src/common/TileType';
 import {Phase} from '../../src/common/Phase';
 import {Algae} from '../../src/server/cards/base/Algae';
 import {SearchForLife} from '../../src/server/cards/base/SearchForLife';
+import {Ants} from '../../src/server/cards/base/Ants';
+import {NuclearZone} from '../../src/server/cards/base/NuclearZone';
 import {IProjectCard} from '../../src/server/cards/IProjectCard';
 
 function createAutomaGame(difficulty: 'easy' | 'normal' | 'hard' | 'brutal' = 'normal'): {game: IGame, human: TestPlayer, marsBot: MarsBot} {
@@ -37,6 +39,17 @@ describe('MarsBot Limitations Fixed', () => {
       const marsBotVal = marsBot.turnResolver.getMarsBotAwardValue(thermalist);
       expect(marsBotVal).to.eq(8);
       // Human standard getScore = 2 (just heat), but for MarsBot comparison = 2 + 5 = 7
+    });
+
+    it('Thermalist comparison counts energy resources but not energy production (BGG 3350125)', () => {
+      const {game, human, marsBot} = createAutomaGame();
+      human.heat = 2;
+      human.energy = 3;
+      human.production.override({heat: 5, energy: 9, megacredits: 0, steel: 0, titanium: 0, plants: 0});
+
+      const thermalist = game.awards.find((a) => a.name === 'Thermalist')!;
+
+      expect(marsBot.turnResolver.getHumanAwardValueForComparison(thermalist)).to.eq(2 + 3 + 5);
     });
 
     it('Miner comparison includes human steel + titanium production', () => {
@@ -82,18 +95,32 @@ describe('MarsBot Limitations Fixed', () => {
       expect(marsBot.playedProjectCards.length).to.be.gte(0);
     });
 
-    it('hard mode scores 1 VP per card with non-negative VP', () => {
+    it('hard mode scores 1 VP per card with a non-negative VP icon', () => {
       const {game, marsBot} = createAutomaGame('hard');
 
-      // Manually add some cards to played list
-      // Algae has 0 VP (non-negative) → counts
-      // SearchForLife has special VP → counts (getVictoryPoints returns >= 0 with 0 resources)
-      marsBot.playedProjectCards.push(new Algae() as IProjectCard);
+      // A conditional icon (Ants, per animal) and a fixed one (Search for Life) both count
+      marsBot.playedProjectCards.push(new Ants() as IProjectCard);
       marsBot.playedProjectCards.push(new SearchForLife() as IProjectCard);
       (game as any).phase = Phase.END;
 
       const vp = marsBot.getVictoryPoints();
       expect(vp.cardVP).to.eq(2);
+    });
+
+    it('hard mode skips cards with no VP icon (BGG 3386410)', () => {
+      const {game, marsBot} = createAutomaGame('hard');
+      marsBot.playedProjectCards.push(new Algae() as IProjectCard);
+      (game as any).phase = Phase.END;
+
+      expect(marsBot.getVictoryPoints().cardVP).to.eq(0);
+    });
+
+    it('hard mode skips cards with a negative VP icon', () => {
+      const {game, marsBot} = createAutomaGame('hard');
+      marsBot.playedProjectCards.push(new NuclearZone() as IProjectCard);
+      (game as any).phase = Phase.END;
+
+      expect(marsBot.getVictoryPoints().cardVP).to.eq(0);
     });
 
     it('normal mode gives 0 card VP regardless of played cards', () => {
@@ -107,7 +134,7 @@ describe('MarsBot Limitations Fixed', () => {
 
     it('brutal mode also gets card VP', () => {
       const {game, marsBot} = createAutomaGame('brutal');
-      marsBot.playedProjectCards.push(new Algae() as IProjectCard);
+      marsBot.playedProjectCards.push(new SearchForLife() as IProjectCard);
       (game as any).phase = Phase.END;
 
       const vp = marsBot.getVictoryPoints();

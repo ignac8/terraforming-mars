@@ -8,6 +8,7 @@ import {MarsBotTurnResolver} from '../../src/server/automa/MarsBotTurnResolver';
 import {THARSIS_MARSBOT_BOARD} from '../../src/server/automa/boards/TharsisMarsBot';
 import {TileType} from '../../src/common/TileType';
 import {SpaceType} from '../../src/common/boards/SpaceType';
+import {ColonyName} from '../../src/common/colonies/ColonyName';
 
 describe('MarsBotScoring', () => {
   let game: IGame;
@@ -230,6 +231,61 @@ describe('MarsBotScoring', () => {
     it('no instant win at gen 19', () => {
       (game as any).generation = 19;
       expect(makeScoring().isInstantWin()).to.be.false;
+    });
+  });
+
+  // TDaver, BGG 3408751 and 3373832: the resources MarsBot has left on the Colonies shipping board,
+  // and its floaters on the Venus board, score half a VP each, rounded down
+  describe('Leftover resources VP (automaColonyVP)', () => {
+    function leftoverGame(options: {automaColonyVP?: boolean, coloniesExtension?: boolean, venusNextExtension?: boolean} = {}) {
+      const [game] = testGame(1, {automaOption: true, coloniesExtension: true, ...options});
+      return {game, bot: game.automaHooks!.marsBot};
+    }
+
+    it('scores 1 VP for every 2 resources left on the shipping board, rounded down', () => {
+      const expected = [[0, 0], [1, 0], [2, 1], [3, 1], [7, 3]];
+      for (const [cubes, vp] of expected) {
+        const {bot} = leftoverGame({automaColonyVP: true});
+        bot.shippingBoard.storage.set(ColonyName.CERES, Math.min(cubes, 4));
+        bot.shippingBoard.storage.set(ColonyName.LUNA, Math.max(0, cubes - 4));
+        expect(bot.getVictoryPoints().leftoverResourcesVP, `${cubes} resources`).to.eq(vp);
+      }
+    });
+
+    it('counts the floaters on the Venus board too', () => {
+      const {bot} = leftoverGame({automaColonyVP: true, venusNextExtension: true});
+      bot.shippingBoard.storage.set(ColonyName.CERES, 2);
+      bot.floaters = 3;
+      expect(bot.getVictoryPoints().leftoverResourcesVP).to.eq(2);
+    });
+
+    it('does not score MarsBot\'s colonies', () => {
+      const {game, bot} = leftoverGame({automaColonyVP: true});
+      for (let i = 0; i < 4; i++) {
+        game.colonies[i].colonies.push(bot.player.id);
+      }
+      expect(bot.getVictoryPoints().leftoverResourcesVP).to.eq(0);
+    });
+
+    it('adds to the total', () => {
+      const without = leftoverGame();
+      const withOption = leftoverGame({automaColonyVP: true});
+      for (const {bot} of [without, withOption]) {
+        bot.shippingBoard.storage.set(ColonyName.CERES, 4);
+      }
+      expect(withOption.bot.getVictoryPoints().total).to.eq(without.bot.getVictoryPoints().total + 2);
+    });
+
+    it('is off by default', () => {
+      const {bot} = leftoverGame();
+      bot.shippingBoard.storage.set(ColonyName.CERES, 4);
+      expect(bot.getVictoryPoints().leftoverResourcesVP).to.eq(0);
+    });
+
+    it('scores nothing without Colonies', () => {
+      const {bot} = leftoverGame({automaColonyVP: true, coloniesExtension: false, venusNextExtension: true});
+      bot.floaters = 4;
+      expect(bot.getVictoryPoints().leftoverResourcesVP).to.eq(0);
     });
   });
 

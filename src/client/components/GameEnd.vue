@@ -1,6 +1,6 @@
 <template>
   <div id="game-end" class="game_end_cont">
-      <h1 v-i18n>{{ constants.APP_NAME }} - Game finished!</h1>
+      <h1><HomeLink>{{ constants.APP_NAME }} - Game finished!</HomeLink></h1>
       <div class="game_end">
           <div v-if="isAutomaGame && game.marsBot">
               <div v-if="game.marsBot.instantWin" class="game_end_fail">
@@ -62,7 +62,7 @@
               </a>
             </div>
           </div>
-          <div v-if="!isAutomaGame && (!isSoloGame || game.isSoloModeWin)" class="game-end-winer-announcement">
+          <div v-if="!isAutomaGame && (!isSoloGame || game.isSoloModeWin)" class="game-end-winner-announcement">
               <span v-for="p in winners" :key="p.color"><span :class="'log-player ' + getEndGamePlayerRowColorClass(p.color)">{{ p.name }}</span></span> <span v-i18n>won!</span>
           </div>
           <div class="game_end_victory_points">
@@ -77,7 +77,7 @@
                           <th><div class="table-forest-tile"></div></th>
                           <th><div class="table-city-tile"></div></th>
                           <th v-if="game.moon !== undefined"><div class="table-moon-road-tile"></div></th>
-                          <th v-if="game.moon !== undefined"><div class="table-moon-colony-tile"></div></th>
+                          <th v-if="game.moon !== undefined"><div class="table-moon-habitat-tile"></div></th>
                           <th v-if="game.moon !== undefined"><div class="table-moon-mine-tile"></div></th>
                           <th v-if="game.pathfinders !== undefined"><div class="table-planetary-track"></div></th>
                           <th><div class="vp">VP</div></th>
@@ -127,7 +127,7 @@
                           <td v-if="game.moon !== undefined">-</td>
                           <td v-if="game.moon !== undefined">-</td>
                           <td v-if="game.pathfinders !== undefined">-</td>
-                          <td>{{game.marsBot.vpBreakdown.neuralInstance + game.marsBot.vpBreakdown.mcToVP + game.marsBot.vpBreakdown.vermin}}</td>
+                          <td>{{marsBotOtherVP}}</td>
                           <td v-if="game.gameOptions.escapeVelocity">-</td>
                           <td class="game-end-total">{{game.marsBot.vpBreakdown.total}}</td>
                           <td class="game-end-mc">{{game.marsBot.megacredits}}</td>
@@ -147,7 +147,7 @@
                 />
               <div class="game-end-flexrow">
                   <div v-for="p in playersInPlace" :key="p.color" class="game-end-column">
-                      <div class="game-end-winer-scorebreak-player-title">
+                      <div class="game-end-winner-scorebreak-player-title">
                           <div :class="'game-end-player ' + getEndGamePlayerRowColorClass(p.color)"><a :href="'player?id='+p.id+'&noredirect'">{{p.name}}</a></div>
                       </div>
                       <div v-for="v in p.victoryPointsBreakdown.detailsCards" :key="v.cardName">
@@ -180,24 +180,12 @@
                       </div>
                   </div>
                   <div v-if="isAutomaGame && game.marsBot?.vpBreakdown" class="game-end-column">
-                      <div class="game-end-winer-scorebreak-player-title">
+                      <div class="game-end-winner-scorebreak-player-title">
                           <div :class="'game-end-player ' + getEndGamePlayerRowColorClass(game.marsBot.color)">{{ game.marsBot.name }}</div>
                       </div>
-                      <div v-for="(v, i) in game.marsBot.vpBreakdown.detailsMilestones" :key="'m'+i">
-                        <div class="game-end-column-row">
-                          <div class="game-end-column-vp">{{v.victoryPoint}}</div>
-                          <div class="game-end-column-text">{{translateMilestoneDetails(v)}}</div>
-                        </div>
-                      </div>
-                      <div v-for="(v, i) in game.marsBot.vpBreakdown.detailsAwards" :key="'a'+i">
-                        <div class="game-end-column-row">
-                          <div class="game-end-column-vp">{{v.victoryPoint}}</div>
-                          <div class="game-end-column-text">{{translateAwardDetails(v)}}</div>
-                        </div>
-                      </div>
-                      <div class="game-end-column-row">
-                        <div class="game-end-column-vp">&nbsp;</div>
-                        <div class="game-end-column-text">&nbsp;</div>
+                      <div v-if="game.marsBot.vpBreakdown.turmoilVP" class="game-end-column-row">
+                        <div class="game-end-column-vp">{{game.marsBot.vpBreakdown.turmoilVP}}</div>
+                        <div class="game-end-column-text" v-i18n>Turmoil Points</div>
                       </div>
                       <div v-if="game.marsBot.vpBreakdown.neuralInstance > 0" class="game-end-column-row">
                         <div class="game-end-column-vp">{{game.marsBot.vpBreakdown.neuralInstance}}</div>
@@ -215,6 +203,30 @@
                         <div class="game-end-column-vp">{{game.marsBot.vpBreakdown.vermin}}</div>
                         <div class="game-end-column-text" v-i18n>Vermin</div>
                       </div>
+                      <div v-if="game.marsBot.vpBreakdown.leftoverResourcesVP" class="game-end-column-row">
+                        <div class="game-end-column-vp">{{game.marsBot.vpBreakdown.leftoverResourcesVP}}</div>
+                        <div class="game-end-column-text" v-i18n>Leftover resources</div>
+                      </div>
+                      <div v-if="game.marsBot.vpBreakdown.corpVP" class="game-end-column-row">
+                        <div class="game-end-column-vp">{{game.marsBot.vpBreakdown.corpVP}}</div>
+                        <div class="game-end-column-text"><span v-i18n>Corporation</span> ({{game.marsBot.corpName}})</div>
+                      </div>
+                      <div class="game-end-column-row">
+                        <div class="game-end-column-vp">&nbsp;</div>
+                        <div class="game-end-column-text">&nbsp;</div>
+                      </div>
+                      <div v-for="(v, i) in game.marsBot.vpBreakdown.detailsMilestones" :key="'m'+i">
+                        <div class="game-end-column-row">
+                          <div class="game-end-column-vp">{{v.victoryPoint}}</div>
+                          <div class="game-end-column-text">{{translateMilestoneDetails(v)}}</div>
+                        </div>
+                      </div>
+                      <div v-for="(v, i) in game.marsBot.vpBreakdown.detailsAwards" :key="'a'+i">
+                        <div class="game-end-column-row">
+                          <div class="game-end-column-vp">{{v.victoryPoint}}</div>
+                          <div class="game-end-column-text">{{translateAwardDetails(v)}}</div>
+                        </div>
+                      </div>
                   </div>
               </div>
           </div>
@@ -228,9 +240,9 @@
                           <th><div class="tile oxygen-tile"></div></th>
                           <th><div class="tile ocean-tile"></div></th>
                           <th v-if="game.gameOptions.expansions.venus"><div class="tile venus-tile"></div></th>
-                          <th v-if="game.gameOptions.expansions.moon"><div class="table-moon-colony-tile"></div></th>
-                          <th v-if="game.gameOptions.expansions.moon"><div class="table-moon-road-tile"></div></th>
+                          <th v-if="game.gameOptions.expansions.moon"><div class="table-moon-habitat-tile"></div></th>
                           <th v-if="game.gameOptions.expansions.moon"><div class="table-moon-mine-tile"></div></th>
+                          <th v-if="game.gameOptions.expansions.moon"><div class="table-moon-road-tile"></div></th>
                           <th><div class="game-end-total-column">Total</div></th>
                       </tr>
                   </thead>
@@ -242,8 +254,8 @@
                           <td>{{ data.oceans }}</td>
                           <td v-if="game.gameOptions.expansions.venus">{{ data.venus }}</td>
                           <td v-if="game.gameOptions.expansions.moon">{{ data.moonHabitat }}</td>
-                          <td v-if="game.gameOptions.expansions.moon">{{ data.moonLogistic }}</td>
                           <td v-if="game.gameOptions.expansions.moon">{{ data.moonMining }}</td>
+                          <td v-if="game.gameOptions.expansions.moon">{{ data.moonLogistic }}</td>
                           <td class="game-end-total">{{ data.total }}</td>
                       </tr>
                   </tbody>
@@ -302,6 +314,7 @@ import PlanetaryTracks from '@/client/components/pathfinders/PlanetaryTracks.vue
 import DeltaProjectBoard from '@/client/components/delta/DeltaProjectBoard.vue';
 import LogPanel from '@/client/components/logpanel/LogPanel.vue';
 import AppButton from '@/client/components/common/AppButton.vue';
+import HomeLink from '@/client/components/common/HomeLink.vue';
 import VictoryPointChart, {DataSet} from '@/client/components/gameend/VictoryPointChart.vue';
 import {playerColorClass} from '@/common/utils/utils';
 import {Timer} from '@/common/Timer';
@@ -368,6 +381,14 @@ export default defineComponent({
     },
     isAutomaGame(): boolean {
       return this.game.marsBot !== undefined;
+    },
+    /** Every MarsBot VP source that has no column of its own, so the row adds up to the total. */
+    marsBotOtherVP(): number {
+      const vp = this.game.marsBot?.vpBreakdown;
+      if (vp === undefined) {
+        return 0;
+      }
+      return vp.neuralInstance + vp.mcToVP + vp.cardVP + vp.vermin + vp.leftoverResourcesVP + vp.turmoilVP + vp.corpVP;
     },
     automaHumanWins(): boolean {
       if (!this.game.marsBot?.vpBreakdown) {
@@ -449,6 +470,7 @@ export default defineComponent({
     };
   },
   components: {
+    HomeLink,
     Board,
     LogPanel,
     AppButton,
@@ -487,7 +509,7 @@ export default defineComponent({
     translateAwardDetails(data: MADetail): string {
       if ( ! data.messageArgs || data.messageArgs.length < 3) {
         console.error( // data.message: ${0} place for ${1} award (funded by ${2})
-          `Award detail has not enought data.
+          `Award detail has not enough data.
           It must contain at least 3 arguments:
           1) a Player's place in the race for the award
           2) translatable Award name

@@ -10,6 +10,7 @@ import {AwardName, awardNames} from '../../common/ma/AwardName';
 import {synergies} from './MilestoneAwardSynergies';
 import {isCompatible, MAManifest} from './MAManifest';
 import {intersection} from '../../common/utils/utils';
+import {AutomaGameSetup} from '../automa/AutomaGameSetup';
 
 type DrawnMilestonesAndAwards = {
   milestones: Array<MilestoneName>,
@@ -79,6 +80,7 @@ export function chooseMilestonesAndAwards(gameOptions: GameOptions): DrawnMilest
     case BoardName.TERRA_CIMMERIA_NOVA:
     case BoardName.VASTITAS_BOREALIS:
     case BoardName.VASTITAS_BOREALIS_NOVA:
+    case BoardName.AMAZONIS_PLANITIA:
       push(milestoneManifest.boards[boardName], awardManifest.boards[gameOptions.boardName]);
       break;
     default:
@@ -113,6 +115,13 @@ export function chooseMilestonesAndAwards(gameOptions: GameOptions): DrawnMilest
   return drawnMilestonesAndAwards;
 }
 
+/** Boards with no volcanic spaces. Exported for tests. */
+export const BOARDS_WITHOUT_VOLCANIC_SPACES: ReadonlyArray<BoardName> = [
+  BoardName.HELLAS,
+  BoardName.UTOPIA_PLANITIA,
+  BoardName.HOLLANDIA,
+];
+
 /**
  * Return the list of possible milestones and awards for a given game. Only meant to work with random selection.
  *
@@ -121,10 +130,15 @@ export function chooseMilestonesAndAwards(gameOptions: GameOptions): DrawnMilest
  * exported for tests
  */
 export function getCandidates(gameOptions: GameOptions): [Array<MilestoneName>, Array<AwardName>] {
-  function include<T extends string>(name: T, manifest: MAManifest<T, any>): boolean {
+  function include<T extends string>(
+    name: T, manifest: MAManifest<T, any>, supportedByAutoma: (name: T, gameOptions: GameOptions) => boolean): boolean {
     // Never include deprecated MAs in random candidates.  They generally have "more official" versions that will be
     // considered for inclusion.
     if (manifest.all[name].deprecated) {
+      return false;
+    }
+    // Against MarsBot, deal only what the automa rules support
+    if (gameOptions.automaOption && !supportedByAutoma(name, gameOptions)) {
       return false;
     }
 
@@ -133,7 +147,9 @@ export function getCandidates(gameOptions: GameOptions): [Array<MilestoneName>, 
       if (random === undefined) {
         return false;
       }
-      // TODO(kberg): Exclude Geologist if the board has no volcanic spaces
+      if (name === 'Geologist' && BOARDS_WITHOUT_VOLCANIC_SPACES.includes(gameOptions.boardName)) {
+        return false;
+      }
     } else {
       // The game boards this MA appears in, if any.
       const boards = Object.values(BoardName).filter((boardName) => manifest.boards[boardName].includes(name));
@@ -159,8 +175,8 @@ export function getCandidates(gameOptions: GameOptions): [Array<MilestoneName>, 
     return true;
   }
 
-  const candidateMilestones = milestoneNames.filter((name) => include(name, milestoneManifest));
-  const candidateAwards = awardNames.filter((name) => include(name, awardManifest));
+  const candidateMilestones = milestoneNames.filter((name) => include(name, milestoneManifest, AutomaGameSetup.supportsMilestone));
+  const candidateAwards = awardNames.filter((name) => include(name, awardManifest, AutomaGameSetup.supportsAward));
 
   return [candidateMilestones, candidateAwards];
 }

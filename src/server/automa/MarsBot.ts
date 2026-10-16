@@ -3,6 +3,7 @@ import {IPlayer} from '../IPlayer';
 import {IProjectCard} from '../cards/IProjectCard';
 import {Resource} from '../../common/Resource';
 import {GlobalParameter} from '../../common/GlobalParameter';
+import * as constants from '../../common/constants';
 import {CardName} from '../../common/cards/CardName';
 import {newCard} from '../createCard';
 import {DifficultyLevel, BonusCardId, TrackDefinition, getAutomaMaxGeneration} from '../../common/automa/AutomaTypes';
@@ -62,6 +63,15 @@ export class MarsBot implements IMarsBot {
   /** Whether MarsBot goes first this generation (alternates each gen, human first in gen 1). */
   public goesFirst: boolean = false;
 
+  /**
+   * Whether the corp's "before the action phase" box still waits for the player's preludes.
+   * Generation 1 only: later generations resolve it as the action phase starts.
+   */
+  public beforeActionPhasePending: boolean = false;
+
+  /** The last generation whose first-turn milestone check (Hard mode) has run. */
+  public firstTurnCheckedGeneration: number = 0;
+
   /** Cards MarsBot has played (for Hard mode VP scoring). */
   public playedProjectCards: Array<IProjectCard> = [];
 
@@ -80,10 +90,13 @@ export class MarsBot implements IMarsBot {
   /** Number of times MarsBot raised temperature (for Thawer milestone). */
   public temperatureRaises: number = 0;
 
-  /** Whether colony cubes are placed (Pioneer4/Constructor in game). */
+  /** Number of bonus cards destroyed while resolving (for the Land Specialist milestone). */
+  public destroyedBonusCards: number = 0;
+
+  /** Whether colony cubes are placed (modular Pioneer/Constructor in game). */
   public hasColonyCubes: boolean = false;
 
-  /** Colony cube positions (set by AutomaGameSetup when Pioneer4/Constructor in game). */
+  /** Colony cube positions (set by AutomaGameSetup when modular Pioneer/Constructor in game). */
   public colonyCubePositions: Set<string> = new Set();
 
   /** Corp-specific state (M€ on card, resources, cubes, etc.). */
@@ -94,8 +107,8 @@ export class MarsBot implements IMarsBot {
 
   /**
    * Track-cube key for the 2nd Trade Fleet position (Colonies, C-6).
-   * Set in constructor when coloniesExtension is enabled; undefined otherwise.
-   * Recomputed on restore — not serialized.
+   * Set in constructor when coloniesExtension is enabled; undefined otherwise. Saved with the
+   * game, because games from before the cube moved to the Energy track keep it on the Event track.
    */
   public tradeFleetCubeKey: string | undefined = undefined;
 
@@ -104,6 +117,19 @@ export class MarsBot implements IMarsBot {
 
   /** Shipping Board with 11 storage areas, one per colony tile (C-18). */
   public shippingBoard: MarsBotShippingBoard = new MarsBotShippingBoard();
+
+  /**
+   * True while Government Intervention raises Venus: its global parameter bonuses pay MarsBot no
+   * MC. Only set during that synchronous raise, so never saved.
+   */
+  public bonusMcBlocked: boolean = false;
+
+  /**
+   * M€ that Government Intervention lets MarsBot keep while it resolves (Lakefront Resorts' advance).
+   *
+   * Undefined outside Government Intervention's no-M€ window, which is synchronous, so never saved.
+   */
+  public mcKeptThroughIntervention: number | undefined = undefined;
 
   /** Spaces holding one of MarsBot's player markers (Settlers) and no tile yet. */
   public markerSpaceIds: Array<SpaceId> = [];
@@ -129,11 +155,11 @@ export class MarsBot implements IMarsBot {
     } else {
       this.bonusDeck = MarsBotBonusDeck.createBase(random);
     }
-    // C-6: Compute 2nd Trade Fleet cube position for Colonies (Event track pos 9)
+    // C-6: the 2nd Trade Fleet starts on space 9 of the Energy track, on every map
     if (opts.coloniesExtension) {
-      const eventTrackIdx = this.marsBotBoard.tagToTrack[Tag.EVENT];
-      if (eventTrackIdx !== undefined) {
-        this.tradeFleetCubeKey = trackCubeKey(eventTrackIdx, 9);
+      const energyTrackIdx = this.marsBotBoard.tagToTrack[Tag.POWER];
+      if (energyTrackIdx !== undefined) {
+        this.tradeFleetCubeKey = trackCubeKey(energyTrackIdx, 9);
       }
     }
     this.tilePlacer = new MarsBotTilePlacer(game, player, humanPlayer);
@@ -151,11 +177,11 @@ export class MarsBot implements IMarsBot {
 
   // ---- Setup ----
 
-  /** Build MarsBot's initial action deck: 3 project cards + 1 bonus card (+ 3 extra with Prelude). */
+  /** Build MarsBot's initial action deck: 3 project cards (4 on Brutal) + 1 bonus card (+ 3 extra with Prelude). */
   public buildInitialActionDeck(): void {
     const opts = this.game.gameOptions;
     // Prelude: MarsBot gets 3 extra project cards instead of Prelude cards
-    const numProjectCards = opts.preludeExtension ? 6 : 3;
+    const numProjectCards = (this.difficulty === 'brutal' ? 4 : 3) + (opts.preludeExtension ? 3 : 0);
     const projectCards = this.game.projectDeck.drawN(this.game, numProjectCards);
     const bonusCard = this.bonusDeck.draw(this.game);
     const deck: Array<IProjectCard | MarsBotBonusCard> = [...projectCards];
@@ -262,6 +288,14 @@ export class MarsBot implements IMarsBot {
 
   /** Execute one MarsBot action (called when it's MarsBot's turn). */
   public takeTurn(): void {
+    // Hard mode: the milestone check comes before the first turn of each generation resolves
+    if (this.firstTurnCheckedGeneration !== this.game.generation) {
+      this.firstTurnCheckedGeneration = this.game.generation;
+      if (this.difficulty === 'hard' || this.difficulty === 'brutal') {
+        this.hardModeFirstTurnMilestone();
+      }
+    }
+
     if (this.actionDeck.length === 0) {
       this.game.playerHasPassed(this.player);
       this.game.log('MarsBot passed');
@@ -275,18 +309,11 @@ export class MarsBot implements IMarsBot {
     }
 
     if (this.isProjectCard(card)) {
-      const projectCard = card as IProjectCard;
-      this.playedProjectCards.push(projectCard);
-      this.turnResolver.resolveProjectCard(projectCard);
+      this.turnResolver.resolveProjectCard(card as IProjectCard);
     } else {
       const bonusCard = card as MarsBotBonusCard;
       this.game.log('MarsBot plays bonus card: ${0}', (b) => b.rawString(bonusCardDisplayName(bonusCard)));
       this.bonusResolver.resolve(bonusCard);
-    }
-
-    // Hard mode: first turn milestone check
-    if (this.difficulty === 'hard' || this.difficulty === 'brutal') {
-      this.hardModeFirstTurnMilestone();
     }
 
     // Signal that MarsBot's turn is done
@@ -296,9 +323,6 @@ export class MarsBot implements IMarsBot {
   /** Hard mode: on first turn of each gen, if 8 MC and meets milestone conditions, claim.
    * MarsBot starts at 0 MC and accumulates from failed actions (5 MC each) and placement bonuses. */
   private hardModeFirstTurnMilestone(): void {
-    if (this.player.actionsTakenThisRound !== 0) {
-      return;
-    }
     if (this.turnResolver.megacredits < 8) {
       return;
     }
@@ -314,7 +338,7 @@ export class MarsBot implements IMarsBot {
     const shouldClaim = claimedCount < 3 && claimedCount + canClaimCount >= 3;
 
     if (shouldClaim) {
-      const toClaim = unclaimed.find((m) => this.turnResolver.marsBotMeetsMilestone(m));
+      const toClaim = this.turnResolver.selectMilestone(this.turnResolver.getClaimableMilestones());
       if (toClaim) {
         this.game.claimedMilestones.push({player: this.player, milestone: toClaim});
         this.turnResolver.megacredits -= 8;
@@ -331,20 +355,37 @@ export class MarsBot implements IMarsBot {
 
   // ---- Final Greenery ----
 
-  /** Place final greenery tiles for MarsBot (tracks with greenery as next action). */
+  /**
+   * Place final greenery tiles for MarsBot (tracks with greenery as next action).
+   *
+   * The tracker moves onto the greenery and the corp's cubes there trigger (IC, Teractor, Helion's
+   * black cubes) unless automaFinalGreeneryNoCorpEffects is on (the designers leave it to the
+   * players). Nothing chains from that space (BGG 3385156): the game has ended, so a
+   * cube's own track advances and card draws do nothing (Thorgate keeps its temperature step,
+   * Aridor's event track stays put). With no legal space the tracker stays and MarsBot takes a
+   * Failed Action (rulebook A p.8, BGG 3404826).
+   */
   public placeFinalGreeneries(): void {
-    for (const track of this.marsBotBoard.tracks) {
-      const nextAction = track.peek();
-      if (nextAction === 'greenery') {
-        const space = this.tilePlacer.findGreenerySpace();
-        if (space) {
-          // Do NOT raise oxygen or award TR for final greenery
-          this.game.addGreenery(this.player, space, false);
-          track.advance(); // Move tracker forward
-          this.game.log('MarsBot places final greenery (${0} track)', (b) => b.rawString(track.definition.tags[0]));
-        }
+    this.marsBotBoard.tracks.forEach((track, trackIndex) => {
+      if (track.peek() !== 'greenery') {
+        return;
       }
-    }
+      const name = track.definition.tags[0];
+      const space = this.tilePlacer.findGreenerySpace();
+      if (space === undefined) {
+        this.game.log('MarsBot: no space for a final greenery (${0} track)', (b) => b.rawString(name));
+        this.turnResolver.failedAction();
+        return;
+      }
+      // Do NOT raise oxygen or award TR for final greenery
+      this.game.addGreenery(this.player, space, false);
+      this.turnResolver.gainMc(this.tilePlacer.getTotalPlacementMC(space));
+      track.advance();
+      this.game.log('MarsBot places final greenery (${0} track)', (b) => b.rawString(name));
+      if (!this.game.gameOptions.automaFinalGreeneryNoCorpEffects) {
+        MarsBotCorpResolver.onTrackAdvanced(this, trackIndex, track.position, true);
+      }
+    });
   }
 
   // ---- Corporation ----
@@ -366,11 +407,18 @@ export class MarsBot implements IMarsBot {
     this.turnResolver.megacredits = mc;
   }
 
+  public get failedActionMc(): number {
+    return this.turnResolver.failedActionMc;
+  }
+
   public advanceTrack(trackIndex: number): void {
     this.turnResolver.advanceTrack(trackIndex);
   }
 
   public maybeDrawAndResolveProjectCard(): void {
+    if (this.gameHasEnded()) {
+      return;
+    }
     const cards = this.game.projectDeck.drawN(this.game, 1);
     if (cards.length === 0) {
       return;
@@ -378,18 +426,33 @@ export class MarsBot implements IMarsBot {
     this.turnResolver.resolveProjectCard(cards[0]);
   }
 
-  public maybeDrawAndResolveProjectCardIgnoringFirstNTags(n: number): void {
+  public maybeDrawAndResolveProjectCardFirstTagOnly(): void {
+    if (this.gameHasEnded()) {
+      return;
+    }
     const cards = this.game.projectDeck.drawN(this.game, 1);
     if (cards.length === 0) {
       return;
     }
-    const card = cards[0];
-    // Use Object.create to preserve prototype (methods like getVictoryPoints)
-    const mockCard = Object.create(card, {tags: {value: card.tags.slice(n)}}) as IProjectCard;
-    this.turnResolver.resolveProjectCard(mockCard);
+    this.turnResolver.resolveProjectCard(cards[0], true);
+  }
+
+  /**
+   * Once the game has ended MarsBot draws and resolves no more cards, like its tracks advance no
+   * more (MarsBotTurnResolver.advanceTrack).
+   */
+  private gameHasEnded(): boolean {
+    if (!this.game.isDoneWithFinalProduction()) {
+      return false;
+    }
+    this.game.log('MarsBot: the game has ended, it draws no card');
+    return true;
   }
 
   public maybeDrawAndResolveBonusCard(): void {
+    if (this.gameHasEnded()) {
+      return;
+    }
     const bonusCard = this.bonusDeck.draw(this.game);
     if (bonusCard === undefined) {
       return;
@@ -421,10 +484,25 @@ export class MarsBot implements IMarsBot {
     this.shuffleIntoActionDeck(bonusCard);
   }
 
-  public raiseTemperature(steps: 1 | 2 | 3): void {
-    const before = this.game.getTemperature();
-    this.game.increaseTemperature(this.player, steps);
-    this.temperatureRaises += (this.game.getTemperature() - before) / 2;
+  public returnSetupBonusCardToBonusDeck(): void {
+    const kept: Array<IProjectCard | MarsBotBonusCard> = [];
+    for (const card of this.actionDeck) {
+      if (this.isProjectCard(card) || this.returnsToActionDeck(card)) {
+        kept.push(card);
+      } else {
+        this.shuffleIntoBonusDeck(card);
+        this.game.log('MarsBot returns ${0} to its bonus deck', (b) => b.rawString(bonusCardDisplayName(card)));
+      }
+    }
+    this.actionDeck = kept;
+  }
+
+  public raiseTemperature(steps: 1 | 2): void {
+    // A corp effect is a reaction, not an action, so a maxed temperature is no Failed Action (Nick)
+    if (this.game.getTemperature() >= constants.MAX_TEMPERATURE) {
+      return;
+    }
+    this.turnResolver.raiseTemperature(steps);
   }
 
   public placeOcean(): void {
@@ -470,8 +548,18 @@ export class MarsBot implements IMarsBot {
 
   public removeBonusCard(bonusCardId: BonusCardId): void {
     this.bonusDeck.removeById(bonusCardId);
-    // Also remove from the action deck if present (e.g. initial deck before corp setup runs)
-    this.actionDeck = this.actionDeck.filter((c) => !('id' in c) || (c as MarsBotBonusCard).id !== bonusCardId);
+    // The setup bonus card is dealt before the corporation is chosen (rulebook A setup step 3).
+    // When the corp destroys that card, the bonus deck deals a replacement, so the first action
+    // deck keeps its bonus card. A set-aside expansion card (Party Politics) gets none.
+    const dealt = this.actionDeck.find((c): c is MarsBotBonusCard => !this.isProjectCard(c) && c.id === bonusCardId);
+    if (dealt === undefined) {
+      return;
+    }
+    inplaceRemove(this.actionDeck, dealt);
+    if (!this.returnsToActionDeck(dealt)) {
+      this.maybeMoveBonusCardToActionDeck();
+      this.game.log('MarsBot replaces the destroyed setup bonus card with one from its bonus deck');
+    }
   }
 
   public resolveBonusCard(bonusCardId: BonusCardId): void {
@@ -583,6 +671,24 @@ export class MarsBot implements IMarsBot {
     return this.trackCubePositions.get(trackCubeKey(trackIndex, position));
   }
 
+  /**
+   * Games saved before the Trade Fleet cube moved to the Energy track have it on space 9 of the
+   * Event track, and don't record where it is. Keep using that cube so those games still unlock
+   * the 2nd Trade Fleet. Energy 9 can't settle it when the corporation is Helion, whose own white
+   * cube sits there, so the Event track decides then.
+   */
+  private keepLegacyTradeFleetCube(hasSecondTradeFleet: boolean): void {
+    const eventTrack = this.marsBotBoard.tagToTrack[Tag.EVENT];
+    if (hasSecondTradeFleet || this.tradeFleetCubeKey === undefined || eventTrack === undefined) {
+      return;
+    }
+    const legacyKey = trackCubeKey(eventTrack, 9);
+    const energyCube = this.trackCubePositions.has(this.tradeFleetCubeKey) && this.corp?.name !== CardName.HELION;
+    if (!energyCube && this.trackCubePositions.get(legacyKey)?.cubeType === 'white') {
+      this.tradeFleetCubeKey = legacyKey;
+    }
+  }
+
   /** Check if a cube at this position has already been triggered. */
   public isCubeTriggered(trackIndex: number, position: number): boolean {
     return this.triggeredCubePositions.has(trackCubeKey(trackIndex, position));
@@ -690,6 +796,8 @@ export class MarsBot implements IMarsBot {
       bonusDeckDiscardPile: this.bonusDeck.discardPile.map((c) => c.id ?? c.name),
       neuralInstanceSpaceId: this.neuralInstanceSpace?.id,
       playedProjectCardNames: this.playedProjectCards.map((c) => c.name),
+      firstTurnCheckedGeneration: this.firstTurnCheckedGeneration,
+      beforeActionPhasePending: this.beforeActionPhasePending,
       marsBotPlayerId: this.player.id,
       terraformRating: this.player.terraformRating,
       globalParameterSteps: {...this.player.globalParameterSteps},
@@ -707,6 +815,9 @@ export class MarsBot implements IMarsBot {
     if (this.hasSecondTradeFleet) {
       state.hasSecondTradeFleet = true;
     }
+    if (this.tradeFleetCubeKey !== undefined) {
+      state.tradeFleetCubeKey = this.tradeFleetCubeKey;
+    }
     if (this.shippingBoard.storage.size > 0) {
       state.shippingBoard = this.shippingBoard.serialize();
     }
@@ -721,6 +832,9 @@ export class MarsBot implements IMarsBot {
     }
     if (this.temperatureRaises > 0) {
       state.temperatureRaises = this.temperatureRaises;
+    }
+    if (this.destroyedBonusCards > 0) {
+      state.destroyedBonusCards = this.destroyedBonusCards;
     }
     if (this.colonyCubePositions.size > 0) {
       state.colonyCubePositions = Array.from(this.colonyCubePositions);
@@ -755,6 +869,9 @@ export class MarsBot implements IMarsBot {
 
     // Restore first player
     this.goesFirst = state.goesFirst;
+    // Older saves lack it: assume the check for the current generation already ran
+    this.firstTurnCheckedGeneration = state.firstTurnCheckedGeneration ?? this.game.generation;
+    this.beforeActionPhasePending = state.beforeActionPhasePending ?? false;
 
     // Restore neural instance
     if (state.neuralInstanceSpaceId) {
@@ -774,11 +891,22 @@ export class MarsBot implements IMarsBot {
         this.trackCubePositions.set(trackCubeKey(cube.trackIndex, cube.position), cube);
       }
     }
+    if (state.tradeFleetCubeKey !== undefined) {
+      this.tradeFleetCubeKey = state.tradeFleetCubeKey;
+    } else {
+      this.keepLegacyTradeFleetCube(state.hasSecondTradeFleet === true);
+    }
     if (state.triggeredCubePositions !== undefined) {
       this.triggeredCubePositions = new Set(state.triggeredCubePositions);
     }
     if (state.corpSpecificState !== undefined) {
       this.corpSpecificState = new Map(Object.entries(state.corpSpecificState).map(([k, v]) => [k, v as number]));
+      // Older saves kept Ecoline's plant under its own key, where the player couldn't reach it
+      const plantOnCard = this.corpSpecificState.get('plantOnCard');
+      if (plantOnCard !== undefined) {
+        this.corpSpecificState.delete('plantOnCard');
+        this.corpSpecificState.set('plantResources', plantOnCard);
+      }
     }
     const floaters = state.floaters ?? state.floaterCount;
     if (floaters !== undefined) {
@@ -789,6 +917,9 @@ export class MarsBot implements IMarsBot {
     }
     if (state.temperatureRaises !== undefined) {
       this.temperatureRaises = state.temperatureRaises;
+    }
+    if (state.destroyedBonusCards !== undefined) {
+      this.destroyedBonusCards = state.destroyedBonusCards;
     }
     if (state.hasSecondTradeFleet === true) {
       this.hasSecondTradeFleet = true;
@@ -824,6 +955,12 @@ export class MarsBot implements IMarsBot {
         if (card !== undefined) {
           this.playedProjectCards.push(card as IProjectCard);
         }
+      }
+      // Older saves also left every resolved card in the project discard pile, where it could be
+      // reshuffled and drawn again. A reshuffle may already have moved some into the draw pile.
+      const played = new Set<string>(this.playedProjectCards.map((c) => c.name));
+      for (const pile of [this.game.projectDeck.discardPile, this.game.projectDeck.drawPile]) {
+        pile.splice(0, pile.length, ...pile.filter((c) => !played.has(c.name)));
       }
     }
 

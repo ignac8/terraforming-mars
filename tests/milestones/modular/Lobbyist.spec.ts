@@ -8,7 +8,7 @@ import {TestPlayer} from '../../TestPlayer';
 import {IParty} from '../../../src/server/turmoil/parties/IParty';
 import {IMarsBot} from '../../../src/server/automa/MarsBotCorpTypes';
 
-describe('Lobbyist Milestone', () => {
+describe('Lobbyist', () => {
   let milestone: Lobbyist;
   let game: IGame;
   let player: TestPlayer;
@@ -70,5 +70,10 @@ describe('Lobbyist Milestone', () => {
 
     turmoil.chairman = player;
     expect(milestone.marsBotCanClaim(bot)).is.true;
+  });
+
+  it('Gives 0 score without Turmoil', () => {
+    const [/* game */, player] = testGame(1, {turmoilExtension: false});
+    expect(milestone.getScore(player)).to.eq(0);
   });
 });

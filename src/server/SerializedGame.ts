@@ -89,6 +89,10 @@ export type SerializedAutomaState = {
     bonusDeckDiscardPile: Array<string>;
     neuralInstanceSpaceId: string | undefined;
     playedProjectCardNames: Array<string>;
+    /** The last generation whose Hard mode first-turn milestone check has run; older saves lack it. */
+    firstTurnCheckedGeneration?: number;
+    /** Whether the corp's before-action-phase box waits for the player's preludes; older saves lack it. */
+    beforeActionPhasePending?: boolean;
     marsBotPlayerId: string;
     // Corporation framework
     corpId?: string;
@@ -102,8 +106,11 @@ export type SerializedAutomaState = {
     /** The bot player's global parameter steps; older saves lack them and keep zeros. */
     globalParameterSteps?: Partial<Record<GlobalParameter, number>>;
     temperatureRaises?: number;
+    destroyedBonusCards?: number;
     colonyCubePositions?: Array<string>;
     hasSecondTradeFleet?: boolean;
+    /** The "trackIndex:position" of the 2nd Trade Fleet cube; older saves lack it and have it on Event 9 or Energy 9. */
+    tradeFleetCubeKey?: string;
     shippingBoard?: Record<string, number>;
     /** Spaces holding one of the bot's player markers (Settlers) and no tile yet. */
     markerSpaceIds?: Array<SpaceId>;

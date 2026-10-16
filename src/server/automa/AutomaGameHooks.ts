@@ -4,6 +4,7 @@ import {Color} from '../../common/Color';
 import {TileType} from '../../common/TileType';
 import {PlayerId} from '../../common/Types';
 import {MarsBot} from './MarsBot';
+import {MarsBotStock} from './MarsBotStock';
 import {MarsBotModel} from '../../common/models/MarsBotModel';
 import {getAutomaMaxGeneration} from '../../common/automa/AutomaTypes';
 import {SelectCard} from '../inputs/SelectCard';
@@ -20,6 +21,7 @@ import {Resource} from '../../common/Resource';
 import {SelectOption} from '../inputs/SelectOption';
 import {IColony} from '../colonies/IColony';
 import {ColonyName} from '../../common/colonies/ColonyName';
+import {CardResource} from '../../common/CardResource';
 import {Space} from '../boards/Space';
 
 /**
@@ -80,6 +82,7 @@ export class AutomaGameHooks {
    */
   public handleStartActions(player: IPlayer): boolean {
     if (player === this.marsBot.player) {
+      this.handleActionPhaseStart();
       this.marsBot.takeTurn();
       return true;
     }
@@ -209,13 +212,11 @@ export class AutomaGameHooks {
     if (opts.coloniesExtension && !opts.venusNextExtension) {
       // C-9/C-X2: Spend 5 from Titan storage (floaters) for extra card
       this.marsBot.shippingBoard.spend(ColonyName.TITAN, 5);
-      const extraCards = this.game.projectDeck.drawN(this.game, 1);
-      this.marsBot.actionDeck.push(...extraCards);
+      this.marsBot.drawProjectCardsToActionDeck(1);
       this.game.log('MarsBot spends 5 Titan floaters for an extra card (C-9)');
     } else {
       this.marsBot.floaters -= 5;
-      const extraCards = this.game.projectDeck.drawN(this.game, 1);
-      this.marsBot.actionDeck.push(...extraCards);
+      this.marsBot.drawProjectCardsToActionDeck(1);
       this.game.log('MarsBot spends 5 floaters for an extra card');
     }
     this.onFloatersSpentForExtraCard();
@@ -272,8 +273,7 @@ export class AutomaGameHooks {
         // Brutal: spend 5 floaters for a 5th card from project deck
         if (isBrutal && canSpend) {
           this.marsBot.spendFloaters(5);
-          const extra = this.game.projectDeck.drawN(this.game, 1);
-          this.marsBot.actionDeck.push(...extra);
+          this.marsBot.drawProjectCardsToActionDeck(1);
           this.game.log('MarsBot (Brutal) spends 5 floaters for a 5th card');
           this.onFloatersSpentForExtraCard();
         }
@@ -344,8 +344,23 @@ export class AutomaGameHooks {
 
     this.marsBot.setCorpAndSetup(corp);
 
-    // Corp before-action-phase effects run now for gen 1
-    corp.beforeActionPhase?.(this.marsBot);
+    // The corp's before-action-phase box waits for the player's preludes: it resolves before any
+    // action of the action phase, and the preludes are the player's first action here. Designer
+    // ruling, BGG thread 3738284.
+    this.marsBot.beforeActionPhasePending = corp.beforeActionPhase !== undefined;
+  }
+
+  /**
+   * Resolves the corp's before-action-phase box that generation 1 held back for the player's
+   * preludes. Returns true when it ran.
+   */
+  public handleActionPhaseStart(): boolean {
+    if (!this.marsBot.beforeActionPhasePending) {
+      return false;
+    }
+    this.marsBot.beforeActionPhasePending = false;
+    this.marsBot.corp?.beforeActionPhase?.(this.marsBot);
+    return true;
   }
 
   /**
@@ -404,6 +419,24 @@ export class AutomaGameHooks {
   }
 
   /**
+   * Handle the Venus 8% card bonus for MarsBot: 2 MC instead of a card, as for the heat production
+   * bonus on the temperature track (BGG 3358342, 3424237, 3733436). Government Intervention pays
+   * no MC from bonuses. Returns true if handled.
+   */
+  public handleVenusCardBonus(player: IPlayer): boolean {
+    if (player !== this.marsBot.player) {
+      return false;
+    }
+    if (this.marsBot.bonusMcBlocked) {
+      this.game.log('MarsBot gains no MC for the Venus card bonus (Government Intervention)');
+      return true;
+    }
+    this.marsBot.gainMc(2);
+    this.game.log('MarsBot gains 2 MC (Venus card bonus)');
+    return true;
+  }
+
+  /**
    * Handle the temperature ocean bonus at 0C for MarsBot, which places the ocean
    * itself rather than being asked for a space it could never choose.
    *
@@ -413,10 +446,22 @@ export class AutomaGameHooks {
     if (player !== this.marsBot.player) {
       return false;
     }
-    if (this.game.canAddOcean()) {
-      this.marsBot.placeOcean();
-    }
+    // With no ocean left to place this is a Failed Action
+    this.marsBot.placeOcean();
     return true;
+  }
+
+  /**
+   * Called when a raise earns a terraforming bonus that can't be resolved, such as the
+   * oxygen bonus step when the temperature is already at its maximum. MarsBot takes a
+   * Failed Action (rulebook A, p.9).
+   */
+  public handleUnresolvableTerraformingBonus(player: IPlayer): void {
+    if (player !== this.marsBot.player) {
+      return;
+    }
+    this.game.log('MarsBot cannot resolve the terraforming bonus, Failed Action');
+    this.marsBot.turnResolver.failedAction();
   }
 
   // ---- Utility ----
@@ -469,30 +514,70 @@ export class AutomaGameHooks {
 
   // ---- Resource removal targeting ----
 
-  /** Check if MarsBot MC supply is a valid target for card resource removal. */
-  public hasRemoveResourceTarget(player: IPlayer, source: string): boolean {
+  /**
+   * The colony storage area that holds `resourceType` for the player's cards (rulebook C, p.5):
+   * Enceladus holds microbes and Miranda animals.
+   */
+  private storageHolding(resourceType: CardResource | undefined): ColonyName | undefined {
+    switch (resourceType) {
+    case CardResource.MICROBE: return ColonyName.ENCELADUS;
+    case CardResource.ANIMAL: return ColonyName.MIRANDA;
+    default: return undefined;
+    }
+  }
+
+  /** Check if MarsBot's M€ supply or colony storage is a valid target for card resource removal. */
+  public hasRemoveResourceTarget(player: IPlayer, source: string, resourceType?: CardResource): boolean {
     if (source === 'self') {
       return false;
     }
     const marsBot = this.marsBot.player;
-    return marsBot !== player && marsBot.stock.megacredits > 0;
+    if (marsBot === player) {
+      return false;
+    }
+    const storage = this.storageHolding(resourceType);
+    return this.marsBot.megacredits > 0 || (storage !== undefined && this.marsBot.shippingBoard.get(storage) > 0);
   }
 
-  /** Get a SelectOption for targeting MarsBot MC supply, or undefined if not available. */
-  public getRemoveResourceOption(player: IPlayer, count: number, source: string, cb: () => void): SelectOption | undefined {
-    if (!this.hasRemoveResourceTarget(player, source)) {
-      return undefined;
+  /**
+   * The ways to remove card resources from MarsBot: its M€ supply, and the colony storage area
+   * holding that resource. The player picks one, and may mix by removing again (BGG 3599965).
+   */
+  public getRemoveResourceOptions(player: IPlayer, count: number, source: string, cb: () => void, resourceType?: CardResource): Array<SelectOption> {
+    if (!this.hasRemoveResourceTarget(player, source, resourceType)) {
+      return [];
     }
-    return new SelectOption(`Remove ${count} from MarsBot MC supply`)
-      .andThen(() => {
-        this.executeRemoveResource(player, count, cb);
-        return undefined;
-      });
+    const options: Array<SelectOption> = [];
+    if (this.marsBot.megacredits > 0) {
+      options.push(new SelectOption(`Remove ${count} from MarsBot MC supply`)
+        .andThen(() => {
+          this.executeRemoveResource(player, count, cb);
+          return undefined;
+        }));
+    }
+    const storage = this.storageHolding(resourceType);
+    if (storage !== undefined && this.marsBot.shippingBoard.get(storage) > 0) {
+      options.push(new SelectOption(`Remove ${count} ${resourceType} from MarsBot's ${storage} colony storage`)
+        .andThen(() => {
+          this.executeRemoveStorageResource(storage, count, cb);
+          return undefined;
+        }));
+    }
+    return options;
   }
 
   /** Deduct from MarsBot MC supply as if card resources were removed. */
-  public executeRemoveResource(player: IPlayer, count: number, cb: () => void): void {
-    this.marsBot.player.stock.deduct(Resource.MEGACREDITS, count, {log: true, from: {player}});
+  private executeRemoveResource(player: IPlayer, count: number, cb: () => void): void {
+    // The supply only: stock.deduct() would offer the colony storage areas too.
+    (this.marsBot.player.stock as MarsBotStock).removeFromSupply(Resource.MEGACREDITS, count, -count, {log: true, from: {player}});
+    cb();
+  }
+
+  /** Remove resources from a colony storage area, losing any excess. */
+  private executeRemoveStorageResource(storage: ColonyName, count: number, cb: () => void): void {
+    const removed = Math.min(count, this.marsBot.shippingBoard.get(storage));
+    this.marsBot.shippingBoard.spend(storage, removed);
+    this.game.log('${0} resources removed from MarsBot\'s ${1} colony storage', (b) => b.number(removed).rawString(storage));
     cb();
   }
 
@@ -542,13 +627,27 @@ export class AutomaGameHooks {
     return true;
   }
 
-  /** Called when any player places a tile. Notifies MarsBot's corp. */
+  /** Called when any player places a tile. Settles MarsBot's special hexes and notifies its corp. */
   public handleTilePlaced(player: IPlayer, tileType: TileType, space: Space): void {
+    if (player === this.marsBot.player) {
+      this.marsBot.turnResolver.tilePlacer.resolveSpecialHex(space);
+    }
     const corp = this.marsBot.corp;
     if (corp?.effect?.onTilePlaced === undefined) {
       return;
     }
     corp.effect.onTilePlaced(this.marsBot, player === this.marsBot.player, tileType, space);
+  }
+
+  /**
+   * Called when `player` builds a colony through the normal colony rules. MarsBot builds its
+   * colonies without them and notifies its corp itself, so only the human's colonies arrive here.
+   */
+  public handleColonyBuilt(player: IPlayer): void {
+    if (player === this.marsBot.player) {
+      return;
+    }
+    this.marsBot.corp?.effect?.onColonyPlaced?.(this.marsBot);
   }
 
   /** Called when either player raises the Venus scale by `steps`. Notifies MarsBot's corp. */

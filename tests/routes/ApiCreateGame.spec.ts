@@ -92,10 +92,12 @@ describe('ApiCreateGame', () => {
   });
 
   it('Official random boards do not include fan maps', () => {
-    expect(ApiCreateGame.boardOptions(RandomBoardOption.OFFICIAL)).deep.eq([BoardName.THARSIS, BoardName.HELLAS, BoardName.ELYSIUM]);
+    expect(ApiCreateGame.boardOptions(RandomBoardOption.OFFICIAL)).to.have.members([
+      BoardName.THARSIS, BoardName.HELLAS, BoardName.ELYSIUM,
+      BoardName.VASTITAS_BOREALIS_NOVA, BoardName.TERRA_CIMMERIA_NOVA, BoardName.UTOPIA_PLANITIA]);
   });
   it('Fully random boards do include fan maps', () => {
-    expect(ApiCreateGame.boardOptions(RandomBoardOption.ALL)).deep.eq([
+    expect(ApiCreateGame.boardOptions(RandomBoardOption.ALL)).to.have.members([
       BoardName.THARSIS,
       BoardName.HELLAS,
       BoardName.ELYSIUM,
@@ -107,6 +109,7 @@ describe('ApiCreateGame', () => {
       BoardName.AMAZONIS,
       BoardName.TERRA_CIMMERIA,
       BoardName.HOLLANDIA,
+      BoardName.AMAZONIS_PLANITIA,
     ]);
   });
 
@@ -132,6 +135,30 @@ describe('ApiCreateGame', () => {
     const game = await scaffolding.ctx.gameLoader.getGame(model.id);
     expect(game).is.not.undefined;
     expect(game!.players[0].name).eq('Robot');
+  });
+
+  it('passes the MarsBot colony VP option on to the game', async () => {
+    for (const automaColonyVP of [true, false]) {
+      const config = newGameConfigForTest();
+      config.expansions.colonies = true;
+      await postConfig({...config, automaOption: true, automaColonyVP});
+      expect(res.statusCode).eq(statusCode.ok);
+      const model = JSON.parse(res.content) as SimpleGameModel;
+      const game = await scaffolding.ctx.gameLoader.getGame(model.id);
+      expect(game!.gameOptions.automaColonyVP).eq(automaColonyVP);
+      res = new MockResponse();
+    }
+  });
+
+  it('passes the MarsBot final greenery option on to the game', async () => {
+    for (const automaFinalGreeneryNoCorpEffects of [true, false]) {
+      await postConfig({...newGameConfigForTest(), automaOption: true, automaFinalGreeneryNoCorpEffects});
+      expect(res.statusCode).eq(statusCode.ok);
+      const model = JSON.parse(res.content) as SimpleGameModel;
+      const game = await scaffolding.ctx.gameLoader.getGame(model.id);
+      expect(game!.gameOptions.automaFinalGreeneryNoCorpEffects).eq(automaFinalGreeneryNoCorpEffects);
+      res = new MockResponse();
+    }
   });
 
   it('red rover solo game', async () => {
@@ -221,7 +248,7 @@ describe('ApiCreateGame', () => {
   it('replaces invalid escape velocity options with defaults', async () => {
     expect(await createdEscapeVelocity({
       thresholdMinutes: '35',
-      bonusSectionsPerAction: -1,
+      bonusSectionsPerAction: 'x',
       penaltyPeriodMinutes: '',
       penaltyVPPerPeriod: 1,
     })).deep.eq({
@@ -230,6 +257,20 @@ describe('ApiCreateGame', () => {
       penaltyPeriodMinutes: 2,
       penaltyVPPerPeriod: 1,
     });
+  });
+
+  it('rejects negative escape velocity options', async () => {
+    await postConfig({
+      ...newGameConfigForTest(),
+      escapeVelocity: {
+        thresholdMinutes: -5,
+        bonusSectionsPerAction: 2,
+        penaltyPeriodMinutes: 2,
+        penaltyVPPerPeriod: 1,
+      },
+    });
+    expect(res.statusCode).eq(statusCode.badRequest);
+    expect(res.content).contains('Escape Velocity values cannot be negative');
   });
 
   // Issues one create-game POST against `handler`, using fresh request/response objects,

@@ -8,7 +8,7 @@ import {MarsBotTurnResolver} from '../../src/server/automa/MarsBotTurnResolver';
 import {MarsBotBonusDeck} from '../../src/server/automa/MarsBotBonusDeck';
 import {MarsBotBonusResolver} from '../../src/server/automa/MarsBotBonusResolver';
 import {MarsBotTilePlacer} from '../../src/server/automa/MarsBotTilePlacer';
-import {createBaseBonusCards} from '../../src/server/automa/MarsBotBonusCard';
+import {createBaseBonusCards, createCorpBonusCard} from '../../src/server/automa/MarsBotBonusCard';
 import {THARSIS_MARSBOT_BOARD} from '../../src/server/automa/boards/TharsisMarsBot';
 import {TrackAction, TrackDefinition, BonusCardId} from '../../src/common/automa/AutomaTypes';
 import {SeededRandom} from '../../src/common/utils/Random';
@@ -17,6 +17,7 @@ import {Tag} from '../../src/common/cards/Tag';
 import {TileType} from '../../src/common/TileType';
 import {Phase} from '../../src/common/Phase';
 import {SpaceType} from '../../src/common/boards/SpaceType';
+import {RandomMAOptionType} from '../../src/common/ma/RandomMAOptionType';
 import {Board} from '../../src/server/boards/Board';
 import {Space} from '../../src/server/boards/Space';
 import {SpaceId} from '../../src/common/Types';
@@ -27,6 +28,8 @@ import {IceCapMelting} from '../../src/server/cards/base/IceCapMelting';
 import {MicroMills} from '../../src/server/cards/base/MicroMills';
 import {Mine} from '../../src/server/cards/base/Mine';
 import {Tardigrades} from '../../src/server/cards/base/Tardigrades';
+import {Ceres} from '../../src/server/colonies/Ceres';
+import {trackCubeKey} from '../../src/server/automa/MarsBotCorpTypes';
 
 function createAutomaGame(difficulty: 'easy' | 'normal' | 'hard' | 'brutal' = 'normal'): {game: IGame, human: TestPlayer, marsBot: MarsBot} {
   const [game, human] = testGame(1, {automaOption: true, automaDifficulty: difficulty, boardName: BoardName.THARSIS});
@@ -315,14 +318,14 @@ describe('MarsBot Rules Compliance', () => {
     });
 
     it('goes to the bonus discard pile when its tile cannot be placed', () => {
-      const {game, marsBot} = createAutomaGame();
+      const {marsBot} = createAutomaGame();
       marsBot.turnResolver.tilePlacer.findNeuralInstanceSpace = () => undefined;
-      const discarded = game.projectDeck.discardPile.length;
+      const played = marsBot.playedProjectCards.length;
 
       const destroyed = marsBot['bonusResolver'].resolve(neuralInstance());
 
       expect(marsBot.neuralInstanceSpace).to.be.undefined;
-      expect(game.projectDeck.discardPile).has.length(discarded + 1); // The project card it resolved instead
+      expect(marsBot.playedProjectCards).has.length(played + 1); // The project card it resolved instead
       expect(destroyed).to.be.false;
       expect(marsBot.bonusDeck.discardPile.map((c) => c.id)).to.include(BonusCardId.B07_LOCAL_NEURAL_INSTANCE);
     });
@@ -369,6 +372,27 @@ describe('MarsBot Rules Compliance', () => {
       expect(marsBot.turnResolver.megacredits).to.be.lte(mcBefore - 5 + 10); // At most 10 MC gained from track actions
       expect(marsBot.turnResolver.megacredits).to.be.lt(mcBefore); // Overall MC decreased
     });
+
+    it('takes no more than MarsBot has when the helper itself cost M€ (colony cube, C-X3)', () => {
+      const [game, human] = testGame(1, {automaOption: true, coloniesExtension: true, boardName: BoardName.THARSIS});
+      const marsBot = game.automaHooks!.marsBot;
+      const ceres = new Ceres();
+      game.colonies = [ceres];
+      game.fundAward(human, game.awards.find((a) => a.name === 'Miner')!);
+      // A colony cube on space track #7, where Miner's helper takes the tracker
+      const key = trackCubeKey(1, 7);
+      marsBot.hasColonyCubes = true;
+      marsBot.colonyCubePositions = new Set([key]);
+      marsBot.trackCubePositions.set(key, {trackIndex: 1, position: 7, cubeType: 'black'});
+      marsBot.marsBotBoard.tracks[1].position = 6;
+      marsBot.turnResolver.megacredits = 5;
+
+      marsBot['bonusResolver'].resolve(createBaseBonusCards().find((c) => c.id === BonusCardId.B08_CORPORATE_COMPETITION)!);
+
+      expect(marsBot.marsBotBoard.tracks[1].position).to.eq(7);
+      expect(ceres.colonies).includes(marsBot.player.id);
+      expect(marsBot.turnResolver.megacredits).to.eq(0);
+    });
   });
 
   describe('B08 Corporate Competition target', () => {
@@ -383,7 +407,7 @@ describe('MarsBot Rules Compliance', () => {
       }
       marsBot.turnResolver.getMarsBotAwardValue = () => 10;
       const b08 = createBaseBonusCards().find((c) => c.id === BonusCardId.B08_CORPORATE_COMPETITION)!;
-      return {game, marsBot, b08};
+      return {game, human, marsBot, b08};
     }
 
     it('competes for the award the player leads by the least, over one MarsBot leads', () => {
@@ -400,6 +424,50 @@ describe('MarsBot Rules Compliance', () => {
       // Scientist moves the science track; Miner would have moved the space track
       expect(marsBot.marsBotBoard.tracks[3].position).to.be.greaterThan(0);
       expect(marsBot.marsBotBoard.tracks[1].position).to.eq(0);
+    });
+
+    it('measures the player\'s Thermalist by heat, energy and heat production', () => {
+      const {game, human, marsBot, b08} = setup({Scientist: 2});
+      game.fundAward(human, game.awards.find((a) => a.name === 'Thermalist')!);
+      // 10 for the comparison, 0 for the final count
+      human.energy = 1;
+      human.production.override({heat: 9, energy: 0, megacredits: 0, steel: 0, titanium: 0, plants: 0});
+      marsBot['bonusResolver'].resolve(b08);
+      // The tie on Thermalist is closer than Scientist's lead of 2
+      expect(marsBot.marsBotBoard.tracks[4].position).to.be.greaterThan(0);
+      expect(marsBot.marsBotBoard.tracks[3].position).to.eq(0);
+    });
+
+    // Rulebook A, p.7: it ignores a funded award whose helping action is impossible
+    it('skips an award whose track is maxed and helps the next closest one', () => {
+      const {marsBot, b08} = setup({Scientist: 0, Banker: 3});
+      const tracks = marsBot.marsBotBoard.tracks;
+      tracks[3].position = tracks[3].definition.layout.length - 1;
+      marsBot['bonusResolver'].resolve(b08);
+      // Banker advances the building track, the upper of the two tied tracks
+      expect(tracks[0].position).to.eq(1);
+      expect(marsBot.turnResolver.megacredits).to.eq(5);
+    });
+
+    it('draws another bonus card without a Failed Action when no helper can resolve', () => {
+      const {marsBot, b08} = setup({Scientist: 0});
+      const tracks = marsBot.marsBotBoard.tracks;
+      tracks[3].position = tracks[3].definition.layout.length - 1;
+      marsBot.bonusDeck.drawPile.push(createCorpBonusCard(BonusCardId.B31_GOVERNMENT_SUBSIDY));
+      const tr = marsBot.player.terraformRating;
+      marsBot['bonusResolver'].resolve(b08);
+      expect(marsBot.player.terraformRating).to.eq(tr + 1);
+      expect(marsBot.turnResolver.megacredits).to.eq(10);
+    });
+
+    it('skips Mogul when the most advanced track is maxed', () => {
+      const {marsBot} = createAutomaGame();
+      const tracks = marsBot.marsBotBoard.tracks;
+      tracks[2].position = tracks[2].definition.layout.length - 1;
+      tracks[0].position = 3;
+      expect(marsBot['bonusResolver']['tryHelperAction']('Mogul')).is.false;
+      expect(tracks[0].position).to.eq(3);
+      expect(marsBot.turnResolver.megacredits).to.eq(0);
     });
 
     it('for Banker advances the less-advanced of the building and event tracks', () => {
@@ -483,12 +551,52 @@ describe('MarsBot Rules Compliance', () => {
       expect(movedTracks(marsBot, 'Magnate')).deep.eq([0]);
     });
 
-    it('Forecaster reveals cards until one with a requirement, plays it and gains 5 M€', () => {
+    it('Forecaster reveals cards until one with a requirement and plays it', () => {
       const {game, marsBot} = createAutomaGame();
       stackDeck(game, new Mine(), new Algae());
       const mc = marsBot.turnResolver.megacredits;
       expect(movedTracks(marsBot, 'Forecaster')).deep.eq([6]);
-      expect(marsBot.turnResolver.megacredits).eq(mc + 5);
+      expect(marsBot.turnResolver.megacredits).eq(mc);
+    });
+
+    it('Forecaster in a full Corporate Competition costs nothing', () => {
+      const [game, human] = testGame(1, {automaOption: true, boardName: BoardName.TERRA_CIMMERIA_NOVA});
+      const marsBot = game.automaHooks!.marsBot;
+      game.fundAward(human, game.awards.find((a) => a.name === 'Forecaster')!);
+      stackDeck(game, new Mine(), new Algae());
+      marsBot.turnResolver.megacredits = 5;
+
+      marsBot['bonusResolver'].resolve(createBaseBonusCards().find((c) => c.id === BonusCardId.B08_CORPORATE_COMPETITION)!);
+
+      expect(marsBot.marsBotBoard.tracks[6].position).to.be.greaterThan(0);
+      expect(marsBot.turnResolver.megacredits).eq(5);
+    });
+
+    // B12: "If MarsBot has at least 5 MC" has no exception for Forecaster
+    it('Forecaster in a full Corporate Competition still needs 5 M€', () => {
+      const [game, human] = testGame(1, {automaOption: true, boardName: BoardName.TERRA_CIMMERIA_NOVA});
+      const marsBot = game.automaHooks!.marsBot;
+      game.fundAward(human, game.awards.find((a) => a.name === 'Forecaster')!);
+      stackDeck(game, new Mine(), new Algae());
+      marsBot.bonusDeck.drawPile.push(createCorpBonusCard(BonusCardId.B31_GOVERNMENT_SUBSIDY));
+      marsBot.turnResolver.megacredits = 4;
+      const tr = marsBot.player.terraformRating;
+
+      marsBot['bonusResolver'].resolve(createBaseBonusCards().find((c) => c.id === BonusCardId.B08_CORPORATE_COMPETITION)!);
+
+      expect(marsBot.marsBotBoard.tracks[6].position).to.eq(0);
+      expect(marsBot.player.terraformRating).to.eq(tr + 1);
+      expect(marsBot.turnResolver.megacredits).eq(4);
+    });
+
+    it('other helpers still need 5 M€ in Corporate Competition', () => {
+      const {game, human, marsBot} = createAutomaGame();
+      game.fundAward(human, game.awards.find((a) => a.name === 'Scientist')!);
+      marsBot.turnResolver.megacredits = 4;
+
+      marsBot['bonusResolver'].resolve(createBaseBonusCards().find((c) => c.id === BonusCardId.B08_CORPORATE_COMPETITION)!);
+
+      expect(marsBot.marsBotBoard.tracks[3].position).to.eq(0);
     });
 
     it('Administrator plays a card with no tags, not an event, and gains 5 M€', () => {
@@ -500,7 +608,26 @@ describe('MarsBot Rules Compliance', () => {
       expect(marsBot.turnResolver.megacredits).eq(mc + 10);
     });
 
-    it('Excentric removes an animal or microbe from the player\'s highest-scoring card', () => {
+    // Our reading: "reveal until" has no cap short of the whole deck
+    it('Administrator keeps revealing past 20 cards', () => {
+      const {game, marsBot} = createAutomaGame();
+      const microMills = new MicroMills();
+      stackDeck(game, ...Array.from({length: 25}, () => new Mine()), microMills);
+
+      expect(helper(marsBot, 'Administrator')).is.true;
+      expect(marsBot.playedProjectCards).to.include(microMills);
+    });
+
+    it('Administrator gives up once the whole deck is seen without a match', () => {
+      const {game, marsBot} = createAutomaGame();
+      game.projectDeck.drawPile.splice(0, game.projectDeck.drawPile.length, ...Array.from({length: 5}, () => new Mine()));
+      game.projectDeck.discardPile.splice(0, game.projectDeck.discardPile.length, ...Array.from({length: 3}, () => new Mine()));
+
+      expect(helper(marsBot, 'Administrator')).is.false;
+      expect(game.projectDeck.size()).eq(8);
+    });
+
+    it('Excentric removes an animal or microbe worth the most VP', () => {
       const {human, marsBot} = createAutomaGame();
       expect(helper(marsBot, 'Excentric')).is.false;
 
@@ -533,13 +660,11 @@ describe('MarsBot Rules Compliance', () => {
       expect(game.board.getAdjacentSpaces(space!).some(Board.isOceanSpace)).is.true;
     });
 
-    it('Suburbian and Edgedancer place their greenery on the edge of the map', () => {
-      for (const awardName of ['Suburbian', 'Edgedancer']) {
-        const {game, marsBot} = createAutomaGame();
-        withTopCities(game, marsBot);
-        const space = placedGreenery(game, marsBot, awardName);
-        expect(game.board.getEdges(), awardName).to.include(space);
-      }
+    it('Suburbian places its greenery on the edge of the map', () => {
+      const {game, marsBot} = createAutomaGame();
+      withTopCities(game, marsBot);
+      const space = placedGreenery(game, marsBot, 'Suburbian');
+      expect(space?.edge).is.true;
     });
 
     it('Highlander places its greenery away from oceans', () => {
@@ -549,6 +674,28 @@ describe('MarsBot Rules Compliance', () => {
       const space = placedGreenery(game, marsBot, 'Highlander');
       expect(space).is.not.undefined;
       expect(game.board.getAdjacentSpaces(space!).some(Board.isOceanSpace)).is.false;
+    });
+
+    it('Highlander on Vastitas Borealis also keeps away from spaces reserved for an ocean', () => {
+      /** Fills every land space except those next to an ocean-reserved space, which the modular Highlander may still use. */
+      const fillAwayFromReservedOceans = (game: IGame, human: TestPlayer) => {
+        const board = game.board;
+        for (const space of board.getSpaces(SpaceType.LAND).filter((sp) => sp.tile === undefined)) {
+          if (!board.getAdjacentSpaces(space).some((sp) => sp.spaceType === SpaceType.OCEAN)) {
+            game.simpleAddTile(human, space, {tileType: TileType.CITY});
+          }
+        }
+      };
+
+      const [vastitas, vastitasHuman] = testGame(1, {automaOption: true, boardName: BoardName.VASTITAS_BOREALIS_NOVA});
+      fillAwayFromReservedOceans(vastitas, vastitasHuman);
+      expect(helper(vastitas.automaHooks!.marsBot, 'Highlander')).is.false;
+
+      const [modular, modularHuman] = testGame(1, {
+        automaOption: true, boardName: BoardName.VASTITAS_BOREALIS_NOVA, randomMA: RandomMAOptionType.UNLIMITED, modularMA: true,
+      });
+      fillAwayFromReservedOceans(modular, modularHuman);
+      expect(helper(modular.automaHooks!.marsBot, 'Highlander')).is.true;
     });
 
     it('Founder places its city next to a special tile', () => {
@@ -565,12 +712,15 @@ describe('MarsBot Rules Compliance', () => {
 
   describe('B04 Overachievement award', () => {
     it('funds the award MarsBot leads by the most', () => {
-      const {game, marsBot} = createAutomaGame();
+      const {game, human, marsBot} = createAutomaGame();
       game.generation = 6;
-      const leads: Record<string, number> = {Scientist: 1, Miner: 4};
+      const leads: Record<string, number> = {Scientist: 1};
       for (const award of game.awards) {
         award.getScore = () => 10 - (leads[award.name] ?? -1);
       }
+      // Miner and Thermalist compare the player's resources plus production
+      human.steel = 6; // leads Miner by 4
+      human.heat = 11;
       marsBot.turnResolver.getMarsBotAwardValue = () => 10;
       const b04 = createBaseBonusCards().find((c) => c.id === BonusCardId.B04_OVERACHIEVEMENT)!;
 

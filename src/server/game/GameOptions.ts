@@ -95,6 +95,16 @@ export type GameOptions = {
    * megacredits convert at the table's last row (1 MC per VP) from then on.
    */
   automaNoGenerationLimit?: boolean;
+  /**
+   * With Colonies, MarsBot scores 1 VP for every 2 resources left on its shipping board and floaters on the
+   * Venus board at game end (designer intent, BGG threads 3408751, 3373832).
+   */
+  automaColonyVP?: boolean;
+  /**
+   * Moving a tracker onto a final greenery triggers none of MarsBot's corp effects. The designers leave
+   * this to the players as a difficulty modifier (Nick, our question thread Q&A 1).
+   */
+  automaFinalGreeneryNoCorpEffects?: boolean;
 }
 
 export const DEFAULT_GAME_OPTIONS: GameOptions = {
@@ -172,4 +182,6 @@ export const DEFAULT_GAME_OPTIONS: GameOptions = {
   automaTurmoilTRReduction: 10,
   automaTurmoilSetupDelegates: 0,
   automaNoGenerationLimit: false,
+  automaColonyVP: false,
+  automaFinalGreeneryNoCorpEffects: false,
 };

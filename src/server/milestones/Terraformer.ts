@@ -1,6 +1,5 @@
 import {IMilestone} from './IMilestone';
 import {IPlayer} from '../IPlayer';
-import {Turmoil} from '../turmoil/Turmoil';
 
 export class Terraformer implements IMilestone {
   public readonly name = 'Terraformer';
@@ -13,9 +12,13 @@ export class Terraformer implements IMilestone {
   public getScore(player: IPlayer): number {
     return player.terraformRating;
   }
+  private target(player: IPlayer): number {
+    return player.game.turmoil ? this.terraformRatingTurmoil : this.terraformRating;
+  }
   public canClaim(player: IPlayer): boolean {
-    const target = Turmoil.ifTurmoilElse(player.game, () => this.terraformRatingTurmoil, () => this.terraformRating);
-    const score = this.getScore(player);
-    return score >= target;
+    return this.getScore(player) >= this.target(player);
+  }
+  public remaining(player: IPlayer): number {
+    return Math.max(0, this.target(player) - this.getScore(player));
   }
 }

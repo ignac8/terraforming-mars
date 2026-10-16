@@ -168,16 +168,16 @@ describe('MarsBotBonusCardsColonies (C-15, C-16, C-17)', () => {
       expect(luna.visitor).to.eq(marsBot.player.id);
     });
 
-    it('C-17: failed action if no tradeable colony', () => {
+    // A bonus card that can't resolve is not a Failed Action (rulebook A, p.5)
+    it('C-17: no effect and no Failed Action if no tradeable colony', () => {
       const [game] = testGame(1, {automaOption: true, coloniesExtension: true, boardName: BoardName.THARSIS});
       const marsBot = getMarsBot(game);
       game.colonies = []; // No colonies
-      const mcBefore = marsBot.turnResolver.megacredits;
+      marsBot.turnResolver.megacredits = 3;
       const card = b19Card();
       marsBot.bonusDeck.drawPile.push(card);
       marsBot['bonusResolver'].resolve(card);
-      // Failed action gives MC
-      expect(marsBot.turnResolver.megacredits).to.be.greaterThan(mcBefore);
+      expect(marsBot.turnResolver.megacredits).to.eq(3);
     });
 
     it('C-24b: Europa trade raises TR instead of resources', () => {
@@ -214,17 +214,18 @@ describe('MarsBotBonusCardsColonies (C-15, C-16, C-17)', () => {
       expect(marsBot.shippingBoard.get(ColonyName.LUNA)).to.eq(2);
     });
 
-    it('C-17: failed action if all colonies visited', () => {
+    it('C-17: no effect and no Failed Action if all colonies visited', () => {
       const [game] = testGame(1, {automaOption: true, coloniesExtension: true, boardName: BoardName.THARSIS});
       const marsBot = getMarsBot(game);
       const luna = new Luna();
       luna.visitor = 'psome-player'; // Already traded
       game.colonies = [luna];
-      const mcBefore = marsBot.turnResolver.megacredits;
+      marsBot.turnResolver.megacredits = 3;
       const card = b20Card();
       marsBot.bonusDeck.drawPile.push(card);
       marsBot['bonusResolver'].resolve(card);
-      expect(marsBot.turnResolver.megacredits).to.be.greaterThan(mcBefore);
+      expect(marsBot.turnResolver.megacredits).to.eq(3);
+      expect(marsBot.shippingBoard.get(ColonyName.LUNA)).to.eq(0);
     });
   });
 });

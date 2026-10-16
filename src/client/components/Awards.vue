@@ -20,14 +20,12 @@
           </span>
         </span>
 
-        <span v-if="isLearnerModeOn">
-          <span
-            v-for="spotPrice in availableAwardSpots"
-            :key="spotPrice"
-            class="milestone-award-inline unpaid"
-          >
-            <div class="milestone-award-price" data-test="spot-price" v-text="spotPrice" ></div>
-          </span>
+        <span
+          v-for="spotPrice in availableAwardSpots"
+          :key="spotPrice"
+          class="milestone-award-inline unpaid"
+        >
+          <div class="milestone-award-price" data-test="spot-price" v-text="spotPrice" ></div>
         </span>
       </div>
 
@@ -40,6 +38,7 @@
             :showScores="showScores"
             :showDescription="showDescription"
             :isAutoma="isAutoma"
+            :automaMapSet="automaMapSet"
           />
         </div>
       </span>
@@ -52,6 +51,7 @@ import {defineComponent} from 'vue';
 import Award from '@/client/components/Award.vue';
 import {AWARD_COSTS} from '@/common/constants';
 import {FundedAwardModel} from '@/common/models/FundedAwardModel';
+import {BoardName} from '@/common/boards/BoardName';
 import {Preferences, PreferencesManager} from '@/client/utils/PreferencesManager';
 
 export default defineComponent({
@@ -69,6 +69,10 @@ export default defineComponent({
     isAutoma: {
       type: Boolean,
       default: false,
+    },
+    automaMapSet: {
+      type: String as () => BoardName,
+      default: undefined,
     },
     preferences: {
       type: Object as () => Readonly<Preferences>,
@@ -98,9 +102,6 @@ export default defineComponent({
     },
     availableAwardSpots(): number[] {
       return AWARD_COSTS.slice(this.fundedAwards.length);
-    },
-    isLearnerModeOn(): boolean {
-      return this.preferences.learner_mode;
     },
   },
 });

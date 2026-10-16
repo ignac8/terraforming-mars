@@ -5,8 +5,10 @@ import {GameOptions} from '../game/GameOptions';
 import {GameId, isPlayerId, safeCast} from '../../common/Types';
 import {Random} from '../../common/utils/Random';
 import {MarsBot} from './MarsBot';
-import {THARSIS_MARSBOT_BOARD, THARSIS_MARSBOT_BOARD_WITH_VENUS} from './boards/TharsisMarsBot';
+import {MARSBOT_BOARDS} from './boards/MarsBotBoards';
 import {TrackDefinition, MARSBOT_STARTING_TR} from '../../common/automa/AutomaTypes';
+import {MARSBOT_BOARD_NAMES} from '../../common/automa/MarsBotBoards';
+import {marsBotMapSet} from '../../common/automa/MarsBotMADescriptions';
 import {BoardName} from '../../common/boards/BoardName';
 import {AutomaGameHooks} from './AutomaGameHooks';
 import {MarsBotTags} from './MarsBotTags';
@@ -16,6 +18,11 @@ import {Tag} from '../../common/cards/Tag';
 import {ICard} from '../cards/ICard';
 import {IMilestone} from '../milestones/IMilestone';
 import {IAward} from '../awards/IAward';
+import {MilestoneName} from '../../common/ma/MilestoneName';
+import {AwardName} from '../../common/ma/AwardName';
+import {milestoneManifest} from '../milestones/Milestones';
+import {awardManifest} from '../awards/Awards';
+import {MAManifest} from '../ma/MAManifest';
 import {trackCubeKey} from './MarsBotCorpTypes';
 import {DELEGATES_PER_PLAYER} from '../../common/constants';
 
@@ -36,28 +43,51 @@ export class AutomaGameSetup {
     gameOptions.underworldExpansion = false;
     gameOptions.communityCardsOption = false;
     gameOptions.solarPhaseOption = false; // Venus Solar Phase Step 2 replaced by Government Intervention card
-    gameOptions.boardName = BoardName.THARSIS;
+    // The alternate Venus board's bonuses and the Chairman's agenda choice would ask MarsBot to choose.
+    gameOptions.altVenusBoard = false;
+    gameOptions.politicalAgendasExtension = 'Standard';
+    if (!MARSBOT_BOARD_NAMES.includes(gameOptions.boardName)) {
+      gameOptions.boardName = BoardName.THARSIS;
+    }
   }
 
-  /** Filter milestones unsupported against MarsBot. */
-  public static filterMilestones(milestones: Array<IMilestone>, gameOptions: GameOptions): Array<IMilestone> {
-    const unsupported: Array<string> = ['Terraformer29'];
+  /**
+   * Whether MarsBot can play against a milestone in this game.
+   *
+   * The automa rules cover the milestones of the maps with a MarsBot board, of the Milestones &
+   * Awards expansion and of Venus Next. A few of those still need an expansion that isn't in play.
+   */
+  public static supportsMilestone(name: MilestoneName, gameOptions: GameOptions): boolean {
+    const unsupported: Array<MilestoneName> = [];
     if (!gameOptions.venusNextExtension) {
-      unsupported.push('Planetologist', 'Trader', 'Merchant');
+      unsupported.push('Planetologist', 'Trader', 'Tradesman');
     }
     if (!gameOptions.turmoilExtension) {
       unsupported.push('Lobbyist');
     }
-    return milestones.filter((m) => !unsupported.includes(m.name));
+    return coveredByAutomaRules(name, milestoneManifest, MODULAR_MILESTONES) && !unsupported.includes(name);
+  }
+
+  /**
+   * Whether MarsBot can play against an award in this game: the awards the automa rules cover, and
+   * Venuphile only with Venus Next. Each has a Corporate Competition helper except Politician,
+   * which Corporate Competition skips.
+   */
+  public static supportsAward(name: AwardName, gameOptions: GameOptions): boolean {
+    if (name === 'Venuphile' && !gameOptions.venusNextExtension) {
+      return false;
+    }
+    return coveredByAutomaRules(name, awardManifest, MODULAR_AWARDS);
+  }
+
+  /** Filter milestones unsupported against MarsBot. */
+  public static filterMilestones(milestones: Array<IMilestone>, gameOptions: GameOptions): Array<IMilestone> {
+    return milestones.filter((m) => AutomaGameSetup.supportsMilestone(m.name, gameOptions));
   }
 
   /** Filter awards unsupported against MarsBot. */
   public static filterAwards(awards: Array<IAward>, gameOptions: GameOptions): Array<IAward> {
-    const unsupported: Array<string> = [];
-    if (!gameOptions.venusNextExtension) {
-      unsupported.push('Venuphile');
-    }
-    return unsupported.length > 0 ? awards.filter((a) => !unsupported.includes(a.name)) : awards;
+    return awards.filter((a) => AutomaGameSetup.supportsAward(a.name, gameOptions));
   }
 
   /** Filter out cards not supported against MarsBot (e.g., Recession). */
@@ -68,25 +98,34 @@ export class AutomaGameSetup {
     return cards;
   }
 
+  /** Rulebook A, p.11: "Mons Insurance - You may not use this corporation against MarsBot." */
+  public static filterCorporationCards<T extends ICard>(cards: Array<T>): Array<T> {
+    return cards.filter((c) => c.name !== CardName.MONS_INSURANCE);
+  }
+
   /** Create the MarsBot player instance for the game engine. */
   public static createMarsBotPlayer(gameId: GameId): IPlayer {
     const playerId = safeCast('p-' + gameId + '-marsbot', isPlayerId);
     return new Player('MarsBot', 'bronze', false, 0, playerId);
   }
 
+  /** The map whose MarsBot board this game uses. The Milestones & Awards expansion always uses Tharsis's (rulebook C, p.13). */
+  public static marsBotBoardName(gameOptions: GameOptions): BoardName {
+    return gameOptions.modularMA ? BoardName.THARSIS : gameOptions.boardName;
+  }
+
   /** Get the MarsBot board data for the selected map. */
   public static getBoardData(boardName: BoardName, venusEnabled: boolean): ReadonlyArray<TrackDefinition> {
-    switch (boardName) {
-    case BoardName.THARSIS:
-      return venusEnabled ? THARSIS_MARSBOT_BOARD_WITH_VENUS : THARSIS_MARSBOT_BOARD;
-    default:
-      throw new Error(`Automa board data not available for ${boardName}. Only Tharsis is currently supported.`);
+    const boards = MARSBOT_BOARDS[boardName];
+    if (boards === undefined) {
+      throw new Error(`No MarsBot board for ${boardName}`);
     }
+    return venusEnabled ? boards.withVenus : boards.base;
   }
 
   /** Set up MarsBot and return the AutomaGameHooks instance for Game.ts to use. */
   public static setup(game: IGame, humanPlayer: IPlayer, gameOptions: GameOptions, rng: Random, existingPlayer?: IPlayer): AutomaGameHooks {
-    const boardData = AutomaGameSetup.getBoardData(gameOptions.boardName, gameOptions.venusNextExtension);
+    const boardData = AutomaGameSetup.getBoardData(AutomaGameSetup.marsBotBoardName(gameOptions), gameOptions.venusNextExtension);
     const marsBotPlayer = existingPlayer ?? AutomaGameSetup.createMarsBotPlayer(game.id);
 
     // Set MarsBot player's game reference
@@ -151,13 +190,15 @@ export class AutomaGameSetup {
   }
 
   /**
-   * Pioneer4 milestone and Constructor award place colony cubes on MarsBot's tracks.
+   * The modular Pioneer milestone and Constructor award place colony cubes on MarsBot's tracks.
    * When MarsBot reaches these positions, it loses 5 MC and builds a colony (if Colonies enabled).
+   * Utopia Planitia's own Pioneer has no cubes.
    */
   private static placeColonyCubes(game: IGame, marsBot: MarsBot): void {
-    const hasPioneer4 = game.milestones.some((m) => m.name === 'Pioneer4');
+    const hasModularPioneer = game.milestones.some((m) => m.name === 'Pioneer') &&
+      marsBotMapSet(game.gameOptions) !== BoardName.UTOPIA_PLANITIA;
     const hasConstructor = game.awards.some((a) => a.name === 'Constructor');
-    if (!hasPioneer4 && !hasConstructor) {
+    if (!hasModularPioneer && !hasConstructor) {
       return;
     }
 
@@ -186,7 +227,7 @@ export class AutomaGameSetup {
   }
 
   /**
-   * C-6: Place the 2nd Trade Fleet cube on the credits track (Event track) at position 9.
+   * C-6: Place the 2nd Trade Fleet cube on space 9 of the Energy track.
    * When triggered (C-27), MarsBot unlocks the 2nd trade fleet and Extended Shipping Lines.
    */
   private static place2ndTradeFleetCube(game: IGame, marsBot: MarsBot): void {
@@ -202,7 +243,7 @@ export class AutomaGameSetup {
     const trackIndex = parseInt(trackStr);
     const position = parseInt(posStr);
     marsBot.trackCubePositions.set(key, {trackIndex, position, cubeType: 'white'});
-    game.log('MarsBot: 2nd Trade Fleet cube placed on credits track position ${0} (C-6)', (b) => b.number(position));
+    game.log('MarsBot: 2nd Trade Fleet cube placed on Energy track position ${0} (C-6)', (b) => b.number(position));
   }
 
   /**
@@ -229,4 +270,36 @@ export class AutomaGameSetup {
     turmoil.sendDelegateToParty(marsBotPlayer, party.name, game);
     game.log('MarsBot: extra setup delegate placed in ${0} (T-15)', (b) => b.partyName(party.name));
   }
+}
+
+/**
+ * The Milestones & Awards expansion's milestones that rulebook C (p.13-14) gives MarsBot a rule
+ * for. Terraformer is "not supported against the automa". Listed by name, so a milestone upstream
+ * adds to the random pool is not dealt against MarsBot.
+ */
+const MODULAR_MILESTONES: ReadonlyArray<MilestoneName> = [
+  'Briber', 'Builder7', 'Coastguard', 'Diversifier', 'Ecologist', 'Energizer', 'Engineer', 'Farmer',
+  'Fundraiser', 'Gardener', 'Generalist', 'Geologist', 'Hydrologist', 'Landshaper', 'Legend4', 'Lobbyist',
+  'Mayor', 'Merchant', 'Metallurgist', 'Philantropist', 'Pioneer', 'Planetologist', 'Planner', 'Producer',
+  'Researcher', 'Rim Settler', 'Spacefarer4', 'Sponsor', 'Tactician4', 'Terran', 'Terran5', 'Thawer', 'Trader',
+  'Tycoon10',
+];
+
+/** The Milestones & Awards expansion's awards that rulebook C (p.14-16) gives MarsBot a rule for. */
+const MODULAR_AWARDS: ReadonlyArray<AwardName> = [
+  'Administrator', 'Banker', 'Benefactor', 'Biologist', 'Botanist', 'Celebrity', 'Collector', 'Constructor',
+  'Contractor', 'Cultivator', 'Electrician', 'Estate Dealer', 'Excentric', 'Forecaster', 'Founder',
+  'Highlander', 'Incorporator', 'Industrialist', 'Investor', 'Landlord', 'Landscaper', 'Magnate',
+  'Manufacturer', 'Metropolist', 'Miner', 'Mogul', 'Politician', 'Promoter', 'Scientist', 'Space Baron',
+  'Suburbian', 'Thermalist', 'Traveller', 'Visionary',
+];
+
+/**
+ * Whether the automa rulebooks give MarsBot a rule for a milestone or award: it belongs to a map
+ * with a MarsBot board, to the Milestones & Awards expansion or to Venus Next.
+ */
+function coveredByAutomaRules<T extends string>(name: T, manifest: MAManifest<T, unknown>, modular: ReadonlyArray<T>): boolean {
+  return MARSBOT_BOARD_NAMES.some((board) => manifest.boards[board].includes(name)) ||
+    modular.includes(name) ||
+    manifest.expansions.venus.includes(name);
 }

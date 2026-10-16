@@ -20,6 +20,11 @@ export const MIN_TEMPERATURE = -30;
 export const MIN_OXYGEN_LEVEL = 0;
 export const MIN_VENUS_SCALE = 0;
 export const MAX_VENUS_SCALE = 30;
+export const MAX_OCEAN_TILES_AMAZONIS = 11;
+export const MAX_TEMPERATURE_AMAZONIS = 14;
+export const MAX_OXYGEN_LEVEL_AMAZONIS = 18;
+// Above 30%, Venus moves 1% per step.
+export const MAX_VENUS_SCALE_AMAZONIS = 33;
 
 export const OXYGEN_LEVEL_FOR_TEMPERATURE_BONUS = 8;
 export const TEMPERATURE_FOR_OCEAN_BONUS = 0;
@@ -54,7 +59,6 @@ export const GRAPHENE_VALUE = 4;
 
 // Map specific
 export const HELLAS_BONUS_OCEAN_COST = 6;
-export const VASTITAS_BOREALIS_BONUS_TEMPERATURE_COST = 3;
 export const VASTITAS_BOREALIS_NOVA_BONUS_TEMPERATURE_COST = 4;
 export const TERRA_CIMMERIA_COLONY_COST = 5;
 
@@ -88,7 +92,7 @@ export const LANGUAGES: Record<LANGUAGE, [string, string]> = {
   cn: ['华语', 'Chinese'],
   pl: ['Polski', 'Polish'],
   es: ['Español', 'Spanish'],
-  br: ['Português Brasileiro', 'Brazilian Portugese'],
+  br: ['Português Brasileiro', 'Brazilian Portuguese'],
   it: ['Italiano', 'Italian'],
   ko: ['한국어', 'Korean'],
   nl: ['Nederlands', 'Dutch'],
@@ -105,3 +109,12 @@ export const DISCORD_INVITE = 'https://discord.gg/afeyggbN6Y';
 export const DEFAULT_WAITING_FOR_TIMEOUT = 1000;
 export const DEFAULT_LOG_LENGTH = 50;
 export const DEFAULT_URL_ROOT = 'http://localhost:8080';
+
+export const PRODUCTION_MINIMUMS = {
+  megacredits: -5,
+  steel: 0,
+  titanium: 0,
+  plants: 0,
+  energy: 0,
+  heat: 0,
+};

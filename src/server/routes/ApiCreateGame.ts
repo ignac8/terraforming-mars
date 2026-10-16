@@ -20,7 +20,8 @@ import {durationToMilliseconds} from '../utils/durations';
 import {readBody} from './readBody';
 import {RouteError} from './RouteError';
 import {CEO_CARDS_DEALT_PER_PLAYER} from '../../common/constants';
-import {sanitizeEscapeVelocityOptions} from '../../common/game/escapeVelocity';
+import {hasNegativeEscapeVelocityOption, sanitizeEscapeVelocityOptions} from '../../common/game/escapeVelocity';
+import {MARSBOT_BOARD_NAMES} from '../../common/automa/MarsBotBoards';
 
 function parseQuotaConfig(struct: any): QuotaConfig {
   let {limit} = struct;
@@ -57,7 +58,7 @@ function getQuotaConfigs(): Array<QuotaConfig> {
       }
       return structs.map(parseQuotaConfig);
     } catch (e) {
-      console.warn('While initialzing quota:', (e instanceof Error ? e.message : e));
+      console.warn('While initializing quota:', (e instanceof Error ? e.message : e));
     }
   }
   return [defaultQuota];
@@ -82,7 +83,10 @@ export class ApiCreateGame extends Handler {
       return allBoards.filter((name) => {
         return name === BoardName.THARSIS ||
           name === BoardName.HELLAS ||
-          name === BoardName.ELYSIUM;
+          name === BoardName.ELYSIUM ||
+          name === BoardName.UTOPIA_PLANITIA ||
+          name === BoardName.VASTITAS_BOREALIS_NOVA ||
+          name === BoardName.TERRA_CIMMERIA_NOVA;
       });
     }
     return [board];
@@ -97,7 +101,7 @@ export class ApiCreateGame extends Handler {
   public validateCustomLists(gameReq: NewGameConfig): void {
     const playerCount = gameReq.players.length;
 
-    function validate(list: Array<unknown> | undefined, perPlayerCount: number, type: string): void {
+    function validate(list: ReadonlyArray<unknown> | undefined, perPlayerCount: number, type: string): void {
       if (list === undefined) {
         return;
       }
@@ -124,6 +128,9 @@ export class ApiCreateGame extends Handler {
     try {
       const gameReq = JSON.parse(body) as NewGameConfig;
       this.validateCustomLists(gameReq);
+      if (gameReq.escapeVelocity !== undefined && hasNegativeEscapeVelocityOption(gameReq.escapeVelocity)) {
+        throw RouteError.badRequest('Escape Velocity values cannot be negative.');
+      }
       const gameId = safeCast(generateRandomId('g'), isGameId);
       const spectatorId = safeCast(generateRandomId('s'), isSpectatorId);
       const players = gameReq.players.map((p) => {
@@ -143,7 +150,13 @@ export class ApiCreateGame extends Handler {
         }
       }
 
-      const boards = ApiCreateGame.boardOptions(gameReq.board);
+      let boards = ApiCreateGame.boardOptions(gameReq.board);
+      if (gameReq.automaOption === true) {
+        boards = boards.filter((name) => MARSBOT_BOARD_NAMES.includes(name));
+        if (boards.length === 0) {
+          boards = [BoardName.THARSIS];
+        }
+      }
       gameReq.board = boards[Math.floor(Math.random() * boards.length)];
 
       const gameOptions: GameOptions = {
@@ -205,6 +218,8 @@ export class ApiCreateGame extends Handler {
         automaTurmoilTRReduction: gameReq.automaTurmoilTRReduction ?? 10,
         automaTurmoilSetupDelegates: gameReq.automaTurmoilSetupDelegates ?? 0,
         automaNoGenerationLimit: gameReq.automaNoGenerationLimit ?? false,
+        automaColonyVP: gameReq.automaColonyVP ?? false,
+        automaFinalGreeneryNoCorpEffects: gameReq.automaFinalGreeneryNoCorpEffects ?? false,
       };
 
       let game: IGame;

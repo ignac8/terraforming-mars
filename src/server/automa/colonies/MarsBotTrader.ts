@@ -3,27 +3,15 @@ import {IColony} from '../../colonies/IColony';
 import {ColonyName} from '../../../common/colonies/ColonyName';
 import {ColoniesHandler} from '../../colonies/ColoniesHandler';
 import type {MarsBot} from '../MarsBot';
+import {pickByFlippedCard} from '../MarsBotCardFlip';
 
 /**
  * MarsBot colony trading logic (C-17, C-20, C-22, C-24b, C-24c).
  */
 
-/**
- * C-17c: Break a tie among candidate tiles by flipping a project card.
- * Uses cost − 1 as a 0-based index (same as C-15b random colony selection).
- * Discards the flipped card.
- */
+/** C-17c: Break a tie among candidate tiles by flipping a project card, like C-15b. */
 function selectTiedColony(game: IGame, candidates: Array<IColony>): IColony {
-  const flipped = game.projectDeck.drawN(game, 1);
-  if (flipped.length === 0) {
-    return candidates[0];
-  }
-  const card = flipped[0];
-  // Use positive modulo: cost=0 cards (e.g. IndenturedWorkers) would give -1 % N in JS
-  const n = candidates.length;
-  const index = ((card.cost - 1) % n + n) % n;
-  game.projectDeck.discardPile.push(card);
-  return candidates[index];
+  return pickByFlippedCard(game, candidates) ?? candidates[0];
 }
 
 /**

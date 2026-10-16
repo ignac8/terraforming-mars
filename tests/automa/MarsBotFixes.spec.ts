@@ -6,7 +6,7 @@ import {MarsBot} from '../../src/server/automa/MarsBot';
 import {MarsBotBoard} from '../../src/server/automa/MarsBotBoard';
 import {MarsBotTurnResolver} from '../../src/server/automa/MarsBotTurnResolver';
 import {THARSIS_MARSBOT_BOARD} from '../../src/server/automa/boards/TharsisMarsBot';
-import {TrackDefinition} from '../../src/common/automa/AutomaTypes';
+import {FAILED_ACTION_MC, TrackDefinition} from '../../src/common/automa/AutomaTypes';
 import {TileType} from '../../src/common/TileType';
 import {Tag} from '../../src/common/cards/Tag';
 import {BoardName} from '../../src/common/boards/BoardName';
@@ -158,7 +158,7 @@ describe('MarsBot Fixes', () => {
       expect(bot.getWaitingFor()).is.undefined;
     });
 
-    it('MarsBot gets nothing when all oceans are already placed', () => {
+    it('MarsBot takes a Failed Action when all oceans are already placed', () => {
       const {game, marsBot} = createAutomaGame();
       const bot = marsBot.player;
       (game as any).temperature = -2;
@@ -173,7 +173,7 @@ describe('MarsBot Fixes', () => {
       runAllActions(game);
 
       expect(game.getTemperature()).to.eq(0);
-      expect(marsBot.turnResolver.megacredits).to.eq(mcBefore);
+      expect(marsBot.turnResolver.megacredits).to.eq(mcBefore + FAILED_ACTION_MC);
       expect(bot.getWaitingFor()).is.undefined;
     });
 

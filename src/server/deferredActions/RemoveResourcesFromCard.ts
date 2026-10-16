@@ -37,6 +37,7 @@ export class RemoveResourcesFromCard extends DeferredAction<Response> {
       autoselect?: boolean
       title?: string | Message,
       blockable?: boolean,
+      /** Log the removal. Default true. */
       log?: boolean,
       /** Minimum resources a card must have to be offered as a target. Default 1 — most callers remove "up to count," not exactly count. */
       min?: number,
@@ -48,7 +49,7 @@ export class RemoveResourcesFromCard extends DeferredAction<Response> {
     this.mandatory = options?.mandatory ?? true;
     this.blockable = options?.blockable ?? true;
     this.autoselect = options?.autoselect ?? true;
-    this.log = options?.log ?? false;
+    this.log = options?.log ?? true;
     this.title = options?.title ?? (`Select card to remove ${count} ${cardResource}(s)`);
     this.min = options?.min ?? 1;
     if (this.source === 'self') {
@@ -68,12 +69,13 @@ export class RemoveResourcesFromCard extends DeferredAction<Response> {
 
     const cards = RemoveResourcesFromCard.getAvailableTargetCards(this.player, this.cardResource, this.source, this.min);
 
-    // Automa: MarsBot's MC supply can be targeted as if it held any resource type
-    const marsBotOption = this.player.game.automaHooks?.getRemoveResourceOption(
-      this.player, this.count, this.source, () => this.cb({card: undefined, owner: undefined, proceed: true}),
-    );
+    // Automa: MarsBot's MC supply can be targeted as if it held any resource type, and so can
+    // the colony storage area that holds this one
+    const marsBotOptions = this.player.game.automaHooks?.getRemoveResourceOptions(
+      this.player, this.count, this.source, () => this.cb({card: undefined, owner: undefined, proceed: true}), this.cardResource,
+    ) ?? [];
 
-    if (cards.length === 0 && marsBotOption === undefined) {
+    if (cards.length === 0 && marsBotOptions.length === 0) {
       this.cb({card: undefined, owner: undefined, proceed: false});
       return undefined;
     }
@@ -93,8 +95,8 @@ export class RemoveResourcesFromCard extends DeferredAction<Response> {
     if (selectCard !== undefined) {
       options.push(selectCard);
     }
-    if (marsBotOption !== undefined) {
-      options.push(marsBotOption);
+    if (marsBotOptions.length > 0) {
+      options.push(...marsBotOptions);
       // Default to MarsBot rather than to a card, which is usually the human's own.
       if (selectCard !== undefined) {
         selectCard.eligibleForDefault = false;
@@ -102,15 +104,13 @@ export class RemoveResourcesFromCard extends DeferredAction<Response> {
     }
 
     if (this.mandatory) {
-      if (options.length === 1 && cards.length === 1 && this.autoselect === true && marsBotOption === undefined) {
+      if (options.length === 1 && cards.length === 1 && this.autoselect === true && marsBotOptions.length === 0) {
         this.attack(cards[0]);
         return undefined;
       }
-      if (options.length === 1 && cards.length === 0 && marsBotOption !== undefined) {
-        // Only MarsBot target available, auto-execute it
-        this.player.game.automaHooks?.executeRemoveResource(
-          this.player, this.count, () => this.cb({card: undefined, owner: undefined, proceed: true}),
-        );
+      if (options.length === 1 && cards.length === 0 && marsBotOptions.length === 1) {
+        // Only one MarsBot target available, auto-execute it
+        marsBotOptions[0].cb(undefined);
         return undefined;
       }
       if (options.length === 1) {
@@ -127,26 +127,25 @@ export class RemoveResourcesFromCard extends DeferredAction<Response> {
   private attack(card: ICard) {
     const target = this.player.game.getCardPlayerOrThrow(card.name);
 
-    // TODO(kberg): Consolidate the blockable in maybeBlock.
-    if (this.blockable === false) {
-      target.removeResourceFrom(card, this.count, {removingPlayer: this.player});
-      this.cb({card: card, owner: target, proceed: true});
-      return;
-    }
-    const msg = message('${0} ${1} from ${2}', (b) => b.number(this.count).string(card.resourceType || 'resources').card(card));
-    target.maybeBlockAttack(this.player, msg, (proceed) => {
+    const resolve = (proceed: boolean) => {
       if (proceed) {
         target.removeResourceFrom(card, this.count, {removingPlayer: this.player, log: this.log});
       }
       this.cb({card: card, owner: target, proceed: proceed});
       return undefined;
-    });
+    };
+    if (this.blockable === false) {
+      resolve(true);
+      return;
+    }
+    const msg = message('${0} ${1} from ${2}', (b) => b.number(this.count).string(card.resourceType || 'resources').card(card));
+    target.maybeBlockAttack(this.player, msg, resolve);
   }
 
-  /** Returns true if there are any valid targets (cards or MarsBot MC supply). */
+  /** Returns true if there are any valid targets (cards or MarsBot's MC supply and colony storage). */
   public static hasAvailableTargets(player: IPlayer, resourceType: CardResource | undefined, source: Source = 'all', min: number = 1): boolean {
     // Check MarsBot MC first (O(1)) before expensive card iteration (O(n*m))
-    if (player.game.automaHooks?.hasRemoveResourceTarget(player, source)) {
+    if (player.game.automaHooks?.hasRemoveResourceTarget(player, source, resourceType)) {
       return true;
     }
     return RemoveResourcesFromCard.getAvailableTargetCards(player, resourceType, source, min).length > 0;

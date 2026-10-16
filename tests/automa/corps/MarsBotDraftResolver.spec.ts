@@ -131,6 +131,34 @@ describe('MarsBotDraftResolver', () => {
 
       expect(picked).to.eq(buildingCard);
     });
+
+    // Our reading: Aridor's priority is a track, not an ordered tag list, so both tags on a
+    // shared track match alike and more matches win.
+    describe('on a track with two tags (Tharsis power/Jovian)', () => {
+      const powerCard = fakeCard({tags: [Tag.POWER]});
+      const jovianCard = fakeCard({tags: [Tag.JOVIAN]});
+      const twoJovianCard = fakeCard({tags: [Tag.JOVIAN, Tag.JOVIAN]});
+
+      function energyBehind(shuffler: Shuffler): MarsBotDraftResolver {
+        const marsBotBoard = new MarsBotBoard(THARSIS_MARSBOT_BOARD);
+        marsBotBoard.tracks.forEach((track, i) => {
+          if (i !== 4) {
+            track.advance();
+          }
+        });
+        expect(marsBotBoard.definitions[marsBotBoard.getLeastAdvancedTrackIndex()].tags).deep.eq([Tag.POWER, Tag.JOVIAN]);
+        return new MarsBotDraftResolver(marsBotBoard, shuffler);
+      }
+
+      it('ties a card with either tag, broken at random', () => {
+        expect(energyBehind(keepOrder).pickCard([jovianCard, powerCard], priority)).to.eq(jovianCard);
+        expect(energyBehind(reverseOrder).pickCard([jovianCard, powerCard], priority)).to.eq(powerCard);
+      });
+
+      it('prefers the card with more of the track\'s tags', () => {
+        expect(energyBehind(keepOrder).pickCard([powerCard, twoJovianCard], priority)).to.eq(twoJovianCard);
+      });
+    });
   });
 
   describe('pickCard, mostTags priority', () => {
@@ -142,12 +170,13 @@ describe('MarsBotDraftResolver', () => {
       expect(picked).to.eq(buildingAndSpaceCard);
     });
 
-    it('does not count wild tags', () => {
+    // Our reading: a wild tag is a tag when MarsBot counts them; it only fails to match a named priority tag
+    it('counts wild tags', () => {
       const threeWildCard = fakeCard({tags: [Tag.WILD, Tag.WILD, Tag.WILD]});
 
-      const picked = resolver().pickCard([threeWildCard, buildingCard], priority);
+      const picked = resolver().pickCard([buildingCard, threeWildCard], priority);
 
-      expect(picked).to.eq(buildingCard);
+      expect(picked).to.eq(threeWildCard);
     });
   });
 
@@ -181,13 +210,36 @@ describe('MarsBotDraftResolver', () => {
       expect(kept).to.deep.eq([buildingCard, earthCard, plantCard]);
     });
 
-    it('discards nothing when every card carries a priority tag', () => {
+    // Nick, BGG 3398289: "it will always end up discarding one card from those drafted", which
+    // overrides rulebook B p.2's 5-card deck
+    it('discards the card with the fewest priority matches when every card carries one', () => {
       const drafted = [buildingCard, spaceCard, buildingAndSpaceCard];
 
       const {kept, discarded} = resolver(keepOrder).discardAfterDraft(drafted, priority);
 
-      expect(discarded).is.empty;
-      expect(kept).to.deep.eq(drafted);
+      expect(discarded).to.deep.eq([spaceCard]);
+      expect(kept).to.deep.eq([buildingCard, buildingAndSpaceCard]);
+    });
+
+    it('breaks a tie among the fewest matches by the shuffled order', () => {
+      const drafted = [spaceCard, buildingCard, expensiveSpaceCard];
+
+      expect(resolver(keepOrder).discardAfterDraft(drafted, priority).discarded).to.deep.eq([spaceCard]);
+      expect(resolver(reverseOrder).discardAfterDraft(drafted, priority).discarded).to.deep.eq([expensiveSpaceCard]);
+    });
+
+    it('drafting on the least advanced track discards the card with the fewest of its tags when all match', () => {
+      const marsBotBoard = new MarsBotBoard(THARSIS_MARSBOT_BOARD);
+      // Leave track 0 (Building and Microbe) behind
+      for (let i = 1; i < marsBotBoard.tracks.length; i++) {
+        marsBotBoard.tracks[i].advance();
+      }
+      const drafted = [buildingCard, buildingAndSpaceCard, scienceAndBuildingCard];
+
+      const {discarded} = new MarsBotDraftResolver(marsBotBoard, keepOrder)
+        .discardAfterDraft(drafted, {type: 'leastAdvancedTrack'});
+
+      expect(discarded).to.deep.eq([buildingCard]);
     });
 
     it('discards only the first card when none of them match', () => {

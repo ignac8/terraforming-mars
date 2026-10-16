@@ -1,21 +1,21 @@
 # Upstream PR tracker
 
 State of the one-file-at-a-time PR series against `terraforming-mars/terraforming-mars`,
-agreed after #8001 was deemed too big to review. Last updated: 2026-08-06.
+agreed after #8001 was deemed too big to review. Last updated: 2026-10-13.
 
 ## Merged
 
 | PR | Contents |
 |----|----------|
-| [#7994](https://github.com/terraforming-mars/terraforming-mars/pull/7994) | Foundation: `AutomaTypes`, `MarsBotTracks` (was `MarsBotBoard`), `TharsisMarsBot`, `MarsBotModel`, `MarsBotMADescriptions`, board spec |
+| [#7994](https://github.com/terraforming-mars/terraforming-mars/pull/7994) | Foundation: `AutomaTypes`, `MarsBotTracks` (was `MarsBotBoard`), `TharsisMarsBot`, `MarsBotModel`, `MarsBotMADescriptions`, board spec. Automa divergence since merge: `MarsBotModel`'s VP breakdown field `colonyVP` is `leftoverResourcesVP` (the optional rule scores leftover shipping-board resources and Venus floaters, not colonies; model only, never saved); `MarsBotMADescriptions` describes every milestone and award MarsBot plays against, adding Polar Explorer, Pioneer, Geologist, Hoverlord, Desert Settler, Estate Dealer, Metropolist, Suburbian, Landscaper, Highlander and Venuphile |
 | [#8203](https://github.com/terraforming-mars/terraforming-mars/pull/8203) | `MarsBotBonusCard.ts` — bonus card type + base set (squash-merged 2026-07-20) |
 | [#8204](https://github.com/terraforming-mars/terraforming-mars/pull/8204) | `MarsBotTags.ts` + spec |
 | [#8205](https://github.com/terraforming-mars/terraforming-mars/pull/8205) | Venus track layout, `AutomaTypes` floater/floater2 + `tag_${string}` actions |
 | [#8206](https://github.com/terraforming-mars/terraforming-mars/pull/8206) | `MarsBotBonusDeck.ts` extending `Deck<MarsBotBonusCard>` + spec, kberg's `b5c7df0cf` (`AUTOMA_*` CardNames, `Deck<Named<CardName>>`) riding along (squash-merged 2026-07-28 as `27bd8b963`). His approval note: many of the deck tests duplicate `Deck.spec.ts` now — #8342 trims them. Automa divergence stays: id-based serde in `MarsBot.ts` (no save migration), expansion deck factories, `findAndRemove`/`removeById`, `bonusCardDisplayName()` (now a `split(':')[0]`) |
-| [#8207](https://github.com/terraforming-mars/terraforming-mars/pull/8207) | `MarsBotCorpTypes.ts` + `CubeType` in `AutomaTypes` (squash-merged 2026-07-31 as `8d8e335d8`). Approved with questions still open, answered and fixed in #8353 |
+| [#8207](https://github.com/terraforming-mars/terraforming-mars/pull/8207) | `MarsBotCorpTypes.ts` + `CubeType` in `AutomaTypes` (squash-merged 2026-07-31 as `8d8e335d8`). Approved with questions still open, answered and fixed in #8353. Automa divergence since merge: `onColonyPlaced` also fires for the human's colonies (Poseidon); `maybeDrawAndResolveProjectCardIgnoringFirstNTags(n)` became `maybeDrawAndResolveProjectCardFirstTagOnly()` (Thorgate resolves only the first tag); new `returnSetupBonusCardToBonusDeck()` (UNMI); new `afterTrackSpaceResolved` effect hook, so Manutech advances again after the #5/#12 space resolves; `IMarsBot.failedActionMc` (Sagitta pays double) and `mcKeptThroughIntervention` (Lakefront's M€ survives Government Intervention); `raiseTemperature` narrowed to `1 \| 2` and takes a Failed Action at max; `trackCubes` also takes a tag-named `MarsBotTagTrackCube` (Aridor's Jovian and city cubes), read through the new `corpTrackCubes(corp, board)`; `advanceTrack` and the `maybeDrawAndResolve*` methods do nothing once the game has ended |
 | [#8342](https://github.com/terraforming-mars/terraforming-mars/pull/8342) | Trims the 3 bonus deck tests that duplicate `Deck.spec.ts` (merged 2026-07-28 as `740d79ef6`). Automa keeps its adapted 4-test spec (id-based deserialize, no name round trip) |
-| [#8208](https://github.com/terraforming-mars/terraforming-mars/pull/8208) | `MarsBotTilePlacer.ts` + spec (squash-merged 2026-08-03 as `b9ddb4063`). Three review rounds: `Board.ownedBy` filters, `drawOrThrow`, duplicated adjacency scorer collapsed; spec rewritten so no test can pass without asserting, then flattened to one `describe` with `cast(x, undefined)` and 17 tests naming the spaces they expect. `findExpediteConstructionCitySpace` renamed after the Expedited Construction card. Pushed back successfully on `maxOutOceans`: it stops at the 9-ocean cap, leaving 3 of Tharsis's 12 reserved spaces free. Automa divergence since merge: `findNeuralInstanceSpace` also rejects spaces next to `noctisCitySpaceId` (with a spec), still to be sent upstream |
-| [#8209](https://github.com/terraforming-mars/terraforming-mars/pull/8209) | `MarsBotDraftResolver.ts` + spec (squash-merged 2026-08-04 as `d3eed6478`). Four rounds; round 4 found two rule bugs behind kberg's "magic incantation" note: tag priority became lexicographic on per-tag counts, and the post-draft discard now removes the first card without a priority tag, with Credicor, Spire and Aridor saving what they drafted for. His parting note that ranking by score exists in more than one place became the `rankedTiers` PR |
+| [#8208](https://github.com/terraforming-mars/terraforming-mars/pull/8208) | `MarsBotTilePlacer.ts` + spec (squash-merged 2026-08-03 as `b9ddb4063`). Three review rounds: `Board.ownedBy` filters, `drawOrThrow`, duplicated adjacency scorer collapsed; spec rewritten so no test can pass without asserting, then flattened to one `describe` with `cast(x, undefined)` and 17 tests naming the spaces they expect. `findExpediteConstructionCitySpace` renamed after the Expedited Construction card. Pushed back successfully on `maxOutOceans`: it stops at the 9-ocean cap, leaving 3 of Tharsis's 12 reserved spaces free. Automa divergence since merge: `findNeuralInstanceSpace` also rejects spaces next to `noctisCitySpaceId` (with a spec), still to be sent upstream; greenery placement scores MarsBot's adjacent cities minus the player's (net gain, BGG 3350125/3411375) instead of MarsBot's first; the Expedited Construction city space goes through `findCitySpace` with a 2+ greenery/ocean filter, so the usual city rule picks among those spaces |
+| [#8209](https://github.com/terraforming-mars/terraforming-mars/pull/8209) | `MarsBotDraftResolver.ts` + spec (squash-merged 2026-08-04 as `d3eed6478`). Four rounds; round 4 found two rule bugs behind kberg's "magic incantation" note: tag priority became lexicographic on per-tag counts, and the post-draft discard now removes the first card without a priority tag, with Credicor, Spire and Aridor saving what they drafted for. His parting note that ranking by score exists in more than one place became the `rankedTiers` PR. Automa divergence since merge: a tag priority (a tag list or Aridor's track) that protects every card still discards one, the card with the fewest matches (`fewestMatches`, BGG 3398289); Aridor scores cards by the tags on its least-advanced track (`scoreByTrack`), both tags of a shared track alike; the most-tags count includes wild tags |
 
 ## Open
 
@@ -31,7 +31,7 @@ plus a `game` reference installed at load), and card hooks take the real
 | [#8210](https://github.com/terraforming-mars/terraforming-mars/pull/8210) | `marsbot-ma-eval` | `MarsBotMilestoneAwardEval.ts` + spec. **Round 2 addressed (2026-08-03):** `MarsBotMAContext` dropped, evals take `IMarsBot` and read the game like the real milestones. Fixed two bugs it exposed: Hydrologist counted owners of ocean tiles, which the engine never sets, so it could never be claimed; Visionary counted the Venus track twice. **Round 3 addressed (2026-08-06):** the 84-entry eval table is gone; the bot claims and scores through the ordinary `IMilestone`/`IAward` calls with its player (its tags and production read the tracks). Rulebook C documents bot criteria past Tharsis (the official maps on pages 9-10, the Awards & Milestones expansion on 13-16), so every criterion that differs from the human rule became an override: 29 milestones and 22 awards implement the new optional `marsBotCanClaim`/`marsBotScore` members, tested in their class specs, and entries the rulebook leaves unchanged fall through to the normal rules. Reading the source also fixed a dozen errors in the old table (Fundraiser and Promoter read the wrong track, Trader and Lobbyist could never be claimed) and Terraformer under Turmoil, where the class knows the 26 threshold the table hardcoded as 35 | `@/` imports -> relative; automa's helpers read the public `tagToTrack` record and the overrides read `megacredits`/`floaters` and `marsBotBoard`, where upstream keeps `getTrackIndexForTag`, `mcSupply`/`floaterCount` and `board` until #8353 lands |
 | [#8211](https://github.com/terraforming-mars/terraforming-mars/pull/8211) | `marsbot-turmoil-helper` | `MarsBotTurmoilHelper.ts` + spec. **Round 1 addressed (2026-08-03):** now a class holding game, turmoil and both players; `totalDelegates` and a no-op `as` cast deleted, `maybeUpdatePartyLeader` renamed, delegate log message generalised. **Round 4 addressed (2026-08-04):** log message to past tense. Pushed back on dropping `maybeUpdatePartyLeader`: `Party.checkPartyLeader` only promotes someone it finds in `game.playersInGenerationOrder`, and MarsBot is deliberately not there, so a bot holding 2 delegates to a human's 1 never took the lead without it. The spec had cast a real second player as MarsBot, which hid this, so it now builds the bot the way `AutomaGameSetup` does and a 14th test covers the leadership. **Round 5 addressed (2026-08-04):** the fix moved into `Party.checkPartyLeader` itself, which now also considers delegates that are not game players, so `maybeUpdatePartyLeader` is deleted; the ctor takes only `game` and reads the bot from the new `automaHooks` seam on IGame (`IAutomaGameHooks`, holding just the MarsBot player upstream); dropped an unnecessary `as PlayerId` cast. **Round 6 addressed (2026-08-06):** the seam is a `type AutomaGameHooks` (the fork's class of the same name replaces it in a later PR); game setup split into its own PR that this one sits on, so the spec builds a real automa game via `automaOption`; the Party fix took kberg's explicit shape, pushing `automaHooks?.marsBotPlayer` after NEUTRAL when it holds delegates | Automa types `IGame.automaHooks` as the full `AutomaGameHooks` class in place of the upstream type; automa's spec builds a real automa game instead of hand-building the player |
 | rankedTiers (PR pending) | `ranking-tiers` -> `ranked-tiers` | `rankedTiers` in `utils.ts` plus refits of the three copies of the first/second-with-friendly-ties walk: `Election`, `Revolution` and the award scoring in `calculateVictoryPoints`. Adds the missing tie-for-first and two-player tests, and a `calculateVictoryPoints.spec.ts` covering that two player games award no second place. Answers kberg's note on #8209 that this ranking exists in more than one place | Automa's award refit keeps the MarsBot player push from `automaHooks` |
-| [#8369](https://github.com/terraforming-mars/terraforming-mars/pull/8369) | `marsbot-game-setup` | Split out of #8211 round 6: `automaOption` in `GameOptions`, `AutomaGameSetup` creating the MarsBot player outside `game.players` (turmoil delegates seeded, no solo neutral tiles, `isSoloMode` false) and the deserialize path recreating it by id; 6 tests including a reload round trip that keeps a sent delegate | Automa's setup also builds the bot manager, decks and board; the upstream slice holds just the player |
+| [#8369](https://github.com/terraforming-mars/terraforming-mars/pull/8369) | `marsbot-game-setup` | Split out of #8211 round 6: `automaOption` in `GameOptions`, `AutomaGameSetup` creating the MarsBot player outside `game.players` (turmoil delegates seeded, no solo neutral tiles, `isSoloMode` false) and the deserialize path recreating it by id; 6 tests including a reload round trip that keeps a sent delegate | Automa's setup also builds the bot manager, decks and board; the upstream slice holds just the player. Automa's `Game.newInstance` also drops Mons Insurance from the corporation deck (rulebook A FAQ) |
 
 ## Design note: bonus card destruction (resolved 2026-06-20)
 
@@ -43,6 +43,49 @@ No flag on the card, no destroyed-list on the deck. On the automa branch,
 the discard accordingly. The old `destroyedBonusCards` serialize/restore/milestone
 plumbing was dead code (it scanned piles a destroyed card can never be in) and was
 removed.
+
+Since 2026-10-12 `MarsBot.destroyedBonusCards` is back as a plain counter, for Utopia
+Planitia's Specialist milestone ("3 or more MarsBot bonus cards are destroyed").
+`resolve()` increments it when a card is destroyed rather than shuffled back into the
+bonus deck. Corp setup resolves (Philares) go through `resolveBonusCard` and don't
+count. It is serialized like the other MarsBot counters.
+
+## Shared engine files touched by the boards and rules batch (2026-10-12)
+
+These ride along with whichever automa PR needs them:
+
+- `boards/Board.ts`: MarsBot pays no placement-bonus costs (`computeAdditionalCosts`).
+- `boards/TerraCimmeriaNovaBoard.ts`, `boards/VastitasBorealisNovaBoard.ts`: MarsBot can
+  always use the MSL and Viking hexes.
+- `Game.ts`: oxygen's temperature bonus with temperature maxed calls
+  `automaHooks.handleUnresolvableTerraformingBonus` (Failed Action for MarsBot).
+- `Player.ts`: generation 1 calls `automaHooks.handleActionPhaseStart` once preludes are
+  done, so MarsBot's before-action-phase box resolves after them.
+- `milestones/IMilestone.ts`, `Terraformer.ts`, `amazonisPlanitia/Minimalist.ts`: optional
+  `remaining(player)` for MarsBot's "closest to meeting" milestone tiebreaker.
+- Map milestones and awards (`RimSettler`, `Irrigator`/`Coastguard`, `Smith`, `Tradesman`,
+  `LandSpecialist`, modular `Engineer`, `Farmer`, `Fundraiser`, `Planetologist`,
+  `awards/modular/Founder`, `awards/Magnate`): `marsBotCanClaim` / `marsBotScore` with map
+  rules keyed by `marsBotMapSet`.
+- `deferredActions/RemoveResourcesFromCard.ts`: MarsBot's colony storage as a target (C-25).
+- `colonies/Colony.ts`: `addColony` calls `automaHooks.handleColonyBuilt`, so the human's
+  colonies trigger MarsBot's Poseidon.
+- `Game.ts`: the Venus 8% card bonus calls `automaHooks.handleVenusCardBonus` first, so MarsBot
+  gains 2 M€ instead of drawing a card.
+- `client/components/GameEnd.vue`, `GameSetupDetail.vue`, `automa/MarsBotPanel.vue`,
+  `create/CreateGameForm.vue`: the `automaColonyVP` labels read "Leftover resources" (fork-only
+  client, but the end-game and setup-detail rows touch shared components).
+- `SerializedGame.ts`, `game/GameOptions.ts`, `common/game/NewGameConfig.ts`,
+  `routes/ApiCreateGame.ts`, `models/ServerModel.ts`, create-form files: new automa state and
+  the `automaColonyVP` option (MarsBot's leftover shipping-board resources and Venus floaters score
+  1/2 VP each) and the `automaFinalGreeneryNoCorpEffects` option (final greeneries skip MarsBot's
+  corp cubes; `GameSetupDetail.vue` shows it too).
+- `ma/MilestoneAwardSelector.ts`: random milestones and awards in an automa game draw only from
+  the ones `AutomaGameSetup.supportsMilestone` / `supportsAward` accept: the six MarsBot maps'
+  sets, Venus Next's, and the Milestones & Awards expansion's listed by name (not by the
+  manifest's `random` flag, so new upstream ones are not dealt against MarsBot).
+- `game/calculateVictoryPoints.ts`: Turmoil Points come first in `detailsCards`, matching
+  MarsBot's end-game column (fork display choice, not needed upstream).
 
 ## Blocked (everything else)
 

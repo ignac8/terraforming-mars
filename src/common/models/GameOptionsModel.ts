@@ -39,6 +39,8 @@ export type GameOptionsModel = {
   automaTurmoilTRReduction: 7 | 10,
   automaTurmoilSetupDelegates: 0 | 1 | 2,
   automaNoGenerationLimit: boolean,
+  automaColonyVP: boolean,
+  automaFinalGreeneryNoCorpEffects: boolean,
 
   // These are only supplied for the JSON, and
   // some of them can be a bit large.

@@ -1,5 +1,7 @@
-import {IMarsBotCorp, trackCubeKey} from '../MarsBotCorpTypes';
+import {IMarsBotCorp, corpTrackCubes, trackCubeKey} from '../MarsBotCorpTypes';
 import {CardName} from '../../../common/cards/CardName';
+import {CardType} from '../../../common/cards/CardType';
+import {IProjectCard} from '../../cards/IProjectCard';
 import {Random} from '../../../common/utils/Random';
 import {GameOptions} from '../../game/GameOptions';
 import {getAllMarsBotCorps} from './MarsBotCorpRegistry';
@@ -24,34 +26,36 @@ export class MarsBotCorpResolver {
    * Run corp setup: place track cubes, resolve starting tags, call setup box.
    */
   public static setupCorp(corp: IMarsBotCorp, marsBot: MarsBot): void {
-    // 1. Place track cubes
-    if (corp.trackCubes !== undefined) {
-      for (const cube of corp.trackCubes) {
-        marsBot.trackCubePositions.set(trackCubeKey(cube.trackIndex, cube.position), cube);
-      }
+    // 1. Place track cubes, skipping tracks this game's board lacks (Venus without Venus Next).
+    // A save keeps the positions, so a restored game never re-resolves them.
+    for (const cube of corpTrackCubes(corp, marsBot.marsBotBoard)) {
+      marsBot.trackCubePositions.set(trackCubeKey(cube.trackIndex, cube.position), cube);
     }
 
-    // 2. Resolve starting tags — advance tracks like project card tags
+    // 2. Call corp-specific setup (rulebook B, p.1: the Setup box resolves before the starting tags)
+    if (corp.setup !== undefined) {
+      corp.setup(marsBot);
+    }
+
+    // 3. Resolve starting tags as if they were shown on a revealed card (rulebook B, setup step 4):
+    // advance tracks, then run the corp's own and the human's card effects. The corp's ongoing
+    // effect is already active, so it sees them (Ecotec: "including the starting tag").
     for (const tag of corp.tags) {
       const trackIndex = marsBot.marsBotBoard.tagToTrack[tag];
       if (trackIndex !== undefined) {
         marsBot.turnResolver.advanceTrack(trackIndex);
       }
+      corp.effect?.onTagResolved?.(marsBot, tag);
     }
 
-    // 2b. FAQ: trigger human corp callbacks for MarsBot's starting tags
-    // e.g., if human plays Saturn Systems and MarsBot has Jovian starting tag
     if (corp.tags.length > 0) {
-      const humanPlayer = marsBot.humanPlayer;
-      const fakeCard = {tags: [...corp.tags], name: corp.name} as any;
-      for (const effectCard of humanPlayer.playedCards) {
-        humanPlayer.defer(effectCard.onCardPlayedByAnyPlayer?.(humanPlayer, fakeCard, marsBot.player));
-      }
-    }
-
-    // 3. Call corp-specific setup
-    if (corp.setup !== undefined) {
-      corp.setup(marsBot);
+      // The starting tags stand in for the tags of a project card, so effects that trigger on a
+      // card's tags (Arclight, Pharmacy Union, Saturn Systems) fire for them too.
+      const tagsCard = {name: corp.name, type: CardType.CORPORATION, tags: [...corp.tags], cost: 0, requirements: [], metadata: {}} as unknown as IProjectCard;
+      corp.effect?.onProjectCardResolved?.(marsBot, tagsCard);
+      // FAQ: trigger human corp callbacks for MarsBot's starting tags
+      // e.g., if human plays Saturn Systems and MarsBot has Jovian starting tag
+      marsBot.turnResolver.notifyPlayerCards(tagsCard);
     }
   }
 
@@ -59,9 +63,10 @@ export class MarsBotCorpResolver {
    * Called when a track advances to a new position. Checks for cube triggers.
    *
    * Returns true when a corp cube replaced the icon printed on that space, so the caller
-   * leaves the icon unresolved.
+   * leaves the icon unresolved. With `corpCubesOnly` the colony and trade fleet cubes stay
+   * untouched, for the final greenery move after the game has ended.
    */
-  public static onTrackAdvanced(marsBot: MarsBot, trackIndex: number, position: number): boolean {
+  public static onTrackAdvanced(marsBot: MarsBot, trackIndex: number, position: number, corpCubesOnly: boolean = false): boolean {
     const cube = marsBot.hasCubeAt(trackIndex, position);
     if (cube === undefined) {
       return false;
@@ -72,15 +77,16 @@ export class MarsBotCorpResolver {
     // Only the corp's own cubes reach its handler. The colony and trade fleet cubes below are
     // rule cubes that sit on the same tracks.
     const corp = marsBot.corp;
-    const corpCube = corp?.trackCubes?.find((c) => c.trackIndex === trackIndex && c.position === position);
+    const corpCube = corp === undefined ? undefined :
+      corpTrackCubes(corp, marsBot.marsBotBoard).find((c) => c.trackIndex === trackIndex && c.position === position);
     const triggers = firstVisit || corp?.trackCubesTriggerEveryAdvance === true;
     const replacedIcon = corpCube !== undefined && triggers &&
       corp?.effect?.onTrackCubeTrigger?.(marsBot, trackIndex, position, corpCube.cubeType) === true;
-    if (!firstVisit) {
+    if (!firstVisit || corpCubesOnly) {
       return replacedIcon;
     }
 
-    // Colony cubes (Pioneer4/Constructor): positions set by AutomaGameSetup
+    // Colony cubes (modular Pioneer/Constructor): positions set by AutomaGameSetup
     // C-X3: deduct 5 MC then place a colony on a randomly selected eligible tile
     if (marsBot.hasColonyCubes && marsBot.colonyCubePositions.has(trackCubeKey(trackIndex, position))) {
       const cost = 5;
@@ -95,7 +101,7 @@ export class MarsBotCorpResolver {
       }
     }
 
-    // 2nd Trade Fleet cube (Colonies, C-6/C-27): unlock when credits track position 9 is reached
+    // 2nd Trade Fleet cube (Colonies, C-6/C-27): unlock when Energy track position 9 is reached
     if (marsBot.tradeFleetCubeKey !== undefined &&
         marsBot.tradeFleetCubeKey === trackCubeKey(trackIndex, position) &&
         !marsBot.hasSecondTradeFleet) {

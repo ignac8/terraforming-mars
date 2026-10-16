@@ -14,13 +14,17 @@ import {CardName} from '../../../src/common/cards/CardName';
 import {BoardName} from '../../../src/common/boards/BoardName';
 import {Resource} from '../../../src/common/Resource';
 import {DEFAULT_GAME_OPTIONS} from '../../../src/server/game/GameOptions';
+import {Asteroid} from '../../../src/server/cards/base/Asteroid';
+import {PowerPlant} from '../../../src/server/cards/base/PowerPlant';
 import {SolarWindPower} from '../../../src/server/cards/base/SolarWindPower';
+import {setTemperature} from '../../TestingUtils';
+import {MAX_TEMPERATURE} from '../../../src/common/constants';
 
-function createAutomaGame(): {game: IGame, human: TestPlayer, marsBot: MarsBot} {
+function createAutomaGame(boardName: BoardName = BoardName.THARSIS): {game: IGame, human: TestPlayer, marsBot: MarsBot} {
   const [game, human] = testGame(1, {
     automaOption: true,
     automaDifficulty: 'normal',
-    boardName: BoardName.THARSIS,
+    boardName,
   });
   expect(game.automaHooks?.marsBot).to.not.be.undefined;
   return {game, human, marsBot: game.automaHooks!.marsBot};
@@ -201,11 +205,37 @@ describe('Base Game MarsBot Corporations', () => {
       expect(marsBot.marsBotBoard.tracks[4].position).to.be.gte(1);
     });
 
+    it('resolves only the first tag of the card it draws', () => {
+      const {game, marsBot} = createAutomaGame();
+      marsBot.setCorpAndSetup(getMarsBotCorp(CardName.THORGATE)!);
+      // Science, Space, Power: "ignoring all except its first tag" leaves Science
+      game.projectDeck.drawPile.push(new SolarWindPower());
+      marsBot.marsBotBoard.tracks[3].position = 1; // Science 2 has no icon
+      const expected = marsBot.marsBotBoard.tracks.map((t) => t.position);
+      expected[3] = 2;
+
+      marsBot.maybeDrawAndResolveProjectCardFirstTagOnly();
+
+      expect(marsBot.marsBotBoard.tracks.map((t) => t.position)).to.deep.eq(expected);
+    });
+
+    it('resolves an event\'s first printed tag, not its Event tag', () => {
+      const {game, marsBot} = createAutomaGame();
+      game.projectDeck.drawPile.push(new Asteroid());
+      marsBot.marsBotBoard.tracks[1].position = 1; // Space 2 has no icon
+      const expected = marsBot.marsBotBoard.tracks.map((t) => t.position);
+      expected[1] = 2;
+
+      marsBot.maybeDrawAndResolveProjectCardFirstTagOnly();
+
+      expect(marsBot.marsBotBoard.tracks.map((t) => t.position)).to.deep.eq(expected);
+    });
+
     it('logs the space it reached when the drawn card moves the same track on', () => {
       const {game, marsBot} = createAutomaGame();
       marsBot.setCorpAndSetup(getMarsBotCorp(CardName.THORGATE)!);
-      // Solar Wind Power's first tag is ignored and its power tag moves the energy track past the cube.
-      game.projectDeck.drawPile.push(new SolarWindPower());
+      // Power Plant's first tag is Power, which moves the energy track past the cube. Its Building tag is ignored.
+      game.projectDeck.drawPile.push(new PowerPlant());
       marsBot.marsBotBoard.tracks[4].position = 5; // Energy 6: an icon under a white cube
       const logsBefore = game.gameLog.length;
 
@@ -264,6 +294,22 @@ describe('Base Game MarsBot Corporations', () => {
       expect(game.getTemperature()).to.eq(temperature);
     });
 
+    // Our reading: the cube replaces only a temperature icon, so the city printed under it on the
+    // Terra Cimmeria Nova board still resolves
+    it('white cube on a non-temperature icon draws a card and resolves the icon too', () => {
+      const {game, marsBot} = createAutomaGame(BoardName.TERRA_CIMMERIA_NOVA);
+      marsBot.setCorpAndSetup(getMarsBotCorp(CardName.HELION)!);
+      let drawn = 0;
+      marsBot.maybeDrawAndResolveProjectCard = () => drawn++;
+      marsBot.marsBotBoard.tracks[3].position = 9; // Science 10: a city icon under a white cube
+      expect(marsBot.marsBotBoard.tracks[3].definition.layout[10]).eq('city');
+
+      marsBot.advanceTrack(3);
+
+      expect(drawn).eq(1);
+      expect(game.board.getCities(marsBot.player)).has.length(1);
+    });
+
     it('black cube raises the temperature on top of the space it sits on', () => {
       const {game, marsBot} = createAutomaGame();
       marsBot.setCorpAndSetup(getMarsBotCorp(CardName.HELION)!);
@@ -274,6 +320,20 @@ describe('Base Game MarsBot Corporations', () => {
 
       expect(game.getTemperature()).to.eq(temperature + 2);
     });
+
+    // A corp effect is a reaction, not an action, so no Failed Action (Nick)
+    it('black cube with the temperature maxed does nothing', () => {
+      const {game, marsBot} = createAutomaGame();
+      marsBot.setCorpAndSetup(getMarsBotCorp(CardName.HELION)!);
+      setTemperature(game, MAX_TEMPERATURE);
+      marsBot.marsBotBoard.tracks[5].position = 2; // Earth 3: no icon, a black cube
+      const mc = marsBot.turnResolver.megacredits;
+
+      marsBot.advanceTrack(5);
+
+      expect(game.getTemperature()).to.eq(MAX_TEMPERATURE);
+      expect(marsBot.turnResolver.megacredits).to.eq(mc);
+    });
   });
 
   describe('C07 Phobolog', () => {
@@ -281,8 +341,7 @@ describe('Base Game MarsBot Corporations', () => {
       const corp = getMarsBotCorp(CardName.PHOBOLOG)!;
       expect(corp.trackCubes).to.have.length(4);
       for (const cube of corp.trackCubes!) {
-        expect(cube.trackIndex).to.eq(1);
-        expect(cube.cubeType).to.eq('white');
+        expect(cube).to.deep.include({trackIndex: 1, cubeType: 'white'});
       }
     });
 

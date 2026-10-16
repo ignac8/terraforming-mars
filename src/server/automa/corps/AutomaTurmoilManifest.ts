@@ -5,7 +5,6 @@ import {BonusCardId} from '../../../common/automa/AutomaTypes';
 import {TileType} from '../../../common/TileType';
 import {AutomaManifest} from './AutomaManifest';
 import {bonusCardBeforeActionPhase} from './BaseGameCorps';
-import {Turmoil} from '../../turmoil/Turmoil';
 import {DELEGATES_PER_PLAYER} from '../../../common/constants';
 
 // ==== TURMOIL (C35-C39) ====
@@ -26,7 +25,12 @@ const LAKEFRONT_RESORTS: IMarsBotCorp = {
         const cube = bot.getCorpState('whiteCubeOnCard');
         if (cube > 0) {
           bot.setCorpState('whiteCubeOnCard', 0);
+          const mcBefore = bot.megacredits;
           bot.advanceTrack(0); // Building track = index 0
+          // FAQ (rulebook B, p.3): this overrides Government Intervention's "no M€", but not its "no TR"
+          if (bot.mcKeptThroughIntervention !== undefined) {
+            bot.mcKeptThroughIntervention += Math.max(0, bot.megacredits - mcBefore);
+          }
           bot.game.log('MarsBot (Lakefront): ocean placed, removed cube, advance building track');
         } else {
           bot.setCorpState('whiteCubeOnCard', 1);
@@ -74,10 +78,11 @@ const SEPTEM_TRIBUS: IMarsBotCorp = {
     bot.addBonusCardToBonusDeck(BonusCardId.B29_GRAY_EMINENCE);
     bot.game.log('MarsBot (Septem Tribus): Party Politics removed, Gray Eminence added');
     // The unused colour's delegates count as MarsBot's own.
-    Turmoil.ifTurmoil(bot.game, (turmoil) => {
+    const turmoil = bot.game.turmoil;
+    if (turmoil) {
       turmoil.delegateReserve.add(bot.player, DELEGATES_PER_PLAYER);
       bot.game.log(`MarsBot (Septem Tribus): ${DELEGATES_PER_PLAYER} more delegates in reserve`);
-    });
+    }
   },
   ...bonusCardBeforeActionPhase(BonusCardId.B29_GRAY_EMINENCE, 'Septem Tribus'),
 };

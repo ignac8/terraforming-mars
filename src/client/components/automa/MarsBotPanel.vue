@@ -17,7 +17,9 @@
       <span class="marsbot-stat" v-if="model.vpBreakdown?.mcToVP"><span v-i18n>MC to VP</span>: <b>{{ model.vpBreakdown.mcToVP }}</b></span>
       <span class="marsbot-stat" v-if="model.vpBreakdown?.cardVP"><span v-i18n>Cards</span>: <b>{{ model.vpBreakdown.cardVP }}</b></span>
       <span class="marsbot-stat" v-if="model.vpBreakdown?.vermin"><span v-i18n>Vermin</span>: <b>{{ model.vpBreakdown.vermin }}</b></span>
+      <span class="marsbot-stat" v-if="model.vpBreakdown?.leftoverResourcesVP"><span v-i18n>Leftover resources</span>: <b>{{ model.vpBreakdown.leftoverResourcesVP }}</b></span>
       <span class="marsbot-stat" v-if="model.vpBreakdown?.turmoilVP"><span v-i18n>Turmoil</span>: <b>{{ model.vpBreakdown.turmoilVP }}</b></span>
+      <span class="marsbot-stat" v-if="model.vpBreakdown?.corpVP"><span v-i18n>Corporation</span>: <b>{{ model.vpBreakdown.corpVP }}</b></span>
       <span class="marsbot-stat"><span v-i18n>MC</span>: <b>{{ model.megacredits }}</b></span>
       <span class="marsbot-stat" v-if="model.mcPerVP"><span v-i18n>MC/VP</span>: <b>{{ model.mcPerVP }}</b></span>
       <span class="marsbot-stat"><span v-i18n>Action Deck</span>: <b>{{ model.actionDeckSize }}</b></span>
@@ -79,6 +81,7 @@ const ACTION_ICONS: Partial<Record<TrackAction, string>> = {
   'venus2': 'V2',
   'floater': 'F',
   'floater2': 'F2',
+  'colony': 'Co',
   'tr1': '1', 'tr2': '2', 'tr3': '3', 'tr4': '4',
   'tr5': '5', 'tr6': '6', 'tr7': '7', 'tr8': '8',
 };
@@ -96,6 +99,7 @@ const ACTION_LABELS: Partial<Record<TrackAction, string>> = {
   'venus2': 'Raise Venus 2 steps',
   'floater': 'Gain 1 floater',
   'floater2': 'Gain 2 floaters',
+  'colony': 'Place colony',
   'tr1': 'Raise TR +1', 'tr2': 'Raise TR +2', 'tr3': 'Raise TR +3', 'tr4': 'Raise TR +4',
   'tr5': 'Raise TR +5', 'tr6': 'Raise TR +6', 'tr7': 'Raise TR +7', 'tr8': 'Raise TR +8',
 };

@@ -61,10 +61,10 @@
 
 // text shadows
 each(@players, {
-@c: ~"player_@{value}";
-.player_shadow_color_@{value} {
-  text-shadow: -1px -1px 6px @@c, 1px 1px 1px #333a;
-}
+  @c: ~"player_@{value}";
+  .player_shadow_color_@{value} {
+    text-shadow: -1px -1px 6px @@c, 1px 1px 1px #333a;
+  }
 })
 
 .game-title {
@@ -485,20 +485,20 @@ each(@players, {
 
       lunar-magnate, lunarchitect, full-moon, one-giant-step,
 
-      economizer, pioneer, land-specialist, martian,
+      economizer, land-specialist, martian,
       cosmic-settler, botanist, promoter, zoologist, a-manufacturer,
 
       v-electrician, v-spacefarer, smith, tradesman, irrigator, capitalist,
-      forecaster, edgedancer, visionary, naturalist, voyager,
+      forecaster, visionary, naturalist, voyager,
 
       rugged, purifier,
 
       agronomist, engineer, farmer,
 
-      colonizer, minimalist, terran, tropicalist,
+      minimalist, terran, tropicalist,
       curator, tourist, a-engineer, a-zoologist,
 
-      t-collector, firestarter, terra-pioneer, spacefarer, gambler,
+      t-collector, firestarter, terra-pioneer, t-spacefarer, gambler,
       biologist, t-politician, urbanist, warmonger,
       incorporator, manufacturer, politician,
 
@@ -512,15 +512,16 @@ each(@players, {
 
       architect, c-forester, coastguard,
 
-      builder7, legend4, pioneer4, metallurgist, spacefarer4, tactician4,
+      builder7, legend4, pioneer, metallurgist, spacefarer4, tactician4,
       terraformer29, terran5, trader, tycoon10, suburbian, briber, merchant,
+
+      // Amazonis Planitia milestone/award additions.
+      merchant3, innovator, physicist,
     ;
     each(@ma-name, {
-    .ma-name--@{value} {
-      background-image: url("assets/ma/@{value}.png");
-      // Images are expected to be 140px x 83px
-      // background-size: 200px;
-      // background-position: -30px -5px;
+      .ma-name--@{value} {
+        // Images are expected to be 140px x 83px
+        background-image: url("assets/ma/@{value}.png");
       }
     })
 
@@ -795,6 +796,13 @@ each(@players, {
     margin-top: 12px;
     font-size: 16px;
   }
+
+  .card-sort-buttons {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    margin: 10px 0 0 10px;
+  }
 }
 
 .hiding-card-button {
@@ -849,7 +857,7 @@ each(@players, {
 }
 
 .select-initial-cards {
-  .megacredits {
+  .starting-megacredits {
     display: inline-block;
     font-size: 26px;
     width: 50px;

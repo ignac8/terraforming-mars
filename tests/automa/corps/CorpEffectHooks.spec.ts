@@ -1,17 +1,21 @@
 import {expect} from 'chai';
-import {setVenusScaleLevel} from '../../TestingUtils';
-import {MAX_VENUS_SCALE} from '../../../src/common/constants';
+import {setOxygenLevel, setTemperature, setVenusScaleLevel} from '../../TestingUtils';
+import {BonusCardId, getAutomaMaxGeneration} from '../../../src/common/automa/AutomaTypes';
+import {Phase} from '../../../src/common/Phase';
+import {MAX_OXYGEN_LEVEL, MAX_TEMPERATURE, MAX_VENUS_SCALE} from '../../../src/common/constants';
 import {CardName} from '../../../src/common/cards/CardName';
 import {testGame} from '../../TestGame';
 import {IGame} from '../../../src/server/IGame';
 import {TestPlayer} from '../../TestPlayer';
 import {MarsBot} from '../../../src/server/automa/MarsBot';
+import {createCorpBonusCard} from '../../../src/server/automa/MarsBotBonusCard';
 import {Tag} from '../../../src/common/cards/Tag';
 import {GlobalParameter} from '../../../src/common/GlobalParameter';
 import {TileType} from '../../../src/common/TileType';
 import {IProjectCard} from '../../../src/server/cards/IProjectCard';
 import {BoardName} from '../../../src/common/boards/BoardName';
 import {SpaceType} from '../../../src/common/boards/SpaceType';
+import {Space} from '../../../src/server/boards/Space';
 import {Birds} from '../../../src/server/cards/base/Birds';
 import {MarsUniversity} from '../../../src/server/cards/base/MarsUniversity';
 import {Asteroid} from '../../../src/server/cards/base/Asteroid';
@@ -170,6 +174,7 @@ describe('Corp Effect Hooks', () => {
       marsBot.setCorpAndSetup(corp);
       marsBot.turnResolver.advanceTrack = (i) => {
         marsBot.marsBotBoard.tracks[i].position++;
+        return true;
       };
       const mcBefore = marsBot.turnResolver.megacredits;
       const eventBefore = marsBot.marsBotBoard.tracks[2].position;
@@ -209,6 +214,53 @@ describe('Corp Effect Hooks', () => {
       expect(tilePlacer.getOceanAdjacencyMC(land)).to.eq(2);
       marsBot.setCorpAndSetup(getMarsBotCorp(CardName.LAKEFRONT_RESORTS)!);
       expect(tilePlacer.getOceanAdjacencyMC(land)).to.eq(3);
+    });
+
+    // FAQ (rulebook B, p.3): Lakefront overrides Government Intervention's "no M€", but not its "no TR"
+    describe('during Government Intervention', () => {
+      // Government Intervention places an ocean, whose Lakefront cube advances the building track
+      function interventionWithBuildingAt(position: number) {
+        const {game, marsBot} = createAutomaGame();
+        marsBot.setCorpAndSetup(getMarsBotCorp(CardName.LAKEFRONT_RESORTS)!);
+        setTemperature(game, MAX_TEMPERATURE);
+        setOxygenLevel(game, MAX_OXYGEN_LEVEL);
+        game.generation = 2;
+        marsBot.marsBotBoard.tracks[0].position = position;
+        return {game, marsBot, mcBefore: marsBot.megacredits, trBefore: marsBot.player.terraformRating};
+      }
+
+      function resolveIntervention(marsBot: MarsBot) {
+        marsBot['bonusResolver'].resolve(createCorpBonusCard(BonusCardId.B16_GOVERNMENT_INTERVENTION));
+      }
+
+      it('keeps the M€ from its building-track advance', () => {
+        // Tharsis building #8 is a greenery; oxygen is maxed, so it pays M€ and no TR
+        const {game, marsBot, mcBefore} = interventionWithBuildingAt(7);
+        const placer = marsBot.turnResolver.tilePlacer;
+        let greenery: Space | undefined;
+        const find = placer.findGreenerySpace.bind(placer);
+        placer.findGreenerySpace = (where) => greenery = find(where);
+
+        resolveIntervention(marsBot);
+
+        expect(game.board.getOceanSpaces()).has.length(1);
+        expect(marsBot.corpSpecificState.get('whiteCubeOnCard')).to.eq(0);
+        expect(marsBot.marsBotBoard.tracks[0].position).to.eq(8);
+        const greeneryMc = placer.getTotalPlacementMC(greenery!);
+        expect(greeneryMc).to.be.greaterThan(0);
+        expect(marsBot.megacredits).to.eq(mcBefore + greeneryMc);
+      });
+
+      it('still loses the TR from its building-track advance', () => {
+        // Tharsis building #5 is 2 TR
+        const {game, marsBot, trBefore} = interventionWithBuildingAt(4);
+
+        resolveIntervention(marsBot);
+
+        expect(game.board.getOceanSpaces()).has.length(1);
+        expect(marsBot.marsBotBoard.tracks[0].position).to.eq(5);
+        expect(marsBot.player.terraformRating).to.eq(trBefore);
+      });
     });
 
     it('ocean placed without white cube → place white cube', () => {
@@ -266,32 +318,106 @@ describe('Corp Effect Hooks', () => {
     });
   });
 
+  describe('C31 Arklight', () => {
+    /** M€ Arklight's effect adds when MarsBot resolves `card`, against the same game without the effect. */
+    function arklightGain(card: IProjectCard): number {
+      const corp = getMarsBotCorp(CardName.ARKLIGHT)!;
+      const run = (c: typeof corp) => {
+        const {marsBot} = createAutomaGame();
+        marsBot.setCorpAndSetup(c);
+        const mcBefore = marsBot.turnResolver.megacredits;
+        marsBot.turnResolver.resolveProjectCard(card);
+        return marsBot.turnResolver.megacredits - mcBefore;
+      };
+      return run(corp) - run({...corp, effect: undefined});
+    }
+
+    it('earns 2 M€ per plant or animal tag, not per card', () => {
+      expect(arklightGain(fakeCard('PlantAnimal', {tags: [Tag.PLANT, Tag.ANIMAL]}))).to.eq(4);
+    });
+
+    it('earns nothing for a microbe tag', () => {
+      expect(arklightGain(fakeCard('Microbe', {tags: [Tag.MICROBE]}))).to.eq(0);
+    });
+  });
+
   describe('C06 Mining Guild card countdown', () => {
-    it('card starts at 10', () => {
+    it('card starts at 10, and the M€ its starting tags earn count down from it', () => {
       const {marsBot} = createAutomaGame();
       const corp = getMarsBotCorp(CardName.MINING_GUILD)!;
+      const mcBefore = marsBot.turnResolver.megacredits;
       marsBot.setCorpAndSetup(corp);
-      expect(marsBot.corpSpecificState.get('mcOnCard')).to.eq(10);
+      const earned = marsBot.turnResolver.megacredits - mcBefore;
+      expect(earned).is.greaterThan(0);
+      expect(marsBot.corpSpecificState.get('mcOnCard')).to.eq(10 - earned);
     });
 
     it('earning M€ counts down the card, bot keeps the earnings', () => {
       const {marsBot} = createAutomaGame();
       const corp = getMarsBotCorp(CardName.MINING_GUILD)!;
       marsBot.setCorpAndSetup(corp);
+      marsBot.corpSpecificState.set('mcOnCard', 10);
       // 5 MC earned: card counts down 10 → 5
       corp.effect!.onMcGained!(marsBot, 5);
       expect(marsBot.corpSpecificState.get('mcOnCard')).to.eq(5);
     });
 
-    it('when card empties, refill + advance building track', () => {
+    // Our reading: the card ticks for every 10 M€ MarsBot gains (njshaw2, BGG 3553988), so what
+    // is left of a gain after the card empties comes off the refilled card.
+    function miningGuild(mcOnCard: number, building: number) {
       const {marsBot} = createAutomaGame();
-      const corp = getMarsBotCorp(CardName.MINING_GUILD)!;
-      marsBot.setCorpAndSetup(corp);
-      marsBot.corpSpecificState.set('mcOnCard', 2);
-      const buildingBefore = marsBot.marsBotBoard.tracks[0].position;
-      corp.effect!.onMcGained!(marsBot, 5);
-      expect(marsBot.corpSpecificState.get('mcOnCard')).to.eq(10); // Refilled
-      expect(marsBot.marsBotBoard.tracks[0].position).to.be.gte(buildingBefore + 1);
+      marsBot.setCorpAndSetup(getMarsBotCorp(CardName.MINING_GUILD)!);
+      marsBot.corpSpecificState.set('mcOnCard', mcOnCard);
+      marsBot.marsBotBoard.tracks[0].position = building;
+      return marsBot;
+    }
+
+    it('when card empties, refill, advance building track, and take the rest off the refilled card', () => {
+      // Tharsis building #3 has no icon
+      const marsBot = miningGuild(2, 2);
+      marsBot.turnResolver.gainMc(5);
+      expect(marsBot.corpSpecificState.get('mcOnCard')).to.eq(7);
+      expect(marsBot.marsBotBoard.tracks[0].position).to.eq(3);
+    });
+
+    it('a gain that empties the card several times advances once per emptying', () => {
+      // Tharsis building #3 and #4 have no icon, #5 gives TR
+      const marsBot = miningGuild(2, 2);
+      marsBot.turnResolver.gainMc(25);
+      expect(marsBot.corpSpecificState.get('mcOnCard')).to.eq(7);
+      expect(marsBot.marsBotBoard.tracks[0].position).to.eq(5);
+    });
+
+    it('stops once the building track reaches #18', () => {
+      const marsBot = miningGuild(2, 17);
+      marsBot.turnResolver.gainMc(15);
+      expect(marsBot.corpSpecificState.get('mcOnCard')).to.eq(10);
+      expect(marsBot.marsBotBoard.tracks[0].position).to.eq(18);
+    });
+
+    // Our reading, like Philares (TDaver, BGG 3513998): nothing advances after the game has ended
+    it('stops counting down once the game has ended', () => {
+      const marsBot = miningGuild(2, 2);
+      marsBot.game.generation = getAutomaMaxGeneration(marsBot.game.gameOptions.preludeExtension);
+      marsBot.game.phase = Phase.PRODUCTION;
+      expect(marsBot.game.isDoneWithFinalProduction()).is.true;
+      const mc = marsBot.turnResolver.megacredits;
+
+      marsBot.turnResolver.gainMc(5);
+
+      expect(marsBot.turnResolver.megacredits).to.eq(mc + 5);
+      expect(marsBot.corpSpecificState.get('mcOnCard')).to.eq(2);
+      expect(marsBot.marsBotBoard.tracks[0].position).to.eq(2);
+    });
+
+    it('takes the M€ the building track advance earns off the refilled card', () => {
+      // Tharsis building #2 places an ocean, which pays M€
+      const marsBot = miningGuild(1, 1);
+      const mc = marsBot.turnResolver.megacredits;
+      marsBot.turnResolver.gainMc(1);
+      const earnedByAdvance = marsBot.turnResolver.megacredits - mc - 1;
+      expect(earnedByAdvance).is.greaterThan(0);
+      expect(marsBot.corpSpecificState.get('mcOnCard')).to.eq(10 - earnedByAdvance);
     });
   });
 
@@ -299,6 +425,7 @@ describe('Corp Effect Hooks', () => {
     it('Mining Guild counts down through turnResolver.gainMc', () => {
       const {marsBot} = createAutomaGame();
       marsBot.setCorpAndSetup(getMarsBotCorp(CardName.MINING_GUILD)!);
+      marsBot.corpSpecificState.set('mcOnCard', 10);
       const mcBefore = marsBot.turnResolver.megacredits;
       marsBot.turnResolver.gainMc(4);
       expect(marsBot.turnResolver.megacredits).to.eq(mcBefore + 4);
@@ -338,16 +465,103 @@ describe('Corp Effect Hooks', () => {
     });
   });
 
+  // A 2-step raise resolves one step at a time, so Pristar's cube cancels only the first step
+  // (BGG threads 3431297 and 3432237, TDaver)
+  describe('C36 Pristar on a 2-step raise', () => {
+    function pristarGame(venus: boolean = false) {
+      const [game] = testGame(1, {automaOption: true, venusNextExtension: venus, boardName: BoardName.THARSIS});
+      const marsBot = game.automaHooks!.marsBot;
+      marsBot.setCorpAndSetup(getMarsBotCorp(CardName.PRISTAR)!);
+      marsBot.corpSpecificState.set('whiteCubeOnCard', 1);
+      return {game, marsBot, tr: marsBot.player.terraformRating, mc: marsBot.turnResolver.megacredits};
+    }
+
+    it('temperature2 icon raises the second step', () => {
+      const {game, marsBot, tr, mc} = pristarGame();
+      setTemperature(game, -30);
+      marsBot.turnResolver.raiseTemperature(2);
+      expect(game.getTemperature()).to.eq(-28);
+      expect(marsBot.player.terraformRating).to.eq(tr + 2);
+      expect(marsBot.turnResolver.megacredits).to.eq(mc + 6);
+      expect(marsBot.temperatureRaises).to.eq(1);
+    });
+
+    it('venus2 icon raises the second step', () => {
+      const {game, marsBot, tr} = pristarGame(true);
+      (marsBot.turnResolver as any).raiseVenus(2);
+      expect(game.getVenusScaleLevel()).to.eq(2);
+      expect(marsBot.player.terraformRating).to.eq(tr + 2);
+    });
+
+    it('Lobbyists temperature branch raises the second step', () => {
+      const {game, marsBot, tr} = pristarGame();
+      setTemperature(game, -28);
+      marsBot.resolveBonusCard(BonusCardId.B06_LOBBYISTS);
+      expect(game.getTemperature()).to.eq(-26);
+      expect(marsBot.player.terraformRating).to.eq(tr + 2);
+    });
+
+    it('Lobbyists (Venus) Venus branch raises the second step', () => {
+      const {game, marsBot, tr} = pristarGame(true);
+      setVenusScaleLevel(game, 4);
+      marsBot.resolveBonusCard(BonusCardId.B15_LOBBYISTS_VENUS);
+      expect(game.getVenusScaleLevel()).to.eq(6);
+      expect(marsBot.player.terraformRating).to.eq(tr + 2);
+    });
+  });
+
+  describe('starting tags resolve as a revealed card (rulebook B, setup step 4)', () => {
+    /** Runs setup for `corp` as is and with its ongoing effect removed, in identical games. */
+    function setupWithAndWithoutEffect(name: CardName) {
+      const corp = getMarsBotCorp(name)!;
+      const run = (c: typeof corp) => {
+        const {marsBot} = createAutomaGame();
+        marsBot.setCorpAndSetup(c);
+        return {
+          mc: marsBot.turnResolver.megacredits,
+          tr: marsBot.player.terraformRating,
+          events: marsBot.marsBotBoard.tracks[2].position,
+        };
+      };
+      return {withEffect: run(corp), without: run({...corp, effect: undefined})};
+    }
+
+    it('Arclight earns 2 M€ for its Animal starting tag', () => {
+      const {withEffect, without} = setupWithAndWithoutEffect(CardName.ARKLIGHT);
+      expect(withEffect.mc).to.eq(without.mc + 2);
+    });
+
+    it('Pharmacy Union raises its TR for its Science starting tag', () => {
+      const {withEffect, without} = setupWithAndWithoutEffect(CardName.PHARMACY_UNION);
+      expect(withEffect.tr).to.eq(without.tr + 1);
+    });
+
+    it('Saturn Systems advances the event track for its Jovian starting tag', () => {
+      const {withEffect, without} = setupWithAndWithoutEffect(CardName.SATURN_SYSTEMS);
+      expect(withEffect.events).to.be.greaterThan(without.events);
+    });
+
+    it('the starting tags make one card, so a corp with several tags is not paid per tag', () => {
+      const {withEffect, without} = setupWithAndWithoutEffect(CardName.SAGITTA_FRONTIER_SERVICES);
+      expect(withEffect.mc).to.eq(without.mc);
+    });
+
+    it('a corp without starting tags gets no card resolved', () => {
+      const {withEffect, without} = setupWithAndWithoutEffect(CardName.CREDICOR);
+      expect(withEffect).to.deep.eq(without);
+    });
+  });
+
   describe('Ecoline/Ecotec plant targeting (FAQ)', () => {
     it('plant removal targets plantResources on corp card when present', () => {
       const {marsBot} = createAutomaGame();
       const corp = getMarsBotCorp(CardName.ECOTEC)!;
       marsBot.setCorpAndSetup(corp);
-      // Ecotec starts with 2 plant resources
-      expect(marsBot.corpSpecificState.get('plantResources')).to.eq(2);
+      // Ecotec starts with 2 plant resources and 1 more from its starting plant tag
+      expect(marsBot.corpSpecificState.get('plantResources')).to.eq(3);
       const mcBefore = marsBot.turnResolver.megacredits;
-      // Remove 3 plants — should take 2 from card, excess lost, NOT from MC supply
-      marsBot.player.stock.add('plants' as any, -3);
+      // Remove 4 plants — should take 3 from card, excess lost, NOT from MC supply
+      marsBot.player.stock.add('plants' as any, -4);
       expect(marsBot.corpSpecificState.get('plantResources')).to.eq(0);
       expect(marsBot.turnResolver.megacredits).to.eq(mcBefore); // No MC deducted
     });

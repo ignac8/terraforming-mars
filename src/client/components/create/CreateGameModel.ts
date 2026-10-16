@@ -67,4 +67,6 @@ export type CreateGameModel = {
   automaTurmoilTRReduction: 7 | 10;
   automaTurmoilSetupDelegates: 0 | 1 | 2;
   automaNoGenerationLimit: boolean;
+  automaColonyVP: boolean;
+  automaFinalGreeneryNoCorpEffects: boolean;
 }

@@ -15,7 +15,7 @@ Implementers must scan the **full rulebook** and add `C-X*` cross-reference entr
 - **C-3** — Shuffle Outer System Foothold (rulebook: B17) into the bonus deck.
 - **C-4** — Place the MarsBot Colonies Shipping Board beside the MarsBot board.
 - **C-5** — Place 1 Trade Fleet for MarsBot (and one for the player) on the Trade Fleets tile.
-- **C-6** — Place a 2nd Trade Fleet on the 9th space of the credits track for Tharsis and Utopia Planitia, and on the energy track for Vastitas Borealis.
+- **C-6** — Place a 2nd Trade Fleet on the 9th space of the Energy track (the Energy/Jovian track on Tharsis and Utopia Planitia, the City/Energy track on Vastitas Borealis).
 - **C-7** — Set aside the bonus cards Shipping Lines and Extended Shipping Lines (rulebook: B18–B19).
 
 ## Gameplay Changes
@@ -73,11 +73,11 @@ Implementers must scan the **full rulebook** and add `C-X*` cross-reference entr
     - **C-24c** — Receiving the Europa colony bonus: instead of 1 resource, MarsBot gains 1 MC.
     - **C-24d** — Resources are never placed in Europa's storage area.
 - **C-25** — Resources on Ceres, Luna, Io, Enceladus, Ganymede, Callisto, Miranda, and Triton are considered to be resources of the indicated type for the purposes of player cards. The player may steal/remove from them as usual.
-- **C-26** — MarsBot does not gain cards for Pluto. Instead it gains [card-equivalent] resources into the corresponding storage area.
+- **C-26** — MarsBot does not gain cards for Pluto. Instead it gains Science resources into the corresponding storage area (5 of them advance the Science track).
 
 ## Unlocking the 2nd Trade Fleet
 
-- **C-27** — When the credits track reaches the 9th space, in addition to resolving the space's effect, move the Trade Fleet from there to the Trade Fleet tile (mark with one of MarsBot's player markers). From the following generation onwards, shuffle Extended Shipping Lines into the action deck (in addition to Shipping Lines), so MarsBot trades twice per generation.
+- **C-27** — When the Energy track reaches the 9th space, in addition to resolving the space's effect, move the Trade Fleet from there to the Trade Fleet tile (mark with one of MarsBot's player markers). From the following generation onwards, shuffle Extended Shipping Lines into the action deck (in addition to Shipping Lines), so MarsBot trades twice per generation.
 
 ## Cross-references (implementer must scan rulebook and fill in)
 

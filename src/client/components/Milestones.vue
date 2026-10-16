@@ -7,10 +7,8 @@
                     <span v-i18n>{{ milestone.name }}</span>
                     <span class="ma-player-cube"><i :class="'board-cube board-cube--'+milestone.color" ></i></span>
                 </span>
-                <span v-if="isLearnerModeOn()">
-                    <span v-for="(spotPrice, index) in getAvailableMilestoneSpots()" :key="index" class="milestone-award-inline unpaid">
-                        <div class="milestone-award-price">{{spotPrice}}</div>
-                    </span>
+                <span v-for="(spotPrice, index) in availableMilestoneSpots" :key="index" class="milestone-award-inline unpaid">
+                    <div class="milestone-award-price">{{spotPrice}}</div>
                 </span>
             </div>
             <span @click="toggleDescription" :title="$t('press to show or hide the description')" data-test="toggle-description">
@@ -22,6 +20,7 @@
                     :showScores="showScores"
                     :showDescription="showDescription"
                     :isAutoma="isAutoma"
+                    :automaMapSet="automaMapSet"
                   />
               </div>
             </span>
@@ -35,6 +34,7 @@ import {defineComponent} from 'vue';
 import {MAX_MILESTONES, MILESTONE_COST} from '@/common/constants';
 import Milestone from '@/client/components/Milestone.vue';
 import {ClaimedMilestoneModel} from '@/common/models/ClaimedMilestoneModel';
+import {BoardName} from '@/common/boards/BoardName';
 import {Preferences, PreferencesManager} from '@/client/utils/PreferencesManager';
 
 export default defineComponent({
@@ -52,6 +52,10 @@ export default defineComponent({
       type: Boolean,
       default: false,
     },
+    automaMapSet: {
+      type: String as () => BoardName,
+      default: undefined,
+    },
     preferences: {
       type: Object as () => Readonly<Preferences>,
       default: () => PreferencesManager.INSTANCE.values(),
@@ -66,6 +70,12 @@ export default defineComponent({
   components: {
     Milestone,
   },
+  computed: {
+    availableMilestoneSpots(): Array<number> {
+      const count = this.milestones.filter((milestone) => milestone.playerName).length;
+      return Array(MAX_MILESTONES - count).fill(MILESTONE_COST);
+    },
+  },
   methods: {
     toggleDescription() {
       this.showDescription = !this.showDescription;
@@ -73,13 +83,6 @@ export default defineComponent({
     toggleList() {
       this.showMilestoneDetails = !this.showMilestoneDetails;
       PreferencesManager.INSTANCE.set('show_milestone_details', this.showMilestoneDetails);
-    },
-    getAvailableMilestoneSpots(): Array<number> {
-      const count = this.milestones.filter((milestone) => milestone.playerName).length;
-      return Array(MAX_MILESTONES - count).fill(MILESTONE_COST);
-    },
-    isLearnerModeOn(): boolean {
-      return this.preferences.learner_mode;
     },
   },
 });

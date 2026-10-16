@@ -4,7 +4,6 @@ import {Board} from '../boards/Board';
 import {MoonExpansion} from '../moon/MoonExpansion';
 import {PathfindersExpansion} from '../pathfinders/PathfindersExpansion';
 import {DeltaProjectExpansion} from '../delta/DeltaProjectExpansion';
-import {Turmoil} from '../turmoil/Turmoil';
 import {VictoryPointsBreakdownBuilder} from './VictoryPointsBreakdownBuilder';
 import {rankedTiers} from '../../common/utils/utils';
 import {FundedAward} from '../awards/FundedAward';
@@ -13,6 +12,12 @@ import {CardName} from '../../common/cards/CardName';
 
 export function calculateVictoryPoints(player: IPlayer) {
   const builder = new VictoryPointsBreakdownBuilder();
+
+  // Turmoil Victory Points, first so they head the end-game card list
+  const includeTurmoilVP = player.game.gameIsOver() || player.game.phase === Phase.END;
+  if (player.game.turmoil && includeTurmoilVP) {
+    builder.setVictoryPoints('victoryPoints', player.game.turmoil.getVictoryPoints(player), 'Turmoil Points');
+  }
 
   // Victory points from cards
   let playerOwnsVermin = false; // For Vermin
@@ -63,15 +68,6 @@ export function calculateVictoryPoints(player: IPlayer) {
           builder.setVictoryPoints('city', 1);
         }
       }
-    }
-  });
-
-  // Turmoil Victory Points
-  const includeTurmoilVP = player.game.gameIsOver() || player.game.phase === Phase.END;
-
-  Turmoil.ifTurmoil(player.game, (turmoil) => {
-    if (includeTurmoilVP) {
-      builder.setVictoryPoints('victoryPoints', turmoil.getVictoryPoints(player), 'Turmoil Points');
     }
   });
 

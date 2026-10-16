@@ -37,8 +37,8 @@
 
   <div v-if="players.length > 1 || isAutoma" class="player_home_block--milestones-and-awards">
     <a class="hotkey-target"></a>
-    <Milestones :milestones="game.milestones" :isAutoma="isAutoma" />
-    <Awards :awards="game.awards" :isAutoma="isAutoma" />
+    <Milestones :milestones="game.milestones" :isAutoma="isAutoma" :automaMapSet="automaMapSet" />
+    <Awards :awards="game.awards" :isAutoma="isAutoma" :automaMapSet="automaMapSet" />
   </div>
 </template>
 
@@ -58,6 +58,8 @@ import PlanetaryTracks from '@/client/components/pathfinders/PlanetaryTracks.vue
 import MarsBotPanel from '@/client/components/automa/MarsBotPanel.vue';
 import {TileView} from './board/TileView';
 import {scrollToSpace} from '@/client/utils/boardScroll';
+import {BoardName} from '@/common/boards/BoardName';
+import {marsBotMapSet} from '@/common/automa/MarsBotMADescriptions';
 
 export default defineComponent({
   name: 'GameBoardView',
@@ -89,6 +91,9 @@ export default defineComponent({
   computed: {
     isAutoma(): boolean {
       return this.game.marsBot !== undefined;
+    },
+    automaMapSet(): BoardName | undefined {
+      return marsBotMapSet(this.game.gameOptions);
     },
   },
   methods: {

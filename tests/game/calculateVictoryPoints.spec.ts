@@ -2,6 +2,9 @@ import {expect} from 'chai';
 import {testGame} from '../TestGame';
 import {Banker} from '../../src/server/awards/Banker';
 import {Resource} from '../../src/common/Resource';
+import {Phase} from '../../src/common/Phase';
+import {BeamFromAThoriumAsteroid} from '../../src/server/cards/base/BeamFromAThoriumAsteroid';
+import {Turmoil} from '../../src/server/turmoil/Turmoil';
 
 describe('calculateVictoryPoints', () => {
   it('with two players, second place scores no award points', () => {
@@ -23,5 +26,17 @@ describe('calculateVictoryPoints', () => {
     expect(player2.getVictoryPoints().awards).to.eq(5);
     expect(player.getVictoryPoints().awards).to.eq(2);
     expect(player3.getVictoryPoints().awards).to.eq(0);
+  });
+
+  it('lists Turmoil points first in the card details', () => {
+    const [game, player] = testGame(2, {turmoilExtension: true});
+    player.playedCards.push(new BeamFromAThoriumAsteroid());
+    Turmoil.getTurmoil(game).chairman = player;
+    game.phase = Phase.END;
+
+    expect(player.getVictoryPoints().detailsCards).to.deep.eq([
+      {cardName: 'Turmoil Points', victoryPoint: 1},
+      {cardName: 'Beam From A Thorium Asteroid', victoryPoint: 1},
+    ]);
   });
 });
