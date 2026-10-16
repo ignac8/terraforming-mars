@@ -87,6 +87,18 @@ These ride along with whichever automa PR needs them:
 - `game/calculateVictoryPoints.ts`: Turmoil Points come first in `detailsCards`, matching
   MarsBot's end-game column (fork display choice, not needed upstream).
 
+## Non-automa fixes to offer upstream
+
+Each can go up as its own PR, independent of the MarsBot chain:
+
+- Head Start (X43) re-enabled (2026-10-16). Upstream keeps it commented out of
+  `PromoCardManifest.ts` since #5852 (kberg: "I'm not about to fix Head Start"). The fork gives it
+  its own serialized counter, `Player.headStartActionsRemaining`, so prelude plays no longer eat
+  its 2 actions. During them Pass, End Turn and Undo become "Skip this action", and the
+  corporation first action waits. When Head Start is the last prelude the turn goes to the next
+  player instead of falling into the action phase. Touches `Player.ts`, `IPlayer.ts`,
+  `SerializedPlayer.ts`, `HeadStart.ts`, `PromoCardManifest.ts`, `HeadStart.spec.ts`.
+
 ## Blocked (everything else)
 
 All remaining modules import `MarsBot` directly: `MarsBotStock`, `MarsBotScoring`,
