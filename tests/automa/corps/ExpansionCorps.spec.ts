@@ -556,7 +556,7 @@ describe('Expansion MarsBot Corporations', () => {
       expect(marsBot.corpSpecificState.get('scienceResources')).to.eq(1);
     });
 
-    // Our reading: a wild tag counts as a tag
+    // A wild tag counts as a tag (Nick, Q&A 19)
     it('counts a wild tag toward the 2 tags', () => {
       const {marsBot} = createAutomaGame();
       const corp = getMarsBotCorp(CardName.SPIRE)!;

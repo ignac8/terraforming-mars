@@ -333,7 +333,7 @@ describe('Corp-Specific Bonus Cards (B22-B32)', () => {
       expect(played).deep.eq([searchForLife, powerPlant]);
     });
 
-    // Our reading: a wild tag counts as a tag
+    // A wild tag counts as a tag (Nick, Q&A 19)
     it('counts wild tags in the tag tiebreak', () => {
       const building = fakeCard({cost: 4, tags: [Tag.BUILDING]});
       const twoWild = fakeCard({cost: 4, tags: [Tag.WILD, Tag.WILD]});
