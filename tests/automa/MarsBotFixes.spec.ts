@@ -188,6 +188,34 @@ describe('MarsBot Fixes', () => {
     });
   });
 
+  describe('Oxygen temperature bonus at 8% with temperature maxed', () => {
+    it('MarsBot takes a Failed Action', () => {
+      const {game, marsBot} = createAutomaGame();
+      const bot = marsBot.player;
+      (game as any).oxygenLevel = 7;
+      (game as any).temperature = MAX_TEMPERATURE;
+      const mcBefore = marsBot.turnResolver.megacredits;
+
+      game.increaseOxygenLevel(bot, 1);
+
+      expect(game.getOxygenLevel()).to.eq(8);
+      expect(marsBot.turnResolver.megacredits).to.eq(mcBefore + FAILED_ACTION_MC);
+    });
+
+    it('MarsBot raises the temperature when it is not maxed', () => {
+      const {game, marsBot} = createAutomaGame();
+      const bot = marsBot.player;
+      (game as any).oxygenLevel = 7;
+      (game as any).temperature = 0;
+      const mcBefore = marsBot.turnResolver.megacredits;
+
+      game.increaseOxygenLevel(bot, 1);
+
+      expect(game.getTemperature()).to.eq(2);
+      expect(marsBot.turnResolver.megacredits).to.eq(mcBefore);
+    });
+  });
+
   describe('Milestone tiebreaker #2 - closest to meeting', () => {
     it('uses humanMilestoneCloseness when no human qualifies', () => {
       const {marsBot} = createAutomaGame();
