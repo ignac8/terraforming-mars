@@ -196,7 +196,7 @@ describe('Expansion MarsBot Corporations', () => {
       runAllActions(game);
 
       // The player has not taken either of Head Start's actions yet, and the box has resolved
-      expect(human.actionsTakenThisRound).to.eq(1);
+      expect(human.headStartActionsRemaining).to.eq(2);
       expect(human.getWaitingFor()).is.instanceOf(OrOptions);
       expect(marsBot.beforeActionPhasePending).is.false;
       expect(settlers()).has.length(1);
