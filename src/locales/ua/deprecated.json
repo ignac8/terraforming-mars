@@ -16,5 +16,11 @@
   "${0} lost ${1} ${2} because of ${3}": "${0} втратив(ла) ${1} ${2} через ${3}",
   "${3} stole ${1} ${2} production from ${0}": "${3} вкрав(ла) ${1} ${2} виробництва у ${0}",
   "${0} stole ${1} ${2} from the neutral player": "${0} вкрав(ла) ${1} ${2} у нейтрального гравця",
-  "${0} removed a resource from ${1} to draw a card": "${0} видалив(ла) ресурс з ${1}, щоб взяти карту"
+  "${0} removed a resource from ${1} to draw a card": "${0} видалив(ла) ресурс з ${1}, щоб взяти карту",
+  "${0} gains ${1} M€ for a tile placed next to ${2}": "${0} отримує ${1} M€ за тайл, розміщений поруч з ${2}",
+  "${0} placing a tile here costs ${1} M€": "${0} розміщення тайлу тут коштує ${1} M€",
+  "${0}'s TR increases ${1} step(s) for removing ${2}": "РТ ${0} збільшується на ${1} крок(ів) за видалення ${2}",
+  "${0}'s TR increases 1 step for eliminating dust storms.": "РТ ${0} збільшується на 1 за усунення пилових бурь.",
+  "All players lose 1 TR.": "Усі гравці втрачають 1 РТ.",
+  "${0} is the new chairman and gains ${1} TR": "${0} став(ла) новим головою і отримав(ла) ${1} РТ"
 }

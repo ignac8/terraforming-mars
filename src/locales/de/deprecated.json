@@ -16,5 +16,11 @@
   "${0} spent ${1} titanium to trade with ${2}": "${0} bezahlte ${1} Titan, um mit ${2} zu handeln",
   "${0} removed a resource from ${1} to draw a card": "${0} hat eine Ressource von ${1} entfernt, um eine Karte zu ziehen.",
   "${0} sold ${1} steel": "${0} verkaufte ${1} Stahl",
-  "${0} removed ${1} ${2} from ${3} to ${4}": "${0} entfernte ${1} ${2} von ${3}, um ${4}"
+  "${0} removed ${1} ${2} from ${3} to ${4}": "${0} entfernte ${1} ${2} von ${3}, um ${4}",
+  "${0} gains ${1} M€ for a tile placed next to ${2}": "${0} erhält ${1} M€ durch Platzierung eines Plättchens angrenzend an ${2}",
+  "${0} placing a tile here costs ${1} M€": "${0} es kostet ${1} M€, hier ein Plättchen zu platzieren",
+  "${0}'s TR increases ${1} step(s) for removing ${2}": "${0}s TW erhöht sich um ${1} durch Entfernung von ${2}",
+  "${0}'s TR increases 1 step for eliminating dust storms.": "${0}s TW erhöht sich um 1 durch Eliminierung von Sandstürmen.",
+  "All players lose 1 TR.": "Alle Spieler verlieren 1 TW.",
+  "${0} is the new chairman and gains ${1} TR": "${0} ist der neue Vorsitzende und erhält ${1} TW"
 }

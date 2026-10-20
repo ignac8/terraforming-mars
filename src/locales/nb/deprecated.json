@@ -15,5 +15,10 @@
   "${0} spent ${1} energy to trade with ${2}": "${0} brukte ${1} energi for å handle med ${2}",
   "${0} spent ${1} titanium to trade with ${2}": "${0} brukte ${1} titan for å handle med ${2}",
   "${0} sold ${1} steel": "${0} solgte ${1} stål",
-  "${0} removed ${1} ${2} from ${3} to ${4}": "${0} fjernet ${1} ${2} fra ${3} til ${4}"
+  "${0} removed ${1} ${2} from ${3} to ${4}": "${0} fjernet ${1} ${2} fra ${3} til ${4}",
+  "${0} gains ${1} M€ for a tile placed next to ${2}": "${0} får ${1} M€ for en brikke plassert ved siden av ${2}",
+  "${0} placing a tile here costs ${1} M€": "${0} koster det ${1} M€ å plassere en brikke her",
+  "${0}'s TR increases ${1} step(s) for removing ${2}": "${0}s TR øker med ${1} trinn for å fjerne ${2}",
+  "${0}'s TR increases 1 step for eliminating dust storms.": "${0}s TR øker med 1 trinn for å eliminere sandstormer.",
+  "${0} is the new chairman and gains ${1} TR": "${0} er ny Styreleder og får ${1} TR"
 }

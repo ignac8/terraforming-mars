@@ -6,5 +6,10 @@
   "${0} spent ${1} titanium to trade with ${2}": "${0} wydaje ${1} jednostek tytanu aby wykonać akcję handlu z ${2}",
   "${0} gained ${1} ${2}": "${0} otrzymuje ${1} ${2}",
   "${0} sold ${1} steel": "${0} sprzedaje ${1} jednostek stali",
-  "${0} removed ${1} ${2} from ${3} to ${4}": "${0} usuwa ${1} jednostek ${2} z ${3} ze względu na efekt ${4}"
+  "${0} removed ${1} ${2} from ${3} to ${4}": "${0} usuwa ${1} jednostek ${2} z ${3} ze względu na efekt ${4}",
+  "${0} gains ${1} M€ for a tile placed next to ${2}": "${0} otrzymuje ${1} M€ za umieszczenie obszaru w sąsiedztwie ${2}",
+  "${0} placing a tile here costs ${1} M€": "${0} umieszczenie obszaru na tym polu kosztuje dodatkowe ${1} M€.",
+  "${0}'s TR increases ${1} step(s) for removing ${2}": "${0} podnosi swój poziom WT o ${1} za usunięcie ${2}",
+  "${0}'s TR increases 1 step for eliminating dust storms.": "Gracz ${0} podnosi swój WT o 1 poziom dzięki usunięciu burzy pyłowej.",
+  "${0} is the new chairman and gains ${1} TR": "${0} zostaje nowym przewodniczącym i podnosi swój WT o ${1} poziom"
 }

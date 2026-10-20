@@ -9,7 +9,7 @@ import {SpaceBonus} from '../../../src/common/boards/SpaceBonus';
 import {ArcticAlgae} from '../../../src/server/cards/base/ArcticAlgae';
 import {SpaceType} from '../../../src/common/boards/SpaceType';
 import {Phase} from '../../../src/common/Phase';
-import {addGreenery, forceGenerationEnd, maxOutOceans, runAllActions, setOxygenLevel, setRulingParty, setTemperature} from '../../TestingUtils';
+import {addGreenery, forceGenerationEnd, formatMessage, maxOutOceans, runAllActions, setOxygenLevel, setRulingParty, setTemperature} from '../../TestingUtils';
 import {TestPlayer} from '../../TestPlayer';
 import {OceanCity} from '../../../src/server/cards/ares/OceanCity';
 import {SelectSpace} from '../../../src/server/inputs/SelectSpace';
@@ -19,6 +19,7 @@ import {OrOptions} from '../../../src/server/inputs/OrOptions';
 import {cast} from '../../../src/common/utils/utils';
 import {SelectResource} from '@/server/inputs/SelectResource';
 import {PartyName} from '@/common/turmoil/PartyName';
+import {LogMessageDataType} from '@/common/logs/LogMessageDataType';
 
 describe('EcologicalSurvey', () => {
   let card: EcologicalSurvey;
@@ -93,6 +94,9 @@ describe('EcologicalSurvey', () => {
     expect(player.cardsInHand).is.length(1);
     expect(microbeCard.resourceCount).eq(2);
     expect(animalCard.resourceCount).eq(2);
+
+    expect(game.gameLog.map(formatMessage)).to.include(
+      `${player.color} gains 1:r:titanium:, 1:r:steel:, 1:r:plants:, 1 Card, 1:r:heat:, 1:r:megacredits:, 1:cr:animal:, 1:cr:microbe:, 1:r:energy: for placing next to no tile`);
   });
 
   it('Works with Space Bonuses', () => {
@@ -124,6 +128,9 @@ describe('EcologicalSurvey', () => {
     expect(player.heat).eq(1);
     expect(player.plants).eq(2);
     expect(player.cardsInHand).is.length(1);
+
+    const messages = game.gameLog.map(formatMessage);
+    expect(messages).to.include(`${player.color} gained a bonus :r:plants: because of Ecological Survey`);
   });
 
   it('Bonus not granted when overplacing', () => {
@@ -188,9 +195,10 @@ describe('EcologicalSurvey', () => {
     const msg = game.gameLog.pop()!;
     expect(msg.data).has.length(3);
     expect(msg.data[0].value).to.eq(player.color);
-    expect(msg.data[1].value).to.eq('Microbe');
+    expect(msg.data[1]).deep.eq({type: LogMessageDataType.CARD_RESOURCE, value: 'Microbe'});
     expect(msg.data[2].value).to.eq(card.name);
     expect(msg.message).to.eq('${0} gained a bonus ${1} because of ${2}');
+    expect(formatMessage(msg)).to.eq(`${player.color} gained a bonus :cr:microbe: because of Ecological Survey`);
     expect(microbeCard.resourceCount).eq(2);
   });
 
