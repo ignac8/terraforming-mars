@@ -80,6 +80,7 @@
               :space="curSpace"
               :aresExtension="expansions.ares"
               :tileView="tileView"
+              :boardName="boardName"
               data-test="board-space"
             />
 

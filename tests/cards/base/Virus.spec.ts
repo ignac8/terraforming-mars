@@ -6,6 +6,7 @@ import {Virus} from '../../../src/server/cards/base/Virus';
 import {OrOptions} from '../../../src/server/inputs/OrOptions';
 import {TestPlayer} from '../../TestPlayer';
 import {testGame} from '../../TestGame';
+import {formatMessage} from '../../TestingUtils';
 
 describe('Virus', () => {
   let card: Virus;
@@ -38,6 +39,16 @@ describe('Virus', () => {
     player.plants = 5;
     cast(card.play(player), undefined);
     expect(player.plants).to.eq(5);
+  });
+
+  it('Logs resource icons when nobody has anything to steal', () => {
+    player.game.gameLog = [];
+
+    card.play(player);
+
+    expect(player.game.gameLog.map(formatMessage)).deep.eq([
+      'There was nobody to steal :r:plants: or :cr:animal: from.',
+    ]);
   });
 
   it('Works in solo mode', () => {

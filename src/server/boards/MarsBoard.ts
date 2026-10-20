@@ -11,7 +11,8 @@ import {oneWayDifference} from '../../common/utils/utils';
 import {Tile} from '../Tile';
 import {SpaceBonus} from '../../common/boards/SpaceBonus';
 import * as constants from '../../common/constants';
-import {GlobalParameterMaximums} from '../IGame';
+import {GlobalParameterMaximums, getGlobalParameterMaximums} from '../../common/boards/GlobalParameterMaximums';
+import {BoardName} from '../../common/boards/BoardName';
 
 // Coordinate labels for the standard nine-row maps.
 const MARS_A9 = {
@@ -80,19 +81,14 @@ const MARS_A9 = {
 
 export class MarsBoard extends Board {
   public readonly A9: Readonly<Partial<Record<SpaceId, string>>> = MARS_A9;
-  public readonly max: GlobalParameterMaximums;
+  public readonly max: Readonly<GlobalParameterMaximums>;
 
   public constructor(
     spaces: ReadonlyArray<Space>,
     noctisCitySpaceId?: SpaceId | undefined,
-    max?: Partial<GlobalParameterMaximums>) {
+    max: Readonly<GlobalParameterMaximums> = getGlobalParameterMaximums(BoardName.THARSIS)) {
     super(spaces, noctisCitySpaceId);
-    this.max = {
-      temperature: max?.temperature ?? constants.MAX_TEMPERATURE,
-      oxygen: max?.oxygen ?? constants.MAX_OXYGEN_LEVEL,
-      oceans: max?.oceans ?? constants.MAX_OCEAN_TILES,
-      venus: max?.venus ?? constants.MAX_VENUS_SCALE,
-    };
+    this.max = max;
   }
 
   public getCitiesOffMars(player?: IPlayer): Array<Space> {
@@ -117,6 +113,15 @@ export class MarsBoard extends Board {
       greeneries = greeneries.filter(Board.ownedBy(player));
     }
     return greeneries;
+  }
+
+  /**
+   * A delegate bonus cannot be skipped, so a space with one is unavailable unless the player has
+   * enough delegates for all of it. The lobby delegate is part of the player's reserve.
+   */
+  public override getAvailableSpacesOnLand(player: IPlayer, canAffordOptions?: CanAffordOptions, subjectToHazardAdjacency: boolean = true): ReadonlyArray<Space> {
+    return super.getAvailableSpacesOnLand(player, canAffordOptions, subjectToHazardAdjacency)
+      .filter((space) => MarsBoard.hasDelegatesForPlacementBonus(player, space));
   }
 
   public getAvailableSpacesForType(player: IPlayer, type: PlacementType, canAffordOptions?: CanAffordOptions | undefined): ReadonlyArray<Space> {
@@ -273,8 +278,22 @@ export class MarsBoard extends Board {
   }
 
   /**
+   * Returns true when the player has enough delegates for the space's delegate placement bonus.
+   * Always true for spaces without one, and in games without Turmoil.
+   */
+  public static hasDelegatesForPlacementBonus(player: IPlayer, space: Space): boolean {
+    const turmoil = player.game.turmoil;
+    // MarsBot never collects placement bonuses.
+    if (turmoil === undefined || player.game.automaHooks?.isAutomaPlayer(player)) {
+      return true;
+    }
+    const delegates = space.bonus.filter((bonus) => bonus === SpaceBonus.DELEGATE).length;
+    return turmoil.getAvailableDelegateCount(player) >= delegates;
+  }
+
+  /**
    * Returns true when the player can afford the M€ (and Reds TR tax) that each of the
-   * space's placement bonuses will charge.
+   * space's placement bonuses will charge, and has the delegates for its delegate bonus.
    *
    * Used by cards that hand the player a non-tile-placement choice of space and then call
    * `grantSpaceBonuses` (Mars Nomads, Gagarin Mobile Base, Survey Mission). Without this
@@ -300,7 +319,7 @@ export class MarsBoard extends Board {
         return false;
       }
     }
-    return true;
+    return MarsBoard.hasDelegatesForPlacementBonus(player, space);
   }
 
   public getAvailableIsolatedSpaces(player: IPlayer, canAffordOptions?: CanAffordOptions): ReadonlyArray<Space> {

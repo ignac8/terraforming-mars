@@ -51,7 +51,7 @@ export class Virus extends Card implements IProjectCard {
     // If no other player has resources to remove
     // assume player will remove nothing from themselves
     if (removeAnimals === undefined && removePlants === undefined) {
-      player.game.log('There was nobody to steal plants or animals from.');
+      player.game.log('There was nobody to steal :r:plants: or :cr:animal: from.');
       return undefined;
     }
 

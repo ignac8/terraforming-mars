@@ -13,6 +13,13 @@ import {MiningGuild} from '../../../src/server/cards/corporation/MiningGuild';
 import {SpaceBonus} from '../../../src/common/boards/SpaceBonus';
 import {Units} from '../../../src/common/Units';
 import {cast} from '../../../src/common/utils/utils';
+import {SelectResource} from '../../../src/server/inputs/SelectResource';
+import {Resource} from '../../../src/common/Resource';
+import {GeologicalSurvey} from '../../../src/server/cards/ares/GeologicalSurvey';
+import {BoardName} from '../../../src/common/boards/BoardName';
+import {Turmoil} from '../../../src/server/turmoil/Turmoil';
+import {SelectParty} from '../../../src/server/inputs/SelectParty';
+import {PartyName} from '../../../src/common/turmoil/PartyName';
 
 function toSpaceIdDigit(space: Space) {
   return parseInt(space.id);
@@ -115,6 +122,39 @@ describe('SurveyMission', () => {
     expect(player.plants).eq(1);
     expect(player.production.asUnits()).deep.eq(Units.of({steel: 1}));
   });
+
+  it('Compatible with Mining Guild and a standard resource bonus', () => {
+    player.playedCards.push(new MiningGuild());
+    const selectSpace = cast(card.play(player), SelectSpace);
+
+    const space = board.getSpaceOrThrow('04');
+    space.bonus = [SpaceBonus.STANDARD_RESOURCE];
+    selectSpace.cb(space);
+    runAllActions(game);
+    cast(player.popWaitingFor(), SelectResource).cb(Resource.STEEL);
+    runAllActions(game);
+
+    expect(player.steel).eq(6);
+    expect(player.production.asUnits()).deep.eq(Units.of({steel: 1}));
+  });
+
+  it('Ares survey cards ignore a standard resource bonus from a claim', () => {
+    [game, player] = testGame(1, {pathfindersExpansion: true, aresExtension: true, aresHazards: false});
+    game.board = board;
+    player.playedCards.push(new MiningGuild(), new GeologicalSurvey());
+    const selectSpace = cast(card.play(player), SelectSpace);
+
+    const space = board.getSpaceOrThrow('04');
+    space.bonus = [SpaceBonus.STANDARD_RESOURCE];
+    selectSpace.cb(space);
+    runAllActions(game);
+    cast(player.popWaitingFor(), SelectResource).cb(Resource.STEEL);
+    runAllActions(game);
+
+    expect(player.steel).eq(6);
+    expect(player.production.asUnits()).deep.eq(Units.of({steel: 1}));
+  });
+
   it('Protected hazard spaces are included in valid triplets', () => {
     const space10 = board.getSpaceOrThrow('10');
     space10.bonus = [SpaceBonus.HEAT, SpaceBonus.PLANT];
@@ -155,5 +195,41 @@ describe('SurveyMission', () => {
 
     player.megaCredits = 6;
     expect(cast(card.play(player), SelectSpace).spaces).to.include(space04);
+  });
+
+  describe('delegate bonus spaces', () => {
+    // On Amazonis Planitia, B2 (10) and H9 (72) give one delegate and H7 (70) gives two.
+    function setup(reserve: number) {
+      [game, player] = testGame(1, {boardName: BoardName.AMAZONIS_PLANITIA, pathfindersExpansion: true, turmoilExtension: true});
+      const turmoil = Turmoil.getTurmoil(game);
+      while (turmoil.getAvailableDelegateCount(player) > reserve) {
+        turmoil.delegateReserve.remove(player);
+      }
+      return cast(card.play(player), SelectSpace).spaces.map((s) => s.id);
+    }
+
+    it('without delegates, no delegate space can be claimed', () => {
+      const ids = setup(0);
+      expect(ids).does.not.include('10');
+      expect(ids).does.not.include('70');
+      expect(ids).does.not.include('72');
+    });
+
+    it('with one delegate, only single delegate spaces can be claimed', () => {
+      const ids = setup(1);
+      expect(ids).includes('10');
+      expect(ids).includes('72');
+      expect(ids).does.not.include('70');
+    });
+
+    it('with two delegates, the double delegate space can be claimed and sends both', () => {
+      const ids = setup(2);
+      expect(ids).includes('70');
+      const selectSpace = cast(card.play(player), SelectSpace);
+      selectSpace.cb(game.board.getSpaceOrThrow('70'));
+      runAllActions(game);
+      cast(player.popWaitingFor(), SelectParty).cb(PartyName.MARS);
+      expect(player.totalDelegatesPlaced).eq(2);
+    });
   });
 });

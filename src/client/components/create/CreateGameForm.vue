@@ -761,6 +761,12 @@ export default defineComponent({
         this.preludeToggled = true;
       }
     },
+    'expansions.deltaProject': function(value: boolean) {
+      if (value === true && this.preludeToggled === false && this.uploading === false) {
+        this.expansions.prelude = true;
+        this.preludeToggled = true;
+      }
+    },
     playersCount(value: number) {
       if (this.marsBotOnly && value !== 1) {
         this.playersCount = 1;

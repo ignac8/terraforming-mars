@@ -11,7 +11,7 @@ import {OrOptions} from '../../../src/server/inputs/OrOptions';
 import {Resource} from '../../../src/common/Resource';
 import {GlobalEventName} from '../../../src/common/turmoil/globalEvents/GlobalEventName';
 import {TestPlayer} from '../../TestPlayer';
-import {runAllActions} from '../../TestingUtils';
+import {formatMessage, runAllActions} from '../../TestingUtils';
 import {testGame} from '../../TestGame';
 import {IGame} from '../../../src/server/IGame';
 import {cast} from '../../../src/common/utils/utils';
@@ -47,6 +47,28 @@ describe('MonsInsurance', () => {
     expect(player2.titanium).to.eq(0);
     expect(player2.megaCredits).to.eq(2);
     expect(player.megaCredits).to.eq(0);
+  });
+
+  it('Logs an M€ icon when paying the owner', () => {
+    player2.megaCredits = 5;
+    player.game.gameLog = [];
+
+    card.payDebt(player2, player);
+
+    expect(player.game.gameLog.map(formatMessage)).deep.eq([
+      'blue received 3:r:megacredits: from Mons Insurance owner (red)',
+    ]);
+  });
+
+  it('Logs an M€ icon when paying the neutral player', () => {
+    player2.megaCredits = 5;
+    player.game.gameLog = [];
+
+    card.payDebt(player2, undefined);
+
+    expect(player.game.gameLog.map(formatMessage)).deep.eq([
+      'Neutral player received 3:r:megacredits: from Mons Insurance owner (red)',
+    ]);
   });
 
   it('Does not trigger effect when player removes resources from self', () => {

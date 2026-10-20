@@ -127,6 +127,8 @@ describe('MarsBot boards', () => {
     expect(isMarsBotBoardChoice(RandomBoardOption.ALL)).is.false;
     expect(isMarsBotBoardChoice(BoardName.ARABIA_TERRA)).is.false;
     expect(isMarsBotBoardChoice(BoardName.VASTITAS_BOREALIS)).is.false;
+    // MarsBot is built for normal-size boards only
+    expect(isMarsBotBoardChoice(BoardName.AMAZONIS_PLANITIA)).is.false;
   });
 
   it('the official random pool is exactly the MarsBot maps', () => {

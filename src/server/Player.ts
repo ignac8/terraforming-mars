@@ -37,6 +37,7 @@ import {Clock, Timer} from '../common/Timer';
 import {TurmoilHandler} from './turmoil/TurmoilHandler';
 import {AllOptions, DrawCards, DrawOptions} from './deferredActions/DrawCards';
 import {Units} from '../common/Units';
+import {MilestoneName} from '../common/ma/MilestoneName';
 import {MoonExpansion} from './moon/MoonExpansion';
 import {IStandardProjectCard} from './cards/IStandardProjectCard';
 import {ConvertPlants} from './cards/base/standardActions/ConvertPlants';
@@ -78,6 +79,12 @@ import {AlliedParty} from '../common/turmoil/Types';
 import {PlayedCards} from './cards/PlayedCards';
 import {From} from './logs/From';
 import {SelectStandardProjectToPlay} from './inputs/SelectStandardProjectToPlay';
+
+// Resources a player must keep after paying to claim a milestone.
+const MILESTONE_RESERVE_UNITS: Partial<Record<MilestoneName, Units>> = {
+  Merchant: Units.every(2),
+  Merchant3: Units.every(3),
+};
 
 const THROW_STATE_ERRORS = Boolean(process.env.THROW_STATE_ERRORS);
 const DEFAULT_GLOBAL_PARAMETER_STEPS = {
@@ -330,7 +337,7 @@ export class Player implements IPlayer {
     }
     if (this.preservationProgram === true && inActionPhase && isFirstTrThisGeneration) {
       steps--;
-      this.game.log('${0} for ${1} is blocking 1 TR', (b) => b.cardName(CardName.PRESERVATION_PROGRAM).player(this));
+      this.game.log('${0} for ${1} is blocking 1:icon:tr:', (b) => b.cardName(CardName.PRESERVATION_PROGRAM).player(this));
       this.preservationProgram = false;
       if (steps === 0) {
         return;
@@ -343,9 +350,9 @@ export class Player implements IPlayer {
       if (opts.log === true) {
         if (opts.from !== undefined) {
           const from = opts.from;
-          this.game.log('${0} gained ${1} TR from ${2}', (b) => b.player(this).number(steps).from(from));
+          this.game.log('${0} gained ${1}:icon:tr: from ${2}', (b) => b.player(this).number(steps).from(from));
         } else {
-          this.game.log('${0} gained ${1} TR', (b) => b.player(this).number(steps));
+          this.game.log('${0} gained ${1}:icon:tr:', (b) => b.player(this).number(steps));
         }
       }
       for (const cardOwner of this.game.playersInGenerationOrder) {
@@ -372,7 +379,7 @@ export class Player implements IPlayer {
   public decreaseTerraformRating(steps: number = 1, opts: {log?: boolean} = {}) {
     this.terraformRating -= steps;
     if (opts.log === true) {
-      this.game.log('${0} lost ${1} TR', (b) => b.player(this).number(steps));
+      this.game.log('${0} lost ${1}:icon:tr:', (b) => b.player(this).number(steps));
     }
   }
 
@@ -527,11 +534,20 @@ export class Player implements IPlayer {
       }
 
       if (options?.log ?? true) {
-        this.game.log('${0} removed ${1} resource(s) from ${2}\'s ${3}', (b) =>
-          b.player(options?.removingPlayer ?? this)
-            .number(amountRemoved)
-            .player(this)
-            .card(card));
+        if (card.resourceType === undefined) {
+          this.game.log('${0} removed ${1} resource(s) from ${2}\'s ${3}', (b) =>
+            b.player(options?.removingPlayer ?? this)
+              .number(amountRemoved)
+              .player(this)
+              .card(card));
+        } else {
+          this.game.log('${0} removed ${1}${2} from ${3}\'s ${4}', (b) =>
+            b.player(options?.removingPlayer ?? this)
+              .number(amountRemoved)
+              .cardResource(card.resourceType)
+              .player(this)
+              .card(card));
+        }
       }
 
       // Lawsuit hook
@@ -545,16 +561,17 @@ export class Player implements IPlayer {
     }
   }
 
-  public addResourceTo(card: ICard, options: number | {qty?: number, log: boolean, logZero?: boolean, from?: From} = 1): void {
+  public addResourceTo(card: ICard, options: number | {qty?: number, log?: boolean, logZero?: boolean, from?: From} = 1): void {
     const count = typeof(options) === 'number' ? options : (options.qty ?? 1);
+    const opts = typeof(options) === 'number' ? undefined : options;
 
     if (card.resourceCount !== undefined) {
       card.resourceCount += count;
     }
 
-    if (typeof(options) !== 'number' && options.log === true) {
-      if (options.logZero === true || count !== 0) {
-        LogHelper.logAddResource(this, card, count, options.from);
+    if (opts?.log ?? true) {
+      if (opts?.logZero === true || count !== 0) {
+        LogHelper.logAddResource(this, card, count, opts?.from);
       }
     }
 
@@ -1109,7 +1126,7 @@ export class Player implements IPlayer {
     } else {
       const baseCost = this.milestoneCost();
       const cost = baseCost + ((milestone.name === 'Briber') ? 12 : 0);
-      const reserveUnits = milestone.name === 'Merchant' ? Units.every(2) : Units.EMPTY;
+      const reserveUnits = MILESTONE_RESERVE_UNITS[milestone.name] ?? Units.EMPTY;
       this.game.defer(new SelectPaymentDeferred(this, cost, {title: 'Select how to pay for milestone', reserveUnits: reserveUnits})).andThen(() => {
         recordClaim();
       });

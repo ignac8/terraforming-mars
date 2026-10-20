@@ -538,7 +538,7 @@
 	"Select card to add microbe or animal": "Velg et kort hvor det skal legges til en mikrobe eller et dyr",
 	"Add resource to card ${0}": "Legg til en ressurs på ${0}",
 	"Select how to pay ${0} for colony trade": "Velg hvordan du vil betale ${0} for å handle med en koloni.",
-	"increase M€ production 1 step": "øk din M€-produksjon med 1",
+	"gain 1:p:megacredits:": "øk din M€-produksjon med 1",
 	"Increase your M€ production by 5": "Øk din M€-produksjon med 5",
 	"Increase your plant production by 2": "Øk din planteproduksjon med 2",
 	"Increase +MC": "Øk +M€",
@@ -822,7 +822,7 @@
 
 	"Place any final greenery from plants": "Plasser eventuelle siste skogområder fra planter",
 
-	"Wetlands: counts as an ocean and a greenery. Does not count toward 9 oceans.": "Våtmark: Telles som et hav og et skogområde. Teller ikke mot 9 hav.",
+	"Wetlands: counts as an ocean and a greenery. Does not count toward ${0} oceans.": "Våtmark: Telles som et hav og et skogområde. Teller ikke mot ${0} hav.",
 	"Red City: 1 VP per empty adjacent area. No greeneries may be placed next to it.": "Rød by: 1 SP per tilstøtende område som er tomt. Ingen skogområder kan plasseres ved siden av den.",
 	"Martian Nature Wonders": "Naturlige underverker på Mars",
 	"Crashlanding": "Kræsjlanding",

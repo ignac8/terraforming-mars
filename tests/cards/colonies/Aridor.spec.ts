@@ -9,7 +9,7 @@ import {Venus} from '../../../src/server/cards/community/Venus';
 import {Celestic} from '../../../src/server/cards/venusNext/Celestic';
 import {Tag} from '../../../src/common/cards/Tag';
 import {Player} from '../../../src/server/Player';
-import {runAllActions} from '../../TestingUtils';
+import {formatMessage, runAllActions} from '../../TestingUtils';
 import {SelectColony} from '../../../src/server/inputs/SelectColony';
 import {InputResponse} from '../../../src/common/inputs/InputResponse';
 import {ColonyName} from '../../../src/common/colonies/ColonyName';
@@ -46,6 +46,15 @@ describe('Aridor', () => {
     // GHG Producing Bacteria has a Science tag and a Microbe tag.
     player.playCard(new GHGProducingBacteria());
     expect(player.production.megacredits).to.eq(5);
+  });
+
+  it('logs the production gain with icons', () => {
+    player.playedCards.push(card);
+
+    player.playCard(new Predators());
+
+    expect(game.gameLog.map(formatMessage)).to.include(
+      `${player.color} gained 1:p:megacredits: from Aridor for the :tag:animal: tag`);
   });
 
   // A test that directly calls initialAction is also good, but this

@@ -85,6 +85,25 @@ describe('Turmoil', () => {
     expect(greens.delegates.size).eq(0);
   });
 
+  it('Names the player when the reserve is empty', () => {
+    turmoil.delegateReserve.clear();
+
+    const logged: Array<string> = [];
+    const originalLog = console.log;
+    console.log = (...args: Array<unknown>) => logged.push(args.join(' '));
+    try {
+      turmoil.sendDelegateToParty(player, PartyName.GREENS, game);
+      turmoil.sendDelegateToParty('NEUTRAL', PartyName.GREENS, game);
+    } finally {
+      console.log = originalLog;
+    }
+
+    expect(logged).deep.eq([
+      `${player.name}/${game.id} tried to get a delegate from an empty reserve.`,
+      `NEUTRAL/${game.id} tried to get a delegate from an empty reserve.`,
+    ]);
+  });
+
   it('Counts influence correctly for dominant party', () => {
     turmoil.parties.forEach((party) => party.delegates.clear());
 
@@ -173,6 +192,26 @@ describe('Turmoil', () => {
     expect(turmoil.dominantParty).to.eq(turmoil.getPartyByName(PartyName.GREENS));
   });
 
+  it('Turmoil phase logs show TR and ruling agenda as icons', () => {
+    player.setTerraformRating(20);
+    player2.setTerraformRating(21);
+    turmoil.sendDelegateToParty(player, PartyName.REDS, game);
+    turmoil.sendDelegateToParty(player, PartyName.REDS, game);
+    turmoil.currentGlobalEvent = undefined;
+
+    game.phase = Phase.SOLAR;
+    turmoil.runTurmoilPhase(game);
+    runAllActions(game);
+
+    const messages = game.gameLog.map(formatMessage);
+    expect(messages).to.include.members([
+      'All players lose 1:icon:tr:.',
+      'The ruling bonus is: The player(s) with the lowest :icon:tr: gains 1:icon:tr:',
+      'The ruling policy is: When you take an action that raises :icon:tr:, you MUST pay 3:r:megacredits: per step raised',
+      `${player.color} is the new chairman and gains 1:icon:tr:`,
+    ]);
+  });
+
   it('Player that is chairman has one fewer delegate avaialble ', () => {
     turmoil.sendDelegateToParty(player, PartyName.REDS, game);
     turmoil.sendDelegateToParty(player, PartyName.REDS, game);
@@ -256,8 +295,8 @@ describe('Turmoil', () => {
 
     const messages = game.gameLog.map(formatMessage).filter((m) => m.includes('because of'));
     expect(messages).to.include.members([
-      `${player.color} gained 1 steel because of Aquifer Released by Public Council`,
-      `${player.color} gained 1 plant because of Aquifer Released by Public Council`,
+      `${player.color} gained 1:r:steel: because of Aquifer Released by Public Council`,
+      `${player.color} gained 1:r:plants: because of Aquifer Released by Public Council`,
     ]);
     expect(messages.filter((m) => m.includes('Corrosive Rain'))).is.empty;
   });

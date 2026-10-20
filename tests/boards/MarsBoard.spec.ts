@@ -17,6 +17,7 @@ import {SpaceBonus} from '../../src/common/boards/SpaceBonus';
 import {maxOutOceans, setRulingParty, setTemperature} from '../TestingUtils';
 import {PartyName} from '../../src/common/turmoil/PartyName';
 import * as constants from '../../src/common/constants';
+import {Turmoil} from '../../src/server/turmoil/Turmoil';
 
 describe('MarsBoard', () => {
   let board: MarsBoard;
@@ -248,6 +249,29 @@ describe('MarsBoard', () => {
       expect(MarsBoard.canAffordPlacementBonuses(player, space)).is.false;
     });
 
+    it('DELEGATE bonus requires that many delegates in reserve', () => {
+      [game, player] = testGame(1, {turmoilExtension: true});
+      const turmoil = Turmoil.getTurmoil(game);
+      space = game.board.getSpaceOrThrow('15');
+      space.bonus = [SpaceBonus.DELEGATE, SpaceBonus.DELEGATE];
+
+      while (turmoil.getAvailableDelegateCount(player) > 2) {
+        turmoil.delegateReserve.remove(player);
+      }
+      expect(MarsBoard.canAffordPlacementBonuses(player, space)).is.true;
+      turmoil.delegateReserve.remove(player);
+      expect(MarsBoard.canAffordPlacementBonuses(player, space)).is.false;
+      space.bonus = [SpaceBonus.DELEGATE];
+      expect(MarsBoard.canAffordPlacementBonuses(player, space)).is.true;
+      turmoil.delegateReserve.remove(player);
+      expect(MarsBoard.canAffordPlacementBonuses(player, space)).is.false;
+    });
+
+    it('DELEGATE bonus is free without Turmoil', () => {
+      space.bonus = [SpaceBonus.DELEGATE, SpaceBonus.DELEGATE];
+      expect(MarsBoard.canAffordPlacementBonuses(player, space)).is.true;
+    });
+
     it('Reds tax adds to OCEAN cost', () => {
       [game, player] = testGame(1, {turmoilExtension: true});
       setRulingParty(game, PartyName.REDS);
@@ -281,10 +305,10 @@ describe('MarsBoard', () => {
   });
 
   it('global parameter maximums can be overridden', () => {
-    const customBoard = new MarsBoard(board.spaces, undefined, {temperature: 14, oxygen: 18, oceans: 11});
+    const customBoard = new MarsBoard(board.spaces, undefined, {temperature: 14, oxygen: 18, oceans: 11, venus: 36});
     expect(customBoard.max.temperature).eq(14);
     expect(customBoard.max.oxygen).eq(18);
     expect(customBoard.max.oceans).eq(11);
-    expect(customBoard.max.venus).eq(constants.MAX_VENUS_SCALE);
+    expect(customBoard.max.venus).eq(36);
   });
 });

@@ -2,6 +2,7 @@ import * as constants from '../common/constants';
 import {venusLevelAfterSteps, venusStepsBetween} from './venusNext/venusScale';
 import {BeginnerCorporation} from './cards/corporation/BeginnerCorporation';
 import {Board} from './boards/Board';
+import {getGlobalParameterTracks, GlobalParameterTracks, grantGlobalParameterTrackBonuses} from '@/server/boards/GlobalParameterTracks';
 import {CardName} from '../common/cards/CardName';
 import {ClaimedMilestone, serializeClaimedMilestones, deserializeClaimedMilestones} from './milestones/ClaimedMilestone';
 import {ColonyDealer} from './colonies/ColonyDealer';
@@ -65,7 +66,8 @@ import {CorporationDeck, PreludeDeck, ProjectDeck, CeoDeck} from './cards/Deck';
 import {Logger} from './logs/Logger';
 import {addDays, stringToNumber} from './database/utils';
 import {Tag} from '../common/cards/Tag';
-import {GlobalParameterMaximums, IGame, Score} from './IGame';
+import {IGame, Score} from './IGame';
+import {GlobalParameterMaximums} from '../common/boards/GlobalParameterMaximums';
 import {MarsBoard} from './boards/MarsBoard';
 import {UnderworldData} from './underworld/UnderworldData';
 import {UnderworldExpansion} from './underworld/UnderworldExpansion';
@@ -201,6 +203,7 @@ export class Game implements IGame, Logger {
   public readonly tags: ReadonlyArray<Tag>;
 
   public underworldDraftEnabled = true;
+  public readonly globalParameterTracks: GlobalParameterTracks;
 
   public automaHooks: AutomaGameHooks | undefined;
 
@@ -261,6 +264,7 @@ export class Game implements IGame, Logger {
     });
 
     this.tags = tags;
+    this.globalParameterTracks = getGlobalParameterTracks(gameOptions.boardName);
   }
 
   private setFirstPlayer(first: IPlayer) {
@@ -388,7 +392,7 @@ export class Game implements IGame, Logger {
 
     // Must configure this before solo placement.
     if (gameOptions.underworldExpansion) {
-      game.underworldData = UnderworldExpansion.initialize(rng);
+      game.underworldData = UnderworldExpansion.initialize(rng, gameOptions.boardName === BoardName.AMAZONIS_PLANITIA);
     }
 
     if (players.length === 1 && gameOptions.automaOption) {
@@ -646,12 +650,13 @@ export class Game implements IGame, Logger {
 
     // Only add 2 more generations when using the track completion option
     // and not the solo TR option.
-    //
-    // isSoloModeWin backs this up.
     if (options.moonExpansion) {
       if (!options.soloTR && options.requiresMoonTrackCompletion) {
         lastGeneration += 2;
       }
+    }
+    if (!options.soloTR && options.boardName === BoardName.AMAZONIS_PLANITIA) {
+      lastGeneration += 1;
     }
     return lastGeneration;
   }
@@ -1274,22 +1279,17 @@ export class Game implements IGame, Logger {
 
     // Literal typing makes |increments| a const
     const steps = Math.min(increments, this.max.oxygen - this.oxygenLevel);
+    const newOxygenLevel = this.oxygenLevel + steps;
 
     if (this.phase !== Phase.SOLAR) {
       TurmoilHandler.onGlobalParameterIncrease(player, GlobalParameter.OXYGEN, steps);
       player.onGlobalParameterIncrease(GlobalParameter.OXYGEN, steps);
       player.increaseTerraformRating(steps);
     }
-    if (this.oxygenLevel < constants.OXYGEN_LEVEL_FOR_TEMPERATURE_BONUS &&
-      this.oxygenLevel + steps >= constants.OXYGEN_LEVEL_FOR_TEMPERATURE_BONUS) {
-      if (this.temperature >= this.max.temperature) {
-        this.automaHooks?.handleUnresolvableTerraformingBonus(player);
-      } else {
-        this.increaseTemperature(player, 1);
-      }
-    }
 
-    this.oxygenLevel += steps;
+    grantGlobalParameterTrackBonuses(player, 'oxygen', this.oxygenLevel, newOxygenLevel);
+
+    this.oxygenLevel = newOxygenLevel;
 
     AresHandler.ifAres(this, (aresData) => {
       AresHandler.onOxygenChange(this, aresData);
@@ -1315,17 +1315,9 @@ export class Game implements IGame, Logger {
     const steps = Math.min(increments, venusStepsBetween(this.venusScaleLevel, this.max.venus));
     const newValue = venusLevelAfterSteps(this.venusScaleLevel, steps);
 
+    grantGlobalParameterTrackBonuses(player, 'venus', this.venusScaleLevel, newValue);
+
     if (this.phase !== Phase.SOLAR) {
-      if (this.venusScaleLevel < constants.VENUS_LEVEL_FOR_CARD_BONUS &&
-        newValue >= constants.VENUS_LEVEL_FOR_CARD_BONUS) {
-        if (!this.automaHooks?.handleVenusCardBonus(player)) {
-          player.drawCard();
-        }
-      }
-      if (this.venusScaleLevel < constants.VENUS_LEVEL_FOR_TR_BONUS &&
-        newValue >= constants.VENUS_LEVEL_FOR_TR_BONUS) {
-        player.increaseTerraformRating();
-      }
       if (this.gameOptions.altVenusBoard) {
         const minimalBaseline = Math.max(this.venusScaleLevel, constants.ALT_VENUS_MINIMUM_BONUS);
         const maximumBaseline = Math.min(newValue, this.max.venus);
@@ -1377,22 +1369,9 @@ export class Game implements IGame, Logger {
 
     // Literal typing makes |increments| a const
     const steps = Math.min(increments, (this.max.temperature - this.temperature) / 2);
+    const newTemperature = this.temperature + steps * 2;
 
     if (this.phase !== Phase.SOLAR) {
-      // BONUS FOR HEAT PRODUCTION AT -20 and -24
-      if (this.temperature < constants.TEMPERATURE_BONUS_FOR_HEAT_1 &&
-        this.temperature + steps * 2 >= constants.TEMPERATURE_BONUS_FOR_HEAT_1) {
-        if (!this.automaHooks?.handleTemperatureHeatBonus(player)) {
-          player.production.add(Resource.HEAT, 1, {log: true});
-        }
-      }
-      if (this.temperature < constants.TEMPERATURE_BONUS_FOR_HEAT_2 &&
-        this.temperature + steps * 2 >= constants.TEMPERATURE_BONUS_FOR_HEAT_2) {
-        if (!this.automaHooks?.handleTemperatureHeatBonus(player)) {
-          player.production.add(Resource.HEAT, 1, {log: true});
-        }
-      }
-
       for (const card of player.playedCards) {
         card.onGlobalParameterIncrease?.(player, GlobalParameter.TEMPERATURE, steps);
       }
@@ -1401,14 +1380,9 @@ export class Game implements IGame, Logger {
       player.increaseTerraformRating(steps);
     }
 
-    // BONUS FOR OCEAN TILE AT 0
-    if (this.temperature < constants.TEMPERATURE_FOR_OCEAN_BONUS && this.temperature + steps * 2 >= constants.TEMPERATURE_FOR_OCEAN_BONUS) {
-      if (!this.automaHooks?.handleTemperatureOceanBonus(player)) {
-        this.defer(new PlaceOceanTile(player, {title: 'Select space for ocean from temperature increase'}));
-      }
-    }
+    grantGlobalParameterTrackBonuses(player, 'temperature', this.temperature, newTemperature);
 
-    this.temperature += steps * 2;
+    this.temperature = newTemperature;
 
     AresHandler.ifAres(this, (aresData) => {
       AresHandler.onTemperatureChange(this, aresData);
@@ -1519,14 +1493,14 @@ export class Game implements IGame, Logger {
 
   public grantPlacementBonuses(player: IPlayer, space: Space, coveringExistingTile: boolean = false) {
     if (!coveringExistingTile) {
-      this.grantSpaceBonuses(player, space);
+      this.grantSpaceBonuses(player, space, /* tilePlaced= */ true);
     }
 
     const adjacentOceanCount = this.board.getAdjacentSpaces(space).filter(Board.isOceanSpace).length;
     const oceanAdjacencyBonus = adjacentOceanCount * player.oceanBonus;
     if (oceanAdjacencyBonus > 0) {
       player.stock.add(Resource.MEGACREDITS, oceanAdjacencyBonus);
-      this.log('${0} gained ${1} M€ from ${2} ocean(s)', (b) => b.player(player).number(oceanAdjacencyBonus).number(adjacentOceanCount));
+      this.log('${0} gained ${1}:r:megacredits: from ${2} ocean(s)', (b) => b.player(player).number(oceanAdjacencyBonus).number(adjacentOceanCount));
     }
   }
 
@@ -1564,14 +1538,14 @@ export class Game implements IGame, Logger {
     LogHelper.logTilePlacement(player, space, tile.tileType);
   }
 
-  public grantSpaceBonuses(player: IPlayer, space: Space) {
+  public grantSpaceBonuses(player: IPlayer, space: Space, tilePlaced: boolean = false) {
     const bonuses = MultiSet.from(space.bonus);
     bonuses.forEachMultiplicity((count: number, bonus: SpaceBonus) => {
-      this.grantSpaceBonus(player, bonus, count);
+      this.grantSpaceBonus(player, bonus, count, tilePlaced ? space : undefined);
     });
   }
 
-  public grantSpaceBonus(player: IPlayer, spaceBonus: SpaceBonus, count: number = 1) {
+  public grantSpaceBonus(player: IPlayer, spaceBonus: SpaceBonus, count: number = 1, space?: Space) {
     switch (spaceBonus) {
     case SpaceBonus.DRAW_CARD:
       player.drawCard(count);
@@ -1630,7 +1604,7 @@ export class Game implements IGame, Logger {
       break;
     case SpaceBonus.DELEGATE:
       if (this.turmoil) {
-        this.defer(new SendDelegateToArea(player));
+        this.defer(new SendDelegateToArea(player, undefined, {count}));
       }
       break;
     case SpaceBonus.COLONY:
@@ -1645,6 +1619,9 @@ export class Game implements IGame, Logger {
       player.defer(new SelectResource('Select a standard resource to gain')
         .andThen((resource) => {
           player.stock.add(resource, 1, {log: true});
+          if (space !== undefined) {
+            this.triggerForAllCards((p, c) => c.onStandardResourcePlacementBonus?.(p, player, space, resource));
+          }
           return undefined;
         }));
       break;

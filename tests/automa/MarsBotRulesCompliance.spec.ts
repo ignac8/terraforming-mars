@@ -608,7 +608,7 @@ describe('MarsBot Rules Compliance', () => {
       expect(marsBot.turnResolver.megacredits).eq(mc + 10);
     });
 
-    // Our reading: "reveal until" has no cap short of the whole deck
+    // "Reveal until" has no cap short of the whole deck (Nick, Q&A 20)
     it('Administrator keeps revealing past 20 cards', () => {
       const {game, marsBot} = createAutomaGame();
       const microMills = new MicroMills();

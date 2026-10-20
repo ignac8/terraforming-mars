@@ -1,6 +1,6 @@
 import {expect} from 'chai';
 import {testGame} from '../../TestGame';
-import {forceGenerationEnd, testRedsCosts} from '../../TestingUtils';
+import {forceGenerationEnd, formatMessage, testRedsCosts} from '../../TestingUtils';
 import {TestPlayer} from '../../TestPlayer';
 import {IGame} from '../../../src/server/IGame';
 import {PreservationProgram} from '../../../src/server/cards/prelude2/PreservationProgram';
@@ -46,6 +46,17 @@ describe('PreservationProgram', () => {
 
     player.increaseTerraformRating();
     expect(player.terraformRating).eq(28);
+  });
+
+  it('Logs the blocked TR with an icon', () => {
+    card.play(player);
+    player.playedCards.push(card);
+    game.phase = Phase.ACTION;
+    game.gameLog.length = 0;
+
+    player.increaseTerraformRating();
+
+    expect(game.gameLog.map(formatMessage)).deep.eq([`Preservation Program for ${player.color} is blocking 1:icon:tr:`]);
   });
 
   it('Allows multi TR to go partially through', () => {
