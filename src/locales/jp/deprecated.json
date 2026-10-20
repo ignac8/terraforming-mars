@@ -6,5 +6,14 @@
   "${0} spent ${1} titanium to trade with ${2}": "${0}が${1}チタンを支払い、${2}と交易",
   "${0} gained ${1} ${2}": "${0}が${1}${2}獲得",
   "${0} sold ${1} steel": "${0}が${1}建材を売却",
-  "${0} removed ${1} ${2} from ${3} to ${4}": "${0}が${3}から${1}${2}除去し${4}"
+  "${0} removed ${1} ${2} from ${3} to ${4}": "${0}が${3}から${1}${2}除去し${4}",
+  "${0} gained ${1} corruption": "${0}が${1}汚職獲得",
+  "${0} spent ${1} corruption": "${0}が${1}汚職支払った",
+  "${0} has no fighter resource cards and gained 1 titanium.": "${0}は戦闘機を配置できるカードがないため、1チタン獲得",
+  "${0} has no science cards and gained 1 TR.": "${0}は科学リソースを配置できるカードがないため、TR+1段階.",
+  "${0} discarded ${1} corruption and gained ${2} M€": "${0}は${1}汚職支払い、${2}MC獲得",
+  "${0} used the ${1} action to convert ${2} wares into ${2} M€": "${0}は${1}のアクションで${2}品物支払い、${2}MC獲得",
+  "Steel and titanium are worth 1 M€ less, except for ${0}, whose steel and titanium are worth 1 M€ more.": "${0}は建材とチタンの価値+1MC. それ以外のプレイヤーは建材とチタンの価値-1MC.",
+  "${0} spent 1 corruption to block an attack by ${1}": "${0}が1汚職を支払い、${1}の攻撃を防いだ.",
+  "${0} spent 1 fighter on ${1} to block an attack by ${2}": "${0}が${1}に1戦闘機を支払い、${2}の攻撃を防いだ."
 }

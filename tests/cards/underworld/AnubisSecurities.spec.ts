@@ -1,7 +1,7 @@
 import {expect} from 'chai';
 import {AnubisSecurities} from '../../../src/server/cards/underworld/AnubisSecurities';
 import {testGame} from '../../TestGame';
-import {runAllActions} from '../../TestingUtils';
+import {formatMessage, runAllActions} from '../../TestingUtils';
 import {AICentral} from '../../../src/server/cards/base/AICentral';
 import {Ants} from '../../../src/server/cards/base/Ants';
 import {SelectProjectCardToPlay} from '../../../src/server/inputs/SelectProjectCardToPlay';
@@ -109,5 +109,7 @@ describe('AnubisSecurities', () => {
 
     expect(player.underworldData.corruption).eq(0);
     expect(player.megaCredits).eq(18);
+    expect(player.game.gameLog.map(formatMessage)).to.include(
+      'blue discarded 3:r:corruption: and gained 18:r:megacredits:');
   });
 });

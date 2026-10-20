@@ -1,7 +1,7 @@
 import {expect} from 'chai';
 import {HyperspaceDrivePrototype} from '../../../src/server/cards/underworld/HyperspaceDrivePrototype';
 import {testGame} from '../../TestGame';
-import {runAllActions} from '../../TestingUtils';
+import {formatMessage, runAllActions} from '../../TestingUtils';
 import {SpacePrivateers} from '../../../src/server/cards/underworld/SpacePrivateers';
 import {TestPlayer} from '../../TestPlayer';
 import {SearchForLife} from '../../../src/server/cards/base/SearchForLife';
@@ -49,6 +49,10 @@ describe('HyperspaceDrivePrototype', () => {
       expect(player.terraformRating).eq(run.tr);
       expect(fighterCard.resourceCount).eq(run.fighter ? 1 : 0);
       expect(scienceCard.resourceCount).eq(run.science ? 1 : 0);
+
+      const log = game.gameLog.map(formatMessage);
+      expect(log.includes('blue has no fighter resource cards and gained 1:r:titanium:.')).eq(!run.fighter);
+      expect(log.includes('blue has no science cards and gained 1:icon:tr:.')).eq(!run.science);
     });
   }
 });

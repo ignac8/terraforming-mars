@@ -73,7 +73,7 @@ describe('GlobalAudit', () => {
 
     expect(player.terraformRating).eq(21);
     const log = game.gameLog.map((m) => formatMessage(m));
-    expect(log.some((m) => m.includes('instead of'))).is.true;
+    expect(log).to.include('blue gains 1:icon:tr: instead of 2 due to the Reds ruling policy');
   });
 
   it('logs when a player gains less TR than entitled - reds, Helion with 2 heat + 2 MC', () => {
@@ -101,6 +101,6 @@ describe('GlobalAudit', () => {
 
     expect(player.terraformRating).eq(21);
     const log = game.gameLog.map((m) => formatMessage(m));
-    expect(log.some((m) => m.includes('instead of'))).is.true;
+    expect(log).to.include('blue gains 1:icon:tr: instead of 2 due to the Reds ruling policy');
   });
 });

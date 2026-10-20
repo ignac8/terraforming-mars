@@ -153,10 +153,23 @@ describe('UnderworldExpansion', () => {
     expect(player1.underworldData.corruption).eq(2);
   });
 
+  it('gainCorruption, log', () => {
+    UnderworldExpansion.gainCorruption(player1, 2, {log: true});
+
+    expect(game.gameLog.map(formatMessage)).to.include('blue gained 2:r:corruption:');
+  });
+
   it('loseCorruption', () => {
     player1.underworldData.corruption = 3;
     UnderworldExpansion.loseCorruption(player1, 2);
     expect(player1.underworldData.corruption).eq(1);
+  });
+
+  it('loseCorruption, log', () => {
+    player1.underworldData.corruption = 3;
+    UnderworldExpansion.loseCorruption(player1, 2, {log: true});
+
+    expect(game.gameLog.map(formatMessage)).to.include('blue spent 2:r:corruption:');
   });
 
   it('grant bonus - card1', () => {
@@ -588,6 +601,7 @@ describe('UnderworldExpansion', () => {
     expect(tester.called).is.true;
     expect(tester.proceed).is.false;
     expect(player1.underworldData.corruption).eq(0);
+    expect(game.gameLog.map(formatMessage)).to.include('blue spent 1:r:corruption: to block an attack by red');
   });
 
   it('maybeBlockAttack - resolves before opponent triggers', () => {
@@ -659,6 +673,8 @@ describe('UnderworldExpansion', () => {
     expect(tester.proceed).is.false;
     expect(player1.underworldData.corruption).eq(0);
     expect(privateMilitaryContractor.resourceCount).eq(1);
+    expect(game.gameLog.map(formatMessage)).to.include(
+      'blue spent 1:cr:fighter: on Private Military Contractor to block an attack by red');
   });
 
   it('maybeBlockAttack - privateMilitaryContractor - resources and corruption', () => {
