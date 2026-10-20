@@ -4,7 +4,7 @@ import {IGame} from '../../../src/server/IGame';
 import {OrOptions} from '../../../src/server/inputs/OrOptions';
 import {Resource} from '../../../src/common/Resource';
 import {TestPlayer} from '../../TestPlayer';
-import {churn, setOxygenLevel} from '../../TestingUtils';
+import {churn, formatMessage, setOxygenLevel} from '../../TestingUtils';
 import {testGame} from '../../TestGame';
 import {cast} from '../../../src/common/utils/utils';
 
@@ -58,9 +58,7 @@ describe('ElectroCatapult', () => {
   });
 
   function spentLog() {
-    return game.gameLog
-      .filter((m) => m.message === '${0} lost ${1} ${2}')
-      .map((m) => m.data.slice(1).map((d) => d.value).join(' '));
+    return game.gameLog.map(formatMessage).filter((m) => m.includes(' lost '));
   }
 
   it('Logs the plant it spends when there is no steel to choose', () => {
@@ -69,7 +67,7 @@ describe('ElectroCatapult', () => {
     churn(card.action(player), player);
 
     expect(player.plants).to.eq(0);
-    expect(spentLog()).deep.eq(['1 plant']);
+    expect(spentLog()).deep.eq(['blue lost 1:r:plants:']);
   });
 
   it('Logs the steel it spends', () => {
@@ -79,6 +77,6 @@ describe('ElectroCatapult', () => {
     const orOptions = cast(churn(card.action(player), player), OrOptions);
     orOptions.options[1].cb();
 
-    expect(spentLog()).deep.eq(['1 steel']);
+    expect(spentLog()).deep.eq(['blue lost 1:r:steel:']);
   });
 });
