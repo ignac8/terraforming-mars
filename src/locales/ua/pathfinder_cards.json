@@ -247,7 +247,7 @@
 
   "Wetlands": "Флігель",
   "(Requires 2 ocean tiles. Lose 4 plants. Place this tile on an UNRESERVED SPACE ADJACENT TO AT LEAST 2 OCEANS. Raise oxygen 1 step. Gain 1 TR.)": "(Вимагає 2 тайли океану. Втратити 4 рослини. Розмістіть цей тайл на НЕЗАРЕЗЕРВОВАНОМУ МІСЦІ ПОБЛИЗУ ПРИНАЙМНІ 2 ОКЕАНІВ. Підвищити рівень кисню на 1. Отримати 1 РТ.)",
-  "(Effect: Wetlands counts as a greenery tile and an ocean tile, except it can't be covered and is not one of the 9 oceans required to end the game.)": "(Ефект: Флігель вважається тайлом лісу та тайлом океану, за винятком того, що його не можна закрити і він не є одним з 9 океанів, необхідних для завершення гри.)",
+  "(Effect: Wetlands counts as a greenery tile and an ocean tile, except it can't be covered and is not one of the oceans required to end the game.)": "(Ефект: Флігель вважається тайлом лісу та тайлом океану, за винятком того, що його не можна закрити і він не є одним з океанів, необхідних для завершення гри.)",
 
   "Action: Spend 1 steel and 1 energy to gain 3 plants.": "Дія: Витратьте 1 сталь і 1 енергію, щоб отримати 3 рослини.",
   "Action: Spend 1 plant to add an animal to this card.": "Дія: Витратьте 1 рослину, щоб додати тварину на цю карту.",
@@ -285,7 +285,7 @@
   "Effect: When playing a card, you can remove data from this card to change the card's global requirement by 1 step for every 1 data removed.": "Ефект: При грі карти ви можете видаляти дані з цієї карти, щоб змінювати глобальну вимогу карти на 1 за кожні видалені дані.",
   "Action: Add 1 floater to ANY Venus card": "Дія: Додайте 1 аеростат до БУДЬ-ЯКОЇ карти Венери.",
   "Requires 2 ocean tiles. Lose 4 plants. Place this tile on an UNRESERVED SPACE ADJACENT TO AT LEAST 2 OCEANS. Raise oxygen 1 step. Gain 1 TR.": "Вимагає 2 тайли океану. Втратьте 4 рослини. Розмістіть цей тайл на НЕЗАРЕЗЕРВОВАНОМУ ПРОСТОРІ, ЩО ПРИЛЯГАЄ ПРИНАЙМНІ ДО 2 ОКЕАНІВ. Підвищте рівень кисню на 1. Отримайте 1 РТ.",
-  "Effect: Wetlands counts as a greenery tile and an ocean tile, except it can't be covered and is not one of the 9 oceans required to end the game.": "Ефект: Водно-болотні угіддя вважаються тайлом лісу і тайлом океану, але їх не можна перекрити, і вони не є одним з 9 океанів, необхідних для завершення гри.",
+  "Effect: Wetlands counts as a greenery tile and an ocean tile, except it can't be covered and is not one of the oceans required to end the game.": "Ефект: Водно-болотні угіддя вважаються тайлом лісу і тайлом океану, але їх не можна перекрити, і вони не є одним з океанів, необхідних для завершення гри.",
 
   "Gain 10 M€. PLAY AN ACTIVE FLOATER CARD FROM HAND, IGNORING GLOBAL REQUIREMENTS, and add 5 floaters to it.": "Отримайте 10 M€. ЗІГРАЙТЕ АКТИВНУ КАРТУ З АЕРОСТАТОМ З РУКИ, ІГНОРУЮЧИ ГЛОБАЛЬНІ ВИМОГИ, і додайте до неї 5 аеростатів."
 }

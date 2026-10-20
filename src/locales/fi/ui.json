@@ -1114,7 +1114,7 @@
   "Place any final greenery from plants": "Aseta lopulliset viheralueet kasveista",
   "Don't place a greenery": "Älä aseta viheraluetta",
 
-  "Wetlands: counts as an ocean and a greenery. Does not count toward 9 oceans.": "Kosteikot: lasketaan valtamereksi ja viheralueeksi. Ei lasketa 9 valtameren joukkoon.",
+  "Wetlands: counts as an ocean and a greenery. Does not count toward ${0} oceans.": "Kosteikot: lasketaan valtamereksi ja viheralueeksi. Ei lasketa ${0} valtameren joukkoon.",
   "Red City: 1 VP per empty adjacent area. No greeneries may be placed next to it.": "Punainen kaupunki: 1 VP per tyhjä viereinen alue. Viheralueita ei saa asettaa sen viereen.",
   "Martian Nature Wonders": "Marsin luonnonihmeeet",
   "Crashlanding": "Hätälaskeutuminen",

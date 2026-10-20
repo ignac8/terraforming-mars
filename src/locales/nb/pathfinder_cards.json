@@ -251,5 +251,5 @@
 
   "Wetlands": "Våtmark",
   "(Requires 2 ocean tiles. Lose 4 plants. Place this tile on an UNRESERVED SPACE ADJACENT TO AT LEAST 2 OCEANS. Raise oxygen 1 step. Gain 1 TR.)": "(Krever 2 havområder. Mist 4 planter. Plasser denne brikken på et IKKE-RESERVERT OMRÅDE VED SIDEN AV MINST 2 HAV. Øk oksygennivået 1 trinn. Få 1 TR.)",
-  "(Effect: Wetlands counts as a greenery tile and an ocean tile, except it can't be covered and is not one of the 9 oceans required to end the game.)": "(Effekt: Våtmark teller som et skogområde og et hav, men det kan ikke tildekkes og er ikke et av de 9 havområdene som kreves for å avslutte spillet.)"
+  "(Effect: Wetlands counts as a greenery tile and an ocean tile, except it can't be covered and is not one of the oceans required to end the game.)": "(Effekt: Våtmark teller som et skogområde og et hav, men det kan ikke tildekkes og er ikke et av havområdene som kreves for å avslutte spillet.)"
 }

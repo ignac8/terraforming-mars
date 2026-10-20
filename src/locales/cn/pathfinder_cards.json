@@ -249,5 +249,5 @@
 
   "Wetlands": "湿地",
   "(Requires 2 ocean tiles. Lose 4 plants. Place this tile on an UNRESERVED SPACE ADJACENT TO AT LEAST 2 OCEANS. Raise oxygen 1 step. Gain 1 TR.)": "需要2个海洋板块。失去4个植物。将此板块放置在至少与2个海洋板块相邻的空地上。提升1级氧气浓度。提升1点改造度。",
-  "(Effect: Wetlands counts as a greenery tile and an ocean tile, except it can't be covered and is not one of the 9 oceans required to end the game.)": "（效果：它被视为绿化和海洋板块。其他板块无法覆盖它，它不计入要放置的9个海洋中。）"
+  "(Effect: Wetlands counts as a greenery tile and an ocean tile, except it can't be covered and is not one of the oceans required to end the game.)": "（效果：它被视为绿化和海洋板块。其他板块无法覆盖它，它不计入要放置的海洋中。）"
 }
