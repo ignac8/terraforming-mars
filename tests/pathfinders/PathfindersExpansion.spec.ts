@@ -2,7 +2,8 @@ import {expect} from 'chai';
 import {testGame} from '../TestGame';
 import {PathfindersExpansion} from '../../src/server/pathfinders/PathfindersExpansion';
 import {Tag} from '../../src/common/cards/Tag';
-import {fakeCard, runAllActions} from '../TestingUtils';
+import {fakeCard, formatMessage, runAllActions} from '../TestingUtils';
+import {GlobalEventName} from '../../src/common/turmoil/globalEvents/GlobalEventName';
 import {CardResource} from '../../src/common/CardResource';
 import {CardName} from '../../src/common/cards/CardName';
 import {SelectParty} from '../../src/server/inputs/SelectParty';
@@ -21,6 +22,8 @@ describe('PathfindersExpansion', () => {
     expect(pathfindersData.earth).eq(3);
     expect(player1.plants).eq(2);
     expect(player2.plants).eq(1);
+    expect(game.gameLog.map(formatMessage)).to.include(
+      `${player1.color} raised the :tag:earth: planetary track 3 step(s)`);
 
     expect(player1.megaCredits).eq(0);
     expect(player2.megaCredits).eq(0);
@@ -31,6 +34,15 @@ describe('PathfindersExpansion', () => {
     expect(pathfindersData.earth).eq(6);
     expect(player1.megaCredits).eq(3);
     expect(player2.megaCredits).eq(3);
+  });
+
+  it('Global event raises a track', () => {
+    const [game] = testGame(2, {pathfindersExpansion: true});
+
+    PathfindersExpansion.raiseTrackForGlobalEvent(Tag.EARTH, GlobalEventName.SOLAR_FLARE, game, 2, false);
+
+    expect(game.gameLog.map(formatMessage)).to.include(
+      'Global Event Solar Flare raised the :tag:earth: planetary track 2 step(s)');
   });
 
   it('Venus track', () => {
@@ -107,6 +119,8 @@ describe('PathfindersExpansion', () => {
     PathfindersExpansion.grant('1vp', player, Tag.EARTH);
     runAllActions(game);
 
+    expect(game.gameLog.map(formatMessage)).to.include(`${player.color} has the most :tag:earth: tags and earns 1VP`);
+
     expect(player.getVictoryPoints().planetaryTracks).eq(1);
   });
 
@@ -115,6 +129,8 @@ describe('PathfindersExpansion', () => {
 
     PathfindersExpansion.grant('2vp', player, Tag.EARTH);
     runAllActions(game);
+
+    expect(game.gameLog.map(formatMessage)).to.include(`${player.color} has the most :tag:earth: tags and earns 2VP`);
 
     expect(player.getVictoryPoints().planetaryTracks).eq(2);
   });
