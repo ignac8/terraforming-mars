@@ -78,6 +78,7 @@ import {hasShowModal, showModal, windowHasHTMLDialogElement} from './HTMLDialogE
 
 import dialogPolyfill from 'dialog-polyfill';
 import {setDocumentTitle} from '../utils/documentTitle';
+import {reloadForChunkError} from '@/client/utils/chunkReload';
 
 type Screen = 'admin' |
             'create-game-form' |
@@ -315,6 +316,11 @@ export default defineComponent({
     } else {
       app.screen = 'start-screen';
     }
+  },
+  // A lazy-loaded screen that fails to load lands here. In production builds Vue only logs the
+  // error, so it never shows up as an unhandled rejection.
+  errorCaptured(err: unknown) {
+    reloadForChunkError(err);
   },
 });
 </script>
