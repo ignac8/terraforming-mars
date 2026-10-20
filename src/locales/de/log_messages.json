@@ -462,7 +462,7 @@
   "jovian": "Jupiter",
   "mars": "Mars",
   "moon": "Mond",
-  "${0} spent ${1}:r:steel: and gained ${2}:r:heat:": "${0} hat ${1}:r:steel: ausgegeben und ${2}:r:heat: erhalten",
+  "${0} spent ${1}:r:steel: and gained ${2}:r:heat:": "Spieler hat ${1} Stahl ausgegeben und ${2} Wärme erhalten",
   "${0} turned the clone tag on ${1} into a ${2} tag": "${0} verwandelte das Klon-Symbol auf ${1} in ein ${2}-Symbol",
   "${0} raised the ${1} planetary track ${2} step(s)": "${0} erhöhte die ${1}-Planeten-Wertung um ${2} Schritt(e)",
   "Global Event ${0} raised the ${1} planetary track ${2} step(s)": "Das globale Ereignis ${0} erhöhte die ${1}-Planeten-Wertung um ${2} Schritt(e)",
