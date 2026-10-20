@@ -1,5 +1,5 @@
 import {expect} from 'chai';
-import {runAllActions, testGame} from '../../TestingUtils';
+import {formatMessage, runAllActions, testGame} from '../../TestingUtils';
 import {ICard} from '../../../src/server/cards/ICard';
 import {Astrodrill} from '../../../src/server/cards/promo/Astrodrill';
 import {CometAiming} from '../../../src/server/cards/promo/CometAiming';
@@ -34,6 +34,18 @@ describe('Astrodrill', () => {
     spendAsteroidOption.cb();
     expect(player.titanium).to.eq(3);
     expect(player.game.deferredActions).has.lengthOf(0);
+  });
+
+  it('Logs resource icons when spending an asteroid resource', () => {
+    const game = player.game;
+    game.gameLog = [];
+    const action = cast(card.action(player), OrOptions);
+
+    action.options[0].cb();
+
+    expect(game.gameLog.map(formatMessage)).deep.eq([
+      'blue removed 1:cr:asteroid: from AstroDrill to gain 3:r:titanium:',
+    ]);
   });
 
   it('Should play - can add asteroid resource to self', () => {

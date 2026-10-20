@@ -83,7 +83,7 @@ export class Faraday extends CeoCard {
     if (!player.canAfford(3)) {
       player.game.log(
         '${0} cannot afford to take advantage of the ${1} effect to draw a ${2} card',
-        (b) => b.player(player).card(this).string(tag));
+        (b) => b.player(player).card(this).string(`:tag:${tag}:`));
       return;
     }
     return new OrOptions(
