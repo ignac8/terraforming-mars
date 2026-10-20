@@ -39,23 +39,21 @@ export function shouldReloadForChunkError(reason: unknown, now: number, lastRelo
   return now - lastReloadAt >= RELOAD_COOLDOWN_MS;
 }
 
-/** Reloads the page once when a lazy chunk fails to load, guarded against loops. */
-export function installChunkReloadHandler(): void {
-  window.addEventListener('unhandledrejection', (event) => {
-    let lastReloadAt = 0;
-    try {
-      lastReloadAt = Number(window.sessionStorage.getItem(RELOAD_MARKER) ?? '0');
-    } catch (_e) {
-      // sessionStorage can throw in private mode; treat it as never reloaded.
-    }
-    if (!shouldReloadForChunkError(event.reason, Date.now(), lastReloadAt)) {
-      return;
-    }
-    try {
-      window.sessionStorage.setItem(RELOAD_MARKER, String(Date.now()));
-    } catch (_e) {
-      // Ignore: the reload still helps, it just is not loop-guarded.
-    }
-    window.location.reload();
-  });
+/** Reloads the page once when `reason` is a chunk load error, guarded against loops. */
+export function reloadForChunkError(reason: unknown): void {
+  let lastReloadAt = 0;
+  try {
+    lastReloadAt = Number(window.sessionStorage.getItem(RELOAD_MARKER) ?? '0');
+  } catch (_e) {
+    // sessionStorage can throw in private mode; treat it as never reloaded.
+  }
+  if (!shouldReloadForChunkError(reason, Date.now(), lastReloadAt)) {
+    return;
+  }
+  try {
+    window.sessionStorage.setItem(RELOAD_MARKER, String(Date.now()));
+  } catch (_e) {
+    // Ignore: the reload still helps, it just is not loop-guarded.
+  }
+  window.location.reload();
 }
