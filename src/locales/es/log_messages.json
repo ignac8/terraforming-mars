@@ -67,7 +67,7 @@
     "${0} received ${1}:r:megacredits: from ${2} owner (${3})": "${0} ha recibido ${1} М€ de ${2} (${3})",
     "${0} copied ${1} production with ${2}": "${0} ha copiado la producción de ${1} con ${2}",
     "${0} used ${1} action with ${2}": "${0} ha realizado la acción ${1} con ${2}",
-    "${0} is the new chairman and gains ${1} TR": "${0} es el nuevo president y ha ganado (${1}) VT",
+    "${0} is the new chairman and gains ${1}:icon:tr:": "${0} es el nuevo president y ha ganado (${1}) VT",
 
 
     "${0} drew ${1}":"${0} ha robado ${1}",
@@ -83,5 +83,6 @@
     "drew":"ha robado",
     "bought":"ha comprado",
     "sold":"ha vendido",
-    "Discarded ${0} cards ${1}": "${0} carta/s han sido descartadas ${1}"
+    "Discarded ${0} cards ${1}": "${0} carta/s han sido descartadas ${1}",
+    "Pay 10:r:megacredits: to draw 3 cards": "Paga 10 М€ para robar 3 cartas"
 }
