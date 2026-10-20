@@ -556,5 +556,5 @@
   "When you raise temperature, gain 3:r:megacredits: per step raised": "Коли ви підвищуєте температуру, отримайте 3 M€ за кожен підвищений крок",
   "Convert 6:r:heat: into temperature": "Перетворити 6 тепла в температуру",
   "When you place a tile, gain 2:r:heat:": "Коли ви розміщуєте тайл, отримайте 2 тепла",
-  "${0} spent ${1}:r:steel: and gained ${2}:r:heat:": "${0} витратив(ла) ${1}:r:steel: та отримав(ла) ${2}:r:heat:"
+  "${0} spent ${1}:r:steel: and gained ${2}:r:heat:": "Гравець витратив ${1} сталі та отримав ${2} тепла"
 }
