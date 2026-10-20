@@ -337,7 +337,7 @@ export class Player implements IPlayer {
     }
     if (this.preservationProgram === true && inActionPhase && isFirstTrThisGeneration) {
       steps--;
-      this.game.log('${0} for ${1} is blocking 1 TR', (b) => b.cardName(CardName.PRESERVATION_PROGRAM).player(this));
+      this.game.log('${0} for ${1} is blocking 1:icon:tr:', (b) => b.cardName(CardName.PRESERVATION_PROGRAM).player(this));
       this.preservationProgram = false;
       if (steps === 0) {
         return;
@@ -350,9 +350,9 @@ export class Player implements IPlayer {
       if (opts.log === true) {
         if (opts.from !== undefined) {
           const from = opts.from;
-          this.game.log('${0} gained ${1} TR from ${2}', (b) => b.player(this).number(steps).from(from));
+          this.game.log('${0} gained ${1}:icon:tr: from ${2}', (b) => b.player(this).number(steps).from(from));
         } else {
-          this.game.log('${0} gained ${1} TR', (b) => b.player(this).number(steps));
+          this.game.log('${0} gained ${1}:icon:tr:', (b) => b.player(this).number(steps));
         }
       }
       for (const cardOwner of this.game.playersInGenerationOrder) {
@@ -379,7 +379,7 @@ export class Player implements IPlayer {
   public decreaseTerraformRating(steps: number = 1, opts: {log?: boolean} = {}) {
     this.terraformRating -= steps;
     if (opts.log === true) {
-      this.game.log('${0} lost ${1} TR', (b) => b.player(this).number(steps));
+      this.game.log('${0} lost ${1}:icon:tr:', (b) => b.player(this).number(steps));
     }
   }
 
@@ -534,11 +534,20 @@ export class Player implements IPlayer {
       }
 
       if (options?.log ?? true) {
-        this.game.log('${0} removed ${1} resource(s) from ${2}\'s ${3}', (b) =>
-          b.player(options?.removingPlayer ?? this)
-            .number(amountRemoved)
-            .player(this)
-            .card(card));
+        if (card.resourceType === undefined) {
+          this.game.log('${0} removed ${1} resource(s) from ${2}\'s ${3}', (b) =>
+            b.player(options?.removingPlayer ?? this)
+              .number(amountRemoved)
+              .player(this)
+              .card(card));
+        } else {
+          this.game.log('${0} removed ${1}${2} from ${3}\'s ${4}', (b) =>
+            b.player(options?.removingPlayer ?? this)
+              .number(amountRemoved)
+              .cardResource(card.resourceType)
+              .player(this)
+              .card(card));
+        }
       }
 
       // Lawsuit hook
