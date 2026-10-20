@@ -250,5 +250,5 @@
 
   "Wetlands": "Kosteikko",
   "(Requires 2 ocean tiles. Lose 4 plants. Place this tile on an UNRESERVED SPACE ADJACENT TO AT LEAST 2 OCEANS. Raise oxygen 1 step. Gain 1 TR.)": "(Vaatii 2 valtamerilaattaa. Menetä 4 kasvia. Aseta tämä laatta EI-VARATULLE PAIKALLE VÄHINTÄÄN 2 VALTAMEREN VIEREEN. Nosta happea 1 askel. Nosta MKL:ääsi 1 askel.)",
-  "(Effect: Wetlands counts as a greenery tile and an ocean tile, except it can't be covered and is not one of the oceans required to end the game.)": "(VAIKUTUS: Kosteikko lasketaan sekä viheralueeksi että valtamereksi, paitsi sitä ei voi peittää eikä se ole yksi pelin päättämiseen vaadittavista valtamerista.)"
+  "(Effect: Wetlands counts as a greenery tile and an ocean tile, except it can't be covered and is not one of the oceans required to end the game.)": "(VAIKUTUS: Kosteikko lasketaan sekä viheralueeksi että valtamereksi, paitsi sitä ei voi peittää eikä se ole yksi 9 pelin päättämiseen vaadittavasta valtamerestä.)"
 }
