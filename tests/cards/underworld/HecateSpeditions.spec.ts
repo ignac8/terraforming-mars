@@ -4,7 +4,7 @@ import {IGame} from '../../../src/server/IGame';
 import {TestPlayer} from '../../TestPlayer';
 import {testGame} from '../../TestGame';
 import {CardName} from '../../../src/common/cards/CardName';
-import {fakeCard, runAllActions} from '../../TestingUtils';
+import {fakeCard, formatMessage, runAllActions} from '../../TestingUtils';
 import {Tag} from '../../../src/common/cards/Tag';
 import {assertNoTradeAction, assertTradeAction} from '../../colonies/coloniesAssertions';
 import {cast} from '../../../src/common/utils/utils';
@@ -55,6 +55,8 @@ describe('HecateSpeditions', () => {
     card.resourceCount = 2;
     assertTradeAction(player, 'Pay 2 supply chain resources (use Hecate Speditions action)');
     expect(card.resourceCount).eq(0);
+    expect(game.gameLog.map(formatMessage)).to.include(
+      'blue spent 2:cr:supply-chain: from Hecate Speditions to trade with Luna');
   });
 
   it('no trade discount', () => {

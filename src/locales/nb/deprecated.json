@@ -16,6 +16,7 @@
   "${0} spent ${1} titanium to trade with ${2}": "${0} brukte ${1} titan for å handle med ${2}",
   "${0} sold ${1} steel": "${0} solgte ${1} stål",
   "${0} removed ${1} ${2} from ${3} to ${4}": "${0} fjernet ${1} ${2} fra ${3} til ${4}",
+  "${0} spent 1 corruption to block an attack by ${1}": "${0} brukte 1 korrupsjon for å blokkere et angrep fra ${1}",
   "${0} spent 1 floater to trade with ${1}": "${0} brukte 1 svever for å handle med ${1}",
   "${0} removed ${1} floaters to gain ${2} titanium": "${0} fjernet ${1} svevere for å få ${2} titan",
   "${0} spends ${1} M€ for the ${2} mining tiles they own.": "${0} betalte ${1} M€ for de ${2} gruve-brikkene de eier.",
