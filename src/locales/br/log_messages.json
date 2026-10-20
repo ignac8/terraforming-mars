@@ -75,7 +75,7 @@
   "${0} received ${1} M€ from ${2} owner (${3})": "${0} recebeu ${1} M€ de ${2} (${3})",
   "${0} copied ${1} production with ${2}": "${0} copiou a produção de ${1} com ${2}",
   "${0} used ${1} action with ${2}": "${0} fez a ação ${1} com ${2}",
-  "${0} is the new chairman and gains ${1}:icon:tr:": "${0} é o novo presidente e ganhou ${1}:icon:tr:",
+  "${0} is the new chairman and gains ${1}:icon:tr:": "${0} é o novo presidente e ganhou (${1}) IT",
 
   "${0} drew ${1}": "${0} comprou ${1}",
   "${0} sold ${1} patents": "${0} vendeu ${1} patente(s)",

@@ -181,7 +181,7 @@
     "${0} received ${1} M€ from ${2} owner (${3})": "${0} 플레이어는 ${2} 소유자(${3})로부터 ${1} M€를 받았습니다. ",
     "${0} copied ${1} production with ${2}": "${0} 플레이어가 ${2} 효과로 ${1} 생산력을 복사했습니다.",
     "${0} used ${1} action with ${2}": "${0} 플레이어가 ${2} 카드에서 ${1} 행동을 사용했습니다.",
-    "${0} is the new chairman and gains ${1}:icon:tr:": "${0} 플레이어는 새 의장이 되며 ${1}:icon:tr:을 얻습니다. ",
+    "${0} is the new chairman and gains ${1}:icon:tr:": "${0} 플레이어는 새 의장이 되며 ${1} TR을 얻습니다. ",
     "A neutral delegate is the new chairman.": "중립 의원이 새로운 의장이 되었습니다.",
     "Greens are in power in the first generation.": "녹색당이 첫 번째 세대의 집권당이 됩니다.",
     "Resolving global event ${0}": "${0} 카드에 의한 행성계 사건을 처리하였습니다.",
