@@ -349,7 +349,7 @@
   "${0} lost 1:p:energy: to gain 8:r:megacredits:": "${0} menetti 1:p:energy: saadakseen 8:r:megacredits:",
   "Neutral player received ${0}:r:megacredits: from ${1} owner (${2})": "Neutraali pelaaja sai ${0}:r:megacredits: kohteen ${1} omistajalta (${2})",
   "${0} placed a Community (player marker)": "${0} asetti yhteisön (pelaajamerkki)",
-  "${0} doubled the ${4} on ${1} from ${2} to ${3}": "${0} tuplasi ${4} kortilla ${1} ${2}:sta ${3}:een",
+  "${0} doubled resources on ${1} from ${2} to ${3}": "${0} tuplasi resurssit kortilla ${1} ${2}:sta ${3}:een",
   "${0} linked ${1} with ${2}": "${0} yhdisti ${1} kohteeseen ${2}",
   "${0} turned ${1} face down to gain 3:icon:tr: and lost ${2}:r:megacredits:": "${0} käänsi ${1} kuvapuoli alaspäin nostaakseen 3:icon:tr: ja menetti ${2}:r:megacredits:",
   "${0} added a:cr:disease: to ${1} and lost ${2}:r:megacredits:": "${0} lisäsi 1:cr:disease: kohteeseen ${1} ja menetti ${2}:r:megacredits:",

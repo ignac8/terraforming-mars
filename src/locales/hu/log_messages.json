@@ -337,7 +337,7 @@
   "${0} lost 1:p:energy: to gain 8:r:megacredits:": "${0} elveszített 1:p:energy:, és kapott 8:r:megacredits:.",
   "Neutral player received ${0}:r:megacredits: from ${1} owner (${2})": "Semleges játékos szerzett ${0}:r:megacredits: ${1}-tól, tulajdonos (${2}).",
   "${0} placed a Community (player marker)": "${0} lehelyezett egy Közösséget (játékosjelölő).",
-  "${0} doubled the ${4} on ${1} from ${2} to ${3}": "${0} megkétszerezte a(z) ${1} kártyán lévő ${4} számát ${2}-ról ${3}-ra.",
+  "${0} doubled resources on ${1} from ${2} to ${3}": "${0} megkétszerezte ${1} erőforrásait ${2}-ról ${3}-ra.",
   "${0} linked ${1} with ${2}": "${0} összekapcsolta a(z) ${1} kártyát a(z) ${2} kártyával.",
   "${0} turned ${1} face down to gain 3:icon:tr: and lost ${2}:r:megacredits:": "${0} lefordította a(z) ${1} kártyát, kapott 3:icon:tr: és elveszített ${2}:r:megacredits:.",
   "${0} added a:cr:disease: to ${1} and lost ${2}:r:megacredits:": "${0} hozzáadott 1:cr:disease: a(z) ${1} kártyára és elveszített ${2}:r:megacredits:.",

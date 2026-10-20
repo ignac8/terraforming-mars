@@ -1,5 +1,5 @@
 import {expect} from 'chai';
-import {formatMessage, testGame} from '../../TestingUtils';
+import {testGame} from '../../TestingUtils';
 import {Research} from '../../../src/server/cards/base/Research';
 import {IProjectCard} from '../../../src/server/cards/IProjectCard';
 import {HousePrinting} from '../../../src/server/cards/prelude/HousePrinting';
@@ -8,7 +8,6 @@ import {OrOptions} from '../../../src/server/inputs/OrOptions';
 import {SelectCard} from '../../../src/server/inputs/SelectCard';
 import {TestPlayer} from '../../TestPlayer';
 import {EarthOffice} from '../../../src/server/cards/base/EarthOffice';
-import {CometAiming} from '../../../src/server/cards/promo/CometAiming';
 import {SerializedCard} from '../../../src/server/SerializedCard';
 import {CardName} from '../../../src/common/cards/CardName';
 import {cast} from '../../../src/common/utils/utils';
@@ -56,35 +55,6 @@ describe('SelfReplicatingRobots', () => {
     const action2 = cast(card.action(player), OrOptions);
     action2.options[0].cb([cast(action2.options[0], SelectCard<IProjectCard>).cards[0]]);
     expect(card.targetCards[0].resourceCount).to.eq(4);
-  });
-
-  it('logs the resource type when doubling a card that holds resources', () => {
-    const cometAiming = new CometAiming();
-    cometAiming.resourceCount = 2;
-    card.targetCards.push(cometAiming);
-    player.game.gameLog = [];
-
-    const action = cast(card.action(player), OrOptions);
-    action.options[0].cb([cometAiming]);
-
-    expect(cometAiming.resourceCount).eq(4);
-    expect(player.game.gameLog.map(formatMessage)).deep.eq([
-      'blue doubled the :cr:asteroid: on Comet Aiming from 2 to 4',
-    ]);
-  });
-
-  it('logs generic resources when the card has no resource type', () => {
-    const housePrinting = new HousePrinting();
-    housePrinting.resourceCount = 2;
-    card.targetCards.push(housePrinting);
-    player.game.gameLog = [];
-
-    const action = cast(card.action(player), OrOptions);
-    action.options[0].cb([housePrinting]);
-
-    expect(player.game.gameLog.map(formatMessage)).deep.eq([
-      'blue doubled the resource on House Printing from 2 to 4',
-    ]);
   });
 
   it('serialization', () => {

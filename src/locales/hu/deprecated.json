@@ -15,7 +15,6 @@
   "${0} removed ${1} microbes from ${2} to gain ${3} M€": "${0} eltávolított ${1} mikrobát a(z) ${2} kártyáról és kapott ${3} M€-tet.",
   "${0} decreased energy production 1 step to gain 8 M€": "${0} csökkentette az energiatermelését 1 értékkel és kapott 8 M€-tet.",
   "Neutral player received ${0} M€ from ${1} owner (${2})": "Semleges játékos szerzett ${0} M€-tet ${1}-tól, tulajdonos (${2}).",
-  "${0} doubled resources on ${1} from ${2} to ${3}": "${0} megkétszerezte ${1} erőforrásait ${2}-ról ${3}-ra.",
   "${0} turned ${1} face down to gain 3 TR and lost ${2} M€": "${0} lefordította a(z) ${1} kártyát, kapott 3 TR-t és elveszített ${2} M€-tet.",
   "${0} added a disease to ${1} and lost ${2} M€": "${0} hozzáadott 1 betegséget a(z) ${1} kártyára és elveszített ${2} M€-tet.",
   "${0} added ${3} diseases to ${1} and lost ${2} M€": "${0} hozzáadott ${3} betegséget a(z) ${1} kártyára és elveszített ${2} M€-tet.",

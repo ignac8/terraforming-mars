@@ -24,7 +24,6 @@
   "${0} removed 1 microbe from ${1} to gain 5 plants": "${0} poisti 1 mikrobin kortilta ${1} saadakseen 5 kasvia",
   "${0} decreased energy production 1 step to gain 8 M€": "${0} vähensi energiatuotantoa 1 askel saadakseen 8 M€",
   "Neutral player received ${0} M€ from ${1} owner (${2})": "Neutraali pelaaja sai ${0} M€ kohteen ${1} omistajalta (${2})",
-  "${0} doubled resources on ${1} from ${2} to ${3}": "${0} tuplasi resurssit kortilla ${1} ${2}:sta ${3}:een",
   "${0} turned ${1} face down to gain 3 TR and lost ${2} M€": "${0} käänsi ${1} kuvapuoli alaspäin nostaakseen MKL:äänsä 3 askelta ja menetti ${2} M€",
   "${0} added a disease to ${1} and lost ${2} M€": "${0} lisäsi taudin kohteeseen ${1} ja menetti ${2} M€",
   "${0} added ${3} diseases to ${1} and lost ${2} M€": "${0} lisäsi ${3} tautia kohteeseen ${1} ja menetti ${2} M€",

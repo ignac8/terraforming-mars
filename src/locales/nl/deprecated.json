@@ -10,7 +10,6 @@
   "${0} received ${1} M€ from ${2} owner (${3})": "${0} ontving ${1} M€ van ${2} (${3})",
   "${0} decreased energy production 1 step to gain 8 M€": "${0} verminderde energieproductie 1 stap om 8 M€ te verdienen",
   "Neutral player received ${0} M€ from ${1} owner (${2})": "De neutrale speler ontving ${0}M€ van de eigenaar van ${1} (${2})",
-  "${0} doubled resources on ${1} from ${2} to ${3}": "${0} verdubbelde grondstoffen op ${1} van ${2} naar ${3}",
   "${0} turned ${1} face down to gain 3 TR and lost ${2} M€": "${0} draaide ${1} om om 3 TN te krijgen en verloor ${2} M€",
   "${0} added a disease to ${1} and lost ${2} M€": "${0} voegde een ziekte toe aan ${1} en verloor ${2} M€",
   "${0} added ${3} diseases to ${1} and lost ${2} M€": "${0} voegde ${3} ziekten toe aan ${1} en verloor ${2} M€",

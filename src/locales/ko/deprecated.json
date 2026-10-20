@@ -15,7 +15,6 @@
   "${0} removed ${1} microbes from ${2} to gain ${3} M€": "",
   "${0} decreased energy production 1 step to gain 8 M€": "",
   "Neutral player received ${0} M€ from ${1} owner (${2})": "",
-  "${0} doubled resources on ${1} from ${2} to ${3}": "${0} 플레이어는 ${1} 카드 위의 자원을 ${2}개에서 ${3}개로 두 배 증가시킴",
   "${0} turned ${1} face down to gain 3 TR and lost ${2} M€": "",
   "${0} added a disease to ${1} and lost ${2} M€": "",
   "${0} added ${3} diseases to ${1} and lost ${2} M€": "",

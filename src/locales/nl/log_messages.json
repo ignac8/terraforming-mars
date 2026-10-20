@@ -252,7 +252,7 @@
     "${0} lost 1:p:energy: to gain 8:r:megacredits:": "${0} verloor 1:p:energy: om 8:r:megacredits: te verdienen",
     "Neutral player received ${0}:r:megacredits: from ${1} owner (${2})": "De neutrale speler ontving ${0}:r:megacredits: van de eigenaar van ${1} (${2})",
     "${0} placed a Community (player marker)": "${0} heeft een community geplaatst (speler-marker)",
-    "${0} doubled the ${4} on ${1} from ${2} to ${3}": "${0} verdubbelde ${4} op ${1} van ${2} naar ${3}",
+    "${0} doubled resources on ${1} from ${2} to ${3}": "${0} verdubbelde grondstoffen op ${1} van ${2} naar ${3}",
     "${0} linked ${1} with ${2}": "${0} verbond ${1} met ${2}",
     "${0} turned ${1} face down to gain 3:icon:tr: and lost ${2}:r:megacredits:": "${0} draaide ${1} om om 3:icon:tr: te krijgen en verloor ${2}:r:megacredits:",
     "${0} added a:cr:disease: to ${1} and lost ${2}:r:megacredits:": "${0} voegde 1:cr:disease: toe aan ${1} en verloor ${2}:r:megacredits:",

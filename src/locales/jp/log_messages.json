@@ -320,7 +320,7 @@
     "${0} lost 1:p:energy: to gain 8:r:megacredits:": "${0}が1:p:energy:を失い、8:r:megacredits:獲得",
     "Neutral player received ${0}:r:megacredits: from ${1} owner (${2})": "",
     "${0} placed a Community (player marker)": "${0}は共同体を配置",
-    "${0} doubled the ${4} on ${1} from ${2} to ${3}": "${0}が${1}上の${4}を2倍化(${2}→${3})",
+    "${0} doubled resources on ${1} from ${2} to ${3}": "${0}が${1}上のリソースを2倍化(${2}→${3})",
     "${0} linked ${1} with ${2}": "${0}が${2}で${1}を載せた",
     "${0} turned ${1} face down to gain 3:icon:tr: and lost ${2}:r:megacredits:": "${0}が${1}を裏返し、+3:icon:tr:し、${2}:r:megacredits:を支払った",
     "${0} added a:cr:disease: to ${1} and lost ${2}:r:megacredits:": "${0}が${1}上に1:cr:disease:獲得し、${2}:r:megacredits:を支払った",

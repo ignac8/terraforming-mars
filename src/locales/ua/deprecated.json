@@ -24,7 +24,6 @@
   "${0} removed ${1} microbes from ${2} to gain ${3} M€": "${0} видалив ${1} мікробів з ${2}, щоб отримати ${3} M€",
   "${0} decreased energy production 1 step to gain 8 M€": "${0} зменшив виробництво енергії на 1, щоб отримати 8 M€",
   "Neutral player received ${0} M€ from ${1} owner (${2})": "Нейтральний гравець отримав ${0} M€ від власника ${1} (${2})",
-  "${0} doubled resources on ${1} from ${2} to ${3}": "${0} подвоїв ресурси на ${1} з ${2} до ${3}",
   "${0} turned ${1} face down to gain 3 TR and lost ${2} M€": "${0} перевернув ${1}, щоб отримати 3 РТ і втратив ${2} M€",
   "${0} added a disease to ${1} and lost ${2} M€": "${0} додав хворобу до ${1} і втратив ${2} M€",
   "${0} added ${3} diseases to ${1} and lost ${2} M€": "${0} додав ${3} хвороби до ${1} і втратив ${2} M€",
