@@ -538,7 +538,7 @@
 	"Select card to add microbe or animal": "Velg et kort hvor det skal legges til en mikrobe eller et dyr",
 	"Add resource to card ${0}": "Legg til en ressurs på ${0}",
 	"Select how to pay ${0} for colony trade": "Velg hvordan du vil betale ${0} for å handle med en koloni.",
-	"gain 1:p:megacredits:": "få 1:p:megacredits:",
+	"gain 1:p:megacredits:": "øk din M€-produksjon med 1",
 	"Increase your M€ production by 5": "Øk din M€-produksjon med 5",
 	"Increase your plant production by 2": "Øk din planteproduksjon med 2",
 	"Increase +MC": "Øk +M€",

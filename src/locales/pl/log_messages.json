@@ -182,7 +182,7 @@
   "${0} turned ${1} face down to gain 3:icon:tr: and lost ${2}:r:megacredits:": "${0} odwraca kartę ${1}, otrzymuje 3:icon:tr: i traci ${2}:r:megacredits:.",
   "${0} added a:cr:disease: to ${1} and lost ${2}:r:megacredits:": "${0} umieszcza 1:cr:disease: na ${1} oraz traci ${2}:r:megacredits:.",
   "${0} added ${3}:cr:disease: to ${1} and lost ${2}:r:megacredits:": "${0} umieszcza ${3}:cr:disease: na ${1} oraz traci ${2}:r:megacredits:.",
-  "${0} removed a:cr:disease: from ${1} to gain 1:icon:tr:": "${0} usuwa 1:cr:disease: z ${1}, i otrzymuje 1:icon:tr:.",
+  "${0} removed a:cr:disease: from ${1} to gain 1:icon:tr:": "${0} usuwa 1:cr:disease: z ${1} i otrzymuje 1:icon:tr:.",
   "${0} cannot remove a:cr:disease: from ${1} to gain 1:icon:tr: because of unaffordable Reds policy cost": "${0} nie może usunąć 1:cr:disease: z ${1} ze względu na niemożliwość pokrycia dodatkowego kosztu polityki czerwonych.",
   "${0} cannot turn ${1} face down to gain 3:icon:tr: because of unaffordable Reds policy cost": "${0} nie może odwrócić karty ${1} ze względu na niemożliwość pokrycia dodatkowego kosztu polityki czerwonych.",
   "${0} turned ${1} face down to gain 3:icon:tr:": "${0} zakrywa ${1} i otrzymuje 3:icon:tr:.",
