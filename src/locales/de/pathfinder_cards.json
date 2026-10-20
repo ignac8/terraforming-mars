@@ -252,5 +252,5 @@
 
   "Wetlands": "Feuchtgebiete",
   "Requires 2 ocean tiles. Lose 4 plants. Place this tile on an UNRESERVED SPACE ADJACENT TO AT LEAST 2 OCEANS. Raise oxygen 1 step. Gain 1 TR.": "Benötigt 2 Ozeanplättchen. Verbrauche 4 Pflanzen. Erhöhe den Sauerstoffgehalt um 1%. Erhöhe deinen TW um 1. Platziere dieses Plättchen angrenzend an 2 Ozeanplättchen.",
-  "Effect: Wetlands counts as a greenery tile and an ocean tile, except it can't be covered and is not one of the oceans required to end the game.": "EFFEKT: Es zählt als Grünflächen- und Ozeanplättchen. Andere Plättchen können es nicht überdecken und es zählt nicht zu den zu platzierenden Ozeanen."
+  "Effect: Wetlands counts as a greenery tile and an ocean tile, except it can't be covered and is not one of the oceans required to end the game.": "EFFEKT: Es zählt als Grünflächen- und Ozeanplättchen. Andere Plättchen können es nicht überdecken und es zählt nicht zu den 9 zu platzierenden Ozeanen."
 }
