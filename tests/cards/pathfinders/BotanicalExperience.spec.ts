@@ -2,7 +2,7 @@ import {expect} from 'chai';
 import {BotanicalExperience} from '../../../src/server/cards/pathfinders/BotanicalExperience';
 import {IGame} from '../../../src/server/IGame';
 import {TestPlayer} from '../../TestPlayer';
-import {runAllActions} from '../../TestingUtils';
+import {formatMessage, runAllActions} from '../../TestingUtils';
 import {testGame} from '../../TestGame';
 import {Space} from '../../../src/server/boards/Space';
 import {TileType} from '../../../src/common/TileType';
@@ -67,6 +67,8 @@ describe('BotanicalExperience', () => {
     player.addResourceTo(card, 8);
     expect(card.resourceCount).eq(1);
     expect(player.production.plants).eq(3);
+    expect(game.gameLog.map(formatMessage)).to.include(
+      `${player.color} removed 9:cr:data: from Botanical Experience to gain 3:p:plants:`);
   });
 
   it('targeted to remove plants', () => {
