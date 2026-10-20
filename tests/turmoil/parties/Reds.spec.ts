@@ -71,8 +71,8 @@ describe('Reds', () => {
     game.gameLog.length = 0;
     REDS_BONUS_1.grant(game);
 
-    expect(game.gameLog.map(formatMessage).filter((message) => message.includes('TR'))).deep.eq([
-      'red gained 1 TR from Reds',
+    expect(game.gameLog.map(formatMessage).filter((message) => message.includes(':icon:tr:'))).deep.eq([
+      'red gained 1:icon:tr: from Reds',
     ]);
   });
 
@@ -82,8 +82,8 @@ describe('Reds', () => {
     game.gameLog.length = 0;
     REDS_BONUS_2.grant(game);
 
-    expect(game.gameLog.map(formatMessage).filter((message) => message.includes('TR'))).deep.eq([
-      'blue lost 1 TR',
+    expect(game.gameLog.map(formatMessage).filter((message) => message.includes(':icon:tr:'))).deep.eq([
+      'blue lost 1:icon:tr:',
     ]);
   });
 
@@ -94,8 +94,8 @@ describe('Reds', () => {
     game.gameLog.length = 0;
     REDS_BONUS_1.grant(game);
 
-    expect(game.gameLog.map(formatMessage).filter((message) => message.includes('TR'))).deep.eq([
-      'blue gained 1 TR from Reds',
+    expect(game.gameLog.map(formatMessage).filter((message) => message.includes(':icon:tr:'))).deep.eq([
+      'blue gained 1:icon:tr: from Reds',
     ]);
   });
 
@@ -106,8 +106,8 @@ describe('Reds', () => {
     game.gameLog.length = 0;
     REDS_BONUS_2.grant(game);
 
-    expect(game.gameLog.map(formatMessage).filter((message) => message.includes('TR'))).deep.eq([
-      'blue lost 1 TR',
+    expect(game.gameLog.map(formatMessage).filter((message) => message.includes(':icon:tr:'))).deep.eq([
+      'blue lost 1:icon:tr:',
     ]);
   });
 
