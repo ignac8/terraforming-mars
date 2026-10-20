@@ -283,7 +283,8 @@ export class MarsBoard extends Board {
    */
   public static hasDelegatesForPlacementBonus(player: IPlayer, space: Space): boolean {
     const turmoil = player.game.turmoil;
-    if (turmoil === undefined) {
+    // MarsBot never collects placement bonuses.
+    if (turmoil === undefined || player.game.automaHooks?.isAutomaPlayer(player)) {
       return true;
     }
     const delegates = space.bonus.filter((bonus) => bonus === SpaceBonus.DELEGATE).length;
