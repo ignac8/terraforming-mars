@@ -4,6 +4,7 @@
       :space="space"
       :aresExtension="aresExtension"
       :tileView="tileView"
+      :boardName="boardName"
     />
     <div class="board-space-text" v-if="text" v-i18n>{{ text }}</div>
     <Bonus :bonus="space.bonus" v-if="showBonus"/>
@@ -43,6 +44,7 @@ import {SpaceModel} from '@/common/models/SpaceModel';
 import {getPreferences} from '../utils/PreferencesManager';
 import {ClaimedToken} from '@/common/underworld/UnderworldPlayerData';
 import {SpaceType} from '@/common/boards/SpaceType';
+import {BoardName} from '@/common/boards/BoardName';
 export default defineComponent({
   name: 'BoardSpace',
   props: {
@@ -60,6 +62,10 @@ export default defineComponent({
     tileView: {
       type: String as () => TileView,
       required: true,
+    },
+    boardName: {
+      type: String as () => BoardName,
+      default: BoardName.THARSIS,
     },
   },
   components: {

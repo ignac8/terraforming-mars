@@ -1003,7 +1003,7 @@
   "Build colony": "Gyarmat alapítása",
   "Place any final greenery from plants": "Utolsó Növényzetlapkák lehelyezése",
   "Don't place a greenery": "Nem helyezek le Növényzetlapkát",
-  "Wetlands: counts as an ocean and a greenery. Does not count toward 9 oceans.": "Vízes élőhelyek: Óceánnak és növényzetnek számít. Nem számít bele a 9 óceánba.",
+  "Wetlands: counts as an ocean and a greenery. Does not count toward ${0} oceans.": "Vízes élőhelyek: Óceánnak és növényzetnek számít. Nem számít bele a ${0} óceánba.",
   "Red City: 1 VP per empty adjacent area. No greeneries may be placed next to it.": "Vörös város: 1 GyP minden szomszédos üres területért. Növényzetlapka nem rakható mellé.",
   "Martian Nature Wonders": "Marsi természeti csodák",
   "Crashlanding": "Kényszerleszállás",
