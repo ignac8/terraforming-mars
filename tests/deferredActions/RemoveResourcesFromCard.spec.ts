@@ -60,7 +60,7 @@ describe('RemoveResourcesFromCard', () => {
     cast(action.execute(), undefined);
 
     expect(atmoCollectors.resourceCount).eq(1);
-    expect(game.gameLog.map(formatMessage)).deep.eq([`${player.color} removed 1 resource(s) from ${player.color}'s Atmo Collectors`]);
+    expect(game.gameLog.map(formatMessage)).deep.eq([`${player.color} removed 1:cr:floater: from ${player.color}'s Atmo Collectors`]);
   });
 
   it('unblockable removal from opponent cannot be blocked', () => {
@@ -112,6 +112,6 @@ describe('RemoveResourcesFromCard', () => {
 
     expect(response).deep.eq({card: atmoCollectors, owner: opponent, proceed: true});
     expect(atmoCollectors.resourceCount).eq(1);
-    expect(game.gameLog.map(formatMessage)).deep.eq([`${player.color} removed 1 resource(s) from ${opponent.color}'s Atmo Collectors`]);
+    expect(game.gameLog.map(formatMessage)).deep.eq([`${player.color} removed 1:cr:floater: from ${opponent.color}'s Atmo Collectors`]);
   });
 });

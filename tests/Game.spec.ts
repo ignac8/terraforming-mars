@@ -7,7 +7,7 @@ import {Thermalist} from '../src/server/awards/Thermalist';
 import {Birds} from '../src/server/cards/base/Birds';
 import {WaterImportFromEuropa} from '../src/server/cards/base/WaterImportFromEuropa';
 import {Phase} from '../src/common/Phase';
-import {addCity, addGreenery, addOcean, fakeCard, forceGenerationEnd, maxOutOceans, runAllActions, setOxygenLevel, setTemperature, setVenusScaleLevel, testGame} from './TestingUtils';
+import {addCity, addGreenery, addOcean, fakeCard, forceGenerationEnd, formatMessage, maxOutOceans, runAllActions, setOxygenLevel, setTemperature, setVenusScaleLevel, testGame} from './TestingUtils';
 import {cast, toName} from '../src/common/utils/utils';
 import {TestPlayer} from './TestPlayer';
 import {SaturnSystems} from '../src/server/cards/corporation/SaturnSystems';
@@ -626,6 +626,19 @@ describe('Game', () => {
 
     const space: Space = game.board.getSpaceOrThrow(spaceId);
     expect(space.player).is.undefined;
+  });
+
+  it('logs the ocean adjacency bonus with a megacredits icon', () => {
+    const [game, player] = testGame(1);
+    const oceanSpace = addOcean(player);
+    const landSpace = game.board.getAdjacentSpaces(oceanSpace).find((space) => space.spaceType === SpaceType.LAND && space.tile === undefined)!;
+    player.megaCredits = 0;
+    game.gameLog.length = 0;
+
+    addGreenery(player, landSpace.id);
+
+    expect(player.megaCredits).eq(2);
+    expect(game.gameLog.map(formatMessage)).includes(`${player.color} gained 2:r:megacredits: from 1 ocean(s)`);
   });
 
   it('Check Ecologist Milestone', () => {

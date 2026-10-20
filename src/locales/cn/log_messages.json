@@ -12,7 +12,7 @@
     "${0} converted plants into a greenery": "${0} 用植物放置森林板块",
     "${0} increased Venus scale ${1} step(s)" : "${0} 增加提升改造度 ${1} 级",
 
-    "${0} spent ${1} M€ to trade with ${2}": "${0} 花了 ${1} M€,在 ${2} 进行贸易",
+    "${0} spent ${1}:r:megacredits: to trade with ${2}": "${0} 花了 ${1}:r:megacredits:,在 ${2} 进行贸易",
     "${0} spent ${1}:r:energy: to trade with ${2}": "${0} 花了 ${1}:r:energy:,在 ${2} 进行贸易",
     "${0} spent ${1}:r:titanium: to trade with ${2}": "${0} 花了 ${1}:r:titanium:,在 ${2} 进行贸易",
     "${0} spent 1 floater to trade with ${1}": "${0} 花了 1 云资源,在 ${1} 进行贸易",
@@ -56,7 +56,7 @@
     "${0}'s ${1} production ${2} by ${3} by ${4}": "${0}的${1}产量被${4}${2}${3}",
     "${0} spent 1 ${1} to gain 7 M€":"${0} 花费 1 ${1} 以获得7 M€",
 
-    "${0} removed ${1} resource(s) from ${2}'s ${3}": "${0} 从 ${2}的 ${3} 移除了 ${1} 资源",
+    "${0} removed ${1}${2} from ${3}'s ${4}": "${0} 从 ${3}的 ${4} 移除了 ${1}${2}",
 
     "${0} drew ${1}":"${0} 摸了 ${1}",
     "${0} sold ${1} patents":"${0} 卖了 ${1} 张专利牌",
