@@ -14,7 +14,7 @@ describe('Farmer', () => {
 
   beforeEach(() => {
     milestone = new Farmer();
-    player = TestPlayer.BLUE.newPlayer();
+    [/* game */, player] = testGame(1);
   });
 
   it('Can claim with 5 animals or microbes', () => {
