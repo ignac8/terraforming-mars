@@ -20,6 +20,8 @@
   "${0} converted ${1} units of steel to titanium.": "${0} a converti ${1} unités d'acier en titane.",
   "${0} gained ${1} corruption": "${0} a gagné ${1} corruption(s)",
   "${0} spent ${1} corruption": "${0} a dépensé ${1} corruption(s)",
+  "${0} spent 8 energy to raise oxygen 1 step.": "${0} a depensé 8 énergie pour augmenter le niveau d'oxygène de 1.",
+  "${0} spent 8 energy to raise Venus 1 step.": "${0} a depensé 8 énergie pour augmenter Vénus de 1.",
   "${0} spent ${1} ${2} from ${3} to trade with ${4}": "${0} a dépensé ${1} ${2} de ${3} pour commercer avec ${4}",
   "${0} has no fighter resource cards and gained 1 titanium.": "${0} n'a pas de carte à ressource combattant et gagne 1 titane.",
   "${0} has no science cards and gained 1 TR.": "${0} n'a pas de carte Science et gagne 1 NT.",
@@ -30,7 +32,5 @@
   "Steel and titanium are worth 1 M€ less, except for ${0}, whose steel and titanium are worth 1 M€ more.": "L'acier et le titane valent 1 M€ de moins, sauf pour ${0} pour qui l'acier et le titane valent 1 M€ de plus.",
   "${0} blackmailed ${1} and was paid 10 M€.": "${0} a fait chanté ${1} et a été payé 10 M€.",
   "${0} spent ${1} ${2} to gain 20 M€ and 1 corruption": "${0} a dépensé ${1} ${2} pour gagner 20 M€ et 1 corruption",
-  "${0} blackmailed ${1} and took 2 corruption.": "${0} a fait chanté ${1} et récupère 2 corruptions",
-  "${0} spent 8 energy to raise oxygen 1 step.": "${0} a depensé 8 énergie pour augmenter le niveau d'oxygène de 1.",
-  "${0} spent 8 energy to raise Venus 1 step.": "${0} a depensé 8 énergie pour augmenter Vénus de 1."
+  "${0} blackmailed ${1} and took 2 corruption.": "${0} a fait chanté ${1} et récupère 2 corruptions"
 }

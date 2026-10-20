@@ -20,6 +20,8 @@
   "${0} converted ${1} units of steel to titanium.": "${0} перетворив(ла) ${1} одиниць сталі на титан",
   "${0} gained ${1} corruption": "${0} отримав(ла) ${1} корупції",
   "${0} spent ${1} corruption": "${0} витратив(ла) ${1} корупції",
+  "${0} spent 8 energy to raise oxygen 1 step.": "${0} витратив(ла) 8 одиниць енергії, щоб збільшити рівень кисню на 1.",
+  "${0} spent 8 energy to raise Venus 1 step.": "${0} витратив(ла) 8 одиниць енергії, щоб збільшити шкалу Венери на 1.",
   "${0} spent ${1} ${2} from ${3} to trade with ${4}": "${0} витратив(ла) ${1} ${2} з ${3}, щоб торгувати з ${4}",
   "${0} has no fighter resource cards and gained 1 titanium.": "${0} не має карт ресурсів бійця і отримав 1 титану.",
   "${0} has no science cards and gained 1 TR.": "${0} не має карт науки і отримав 1 РТ.",
@@ -30,7 +32,5 @@
   "Steel and titanium are worth 1 M€ less, except for ${0}, whose steel and titanium are worth 1 M€ more.": "Сталь і титан варті 1 M€ менше, за винятком ${0}, чия сталь і титан варті на 1 M€ більше.",
   "${0} spent ${1} ${2} to gain 20 M€ and 1 corruption": "${0} витратив(ла) ${1} ${2}, щоб отримати 20 M€ та 1 корупцію",
   "${0} blackmailed ${1} and took 2 corruption.": "${0} шантажував(ла) ${1} та взяв(ла) 2 корупції.",
-  "${0} blackmailed ${1} and was paid 10 M€.": "${0} шантажував(ла) ${1} та отримав(ла) 10 M€.",
-  "${0} spent 8 energy to raise oxygen 1 step.": "${0} витратив(ла) 8 одиниць енергії, щоб збільшити рівень кисню на 1.",
-  "${0} spent 8 energy to raise Venus 1 step.": "${0} витратив(ла) 8 одиниць енергії, щоб збільшити шкалу Венери на 1."
+  "${0} blackmailed ${1} and was paid 10 M€.": "${0} шантажував(ла) ${1} та отримав(ла) 10 M€."
 }
