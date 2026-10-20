@@ -3,7 +3,7 @@ import {SagittaFrontierServices} from '../../../src/server/cards/prelude2/Sagitt
 import {TestPlayer} from '../../TestPlayer';
 import {testGame} from '../../TestGame';
 import {Units} from '../../../src/common/Units';
-import {fakeCard, runAllActions} from '../../TestingUtils';
+import {fakeCard, formatMessage, runAllActions} from '../../TestingUtils';
 import {Tag} from '../../../src/common/cards/Tag';
 import {CardType} from '../../../src/common/cards/CardType';
 import {IGame} from '../../../src/server/IGame';
@@ -39,6 +39,22 @@ describe('SagittaFrontierServices', () => {
     card.onCardPlayed(player, fakeCard({tags: [Tag.SCIENCE]}));
     runAllActions(game);
     expect(player.megaCredits).eq(1);
+  });
+
+  it('Logs M€ icons', () => {
+    player.playedCards.push(card);
+    const noTags = fakeCard({tags: []});
+    const oneTag = fakeCard({tags: [Tag.SCIENCE]});
+    game.gameLog = [];
+
+    card.onCardPlayed(player, noTags);
+    card.onCardPlayed(player, oneTag);
+    runAllActions(game);
+
+    expect(game.gameLog.map(formatMessage)).deep.eq([
+      `blue gained 4:r:megacredits: for playing ${noTags.name}, which has no tags.`,
+      `blue gained 1:r:megacredits: for playing ${oneTag.name}, which has exactly 1 tag.`,
+    ]);
   });
 
   it('Event tag is a tag', () => {

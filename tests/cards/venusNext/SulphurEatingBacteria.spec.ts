@@ -1,5 +1,5 @@
 import {expect} from 'chai';
-import {setVenusScaleLevel} from '../../TestingUtils';
+import {formatMessage, setVenusScaleLevel} from '../../TestingUtils';
 import {SulphurEatingBacteria} from '../../../src/server/cards/venusNext/SulphurEatingBacteria';
 import {IGame} from '../../../src/server/IGame';
 import {OrOptions} from '../../../src/server/inputs/OrOptions';
@@ -36,6 +36,18 @@ describe('SulphurEatingBacteria', () => {
     action.options[1].cb(3);
     expect(player.megaCredits).to.eq(9);
     expect(card.resourceCount).to.eq(2);
+  });
+
+  it('Logs resource icons when spending microbes', () => {
+    player.playedCards.push(card);
+    player.addResourceTo(card, 5);
+    game.gameLog = [];
+
+    const action = cast(card.action(player), OrOptions);
+    action.options[1].cb(3);
+
+    expect(game.gameLog.map(formatMessage)).includes(
+      'blue removed 3:cr:microbe: from Sulphur-Eating Bacteria to gain 9:r:megacredits:');
   });
 
   it('Should act - only one action available', () => {

@@ -3,7 +3,7 @@ import {SuitableInfrastructure} from '../../../src/server/cards/prelude2/Suitabl
 import {testGame} from '../../TestGame';
 import {Resource} from '../../../src/common/Resource';
 import {PowerPlantStandardProject} from '../../../src/server/cards/base/standardProjects/PowerPlantStandardProject';
-import {runAllActions, simulateFinishingAction} from '../../TestingUtils';
+import {formatMessage, runAllActions, simulateFinishingAction} from '../../TestingUtils';
 import {SaturnSystems} from '../../../src/server/cards/corporation/SaturnSystems';
 import {Manutech} from '../../../src/server/cards/venusNext/Manutech';
 import {JovianLanterns} from '../../../src/server/cards/colonies/JovianLanterns';
@@ -44,6 +44,19 @@ describe('SuitableInfrastructure', () => {
     expect(player.stock.megacredits).eq(4);
 
     simulateFinishingAction(player);
+  });
+
+  it('logs an M€ icon', () => {
+    const card = new SuitableInfrastructure();
+    const [game, player] = testGame(1);
+
+    game.phase = Phase.ACTION;
+    player.playedCards.push(card);
+    game.gameLog = [];
+
+    player.production.add(Resource.ENERGY, 1);
+
+    expect(game.gameLog.map(formatMessage)).includes('blue gained 2:r:megacredits: from Suitable Infrastructure');
   });
 
   it('works with Power Plant standard project', () => {

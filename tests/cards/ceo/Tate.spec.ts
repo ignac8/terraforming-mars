@@ -1,7 +1,7 @@
 import {expect} from 'chai';
 import {IGame} from '../../../src/server/IGame';
 import {TestPlayer} from '../../TestPlayer';
-import {forceGenerationEnd} from '../../TestingUtils';
+import {forceGenerationEnd, formatMessage} from '../../TestingUtils';
 import {testGame} from '../../TestGame';
 import {runAllActions} from '../../TestingUtils';
 import {ICard} from '../../../src/server/cards/ICard';
@@ -88,6 +88,16 @@ describe('Tate', () => {
     const data = message!.data[1];
     expect(data.type).eq(LogMessageDataType.CARDS);
     expect(data.value).to.have.members(selectCard.cards.map(toName));
+  });
+
+  it('Logs a tag icon for the searched tag', () => {
+    game.gameLog = [];
+
+    const orOptions = cast(card.action(player), OrOptions);
+    // Select tag [0] (Tag.BUILDING)
+    cast(orOptions.options[0], SelectOption).cb(undefined);
+
+    expect(game.gameLog.map(formatMessage)).includes('blue searched for :tag:building: tags');
   });
 
   it('Can only act once per game', () => {

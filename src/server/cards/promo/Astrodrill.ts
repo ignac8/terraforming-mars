@@ -102,7 +102,7 @@ export class Astrodrill extends CorporationCard implements ICorporationCard, IAc
     const spendResource = new SelectOption('Remove 1 asteroid on this card to gain 3 titanium', 'Remove asteroid').andThen(() => {
       this.resourceCount--;
       player.titanium += 3;
-      LogHelper.logRemoveResource(player, this, 1, 'gain 3 titanium');
+      LogHelper.logRemoveResource(player, this, 1, 'gain 3:r:titanium:');
 
       return undefined;
     });
