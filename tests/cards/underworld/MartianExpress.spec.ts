@@ -1,7 +1,7 @@
 import {expect} from 'chai';
 import {MartianExpress} from '../../../src/server/cards/underworld/MartianExpress';
 import {testGame} from '../../TestGame';
-import {addCity, runAllActions} from '../../TestingUtils';
+import {addCity, formatMessage, runAllActions} from '../../TestingUtils';
 import {AddResourcesToCard} from '../../../src/server/deferredActions/AddResourcesToCard';
 import {CardResource} from '../../../src/common/CardResource';
 import {JupiterFloatingStation} from '../../../src/server/cards/colonies/JupiterFloatingStation';
@@ -68,13 +68,15 @@ describe('MartianExpress', () => {
 
   it('action', () => {
     const card = new MartianExpress();
-    const [/* game */, player] = testGame(2);
+    const [game, player] = testGame(2);
 
     card.resourceCount = 7;
     cast(card.action(player), undefined);
 
     expect(player.megaCredits).eq(7);
     expect(card.resourceCount).eq(0);
+    expect(game.gameLog.map(formatMessage)).to.include(
+      'blue used the Martian Express action to convert 7:cr:ware: into 7:r:megacredits:');
   });
 
   it('activates colonies', () => {

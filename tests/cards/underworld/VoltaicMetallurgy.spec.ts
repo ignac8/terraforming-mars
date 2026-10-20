@@ -1,6 +1,7 @@
 import {expect} from 'chai';
 import {VoltaicMetallurgy} from '../../../src/server/cards/underworld/VoltaicMetallurgy';
 import {testGame} from '../../TestGame';
+import {formatMessage} from '../../TestingUtils';
 import {cast} from '@/common/utils/utils';
 import {SelectAmount} from '../../../src/server/inputs/SelectAmount';
 
@@ -45,7 +46,7 @@ describe('VoltaicMetallurgy', () => {
   for (const run of actionRuns) {
     it('action ' + JSON.stringify(run), () => {
       const card = new VoltaicMetallurgy();
-      const [/* game */, player] = testGame(1);
+      const [game, player] = testGame(1);
 
       player.tagsForTest = {power: run.powerTags};
       player.steel = run.steel;
@@ -54,6 +55,7 @@ describe('VoltaicMetallurgy', () => {
       selectAmount.cb(run.amount);
       expect(player.steel).eq(run.expected.steel);
       expect(player.titanium).eq(run.expected.titanium);
+      expect(game.gameLog.map(formatMessage)).to.include(`blue converted ${run.amount}:r:steel: to :r:titanium:.`);
     });
   }
 });

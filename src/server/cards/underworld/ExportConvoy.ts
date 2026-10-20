@@ -52,7 +52,7 @@ export class ExportConvoy extends Card implements IProjectCard {
   }
 
   public override bespokePlay(player: IPlayer) {
-    const template = '${0} spent ${1} ${2} to gain 20 M€ and 1 corruption';
+    const template = '${0} spent ${1}${2} to gain 20:r:megacredits: and 1:r:corruption:';
 
     const orOptions = new OrOptions().setTitle('Select a resource to spend.');
 
@@ -61,7 +61,7 @@ export class ExportConvoy extends Card implements IProjectCard {
         player.stock.deduct(Resource.PLANTS, 4);
         player.stock.add(Resource.MEGACREDITS, 20);
         UnderworldExpansion.gainCorruption(player, 1);
-        player.game.log(template, (b) => b.player(player).number(4).string('plants'));
+        player.game.log(template, (b) => b.player(player).number(4).resource(Resource.PLANTS));
         return undefined;
       }));
     }
@@ -74,7 +74,7 @@ export class ExportConvoy extends Card implements IProjectCard {
               if (response.proceed) {
                 player.stock.add(Resource.MEGACREDITS, 20);
                 UnderworldExpansion.gainCorruption(player, 1);
-                player.game.log(template, (b) => b.player(player).number(3).string('microbes'));
+                player.game.log(template, (b) => b.player(player).number(3).cardResource(CardResource.MICROBE));
               }
             }));
         return undefined;
@@ -90,7 +90,7 @@ export class ExportConvoy extends Card implements IProjectCard {
               if (response.proceed) {
                 player.stock.add(Resource.MEGACREDITS, 20);
                 UnderworldExpansion.gainCorruption(player, 1);
-                player.game.log(template, (b) => b.player(player).number(2).string('animals'));
+                player.game.log(template, (b) => b.player(player).number(2).cardResource(CardResource.ANIMAL));
               }
             }));
         return undefined;

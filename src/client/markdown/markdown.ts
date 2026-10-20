@@ -86,7 +86,7 @@ export type MarkdownOptions = {
  *
  * `:tag:<name>:`, e.g. :tag:building:  :tag:space:  :tag:mars:
  *
- * `:r:<name>:` e.g. :r:steel:, :r:megacredits:
+ * `:r:<name>:` e.g. :r:steel:, :r:megacredits:, :r:corruption:
  * `:p:<name>:` e.g. :p:steel:, :p:plants:
  * `:cr:<name>:` e.g. :cr:ware:, :cr:syndicate-fleet:
  * Other special icons:

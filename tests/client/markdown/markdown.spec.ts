@@ -24,6 +24,11 @@ describe('markdown', () => {
       '<p><span class="markdown-resource resource_icon--steel"></span></p>\n');
   });
 
+  it('renders corruption as a resource', () => {
+    expect(renderMarkdown(':r:corruption:')).eq(
+      '<p><span class="markdown-resource resource_icon--corruption"></span></p>\n');
+  });
+
   it('renders card resources', () => {
     expect(renderMarkdown(':cr:syndicate-fleet:')).eq(
       '<p><span class="markdown-resource card-resource-syndicate-fleet"></span></p>\n');
