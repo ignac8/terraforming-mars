@@ -58,8 +58,8 @@ export class SelfReplicatingRobots extends Card implements IProjectCard {
         .andThen(([card]) => {
           const resourceCount = card.resourceCount;
           card.resourceCount *= 2;
-          player.game.log('${0} doubled resources on ${1} from ${2} to ${3}', (b) => {
-            b.player(player).card(card).number(resourceCount).number(card.resourceCount);
+          player.game.log('${0} doubled the ${4} on ${1} from ${2} to ${3}', (b) => {
+            b.player(player).card(card).number(resourceCount).number(card.resourceCount).cardResource(card.resourceType);
           });
           return undefined;
         }));

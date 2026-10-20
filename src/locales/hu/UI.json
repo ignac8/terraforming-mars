@@ -655,7 +655,7 @@
   "Select card to add microbe or animal": "Válassz egy kártyát, hogy hozzáadj 1 mikrobát vagy állatot",
   "Add resource to card ${0}": "Rakj erőforrást a(z) ${0} kártyára",
   "Select how to pay ${0} for colony trade": "Válaszd ki, hogy hogyan fizetsz ${0}-t a gyarmatokon való kereskedésért",
-  "increase M€ production 1 step": "Növeld a M€-termelésed 1 értékkel",
+  "gain 1:p:megacredits:": "Kapsz 1:p:megacredits:.",
   "Increase your M€ production 5 steps": "Növeld a M€-termelésed 5 értékkel",
   "Increase your plant production 2 steps": "Növeld a palántatermelésed 2 értékkel",
   "Increase +MC": "Növeld a M€-et",

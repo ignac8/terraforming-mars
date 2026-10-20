@@ -2,7 +2,7 @@ import {expect} from 'chai';
 import {Supercapacitors} from '../../../src/server/cards/promo/Supercapacitors';
 import {IGame} from '../../../src/server/IGame';
 import {TestPlayer} from '../../TestPlayer';
-import {doWait, forceGenerationEnd, runAllActions} from '../../TestingUtils';
+import {doWait, forceGenerationEnd, formatMessage, runAllActions} from '../../TestingUtils';
 import {testGame} from '../../TestGame';
 import {SelectCard} from '../../../src/server/inputs/SelectCard';
 import {SelectAmount} from '../../../src/server/inputs/SelectAmount';
@@ -53,5 +53,20 @@ describe('Supercapacitors', () => {
 
     // Select cards for next generation
     cast(player.popWaitingFor(), SelectCard);
+  });
+
+  it('Logs resource icons when converting energy to heat', () => {
+    cast(player.popWaitingFor(), undefined);
+    player.playedCards.push(card);
+    player.production.override({energy: 2, heat: 3});
+    player.energy = 5;
+    forceGenerationEnd(game);
+    runAllActions(game);
+
+    doWait(player, SelectAmount, (selectAmount) => {
+      selectAmount.cb(4);
+    });
+
+    expect(game.gameLog.map(formatMessage)).includes('blue converted 4:r:energy: to :r:heat:');
   });
 });

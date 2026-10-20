@@ -714,7 +714,7 @@
   "Select which resource type to steal 2 units from all other players.": "Valitse resurssityyppi josta varastat 2 yksikköä kaikilta muilta pelaajilta.",
   "Add resource to card ${0}": "Lisää resurssi kortille ${0}",
   "Select how to pay ${0} for colony trade": "Valitse miten maksat ${0} siirtokunnan kauppaa varten",
-  "increase M€ production 1 step": "nosta M€-tuotantoa 1 askel",
+  "gain 1:p:megacredits:": "saadakseen 1:p:megacredits:",
   "Increase your M€ production 5 steps": "Nosta M€-tuotantoasi 5 askelta",
   "Increase your plant production 2 steps": "Nosta kasvintuotantoasi 2 askelta",
   "Increase +MC": "Nosta +M€",
