@@ -416,7 +416,7 @@
   "jovian": "Jupiter",
   "mars": "",
   "moon": "Hold",
-  "${0} spent ${1}:r:steel: and gained ${2}:r:heat:": "${0} elköltött ${1}:r:steel: és szerzett ${2}:r:heat:.",
+  "${0} spent ${1}:r:steel: and gained ${2}:r:heat:": "A játékos elköltött ${1} acélt és szerzett ${2} hőt.",
   "${0} turned the clone tag on ${1} into a ${2} tag": "${0} átváltoztatta a klón ikont a(z) ${1} kártyán ${2} ikonná.",
   "${0} raised the ${1} planetary track ${2} step(s)": "${0} megnövelte a(z) ${1} bolygósávját ${2} értékkel.",
   "Global Event ${0} raised the ${1} planetary track ${2} step(s)": "A(z) ${0} Globális esemény megnövelte a(z) ${1} bolygósávját ${2} értékkel.",
