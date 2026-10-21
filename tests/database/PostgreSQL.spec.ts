@@ -1,4 +1,5 @@
 import {expect} from 'chai';
+import {Context} from 'mocha';
 import {EventEmitter} from 'events';
 import pg from 'pg';
 import {PostgreSQL} from '../../src/server/database/PostgreSQL';
@@ -11,6 +12,8 @@ type Statement = {connection: string, sql: string};
 // statement sent through pool.query(), which can land on any connection.
 class FakePool {
   public statements: Array<Statement> = [];
+  // The parameters of each statement sent through pool.query().
+  public poolParams: Array<Array<unknown> | undefined> = [];
   public released: Array<{connection: string, err: Error | boolean | undefined}> = [];
   // Statements that start with any of these fail.
   public failing: Array<string> = [];
@@ -51,7 +54,8 @@ class FakePool {
     return Promise.resolve({rows: [{inserted: true}]});
   }
 
-  public query(sql: string) {
+  public query(sql: string, params?: Array<unknown>) {
+    this.poolParams.push(params);
     return this.run('pool', sql);
   }
 
@@ -238,10 +242,10 @@ describe('PostgreSQL', () => {
       }
     });
 
-    it('keeps every save unless POSTGRES_TRIM_COUNT is set', () => {
+    it('keeps every save unless POSTGRES_TRIM_COUNT is set', function(this: Context) {
       // The default is read when the module loads, so this only holds when the variable is unset.
       if (process.env.POSTGRES_TRIM_COUNT !== undefined) {
-        return;
+        this.skip();
       }
       expect(new DefaultPostgreSQL(pool).defaultTrimCount).eq(0);
     });
@@ -252,6 +256,13 @@ describe('PostgreSQL', () => {
       await db.compressCompletedGames();
 
       expect(pool.statements[0]).deep.eq({connection: 'pool', sql: 'SELECT DISTINCT game_id'});
+    });
+
+    it('compresses games completed over 14 days ago when the days are negative', async () => {
+      await db.compressCompletedGames('-5');
+
+      const cutoff = pool.poolParams[0]![0] as number;
+      expect(cutoff).closeTo(Date.now() / 1000 - 14 * 86400, 5);
     });
   });
 });

@@ -3,7 +3,7 @@ import {testGame} from '../TestGame';
 import {TestPlayer} from '../TestPlayer';
 import {IGame} from '../../src/server/IGame';
 import {SerializedGame} from '../../src/server/SerializedGame';
-import {clearReplayCache, getReplayMoves, loadReplayState} from '../../src/server/replay/ReplayService';
+import {clearReplayCache, getReplayMoves, isFinished, loadReplayState} from '../../src/server/replay/ReplayService';
 import {RouteError} from '../../src/server/routes/RouteError';
 import {LogMessage} from '../../src/common/logs/LogMessage';
 import {LogMessageType} from '../../src/common/logs/LogMessageType';
@@ -19,8 +19,14 @@ describe('ReplayService', () => {
   let player: TestPlayer;
   let player2: TestPlayer;
   let base: SerializedGame;
+  let warnings: Array<Array<unknown>>;
+  const originalWarn = console.warn;
 
   beforeEach(() => {
+    warnings = [];
+    console.warn = (...args: Array<unknown>) => {
+      warnings.push(args);
+    };
     db = new InMemoryDatabase();
     setTestDatabase(db);
     clearReplayCache();
@@ -29,6 +35,7 @@ describe('ReplayService', () => {
   });
 
   afterEach(() => {
+    console.warn = originalWarn;
     restoreTestDatabase();
     clearReplayCache();
   });
@@ -198,5 +205,97 @@ describe('ReplayService', () => {
       expect(error).instanceOf(RouteError);
       expect((error as RouteError).kind).eq('notFound');
     }
+  });
+
+  async function errorOf(promise: Promise<unknown>): Promise<unknown> {
+    try {
+      await promise;
+    } catch (e) {
+      return e;
+    }
+    return undefined;
+  }
+
+  it('loadReplayState answers notFound when compression removed the save meanwhile', async () => {
+    storeLengths([0, 2, 5]);
+    db.getGameVersion = () => Promise.reject(new Error('Game not found'));
+    const error = await errorOf(loadReplayState(game, 1));
+    expect(error).instanceOf(RouteError);
+    expect(error).deep.include({kind: 'notFound', detail: 'save not available'});
+    expect(warnings).has.length(1);
+    expect(String(warnings[0][0])).contains(game.id).and.contains('1');
+    expect((warnings[0][1] as Error).message).eq('Game not found');
+  });
+
+  it('loadReplayState answers notFound for a save the code cannot deserialize', async () => {
+    storeLengths([0, 2, 5]);
+    db.games.get(game.id)![1] = {...base, board: undefined} as unknown as SerializedGame;
+    const error = await errorOf(loadReplayState(game, 1));
+    expect(error).instanceOf(RouteError);
+    expect(error).deep.include({kind: 'notFound', detail: 'save not available'});
+    expect(warnings).has.length(1);
+    expect(String(warnings[0][0])).contains(game.id);
+    expect(warnings[0][1]).instanceOf(TypeError);
+  });
+
+  it('getReplayMoves answers notFound when a save cannot be read', async () => {
+    storeLengths([0, 2, 5]);
+    db.getGameVersion = () => Promise.reject(new Error('Game not found'));
+    const error = await errorOf(getReplayMoves(game, player.id));
+    expect(error).instanceOf(RouteError);
+    expect(error).deep.include({kind: 'notFound', detail: 'save not available'});
+    expect(warnings).has.length(1);
+  });
+
+  it('loadReplayState keeps a RouteError from the database as it is', async () => {
+    storeLengths([0, 2, 5]);
+    db.getGameVersion = () => Promise.reject(RouteError.forbidden('no'));
+    const error = await errorOf(loadReplayState(game, 1));
+    expect(error).deep.include({kind: 'forbidden', detail: 'no'});
+    expect(warnings).is.empty;
+  });
+
+  it('isFinished does not read the newest save again once it saw it in END', async () => {
+    storeLengths([0, 2, 5]);
+    let reads = 0;
+    const getGameVersion = db.getGameVersion.bind(db);
+    db.getGameVersion = (gameId, saveId) => {
+      reads++;
+      return getGameVersion(gameId, saveId);
+    };
+    expect(await isFinished(game)).is.true;
+    expect(await isFinished(game)).is.true;
+    expect(reads).eq(1);
+    clearReplayCache();
+    expect(await isFinished(game)).is.true;
+    expect(reads).eq(2);
+  });
+
+  it('isFinished does not remember a game whose END save has not landed', async () => {
+    storeLengths([0, 2, 5]);
+    const rows = db.games.get(game.id)!;
+    rows[2] = {...rows[2]!, phase: Phase.ACTION};
+    expect(await isFinished(game)).is.false;
+    rows[2] = {...rows[2]!, phase: Phase.END};
+    expect(await isFinished(game)).is.true;
+  });
+
+  it('answers expired, uncached, when compression removes saves while the list is built', async () => {
+    storeLengths([0, 2, 5]);
+    const rows = db.games.get(game.id)!;
+    const middle = rows[1]!;
+    const getGameVersion = db.getGameVersion.bind(db);
+    let reads = 0;
+    db.getGameVersion = (gameId, saveId) => {
+      // The first read is the newest save, for isFinished. Then compression strikes.
+      if (++reads === 2) {
+        delete rows[1];
+      }
+      return getGameVersion(gameId, saveId);
+    };
+    expect(await getReplayMoves(game, player.id)).deep.eq({status: 'expired'});
+
+    rows[1] = middle;
+    expect((await moves()).map((m) => m.saveId)).deep.eq([0, 1, 2]);
   });
 });

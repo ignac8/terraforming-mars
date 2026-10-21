@@ -1,5 +1,6 @@
 import {expect} from 'chai';
 import {ApiReplayView} from '../../src/server/routes/ApiReplayView';
+import {clearReplayCache} from '../../src/server/replay/ReplayService';
 import {IGame} from '../../src/server/IGame';
 import {SerializedGame} from '../../src/server/SerializedGame';
 import {PLAYER_COLORS} from '../../src/common/Color';
@@ -24,12 +25,14 @@ describe('ApiReplayView', () => {
     res = new MockResponse();
     db = new InMemoryDatabase();
     setTestDatabase(db);
+    clearReplayCache();
     [game, player] = testGame(2);
     await scaffolding.ctx.gameLoader.add(game);
   });
 
   afterEach(() => {
     restoreTestDatabase();
+    clearReplayCache();
   });
 
   // The newest save of a finished game is in the END phase.
@@ -55,7 +58,22 @@ describe('ApiReplayView', () => {
     expect(res.statusCode).eq(statusCode.notFound);
   });
 
+  it('rejects a game id', async () => {
+    await get(`id=${game.id}&save=1&as=all`);
+    expect(res.statusCode).eq(statusCode.badRequest);
+    expect(res.content).eq('Bad request: invalid participant id');
+  });
+
   it('fails when the game is not finished', async () => {
+    await get(`id=${player.id}&save=1&as=all`);
+    expect(res.statusCode).eq(statusCode.badRequest);
+    expect(res.content).eq('Bad request: game not finished');
+  });
+
+  it('fails while the END save has not been written yet', async () => {
+    const base: SerializedGame = game.serialize();
+    db.games.set(game.id, [base, base, {...base, phase: Phase.ACTION}]);
+    game.phase = Phase.END;
     await get(`id=${player.id}&save=1&as=all`);
     expect(res.statusCode).eq(statusCode.badRequest);
     expect(res.content).eq('Bad request: game not finished');

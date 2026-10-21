@@ -46,3 +46,12 @@ export function daysAgoToSeconds(dayString: string | undefined, defaultValue: nu
   const date = addDays(new Date(), -days);
   return dateToSeconds(date);
 }
+
+/**
+ * The time before which completed games get compressed. A negative number of days would put the
+ * cutoff in the future and compress every completed game, so it counts as invalid.
+ */
+export function compressCutoffSeconds(dayString: string | undefined): number {
+  const defaultDays = Number(DEFAULT_COMPRESS_COMPLETED_GAMES_DAYS);
+  return daysAgoToSeconds(stringToNumber(dayString, defaultDays) < 0 ? undefined : dayString, defaultDays);
+}

@@ -5,7 +5,7 @@ import {IGame, Score} from '../IGame';
 import {GameOptions} from '../game/GameOptions';
 import {GameId, ParticipantId, isGameId, safeCast} from '../../common/Types';
 import {SerializedGame} from '../SerializedGame';
-import {DEFAULT_COMPRESS_COMPLETED_GAMES_DAYS, daysAgoToSeconds, stringToBoolean, stringToNumber} from './utils';
+import {DEFAULT_COMPRESS_COMPLETED_GAMES_DAYS, compressCutoffSeconds, daysAgoToSeconds, stringToBoolean, stringToNumber} from './utils';
 import {GameIdLedger} from './IDatabase';
 import {Session, SessionId} from '../auth/Session';
 import {toID} from '../../common/utils/utils';
@@ -338,7 +338,7 @@ export class PostgreSQL implements IDatabase {
 
 
   async compressCompletedGames(compressCompletedGamesDays: string = process.env.COMPRESS_COMPLETED_GAMES_DAYS ?? DEFAULT_COMPRESS_COMPLETED_GAMES_DAYS): Promise<void> {
-    const dateToSeconds = daysAgoToSeconds(compressCompletedGamesDays, Number(DEFAULT_COMPRESS_COMPLETED_GAMES_DAYS));
+    const dateToSeconds = compressCutoffSeconds(compressCompletedGamesDays);
     const selectResult = await this.client.query('SELECT DISTINCT game_id FROM completed_game WHERE completed_time < to_timestamp($1)', [dateToSeconds]);
     const gameIds = selectResult.rows.slice(0, 1000).map((row) => row.game_id);
     console.log(`${gameIds.length} completed games to be compressed.`);
