@@ -7,12 +7,12 @@
     </div>
 
     <div class="replay-controls">
-      <button class="replay-start" type="button" :title="$t('Go to start')" :disabled="index === 0" @click="select(0)">&#x23EE;</button>
-      <button class="replay-back" type="button" :title="$t('Step back')" :disabled="index === 0" @click="select(index - 1)">&#x25C0;</button>
-      <button class="replay-play" type="button" :title="playing ? $t('Pause') : $t('Play replay')" @click="playing ? $emit('pause') : $emit('play')">{{ playing ? '\u23F8' : '\u25B6' }}</button>
-      <button class="replay-forward" type="button" :title="$t('Step forward')" :disabled="index >= last" @click="select(index + 1)">&#x25B6;&#x25B6;</button>
-      <button class="replay-end" type="button" :title="$t('Go to end')" :disabled="index >= last" @click="select(last)">&#x23ED;</button>
-      <select class="replay-speed" :title="$t('Speed')" :value="speed" @change="onSpeed">
+      <button class="replay-start" type="button" :title="$t('Go to start')" :aria-label="$t('Go to start')" :disabled="index === 0" @click="select(0)">&#x23EE;</button>
+      <button class="replay-back" type="button" :title="$t('Step back')" :aria-label="$t('Step back')" :disabled="index === 0" @click="select(index - 1)">&#x25C0;</button>
+      <button class="replay-play" type="button" :title="playLabel" :aria-label="playLabel" @click="playing ? $emit('pause') : $emit('play')">{{ playing ? '\u23F8' : '\u25B6' }}</button>
+      <button class="replay-forward" type="button" :title="$t('Step forward')" :aria-label="$t('Step forward')" :disabled="index >= last" @click="select(index + 1)">&#x25B6;&#x25B6;</button>
+      <button class="replay-end" type="button" :title="$t('Go to end')" :aria-label="$t('Go to end')" :disabled="index >= last" @click="select(last)">&#x23ED;</button>
+      <select class="replay-speed" :title="$t('Speed')" :aria-label="$t('Speed')" :value="speed" @change="onSpeed">
         <option v-for="option in speeds" :key="option" :value="option">{{ option }}&times;</option>
       </select>
     </div>
@@ -104,6 +104,9 @@ export default defineComponent({
     speeds(): ReadonlyArray<number> {
       return SPEEDS;
     },
+    playLabel(): string {
+      return this.playing ? this.$t('Pause') : this.$t('Play replay');
+    },
   },
   methods: {
     select(index: number): void {
@@ -127,6 +130,12 @@ export default defineComponent({
   },
   watch: {
     index() {
+      this.$nextTick(() => this.scrollToCurrent());
+    },
+    viewAs() {
+      this.$nextTick(() => this.scrollToCurrent());
+    },
+    collapsed() {
       this.$nextTick(() => this.scrollToCurrent());
     },
   },

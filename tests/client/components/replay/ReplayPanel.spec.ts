@@ -1,5 +1,7 @@
 import {mount} from '@vue/test-utils';
 import {expect} from 'chai';
+import {afterEach} from 'vitest';
+import {nextTick} from 'vue';
 import {globalConfig} from '../getLocalVue';
 import ReplayPanel from '@/client/components/replay/ReplayPanel.vue';
 import {fakeGameModel, fakePublicPlayerModel, fakeViewModel} from '../testHelpers';
@@ -42,7 +44,39 @@ function mountPanel(props: Record<string, unknown> = {}) {
   });
 }
 
+// jsdom lays nothing out: rows 30px apart in a 100px list, which keeps whatever is scrolled.
+function fakeLayout(): () => void {
+  const offsetTop = Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'offsetTop');
+  const clientHeight = Object.getOwnPropertyDescriptor(Element.prototype, 'clientHeight');
+  const scrollTop = Object.getOwnPropertyDescriptor(Element.prototype, 'scrollTop');
+  const scrolled = new WeakMap<Element, number>();
+  Object.defineProperty(HTMLElement.prototype, 'offsetTop', {configurable: true, get(this: HTMLElement) {
+    return this.parentElement === null ? 0 : Array.from(this.parentElement.children).indexOf(this) * 30;
+  }});
+  Object.defineProperty(Element.prototype, 'clientHeight', {configurable: true, get: () => 100});
+  Object.defineProperty(Element.prototype, 'scrollTop', {configurable: true,
+    get(this: Element) {
+      return scrolled.get(this) ?? 0;
+    },
+    set(this: Element, value: number) {
+      scrolled.set(this, value);
+    },
+  });
+  return () => {
+    Object.defineProperty(HTMLElement.prototype, 'offsetTop', offsetTop!);
+    Object.defineProperty(Element.prototype, 'clientHeight', clientHeight!);
+    Object.defineProperty(Element.prototype, 'scrollTop', scrollTop!);
+  };
+}
+
 describe('ReplayPanel', () => {
+  let restoreLayout: (() => void) | undefined;
+
+  afterEach(() => {
+    restoreLayout?.();
+    restoreLayout = undefined;
+  });
+
   it('step forward at the first move selects the second', async () => {
     const wrapper = mountPanel();
     await wrapper.find('.replay-forward').trigger('click');
@@ -104,6 +138,31 @@ describe('ReplayPanel', () => {
     expect(wrapper.find('.replay-moves').exists()).is.false;
     await wrapper.find('.replay-collapse').trigger('click');
     expect(wrapper.find('.replay-moves').exists()).is.true;
+  });
+
+  it('names its icon buttons for screen readers', () => {
+    const wrapper = mountPanel();
+    const labels = ['.replay-start', '.replay-back', '.replay-play', '.replay-forward', '.replay-end']
+      .map((selector) => wrapper.find(selector).attributes('aria-label'));
+    expect(labels).deep.eq(['Go to start', 'Step back', 'Play replay', 'Step forward', 'Go to end']);
+  });
+
+  it('scrolls the current move back into view when the list is shown again', async () => {
+    restoreLayout = fakeLayout();
+    const wrapper = mountPanel({index: 2});
+    expect(wrapper.find('.replay-moves').element.scrollTop).eq(10);
+    await wrapper.find('.replay-collapse').trigger('click');
+    await wrapper.find('.replay-collapse').trigger('click');
+    expect(wrapper.find('.replay-moves').element.scrollTop).eq(10);
+  });
+
+  it('scrolls the current move into view when the view changes', async () => {
+    restoreLayout = fakeLayout();
+    const wrapper = mountPanel({index: 2});
+    wrapper.find('.replay-moves').element.scrollTop = 0;
+    await wrapper.setProps({viewAs: 'red'});
+    await nextTick();
+    expect(wrapper.find('.replay-moves').element.scrollTop).eq(10);
   });
 
   it('choosing a player emits update:viewAs with that color', async () => {
