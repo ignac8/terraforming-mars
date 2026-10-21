@@ -101,6 +101,11 @@ export function setGameLog(f: () => Array<LogMessage>) {
   createGameLog = f;
 }
 
+export type DeserializeOptions = {
+  /** When true the game never writes to the database or the game cache. Used to show past moments of a game. */
+  sandbox?: boolean;
+};
+
 export class Game implements IGame, Logger {
   public readonly id: GameId;
   public readonly name: string;
@@ -129,6 +134,8 @@ export class Game implements IGame, Logger {
   public undoCount: number = 0; // Each undo increases it
   public inputsThisRound = 0;
   public resettable: boolean = false;
+  /** A sandbox game is a read-only view of a past save. It is never serialized. */
+  public isSandbox: boolean = false;
   public globalsPerGeneration: Array<Partial<Record<GlobalParameter, number>>> = [];
 
   public generation: number = 1;
@@ -501,6 +508,9 @@ export class Game implements IGame, Logger {
   }
 
   public save(): void {
+    if (this.isSandbox) {
+      return;
+    }
     GameLoader.getInstance().saveGame(this);
   }
 
@@ -1192,6 +1202,11 @@ export class Game implements IGame, Logger {
       this.log('This game id was ${0}', (b) => b.rawString(id));
     }
 
+    if (this.isSandbox) {
+      this.phase = Phase.END;
+      return;
+    }
+
     const scores: Array<Score> = [];
     this.players.forEach((player) => {
       const corporation = player.playedCards.filter(isICorporationCard).map(toName).join('|');
@@ -1788,7 +1803,7 @@ export class Game implements IGame, Logger {
     return addDays(this.createdTime, days).getTime();
   }
 
-  public static deserialize(d: SerializedGame): Game {
+  public static deserialize(d: SerializedGame, options: DeserializeOptions = {}): Game {
     const gameOptions = d.gameOptions;
     gameOptions.boardName = normalizeBoardName(gameOptions.boardName);
     if (gameOptions.escapeVelocity !== undefined) {
@@ -1819,6 +1834,7 @@ export class Game implements IGame, Logger {
     const ceoDeck = CeoDeck.deserialize(d.ceoDeck, rng);
 
     const game = new Game(d.id, d.name, players, first, d.activePlayer, d.spectatorId, gameOptions, rng, board, projectDeck, corporationDeck, preludeDeck, ceoDeck, d.tags, marsBotPlayer);
+    game.isSandbox = options.sandbox === true;
     game.resettable = true;
     game.spectatorId = d.spectatorId;
     game.createdTime = new Date(d.createdTimeMs);
@@ -1946,7 +1962,7 @@ export class Game implements IGame, Logger {
       game.activePlayer.takeAction(/* saveBeforeTakingAction */ false);
     }
 
-    if (game.phase === Phase.END) {
+    if (game.phase === Phase.END && !game.isSandbox) {
       GameLoader.getInstance().mark(game.id);
     }
     return game;

@@ -860,6 +860,7 @@ describe('Game', () => {
       'inDoubleDown',
       'inputsThisRound',
       'inTurmoil',
+      'isSandbox',
       'playersInGenerationOrder',
       'monsInsuranceOwner',
       'resettable',

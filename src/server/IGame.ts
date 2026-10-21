@@ -59,6 +59,8 @@ export interface IGame extends Logger {
   undoCount: number; // Each undo increases it
   inputsThisRound: number;
   resettable: boolean;
+  /** True for a read-only view of a past save: it never writes to the database or the game cache. */
+  readonly isSandbox: boolean;
   generation: number;
   readonly players: ReadonlyArray<IPlayer>;
   /** All players including MarsBot (automa). Use this for targeting cards. */
