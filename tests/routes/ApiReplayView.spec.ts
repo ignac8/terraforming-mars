@@ -61,6 +61,15 @@ describe('ApiReplayView', () => {
     expect(res.content).eq('Bad request: game not finished');
   });
 
+  it('fails while the END save has not been written yet', async () => {
+    const base: SerializedGame = game.serialize();
+    db.games.set(game.id, [base, base, {...base, phase: Phase.ACTION}]);
+    game.phase = Phase.END;
+    await get(`id=${player.id}&save=1&as=all`);
+    expect(res.statusCode).eq(statusCode.badRequest);
+    expect(res.content).eq('Bad request: game not finished');
+  });
+
   ['abc', '-1', '1.5', ''].forEach((save) => {
     it(`fails when save is "${save}"`, async () => {
       finishGame();

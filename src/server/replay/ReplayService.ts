@@ -32,15 +32,31 @@ async function getSave(game: IGame, saveId: number): Promise<SerializedGame> {
   }
 }
 
-export async function getReplayMoves(game: IGame, viewerId: ParticipantId): Promise<ReplayMovesModel> {
+/**
+ * A game can be replayed once it is in the END phase and its newest save is too. The game sets
+ * its phase to END before the final save is written, and until that save lands the list of
+ * saves is incomplete.
+ */
+export async function isFinished(game: IGame): Promise<boolean> {
   if (game.phase !== Phase.END) {
-    return {status: 'not-finished'};
+    return false;
   }
+  const saveIds = await getSortedSaveIds(game);
+  if (saveIds.length === 0) {
+    return false;
+  }
+  return (await getSave(game, saveIds[saveIds.length - 1])).phase === Phase.END;
+}
 
+export async function getReplayMoves(game: IGame, viewerId: ParticipantId): Promise<ReplayMovesModel> {
   const key = `${game.id}/${viewerId}`;
   const cached = cache.get(key);
   if (cached !== undefined) {
     return cached;
+  }
+
+  if (!await isFinished(game)) {
+    return {status: 'not-finished'};
   }
 
   const saveIds = await getSortedSaveIds(game);
@@ -52,12 +68,6 @@ export async function getReplayMoves(game: IGame, viewerId: ParticipantId): Prom
   const saves: Array<{saveId: number, save: SerializedGame}> = [];
   for (const saveId of saveIds) {
     saves.push({saveId, save: await getSave(game, saveId)});
-  }
-
-  // The game sets its phase to END before the final save is written. Until that save lands the
-  // list would be wrong, and it must not be cached.
-  if (saves[saves.length - 1].save.phase !== Phase.END) {
-    return {status: 'not-finished'};
   }
 
   // A save with the same log length as the next one changed nothing a viewer can see,
