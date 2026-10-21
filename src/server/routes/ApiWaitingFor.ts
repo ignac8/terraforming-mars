@@ -70,7 +70,7 @@ export class ApiWaitingFor extends Handler {
       return;
     }
 
-    const id =ctx.urlParams.participantId('id');
+    const id = ctx.urlParams.participantId('id');
     const gameAge = ctx.urlParams.number('gameAge');
     const undoCount = ctx.urlParams.number('undoCount');
 
