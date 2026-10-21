@@ -1,0 +1,181 @@
+import {expect} from 'chai';
+import {testGame} from '../TestGame';
+import {TestPlayer} from '../TestPlayer';
+import {IGame} from '../../src/server/IGame';
+import {SerializedGame} from '../../src/server/SerializedGame';
+import {clearReplayCache, getReplayMoves, loadReplayState} from '../../src/server/replay/ReplayService';
+import {RouteError} from '../../src/server/routes/RouteError';
+import {LogMessage} from '../../src/common/logs/LogMessage';
+import {LogMessageType} from '../../src/common/logs/LogMessageType';
+import {Phase} from '../../src/common/Phase';
+import {PlayerId} from '../../src/common/Types';
+import {ReplayMove} from '../../src/common/replay/ReplayModel';
+import {InMemoryDatabase} from '../testing/InMemoryDatabase';
+import {restoreTestDatabase, setTestDatabase} from '../testing/setup';
+
+describe('ReplayService', () => {
+  let db: InMemoryDatabase;
+  let game: IGame;
+  let player: TestPlayer;
+  let player2: TestPlayer;
+  let base: SerializedGame;
+
+  beforeEach(() => {
+    db = new InMemoryDatabase();
+    setTestDatabase(db);
+    clearReplayCache();
+    [game, player, player2] = testGame(2);
+    base = game.serialize();
+  });
+
+  afterEach(() => {
+    restoreTestDatabase();
+    clearReplayCache();
+  });
+
+  // The log of the final save: message i reads `line i`.
+  function logOf(length: number, privateTo: Map<number, PlayerId> = new Map()): Array<LogMessage> {
+    return Array.from({length}, (_, i) => new LogMessage(LogMessageType.DEFAULT, `line ${i}`, [], privateTo.get(i)));
+  }
+
+  function row(log: Array<LogMessage>, length: number, generation: number = 1): SerializedGame {
+    return {...base, generation, gameLog: log.slice(0, length)};
+  }
+
+  // Stores rows at the given save ids and marks the live game as finished.
+  function storeSaves(saves: Array<[number, SerializedGame]>) {
+    const rows: Array<SerializedGame | undefined> = [];
+    for (const [saveId, save] of saves) {
+      rows[saveId] = save;
+    }
+    db.games.set(game.id, rows);
+    game.phase = Phase.END;
+  }
+
+  function storeLengths(lengths: Array<number>, privateTo?: Map<number, PlayerId>) {
+    const log = logOf(Math.max(...lengths), privateTo);
+    storeSaves(lengths.map((n, idx) => [idx, row(log, n)]));
+  }
+
+  async function moves(viewerId: string = player.id): Promise<Array<ReplayMove>> {
+    const r = await getReplayMoves(game, viewerId as PlayerId);
+    expect(r.status).eq('available');
+    return (r as {moves: Array<ReplayMove>}).moves;
+  }
+
+  it('refuses a game that is still running', async () => {
+    storeLengths([0, 2, 5]);
+    game.phase = Phase.ACTION;
+    expect(await getReplayMoves(game, player.id)).deep.eq({status: 'not-finished'});
+  });
+
+  it('lists one move per save, collapsing duplicate saves', async () => {
+    storeLengths([0, 2, 5, 5, 9]);
+    const r = await getReplayMoves(game, player.id);
+    expect(r.status).eq('available');
+    const list = (r as {moves: Array<ReplayMove>}).moves;
+    expect(list.map((m) => m.saveId)).deep.eq([0, 1, 3, 4]);
+    expect(list.map((m) => m.messages.length)).deep.eq([2, 3, 4, 0]);
+    expect(list[1].messages.map((m) => m.message)).deep.eq(['line 2', 'line 3', 'line 4']);
+  });
+
+  it('takes the generation from each save', async () => {
+    const log = logOf(5);
+    storeSaves([[0, row(log, 0, 1)], [1, row(log, 2, 1)], [2, row(log, 5, 3)]]);
+    expect((await moves()).map((m) => m.generation)).deep.eq([1, 1, 3]);
+  });
+
+  it('hides other players\' private log lines', async () => {
+    // Line 0 is public, 1 is private to player, 2 is private to player2, 3 is public.
+    storeLengths([0, 4, 4, 4], new Map([[1, player.id], [2, player2.id]]));
+    const forPlayer = await moves(player.id);
+    expect(forPlayer[0].messages.map((m) => m.message)).deep.eq(['line 0', 'line 1', 'line 3']);
+    clearReplayCache();
+    const forPlayer2 = await moves(player2.id);
+    expect(forPlayer2[0].messages.map((m) => m.message)).deep.eq(['line 0', 'line 2', 'line 3']);
+  });
+
+  it('shows a spectator only public lines', async () => {
+    storeLengths([0, 4, 4, 4], new Map([[1, player.id], [2, player2.id]]));
+    expect((await moves('s-spectator'))[0].messages.map((m) => m.message)).deep.eq(['line 0', 'line 3']);
+  });
+
+  it('does not share cached messages between viewers', async () => {
+    storeLengths([0, 4, 4, 4], new Map([[1, player.id]]));
+    expect((await moves(player.id))[0].messages).has.length(4);
+    expect((await moves(player2.id))[0].messages).has.length(3);
+  });
+
+  it('reports expired once only the first and last save remain', async () => {
+    const log = logOf(9);
+    storeSaves([[0, row(log, 0)], [9, row(log, 9)]]);
+    expect(await getReplayMoves(game, player.id)).deep.eq({status: 'expired'});
+  });
+
+  it('sorts save ids numerically, not as text', async () => {
+    const log = logOf(30);
+    storeSaves([[2, row(log, 4)], [10, row(log, 20)], [9, row(log, 10)], [0, row(log, 0)]]);
+    expect((await moves()).map((m) => m.saveId)).deep.eq([0, 2, 9, 10]);
+  });
+
+  it('works with gaps from saves trimmed before this shipped', async () => {
+    const log = logOf(20);
+    storeSaves([[0, row(log, 0)], [57, row(log, 5)], [58, row(log, 12)], [59, row(log, 20)]]);
+    expect((await moves()).map((m) => m.saveId)).deep.eq([0, 57, 58, 59]);
+  });
+
+  it('keeps the last save even when it repeats the previous log length', async () => {
+    storeLengths([0, 3, 3]);
+    expect((await moves()).map((m) => m.saveId)).deep.eq([0, 2]);
+  });
+
+  it('caches the move list of a finished game', async () => {
+    storeLengths([0, 2, 5]);
+    const first = await getReplayMoves(game, player.id);
+    db.games.delete(game.id);
+    expect(await getReplayMoves(game, player.id)).eq(first);
+  });
+
+  it('drops the oldest cached move list past 50 entries', async () => {
+    storeLengths([0, 2, 5]);
+    const first = await getReplayMoves(game, 's-0' as PlayerId);
+    for (let i = 1; i < 50; i++) {
+      await getReplayMoves(game, `s-${i}` as PlayerId);
+    }
+    // Still 50 entries, so the first one is cached.
+    expect(await getReplayMoves(game, 's-0' as PlayerId)).eq(first);
+    await getReplayMoves(game, 's-50' as PlayerId);
+    // The 51st entry pushed the first one out, so it is built again from the saves.
+    expect(await getReplayMoves(game, 's-0' as PlayerId)).not.eq(first);
+  });
+
+  it('does not change the live game', async () => {
+    storeLengths([0, 2, 5]);
+    const before = JSON.stringify(game.serialize());
+    await getReplayMoves(game, player.id);
+    await loadReplayState(game, 1);
+    expect(JSON.stringify(game.serialize())).eq(before);
+  });
+
+  it('loadReplayState returns a sandbox game at that save', async () => {
+    const log = logOf(5);
+    storeSaves([[0, row(log, 0, 1)], [1, row(log, 2, 4)], [2, row(log, 5, 6)]]);
+    const replayed = await loadReplayState(game, 1);
+    expect(replayed.isSandbox).is.true;
+    expect(replayed.generation).eq(4);
+  });
+
+  it('loadReplayState rejects a save id the game does not have', async () => {
+    storeLengths([0, 2, 5]);
+    for (const saveId of [3, -1]) {
+      let error: unknown;
+      try {
+        await loadReplayState(game, saveId);
+      } catch (e) {
+        error = e;
+      }
+      expect(error).instanceOf(RouteError);
+      expect((error as RouteError).kind).eq('notFound');
+    }
+  });
+});
