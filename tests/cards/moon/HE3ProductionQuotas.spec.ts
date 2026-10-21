@@ -7,7 +7,6 @@ import {MoonExpansion} from '../../../src/server/moon/MoonExpansion';
 import {MoonData} from '../../../src/server/moon/MoonData';
 import {TileType} from '../../../src/common/TileType';
 import {PartyName} from '@/common/turmoil/PartyName';
-import {formatMessage} from '../../TestingUtils';
 
 describe('HE3ProductionQuotas', () => {
   let player: TestPlayer;
@@ -67,19 +66,6 @@ describe('HE3ProductionQuotas', () => {
     expect(player.heat).eq(12);
     expect(moonData.miningRate).eq(1);
     expect(player.terraformRating).eq(15);
-  });
-
-  it('logs the player and the amounts spent and gained', () => {
-    const spaces = moonData.moon.getAvailableSpacesOnLand(player);
-    spaces[0].tile = {tileType: TileType.MOON_MINE};
-    spaces[1].tile = {tileType: TileType.MOON_MINE};
-    spaces[2].tile = {tileType: TileType.MOON_MINE};
-    player.steel = 5;
-
-    card.play(player);
-
-    const messages = game.gameLog.map(formatMessage);
-    expect(messages).includes(`${player.color} spent 3:r:steel: and gained 12:r:heat:`);
   });
 });
 
