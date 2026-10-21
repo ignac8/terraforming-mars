@@ -50,6 +50,10 @@ let ui_update_timeout_id: number | undefined;
 let otherPlayersTimer: number | undefined;
 let documentTitleTimer: number | undefined;
 let animationFrame = 0;
+let failedPolls = 0;
+
+// Failed polls in a row before the player is told. Enough to ride out a server restart.
+const ALERT_AFTER_FAILED_POLLS = 30;
 
 // How often to refresh other players' status during simultaneous phases.
 const OTHER_PLAYERS_INTERVAL = 3000;
@@ -213,14 +217,24 @@ export default defineComponent({
           vueApp.waitForUpdate();
         }
       };
+      const pollFailed = (title: string, message: string) => {
+        failedPolls++;
+        if (failedPolls < ALERT_AFTER_FAILED_POLLS) {
+          vueApp.waitForUpdate();
+          return;
+        }
+        failedPolls = 0;
+        root.showAlert(title, message, () => vueApp.waitForUpdate());
+      };
       const askForUpdate = () => {
         const xhr = new XMLHttpRequest();
         xhr.open('GET', paths.API_WAITING_FOR + window.location.search + '&gameAge=' + this.playerView.game.gameAge + '&undoCount=' + this.playerView.game.undoCount);
         xhr.onerror = function() {
-          root.showAlert('Error fetching state', CANNOT_CONTACT_SERVER, () => vueApp.waitForUpdate());
+          pollFailed('Error fetching state', CANNOT_CONTACT_SERVER);
         };
         xhr.onload = () => {
           if (xhr.status === statusCode.ok) {
+            failedPolls = 0;
             const result = xhr.response as WaitingForModel;
             this.playersWaitingFor = result.waitingFor;
             if (result.result === 'GO') {
@@ -241,7 +255,7 @@ export default defineComponent({
             }
             vueApp.waitForUpdate();
           } else {
-            root.showAlert('Error with input', `Received unexpected response from server (${xhr.status}). This is often due to the server restarting.`, () => vueApp.waitForUpdate());
+            pollFailed('Error with input', `Received unexpected response from server (${xhr.status}). This is often due to the server restarting.`);
           }
         };
         xhr.responseType = 'json';

@@ -6,6 +6,7 @@ import {afterEach, vi} from 'vitest';
 import WaitingFor from '@/client/components/WaitingFor.vue';
 import {RecursivePartial} from '@/common/utils/utils';
 import {PlayerViewModel, PublicPlayerModel} from '@/common/models/PlayerModel';
+import {WaitingForModel} from '@/common/models/WaitingForModel';
 import {Phase} from '@/common/Phase';
 
 describe('WaitingFor', () => {
@@ -216,33 +217,54 @@ describe('WaitingFor', () => {
     expect(urls[0]).includes('api/waitingfor');
   });
 
-  it('keeps polling after a failed refresh', async () => {
-    vi.useFakeTimers();
-    let polls = 0;
+  // Answers every poll the same way and counts them.
+  function stubPolls(pollStatus: number, pollResponse?: WaitingForModel) {
+    const polls = {count: 0};
     vi.stubGlobal('XMLHttpRequest', class {
-      status = 200;
-      response = {result: 'REFRESH', waitingFor: []};
+      status = pollStatus;
+      response = pollResponse;
       onload = () => {};
       open() {}
       send() {
-        polls++;
+        polls.count++;
         this.onload();
       }
     });
+    return polls;
+  }
+
+  // `rootMethods` stand in for the App methods WaitingFor calls through vueRoot.
+  function mountSpectator(rootMethods: Record<string, unknown>) {
     const spectator = {id: 's-spectator-id', players: [], game: {phase: Phase.ACTION, gameAge: 1, undoCount: 0}};
-    mount(WaitingFor, {
+    return mount(WaitingFor, {
       ...globalConfig,
-      global: {
-        ...globalConfig.global,
-        stubs: {'PlayerInputFactory': true},
-        // The spectator fetch fails, so the view never changes.
-        mocks: {updateSpectator: async () => false},
-      },
+      global: {...globalConfig.global, stubs: {'PlayerInputFactory': true}, mocks: rootMethods},
       props: {playerView: spectator as unknown as PlayerViewModel},
     });
+  }
+
+  it('keeps polling after a failed refresh', async () => {
+    vi.useFakeTimers();
+    const polls = stubPolls(200, {result: 'REFRESH', waitingFor: []});
+    // The spectator fetch fails, so the view never changes.
+    mountSpectator({updateSpectator: async () => false});
 
     await vi.advanceTimersByTimeAsync(2500);
 
-    expect(polls).eq(2);
+    expect(polls.count).eq(2);
+  });
+
+  it('retries failed polls quietly before alerting', async () => {
+    vi.useFakeTimers();
+    const polls = stubPolls(502);
+    const showAlert = vi.fn();
+    mountSpectator({showAlert});
+
+    await vi.advanceTimersByTimeAsync(5500);
+    expect(polls.count).eq(5);
+    expect(showAlert.mock.calls).is.empty;
+
+    await vi.advanceTimersByTimeAsync(30000);
+    expect(showAlert.mock.calls).has.length(1);
   });
 });
