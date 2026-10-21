@@ -115,6 +115,62 @@ describe('ApiReplayView', () => {
     expect(body.privates).has.length(2);
   });
 
+  describe('tournament access', () => {
+    beforeEach(async () => {
+      [game, player] = testGame(2, {judgeLink: true, playerPasswords: true});
+      game.judgePassword = 'secret';
+      await scaffolding.ctx.gameLoader.add(game);
+    });
+
+    it('shows a judge the view with the right password', async () => {
+      finishGame();
+      await get(`id=${game.judgeId}&password=secret&save=1&as=all`);
+      expect(res.statusCode).eq(statusCode.ok);
+      const body = JSON.parse(res.content);
+      expect(body.viewAs).eq('all');
+      expect(body.view.id).eq(game.judgeId);
+    });
+
+    it('shows a judge one player, with no prompts', async () => {
+      finishGame();
+      await get(`id=${game.judgeId}&password=secret&save=1&as=${player.color}`);
+      expect(res.statusCode).eq(statusCode.ok);
+      const body = JSON.parse(res.content);
+      expect(body.view.id).eq(game.judgeId);
+      expect(body.view.waitingFor).is.undefined;
+    });
+
+    it('refuses a judge with a wrong password', async () => {
+      finishGame();
+      await get(`id=${game.judgeId}&password=wrong&save=1&as=all`);
+      expect(res.statusCode).eq(statusCode.unauthorized);
+    });
+
+    it('refuses a judge without a password', async () => {
+      finishGame();
+      await get(`id=${game.judgeId}&save=1&as=all`);
+      expect(res.statusCode).eq(statusCode.unauthorized);
+    });
+
+    it('does not find a judge id that belongs to no game', async () => {
+      await get('id=j-unknown-id&password=secret&save=1&as=all');
+      expect(res.statusCode).eq(statusCode.notFound);
+    });
+
+    it('refuses a player without the password while the game runs', async () => {
+      player.password = 'seat-secret';
+      await get(`id=${player.id}&save=1&as=all`);
+      expect(res.statusCode).eq(statusCode.unauthorized);
+    });
+
+    it('lets a player into a finished game without a password, as everywhere else', async () => {
+      player.password = 'seat-secret';
+      finishGame();
+      await get(`id=${player.id}&save=1&as=all`);
+      expect(res.statusCode).eq(statusCode.ok);
+    });
+  });
+
   it('shows one player for as=<color>, to a spectator', async () => {
     finishGame();
     await get(`id=${game.spectatorId}&save=1&as=${player.color}`);
