@@ -136,6 +136,23 @@ describeDatabaseSuite({
         expect(await db.getSaveIds('game-rolled-back')).has.members([0, 1, 2, 3, 4]);
       });
 
+      it('still deletes the saves when leaving the compression queue fails', async () => {
+        const db = dbFactory() as TestSQLite;
+        await finishedGame(db, 'game-queue-broken', 0);
+        db.database.prepare('DROP TABLE completed_game').run();
+        // Production does not throw quiet failures; the test database does.
+        (db as unknown as {throwQuietFailures: boolean}).throwQuietFailures = false;
+        const originalError = console.error;
+        console.error = () => {};
+        try {
+          await db.deleteGameNbrSaves('game-queue-broken', 2);
+        } finally {
+          console.error = originalError;
+        }
+
+        expect(await db.getSaveIds('game-queue-broken')).has.members([0, 1, 2, 3]);
+      });
+
       for (const invalid of ['', 'abc', '-5']) {
         it(`falls back to the default for the invalid value '${invalid}'`, async () => {
           const db = dbFactory() as TestSQLite;
