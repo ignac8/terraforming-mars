@@ -9,7 +9,7 @@ import {Space} from '../boards/Space';
 import {IPlayer} from '../IPlayer';
 import {PlayerInput} from '../PlayerInput';
 import {PlayerInputModel} from '../../common/models/PlayerInputModel';
-import {PlayerViewModel, Protection, PublicPlayerModel} from '../../common/models/PlayerModel';
+import {PlayerViewModel, PrivatePlayerFields, Protection, PublicPlayerModel} from '../../common/models/PlayerModel';
 import {SpaceHighlight, SpaceModel} from '../../common/models/SpaceModel';
 import {TileType} from '../../common/TileType';
 import {Phase} from '../../common/Phase';
@@ -109,6 +109,21 @@ export class Server {
     const thisPlayer: PublicPlayerModel = players[thisPlayerIndex];
 
     const rv: PlayerViewModel = {
+      ...this.getPrivateFields(player),
+      game: this.getGameModel(player.game),
+      id: player.id,
+      color: player.color,
+      runId: runId,
+      thisPlayer: thisPlayer,
+      players: players,
+      autopass: player.autopass,
+    };
+    return rv;
+  }
+
+  /** The fields of a player's view that only that seat (or a judge) may see. */
+  public static getPrivateFields(player: IPlayer): PrivatePlayerFields {
+    return {
       cardsInHand: cardsToModel(player, player.cardsInHand, {showCalculatedCost: true}),
       ceoCardsInHand: cardsToModel(player, Array.from(player.ceoCardsInHand)),
       dealtCorporationCards: cardsToModel(player, player.dealtCorporationCards),
@@ -116,18 +131,10 @@ export class Server {
       dealtCeoCards: cardsToModel(player, player.dealtCeoCards),
       dealtProjectCards: cardsToModel(player, player.dealtProjectCards),
       draftedCards: cardsToModel(player, player.draftedCards, {showCalculatedCost: true}),
-      game: this.getGameModel(player.game),
-      id: player.id,
-      color: player.color,
-      runId: runId,
       pickedCorporationCard: player.pickedCorporationCard ? cardsToModel(player, [player.pickedCorporationCard]) : [],
       preludeCardsInHand: cardsToModel(player, player.preludeCardsInHand),
-      thisPlayer: thisPlayer,
       waitingFor: this.getWaitingFor(player, player.getWaitingFor()),
-      players: players,
-      autopass: player.autopass,
     };
-    return rv;
   }
 
   public static getSpectatorModel(game: IGame): SpectatorModel {
