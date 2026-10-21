@@ -11,7 +11,10 @@ export async function fetchLogs(view: ViewModel, generation: number): Promise<Ar
   abortController?.abort();
   abortController = new AbortController();
 
-  const url = `${paths.API_GAME_LOGS}?id=${view.id}&generation=${generation}${passwordParam(view)}`;
+  // A serverId visit leaves an open seat unclaimed, so the log request carries the serverId too.
+  const serverId = new URLSearchParams(window.location.search).get('serverId');
+  const serverIdParam = serverId === null ? '' : '&serverId=' + encodeURIComponent(serverId);
+  const url = `${paths.API_GAME_LOGS}?id=${view.id}&generation=${generation}${passwordParam(view)}${serverIdParam}`;
 
   try {
     const resp = await fetch(url, {signal: abortController.signal});
