@@ -138,7 +138,7 @@ describe('ApiCreateGame', () => {
     }
   });
 
-  it('picks a MarsBot game's board only from the selected boards MarsBot supports', async () => {
+  it('picks a MarsBot game board only from the selected boards MarsBot supports', async () => {
     await postConfig({...newGameConfigForTest(), automaOption: true, boards: [BoardName.AMAZONIS_PLANITIA, BoardName.HELLAS, BoardName.ARABIA_TERRA]});
     expect(res.statusCode).eq(statusCode.ok);
     const model = JSON.parse(res.content) as SimpleGameModel;
