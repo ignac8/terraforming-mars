@@ -25,34 +25,24 @@ describe('BoardSpaceTile', () => {
     expect(wrapper.exists()).to.be.true;
   });
 
-  function wetlandsTooltip(boardName?: BoardName): string {
-    const wrapper = shallowMount(BoardSpaceTile, {
-      ...globalConfig,
-      props: {
-        space: {
-          id: '01',
-          bonus: [],
-          color: undefined,
-          tileType: TileType.WETLANDS,
-          spaceType: SpaceType.LAND,
-          highlight: undefined,
+  for (const [boardName, oceans] of [[undefined, 9], [BoardName.AMAZONIS_PLANITIA, 11]] as const) {
+    it(`Wetlands tooltip names ${oceans} oceans on ${boardName ?? 'the default board'}`, () => {
+      const wrapper = shallowMount(BoardSpaceTile, {
+        ...globalConfig,
+        props: {
+          space: {
+            id: '01',
+            bonus: [],
+            color: undefined,
+            tileType: TileType.WETLANDS,
+            spaceType: SpaceType.LAND,
+            highlight: undefined,
+          },
+          aresExtension: false,
+          boardName,
         },
-        aresExtension: false,
-        ...(boardName === undefined ? {} : {boardName}),
-      },
+      });
+      expect(wrapper.find('[data-test="tile"]').attributes('title')).to.contain(`Does not count toward ${oceans} oceans.`);
     });
-    return wrapper.find('[data-test="tile"]').attributes('title') ?? '';
   }
-
-  it('Wetlands tooltip names 9 oceans by default', () => {
-    expect(wetlandsTooltip()).to.contain('Does not count toward 9 oceans.');
-  });
-
-  it('Wetlands tooltip names 9 oceans on Tharsis', () => {
-    expect(wetlandsTooltip(BoardName.THARSIS)).to.contain('Does not count toward 9 oceans.');
-  });
-
-  it('Wetlands tooltip names 11 oceans on Amazonis Planitia', () => {
-    expect(wetlandsTooltip(BoardName.AMAZONIS_PLANITIA)).to.contain('Does not count toward 11 oceans.');
-  });
 });

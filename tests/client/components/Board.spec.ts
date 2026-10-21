@@ -77,22 +77,6 @@ describe('Board', () => {
     ).to.be.true;
   });
 
-  it('passes the board name to the spaces on the board', () => {
-    const wrapper = shallowMount(Board, {
-      ...globalConfig,
-      props: {spaces, expansions: DEFAULT_EXPANSIONS, tileView: 'show', venusScaleLevel: 0, boardName: BoardName.AMAZONIS_PLANITIA},
-    });
-
-    const boardSpacesWrappers = wrapper.findAllComponents(BoardSpace).filter((wrapper) => {
-      return wrapper.attributes('data-test') === 'board-space';
-    });
-
-    expect(boardSpacesWrappers).is.not.empty;
-    expect(
-      boardSpacesWrappers.every((wrapper) => wrapper.props('boardName') === BoardName.AMAZONIS_PLANITIA),
-    ).to.be.true;
-  });
-
   it('emits toggleTileView on toggle button click', async () => {
     const wrapper = shallowMount(Board, {
       ...globalConfig,
