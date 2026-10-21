@@ -42,7 +42,9 @@ export function stringToBoolean(s: string | undefined, defaultValue: boolean): b
 }
 
 export function daysAgoToSeconds(dayString: string | undefined, defaultValue: number): number {
-  const days = stringToNumber(dayString, defaultValue);
+  const parsed = stringToNumber(dayString, defaultValue);
+  // A negative number of days would put the cutoff in the future, which matches every game.
+  const days = parsed < 0 ? defaultValue : parsed;
   const date = addDays(new Date(), -days);
   return dateToSeconds(date);
 }
