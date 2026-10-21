@@ -70,6 +70,33 @@ describe('ApiReplayMoves', () => {
     expect(JSON.parse(res.content).status).eq('available');
   });
 
+  it('rejects a game id', async () => {
+    scaffolding.url = '/api/replay/moves?id=' + game.id;
+    await scaffolding.get(ApiReplayMoves.INSTANCE, res);
+    expect(res.statusCode).eq(statusCode.badRequest);
+    expect(res.content).eq('Bad request: invalid participant id');
+  });
+
+  it('says not-finished while the newest save is not in the END phase', async () => {
+    const base: SerializedGame = game.serialize();
+    db.games.set(game.id, [base, base, {...base, phase: Phase.ACTION}]);
+    game.phase = Phase.END;
+    scaffolding.url = '/api/replay/moves?id=' + player.id;
+    await scaffolding.get(ApiReplayMoves.INSTANCE, res);
+    expect(res.statusCode).eq(statusCode.ok);
+    expect(JSON.parse(res.content)).deep.eq({status: 'not-finished'});
+  });
+
+  it('says expired when fewer than 3 saves remain', async () => {
+    const base: SerializedGame = game.serialize();
+    db.games.set(game.id, [base, {...base, phase: Phase.END}]);
+    game.phase = Phase.END;
+    scaffolding.url = '/api/replay/moves?id=' + player.id;
+    await scaffolding.get(ApiReplayMoves.INSTANCE, res);
+    expect(res.statusCode).eq(statusCode.ok);
+    expect(JSON.parse(res.content)).deep.eq({status: 'expired'});
+  });
+
   it('says not-finished for a running game', async () => {
     scaffolding.url = '/api/replay/moves?id=' + player.id;
     await scaffolding.get(ApiReplayMoves.INSTANCE, res);

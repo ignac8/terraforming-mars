@@ -55,6 +55,12 @@ describe('ApiReplayView', () => {
     expect(res.statusCode).eq(statusCode.notFound);
   });
 
+  it('rejects a game id', async () => {
+    await get(`id=${game.id}&save=1&as=all`);
+    expect(res.statusCode).eq(statusCode.badRequest);
+    expect(res.content).eq('Bad request: invalid participant id');
+  });
+
   it('fails when the game is not finished', async () => {
     await get(`id=${player.id}&save=1&as=all`);
     expect(res.statusCode).eq(statusCode.badRequest);
