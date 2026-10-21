@@ -11,6 +11,9 @@ import {restoreTestDatabase, setTestDatabase} from '../testing/setup';
 import {GameId} from '../../src/common/Types';
 import {Phase} from '../../src/common/Phase';
 import {InMemoryDatabase} from '../testing/InMemoryDatabase';
+import {IGame} from '../../src/server/IGame';
+import {LogMessage} from '../../src/common/logs/LogMessage';
+import {LogMessageType} from '../../src/common/logs/LogMessageType';
 import {clearReplayCache, getReplayMoves} from '../../src/server/replay/ReplayService';
 
 describe('LoadGame', () => {
@@ -100,6 +103,38 @@ describe('LoadGame', () => {
 
     expect(res.statusCode).eq(statusCode.ok);
     expect(await getReplayMoves(game, player.id)).deep.eq({status: 'not-finished'});
+    clearReplayCache();
+  });
+
+  it('shows the new list, not the abandoned one, when a rolled back game finishes again', async () => {
+    const db = new InMemoryDatabase();
+    setTestDatabase(db);
+    clearReplayCache();
+    const [game, player] = testGame(2);
+    await scaffolding.ctx.gameLoader.add(game);
+    const save = game.serialize();
+    const log = (n: number) => Array.from({length: n}, (_, i) => new LogMessage(LogMessageType.DEFAULT, `line ${i}`, []));
+    db.games.set(game.id, [
+      {...save, gameLog: log(0)},
+      {...save, gameLog: log(2)},
+      {...save, gameLog: log(5)},
+      {...save, gameLog: log(5), phase: Phase.END},
+    ]);
+    game.phase = Phase.END;
+    const moveIds = async (g: IGame) => ((await getReplayMoves(g, player.id)) as {moves: Array<{saveId: number}>}).moves.map((m) => m.saveId);
+    expect(await moveIds(game)).deep.eq([0, 1, 3]);
+
+    await put({gameId: game.id, rollbackCount: 2});
+
+    const reopened = (await scaffolding.ctx.gameLoader.getGame(game.id))!;
+    reopened.phase = Phase.ACTION;
+    expect(await getReplayMoves(reopened, player.id)).deep.eq({status: 'not-finished'});
+
+    // The game is played differently this time and finishes with different saves.
+    const rows = db.games.get(game.id)!;
+    rows.push({...save, gameLog: log(3)}, {...save, gameLog: log(7)}, {...save, gameLog: log(7), phase: Phase.END});
+    reopened.phase = Phase.END;
+    expect(await moveIds(reopened)).deep.eq([0, 1, 2, 4]);
     clearReplayCache();
   });
 
