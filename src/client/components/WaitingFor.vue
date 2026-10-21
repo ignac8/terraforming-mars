@@ -78,6 +78,7 @@ type DataModel = {
   inputKey: number,
 }
 
+const INCORRECT_JUDGE_PASSWORD = 'Incorrect judge password. Reopen the judge page from your browser history, or ask the organizer for the judge link with its password.';
 const CANNOT_CONTACT_SERVER = 'Unable to reach the server. It may be restarting or down for maintenance.';
 
 export default defineComponent({
@@ -263,7 +264,10 @@ export default defineComponent({
             }
             vueApp.waitForUpdate();
           } else {
-            pollFailed('Error with input', `Received unexpected response from server (${xhr.status}). This is often due to the server restarting.`);
+            const message = xhr.status === statusCode.unauthorized && isJudgeId(this.playerView.id) ?
+              INCORRECT_JUDGE_PASSWORD :
+              `Received unexpected response from server (${xhr.status}). This is often due to the server restarting.`;
+            pollFailed('Error with input', message);
           }
         };
         xhr.responseType = 'json';
