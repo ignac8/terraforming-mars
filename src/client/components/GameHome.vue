@@ -27,7 +27,7 @@
       <li v-if="game !== undefined && game.judgeId !== undefined" class="judge-hint">
         <span class="turn-order"></span>
         <span class="color-square"></span>
-        <span v-i18n>Open the judge link now, before you share this page. The first person to open it receives its password.</span>
+        <span v-i18n>Send the judge link only to the judge, and send players their own links instead of this page. Whoever opens the judge link first receives its password.</span>
       </li>
     </ul>
 
