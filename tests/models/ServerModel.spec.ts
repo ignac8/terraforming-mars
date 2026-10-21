@@ -123,6 +123,17 @@ describe('ServerModel', () => {
     expect(otherPlayer!.globalParameterSteps[GlobalParameter.OXYGEN]).eq(7);
   });
 
+  it('puts the judge id on the organizer game model only', () => {
+    createTestGame(false);
+    expect(Server.getSimpleGameModel(game).judgeId).is.undefined;
+
+    game.judgeId = 'jtest';
+
+    expect(Server.getSimpleGameModel(game).judgeId).eq('jtest');
+    expect(JSON.stringify(Server.getGameModel(game))).does.not.contain('jtest');
+    expect(JSON.stringify(Server.getSpectatorModel(game))).does.not.contain('jtest');
+  });
+
   it('reports the sizes of the decks in the game', () => {
     [game] = testGame(2, {preludeExtension: true, turmoilExtension: true});
     game.preludeDeck.discardPile.push(...game.preludeDeck.drawPile.splice(0, 1));

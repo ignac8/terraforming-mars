@@ -26,6 +26,7 @@ export function defaultCreateGameModel(): CreateGameModel {
     randomFirstPlayer: true,
     showOtherPlayersVP: false,
     playerPasswords: false,
+    judgeLink: false,
     // beginnerOption: false,
     showCeosList: false,
     showColoniesList: false,

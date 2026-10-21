@@ -42,6 +42,7 @@ export class Server {
         name: player.name,
       })),
       spectatorId: game.spectatorId,
+      judgeId: game.judgeId,
       gameOptions: this.getGameOptionsAsModel(game.gameOptions),
       lastSoloGeneration: game.lastSoloGeneration(),
       expectedPurgeTimeMs: game.expectedPurgeTimeMs(),

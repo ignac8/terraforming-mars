@@ -119,6 +119,7 @@ const TEMPLATE_EXPECTED: CreateGameModel = {
   randomFirstPlayer: true,
   showOtherPlayersVP: false,
   playerPasswords: false,
+  judgeLink: false,
   showColoniesList: false,
   showCorporationList: false,
   showPreludesList: false,
