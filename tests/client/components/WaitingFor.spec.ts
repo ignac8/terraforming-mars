@@ -6,6 +6,7 @@ import {afterEach, vi} from 'vitest';
 import WaitingFor from '@/client/components/WaitingFor.vue';
 import {RecursivePartial} from '@/common/utils/utils';
 import {PlayerViewModel, PublicPlayerModel} from '@/common/models/PlayerModel';
+import {WaitingForModel} from '@/common/models/WaitingForModel';
 import {Phase} from '@/common/Phase';
 import {INVALID_REQUEST_ID} from '@/common/app/AppErrorId';
 
@@ -259,5 +260,56 @@ describe('WaitingFor', () => {
     await submit(inputError(undefined));
 
     expect(vi.getTimerCount()).eq(0);
+  });
+
+  // Answers every poll the same way and counts them.
+  function stubPolls(pollStatus: number, pollResponse?: WaitingForModel) {
+    const polls = {count: 0};
+    vi.stubGlobal('XMLHttpRequest', class {
+      status = pollStatus;
+      response = pollResponse;
+      onload = () => {};
+      open() {}
+      send() {
+        polls.count++;
+        this.onload();
+      }
+    });
+    return polls;
+  }
+
+  // `rootMethods` stand in for the App methods WaitingFor calls through vueRoot.
+  function mountSpectator(rootMethods: Record<string, unknown>) {
+    const spectator = {id: 's-spectator-id', players: [], game: {phase: Phase.ACTION, gameAge: 1, undoCount: 0}};
+    return mount(WaitingFor, {
+      ...globalConfig,
+      global: {...globalConfig.global, stubs: {'PlayerInputFactory': true}, mocks: rootMethods},
+      props: {playerView: spectator as unknown as PlayerViewModel},
+    });
+  }
+
+  it('keeps polling after a failed refresh', async () => {
+    vi.useFakeTimers();
+    const polls = stubPolls(200, {result: 'REFRESH', waitingFor: []});
+    // The spectator fetch fails, so the view never changes.
+    mountSpectator({updateSpectator: async () => false});
+
+    await vi.advanceTimersByTimeAsync(2500);
+
+    expect(polls.count).eq(2);
+  });
+
+  it('retries failed polls quietly before alerting', async () => {
+    vi.useFakeTimers();
+    const polls = stubPolls(502);
+    const showAlert = vi.fn();
+    mountSpectator({showAlert});
+
+    await vi.advanceTimersByTimeAsync(5500);
+    expect(polls.count).eq(5);
+    expect(showAlert.mock.calls).is.empty;
+
+    await vi.advanceTimersByTimeAsync(30000);
+    expect(showAlert.mock.calls).has.length(1);
   });
 });
