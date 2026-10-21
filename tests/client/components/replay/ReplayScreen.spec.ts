@@ -1,4 +1,4 @@
-import {flushPromises, shallowMount} from '@vue/test-utils';
+import {flushPromises, mount, shallowMount} from '@vue/test-utils';
 import {expect} from 'chai';
 import {afterEach, beforeEach, vi} from 'vitest';
 import {globalConfig} from '../getLocalVue';
@@ -258,7 +258,8 @@ describe('ReplayScreen', () => {
     panel().vm.$emit('select', 1);
     panel().vm.$emit('update:viewAs', 'blue');
     await flushPromises();
-    expect(wrapper.text()).to.contain('Save not found');
+    // The shallow panel does not render the error slot.
+    expect((wrapper.vm as any).error).to.contain('Save not found');
     expect(panel().props('index')).to.equal(0);
     expect(panel().props('viewAs')).to.equal('all');
   });
@@ -285,5 +286,22 @@ describe('ReplayScreen', () => {
     const wrapper = mountScreen();
     await flushPromises();
     expect(wrapper.text()).to.contain('Save not found');
+  });
+
+  it('shows a view-load error inside the panel, so the panel cannot cover it', async () => {
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    const wrapper = mount(ReplayScreen, {
+      ...globalConfig,
+      props: {participantId: id},
+      global: {...globalConfig.global, stubs: {PlayerHome: true, SpectatorHome: true, ReplayHands: true}},
+    });
+    await flushPromises();
+    const working = (global as any).fetch;
+    (global as any).fetch = (url: string) => url.startsWith('api/replay/view') ?
+      Promise.resolve({ok: false, status: 404, text: () => Promise.resolve('Save not found')}) :
+      working(url);
+    wrapper.findComponent(ReplayPanel).vm.$emit('select', 1);
+    await flushPromises();
+    expect(wrapper.find('.replay-panel .replay-error--floating').text()).to.contain('Save not found');
   });
 });

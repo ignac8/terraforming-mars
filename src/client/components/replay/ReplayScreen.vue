@@ -26,7 +26,6 @@
       <SpectatorHome v-if="spectatorView !== undefined" :spectator="spectatorView" :replay="true"/>
       <PlayerHome v-else-if="playerView !== undefined" :playerView="playerView" :replay="true"/>
       <ReplayHands v-if="spectatorView !== undefined" :privates="replayView.privates" :players="spectatorView.players"/>
-      <div v-if="error !== undefined" class="replay-error replay-error--floating">{{ error }}</div>
       <ReplayPanel
         :moves="moves"
         :index="index"
@@ -39,7 +38,11 @@
         @update:viewAs="changeViewAs"
         @play="play"
         @pause="pause"
-        @update:speed="changeSpeed"/>
+        @update:speed="changeSpeed">
+        <template #error>
+          <div v-if="error !== undefined" class="replay-error replay-error--floating">{{ error }}</div>
+        </template>
+      </ReplayPanel>
     </template>
   </div>
 </template>
