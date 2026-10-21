@@ -5,7 +5,6 @@ import {SerializedGame} from '../SerializedGame';
 import {loadSandboxGame} from './sandbox';
 import {Phase} from '../../common/Phase';
 import {GameId, ParticipantId} from '../../common/Types';
-import {LogMessage} from '../../common/logs/LogMessage';
 import {playerColors, toJudgeMessage} from '../routes/GameLogs';
 import {ReplayMove, ReplayMovesModel} from '../../common/replay/ReplayModel';
 
