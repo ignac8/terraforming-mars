@@ -7,7 +7,7 @@ import {IGame, Score} from '../IGame';
 import {GameOptions} from '../game/GameOptions';
 import {GameId, ParticipantId} from '../../common/Types';
 import {SerializedGame} from '../SerializedGame';
-import {DEFAULT_COMPRESS_COMPLETED_GAMES_DAYS, daysAgoToSeconds} from './utils';
+import {DEFAULT_COMPRESS_COMPLETED_GAMES_DAYS, compressCutoffSeconds, daysAgoToSeconds} from './utils';
 import {MultiMap} from 'mnemonist';
 import {Session, SessionId} from '../auth/Session';
 import {toID} from '../../common/utils/utils';
@@ -169,7 +169,7 @@ export class SQLite implements IDatabase {
   }
 
   async compressCompletedGames(compressCompletedGamesDays: string = process.env.COMPRESS_COMPLETED_GAMES_DAYS ?? DEFAULT_COMPRESS_COMPLETED_GAMES_DAYS): Promise<void> {
-    const dateToSeconds = daysAgoToSeconds(compressCompletedGamesDays, Number(DEFAULT_COMPRESS_COMPLETED_GAMES_DAYS));
+    const dateToSeconds = compressCutoffSeconds(compressCompletedGamesDays);
     const selectResult = await this.asyncAll('SELECT DISTINCT game_id FROM completed_game WHERE completed_time < ?', [dateToSeconds]);
     const gameIds = selectResult.map((row) => row.game_id);
     console.log(`${gameIds.length} completed games to be compressed.`);
