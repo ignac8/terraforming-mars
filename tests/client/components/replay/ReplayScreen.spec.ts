@@ -125,6 +125,21 @@ describe('ReplayScreen', () => {
     expect(calls).has.length(callCount);
   });
 
+  it('playing from the last move starts over from the first', async () => {
+    const wrapper = mountScreen();
+    await flushPromises();
+    const panel = () => wrapper.findComponent(ReplayPanel);
+    panel().vm.$emit('select', 1);
+    await flushPromises();
+    panel().vm.$emit('play');
+    await flushPromises();
+    expect(panel().props('index')).to.equal(0);
+    expect(calls[calls.length - 1]).to.equal(`api/replay/view?id=${id}&save=10&as=all`);
+    panel().vm.$emit('pause');
+    await flushPromises();
+    expect(panel().props('playing')).is.false;
+  });
+
   it('shows the server message when the view cannot be loaded', async () => {
     vi.spyOn(console, 'error').mockImplementation(() => {});
     (global as any).fetch = (url: string) => url.startsWith('api/replay/moves') ?
