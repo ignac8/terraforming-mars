@@ -199,4 +199,44 @@ describe('ReplayService', () => {
       expect((error as RouteError).kind).eq('notFound');
     }
   });
+
+  async function errorOf(promise: Promise<unknown>): Promise<unknown> {
+    try {
+      await promise;
+    } catch (e) {
+      return e;
+    }
+    return undefined;
+  }
+
+  it('loadReplayState answers notFound when compression removed the save meanwhile', async () => {
+    storeLengths([0, 2, 5]);
+    db.getGameVersion = () => Promise.reject(new Error('Game not found'));
+    const error = await errorOf(loadReplayState(game, 1));
+    expect(error).instanceOf(RouteError);
+    expect(error).deep.include({kind: 'notFound', detail: 'save not available'});
+  });
+
+  it('loadReplayState answers notFound for a save the code cannot deserialize', async () => {
+    storeLengths([0, 2, 5]);
+    db.games.get(game.id)![1] = {...base, board: undefined} as unknown as SerializedGame;
+    const error = await errorOf(loadReplayState(game, 1));
+    expect(error).instanceOf(RouteError);
+    expect(error).deep.include({kind: 'notFound', detail: 'save not available'});
+  });
+
+  it('getReplayMoves answers notFound when a save cannot be read', async () => {
+    storeLengths([0, 2, 5]);
+    db.getGameVersion = () => Promise.reject(new Error('Game not found'));
+    const error = await errorOf(getReplayMoves(game, player.id));
+    expect(error).instanceOf(RouteError);
+    expect(error).deep.include({kind: 'notFound', detail: 'save not available'});
+  });
+
+  it('loadReplayState keeps a RouteError from the database as it is', async () => {
+    storeLengths([0, 2, 5]);
+    db.getGameVersion = () => Promise.reject(RouteError.forbidden('no'));
+    const error = await errorOf(loadReplayState(game, 1));
+    expect(error).deep.include({kind: 'forbidden', detail: 'no'});
+  });
 });
