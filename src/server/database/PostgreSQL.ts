@@ -431,6 +431,9 @@ export class PostgreSQL implements IDatabase {
         if (game.spectatorId) {
           participantIds.push(game.spectatorId);
         }
+        if (game.judgeId) {
+          participantIds.push(game.judgeId);
+        }
         await this._storeParticipants(client, {gameId: game.id, participantIds: participantIds});
       }
 

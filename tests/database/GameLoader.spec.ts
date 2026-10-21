@@ -127,6 +127,14 @@ describe('GameLoader', () => {
     );
   });
 
+  it('finds a game by its judge id', async () => {
+    const player = TestPlayer.GREEN.newPlayer();
+    const judged = Game.newInstance('gjudged', [player], player, 'sjudged', {judgeLink: true});
+    await instance.add(judged);
+    const found = await instance.getGame(judged.judgeId!);
+    expect(found?.id).to.eq('gjudged');
+  });
+
   it('loads values after error pulling game ids', async () => {
     database.failure = 'getParticipants';
     instance.resetForTesting();

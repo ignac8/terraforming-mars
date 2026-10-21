@@ -123,6 +123,9 @@ export class InMemoryDatabase implements IDatabase {
       if (lastSave.spectatorId) {
         participantIds.push(lastSave.spectatorId);
       }
+      if (lastSave.judgeId) {
+        participantIds.push(lastSave.judgeId);
+      }
       entries.push({gameId, participantIds});
     });
     return entries;

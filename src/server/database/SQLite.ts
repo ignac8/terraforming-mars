@@ -99,8 +99,10 @@ export class SQLite implements IDatabase {
     let sql = 'SELECT game_id from games, json_each(games.game, \'$.players\') e where json_extract(e.value, \'$.id\') = ?';
     if (participantId.charAt(0) === 's') {
       sql = 'SELECT game_id from games where json_extract(games.game, \'$.spectatorId\') = ?';
+    } else if (participantId.charAt(0) === 'j') {
+      sql = 'SELECT game_id from participants where participant = ?';
     } else if (participantId.charAt(0) !== 'p') {
-      throw new Error(`id ${participantId} is neither a player id or spectator id`);
+      throw new Error(`id ${participantId} is neither a player id, spectator id or judge id`);
     }
 
     const row: { game_id: any; } = await this.asyncGet(sql, [participantId]);
@@ -210,6 +212,9 @@ export class SQLite implements IDatabase {
       const participantIds: Array<ParticipantId> = game.players.map(toID);
       if (game.spectatorId) {
         participantIds.push(game.spectatorId);
+      }
+      if (game.judgeId) {
+        participantIds.push(game.judgeId);
       }
       try {
         await this.storeParticipants({gameId: game.id, participantIds: participantIds});

@@ -361,6 +361,16 @@ export function describeDatabaseSuite<T extends ITestDatabase>(dtor: DatabaseTes
       ]);
     });
 
+    it('stores the judge id as a participant', async () => {
+      const player = TestPlayer.BLUE.newPlayer();
+      const game = Game.newInstance('game-id-1212', [player], player, 'spectatorid', {judgeLink: true});
+      await db.lastSaveGamePromise;
+
+      const entry = (await db.getParticipants()).find((entry) => entry.gameId === game.id);
+      expect(entry?.participantIds).includes(game.judgeId);
+      expect(await db.getGameId(game.judgeId!)).eq(game.id);
+    });
+
     if (dtor.omit?.storeParticipants !== true) {
       it('storeParticipants', async () => {
         const gameId: GameId = 'g-dup';
