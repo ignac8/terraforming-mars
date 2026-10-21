@@ -8,8 +8,9 @@ import {PlayerViewModel, ViewModel} from '@/common/models/PlayerModel';
  * id rather than from `window.location.search` needs this appended.
  *
  * Takes a `ViewModel` because the components that build those URLs are shared
- * with the spectator view. Only `PlayerViewModel` ever carries a password, so a
- * spectator's model reads as undefined and contributes nothing.
+ * with the spectator and judge views. `PlayerViewModel` and `JudgeModel` carry a
+ * password (the judge's own, never a player's), so a spectator's model reads as
+ * undefined and contributes nothing.
  */
 export function passwordParam(view: ViewModel): string {
   const password = (view as PlayerViewModel).password;
