@@ -528,5 +528,13 @@
   "Copy the text below and then paste it in": "Skopiuj tekst i wklej go",
   "#bug-reports Discord channel": "na kanale Discorda #bug-reports",
   "a GitHub issue": "jako błąd na stronie GitHub",
-  "Reorder Cards": "Zmień kolejność kart"
+  "Reorder Cards": "Zmień kolejność kart",
+  "Dealt corporations": "Rozdane korporacje",
+  "Dealt preludes": "Rozdane preludia",
+  "Dealt CEOs": "Rozdani CEO",
+  "Dealt project cards": "Rozdane karty projektów",
+  "Picked corporation": "Wybrana korporacja",
+  "Preludes in hand": "Preludia w ręce",
+  "CEOs in hand": "CEO w ręce",
+  "Pending choice": "Oczekujący wybór"
 }

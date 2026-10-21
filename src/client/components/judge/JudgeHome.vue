@@ -1,0 +1,133 @@
+<template>
+  <div id="judge-home" :class="(game.turmoil ? 'with-turmoil': '')">
+
+    <div v-if="game.phase === 'end'">
+      <div class="player_home_block">
+        <DynamicTitle title="This game is over!" :color="judge.color"/>
+      </div>
+    </div>
+
+    <Sidebar v-trim-whitespace
+      :actingPlayer="false"
+      :playerColor="judge.color"
+      :generation="game.generation"
+      :coloniesCount="game.colonies.length"
+      :temperature = "game.temperature"
+      :oxygen = "game.oxygenLevel"
+      :oceans = "game.oceans"
+      :venus = "game.venusScaleLevel"
+      :turmoil = "game.turmoil"
+      :moonData="game.moon"
+      :gameOptions = "game.gameOptions"
+      :playerNumber = "judge.players.length"
+      :lastSoloGeneration = "game.lastSoloGeneration"
+      :deckSize = "game.deckSize"
+      :discardPileSize = "game.discardPileSize"
+      :otherDeckSizes = "game.otherDeckSizes"/>
+
+    <div class="player_home_block nofloat">
+      <LogPanel :viewModel="judge" :step="game.step" @spaceClicked="onSpaceClicked"/>
+    </div>
+
+    <PlayersOverview class="player_home_block player_home_block--players nofloat" :playerView="judge" v-trim-whitespace id="shortkey-playersoverview"/>
+
+    <GameBoardView
+      ref="gameBoardView"
+      :game="game"
+      :tileView="tileView"
+      :players="judge.players"
+      @toggleTileView="cycleTileView()"
+    />
+
+    <div v-if="game.colonies.length > 0" class="player_home_block" ref="colonies" id="shortkey-colonies">
+      <a name="colonies" class="player_home_anchor"></a>
+      <DynamicTitle title="Colonies" :color="judge.color"/>
+      <div class="colonies-fleets-cont">
+        <div class="colonies-player-fleets" v-for="player in judge.players" :key="player.color">
+            <div :class="'colonies-fleet colonies-fleet-'+ player.color" v-for="idx in range(Math.max(0, player.fleetSize - player.tradesThisGeneration))" :key="idx"></div>
+        </div>
+      </div>
+      <div class="player_home_colony_cont">
+        <div class="player_home_colony" v-for="colony in game.colonies" :key="colony.name">
+            <Colony :colony="colony" :active="colony.isActive"/>
+        </div>
+      </div>
+    </div>
+
+    <JudgePlayerPanel
+      v-for="entry in panels"
+      :key="entry.privates.color"
+      :privates="entry.privates"
+      :player="entry.player"/>
+
+    <WaitingFor v-show="false" v-if="game.phase !== 'end'" :playerView="judge" :waitingfor="undefined"/>
+    <PurgeWarning :expectedPurgeTimeMs="game.expectedPurgeTimeMs"/>
+    <KeyboardShortcuts v-show="keyboardShortcutOpened" @close="keyboardShortcutOpened = false"/>
+  </div>
+</template>
+
+<script lang="ts">
+import {defineComponent} from 'vue';
+
+import {GameModel} from '@/common/models/GameModel';
+import {JudgeModel, JudgePlayerModel} from '@/common/models/JudgeModel';
+import {PublicPlayerModel} from '@/common/models/PlayerModel';
+import Colony from '@/client/components/colonies/Colony.vue';
+import DynamicTitle from '@/client/components/common/DynamicTitle.vue';
+import GameBoardView from '@/client/components/GameBoardView.vue';
+import JudgePlayerPanel from '@/client/components/judge/JudgePlayerPanel.vue';
+import LogPanel from '@/client/components/logpanel/LogPanel.vue';
+import Sidebar from '@/client/components/Sidebar.vue';
+import WaitingFor from '@/client/components/WaitingFor.vue';
+import PlayersOverview from '@/client/components/overview/PlayersOverview.vue';
+import PurgeWarning from '@/client/components/common/PurgeWarning.vue';
+import KeyboardShortcuts from '@/client/components/KeyboardShortcuts.vue';
+import {range} from '@/common/utils/utils';
+import {HomeMixin} from '@/client/mixins/HomeMixin';
+
+type Panel = {privates: JudgePlayerModel, player: PublicPlayerModel};
+
+export default defineComponent({
+  name: 'JudgeHome',
+  mixins: [HomeMixin],
+  props: {
+    judge: {
+      type: Object as () => JudgeModel,
+      required: true,
+    },
+  },
+  computed: {
+    game(): GameModel {
+      return this.judge.game;
+    },
+    // Each private block is paired with its public player by color.
+    panels(): Array<Panel> {
+      const panels: Array<Panel> = [];
+      for (const privates of this.judge.privates) {
+        const player = this.judge.players.find((p) => p.color === privates.color);
+        if (player !== undefined) {
+          panels.push({privates, player});
+        }
+      }
+      return panels;
+    },
+  },
+  components: {
+    Colony,
+    DynamicTitle,
+    GameBoardView,
+    JudgePlayerPanel,
+    KeyboardShortcuts,
+    LogPanel,
+    PlayersOverview,
+    PurgeWarning,
+    Sidebar,
+    WaitingFor,
+  },
+  methods: {
+    range(n: number): Array<number> {
+      return range(n);
+    },
+  },
+});
+</script>
