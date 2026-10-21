@@ -12,6 +12,8 @@ import {randomBytes, timingSafeEqual} from 'crypto';
 
 /** 48 bits, matching the fork this was ported from, but from a CSPRNG. */
 const PASSWORD_BYTES = 6;
+/** The shape of a password the server generates: PASSWORD_BYTES bytes as lowercase hex. */
+const WELL_FORMED_PASSWORD = new RegExp(`^[0-9a-f]{${PASSWORD_BYTES * 2}}$`);
 
 /** Compares two passwords without leaking their common prefix through timing. */
 function safeEquals(a: string, b: string): boolean {
@@ -120,9 +122,10 @@ export abstract class Handler implements IHandler {
   }
 
   /**
-   * Gates the judge seat. The first request claims it: a fresh password is generated
-   * and stored, and the caller is let through so the client can put it in the URL.
-   * Every later request must carry that password.
+   * Gates the judge seat. The first request claims it and is let through. If it carries a
+   * well-formed password (the format the server generates), that password becomes the seat's,
+   * so a judge tab that outlives the stored claim keeps working. Otherwise a fresh password is
+   * generated, and the client puts it in the URL. Every later request must carry the password.
    *
    * Unlike a player seat there is no exemption for solo games, finished games or games
    * without `playerPasswords`: the judge sees every player's hidden cards in all of them.
@@ -132,11 +135,13 @@ export abstract class Handler implements IHandler {
     if (this.isServerIdValid(ctx)) {
       return;
     }
+    const incoming = ctx.urlParams.stringOrUndefined('password');
     if (game.judgePassword === undefined) {
-      game.judgePassword = randomBytes(PASSWORD_BYTES).toString('hex');
+      game.judgePassword = incoming !== undefined && WELL_FORMED_PASSWORD.test(incoming) ?
+        incoming :
+        randomBytes(PASSWORD_BYTES).toString('hex');
       return;
     }
-    const incoming = ctx.urlParams.stringOrUndefined('password');
     if (incoming === undefined || !safeEquals(incoming, game.judgePassword)) {
       throw RouteError.unauthorized();
     }

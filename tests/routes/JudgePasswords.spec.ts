@@ -58,6 +58,27 @@ describe('judge passwords', () => {
     expect(game.judgePassword).is.undefined;
   });
 
+  it('an unclaimed seat is claimed with a well-formed password the request carries', async () => {
+    const mine = '0123456789ab';
+
+    const model = await getJudge('&password=' + mine);
+
+    expect(game.judgePassword).eq(mine);
+    expect(model.password).eq(mine);
+  });
+
+  it('an unclaimed seat ignores a malformed password and hands out a fresh one', async () => {
+    for (const malformed of ['0123456789a', '0123456789abc', 'ghijklmnopqr', '0123456789AB']) {
+      game.judgePassword = undefined;
+
+      const model = await getJudge('&password=' + malformed);
+
+      expect(model.password).is.not.eq(malformed);
+      expect(game.judgePassword).eq(model.password);
+      expect(game.judgePassword).matches(/^[0-9a-f]{12}$/);
+    }
+  });
+
   it('a later visitor without the password is refused', async () => {
     await getJudge('');
 
