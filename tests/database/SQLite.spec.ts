@@ -125,6 +125,18 @@ describeDatabaseSuite({
         expect(await db.getSaveIds('game-today')).deep.eq([0, 5]);
       });
 
+      for (const invalid of ['', 'abc']) {
+        it(`falls back to the default for the invalid value '${invalid}'`, async () => {
+          const db = dbFactory() as TestSQLite;
+          await finishedGame(db, 'game-invalid', 3);
+
+          await db.compressCompletedGames(invalid);
+          await settle();
+
+          expect(await db.getSaveIds('game-invalid')).has.members([0, 1, 2, 3, 4, 5]);
+        });
+      }
+
       it('an env var overrides the default', async () => {
         const db = dbFactory() as TestSQLite;
         await finishedGame(db, 'game-env', 3);

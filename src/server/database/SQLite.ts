@@ -169,7 +169,7 @@ export class SQLite implements IDatabase {
   }
 
   async compressCompletedGames(compressCompletedGamesDays: string = process.env.COMPRESS_COMPLETED_GAMES_DAYS ?? DEFAULT_COMPRESS_COMPLETED_GAMES_DAYS): Promise<void> {
-    const dateToSeconds = daysAgoToSeconds(compressCompletedGamesDays, 0);
+    const dateToSeconds = daysAgoToSeconds(compressCompletedGamesDays, Number(DEFAULT_COMPRESS_COMPLETED_GAMES_DAYS));
     const selectResult = await this.asyncAll('SELECT DISTINCT game_id FROM completed_game WHERE completed_time < ?', [dateToSeconds]);
     const gameIds = selectResult.map((row) => row.game_id);
     console.log(`${gameIds.length} completed games to be compressed.`);
