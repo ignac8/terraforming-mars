@@ -5,7 +5,7 @@ import {DeferredAction} from './deferredActions/DeferredAction';
 import {SerializedColony} from './SerializedColony';
 import {SerializedPlayer} from './SerializedPlayer';
 import {SerializedTurmoil} from './turmoil/SerializedTurmoil';
-import {PlayerId, GameId, SpectatorId, SpaceId} from '../common/Types';
+import {PlayerId, GameId, SpectatorId, SpaceId, JudgeId, Password} from '../common/Types';
 import {GameOptions} from './game/GameOptions';
 import {AresData} from '../common/ares/AresData';
 import {LogMessage} from '../common/logs/LogMessage';
@@ -62,6 +62,8 @@ export type SerializedGame = {
     seed: number;
     someoneHasRemovedOtherPlayersPlants: boolean;
     spectatorId: SpectatorId;
+    judgeId?: JudgeId;
+    judgePassword?: Password;
     stJosephCathedrals: Array<SpaceId>;
     syndicatePirateRaider: PlayerId | undefined;
     tags: ReadonlyArray<Tag>

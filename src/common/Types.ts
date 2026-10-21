@@ -1,7 +1,8 @@
 export type PlayerId = `p${string}`;
 export type GameId = `g${string}`;
 export type SpectatorId = `s${string}`;
-export type ParticipantId = PlayerId | SpectatorId;
+export type JudgeId = `j${string}`;
+export type ParticipantId = PlayerId | SpectatorId | JudgeId;
 /** The secret that claims a player seat when `playerPasswords` is on. */
 export type Password = string;
 type Digit = '0' | '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9';
@@ -19,6 +20,10 @@ export function isGameId(object: string): object is GameId {
 
 export function isSpectatorId(object: string): object is SpectatorId {
   return object?.charAt?.(0) === 's';
+}
+
+export function isJudgeId(object: string): object is JudgeId {
+  return object?.charAt?.(0) === 'j';
 }
 
 export function isSpaceId(object: string): object is SpaceId {

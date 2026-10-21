@@ -28,7 +28,7 @@ import {PartyHooks} from './turmoil/parties/PartyHooks';
 import {Phase} from '../common/Phase';
 import {IPlayer} from './IPlayer';
 import {Player} from './Player';
-import {PlayerId, GameId, SpectatorId, SpaceId} from '../common/Types';
+import {PlayerId, GameId, SpectatorId, SpaceId, JudgeId, Password, isJudgeId, safeCast} from '../common/Types';
 import {PlayerInput} from './PlayerInput';
 import {CardResource} from '../common/CardResource';
 import {Resource} from '../common/Resource';
@@ -96,6 +96,7 @@ import {BoardName} from '../common/boards/BoardName';
 import {SpaceType} from '../common/boards/SpaceType';
 import {ICard} from './cards/ICard';
 import {generateGameName} from './GameName';
+import {generateRandomId} from './utils/server-ids';
 import {byKey} from '@/common/utils/Ordering';
 import {sanitizeEscapeVelocityOptions} from '@/common/game/escapeVelocity';
 import {ColoniesHandler} from './colonies/ColoniesHandler';
@@ -125,6 +126,8 @@ export class Game implements IGame, Logger {
   private clonedGamedId: string | undefined;
   public rng: SeededRandom;
   public spectatorId: SpectatorId;
+  public judgeId: JudgeId | undefined = undefined;
+  public judgePassword: Password | undefined = undefined;
   public deferredActions: DeferredActionsQueue = new DeferredActionsQueue();
   public createdTime: Date = new Date(0);
   public gameAge: number = 0; // Each log event increases it
@@ -367,6 +370,8 @@ export class Game implements IGame, Logger {
 
     const name = generateGameName(UnseededRandom.INSTANCE);
     const game = new Game(id, name, players, firstPlayer, activePlayer, spectatorId, gameOptions, rng, board, projectDeck, corporationDeck, preludeDeck, ceoDeck, Array.from(tags));
+    // Set before anything can save: PostgreSQL writes the participants only on the first save.
+    game.judgeId = gameOptions.judgeLink ? safeCast(generateRandomId('j'), isJudgeId) : undefined;
     // This evaluation of created time doesn't match what's stored in the database, but that's fine.
     game.createdTime = new Date();
     // Initialize Ares data
@@ -570,6 +575,8 @@ export class Game implements IGame, Logger {
       seed: this.rng.seed,
       someoneHasRemovedOtherPlayersPlants: this.someoneHasRemovedOtherPlayersPlants,
       spectatorId: this.spectatorId,
+      judgeId: this.judgeId,
+      judgePassword: this.judgePassword,
       syndicatePirateRaider: this.syndicatePirateRaider,
       tags: this.tags,
       temperature: this.temperature,
@@ -1835,6 +1842,8 @@ export class Game implements IGame, Logger {
     const game = new Game(d.id, d.name, players, first, d.activePlayer, d.spectatorId, gameOptions, rng, board, projectDeck, corporationDeck, preludeDeck, ceoDeck, d.tags);
     game.resettable = true;
     game.spectatorId = d.spectatorId;
+    game.judgeId = d.judgeId;
+    game.judgePassword = d.judgePassword;
     game.createdTime = new Date(d.createdTimeMs);
 
     const milestones: Array<IMilestone> = [];

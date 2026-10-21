@@ -892,6 +892,24 @@ describe('Game', () => {
       .deep.eq(gameKeys.concat(...serializedValuesNotInGame).sort());
   });
 
+  it('keeps the judge id and password through serialization', () => {
+    const player = TestPlayer.BLUE.newPlayer();
+    const game = Game.newInstance('gameid', [player], player, 'spectatorid', {judgeLink: true});
+    game.judgePassword = 'abc';
+
+    const deserialized = Game.deserialize(game.serialize());
+    expect(deserialized.judgeId).eq(game.judgeId);
+    expect(deserialized.judgeId).is.not.undefined;
+    expect(deserialized.judgePassword).eq('abc');
+
+    const serialized = game.serialize();
+    delete serialized['judgeId'];
+    delete serialized['judgePassword'];
+    const without = Game.deserialize(serialized);
+    expect(without.judgeId).is.undefined;
+    expect(without.judgePassword).is.undefined;
+  });
+
   it('deserializing a game without moon data still loads', () => {
     const player = TestPlayer.BLUE.newPlayer();
     const game = Game.newInstance('gameid', [player], player, 'spectatorid', {moonExpansion: false});

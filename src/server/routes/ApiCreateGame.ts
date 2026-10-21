@@ -210,6 +210,7 @@ export class ApiCreateGame extends Handler {
         underworldExpansion: gameReq.expansions.underworld,
         deltaProjectExpansion: gameReq.expansions.deltaProject,
         tournamentExpansion: tournament,
+        judgeLink: tournament && gameReq.judgeLink === true,
         undoOption: gameReq.undoOption,
         venusNextExtension: gameReq.expansions.venus,
       };

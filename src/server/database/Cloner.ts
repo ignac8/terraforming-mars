@@ -1,12 +1,13 @@
 import {Game} from '../Game';
 import {IGame} from '../IGame';
-import {GameId, isPlayerId} from '../../common/Types';
+import {GameId, isJudgeId, isPlayerId, safeCast} from '../../common/Types';
 import {GameSetup} from '../GameSetup';
 import {IPlayer} from '../IPlayer';
 import {PlayerId} from '../../common/Types';
 import {SerializedGame} from '../SerializedGame';
 import {SerializedPlayer} from '../SerializedPlayer';
 import {toID} from '../../common/utils/utils';
+import {generateRandomId} from '../utils/server-ids';
 
 export class Cloner {
   public static clone(
@@ -29,6 +30,10 @@ export class Cloner {
         [GameSetup.neutralPlayerFor(newGameId).id]);
     }
     serialized.id = newGameId;
+    if (serialized.judgeId !== undefined) {
+      serialized.judgeId = safeCast(generateRandomId('j'), isJudgeId);
+      delete serialized.judgePassword;
+    }
 
     for (let idx = 0; idx < players.length; idx++) {
       this.updatePlayer(players[idx], serialized.players[idx]);

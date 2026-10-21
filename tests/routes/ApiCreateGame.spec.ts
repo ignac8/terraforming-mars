@@ -10,6 +10,7 @@ import {RandomMAOptionType} from '../../src/common/ma/RandomMAOptionType';
 import {SimpleGameModel} from '../../src/common/models/SimpleGameModel';
 import {FakeClock} from '../common/FakeClock';
 import {CardName} from '../../src/common/cards/CardName';
+import {isJudgeId} from '../../src/common/Types';
 
 // A complete create-game request for a one-player game.
 function newGameConfigForTest(): NewGameConfig {
@@ -262,6 +263,30 @@ describe('ApiCreateGame', () => {
     expect(game!.gameOptions.tournamentExpansion).is.true;
     expect(game!.gameOptions.undoOption).is.false;
     expect(game!.players.map((p) => p.handicap)).deep.eq([0, 0]);
+  });
+
+  it('gives a tournament game a judge id only when asked', async () => {
+    const base = newGameConfigForTest();
+    const tournamentExpansions = {...base.expansions, tournament: true};
+    const configs = [
+      {...base, expansions: tournamentExpansions, judgeLink: true},
+      {...base, expansions: tournamentExpansions},
+      {...base, judgeLink: true},
+    ];
+    const judgeIds: Array<string | undefined> = [];
+    for (const config of configs) {
+      req = new MockRequest();
+      res = new MockResponse();
+      scaffolding = new RouteTestScaffolding(req);
+      await postConfig(config);
+      expect(res.statusCode).eq(statusCode.ok);
+      const model = JSON.parse(res.content) as SimpleGameModel;
+      const game = await scaffolding.ctx.gameLoader.getGame(model.id);
+      judgeIds.push(game!.judgeId);
+    }
+    expect(isJudgeId(judgeIds[0]!)).is.true;
+    expect(judgeIds[1]).is.undefined;
+    expect(judgeIds[2]).is.undefined;
   });
 
   it('keeps handicap in non-tournament games', async () => {

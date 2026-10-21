@@ -1,4 +1,4 @@
-import {GameId, ParticipantId, PlayerId, SpectatorId, isGameId, isPlayerId, isSpectatorId} from '@/common/Types';
+import {GameId, JudgeId, PlayerId, SpectatorId, isGameId, isJudgeId, isPlayerId, isSpectatorId} from '@/common/Types';
 import {RouteError} from './RouteError';
 
 export class UrlParams {
@@ -35,7 +35,14 @@ export class UrlParams {
     }
     return id;
   }
-  public participantId(name: string): ParticipantId {
+  public judgeId(name: string): JudgeId {
+    const id = this.get(name);
+    if (!isJudgeId(id)) {
+      throw RouteError.badRequest('invalid judge id');
+    }
+    return id;
+  }
+  public participantId(name: string): PlayerId | SpectatorId {
     const id = this.get(name);
     if (!isPlayerId(id) && !isSpectatorId(id)) {
       throw RouteError.badRequest('invalid participant id');

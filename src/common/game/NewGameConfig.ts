@@ -48,6 +48,8 @@ export type NewGameConfig = {
   fastModeOption: boolean;
   showOtherPlayersVP: boolean;
   playerPasswords: boolean;
+  /** Tournament games only: ask for a judge link. */
+  judgeLink?: boolean;
 
   // Extensions
   // aresHazards: boolean;

@@ -2,6 +2,7 @@ import {expect} from 'chai';
 import {Cloner} from '../../src/server/database/Cloner';
 import {Game} from '../../src/server/Game';
 import {Player} from '../../src/server/Player';
+import {isJudgeId} from '../../src/common/Types';
 
 describe('Cloner', () => {
   it('solo game preserved', () => {
@@ -67,5 +68,20 @@ describe('Cloner', () => {
     }
     // This test will pass now that space players have been separately verified.
     expect(game.board).to.deep.eq(newGame.board);
+  });
+
+  it('gives a cloned judge game a new judge id and no judge password', () => {
+    const player = new Player('old-player1', 'yellow', false, 0, 'p-old-player1-id');
+    const game = Game.newInstance('g-old-game-id', [player], player, 'spectatorid', {judgeLink: true});
+    const serialized = game.serialize();
+    serialized.judgePassword = 'abc';
+
+    const newPlayer = new Player('new-player1', 'red', false, 0, 'p-new-player1-id');
+    const clone = Cloner.clone('g-new-id', [newPlayer], 0, serialized);
+
+    expect(isJudgeId(game.judgeId!)).is.true;
+    expect(isJudgeId(clone.judgeId!)).is.true;
+    expect(clone.judgeId).not.eq(game.judgeId);
+    expect(clone.judgePassword).is.undefined;
   });
 });

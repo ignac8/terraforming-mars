@@ -49,6 +49,8 @@ export type GameOptions = {
   underworldExpansion: boolean;
   deltaProjectExpansion: boolean;
   tournamentExpansion: boolean;
+  /** Tournament games only: gives the game a judge id and so a read-only judge view. */
+  judgeLink: boolean;
 
   expansions: Record<Expansion, boolean>,
 
@@ -235,6 +237,7 @@ export const DEFAULT_GAME_OPTIONS: GameOptions = {
   underworldExpansion: false,
   deltaProjectExpansion: false,
   tournamentExpansion: false,
+  judgeLink: false,
   undoOption: false,
   venusNextExtension: false,
   twoCorpsVariant: false,

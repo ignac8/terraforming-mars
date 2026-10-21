@@ -11,7 +11,7 @@ import {LogMessageBuilder} from './logs/LogMessageBuilder';
 import {LogMessage} from '../common/logs/LogMessage';
 import {Phase} from '../common/Phase';
 import {IPlayer} from './IPlayer';
-import {PlayerId, GameId, SpectatorId, SpaceId, isGameId} from '../common/Types';
+import {PlayerId, GameId, SpectatorId, SpaceId, JudgeId, Password, isGameId} from '../common/Types';
 import {AndThen, DeferredAction} from './deferredActions/DeferredAction';
 import {Priority} from './deferredActions/Priority';
 import {DeferredActionsQueue} from './deferredActions/DeferredActionsQueue';
@@ -54,6 +54,10 @@ export interface IGame extends Logger {
   lastSaveId: number;
   readonly rng: SeededRandom;
   readonly spectatorId: SpectatorId;
+  /** Set only on tournament games created with `judgeLink`. */
+  judgeId: JudgeId | undefined;
+  /** The secret that claims the judge seat. Unset until a judge claims it. */
+  judgePassword: Password | undefined;
   deferredActions: DeferredActionsQueue;
   /** Run every deferred action, including any added while running them, and then call `cb`. */
   drainQueue(cb: () => void): void;
