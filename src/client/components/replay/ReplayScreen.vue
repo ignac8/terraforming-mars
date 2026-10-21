@@ -63,6 +63,8 @@ type DataModel = {
   viewAs: ReplayViewAs;
   /** The view of `index` as `viewAs`. It lags behind them for as long as the next view is loading. */
   replayView: ReplayViewModel | undefined;
+  /** The move `replayView` shows, so a failed load can put `index` back. */
+  shownIndex: number;
   /** Why the last request failed. */
   error: string | undefined;
   playing: boolean;
@@ -70,6 +72,8 @@ type DataModel = {
   /** Numbers view requests so that a slow answer never replaces a newer one. */
   latestRequest: number;
   timer: ReturnType<typeof setTimeout> | undefined;
+  /** An autoplay step is waiting for its view, so no timer is pending and none may be started. */
+  advancing: boolean;
 }
 
 // Replays a finished game: the home screen of the chosen player, or the spectator's with every hand
@@ -90,11 +94,13 @@ export default defineComponent({
       index: 0,
       viewAs: 'all',
       replayView: undefined,
+      shownIndex: 0,
       error: undefined,
       playing: false,
       speed: 1,
       latestRequest: 0,
       timer: undefined,
+      advancing: false,
     };
   },
   computed: {
@@ -129,15 +135,16 @@ export default defineComponent({
     },
     async loadView(): Promise<void> {
       const request = ++this.latestRequest;
+      const {index, viewAs} = this;
       try {
-        const answer = await fetchReplayView(this.participantId, this.moves[this.index].saveId, this.viewAs);
+        const answer = await fetchReplayView(this.participantId, this.moves[index].saveId, viewAs);
         if (request !== this.latestRequest) {
           return;
         }
-        if (answer.viewAs !== 'all') {
-          setTranslationContext(answer.view as PlayerViewModel);
-        }
+        // Only the players' names and MarsBot's are read from it, and the spectator's model has them too.
+        setTranslationContext(answer.view as PlayerViewModel);
         this.replayView = answer;
+        this.shownIndex = index;
         this.error = undefined;
       } catch (err) {
         if (request !== this.latestRequest || (err instanceof Error && err.name === 'AbortError')) {
@@ -146,22 +153,37 @@ export default defineComponent({
         console.error(err);
         this.pause();
         this.error = err instanceof Error ? err.message : String(err);
+        // Keep the panel in step with the board, which still shows the previous view.
+        if (this.replayView !== undefined) {
+          this.index = this.shownIndex;
+          this.viewAs = this.replayView.viewAs;
+        }
       }
     },
-    select(index: number): void {
-      this.index = index;
-      this.loadView();
+    /** A move picked by hand. It takes over from autoplay, which would otherwise carry on from a stale position. */
+    select(index: number): Promise<void> {
+      this.pause();
+      return this.goTo(index);
+    },
+    goTo(index: number): Promise<void> {
+      this.index = Math.min(Math.max(index, 0), this.moves.length - 1);
+      return this.loadView();
     },
     changeViewAs(viewAs: ReplayViewAs): void {
       this.viewAs = viewAs;
       this.loadView();
     },
     play(): void {
+      if (this.moves.length < 2) {
+        return;
+      }
       if (this.index >= this.moves.length - 1) {
-        this.select(0);
+        this.goTo(0);
       }
       this.playing = true;
-      this.scheduleTick();
+      if (!this.advancing) {
+        this.scheduleTick();
+      }
     },
     pause(): void {
       this.playing = false;
@@ -169,7 +191,7 @@ export default defineComponent({
     },
     changeSpeed(speed: number): void {
       this.speed = speed;
-      if (this.playing) {
+      if (this.playing && this.timer !== undefined) {
         this.scheduleTick();
       }
     },
@@ -181,9 +203,18 @@ export default defineComponent({
       clearTimeout(this.timer);
       this.timer = undefined;
     },
-    tick(): void {
+    /** Moves on by one move, and only starts the next wait once that move's view is on screen. */
+    async tick(): Promise<void> {
       this.timer = undefined;
-      this.select(this.index + 1);
+      this.advancing = true;
+      try {
+        await this.goTo(this.index + 1);
+      } finally {
+        this.advancing = false;
+      }
+      if (!this.playing) {
+        return;
+      }
       if (this.index >= this.moves.length - 1) {
         this.pause();
       } else {
@@ -195,7 +226,7 @@ export default defineComponent({
     this.loadMoves();
   },
   unmounted() {
-    this.cancelTick();
+    this.pause();
   },
 });
 </script>
