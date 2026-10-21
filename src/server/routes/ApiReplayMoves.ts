@@ -14,7 +14,8 @@ export class ApiReplayMoves extends Handler {
   }
 
   public override async get(_req: Request, res: Response, ctx: Context): Promise<void> {
-    // A judge never plays, so a judge id gets the same moves as a spectator id.
+    // A judge never plays, so a judge id has no seat of its own. The judge sees every private log
+    // line, marked with its owner's color (see getReplayMoves).
     if (isJudgeId(ctx.urlParams.get('id'))) {
       const judgeId = ctx.urlParams.judgeId('id');
       const judgeGame = await ctx.gameLoader.getGame(judgeId);

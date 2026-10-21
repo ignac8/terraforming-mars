@@ -3,6 +3,8 @@ import {ApiReplayMoves} from '../../src/server/routes/ApiReplayMoves';
 import {IGame} from '../../src/server/IGame';
 import {SerializedGame} from '../../src/server/SerializedGame';
 import {clearReplayCache} from '../../src/server/replay/ReplayService';
+import {LogMessage} from '../../src/common/logs/LogMessage';
+import {LogMessageType} from '../../src/common/logs/LogMessageType';
 import {Phase} from '../../src/common/Phase';
 import {statusCode} from '../../src/common/http/statusCode';
 import {testGame} from '../TestGame';
@@ -85,14 +87,32 @@ describe('ApiReplayMoves', () => {
       expect(JSON.parse(res.content).status).eq('available');
     });
 
-    it('gives a judge the same moves as a spectator', async () => {
-      finishGame();
+    it('shows a judge every private log line with its owner, and a spectator only the public ones', async () => {
+      const log = [
+        new LogMessage(LogMessageType.DEFAULT, 'public one', []),
+        new LogMessage(LogMessageType.DEFAULT, 'private to player', [], player.id),
+        new LogMessage(LogMessageType.DEFAULT, 'public two', []),
+      ];
+      const base: SerializedGame = game.serialize();
+      db.games.set(game.id, [
+        {...base, gameLog: []},
+        {...base, gameLog: log.slice(0, 1)},
+        {...base, gameLog: log, phase: Phase.END},
+      ]);
+      game.phase = Phase.END;
+
       scaffolding.url = `/api/replay/moves?id=${game.judgeId}&password=secret`;
       await scaffolding.get(ApiReplayMoves.INSTANCE, res);
       const spectatorRes = new MockResponse();
       scaffolding.url = '/api/replay/moves?id=' + game.spectatorId;
       await scaffolding.get(ApiReplayMoves.INSTANCE, spectatorRes);
-      expect(JSON.parse(res.content)).deep.eq(JSON.parse(spectatorRes.content));
+
+      const judgeMessages = JSON.parse(res.content).moves.flatMap((m: any) => m.messages);
+      expect(judgeMessages.map((m: any) => m.message)).deep.eq(['public one', 'private to player', 'public two']);
+      expect(judgeMessages.map((m: any) => m.owner)).deep.eq([undefined, player.color, undefined]);
+      expect(res.content).not.contains(player.id);
+      const spectatorMessages = JSON.parse(spectatorRes.content).moves.flatMap((m: any) => m.messages);
+      expect(spectatorMessages.map((m: any) => m.message)).deep.eq(['public one', 'public two']);
     });
 
     it('refuses a judge with a wrong password', async () => {
