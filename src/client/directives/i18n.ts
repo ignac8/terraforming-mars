@@ -3,12 +3,12 @@ import {Message} from '@/common/logs/Message';
 import {getPreferences} from '@/client/utils/PreferencesManager';
 import {LogMessageData} from '@/common/logs/LogMessageData';
 import {Log} from '@/common/logs/Log';
-import {PlayerViewModel} from '@/common/models/PlayerModel';
+import {ViewModel} from '@/common/models/PlayerModel';
 import {tileTypeToString} from '@/common/TileType';
 import {Color} from '@/common/Color';
 
 type Context = {
-  playerView: PlayerViewModel | undefined;
+  playerView: ViewModel | undefined;
   players: Map<Color, string>;
 }
 
@@ -17,7 +17,7 @@ const context: Context = {
   players: new Map(),
 };
 
-export function setTranslationContext(playerView: PlayerViewModel) {
+export function setTranslationContext(playerView: ViewModel) {
   context.playerView = playerView;
   context.players.clear();
   for (const player of playerView.players) {

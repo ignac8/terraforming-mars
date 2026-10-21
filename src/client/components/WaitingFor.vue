@@ -33,6 +33,7 @@ import {vueRoot} from '@/client/components/vueRoot';
 import {PlayerInputModel} from '@/common/models/PlayerInputModel';
 import {playerColorClass} from '@/common/utils/utils';
 import {PlayerViewModel, ViewModel} from '@/common/models/PlayerModel';
+import {JudgeModel} from '@/common/models/JudgeModel';
 import {getPreferences} from '@/client/utils/PreferencesManager';
 import {SoundManager} from '@/client/utils/SoundManager';
 import {WaitingForModel} from '@/common/models/WaitingForModel';
@@ -40,7 +41,7 @@ import {Phase} from '@/common/Phase';
 import {paths} from '@/common/app/paths';
 import {passwordParam} from '@/client/utils/playerPassword';
 import {statusCode} from '@/common/http/statusCode';
-import {isPlayerId} from '@/common/Types';
+import {isJudgeId, isPlayerId} from '@/common/Types';
 import {InputResponse} from '@/common/inputs/InputResponse';
 import {INVALID_REQUEST_ID, INVALID_RUN_ID, AppErrorResponse} from '@/common/app/AppErrorId';
 import {Color} from '@/common/Color';
@@ -229,7 +230,11 @@ export default defineComponent({
       };
       const askForUpdate = () => {
         const xhr = new XMLHttpRequest();
-        xhr.open('GET', paths.API_WAITING_FOR + window.location.search + '&gameAge=' + this.playerView.game.gameAge + '&undoCount=' + this.playerView.game.undoCount);
+        // A judge page changes whenever its signature does. Players and spectators compare ages.
+        const query = isJudgeId(this.playerView.id) ?
+          '&signature=' + encodeURIComponent((this.playerView as JudgeModel).signature) :
+          '&gameAge=' + this.playerView.game.gameAge + '&undoCount=' + this.playerView.game.undoCount;
+        xhr.open('GET', paths.API_WAITING_FOR + window.location.search + query);
         xhr.onerror = function() {
           pollFailed('Error fetching state', CANNOT_CONTACT_SERVER);
         };
@@ -248,6 +253,8 @@ export default defineComponent({
               // Something changed, let's refresh UI
               if (isPlayerId(this.playerView.id)) {
                 root.updatePlayer().then(pollAgainUnlessUpdated);
+              } else if (isJudgeId(this.playerView.id)) {
+                root.updateJudge().then(pollAgainUnlessUpdated);
               } else {
                 root.updateSpectator().then(pollAgainUnlessUpdated);
               }

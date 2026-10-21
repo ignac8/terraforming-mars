@@ -29,6 +29,10 @@
         v-else-if="screen === 'spectator-home' && spectator !== undefined"
         :spectator="spectator"
       />
+      <JudgeHome
+        v-else-if="screen === 'judge-home' && judge !== undefined"
+        :judge="judge"
+      />
       <GameEnd
         v-else-if="screen === 'the-end' && participant !== undefined"
         :participant="participant"
@@ -58,6 +62,7 @@ const GameEnd = defineAsyncComponent(() => import(/* webpackChunkName: "game-end
 const GameHome = defineAsyncComponent(() => import(/* webpackChunkName: "game-home" */ '@/client/components/GameHome.vue'));
 const GamesOverview = defineAsyncComponent(() => import(/* webpackChunkName: "games-overview" */ '@/client/components/GamesOverview.vue'));
 const Help = defineAsyncComponent(() => import(/* webpackChunkName: "help" */ '@/client/components/help/Help.vue'));
+const JudgeHome = defineAsyncComponent(() => import(/* webpackChunkName: "judge-home" */ '@/client/components/judge/JudgeHome.vue'));
 const LoginHome = defineAsyncComponent(() => import(/* webpackChunkName: "login" */ '@/client/components/auth/LoginHome.vue'));
 const LoadGameForm = defineAsyncComponent(() => import(/* webpackChunkName: "load-game" */ '@/client/components/LoadGameForm.vue'));
 const PlayerHome = defineAsyncComponent(() => import(/* webpackChunkName: "player-home" */ '@/client/components/PlayerHome.vue'));
@@ -73,6 +78,7 @@ class UnauthorizedError extends Error {}
 import {PlayerViewModel, ViewModel} from '@/common/models/PlayerModel';
 import {SimpleGameModel} from '@/common/models/SimpleGameModel';
 import {SpectatorModel} from '@/common/models/SpectatorModel';
+import {JudgeModel} from '@/common/models/JudgeModel';
 import {isPlayerId, isSpectatorId} from '@/common/Types';
 import {hasShowModal, showModal, windowHasHTMLDialogElement} from './HTMLDialogElementCompatibility';
 
@@ -87,6 +93,7 @@ type Screen = 'admin' |
             'game-home' |
             'games-overview' |
             'help' |
+            'judge-home' |
             'load' |
             'login-home' |
             'player-home' |
@@ -96,12 +103,13 @@ type Screen = 'admin' |
 export type MainAppData = {
     screen: Screen;
     /**
-     * player or spectator are set once the app component has loaded.
+     * player, spectator or judge are set once the app component has loaded.
      * Vue only watches properties that exist initially. When we
      * use this property we can't trigger vue state without
      * a refactor.
      */
     spectator?: SpectatorModel;
+    judge?: JudgeModel;
     playerView?: PlayerViewModel;
     isServerSideRequestInProgress: boolean;
     componentsVisibility: {[x: string]: boolean};
@@ -136,6 +144,7 @@ export default defineComponent({
       game: undefined as SimpleGameModel | undefined,
       playerView: undefined,
       spectator: undefined,
+      judge: undefined,
       login: undefined,
     };
   },
@@ -146,6 +155,7 @@ export default defineComponent({
     GameHome,
     PlayerHome,
     SpectatorHome,
+    JudgeHome,
     GameEnd,
     GamesOverview,
     CardList,
@@ -188,7 +198,7 @@ export default defineComponent({
       return (this as unknown as MainAppData).componentsVisibility[targetVar] ? true : false;
     },
     /** Resolves to whether the view was replaced. */
-    update(path: typeof paths.PLAYER | typeof paths.SPECTATOR): Promise<boolean> {
+    update(path: typeof paths.PLAYER | typeof paths.SPECTATOR | typeof paths.JUDGE): Promise<boolean> {
       const currentPathname = getLastPathSegment();
       const app = this as unknown as MainAppData;
 
@@ -210,12 +220,17 @@ export default defineComponent({
             setTranslationContext(app.playerView);
           } else if (path === paths.SPECTATOR) {
             app.spectator = model as SpectatorModel;
+          } else {
+            app.judge = model as JudgeModel;
+            setTranslationContext(app.judge);
           }
           // The password has to survive into the address bar: it is how this
-          // seat stays claimed, and every later poll reads it back out of the URL.
-          const password = path === paths.PLAYER ? passwordParam(model as PlayerViewModel) : '';
+          // seat or judge page stays claimed, and every later poll reads it back out of the URL.
+          const password = passwordParam(model);
+          // A finished judge game stays on the judge page, which has no results screen.
           if (
-            model.game.phase === 'end' &&
+            path !== paths.JUDGE &&
+              model.game.phase === 'end' &&
               window.location.search.includes('&noredirect') === false
           ) {
             app.screen = 'the-end';
@@ -231,6 +246,8 @@ export default defineComponent({
               app.screen = 'player-home';
             } else if (path === paths.SPECTATOR) {
               app.screen = 'spectator-home';
+            } else {
+              app.screen = 'judge-home';
             }
             if (currentPathname !== path || (password !== '' && !window.location.search.includes('password='))) {
               window.history.replaceState(
@@ -258,6 +275,9 @@ export default defineComponent({
     updateSpectator() {
       return this.update(paths.SPECTATOR);
     },
+    updateJudge() {
+      return this.update(paths.JUDGE);
+    },
   },
   mounted() {
     setDocumentTitle();
@@ -265,7 +285,7 @@ export default defineComponent({
       dialogPolyfill.registerDialog(document.getElementById('alert-dialog') as HTMLDialogElement);
     }
     const currentPathname = getLastPathSegment();
-    const app = this as unknown as MainAppData & {updatePlayer(): void; updateSpectator(): void};
+    const app = this as unknown as MainAppData & {updatePlayer(): void; updateSpectator(): void; updateJudge(): void};
     if (currentPathname === paths.PLAYER) {
       app.updatePlayer();
     } else if (currentPathname === paths.THE_END) {
@@ -312,6 +332,8 @@ export default defineComponent({
       app.screen = 'help';
     } else if (currentPathname === paths.SPECTATOR) {
       app.updateSpectator();
+    } else if (currentPathname === paths.JUDGE) {
+      app.updateJudge();
     } else if (currentPathname === paths.ADMIN) {
       app.screen = 'admin';
     } else if (currentPathname === paths.LOGIN) {

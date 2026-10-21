@@ -278,13 +278,14 @@ describe('WaitingFor', () => {
     return polls;
   }
 
+  const spectatorView = {id: 's-spectator-id', players: [], game: {phase: Phase.ACTION, gameAge: 1, undoCount: 0}};
+
   // `rootMethods` stand in for the App methods WaitingFor calls through vueRoot.
-  function mountSpectator(rootMethods: Record<string, unknown>) {
-    const spectator = {id: 's-spectator-id', players: [], game: {phase: Phase.ACTION, gameAge: 1, undoCount: 0}};
+  function mountSpectator(rootMethods: Record<string, unknown>, view: object = spectatorView) {
     return mount(WaitingFor, {
       ...globalConfig,
       global: {...globalConfig.global, stubs: {'PlayerInputFactory': true}, mocks: rootMethods},
-      props: {playerView: spectator as unknown as PlayerViewModel},
+      props: {playerView: view as unknown as PlayerViewModel},
     });
   }
 
@@ -311,5 +312,31 @@ describe('WaitingFor', () => {
 
     await vi.advanceTimersByTimeAsync(30000);
     expect(showAlert.mock.calls).has.length(1);
+  });
+
+  it('polls a judge page with its signature and refreshes it', async () => {
+    vi.useFakeTimers();
+    const urls: Array<string> = [];
+    vi.stubGlobal('XMLHttpRequest', class {
+      status = 200;
+      response = {result: 'REFRESH', waitingFor: []};
+      onload = () => {};
+      open(_method: string, url: string) {
+        urls.push(url);
+      }
+      send() {
+        this.onload();
+      }
+    });
+    const updateJudge = vi.fn(async () => true);
+    const judge = {...spectatorView, id: 'j-judge-id', signature: 'sig:1'};
+    mountSpectator({updateJudge}, judge);
+
+    await vi.advanceTimersByTimeAsync(1500);
+
+    expect(urls).has.length(1);
+    expect(urls[0]).includes('signature=sig%3A1');
+    expect(urls[0]).does.not.include('gameAge');
+    expect(updateJudge.mock.calls).has.length(1);
   });
 });

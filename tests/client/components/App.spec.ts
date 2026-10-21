@@ -4,11 +4,15 @@ import {afterEach, vi} from 'vitest';
 import {defineAsyncComponent} from 'vue';
 import {globalConfig} from '@tests/client/components/getLocalVue';
 import App from '@/client/components/App.vue';
+import {translateMessage} from '@/client/directives/i18n';
+import {LogMessageDataType} from '@/common/logs/LogMessageDataType';
 
 describe('App', () => {
   afterEach(() => {
     vi.restoreAllMocks();
+    vi.unstubAllGlobals();
     window.sessionStorage.clear();
+    window.history.replaceState({}, '', '/');
   });
 
   it('mounts without errors', () => {
@@ -40,5 +44,42 @@ describe('App', () => {
   it('leaves other errors alone', async () => {
     await mountWithFailingStartScreen(new Error('boom'));
     expect(window.sessionStorage.getItem('chunkReloadAt')).is.null;
+  });
+
+  // Mounts the judge page for a game in `phase`, served a judge model with one player.
+  async function mountJudgePage(phase: string) {
+    window.history.replaceState({}, '', '/judge?id=j1');
+    const judge = {
+      id: 'j1',
+      color: 'neutral',
+      signature: 'sig',
+      players: [{color: 'red', name: 'Alice'}],
+      privates: [],
+      game: {phase, gameAge: 1, undoCount: 0},
+    };
+    vi.stubGlobal('fetch', vi.fn(async () => ({ok: true, status: 200, json: async () => judge}) as Response));
+    const alertStub = vi.fn();
+    vi.stubGlobal('alert', alertStub);
+    // The real screen imports the whole judge page, which would load after the test ends.
+    const wrapper = shallowMount(App, {
+      ...globalConfig,
+      global: {...globalConfig.global, stubs: {JudgeHome: {template: '<div class="stub-judge"></div>'}}},
+    });
+    await flushPromises();
+    return {wrapper, alertStub};
+  }
+
+  it('keeps a finished judge game on the judge screen', async () => {
+    const {wrapper, alertStub} = await mountJudgePage('end');
+
+    expect((wrapper.vm as any).screen).eq('judge-home');
+    expect(alertStub.mock.calls).is.empty;
+  });
+
+  it('names players in messages on the judge page', async () => {
+    await mountJudgePage('action');
+
+    const message = {message: 'Hello ${0}', data: [{type: LogMessageDataType.PLAYER, value: 'red'}]};
+    expect(translateMessage(message as any)).eq('Hello Alice');
   });
 });
