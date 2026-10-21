@@ -338,7 +338,7 @@ export class PostgreSQL implements IDatabase {
 
 
   async compressCompletedGames(compressCompletedGamesDays: string = process.env.COMPRESS_COMPLETED_GAMES_DAYS ?? DEFAULT_COMPRESS_COMPLETED_GAMES_DAYS): Promise<void> {
-    const dateToSeconds = daysAgoToSeconds(compressCompletedGamesDays, 0);
+    const dateToSeconds = daysAgoToSeconds(compressCompletedGamesDays, Number(DEFAULT_COMPRESS_COMPLETED_GAMES_DAYS));
     const selectResult = await this.client.query('SELECT DISTINCT game_id FROM completed_game WHERE completed_time < to_timestamp($1)', [dateToSeconds]);
     const gameIds = selectResult.rows.slice(0, 1000).map((row) => row.game_id);
     console.log(`${gameIds.length} completed games to be compressed.`);
