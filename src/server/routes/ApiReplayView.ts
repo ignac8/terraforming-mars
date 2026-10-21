@@ -32,16 +32,20 @@ export class ApiReplayView extends Handler {
       throw RouteError.badRequest('invalid as');
     }
 
-    const game = judge ? await this.loadJudgeGame(ctx) : await ctx.gameLoader.getGame(id);
-    if (game === undefined) {
+    const game = await ctx.gameLoader.getGame(id);
+    if (game === undefined || (judge && game.judgeId !== id)) {
       throw RouteError.notFound('game not found');
     }
-    // A player's view carries their private cards, so a player needs the seat password.
-    if (isPlayerId(id)) {
-      this.checkPlayerPassword(game.getPlayerById(id), ctx);
-    }
+    // A replay needs a finished game. This is answered before any password check, which can claim
+    // an unclaimed seat: a replay read must not write to a running game.
     if (game.phase !== Phase.END) {
       throw RouteError.badRequest('game not finished');
+    }
+    if (judge) {
+      this.checkJudgePassword(game, ctx);
+    } else if (isPlayerId(id)) {
+      // A player's view carries their private cards, so a player needs the seat password.
+      this.checkPlayerPassword(game.getPlayerById(id), ctx);
     }
 
     const sandbox = await loadReplayState(game, saveId);

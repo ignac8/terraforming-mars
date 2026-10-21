@@ -157,10 +157,53 @@ describe('ApiReplayView', () => {
       expect(res.statusCode).eq(statusCode.notFound);
     });
 
-    it('refuses a player without the password while the game runs', async () => {
-      player.password = 'seat-secret';
+    it('does not claim an unclaimed player seat while the game runs', async () => {
       await get(`id=${player.id}&save=1&as=all`);
-      expect(res.statusCode).eq(statusCode.unauthorized);
+      expect(res.statusCode).eq(statusCode.badRequest);
+      expect(res.content).eq('Bad request: game not finished');
+      expect(player.password).is.undefined;
+    });
+
+    it('does not claim an unclaimed judge seat while the game runs', async () => {
+      game.judgePassword = undefined;
+      await get(`id=${game.judgeId}&save=1&as=all`);
+      expect(res.statusCode).eq(statusCode.badRequest);
+      expect(res.content).eq('Bad request: game not finished');
+      expect(game.judgePassword).is.undefined;
+    });
+
+    describe('seat password', () => {
+      beforeEach(() => {
+        player.password = 'seat-secret';
+        finishGame();
+      });
+
+      it('never reaches a spectator looking at one player', async () => {
+        await get(`id=${game.spectatorId}&save=1&as=${player.color}`);
+        expect(res.statusCode).eq(statusCode.ok);
+        expect(res.content).not.contains('seat-secret');
+        expect(JSON.parse(res.content).view.password).is.undefined;
+      });
+
+      it('never reaches a judge looking at one player', async () => {
+        await get(`id=${game.judgeId}&password=secret&save=1&as=${player.color}`);
+        expect(res.statusCode).eq(statusCode.ok);
+        expect(res.content).not.contains('seat-secret');
+        expect(JSON.parse(res.content).view.password).is.undefined;
+      });
+
+      it('never reaches a player looking at their own seat', async () => {
+        await get(`id=${player.id}&save=1&as=${player.color}`);
+        expect(res.statusCode).eq(statusCode.ok);
+        expect(res.content).not.contains('seat-secret');
+        expect(JSON.parse(res.content).view.password).is.undefined;
+      });
+
+      it('is not in the all-hands view', async () => {
+        await get(`id=${game.spectatorId}&save=1&as=all`);
+        expect(res.statusCode).eq(statusCode.ok);
+        expect(res.content).not.contains('seat-secret');
+      });
     });
 
     it('lets a player into a finished game without a password, as everywhere else', async () => {

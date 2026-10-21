@@ -29,7 +29,8 @@ export function buildReplayView(sandbox: IGame, viewerId: ParticipantId, saveId:
   const view: PlayerViewModel = Server.getPlayerModel(player);
   view.players.forEach(scrub);
   // The viewer may be a spectator, so this is not always a PlayerId.
-  return {saveId, viewAs, view: {...view, id: viewerId as PlayerId, waitingFor: undefined}, privates: []};
+  // The model carries the seat password. It is blanked here, not left to JSON, so no viewer can ever read it.
+  return {saveId, viewAs, view: {...view, id: viewerId as PlayerId, password: undefined, waitingFor: undefined}, privates: []};
 }
 
 // Models are freshly built, so they are changed in place. Replaying a past save must not show a

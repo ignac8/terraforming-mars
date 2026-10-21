@@ -115,11 +115,21 @@ describe('ApiReplayMoves', () => {
       expect(res.statusCode).eq(statusCode.notFound);
     });
 
-    it('refuses a player without the password while the game runs', async () => {
-      player.password = 'seat-secret';
+    it('does not claim an unclaimed player seat while the game runs', async () => {
       scaffolding.url = '/api/replay/moves?id=' + player.id;
       await scaffolding.get(ApiReplayMoves.INSTANCE, res);
-      expect(res.statusCode).eq(statusCode.unauthorized);
+      expect(res.statusCode).eq(statusCode.ok);
+      expect(JSON.parse(res.content)).deep.eq({status: 'not-finished'});
+      expect(player.password).is.undefined;
+    });
+
+    it('does not claim an unclaimed judge seat while the game runs', async () => {
+      game.judgePassword = undefined;
+      scaffolding.url = `/api/replay/moves?id=${game.judgeId}`;
+      await scaffolding.get(ApiReplayMoves.INSTANCE, res);
+      expect(res.statusCode).eq(statusCode.ok);
+      expect(JSON.parse(res.content)).deep.eq({status: 'not-finished'});
+      expect(game.judgePassword).is.undefined;
     });
 
     it('answers a player with the password while the game runs', async () => {
