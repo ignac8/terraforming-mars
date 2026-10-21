@@ -249,7 +249,11 @@ export default defineComponent({
             } else {
               app.screen = 'judge-home';
             }
-            if (currentPathname !== path || (password !== '' && !window.location.search.includes('password='))) {
+            // The server may hand a judge a different password than the address bar holds
+            // (a re-claimed judge seat), and polls would then be refused.
+            const stalePassword = path === paths.JUDGE && password !== '' &&
+              new URLSearchParams(window.location.search).get('password') !== (model as JudgeModel).password;
+            if (currentPathname !== path || stalePassword || (password !== '' && !window.location.search.includes('password='))) {
               window.history.replaceState(
                 model,
                 `${constants.APP_NAME} - Game`,
@@ -261,6 +265,10 @@ export default defineComponent({
         })
         .catch((err) => {
           if (err instanceof UnauthorizedError) {
+            if (path === paths.JUDGE) {
+              alert($t('Incorrect judge password. Reopen the judge page from your browser history, or ask the organizer for the judge link with its password.'));
+              return false;
+            }
             alert('Incorrect password.\n(If you accidentally closed your player page, check your browser\'s History > Recently Closed tabs.)');
             return false;
           }

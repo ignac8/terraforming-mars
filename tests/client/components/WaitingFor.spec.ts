@@ -95,6 +95,7 @@ describe('WaitingFor', () => {
   }
 
   afterEach(() => {
+    window.history.replaceState({}, '', '/');
     vi.useRealTimers();
     vi.unstubAllGlobals();
     vi.restoreAllMocks();
@@ -330,12 +331,14 @@ describe('WaitingFor', () => {
     });
     const updateJudge = vi.fn(async () => true);
     const judge = {...spectatorView, id: 'j-judge-id', signature: 'sig:1'};
+    window.history.replaceState({}, '', '/judge?id=j-judge-id&password=secret');
     mountSpectator({updateJudge}, judge);
 
     await vi.advanceTimersByTimeAsync(1500);
 
     expect(urls).has.length(1);
     expect(urls[0]).includes('signature=sig%3A1');
+    expect(urls[0]).includes('password=secret');
     expect(urls[0]).does.not.include('gameAge');
     expect(updateJudge.mock.calls).has.length(1);
   });
