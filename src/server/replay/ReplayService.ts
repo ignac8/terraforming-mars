@@ -45,6 +45,12 @@ export async function getReplayMoves(game: IGame, viewerId: ParticipantId): Prom
     saves.push({saveId, save: await db.getGameVersion(game.id, saveId)});
   }
 
+  // The game sets its phase to END before the final save is written. Until that save lands the
+  // list would be wrong, and it must not be cached.
+  if (saves[saves.length - 1].save.phase !== Phase.END) {
+    return {status: 'not-finished'};
+  }
+
   // A save with the same log length as the next one changed nothing a viewer can see,
   // e.g. the two saves at the end of the game.
   const kept = saves.filter((entry, idx) => {
