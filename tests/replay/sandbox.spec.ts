@@ -88,8 +88,7 @@ describe('loadSandboxGame', () => {
     game.phase = Phase.ACTION;
     player.takeAction();
     runAllActions(game);
-    player.takeAction();
-    runAllActions(game);
+    game.save();
     const rowsBefore = db.games.get(game.id)!.length;
     const saved = lastSave(game);
     const copy = structuredClone(saved);
@@ -127,12 +126,15 @@ describe('loadSandboxGame', () => {
     const [game] = testGame(2, {skipInitialCardSelection: false});
     game.save();
     const saved = lastSave(game);
+    const copy = structuredClone(saved);
     recordWrites();
 
     const sandbox = loadSandboxGame(saved);
 
     expect(sandbox.isSandbox).is.true;
+    expect(sandbox.phase).eq(Phase.RESEARCH);
     expect(calls).deep.eq([]);
+    expect(saved).deep.eq(copy);
   });
 
   it('loading a final-greenery save writes no results and no finished mark', () => {
