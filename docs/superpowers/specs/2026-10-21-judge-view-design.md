@@ -1,6 +1,6 @@
 # Tournament judge view
 
-Status: design, waiting for approval. Branch: tournament only.
+Status: approved by Marcin on 2026-10-21, with the judge link made opt-in. Branch: tournament only.
 
 ## Why
 
@@ -15,7 +15,8 @@ spectator link, where the judge sees all of the info.
 
 ## Goals
 
-- Every tournament game gets one judge link when it is created. Nobody has to opt in.
+- The organizer can turn on a judge link when creating a tournament game. It is off by default.
+  Only games created with it on get a judge link, and they get exactly one.
 - The judge page is read-only. It shows the normal spectator view plus, for every player, what only
   that player can see:
   - cards in hand
@@ -35,7 +36,8 @@ spectator link, where the judge sees all of the info.
 ## Non-goals
 
 - Acting for a player, undoing, or changing game state in any way.
-- Judge links for games that aren't tournament games, or for games created before this ships.
+- Judge links for games that aren't tournament games, for games created before this ships, or for
+  games created with the option off. A judge link can't be added to a game after it was created.
 - More than one judge link per game. Several judges share the same full address, password included.
 - An admin login or a serverId-based page. The organizer creates the games, so the game page is
   enough.
@@ -61,6 +63,7 @@ spectator link, where the judge sees all of the info.
    the damage once the link has been opened, so the page shows a one-line hint next to the link:
    open it now, before sharing this page. Wording is the builder's call.
 5. The judge sees everything hidden.
+6. The judge link is opt-in on the create-game form and off by default.
 
 ## Facts from the code (tournament branch)
 
@@ -101,6 +104,11 @@ These come from reading the code. Line numbers are approximate.
     some changes to pending choices.
   - Every `PlayerInput` has a random `requestId`.
 - **Tournament gate.** `gameOptions.tournamentExpansion`, set at game creation.
+  `applyTournamentPreset` (`GameOptions.ts`) forces some options for tournament games. It must leave
+  the judge option as the organizer set it.
+- **Create-game form.** Fork-only game options have to be added to the `newGameConfig` computed in
+  `CreateGameForm.vue`. If they are missing there, the checkbox shows but the value never reaches the
+  server. Upstream merges have dropped fork options from that list before.
 - **Game page.** `GameHome.vue` lists the player and spectator links. It is fed by `ApiCreateGame`
   and `ApiGame` (`SimpleGameModel`). `ApiGame` has no authentication: anyone with the game id gets
   it.
@@ -114,6 +122,9 @@ quiet retries during a restart, and no permanent freeze after one failed fetch.
 
 ## Claude's calls (Marcin can override any of these)
 
+- **The option.** A boolean game option (working name `judgeLink`, default `false`). The checkbox
+  only shows when the tournament option is on, and the server ignores it for other games. With it
+  off, the game has no judge id and the game page shows no judge link.
 - **Id prefix `j`, page path `/judge?id=j...`.** The judge id is added to the participants mapping
   like the spectator id, and regenerated on clone.
 - **The judge password lives on the game**, serialized as an optional field. It needs its own check
@@ -151,6 +162,7 @@ quiet retries during a restart, and no permanent freeze after one failed fetch.
     - The judge password is claimed on the first visit and enforced after that.
     - A draft pick changes the judge signature.
     - A cloned game gets a new judge id.
+    - A tournament game created with the option off has no judge id.
   - The new Vue page gets at least a sanity test (repo rule). Whether it should get feature-rich
     tests is a question for Marcin at implementation time.
 
