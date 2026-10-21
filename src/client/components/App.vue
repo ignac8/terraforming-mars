@@ -187,13 +187,14 @@ export default defineComponent({
     getVisibilityState(targetVar: string): boolean {
       return (this as unknown as MainAppData).componentsVisibility[targetVar] ? true : false;
     },
-    update(path: typeof paths.PLAYER | typeof paths.SPECTATOR): void {
+    /** Resolves to whether the view was replaced. */
+    update(path: typeof paths.PLAYER | typeof paths.SPECTATOR): Promise<boolean> {
       const currentPathname = getLastPathSegment();
       const app = this as unknown as MainAppData;
 
       const url = 'api/' + path + window.location.search.replace('&noredirect', '');
 
-      fetch(url)
+      return fetch(url)
         .then((resp) => {
           if (resp.status === statusCode.unauthorized) {
             throw new UnauthorizedError();
@@ -239,6 +240,7 @@ export default defineComponent({
               );
             }
           }
+          return true;
         })
         .catch((err) => {
           if (err instanceof UnauthorizedError) {
@@ -247,13 +249,14 @@ export default defineComponent({
           }
           alert('Error getting game data');
           console.error(err);
+          return false;
         });
     },
     updatePlayer() {
-      this.update(paths.PLAYER);
+      return this.update(paths.PLAYER);
     },
     updateSpectator() {
-      this.update(paths.SPECTATOR);
+      return this.update(paths.SPECTATOR);
     },
   },
   mounted() {
