@@ -134,7 +134,16 @@ quiet retries during a restart, and no permanent freeze after one failed fetch.
   - Compare with `!==`, not `>`.
   - Whether this is a judge branch in `ApiWaitingFor` or its own route is the builder's call. A judge
     branch must come before the `getPlayerById` call, which throws for unknown ids.
-- **Logs.** The judge log route returns all lines.
+- **Logs.**
+  - The judge log route returns all lines.
+  - Private lines don't name their player: they read "You bought ${0}" (`ChooseCards.ts`) or "You
+    drew ${0}" (`LogHelper.logDrawnCards`). Only `LogMessage.playerId` says whose line it is. So the
+    judge route marks each private line with its owner's color, and `LogPanel` shows it.
+  - Use the color, never the player id. On tournament, an unclaimed seat's player id is enough to
+    claim that seat. For the same reason, no player ids go anywhere in the judge data.
+- **Game end.** The judge page stays on the judge view after the game ends, with the password check
+  still on. `App.update` sends every view at `END` to `the-end?id=...`, and that branch accepts only
+  `p` and `s` ids, so judge ids skip that redirect.
 - **New UI strings** get Polish translations. Only Polish and English are edited.
 - **Tests.**
   - Server tests, each of which must fail when its change is reverted:
