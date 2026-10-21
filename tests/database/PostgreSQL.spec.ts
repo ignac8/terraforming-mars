@@ -83,6 +83,21 @@ class TestPostgreSQL extends PostgreSQL {
   }
 }
 
+// Keeps the trimCount PostgreSQL picks by default.
+class DefaultPostgreSQL extends PostgreSQL {
+  constructor(public readonly pool: FakePool) {
+    super();
+  }
+
+  public get defaultTrimCount() {
+    return this.trimCount;
+  }
+
+  protected override get client(): pg.Pool {
+    return this.pool as unknown as pg.Pool;
+  }
+}
+
 describe('PostgreSQL', () => {
   let pool: FakePool;
   let db: TestPostgreSQL;
@@ -211,5 +226,32 @@ describe('PostgreSQL', () => {
     expect(pool.statements.at(-1)).deep.eq({connection: 'pool', sql: 'DELETE FROM games'});
     expect(pool.statements.map((s) => s.sql)).includes('COMMIT');
     expect(game.lastSaveId).eq(1);
+  });
+
+  describe('defaults', () => {
+    const savedCompress = process.env.COMPRESS_COMPLETED_GAMES_DAYS;
+    afterEach(() => {
+      if (savedCompress === undefined) {
+        delete process.env.COMPRESS_COMPLETED_GAMES_DAYS;
+      } else {
+        process.env.COMPRESS_COMPLETED_GAMES_DAYS = savedCompress;
+      }
+    });
+
+    it('keeps every save unless POSTGRES_TRIM_COUNT is set', () => {
+      // The default is read when the module loads, so this only holds when the variable is unset.
+      if (process.env.POSTGRES_TRIM_COUNT !== undefined) {
+        return;
+      }
+      expect(new DefaultPostgreSQL(pool).defaultTrimCount).eq(0);
+    });
+
+    it('looks for completed games to compress even when COMPRESS_COMPLETED_GAMES_DAYS is unset', async () => {
+      delete process.env.COMPRESS_COMPLETED_GAMES_DAYS;
+
+      await db.compressCompletedGames();
+
+      expect(pool.statements[0]).deep.eq({connection: 'pool', sql: 'SELECT DISTINCT game_id'});
+    });
   });
 });

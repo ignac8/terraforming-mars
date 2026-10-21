@@ -14,6 +14,11 @@ export function dateToSeconds(date: Date) {
   return Math.round(date.getTime() / 1000);
 }
 
+/**
+ * How long, after a game ends, to keep every save. Replay needs them all. Afterwards only the first and last remain.
+ */
+export const DEFAULT_COMPRESS_COMPLETED_GAMES_DAYS = '14';
+
 export function stringToNumber(s: string | undefined, defaultValue: number): number {
   if (s === undefined) {
     return defaultValue;
