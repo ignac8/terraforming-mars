@@ -238,10 +238,10 @@ describe('PostgreSQL', () => {
       }
     });
 
-    it('keeps every save unless POSTGRES_TRIM_COUNT is set', () => {
+    it('keeps every save unless POSTGRES_TRIM_COUNT is set', function() {
       // The default is read when the module loads, so this only holds when the variable is unset.
       if (process.env.POSTGRES_TRIM_COUNT !== undefined) {
-        return;
+        this.skip();
       }
       expect(new DefaultPostgreSQL(pool).defaultTrimCount).eq(0);
     });
