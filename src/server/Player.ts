@@ -1476,9 +1476,7 @@ export class Player implements IPlayer {
     this.game.drainQueue(() => {
       const game = this.game;
 
-      if (this.actionsTakenThisRound === 0 || game.gameOptions.undoOption) {
-        game.save();
-      }
+      game.save();
       // if (saveBeforeTakingAction) game.save();
 
 
