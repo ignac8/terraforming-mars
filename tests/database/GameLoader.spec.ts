@@ -10,6 +10,8 @@ import {restoreTestDatabase, restoreTestGameLoader, setTestDatabase, setTestGame
 import {sleep} from '../TestingUtils';
 import {InMemoryDatabase} from '../testing/InMemoryDatabase';
 import {FakeClock} from '../common/FakeClock';
+import {Phase} from '../../src/common/Phase';
+import {clearReplayCache, isFinished} from '../../src/server/replay/ReplayService';
 
 class TestDatabase extends InMemoryDatabase {
   public failure: 'getGameIds' | 'getParticipants' | undefined = undefined;
@@ -473,6 +475,29 @@ describe('GameLoader', () => {
     // incremented at the end of save(). It loads #2, and increments.
     expect(newGame.lastSaveId).eq(3);
     expect(await database.getSaveIds(game.id)).deep.eq([0, 1, 2]);
+  });
+
+  it('restoreGameAt forgets what the replay knew about the game', async () => {
+    game.phase = Phase.END;
+    game.save();
+    game.save();
+    game.save();
+    expect(await isFinished(game)).is.true;
+    let reads = 0;
+    const getGameVersion = database.getGameVersion.bind(database);
+    database.getGameVersion = (gameId, saveId) => {
+      reads++;
+      return getGameVersion(gameId, saveId);
+    };
+    expect(await isFinished(game)).is.true;
+    expect(reads).eq(0);
+
+    await instance.restoreGameAt(game.id, 2);
+
+    // The memo is gone, so the saves are read again.
+    await isFinished(game);
+    expect(reads).eq(1);
+    clearReplayCache();
   });
 
   it('saveGame', async () => {

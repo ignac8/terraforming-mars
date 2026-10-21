@@ -11,6 +11,7 @@ import {timeAsync} from '../utils/timer';
 import {durationToMilliseconds} from '../utils/durations';
 import {CacheConfig} from './CacheConfig';
 import {Clock} from '../../common/Timer';
+import {forgetReplay} from '../replay/ReplayService';
 
 const metrics = {
   initialize: new prometheus.Gauge({
@@ -244,6 +245,8 @@ export class GameLoader implements IGameLoader {
     const deletes = (currentSaveId - saveId) - 1;
     if (deletes > 0) {
       await Database.getInstance().deleteGameNbrSaves(gameId, deletes);
+      // The replay's list of this game's saves is out of date now.
+      forgetReplay(gameId);
     }
     const serializedGame = await Database.getInstance().getGame(gameId);
     const game = Game.deserialize(serializedGame);
