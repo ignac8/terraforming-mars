@@ -128,6 +128,21 @@ describe('ReplayService', () => {
     expect(list.map((m) => m.messages.length)).deep.eq([4, 3, 2, 0]);
   });
 
+  it('reads only the newest save while the END save has not landed', async () => {
+    const log = logOf(9);
+    const rows: Array<SerializedGame | undefined> = [0, 3, 6, 8].map((n) => ({...row(log, n), phase: Phase.ACTION}));
+    db.games.set(game.id, rows);
+    game.phase = Phase.END;
+    const reads: Array<number> = [];
+    const getGameVersion = db.getGameVersion.bind(db);
+    db.getGameVersion = (gameId, saveId) => {
+      reads.push(saveId);
+      return getGameVersion(gameId, saveId);
+    };
+    expect(await getReplayMoves(game, player.id)).deep.eq({status: 'not-finished'});
+    expect(reads).deep.eq([3]);
+  });
+
   it('reports expired once only the first and last save remain', async () => {
     const log = logOf(9);
     storeSaves([[0, row(log, 0)], [9, row(log, 9)]]);
@@ -282,16 +297,22 @@ describe('ReplayService', () => {
     });
     db.getGameVersion = async (gameId, saveId) => {
       const save = await getGameVersion(gameId, saveId);
-      await gate;
+      // Only the last read waits, so the build has the whole old list by then.
+      if (saveId === 2) {
+        await gate;
+      }
       return save;
     };
     const stale = getReplayMoves(game, player.id);
-    await new Promise((resolve) => setImmediate(resolve));
+    for (let i = 0; i < 5; i++) {
+      await new Promise((resolve) => setImmediate(resolve));
+    }
     // A rollback replaces the saves while the build is still reading.
     forgetReplay(game.id);
     rows.pop();
     release();
-    await stale;
+    // The request that was waiting still gets the list it asked for.
+    expect((await stale).status).eq('available');
 
     db.getGameVersion = getGameVersion;
     expect(await getReplayMoves(game, player.id)).deep.eq({status: 'not-finished'});
