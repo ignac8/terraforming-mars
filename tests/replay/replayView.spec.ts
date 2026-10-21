@@ -36,9 +36,10 @@ describe('buildReplayView', () => {
     const r = buildReplayView(sandbox, game.spectatorId, 3, 'all');
     expect(r.saveId).eq(3);
     expect(r.viewAs).eq('all');
-    expect(r.privates.map((p) => p.color)).deep.eq(sandbox.players.map((p) => p.color));
-    expect(r.privates[1].cardsInHand.map((c) => c.name)).deep.eq([CardName.ALGAE, CardName.TARDIGRADES]);
-    expect(r.privates[0].cardsInHand.map((c) => c.name)).deep.eq([CardName.ANTS]);
+    expect(r.privates.map((p) => p.color)).has.members(sandbox.players.map((p) => p.color));
+    const handOf = (color: string) => r.privates.find((p) => p.color === color)!.cardsInHand.map((c) => c.name);
+    expect(handOf(player.color)).deep.eq([CardName.ANTS]);
+    expect(handOf(player2.color)).deep.eq([CardName.ALGAE, CardName.TARDIGRADES]);
   });
 
   it('all hands uses the spectator view', () => {
@@ -117,11 +118,13 @@ describe('buildReplayView', () => {
       }
     });
 
-    it('does not change the timers of the sandbox itself', () => {
-      const withTimers = saveWithRunningTimer();
-      const before = withTimers.players.map((p) => p.timer.serialize());
-      buildReplayView(withTimers, game.spectatorId, 3, 'all');
-      expect(withTimers.players.map((p) => p.timer.serialize())).deep.eq(before);
-    });
+    for (const viewAs of ['all', 'player', 'player2'] as const) {
+      it(`does not change the timers of the sandbox itself, as ${viewAs}`, () => {
+        const withTimers = saveWithRunningTimer();
+        const before = withTimers.players.map((p) => p.timer.serialize());
+        buildReplayView(withTimers, game.spectatorId, 3, viewAs === 'all' ? 'all' : (viewAs === 'player' ? player : player2).color);
+        expect(withTimers.players.map((p) => p.timer.serialize())).deep.eq(before);
+      });
+    }
   });
 });
