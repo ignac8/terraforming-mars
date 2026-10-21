@@ -18,6 +18,17 @@
         <span class="player-name"><a :href="getHref(game.spectatorId)" v-i18n>Spectator</a></span>
         <AppButton title="copy" size="tiny" @click="copyUrl(game.spectatorId)"/>
       </li>
+      <li v-if="game !== undefined && game.judgeId !== undefined">
+        <span class="turn-order"></span>
+        <span class="color-square"></span>
+        <span class="player-name"><a :href="getHref(game.judgeId)" v-i18n>Judge</a></span>
+        <AppButton title="copy" size="tiny" @click="copyUrl(game.judgeId)"/>
+      </li>
+      <li v-if="game !== undefined && game.judgeId !== undefined" class="judge-hint">
+        <span class="turn-order"></span>
+        <span class="color-square"></span>
+        <span v-i18n>Open the judge link now, before you share this page. The first person to open it receives its password.</span>
+      </li>
     </ul>
 
     <div class="spacing-setup"></div>
@@ -113,6 +124,9 @@ export default defineComponent({
     getHref(playerId: ParticipantId): string {
       if (playerId === this.game.spectatorId) {
         return `spectator?id=${playerId}`;
+      }
+      if (playerId === this.game.judgeId) {
+        return `judge?id=${playerId}`;
       }
       return `player?id=${playerId}`;
     },

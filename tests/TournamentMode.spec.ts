@@ -317,6 +317,7 @@ describe('TournamentMode', () => {
       'boardName', // clamped to Tharsis/Hellas/Elysium, otherwise free
       'clonedGamedId', // cloning is out of scope (user decision)
       'escapeVelocity', // tournament games may use the clock
+      'judgeLink', // the organizer's opt-in, off unless asked for
       'removeNegativeGlobalEventsOption', // inert: Turmoil is forced off
       'showTimers',
       'soloTR',

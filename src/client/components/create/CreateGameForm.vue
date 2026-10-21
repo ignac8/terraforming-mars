@@ -428,6 +428,13 @@
                             <label for="playerPasswords-checkbox" title="The first person to open a player link claims that seat. From then on only they can use it.">
                                 <span v-i18n>Player passwords</span>
                             </label>
+
+                            <template v-if="expansions.tournament">
+                                <input type="checkbox" name="judgeLink" v-model="judgeLink" id="judgeLink-checkbox">
+                                <label for="judgeLink-checkbox">
+                                    <span v-i18n>Judge link</span>
+                                </label>
+                            </template>
                         </div>
 
                         <div class="create-game-players-cont">
@@ -739,6 +746,7 @@ export default defineComponent({
         draftVariant: this.draftVariant,
         showOtherPlayersVP: this.showOtherPlayersVP,
         playerPasswords: this.playerPasswords,
+        judgeLink: this.expansions.tournament && this.judgeLink,
         customCorporationsList: this.customCorporations,
         customColoniesList: this.customColonies,
         customCeos: this.customCeos,

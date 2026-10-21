@@ -189,6 +189,23 @@ describe('CreateGameForm', () => {
     expect(vm.playerPasswords).eq(false);
   });
 
+  it('sends the judge option only for tournament games', async () => {
+    const wrapper = shallowMount(CreateGameForm, {...globalConfig});
+    await wrapper.vm.$nextTick();
+    const vm = wrapper.vm as any;
+
+    expect(vm.expansions.tournament).eq(true);
+    expect(vm.newGameConfig.judgeLink).eq(false);
+    await wrapper.find('#judgeLink-checkbox').setValue(true);
+    expect(vm.newGameConfig.judgeLink).eq(true);
+
+    vm.expansions.tournament = false;
+    await wrapper.vm.$nextTick();
+
+    expect(vm.newGameConfig.judgeLink).eq(false);
+    expect(wrapper.find('#judgeLink-checkbox').exists()).eq(false);
+  });
+
   it('applies tournament locks when restoring saved tournament settings', async () => {
     createGameSettingsStorage.save(createNewGameConfig({
       players: [
