@@ -1,4 +1,4 @@
-#player-home, #spectator-home {
+#player-home, #spectator-home, #judge-home {
   padding-left: 20px;
   padding-top: 20px;
   background: linear-gradient(transparent, #000), url(./assets/stars.jpg);
@@ -26,7 +26,7 @@
 // A fixed element behind the page doesn't. Width can't tell phones apart here
 // because the game page sets a 1260px viewport.
 @media (hover: none) and (pointer: coarse) {
-  #player-home, #spectator-home {
+  #player-home, #spectator-home, #judge-home {
     background: none;
 
     &::before {

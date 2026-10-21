@@ -91,6 +91,16 @@ describe('App', () => {
     expect(window.location.search).does.not.include('password=old');
   });
 
+  it('leaves the address bar alone when neither it nor the judge model has a password', async () => {
+    const replaceState = vi.spyOn(window.history, 'replaceState');
+
+    await mountJudgePage('action', '/judge?id=j1&serverId=1');
+
+    // The page rewrites the address bar by passing the model as the history state.
+    expect(replaceState.mock.calls.filter((call) => (call[0] as any)?.id === 'j1')).is.empty;
+    expect(window.location.search).eq('?id=j1&serverId=1');
+  });
+
   it('tells a judge about an incorrect judge password', async () => {
     const {wrapper, alertStub} = await mountJudgePage('action');
     vi.stubGlobal('fetch', vi.fn(async () => ({ok: false, status: 401}) as Response));

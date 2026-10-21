@@ -2,7 +2,9 @@
   <div class="judge-pending-choice">
     <div class="judge-pending-choice-title">{{ $t(input.title) }}</div>
     <div v-if="cards.length > 0" class="judge-pending-choice-cards">
-      <Card v-for="card in cards" :key="card.name" :card="card" />
+      <div v-for="card in cards" :key="card.name" class="cardbox">
+        <Card :card="card" />
+      </div>
     </div>
     <div v-if="options.length > 0" class="judge-pending-choice-options">
       <JudgePendingChoice v-for="(option, idx) in options" :key="idx" :input="option" />

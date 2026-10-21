@@ -29,6 +29,16 @@ describe('JudgePendingChoice', () => {
     expect(wrapper.text()).to.include(CardName.BIRDS);
   });
 
+  it('puts each card in a cardbox so the cards lay out side by side', () => {
+    const wrapper = mountInput(cardInput('Select a card', CardName.ANTS, CardName.BIRDS));
+
+    const boxes = wrapper.findAll('.cardbox');
+    expect(boxes).has.length(2);
+    for (const box of boxes) {
+      expect(box.findAllComponents({name: 'Card'})).has.length(1);
+    }
+  });
+
   it('shows the cards inside a nested setup choice', () => {
     const wrapper = mountInput(asComplete<PlayerInputModel>({
       type: 'initialCards',
