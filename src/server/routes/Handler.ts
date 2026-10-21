@@ -115,10 +115,7 @@ export abstract class Handler implements IHandler {
       player.password = randomBytes(PASSWORD_BYTES).toString('hex');
       return;
     }
-    const incoming = ctx.urlParams.stringOrUndefined('password');
-    if (incoming === undefined || !safeEquals(incoming, player.password)) {
-      throw RouteError.unauthorized();
-    }
+    this.requirePassword(player.password, ctx);
   }
 
   /**
@@ -135,14 +132,29 @@ export abstract class Handler implements IHandler {
     if (this.isServerIdValid(ctx)) {
       return;
     }
-    const incoming = ctx.urlParams.stringOrUndefined('password');
     if (game.judgePassword === undefined) {
-      game.judgePassword = incoming !== undefined && WELL_FORMED_PASSWORD.test(incoming) ?
-        incoming :
-        randomBytes(PASSWORD_BYTES).toString('hex');
+      game.judgePassword = this.claimPassword(ctx);
       return;
     }
-    if (incoming === undefined || !safeEquals(incoming, game.judgePassword)) {
+    this.requirePassword(game.judgePassword, ctx);
+  }
+
+  /**
+   * Picks the password for a seat being claimed: the incoming one if it is well-formed (the
+   * format the server generates), otherwise a fresh one.
+   */
+  private claimPassword(ctx: Context): string {
+    const incoming = ctx.urlParams.stringOrUndefined('password');
+    if (incoming !== undefined && WELL_FORMED_PASSWORD.test(incoming)) {
+      return incoming;
+    }
+    return randomBytes(PASSWORD_BYTES).toString('hex');
+  }
+
+  /** Throws unless the request carries the claimed seat's password. */
+  private requirePassword(stored: string, ctx: Context): void {
+    const incoming = ctx.urlParams.stringOrUndefined('password');
+    if (incoming === undefined || !safeEquals(incoming, stored)) {
       throw RouteError.unauthorized();
     }
   }
