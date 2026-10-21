@@ -180,7 +180,7 @@
 
                         <div class="create-game-page-column">
                             <h4 v-i18n>Options</h4>
-                            <BoardSelector v-model:board="board" v-model:shuffleMap="shuffleMapOption" :isBoardDisabled="isBoardDisabledForTournament" :shuffleMapDisabled="expansions.tournament" />
+                            <BoardSelector v-model:boards="boards" v-model:shuffleMap="shuffleMapOption" :isBoardDisabled="isBoardDisabledForTournament" :shuffleMapDisabled="expansions.tournament" />
 
                             <label for="startingCorpNum-checkbox">
                             <input type="number" class="create-game-corporations-count" value="2" min="1" :max="6" v-model="startingCorporations" id="startingCorpNum-checkbox" :disabled="expansions.tournament">
@@ -580,7 +580,6 @@ import {Color, PLAYER_COLORS} from '@/common/Color';
 import {CardName} from '@/common/cards/CardName';
 import CeosFilter from '@/client/components/create/CeosFilter.vue';
 import {BoardName} from '@/common/boards/BoardName';
-import {RandomBoardOption} from '@/common/boards/RandomBoardOption';
 import BoardSelector from '@/client/components/create/BoardSelector.vue';
 import CorporationsFilter from '@/client/components/create/CorporationsFilter.vue';
 import PreludesFilter from '@/client/components/create/PreludesFilter.vue';
@@ -595,7 +594,7 @@ import {GameId, JSONObject} from '@/common/Types';
 import {AgendaStyle} from '@/common/turmoil/Types';
 import PreferencesIcon from '@/client/components/PreferencesIcon.vue';
 import {getCard} from '@/client/cards/ClientCardManifest';
-import {BoardNameType, NewGameConfig, NewPlayerModel} from '@/common/game/NewGameConfig';
+import {NewGameConfig, NewPlayerModel} from '@/common/game/NewGameConfig';
 import {vueRoot} from '@/client/components/vueRoot';
 import {CreateGameModel} from './CreateGameModel';
 import {paths} from '@/common/app/paths';
@@ -753,7 +752,7 @@ export default defineComponent({
         customPreludes: this.customPreludes,
         bannedCards: this.bannedCards,
         includedCards: this.includedCards,
-        board: this.board,
+        boards: this.boards,
         seed: this.seed,
         solarPhaseOption: this.solarPhaseOption,
         aresExtremeVariant: this.aresExtremeVariant,
@@ -819,8 +818,8 @@ export default defineComponent({
     PLAYER_COLORS(): typeof PLAYER_COLORS {
       return PLAYER_COLORS;
     },
-    tournamentBoards(): Array<BoardName | RandomBoardOption> {
-      return [BoardName.THARSIS, BoardName.HELLAS, BoardName.ELYSIUM, RandomBoardOption.OFFICIAL];
+    tournamentBoards(): Array<BoardName> {
+      return [BoardName.THARSIS, BoardName.HELLAS, BoardName.ELYSIUM];
     },
     getPlayers(): Array<NewPlayerModel> {
       return this.players.slice(0, this.playersCount);
@@ -862,8 +861,9 @@ export default defineComponent({
       this.shuffleMapOption = false;
       this.aresExtremeVariant = false;
       this.startingCorporations = 5;
-      if (!this.tournamentBoards.includes(this.board)) {
-        this.board = BoardName.THARSIS;
+      this.boards = this.boards.filter((boardName) => this.tournamentBoards.includes(boardName));
+      if (this.boards.length === 0) {
+        this.boards = [BoardName.THARSIS];
       }
       this.undoOption = false;
       this.fastModeOption = false;
@@ -1069,7 +1069,7 @@ export default defineComponent({
         this.moonStandardProjectVariant1 = false;
       }
     },
-    isBoardDisabledForTournament(boardName: BoardNameType): boolean {
+    isBoardDisabledForTournament(boardName: BoardName): boolean {
       return this.expansions.tournament && !this.tournamentBoards.includes(boardName);
     },
     getPlayerCubeColorClass(color: Color): string {
