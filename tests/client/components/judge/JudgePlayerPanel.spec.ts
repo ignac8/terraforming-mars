@@ -1,12 +1,15 @@
-import {mount} from '@vue/test-utils';
+import {mount, VueWrapper} from '@vue/test-utils';
 import {expect} from 'chai';
 import {globalConfig} from '../getLocalVue';
 import {fakePublicPlayerModel} from '../testHelpers';
 import {asComplete} from '../utils/models';
+import {FakeLocalStorage} from '../FakeLocalStorage';
 import JudgePlayerPanel from '@/client/components/judge/JudgePlayerPanel.vue';
 import {CardName} from '@/common/cards/CardName';
+import {Color} from '@/common/Color';
 import {JudgePlayerModel} from '@/common/models/JudgeModel';
 import {SelectCardModel} from '@/common/models/PlayerInputModel';
+import {JudgeId} from '@/common/Types';
 import {playerColorClass} from '@/common/utils/utils';
 
 function privates(overrides: Partial<JudgePlayerModel> = {}): JudgePlayerModel {
@@ -26,15 +29,26 @@ function privates(overrides: Partial<JudgePlayerModel> = {}): JudgePlayerModel {
   };
 }
 
-function mountPanel(overrides: Partial<JudgePlayerModel> = {}) {
+function mountPanel(overrides: Partial<JudgePlayerModel> = {}, judgeId: JudgeId = 'j-judge', color: Color = 'red') {
   return mount(JudgePlayerPanel, {
     ...globalConfig,
     props: {
-      privates: privates(overrides),
-      player: fakePublicPlayerModel({color: 'red', name: 'Alice'}),
+      judgeId,
+      privates: privates({color, ...overrides}),
+      player: fakePublicPlayerModel({color, name: 'Alice'}),
     },
   });
 }
+
+function toggleButton(wrapper: VueWrapper) {
+  const button = wrapper.findAll('button').find((b) => b.text() === 'Hide' || b.text() === 'Show');
+  if (button === undefined) {
+    throw new Error('no Hide/Show button');
+  }
+  return button;
+}
+
+const hand = {cardsInHand: [{name: CardName.ANTS}]};
 
 const sections: Array<[keyof JudgePlayerModel, string, CardName]> = [
   ['cardsInHand', 'Cards In Hand', CardName.ANTS],
@@ -99,5 +113,59 @@ describe('JudgePlayerPanel', () => {
     const wrapper = mountPanel();
 
     expect(wrapper.findComponent({name: 'JudgePendingChoice'}).exists()).is.false;
+  });
+
+  describe('hiding', () => {
+    let localStorage: FakeLocalStorage;
+
+    beforeEach(() => {
+      localStorage = new FakeLocalStorage();
+      FakeLocalStorage.register(localStorage);
+    });
+
+    afterEach(() => {
+      FakeLocalStorage.deregister(localStorage);
+    });
+
+    const waitingFor = asComplete<SelectCardModel>({type: 'card', title: 'Select a card to keep', cards: [{name: CardName.BIRDS}]});
+
+    it('folds away the cards and the pending choice but keeps the name', async () => {
+      const wrapper = mountPanel({...hand, waitingFor});
+
+      await toggleButton(wrapper).trigger('click');
+
+      expect(wrapper.text()).to.include('Alice');
+      expect(wrapper.text()).to.not.include('Cards In Hand');
+      expect(wrapper.findComponent({name: 'Card'}).exists()).is.false;
+      expect(wrapper.findComponent({name: 'JudgePendingChoice'}).exists()).is.false;
+      expect(toggleButton(wrapper).text()).eq('Show');
+    });
+
+    it('shows everything again on a second click', async () => {
+      const wrapper = mountPanel({...hand, waitingFor});
+
+      await toggleButton(wrapper).trigger('click');
+      await toggleButton(wrapper).trigger('click');
+
+      expect(wrapper.text()).to.include('Cards In Hand');
+      expect(wrapper.findComponent({name: 'JudgePendingChoice'}).exists()).is.true;
+      expect(toggleButton(wrapper).text()).eq('Hide');
+    });
+
+    it('stays hidden when the page is opened again', async () => {
+      await toggleButton(mountPanel(hand)).trigger('click');
+
+      const reopened = mountPanel(hand);
+
+      expect(reopened.text()).to.not.include('Cards In Hand');
+      expect(toggleButton(reopened).text()).eq('Show');
+    });
+
+    it('keeps other players and other judge links open', async () => {
+      await toggleButton(mountPanel(hand, 'j-judge', 'red')).trigger('click');
+
+      expect(mountPanel(hand, 'j-judge', 'blue').text()).to.include('Cards In Hand');
+      expect(mountPanel(hand, 'j-other', 'red').text()).to.include('Cards In Hand');
+    });
   });
 });

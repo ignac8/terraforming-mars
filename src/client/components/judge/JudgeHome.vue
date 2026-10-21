@@ -57,6 +57,7 @@
     <JudgePlayerPanel
       v-for="entry in panels"
       :key="entry.privates.color"
+      :judgeId="judge.id"
       :privates="entry.privates"
       :player="entry.player"/>
 
