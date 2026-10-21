@@ -9,7 +9,7 @@
     <div class="replay-controls">
       <button class="replay-start" type="button" :title="$t('Go to start')" :disabled="index === 0" @click="select(0)">&#x23EE;</button>
       <button class="replay-back" type="button" :title="$t('Step back')" :disabled="index === 0" @click="select(index - 1)">&#x25C0;</button>
-      <button class="replay-play" type="button" :title="playing ? $t('Pause') : $t('Play')" @click="playing ? $emit('pause') : $emit('play')">{{ playing ? '\u23F8' : '\u25B6' }}</button>
+      <button class="replay-play" type="button" :title="playing ? $t('Pause') : $t('Play replay')" @click="playing ? $emit('pause') : $emit('play')">{{ playing ? '\u23F8' : '\u25B6' }}</button>
       <button class="replay-forward" type="button" :title="$t('Step forward')" :disabled="index >= last" @click="select(index + 1)">&#x25B6;&#x25B6;</button>
       <button class="replay-end" type="button" :title="$t('Go to end')" :disabled="index >= last" @click="select(last)">&#x23ED;</button>
       <select class="replay-speed" :title="$t('Speed')" :value="speed" @change="onSpeed">
