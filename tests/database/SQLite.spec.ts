@@ -4,6 +4,9 @@ import {IN_MEMORY_SQLITE_PATH, SQLite} from '../../src/server/database/SQLite';
 import {GameId} from '../../src/common/Types';
 import {RunResult} from 'better-sqlite3';
 import {ITestDatabase, Status} from './ITestDatabase';
+import {expect} from 'chai';
+import {Game} from '../../src/server/Game';
+import {TestPlayer} from '../TestPlayer';
 
 class TestSQLite extends SQLite implements ITestDatabase {
   public lastSaveGamePromise: Promise<void> = Promise.resolve();
@@ -51,5 +54,87 @@ describeDatabaseSuite({
     type: 'SQLite',
     path: ':memory:',
     size_bytes: -1,
+  },
+  otherTests: (dbFactory) => {
+    describe('compressCompletedGames default', () => {
+      const savedEnv = process.env.COMPRESS_COMPLETED_GAMES_DAYS;
+      beforeEach(() => {
+        delete process.env.COMPRESS_COMPLETED_GAMES_DAYS;
+      });
+      afterEach(() => {
+        if (savedEnv === undefined) {
+          delete process.env.COMPRESS_COMPLETED_GAMES_DAYS;
+        } else {
+          process.env.COMPRESS_COMPLETED_GAMES_DAYS = savedEnv;
+        }
+      });
+
+      async function finishedGame(db: TestSQLite, id: GameId, finishedDaysAgo: number) {
+        const player = TestPlayer.BLACK.newPlayer();
+        const game = Game.newInstance(id, [player], player, 'spectatorid');
+        await db.lastSaveGamePromise;
+        for (let i = 0; i < 5; i++) {
+          await db.saveGame(game);
+        }
+        await db.markFinished(id);
+        const completedTime = Math.floor(Date.now() / 1000) - finishedDaysAgo * 86400;
+        db.database.prepare('UPDATE completed_game SET completed_time = ? WHERE game_id = ?').run(completedTime, id);
+        expect(await db.getSaveIds(id)).has.members([0, 1, 2, 3, 4, 5]);
+      }
+
+      // compressCompletedGames does not wait for the individual game compressions.
+      const settle = () => new Promise((resolve) => setImmediate(resolve));
+
+      it('keeps every save of a game that just finished', async () => {
+        const db = dbFactory() as TestSQLite;
+        await finishedGame(db, 'game-recent', 0);
+
+        await db.compressCompletedGames();
+        await settle();
+
+        expect(await db.getSaveIds('game-recent')).has.members([0, 1, 2, 3, 4, 5]);
+      });
+
+      it('keeps every save of a game that finished 13 days ago', async () => {
+        const db = dbFactory() as TestSQLite;
+        await finishedGame(db, 'game-13-days', 13);
+
+        await db.compressCompletedGames();
+        await settle();
+
+        expect(await db.getSaveIds('game-13-days')).has.members([0, 1, 2, 3, 4, 5]);
+      });
+
+      it('keeps only the first and last save of a game that finished 15 days ago', async () => {
+        const db = dbFactory() as TestSQLite;
+        await finishedGame(db, 'game-15-days', 15);
+
+        await db.compressCompletedGames();
+        await settle();
+
+        expect(await db.getSaveIds('game-15-days')).deep.eq([0, 5]);
+      });
+
+      it('keeps only the first and last save when given 0 days', async () => {
+        const db = dbFactory() as TestSQLite;
+        await finishedGame(db, 'game-today', 1);
+
+        await db.compressCompletedGames('0');
+        await settle();
+
+        expect(await db.getSaveIds('game-today')).deep.eq([0, 5]);
+      });
+
+      it('an env var overrides the default', async () => {
+        const db = dbFactory() as TestSQLite;
+        await finishedGame(db, 'game-env', 3);
+        process.env.COMPRESS_COMPLETED_GAMES_DAYS = '2';
+
+        await db.compressCompletedGames();
+        await settle();
+
+        expect(await db.getSaveIds('game-env')).deep.eq([0, 5]);
+      });
+    });
   },
 });
