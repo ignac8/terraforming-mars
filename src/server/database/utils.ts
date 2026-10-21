@@ -42,9 +42,16 @@ export function stringToBoolean(s: string | undefined, defaultValue: boolean): b
 }
 
 export function daysAgoToSeconds(dayString: string | undefined, defaultValue: number): number {
-  const parsed = stringToNumber(dayString, defaultValue);
-  // A negative number of days would put the cutoff in the future, which matches every game.
-  const days = parsed < 0 ? defaultValue : parsed;
+  const days = stringToNumber(dayString, defaultValue);
   const date = addDays(new Date(), -days);
   return dateToSeconds(date);
+}
+
+/**
+ * The time before which completed games get compressed. A negative number of days would put the
+ * cutoff in the future and compress every completed game, so it counts as invalid.
+ */
+export function compressCutoffSeconds(dayString: string | undefined): number {
+  const defaultDays = Number(DEFAULT_COMPRESS_COMPLETED_GAMES_DAYS);
+  return daysAgoToSeconds(stringToNumber(dayString, defaultDays) < 0 ? undefined : dayString, defaultDays);
 }
