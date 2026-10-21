@@ -84,7 +84,7 @@ import {PlayerViewModel, ViewModel} from '@/common/models/PlayerModel';
 import {SimpleGameModel} from '@/common/models/SimpleGameModel';
 import {SpectatorModel} from '@/common/models/SpectatorModel';
 import {JudgeModel} from '@/common/models/JudgeModel';
-import {isPlayerId, isSpectatorId, ParticipantId} from '@/common/Types';
+import {isJudgeId, isPlayerId, isSpectatorId, ParticipantId} from '@/common/Types';
 import {hasShowModal, showModal, windowHasHTMLDialogElement} from './HTMLDialogElementCompatibility';
 
 import dialogPolyfill from 'dialog-polyfill';
@@ -317,7 +317,7 @@ export default defineComponent({
       }
     } else if (currentPathname === paths.REPLAY) {
       const id = new URLSearchParams(window.location.search).get('id') || '';
-      if (isPlayerId(id) || isSpectatorId(id)) {
+      if (isPlayerId(id) || isSpectatorId(id) || isJudgeId(id)) {
         app.replayParticipantId = id;
         app.screen = 'replay';
       } else {

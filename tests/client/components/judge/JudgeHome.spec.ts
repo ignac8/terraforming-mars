@@ -6,6 +6,7 @@ import JudgeHome from '@/client/components/judge/JudgeHome.vue';
 import {CardName} from '@/common/cards/CardName';
 import {Color} from '@/common/Color';
 import {JudgeModel, JudgePlayerModel} from '@/common/models/JudgeModel';
+import {Phase} from '@/common/Phase';
 
 function privates(color: Color, hand: CardName): JudgePlayerModel {
   return {
@@ -103,5 +104,34 @@ describe('JudgeHome', () => {
     expect(waitingFor.exists()).is.true;
     expect(waitingFor.attributes('style')).to.include('display: none');
     expect(waitingFor.props('playerView').id).to.equal(judge.id);
+  });
+});
+
+describe('JudgeHome replay link', () => {
+  function finished(password: string | undefined) {
+    const judge = judgeModel([privates('red', CardName.ANTS)]);
+    judge.game = fakeGameModel({phase: Phase.END});
+    judge.password = password;
+    return judge;
+  }
+
+  it('is shown for a finished game, carrying the judge password', () => {
+    const wrapper = mountJudge(finished('se cret'));
+
+    const link = wrapper.find('a.judge-replay-link');
+    expect(link.exists()).is.true;
+    expect(link.attributes('href')).eq('replay?id=j-judge-id&password=se%20cret');
+  });
+
+  it('has no password in the link when the judge has none', () => {
+    const wrapper = mountJudge(finished(undefined));
+
+    expect(wrapper.find('a.judge-replay-link').attributes('href')).eq('replay?id=j-judge-id');
+  });
+
+  it('is not shown while the game runs', () => {
+    const wrapper = mountJudge(judgeModel([privates('red', CardName.ANTS)]));
+
+    expect(wrapper.find('a.judge-replay-link').exists()).is.false;
   });
 });

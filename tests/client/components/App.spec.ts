@@ -146,6 +146,13 @@ describe('App', () => {
       expect(wrapper.vm.replayParticipantId).to.equal('s-spectator-id');
     });
 
+    it('opens the replay screen for a judge id', () => {
+      window.history.replaceState({}, '', '/replay?id=j-judge-id&password=secret');
+      const wrapper = shallowMount(App, globalConfig);
+      expect(wrapper.vm.screen).to.equal('replay');
+      expect(wrapper.vm.replayParticipantId).to.equal('j-judge-id');
+    });
+
     it('alerts on a bad id', () => {
       const alert = vi.spyOn(window, 'alert').mockImplementation(() => {});
       window.history.replaceState({}, '', '/replay?id=nonsense');

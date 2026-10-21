@@ -1,5 +1,10 @@
 import {PlayerViewModel, ViewModel} from '@/common/models/PlayerModel';
 
+/** The query fragment for a seat's password, or '' when there is none. */
+export function passwordQuery(password: string | undefined | null): string {
+  return password === undefined || password === null ? '' : '&password=' + encodeURIComponent(password);
+}
+
 /**
  * The query fragment that identifies this seat's claim, or '' when the game
  * runs without player passwords.
@@ -13,6 +18,5 @@ import {PlayerViewModel, ViewModel} from '@/common/models/PlayerModel';
  * undefined and contributes nothing.
  */
 export function passwordParam(view: ViewModel): string {
-  const password = (view as PlayerViewModel).password;
-  return password === undefined ? '' : '&password=' + encodeURIComponent(password);
+  return passwordQuery((view as PlayerViewModel).password);
 }

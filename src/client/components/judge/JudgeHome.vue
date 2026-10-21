@@ -4,6 +4,7 @@
     <div v-if="game.phase === 'end'">
       <div class="player_home_block">
         <DynamicTitle title="This game is over!" :color="judge.color"/>
+        <a :href="replayUrl" class="judge-replay-link" v-i18n>Replay</a>
       </div>
     </div>
 
@@ -83,6 +84,8 @@ import WaitingFor from '@/client/components/WaitingFor.vue';
 import PlayersOverview from '@/client/components/overview/PlayersOverview.vue';
 import PurgeWarning from '@/client/components/common/PurgeWarning.vue';
 import KeyboardShortcuts from '@/client/components/KeyboardShortcuts.vue';
+import {paths} from '@/common/app/paths';
+import {passwordParam} from '@/client/utils/playerPassword';
 import {range} from '@/common/utils/utils';
 import {HomeMixin} from '@/client/mixins/HomeMixin';
 
@@ -100,6 +103,9 @@ export default defineComponent({
   computed: {
     game(): GameModel {
       return this.judge.game;
+    },
+    replayUrl(): string {
+      return `${paths.REPLAY}?id=${this.judge.id}${passwordParam(this.judge)}`;
     },
     // Each private block is paired with its public player by color.
     panels(): Array<Panel> {
