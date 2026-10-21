@@ -40,12 +40,33 @@ export class GameLogs {
       }
     };
 
-    // Default view keeps the payload small. An explicit generation request should
-    // always return the full generation, including the current one.
+    return this.selectLogs(game, generation, messagesForPlayer);
+  }
+
+  /**
+   * Every line, private ones included. Each copy loses its `playerId` and carries
+   * the owner's color in `owner` instead, so a judge never sees a player id.
+   */
+  public getLogsForJudge(game: IGame, generation: number | undefined): Array<LogMessage> {
+    const colors = new Map(game.players.map((player) => [player.id, player.color]));
+    const notEmpty = (message: LogMessage) => message !== undefined && message !== null;
+    return this.selectLogs(game, generation, notEmpty).map((message) => {
+      const copy = {...message};
+      if (message.playerId !== undefined) {
+        delete copy.playerId;
+        copy.owner = colors.get(message.playerId);
+      }
+      return copy;
+    });
+  }
+
+  // Default view keeps the payload small. An explicit generation request should
+  // always return the full generation, including the current one.
+  private selectLogs(game: IGame, generation: number | undefined, keep: (message: LogMessage) => boolean): Array<LogMessage> {
     if (generation === undefined) {
-      return game.gameLog.filter(messagesForPlayer).slice(-50);
+      return game.gameLog.filter(keep).slice(-50);
     }
-    return this.getLogsForGeneration(game.gameLog, generation).filter(messagesForPlayer);
+    return this.getLogsForGeneration(game.gameLog, generation).filter(keep);
   }
 
   public getLogsForGameEnd(game: IGame): Array<string> {

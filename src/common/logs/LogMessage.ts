@@ -2,9 +2,12 @@ import {LogMessageType} from './LogMessageType';
 import {LogMessageData} from './LogMessageData';
 import {Message} from './Message';
 import {PlayerId} from '../Types';
+import {Color} from '../Color';
 
 export class LogMessage implements Message {
   public playerId?: PlayerId;
+  // Set by the judge log route in place of playerId, so judges see who a private line belongs to.
+  public owner?: Color;
   public timestamp = Date.now();
   public type?: LogMessageType;
   constructor(
