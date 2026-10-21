@@ -6,6 +6,7 @@ import {DiscordId} from '../server/auth/discord';
 import {RouteError} from './RouteError';
 import {assertNever} from '../../common/utils/utils';
 import {IPlayer} from '../IPlayer';
+import {IGame} from '../IGame';
 import {Phase} from '../../common/Phase';
 import {randomBytes, timingSafeEqual} from 'crypto';
 
@@ -116,6 +117,43 @@ export abstract class Handler implements IHandler {
     if (incoming === undefined || !safeEquals(incoming, player.password)) {
       throw RouteError.unauthorized();
     }
+  }
+
+  /**
+   * Gates the judge seat. The first request claims it: a fresh password is generated
+   * and stored, and the caller is let through so the client can put it in the URL.
+   * Every later request must carry that password.
+   *
+   * Unlike a player seat there is no exemption for solo games, finished games or games
+   * without `playerPasswords`: the judge sees every player's hidden cards in all of them.
+   */
+  protected checkJudgePassword(game: IGame, ctx: Context): void {
+    // The operator's serverId link is a master key, as it is elsewhere.
+    if (this.isServerIdValid(ctx)) {
+      return;
+    }
+    if (game.judgePassword === undefined) {
+      game.judgePassword = randomBytes(PASSWORD_BYTES).toString('hex');
+      return;
+    }
+    const incoming = ctx.urlParams.stringOrUndefined('password');
+    if (incoming === undefined || !safeEquals(incoming, game.judgePassword)) {
+      throw RouteError.unauthorized();
+    }
+  }
+
+  /**
+   * Loads the game for the judge id in the `id` parameter and checks the judge password.
+   * Responds 404 unless the id belongs to that game.
+   */
+  protected async loadJudgeGame(ctx: Context): Promise<IGame> {
+    const id = ctx.urlParams.judgeId('id');
+    const game = await ctx.gameLoader.getGame(id);
+    if (game === undefined || game.judgeId !== id) {
+      throw RouteError.notFound();
+    }
+    this.checkJudgePassword(game, ctx);
+    return game;
   }
 
   private isServerIdValid(ctx: Context): boolean {

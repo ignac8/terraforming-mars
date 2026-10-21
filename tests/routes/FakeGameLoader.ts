@@ -2,7 +2,7 @@ import {IGameLoader} from '../../src/server/database/IGameLoader';
 import {GameIdLedger} from '../../src/server/database/IDatabase';
 import {Game} from '../../src/server/Game';
 import {IGame} from '../../src/server/IGame';
-import {GameId, isGameId, PlayerId, SpectatorId} from '../../src/common/Types';
+import {GameId, isGameId, ParticipantId} from '../../src/common/Types';
 
 export class FakeGameLoader implements IGameLoader {
   private games: Map<GameId, IGame> = new Map();
@@ -16,13 +16,13 @@ export class FakeGameLoader implements IGameLoader {
         return {gameId: gameId, participantIds: []};
       });
   }
-  public getGame(id: GameId | PlayerId | SpectatorId): Promise<IGame | undefined> {
+  public getGame(id: GameId | ParticipantId): Promise<IGame | undefined> {
     if (isGameId(id)) {
       return Promise.resolve(this.games.get(id));
     }
 
     for (const game of Array.from(this.games.values())) {
-      const matches = game.playersInGenerationOrder.some((player) => player.id === id) || game.spectatorId === id;
+      const matches = game.playersInGenerationOrder.some((player) => player.id === id) || game.spectatorId === id || game.judgeId === id;
       if (matches) {
         return Promise.resolve(game);
       }

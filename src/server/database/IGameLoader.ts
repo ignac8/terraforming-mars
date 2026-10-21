@@ -13,7 +13,7 @@ export interface IGameLoader {
    * Fetches a game from the GameLoader cache.
    *
    * @param {GameId | ParticipantId} id the id of the game to retrieve, or
-   * one of its player ids, or its spectator id or judge id.
+   * one of its player ids, its spectator id, or its judge id.
    * @param {boolean} forceLoad (default is false.) When true always load from the database,
    * which refreshes the cache. This should never be true during an active game except when
    * doing an administrative rollback. Don't even make this true for normal game undos.
