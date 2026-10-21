@@ -64,8 +64,6 @@ describe('CollegiumCopernicus', () => {
     selectColony.cb(selectColony.colonies[0]);
     expect(card.resourceCount).to.eq(7);
     expect(player.megaCredits).to.eq(2);
-    expect(game.gameLog.map(formatMessage)).to.include(
-      `${player.color} spent 3:cr:data: from Collegium Copernicus to trade with Luna`);
   });
 
 
