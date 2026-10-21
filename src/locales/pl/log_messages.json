@@ -51,6 +51,7 @@
   "Drew and discarded ${0} to place a ${1}": "Dobrano i odrzucono kartę ${0} aby umieścić obszar: ${1}",
   "The id of this game is ${0}": "ID tej gry to: ${0}",
   "Good luck ${0}!": "Powodzenia, ${0}!",
+  "First player this generation is ${0}": "Pierwszym graczem w tym pokoleniu jest ${0}",
   "Final greenery placement": "Końcowe umieszczanie obszarów zieleni",
   "This game id was ${0}": "ID tej gry to: ${0}",
   "megacredits": "M€",

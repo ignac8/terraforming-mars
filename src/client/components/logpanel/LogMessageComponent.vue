@@ -1,6 +1,6 @@
 <template>
    <li v-if="message !== undefined && message.data !== undefined && message.message !== undefined" @click.prevent="$emit('click')">
-    <span v-if="message.owner !== undefined" class="log-owner" :class="ownerClass"></span>
+    <span v-if="message.owner !== undefined" class="log-owner" :class="ownerClass" :title="getPlayerName(message.owner)"></span>
     <span v-if="(message.type ?? LogMessageType.DEFAULT) === LogMessageType.DEFAULT" :title="when" v-html="icon"></span>
     <template v-for="(data, idx) of entries" :key="idx">
       <span class="log-plain-text" v-if="typeof(data) === 'string'" v-html="inlineMarkdown(data)"></span>

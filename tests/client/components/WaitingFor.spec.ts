@@ -315,6 +315,30 @@ describe('WaitingFor', () => {
     expect(showAlert.mock.calls).has.length(1);
   });
 
+  describe('when polls are refused with 401', () => {
+    const judge = {...spectatorView, id: 'j-judge-id', signature: 'sig:1'};
+
+    async function alertAfterRefusedPolls(view: object): Promise<string> {
+      vi.useFakeTimers();
+      stubPolls(401);
+      const showAlert = vi.fn();
+      mountSpectator({showAlert}, view);
+
+      await vi.advanceTimersByTimeAsync(35000);
+
+      expect(showAlert.mock.calls).has.length(1);
+      return showAlert.mock.calls[0][1];
+    }
+
+    it('tells a judge the password is incorrect', async () => {
+      expect(await alertAfterRefusedPolls(judge)).includes('Incorrect judge password.');
+    });
+
+    it('keeps the generic message for a spectator', async () => {
+      expect(await alertAfterRefusedPolls(spectatorView)).includes('Received unexpected response from server (401).');
+    });
+  });
+
   it('polls a judge page with its signature and refreshes it', async () => {
     vi.useFakeTimers();
     const urls: Array<string> = [];
