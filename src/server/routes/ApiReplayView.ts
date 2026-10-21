@@ -4,10 +4,9 @@ import {Context} from './IHandler';
 import {Request} from '../Request';
 import {Response} from '../Response';
 import {RouteError} from './RouteError';
-import {loadReplayState} from '../replay/ReplayService';
+import {isFinished, loadReplayState} from '../replay/ReplayService';
 import {buildReplayView} from '../replay/replayView';
 import {PLAYER_COLORS} from '../../common/Color';
-import {Phase} from '../../common/Phase';
 import {ReplayViewAs} from '../../common/replay/ReplayModel';
 import {isJudgeId, isPlayerId} from '../../common/Types';
 
@@ -38,7 +37,7 @@ export class ApiReplayView extends Handler {
     }
     // A replay needs a finished game. This is answered before any password check, which can claim
     // an unclaimed seat: a replay read must not write to a running game.
-    if (game.phase !== Phase.END) {
+    if (!await isFinished(game)) {
       throw RouteError.badRequest('game not finished');
     }
     if (judge) {
