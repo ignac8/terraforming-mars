@@ -253,7 +253,7 @@ export default defineComponent({
             // (a re-claimed seat), and polls would then be refused. A spectator model has no password.
             const stalePassword = password !== '' &&
               new URLSearchParams(window.location.search).get('password') !== (model as PlayerViewModel | JudgeModel).password;
-            if (currentPathname !== path || stalePassword || (password !== '' && !window.location.search.includes('password='))) {
+            if (currentPathname !== path || stalePassword) {
               window.history.replaceState(
                 model,
                 `${constants.APP_NAME} - Game`,
