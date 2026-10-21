@@ -100,25 +100,28 @@ export async function isFinished(game: IGame): Promise<boolean> {
 }
 
 // Reads the saves one at a time and keeps only what the list needs, so at most one save is in
-// memory at once. `moves` holds every message, whoever may see it.
+// memory at once, besides the newest, which is read first.
 async function buildMoves(game: IGame): Promise<{result: ReplayMovesModel, finished: boolean}> {
   const saveIds = await getSortedSaveIds(game);
+  if (saveIds.length === 0) {
+    return {result: {status: 'not-finished'}, finished: false};
+  }
+  // The newest save is read first, so a game whose END save has not landed costs one read.
+  const newestId = saveIds[saveIds.length - 1];
+  const newest = await getSave(game, newestId);
+  if (newest.phase !== Phase.END) {
+    return {result: {status: 'not-finished'}, finished: false};
+  }
   // After compression only the first and last save remain.
   if (saveIds.length < 3) {
-    const finished = saveIds.length > 0 &&
-      (await getSave(game, saveIds[saveIds.length - 1])).phase === Phase.END;
-    return {result: {status: finished ? 'expired' : 'not-finished'}, finished};
+    return {result: {status: 'expired'}, finished: true};
   }
 
   const saves: Array<{saveId: number, logLength: number}> = [];
-  let finalLog: Array<LogMessage> = [];
-  let finalPhase: Phase = Phase.END;
   try {
     for (const saveId of saveIds) {
-      const save = await getSave(game, saveId);
+      const save = saveId === newestId ? newest : await getSave(game, saveId);
       saves.push({saveId, logLength: save.gameLog.length});
-      finalLog = save.gameLog;
-      finalPhase = save.phase;
     }
   } catch (e) {
     // Compression can strike while the saves are read. Only the first and last remain then.
@@ -127,9 +130,7 @@ async function buildMoves(game: IGame): Promise<{result: ReplayMovesModel, finis
     }
     throw e;
   }
-  if (finalPhase !== Phase.END) {
-    return {result: {status: 'not-finished'}, finished: false};
-  }
+  const finalLog = newest.gameLog;
 
   // A save with the same log length as the next one changed nothing a viewer can see,
   // e.g. the two saves at the end of the game.
