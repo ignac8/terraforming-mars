@@ -80,6 +80,14 @@ describe('JudgeHome', () => {
     expect(panels[1].text()).to.include(CardName.ANTS);
   });
 
+  it('renders no panel for a private block whose color matches no player', () => {
+    const wrapper = mountJudge(judgeModel([privates('red', CardName.ANTS), privates('green', CardName.BIRDS)]));
+
+    expect(wrapper.findAllComponents({name: 'JudgePlayerPanel'})).has.length(1);
+    expect(wrapper.text()).to.include(CardName.ANTS);
+    expect(wrapper.text()).to.not.include(CardName.BIRDS);
+  });
+
   it('has no spectator or judge link', () => {
     const wrapper = mountJudge(judgeModel([privates('red', CardName.ANTS), privates('blue', CardName.BIRDS)]));
 

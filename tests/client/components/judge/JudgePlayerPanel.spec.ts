@@ -7,6 +7,7 @@ import JudgePlayerPanel from '@/client/components/judge/JudgePlayerPanel.vue';
 import {CardName} from '@/common/cards/CardName';
 import {JudgePlayerModel} from '@/common/models/JudgeModel';
 import {SelectCardModel} from '@/common/models/PlayerInputModel';
+import {playerColorClass} from '@/common/utils/utils';
 
 function privates(overrides: Partial<JudgePlayerModel> = {}): JudgePlayerModel {
   return {
@@ -54,18 +55,31 @@ describe('JudgePlayerPanel', () => {
     expect(wrapper.text()).to.include('Alice');
   });
 
+  it('shows the player name in the player color', () => {
+    const wrapper = mountPanel();
+
+    expect(wrapper.find('.dynamic-title').classes()).to.include(playerColorClass('red', 'shadow'));
+  });
+
+  it('shows no section when every list is empty', () => {
+    const wrapper = mountPanel();
+
+    for (const [, title] of sections) {
+      expect(wrapper.text()).to.not.include(title);
+    }
+  });
+
   for (const [field, title, card] of sections) {
-    it(`shows ${field} when filled`, () => {
+    it(`shows only the ${field} section when only it is filled`, () => {
       const wrapper = mountPanel({[field]: [{name: card}]});
 
       expect(wrapper.text()).to.include(title);
       expect(wrapper.text().toLowerCase()).to.include(card.toLowerCase());
-    });
-
-    it(`hides ${field} when empty`, () => {
-      const wrapper = mountPanel();
-
-      expect(wrapper.text()).to.not.include(title);
+      for (const [otherField, otherTitle] of sections) {
+        if (otherField !== field) {
+          expect(wrapper.text()).to.not.include(otherTitle);
+        }
+      }
     });
   }
 
