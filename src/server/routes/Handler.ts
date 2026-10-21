@@ -89,9 +89,11 @@ export abstract class Handler implements IHandler {
   /**
    * Gates a player seat when the game runs with `playerPasswords`.
    *
-   * The first request to reach an unclaimed seat claims it: a fresh password is
-   * generated and stored, and the caller is let through so the client can put it
-   * in the URL. Every later request must carry that password.
+   * The first request to reach an unclaimed seat claims it and is let through. If it
+   * carries a well-formed password (the format the server generates), that password
+   * becomes the seat's, so a player tab that outlives the stored claim keeps working.
+   * Otherwise a fresh password is generated, and the client puts it in the URL. Every
+   * later request must carry that password.
    *
    * Callers must apply this to *every* player-scoped route. Guarding only the
    * route that serves the page leaves the seat wide open, since knowing a player
@@ -112,7 +114,7 @@ export abstract class Handler implements IHandler {
       return;
     }
     if (player.password === undefined) {
-      player.password = randomBytes(PASSWORD_BYTES).toString('hex');
+      player.password = this.claimPassword(ctx);
       return;
     }
     this.requirePassword(player.password, ctx);

@@ -48,6 +48,41 @@ describe('player passwords', () => {
     expect(model.password).eq(player.password);
   });
 
+  it('an unclaimed seat is claimed with a well-formed password the request carries', async () => {
+    const mine = '0123456789ab';
+
+    const model = await getPlayer('&password=' + mine);
+
+    expect(player.password).eq(mine);
+    expect(model.password).eq(mine);
+  });
+
+  it('an unclaimed seat ignores a malformed password and hands out a fresh one', async () => {
+    for (const malformed of ['', '0123456789a', '0123456789abc', 'ghijklmnopqr', '0123456789AB']) {
+      player.password = undefined;
+
+      const model = await getPlayer('&password=' + malformed);
+
+      expect(model.password).is.not.eq(malformed);
+      expect(player.password).eq(model.password);
+      expect(player.password).matches(/^[0-9a-f]{12}$/);
+    }
+  });
+
+  it('a lost claim is reclaimed by the tab that held it', async () => {
+    const model = await getPlayer('');
+    const mine = model.password;
+    player.password = undefined;
+
+    scaffolding.url = '/api/waitingfor?id=' + player.id + '&gameAge=0&undoCount=0&password=' + mine;
+    await scaffolding.get(ApiWaitingFor.INSTANCE, res);
+    expect(res.statusCode).eq(statusCode.ok);
+    expect(player.password).eq(mine);
+
+    const again = await getPlayer('&password=' + mine);
+    expect(again.password).eq(mine);
+  });
+
   it('a later visitor without the password is refused', async () => {
     await getPlayer('');
 
