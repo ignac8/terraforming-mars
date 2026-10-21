@@ -5,7 +5,6 @@ import {SerializedGame} from '../SerializedGame';
 import {loadSandboxGame} from './sandbox';
 import {Phase} from '../../common/Phase';
 import {GameId, ParticipantId} from '../../common/Types';
-import {LogMessage} from '../../common/logs/LogMessage';
 import {ReplayMove, ReplayMovesModel} from '../../common/replay/ReplayModel';
 
 const MAX_CACHED_GAMES = 50;
