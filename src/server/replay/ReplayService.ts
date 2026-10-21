@@ -22,6 +22,16 @@ async function getSortedSaveIds(game: IGame): Promise<Array<number>> {
   return [...saveIds].sort((a, b) => a - b);
 }
 
+// Compression can remove a save between listing the ids and reading it. Treat that like any
+// other missing save instead of letting the error become a 500.
+async function getSave(game: IGame, saveId: number): Promise<SerializedGame> {
+  try {
+    return await Database.getInstance().getGameVersion(game.id, saveId);
+  } catch (e) {
+    throw e instanceof RouteError ? e : RouteError.notFound('save not available');
+  }
+}
+
 export async function getReplayMoves(game: IGame, viewerId: ParticipantId): Promise<ReplayMovesModel> {
   if (game.phase !== Phase.END) {
     return {status: 'not-finished'};
@@ -39,10 +49,9 @@ export async function getReplayMoves(game: IGame, viewerId: ParticipantId): Prom
     return {status: 'expired'};
   }
 
-  const db = Database.getInstance();
   const saves: Array<{saveId: number, save: SerializedGame}> = [];
   for (const saveId of saveIds) {
-    saves.push({saveId, save: await db.getGameVersion(game.id, saveId)});
+    saves.push({saveId, save: await getSave(game, saveId)});
   }
 
   // The game sets its phase to END before the final save is written. Until that save lands the
@@ -84,5 +93,11 @@ export async function loadReplayState(game: IGame, saveId: number): Promise<IGam
   if (!saveIds.includes(saveId)) {
     throw RouteError.notFound();
   }
-  return loadSandboxGame(await Database.getInstance().getGameVersion(game.id, saveId));
+  const save = await getSave(game, saveId);
+  try {
+    return loadSandboxGame(save);
+  } catch (e) {
+    // A save that this version of the code cannot read.
+    throw e instanceof RouteError ? e : RouteError.notFound('save not available');
+  }
 }
