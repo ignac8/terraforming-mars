@@ -125,7 +125,7 @@ describeDatabaseSuite({
         expect(await db.getSaveIds('game-today')).deep.eq([0, 5]);
       });
 
-      for (const invalid of ['', 'abc']) {
+      for (const invalid of ['', 'abc', '-5']) {
         it(`falls back to the default for the invalid value '${invalid}'`, async () => {
           const db = dbFactory() as TestSQLite;
           await finishedGame(db, 'game-invalid', 3);
