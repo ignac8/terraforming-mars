@@ -453,8 +453,23 @@ describeDatabaseSuite({
       expect(revisedPlayer.actionsTakenThisRound).eq(4);
     });
 
+    it('keeps every save by default', async () => {
+      const db = dbFactory();
+
+      const player = TestPlayer.BLACK.newPlayer();
+      const game = Game.newInstance('game-id-1212', [player], player, 'spectatorid');
+      await db.lastSaveGamePromise;
+
+      for (let i = 0; i < 20; i++) {
+        await db.saveGame(game);
+      }
+
+      expect(await db.getSaveIds(game.id)).has.members([...Array(21).keys()]);
+    });
+
     it('trim', async () => {
       const db = dbFactory();
+      db.setTrimCount(10);
 
       const player = TestPlayer.BLACK.newPlayer();
       const game = Game.newInstance('game-id-1212', [player], player, 'spectatorid');
