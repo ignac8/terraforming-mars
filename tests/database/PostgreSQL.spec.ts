@@ -236,10 +236,29 @@ describe('PostgreSQL', () => {
     await db.deleteGameNbrSaves(game.id, 2);
 
     expect(pool.statements).deep.eq([
-      {connection: 'pool', sql: 'DELETE FROM games'},
       {connection: 'pool', sql: 'DELETE FROM completed_game'},
+      {connection: 'pool', sql: 'DELETE FROM games'},
     ]);
-    expect(pool.poolParams[1]).deep.eq([game.id]);
+    expect(pool.poolParams[0]).deep.eq([game.id]);
+  });
+
+  it('still deletes the saves when leaving the compression queue fails', async () => {
+    const warnings: Array<Array<unknown>> = [];
+    const originalWarn = console.warn;
+    console.warn = (...args: Array<unknown>) => {
+      warnings.push(args);
+    };
+    try {
+      pool.failing = ['DELETE FROM completed_game'];
+
+      await db.deleteGameNbrSaves(game.id, 2);
+
+      expect(pool.statements.map((s) => s.sql)).deep.eq(['DELETE FROM completed_game', 'DELETE FROM games']);
+      expect(warnings).has.length(1);
+      expect(String(warnings[0][0])).contains(game.id);
+    } finally {
+      console.warn = originalWarn;
+    }
   });
 
   describe('defaults', () => {
