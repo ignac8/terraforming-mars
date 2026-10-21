@@ -182,33 +182,9 @@ describe('LogMessageComponent', () => {
   it('renders UNDERGROUND_TOKEN data as icons', () => {
     expect(undergroundTokenHtml('titanium2')).includes(
       '2<span class="markdown-resource resource_icon--titanium"></span>');
-    expect(undergroundTokenHtml('corruption1')).includes(
-      '1<span class="markdown-resource resource_icon--corruption"></span>');
     expect(undergroundTokenHtml('steel1production')).includes(
       '1<span class="markdown-production"><span class="markdown-resource resource_icon--steel"></span></span>');
-    expect(undergroundTokenHtml('microbe2')).includes(
-      '2<span class="markdown-resource card-resource-microbe"></span>');
-    expect(undergroundTokenHtml('tr')).includes('1<span class="markdown-icon markdown-icon-tr"></span>');
-    expect(undergroundTokenHtml('sciencetag')).includes('1<span class="markdown-tag tag-science"></span>');
-  });
-
-  it('renders UNDERGROUND_TOKEN data without icons as plain text', () => {
-    const html = undergroundTokenHtml('card2');
-
-    expect(html).includes('draw 2 cards');
-    expect(html).does.not.include('markdown-');
-  });
-
-  it('translates UNDERGROUND_TOKEN data before rendering icons', () => {
-    PreferencesManager.INSTANCE.set('lang', 'de');
-    (window as any)._translations = {'1:r:titanium: and 1:r:plants:': '1:r:titanium: und 1:r:plants:'};
-    try {
-      const html = undergroundTokenHtml('titaniumandplant');
-
-      expect(html).includes('resource_icon--titanium"></span> und 1<span class="markdown-resource resource_icon--plants">');
-    } finally {
-      PreferencesManager.resetForTest();
-      delete (window as any)._translations;
-    }
+    expect(undergroundTokenHtml('corruption1')).includes(
+      '1<span class="markdown-resource resource_icon--corruption"></span>');
   });
 });

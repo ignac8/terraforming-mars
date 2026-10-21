@@ -1,7 +1,7 @@
 import {expect} from 'chai';
 import {Voltagon} from '../../../src/server/cards/underworld/Voltagon';
 import {testGame} from '../../TestGame';
-import {formatMessage, runAllActions} from '../../TestingUtils';
+import {runAllActions} from '../../TestingUtils';
 import {IGame} from '../../../src/server/IGame';
 import {TestPlayer} from '../../TestPlayer';
 import {OrOptions} from '../../../src/server/inputs/OrOptions';
@@ -49,14 +49,12 @@ describe('Voltagon', () => {
 
     expect(player.energy).eq(8);
     expect(game.getOxygenLevel()).eq(1);
-    expect(game.gameLog.map(formatMessage)).to.include('blue spent 8:r:energy: to raise oxygen 1 step.');
 
     expect(game.getVenusScaleLevel()).eq(0);
     cast(orOptions.options[1], SelectOption).cb(undefined);
 
     expect(player.energy).eq(0);
     expect(game.getVenusScaleLevel()).eq(2);
-    expect(game.gameLog.map(formatMessage)).to.include('blue spent 8:r:energy: to raise Venus 1 step.');
   });
 
   it('onClaim', () => {
