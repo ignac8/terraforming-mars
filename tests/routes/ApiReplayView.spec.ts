@@ -1,5 +1,6 @@
 import {expect} from 'chai';
 import {ApiReplayView} from '../../src/server/routes/ApiReplayView';
+import {clearReplayCache} from '../../src/server/replay/ReplayService';
 import {IGame} from '../../src/server/IGame';
 import {SerializedGame} from '../../src/server/SerializedGame';
 import {PLAYER_COLORS} from '../../src/common/Color';
@@ -24,12 +25,14 @@ describe('ApiReplayView', () => {
     res = new MockResponse();
     db = new InMemoryDatabase();
     setTestDatabase(db);
+    clearReplayCache();
     [game, player] = testGame(2);
     await scaffolding.ctx.gameLoader.add(game);
   });
 
   afterEach(() => {
     restoreTestDatabase();
+    clearReplayCache();
   });
 
   // The newest save of a finished game is in the END phase.
