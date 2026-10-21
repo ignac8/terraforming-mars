@@ -150,6 +150,16 @@ describe('ApiReplayMoves', () => {
       expect(player.password).is.undefined;
     });
 
+    it('says not-finished before the judge password check while the newest save is not END', async () => {
+      const base: SerializedGame = game.serialize();
+      db.games.set(game.id, [base, base, {...base, phase: Phase.ACTION}]);
+      game.phase = Phase.END;
+      scaffolding.url = `/api/replay/moves?id=${game.judgeId}&password=wrong`;
+      await scaffolding.get(ApiReplayMoves.INSTANCE, res);
+      expect(res.statusCode).eq(statusCode.ok);
+      expect(JSON.parse(res.content)).deep.eq({status: 'not-finished'});
+    });
+
     it('answers a player with the password while the game runs', async () => {
       player.password = 'seat-secret';
       scaffolding.url = '/api/replay/moves?id=' + player.id + '&password=seat-secret';

@@ -4,8 +4,7 @@ import {Context} from './IHandler';
 import {Request} from '../Request';
 import {Response} from '../Response';
 import {RouteError} from './RouteError';
-import {getReplayMoves} from '../replay/ReplayService';
-import {Phase} from '../../common/Phase';
+import {getReplayMoves, isFinished} from '../replay/ReplayService';
 import {isJudgeId, isPlayerId} from '../../common/Types';
 
 export class ApiReplayMoves extends Handler {
@@ -25,7 +24,7 @@ export class ApiReplayMoves extends Handler {
       // The password checks can claim an unclaimed seat. A replay read never writes to a game and
       // never hands a password back, so only a finished game with a claimed judge seat is checked.
       // An unclaimed seat lets the judge link through, as the link alone is the credential.
-      if (judgeGame.phase === Phase.END && judgeGame.judgePassword !== undefined) {
+      if (judgeGame.judgePassword !== undefined && await isFinished(judgeGame)) {
         this.checkJudgePassword(judgeGame, ctx);
       }
       responses.writeJson(res, ctx, await getReplayMoves(judgeGame, judgeId));
@@ -38,7 +37,7 @@ export class ApiReplayMoves extends Handler {
     }
     // The moves carry the viewer's private log lines, so a player needs the seat password.
     // Only a finished game is checked, see above.
-    if (game.phase === Phase.END && isPlayerId(id)) {
+    if (isPlayerId(id) && await isFinished(game)) {
       this.checkPlayerPassword(game.getPlayerById(id), ctx);
     }
     responses.writeJson(res, ctx, await getReplayMoves(game, id));
