@@ -2,7 +2,7 @@ import {shallowMount} from '@vue/test-utils';
 import {expect} from 'chai';
 import {globalConfig} from '../getLocalVue';
 import LogMessageComponent from '@/client/components/logpanel/LogMessageComponent.vue';
-import {fakeViewModel} from '../testHelpers';
+import {fakePublicPlayerModel, fakeViewModel} from '../testHelpers';
 import {LogMessage} from '@/common/logs/LogMessage';
 import {LogMessageType} from '@/common/logs/LogMessageType';
 import {LogMessageDataType} from '@/common/logs/LogMessageDataType';
@@ -36,6 +36,21 @@ describe('LogMessageComponent', () => {
     expect(wrapper.find('li > .' + playerColorClass('red', 'bg')).exists()).is.true;
   });
 
+  it('names the owner on the owner marker', () => {
+    const message = new LogMessage(LogMessageType.DEFAULT, 'Test message', []);
+    message.owner = 'red';
+    const players = [
+      fakePublicPlayerModel({color: 'blue', name: 'Bob'}),
+      fakePublicPlayerModel({color: 'red', name: 'Alice'}),
+    ];
+    const wrapper = shallowMount(LogMessageComponent, {
+      ...globalConfig,
+      props: {message, viewModel: fakeViewModel({players})},
+    });
+
+    expect(wrapper.find('.log-owner').attributes('title')).to.equal('Alice');
+  });
+
   it('shows the chat icon on an owned line and the clock on a system line', () => {
     const owned = new LogMessage(LogMessageType.DEFAULT, 'Test message', []);
     owned.owner = 'red';
@@ -43,7 +58,7 @@ describe('LogMessageComponent', () => {
     const iconOf = (message: LogMessage) => shallowMount(LogMessageComponent, {
       ...globalConfig,
       props: {message, viewModel: fakeViewModel()},
-    }).find('li > span[title]').text();
+    }).findAll('li > span[title]').at(-1)!.text();
 
     expect(iconOf(owned)).to.equal('\u{1f4ac}');
     expect(iconOf(system)).to.equal('\u{1f551}');
