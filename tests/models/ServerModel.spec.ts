@@ -9,6 +9,11 @@ import {testGame} from '../TestGame';
 import {Server} from '../../src/server/models/ServerModel';
 import {GlobalParameter} from '../../src/common/GlobalParameter';
 import {Phase} from '../../src/common/Phase';
+import {CardName} from '../../src/common/cards/CardName';
+import {toName, cast} from '../../src/common/utils/utils';
+import {cardsFromJSON} from '../../src/server/createCard';
+import {finishGeneration} from '../TestingUtils';
+import {SelectCard} from '../../src/server/inputs/SelectCard';
 
 describe('ServerModel', () => {
   let player: TestPlayer;
@@ -136,5 +141,65 @@ describe('ServerModel', () => {
       drawPile: game.turmoil!.globalEventDealer.deck.length,
       discardPile: game.turmoil!.globalEventDealer.discards.length,
     });
+  });
+
+  it('judge model shows every player\'s hand and no player secrets', () => {
+    [game, player, player2] = testGame(2, {judgeLink: true, playerPasswords: true});
+    player.cardsInHand = cardsFromJSON([CardName.ANTS]);
+    player2.cardsInHand = cardsFromJSON([CardName.FISH]);
+    player.password = 'player-one-secret';
+    player2.password = 'player-two-secret';
+    game.judgePassword = 'judge-secret';
+
+    const model = Server.getJudgeModel(game);
+
+    expect(model.id).eq(game.judgeId);
+    expect(model.password).eq('judge-secret');
+    expect(model.thisPlayer).is.undefined;
+    expect(model.privates.map((p) => p.cardsInHand.map(toName))).deep.eq([[CardName.ANTS], [CardName.FISH]]);
+    expect(model.privates.map((p) => p.color)).deep.eq([player.color, player2.color]);
+    const json = JSON.stringify(model);
+    expect(json).does.not.include('player-one-secret');
+    expect(json).does.not.include('player-two-secret');
+    expect(json).does.not.include(player.id);
+    expect(json).does.not.include(player2.id);
+  });
+
+  it('the judge model needs a judge id', () => {
+    [game] = testGame(2);
+
+    expect(() => Server.getJudgeModel(game)).to.throw('no judge id');
+  });
+
+  it('player and spectator models never carry the judge id', () => {
+    [game, player] = testGame(2, {judgeLink: true});
+    game.judgePassword = 'secret';
+
+    for (const model of [Server.getPlayerModel(player), Server.getSpectatorModel(game)]) {
+      const json = JSON.stringify(model);
+      expect(json).does.not.include(game.judgeId!);
+      expect(json).does.not.include('secret');
+    }
+  });
+
+  it('a draft pick changes the judge signature', () => {
+    [game, player, player2] = testGame(2, {draftVariant: true, judgeLink: true, skipInitialShuffling: true});
+    game.projectDeck.drawPile.unshift(...cardsFromJSON([
+      CardName.ACQUIRED_COMPANY,
+      CardName.BIOFERTILIZER_FACILITY,
+      CardName.CAPITAL,
+      CardName.DECOMPOSERS,
+      CardName.EARTH_OFFICE,
+      CardName.FISH,
+      CardName.GENE_REPAIR,
+      CardName.HACKERS]));
+    game.generation = 1;
+    finishGeneration(game);
+    const before = Server.getJudgeSignature(game);
+
+    const selectCard = cast(player.popWaitingFor(), SelectCard);
+    selectCard.process({type: 'card', cards: [CardName.BIOFERTILIZER_FACILITY]});
+
+    expect(Server.getJudgeSignature(game)).not.eq(before);
   });
 });

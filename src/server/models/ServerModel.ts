@@ -9,7 +9,7 @@ import {Space} from '../boards/Space';
 import {IPlayer} from '../IPlayer';
 import {PlayerInput} from '../PlayerInput';
 import {PlayerInputModel} from '../../common/models/PlayerInputModel';
-import {PlayerViewModel, Protection, PublicPlayerModel} from '../../common/models/PlayerModel';
+import {PlayerViewModel, PrivatePlayerFields, Protection, PublicPlayerModel} from '../../common/models/PlayerModel';
 import {SpaceHighlight, SpaceModel} from '../../common/models/SpaceModel';
 import {TileType} from '../../common/TileType';
 import {Phase} from '../../common/Phase';
@@ -18,6 +18,7 @@ import {ClaimedMilestoneModel, MilestoneScore} from '../../common/models/Claimed
 import {FundedAwardModel, AwardScore} from '../../common/models/FundedAwardModel';
 import {getTurmoilModel} from '../models/TurmoilModel';
 import {SpectatorModel} from '../../common/models/SpectatorModel';
+import {JudgeModel} from '../../common/models/JudgeModel';
 import {GameModel, OtherDeckSizesModel} from '../../common/models/GameModel';
 import {createPathfindersModel} from './PathfindersModel';
 import {MoonModel} from '../../common/models/MoonModel';
@@ -109,6 +110,22 @@ export class Server {
     const thisPlayer: PublicPlayerModel = players[thisPlayerIndex];
 
     const rv: PlayerViewModel = {
+      ...this.getPrivateFields(player),
+      game: this.getGameModel(player.game),
+      id: player.id,
+      password: player.password,
+      color: player.color,
+      runId: runId,
+      thisPlayer: thisPlayer,
+      players: players,
+      autopass: player.autopass,
+    };
+    return rv;
+  }
+
+  /** The fields of a player's view that nobody else may see. */
+  public static getPrivateFields(player: IPlayer): PrivatePlayerFields {
+    return {
       cardsInHand: cardsToModel(player, player.cardsInHand, {showCalculatedCost: true}),
       ceoCardsInHand: cardsToModel(player, Array.from(player.ceoCardsInHand)),
       dealtCorporationCards: cardsToModel(player, player.dealtCorporationCards),
@@ -116,19 +133,35 @@ export class Server {
       dealtCeoCards: cardsToModel(player, player.dealtCeoCards),
       dealtProjectCards: cardsToModel(player, player.dealtProjectCards),
       draftedCards: cardsToModel(player, player.draftedCards, {showCalculatedCost: true}),
-      game: this.getGameModel(player.game),
-      id: player.id,
-      password: player.password,
-      color: player.color,
-      runId: runId,
       pickedCorporationCard: player.pickedCorporationCard ? cardsToModel(player, [player.pickedCorporationCard]) : [],
       preludeCardsInHand: cardsToModel(player, player.preludeCardsInHand),
-      thisPlayer: thisPlayer,
       waitingFor: this.getWaitingFor(player, player.getWaitingFor()),
-      players: players,
-      autopass: player.autopass,
     };
-    return rv;
+  }
+
+  public static getJudgeModel(game: IGame): JudgeModel {
+    if (game.judgeId === undefined) {
+      throw new Error('Game has no judge id');
+    }
+    const players = game.playersInGenerationOrder;
+    return {
+      color: 'neutral',
+      id: game.judgeId,
+      password: game.judgePassword,
+      game: this.getGameModel(game),
+      // The judge sees every player's VP. Player ids stay hidden until the game ends.
+      players: players.map((p) => this.getPlayer(p, true)),
+      thisPlayer: undefined,
+      runId: runId,
+      signature: this.getJudgeSignature(game),
+      privates: players.map((p) => ({...this.getPrivateFields(p), color: p.color})),
+    };
+  }
+
+  /** Changes whenever anything a judge sees changes, including a pending draft or research pick. */
+  public static getJudgeSignature(game: IGame): string {
+    const requestIds = game.playersInGenerationOrder.map((p) => p.getWaitingFor()?.requestId ?? '-');
+    return [game.lastSaveId, game.gameAge, game.undoCount, ...requestIds].join(':');
   }
 
   public static getSpectatorModel(game: IGame): SpectatorModel {
