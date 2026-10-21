@@ -3,7 +3,7 @@ import {testGame} from '../TestGame';
 import {TestPlayer} from '../TestPlayer';
 import {IGame} from '../../src/server/IGame';
 import {SerializedGame} from '../../src/server/SerializedGame';
-import {clearReplayCache, getReplayMoves, isFinished, loadReplayState} from '../../src/server/replay/ReplayService';
+import {clearReplayCache, forgetReplay, getReplayMoves, isFinished, loadReplayState} from '../../src/server/replay/ReplayService';
 import {RouteError} from '../../src/server/routes/RouteError';
 import {LogMessage} from '../../src/common/logs/LogMessage';
 import {LogMessageType} from '../../src/common/logs/LogMessageType';
@@ -162,6 +162,22 @@ describe('ReplayService', () => {
     const first = await getReplayMoves(game, player.id);
     db.games.delete(game.id);
     expect(await getReplayMoves(game, player.id)).eq(first);
+  });
+
+  it('forgetReplay makes a rolled back game read its saves again', async () => {
+    storeLengths([0, 2, 5, 9]);
+    const other = testGame(2, {}, '-other')[0];
+    db.games.set(other.id, [...db.games.get(game.id)!]);
+    other.phase = Phase.END;
+    expect(await moves()).has.length(4);
+    const otherList = await getReplayMoves(other, other.playersInGenerationOrder[0].id);
+    // The rollback removes the END save.
+    db.games.get(game.id)!.pop();
+
+    forgetReplay(game.id);
+
+    expect(await getReplayMoves(game, player.id)).deep.eq({status: 'not-finished'});
+    expect(await getReplayMoves(other, other.playersInGenerationOrder[0].id)).eq(otherList);
   });
 
   it('drops the oldest cached move list past 50 entries', async () => {

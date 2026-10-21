@@ -9,6 +9,9 @@ import {Database} from '../../src/server/database/Database';
 import {IDatabase} from '../../src/server/database/IDatabase';
 import {restoreTestDatabase, setTestDatabase} from '../testing/setup';
 import {GameId} from '../../src/common/Types';
+import {Phase} from '../../src/common/Phase';
+import {InMemoryDatabase} from '../testing/InMemoryDatabase';
+import {clearReplayCache, getReplayMoves} from '../../src/server/replay/ReplayService';
 
 describe('LoadGame', () => {
   let scaffolding: RouteTestScaffolding;
@@ -80,6 +83,24 @@ describe('LoadGame', () => {
     expect(res.headers.get('Content-Type')).eq('application/json');
     const model = JSON.parse(res.content) as SimpleGameModel;
     expect(model.id).eq(game.id);
+  });
+
+  it('forgets the replay of a game it rolls back', async () => {
+    const db = new InMemoryDatabase();
+    setTestDatabase(db);
+    clearReplayCache();
+    const [game, player] = testGame(2);
+    await scaffolding.ctx.gameLoader.add(game);
+    const save = game.serialize();
+    db.games.set(game.id, [save, save, save, {...save, phase: Phase.END}]);
+    game.phase = Phase.END;
+    expect((await getReplayMoves(game, player.id)).status).eq('available');
+
+    await put({gameId: game.id, rollbackCount: 1});
+
+    expect(res.statusCode).eq(statusCode.ok);
+    expect(await getReplayMoves(game, player.id)).deep.eq({status: 'not-finished'});
+    clearReplayCache();
   });
 
   describe('rollback', () => {
