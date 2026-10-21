@@ -89,6 +89,7 @@ export class InMemoryDatabase implements IDatabase {
       throw new Error('Game not found ' + gameId);
     }
     row.splice(row.length - rollbackCount, rollbackCount);
+    this.completedGames.delete(gameId);
 
     return Promise.resolve();
   }

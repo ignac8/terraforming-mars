@@ -230,7 +230,9 @@ export class SQLite implements IDatabase {
       // Should this be an error?
       return Promise.resolve();
     }
-    return this.runQuietly('DELETE FROM games WHERE rowid IN (SELECT rowid FROM games WHERE game_id = ? ORDER BY save_id DESC LIMIT ?)', [gameId, rollbackCount]);
+    // A game that runs again is no longer waiting to have its saves compressed.
+    return this.runQuietly('DELETE FROM games WHERE rowid IN (SELECT rowid FROM games WHERE game_id = ? ORDER BY save_id DESC LIMIT ?)', [gameId, rollbackCount])
+      .then(() => this.runQuietly('DELETE FROM completed_game WHERE game_id = ?', [gameId]));
   }
 
   public stats(): Promise<{[key: string]: string | number}> {
