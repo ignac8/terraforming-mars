@@ -245,7 +245,7 @@ export default defineComponent({
         .catch((err) => {
           if (err instanceof UnauthorizedError) {
             alert('Incorrect password.\n(If you accidentally closed your player page, check your browser\'s History > Recently Closed tabs.)');
-            return;
+            return false;
           }
           alert('Error getting game data');
           console.error(err);
