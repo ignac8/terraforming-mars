@@ -12,7 +12,6 @@ import {Phase} from '../../src/common/Phase';
 import {CardName} from '../../src/common/cards/CardName';
 import {toName, cast} from '../../src/common/utils/utils';
 import {cardsFromJSON} from '../../src/server/createCard';
-import {finishGeneration} from '../TestingUtils';
 import {SelectCard} from '../../src/server/inputs/SelectCard';
 
 describe('ServerModel', () => {
@@ -185,6 +184,7 @@ describe('ServerModel', () => {
   it('player and spectator models never carry the judge id', () => {
     [game, player] = testGame(2, {judgeLink: true});
     game.judgePassword = 'secret';
+    expect(game.judgeId).is.a('string');
 
     for (const model of [Server.getPlayerModel(player), Server.getSpectatorModel(game)]) {
       const json = JSON.stringify(model);
@@ -205,7 +205,14 @@ describe('ServerModel', () => {
       CardName.GENE_REPAIR,
       CardName.HACKERS]));
     game.generation = 1;
-    finishGeneration(game);
+    // Same as finishGeneration, but each player's action-phase input is cleared first so the
+    // draft inputs do not overwrite it.
+    for (const p of [player, player2]) {
+      p.popWaitingFor();
+      game.playerHasPassed(p);
+      game.playerIsFinishedTakingActions();
+    }
+    expect(game.generation).eq(2);
     const before = Server.getJudgeSignature(game);
 
     const selectCard = cast(player.popWaitingFor(), SelectCard);

@@ -50,6 +50,14 @@ describe('judge passwords', () => {
     expect(model.password).eq(game.judgePassword);
   });
 
+  it('the serverId link does not claim the password', async () => {
+    // scaffolding sets serverId to '1'
+    const model = await getJudge('&serverId=1');
+
+    expect(model.id).eq(game.judgeId);
+    expect(game.judgePassword).is.undefined;
+  });
+
   it('a later visitor without the password is refused', async () => {
     await getJudge('');
 
@@ -60,6 +68,22 @@ describe('judge passwords', () => {
     await getJudge('');
 
     await expectUnauthorized('&password=deadbeef');
+  });
+
+  it('a wrong password of the same length is refused', async () => {
+    const model = await getJudge('');
+    const stored = model.password!;
+    const lastDigit = stored.charAt(stored.length - 1);
+    const wrong = stored.slice(0, -1) + (lastDigit === '0' ? '1' : '0');
+    expect(wrong).has.length(stored.length);
+
+    await expectUnauthorized('&password=' + wrong);
+  });
+
+  it('an empty password is refused', async () => {
+    await getJudge('');
+
+    await expectUnauthorized('&password=');
   });
 
   it('the claimant keeps access with the password', async () => {

@@ -120,5 +120,12 @@ describe('ApiWaitingFor', () => {
 
       expect(res.statusCode).eq(statusCode.unauthorized);
     });
+
+    it('is a bad request without a signature', async () => {
+      scaffolding.url = '/api/waitingfor?id=' + game.judgeId + '&password=secret';
+      await scaffolding.get(ApiWaitingFor.INSTANCE, res);
+
+      expect(res.statusCode).eq(statusCode.badRequest);
+    });
   });
 });
