@@ -44,6 +44,9 @@ export class LoadGame extends Handler {
       } catch (error) {
         console.error(error);
         throw RouteError.internalServerError();
+      } finally {
+        // Not after the reload only: the abandoned list must not be served while the game loads.
+        forgetReplay(gameId);
       }
     }
     const game = await ctx.gameLoader.getGame(gameId, /* bypassCache */ true);

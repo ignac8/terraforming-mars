@@ -106,6 +106,31 @@ describe('LoadGame', () => {
     clearReplayCache();
   });
 
+  it('forgets the replay before it reloads the game', async () => {
+    const db = new InMemoryDatabase();
+    setTestDatabase(db);
+    clearReplayCache();
+    const [game, player] = testGame(2);
+    await scaffolding.ctx.gameLoader.add(game);
+    const save = game.serialize();
+    db.games.set(game.id, [save, save, save, {...save, phase: Phase.END}]);
+    game.phase = Phase.END;
+    expect((await getReplayMoves(game, player.id)).status).eq('available');
+    const loader = scaffolding.ctx.gameLoader;
+    const getGame = loader.getGame.bind(loader);
+    let duringReload: unknown;
+    loader.getGame = async (gameId, bypassCache) => {
+      // The old game object is still the one in memory while the reload is under way.
+      duringReload = await getReplayMoves(game, player.id);
+      return getGame(gameId, bypassCache);
+    };
+
+    await put({gameId: game.id, rollbackCount: 1});
+
+    expect(duringReload).deep.eq({status: 'not-finished'});
+    clearReplayCache();
+  });
+
   it('shows the new list, not the abandoned one, when a rolled back game finishes again', async () => {
     const db = new InMemoryDatabase();
     setTestDatabase(db);
