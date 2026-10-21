@@ -1,6 +1,7 @@
 import {shallowMount} from '@vue/test-utils';
 import {expect} from 'chai';
 import {globalConfig} from './getLocalVue';
+import PurgeWarning from '@/client/components/common/PurgeWarning.vue';
 import PlayerHome from '@/client/components/PlayerHome.vue';
 import CardSortButtons from '@/client/components/CardSortButtons.vue';
 import SortableCards from '@/client/components/SortableCards.vue';
@@ -89,6 +90,11 @@ describe('PlayerHome', () => {
 
     it('renders no WaitingFor when replaying', () => {
       expect(mountHome(playedView(), true).findComponent(WaitingFor).exists()).is.false;
+    });
+
+    it('shows the purge warning only outside a replay', () => {
+      expect(mountHome(playedView()).findComponent(PurgeWarning).exists()).is.true;
+      expect(mountHome(playedView(), true).findComponent(PurgeWarning).exists()).is.false;
     });
 
     it('tells the setup view not to render WaitingFor when replaying', () => {
