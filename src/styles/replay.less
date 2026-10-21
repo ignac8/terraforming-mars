@@ -11,9 +11,12 @@
   color: #ff6b5e;
 }
 
+// Clear of the sidebar (.sidebar_cont: fixed, 60px wide, z-index 99), which would otherwise cover the left edge.
+@replay-sidebar-clearance: 68px;
+
 .replay-error--floating {
   position: fixed;
-  left: 8px;
+  left: @replay-sidebar-clearance;
   bottom: 8px;
   z-index: 60;
   max-width: 320px;
@@ -136,8 +139,9 @@
 
 @media only screen and (max-width: 767px) {
   .replay-panel {
-    left: 8px;
+    left: @replay-sidebar-clearance;
     width: auto;
+    max-width: none;
   }
 
   .replay-moves {
