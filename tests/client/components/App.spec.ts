@@ -46,12 +46,13 @@ describe('App', () => {
     expect(window.sessionStorage.getItem('chunkReloadAt')).is.null;
   });
 
-  // Mounts the judge page for a game in `phase`, served a judge model with one player.
-  async function mountJudgePage(phase: string) {
-    window.history.replaceState({}, '', '/judge?id=j1');
+  // Mounts the judge page at `url` for a game in `phase`, served a judge model with one player.
+  async function mountJudgePage(phase: string, url = '/judge?id=j1', password?: string) {
+    window.history.replaceState({}, '', url);
     const judge = {
       id: 'j1',
       color: 'neutral',
+      password,
       signature: 'sig',
       players: [{color: 'red', name: 'Alice'}],
       privates: [],
@@ -81,5 +82,21 @@ describe('App', () => {
 
     const message = {message: 'Hello ${0}', data: [{type: LogMessageDataType.PLAYER, value: 'red'}]};
     expect(translateMessage(message as any)).eq('Hello Alice');
+  });
+
+  it('replaces a stale judge password in the address bar', async () => {
+    await mountJudgePage('action', '/judge?id=j1&password=old', 'new');
+
+    expect(window.location.search).includes('password=new');
+    expect(window.location.search).does.not.include('password=old');
+  });
+
+  it('tells a judge about an incorrect judge password', async () => {
+    const {wrapper, alertStub} = await mountJudgePage('action');
+    vi.stubGlobal('fetch', vi.fn(async () => ({ok: false, status: 401}) as Response));
+
+    await (wrapper.vm as any).updateJudge();
+
+    expect(alertStub.mock.calls).deep.eq([['Incorrect judge password. Reopen the judge page from your browser history, or ask the organizer for the judge link with its password.']]);
   });
 });
