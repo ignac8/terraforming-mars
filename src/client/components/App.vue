@@ -249,10 +249,10 @@ export default defineComponent({
             } else {
               app.screen = 'judge-home';
             }
-            // The server may hand a judge a different password than the address bar holds
-            // (a re-claimed judge seat), and polls would then be refused.
-            const stalePassword = path === paths.JUDGE && password !== '' &&
-              new URLSearchParams(window.location.search).get('password') !== (model as JudgeModel).password;
+            // The server may hand a player or judge a different password than the address bar holds
+            // (a re-claimed seat), and polls would then be refused. A spectator model has no password.
+            const stalePassword = password !== '' &&
+              new URLSearchParams(window.location.search).get('password') !== (model as PlayerViewModel | JudgeModel).password;
             if (currentPathname !== path || stalePassword || (password !== '' && !window.location.search.includes('password='))) {
               window.history.replaceState(
                 model,

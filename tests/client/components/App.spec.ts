@@ -91,6 +91,27 @@ describe('App', () => {
     expect(window.location.search).does.not.include('password=old');
   });
 
+  it('replaces a stale player password in the address bar', async () => {
+    window.history.replaceState({}, '', '/player?id=p1&password=old');
+    const player = {
+      id: 'p1',
+      color: 'red',
+      password: 'new',
+      players: [{color: 'red', name: 'Alice'}],
+      game: {phase: 'action', gameAge: 1, undoCount: 0},
+    };
+    vi.stubGlobal('fetch', vi.fn(async () => ({ok: true, status: 200, json: async () => player}) as Response));
+    // The real screen imports the whole player page, which would load after the test ends.
+    shallowMount(App, {
+      ...globalConfig,
+      global: {...globalConfig.global, stubs: {PlayerHome: {template: '<div class="stub-player"></div>'}}},
+    });
+    await flushPromises();
+
+    expect(window.location.search).includes('password=new');
+    expect(window.location.search).does.not.include('password=old');
+  });
+
   it('leaves the address bar alone when neither it nor the judge model has a password', async () => {
     const replaceState = vi.spyOn(window.history, 'replaceState');
 
