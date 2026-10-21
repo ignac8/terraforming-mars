@@ -24,6 +24,16 @@ export function clearReplayCache(): void {
   finishedGames.clear();
 }
 
+/** Forgets what is known about one game's replay, for when its saves change, as in a rollback. */
+export function forgetReplay(gameId: GameId): void {
+  for (const key of cache.keys()) {
+    if (key.startsWith(`${gameId}/`)) {
+      cache.delete(key);
+    }
+  }
+  finishedGames.delete(gameId);
+}
+
 async function getSortedSaveIds(game: IGame): Promise<Array<number>> {
   const saveIds = await Database.getInstance().getSaveIds(game.id);
   return [...saveIds].sort((a, b) => a - b);
