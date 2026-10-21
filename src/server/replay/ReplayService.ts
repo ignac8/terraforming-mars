@@ -6,6 +6,7 @@ import {loadSandboxGame} from './sandbox';
 import {Phase} from '../../common/Phase';
 import {GameId, ParticipantId} from '../../common/Types';
 import {LogMessage} from '../../common/logs/LogMessage';
+import {playerColors, toJudgeMessage} from '../routes/GameLogs';
 import {ReplayMove, ReplayMovesModel} from '../../common/replay/ReplayModel';
 
 const MAX_CACHED_GAMES = 50;
@@ -184,9 +185,13 @@ export async function getReplayMoves(game: IGame, viewerId: ParticipantId): Prom
   if (result.status !== 'available') {
     return result;
   }
+  // The judge page shows every private line, so the judge's replay does too, in the same form.
+  const colors = viewerId === game.judgeId ? playerColors(game) : undefined;
   const moves = result.moves.map(({saveId, messages}) => ({
     saveId,
-    messages: messages.filter((m) => m.playerId === undefined || m.playerId === viewerId),
+    messages: colors !== undefined ?
+      messages.map((m) => toJudgeMessage(m, colors)) :
+      messages.filter((m) => m.playerId === undefined || m.playerId === viewerId),
   }));
   return {status: 'available', moves};
 }

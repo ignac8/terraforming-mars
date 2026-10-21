@@ -1,11 +1,29 @@
 import {LogMessage} from '../../common/logs/LogMessage';
 import {LogMessageType} from '../../common/logs/LogMessageType';
-import {ParticipantId} from '../../common/Types';
+import {ParticipantId, PlayerId} from '../../common/Types';
+import {Color} from '../../common/Color';
 import {IGame} from '../IGame';
 import {Phase} from '../../common/Phase';
 import {Log} from '../../common/logs/Log';
 import {LogMessageData} from '../../common/logs/LogMessageData';
 import {LogMessageDataType} from '../../common/logs/LogMessageDataType';
+
+/**
+ * What a judge sees of a log line: a private line loses its `playerId` and carries the owner's
+ * color in `owner` instead, so a judge never sees a player id. Returns a copy.
+ */
+export function toJudgeMessage(message: LogMessage, colors: ReadonlyMap<PlayerId, Color>): LogMessage {
+  const copy = {...message};
+  if (message.playerId !== undefined) {
+    delete copy.playerId;
+    copy.owner = colors.get(message.playerId);
+  }
+  return copy;
+}
+
+export function playerColors(game: IGame): ReadonlyMap<PlayerId, Color> {
+  return new Map(game.players.map((player) => [player.id, player.color]));
+}
 
 export class GameLogs {
   private getLogsForGeneration(messages: Array<LogMessage>, generation: number): Array<LogMessage> {
@@ -48,16 +66,9 @@ export class GameLogs {
    * the owner's color in `owner` instead, so a judge never sees a player id.
    */
   public getLogsForJudge(game: IGame, generation: number | undefined): Array<LogMessage> {
-    const colors = new Map(game.players.map((player) => [player.id, player.color]));
+    const colors = playerColors(game);
     const notEmpty = (message: LogMessage) => message !== undefined && message !== null;
-    return this.selectLogs(game, generation, notEmpty).map((message) => {
-      const copy = {...message};
-      if (message.playerId !== undefined) {
-        delete copy.playerId;
-        copy.owner = colors.get(message.playerId);
-      }
-      return copy;
-    });
+    return this.selectLogs(game, generation, notEmpty).map((message) => toJudgeMessage(message, colors));
   }
 
   // Default view keeps the payload small. An explicit generation request should

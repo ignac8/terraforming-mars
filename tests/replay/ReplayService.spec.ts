@@ -104,6 +104,37 @@ describe('ReplayService', () => {
     expect((await moves('s-spectator'))[0].messages.map((m) => m.message)).deep.eq(['line 0', 'line 3']);
   });
 
+  describe('for a judge', () => {
+    beforeEach(() => {
+      [game, player, player2] = testGame(2, {judgeLink: true});
+      base = game.serialize();
+      // Line 0 is public, 1 is private to player, 2 is private to player2, 3 is public.
+      storeLengths([0, 4, 4, 4], new Map([[1, player.id], [2, player2.id]]));
+    });
+
+    it('shows every line, each private one marked with its owner', async () => {
+      const messages = (await moves(game.judgeId))[0].messages;
+      expect(messages.map((m) => m.message)).deep.eq(['line 0', 'line 1', 'line 2', 'line 3']);
+      expect(messages.map((m) => m.owner)).deep.eq([undefined, player.color, player2.color, undefined]);
+    });
+
+    it('never shows a player id', async () => {
+      const list = await moves(game.judgeId);
+      const json = JSON.stringify(list);
+      expect(json).not.contains(player.id);
+      expect(json).not.contains(player2.id);
+      expect(list[0].messages.some((m) => m.playerId !== undefined)).is.false;
+    });
+
+    it('does not change what players and spectators see', async () => {
+      await moves(game.judgeId);
+      expect((await moves(player.id))[0].messages.map((m) => m.message)).deep.eq(['line 0', 'line 1', 'line 3']);
+      expect((await moves(player2.id))[0].messages.map((m) => m.message)).deep.eq(['line 0', 'line 2', 'line 3']);
+      expect((await moves(game.spectatorId))[0].messages.map((m) => m.message)).deep.eq(['line 0', 'line 3']);
+      expect(JSON.stringify(await moves(player.id))).contains(player.id);
+    });
+  });
+
   it('does not share cached messages between viewers', async () => {
     storeLengths([0, 4, 4, 4], new Map([[1, player.id]]));
     expect((await moves(player.id))[0].messages).has.length(4);
