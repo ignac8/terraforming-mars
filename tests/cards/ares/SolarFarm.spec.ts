@@ -99,4 +99,24 @@ describe('SolarFarm', () => {
       expect(player.production.energy).eq(2);
     });
   });
+
+  for (const run of [
+    {choice: 'plants', energy: 1},
+    {choice: 'steel', energy: 0},
+  ] as const) {
+    it('Standard resource ' + JSON.stringify(run), () => {
+      const space = game.board.getAvailableSpacesOnLand(player).filter((s) => !AresHandler.hasHazardTile(s))[0];
+      space.bonus = [SpaceBonus.STANDARD_RESOURCE];
+      player.playedCards.push(card);
+
+      cast(card.play(player), undefined);
+      runAllActions(game);
+      cast(player.popWaitingFor(), SelectSpace).cb(space);
+      runAllActions(game);
+      cast(player.popWaitingFor(), SelectResource).process({type: 'resource', resource: run.choice});
+      runAllActions(game);
+
+      expect(player.production.energy).eq(run.energy);
+    });
+  }
 });
