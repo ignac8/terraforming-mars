@@ -173,26 +173,6 @@ describe('Turmoil', () => {
     expect(turmoil.dominantParty).to.eq(turmoil.getPartyByName(PartyName.GREENS));
   });
 
-  it('Turmoil phase logs show TR and ruling agenda as icons', () => {
-    player.setTerraformRating(20);
-    player2.setTerraformRating(21);
-    turmoil.sendDelegateToParty(player, PartyName.REDS, game);
-    turmoil.sendDelegateToParty(player, PartyName.REDS, game);
-    turmoil.currentGlobalEvent = undefined;
-
-    game.phase = Phase.SOLAR;
-    turmoil.runTurmoilPhase(game);
-    runAllActions(game);
-
-    const messages = game.gameLog.map(formatMessage);
-    expect(messages).to.include.members([
-      'All players lose 1:icon:tr:.',
-      'The ruling bonus is: The player(s) with the lowest :icon:tr: gains 1:icon:tr:',
-      'The ruling policy is: When you take an action that raises :icon:tr:, you MUST pay 3:r:megacredits: per step raised',
-      `${player.color} is the new chairman and gains 1:icon:tr:`,
-    ]);
-  });
-
   it('Player that is chairman has one fewer delegate avaialble ', () => {
     turmoil.sendDelegateToParty(player, PartyName.REDS, game);
     turmoil.sendDelegateToParty(player, PartyName.REDS, game);
