@@ -17,6 +17,8 @@ import {ApiLogout} from '../routes/ApiLogout';
 import {ApiMetrics} from '../routes/ApiMetrics';
 import {ApiPlayer} from '../routes/ApiPlayer';
 import {ApiProfile} from '../routes/ApiProfile';
+import {ApiReplayMoves} from '../routes/ApiReplayMoves';
+import {ApiReplayView} from '../routes/ApiReplayView';
 import {ApiSpectator} from '../routes/ApiSpectator';
 import {ApiStats} from '../routes/ApiStats';
 import {ApiWaitingFor} from '../routes/ApiWaitingFor';
@@ -123,6 +125,9 @@ const handlers: Map<string, IHandler> = new Map(
     [paths.PLAYER, ServeApp.INSTANCE],
     [paths.PLAYER_INPUT, PlayerInput.INSTANCE],
     [paths.API_PROFILE, ApiProfile.INSTANCE],
+    [paths.API_REPLAY_MOVES, ApiReplayMoves.INSTANCE],
+    [paths.API_REPLAY_VIEW, ApiReplayView.INSTANCE],
+    [paths.REPLAY, ServeApp.INSTANCE],
     [paths.RESET, Reset.INSTANCE],
     [paths.SPECTATOR, ServeApp.INSTANCE],
     ['styles.css', ServeAsset.INSTANCE],
