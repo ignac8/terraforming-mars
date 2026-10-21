@@ -10,6 +10,7 @@ import {CardName} from '@/common/cards/CardName';
 import {PreferencesManager} from '@/client/utils/PreferencesManager';
 import {Resource} from '@/common/Resource';
 import {CardResource} from '@/common/CardResource';
+import {playerColorClass} from '@/common/utils/utils';
 import {UndergroundResourceToken} from '@/common/underworld/UndergroundResourceToken';
 
 describe('LogMessageComponent', () => {
@@ -22,6 +23,43 @@ describe('LogMessageComponent', () => {
       },
     });
     expect(wrapper.exists()).to.be.true;
+  });
+
+  it('marks a line that has an owner with the owner color', () => {
+    const message = new LogMessage(LogMessageType.DEFAULT, 'Test message', []);
+    message.owner = 'red';
+    const wrapper = shallowMount(LogMessageComponent, {
+      ...globalConfig,
+      props: {message, viewModel: fakeViewModel()},
+    });
+
+    expect(wrapper.find('li > .' + playerColorClass('red', 'bg')).exists()).is.true;
+  });
+
+  it('shows the chat icon on an owned line and the clock on a system line', () => {
+    const owned = new LogMessage(LogMessageType.DEFAULT, 'Test message', []);
+    owned.owner = 'red';
+    const system = new LogMessage(LogMessageType.DEFAULT, 'Test message', []);
+    const iconOf = (message: LogMessage) => shallowMount(LogMessageComponent, {
+      ...globalConfig,
+      props: {message, viewModel: fakeViewModel()},
+    }).find('li > span[title]').text();
+
+    expect(iconOf(owned)).to.equal('\u{1f4ac}');
+    expect(iconOf(system)).to.equal('\u{1f551}');
+  });
+
+  it('renders no owner marker on a line without an owner', () => {
+    const wrapper = shallowMount(LogMessageComponent, {
+      ...globalConfig,
+      props: {
+        message: new LogMessage(LogMessageType.DEFAULT, 'Test message', []),
+        viewModel: fakeViewModel(),
+      },
+    });
+
+    expect(wrapper.find('.log-owner').exists()).is.false;
+    expect(wrapper.find('[class*="player_bg_color_"]').exists()).is.false;
   });
 
   it('renders CARD type as a single card span', () => {

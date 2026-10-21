@@ -1,4 +1,4 @@
-import {shallowMount} from '@vue/test-utils';
+import {mount, shallowMount} from '@vue/test-utils';
 import {expect} from 'chai';
 import {globalConfig} from '../getLocalVue';
 import LogPanel from '@/client/components/logpanel/LogPanel.vue';
@@ -7,7 +7,9 @@ import {fakeViewModel} from '../testHelpers';
 import {LogMessage} from '@/common/logs/LogMessage';
 import {LogMessageType} from '@/common/logs/LogMessageType';
 import {LogMessageDataType} from '@/common/logs/LogMessageDataType';
+import {Color} from '@/common/Color';
 import {SpaceId} from '@/common/Types';
+import {playerColorClass} from '@/common/utils/utils';
 
 describe('LogPanel', () => {
   let originalFetch: any;
@@ -102,6 +104,29 @@ describe('LogPanel', () => {
     await wrapper.findComponent(LogMessageComponent).vm.$emit('spaceClicked', '05');
 
     expect(wrapper.emitted('spaceClicked')).to.deep.eq([['05']]);
+  });
+
+  it('marks only the owned lines, each in its owner color', async () => {
+    const wrapper = mount(LogPanel, {
+      ...globalConfig,
+      props: {viewModel: fakeViewModel()},
+    });
+    await flushLogs(wrapper);
+
+    const line = (text: string, owner?: Color) => {
+      const message = new LogMessage(LogMessageType.DEFAULT, text, []);
+      message.owner = owner;
+      return message;
+    };
+    (wrapper.vm as any).messages.push(line('first', 'red'), line('second'), line('third', 'blue'));
+    await wrapper.vm.$nextTick();
+
+    const lines = wrapper.findAll('li');
+    expect(lines).has.length(3);
+    expect(lines[0].find('.' + playerColorClass('red', 'bg')).exists()).is.true;
+    expect(lines[1].find('.log-owner').exists()).is.false;
+    expect(lines[2].find('.' + playerColorClass('blue', 'bg')).exists()).is.true;
+    expect(lines[2].find('.' + playerColorClass('red', 'bg')).exists()).is.false;
   });
 
   it('shows the scroll button only when away from the bottom', async () => {
