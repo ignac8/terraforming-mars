@@ -5,13 +5,18 @@ import {SerializedGame} from '../SerializedGame';
 import {loadSandboxGame} from './sandbox';
 import {Phase} from '../../common/Phase';
 import {GameId, ParticipantId} from '../../common/Types';
+import {LogMessage} from '../../common/logs/LogMessage';
 import {ReplayMove, ReplayMovesModel} from '../../common/replay/ReplayModel';
 
-const MAX_CACHED_MOVE_LISTS = 50;
+const MAX_CACHED_GAMES = 50;
 
-// A finished game does not change, so its move list is kept. Messages depend on who is
-// looking (private lines), so the key includes the viewer. Oldest entries go first.
-const cache = new Map<string, ReplayMovesModel>();
+// A finished game does not change, so its move list is kept. The list holds every message, so
+// it is the same for all viewers; each request filters the private lines for its own viewer.
+// Oldest entries go first.
+const cache = new Map<GameId, Array<ReplayMove>>();
+
+// Builds in progress, so viewers who ask at the same time share one pass over the saves.
+const building = new Map<GameId, Promise<ReplayMovesModel>>();
 
 const MAX_FINISHED_GAMES = 1000;
 
@@ -21,17 +26,29 @@ const finishedGames = new Set<GameId>();
 
 export function clearReplayCache(): void {
   cache.clear();
+  building.clear();
   finishedGames.clear();
 }
 
-/** Forgets what is known about one game's replay, for when its saves change, as in a rollback. */
+/**
+ * Forgets what is known about one game's replay, for when its saves change, as in a rollback.
+ * A build that is still running keeps serving the requests that wait for it, but its result is
+ * not remembered.
+ */
 export function forgetReplay(gameId: GameId): void {
-  for (const key of cache.keys()) {
-    if (key.startsWith(`${gameId}/`)) {
-      cache.delete(key);
+  cache.delete(gameId);
+  building.delete(gameId);
+  finishedGames.delete(gameId);
+}
+
+function rememberFinished(gameId: GameId): void {
+  if (finishedGames.size >= MAX_FINISHED_GAMES) {
+    for (const oldest of finishedGames) {
+      finishedGames.delete(oldest);
+      break;
     }
   }
-  finishedGames.delete(gameId);
+  finishedGames.add(gameId);
 }
 
 async function getSortedSaveIds(game: IGame): Promise<Array<number>> {
@@ -77,71 +94,101 @@ export async function isFinished(game: IGame): Promise<boolean> {
   if ((await getSave(game, saveIds[saveIds.length - 1])).phase !== Phase.END) {
     return false;
   }
-  if (finishedGames.size >= MAX_FINISHED_GAMES) {
-    for (const oldest of finishedGames) {
-      finishedGames.delete(oldest);
-      break;
-    }
-  }
-  finishedGames.add(game.id);
+  rememberFinished(game.id);
   return true;
 }
 
-export async function getReplayMoves(game: IGame, viewerId: ParticipantId): Promise<ReplayMovesModel> {
-  const key = `${game.id}/${viewerId}`;
-  const cached = cache.get(key);
-  if (cached !== undefined) {
-    return cached;
-  }
-
-  if (!await isFinished(game)) {
-    return {status: 'not-finished'};
-  }
-
+// Reads the saves one at a time and keeps only what the list needs, so at most one save is in
+// memory at once. `moves` holds every message, whoever may see it.
+async function buildMoves(game: IGame): Promise<{result: ReplayMovesModel, finished: boolean}> {
   const saveIds = await getSortedSaveIds(game);
   // After compression only the first and last save remain.
   if (saveIds.length < 3) {
-    return {status: 'expired'};
+    const finished = saveIds.length > 0 &&
+      (await getSave(game, saveIds[saveIds.length - 1])).phase === Phase.END;
+    return {result: {status: finished ? 'expired' : 'not-finished'}, finished};
   }
 
-  const saves: Array<{saveId: number, save: SerializedGame}> = [];
+  const saves: Array<{saveId: number, logLength: number}> = [];
+  let finalLog: Array<LogMessage> = [];
+  let finalPhase: Phase = Phase.END;
   try {
     for (const saveId of saveIds) {
-      saves.push({saveId, save: await getSave(game, saveId)});
+      const save = await getSave(game, saveId);
+      saves.push({saveId, logLength: save.gameLog.length});
+      finalLog = save.gameLog;
+      finalPhase = save.phase;
     }
   } catch (e) {
     // Compression can strike while the saves are read. Only the first and last remain then.
     if ((await getSortedSaveIds(game)).length < 3) {
-      return {status: 'expired'};
+      return {result: {status: 'expired'}, finished: true};
     }
     throw e;
+  }
+  if (finalPhase !== Phase.END) {
+    return {result: {status: 'not-finished'}, finished: false};
   }
 
   // A save with the same log length as the next one changed nothing a viewer can see,
   // e.g. the two saves at the end of the game.
   const kept = saves.filter((entry, idx) => {
     const next = saves[idx + 1];
-    return next === undefined || next.save.gameLog.length !== entry.save.gameLog.length;
+    return next === undefined || next.logLength !== entry.logLength;
   });
 
-  const finalLog = saves[saves.length - 1].save.gameLog;
   const moves: Array<ReplayMove> = kept.map((entry, idx) => {
-    const start = entry.save.gameLog.length;
     const next = kept[idx + 1];
-    const end = next === undefined ? start : next.save.gameLog.length;
-    const messages = finalLog.slice(start, end).filter((m) => m.playerId === undefined || m.playerId === viewerId);
-    return {saveId: entry.saveId, messages};
+    const end = next === undefined ? entry.logLength : next.logLength;
+    return {saveId: entry.saveId, messages: finalLog.slice(entry.logLength, end)};
   });
+  return {result: {status: 'available', moves}, finished: true};
+}
 
-  const result: ReplayMovesModel = {status: 'available', moves};
-  if (cache.size >= MAX_CACHED_MOVE_LISTS) {
-    for (const oldest of cache.keys()) {
-      cache.delete(oldest);
-      break;
+function build(game: IGame): Promise<ReplayMovesModel> {
+  const pending: Promise<ReplayMovesModel> = buildMoves(game).then(({result, finished}) => {
+    // Not remembered if a rollback made forgetReplay run in the meantime.
+    if (building.get(game.id) === pending) {
+      if (finished) {
+        rememberFinished(game.id);
+      }
+      if (result.status === 'available') {
+        if (cache.size >= MAX_CACHED_GAMES) {
+          for (const oldest of cache.keys()) {
+            cache.delete(oldest);
+            break;
+          }
+        }
+        cache.set(game.id, result.moves);
+      }
     }
+    return result;
+  }).finally(() => {
+    if (building.get(game.id) === pending) {
+      building.delete(game.id);
+    }
+  });
+  building.set(game.id, pending);
+  return pending;
+}
+
+export async function getReplayMoves(game: IGame, viewerId: ParticipantId): Promise<ReplayMovesModel> {
+  // The live phase comes first: a game that a rollback reopened must not serve its old list.
+  if (game.phase !== Phase.END) {
+    return {status: 'not-finished'};
   }
-  cache.set(key, result);
-  return result;
+  const cached = cache.get(game.id);
+  const result: ReplayMovesModel = cached !== undefined ?
+    {status: 'available', moves: cached} :
+    await (building.get(game.id) ?? build(game));
+  if (result.status !== 'available') {
+    return result;
+  }
+  const moves = result.moves.map(({saveId, messages}) => ({
+    saveId,
+    messages: messages.filter((m) => m.playerId === undefined || m.playerId === viewerId),
+  }));
+  return {status: 'available', moves};
 }
 
 /** Returns the game as it was at `saveId`. The game is a sandbox: it never writes anything. */
