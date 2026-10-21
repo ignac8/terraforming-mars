@@ -42,12 +42,12 @@
     <PlayersOverview class="player_home_block player_home_block--players nofloat" :playerView="playerView" v-trim-whitespace id="shortkey-playersoverview"/>
 
       <a class="hotkey-target"></a>
-      <div class="player_home_block nofloat">
+      <div v-if="!replay" class="player_home_block nofloat">
         <LogPanel :viewModel="playerView" :step="game.step" @spaceClicked="onSpaceClicked"/>
       </div>
 
       <a class="hotkey-target"></a>
-      <div class="player_home_block player_home_block--actions nofloat">
+      <div v-if="!replay" class="player_home_block player_home_block--actions nofloat">
         <a name="actions" class="player_home_anchor"></a>
         <DynamicTitle title="Actions" :color="thisPlayer.color"/>
         <WaitingFor v-if="game.phase !== 'end'" :playerView="playerView" :waitingfor="playerView.waitingFor"/>
@@ -125,7 +125,7 @@
     </div>
 
     <template v-if="thisPlayer.tableau.length === 0">
-      <PlayerSetupView :playerView="playerView" :tileView="tileView" @toggleTileView="cycleTileView()"/>
+      <PlayerSetupView :playerView="playerView" :tileView="tileView" :replay="replay" @toggleTileView="cycleTileView()"/>
     </template>
 
     <div v-if="game.colonies.length > 0" class="player_home_block" ref="colonies" id="shortkey-colonies">
@@ -230,6 +230,11 @@ export default defineComponent({
     playerView: {
       type: Object as () => PlayerViewModel,
       required: true,
+    },
+    /** True while replaying a finished game: read-only, so no input forms and no polling. */
+    replay: {
+      type: Boolean,
+      default: false,
     },
   },
   computed: {

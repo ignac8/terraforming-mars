@@ -291,6 +291,7 @@
           <div class="game_end_block--log game-end-column">
             <LogPanel :viewModel="participant"/>
             <a :href="downloadLogUrl" target="_blank" v-i18n>Download game log</a>
+            <div><a :href="replayUrl" class="game-end-replay-link" v-i18n>Replay</a></div>
           </div>
         </div>
       </div>
@@ -343,6 +344,9 @@ export default defineComponent({
     },
     downloadLogUrl() {
       return `${paths.END_GAME_LOG}?id=${this.participant.id}`;
+    },
+    replayUrl(): string {
+      return `${paths.REPLAY}?id=${this.participant.id}`;
     },
     playersInPlace(): Array<PublicPlayerModel> {
       const sorted = this.participant.players.toSorted(function(a:PublicPlayerModel, b:PublicPlayerModel) {

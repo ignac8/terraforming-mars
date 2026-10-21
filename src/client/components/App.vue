@@ -37,6 +37,10 @@
         v-else-if="screen === 'games-overview'"
       />
       <CardList v-else-if="screen === 'cards'"/>
+      <ReplayScreen
+        v-else-if="screen === 'replay' && replayParticipantId !== undefined"
+        :participantId="replayParticipantId"
+      />
       <AdminHome v-else-if="screen === 'admin'"/>
       <LoginHome v-else-if="screen === 'login-home'"/>
       <Help v-else-if="screen === 'help'"/>
@@ -62,13 +66,14 @@ const LoginHome = defineAsyncComponent(() => import(/* webpackChunkName: "login"
 const LoadGameForm = defineAsyncComponent(() => import(/* webpackChunkName: "load-game" */ '@/client/components/LoadGameForm.vue'));
 const PlayerHome = defineAsyncComponent(() => import(/* webpackChunkName: "player-home" */ '@/client/components/PlayerHome.vue'));
 const SpectatorHome = defineAsyncComponent(() => import(/* webpackChunkName: "spectator-home" */ '@/client/components/SpectatorHome.vue'));
+const ReplayScreen = defineAsyncComponent(() => import(/* webpackChunkName: "replay" */ '@/client/components/replay/ReplayScreen.vue'));
 const StartScreen = defineAsyncComponent(() => import(/* webpackChunkName: "start-screen" */ '@/client/components/StartScreen.vue'));
 import {$t, setTranslationContext} from '@/client/directives/i18n';
 import {paths} from '@/common/app/paths';
 import {PlayerViewModel, ViewModel} from '@/common/models/PlayerModel';
 import {SimpleGameModel} from '@/common/models/SimpleGameModel';
 import {SpectatorModel} from '@/common/models/SpectatorModel';
-import {isPlayerId, isSpectatorId} from '@/common/Types';
+import {isPlayerId, isSpectatorId, ParticipantId} from '@/common/Types';
 import {hasShowModal, showModal, windowHasHTMLDialogElement} from './HTMLDialogElementCompatibility';
 
 import dialogPolyfill from 'dialog-polyfill';
@@ -85,6 +90,7 @@ type Screen = 'admin' |
             'load' |
             'login-home' |
             'player-home' |
+            'replay' |
             'spectator-home' |
             'start-screen' |
             'the-end';
@@ -102,6 +108,7 @@ export type MainAppData = {
     componentsVisibility: {[x: string]: boolean};
     game: SimpleGameModel | undefined;
     login: string | undefined;
+    replayParticipantId: ParticipantId | undefined;
 }
 
 // NOTE: this simplistic truncation to the last segment might cause issues if
@@ -132,6 +139,7 @@ export default defineComponent({
       playerView: undefined,
       spectator: undefined,
       login: undefined,
+      replayParticipantId: undefined,
     };
   },
   components: {
@@ -147,6 +155,7 @@ export default defineComponent({
     Help,
     AdminHome,
     LoginHome,
+    ReplayScreen,
   },
   computed: {
     participant(): ViewModel | undefined {
@@ -260,6 +269,14 @@ export default defineComponent({
         app.updatePlayer();
       } else if (isSpectatorId(id)) {
         app.updateSpectator();
+      } else {
+        alert('Bad id URL parameter.');
+      }
+    } else if (currentPathname === paths.REPLAY) {
+      const id = new URLSearchParams(window.location.search).get('id') || '';
+      if (isPlayerId(id) || isSpectatorId(id)) {
+        app.replayParticipantId = id;
+        app.screen = 'replay';
       } else {
         alert('Bad id URL parameter.');
       }
