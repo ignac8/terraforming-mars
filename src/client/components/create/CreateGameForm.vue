@@ -174,7 +174,7 @@
 
                         <div class="create-game-page-column">
                             <h4 v-i18n>Options</h4>
-                            <BoardSelector v-model:board="board" v-model:shuffleMap="shuffleMapOption" :isBoardDisabled="isBoardDisabledForAutoma" />
+                            <BoardSelector v-model:boards="boards" v-model:shuffleMap="shuffleMapOption" :isBoardDisabled="isBoardDisabledForAutoma" />
 
                             <label for="startingCorpNum-checkbox">
                             <input type="number" class="create-game-corporations-count" value="2" min="1" :max="6" v-model="startingCorporations" id="startingCorpNum-checkbox">
@@ -642,7 +642,7 @@ import {GameId, JSONObject} from '@/common/Types';
 import {AgendaStyle} from '@/common/turmoil/Types';
 import PreferencesIcon from '@/client/components/PreferencesIcon.vue';
 import {getCard} from '@/client/cards/ClientCardManifest';
-import {BoardNameType, NewGameConfig, NewPlayerModel} from '@/common/game/NewGameConfig';
+import {NewGameConfig, NewPlayerModel} from '@/common/game/NewGameConfig';
 import {vueRoot} from '@/client/components/vueRoot';
 import {CreateGameModel} from './CreateGameModel';
 import {paths} from '@/common/app/paths';
@@ -776,8 +776,9 @@ export default defineComponent({
     },
     automaOption(value: boolean) {
       if (value) {
-        if (!isMarsBotBoardChoice(this.board)) {
-          this.board = BoardName.THARSIS;
+        this.boards = this.boards.filter(isMarsBotBoardChoice);
+        if (this.boards.length === 0) {
+          this.boards = [BoardName.THARSIS];
         }
         this.initialDraft = false;
         this.randomFirstPlayer = false;
@@ -872,7 +873,7 @@ export default defineComponent({
         customPreludes: this.customPreludes,
         bannedCards: this.bannedCards,
         includedCards: this.includedCards,
-        board: this.board,
+        boards: this.boards,
         seed: this.seed,
         solarPhaseOption: this.solarPhaseOption,
         aresExtremeVariant: this.aresExtremeVariant,
@@ -1134,7 +1135,7 @@ export default defineComponent({
         this.moonStandardProjectVariant1 = false;
       }
     },
-    isBoardDisabledForAutoma(boardName: BoardNameType): boolean {
+    isBoardDisabledForAutoma(boardName: BoardName): boolean {
       return this.automaOption && !isMarsBotBoardChoice(boardName);
     },
     getPlayerCubeColorClass(color: Color): string {

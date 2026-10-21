@@ -5,7 +5,6 @@ import {MockRequest, MockResponse} from './HttpMocks';
 import {RouteTestScaffolding} from './RouteTestScaffolding';
 import {statusCode} from '../../src/common/http/statusCode';
 import {NewGameConfig} from '../../src/common/game/NewGameConfig';
-import {RandomBoardOption} from '../../src/common/boards/RandomBoardOption';
 import {RandomMAOptionType} from '../../src/common/ma/RandomMAOptionType';
 import {SimpleGameModel} from '../../src/common/models/SimpleGameModel';
 import {FakeClock} from '../common/FakeClock';
@@ -38,7 +37,7 @@ function newGameConfigForTest(): NewGameConfig {
       underworld: false,
       deltaProject: false,
     },
-    board: RandomBoardOption.OFFICIAL,
+    boards: [BoardName.THARSIS],
     seed: 0,
     randomFirstPlayer: false,
     clonedGamedId: undefined,
@@ -91,28 +90,6 @@ describe('ApiCreateGame', () => {
     apiCreateGame = new ApiCreateGame([{limit: 99999, perMs: 1}]);
   });
 
-  it('Official random boards do not include fan maps', () => {
-    expect(ApiCreateGame.boardOptions(RandomBoardOption.OFFICIAL)).to.have.members([
-      BoardName.THARSIS, BoardName.HELLAS, BoardName.ELYSIUM,
-      BoardName.VASTITAS_BOREALIS_NOVA, BoardName.TERRA_CIMMERIA_NOVA, BoardName.UTOPIA_PLANITIA]);
-  });
-  it('Fully random boards do include fan maps', () => {
-    expect(ApiCreateGame.boardOptions(RandomBoardOption.ALL)).to.have.members([
-      BoardName.THARSIS,
-      BoardName.HELLAS,
-      BoardName.ELYSIUM,
-      BoardName.UTOPIA_PLANITIA,
-      BoardName.VASTITAS_BOREALIS_NOVA,
-      BoardName.TERRA_CIMMERIA_NOVA,
-      BoardName.ARABIA_TERRA,
-      BoardName.VASTITAS_BOREALIS,
-      BoardName.AMAZONIS,
-      BoardName.TERRA_CIMMERIA,
-      BoardName.HOLLANDIA,
-      BoardName.AMAZONIS_PLANITIA,
-    ]);
-  });
-
   it('no get', async () => {
     await scaffolding.get(apiCreateGame, res);
     expect(res.statusCode).eq(statusCode.notFound);
@@ -159,6 +136,22 @@ describe('ApiCreateGame', () => {
       expect(game!.gameOptions.automaFinalGreeneryNoCorpEffects).eq(automaFinalGreeneryNoCorpEffects);
       res = new MockResponse();
     }
+  });
+
+  it('picks a MarsBot game's board only from the selected boards MarsBot supports', async () => {
+    await postConfig({...newGameConfigForTest(), automaOption: true, boards: [BoardName.AMAZONIS_PLANITIA, BoardName.HELLAS, BoardName.ARABIA_TERRA]});
+    expect(res.statusCode).eq(statusCode.ok);
+    const model = JSON.parse(res.content) as SimpleGameModel;
+    const game = await scaffolding.ctx.gameLoader.getGame(model.id);
+    expect(game!.gameOptions.boardName).eq(BoardName.HELLAS);
+  });
+
+  it('falls back to Tharsis when no selected board supports MarsBot', async () => {
+    await postConfig({...newGameConfigForTest(), automaOption: true, boards: [BoardName.AMAZONIS_PLANITIA, BoardName.ARABIA_TERRA]});
+    expect(res.statusCode).eq(statusCode.ok);
+    const model = JSON.parse(res.content) as SimpleGameModel;
+    const game = await scaffolding.ctx.gameLoader.getGame(model.id);
+    expect(game!.gameOptions.boardName).eq(BoardName.THARSIS);
   });
 
   it('red rover solo game', async () => {

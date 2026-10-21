@@ -1,7 +1,6 @@
 import {expect} from 'chai';
 import {testGame} from '../TestGame';
 import {BoardName} from '../../src/common/boards/BoardName';
-import {ApiCreateGame} from '../../src/server/routes/ApiCreateGame';
 import {ColonyName} from '../../src/common/colonies/ColonyName';
 import {CardName} from '../../src/common/cards/CardName';
 import {IGame} from '../../src/server/IGame';
@@ -198,13 +197,6 @@ describe('MarsBotGameCreation', () => {
         boardName: BoardName.ARABIA_TERRA,
       });
       expect(game.gameOptions.boardName).to.eq(BoardName.THARSIS);
-    });
-  });
-
-  describe('Board options', () => {
-    it('ApiCreateGame.boardOptions returns correct boards', () => {
-      expect(ApiCreateGame.boardOptions(BoardName.THARSIS)).to.deep.eq([BoardName.THARSIS]);
-      expect(ApiCreateGame.boardOptions(BoardName.HELLAS)).to.deep.eq([BoardName.HELLAS]);
     });
   });
 });

@@ -23,7 +23,7 @@ function createNewGameConfig(overrides: JSONObject = {}):  NewGameConfig {
       {name: 'Bob', color: 'blue', beginner: false, handicap: 0, first: true},
     ],
     expansions: DEFAULT_EXPANSIONS,
-    board: BoardName.HELLAS,
+    boards: [BoardName.HELLAS],
     draftVariant: false,
     solarPhaseOption: true,
     ...overrides,
@@ -216,6 +216,22 @@ describe('CreateGameForm', () => {
     expect(isBoardDisabled(BoardName.ARABIA_TERRA)).is.false;
   });
 
+  for (const run of [
+    {boards: [BoardName.AMAZONIS_PLANITIA, BoardName.HELLAS, BoardName.ARABIA_TERRA], expected: [BoardName.HELLAS]},
+    {boards: [BoardName.AMAZONIS_PLANITIA, BoardName.ARABIA_TERRA], expected: [BoardName.THARSIS]},
+  ] as const) {
+    it(`enabling automa keeps only the selected MarsBot boards ${JSON.stringify(run)}`, async () => {
+      const wrapper = shallowMount(CreateGameForm, {...globalConfig});
+      const vm = wrapper.vm as any;
+      vm.automaOption = false;
+      await vm.$nextTick();
+      vm.boards = [...run.boards];
+      vm.automaOption = true;
+      await vm.$nextTick();
+      expect(vm.boards).deep.eq(run.expected);
+    });
+  }
+
   it('enabling automa disables fan-made expansions and force-offs incompatible options', async () => {
     const wrapper = shallowMount(CreateGameForm, {...globalConfig});
     const vm = wrapper.vm as any;
@@ -294,7 +310,7 @@ describe('CreateGameForm', () => {
     expect((wrapper.vm as any).playersCount).eq(2);
     expect((wrapper.vm as any).players[0].name).eq('Alice');
     expect((wrapper.vm as any).players[1].name).eq('Bob');
-    expect((wrapper.vm as any).board).eq(BoardName.HELLAS);
+    expect((wrapper.vm as any).boards).deep.eq([BoardName.HELLAS]);
     expect((wrapper.vm as any).draftVariant).eq(false);
     expect((wrapper.vm as any).expansions.venus).eq(true);
     expect((wrapper.vm as any).solarPhaseOption).eq(true);
@@ -337,12 +353,12 @@ describe('CreateGameForm', () => {
     });
     await wrapper.vm.$nextTick();
 
-    expect((wrapper.vm as any).board).eq(BoardName.HELLAS);
+    expect((wrapper.vm as any).boards).deep.eq([BoardName.HELLAS]);
 
     (wrapper.vm as any).resetSettings();
     await wrapper.vm.$nextTick();
 
-    expect((wrapper.vm as any).board).eq(BoardName.THARSIS);
+    expect((wrapper.vm as any).boards).deep.eq([BoardName.THARSIS]);
     expect((wrapper.vm as any).draftVariant).eq(true);
     expect(createGameSettingsStorage.load()).eq(undefined);
     expect(wrapper.findAllComponents({name: 'AppButton'}).map((button) => button.props('title'))).includes('Reset');
@@ -376,12 +392,12 @@ describe('CreateGameForm', () => {
       (wrapper.vm as any).randomFirstPlayer = false;
       (wrapper.vm as any).players[0].name = 'Alice';
       (wrapper.vm as any).players[1].name = 'Bob';
-      (wrapper.vm as any).board = BoardName.ELYSIUM;
+      (wrapper.vm as any).boards = [BoardName.ELYSIUM];
 
       await (wrapper.vm as any).createGame();
 
       const savedSettings = createGameSettingsStorage.load();
-      expect(savedSettings?.board).eq(BoardName.ELYSIUM);
+      expect(savedSettings?.boards).deep.eq([BoardName.ELYSIUM]);
       expect((savedSettings?.players as Array<{name: string}>).map((player) => player.name)).deep.eq(['Alice', 'Bob']);
     } finally {
       global.fetch = originalFetch;
