@@ -135,6 +135,19 @@ describe('GameLoader', () => {
     expect(found?.id).to.eq('gjudged');
   });
 
+  it('finds a game by its judge id after a restart', async () => {
+    const player = TestPlayer.GREEN.newPlayer();
+    const judged = Game.newInstance('gjudged', [player], player, 'sjudged', {judgeLink: true});
+    judged.save();
+    // Drops everything in memory, so the judge id has to come back from the database.
+    instance.resetForTesting();
+    expect(await instance.isCached('gjudged')).is.false;
+
+    const found = await instance.getGame(judged.judgeId!);
+
+    expect(found?.id).to.eq('gjudged');
+  });
+
   it('loads values after error pulling game ids', async () => {
     database.failure = 'getParticipants';
     instance.resetForTesting();

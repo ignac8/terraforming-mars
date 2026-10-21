@@ -153,4 +153,17 @@ describe('ApiGameLogs', () => {
     // The stored log keeps its player ids.
     expect(game.gameLog.map((m) => m.playerId)).deep.eq([undefined, yellowPlayer.id, orangePlayer.id]);
   });
+
+  it('judge logs refuse a wrong password once the judge password is claimed', async () => {
+    const yellowPlayer = TestPlayer.YELLOW.newPlayer();
+    const orangePlayer = TestPlayer.ORANGE.newPlayer();
+    const game = Game.newInstance('game-id', [yellowPlayer, orangePlayer], yellowPlayer, 'spectatorid', {judgeLink: true});
+    game.judgePassword = 'secret';
+    await scaffolding.ctx.gameLoader.add(game);
+
+    scaffolding.url = '/api/game/logs?id=' + game.judgeId + '&password=wrong';
+    await scaffolding.get(ApiGameLogs.INSTANCE, res);
+
+    expect(res.statusCode).eq(statusCode.unauthorized);
+  });
 });

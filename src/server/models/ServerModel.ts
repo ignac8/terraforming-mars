@@ -124,7 +124,7 @@ export class Server {
     return rv;
   }
 
-  /** The fields of a player's view that nobody else may see. */
+  /** The fields of a player's view that only that seat (or a judge) may see. */
   public static getPrivateFields(player: IPlayer): PrivatePlayerFields {
     return {
       cardsInHand: cardsToModel(player, player.cardsInHand, {showCalculatedCost: true}),
@@ -150,7 +150,8 @@ export class Server {
       id: game.judgeId,
       password: game.judgePassword,
       game: this.getGameModel(game),
-      // The judge sees every player's VP. Player ids stay hidden until the game ends.
+      // The judge sees every player's VP. Passing true also skips the research-phase snapshot,
+      // so the judge sees live values. Player ids stay hidden until the game ends.
       players: players.map((p) => this.getPlayer(p, true)),
       thisPlayer: undefined,
       runId: runId,

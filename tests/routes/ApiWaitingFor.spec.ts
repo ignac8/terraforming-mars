@@ -1,5 +1,6 @@
 import {expect} from 'chai';
 import {ApiWaitingFor} from '../../src/server/routes/ApiWaitingFor';
+import {ApiJudge} from '../../src/server/routes/ApiJudge';
 import {Game} from '../../src/server/Game';
 import {TestPlayer} from '../TestPlayer';
 import {MockResponse} from './HttpMocks';
@@ -119,6 +120,29 @@ describe('ApiWaitingFor', () => {
       await scaffolding.get(ApiWaitingFor.INSTANCE, res);
 
       expect(res.statusCode).eq(statusCode.unauthorized);
+    });
+
+    it('claims an unclaimed seat with the password it carries', async () => {
+      game.judgePassword = undefined;
+      const signature = Server.getJudgeSignature(game);
+
+      scaffolding.url = '/api/waitingfor?id=' + game.judgeId + '&signature=' + signature + '&password=0123456789ab';
+      await scaffolding.get(ApiWaitingFor.INSTANCE, res);
+
+      expect(res.statusCode).eq(statusCode.ok);
+      expect(game.judgePassword).eq('0123456789ab');
+
+      const judgeRes = new MockResponse();
+      scaffolding.url = '/api/judge?id=' + game.judgeId + '&password=0123456789ab';
+      await scaffolding.get(ApiJudge.INSTANCE, judgeRes);
+      expect(judgeRes.statusCode).eq(statusCode.ok);
+    });
+
+    it('is a bad request without a signature', async () => {
+      scaffolding.url = '/api/waitingfor?id=' + game.judgeId + '&password=secret';
+      await scaffolding.get(ApiWaitingFor.INSTANCE, res);
+
+      expect(res.statusCode).eq(statusCode.badRequest);
     });
   });
 });
