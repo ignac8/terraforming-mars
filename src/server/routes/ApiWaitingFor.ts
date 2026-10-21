@@ -5,10 +5,11 @@ import {Phase} from '../../common/Phase';
 import {IPlayer} from '../IPlayer';
 import {WaitingForModel} from '../../common/models/WaitingForModel';
 import {IGame} from '../IGame';
-import {isSpectatorId} from '../../common/Types';
+import {isJudgeId, isSpectatorId} from '../../common/Types';
 import {Request} from '../Request';
 import {Response} from '../Response';
 import {RouteError} from './RouteError';
+import {Server} from '../models/ServerModel';
 
 export class ApiWaitingFor extends Handler {
   public static readonly INSTANCE = new ApiWaitingFor();
@@ -52,8 +53,24 @@ export class ApiWaitingFor extends Handler {
     return {result: 'WAIT', waitingFor: inputs};
   }
 
+  private getJudgeWaitingForModel(game: IGame, signature: string): WaitingForModel {
+    const inputs = this.playersWithRequiredInputs(game);
+
+    if (signature !== Server.getJudgeSignature(game)) {
+      return {result: 'REFRESH', waitingFor: inputs};
+    }
+    return {result: 'WAIT', waitingFor: inputs};
+  }
+
   public override async get(_req: Request, res: Response, ctx: Context): Promise<void> {
-    const id = ctx.urlParams.participantId('id');
+    if (isJudgeId(ctx.urlParams.get('id'))) {
+      const game = await this.loadJudgeGame(ctx);
+      const signature = ctx.urlParams.get('signature');
+      responses.writeJson(res, ctx, this.getJudgeWaitingForModel(game, signature));
+      return;
+    }
+
+    const id =ctx.urlParams.participantId('id');
     const gameAge = ctx.urlParams.number('gameAge');
     const undoCount = ctx.urlParams.number('undoCount');
 

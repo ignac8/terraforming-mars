@@ -6,6 +6,7 @@ import {MockResponse} from './HttpMocks';
 import {RouteTestScaffolding} from './RouteTestScaffolding';
 import {GameId} from '../../src/common/Types';
 import {statusCode} from '../../src/common/http/statusCode';
+import {Server} from '../../src/server/models/ServerModel';
 
 describe('ApiWaitingFor', () => {
   let scaffolding: RouteTestScaffolding;
@@ -80,5 +81,44 @@ describe('ApiWaitingFor', () => {
     await scaffolding.get(ApiWaitingFor.INSTANCE, res);
     expect(res.statusCode).eq(statusCode.ok);
     expect(res.content).eq('{"result":"WAIT","waitingFor":["black","red"]}');
+  });
+
+  describe('judge', () => {
+    let game: Game;
+
+    beforeEach(async () => {
+      const player = TestPlayer.BLACK.newPlayer();
+      const player2 = TestPlayer.RED.newPlayer();
+      game = Game.newInstance('game-id', [player, player2], player, 's-spectatorid', {judgeLink: true});
+      game.judgePassword = 'secret';
+      await scaffolding.ctx.gameLoader.add(game);
+    });
+
+    it('waits when the signature is current', async () => {
+      const signature = Server.getJudgeSignature(game);
+
+      scaffolding.url = '/api/waitingfor?id=' + game.judgeId + '&signature=' + signature + '&password=secret';
+      await scaffolding.get(ApiWaitingFor.INSTANCE, res);
+
+      expect(res.statusCode).eq(statusCode.ok);
+      expect(res.content).eq('{"result":"WAIT","waitingFor":["black","red"]}');
+    });
+
+    it('refreshes when the signature is stale', async () => {
+      scaffolding.url = '/api/waitingfor?id=' + game.judgeId + '&signature=stale&password=secret';
+      await scaffolding.get(ApiWaitingFor.INSTANCE, res);
+
+      expect(res.statusCode).eq(statusCode.ok);
+      expect(res.content).eq('{"result":"REFRESH","waitingFor":["black","red"]}');
+    });
+
+    it('is refused without the claimed password', async () => {
+      const signature = Server.getJudgeSignature(game);
+
+      scaffolding.url = '/api/waitingfor?id=' + game.judgeId + '&signature=' + signature;
+      await scaffolding.get(ApiWaitingFor.INSTANCE, res);
+
+      expect(res.statusCode).eq(statusCode.unauthorized);
+    });
   });
 });
