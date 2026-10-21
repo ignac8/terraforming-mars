@@ -39,6 +39,8 @@ import {EnergyTapping} from '../src/server/cards/base/EnergyTapping';
 import {cast} from '@/common/utils/utils';
 import {Timer} from '../src/common/Timer';
 import {FakeClock} from './common/FakeClock';
+import {InMemoryDatabase} from './testing/InMemoryDatabase';
+import {restoreTestDatabase, setTestDatabase} from './testing/setup';
 
 function playerWithRunningTimer(): [Player, FakeClock] {
   const player = new Player('blue', 'blue', false, 0, 'p-blue');
@@ -745,5 +747,22 @@ describe('Player', () => {
 
     expect(player.cardsInHand).to.have.members([cards[0], cards[2]]);
     expect(player.megaCredits).eq(14);
+  });
+
+  describe('saves', () => {
+    it('saves before every action, also without undo', () => {
+      const db = new InMemoryDatabase();
+      setTestDatabase(db);
+      try {
+        const [game, player] = testGame(2, {undoOption: false});
+        player.actionsTakenThisRound = 1; // second action of the turn
+        const before = db.games.get(game.id)?.length ?? 0;
+        player.takeAction();
+        runAllActions(game);
+        expect(db.games.get(game.id)?.length ?? 0).eq(before + 1);
+      } finally {
+        restoreTestDatabase();
+      }
+    });
   });
 });
