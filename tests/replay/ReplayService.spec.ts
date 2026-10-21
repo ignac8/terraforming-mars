@@ -9,7 +9,7 @@ import {LogMessage} from '../../src/common/logs/LogMessage';
 import {LogMessageType} from '../../src/common/logs/LogMessageType';
 import {Phase} from '../../src/common/Phase';
 import {PlayerId} from '../../src/common/Types';
-import {ReplayMove} from '../../src/common/replay/ReplayModel';
+import {ReplayMove, ReplayMovesModel} from '../../src/common/replay/ReplayModel';
 import {InMemoryDatabase} from '../testing/InMemoryDatabase';
 import {restoreTestDatabase, setTestDatabase} from '../testing/setup';
 
@@ -155,7 +155,22 @@ describe('ReplayService', () => {
     storeLengths([0, 2, 5]);
     const first = await getReplayMoves(game, player.id);
     db.games.delete(game.id);
-    expect(await getReplayMoves(game, player.id)).eq(first);
+    expect(await getReplayMoves(game, player.id)).deep.eq(first);
+  });
+
+  it('builds the move list once per game, whoever asks', async () => {
+    storeLengths([0, 2, 5]);
+    await getReplayMoves(game, player.id);
+    db.games.delete(game.id);
+    expect((await getReplayMoves(game, player2.id)).status).eq('available');
+    expect((await getReplayMoves(game, 's-spectator' as PlayerId)).status).eq('available');
+  });
+
+  it('answers not-finished for a cached game that runs again', async () => {
+    storeLengths([0, 2, 5]);
+    expect((await getReplayMoves(game, player.id)).status).eq('available');
+    game.phase = Phase.ACTION;
+    expect(await getReplayMoves(game, player.id)).deep.eq({status: 'not-finished'});
   });
 
   it('forgetReplay makes a rolled back game read its saves again', async () => {
@@ -171,20 +186,115 @@ describe('ReplayService', () => {
     forgetReplay(game.id);
 
     expect(await getReplayMoves(game, player.id)).deep.eq({status: 'not-finished'});
-    expect(await getReplayMoves(other, other.playersInGenerationOrder[0].id)).eq(otherList);
+    expect(await getReplayMoves(other, other.playersInGenerationOrder[0].id)).deep.eq(otherList);
   });
 
-  it('drops the oldest cached move list past 50 entries', async () => {
+  it('drops the oldest cached game past 50 games', async () => {
     storeLengths([0, 2, 5]);
-    const first = await getReplayMoves(game, 's-0' as PlayerId);
-    for (let i = 1; i < 50; i++) {
-      await getReplayMoves(game, `s-${i}` as PlayerId);
+    const copy = db.games.get(game.id)!;
+    function other(i: number): IGame {
+      db.games.set(`g-${i}`, copy);
+      return {id: `g-${i}`, phase: Phase.END} as IGame;
     }
-    // Still 50 entries, so the first one is cached.
-    expect(await getReplayMoves(game, 's-0' as PlayerId)).eq(first);
-    await getReplayMoves(game, 's-50' as PlayerId);
-    // The 51st entry pushed the first one out, so it is built again from the saves.
-    expect(await getReplayMoves(game, 's-0' as PlayerId)).not.eq(first);
+    const first = other(0);
+    await getReplayMoves(first, player.id);
+    for (let i = 1; i < 50; i++) {
+      await getReplayMoves(other(i), player.id);
+    }
+    let reads = 0;
+    const getGameVersion = db.getGameVersion.bind(db);
+    db.getGameVersion = (gameId, saveId) => {
+      reads++;
+      return getGameVersion(gameId, saveId);
+    };
+    // Still 50 games, so the first one is cached.
+    await getReplayMoves(first, player.id);
+    expect(reads).eq(0);
+    await getReplayMoves(other(50), player.id);
+    reads = 0;
+    // The 51st game pushed the first one out, so it is built again from the saves.
+    await getReplayMoves(first, player.id);
+    expect(reads).greaterThan(0);
+  });
+
+  it('reads each save once for viewers who ask at the same time', async () => {
+    storeLengths([0, 2, 5, 9]);
+    const reads: Array<number> = [];
+    const getGameVersion = db.getGameVersion.bind(db);
+    db.getGameVersion = (gameId, saveId) => {
+      reads.push(saveId);
+      return getGameVersion(gameId, saveId);
+    };
+    const results = await Promise.all([
+      getReplayMoves(game, player.id),
+      getReplayMoves(game, player2.id),
+      getReplayMoves(game, 's-spectator' as PlayerId),
+    ]);
+    for (const r of results) {
+      expect(r.status).eq('available');
+    }
+    expect(reads.sort()).deep.eq([0, 1, 2, 3]);
+  });
+
+  it('gives each concurrent viewer only their own private lines', async () => {
+    storeLengths([0, 4, 4, 4], new Map([[1, player.id], [2, player2.id]]));
+    const [forPlayer, forPlayer2, forSpectator] = await Promise.all([
+      getReplayMoves(game, player.id),
+      getReplayMoves(game, player2.id),
+      getReplayMoves(game, 's-spectator' as PlayerId),
+    ]);
+    const lines = (r: ReplayMovesModel) => (r as {moves: Array<ReplayMove>}).moves[0].messages.map((m) => m.message);
+    expect(lines(forPlayer)).deep.eq(['line 0', 'line 1', 'line 3']);
+    expect(lines(forPlayer2)).deep.eq(['line 0', 'line 2', 'line 3']);
+    expect(lines(forSpectator)).deep.eq(['line 0', 'line 3']);
+  });
+
+  it('does not hand one viewer the message array of another', async () => {
+    storeLengths([0, 4, 4, 4]);
+    const a = await getReplayMoves(game, player.id) as {moves: Array<ReplayMove>};
+    const b = await getReplayMoves(game, player2.id) as {moves: Array<ReplayMove>};
+    expect(a.moves[0].messages).not.eq(b.moves[0].messages);
+  });
+
+  it('shares a failed build, then builds again on the next request', async () => {
+    storeLengths([0, 2, 5]);
+    const getGameVersion = db.getGameVersion.bind(db);
+    db.getGameVersion = () => Promise.reject(new Error('Game not found'));
+    const failures = await Promise.all([
+      errorOf(getReplayMoves(game, player.id)),
+      errorOf(getReplayMoves(game, player2.id)),
+    ]);
+    for (const e of failures) {
+      expect(e).instanceOf(RouteError);
+    }
+
+    db.getGameVersion = getGameVersion;
+    expect((await moves()).map((m) => m.saveId)).deep.eq([0, 1, 2]);
+  });
+
+  it('does not cache a build that forgetReplay superseded', async () => {
+    storeLengths([0, 2, 5]);
+    const rows = db.games.get(game.id)!;
+    const getGameVersion = db.getGameVersion.bind(db);
+    let release: () => void = () => {};
+    const gate = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    db.getGameVersion = async (gameId, saveId) => {
+      const save = await getGameVersion(gameId, saveId);
+      await gate;
+      return save;
+    };
+    const stale = getReplayMoves(game, player.id);
+    await new Promise((resolve) => setImmediate(resolve));
+    // A rollback replaces the saves while the build is still reading.
+    forgetReplay(game.id);
+    rows.pop();
+    release();
+    await stale;
+
+    db.getGameVersion = getGameVersion;
+    expect(await getReplayMoves(game, player.id)).deep.eq({status: 'not-finished'});
   });
 
   it('does not change the live game', async () => {
