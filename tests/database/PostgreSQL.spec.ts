@@ -1,4 +1,5 @@
 import {expect} from 'chai';
+import {Context} from 'mocha';
 import {EventEmitter} from 'events';
 import pg from 'pg';
 import {PostgreSQL} from '../../src/server/database/PostgreSQL';
@@ -238,7 +239,7 @@ describe('PostgreSQL', () => {
       }
     });
 
-    it('keeps every save unless POSTGRES_TRIM_COUNT is set', function() {
+    it('keeps every save unless POSTGRES_TRIM_COUNT is set', function(this: Context) {
       // The default is read when the module loads, so this only holds when the variable is unset.
       if (process.env.POSTGRES_TRIM_COUNT !== undefined) {
         this.skip();
