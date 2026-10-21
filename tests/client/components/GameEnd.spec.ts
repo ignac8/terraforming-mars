@@ -18,6 +18,16 @@ describe('GameEnd', () => {
     expect(wrapper.exists()).to.be.true;
   });
 
+  it('links to the replay of the game', () => {
+    const wrapper = shallowMount(GameEnd, {
+      ...globalConfig,
+      props: {
+        participant: fakePlayerViewModel({id: 'p-blue-id' as any}),
+      },
+    });
+    expect(wrapper.find('a.game-end-replay-link').attributes('href')).to.equal('replay?id=p-blue-id');
+  });
+
   it('shows the dogs', () => {
     const wrapper = shallowMount(GameEnd, {
       ...globalConfig,

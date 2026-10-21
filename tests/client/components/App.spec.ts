@@ -7,6 +7,9 @@ import App from '@/client/components/App.vue';
 import {translateMessage} from '@/client/directives/i18n';
 import {LogMessageDataType} from '@/common/logs/LogMessageDataType';
 
+// The real replay screen would load the whole game UI, which isn't what the routing tests are about.
+vi.mock('@/client/components/replay/ReplayScreen.vue', () => ({default: {template: '<div class="replay-screen-stub"/>'}}));
+
 describe('App', () => {
   afterEach(() => {
     vi.restoreAllMocks();
@@ -129,5 +132,26 @@ describe('App', () => {
     await (wrapper.vm as any).updateJudge();
 
     expect(alertStub.mock.calls).deep.eq([['Incorrect judge password. Reopen the judge page from your browser history, or ask the organizer for the judge link with its password.']]);
+  });
+
+  describe('replay route', () => {
+    afterEach(() => {
+      window.history.replaceState({}, '', '/');
+    });
+
+    it('opens the replay screen for a participant id', () => {
+      window.history.replaceState({}, '', '/replay?id=s-spectator-id');
+      const wrapper = shallowMount(App, globalConfig);
+      expect(wrapper.vm.screen).to.equal('replay');
+      expect(wrapper.vm.replayParticipantId).to.equal('s-spectator-id');
+    });
+
+    it('alerts on a bad id', () => {
+      const alert = vi.spyOn(window, 'alert').mockImplementation(() => {});
+      window.history.replaceState({}, '', '/replay?id=nonsense');
+      const wrapper = shallowMount(App, globalConfig);
+      expect(alert.mock.calls).to.deep.equal([['Bad id URL parameter.']]);
+      expect(wrapper.vm.screen).to.equal('empty');
+    });
   });
 });
