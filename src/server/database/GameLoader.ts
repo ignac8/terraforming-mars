@@ -2,7 +2,7 @@ import prometheus from '@prometheus-io/client';
 import {Database} from './Database';
 import {Game} from '../Game';
 import {IGame} from '../IGame';
-import {PlayerId, GameId, SpectatorId, isGameId, ParticipantId} from '../../common/Types';
+import {GameId, isGameId, ParticipantId} from '../../common/Types';
 import {IGameLoader} from './IGameLoader';
 import {GameIdLedger} from './IDatabase';
 import {Cache} from './Cache';
@@ -156,6 +156,9 @@ export class GameLoader implements IGameLoader {
     if (game.spectatorId !== undefined) {
       d.participantIds.set(game.spectatorId, game.id);
     }
+    if (game.judgeId !== undefined) {
+      d.participantIds.set(game.judgeId, game.id);
+    }
     for (const player of game.players) {
       d.participantIds.set(player.id, game.id);
     }
@@ -177,7 +180,7 @@ export class GameLoader implements IGameLoader {
     return d.games.get(gameId) !== undefined;
   }
 
-  public async getGame(id: GameId | PlayerId | SpectatorId, forceLoad: boolean = false): Promise<IGame | undefined> {
+  public async getGame(id: GameId | ParticipantId, forceLoad: boolean = false): Promise<IGame | undefined> {
     const d = await this.cache.getGames();
     const gameId = isGameId(id) ? id : d.participantIds.get(id);
     if (gameId === undefined) {

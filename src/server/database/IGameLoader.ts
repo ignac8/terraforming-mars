@@ -1,5 +1,5 @@
 import {IGame} from '../IGame';
-import {PlayerId, GameId, SpectatorId} from '../../common/Types';
+import {GameId, ParticipantId} from '../../common/Types';
 import {GameIdLedger} from './IDatabase';
 
 /**
@@ -12,14 +12,14 @@ export interface IGameLoader {
   /**
    * Fetches a game from the GameLoader cache.
    *
-   * @param {GameId | PlayerId | SpectatorId} id the id of the game to retrieve, or
-   * one of its player ids, or its spectator id.
+   * @param {GameId | ParticipantId} id the id of the game to retrieve, or
+   * one of its player ids, or its spectator id or judge id.
    * @param {boolean} forceLoad (default is false.) When true always load from the database,
    * which refreshes the cache. This should never be true during an active game except when
    * doing an administrative rollback. Don't even make this true for normal game undos.
    * That's what `restoreGameAt` is for.
    */
-  getGame(id: GameId | PlayerId | SpectatorId, forceLoad?: boolean): Promise<IGame | undefined>;
+  getGame(id: GameId | ParticipantId, forceLoad?: boolean): Promise<IGame | undefined>;
   /**
    * Reload a game at a specific version, deleting all versions ahead of it.
    *
