@@ -5,7 +5,7 @@ import {GameLogs} from './GameLogs';
 import {Request} from '../Request';
 import {Response} from '../Response';
 import {RouteError} from './RouteError';
-import {isPlayerId} from '../../common/Types';
+import {isJudgeId, isPlayerId} from '../../common/Types';
 
 export class ApiGameLogs extends Handler {
   public static readonly INSTANCE = new ApiGameLogs();
@@ -14,8 +14,13 @@ export class ApiGameLogs extends Handler {
   }
 
   public override async get(_req: Request, res: Response, ctx: Context): Promise<void> {
-    const id = ctx.urlParams.participantId('id');
     const generation = ctx.urlParams.numberOrUndefined('generation');
+    if (isJudgeId(ctx.urlParams.get('id'))) {
+      const judgeGame = await this.loadJudgeGame(ctx);
+      responses.writeJson(res, ctx, this.gameLogs.getLogsForJudge(judgeGame, generation));
+      return;
+    }
+    const id = ctx.urlParams.participantId('id');
     const game = await ctx.gameLoader.getGame(id);
     if (game === undefined) {
       throw RouteError.notFound('game not found');

@@ -131,4 +131,26 @@ describe('ApiGameLogs', () => {
       expect(messages[1].message).eq(`${entry.color} player sees this.`);
     });
   });
+
+  it('judge logs include private lines tagged with their owner', async () => {
+    const yellowPlayer = TestPlayer.YELLOW.newPlayer();
+    const orangePlayer = TestPlayer.ORANGE.newPlayer();
+    const game = Game.newInstance('game-id', [yellowPlayer, orangePlayer], yellowPlayer, 'spectatorid', {judgeLink: true});
+    await scaffolding.ctx.gameLoader.add(game);
+
+    game.gameLog.length = 0;
+    game.log('All players see this.');
+    game.log('Yellow only.', (_b) => {}, {reservedFor: yellowPlayer});
+    game.log('Orange only.', (_b) => {}, {reservedFor: orangePlayer});
+
+    scaffolding.url = '/api/game/logs?id=' + game.judgeId;
+    await scaffolding.get(ApiGameLogs.INSTANCE, res);
+    const messages = JSON.parse(res.content);
+
+    expect(messages.map((m: any) => m.message)).deep.eq(['All players see this.', 'Yellow only.', 'Orange only.']);
+    expect(messages.map((m: any) => m.owner)).deep.eq([undefined, yellowPlayer.color, orangePlayer.color]);
+    expect(messages.filter((m: any) => m.playerId !== undefined)).is.empty;
+    // The stored log keeps its player ids.
+    expect(game.gameLog.map((m) => m.playerId)).deep.eq([undefined, yellowPlayer.id, orangePlayer.id]);
+  });
 });
