@@ -76,6 +76,25 @@ describe('ReplayScreen', () => {
     expect(calls.filter((c) => c.startsWith('api/replay/moves'))).has.length(2);
   });
 
+  it('says the game was not found, without a retry', async () => {
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    (global as any).fetch = () => Promise.resolve({ok: false, status: 404, text: () => Promise.resolve('Not found: game not found')});
+    const wrapper = mountScreen();
+    await flushPromises();
+    expect(wrapper.text()).to.contain('This game was not found.');
+    expect(wrapper.text()).not.to.contain('Not found: game not found');
+    expect(wrapper.find('.replay-retry').exists()).is.false;
+  });
+
+  it('offers a retry when the server cannot be reached', async () => {
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    (global as any).fetch = () => Promise.reject(new TypeError('Failed to fetch'));
+    const wrapper = mountScreen();
+    await flushPromises();
+    expect(wrapper.text()).to.contain('Failed to fetch');
+    expect(wrapper.find('.replay-retry').exists()).is.true;
+  });
+
   it('says the replay has expired', async () => {
     movesAnswer = {status: 'expired'};
     const wrapper = mountScreen();
@@ -190,6 +209,18 @@ describe('ReplayScreen', () => {
       expect(panel().props('playing')).is.false;
       expect(wrapper.find('.replay-error').exists()).is.false;
       expect(calls).has.length(callCount);
+    });
+
+    it('stops when another view is chosen', async () => {
+      const wrapper = await mountPlayable();
+      const panel = () => wrapper.findComponent(ReplayPanel);
+      panel().vm.$emit('play');
+      await vi.advanceTimersByTimeAsync(0);
+      panel().vm.$emit('update:viewAs', 'blue');
+      await vi.advanceTimersByTimeAsync(5000);
+      expect(panel().props('playing')).is.false;
+      expect(panel().props('index')).to.equal(0);
+      expect(calls[calls.length - 1]).to.equal(`api/replay/view?id=${id}&save=10&as=blue`);
     });
 
     it('waits for a slow view before advancing again', async () => {

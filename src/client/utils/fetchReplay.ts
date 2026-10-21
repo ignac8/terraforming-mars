@@ -7,11 +7,19 @@ import {passwordQuery} from '@/client/utils/playerPassword';
 // Kept apart from fetchLogs' controller so the two never cancel each other.
 let viewAbortController: AbortController | undefined;
 
+/** A replay request the server answered with an error status. */
+export class ReplayResponseError extends Error {
+  constructor(message: string, public readonly status: number) {
+    super(message);
+    this.name = 'ReplayResponseError';
+  }
+}
+
 async function readJson<T>(resp: Response): Promise<T> {
   if (!resp.ok) {
     // The server explains 400s and 404s in a text body.
     const text = await resp.text();
-    throw new Error(text || `Replay request failed, response code ${resp.status}`);
+    throw new ReplayResponseError(text || `Replay request failed, response code ${resp.status}`, resp.status);
   }
   return resp.json();
 }

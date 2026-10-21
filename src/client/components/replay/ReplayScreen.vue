@@ -8,6 +8,9 @@
     <div v-else-if="status === 'expired'" class="replay-message">
       <p v-i18n>This replay is no longer available.</p>
     </div>
+    <div v-else-if="status === 'not-found'" class="replay-message">
+      <p v-i18n>This game was not found.</p>
+    </div>
     <div v-else-if="status === 'error'" class="replay-message">
       <p class="replay-error">{{ error }}</p>
       <button class="btn btn-primary replay-retry" type="button" @click="loadMoves" v-i18n>Retry</button>
@@ -48,13 +51,13 @@ import SpectatorHome from '@/client/components/SpectatorHome.vue';
 import ReplayHands from '@/client/components/replay/ReplayHands.vue';
 import ReplayPanel from '@/client/components/replay/ReplayPanel.vue';
 import {setTranslationContext} from '@/client/directives/i18n';
-import {fetchReplayMoves, fetchReplayView} from '@/client/utils/fetchReplay';
+import {fetchReplayMoves, fetchReplayView, ReplayResponseError} from '@/client/utils/fetchReplay';
 import {PlayerViewModel} from '@/common/models/PlayerModel';
 import {SpectatorModel} from '@/common/models/SpectatorModel';
 import {ReplayMove, ReplayViewAs, ReplayViewModel} from '@/common/replay/ReplayModel';
 import {ParticipantId} from '@/common/Types';
 
-type Status = 'loading' | 'available' | 'not-finished' | 'expired' | 'error';
+type Status = 'loading' | 'available' | 'not-finished' | 'expired' | 'not-found' | 'error';
 
 type DataModel = {
   status: Status;
@@ -129,6 +132,11 @@ export default defineComponent({
         }
       } catch (err) {
         console.error(err);
+        // The moves endpoint answers 400 and 404 only for an id that names no game, which no retry fixes.
+        if (err instanceof ReplayResponseError && (err.status === 400 || err.status === 404)) {
+          this.status = 'not-found';
+          return;
+        }
         this.status = 'error';
         this.error = err instanceof Error ? err.message : String(err);
       }
@@ -169,7 +177,9 @@ export default defineComponent({
       this.index = Math.min(Math.max(index, 0), this.moves.length - 1);
       return this.loadView();
     },
+    /** A view picked by hand. Like `select`, it stops autoplay, whose next step would cancel a slow load of the view. */
     changeViewAs(viewAs: ReplayViewAs): void {
+      this.pause();
       this.viewAs = viewAs;
       this.loadView();
     },
