@@ -125,6 +125,17 @@ describeDatabaseSuite({
         expect(await db.getSaveIds('game-today')).deep.eq([0, 5]);
       });
 
+      it('keeps every save of a finished game that was rolled back, once it is old enough', async () => {
+        const db = dbFactory() as TestSQLite;
+        await finishedGame(db, 'game-rolled-back', 15);
+
+        await db.deleteGameNbrSaves('game-rolled-back', 1);
+        await db.compressCompletedGames();
+        await settle();
+
+        expect(await db.getSaveIds('game-rolled-back')).has.members([0, 1, 2, 3, 4]);
+      });
+
       for (const invalid of ['', 'abc', '-5']) {
         it(`falls back to the default for the invalid value '${invalid}'`, async () => {
           const db = dbFactory() as TestSQLite;

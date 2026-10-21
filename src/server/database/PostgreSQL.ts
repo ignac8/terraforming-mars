@@ -478,6 +478,8 @@ export class PostgreSQL implements IDatabase {
       return;
     }
     await this.client.query('DELETE FROM games WHERE ctid IN (SELECT ctid FROM games WHERE game_id = $1 ORDER BY save_id DESC LIMIT $2)', [gameId, rollbackCount]);
+    // A game that runs again is no longer waiting to have its saves compressed.
+    await this.client.query('DELETE FROM completed_game WHERE game_id = $1', [gameId]);
   }
 
   public storeParticipants(entry: GameIdLedger): Promise<void> {

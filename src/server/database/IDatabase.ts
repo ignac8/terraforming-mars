@@ -90,6 +90,9 @@ export interface IDatabase {
      * Deletes the last `rollbackCount` saves of the specified game.
      *
      * Used as part of undo, reset, and via API to roll back a broken game.
+     *
+     * A game that was finished is no longer queued for compression afterwards. It is queued
+     * again if it finishes again.
      */
     deleteGameNbrSaves(gameId: GameId, rollbackCount: number): Promise<void>;
 

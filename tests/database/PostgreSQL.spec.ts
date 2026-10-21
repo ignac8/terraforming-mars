@@ -232,6 +232,16 @@ describe('PostgreSQL', () => {
     expect(game.lastSaveId).eq(1);
   });
 
+  it('takes a rolled back game off the compression queue', async () => {
+    await db.deleteGameNbrSaves(game.id, 2);
+
+    expect(pool.statements).deep.eq([
+      {connection: 'pool', sql: 'DELETE FROM games'},
+      {connection: 'pool', sql: 'DELETE FROM completed_game'},
+    ]);
+    expect(pool.poolParams[1]).deep.eq([game.id]);
+  });
+
   describe('defaults', () => {
     const savedCompress = process.env.COMPRESS_COMPLETED_GAMES_DAYS;
     afterEach(() => {

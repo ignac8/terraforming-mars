@@ -195,6 +195,24 @@ export function describeDatabaseSuite<T extends ITestDatabase>(dtor: DatabaseTes
           expect(await db.completedTime('game2-id')).is.undefined;
         });
       }
+
+      it('a rolled back finished game is no longer waiting for compression', async () => {
+        const player = TestPlayer.BLACK.newPlayer();
+        const game = Game.newInstance('game-id-rolled-back', [player], player, 'spectatorid');
+        await db.lastSaveGamePromise;
+        await db.saveGame(game);
+        await db.saveGame(game);
+        await db.saveGame(game);
+        await db.markFinished(game.id);
+        await db.setCompletedTime(game.id, 100);
+        expect(await db.completedTime(game.id)).is.not.undefined;
+
+        await db.deleteGameNbrSaves(game.id, 1);
+
+        expect(await db.completedTime(game.id)).is.undefined;
+        await db.compressCompletedGames('2');
+        expect(await db.getSaveIds(game.id)).has.members([0, 1, 2]);
+      });
     }
 
     it('gets player count', async () => {
