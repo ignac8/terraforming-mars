@@ -97,8 +97,9 @@ export default defineComponent({
     last(): number {
       return this.moves.length - 1;
     },
+    /** The generation the board shows, which differs from the save's at the end of a generation, where loading the save runs production. */
     generation(): number {
-      return this.moves[this.index]?.generation ?? 0;
+      return this.viewModel.game.generation;
     },
     speeds(): ReadonlyArray<number> {
       return SPEEDS;

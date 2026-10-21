@@ -3,7 +3,7 @@ import {LogMessage} from '../logs/LogMessage';
 import {PlayerViewModel, PrivatePlayerFields} from '../models/PlayerModel';
 import {SpectatorModel} from '../models/SpectatorModel';
 
-export type ReplayMove = {saveId: number; generation: number; messages: Array<LogMessage>};
+export type ReplayMove = {saveId: number; messages: Array<LogMessage>};
 
 export type ReplayMovesModel =
   | {status: 'available'; moves: Array<ReplayMove>}

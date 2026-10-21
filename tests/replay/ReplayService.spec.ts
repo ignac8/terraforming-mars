@@ -89,12 +89,6 @@ describe('ReplayService', () => {
     expect(list[1].messages.map((m) => m.message)).deep.eq(['line 2', 'line 3', 'line 4']);
   });
 
-  it('takes the generation from each save', async () => {
-    const log = logOf(5);
-    storeSaves([[0, row(log, 0, 1)], [1, row(log, 2, 1)], [2, row(log, 5, 3)]]);
-    expect((await moves()).map((m) => m.generation)).deep.eq([1, 1, 3]);
-  });
-
   it('hides other players\' private log lines', async () => {
     // Line 0 is public, 1 is private to player, 2 is private to player2, 3 is public.
     storeLengths([0, 4, 4, 4], new Map([[1, player.id], [2, player2.id]]));

@@ -35,8 +35,8 @@ describe('ReplayScreen', () => {
     holdView = undefined;
     playerNames = {};
     movesAnswer = {status: 'available', moves: [
-      {saveId: 10, generation: 1, messages: []},
-      {saveId: 11, generation: 1, messages: []},
+      {saveId: 10, messages: []},
+      {saveId: 11, messages: []},
     ]};
     (global as any).fetch = async (url: string) => {
       calls.push(url);
@@ -69,7 +69,7 @@ describe('ReplayScreen', () => {
     const wrapper = mountScreen();
     await flushPromises();
     expect(wrapper.text()).to.contain('Replay is not ready yet');
-    movesAnswer = {status: 'available', moves: [{saveId: 10, generation: 1, messages: []}]};
+    movesAnswer = {status: 'available', moves: [{saveId: 10, messages: []}]};
     await wrapper.find('.replay-retry').trigger('click');
     await flushPromises();
     expect(wrapper.text()).not.to.contain('Replay is not ready yet');
@@ -154,9 +154,9 @@ describe('ReplayScreen', () => {
 
   describe('autoplay', () => {
     const threeMoves: ReplayMovesModel = {status: 'available', moves: [
-      {saveId: 10, generation: 1, messages: []},
-      {saveId: 11, generation: 1, messages: []},
-      {saveId: 12, generation: 2, messages: []},
+      {saveId: 10, messages: []},
+      {saveId: 11, messages: []},
+      {saveId: 12, messages: []},
     ]};
 
     async function mountPlayable(moves: ReplayMovesModel = threeMoves) {
@@ -181,7 +181,7 @@ describe('ReplayScreen', () => {
     });
 
     it('does nothing when playing a game of one move', async () => {
-      const wrapper = await mountPlayable({status: 'available', moves: [{saveId: 10, generation: 1, messages: []}]});
+      const wrapper = await mountPlayable({status: 'available', moves: [{saveId: 10, messages: []}]});
       const panel = () => wrapper.findComponent(ReplayPanel);
       const callCount = calls.length;
       panel().vm.$emit('play');
