@@ -147,4 +147,14 @@
   .replay-moves {
     max-height: 120px;
   }
+
+  // The panel is as wide as the screen here and would cover the error, so the error moves onto the panel's top edge.
+  .replay-error--floating {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 100%;
+    margin-bottom: 4px;
+    max-width: none;
+  }
 }

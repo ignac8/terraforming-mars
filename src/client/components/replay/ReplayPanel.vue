@@ -42,6 +42,9 @@
         </ul>
       </li>
     </ul>
+
+    <!-- Rendered inside the panel, so that on a narrow screen it can sit just above it instead of under it. -->
+    <slot name="error"></slot>
   </div>
 </template>
 
