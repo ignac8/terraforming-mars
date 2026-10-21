@@ -48,6 +48,9 @@ describe('ReplayService', () => {
     for (const [saveId, save] of saves) {
       rows[saveId] = save;
     }
+    // The newest save of a finished game is in the END phase.
+    const last = rows.length - 1;
+    rows[last] = {...rows[last]!, phase: Phase.END};
     db.games.set(game.id, rows);
     game.phase = Phase.END;
   }
@@ -104,6 +107,24 @@ describe('ReplayService', () => {
     storeLengths([0, 4, 4, 4], new Map([[1, player.id]]));
     expect((await moves(player.id))[0].messages).has.length(4);
     expect((await moves(player2.id))[0].messages).has.length(3);
+  });
+
+  it('waits for the END save and does not cache the list built before it', async () => {
+    const log = logOf(9);
+    // The live game is already in END but the final save has not been written yet.
+    const rows: Array<SerializedGame | undefined> = [
+      {...row(log, 0), phase: Phase.ACTION},
+      {...row(log, 4), phase: Phase.ACTION},
+      {...row(log, 7), phase: Phase.ACTION},
+    ];
+    db.games.set(game.id, rows);
+    game.phase = Phase.END;
+    expect(await getReplayMoves(game, player.id)).deep.eq({status: 'not-finished'});
+
+    rows.push({...row(log, 9), phase: Phase.END});
+    const list = await moves();
+    expect(list.map((m) => m.saveId)).deep.eq([0, 1, 2, 3]);
+    expect(list.map((m) => m.messages.length)).deep.eq([4, 3, 2, 0]);
   });
 
   it('reports expired once only the first and last save remain', async () => {
