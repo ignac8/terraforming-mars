@@ -21,7 +21,7 @@
       <span v-i18n>View as</span>
       <button class="replay-view-all" type="button" :class="{'replay-view-active': viewAs === 'all'}" @click="$emit('update:viewAs', 'all')" v-i18n>All hands</button>
       <button
-        v-for="player in players"
+        v-for="player in sortedPlayers"
         :key="player.color"
         type="button"
         class="replay-view-player"
@@ -49,6 +49,7 @@
 import {defineComponent} from 'vue';
 import LogMessageComponent from '@/client/components/logpanel/LogMessageComponent.vue';
 import {PublicPlayerModel, ViewModel} from '@/common/models/PlayerModel';
+import {PLAYER_COLORS} from '@/common/Color';
 import {ReplayMove, ReplayViewAs} from '@/common/replay/ReplayModel';
 
 const SPEEDS = [0.5, 1, 2, 4];
@@ -100,6 +101,14 @@ export default defineComponent({
     /** The generation the board shows, which differs from the save's at the end of a generation, where loading the save runs production. */
     generation(): number {
       return this.viewModel.game.generation;
+    },
+    /** Players come in generation order, which turns every generation. Buttons keep one place by color. */
+    sortedPlayers(): Array<PublicPlayerModel> {
+      const rank = (player: PublicPlayerModel) => {
+        const index = PLAYER_COLORS.indexOf(player.color as typeof PLAYER_COLORS[number]);
+        return index < 0 ? PLAYER_COLORS.length : index;
+      };
+      return [...this.players].sort((a, b) => rank(a) - rank(b));
     },
     speeds(): ReadonlyArray<number> {
       return SPEEDS;

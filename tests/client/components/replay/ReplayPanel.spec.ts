@@ -44,6 +44,8 @@ function mountPanel(props: Record<string, unknown> = {}) {
   });
 }
 
+const green = fakePublicPlayerModel({color: 'green', name: 'Green player'});
+
 // jsdom lays nothing out: rows 30px apart in a 100px list, which keeps whatever is scrolled.
 function fakeLayout(): () => void {
   const offsetTop = Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'offsetTop');
@@ -75,6 +77,14 @@ describe('ReplayPanel', () => {
   afterEach(() => {
     restoreLayout?.();
     restoreLayout = undefined;
+  });
+
+  it('lists the view-as players in the same order whatever order the view lists them in', () => {
+    const colors = (players: Array<typeof blue>) => mountPanel({players}).findAll('.replay-view-player').map((b) => b.text());
+    const expected = ['Red player', 'Green player', 'Blue player'];
+    expect(colors([blue, red, green])).deep.eq(expected);
+    expect(colors([green, blue, red])).deep.eq(expected);
+    expect(colors([red, green, blue])).deep.eq(expected);
   });
 
   it('step forward at the first move selects the second', async () => {
