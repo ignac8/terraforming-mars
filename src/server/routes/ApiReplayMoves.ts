@@ -22,9 +22,10 @@ export class ApiReplayMoves extends Handler {
       if (judgeGame === undefined || judgeGame.judgeId !== judgeId) {
         throw RouteError.notFound();
       }
-      // The password checks can claim an unclaimed seat. A replay read must not write to a running
-      // game, and it never hands the password back, so only a finished game is checked.
-      if (judgeGame.phase === Phase.END) {
+      // The password checks can claim an unclaimed seat. A replay read never writes to a game and
+      // never hands a password back, so only a finished game with a claimed judge seat is checked.
+      // An unclaimed seat lets the judge link through, as the link alone is the credential.
+      if (judgeGame.phase === Phase.END && judgeGame.judgePassword !== undefined) {
         this.checkJudgePassword(judgeGame, ctx);
       }
       responses.writeJson(res, ctx, await getReplayMoves(judgeGame, judgeId));

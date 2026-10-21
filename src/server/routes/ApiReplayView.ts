@@ -42,7 +42,10 @@ export class ApiReplayView extends Handler {
       throw RouteError.badRequest('game not finished');
     }
     if (judge) {
-      this.checkJudgePassword(game, ctx);
+      // An unclaimed judge seat is not claimed here: a replay read never writes to a game.
+      if (game.judgePassword !== undefined) {
+        this.checkJudgePassword(game, ctx);
+      }
     } else if (isPlayerId(id)) {
       // A player's view carries their private cards, so a player needs the seat password.
       this.checkPlayerPassword(game.getPlayerById(id), ctx);

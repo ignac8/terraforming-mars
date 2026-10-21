@@ -172,6 +172,21 @@ describe('ApiReplayView', () => {
       expect(game.judgePassword).is.undefined;
     });
 
+    it('lets a judge into a finished game without claiming an unclaimed judge seat', async () => {
+      game.judgePassword = undefined;
+      finishGame();
+      await get(`id=${game.judgeId}&save=1&as=all`);
+      expect(res.statusCode).eq(statusCode.ok);
+      expect(game.judgePassword).is.undefined;
+    });
+
+    it('does not claim a player seat on a finished game', async () => {
+      finishGame();
+      await get(`id=${player.id}&save=1&as=all`);
+      expect(res.statusCode).eq(statusCode.ok);
+      expect(player.password).is.undefined;
+    });
+
     describe('seat password', () => {
       beforeEach(() => {
         player.password = 'seat-secret';
