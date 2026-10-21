@@ -68,7 +68,7 @@ describe('judge passwords', () => {
   });
 
   it('an unclaimed seat ignores a malformed password and hands out a fresh one', async () => {
-    for (const malformed of ['0123456789a', '0123456789abc', 'ghijklmnopqr', '0123456789AB']) {
+    for (const malformed of ['', '0123456789a', '0123456789abc', 'ghijklmnopqr', '0123456789AB']) {
       game.judgePassword = undefined;
 
       const model = await getJudge('&password=' + malformed);
@@ -125,7 +125,8 @@ describe('judge passwords', () => {
   });
 
   it('a solo game still requires the password', async () => {
-    game = Game.newInstance('gsolo', [player], player, 'solospectator', {judgeLink: true});
+    const solo = TestPlayer.GREEN.newPlayer();
+    game = Game.newInstance('gsolo', [solo], solo, 'solospectator', {judgeLink: true});
     await scaffolding.ctx.gameLoader.add(game);
     expect(game.isSoloMode()).is.true;
     await getJudge('');
@@ -141,7 +142,9 @@ describe('judge passwords', () => {
   });
 
   it('requires the password when playerPasswords is off', async () => {
-    game = Game.newInstance('gnopw', [player, opponent], player, 'snopw', {judgeLink: true, playerPasswords: false});
+    const first = TestPlayer.GREEN.newPlayer();
+    const second = TestPlayer.RED.newPlayer();
+    game = Game.newInstance('gnopw', [first, second], first, 'snopw', {judgeLink: true, playerPasswords: false});
     await scaffolding.ctx.gameLoader.add(game);
     await getJudge('');
 
