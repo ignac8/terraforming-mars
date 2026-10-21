@@ -2,7 +2,7 @@ import {mount} from '@vue/test-utils';
 import {expect} from 'chai';
 import {globalConfig} from '../getLocalVue';
 import ReplayPanel from '@/client/components/replay/ReplayPanel.vue';
-import {fakePublicPlayerModel, fakeViewModel} from '../testHelpers';
+import {fakeGameModel, fakePublicPlayerModel, fakeViewModel} from '../testHelpers';
 import {ReplayMove} from '@/common/replay/ReplayModel';
 import {LogMessage} from '@/common/logs/LogMessage';
 import {LogMessageDataType} from '@/common/logs/LogMessageDataType';
@@ -18,9 +18,9 @@ function message(text: string, timestamp: number): LogMessage {
 }
 
 const moves: Array<ReplayMove> = [
-  {saveId: 1, generation: 1, messages: [message('alpha', 1)]},
-  {saveId: 2, generation: 1, messages: [message('beta', 2)]},
-  {saveId: 3, generation: 2, messages: []},
+  {saveId: 1, messages: [message('alpha', 1)]},
+  {saveId: 2, messages: [message('beta', 2)]},
+  {saveId: 3, messages: []},
 ];
 
 const blue = fakePublicPlayerModel({color: 'blue', name: 'Blue player'});
@@ -79,9 +79,10 @@ describe('ReplayPanel', () => {
     expect(playing.emitted('play')).is.undefined;
   });
 
-  it('shows the generation and the move position', () => {
-    const wrapper = mountPanel({index: 2});
-    expect(wrapper.find('.replay-position').text()).to.equal('Gen 2 · move 3 / 3');
+  // A save from the end of a generation shows the next one: loading it runs production.
+  it('shows the generation of the view on screen and the move position', () => {
+    const wrapper = mountPanel({index: 2, viewModel: fakeViewModel({players: [blue, red], game: fakeGameModel({generation: 5})})});
+    expect(wrapper.find('.replay-position').text()).to.equal('Gen 5 · move 3 / 3');
   });
 
   it('renders the messages of every move', () => {

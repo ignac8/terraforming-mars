@@ -130,7 +130,7 @@ export async function getReplayMoves(game: IGame, viewerId: ParticipantId): Prom
     const next = kept[idx + 1];
     const end = next === undefined ? start : next.save.gameLog.length;
     const messages = finalLog.slice(start, end).filter((m) => m.playerId === undefined || m.playerId === viewerId);
-    return {saveId: entry.saveId, generation: entry.save.generation, messages};
+    return {saveId: entry.saveId, messages};
   });
 
   const result: ReplayMovesModel = {status: 'available', moves};
