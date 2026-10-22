@@ -205,7 +205,14 @@ describe('player passwords', () => {
     const mine = (await getPlayer('')).password;
     game.phase = Phase.END;
 
-    for (const [query, expected] of [['', undefined], ['&password=' + mine, mine]] as const) {
+    const wrong = mine === '0123456789ab' ? 'ba9876543210' : '0123456789ab';
+    // scaffolding sets serverId to '1'
+    for (const [query, expected] of [
+      ['', undefined],
+      ['&serverId=1', undefined],
+      ['&password=' + wrong, undefined],
+      ['&password=' + mine, mine],
+    ] as const) {
       expect((await getPlayer(query)).password).eq(expected);
     }
   });
