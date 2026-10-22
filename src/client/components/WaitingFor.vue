@@ -2,7 +2,7 @@
   <div>
   <template v-if="waitingfor === undefined || waitingfor.optional">
     <template v-if="waitingfor === undefined">
-      {{ $t('Not your turn to take any actions') }}
+      <template v-if="!playerView.game.frozen">{{ $t('Not your turn to take any actions') }}</template>
     </template>
     <template v-else>
       {{ $t('Waiting for other players') }}
@@ -47,6 +47,7 @@ import {INVALID_REQUEST_ID, INVALID_RUN_ID, AppErrorResponse} from '@/common/app
 import {Color} from '@/common/Color';
 import {gameDocumentTitle} from '../utils/documentTitle';
 import {setFaviconStatus, setFaviconTurnFrame} from '@/client/utils/favicon';
+import {watchesForRefresh} from '@/client/utils/watchesForRefresh';
 
 let ui_update_timeout_id: number | undefined;
 let otherPlayersTimer: number | undefined;
@@ -115,8 +116,14 @@ export default defineComponent({
       window.clearInterval(documentTitleTimer);
       if (this.waitingfor === undefined || this.waitingfor.optional) {
         this.waitForUpdate();
-      } else if (this.playerView.players.length > 1 && SIMULTANEOUS_PHASES.includes(this.playerView.game.phase)) {
-        this.watchOtherPlayers();
+      } else {
+        // The prompt stays on screen. A page that watches for a freeze or a rewind polls without reloading it.
+        if (isPlayerId(this.playerView.id) && watchesForRefresh(this.playerView as PlayerViewModel)) {
+          this.waitForUpdate(true);
+        }
+        if (this.playerView.players.length > 1 && SIMULTANEOUS_PHASES.includes(this.playerView.game.phase)) {
+          this.watchOtherPlayers();
+        }
       }
       if (this.playerView.players.length > 1 && this.waitingfor !== undefined && !this.waitingfor.optional) {
         documentTitleTimer = window.setInterval(() => this.animateTitle(), 1000);
@@ -210,24 +217,28 @@ export default defineComponent({
         window.location = window.location as any as (string & Location);
       }
     },
-    waitForUpdate() {
+    /**
+     * Polls until the game changes. In watch mode the page shows a prompt that must not be disturbed:
+     * only a refresh replaces the view, and a GO answer neither reloads it nor plays the turn cue.
+     */
+    waitForUpdate(watch: boolean = false) {
       const vueApp = this;
       const root = vueRoot(this);
       clearTimeout(ui_update_timeout_id);
       // A new view restarts polling through the playerView watcher. Without one, nothing would.
       const pollAgainUnlessUpdated = (updated: boolean) => {
         if (!updated) {
-          vueApp.waitForUpdate();
+          vueApp.waitForUpdate(watch);
         }
       };
       const pollFailed = (title: string, message: string) => {
         failedPolls++;
         if (failedPolls < ALERT_AFTER_FAILED_POLLS) {
-          vueApp.waitForUpdate();
+          vueApp.waitForUpdate(watch);
           return;
         }
         failedPolls = 0;
-        root.showAlert(title, message, () => vueApp.waitForUpdate());
+        root.showAlert(title, message, () => vueApp.waitForUpdate(watch));
       };
       const askForUpdate = () => {
         const xhr = new XMLHttpRequest();
@@ -244,7 +255,7 @@ export default defineComponent({
             failedPolls = 0;
             const result = xhr.response as WaitingForModel;
             this.playersWaitingFor = result.waitingFor;
-            if (result.result === 'GO') {
+            if (result.result === 'GO' && !watch) {
               // Will only apply to player, not spectator.
               root.updatePlayer().then(pollAgainUnlessUpdated);
               this.notify();
@@ -253,7 +264,15 @@ export default defineComponent({
             } else if (result.result === 'REFRESH') {
               // Something changed, let's refresh UI
               if (isPlayerId(this.playerView.id)) {
-                root.updatePlayer().then(pollAgainUnlessUpdated);
+                // A refresh that hands the turn back (an unfreeze, or a rewind) is not a GO answer, so it cues the turn here.
+                const hadTurn = this.waitingfor !== undefined && !this.waitingfor.optional;
+                root.updatePlayer().then((updated) => {
+                  const prompt = root.playerView?.waitingFor;
+                  if (updated && !hadTurn && prompt !== undefined && !prompt.optional) {
+                    this.notify();
+                  }
+                  pollAgainUnlessUpdated(updated);
+                });
               } else if (isJudgeId(this.playerView.id)) {
                 root.updateJudge().then(pollAgainUnlessUpdated);
               } else {
@@ -262,7 +281,7 @@ export default defineComponent({
 
               return;
             }
-            vueApp.waitForUpdate();
+            vueApp.waitForUpdate(watch);
           } else {
             const message = xhr.status === statusCode.unauthorized && isJudgeId(this.playerView.id) ?
               INCORRECT_JUDGE_PASSWORD :

@@ -3,6 +3,7 @@ import {defineComponent} from 'vue';
 import {globalConfig} from './getLocalVue';
 import {expect} from 'chai';
 import {afterEach, vi} from 'vitest';
+import {SoundManager} from '@/client/utils/SoundManager';
 import WaitingFor from '@/client/components/WaitingFor.vue';
 import {RecursivePartial} from '@/common/utils/utils';
 import {PlayerViewModel, PublicPlayerModel} from '@/common/models/PlayerModel';
@@ -23,6 +24,7 @@ describe('WaitingFor', () => {
       phase: Phase.ACTION,
       gameAge: 1,
       undoCount: 0,
+      gameOptions: {judgeUndo: false},
     },
   };
 
@@ -71,7 +73,7 @@ describe('WaitingFor', () => {
     id: 'p-player-id',
     thisPlayer: {color: 'red'},
     players: [{color: 'red', needsToDraft: true}, {color: 'blue', needsToDraft: true}],
-    game: {phase: Phase.DRAFTING, gameAge: 1, undoCount: 0},
+    game: {phase: Phase.DRAFTING, gameAge: 1, undoCount: 0, gameOptions: {judgeUndo: false}},
   }) as unknown as PlayerViewModel;
 
   function mountDrafting(playerView: PlayerViewModel) {
@@ -365,5 +367,110 @@ describe('WaitingFor', () => {
     expect(urls[0]).includes('password=secret');
     expect(urls[0]).does.not.include('gameAge');
     expect(updateJudge.mock.calls).has.length(1);
+  });
+  describe('at a required prompt', () => {
+    const requiredPrompt = {type: 'option', title: 'test', buttonLabel: 'save'} as any;
+
+    function viewWith(game: object): PlayerViewModel {
+      return {
+        id: 'p-player-id',
+        thisPlayer: {color: 'red'},
+        players: [{color: 'red'}, {color: 'blue'}],
+        game: {phase: Phase.ACTION, gameAge: 1, undoCount: 0, gameOptions: {judgeUndo: false}, ...game},
+      } as unknown as PlayerViewModel;
+    }
+
+    function mountAt(view: PlayerViewModel, waitingfor: unknown, rootMethods: Record<string, unknown> = {}) {
+      return mount(WaitingFor, {
+        ...globalConfig,
+        global: {...globalConfig.global, stubs: {'PlayerInputFactory': PlayerInputFactoryStub}, mocks: rootMethods},
+        props: {playerView: view, waitingfor: waitingfor as any},
+      });
+    }
+
+    // Counts the turn cues. Each one plays the sound and shows a notification.
+    function stubTurnCue() {
+      vi.spyOn(SoundManager, 'playActivePlayerSound').mockImplementation(() => {});
+      let notifications = 0;
+      vi.stubGlobal('Notification', class {
+        static permission = 'granted';
+        constructor() {
+          notifications++;
+        }
+      });
+      return {cues: () => notifications};
+    }
+
+    it('keeps polling in a judge undo game, and leaves the page alone on GO', async () => {
+      vi.useFakeTimers();
+      const polls = stubPolls(200, {result: 'GO', waitingFor: []});
+      const updatePlayer = vi.fn(async () => true);
+      const turn = stubTurnCue();
+      mountAt(viewWith({gameOptions: {judgeUndo: true}}), requiredPrompt, {updatePlayer});
+
+      await vi.advanceTimersByTimeAsync(2500);
+
+      expect(polls.count).eq(2);
+      expect(updatePlayer.mock.calls).is.empty;
+      expect(turn.cues()).eq(0);
+    });
+
+    it('refreshes the page on REFRESH in a judge undo game', async () => {
+      vi.useFakeTimers();
+      stubPolls(200, {result: 'REFRESH', waitingFor: []});
+      const updatePlayer = vi.fn(async () => true);
+      mountAt(viewWith({gameOptions: {judgeUndo: true}}), requiredPrompt, {updatePlayer});
+
+      await vi.advanceTimersByTimeAsync(1500);
+
+      expect(updatePlayer.mock.calls).has.length(1);
+    });
+
+    it('does not poll without judge undo', async () => {
+      vi.useFakeTimers();
+      const polls = stubPolls(200, {result: 'REFRESH', waitingFor: []});
+      mountAt(viewWith({}), requiredPrompt, {updatePlayer: async () => true});
+
+      await vi.advanceTimersByTimeAsync(5000);
+
+      expect(polls.count).eq(0);
+    });
+
+    it('plays the turn cue when a refresh brings back a turn, in every game', async () => {
+      for (const judgeUndo of [true, false]) {
+        vi.useFakeTimers();
+        stubPolls(200, {result: 'REFRESH', waitingFor: []});
+        const turn = stubTurnCue();
+        const frozen = viewWith({frozen: true, gameOptions: {judgeUndo}});
+        const resumed = {...viewWith({gameOptions: {judgeUndo}}), waitingFor: requiredPrompt};
+        let swapped = false;
+        const wrapper = mountAt(frozen, undefined, {
+          updatePlayer: async () => {
+            if (swapped) {
+              return false;
+            }
+            swapped = true;
+            // What App does with a fetched view.
+            (wrapper.vm.$root as any).playerView = resumed;
+            await wrapper.setProps({playerView: resumed, waitingfor: requiredPrompt});
+            return true;
+          },
+        });
+
+        await vi.advanceTimersByTimeAsync(5000);
+
+        expect(turn.cues(), `judgeUndo ${judgeUndo}`).eq(1);
+        wrapper.unmount();
+        vi.useRealTimers();
+        vi.unstubAllGlobals();
+        vi.restoreAllMocks();
+      }
+    });
+
+    it('does not say it is not your turn while the game is frozen', () => {
+      const wrapper = mountAt(viewWith({frozen: true}), undefined);
+
+      expect(wrapper.text()).does.not.include('Not your turn');
+    });
   });
 });

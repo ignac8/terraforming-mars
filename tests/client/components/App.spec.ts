@@ -191,6 +191,46 @@ describe('App', () => {
     });
   });
 
+  describe('frozen game', () => {
+    const views = {
+      'player-home': 'playerView',
+      'spectator-home': 'spectator',
+      'judge-home': 'judge',
+    } as const;
+
+    it('shows the banner to a player, a spectator and a judge, only while it is frozen', async () => {
+      for (const [screen, field] of Object.entries(views)) {
+        for (const frozen of [true, false]) {
+          const wrapper = shallowMount(App, {
+            ...globalConfig,
+            global: {
+              ...globalConfig.global,
+              stubs: {
+                PlayerHome: {template: '<div/>'},
+                SpectatorHome: {template: '<div/>'},
+                JudgeHome: {template: '<div/>'},
+                FrozenBanner: {template: '<div class="frozen-banner-stub"/>'},
+              },
+            },
+          });
+          const view = {id: 'x', players: [], game: {phase: 'action', gameAge: 1, undoCount: 0, frozen, gameOptions: {undoOption: false}}};
+          await wrapper.setData({screen, [field]: view});
+          expect(wrapper.find('.frozen-banner-stub').exists(), `${screen} frozen ${frozen}`).eq(frozen);
+        }
+      }
+    });
+
+    it('does not show the banner on a replay URL', async () => {
+      const wrapper = shallowMount(App, {
+        ...globalConfig,
+        global: {...globalConfig.global, stubs: {FrozenBanner: {template: '<div class="frozen-banner-stub"/>'}}},
+      });
+      const view = {id: 'x', players: [], game: {phase: 'action', gameAge: 1, undoCount: 0, frozen: true, gameOptions: {undoOption: false}}};
+      await wrapper.setData({screen: 'replay', replayParticipantId: 'p-x', playerView: view});
+      expect(wrapper.find('.frozen-banner-stub').exists()).is.false;
+    });
+  });
+
   describe('replay route', () => {
     afterEach(() => {
       window.history.replaceState({}, '', '/');

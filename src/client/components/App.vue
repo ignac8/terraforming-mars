@@ -11,6 +11,7 @@
         </form>
       </dialog>
     </section>
+    <FrozenBanner v-if="frozen"/>
     <div class="main-container">
       <StartScreen v-if="screen === 'start-screen'"/>
       <CreateGameForm
@@ -77,6 +78,7 @@ const LoadGameForm = defineAsyncComponent(() => import(/* webpackChunkName: "loa
 const PlayerHome = defineAsyncComponent(() => import(/* webpackChunkName: "player-home" */ '@/client/components/PlayerHome.vue'));
 const SpectatorHome = defineAsyncComponent(() => import(/* webpackChunkName: "spectator-home" */ '@/client/components/SpectatorHome.vue'));
 const ReplayScreen = defineAsyncComponent(() => import(/* webpackChunkName: "replay" */ '@/client/components/replay/ReplayScreen.vue'));
+import FrozenBanner from '@/client/components/replay/FrozenBanner.vue';
 const StartScreen = defineAsyncComponent(() => import(/* webpackChunkName: "start-screen" */ '@/client/components/StartScreen.vue'));
 import {$t, setTranslationContext} from '@/client/directives/i18n';
 import {paths} from '@/common/app/paths';
@@ -162,6 +164,7 @@ export default defineComponent({
     };
   },
   components: {
+    FrozenBanner,
     StartScreen,
     CreateGameForm,
     LoadGameForm,
@@ -180,6 +183,19 @@ export default defineComponent({
   computed: {
     participant(): ViewModel | undefined {
       return this.playerView ?? this.spectator;
+    },
+    /** The judge has frozen the game that this page shows live. A replay shows a past moment, which is never frozen. */
+    frozen(): boolean {
+      switch (this.screen) {
+      case 'player-home':
+        return this.playerView?.game.frozen === true;
+      case 'spectator-home':
+        return this.spectator?.game.frozen === true;
+      case 'judge-home':
+        return this.judge?.game.frozen === true;
+      default:
+        return false;
+      }
     },
     /** A solo or MarsBot game with Player undo keeps its history on the game page, where the player can rewind it. */
     hasHistory(): boolean {
