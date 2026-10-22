@@ -64,7 +64,7 @@
       :key="index"
       :mode="canRewind ? 'rewind' : 'vote'"
       :disabled="rewinding"
-      :blocked="requestBlocked"
+      :blocked="requestBlock"
       :clocks="clocks"
       :undone="selectedUndone"
       @rewind="(cards, rewindClocks) => $emit('rewind', cards, rewindClocks)"
@@ -83,6 +83,7 @@ import RewindControls from '@/client/components/replay/RewindControls.vue';
 import {PublicPlayerModel, ViewModel} from '@/common/models/PlayerModel';
 import {Color, PLAYER_COLORS} from '@/common/Color';
 import {ReplayMove, ReplayViewAs, RewindCards, RewindClockRow, RewindClocks} from '@/common/replay/ReplayModel';
+import {RequestBlock} from '@/common/rewind/RewindVoteModel';
 
 const SPEEDS = [0.5, 1, 2, 4];
 
@@ -148,10 +149,10 @@ export default defineComponent({
       type: Boolean,
       default: false,
     },
-    /** The player may not ask for a rewind again yet. */
-    requestBlocked: {
-      type: Boolean,
-      default: false,
+    /** Why the player may not ask for a rewind right now. */
+    requestBlock: {
+      type: String as () => RequestBlock,
+      default: undefined,
     },
     /** True until the moves have been read, so an empty list is not yet known to be empty. */
     loading: {

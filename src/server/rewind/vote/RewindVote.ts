@@ -1,6 +1,6 @@
 import {IGame} from '../../IGame';
 import {PlayerId} from '../../../common/Types';
-import {RewindVoteModel, RewindVoteStatus} from '../../../common/rewind/RewindVoteModel';
+import {RequestBlock, RewindVoteModel, RewindVoteStatus} from '../../../common/rewind/RewindVoteModel';
 import {RewindRequestLimits, SerializedRewindVote} from '../tableState';
 
 export const VOTE_EXPIRY_MS = 2 * 60 * 1000;
@@ -73,6 +73,17 @@ export function voteModel(game: IGame, ended: EndedVote | undefined, now: number
 /** False only if `player` is in `limits` and `limits.generation === game.generation`. */
 export function mayRequest(limits: RewindRequestLimits | undefined, game: IGame, player: PlayerId): boolean {
   return limits === undefined || limits.generation !== game.generation || !limits.players.includes(player);
+}
+
+/** Why `player` may not ask for a rewind now, in the order a request is refused for it. */
+export function requestBlock(game: IGame, player: PlayerId): RequestBlock | undefined {
+  if (game.frozen) {
+    return 'frozen';
+  }
+  if (game.rewindVote !== undefined) {
+    return 'vote-open';
+  }
+  return mayRequest(game.rewindRequestLimits, game, player) ? undefined : 'barred';
 }
 
 /** Adds `player` for the game's current generation, starting a fresh list when the generation has changed. */

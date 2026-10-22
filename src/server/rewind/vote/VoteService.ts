@@ -13,6 +13,7 @@ import {
   everyoneAgreed,
   isDue,
   mayRequest,
+  requestBlock,
   voteModel,
   ENDED_VOTE_SHOWN_MS,
   VOTE_EXPIRY_MS,
@@ -20,7 +21,7 @@ import {
 import {Clock} from '../../../common/Timer';
 import {GameId, PlayerId} from '../../../common/Types';
 import {RewindCards} from '../../../common/replay/ReplayModel';
-import {RewindVotePoll} from '../../../common/rewind/RewindVoteModel';
+import {RewindVotePoll, VOTE_ALREADY_OPEN} from '../../../common/rewind/RewindVoteModel';
 
 export const voteMetrics = {
   votes: new prometheus.Counter({
@@ -72,10 +73,12 @@ export class VoteService {
     if (this.expire(game)) {
       void this.write(game);
     }
+    const blocked = requestBlock(game, player.id);
     return {
       undoCount: game.undoCount,
       vote: voteModel(game, this.endedOf(game), this.clock.now()),
-      mayRequest: !game.frozen && mayRequest(game.rewindRequestLimits, game, player.id) && canVoteRewind(game, player.id),
+      mayRequest: blocked === undefined && canVoteRewind(game, player.id),
+      blocked,
     };
   }
 
@@ -276,7 +279,7 @@ export class VoteService {
     this.checkMayTake(game, player);
     this.checkNotFrozen(game);
     if (game.rewindVote !== undefined) {
-      throw RouteError.badRequest('A rewind vote is already open.');
+      throw RouteError.badRequest(VOTE_ALREADY_OPEN);
     }
     if (!mayRequest(game.rewindRequestLimits, game, player.id)) {
       throw RouteError.badRequest('You can ask again next generation.');

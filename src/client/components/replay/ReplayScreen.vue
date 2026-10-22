@@ -10,7 +10,7 @@
       :players="liveView.players"
       ref="voteBanner"
       @show="showMove"
-      @mayRequest="(mayRequest) => requestBlocked = !mayRequest"/>
+      @requestBlock="changeRequestBlock"/>
     <!-- On the replay URL the page has no game of its own, so it knows the player by their colour from the moves answer. -->
     <RewindVoteBanner
       v-else-if="replayVoter !== undefined"
@@ -21,7 +21,7 @@
       :pollMs="votePollMs"
       ref="voteBanner"
       @show="showMove"
-      @mayRequest="(mayRequest) => requestBlocked = !mayRequest"/>
+      @requestBlock="changeRequestBlock"/>
     <template v-if="isLive">
       <div v-if="index !== undefined && replayView === undefined" class="replay-message" v-i18n>Loading replay...</div>
       <template v-else-if="index !== undefined && replayView !== undefined">
@@ -76,7 +76,7 @@
       :canRewind="canRewind"
       :canVoteRewind="canVoteRewind"
       :viewerColor="viewerColor"
-      :requestBlocked="requestBlocked"
+      :requestBlock="requestBlock"
       :ownViewOnly="ownViewOnly"
       :rewinding="rewinding || freezing"
       :frozen="judgeFrozen"
@@ -123,7 +123,7 @@ import {PlayerViewModel, PublicPlayerModel, ViewModel} from '@/common/models/Pla
 import {SpectatorModel} from '@/common/models/SpectatorModel';
 import {ReplayMove, ReplayMovesModel, ReplayViewAs, ReplayViewModel, RewindCards, RewindClockRow, RewindClocks} from '@/common/replay/ReplayModel';
 import {Phase} from '@/common/Phase';
-import {FINISHED_GAME_VOTE_POLL_MS} from '@/common/rewind/RewindVoteModel';
+import {FINISHED_GAME_VOTE_POLL_MS, RequestBlock, VOTE_ALREADY_OPEN} from '@/common/rewind/RewindVoteModel';
 import {Timer} from '@/common/Timer';
 import {isJudgeId, isPlayerId, ParticipantId, PlayerId} from '@/common/Types';
 
@@ -146,8 +146,8 @@ type DataModel = {
   canRewind: boolean;
   /** Whether the moves answer allows asking the other players to rewind to a move. */
   canVoteRewind: boolean;
-  /** The player is barred from asking for a rewind until the next generation. */
-  requestBlocked: boolean;
+  /** Why the player may not ask for a rewind right now. */
+  requestBlock: RequestBlock | undefined;
   /** Whether the game the moves belong to has ended. */
   finished: boolean;
   /** The colour of the player the moves were read for, which the replay views leave out. */
@@ -170,6 +170,8 @@ type DataModel = {
   shownIndex: number;
   /** Why the last request failed. */
   error: string | undefined;
+  /** The error of the last request for a vote, if a vote already being open caused it. */
+  voteRefusal: string | undefined;
   /** Why the server refused the last rewind. */
   refusal: string | undefined;
   /** The page has read the game again after the refusal, so the next game update makes it stale. */
@@ -216,7 +218,7 @@ export default defineComponent({
       viewAs: 'all',
       canRewind: false,
       canVoteRewind: false,
-      requestBlocked: false,
+      requestBlock: undefined,
       finished: false,
       viewerColor: undefined,
       movesGameAge: undefined,
@@ -228,6 +230,7 @@ export default defineComponent({
       replayView: undefined,
       shownIndex: 0,
       error: undefined,
+      voteRefusal: undefined,
       refusal: undefined,
       refusalSettled: false,
       playing: false,
@@ -507,8 +510,23 @@ export default defineComponent({
       } catch (err) {
         console.error(err);
         this.error = err instanceof Error ? translateRefusal(err.message) : String(err);
+        if (err instanceof Error && err.message.endsWith(VOTE_ALREADY_OPEN)) {
+          this.voteRefusal = this.error;
+          // The vote the refusal is about may not be on the page yet, and the page has to see it end.
+          (this.$refs.voteBanner as InstanceType<typeof RewindVoteBanner> | undefined)?.refresh?.();
+        }
       } finally {
         this.rewinding = false;
+      }
+    },
+    /** What the vote route said about asking for a rewind. A refusal for an open vote goes away once no vote is open. */
+    changeRequestBlock(block: RequestBlock | undefined): void {
+      this.requestBlock = block;
+      if (block !== 'vote-open' && this.voteRefusal !== undefined) {
+        if (this.error === this.voteRefusal) {
+          this.error = undefined;
+        }
+        this.voteRefusal = undefined;
       }
     },
     /** Freezes the game, or unfreezes it, and reads the game again to show which it is now. */

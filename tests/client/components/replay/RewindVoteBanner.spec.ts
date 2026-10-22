@@ -230,12 +230,12 @@ describe('RewindVoteBanner', () => {
     expect(failed.find('.rewind-vote-ended').text()).not.to.contain('Bad request');
   });
 
-  it('tells the page whether its player may still ask for a rewind', async () => {
-    answers = [answer(poll(undefined, {mayRequest: false})), answer(poll(undefined, {mayRequest: true}))];
+  it('tells the page why its player may not ask for a rewind right now', async () => {
+    answers = [answer(poll(undefined, {mayRequest: false, blocked: 'frozen'})), answer(poll(undefined, {mayRequest: true}))];
     const wrapper = mountBanner();
     await flushPromises();
     await ticks(1000);
-    expect(wrapper.emitted('mayRequest')).to.deep.equal([[false], [true]]);
+    expect(wrapper.emitted('requestBlock')).to.deep.equal([['frozen'], [undefined]]);
   });
 
   describe('after a rewind', () => {

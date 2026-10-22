@@ -1003,9 +1003,40 @@ describe('ReplayScreen', () => {
         expect(panel(wrapper).props('index')).to.equal(1);
       });
 
-      it('disables the request while the banner says the player may not ask again', async () => {
-        for (const mayRequest of [false, true]) {
-          voteAnswer = () => respond({undoCount: 0, vote: undefined, mayRequest});
+      it('drops the refusal of a request for an open vote once the vote has ended', async () => {
+        const vote = {voteId: 7, status: 'open', requester: 'red', saveId: 11, moveNumber: 2, generation: 1, cards: 'same', votes: [{color: 'blue', choice: 'pending'}], expiresInMs: 60_000};
+        let voteOpen = false;
+        let refused = 0;
+        voteAnswer = () => {
+          if (votes.length > refused) {
+            // The player asked just as someone else's vote opened.
+            refused = votes.length;
+            voteOpen = true;
+            return Promise.resolve({ok: false, status: 400, json: () => Promise.reject(new Error('no json')), text: () => Promise.resolve('Bad request: A rewind vote is already open.')});
+          }
+          return respond(voteOpen ? {undoCount: 0, vote, mayRequest: false, blocked: 'vote-open'} : {undoCount: 0, vote: undefined, mayRequest: true});
+        };
+        const wrapper = mountVote(true);
+        await flushPromises();
+        await open(wrapper);
+        await flushPromises();
+        panel(wrapper).vm.$emit('select', 0);
+        await flushPromises();
+        await wrapper.find('.rewind-start').trigger('click');
+        await wrapper.find('.rewind-confirm-button').trigger('click');
+        await flushPromises();
+        expect(wrapper.find('.replay-error--floating').text()).equals('A rewind vote is already open.');
+
+        voteOpen = false;
+        await (wrapper.findComponent(RewindVoteBanner).vm as any).refresh();
+        await flushPromises();
+        expect(wrapper.find('.replay-error--floating').exists()).is.false;
+      });
+
+      it('disables the request while the banner says the player may not ask', async () => {
+        for (const blocked of ['barred', 'frozen', 'vote-open', undefined] as const) {
+          const mayRequest = blocked === undefined;
+          voteAnswer = () => respond({undoCount: 0, vote: undefined, mayRequest, blocked});
           const wrapper = mountVote(true);
           await flushPromises();
           await open(wrapper);

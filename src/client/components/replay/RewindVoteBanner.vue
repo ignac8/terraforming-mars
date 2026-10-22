@@ -37,7 +37,7 @@ import {translateTextWithParams} from '@/client/directives/i18n';
 import {paths} from '@/common/app/paths';
 import {Color} from '@/common/Color';
 import {PublicPlayerModel} from '@/common/models/PlayerModel';
-import {RewindVoteModel, RewindVotePoll} from '@/common/rewind/RewindVoteModel';
+import {RequestBlock, RewindVoteModel, RewindVotePoll} from '@/common/rewind/RewindVoteModel';
 import {PlayerId} from '@/common/Types';
 
 const VOTE_POLL_MS = 3000;
@@ -106,8 +106,8 @@ export default defineComponent({
   emits: {
     /** The player wants to see the move the vote is about. */
     'show': (_saveId: number) => true,
-    /** Whether the player may ask for a rewind, from each answer. */
-    'mayRequest': (_mayRequest: boolean) => true,
+    /** Why the player may not ask for a rewind right now, from each answer. */
+    'requestBlock': (_block: RequestBlock | undefined) => true,
   },
   data(): DataModel {
     return {
@@ -197,7 +197,7 @@ export default defineComponent({
         this.error = undefined;
       }
       this.syncClock();
-      this.$emit('mayRequest', answer.mayRequest);
+      this.$emit('requestBlock', answer.blocked);
     },
     /** The countdown has a clock only while there is a vote to count down. */
     syncClock(): void {

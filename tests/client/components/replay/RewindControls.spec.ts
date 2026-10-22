@@ -70,9 +70,16 @@ describe('RewindControls', () => {
       expect(wrapper.emitted('rewind')).is.undefined;
     });
 
-    it('cannot be started while blocked', async () => {
-      const wrapper = mount(RewindControls, {...globalConfig, props: {disabled: false, mode: 'vote', blocked: true}});
-      expect(wrapper.find('.rewind-start').attributes('disabled')).not.is.undefined;
+    it('cannot be started while blocked, and says which block it is', async () => {
+      for (const [blocked, text] of [
+        ['barred', 'You can ask again next generation.'],
+        ['frozen', 'The game is frozen, so no rewind can be asked for or answered.'],
+        ['vote-open', 'A rewind vote is already open.'],
+      ] as const) {
+        const wrapper = mount(RewindControls, {...globalConfig, props: {disabled: false, mode: 'vote', blocked}});
+        expect(wrapper.find('.rewind-start').attributes('disabled'), blocked).not.is.undefined;
+        expect(wrapper.find('.rewind-blocked').text(), blocked).equals(text);
+      }
     });
   });
 

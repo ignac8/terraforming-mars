@@ -317,6 +317,24 @@ describe('VoteService', () => {
     }
   });
 
+  it('says why a player may not ask for a rewind: the game is frozen, a vote is open, or they are barred', async () => {
+    expect(service.poll(game, p2).blocked).is.undefined;
+
+    game.frozen = true;
+    expect(service.poll(game, p2).blocked).eq('frozen');
+    game.frozen = false;
+
+    const opened = await service.request(game, p2, saveId, 'same');
+    for (const player of [p2, p3]) {
+      expect(service.poll(game, player).blocked, player.color).eq('vote-open');
+      expect(service.poll(game, player).mayRequest, player.color).is.false;
+    }
+
+    await service.cast(game, p1, opened.vote!.voteId, 'no');
+    expect(service.poll(game, p2).blocked).eq('barred');
+    expect(service.poll(game, p3).blocked).is.undefined;
+  });
+
   it('ends as failed with the refusal text when the rewind is refused', async () => {
     const runs: Array<{error: unknown, reason: string}> = [
       {error: RouteError.badRequest(UNLOADABLE), reason: UNLOADABLE},
@@ -552,7 +570,8 @@ describe('VoteService', () => {
       const poll: RewindVotePoll = service.poll(game, p2);
       expect(poll.vote!.status, run.result).eq(run.result);
       expect(persists, run.result).has.length(run.writes);
-      expect(poll.mayRequest, run.result).eq(!run.barred);
+      // Nobody asks while a vote is open.
+      expect(poll.mayRequest, run.result).eq(!run.barred && run.result !== 'open');
       if (run.result === 'failed') {
         expect(poll.vote!.reason).eq(RESTARTED_BEFORE_REWIND);
       }
