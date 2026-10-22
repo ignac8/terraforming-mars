@@ -16,8 +16,8 @@ export type ReplayViewAs = 'all' | Color;
 export type RewindCards = 'same' | 'shuffle';
 
 /**
- * A rewind's clocks: every player's as they were at the restored moment, or, with 'keep', the live total of the
- * player whose move is undone, while everyone else's go back.
+ * A rewind's clocks: every player's as they were at the restored moment, or, with 'keep', the live total of every
+ * player who answered the move that is undone, while everyone else's go back.
  */
 export type RewindClocks = 'back' | 'keep';
 

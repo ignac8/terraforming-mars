@@ -714,6 +714,27 @@ describe('RewindService whole table', () => {
     expect((await movesOf(game, game.judgeId!)).find((move) => move.saveId === thirdResearch)?.movers).deep.eq(both);
   });
 
+  it('lists the players who have answered so far in a research step of three, in answer order', async () => {
+    clearReplayCache();
+    db = new SnapshotDatabase();
+    setTestDatabase(db);
+    let player3: TestPlayer;
+    [game, player, player2, player3] = testGame(3, {judgeLink: true, judgeUndo: true});
+    await GameLoader.getInstance().add(game);
+    game.phase = Phase.ACTION;
+    player.takeAction();
+    for (const p of [player, player2, player3]) {
+      choose(p, 'Pass for this generation');
+    }
+    const research = game.lastSaveId - 1;
+
+    player2.process({type: 'card', cards: []});
+    player.process({type: 'card', cards: []});
+
+    const newest = (await movesOf(game, game.judgeId!)).find((move) => move.saveId === research);
+    expect(newest?.movers).deep.eq([player2.color, player.color]);
+  });
+
   it('carries the freeze into the rewound game and its save, and starts no clock', async () => {
     for (const run of [{live: true, option: undefined}, {live: false, option: true}]) {
       await playTable();

@@ -56,7 +56,7 @@ import {RequestBlock} from '@/common/rewind/RewindVoteModel';
 
 // The choices for rewinding to the selected move. It only emits once the player has confirmed. In vote mode the
 // player asks the others to rewind rather than rewinding, so it emits `request`. With `clocks`, whoever rewinds may
-// also choose whether the clocks go back; without them it asks to keep the clock of the player whose move is undone.
+// also choose whether the clocks go back; without them it asks to keep the clock of every player who answered the move that is undone.
 export default defineComponent({
   name: 'RewindControls',
   props: {
