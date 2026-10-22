@@ -5,7 +5,7 @@ import {IPlayer} from '../IPlayer';
 import {SerializedGame} from '../SerializedGame';
 import {Database} from '../database/Database';
 import {GameLoader} from '../database/GameLoader';
-import {forgetReplay, historySaveIds, moverOf} from '../replay/ReplayService';
+import {forgetReplay, historySaveIds, moversOf} from '../replay/ReplayService';
 import {loadSandboxGame} from '../replay/sandbox';
 import {RouteError} from '../routes/RouteError';
 import {canRewind} from './access';
@@ -86,12 +86,12 @@ async function rewind(live: IGame, saveId: number, options: RewindOptions, by: R
 
   let saves: Array<SerializedGame>;
   let maxSaveId: number;
-  let mover: PlayerId | undefined;
+  let movers: Array<PlayerId>;
   try {
     saves = await readRebuildSaves(live, saveId);
     maxSaveId = Math.max(...await Database.getInstance().getSaveIds(live.id));
     // Only the clocks of a rewind that keeps them need to know.
-    mover = options.clocks === 'keep' ? await moverOf(live, saveId) : undefined;
+    movers = options.clocks === 'keep' ? await moversOf(live, saveId) : [];
   } catch (e) {
     console.warn(`rewind: unable to read save ${saveId} of ${live.id}`, e);
     throw RouteError.badRequest(UNRESTORABLE);
@@ -158,7 +158,7 @@ async function rewind(live: IGame, saveId: number, options: RewindOptions, by: R
     logStart: target.gameLog.length,
     logEnd: live.gameLog.length,
   };
-  const swap: Swap = {live, by, record, options, target, restoresUndone, mover};
+  const swap: Swap = {live, by, record, options, target, restoresUndone, movers};
   let restored: Game | undefined;
   try {
     if (replay) {
@@ -258,8 +258,8 @@ type Swap = {
   target: SerializedGame,
   /** The moment is on a line that an earlier rewind abandoned, which this rewind brings back. */
   restoresUndone: boolean,
-  /** Who made the move the rewind undoes, when that is known. */
-  mover: PlayerId | undefined,
+  /** Who made the move the rewind undoes, when that is known: empty when not. */
+  movers: Array<PlayerId>,
   /** The write of the save `record.saveId`, once promote has started it. */
   written?: Promise<void>,
 };
@@ -287,7 +287,7 @@ async function restoreLive({live, record, written}: Swap): Promise<void> {
  * It runs inside the sandbox's save of the moment, before play goes on, so it can't leave half a rewind.
  */
 function promote(sandbox: Game, swap: Swap): void {
-  const {live, by, record, options, target, restoresUndone, mover} = swap;
+  const {live, by, record, options, target, restoresUndone, movers} = swap;
   sandbox.gameLog = [...live.gameLog];
   sandbox.gameAge = live.gameAge;
   logRewind(sandbox, by, options.cards, restoresUndone);
@@ -306,10 +306,10 @@ function promote(sandbox: Game, swap: Swap): void {
     undefined;
   for (const [i, p] of sandbox.players.entries()) {
     const was = live.getPlayerById(p.id);
-    // 'keep' is for the player whose move is undone, and counts the interval in progress too: under escape
-    // velocity it is time spent. Everyone else's clock goes back. Every clock stays when the mover is not known.
+    // 'keep' is for the players whose move is undone, and counts the interval in progress too: under escape
+    // velocity it is time spent. Everyone else's clock goes back. Every clock stays when the movers are not known.
     // Every save lists the players in the same order.
-    const kept = options.clocks === 'keep' && (mover === undefined || mover === p.id) ?
+    const kept = options.clocks === 'keep' && (movers.length === 0 || movers.includes(p.id)) ?
       {sumElapsed: was.timer.countedElapsed(), afterFirstAction: was.timer.serialize().afterFirstAction} :
       target.players[i].timer;
     // Nobody's clock runs until the hand-over settles who is asked.

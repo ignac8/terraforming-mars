@@ -489,7 +489,7 @@ describe('ReplayScreen', () => {
       const messages = finished ? [] : played;
       return {
         status: 'available', finished, canRewind: false, canVoteRewind, viewerColor: 'blue', defaultViewAs: finished ? 'all' : 'blue',
-        moves: [{saveId: 10, messages, mover: 'blue'}, {saveId: 11, messages, mover: 'blue'}],
+        moves: [{saveId: 10, messages, movers: ['blue']}, {saveId: 11, messages, movers: ['blue']}],
       };
     }
 
@@ -525,7 +525,7 @@ describe('ReplayScreen', () => {
       for (const [index, offered] of [[0, true], [1, false]] as const) {
         movesAnswer = {
           status: 'available', finished: true, canRewind: false, canVoteRewind: true, viewerColor: 'blue', defaultViewAs: 'all',
-          moves: [{saveId: 10, messages: [], mover: 'blue'}, {saveId: 11, messages: [], mover: 'red'}],
+          moves: [{saveId: 10, messages: [], movers: ['blue']}, {saveId: 11, messages: [], movers: ['red']}],
         };
         const wrapper = mountReplay();
         await flushPromises();
@@ -864,7 +864,7 @@ describe('ReplayScreen', () => {
     describe('at a table that votes on a rewind', () => {
       const voteMoves = {
         ...liveMoves, canRewind: false, canVoteRewind: true, viewerColor: 'blue',
-        moves: [{saveId: 10, messages: played, mover: 'blue'}, {saveId: 11, messages: played, mover: 'blue'}],
+        moves: [{saveId: 10, messages: played, movers: ['blue']}, {saveId: 11, messages: played, movers: ['blue']}],
       } as const;
       // A running game's model leaves the players' ids out.
       const red = () => fakePublicPlayerModel({color: 'red', id: undefined, name: 'red'});

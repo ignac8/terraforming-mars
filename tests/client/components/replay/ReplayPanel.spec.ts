@@ -264,9 +264,9 @@ describe('ReplayPanel', () => {
 
   describe('undone moves', () => {
     const withUndone: Array<ReplayMove> = [
-      {saveId: 1, messages: [message('alpha', 1)], mover: 'blue'},
-      {saveId: 2, messages: [message('beta', 2)], undone: true, mover: 'blue'},
-      {saveId: 3, messages: [message('gamma', 3)], mover: 'blue'},
+      {saveId: 1, messages: [message('alpha', 1)], movers: ['blue']},
+      {saveId: 2, messages: [message('beta', 2)], undone: true, movers: ['blue']},
+      {saveId: 3, messages: [message('gamma', 3)], movers: ['blue']},
     ];
 
     it('offers the judge a switch, and passes the choice on', async () => {
@@ -307,11 +307,11 @@ describe('ReplayPanel', () => {
     });
   });
 
-  it('offers a vote only on a move the viewer made, and the judge a rewind to any', () => {
-    const made: Array<ReplayMove> = [{...moves[0], mover: 'blue'}, {...moves[1], mover: 'red'}, moves[2]];
+  it('offers a vote only on a move the viewer made, alone or with others, and the judge a rewind to any', () => {
+    const made: Array<ReplayMove> = [{...moves[0], movers: ['blue']}, {...moves[1], movers: ['red', 'blue']}, moves[2]];
     // The viewer is told by colour: a running game's players have no ids.
     const players = [fakePublicPlayerModel({color: 'blue', id: undefined}), fakePublicPlayerModel({color: 'red', id: undefined})];
-    for (const [index, viewerColor, offered] of [[0, 'blue', true], [1, 'blue', false], [2, 'blue', false], [1, 'red', true], [0, undefined, false]] as const) {
+    for (const [index, viewerColor, offered] of [[0, 'blue', true], [1, 'blue', true], [2, 'blue', false], [1, 'red', true], [0, undefined, false]] as const) {
       const controls = mountPanel({canVoteRewind: true, moves: made, players, index, viewerColor}).findComponent(RewindControls);
       expect(controls.exists(), `${index} ${viewerColor}`).equals(offered);
       if (offered) {

@@ -90,8 +90,8 @@ export class VoteService {
     if (index < 0) {
       throw RouteError.notFound('That move is not in this game\'s history.');
     }
-    // A move of unknown player is refused too.
-    if (history.status === 'available' && history.moves[index].mover !== player.color) {
+    // A move of unknown players is refused too.
+    if (history.status === 'available' && !history.moves[index].movers?.includes(player.color)) {
       throw RouteError.badRequest(OWN_MOVES_ONLY);
     }
     let generation: number;

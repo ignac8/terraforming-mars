@@ -83,7 +83,7 @@ describe('ApiRewindVote', () => {
   it('refuses a move of another player, and one of unknown player, and opens no vote', async () => {
     const entries = await t.entries();
     // The second generation: player 2's two moves, player 1's move, and the newest save, which nobody has answered.
-    expect(entries.slice(-4).map((move) => move.mover)).deep.eq([t.p2.color, t.p2.color, t.p1.color, undefined]);
+    expect(entries.slice(-4).map((move) => move.movers)).deep.eq([[t.p2.color], [t.p2.color], [t.p1.color], undefined]);
 
     for (const [asker, saveId] of [[t.p2, entries[entries.length - 2].saveId], [t.p2, entries[entries.length - 1].saveId], [t.p1, target]] as const) {
       const res = await t.post(asker.id, {action: 'request', saveId, cards: 'same'});
@@ -93,6 +93,16 @@ describe('ApiRewindVote', () => {
       expect(t.newest().rewindVote).is.undefined;
       expect((await t.live()).rewindVote).is.undefined;
     }
+  });
+
+  it('lets each player who answered a research step ask about it', async () => {
+    const research = (await t.entries()).find((move) => move.movers?.length === 2)!;
+    expect(research.movers).deep.eq([t.p1.color, t.p2.color]);
+
+    // Player 2 answered after player 1, who is the first answerer.
+    const poll = answer(await t.post(t.p2.id, {action: 'request', saveId: research.saveId, cards: 'same'}, await seat(t.p2)));
+
+    expect(poll.vote?.status).eq('open');
   });
 
   // Both players pass with Mars terraformed, so the game ends. `target` is the moment before the last pass.
@@ -142,7 +152,7 @@ describe('ApiRewindVote', () => {
     await endGame();
     const entries = await t.entries();
     const final = entries[entries.length - 1];
-    expect(final.mover).is.undefined;
+    expect(final.movers).is.undefined;
 
     for (const asker of [t.p1, t.p2]) {
       const res = await t.post(asker.id, {action: 'request', saveId: final.saveId, cards: 'same'}, await seat(asker));

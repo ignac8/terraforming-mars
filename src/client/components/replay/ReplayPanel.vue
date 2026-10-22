@@ -226,10 +226,10 @@ export default defineComponent({
     selectedUndone(): boolean {
       return this.index !== undefined && this.moves[this.index]?.undone === true;
     },
-    /** The viewer can ask for a rewind to the selected move: they made it. */
+    /** The viewer can ask for a rewind to the selected move: they are among those who made it. */
     votesOnSelected(): boolean {
-      const mover = this.index === undefined ? undefined : this.moves[this.index]?.mover;
-      return this.canVoteRewind && mover !== undefined && mover === this.viewerColor;
+      const movers = this.index === undefined ? undefined : this.moves[this.index]?.movers;
+      return this.canVoteRewind && this.viewerColor !== undefined && movers?.includes(this.viewerColor) === true;
     },
     /** Only the judge, who may see the undone moves, may rewind to one. Nobody may vote for one. */
     judgeRewindsUndone(): boolean {

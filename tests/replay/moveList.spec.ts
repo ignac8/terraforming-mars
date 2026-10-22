@@ -29,26 +29,26 @@ describe('buildMoveList', () => {
     });
   }
 
-  it('names the mover of each move from the next save by id, and the newest from the live answer', () => {
+  it('names the movers of each move from the next save by id, and the newest from the live answer', () => {
     const colors = new Map<PlayerId, Color>([['p-a' as PlayerId, 'red'], ['p-b' as PlayerId, 'blue']]);
     // Save k records who answered first from the state of save k - 1. The rewind's save records no answer.
-    const answered = ['p-a', 'p-b', 'p-a', undefined, 'p-b', 'p-a', undefined] as Array<PlayerId | undefined>;
+    const answered = [['p-a'], ['p-b'], ['p-a'], [], ['p-b'], ['p-a'], []] as Array<Array<PlayerId>>;
     const answers = saves.map((save, i) => ({...save, answeredBy: answered[i]}));
     for (const showUndone of [false, true]) {
-      const moves = buildMoveList(answers, [first], log, showUndone, {colors, newest: 'p-b' as PlayerId});
+      const moves = buildMoveList(answers, [first], log, showUndone, {colors, newest: ['p-b' as PlayerId]});
 
       // Save 1 is followed by save 2 by id, which the rewind abandoned. Save 4 is the rewind's own: its first
       // answer is in save 5. Save 5's next save records none.
-      const movers = Object.fromEntries(moves.map((m) => [m.saveId, m.mover]));
-      expect(movers[0], String(showUndone)).eq('blue');
-      expect(movers[1], String(showUndone)).eq('red');
-      expect(movers[4], String(showUndone)).eq('red');
+      const movers = Object.fromEntries(moves.map((m) => [m.saveId, m.movers]));
+      expect(movers[0], String(showUndone)).deep.eq(['blue']);
+      expect(movers[1], String(showUndone)).deep.eq(['red']);
+      expect(movers[4], String(showUndone)).deep.eq(['red']);
       expect(movers[5], String(showUndone)).is.undefined;
-      expect(movers[6], String(showUndone)).eq('blue');
+      expect(movers[6], String(showUndone)).deep.eq(['blue']);
     }
     // Without the newest answer, its mover is not known.
-    expect(buildMoveList(answers, [], log, false, {colors}).map((m) => m.mover)).deep.eq(['blue', 'red', undefined, 'blue', 'red', undefined, undefined]);
-    expect(buildMoveList(saves, [], log).some((m) => m.mover !== undefined)).is.false;
+    expect(buildMoveList(answers, [], log, false, {colors}).map((m) => m.movers)).deep.eq([['blue'], ['red'], undefined, ['blue'], ['red'], undefined, undefined]);
+    expect(buildMoveList(saves, [], log).some((m) => m.movers !== undefined)).is.false;
   });
 
   it('puts every visible line in exactly one move, in order', () => {

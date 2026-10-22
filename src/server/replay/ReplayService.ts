@@ -2,7 +2,6 @@ import {IGame} from '../IGame';
 import {Database} from '../database/Database';
 import {RouteError} from '../routes/RouteError';
 import {SerializedGame} from '../SerializedGame';
-import {RecordedInput} from '../rewind/RecordedInput';
 import {loadSandboxGame} from './sandbox';
 import {Phase} from '../../common/Phase';
 import {GameId, ParticipantId, PlayerId} from '../../common/Types';
@@ -11,7 +10,7 @@ import {ReplayMove, ReplayMovesModel} from '../../common/replay/ReplayModel';
 import {LogMessage} from '../../common/logs/LogMessage';
 import {isAbandonedSave, RewindRecord} from '../rewind/RewindRecord';
 import {canBrowseHistory, canRewind, canVoteRewind, checkMayShowUndone, judgeCanRewind} from '../rewind/access';
-import {buildMoveList, SaveEntry} from './moveList';
+import {answerersOf, buildMoveList, SaveEntry} from './moveList';
 
 const MAX_CACHED_GAMES = 50;
 
@@ -140,20 +139,15 @@ export async function isFinished(game: IGame): Promise<boolean> {
   return true;
 }
 
-// Who gave the first of the answers a save recorded, which were applied to the state of the save before it.
-function firstAnswer(inputs: ReadonlyArray<RecordedInput> | undefined): PlayerId | undefined {
-  return inputs?.[0]?.playerId;
-}
-
-// Who gave the first answer since the save `newestId`, the newest one, from the live game. A game loaded from that
+// Who gave the answers since the save `newestId`, the newest one, from the live game. A game loaded from that
 // save has not saved since, so what it holds are the answers that led to the save, not the ones after it. Phases
 // that ask again without saving, like a draft, leave it so.
-function answerSince(game: IGame, newestId: number): PlayerId | undefined {
-  return game.lastSaveId > newestId ? firstAnswer(game.inputsSinceSave) : undefined;
+function answersSince(game: IGame, newestId: number): Array<PlayerId> {
+  return game.lastSaveId > newestId ? answerersOf(game.inputsSinceSave) : [];
 }
 
 function entryOf(saveId: number, save: SerializedGame): SaveEntry {
-  return {saveId, logLength: save.gameLog.length, answeredBy: firstAnswer(save.inputs)};
+  return {saveId, logLength: save.gameLog.length, answeredBy: answerersOf(save.inputs)};
 }
 
 // Reads the saves one at a time and keeps only what the list needs, so at most one save is in
@@ -271,7 +265,7 @@ async function allMoves(game: IGame, undone: boolean = false): Promise<AllMoves>
   if (game.phase !== Phase.END) {
     const saves = await readRunningSaves(game);
     // The newest save's move is the one the game is at, which its inputs since that save tell.
-    const movers = {colors, newest: answerSince(game, saves[saves.length - 1]?.saveId ?? -1)};
+    const movers = {colors, newest: answersSince(game, saves[saves.length - 1]?.saveId ?? -1)};
     return {status: 'available', moves: buildMoveList(saves, game.rewinds, game.gameLog, undone, movers), finished: false};
   }
   const cached = cache.get(game.id);
@@ -286,13 +280,13 @@ async function allMoves(game: IGame, undone: boolean = false): Promise<AllMoves>
 }
 
 /**
- * The player who made the move from the state of save `saveId`: who gave the first answer recorded in the save
- * after it, or in the live game when it is the newest. Undefined when that is not known, as for a save written
- * before answers were recorded, or when no answer follows it.
+ * The players who made the move from the state of save `saveId`: everyone who gave an answer recorded in the save
+ * after it, or in the live game when it is the newest, in the order of their first answer. Empty when that is not
+ * known, as for a save written before answers were recorded, or when no answer follows it.
  */
-export async function moverOf(game: IGame, saveId: number): Promise<PlayerId | undefined> {
+export async function moversOf(game: IGame, saveId: number): Promise<Array<PlayerId>> {
   const next = (await getSortedSaveIds(game)).find((id) => id > saveId);
-  return next === undefined ? answerSince(game, saveId) : firstAnswer((await getSave(game, next)).inputs);
+  return next === undefined ? answersSince(game, saveId) : answerersOf((await getSave(game, next)).inputs);
 }
 
 /**

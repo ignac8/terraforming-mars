@@ -5,10 +5,11 @@ import {SpectatorModel} from '../models/SpectatorModel';
 
 /**
  * `undone`: a rewind abandoned this move. Only the judge's list shows such moves, and only when asked.
- * `mover`: the colour of the player who made the move, when the saves tell. A colour and not an id,
- * because a running game's public models carry no player ids.
+ * `movers`: the colours of the players who answered to make the move, in the order of their first answer, when the
+ * saves tell. A step that several players answered together, like research, is every one of theirs. Colours and not
+ * ids, because a running game's public models carry no player ids.
  */
-export type ReplayMove = {saveId: number; messages: Array<LogMessage>; undone?: boolean; mover?: Color};
+export type ReplayMove = {saveId: number; messages: Array<LogMessage>; undone?: boolean; movers?: Array<Color>};
 
 export type ReplayViewAs = 'all' | Color;
 

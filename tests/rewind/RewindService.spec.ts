@@ -7,7 +7,7 @@ import {GameLoader} from '../../src/server/database/GameLoader';
 import {OrOptions} from '../../src/server/inputs/OrOptions';
 import {SelectCard} from '../../src/server/inputs/SelectCard';
 import {Server} from '../../src/server/models/ServerModel';
-import {clearReplayCache, getReplayMoves, historySaveIds, loadReplayState, moverOf} from '../../src/server/replay/ReplayService';
+import {clearReplayCache, getReplayMoves, historySaveIds, loadReplayState, moversOf} from '../../src/server/replay/ReplayService';
 import {readRebuildSaves} from '../../src/server/rewind/rebuild';
 import {activeRewinds} from '../../src/server/rewind/RewindRecord';
 import {MAX_REWINDS, RewindActor, rewindGame, rewindMetrics, rewindTable} from '../../src/server/rewind/RewindService';
@@ -605,6 +605,24 @@ describe('RewindService whole table', () => {
     }
   });
 
+  it('keeps the clock of every player who answered the research step with keep', async () => {
+    await playTable();
+    // Both players bought their cards in the research step after secondResearch.
+    const players = [player, player2];
+    players.forEach((p, i) => {
+      p.timer = Timer.deserialize({sumElapsed: 600_000 + i, startedAt: 0, running: false, afterFirstAction: true, lastStoppedAt: 0});
+    });
+    for (const [i, p] of rows()[secondResearch].players.entries()) {
+      p.timer.sumElapsed = 300_000 + i;
+    }
+
+    const restored = await rewindTable(game, secondResearch, {cards: 'same', clocks: 'keep'}, judge);
+
+    players.forEach((p, i) => {
+      expect(restored.getPlayerById(p.id).timer.serialize().sumElapsed, `player ${i + 1}`).eq(600_000 + i);
+    });
+  });
+
   it('keeps every clock with keep when nothing says whose move is undone', async () => {
     await playTable();
     expect(rows()[target + 1].inputs?.[0]?.playerId).eq(player2.id);
@@ -633,8 +651,8 @@ describe('RewindService whole table', () => {
     expect(rows()[own].inputs).deep.eq([]);
     choose(restored.getPlayerById(player2.id), 'Convert 8 heat into temperature');
 
-    expect(await moverOf(restored, own)).eq(player2.id);
-    expect((await movesOf(restored, restored.judgeId!)).find((move) => move.saveId === own)?.mover).eq(player2.color);
+    expect(await moversOf(restored, own)).deep.eq([player2.id]);
+    expect((await movesOf(restored, restored.judgeId!)).find((move) => move.saveId === own)?.movers).deep.eq([player2.color]);
   });
 
   it('does not credit the newest save to the player whose answer made it, after a reload', async () => {
@@ -654,14 +672,14 @@ describe('RewindService whole table', () => {
       // A restart loads the newest save. The draft asks again without saving.
       const loaded = Game.deserialize(structuredClone(rows()[newest]));
 
-      expect(await moverOf(loaded, newest), phase).is.undefined;
+      expect(await moversOf(loaded, newest), phase).deep.eq([]);
       const entries = await movesOf(loaded, loaded.judgeId!);
       expect(entries[entries.length - 1].saveId, phase).eq(newest);
-      expect(entries[entries.length - 1].mover, phase).is.undefined;
+      expect(entries[entries.length - 1].movers, phase).is.undefined;
       if (phase === 'research') {
         // Once the loaded game has saved, an answer after that save is the newest save's.
         loaded.getPlayerById(player.id).process({type: 'card', cards: []});
-        expect(await moverOf(loaded, newest), phase).eq(player.id);
+        expect(await moversOf(loaded, newest), phase).deep.eq([player.id]);
       }
     }
   });
@@ -670,18 +688,30 @@ describe('RewindService whole table', () => {
     await playTable({judgeUndo: true});
     const before = await movesOf(game, game.judgeId!);
     const at = before.findIndex((move) => move.saveId === target);
-    expect(before[at].mover).eq(player2.color);
-    expect(before[at - 1].mover).eq(player.color);
+    expect(before[at].movers).deep.eq([player2.color]);
+    expect(before[at - 1].movers).deep.eq([player.color]);
     // Nobody has answered since the newest save.
     expect(before[before.length - 1].saveId).eq(thirdResearch);
-    expect(before[before.length - 1].mover).is.undefined;
+    expect(before[before.length - 1].movers).is.undefined;
 
     player.process({type: 'card', cards: []});
     expect(game.inputsSinceSave).has.length(1);
 
-    expect(await moverOf(game, thirdResearch)).eq(player.id);
+    expect(await moversOf(game, thirdResearch)).deep.eq([player.id]);
     const after = await movesOf(game, game.judgeId!);
-    expect(after[after.length - 1].mover).eq(player.color);
+    expect(after[after.length - 1].movers).deep.eq([player.color]);
+  });
+
+  it('lists every player who answered a research step as its movers, the newest from the live game', async () => {
+    await playTable({judgeUndo: true});
+    const both = [player.color, player2.color];
+    expect((await movesOf(game, game.judgeId!)).find((move) => move.saveId === secondResearch)?.movers).deep.eq(both);
+
+    player.process({type: 'card', cards: []});
+    expect((await movesOf(game, game.judgeId!)).find((move) => move.saveId === thirdResearch)?.movers).deep.eq([player.color]);
+
+    player2.process({type: 'card', cards: []});
+    expect((await movesOf(game, game.judgeId!)).find((move) => move.saveId === thirdResearch)?.movers).deep.eq(both);
   });
 
   it('carries the freeze into the rewound game and its save, and starts no clock', async () => {
