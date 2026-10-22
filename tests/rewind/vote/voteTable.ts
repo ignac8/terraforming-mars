@@ -166,7 +166,10 @@ export class VoteTable {
     const response = (method === 'post' ? scaffolding.post(handler, res) : scaffolding.put(handler, res)).finally(() => {
       answered = true;
     });
-    while (!answered && req.emitter.listenerCount('end') === 0) {
+    for (let i = 0; !answered && req.emitter.listenerCount('end') === 0; i++) {
+      if (i === 100) {
+        throw new Error(`${url} neither read its body nor answered`);
+      }
       await new Promise((resolve) => setImmediate(resolve));
     }
     if (!answered) {
