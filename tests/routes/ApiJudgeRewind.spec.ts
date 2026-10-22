@@ -2,6 +2,7 @@ import {expect} from 'chai';
 import {ApiJudgeRewind} from '../../src/server/routes/ApiJudgeRewind';
 import {IGame} from '../../src/server/IGame';
 import {IPlayer} from '../../src/server/IPlayer';
+import {SerializedGame} from '../../src/server/SerializedGame';
 import {GameLoader} from '../../src/server/database/GameLoader';
 import {OrOptions} from '../../src/server/inputs/OrOptions';
 import {clearReplayCache, getReplayMoves} from '../../src/server/replay/ReplayService';
@@ -127,7 +128,7 @@ describe('ApiJudgeRewind', () => {
         p.timer = Timer.deserialize({sumElapsed: 600_000 + i, startedAt: 0, running: false, afterFirstAction: true, lastStoppedAt: 0});
       });
       // Timers are not part of the moment's state, so the replay still matches the changed row.
-      db.games.get(game.id)![target].players.forEach((p, i) => {
+      (db.games.get(game.id) as Array<SerializedGame>)[target].players.forEach((p, i) => {
         p.timer.sumElapsed = 300_000 + i;
       });
 
