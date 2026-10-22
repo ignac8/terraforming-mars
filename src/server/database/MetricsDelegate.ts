@@ -112,8 +112,8 @@ export class MetricsDelegate implements IDatabase {
     return withDatabaseMetrics('saveGame', () => this.delegate.saveGame(game));
   }
 
-  saveGameResults(gameId: GameId, players: number, generations: number, gameOptions: GameOptions, scores: Array<Score>): void {
-    this.delegate.saveGameResults(gameId, players, generations, gameOptions, scores);
+  saveGameResults(gameId: GameId, players: number, generations: number, gameOptions: GameOptions, scores: Array<Score>): void | Promise<void> {
+    return this.delegate.saveGameResults(gameId, players, generations, gameOptions, scores);
   }
 
   deleteGameNbrSaves(gameId: GameId, rollbackCount: number): Promise<void> {

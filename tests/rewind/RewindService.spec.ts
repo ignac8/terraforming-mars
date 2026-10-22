@@ -268,6 +268,24 @@ describe('RewindService', () => {
     expect((await loadReplayState(game, saveId)).phase).eq(Phase.END);
   });
 
+  it('does not return from a failed rewind of a finished game before its results are written back', async () => {
+    const loader = GameLoader.newTestInstance({sleepMillis: 0, evictMillis: 100, idleMillis: 0, sweep: 'manual'}, new FakeClock());
+    setTestGameLoader(loader);
+    await play({lastGeneration: true});
+    await game.finishing;
+    // The results INSERT settles late, as it can on PostgreSQL.
+    const saveGameResults = db.saveGameResults.bind(db);
+    db.saveGameResults = (...args) => new Promise((resolve) => setTimeout(() => {
+      saveGameResults(...args);
+      resolve();
+    }, 20));
+    loader.add = () => Promise.reject(new Error('add failed'));
+
+    await refusal(rewindGame(game, player, convert, 'same'));
+
+    expect(await db.hasGameResults(game.id)).is.true;
+  });
+
   it('writes one save when the answer that wrote the moment went on to save again', async () => {
     for (const cards of ['same', 'shuffle'] as const) {
       await play();

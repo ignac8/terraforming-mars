@@ -83,8 +83,11 @@ export interface IDatabase {
      * @param generations the generation number at the end of the game
      * @param gameOptions the options used for this game.
      * @param scores an array of scores correlated to the player's corporation.
+     * @returns a promise that settles when the row is written, from a backend that writes it
+     * asynchronously. Ending a game does not wait for it. A caller that must know the row is back,
+     * like a rewind that writes it back after a failure, does.
      */
-    saveGameResults(gameId: GameId, players: number, generations: number, gameOptions: GameOptions, scores: Array<Score>): void;
+    saveGameResults(gameId: GameId, players: number, generations: number, gameOptions: GameOptions, scores: Array<Score>): void | Promise<void>;
 
     /**
      * Deletes the last `rollbackCount` saves of the specified game.

@@ -275,17 +275,21 @@ export class PostgreSQL implements IDatabase {
 
   // Not part of IDatabase: void/callback-based, so MetricsDelegate can't observe its completion or
   // errors the way it can for Promise-returning methods. Instrumented directly here instead.
-  saveGameResults(gameId: GameId, players: number, generations: number, gameOptions: GameOptions, scores: Array<Score>): void {
+  saveGameResults(gameId: GameId, players: number, generations: number, gameOptions: GameOptions, scores: Array<Score>): Promise<void> {
     const operation = 'saveGameResults';
     const startMs = Date.now();
     databaseMetrics.operationCount.inc({operation});
-    this.client.query('INSERT INTO game_results (game_id, seed_game_id, players, generations, game_options, scores) VALUES($1, $2, $3, $4, $5, $6)', [gameId, gameOptions.clonedGamedId, players, generations, gameOptions, JSON.stringify(scores)], (err) => {
-      databaseMetrics.operationLatency.observe({operation}, Date.now() - startMs);
-      if (err) {
-        databaseMetrics.operationErrors.inc({operation});
-        console.error('PostgreSQL:saveGameResults', err);
-        throw err;
-      }
+    return new Promise((resolve, reject) => {
+      this.client.query('INSERT INTO game_results (game_id, seed_game_id, players, generations, game_options, scores) VALUES($1, $2, $3, $4, $5, $6)', [gameId, gameOptions.clonedGamedId, players, generations, gameOptions, JSON.stringify(scores)], (err) => {
+        databaseMetrics.operationLatency.observe({operation}, Date.now() - startMs);
+        if (err) {
+          databaseMetrics.operationErrors.inc({operation});
+          console.error('PostgreSQL:saveGameResults', err);
+          reject(err);
+        } else {
+          resolve();
+        }
+      });
     });
   }
 

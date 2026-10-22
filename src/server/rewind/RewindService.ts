@@ -175,7 +175,12 @@ async function rewind(live: IGame, player: IPlayer, saveId: number, cards: Rewin
       // Queues the game for compression again, and writes back the results the reopen deleted.
       await Database.getInstance().markFinished(live.id).catch((err) => console.warn(`rewind: unable to mark ${live.id} finished again`, err));
       GameLoader.getInstance().mark(live.id);
-      live.saveGameResults();
+      // Awaited: a retry's reopen deletes the results row, and must not land before this write.
+      try {
+        await live.saveGameResults();
+      } catch (err) {
+        console.warn(`rewind: unable to write the results of ${live.id} back`, err);
+      }
       // A replay view read while the rebuilt game was the newest save holds that game.
       forgetReplay(live.id);
     }

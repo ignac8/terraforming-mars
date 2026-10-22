@@ -1313,7 +1313,7 @@ export class Game implements IGame, Logger {
     await gameLoader.completeGame(this);
   }
 
-  public saveGameResults(): void {
+  public saveGameResults(): void | Promise<void> {
     const scores: Array<Score> = [];
     this.players.forEach((player) => {
       const corporation = player.playedCards.filter(isICorporationCard).map(toName).join('|');
@@ -1321,7 +1321,7 @@ export class Game implements IGame, Logger {
       scores.push({corporation: corporation, playerScore: vpb.total});
     });
 
-    Database.getInstance().saveGameResults(this.id, this.players.length, this.generation, this.gameOptions, scores);
+    return Database.getInstance().saveGameResults(this.id, this.players.length, this.generation, this.gameOptions, scores);
   }
 
   // Part of final greenery placement.
