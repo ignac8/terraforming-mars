@@ -222,6 +222,30 @@ describe('ApiCreateGame', () => {
     expect(game!.players.map((p) => p.handicap)).deep.eq([0, 0]);
   });
 
+  it('makes a multiplayer game with Player undo use player passwords whatever was sent', async () => {
+    const two = [
+      {name: 'a', color: 'red', beginner: false, handicap: 0, first: true},
+      {name: 'b', color: 'blue', beginner: false, handicap: 0, first: false},
+    ];
+    for (const [label, players, undoOption, playerPasswords, expected] of [
+      ['multiplayer undo', two, true, false, true],
+      ['multiplayer undo, passwords sent', two, true, true, true],
+      ['multiplayer undo, passwords left out', two, true, undefined, true],
+      ['multiplayer, no undo', two, false, false, false],
+      ['solo undo', two.slice(0, 1), true, false, false],
+    ] as const) {
+      req = new MockRequest();
+      res = new MockResponse();
+      scaffolding = new RouteTestScaffolding(req);
+      await postConfig({...newGameConfigForTest(), players: [...players], undoOption, playerPasswords: playerPasswords as boolean});
+
+      expect(res.statusCode, label).eq(statusCode.ok);
+      const model = JSON.parse(res.content) as SimpleGameModel;
+      const game = await scaffolding.ctx.gameLoader.getGame(model.id);
+      expect(game!.gameOptions.playerPasswords, label).eq(expected);
+    }
+  });
+
   it('treats a truthy non-boolean tournament flag as a tournament game', async () => {
     const config = {
       ...newGameConfigForTest(),

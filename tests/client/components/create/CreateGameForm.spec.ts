@@ -189,6 +189,49 @@ describe('CreateGameForm', () => {
     expect(vm.playerPasswords).eq(false);
   });
 
+  it('ticks and locks player passwords for a multiplayer game with Player undo', async () => {
+    const wrapper = shallowMount(CreateGameForm, {...globalConfig});
+    await wrapper.vm.$nextTick();
+    const vm = wrapper.vm as any;
+    vm.expansions.tournament = false;
+    await wrapper.vm.$nextTick();
+    vm.playerPasswords = false;
+
+    for (const [label, playersCount, undoOption, forced] of [
+      ['two players, undo', 2, true, true],
+      ['two players, no undo', 2, false, false],
+      ['solo, undo', 1, true, false],
+    ] as const) {
+      vm.playersCount = playersCount;
+      vm.undoOption = undoOption;
+      await wrapper.vm.$nextTick();
+      const box = wrapper.find('#playerPasswords-checkbox');
+      if (playersCount === 1) {
+        // The checkbox is only offered to a multiplayer game.
+        expect(box.exists(), label).eq(false);
+        expect(vm.newGameConfig.playerPasswords, label).eq(false);
+        continue;
+      }
+      expect((box.element as HTMLInputElement).checked, label).eq(forced);
+      expect(box.attributes('disabled') !== undefined, label).eq(forced);
+      expect(vm.newGameConfig.playerPasswords, label).eq(forced);
+      expect(wrapper.find('label[for="playerPasswords-checkbox"]').attributes('title')?.includes('Player undo'), label).eq(forced);
+      // What the player chose stays what they chose.
+      expect(vm.playerPasswords, label).eq(false);
+    }
+  });
+
+  it('sends the tournament preset with passwords on and Player undo off', async () => {
+    const wrapper = shallowMount(CreateGameForm, {...globalConfig});
+    await wrapper.vm.$nextTick();
+    const vm = wrapper.vm as any;
+    vm.playersCount = 2;
+    await wrapper.vm.$nextTick();
+
+    expect(vm.expansions.tournament).eq(true);
+    expect(vm.newGameConfig).deep.include({undoOption: false, playerPasswords: true});
+  });
+
   it('sends the judge option only for tournament games', async () => {
     const wrapper = shallowMount(CreateGameForm, {...globalConfig});
     await wrapper.vm.$nextTick();

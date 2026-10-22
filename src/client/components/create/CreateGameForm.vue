@@ -421,8 +421,8 @@
                                 <span v-i18n>Fast mode</span>&nbsp;<a :href="wikiUrls.fastMode" class="tooltip" v-i18n data-tooltip="Link opens in a new tab/window" target="_blank">&#9432;</a>
                             </label>
 
-                            <input type="checkbox" name="playerPasswords" v-model="playerPasswords" id="playerPasswords-checkbox" :disabled="expansions.tournament">
-                            <label for="playerPasswords-checkbox" title="The first person to open a player link claims that seat. From then on only they can use it.">
+                            <input type="checkbox" name="playerPasswords" v-model="playerPasswordsChecked" id="playerPasswords-checkbox" :disabled="expansions.tournament || undoNeedsPasswords">
+                            <label for="playerPasswords-checkbox" :title="undoNeedsPasswords ? $t('Player undo needs player passwords, so a stranger cannot rewind a finished game.') : 'The first person to open a player link claims that seat. From then on only they can use it.'">
                                 <span v-i18n>Player passwords</span>
                             </label>
 
@@ -734,6 +734,19 @@ export default defineComponent({
       ?.setAttribute('content', this.previousViewport);
   },
   computed: {
+    /** A finished game can be rewound, so the seats of a multiplayer game with Player undo need passwords. */
+    undoNeedsPasswords(): boolean {
+      return this.undoOption && this.playersCount > 1;
+    },
+    /** The box shows the lock without overwriting the choice, which comes back when Player undo goes. */
+    playerPasswordsChecked: {
+      get(): boolean {
+        return this.playerPasswords || this.undoNeedsPasswords;
+      },
+      set(value: boolean) {
+        this.playerPasswords = value;
+      },
+    },
     wikiUrls(): typeof RULEBOOK_URLS & typeof WIKI_URLS {
       return {...RULEBOOK_URLS, ...WIKI_URLS};
     },
@@ -748,7 +761,7 @@ export default defineComponent({
         expansions: this.expansions,
         draftVariant: this.draftVariant,
         showOtherPlayersVP: this.showOtherPlayersVP,
-        playerPasswords: this.playerPasswords,
+        playerPasswords: this.playerPasswordsChecked,
         judgeLink: this.expansions.tournament && this.judgeLink,
         judgeUndo: this.expansions.tournament && this.judgeLink && this.judgeUndo,
         customCorporationsList: this.customCorporations,

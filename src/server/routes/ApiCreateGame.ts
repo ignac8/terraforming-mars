@@ -174,7 +174,8 @@ export class ApiCreateGame extends Handler {
         requiresMoonTrackCompletion: gameReq.requiresMoonTrackCompletion,
         requiresVenusTrackCompletion: gameReq.requiresVenusTrackCompletion,
         showOtherPlayersVP: gameReq.showOtherPlayersVP,
-        playerPasswords: gameReq.playerPasswords ?? false,
+        // A finished game can be rewound, so a table with Player undo needs seats that only their players can use.
+        playerPasswords: (gameReq.playerPasswords ?? false) || (gameReq.undoOption === true && players.length > 1),
         showTimers: gameReq.showTimers,
         shuffleMapOption: gameReq.shuffleMapOption,
         solarPhaseOption: gameReq.solarPhaseOption,
