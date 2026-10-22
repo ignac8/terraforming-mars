@@ -153,10 +153,15 @@ export abstract class Handler implements IHandler {
     return randomBytes(PASSWORD_BYTES).toString('hex');
   }
 
+  /** Whether the request carries the claimed seat's password. */
+  protected carriesPassword(stored: string, ctx: Context): boolean {
+    const incoming = ctx.urlParams.stringOrUndefined('password');
+    return incoming !== undefined && safeEquals(incoming, stored);
+  }
+
   /** Throws unless the request carries the claimed seat's password. */
   private requirePassword(stored: string, ctx: Context): void {
-    const incoming = ctx.urlParams.stringOrUndefined('password');
-    if (incoming === undefined || !safeEquals(incoming, stored)) {
+    if (!this.carriesPassword(stored, ctx)) {
       throw RouteError.unauthorized();
     }
   }

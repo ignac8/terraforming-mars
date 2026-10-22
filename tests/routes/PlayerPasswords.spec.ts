@@ -201,6 +201,15 @@ describe('player passwords', () => {
     expect(res.statusCode).eq(statusCode.ok);
   });
 
+  it('does not hand out a finished game\'s seat password', async () => {
+    const mine = (await getPlayer('')).password;
+    game.phase = Phase.END;
+
+    for (const [query, expected] of [['', undefined], ['&password=' + mine, mine]] as const) {
+      expect((await getPlayer(query)).password).eq(expected);
+    }
+  });
+
   it('the option off leaves no seat claimed', async () => {
     const solitary = TestPlayer.RED.newPlayer();
     const other = TestPlayer.GREEN.newPlayer();

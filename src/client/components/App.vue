@@ -256,7 +256,7 @@ export default defineComponent({
               window.history.replaceState(
                 model,
                 `${constants.APP_NAME} - Player`,
-                `${paths.THE_END}?id=${model.id}`,
+                `${paths.THE_END}?id=${model.id}${password}`,
               );
             }
           } else {

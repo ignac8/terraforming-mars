@@ -6,6 +6,7 @@ import {Request} from '../Request';
 import {Response} from '../Response';
 import {RouteError} from './RouteError';
 import {IPlayer} from '../IPlayer';
+import {Phase} from '../../common/Phase';
 
 export class ApiPlayer extends Handler {
   public static readonly INSTANCE = new ApiPlayer();
@@ -36,6 +37,12 @@ export class ApiPlayer extends Handler {
     this.checkPlayerPassword(player, ctx);
 
     ctx.ipTracker.addParticipant(playerId, ctx.ip);
-    responses.writeJson(res, ctx, Server.getPlayerModel(player));
+    const model = Server.getPlayerModel(player);
+    // A finished game is readable without the password, so the model must not hand it out:
+    // a link that carries only the player id would otherwise claim the seat.
+    if (game.phase === Phase.END && player.password !== undefined && !this.carriesPassword(player.password, ctx)) {
+      model.password = undefined;
+    }
+    responses.writeJson(res, ctx, model);
   }
 }

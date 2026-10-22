@@ -225,6 +225,7 @@ import {setDocumentTitle} from '@/client/utils/documentTitle';
 import {setFaviconStatus} from '@/client/utils/favicon';
 import {getPreferences} from '@/client/utils/PreferencesManager';
 import {paths} from '@/common/app/paths';
+import {passwordParam} from '@/client/utils/playerPassword';
 import {GameModel} from '@/common/models/GameModel';
 import {PublicPlayerModel, ViewModel} from '@/common/models/PlayerModel';
 import Board from '@/client/components/Board.vue';
@@ -265,7 +266,7 @@ export default defineComponent({
       return `${paths.END_GAME_LOG}?id=${this.participant.id}`;
     },
     replayUrl(): string {
-      return `${paths.REPLAY}?id=${this.participant.id}`;
+      return `${paths.REPLAY}?id=${this.participant.id}${passwordParam(this.participant)}`;
     },
     playersInPlace(): Array<PublicPlayerModel> {
       const sorted = this.participant.players.toSorted(function(a:PublicPlayerModel, b:PublicPlayerModel) {

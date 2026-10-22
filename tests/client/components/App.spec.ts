@@ -81,6 +81,27 @@ describe('App', () => {
     expect(alertStub.mock.calls).is.empty;
   });
 
+  it('keeps the seat password on the way to a finished game\'s end screen', async () => {
+    window.history.replaceState({}, '', '/player?id=p1&password=0123456789ab');
+    const player = {
+      id: 'p1',
+      color: 'red',
+      password: '0123456789ab',
+      players: [{color: 'red', name: 'Alice'}],
+      game: {phase: 'end', gameAge: 1, undoCount: 0, gameOptions: {undoOption: false}},
+    };
+    vi.stubGlobal('fetch', vi.fn(async () => ({ok: true, status: 200, json: async () => player}) as Response));
+    // The real screen imports the whole end screen, which would load after the test ends.
+    shallowMount(App, {
+      ...globalConfig,
+      global: {...globalConfig.global, stubs: {GameEnd: {template: '<div class="stub-end"></div>'}}},
+    });
+    await flushPromises();
+
+    expect(window.location.pathname).eq('/the-end');
+    expect(window.location.search).eq('?id=p1&password=0123456789ab');
+  });
+
   it('names players in messages on the judge page', async () => {
     await mountJudgePage('action');
 

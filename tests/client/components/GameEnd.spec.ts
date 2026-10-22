@@ -28,6 +28,16 @@ describe('GameEnd', () => {
     expect(wrapper.find('a.game-end-replay-link').attributes('href')).to.equal('replay?id=p-blue-id');
   });
 
+  it('carries the seat password on the replay link', () => {
+    const wrapper = shallowMount(GameEnd, {
+      ...globalConfig,
+      props: {
+        participant: fakePlayerViewModel({id: 'p-blue-id' as any, password: '0123456789ab'}),
+      },
+    });
+    expect(wrapper.find('a.game-end-replay-link').attributes('href')).to.equal('replay?id=p-blue-id&password=0123456789ab');
+  });
+
   it('shows the dogs', () => {
     const wrapper = shallowMount(GameEnd, {
       ...globalConfig,
