@@ -18,9 +18,10 @@ export function isAbandonedSave(saveId: number, rewinds: ReadonlyArray<RewindRec
   return rewinds.some((r) => saveId >= r.restoredSaveId && saveId < r.saveId);
 }
 
+export function isHiddenLogIndex(idx: number, rewinds: ReadonlyArray<RewindRecord>): boolean {
+  return rewinds.some((r) => idx >= r.logStart && idx < r.logEnd);
+}
+
 export function visibleLog(log: ReadonlyArray<LogMessage>, rewinds: ReadonlyArray<RewindRecord>): Array<LogMessage> {
-  if (rewinds.length === 0) {
-    return [...log];
-  }
-  return log.filter((_, idx) => !rewinds.some((r) => idx >= r.logStart && idx < r.logEnd));
+  return log.filter((_, idx) => !isHiddenLogIndex(idx, rewinds));
 }
