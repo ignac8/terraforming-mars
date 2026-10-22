@@ -37,7 +37,8 @@ export class ApiReplayView extends Handler {
       throw RouteError.notFound('game not found');
     }
     // A replay needs a finished game. This is answered before any password check, which can claim
-    // an unclaimed seat: a replay read must not write to a running game.
+    // an unclaimed seat: a replay read must not write to a running game. The one viewer let into a
+    // running game is the player of a solo game, and a solo seat is never claimed.
     if (!await isFinished(game)) {
       if (!canRewind(game, id)) {
         throw RouteError.badRequest('game not finished');
