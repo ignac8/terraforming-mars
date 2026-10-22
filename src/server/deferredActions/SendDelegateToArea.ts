@@ -59,7 +59,7 @@ export class SendDelegateToArea extends DeferredAction {
     }
     // Never send, log or count more delegates than the player has in reserve. Replacing also takes
     // the incoming delegate from the player's reserve.
-    const numDelegateToSend = Math.min(this.options.count ?? 1, this.turmoil.getAvailableDelegateCount(this.player));
+    const numDelegateToSend = Math.min(this.options.count ?? 1, this.turmoil.delegateReserve.get(this.player));
     if (numDelegateToSend === 0) {
       return undefined;
     }

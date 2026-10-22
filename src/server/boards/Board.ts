@@ -206,7 +206,7 @@ export abstract class Board {
 
   public getAvailableSpacesOnLand(player: IPlayer, canAffordOptions?: CanAffordOptions, subjectToHazardAdjacency: boolean = true): ReadonlyArray<Space> {
     // MarsBot never collects placement bonuses.
-    const availableDelegates = player.game.automaHooks?.isAutomaPlayer(player) ? undefined : player.game.turmoil?.getAvailableDelegateCount(player);
+    const availableDelegates = player.game.automaHooks?.isAutomaPlayer(player) ? undefined : player.game.turmoil?.delegateReserve.get(player);
     // Does this also apply to cove spaces?
     const landSpaces = this.getSpaces(SpaceType.LAND).filter((space) => {
       // A space is available if it doesn't have a player marker on it, or it belongs to |player|

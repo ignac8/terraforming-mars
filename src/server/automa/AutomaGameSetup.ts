@@ -261,7 +261,7 @@ export class AutomaGameSetup {
       game.projectDeck.discardPile.push(card);
     }
     // Place 1 MarsBot delegate in a random party (only if reserve is non-empty)
-    if (!turmoil.hasDelegatesInReserve(marsBotPlayer)) {
+    if (!turmoil.delegateReserve.has(marsBotPlayer)) {
       return;
     }
     const parties = turmoil.parties;

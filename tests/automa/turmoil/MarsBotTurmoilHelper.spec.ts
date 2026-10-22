@@ -131,7 +131,7 @@ describe('MarsBotTurmoilHelper', () => {
       for (let i = 0; i < DELEGATES_PER_PLAYER; i++) {
         turmoil.sendDelegateToParty(marsBotPlayer, PartyName.MARS, game);
       }
-      expect(turmoil.hasDelegatesInReserve(marsBotPlayer)).is.false;
+      expect(turmoil.delegateReserve.has(marsBotPlayer)).is.false;
 
       expect(helper.selectParty()).is.undefined;
     });
@@ -140,13 +140,13 @@ describe('MarsBotTurmoilHelper', () => {
   describe('maybePlaceDelegate', () => {
     it('sends a delegate from the reserve to the chosen party', () => {
       const {turmoil, marsBotPlayer, helper} = createTurmoilGame();
-      const before = turmoil.getAvailableDelegateCount(marsBotPlayer);
+      const before = turmoil.delegateReserve.get(marsBotPlayer);
 
       const partyName = helper.maybePlaceDelegate();
 
       expect(partyName).is.not.undefined;
       expect(turmoil.getPartyByName(partyName!).delegates.get(marsBotPlayer)).to.eq(1);
-      expect(turmoil.getAvailableDelegateCount(marsBotPlayer)).to.eq(before - 1);
+      expect(turmoil.delegateReserve.get(marsBotPlayer)).to.eq(before - 1);
     });
 
     it('takes the party leadership the delegate earns', () => {
