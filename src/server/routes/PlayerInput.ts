@@ -17,7 +17,7 @@ import {INVALID_REQUEST_ID, INVALID_RUN_ID, RESPONDING_TOO_QUICKLY} from '../../
 import {RouteError} from './RouteError';
 import {readBody} from './readBody';
 import {stringToNumber} from '../database/utils';
-import {isTableLocked} from '../rewind/tableLock';
+import {isTableLocked, withTableLock} from '../rewind/tableLock';
 
 export const playerInputMetrics = {
   responseInterval: new prometheus.Histogram({
@@ -104,7 +104,9 @@ export class PlayerInput extends Handler {
       this.resetTableauCardState(player);
 
       if (this.isWaitingForUndo(player, entity)) {
-        await this.performUndo(req, res, ctx, player);
+        // The undo deletes saves and replaces the cached game, so no rewind may run meanwhile.
+        // The table is free: validateNotHeld checked it with no await since.
+        await withTableLock(player.game.id, () => this.performUndo(req, res, ctx, player));
       } else {
         player.process(entity);
         responses.writeJson(res, ctx, Server.getPlayerModel(player));
