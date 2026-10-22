@@ -539,5 +539,8 @@
   "Preludes in hand": "Preludia w ręce",
   "CEOs in hand": "CEO w ręce",
   "Pending choice": "Oczekujący wybór",
-  "Incorrect judge password. Reopen the judge page from your browser history, or ask the organizer for the judge link with its password.": "Nieprawidłowe hasło sędziego. Otwórz stronę sędziego z historii przeglądarki albo poproś organizatora o link sędziego z hasłem."
+  "Incorrect judge password. Reopen the judge page from your browser history, or ask the organizer for the judge link with its password.": "Nieprawidłowe hasło sędziego. Otwórz stronę sędziego z historii przeglądarki albo poproś organizatora o link sędziego z hasłem.",
+  "The server has restarted. Click OK to refresh this page.": "Serwer został uruchomiony ponownie. Kliknij OK, aby odświeżyć tę stronę.",
+  "This game was rewound. Click OK to refresh this page.": "Ta gra została cofnięta. Kliknij OK, aby odświeżyć tę stronę.",
+  "This page is out of date. Click OK to refresh it.": "Ta strona jest nieaktualna. Kliknij OK, aby ją odświeżyć."
 }
