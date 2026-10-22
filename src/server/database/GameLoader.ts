@@ -12,6 +12,7 @@ import {durationToMilliseconds} from '../utils/durations';
 import {CacheConfig} from './CacheConfig';
 import {Clock} from '../../common/Timer';
 import {forgetReplay} from '../replay/ReplayService';
+import {voteService} from '../rewind/vote/effects';
 
 const metrics = {
   initialize: new prometheus.Gauge({
@@ -165,6 +166,11 @@ export class GameLoader implements IGameLoader {
     }
     if (isNew) {
       metrics.gamesCreated.inc({players: String(game.players.length)});
+    }
+    // Every load passes through here, and the game is served from here on, so a vote it was saved with
+    // is expired, re-armed or failed now (never in deserialize, which also builds sandboxes).
+    if (game.rewindVote !== undefined) {
+      await voteService.resume(game);
     }
   }
 

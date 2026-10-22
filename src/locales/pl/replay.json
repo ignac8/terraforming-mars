@@ -31,6 +31,7 @@
   "invalid freeze": "Nieprawidłowe żądanie zamrożenia gry.",
   "The game is frozen, but that was not saved. A restart would undo it.": "Gra jest zamrożona, ale nie udało się tego zapisać. Po ponownym uruchomieniu serwera zostanie odmrożona.",
   "The game runs again, but that was not saved. A restart would freeze it again.": "Gra toczy się dalej, ale nie udało się tego zapisać. Po ponownym uruchomieniu serwera zostanie znów zamrożona.",
+  "invalid vote": "Nieprawidłowe żądanie głosowania.",
   "A rewind is already running.": "Cofanie gry już trwa.",
   "The judge froze the game. Click OK to refresh this page.": "Sędzia zamroził grę. Kliknij OK, aby odświeżyć stronę.",
   "The table is being rewound or frozen. Click OK to refresh this page.": "Trwa cofanie albo zamrażanie gry. Kliknij OK, aby odświeżyć stronę.",

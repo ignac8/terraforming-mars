@@ -35,6 +35,7 @@ import {LoadGame} from '../routes/LoadGame';
 import {Login} from '../routes/Login';
 import {PlayerInput} from '../routes/PlayerInput';
 import {ApiRewind} from '../routes/ApiRewind';
+import {ApiRewindVote} from '../routes/ApiRewindVote';
 import {Reset} from '../routes/Reset';
 import {ServeApp} from '../routes/ServeApp';
 import {ServeAsset} from '../routes/ServeAsset';
@@ -135,6 +136,7 @@ const handlers: Map<string, IHandler> = new Map(
     [paths.API_REPLAY_MOVES, ApiReplayMoves.INSTANCE],
     [paths.API_REPLAY_VIEW, ApiReplayView.INSTANCE],
     [paths.API_REWIND, ApiRewind.INSTANCE],
+    [paths.API_REWIND_VOTE, ApiRewindVote.INSTANCE],
     [paths.REPLAY, ServeApp.INSTANCE],
     [paths.RESET, Reset.INSTANCE],
     [paths.JUDGE, ServeApp.INSTANCE],
