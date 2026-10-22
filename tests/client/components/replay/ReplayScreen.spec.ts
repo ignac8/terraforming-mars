@@ -1020,11 +1020,14 @@ describe('ReplayScreen', () => {
     it('shows why a freeze was refused in the panel', async () => {
       vi.spyOn(console, 'error').mockImplementation(() => {});
       judgeAnswer = () => Promise.resolve({ok: false, status: 400, text: () => Promise.resolve('Bad request: The game is already frozen.')});
-      const wrapper = mountJudge(judgeModel(), {updateJudge: vi.fn()});
+      const updateJudge = vi.fn();
+      const wrapper = mountJudge(judgeModel(), {updateJudge});
       await flushPromises();
       await wrapper.find('.replay-freeze').trigger('click');
       await flushPromises();
       expect(wrapper.find('.replay-panel .rewind-refusal').text()).equals('The game is already frozen.');
+      // The change may have been made all the same, as when the freeze was not saved.
+      expect(updateJudge.mock.calls).has.length(1);
     });
 
     it('offers no freeze for a finished game', async () => {
