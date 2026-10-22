@@ -67,6 +67,11 @@ export default defineComponent({
       type: String as () => PlayerId,
       required: true,
     },
+    /** The viewer's colour. A running game leaves the players' ids out of its model, so the viewer is known by colour. */
+    color: {
+      type: String as () => Color,
+      required: true,
+    },
     /** The seat's password as `passwordParam` makes it, or '' where the address bar has it. */
     password: {
       type: String,
@@ -115,14 +120,11 @@ export default defineComponent({
     };
   },
   computed: {
-    me(): PublicPlayerModel | undefined {
-      return this.players.find((player) => player.id === this.participantId);
-    },
     isRequester(): boolean {
-      return this.vote !== undefined && this.me !== undefined && this.vote.requester === this.me.color;
+      return this.vote?.requester === this.color;
     },
     canAnswer(): boolean {
-      const mine = this.vote?.votes.find((choice) => choice.color === this.me?.color);
+      const mine = this.vote?.votes.find((choice) => choice.color === this.color);
       return mine?.choice === 'pending';
     },
     title(): string {

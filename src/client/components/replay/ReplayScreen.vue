@@ -4,6 +4,7 @@
     <RewindVoteBanner
       v-if="liveView !== undefined && votesOnRewind"
       :participantId="liveView.id"
+      :color="liveView.color"
       :password="passwordFragment"
       :undoCount="liveView.game.undoCount"
       :players="liveView.players"

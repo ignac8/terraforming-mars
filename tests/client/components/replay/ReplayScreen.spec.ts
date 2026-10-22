@@ -709,12 +709,13 @@ describe('ReplayScreen', () => {
 
     describe('at a table that votes on a rewind', () => {
       const voteMoves = {...liveMoves, canRewind: false, canVoteRewind: true} as const;
-      const red = () => fakePublicPlayerModel({color: 'red', id: 'p-red-id' as any, name: 'red'});
+      // A running game's model leaves the players' ids out.
+      const red = () => fakePublicPlayerModel({color: 'red', id: undefined, name: 'red'});
 
       function voteView(gameOptions: Parameters<typeof fakeGameOptionsModel>[0] = {undoOption: true}, players = 2): PlayerViewModel {
         return playedView({
           waitingFor,
-          players: [fakePublicPlayerModel({color: 'blue', id: playerId}), red()].slice(0, players),
+          players: [fakePublicPlayerModel({color: 'blue', id: undefined}), red()].slice(0, players),
           game: fakeGameModel({gameAge: 3, gameOptions: fakeGameOptionsModel(gameOptions)}),
         });
       }
@@ -745,6 +746,14 @@ describe('ReplayScreen', () => {
           expect(wrapper.findComponent(RewindVoteBanner).exists(), JSON.stringify([gameOptions, players])).equals(shown);
           wrapper.unmount();
         }
+      });
+
+      it('lets the player answer a vote on the page', async () => {
+        const vote = {voteId: 7, status: 'open', requester: 'red', saveId: 11, moveNumber: 2, generation: 1, cards: 'same', votes: [{color: 'blue', choice: 'pending'}], expiresInMs: 60_000};
+        voteAnswer = () => respond({undoCount: 0, vote, mayRequest: true});
+        const wrapper = mountVote(true);
+        await flushPromises();
+        expect(wrapper.find('.rewind-vote-yes').exists()).is.true;
       });
 
       it('gives the banner the players, the undo count and the password of the page', async () => {

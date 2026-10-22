@@ -8,10 +8,10 @@ import {RewindVoteModel, RewindVotePoll} from '@/common/rewind/RewindVoteModel';
 import {PlayerId} from '@/common/Types';
 
 const blueId = 'p-blue-id' as PlayerId;
-const redId = 'p-red-id' as PlayerId;
+// A running game's model leaves the players' ids out.
 const players = [
-  fakePublicPlayerModel({color: 'blue', name: 'Blue', id: blueId}),
-  fakePublicPlayerModel({color: 'red', name: 'Red', id: redId}),
+  fakePublicPlayerModel({color: 'blue', name: 'Blue', id: undefined}),
+  fakePublicPlayerModel({color: 'red', name: 'Red', id: undefined}),
 ];
 
 function openVote(overrides: Partial<RewindVoteModel> = {}): RewindVoteModel {
@@ -68,7 +68,7 @@ describe('RewindVoteBanner', () => {
   });
 
   function mountBanner(props: Record<string, unknown> = {}) {
-    return mount(RewindVoteBanner, {...globalConfig, props: {participantId: blueId, password: '', players, pollMs: 1000, undoCount: 0, ...props}});
+    return mount(RewindVoteBanner, {...globalConfig, props: {participantId: blueId, color: 'blue', password: '', players, pollMs: 1000, undoCount: 0, ...props}});
   }
 
   async function ticks(ms: number) {
@@ -92,8 +92,8 @@ describe('RewindVoteBanner', () => {
   });
 
   it('lets the requester cancel, and offers them no vote', async () => {
-    answers = [answer(poll(openVote({requester: 'blue', votes: [{color: 'red', choice: 'pending'}]})))];
-    const wrapper = mountBanner();
+    answers = [answer(poll(openVote({requester: 'red', votes: [{color: 'blue', choice: 'pending'}]})))];
+    const wrapper = mountBanner({color: 'red'});
     await flushPromises();
     expect(wrapper.find('.rewind-vote-yes').exists()).is.false;
     expect(wrapper.find('.rewind-vote-no').exists()).is.false;
