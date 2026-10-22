@@ -263,7 +263,7 @@ describe('TournamentMode', () => {
     expect(options.initialDraftVariant).is.true;
     expect(options.solarPhaseOption).is.false;
     expect(options.boardName).to.eq(BoardName.THARSIS);
-    expect(options.undoOption).is.false;
+    expect(options.undoOption).is.true;
     expect(options.fastModeOption).is.false;
     expect(options.showOtherPlayersVP).is.false;
     expect(options.playerPasswords).is.true;
@@ -310,7 +310,7 @@ describe('TournamentMode', () => {
       'preludeExtension', 'promoCardsOption', 'randomMA', 'requiresMoonTrackCompletion',
       'requiresVenusTrackCompletion', 'showOtherPlayersVP', 'shuffleMapOption',
       'solarPhaseOption', 'starWarsExpansion', 'turmoilExtension', 'twoCorpsVariant',
-      'underworldExpansion', 'undoOption', 'venusNextExtension',
+      'underworldExpansion', 'venusNextExtension',
     ];
     const passthrough = [
       'aresHazards', // inert: Ares is forced off
@@ -326,6 +326,7 @@ describe('TournamentMode', () => {
       'startingCorporations', // inert: tournament dealing always uses the pool size
       'startingPreludes', // inert: Prelude is forced off
       'tournamentExpansion',
+      'undoOption', // Player undo is the creator's choice, a game with Judge undo and several players drops it in ApiCreateGame
     ];
     expect([...forced, ...passthrough].sort()).deep.eq(Object.keys(DEFAULT_GAME_OPTIONS).sort());
   });

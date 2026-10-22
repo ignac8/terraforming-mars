@@ -258,7 +258,7 @@
                                     <span v-i18n>Merger</span>&nbsp;<a :href="wikiUrls.merger" class="tooltip" v-i18n data-tooltip="Link opens in a new tab/window" target="_blank">&#9432;</a>
                               </label>
                             </template>
-                                                        <input type="checkbox" v-model="undoOption" id="undo-checkbox" :disabled="expansions.tournament">
+                                                        <input type="checkbox" v-model="undoOption" id="undo-checkbox">
                             <label for="undo-checkbox">
                                 <span v-i18n>Player undo</span>&nbsp;<a :href="wikiUrls.allowUndo" class="tooltip" v-i18n data-tooltip="Link opens in a new tab/window" target="_blank">&#9432;</a>
                             </label>
@@ -672,6 +672,18 @@ export default defineComponent({
       },
       immediate: true,
     },
+    // A table with Judge undo has no votes, so the two exclude each other once there is more than one player.
+    // Restored settings that hold both end with Judge undo, as on the server.
+    judgeUndoOn(value: boolean) {
+      if (value && this.playersCount > 1) {
+        this.undoOption = false;
+      }
+    },
+    undoOption(value: boolean) {
+      if (value && this.playersCount > 1 && this.judgeUndoOn) {
+        this.judgeUndo = false;
+      }
+    },
     'expansions.venus': function(value: boolean) {
       this.solarPhaseOption = value;
     },
@@ -708,6 +720,8 @@ export default defineComponent({
     playersCount(value: number) {
       if (value === 1) {
         this.expansions.corpera = true;
+      } else if (this.judgeUndoOn) {
+        this.undoOption = false;
       }
     },
   },
@@ -738,6 +752,10 @@ export default defineComponent({
     undoNeedsPasswords(): boolean {
       return this.undoOption && this.playersCount > 1;
     },
+    /** Judge undo is only on for a tournament game with a judge link. */
+    judgeUndoOn(): boolean {
+      return this.expansions.tournament && this.judgeLink && this.judgeUndo;
+    },
     /** The box shows the lock without overwriting the choice, which comes back when Player undo goes. */
     playerPasswordsChecked: {
       get(): boolean {
@@ -763,7 +781,7 @@ export default defineComponent({
         showOtherPlayersVP: this.showOtherPlayersVP,
         playerPasswords: this.playerPasswordsChecked,
         judgeLink: this.expansions.tournament && this.judgeLink,
-        judgeUndo: this.expansions.tournament && this.judgeLink && this.judgeUndo,
+        judgeUndo: this.judgeUndoOn,
         customCorporationsList: this.customCorporations,
         customColoniesList: this.customColonies,
         customCeos: this.customCeos,
@@ -883,7 +901,6 @@ export default defineComponent({
       if (this.boards.length === 0) {
         this.boards = [BoardName.THARSIS];
       }
-      this.undoOption = false;
       this.fastModeOption = false;
       this.showOtherPlayersVP = false;
       this.playerPasswords = true;

@@ -10,6 +10,7 @@ import {SimpleGameModel} from '../../src/common/models/SimpleGameModel';
 import {FakeClock} from '../common/FakeClock';
 import {CardName} from '../../src/common/cards/CardName';
 import {isJudgeId} from '../../src/common/Types';
+import {canBrowseHistory, canRewind, canVoteRewind} from '../../src/server/rewind/access';
 
 // A complete create-game request for a one-player game.
 function newGameConfigForTest(): NewGameConfig {
@@ -210,7 +211,6 @@ describe('ApiCreateGame', () => {
     const game = await scaffolding.ctx.gameLoader.getGame(model.id);
     expect(game).is.not.undefined;
     const options = game!.gameOptions;
-    expect(options.undoOption).is.false;
     expect(options.fastModeOption).is.false;
     expect(options.showOtherPlayersVP).is.false;
     expect(options.playerPasswords).is.true;
@@ -262,7 +262,6 @@ describe('ApiCreateGame', () => {
     const model = JSON.parse(res.content) as SimpleGameModel;
     const game = await scaffolding.ctx.gameLoader.getGame(model.id);
     expect(game!.gameOptions.tournamentExpansion).is.true;
-    expect(game!.gameOptions.undoOption).is.false;
     expect(game!.players.map((p) => p.handicap)).deep.eq([0, 0]);
   });
 
@@ -306,6 +305,56 @@ describe('ApiCreateGame', () => {
           expect(game!.gameOptions.judgeUndo, `${tournament} ${judgeLink} ${judgeUndo}`).eq(tournament && judgeLink && judgeUndo);
         }
       }
+    }
+  });
+
+  it('keeps Player undo in a tournament game, except beside Judge undo at a table', async () => {
+    const base = newGameConfigForTest();
+    const two = [
+      {name: 'a', color: 'red', beginner: false, handicap: 0, first: true},
+      {name: 'b', color: 'blue', beginner: false, handicap: 0, first: false},
+    ];
+    const expansions = {...base.expansions, tournament: true};
+    for (const [label, players, judge, expected] of [
+      ['multiplayer', two, false, true],
+      ['solo', two.slice(0, 1), false, true],
+      ['multiplayer with Judge undo', two, true, false],
+      ['solo with Judge undo', two.slice(0, 1), true, true],
+    ] as const) {
+      req = new MockRequest();
+      res = new MockResponse();
+      scaffolding = new RouteTestScaffolding(req);
+      await postConfig({...base, expansions, players: [...players], undoOption: true, judgeLink: judge, judgeUndo: judge});
+
+      expect(res.statusCode, label).eq(statusCode.ok);
+      const model = JSON.parse(res.content) as SimpleGameModel;
+      const game = await scaffolding.ctx.gameLoader.getGame(model.id);
+      const options = game!.gameOptions;
+      expect(options.undoOption, label).eq(expected);
+      expect(options.judgeUndo, label).eq(judge);
+      expect(options.playerPasswords, label).is.true;
+    }
+  });
+
+  it('lets a player of a multiplayer tournament game vote on a rewind and the solo player rewind', async () => {
+    const base = newGameConfigForTest();
+    const expansions = {...base.expansions, tournament: true};
+    const two = [
+      {name: 'a', color: 'red', beginner: false, handicap: 0, first: true},
+      {name: 'b', color: 'blue', beginner: false, handicap: 0, first: false},
+    ];
+    for (const [label, players] of [['multiplayer', two], ['solo', two.slice(0, 1)]] as const) {
+      req = new MockRequest();
+      res = new MockResponse();
+      scaffolding = new RouteTestScaffolding(req);
+      await postConfig({...base, expansions, players: [...players], undoOption: true});
+
+      const model = JSON.parse(res.content) as SimpleGameModel;
+      const game = await scaffolding.ctx.gameLoader.getGame(model.id);
+      const player = game!.players[0];
+      expect(canVoteRewind(game!, player.id), label).eq(players.length > 1);
+      expect(canRewind(game!, player.id), label).eq(players.length === 1);
+      expect(canBrowseHistory(game!, player.id), label).is.true;
     }
   });
 

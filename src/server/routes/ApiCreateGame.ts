@@ -133,6 +133,9 @@ export class ApiCreateGame extends Handler {
         }
       }
 
+      // A table with Judge undo has no votes, so Judge undo wins over Player undo there. A solo game may have both.
+      const judgeUndo = tournament && gameReq.judgeLink === true && gameReq.judgeUndo === true;
+
       const boardName = gameReq.boards[Math.floor(Math.random() * gameReq.boards.length)];
 
       const gameOptions: GameOptions = {
@@ -190,8 +193,8 @@ export class ApiCreateGame extends Handler {
         deltaProjectExpansion: gameReq.expansions.deltaProject,
         tournamentExpansion: tournament,
         judgeLink: tournament && gameReq.judgeLink === true,
-        judgeUndo: tournament && gameReq.judgeLink === true && gameReq.judgeUndo === true,
-        undoOption: gameReq.undoOption,
+        judgeUndo,
+        undoOption: gameReq.undoOption && !(judgeUndo && players.length > 1),
         venusNextExtension: gameReq.expansions.venus,
       };
 
