@@ -4,6 +4,9 @@ import {afterEach, beforeEach, vi} from 'vitest';
 import {globalConfig} from '../getLocalVue';
 import RewindVoteBanner from '@/client/components/replay/RewindVoteBanner.vue';
 import {fakePublicPlayerModel} from '../testHelpers';
+import {setTranslationContext} from '@/client/directives/i18n';
+import {PreferencesManager} from '@/client/utils/PreferencesManager';
+import {ViewModel} from '@/common/models/PlayerModel';
 import {RewindVoteModel, RewindVotePoll} from '@/common/rewind/RewindVoteModel';
 import {PlayerId} from '@/common/Types';
 
@@ -145,6 +148,25 @@ describe('RewindVoteBanner', () => {
     } finally {
       wrapper.unmount();
       stack.remove();
+    }
+  });
+
+  it('leaves a player name that is also a word, like Red, untranslated in another language', async () => {
+    PreferencesManager.INSTANCE.set('lang', 'pl');
+    (window as any)._translations = {
+      '${0} asks to rewind to before move ${1} of generation ${2}.': '${0} prosi o cofnięcie gry do stanu sprzed ruchu ${1} w pokoleniu ${2}.',
+      'Red': 'Czerwony',
+    };
+    // The page sets this for the players it shows.
+    setTranslationContext({players} as ViewModel);
+    answers = [answer(poll(openVote({requester: 'red'})))];
+    try {
+      const wrapper = mountBanner();
+      await flushPromises();
+      expect(wrapper.find('.rewind-vote-title').text()).equals('Red prosi o cofnięcie gry do stanu sprzed ruchu 3 w pokoleniu 2.');
+    } finally {
+      PreferencesManager.INSTANCE.set('lang', 'en');
+      delete (window as any)._translations;
     }
   });
 

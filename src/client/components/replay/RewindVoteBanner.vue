@@ -33,7 +33,8 @@
 <script lang="ts">
 import {defineComponent} from 'vue';
 import {translateRefusal, fetchVote, postVote, seatPasswordParam, VoteBody} from '@/client/utils/fetchReplay';
-import {translateTextWithParams} from '@/client/directives/i18n';
+import {translateMessage, translateTextWithParams} from '@/client/directives/i18n';
+import {LogMessageDataType} from '@/common/logs/LogMessageDataType';
 import {paths} from '@/common/app/paths';
 import {Color} from '@/common/Color';
 import {PublicPlayerModel} from '@/common/models/PlayerModel';
@@ -137,8 +138,15 @@ export default defineComponent({
       if (vote === undefined) {
         return '';
       }
-      return translateTextWithParams('${0} asks to rewind to before move ${1} of generation ${2}.', [
-        this.nameOf(vote.requester), String(vote.moveNumber), String(vote.generation)]);
+      // A player's name is a PLAYER datum, which the translation leaves alone. A raw string would turn a name like "Red" into the colour.
+      return translateMessage({
+        message: '${0} asks to rewind to before move ${1} of generation ${2}.',
+        data: [
+          {type: LogMessageDataType.PLAYER, value: vote.requester},
+          {type: LogMessageDataType.RAW_STRING, value: String(vote.moveNumber)},
+          {type: LogMessageDataType.RAW_STRING, value: String(vote.generation)},
+        ],
+      });
     },
     countdown(): string {
       const left = Math.max(0, Math.ceil(((this.vote?.expiresInMs ?? 0) - (this.now - this.receivedAt)) / 1000));
@@ -151,7 +159,10 @@ export default defineComponent({
       switch (vote?.status) {
       case 'declined': {
         const no = vote.votes.find((choice) => choice.choice === 'no');
-        return translateTextWithParams('${0} declined the rewind.', [no === undefined ? '' : this.nameOf(no.color)]);
+        return translateMessage({
+          message: '${0} declined the rewind.',
+          data: [no === undefined ? {type: LogMessageDataType.RAW_STRING, value: ''} : {type: LogMessageDataType.PLAYER, value: no.color}],
+        });
       }
       case 'cancelled':
         return this.$t('The rewind request was cancelled.');
