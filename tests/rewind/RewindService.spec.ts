@@ -275,7 +275,7 @@ describe('RewindService', () => {
     await game.finishing;
     // The results INSERT settles late, as it can on PostgreSQL.
     const saveGameResults = db.saveGameResults.bind(db);
-    db.saveGameResults = (...args) => new Promise((resolve) => setTimeout(() => {
+    db.saveGameResults = (...args) => new Promise<void>((resolve) => setTimeout(() => {
       saveGameResults(...args);
       resolve();
     }, 20));
