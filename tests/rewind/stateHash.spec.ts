@@ -3,7 +3,7 @@ import {testGame} from '../TestingUtils';
 import {sameState, stateHash} from '../../src/server/rewind/stateHash';
 
 describe('stateHash', () => {
-  it('ignores clocks, save ids and log timestamps', () => {
+  it('ignores clocks, save ids, log timestamps and seat passwords', () => {
     const [game] = testGame(1);
     const a = game.serialize();
     const b = structuredClone(a);
@@ -13,6 +13,8 @@ describe('stateHash', () => {
     b.gameAge += 1;
     b.inputs = [];
     b.gameLog[0].timestamp += 1;
+    b.judgePassword = 'judge';
+    b.players[0].password = 'player';
     expect(stateHash(b)).eq(stateHash(a));
     expect(sameState(a, b)).is.true;
     b.players[0].megaCredits += 1;
