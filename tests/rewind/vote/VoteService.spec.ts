@@ -482,8 +482,9 @@ describe('VoteService', () => {
 
       await call(opened.vote!.voteId);
 
-      expect(game.rewindRequestLimits?.players, name).deep.eq([p2.id]);
-      expect(game.rewindVote?.requester === p2.id, name).is.false;
+      const {rewindRequestLimits, rewindVote} = game as IGame;
+      expect(rewindRequestLimits?.players, name).deep.eq([p2.id]);
+      expect(rewindVote?.requester === p2.id, name).is.false;
       expect(logs, name).includes(`rewind vote ${opened.vote!.voteId} of ${game.id} expired`);
     }
   });
