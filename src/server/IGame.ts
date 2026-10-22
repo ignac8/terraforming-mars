@@ -100,6 +100,11 @@ export interface IGame extends Logger {
    * Writes the table state (TableStatePatch) into this game's own save row, after every write of this game already started.
    * A sandbox or retired game writes nothing, and a row that is no longer the newest is left alone; both resolve.
    * Rejects only when the database call throws. The next patch or save carries the whole state again.
+   *
+   * Call it only on the object GameLoader currently serves. A player undo (`restoreGameAt`) or a LoadGame
+   * rollback replaces the object without retiring it, and once the new object writes the old object's row id
+   * again, the newest-row check no longer keeps the old object's patch off it. Callers check that the object
+   * is still the live game first (V4's isLive guard).
    */
   persistTableState(): Promise<void>;
   generation: number;
