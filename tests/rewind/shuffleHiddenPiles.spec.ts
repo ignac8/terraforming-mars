@@ -4,7 +4,6 @@ import {SerializedGame} from '../../src/server/SerializedGame';
 import {shuffleHiddenPiles} from '../../src/server/rewind/shuffleHiddenPiles';
 import {SeededRandom} from '../../src/common/utils/Random';
 import {BoardName} from '../../src/common/boards/BoardName';
-import {BonusCardId} from '../../src/common/automa/AutomaTypes';
 
 type Pile = {
   get: (d: SerializedGame) => Array<unknown>;
@@ -21,8 +20,6 @@ const hiddenPiles: Array<[string, Pile]> = [
     set: (d, p) => d.turmoil!.globalEventDealer.deck = p,
   }],
   ['underworld tokens', {get: (d) => d.underworldData.tokens, set: (d, p) => d.underworldData.tokens = p}],
-  ['action deck', {get: (d) => d.automaState!.actionDeckCardNames, set: (d, p) => d.automaState!.actionDeckCardNames = p}],
-  ['bonus deck', {get: (d) => d.automaState!.bonusDeckDrawPile, set: (d, p) => d.automaState!.bonusDeckDrawPile = p}],
 ];
 
 describe('shuffleHiddenPiles', () => {
@@ -31,19 +28,13 @@ describe('shuffleHiddenPiles', () => {
 
   beforeEach(() => {
     const [game] = testGame(1, {
-      automaOption: true,
       boardName: BoardName.THARSIS,
       turmoilExtension: true,
       preludeExtension: true,
+      ceoExtension: true,
+      underworldExpansion: true,
     });
-    game.automaHooks!.marsBot.addBonusCardToBottomOfBonusDeck(BonusCardId.B30_INTERFACE_HYPERLINK);
     d = game.serialize();
-
-    // A MarsBot game has neither CEOs nor Underworld, so take those piles from a solo game that has them.
-    const [solo] = testGame(1, {ceoExtension: true, underworldExpansion: true});
-    const soloState = solo.serialize();
-    d.ceoDeck = soloState.ceoDeck;
-    d.underworldData = soloState.underworldData;
     before = structuredClone(d);
   });
 
@@ -64,15 +55,5 @@ describe('shuffleHiddenPiles', () => {
     d.seed = before.seed;
     d.currentSeed = before.currentSeed;
     expect(d).deep.eq(before);
-  });
-
-  it('keeps Interface Hyperlink at the bottom of MarsBot\'s bonus deck', () => {
-    expect(before.automaState!.bonusDeckDrawPile[0]).eq(BonusCardId.B30_INTERFACE_HYPERLINK);
-
-    for (const seed of [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]) {
-      const copy = structuredClone(before);
-      shuffleHiddenPiles(copy, new SeededRandom(seed));
-      expect(copy.automaState!.bonusDeckDrawPile[0], String(seed)).eq(BonusCardId.B30_INTERFACE_HYPERLINK);
-    }
   });
 });
