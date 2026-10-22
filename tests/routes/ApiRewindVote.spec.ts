@@ -222,6 +222,16 @@ describe('ApiRewindVote', () => {
     }
   });
 
+  it('refuses a spectator id and a judge id', async () => {
+    await t.start({judgeLink: true});
+    for (const id of [t.game.spectatorId, t.game.judgeId!]) {
+      for (const res of [await t.get(id), await t.post(id, {action: 'request', saveId: target, cards: 'same'})]) {
+        expect(res.statusCode, id).eq(statusCode.badRequest);
+        expect(res.content, id).eq('Bad request: invalid player id');
+      }
+    }
+  });
+
   it('refuses a body that is not a vote', async () => {
     const bodies = [
       '{}',

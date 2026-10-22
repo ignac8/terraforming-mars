@@ -11,7 +11,7 @@ import {LoadGame} from '../../../src/server/routes/LoadGame';
 import {PlayerInput} from '../../../src/server/routes/PlayerInput';
 import {Phase} from '../../../src/common/Phase';
 import {Clock} from '../../../src/common/Timer';
-import {PlayerId} from '../../../src/common/Types';
+import {ParticipantId, PlayerId} from '../../../src/common/Types';
 import {RewindVotePoll} from '../../../src/common/rewind/RewindVoteModel';
 import {cast} from '../../../src/common/utils/utils';
 import {restoreTestDatabase, restoreTestGameLoader, setTestDatabase, setTestGameLoader} from '../../testing/setup';
@@ -112,11 +112,11 @@ export class VoteTable {
     return game;
   }
 
-  public get(id: PlayerId, query = ''): Promise<MockResponse> {
+  public get(id: ParticipantId, query = ''): Promise<MockResponse> {
     return this.call(ApiRewindVote.INSTANCE, `/api/rewind/vote?id=${id}${query}`, 'get');
   }
 
-  public post(id: PlayerId, body: object | string, query = ''): Promise<MockResponse> {
+  public post(id: ParticipantId, body: object | string, query = ''): Promise<MockResponse> {
     return this.call(ApiRewindVote.INSTANCE, `/api/rewind/vote?id=${id}${query}`, 'post', typeof body === 'string' ? body : JSON.stringify(body));
   }
 
