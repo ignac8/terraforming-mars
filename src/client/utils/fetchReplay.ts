@@ -1,7 +1,7 @@
 import {paths} from '@/common/app/paths';
 import {PlayerViewModel} from '@/common/models/PlayerModel';
 import {ReplayMovesModel, ReplayViewAs, ReplayViewModel, RewindCards} from '@/common/replay/ReplayModel';
-import {isJudgeId, ParticipantId, PlayerId} from '@/common/Types';
+import {isJudgeId, isPlayerId, ParticipantId, PlayerId} from '@/common/Types';
 import {translateText} from '@/client/directives/i18n';
 import {passwordParam, passwordQuery} from '@/client/utils/playerPassword';
 
@@ -34,9 +34,12 @@ function addressBarPasswordParam(): string {
 
 // A claimed seat needs its password, sent as a query parameter like every other request of the
 // seat. A judge link takes it from the address bar. A player's own page passes the one it was given,
-// and the replay page has none to pass, so it reads the address bar. A spectator sends none.
+// and the replay page has none to pass, so it reads the address bar. A spectator has no seat.
 function seatPasswordParam(id: ParticipantId, password: string | undefined): string {
-  return isJudgeId(id) || password === undefined ? addressBarPasswordParam() : passwordQuery(password);
+  if (isJudgeId(id) || (isPlayerId(id) && password === undefined)) {
+    return addressBarPasswordParam();
+  }
+  return isPlayerId(id) ? passwordQuery(password) : '';
 }
 
 /** `password` is the seat's, from the live game page. */

@@ -44,19 +44,33 @@ describe('fetchReplay', () => {
     expect(urls).deep.eq(['api/replay/moves?id=j-judge-id']);
   });
 
-  for (const id of ['s-spectator-id', 'p-player-id'] as const) {
-    it(`does not send a password for ${id}`, async () => {
-      window.history.replaceState({}, '', `/replay?id=${id}&password=secret`);
+  it('does not send a password for a spectator', async () => {
+    window.history.replaceState({}, '', '/replay?id=s-spectator-id&password=secret');
 
-      await fetchReplayMoves(id);
-      await fetchReplayView(id, 3, 'all');
+    await fetchReplayMoves('s-spectator-id', 'secret');
+    await fetchReplayView('s-spectator-id', 3, 'all', 'secret');
 
-      expect(urls).deep.eq([
-        `api/replay/moves?id=${id}`,
-        `api/replay/view?id=${id}&save=3&as=all`,
-      ]);
-    });
-  }
+    expect(urls).deep.eq([
+      'api/replay/moves?id=s-spectator-id',
+      'api/replay/view?id=s-spectator-id&save=3&as=all',
+    ]);
+  });
+
+  it('sends a player the seat password it was given, or else the one in the address bar', async () => {
+    window.history.replaceState({}, '', '/replay?id=p-player-id&password=from-address');
+
+    await fetchReplayMoves('p-player-id', 'a&b');
+    await fetchReplayView('p-player-id', 3, 'blue', 'a&b');
+    await fetchReplayMoves('p-player-id');
+    await fetchReplayView('p-player-id', 3, 'blue');
+
+    expect(urls).deep.eq([
+      'api/replay/moves?id=p-player-id&password=a%26b',
+      'api/replay/view?id=p-player-id&save=3&as=blue&password=a%26b',
+      'api/replay/moves?id=p-player-id&password=from-address',
+      'api/replay/view?id=p-player-id&save=3&as=blue&password=from-address',
+    ]);
+  });
 
   describe('postRewind', () => {
     const playerId = 'p-player-id';
