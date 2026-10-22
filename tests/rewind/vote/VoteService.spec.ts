@@ -197,8 +197,8 @@ describe('VoteService', () => {
   });
 
   it('refuses a move that is not the requester\'s own, or whose player is not known, and stores nothing', async () => {
-    for (const run of [{asker: p3, own: true}, {asker: p2, own: false}]) {
-      if (!run.own) {
+    for (const run of [{asker: p3, reason: 'another player'}, {asker: p2, reason: 'unknown player'}]) {
+      if (run.reason === 'unknown player') {
         // A save written before answers were recorded.
         delete (db.games.get(game.id) as Array<SerializedGame>)[saveId + 1].inputs;
         clearReplayCache();
@@ -206,10 +206,10 @@ describe('VoteService', () => {
 
       const refused = await refusal(service.request(game, run.asker, saveId, 'same'));
 
-      expect(refused.detail, String(run.own)).eq('You can only ask to rewind your own moves.');
-      expect(game.rewindVote, String(run.own)).is.undefined;
-      expect(persists, String(run.own)).is.empty;
-      expect(timers, String(run.own)).is.empty;
+      expect(refused.detail, run.reason).eq('You can only ask to rewind your own moves.');
+      expect(game.rewindVote, run.reason).is.undefined;
+      expect(persists, run.reason).is.empty;
+      expect(timers, run.reason).is.empty;
     }
   });
 
