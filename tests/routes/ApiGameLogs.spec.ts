@@ -106,19 +106,21 @@ describe('ApiGameLogs', () => {
   });
 
   for (const query of ['', '&generation=1']) {
-    it(`hides the abandoned lines of a rewind${query}`, async () => {
-      const [game, player] = testGame(1);
-      await scaffolding.ctx.gameLoader.add(game);
-      game.gameLog.length = 0;
-      for (let i = 0; i < 5; i++) {
-        game.log(`Log ${i}`);
-      }
-      game.rewinds = [{saveId: 3, restoredSaveId: 1, logStart: 1, logEnd: 3}];
+    for (const viewer of ['player', 'judge'] as const) {
+      it(`hides the abandoned lines of a rewind from the ${viewer}${query}`, async () => {
+        const [game, player] = testGame(1, {judgeLink: true});
+        await scaffolding.ctx.gameLoader.add(game);
+        game.gameLog.length = 0;
+        for (let i = 0; i < 5; i++) {
+          game.log(`Log ${i}`);
+        }
+        game.rewinds = [{saveId: 3, restoredSaveId: 1, logStart: 1, logEnd: 3}];
 
-      scaffolding.url = '/api/game/logs?id=' + player.id + query;
-      await scaffolding.get(ApiGameLogs.INSTANCE, res);
-      expect(JSON.parse(res.content).map((m: {message: string}) => m.message)).deep.eq(['Log 0', 'Log 3', 'Log 4']);
-    });
+        scaffolding.url = '/api/game/logs?id=' + (viewer === 'judge' ? game.judgeId : player.id) + query;
+        await scaffolding.get(ApiGameLogs.INSTANCE, res);
+        expect(JSON.parse(res.content).map((m: {message: string}) => m.message)).deep.eq(['Log 0', 'Log 3', 'Log 4']);
+      });
+    }
   }
 
   it('hides the abandoned lines of a rewind from the end of game log', () => {
