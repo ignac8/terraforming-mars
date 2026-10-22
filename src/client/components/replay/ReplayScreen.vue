@@ -115,7 +115,7 @@ type DataModel = {
   canRewind: boolean;
   /** Whether the moves answer allows asking the other players to rewind to a move. */
   canVoteRewind: boolean;
-  /** The player has asked for a rewind this generation already, or one is open. */
+  /** The player is barred from asking for a rewind until the next generation. */
   requestBlocked: boolean;
   /** The game age the moves were read at, so the live page knows when they are out of date. */
   movesGameAge: number | undefined;
