@@ -98,6 +98,7 @@ export class Server {
       tags: game.tags,
       turmoil: getTurmoilModel(game),
       undoCount: game.undoCount,
+      rewindCount: game.rewinds.length,
       venusScaleLevel: game.getVenusScaleLevel(),
       frozen: game.frozen,
     };

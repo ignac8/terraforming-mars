@@ -27,10 +27,11 @@ export type RequestBlock = 'frozen' | 'vote-open' | 'barred';
 export const VOTE_ALREADY_OPEN = 'A rewind vote is already open.';
 
 /**
- * What the vote route answers. `undoCount` rising tells a page that a rewind happened. `mayRequest` is false while
- * `blocked` has a reason, and for a player who has no say in the table's rewinds.
+ * What the vote route answers. `rewindCount` rising tells a page that a rewind happened, which a freeze doesn't change
+ * the way it does the undo count. `mayRequest` is false while `blocked` has a reason, and for a player who has no say in
+ * the table's rewinds.
  */
-export type RewindVotePoll = {undoCount: number; vote: RewindVoteModel | undefined; mayRequest: boolean; blocked?: RequestBlock};
+export type RewindVotePoll = {rewindCount: number; vote: RewindVoteModel | undefined; mayRequest: boolean; blocked?: RequestBlock};
 
 /**
  * How often a page of a finished game polls the vote. A finished game is evicted from memory soon after it ends,

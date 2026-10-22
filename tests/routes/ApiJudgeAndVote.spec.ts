@@ -2,6 +2,7 @@ import {expect} from 'chai';
 import {IPlayer} from '../../src/server/IPlayer';
 import {freezeGame} from '../../src/server/rewind/freeze';
 import {isTableLocked} from '../../src/server/rewind/tableLock';
+import {Server} from '../../src/server/models/ServerModel';
 import {RewindVotePoll} from '../../src/common/rewind/RewindVoteModel';
 import {statusCode} from '../../src/common/http/statusCode';
 import {flush, VoteTable} from '../rewind/vote/voteTable';
@@ -54,6 +55,26 @@ describe('a judge at a table that votes', () => {
     expect((await t.judgeFreeze(false)).statusCode).eq(statusCode.ok);
     expect((await t.poll(t.p2.id, await seat(t.p2))).mayRequest).is.true;
     await request();
+  });
+
+  it('changes the rewind count a page reloads for on a rewind, and not on a freeze or an unfreeze', async () => {
+    // What the vote poll says, and what the page's own game model says.
+    const counts = async () => {
+      const live = await t.live();
+      return [(await t.poll(t.p1.id, await seat(t.p1))).rewindCount, Server.getPlayerModel(live.getPlayerById(t.p1.id)).game.rewindCount];
+    };
+    const before = await counts();
+
+    await t.judgeFreeze(true);
+    const undoCount = (await t.live()).undoCount;
+    expect(await counts()).deep.eq(before);
+    await t.judgeFreeze(false);
+    expect(await counts()).deep.eq(before);
+    // A freeze does change the undo count, which is why a page cannot reload for that.
+    expect((await t.live()).undoCount).is.greaterThan(undoCount);
+
+    expect((await t.judgeRewind((await t.moves()).slice(-2)[0])).statusCode).eq(statusCode.ok);
+    expect(await counts()).deep.eq([before[0] + 1, before[1] + 1]);
   });
 
   it('refuses a request while the game is frozen', async () => {

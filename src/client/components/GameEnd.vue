@@ -5,7 +5,7 @@
         :participantId="playerId"
         :color="participant.color"
         :password="seatPassword"
-        :undoCount="game.undoCount"
+        :rewindCount="game.rewindCount"
         :players="participant.players"
         :pollMs="votePollMs"
         :replayUrl="replayUrl"/>

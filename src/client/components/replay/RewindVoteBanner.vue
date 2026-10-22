@@ -51,7 +51,7 @@ type DataModel = {
   error: string | undefined;
   /** An answer to the vote is on its way. */
   acting: boolean;
-  /** What the table's undo count was when this banner first heard of it, for a page that was not given one. */
+  /** How often the table had been rewound when this banner first heard of it, for a page that was not given the count. */
   baseline: number | undefined;
   /** Numbers requests so that a slow answer never replaces a newer one. */
   latestRequest: number;
@@ -82,10 +82,10 @@ export default defineComponent({
       required: true,
     },
     /**
-     * The undo count of the game the page shows. A page that shows an old save has no count of its own,
+     * How often the table had been rewound when the page got its game. A page that shows an old save has no count of its own,
      * so it leaves this out, and the first answer is what it compares the later ones with.
      */
-    undoCount: {
+    rewindCount: {
       type: Number,
       default: undefined,
     },
@@ -181,8 +181,8 @@ export default defineComponent({
       if (this.stopped) {
         return;
       }
-      this.baseline ??= this.undoCount ?? answer.undoCount;
-      if (answer.undoCount !== (this.undoCount ?? this.baseline)) {
+      this.baseline ??= this.rewindCount ?? answer.rewindCount;
+      if (answer.rewindCount !== (this.rewindCount ?? this.baseline)) {
         // The table was rewound, so this page shows a game that no longer exists.
         this.stop();
         window.location.href = `${paths.PLAYER}?id=${this.participantId}${seatPasswordParam(this.participantId, this.password)}`;

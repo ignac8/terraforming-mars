@@ -30,7 +30,7 @@ function openVote(overrides: Partial<RewindVoteModel> = {}): RewindVoteModel {
 }
 
 function poll(vote: RewindVoteModel | undefined, overrides: Partial<RewindVotePoll> = {}): RewindVotePoll {
-  return {undoCount: 0, vote, mayRequest: true, ...overrides};
+  return {rewindCount: 0, vote, mayRequest: true, ...overrides};
 }
 
 describe('RewindVoteBanner', () => {
@@ -68,7 +68,7 @@ describe('RewindVoteBanner', () => {
   });
 
   function mountBanner(props: Record<string, unknown> = {}) {
-    return mount(RewindVoteBanner, {...globalConfig, props: {participantId: blueId, color: 'blue', password: '', players, pollMs: 1000, undoCount: 0, ...props}});
+    return mount(RewindVoteBanner, {...globalConfig, props: {participantId: blueId, color: 'blue', password: '', players, pollMs: 1000, rewindCount: 0, ...props}});
   }
 
   async function ticks(ms: number) {
@@ -240,8 +240,8 @@ describe('RewindVoteBanner', () => {
 
   describe('after a rewind', () => {
     it('opens the game page again when the undo count of the table is not the page\'s', async () => {
-      answers = [answer(poll(undefined)), answer(poll(undefined, {undoCount: 1}))];
-      mountBanner({password: '&password=pw', undoCount: 0});
+      answers = [answer(poll(undefined)), answer(poll(undefined, {rewindCount: 1}))];
+      mountBanner({password: '&password=pw', rewindCount: 0});
       await flushPromises();
       expect(window.location.href).to.equal('http://localhost/player');
       await ticks(1000);
@@ -249,8 +249,8 @@ describe('RewindVoteBanner', () => {
     });
 
     it('takes the first answer as what the page has when it is given no count', async () => {
-      answers = [answer(poll(undefined, {undoCount: 4})), answer(poll(undefined, {undoCount: 4})), answer(poll(undefined, {undoCount: 5}))];
-      mountBanner({undoCount: undefined});
+      answers = [answer(poll(undefined, {rewindCount: 4})), answer(poll(undefined, {rewindCount: 4})), answer(poll(undefined, {rewindCount: 5}))];
+      mountBanner({rewindCount: undefined});
       await flushPromises();
       await ticks(1000);
       expect(window.location.href).to.equal('http://localhost/player');

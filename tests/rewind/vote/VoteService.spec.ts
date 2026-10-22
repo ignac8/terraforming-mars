@@ -10,6 +10,7 @@ import {SelectSpace} from '../../../src/server/inputs/SelectSpace';
 import {clearReplayCache, getReplayMoves} from '../../../src/server/replay/ReplayService';
 import {RouteError} from '../../../src/server/routes/RouteError';
 import {RESTARTED_BEFORE_REWIND, VoteEffects, VoteService, voteMetrics} from '../../../src/server/rewind/vote/VoteService';
+import {RewindRecord} from '../../../src/server/rewind/RewindRecord';
 import {ENDED_VOTE_SHOWN_MS, VOTE_EXPIRY_MS} from '../../../src/server/rewind/vote/RewindVote';
 import {RewindCards} from '../../../src/common/replay/ReplayModel';
 import {RewindVotePoll} from '../../../src/common/rewind/RewindVoteModel';
@@ -164,6 +165,7 @@ describe('VoteService', () => {
     saveId3 = history.moves[2].saveId;
     restored = Object.create(game);
     restored.undoCount = game.undoCount + 1;
+    restored.rewinds = [...game.rewinds, {} as RewindRecord];
     restored.rewindVote = undefined;
   });
 
@@ -226,7 +228,7 @@ describe('VoteService', () => {
 
     expect(rewinds).has.length(1);
     expect(rewinds[0]).deep.include({game, saveId, cards: 'shuffle', requester: p2});
-    expect(poll.undoCount).eq(game.undoCount + 1);
+    expect(poll.rewindCount).eq(game.rewinds.length + 1);
     expect(poll.vote!.status).eq('passed');
     expect(await outcomes('passed')).eq(passedBefore + 1);
   });

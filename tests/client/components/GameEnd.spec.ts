@@ -55,7 +55,7 @@ describe('GameEnd', () => {
             password: '0123456789ab',
             thisPlayer: blue,
             players,
-            game: fakeGameModel({undoCount: 4, gameOptions: fakeGameOptionsModel(options)}),
+            game: fakeGameModel({undoCount: 4, rewindCount: 3, gameOptions: fakeGameOptionsModel(options)}),
           }),
         },
       });
@@ -82,7 +82,7 @@ describe('GameEnd', () => {
         participantId: 'p-blue-id',
         color: 'blue',
         password: '&password=0123456789ab',
-        undoCount: 4,
+        rewindCount: 3,
         pollMs: 10_000,
         replayUrl: 'replay?id=p-blue-id&password=0123456789ab',
       });

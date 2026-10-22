@@ -6,7 +6,7 @@
       :participantId="liveView.id"
       :color="liveView.color"
       :password="passwordFragment"
-      :undoCount="liveView.game.undoCount"
+      :rewindCount="liveView.game.rewindCount"
       :players="liveView.players"
       ref="voteBanner"
       @show="showMove"
