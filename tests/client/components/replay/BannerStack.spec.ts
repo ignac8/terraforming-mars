@@ -5,11 +5,11 @@ import {globalConfig} from '../getLocalVue';
 import BannerStack from '@/client/components/replay/BannerStack.vue';
 
 describe('BannerStack', () => {
-  let resize: ResizeObserverCallback;
+  let resize: (entries: Array<unknown>) => void;
 
   beforeEach(() => {
     vi.stubGlobal('ResizeObserver', class {
-      constructor(callback: ResizeObserverCallback) {
+      constructor(callback: typeof resize) {
         resize = callback;
       }
       observe() {}
@@ -28,7 +28,7 @@ describe('BannerStack', () => {
     expect(spacer()).includes('height: 0px');
 
     for (const height of [96.4, 0]) {
-      resize([{contentRect: {height}} as ResizeObserverEntry], {} as ResizeObserver);
+      resize([{contentRect: {height}}]);
       await wrapper.vm.$nextTick();
       expect(spacer()).includes(`height: ${Math.ceil(height)}px`);
     }
