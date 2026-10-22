@@ -61,7 +61,7 @@
       :disabled="rewinding"
       :blocked="requestBlocked"
       :clocks="clocks"
-      @rewind="(cards, clocks) => $emit('rewind', cards, clocks)"
+      @rewind="(cards, rewindClocks) => $emit('rewind', cards, rewindClocks)"
       @request="(cards) => $emit('request', cards)"/>
 
     <!-- Errors, rendered inside the panel: a refused rewind under the rewind controls, and others in a box
