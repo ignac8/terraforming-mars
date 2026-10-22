@@ -896,7 +896,8 @@ describe('ReplayScreen', () => {
         for (const [gameOptions, players, shown] of [
           [{undoOption: true}, 2, true],
           [{undoOption: false}, 2, false],
-          [{undoOption: true, judgeUndo: true}, 2, false],
+          [{undoOption: true, judgeUndo: true}, 2, true],
+          [{undoOption: false, judgeUndo: true}, 2, false],
           [{undoOption: true}, 1, false],
         ] as const) {
           const wrapper = mountVote(false, voteView(gameOptions, players));

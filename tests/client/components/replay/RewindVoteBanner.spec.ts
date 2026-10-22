@@ -176,13 +176,26 @@ describe('RewindVoteBanner', () => {
   });
 
   it('says why a vote ended, and offers nothing to do about it', async () => {
-    for (const status of ['rewinding', 'passed', 'declined', 'cancelled', 'expired', 'moved-on', 'failed'] as const) {
+    for (const status of ['rewinding', 'passed', 'declined', 'cancelled', 'expired', 'moved-on', 'froze', 'judge-rewound', 'failed'] as const) {
       answers = [answer(poll(openVote({status, expiresInMs: 0, reason: 'That moment can\'t be restored. Nothing was changed.'})))];
       const wrapper = mountBanner();
       await flushPromises();
       expect(wrapper.find('.rewind-vote-ended').exists(), status).is.true;
       expect(wrapper.find('.rewind-vote-yes').exists(), status).is.false;
       expect(wrapper.find('.rewind-vote-show').exists(), status).is.false;
+      wrapper.unmount();
+    }
+  });
+
+  it('says which judge action ended a vote', async () => {
+    for (const [status, line] of [
+      ['froze', 'The judge froze the game, so the rewind request ended.'],
+      ['judge-rewound', 'The judge rewound the game, so the rewind request ended.'],
+    ] as const) {
+      answers = [answer(poll(openVote({status, expiresInMs: 0})))];
+      const wrapper = mountBanner();
+      await flushPromises();
+      expect(wrapper.find('.rewind-vote-ended').text(), status).eq(line);
       wrapper.unmount();
     }
   });

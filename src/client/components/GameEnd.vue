@@ -279,10 +279,9 @@ export default defineComponent({
     downloadLogUrl() {
       return `${paths.END_GAME_LOG}?id=${this.participant.id}`;
     },
-    /** The players of a table with Player undo vote to rewind a finished game. The judge of a Judge undo game rewinds without one. */
+    /** The players of a table with Player undo vote to rewind a finished game. The judge rewinds without one. */
     votesOnRewind(): boolean {
-      return isPlayerId(this.participant.id) && this.participant.players.length > 1 &&
-        this.game.gameOptions.undoOption && !this.game.gameOptions.judgeUndo;
+      return isPlayerId(this.participant.id) && this.participant.players.length > 1 && this.game.gameOptions.undoOption;
     },
     /** A rewind reopens the game for every page on this screen. The vote banner reloads players who vote, so the others poll. */
     pollsForRewind(): boolean {

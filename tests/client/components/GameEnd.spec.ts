@@ -66,7 +66,8 @@ describe('GameEnd', () => {
       for (const [label, wrapper, shown] of [
         ['player', mountEnd({undoOption: true}), true],
         ['no Player undo', mountEnd({undoOption: false}), false],
-        ['judge undo', mountEnd({undoOption: true, judgeUndo: true}), false],
+        ['Player undo and Judge undo', mountEnd({undoOption: true, judgeUndo: true}), true],
+        ['Judge undo only', mountEnd({undoOption: false, judgeUndo: true}), false],
         ['solo', mountEnd({undoOption: true}, [blue]), false],
         ['spectator', shallowMount(GameEnd, {...globalConfig, props: {participant: spectator}}), false],
       ] as const) {
@@ -138,7 +139,7 @@ describe('GameEnd', () => {
 
     it('reloads the game page when the undo count changes, for every viewer of a game that nobody polls otherwise', async () => {
       for (const [label, participant, url, page] of [
-        ['judge undo player', player({undoOption: true, judgeUndo: true}), 'api/waitingfor?id=p-blue-id&password=0123456789ab&gameAge=9&undoCount=4', 'player?id=p-blue-id&password=0123456789ab'],
+        ['judge undo player', player({undoOption: false, judgeUndo: true}), 'api/waitingfor?id=p-blue-id&password=0123456789ab&gameAge=9&undoCount=4', 'player?id=p-blue-id&password=0123456789ab'],
         ['judge undo spectator', spectator({undoOption: true, judgeUndo: true}), 'api/waitingfor?id=s-id&gameAge=9&undoCount=4', 'spectator?id=s-id'],
         ['player undo spectator', spectator({undoOption: true}), 'api/waitingfor?id=s-id&gameAge=9&undoCount=4', 'spectator?id=s-id'],
         ['solo player undo', player({undoOption: true}, [blue]), 'api/waitingfor?id=p-blue-id&password=0123456789ab&gameAge=9&undoCount=4', 'player?id=p-blue-id&password=0123456789ab'],
@@ -167,6 +168,7 @@ describe('GameEnd', () => {
       never.unmount();
       voters.unmount();
 
+      // A player who votes has the banner poll, judge or not.
       mountEnd(player({undoOption: true, judgeUndo: true})).unmount();
       await ticks(30_000);
       expect(requests).has.length(0);

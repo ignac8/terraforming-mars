@@ -202,10 +202,9 @@ export default defineComponent({
         return false;
       }
     },
-    /** A game with Player undo keeps its history on the game page, where a solo player rewinds it and a table votes on it. Judge undo leaves that to the judge. */
+    /** A game with Player undo keeps its history on the game page, where a solo player rewinds it and a table votes on it, judge or not. */
     hasHistory(): boolean {
-      const view = this.playerView;
-      return view !== undefined && view.game.gameOptions.undoOption && (view.players.length === 1 || !view.game.gameOptions.judgeUndo);
+      return this.playerView?.game.gameOptions.undoOption === true;
     },
     /** A game with Judge undo keeps its history on the judge page, where the judge rewinds and freezes it. */
     judgeHasHistory(): boolean {

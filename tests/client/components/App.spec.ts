@@ -204,8 +204,13 @@ describe('App', () => {
       expect(wrapper.find('.player-home-stub').exists()).is.false;
     });
 
+    it('keeps the history of a judged table with Player undo on the game page, beside the judge\'s', async () => {
+      const wrapper = await mountPlayerHome(2, true, true);
+      expect(wrapper.findComponent({name: 'ReplayScreenStub'}).props('liveView')).to.equal(wrapper.vm.playerView);
+    });
+
     it('shows every other game as it always has', async () => {
-      for (const [players, undoOption, judgeUndo] of [[1, false, false], [2, false, false], [2, true, true]] as const) {
+      for (const [players, undoOption, judgeUndo] of [[1, false, false], [2, false, false], [2, false, true]] as const) {
         const wrapper = await mountPlayerHome(players, undoOption, judgeUndo);
         expect(wrapper.find('.replay-screen-stub').exists(), `${players} ${undoOption} ${judgeUndo}`).is.false;
         expect(wrapper.find('.player-home-stub').exists(), `${players} ${undoOption} ${judgeUndo}`).is.true;

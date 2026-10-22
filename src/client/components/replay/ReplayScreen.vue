@@ -238,10 +238,10 @@ export default defineComponent({
     };
   },
   computed: {
-    /** The page of a player at a table where a rewind is put to a vote. The judge of a Judge undo game rewinds without one. */
+    /** The page of a player at a table where a rewind is put to a vote. The judge rewinds without one. */
     votesOnRewind(): boolean {
       const view = this.liveView;
-      return view !== undefined && view.players.length > 1 && view.game.gameOptions.undoOption && !view.game.gameOptions.judgeUndo;
+      return view !== undefined && view.players.length > 1 && view.game.gameOptions.undoOption;
     },
     /** The player on the replay URL of a table that votes on a rewind, once the page has what the banner needs. */
     replayVoter(): {id: PlayerId; color: Color; players: Array<PublicPlayerModel>} | undefined {

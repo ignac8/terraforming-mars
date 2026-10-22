@@ -154,6 +154,10 @@ export default defineComponent({
         return this.$t('The rewind request expired.');
       case 'moved-on':
         return this.$t('A move was made, so the rewind request ended.');
+      case 'froze':
+        return this.$t('The judge froze the game, so the rewind request ended.');
+      case 'judge-rewound':
+        return this.$t('The judge rewound the game, so the rewind request ended.');
       case 'failed':
         return vote.reason === undefined ? this.$t('The rewind did not happen.') : translateRefusal(vote.reason);
       default:
