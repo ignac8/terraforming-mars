@@ -28,6 +28,7 @@ function markerStart(record: RewindRecord, rewinds: ReadonlyArray<RewindRecord>)
  * save that a rewind wrote starts at its own marker, and a marker that still shows, because a later
  * rewind restored that save, stays with the later rewind's save. The save before a rewind's save ends
  * at the rewind's `logEnd`, where the marker starts, even though the rewind's save has a longer log.
+ * An undone save with no lines of its own is left out like any other, so it is never a rewind target.
  */
 export function buildMoveList(saves: ReadonlyArray<SaveEntry>, rewinds: ReadonlyArray<RewindRecord>, log: ReadonlyArray<LogMessage>, showUndone: boolean = false): Array<ReplayMove> {
   const active = activeRewinds(rewinds);
