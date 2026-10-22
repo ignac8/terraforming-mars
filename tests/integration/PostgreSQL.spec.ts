@@ -15,6 +15,7 @@ import {GameId} from '../../src/common/Types';
 import {QueryResult} from 'pg';
 import {SelectInitialCards} from '../../src/server/inputs/SelectInitialCards';
 import {cast, range} from '../../src/common/utils/utils';
+import {SerializedGame} from '../../src/server/SerializedGame';
 
 dotenv.config({path: 'tests/integration/.env', debug: true, quiet: true});
 
@@ -768,6 +769,11 @@ describeDatabaseSuite({
     });
 
     it('patches a save in the column it was stored in, and leaves the shared log alone', async () => {
+      // A save without its table state, as JSON.
+      function gameState(d: SerializedGame) {
+        const {frozen: _frozen, rewindVote: _rewindVote, rewindRequestLimits: _rewindRequestLimits, undoCount: _undoCount, ...rest} = d;
+        return JSON.stringify({...rest, players: d.players.map(({timer: _timer, ...p}) => p)});
+      }
       const db = dbFactory();
       const player = TestPlayer.BLACK.newPlayer();
       const game = Game.newInstance('game-id-patched-column', [player], player, 'spectatorid');
@@ -777,15 +783,23 @@ describeDatabaseSuite({
         const saveId = game.lastSaveId;
         await db.saveGame(game);
         const logRow = await db.getLogRow(game.id);
+        const before = await db.getGameVersion(game.id, saveId);
         // A patch that went through saveGame would store this line.
         game.log('after the save');
+        const patch = tableStatePatch(game);
 
-        expect(await db.updateNewestSave(game.id, saveId, tableStatePatch(game))).is.true;
+        expect(await db.updateNewestSave(game.id, saveId, patch)).is.true;
 
         const raw = await db.getRawGame(game.id, saveId);
         expect(raw.game === null, String(compressOnWrite)).eq(compressOnWrite);
         expect(raw.gameCompressed === null, String(compressOnWrite)).eq(!compressOnWrite);
-        expect((await db.getGameVersion(game.id, saveId)).frozen).is.true;
+        const after = await db.getGameVersion(game.id, saveId);
+        expect(after.frozen).is.true;
+        expect(after.rewindVote).deep.eq(patch.rewindVote);
+        expect(after.rewindRequestLimits).deep.eq(patch.rewindRequestLimits);
+        expect(after.undoCount).eq(patch.undoCount);
+        expect(after.players[0].timer).deep.eq(patch.timers[0].timer);
+        expect(gameState(after)).eq(gameState(before));
         expect(await db.getLogRow(game.id)).deep.eq(logRow);
       }
     });
