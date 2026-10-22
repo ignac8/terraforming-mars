@@ -121,6 +121,7 @@ export function fakeGameModel(overrides?: RecursivePartial<GameModel>): GameMode
     isTerraformed: false,
     turmoil: undefined,
     undoCount: 0,
+    rewindCount: 0,
     venusScaleLevel: 0,
     ...overrides,
   } as GameModel;

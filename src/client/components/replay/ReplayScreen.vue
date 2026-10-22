@@ -631,7 +631,8 @@ export default defineComponent({
   },
   watch: {
     // The table was rewound, so a past move that is shown and the moves listed belong to a game that is gone.
-    'liveModel.game.undoCount'() {
+    // A freeze changes the undo count too, but leaves the game and its moves as they are.
+    'liveModel.game.rewindCount'() {
       this.pause();
       this.backToLive();
       this.latestMovesRequest++;

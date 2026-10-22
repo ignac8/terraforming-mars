@@ -4,9 +4,7 @@ import {afterEach, beforeEach, vi} from 'vitest';
 import {globalConfig} from '../getLocalVue';
 import RewindVoteBanner from '@/client/components/replay/RewindVoteBanner.vue';
 import {fakePublicPlayerModel} from '../testHelpers';
-import {setTranslationContext} from '@/client/directives/i18n';
 import {PreferencesManager} from '@/client/utils/PreferencesManager';
-import {ViewModel} from '@/common/models/PlayerModel';
 import {RewindVoteModel, RewindVotePoll} from '@/common/rewind/RewindVoteModel';
 import {PlayerId} from '@/common/Types';
 
@@ -157,8 +155,6 @@ describe('RewindVoteBanner', () => {
       '${0} asks to rewind to before move ${1} of generation ${2}.': '${0} prosi o cofnięcie gry do stanu sprzed ruchu ${1} w pokoleniu ${2}.',
       'Red': 'Czerwony',
     };
-    // The page sets this for the players it shows.
-    setTranslationContext({players} as ViewModel);
     answers = [answer(poll(openVote({requester: 'red'})))];
     try {
       const wrapper = mountBanner();

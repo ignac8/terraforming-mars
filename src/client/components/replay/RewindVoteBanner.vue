@@ -33,8 +33,10 @@
 <script lang="ts">
 import {defineComponent} from 'vue';
 import {translateRefusal, fetchVote, postVote, seatPasswordParam, VoteBody} from '@/client/utils/fetchReplay';
-import {translateMessage, translateTextWithParams} from '@/client/directives/i18n';
+import {translateText, translateTextWithParams} from '@/client/directives/i18n';
+import {Log} from '@/common/logs/Log';
 import {LogMessageDataType} from '@/common/logs/LogMessageDataType';
+import {Message} from '@/common/logs/Message';
 import {paths} from '@/common/app/paths';
 import {Color} from '@/common/Color';
 import {PublicPlayerModel} from '@/common/models/PlayerModel';
@@ -138,8 +140,7 @@ export default defineComponent({
       if (vote === undefined) {
         return '';
       }
-      // A player's name is a PLAYER datum, which the translation leaves alone. A raw string would turn a name like "Red" into the colour.
-      return translateMessage({
+      return this.withNames({
         message: '${0} asks to rewind to before move ${1} of generation ${2}.',
         data: [
           {type: LogMessageDataType.PLAYER, value: vote.requester},
@@ -159,7 +160,7 @@ export default defineComponent({
       switch (vote?.status) {
       case 'declined': {
         const no = vote.votes.find((choice) => choice.choice === 'no');
-        return translateMessage({
+        return this.withNames({
           message: '${0} declined the rewind.',
           data: [no === undefined ? {type: LogMessageDataType.RAW_STRING, value: ''} : {type: LogMessageDataType.PLAYER, value: no.color}],
         });
@@ -184,6 +185,15 @@ export default defineComponent({
   methods: {
     nameOf(color: Color): string {
       return this.players.find((player) => player.color === color)?.name ?? color;
+    },
+    /**
+     * `message` translated, with its players (PLAYER data, as in the game log) put in by name afterwards. Run through the
+     * translation, a name like "Red" would come out as the colour.
+     */
+    withNames(message: Message): string {
+      return Log.applyData({...message, message: translateText(message.message)}, (datum) => {
+        return datum.type === LogMessageDataType.PLAYER ? this.nameOf(datum.value) : String(datum.value);
+      });
     },
     /** Applies the answer of `request`, unless a newer request was sent since. */
     async receive(request: () => Promise<RewindVotePoll>, keepError = false): Promise<void> {
