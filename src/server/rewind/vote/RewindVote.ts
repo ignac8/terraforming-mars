@@ -31,10 +31,10 @@ function modelOf(
   expiresInMs: number,
   no: PlayerId | undefined,
   reason: string | undefined,
-): RewindVoteModel {
+): RewindVoteModel | undefined {
   const requester = game.players.find((player) => player.id === vote.requester);
   if (requester === undefined) {
-    throw new Error(`Rewind vote ${vote.id} has no requester in this game`);
+    return undefined;
   }
   const model: RewindVoteModel = {
     voteId: vote.id,
@@ -58,7 +58,7 @@ function modelOf(
   return model;
 }
 
-/** The model of the game's vote, or of `ended` while it is shown; undefined otherwise. */
+/** The model of the game's vote, or of `ended` while it is shown; undefined otherwise, or when the vote's requester is not in the game. */
 export function voteModel(game: IGame, ended: EndedVote | undefined, now: number): RewindVoteModel | undefined {
   const vote = game.rewindVote;
   if (vote !== undefined) {

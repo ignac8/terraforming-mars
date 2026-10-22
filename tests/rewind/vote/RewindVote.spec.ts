@@ -65,6 +65,15 @@ describe('RewindVote', () => {
     expect(voteModel(game, undefined, 4000)!.expiresInMs).eq(0);
   });
 
+  it('shows nothing for a vote whose requester is not in the game', () => {
+    const [game] = testGame(2);
+    game.rewindVote = vote('someone-else', ['someone-else']);
+    expect(voteModel(game, undefined, 4000)).is.undefined;
+    game.rewindVote = undefined;
+    const ended: EndedVote = {vote: vote('someone-else', ['someone-else']), status: 'cancelled', endedAt: 5000};
+    expect(voteModel(game, ended, 5001)).is.undefined;
+  });
+
   it('marks the player who said no, and shows no time once ended', () => {
     const [game, player1, player2, player3] = testGame(3);
     const ended: EndedVote = {vote: vote(player1.id, [player1.id, player2.id]), status: 'declined', endedAt: 5000, no: player3.id, reason: 'why'};
