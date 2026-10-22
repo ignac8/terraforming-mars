@@ -2,6 +2,7 @@ import {IGame} from '../IGame';
 import {Database} from '../database/Database';
 import {RouteError} from '../routes/RouteError';
 import {SerializedGame} from '../SerializedGame';
+import {RecordedInput} from '../rewind/RecordedInput';
 import {loadSandboxGame} from './sandbox';
 import {Phase} from '../../common/Phase';
 import {GameId, ParticipantId, PlayerId} from '../../common/Types';
@@ -139,8 +140,20 @@ export async function isFinished(game: IGame): Promise<boolean> {
   return true;
 }
 
+// Who gave the first of the answers a save recorded, which were applied to the state of the save before it.
+function firstAnswer(inputs: ReadonlyArray<RecordedInput> | undefined): PlayerId | undefined {
+  return inputs?.[0]?.playerId;
+}
+
+// Who gave the first answer since the save `newestId`, the newest one, from the live game. A game loaded from that
+// save has not saved since, so what it holds are the answers that led to the save, not the ones after it. Phases
+// that ask again without saving, like a draft, leave it so.
+function answerSince(game: IGame, newestId: number): PlayerId | undefined {
+  return game.lastSaveId > newestId ? firstAnswer(game.inputsSinceSave) : undefined;
+}
+
 function entryOf(saveId: number, save: SerializedGame): SaveEntry {
-  return {saveId, logLength: save.gameLog.length, answeredBy: save.inputs?.[0]?.playerId};
+  return {saveId, logLength: save.gameLog.length, answeredBy: firstAnswer(save.inputs)};
 }
 
 // Reads the saves one at a time and keeps only what the list needs, so at most one save is in
@@ -258,7 +271,7 @@ async function allMoves(game: IGame, undone: boolean = false): Promise<AllMoves>
   if (game.phase !== Phase.END) {
     const saves = await readRunningSaves(game);
     // The newest save's move is the one the game is at, which its inputs since that save tell.
-    const movers = {colors, newest: game.inputsSinceSave?.[0]?.playerId};
+    const movers = {colors, newest: answerSince(game, saves[saves.length - 1]?.saveId ?? -1)};
     return {status: 'available', moves: buildMoveList(saves, game.rewinds, game.gameLog, undone, movers), finished: false};
   }
   const cached = cache.get(game.id);
@@ -279,8 +292,7 @@ async function allMoves(game: IGame, undone: boolean = false): Promise<AllMoves>
  */
 export async function moverOf(game: IGame, saveId: number): Promise<PlayerId | undefined> {
   const next = (await getSortedSaveIds(game)).find((id) => id > saveId);
-  const inputs = next === undefined ? game.inputsSinceSave : (await getSave(game, next)).inputs;
-  return inputs?.[0]?.playerId;
+  return next === undefined ? answerSince(game, saveId) : firstAnswer((await getSave(game, next)).inputs);
 }
 
 /**

@@ -637,6 +637,35 @@ describe('RewindService whole table', () => {
     expect((await movesOf(restored, restored.judgeId!)).find((move) => move.saveId === own)?.mover).eq(player2.color);
   });
 
+  it('does not credit the newest save to the player whose answer made it, after a reload', async () => {
+    for (const phase of ['drafting', 'research'] as const) {
+      await playTable({judgeUndo: true, draftVariant: phase === 'drafting'});
+      if (phase === 'drafting') {
+        // A pick saves the draft. Nobody has answered since that save.
+        const before = rows().length;
+        player.process({type: 'card', cards: [cast(player.getWaitingFor(), SelectCard).cards[0].name]});
+        expect(rows(), phase).has.length(before + 1);
+      }
+      const newest = rows().length - 1;
+      if (phase === 'drafting') {
+        expect(rows()[newest].inputs?.[0]?.playerId, phase).eq(player.id);
+      }
+
+      // A restart loads the newest save. The draft asks again without saving.
+      const loaded = Game.deserialize(structuredClone(rows()[newest]));
+
+      expect(await moverOf(loaded, newest), phase).is.undefined;
+      const entries = await movesOf(loaded, loaded.judgeId!);
+      expect(entries[entries.length - 1].saveId, phase).eq(newest);
+      expect(entries[entries.length - 1].mover, phase).is.undefined;
+      if (phase === 'research') {
+        // Once the loaded game has saved, an answer after that save is the newest save's.
+        loaded.getPlayerById(player.id).process({type: 'card', cards: []});
+        expect(await moverOf(loaded, newest), phase).eq(player.id);
+      }
+    }
+  });
+
   it('names whose move each entry of the move list is, the newest from the live game\'s answers', async () => {
     await playTable({judgeUndo: true});
     const before = await movesOf(game, game.judgeId!);

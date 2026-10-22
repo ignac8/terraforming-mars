@@ -214,6 +214,7 @@ describe('VoteService', () => {
   });
 
   it('rewinds with the requester\'s cards once every other player agrees', async () => {
+    const passedBefore = await outcomes('passed');
     const opened = await service.request(game, p2, saveId, 'shuffle');
     const first = await service.cast(game, p1, opened.vote!.voteId, 'yes');
     await service.cast(game, p1, opened.vote!.voteId, 'yes');
@@ -227,7 +228,7 @@ describe('VoteService', () => {
     expect(rewinds[0]).deep.include({game, saveId, cards: 'shuffle', requester: p2});
     expect(poll.undoCount).eq(game.undoCount + 1);
     expect(poll.vote!.status).eq('passed');
-    expect(await outcomes('passed')).eq(1);
+    expect(await outcomes('passed')).eq(passedBefore + 1);
   });
 
   it('starts the rewind once when the last two yes votes arrive together', async () => {

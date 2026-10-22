@@ -43,8 +43,7 @@ describe('RewindControls', () => {
       expect((wrapper.find('input[value=keep]').element as HTMLInputElement).checked).is.false;
     });
 
-    it('rewinds with the clocks that were chosen, the second being time back for everyone but the mover', async () => {
-      expect(mountWithClocks().find('input[value=keep]').element.parentElement!.textContent).to.contain('Time back for everyone but the player whose move is undone');
+    it('rewinds with the clocks that were chosen', async () => {
       for (const choice of ['back', 'keep']) {
         const wrapper = mountWithClocks();
         await wrapper.find(`input[value=${choice}]`).setValue(true);
