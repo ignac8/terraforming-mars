@@ -180,6 +180,12 @@ describe('ApiReplayMoves', () => {
       expect(JSON.parse(res.content)).deep.eq({status: 'not-finished'});
     });
 
+    it('refuses a claimed judge seat with a wrong password while the game runs, also without Judge undo', async () => {
+      scaffolding.url = `/api/replay/moves?id=${game.judgeId}&password=wrong`;
+      await scaffolding.get(ApiReplayMoves.INSTANCE, res);
+      expect(res.statusCode).eq(statusCode.unauthorized);
+    });
+
     it('answers a player with the password while the game runs', async () => {
       player.password = 'seat-secret';
       scaffolding.url = '/api/replay/moves?id=' + player.id + '&password=seat-secret';
