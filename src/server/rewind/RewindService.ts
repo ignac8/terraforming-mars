@@ -5,7 +5,7 @@ import {IPlayer} from '../IPlayer';
 import {SerializedGame} from '../SerializedGame';
 import {Database} from '../database/Database';
 import {GameLoader} from '../database/GameLoader';
-import {forgetReplay, getReplayMoves} from '../replay/ReplayService';
+import {forgetReplay, historySaveIds} from '../replay/ReplayService';
 import {loadSandboxGame} from '../replay/sandbox';
 import {RouteError} from '../routes/RouteError';
 import {canRewind} from './access';
@@ -15,7 +15,7 @@ import {shuffleHiddenPiles} from './shuffleHiddenPiles';
 import {withTableLock} from './tableLock';
 import {Phase} from '../../common/Phase';
 import {Timer} from '../../common/Timer';
-import {RewindCards} from '../../common/replay/ReplayModel';
+import {RewindCards, RewindClocks} from '../../common/replay/ReplayModel';
 import {UnseededRandom} from '../../common/utils/Random';
 
 export const rewindMetrics = {
@@ -31,27 +31,51 @@ const UNRESTORABLE = 'That moment can\'t be restored. Nothing was changed.';
 const UNLOADABLE = 'That moment can\'t be restored with this version of the game. Nothing was changed.';
 const PICK_EARLIER = 'Pick an earlier move.';
 
+/** Who rewinds: the player of a solo game, the judge, or the player whose request a vote accepted. */
+export type RewindActor = {kind: 'player', player: IPlayer} | {kind: 'judge'} | {kind: 'vote', requester: IPlayer};
+
+export type RewindOptions = {
+  cards: RewindCards;
+  clocks: RewindClocks;
+  /** True: the rewound game is frozen, whatever the live game was. Otherwise the live game's freeze carries over. */
+  freeze?: boolean;
+};
+
+/** The most rewinds one game takes, of every kind. Past it a rewind is refused. */
+export const MAX_REWINDS = 50;
+
 /**
- * Makes `game` as it was at `saveId` the live game, written as a new save after every existing one.
- * Throws a RouteError when refused; the live game, its rows and the cache are then unchanged.
+ * Makes the whole table as it was at `saveId` the live game, written as one new save after every existing one.
+ * Takes the table lock synchronously on call. The caller decides who may do this. Throws a RouteError when refused;
+ * the live game, its rows and the cache are then unchanged.
  */
+export function rewindTable(game: IGame, saveId: number, options: RewindOptions, by: RewindActor): Promise<IGame> {
+  return withTableLock(game.id, () => rewind(game, saveId, options, by));
+}
+
+/** The rewind of a solo or MarsBot game by its player, who keeps the time already spent. */
 export async function rewindGame(game: IGame, player: IPlayer, saveId: number, cards: RewindCards): Promise<IGame> {
   if (!canRewind(game, player.id)) {
     throw RouteError.forbidden();
   }
-  // The request took the game before an earlier rewind replaced it.
-  if (game.retired) {
-    throw RouteError.badRequest('This game was rewound. Refresh this page.');
-  }
-  return await withTableLock(game.id, () => rewind(game, player, saveId, cards));
+  return await rewindTable(game, saveId, {cards, clocks: 'keep'}, {kind: 'player', player});
 }
 
-async function rewind(live: IGame, player: IPlayer, saveId: number, cards: RewindCards): Promise<IGame> {
+async function rewind(live: IGame, saveId: number, options: RewindOptions, by: RewindActor): Promise<IGame> {
+  // The request took the game before an earlier rewind replaced it.
+  if (live.retired) {
+    throw RouteError.badRequest('This game was rewound. Refresh this page.');
+  }
+  // Every request reads the rewind records, so their number is bounded.
+  if (live.rewinds.length >= MAX_REWINDS) {
+    throw RouteError.badRequest('This game was rewound too many times.');
+  }
   // The list leaves out abandoned saves, saves that show no move, and compressed history.
-  const history = await getReplayMoves(live, player.id);
-  if (history.status !== 'available' || !history.moves.some((move) => move.saveId === saveId)) {
+  const history = await historySaveIds(live);
+  if (history === undefined || !history.includes(saveId)) {
     throw RouteError.notFound('That move is not in this game\'s history.');
   }
+  const {cards} = options;
 
   let saves: Array<SerializedGame>;
   let maxSaveId: number;
@@ -124,7 +148,7 @@ async function rewind(live: IGame, player: IPlayer, saveId: number, cards: Rewin
     logStart: target.gameLog.length,
     logEnd: live.gameLog.length,
   };
-  const swap: Swap = {live, player, record, cards};
+  const swap: Swap = {live, by, record, options, target};
   let restored: Game | undefined;
   try {
     if (replay) {
@@ -155,6 +179,7 @@ async function rewind(live: IGame, player: IPlayer, saveId: number, cards: Rewin
     if (restored.phase === Phase.END) {
       throw new Error('the rebuilt game ended');
     }
+    settleClocks(restored);
     await GameLoader.getInstance().add(restored);
   } catch (e) {
     if (live.retired) {
@@ -209,9 +234,11 @@ function warnMismatch(live: IGame, saveId: number, replayed: ReplayResult): void
 
 type Swap = {
   live: IGame,
-  player: IPlayer,
+  by: RewindActor,
   record: RewindRecord,
-  cards: RewindCards,
+  options: RewindOptions,
+  /** The stored save of the moment. Its clocks are the moment's, which a replay's are not. */
+  target: SerializedGame,
   /** The write of the save `record.saveId`, once promote has started it. */
   written?: Promise<void>,
 };
@@ -239,28 +266,31 @@ async function restoreLive({live, record, written}: Swap): Promise<void> {
  * It runs inside the sandbox's save of the moment, before play goes on, so it can't leave half a rewind.
  */
 function promote(sandbox: Game, swap: Swap): void {
-  const {live, player, record, cards} = swap;
+  const {live, by, record, options, target} = swap;
   sandbox.gameLog = [...live.gameLog];
   sandbox.gameAge = live.gameAge;
-  const message = cards === 'shuffle' ?
-    '${0} rewound the game to generation ${1} and shuffled the hidden piles' :
-    '${0} rewound the game to generation ${1}';
-  sandbox.log(message, (b) => b.player(sandbox.getPlayerById(player.id)).number(sandbox.generation));
+  logRewind(sandbox, by, options.cards);
   sandbox.rewinds = [...live.rewinds, record];
   // Open pages see a higher count and refresh.
   sandbox.undoCount = live.undoCount + 1;
   // This save is the result of the rewind, not of inputs.
   sandbox.inputsSinceSave = [];
-  for (const p of sandbox.players) {
+  // The save carries the freeze, so a reload of it is frozen exactly when the game is. The sandbox
+  // holds no vote and bars no one, and none of that is copied.
+  sandbox.frozen = options.freeze === true || live.frozen;
+  for (const [i, p] of sandbox.players.entries()) {
     const was = live.getPlayerById(p.id);
-    const own = p.timer.serialize();
-    const spent = was.timer.serialize();
-    // Only closed intervals carry over, so no time counts twice.
+    // 'keep' counts the interval in progress too: under escape velocity it is time spent.
+    // Every save lists the players in the same order.
+    const kept = options.clocks === 'keep' ?
+      {sumElapsed: was.timer.countedElapsed(), afterFirstAction: was.timer.serialize().afterFirstAction} :
+      target.players[i].timer;
+    // Nobody's clock runs until the hand-over settles who is asked.
     p.timer = Timer.deserialize({
-      ...own,
-      sumElapsed: spent.sumElapsed,
-      afterFirstAction: spent.afterFirstAction,
-      startedAt: own.running ? Date.now() : own.startedAt,
+      sumElapsed: kept.sumElapsed,
+      afterFirstAction: kept.afterFirstAction,
+      running: false,
+      startedAt: 0,
       lastStoppedAt: 0,
     });
     // Seats are claimed by loading a page, which a rewind does not take back.
@@ -274,4 +304,44 @@ function promote(sandbox: Game, swap: Swap): void {
   // Play goes on to the next prompt before the hand-over. A save on the way, like the research
   // phase after a pass, comes after the moment, so it isn't written.
   sandbox.isSandbox = true;
+}
+
+/** Writes the line that marks the rewind, naming who did it. */
+function logRewind(game: Game, by: RewindActor, cards: RewindCards): void {
+  const shuffled = cards === 'shuffle';
+  switch (by.kind) {
+  case 'player':
+    game.log(shuffled ?
+      '${0} rewound the game to generation ${1} and shuffled the hidden piles' :
+      '${0} rewound the game to generation ${1}',
+    (b) => b.player(game.getPlayerById(by.player.id)).number(game.generation));
+    break;
+  case 'judge':
+    game.log(shuffled ?
+      'The judge rewound the game to generation ${0} and shuffled the hidden piles' :
+      'The judge rewound the game to generation ${0}',
+    (b) => b.number(game.generation));
+    break;
+  case 'vote':
+    game.log(shuffled ?
+      '${0} rewound the game to generation ${1} after a unanimous vote and shuffled the hidden piles' :
+      '${0} rewound the game to generation ${1} after a unanimous vote',
+    (b) => b.player(game.getPlayerById(by.requester.id)).number(game.generation));
+    break;
+  }
+}
+
+/**
+ * Starts the clocks of the players the restored game asks, from now. Promote stopped every clock, and a
+ * prompt reached after it started its clock at the shared last stop time, which can lie anywhere.
+ * A frozen game runs no clock.
+ */
+function settleClocks(game: IGame): void {
+  for (const p of game.players) {
+    p.timer = Timer.deserialize({...p.timer.serialize(), running: false, lastStoppedAt: 0});
+    const prompt = p.getWaitingFor();
+    if (!game.frozen && prompt !== undefined && !prompt.optional) {
+      p.timer.resume();
+    }
+  }
 }

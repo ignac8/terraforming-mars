@@ -9,6 +9,9 @@ export type ReplayViewAs = 'all' | Color;
 
 export type RewindCards = 'same' | 'shuffle';
 
+/** A rewind's clocks: as they were at the restored moment, or every player's live total. */
+export type RewindClocks = 'back' | 'keep';
+
 export type ReplayMovesModel =
   | {status: 'available'; moves: Array<ReplayMove>; finished: boolean; canRewind: boolean; canVoteRewind: boolean; defaultViewAs: ReplayViewAs}
   | {status: 'not-finished'}

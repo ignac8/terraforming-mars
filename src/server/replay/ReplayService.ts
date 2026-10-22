@@ -245,23 +245,14 @@ function movesFor(game: IGame, viewerId: ParticipantId, moves: Array<ReplayMove>
   }));
 }
 
-export async function getReplayMoves(game: IGame, viewerId: ParticipantId): Promise<ReplayMovesModel> {
+type AllMoves = {status: 'available', moves: Array<ReplayMove>, finished: boolean} | {status: 'not-finished'} | {status: 'expired'};
+
+// Every move of the game with every message, the same for every viewer.
+async function allMoves(game: IGame): Promise<AllMoves> {
   // The live phase comes first: a game that a rollback reopened must not serve its old list.
   if (game.phase !== Phase.END) {
-    if (!canBrowseHistory(game, viewerId)) {
-      return {status: 'not-finished'};
-    }
     const saves = await readRunningSaves(game);
-    // Everyone but the judge sees only their own view while the game runs.
-    const own = game.players.find((p) => p.id === viewerId);
-    return {
-      status: 'available',
-      moves: movesFor(game, viewerId, buildMoveList(saves, game.rewinds, game.gameLog)),
-      finished: false,
-      canRewind: canRewind(game, viewerId) || judgeCanRewind(game, viewerId),
-      canVoteRewind: canVoteRewind(game, viewerId),
-      defaultViewAs: own?.color ?? 'all',
-    };
+    return {status: 'available', moves: buildMoveList(saves, game.rewinds, game.gameLog), finished: false};
   }
   const cached = cache.get(game.id);
   const result: Built = cached?.finished ?
@@ -271,13 +262,32 @@ export async function getReplayMoves(game: IGame, viewerId: ParticipantId): Prom
     return result;
   }
   const {saves, rewinds, log} = result.game;
+  return {status: 'available', moves: buildMoveList(saves, rewinds, log), finished: true};
+}
+
+/** The save ids of the game's move list, the same for every viewer. Undefined when its history is gone (compressed). */
+export async function historySaveIds(game: IGame): Promise<Array<number> | undefined> {
+  const all = await allMoves(game);
+  return all.status === 'available' ? all.moves.map((move) => move.saveId) : undefined;
+}
+
+export async function getReplayMoves(game: IGame, viewerId: ParticipantId): Promise<ReplayMovesModel> {
+  if (game.phase !== Phase.END && !canBrowseHistory(game, viewerId)) {
+    return {status: 'not-finished'};
+  }
+  const all = await allMoves(game);
+  if (all.status !== 'available') {
+    return all;
+  }
+  // Everyone but the judge sees only their own view while the game runs.
+  const own = game.players.find((p) => p.id === viewerId);
   return {
     status: 'available',
-    moves: movesFor(game, viewerId, buildMoveList(saves, rewinds, log)),
-    finished: true,
+    moves: movesFor(game, viewerId, all.moves),
+    finished: all.finished,
     canRewind: canRewind(game, viewerId) || judgeCanRewind(game, viewerId),
     canVoteRewind: canVoteRewind(game, viewerId),
-    defaultViewAs: 'all',
+    defaultViewAs: all.finished ? 'all' : own?.color ?? 'all',
   };
 }
 
