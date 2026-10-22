@@ -97,6 +97,29 @@ describe('JudgePlayerPanel', () => {
     });
   }
 
+  it('drops the setup cards once the player has a corporation in play', () => {
+    const wrapper = mount(JudgePlayerPanel, {
+      ...globalConfig,
+      props: {
+        judgeId: 'j-judge',
+        privates: privates({
+          cardsInHand: [{name: CardName.ANTS}],
+          dealtCorporationCards: [{name: CardName.ECOLINE}],
+          dealtPreludeCards: [{name: CardName.DONATION}],
+          dealtCeoCards: [{name: CardName.ASIMOV}],
+          dealtProjectCards: [{name: CardName.COMET}],
+          pickedCorporationCard: [{name: CardName.HELION}],
+        }),
+        player: fakePublicPlayerModel({color: 'red', name: 'Alice', tableau: [{name: CardName.HELION}]}),
+      },
+    });
+
+    expect(wrapper.text()).to.include('Cards In Hand');
+    for (const title of ['Dealt corporations', 'Dealt preludes', 'Dealt CEOs', 'Dealt project cards', 'Picked corporation']) {
+      expect(wrapper.text()).to.not.include(title);
+    }
+  });
+
   it('shows the pending choice when one is waiting', () => {
     const waitingFor = asComplete<SelectCardModel>({
       type: 'card',

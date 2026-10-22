@@ -112,13 +112,13 @@ describe('VastitasBorealisNovaBoard', () => {
     const delegateSpaces = board.spaces.filter((space) => space.bonus.includes(SpaceBonus.DELEGATE));
     expect(delegateSpaces).has.length(2);
 
-    while (turmoil.getAvailableDelegateCount(player) > 1) {
+    while (turmoil.delegateReserve.get(player) > 1) {
       turmoil.delegateReserve.remove(player);
     }
     expect(board.getAvailableSpacesOnLand(player, {cost: 0})).includes.members(delegateSpaces);
 
     turmoil.delegateReserve.remove(player);
-    expect(turmoil.getAvailableDelegateCount(player)).eq(0);
+    expect(turmoil.delegateReserve.get(player)).eq(0);
     const available = board.getAvailableSpacesOnLand(player, {cost: 0});
     for (const space of delegateSpaces) {
       expect(available).does.not.include(space);
