@@ -394,6 +394,26 @@ describe('ReplayService', () => {
       expect(await errorOf(loadReplayState(game, 1))).deep.include({kind: 'notFound'});
       expect((await loadReplayState(game, 2)).isSandbox).is.true;
     });
+
+    it('loadReplayState loads an abandoned save when asked, and still refuses it to the next request', async () => {
+      expect((await loadReplayState(game, 1, {undone: true})).isSandbox).is.true;
+      expect(await errorOf(loadReplayState(game, 1))).deep.include({kind: 'notFound'});
+    });
+
+    it('lists the undone moves for the judge of a Judge undo game, and refuses everyone else', async () => {
+      [game, player] = testGame(2, {judgeLink: true, judgeUndo: true});
+      base = game.serialize();
+      storeLengths([0, 2, 4, 5]);
+      const rewinds = [{saveId: 2, restoredSaveId: 1, logStart: 2, logEnd: 3}];
+      db.games.get(game.id)![3] = {...db.games.get(game.id)![3]!, rewinds};
+      game.rewinds = rewinds;
+
+      const listed = await getReplayMoves(game, game.judgeId!, {undone: true}) as Extract<ReplayMovesModel, {status: 'available'}>;
+      expect(listed.moves.map((m) => [m.saveId, m.undone])).deep.eq([[0, undefined], [1, true], [2, undefined], [3, undefined]]);
+      for (const viewer of [player.id, game.spectatorId]) {
+        expect(await errorOf(getReplayMoves(game, viewer, {undone: true}))).deep.include({kind: 'forbidden'});
+      }
+    });
   });
 
   describe('a running game', () => {

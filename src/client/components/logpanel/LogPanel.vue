@@ -13,7 +13,7 @@
     </LogGenerationList>
     <div class="panel log-panel">
       <div id="logpanel-scrollable" class="panel-body" @scroll="updateScrollState">
-        <LogMessageComponent v-for="(message, index) in messages" :key="index" :message="message" :viewModel="viewModel" @click="messageClicked(message)" @spaceClicked="$emit('spaceClicked', $event)"/>
+        <LogMessageComponent v-for="(message, index) in messages" :key="index" :class="{'log-undone': message.undone}" :message="message" :viewModel="viewModel" @click="messageClicked(message)" @spaceClicked="$emit('spaceClicked', $event)"/>
       </div>
       <button
         v-show="showScrollToBottomButton"
@@ -74,6 +74,11 @@ export default defineComponent({
       required: false,
       default: 0,
     },
+    /** The judge's log keeps the lines that rewinds hid, dimmed. */
+    showUndone: {
+      type: Boolean,
+      default: false,
+    },
   },
   data(): LogPanelModel {
     return {
@@ -96,6 +101,9 @@ export default defineComponent({
         this.showLatestLogs();
       }
     },
+    showUndone(): void {
+      this.getLogsForGeneration(this.selectedGeneration);
+    },
   },
   methods: {
     messageClicked(message: LogMessage) {
@@ -115,7 +123,7 @@ export default defineComponent({
     },
     getLogsForGeneration(generation: number, scrollPosition?: 'bottom'): void {
       const messages = this.messages;
-      fetchLogs(this.viewModel, generation)
+      fetchLogs(this.viewModel, generation, this.showUndone)
         .then((data) => {
           if (!data) {
             return;

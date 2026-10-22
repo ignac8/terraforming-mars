@@ -265,6 +265,32 @@
   color: @text_action;
 }
 
+// A move that a rewind undid, which only the judge's list shows when asked.
+.replay-move-undone {
+  opacity: 0.5;
+}
+
+.replay-undone-badge {
+  flex: none;
+  align-self: flex-start;
+  padding: 0 4px;
+  border: 1px solid #888;
+  border-radius: 3px;
+  font-size: 11px;
+}
+
+.replay-show-undone {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+}
+
+// A log line that a rewind hid, which only the judge's log shows when asked.
+.log-undone {
+  opacity: 0.5;
+}
+
 .replay-move-number {
   flex: none;
   min-width: 2em;

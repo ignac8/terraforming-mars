@@ -18,7 +18,7 @@
         <PlayerHome v-else-if="playerView !== undefined" key="past" :playerView="playerView" :replay="true"/>
         <ReplayHands v-if="spectatorView !== undefined" :privates="replayView.privates" :players="spectatorView.players"/>
       </template>
-      <JudgeHome v-else-if="liveJudge !== undefined" key="live-judge" :judge="liveJudge"/>
+      <JudgeHome v-else-if="liveJudge !== undefined" key="live-judge" :judge="liveJudge" :showUndone="showUndone"/>
       <PlayerHome v-else-if="liveView !== undefined" key="live" :playerView="liveView"/>
     </template>
     <div v-else-if="status === 'loading'" class="replay-message" v-i18n>Loading replay...</div>
@@ -69,6 +69,8 @@
       :frozen="judgeFrozen"
       :viewAsInLive="liveJudge !== undefined"
       :clocks="clockRows"
+      :canShowUndone="canShowUndone"
+      :showUndone="showUndone"
       :loading="status !== 'available'"
       @select="select"
       @update:viewAs="changeViewAs"
@@ -76,6 +78,7 @@
       @pause="pause"
       @update:speed="changeSpeed"
       @update:collapsed="changeCollapsed"
+      @update:showUndone="changeShowUndone"
       @back="backToLive"
       @rewind="rewind"
       @freeze="freeze"
@@ -138,6 +141,8 @@ type DataModel = {
   rewinding: boolean;
   /** A freeze or unfreeze is on its way. */
   freezing: boolean;
+  /** The judge's list and log show what rewinds undid. Off whenever the page loads. */
+  showUndone: boolean;
   /** Numbers moves requests so that a slow answer never replaces a newer one. */
   latestMovesRequest: number;
   /** The view of `index` as `viewAs`. It lags behind them for as long as the next view is loading. */
@@ -197,6 +202,7 @@ export default defineComponent({
       expanded: false,
       rewinding: false,
       freezing: false,
+      showUndone: false,
       latestMovesRequest: 0,
       replayView: undefined,
       shownIndex: 0,
@@ -230,6 +236,10 @@ export default defineComponent({
     judgeFrozen(): boolean | undefined {
       const game = this.liveJudge?.game;
       return game === undefined || game.phase === Phase.END ? undefined : game.frozen === true;
+    },
+    /** The judge of a Judge undo game may look at the moves that rewinds undid. */
+    canShowUndone(): boolean {
+      return this.liveJudge !== undefined || (isJudgeId(this.participantId) && this.canRewind);
     },
     /**
      * What each clock reads in the live game and at the move selected, which a judge who rewinds chooses between.
@@ -274,7 +284,7 @@ export default defineComponent({
       }
       this.error = undefined;
       try {
-        const answer = await fetchReplayMoves(this.participantId, this.liveModel && passwordParam(this.liveModel));
+        const answer = await fetchReplayMoves(this.participantId, this.liveModel && passwordParam(this.liveModel), this.showUndone);
         if (request !== this.latestMovesRequest) {
           return;
         }
@@ -302,11 +312,20 @@ export default defineComponent({
           if (this.moves.length === 0) {
             this.viewAs = answer.defaultViewAs;
           }
+          // The list changes when the judge switches the undone moves on or off, so the move stays the one it was.
+          const selected = this.index === undefined ? undefined : this.moves[this.index]?.saveId;
           this.moves = moves;
           this.canRewind = answer.canRewind;
           this.canVoteRewind = answer.canVoteRewind;
           this.movesGameAge = gameAge;
           this.status = 'available';
+          const at = moves.findIndex((move) => move.saveId === selected);
+          if (at >= 0) {
+            this.index = at;
+          } else if (this.isLive && this.index !== undefined) {
+            // The move is gone from the list, as an undone one is when the judge hides them.
+            this.backToLive();
+          }
           if (!this.isLive) {
             // Read again, the list can be shorter than the one the move was picked from.
             this.index = Math.min(this.index ?? 0, this.moves.length - 1);
@@ -335,7 +354,8 @@ export default defineComponent({
         return;
       }
       try {
-        const answer = await fetchReplayView(this.participantId, this.moves[index].saveId, viewAs, this.liveModel && passwordParam(this.liveModel));
+        const move = this.moves[index];
+        const answer = await fetchReplayView(this.participantId, move.saveId, viewAs, this.liveModel && passwordParam(this.liveModel), move.undone === true);
         if (request !== this.latestRequest) {
           return;
         }
@@ -359,6 +379,12 @@ export default defineComponent({
           this.index = undefined;
         }
       }
+    },
+    /** The judge switches the moves that rewinds undid on or off. The list is read again, and the page stays on the move it shows. */
+    async changeShowUndone(showUndone: boolean): Promise<void> {
+      this.pause();
+      this.showUndone = showUndone;
+      await this.loadMoves();
     },
     /** Leaves the past moment for the live game, which has been waiting for input the whole time. */
     backToLive(): void {

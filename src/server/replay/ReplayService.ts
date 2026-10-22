@@ -9,7 +9,7 @@ import {playerColors, toJudgeMessage} from '../routes/GameLogs';
 import {ReplayMove, ReplayMovesModel} from '../../common/replay/ReplayModel';
 import {LogMessage} from '../../common/logs/LogMessage';
 import {isAbandonedSave, RewindRecord} from '../rewind/RewindRecord';
-import {canBrowseHistory, canRewind, canVoteRewind, judgeCanRewind} from '../rewind/access';
+import {canBrowseHistory, canRewind, canVoteRewind, checkMayShowUndone, judgeCanRewind} from '../rewind/access';
 import {buildMoveList, SaveEntry} from './moveList';
 
 const MAX_CACHED_GAMES = 50;
@@ -237,22 +237,22 @@ function readRunningSaves(game: IGame): Promise<Array<SaveEntry>> {
 function movesFor(game: IGame, viewerId: ParticipantId, moves: Array<ReplayMove>): Array<ReplayMove> {
   // The judge page shows every private line, so the judge's replay does too, in the same form.
   const colors = viewerId === game.judgeId ? playerColors(game) : undefined;
-  return moves.map(({saveId, messages}) => ({
-    saveId,
+  return moves.map((move) => ({
+    ...move,
     messages: colors !== undefined ?
-      messages.map((m) => toJudgeMessage(m, colors)) :
-      messages.filter((m) => m.playerId === undefined || m.playerId === viewerId),
+      move.messages.map((m) => toJudgeMessage(m, colors)) :
+      move.messages.filter((m) => m.playerId === undefined || m.playerId === viewerId),
   }));
 }
 
 type AllMoves = {status: 'available', moves: Array<ReplayMove>, finished: boolean} | {status: 'not-finished'} | {status: 'expired'};
 
-// Every move of the game with every message, the same for every viewer.
-async function allMoves(game: IGame): Promise<AllMoves> {
+// Every move of the game with every message, the same for every viewer. `undone` adds the moves that rewinds undid.
+async function allMoves(game: IGame, undone: boolean = false): Promise<AllMoves> {
   // The live phase comes first: a game that a rollback reopened must not serve its old list.
   if (game.phase !== Phase.END) {
     const saves = await readRunningSaves(game);
-    return {status: 'available', moves: buildMoveList(saves, game.rewinds, game.gameLog), finished: false};
+    return {status: 'available', moves: buildMoveList(saves, game.rewinds, game.gameLog, undone), finished: false};
   }
   const cached = cache.get(game.id);
   const result: Built = cached?.finished ?
@@ -262,7 +262,7 @@ async function allMoves(game: IGame): Promise<AllMoves> {
     return result;
   }
   const {saves, rewinds, log} = result.game;
-  return {status: 'available', moves: buildMoveList(saves, rewinds, log), finished: true};
+  return {status: 'available', moves: buildMoveList(saves, rewinds, log, undone), finished: true};
 }
 
 /**
@@ -274,11 +274,19 @@ export async function historySaveIds(game: IGame): Promise<Array<number> | undef
   return all.status === 'available' ? all.moves.map((move) => move.saveId) : undefined;
 }
 
-export async function getReplayMoves(game: IGame, viewerId: ParticipantId): Promise<ReplayMovesModel> {
+/**
+ * `undone`: the judge's list with the moves that rewinds undid, each marked. Refused unless the viewer
+ * is the judge of a Judge undo game.
+ */
+export async function getReplayMoves(game: IGame, viewerId: ParticipantId, options: {undone?: boolean} = {}): Promise<ReplayMovesModel> {
+  const undone = options.undone === true;
+  if (undone) {
+    checkMayShowUndone(game, viewerId);
+  }
   if (game.phase !== Phase.END && !canBrowseHistory(game, viewerId)) {
     return {status: 'not-finished'};
   }
-  const all = await allMoves(game);
+  const all = await allMoves(game, undone);
   if (all.status !== 'available') {
     return all;
   }
@@ -296,10 +304,11 @@ export async function getReplayMoves(game: IGame, viewerId: ParticipantId): Prom
 
 /**
  * Returns the game as it was at `saveId`. The game is a sandbox: it never writes anything, and
- * callers share it, so they must only read it.
+ * callers share it, so they must only read it. `undone`: a save that a rewind abandoned may be
+ * loaded too. Only the judge's routes pass it.
  */
-export function loadReplayState(game: IGame, saveId: number): Promise<IGame> {
-  if (isAbandonedSave(saveId, game.rewinds)) {
+export function loadReplayState(game: IGame, saveId: number, options: {undone?: boolean} = {}): Promise<IGame> {
+  if (options.undone !== true && isAbandonedSave(saveId, game.rewinds)) {
     return Promise.reject(RouteError.notFound());
   }
   const key = `${game.id}/${saveId}`;

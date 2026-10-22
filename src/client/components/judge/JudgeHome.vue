@@ -27,7 +27,7 @@
       :otherDeckSizes = "game.otherDeckSizes"/>
 
     <div class="player_home_block nofloat">
-      <LogPanel :viewModel="judge" :step="game.step" @spaceClicked="onSpaceClicked"/>
+      <LogPanel :viewModel="judge" :step="game.step" :showUndone="showUndone" @spaceClicked="onSpaceClicked"/>
     </div>
 
     <PlayersOverview class="player_home_block player_home_block--players nofloat" :playerView="judge" v-trim-whitespace id="shortkey-playersoverview"/>
@@ -98,6 +98,11 @@ export default defineComponent({
     judge: {
       type: Object as () => JudgeModel,
       required: true,
+    },
+    /** The game log keeps the lines that rewinds hid. */
+    showUndone: {
+      type: Boolean,
+      default: false,
     },
   },
   computed: {

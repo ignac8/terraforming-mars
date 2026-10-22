@@ -1047,6 +1047,92 @@ describe('ReplayScreen', () => {
       expect(wrapper.find('.replay-freeze').exists()).is.false;
     });
 
+    describe('the undone moves', () => {
+      const withUndone = {...judgeMoves, moves: [
+        {saveId: 10, messages: played},
+        {saveId: 11, messages: played, undone: true},
+        {saveId: 12, messages: played},
+      ]} as any;
+      const movesCalls = () => calls.filter((url) => url.startsWith('api/replay/moves'));
+      const switchOf = (wrapper: ReturnType<typeof mountJudge>) => wrapper.find('.replay-show-undone input');
+
+      it('are off when the page loads, and read again with the parameter when the switch is turned on and off', async () => {
+        const wrapper = mountJudge();
+        expand(wrapper);
+        await flushPromises();
+        expect(movesCalls()).to.deep.equal([`api/replay/moves?id=${judgeId}`]);
+        expect(wrapper.findComponent(JudgeHome).props('showUndone')).is.false;
+
+        movesAnswer = withUndone;
+        await switchOf(wrapper).setValue(true);
+        await flushPromises();
+        expect(movesCalls()[1]).to.equal(`api/replay/moves?id=${judgeId}&undone=1`);
+        expect(wrapper.findComponent(JudgeHome).props('showUndone')).is.true;
+        expect(wrapper.findAll('.replay-move-undone')).to.have.length(1);
+
+        movesAnswer = judgeMoves as any;
+        await switchOf(wrapper).setValue(false);
+        await flushPromises();
+        expect(movesCalls()[2]).to.equal(`api/replay/moves?id=${judgeId}`);
+        expect(wrapper.findComponent(JudgeHome).props('showUndone')).is.false;
+      });
+
+      it('are previewed with the parameter, without the rewind controls', async () => {
+        movesAnswer = withUndone;
+        const wrapper = mountJudge();
+        expand(wrapper);
+        await flushPromises();
+        await switchOf(wrapper).setValue(true);
+        await flushPromises();
+
+        for (const [index, saveId, undone] of [[1, 11, true], [2, 12, false]] as const) {
+          panel(wrapper).vm.$emit('select', index);
+          await flushPromises();
+          expect(calls[calls.length - 1], String(index)).to.equal(`api/replay/view?id=${judgeId}&save=${saveId}&as=all${undone ? '&undone=1' : ''}`);
+          expect(wrapper.find('.rewind-controls').exists(), String(index)).equals(!undone);
+        }
+      });
+
+      it('stay on the move that is shown when the list changes, and go back to the live game when it is gone', async () => {
+        movesAnswer = withUndone;
+        const wrapper = mountJudge();
+        expand(wrapper);
+        await flushPromises();
+        await switchOf(wrapper).setValue(true);
+        await flushPromises();
+        panel(wrapper).vm.$emit('select', 2);
+        await flushPromises();
+
+        // Move 12 is index 1 once the undone move is out of the list.
+        const withoutUndone = {...judgeMoves, moves: [{saveId: 10, messages: played}, {saveId: 12, messages: played}]} as any;
+        movesAnswer = withoutUndone;
+        await switchOf(wrapper).setValue(false);
+        await flushPromises();
+        expect(panel(wrapper).props('index')).equals(1);
+
+        movesAnswer = withUndone;
+        await switchOf(wrapper).setValue(true);
+        await flushPromises();
+        panel(wrapper).vm.$emit('select', 1);
+        await flushPromises();
+        movesAnswer = withoutUndone;
+        await switchOf(wrapper).setValue(false);
+        await flushPromises();
+        expect(panel(wrapper).props('index')).is.undefined;
+        expect(wrapper.findComponent(JudgeHome).exists()).is.true;
+      });
+
+      it('are offered to the judge of a game that allows it, and to no one else', async () => {
+        for (const [participantId, canRewind, expected] of [[judgeId, true, true], [judgeId, false, false], [id, true, false]] as const) {
+          movesAnswer = {...judgeMoves, canRewind} as any;
+          const wrapper = shallowMount(ReplayScreen, {...globalConfig, props: {participantId}});
+          await flushPromises();
+          expect(wrapper.findComponent(ReplayPanel).props('canShowUndone'), `${participantId} ${canRewind}`).equals(expected);
+          wrapper.unmount();
+        }
+      });
+    });
+
     it('rewinds from the replay page through the judge route, and goes back to the judge page with the password', async () => {
       vi.stubGlobal('location', {href: `http://localhost/replay?id=${judgeId}`, search: '?id=j-judge-id&password=a%26b&serverId=1', reload: vi.fn()});
       const wrapper = shallowMount(ReplayScreen, {

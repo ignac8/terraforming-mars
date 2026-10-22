@@ -6,7 +6,7 @@ import {Response} from '../Response';
 import {RouteError} from './RouteError';
 import {isFinished, loadReplayState} from '../replay/ReplayService';
 import {buildReplayView} from '../replay/replayView';
-import {canBrowseHistory, canVoteRewind, judgeCanRewind} from '../rewind/access';
+import {canBrowseHistory, canVoteRewind, checkMayShowUndone, judgeCanRewind} from '../rewind/access';
 import {PLAYER_COLORS} from '../../common/Color';
 import {ReplayViewAs} from '../../common/replay/ReplayModel';
 import {isJudgeId, isPlayerId, PlayerId} from '../../common/Types';
@@ -36,6 +36,15 @@ export class ApiReplayView extends Handler {
     if (game === undefined || (judge && game.judgeId !== id)) {
       throw RouteError.notFound('game not found');
     }
+    // Only the judge of a Judge undo game sees a save that a rewind undid, and only when asked. A
+    // claimed judge seat is checked first, as below, so a refusal does not tell a stranger anything.
+    const undone = ctx.urlParams.stringOrUndefined('undone') === '1';
+    if (undone) {
+      if (judge && game.judgePassword !== undefined) {
+        this.checkJudgePassword(game, ctx);
+      }
+      checkMayShowUndone(game, id);
+    }
     // A running game's history is for whoever could rewind it. The judge of a judge-undo game sees
     // any view, everyone else only their own. This is answered before any password check, which can
     // claim an unclaimed seat: a replay read must not write to a running game.
@@ -63,7 +72,7 @@ export class ApiReplayView extends Handler {
       }
     }
 
-    const sandbox = await loadReplayState(game, saveId);
+    const sandbox = await loadReplayState(game, saveId, {undone});
     responses.writeJson(res, ctx, buildReplayView(sandbox, id, saveId, viewAs));
   }
 }

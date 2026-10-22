@@ -88,6 +88,31 @@ describe('LogPanel', () => {
     expect(fetchCalls[fetchCalls.length - 1]).includes('&password=secret');
   });
 
+  it('asks for the lines that rewinds hid when told to show them, and dims them', async () => {
+    const line = (text: string, undone?: boolean) => {
+      const message = new LogMessage(LogMessageType.DEFAULT, text, []);
+      message.undone = undone;
+      return message;
+    };
+    (global as any).fetch = (url: string) => {
+      fetchCalls.push(url);
+      return Promise.resolve({ok: true, json: () => Promise.resolve([line('kept'), line('hidden', true)])});
+    };
+    const wrapper = mount(LogPanel, {
+      ...globalConfig,
+      props: {viewModel: fakeViewModel()},
+    });
+    await flushLogs(wrapper);
+    expect(fetchCalls[fetchCalls.length - 1]).does.not.include('undone');
+
+    await wrapper.setProps({showUndone: true});
+    await flushLogs(wrapper);
+
+    expect(fetchCalls[fetchCalls.length - 1]).includes('&undone=1');
+    const lines = wrapper.findAll('li');
+    expect(lines.map((l) => l.classes('log-undone'))).deep.eq([false, true]);
+  });
+
   it('emits spaceClicked when a log message emits spaceClicked', async () => {
     const wrapper = shallowMount(LogPanel, {
       ...globalConfig,

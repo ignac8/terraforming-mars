@@ -7,7 +7,7 @@ import {Phase} from '../../common/Phase';
 import {Log} from '../../common/logs/Log';
 import {LogMessageData} from '../../common/logs/LogMessageData';
 import {LogMessageDataType} from '../../common/logs/LogMessageDataType';
-import {visibleLog} from '../rewind/RewindRecord';
+import {isHiddenLogIndex, visibleLog} from '../rewind/RewindRecord';
 
 /**
  * What a judge sees of a log line: a private line loses its `playerId` and carries the owner's
@@ -26,12 +26,17 @@ export function playerColors(game: IGame): ReadonlyMap<PlayerId, Color> {
   return new Map(game.players.map((player) => [player.id, player.color]));
 }
 
+// A line of the game log, and whether a rewind hid it.
+type Line = {message: LogMessage, undone: boolean};
+
 export class GameLogs {
-  private getLogsForGeneration(messages: Array<LogMessage>, generation: number): Array<LogMessage> {
+  private getLogsForGeneration(lines: Array<Line>, generation: number): Array<Line> {
     let foundStart = generation === 1;
-    const newMessages = [];
-    for (const message of messages) {
-      if (message.type === LogMessageType.NEW_GENERATION) {
+    const newLines = [];
+    for (const line of lines) {
+      const {message} = line;
+      // A line that a rewind hid is from another line of play, so it neither starts nor ends a generation.
+      if (!line.undone && message.type === LogMessageType.NEW_GENERATION) {
         const value = Number(message.data[0]?.value);
         if (value === generation) {
           foundStart = true;
@@ -40,10 +45,10 @@ export class GameLogs {
         }
       }
       if (foundStart === true) {
-        newMessages.push(message);
+        newLines.push(line);
       }
     }
-    return newMessages;
+    return newLines;
   }
 
   public getLogsForGameView(playerId: ParticipantId, game: IGame, generation: number | undefined): Array<LogMessage> {
@@ -59,27 +64,36 @@ export class GameLogs {
       }
     };
 
-    return this.selectLogs(game, generation, messagesForPlayer);
+    return this.selectLogs(game, generation, messagesForPlayer, false).map((line) => line.message);
   }
 
   /**
    * Every line, private ones included. Each copy loses its `playerId` and carries
    * the owner's color in `owner` instead, so a judge never sees a player id.
+   * `showUndone`: the lines a rewind hid stay in, each copy marked `undone: true`.
    */
-  public getLogsForJudge(game: IGame, generation: number | undefined): Array<LogMessage> {
+  public getLogsForJudge(game: IGame, generation: number | undefined, showUndone: boolean = false): Array<LogMessage> {
     const colors = playerColors(game);
     const notEmpty = (message: LogMessage) => message !== undefined && message !== null;
-    return this.selectLogs(game, generation, notEmpty).map((message) => toJudgeMessage(message, colors));
+    return this.selectLogs(game, generation, notEmpty, showUndone).map((line) => {
+      const copy = toJudgeMessage(line.message, colors);
+      if (line.undone) {
+        copy.undone = true;
+      }
+      return copy;
+    });
   }
 
   // Default view keeps the payload small. An explicit generation request should
   // always return the full generation, including the current one.
-  private selectLogs(game: IGame, generation: number | undefined, keep: (message: LogMessage) => boolean): Array<LogMessage> {
-    const log = visibleLog(game.gameLog, game.rewinds);
+  private selectLogs(game: IGame, generation: number | undefined, keep: (message: LogMessage) => boolean, showUndone: boolean): Array<Line> {
+    const lines = game.gameLog
+      .map((message, idx) => ({message, undone: isHiddenLogIndex(idx, game.rewinds)}))
+      .filter((line) => showUndone || !line.undone);
     if (generation === undefined) {
-      return log.filter(keep).slice(-50);
+      return lines.filter((line) => keep(line.message)).slice(-50);
     }
-    return this.getLogsForGeneration(log, generation).filter(keep);
+    return this.getLogsForGeneration(lines, generation).filter((line) => keep(line.message));
   }
 
   public getLogsForGameEnd(game: IGame): Array<string> {

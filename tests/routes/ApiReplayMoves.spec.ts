@@ -13,6 +13,7 @@ import {InMemoryDatabase} from '../testing/InMemoryDatabase';
 import {restoreTestDatabase, setTestDatabase} from '../testing/setup';
 import {MockResponse} from './HttpMocks';
 import {RouteTestScaffolding} from './RouteTestScaffolding';
+import {storeRewoundSaves, UNDONE_LINES} from './RewoundGame';
 
 describe('ApiReplayMoves', () => {
   let scaffolding: RouteTestScaffolding;
@@ -293,6 +294,78 @@ describe('ApiReplayMoves', () => {
       noUndo.first.password = 'secret';
       await read(`id=${noUndo.first.id}&password=secret`);
       expect(JSON.parse(res.content)).deep.eq({status: 'not-finished'});
+    });
+  });
+
+  describe('the undone moves of a rewound game', () => {
+    // Every test game has the same id, so only the newest one is found.
+    async function rewound(options: Parameters<typeof testGame>[1], finished: boolean) {
+      const [rewoundGame, first, second] = testGame(2, {playerPasswords: true, ...options});
+      await scaffolding.ctx.gameLoader.add(rewoundGame);
+      storeRewoundSaves(db, rewoundGame, finished);
+      clearReplayCache();
+      return {game: rewoundGame, first, second};
+    }
+
+    async function read(query: string) {
+      res = new MockResponse();
+      scaffolding.url = `/api/replay/moves?${query}`;
+      await scaffolding.get(ApiReplayMoves.INSTANCE, res);
+    }
+
+    const texts = (moves: Array<{messages: Array<{message: string}>}>) => moves.flatMap((m) => m.messages.map((l) => l.message));
+
+    for (const finished of [false, true]) {
+      it(`shows the judge of a Judge undo game the undone moves when asked, ${finished ? 'after the game' : 'while it runs'}`, async () => {
+        const {game: judged} = await rewound({judgeLink: true, judgeUndo: true}, finished);
+        judged.judgePassword = 'secret';
+
+        await read(`id=${judged.judgeId}&password=secret&undone=1`);
+        expect(res.statusCode).eq(statusCode.ok);
+        const moves = JSON.parse(res.content).moves;
+        expect(moves.map((m: any) => [m.saveId, m.undone === true])).deep.eq([[0, false], [1, false], [2, true], [3, true], [4, true], [5, false]]);
+        expect(texts(moves.filter((m: any) => m.undone))).deep.eq(UNDONE_LINES);
+
+        await read(`id=${judged.judgeId}&password=secret`);
+        const plain = JSON.parse(res.content).moves;
+        expect(plain.map((m: any) => m.saveId)).deep.eq([0, 1, 5]);
+        expect(plain.some((m: any) => m.undone !== undefined)).is.false;
+        expect(texts(plain)).not.includes('line 5');
+      });
+    }
+
+    for (const finished of [false, true]) {
+      const runs = [
+        {who: 'a player', options: {judgeLink: true, judgeUndo: true}, viewer: (_g: IGame, p: TestPlayer) => p.id},
+        {who: 'a spectator', options: {judgeLink: true, judgeUndo: true}, viewer: (g: IGame) => g.spectatorId},
+        {who: 'a vote player', options: {undoOption: true}, viewer: (_g: IGame, p: TestPlayer) => p.id},
+        {who: 'the judge of a game without Judge undo', options: {judgeLink: true}, viewer: (g: IGame) => g.judgeId},
+      ];
+      for (const run of runs) {
+        it(`refuses the undone moves to ${run.who}, ${finished ? 'after the game' : 'while it runs'}`, async () => {
+          const {game: other, first} = await rewound(run.options, finished);
+          await read(`id=${run.viewer(other, first)}&undone=1`);
+          expect(res.statusCode).eq(statusCode.forbidden);
+          expect(res.content).not.contains('line');
+
+          // Without the parameter nobody gets a move the rewind undid.
+          await read(`id=${run.viewer(other, first)}`);
+          expect(res.statusCode).eq(statusCode.ok);
+          const answer = JSON.parse(res.content);
+          expect(texts(answer.moves ?? [])).not.includes('line 5');
+          expect((answer.moves ?? []).some((m: any) => m.undone !== undefined)).is.false;
+        });
+      }
+    }
+
+    it('checks the judge password before it shows the undone moves', async () => {
+      const {game: judged} = await rewound({judgeLink: true, judgeUndo: true}, true);
+      judged.judgePassword = 'secret';
+      for (const query of ['&password=wrong', '']) {
+        await read(`id=${judged.judgeId}${query}&undone=1`);
+        expect(res.statusCode, query).eq(statusCode.unauthorized);
+        expect(res.content).not.contains('line');
+      }
     });
   });
 });

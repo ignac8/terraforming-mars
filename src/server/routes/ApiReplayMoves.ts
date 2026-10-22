@@ -5,6 +5,7 @@ import {Request} from '../Request';
 import {Response} from '../Response';
 import {RouteError} from './RouteError';
 import {getReplayMoves, isFinished} from '../replay/ReplayService';
+import {checkMayShowUndone} from '../rewind/access';
 import {isJudgeId, isPlayerId} from '../../common/Types';
 
 export class ApiReplayMoves extends Handler {
@@ -14,6 +15,8 @@ export class ApiReplayMoves extends Handler {
   }
 
   public override async get(_req: Request, res: Response, ctx: Context): Promise<void> {
+    // Only the judge of a Judge undo game sees the moves that a rewind undid, and only when asked.
+    const undone = ctx.urlParams.stringOrUndefined('undone') === '1';
     // A judge never plays, so a judge id has no seat of its own. The judge sees every private log
     // line, marked with its owner's color (see getReplayMoves).
     if (isJudgeId(ctx.urlParams.get('id'))) {
@@ -29,13 +32,16 @@ export class ApiReplayMoves extends Handler {
       if (judgeGame.judgePassword !== undefined) {
         this.checkJudgePassword(judgeGame, ctx);
       }
-      responses.writeJson(res, ctx, await getReplayMoves(judgeGame, judgeId));
+      responses.writeJson(res, ctx, await getReplayMoves(judgeGame, judgeId, {undone}));
       return;
     }
     const id = ctx.urlParams.participantId('id');
     const game = await ctx.gameLoader.getGame(id);
     if (game === undefined) {
       throw RouteError.notFound('game not found');
+    }
+    if (undone) {
+      checkMayShowUndone(game, id);
     }
     // The moves carry the viewer's private log lines, so a player needs the seat password. A running
     // game's claimed seat is checked without any exemption, and never claimed.

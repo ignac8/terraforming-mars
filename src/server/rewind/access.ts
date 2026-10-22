@@ -1,5 +1,6 @@
 import {IGame} from '../IGame';
 import {ParticipantId} from '../../common/Types';
+import {RouteError} from '../routes/RouteError';
 
 /** The one human player of a solo or MarsBot game with Player undo on. */
 export function canRewind(game: IGame, participantId: ParticipantId): boolean {
@@ -9,6 +10,13 @@ export function canRewind(game: IGame, participantId: ParticipantId): boolean {
 /** The judge of a game with Judge undo on. */
 export function judgeCanRewind(game: IGame, participantId: ParticipantId): boolean {
   return game.gameOptions.judgeUndo && game.judgeId !== undefined && participantId === game.judgeId;
+}
+
+/** The refusal of a request for the moves and lines a rewind undid, which only the judge of a Judge undo game may make. */
+export function checkMayShowUndone(game: IGame, participantId: ParticipantId): void {
+  if (!judgeCanRewind(game, participantId)) {
+    throw RouteError.forbidden();
+  }
 }
 
 /** A player of a multiplayer game with Player undo and without Judge undo: may browse its history and ask for a rewind by vote. */

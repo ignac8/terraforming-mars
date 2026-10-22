@@ -7,6 +7,10 @@
         <template v-if="index === undefined"><span v-i18n>live</span></template>
         <template v-else><span v-i18n>move</span> {{ index + 1 }} / {{ moves.length }}</template>
       </span>
+      <label v-if="canShowUndone" class="replay-show-undone" :title="$t('Only the judge sees undone moves.')">
+        <input type="checkbox" :checked="showUndone" @change="onShowUndone">
+        <span v-i18n>Show undone moves</span>
+      </label>
       <button v-if="frozen !== undefined" class="replay-freeze" type="button" :disabled="rewinding" @click="$emit('freeze')" v-i18n>{{ frozen ? 'Unfreeze' : 'Freeze' }}</button>
       <button class="replay-collapse" type="button" @click="toggle" v-i18n>{{ collapsed ? 'Show' : 'Hide' }}</button>
     </div>
@@ -43,9 +47,10 @@
         v-for="(move, i) in moves"
         :key="move.saveId"
         class="replay-move"
-        :class="{'replay-move-current': i === index}"
+        :class="{'replay-move-current': i === index, 'replay-move-undone': move.undone}"
         @click="select(i)">
         <span class="replay-move-number">{{ i + 1 }}</span>
+        <span v-if="move.undone" class="replay-undone-badge" v-i18n>undone</span>
         <ul class="replay-move-messages">
           <LogMessageComponent v-for="(message, j) in move.messages" :key="j" :message="message" :viewModel="viewModel"/>
         </ul>
@@ -55,7 +60,7 @@
 
     <!-- The key forgets a half-made choice when another move is picked. -->
     <RewindControls
-      v-if="(canRewind || canVoteRewind) && index !== undefined && !(live && collapsed)"
+      v-if="(canRewind || canVoteRewind) && index !== undefined && !selectedUndone && !(live && collapsed)"
       :key="index"
       :mode="canRewind ? 'rewind' : 'vote'"
       :disabled="rewinding"
@@ -162,6 +167,16 @@ export default defineComponent({
       type: Array as () => Array<RewindClockRow>,
       default: undefined,
     },
+    /** The judge gets a switch for the moves that rewinds undid. */
+    canShowUndone: {
+      type: Boolean,
+      default: false,
+    },
+    /** The list shows the moves that rewinds undid. */
+    showUndone: {
+      type: Boolean,
+      default: false,
+    },
   },
   emits: {
     'select': (_index: number) => true,
@@ -174,6 +189,7 @@ export default defineComponent({
     'rewind': (_cards: RewindCards, _clocks: RewindClocks) => true,
     'request': (_cards: RewindCards) => true,
     'freeze': () => true,
+    'update:showUndone': (_showUndone: boolean) => true,
   },
   data() {
     return {collapsed: this.live};
@@ -193,6 +209,10 @@ export default defineComponent({
         return index < 0 ? PLAYER_COLORS.length : index;
       };
       return [...this.players].sort((a, b) => rank(a) - rank(b));
+    },
+    /** A move that a rewind undid can be looked at, not rewound to. */
+    selectedUndone(): boolean {
+      return this.index !== undefined && this.moves[this.index]?.undone === true;
     },
     speeds(): ReadonlyArray<number> {
       return SPEEDS;
@@ -226,6 +246,9 @@ export default defineComponent({
         return;
       }
       this.$emit('select', index);
+    },
+    onShowUndone(event: Event): void {
+      this.$emit('update:showUndone', (event.target as HTMLInputElement).checked);
     },
     onSpeed(event: Event): void {
       this.$emit('update:speed', Number((event.target as HTMLSelectElement).value));

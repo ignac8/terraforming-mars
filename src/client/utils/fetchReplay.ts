@@ -56,16 +56,24 @@ export function judgeCredentials(id: ParticipantId, passwordFragment: string | u
   return seatPasswordParam(id, passwordFragment) + (serverId === null ? '' : '&serverId=' + encodeURIComponent(serverId));
 }
 
-/** `passwordFragment` is the seat's, as `passwordParam` makes it on the live game page. */
-export async function fetchReplayMoves(id: ParticipantId, passwordFragment?: string): Promise<ReplayMovesModel> {
-  return readJson(await fetch(`${paths.API_REPLAY_MOVES}?id=${id}${judgeCredentials(id, passwordFragment)}`));
+// The judge asks for the moves a rewind undid, which only the judge of a Judge undo game is given.
+function undoneParam(undone: boolean): string {
+  return undone ? '&undone=1' : '';
 }
 
-/** Rejects with an `AbortError` when a newer call replaced this one. */
-export async function fetchReplayView(id: ParticipantId, saveId: number, viewAs: ReplayViewAs, passwordFragment?: string): Promise<ReplayViewModel> {
+/**
+ * `passwordFragment` is the seat's, as `passwordParam` makes it on the live game page. `undone`: the judge's list with the
+ * moves that rewinds undid.
+ */
+export async function fetchReplayMoves(id: ParticipantId, passwordFragment?: string, undone: boolean = false): Promise<ReplayMovesModel> {
+  return readJson(await fetch(`${paths.API_REPLAY_MOVES}?id=${id}${judgeCredentials(id, passwordFragment)}${undoneParam(undone)}`));
+}
+
+/** Rejects with an `AbortError` when a newer call replaced this one. `undone`: the save is one that a rewind undid. */
+export async function fetchReplayView(id: ParticipantId, saveId: number, viewAs: ReplayViewAs, passwordFragment?: string, undone: boolean = false): Promise<ReplayViewModel> {
   viewAbortController?.abort();
   viewAbortController = new AbortController();
-  const url = `${paths.API_REPLAY_VIEW}?id=${id}&save=${saveId}&as=${viewAs}${judgeCredentials(id, passwordFragment)}`;
+  const url = `${paths.API_REPLAY_VIEW}?id=${id}&save=${saveId}&as=${viewAs}${judgeCredentials(id, passwordFragment)}${undoneParam(undone)}`;
   return readJson(await fetch(url, {signal: viewAbortController.signal}));
 }
 

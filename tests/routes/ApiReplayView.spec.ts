@@ -12,6 +12,7 @@ import {InMemoryDatabase} from '../testing/InMemoryDatabase';
 import {restoreTestDatabase, setTestDatabase} from '../testing/setup';
 import {MockResponse} from './HttpMocks';
 import {RouteTestScaffolding} from './RouteTestScaffolding';
+import {storeRewoundSaves} from './RewoundGame';
 
 describe('ApiReplayView', () => {
   let scaffolding: RouteTestScaffolding;
@@ -355,6 +356,65 @@ describe('ApiReplayView', () => {
       await get(`id=${voted.first.id}&save=0&as=${voted.first.color}`);
       expect(res.statusCode).eq(statusCode.ok);
       expect(voted.first.password).is.undefined;
+    });
+  });
+
+  describe('a save that a rewind undid', () => {
+    // Save 3 is one of the saves 2 to 4 that the rewind abandoned. Every test game has the same id, so only the newest one is found.
+    const UNDONE_SAVE = 3;
+
+    async function rewound(options: Parameters<typeof testGame>[1], finished: boolean) {
+      const [rewoundGame, first] = testGame(2, {playerPasswords: true, ...options});
+      await scaffolding.ctx.gameLoader.add(rewoundGame);
+      storeRewoundSaves(db, rewoundGame, finished);
+      clearReplayCache();
+      res = new MockResponse();
+      return {game: rewoundGame, first};
+    }
+
+    for (const finished of [false, true]) {
+      it(`shows the judge of a Judge undo game the save when asked, ${finished ? 'after the game' : 'while it runs'}`, async () => {
+        const {game: judged} = await rewound({judgeLink: true, judgeUndo: true}, finished);
+        judged.judgePassword = 'secret';
+
+        await get(`id=${judged.judgeId}&password=secret&save=${UNDONE_SAVE}&as=all&undone=1`);
+        expect(res.statusCode).eq(statusCode.ok);
+        expect(JSON.parse(res.content).saveId).eq(UNDONE_SAVE);
+
+        res = new MockResponse();
+        await get(`id=${judged.judgeId}&password=secret&save=${UNDONE_SAVE}&as=all`);
+        expect(res.statusCode).eq(statusCode.notFound);
+      });
+    }
+
+    const runs = [
+      {who: 'a player', options: {judgeLink: true, judgeUndo: true}, viewer: (_g: IGame, p: TestPlayer) => p.id},
+      {who: 'a spectator', options: {judgeLink: true, judgeUndo: true}, viewer: (g: IGame) => g.spectatorId},
+      {who: 'a vote player', options: {undoOption: true}, viewer: (_g: IGame, p: TestPlayer) => p.id},
+      {who: 'the judge of a game without Judge undo', options: {judgeLink: true}, viewer: (g: IGame) => g.judgeId},
+    ];
+    for (const run of runs) {
+      it(`refuses the save to ${run.who} when asked, and does not find it otherwise`, async () => {
+        for (const finished of [false, true]) {
+          const {game: other, first} = await rewound(run.options, finished);
+          await get(`id=${run.viewer(other, first)}&save=${UNDONE_SAVE}&as=${first.color}&undone=1`);
+          expect(res.statusCode, `finished ${finished}`).eq(statusCode.forbidden);
+          expect(res.content).eq('forbidden');
+        }
+        const {game: other, first} = await rewound(run.options, true);
+        await get(`id=${run.viewer(other, first)}&save=${UNDONE_SAVE}&as=all`);
+        expect(res.statusCode).eq(statusCode.notFound);
+      });
+    }
+
+    it('checks the judge password before it shows the save', async () => {
+      const {game: judged} = await rewound({judgeLink: true, judgeUndo: true}, true);
+      judged.judgePassword = 'secret';
+      for (const query of ['&password=wrong', '']) {
+        res = new MockResponse();
+        await get(`id=${judged.judgeId}${query}&save=${UNDONE_SAVE}&as=all&undone=1`);
+        expect(res.statusCode, query).eq(statusCode.unauthorized);
+      }
     });
   });
 });

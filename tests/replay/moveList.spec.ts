@@ -42,4 +42,37 @@ describe('buildMoveList', () => {
     const moves = buildMoveList(saves, runs[3].rewinds, log);
     expect(moves[2].messages).deep.eq([log[6], log[10], log[11]]);
   });
+
+  describe('with the undone moves shown', () => {
+    it('lists the saves of the abandoned line in order, marked undone', () => {
+      const moves = buildMoveList(saves, [first], log, true);
+      // Save 3 holds no line of its own: the rewind ended at its log length, and the hidden lines are save 2's.
+      expect(moves.map((m) => [m.saveId, m.undone])).deep.eq([[0, undefined], [1, undefined], [2, true], [4, undefined], [5, undefined], [6, undefined]]);
+    });
+
+    it('ends the last abandoned save where the rewind did, and gives the marker to the rewind\'s save', () => {
+      const moves = buildMoveList(saves, [first], log, true);
+      expect(moves[2].messages).deep.eq(log.slice(4, 6));
+      expect(moves[3].messages).deep.eq(log.slice(6, 9));
+      expect(moves[4].messages).deep.eq(log.slice(9, 11));
+    });
+
+    it('puts every line in exactly one move, in order', () => {
+      for (const rewinds of [[first], runs[2].rewinds]) {
+        const moves = buildMoveList(saves, rewinds, log, true);
+        expect(moves.flatMap((m) => m.messages), JSON.stringify(rewinds)).deep.eq(log);
+      }
+    });
+
+    it('marks the saves of an earlier rewind\'s line too when a later rewind goes further back', () => {
+      const moves = buildMoveList(saves, runs[2].rewinds, log, true);
+      expect(moves.filter((m) => m.undone).map((m) => m.saveId)).deep.eq([1, 2, 4, 5]);
+    });
+
+    it('marks nothing without the switch', () => {
+      for (const run of runs) {
+        expect(buildMoveList(saves, run.rewinds, log).some((m) => m.undone !== undefined)).is.false;
+      }
+    });
+  });
 });

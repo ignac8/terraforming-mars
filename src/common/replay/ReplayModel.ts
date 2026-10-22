@@ -3,7 +3,8 @@ import {LogMessage} from '../logs/LogMessage';
 import {PlayerViewModel, PrivatePlayerFields} from '../models/PlayerModel';
 import {SpectatorModel} from '../models/SpectatorModel';
 
-export type ReplayMove = {saveId: number; messages: Array<LogMessage>};
+/** `undone`: a rewind abandoned this move. Only the judge's list shows such moves, and only when asked. */
+export type ReplayMove = {saveId: number; messages: Array<LogMessage>; undone?: boolean};
 
 export type ReplayViewAs = 'all' | Color;
 

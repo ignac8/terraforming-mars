@@ -8,6 +8,8 @@ export class LogMessage implements Message {
   public playerId?: PlayerId;
   // Set by the judge log route in place of playerId, so judges see who a private line belongs to.
   public owner?: Color;
+  // Set by the judge log route on a line a rewind hid, which the judge sees only when asked.
+  public undone?: boolean;
   public timestamp = Date.now();
   public type?: LogMessageType;
   constructor(

@@ -262,6 +262,42 @@ describe('ReplayPanel', () => {
     });
   });
 
+  describe('undone moves', () => {
+    const withUndone: Array<ReplayMove> = [
+      {saveId: 1, messages: [message('alpha', 1)]},
+      {saveId: 2, messages: [message('beta', 2)], undone: true},
+      {saveId: 3, messages: [message('gamma', 3)]},
+    ];
+
+    it('offers the judge a switch, and passes the choice on', async () => {
+      for (const showUndone of [false, true]) {
+        const wrapper = mountPanel({canShowUndone: true, showUndone});
+        const input = wrapper.find('.replay-header .replay-show-undone input');
+        expect((input.element as HTMLInputElement).checked).equals(showUndone);
+        await input.setValue(!showUndone);
+        expect(wrapper.emitted('update:showUndone'), String(showUndone)).to.deep.equal([[!showUndone]]);
+      }
+    });
+
+    it('offers it to no one else', () => {
+      expect(mountPanel().find('.replay-show-undone').exists()).is.false;
+    });
+
+    it('dims an undone move and badges it, and no other', () => {
+      const wrapper = mountPanel({moves: withUndone});
+      const entries = wrapper.findAll('.replay-move');
+      expect(entries.map((entry) => entry.classes('replay-move-undone'))).deep.equal([false, true, false]);
+      expect(entries.map((entry) => entry.find('.replay-undone-badge').exists())).deep.equal([false, true, false]);
+    });
+
+    it('offers no rewind to an undone move, nor a vote for one', () => {
+      for (const props of [{canRewind: true}, {canVoteRewind: true}]) {
+        expect(mountPanel({...props, moves: withUndone, index: 1}).findComponent(RewindControls).exists(), JSON.stringify(props)).is.false;
+        expect(mountPanel({...props, moves: withUndone, index: 2}).findComponent(RewindControls).exists(), JSON.stringify(props)).is.true;
+      }
+    });
+  });
+
   it('lets the judge choose a view on the live game page, where a player has none', () => {
     expect(mountPanel({live: true}).find('.replay-view-as').exists()).is.false;
     expect(mountPanel({live: true, viewAsInLive: true}).find('.replay-view-as').exists()).is.true;
