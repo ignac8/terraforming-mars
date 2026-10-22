@@ -165,6 +165,7 @@ export class Game implements IGame, Logger {
   /** The open or rewinding vote, as plain data. */
   public rewindVote: SerializedRewindVote | undefined = undefined;
   public rewindRequestLimits: RewindRequestLimits | undefined = undefined;
+  public onRewindVoteMove: (() => void) | undefined = undefined;
   /** The save row this object last wrote or was loaded from. Patches go to this row only. Undefined for a sandbox and before the first save. */
   public ownSaveId: number | undefined = undefined;
   /** Settles once every save row this object started writing is written, or has failed. */

@@ -94,6 +94,8 @@ export interface IGame extends Logger {
   /** The open or rewinding vote, as plain data. */
   rewindVote: SerializedRewindVote | undefined;
   rewindRequestLimits: RewindRequestLimits | undefined;
+  /** Called after every accepted input while the game has a vote. Whoever gives the game a vote sets it. */
+  onRewindVoteMove?: () => void;
   /** The save row this object last wrote or was loaded from. Patches go to this row only. Undefined for a sandbox and before the first save. */
   ownSaveId: number | undefined;
   /**

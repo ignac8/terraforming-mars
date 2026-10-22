@@ -1776,6 +1776,9 @@ export class Player implements IPlayer {
       this.setWaitingFor(waitingFor, waitingForCb);
       throw err;
     }
+    if (this.game.rewindVote !== undefined) {
+      this.game.onRewindVoteMove?.();
+    }
   }
 
   public getWaitingFor(): PlayerInput | undefined {
