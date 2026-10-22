@@ -40,6 +40,8 @@ export class ApiReplayMoves extends Handler {
     // The moves carry the viewer's private log lines, so a player needs the seat password. A running
     // game's claimed seat is checked without any exemption, and never claimed.
     if (isPlayerId(id)) {
+      // isFinished reads the newest save and getReplayMoves goes by the phase, so they differ while a
+      // game that has just ended has not saved its END row. That only makes the check here the stricter.
       if (await isFinished(game)) {
         this.checkPlayerPassword(game.getPlayerById(id), ctx);
       } else {
