@@ -66,7 +66,7 @@ import SpectatorHome from '@/client/components/SpectatorHome.vue';
 import ReplayHands from '@/client/components/replay/ReplayHands.vue';
 import ReplayPanel from '@/client/components/replay/ReplayPanel.vue';
 import {setTranslationContext} from '@/client/directives/i18n';
-import {fetchReplayMoves, fetchReplayView, postRewind, ReplayResponseError} from '@/client/utils/fetchReplay';
+import {fetchReplayMoves, fetchReplayView, postRewind, ReplayResponseError, translateRefusal} from '@/client/utils/fetchReplay';
 import {paths} from '@/common/app/paths';
 import {PlayerViewModel, ViewModel} from '@/common/models/PlayerModel';
 import {SpectatorModel} from '@/common/models/SpectatorModel';
@@ -265,12 +265,12 @@ export default defineComponent({
       this.rewinding = true;
       this.error = undefined;
       try {
-        await postRewind(this.participantId, this.moves[this.index].saveId, cards);
+        await postRewind(this.participantId, this.moves[this.index].saveId, cards, this.liveView);
         // The page is on its way out, so it stays disabled.
         window.location.href = `${paths.PLAYER}?id=${this.participantId}`;
       } catch (err) {
         console.error(err);
-        this.error = err instanceof Error ? err.message : String(err);
+        this.error = err instanceof Error ? translateRefusal(err.message) : String(err);
         this.rewinding = false;
       }
     },

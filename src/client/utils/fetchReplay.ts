@@ -2,7 +2,8 @@ import {paths} from '@/common/app/paths';
 import {PlayerViewModel} from '@/common/models/PlayerModel';
 import {ReplayMovesModel, ReplayViewAs, ReplayViewModel, RewindCards} from '@/common/replay/ReplayModel';
 import {isJudgeId, ParticipantId, PlayerId} from '@/common/Types';
-import {passwordQuery} from '@/client/utils/playerPassword';
+import {translateText} from '@/client/directives/i18n';
+import {passwordParam, passwordQuery} from '@/client/utils/playerPassword';
 
 // Replaying steps through views quickly, so a new view request cancels the one still in flight.
 // Kept apart from fetchLogs' controller so the two never cancel each other.
@@ -25,14 +26,16 @@ async function readJson<T>(resp: Response): Promise<T> {
   return resp.json();
 }
 
-// A judge link with a claimed seat needs its password, sent as a query parameter like every other
-// judge request. The replay page has no model to read it from, so it comes from the address bar,
-// where the judge page's link puts it. Players and spectators need none.
-function judgePasswordParam(id: ParticipantId): string {
-  if (!isJudgeId(id)) {
-    return '';
-  }
+// The replay page has no model to read a password from, so it comes from the address bar, where
+// the judge page's link and the player's own link put it.
+function addressBarPasswordParam(): string {
   return passwordQuery(new URLSearchParams(window.location.search).get('password'));
+}
+
+// A judge link with a claimed seat needs its password, sent as a query parameter like every other
+// judge request. Players and spectators need none to read a replay.
+function judgePasswordParam(id: ParticipantId): string {
+  return isJudgeId(id) ? addressBarPasswordParam() : '';
 }
 
 export async function fetchReplayMoves(id: ParticipantId): Promise<ReplayMovesModel> {
@@ -47,12 +50,24 @@ export async function fetchReplayView(id: ParticipantId, saveId: number, viewAs:
   return readJson(await fetch(url, {signal: viewAbortController.signal}));
 }
 
-/** Rewinds the running game to before the move saved as `saveId`, and answers the player's view of the rewound game. */
-export async function postRewind(id: PlayerId, saveId: number, cards: RewindCards): Promise<PlayerViewModel> {
-  const resp = await fetch(`${paths.API_REWIND}?id=${id}`, {
+/**
+ * Rewinds the running game to before the move saved as `saveId`, and answers the player's view of the rewound game.
+ * The seat password comes from `liveView` on the live game page, and from the address bar on the replay page.
+ */
+export async function postRewind(id: PlayerId, saveId: number, cards: RewindCards, liveView?: PlayerViewModel): Promise<PlayerViewModel> {
+  const password = liveView === undefined ? addressBarPasswordParam() : passwordParam(liveView);
+  const resp = await fetch(`${paths.API_REWIND}?id=${id}${password}`, {
     method: 'POST',
     headers: {'Content-Type': 'application/json'},
     body: JSON.stringify({saveId, cards}),
   });
   return readJson(resp);
+}
+
+// The server writes a refusal as its status text and the reason, as in `Bad request: <reason>`.
+const STATUS_TEXT = /^(Bad request|Not found): /;
+
+/** The reason the server gave for a refusal, in the language of the player. */
+export function translateRefusal(text: string): string {
+  return translateText(text.replace(STATUS_TEXT, ''));
 }

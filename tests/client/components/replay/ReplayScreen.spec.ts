@@ -16,6 +16,7 @@ import WaitingFor from '@/client/components/WaitingFor.vue';
 import {CardName} from '@/common/cards/CardName';
 import {translateMessage} from '@/client/directives/i18n';
 import {LogMessageDataType} from '@/common/logs/LogMessageDataType';
+import {PreferencesManager} from '@/client/utils/PreferencesManager';
 
 const id = 's-spectator-id' as SpectatorId;
 const playerId = 'p-blue-id' as PlayerId;
@@ -78,6 +79,8 @@ describe('ReplayScreen', () => {
     (global as any).fetch = originalFetch;
     vi.useRealTimers();
     vi.restoreAllMocks();
+    PreferencesManager.INSTANCE.set('lang', 'en');
+    delete (window as any)._translations;
   });
 
   function mountScreen() {
@@ -375,6 +378,34 @@ describe('ReplayScreen', () => {
       expect(wrapper.find('.replay-error--floating').text()).to.contain('nothing was changed');
       expect(window.location.href).to.equal('http://localhost/replay');
       expect(wrapper.findComponent(SpectatorHome).exists()).is.true;
+    });
+
+    it('shows a refused rewind in the language of the player', async () => {
+      vi.spyOn(console, 'error').mockImplementation(() => {});
+      PreferencesManager.INSTANCE.set('lang', 'pl');
+      (window as any)._translations = {'A rewind is already running.': 'Cofanie gry już trwa.'};
+      rewindAnswer = () => Promise.resolve({ok: false, status: 400, text: () => Promise.resolve('Bad request: A rewind is already running.')});
+      const wrapper = mountRewindable();
+      await flushPromises();
+      wrapper.findComponent(RewindControls).vm.$emit('rewind', 'same');
+      await flushPromises();
+      expect(wrapper.find('.replay-error--floating').text()).to.equal('Cofanie gry już trwa.');
+    });
+
+    it('sends the seat password of the live game page', async () => {
+      movesAnswer = {status: 'available', finished: false, canRewind: true, defaultViewAs: 'blue', moves: [{saveId: 10, messages: []}, {saveId: 11, messages: []}]};
+      const wrapper = shallowMount(ReplayScreen, {
+        ...globalConfig,
+        global: {...globalConfig.global, stubs: {ReplayPanel: false}},
+        props: {participantId: playerId, liveView: playedView({password: '0123456789ab'})},
+      });
+      await wrapper.find('.replay-collapse').trigger('click');
+      await flushPromises();
+      wrapper.findComponent(ReplayPanel).vm.$emit('select', 1);
+      await flushPromises();
+      wrapper.findComponent(RewindControls).vm.$emit('rewind', 'same');
+      await flushPromises();
+      expect(rewinds.map((rewind) => rewind.url)).to.deep.equal([`api/rewind?id=${playerId}&password=0123456789ab`]);
     });
   });
 

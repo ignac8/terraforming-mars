@@ -24,5 +24,15 @@
   "Rewind to before this move": "Cofnij grę do stanu sprzed tego ruchu",
   "Moves after this one will be undone.": "Ruchy po tym zostaną cofnięte.",
   "Rewind": "Cofnij grę",
-  "Cancel": "Anuluj"
+  "Cancel": "Anuluj",
+  "invalid rewind": "Nieprawidłowe żądanie cofnięcia gry.",
+  "A rewind is already running.": "Cofanie gry już trwa.",
+  "This game was rewound. Refresh this page.": "Ta gra została cofnięta. Odśwież tę stronę.",
+  "That move is not in this game's history.": "Tego ruchu nie ma w historii tej gry.",
+  "That moment can't be restored. Nothing was changed.": "Nie można przywrócić tego momentu. Nic nie zostało zmienione.",
+  "That moment can't be restored with this version of the game. Nothing was changed.": "Nie można przywrócić tego momentu w tej wersji gry. Nic nie zostało zmienione.",
+  "Pick an earlier move.": "Wybierz wcześniejszy ruch.",
+  "Incorrect password": "Nieprawidłowe hasło",
+  "forbidden": "Brak dostępu",
+  "Not found": "Nie znaleziono"
 }
