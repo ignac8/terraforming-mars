@@ -317,7 +317,7 @@ export default defineComponent({
         reads.push(this.loadMoves());
         this.refusal = refusal;
         // The game update that reading brings is the one the refusal answers, so it stays for it.
-        await Promise.all(reads);
+        await Promise.allSettled(reads);
         await this.$nextTick();
         this.refusalSettled = this.refusal === refusal;
       }
