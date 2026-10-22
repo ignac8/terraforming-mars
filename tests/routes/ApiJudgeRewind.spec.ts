@@ -8,6 +8,7 @@ import {clearReplayCache, getReplayMoves} from '../../src/server/replay/ReplaySe
 import {withTableLock} from '../../src/server/rewind/tableLock';
 import {JudgeModel} from '../../src/common/models/JudgeModel';
 import {Phase} from '../../src/common/Phase';
+import {Timer} from '../../src/common/Timer';
 import * as constants from '../../src/common/constants';
 import {statusCode} from '../../src/common/http/statusCode';
 import {cast} from '../../src/common/utils/utils';
@@ -22,6 +23,7 @@ const PASSWORD = '0123456789ab';
 
 describe('ApiJudgeRewind', () => {
   let res: MockResponse;
+  let db: SnapshotDatabase;
   let game: IGame;
   let player: TestPlayer;
   let player2: TestPlayer;
@@ -36,7 +38,8 @@ describe('ApiJudgeRewind', () => {
   // A two-player game played into the second generation's action phase.
   async function start(options: Parameters<typeof testGame>[1] = {}) {
     clearReplayCache();
-    setTestDatabase(new SnapshotDatabase());
+    db = new SnapshotDatabase();
+    setTestDatabase(db);
     [game, player, player2] = testGame(2, {judgeLink: true, judgeUndo: true, ...options});
     game.judgePassword = PASSWORD;
     await GameLoader.getInstance().add(game);
@@ -114,6 +117,29 @@ describe('ApiJudgeRewind', () => {
     const model: JudgeModel = JSON.parse(res.content);
     expect(model.id).eq(game.judgeId);
     expect(model.game.frozen).is.true;
+  });
+
+  it('passes the judge\'s clocks choice on, and the marker names the judge', async () => {
+    for (const clocks of ['keep', 'back'] as const) {
+      await start();
+      const players = [player, player2];
+      players.forEach((p, i) => {
+        p.timer = Timer.deserialize({sumElapsed: 600_000 + i, startedAt: 0, running: false, afterFirstAction: true, lastStoppedAt: 0});
+      });
+      // Timers are not part of the moment's state, so the replay still matches the changed row.
+      db.games.get(game.id)![target].players.forEach((p, i) => {
+        p.timer.sumElapsed = 300_000 + i;
+      });
+
+      await post(JSON.stringify({saveId: target, cards: 'same', clocks}));
+
+      expect(res.statusCode, clocks).eq(statusCode.ok);
+      const restored = (await GameLoader.getInstance().getGame(game.id))!;
+      players.forEach((p, i) => {
+        expect(restored.getPlayerById(p.id).timer.serialize().sumElapsed, clocks).eq((clocks === 'keep' ? 600_000 : 300_000) + i);
+      });
+      expect(restored.gameLog[restored.gameLog.length - 1].message, clocks).eq('The judge rewound the game to generation ${0}');
+    }
   });
 
   it('reopens a finished game, frozen, and its moves are no longer a finished game\'s', async () => {
