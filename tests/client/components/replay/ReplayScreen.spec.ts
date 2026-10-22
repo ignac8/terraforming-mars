@@ -546,6 +546,31 @@ describe('ReplayScreen', () => {
       expect(wrapper.find('.rewind-refusal').text()).to.contain('not in this game');
     });
 
+    it('drops the moves it listed when a reload after a refused rewind lists none', async () => {
+      vi.spyOn(console, 'error').mockImplementation(() => {});
+      const updatePlayer = vi.fn();
+      const wrapper = shallowMount(ReplayScreen, {
+        ...globalConfig,
+        global: {...globalConfig.global, stubs: {PlayerHome: false, ReplayPanel: false}, mocks: {updatePlayer}},
+        props: {participantId: playerId, liveView: liveView()},
+      });
+      await wrapper.find('.replay-collapse').trigger('click');
+      await flushPromises();
+      panel(wrapper).vm.$emit('select', 1);
+      await flushPromises();
+      expect(wrapper.findComponent(RewindControls).exists()).is.true;
+      // Another page rewound the game to its first move, which leaves no listed move.
+      movesAnswer = {...liveMoves, moves: [{saveId: 10, messages: []}]};
+      rewindAnswer = () => Promise.resolve({ok: false, status: 404, text: () => Promise.resolve('Not found: That move is not in this game\'s history.')});
+      wrapper.findComponent(RewindControls).vm.$emit('rewind', 'same');
+      await flushPromises();
+
+      expect(wrapper.find('.rewind-refusal').exists()).is.true;
+      expect(panel(wrapper).props('moves')).has.length(0);
+      expect(panel(wrapper).props('canRewind')).is.false;
+      expect(wrapper.findComponent(RewindControls).exists()).is.false;
+    });
+
     it('lists no move for the live game itself, and keeps the last position of a finished game', async () => {
       for (const finished of [false, true]) {
         movesAnswer = {...liveMoves, finished, moves: [{saveId: 10, messages: played}, {saveId: 11, messages: []}]};

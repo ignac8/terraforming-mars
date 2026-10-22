@@ -188,6 +188,14 @@ export default defineComponent({
           return;
         }
         const moves = answer.status === 'available' ? listedMoves(answer) : [];
+        if (moves.length === 0) {
+          // The list the page showed is gone, and must not stay to be picked or rewound to.
+          this.moves = [];
+          this.canRewind = false;
+          if (this.index !== undefined && this.liveView !== undefined) {
+            this.backToLive();
+          }
+        }
         if (answer.status === 'available' && moves.length === 0 && this.liveView !== undefined) {
           // A game with no move made yet, for the panel to say so.
           this.movesGameAge = gameAge;
