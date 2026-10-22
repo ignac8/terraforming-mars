@@ -26,6 +26,7 @@
   "Moves after this one will be undone.": "Ruchy po tym zostaną cofnięte.",
   "Rewind": "Cofnij grę",
   "Cancel": "Anuluj",
+  "only your own view while the game runs": "Podczas gry możesz oglądać tylko swój widok.",
   "invalid rewind": "Nieprawidłowe żądanie cofnięcia gry.",
   "A rewind is already running.": "Cofanie gry już trwa.",
   "This game was rewound. Refresh this page.": "Ta gra została cofnięta. Odśwież tę stronę.",
