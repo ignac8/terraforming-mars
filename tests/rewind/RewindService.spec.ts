@@ -9,6 +9,7 @@ import {SelectCard} from '../../src/server/inputs/SelectCard';
 import {clearReplayCache, getReplayMoves, loadReplayState} from '../../src/server/replay/ReplayService';
 import {rewindGame, rewindMetrics} from '../../src/server/rewind/RewindService';
 import {sameState} from '../../src/server/rewind/stateHash';
+import {isTableLocked} from '../../src/server/rewind/tableLock';
 import {RouteError} from '../../src/server/routes/RouteError';
 import {CardName} from '../../src/common/cards/CardName';
 import {Phase} from '../../src/common/Phase';
@@ -388,8 +389,11 @@ describe('RewindService', () => {
 
   it('refuses a second rewind while one runs, a replaced game, and players who cannot rewind', async () => {
     const first = rewindGame(game, player, convert, 'same');
+    // Inputs check the same lock.
+    expect(isTableLocked(game.id)).is.true;
     expect((await refusal(rewindGame(game, player, research, 'same'))).detail).eq('A rewind is already running.');
     await first;
+    expect(isTableLocked(game.id)).is.false;
     // `game` is the object the first rewind replaced.
     expect((await refusal(rewindGame(game, player, research, 'same'))).kind).eq('badRequest');
 

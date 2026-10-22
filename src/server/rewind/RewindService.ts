@@ -12,9 +12,9 @@ import {canRewind} from './access';
 import {readRebuildSaves, replayToSave, ReplayResult} from './rebuild';
 import {RewindRecord} from './RewindRecord';
 import {shuffleHiddenPiles} from './shuffleHiddenPiles';
+import {withTableLock} from './tableLock';
 import {Phase} from '../../common/Phase';
 import {Timer} from '../../common/Timer';
-import {GameId} from '../../common/Types';
 import {RewindCards} from '../../common/replay/ReplayModel';
 import {UnseededRandom} from '../../common/utils/Random';
 
@@ -31,9 +31,6 @@ const UNRESTORABLE = 'That moment can\'t be restored. Nothing was changed.';
 const UNLOADABLE = 'That moment can\'t be restored with this version of the game. Nothing was changed.';
 const PICK_EARLIER = 'Pick an earlier move.';
 
-// Games with a rewind in progress.
-const rewinding = new Set<GameId>();
-
 /**
  * Makes `game` as it was at `saveId` the live game, written as a new save after every existing one.
  * Throws a RouteError when refused; the live game, its rows and the cache are then unchanged.
@@ -42,19 +39,11 @@ export async function rewindGame(game: IGame, player: IPlayer, saveId: number, c
   if (!canRewind(game, player.id)) {
     throw RouteError.forbidden();
   }
-  if (rewinding.has(game.id)) {
-    throw RouteError.badRequest('A rewind is already running.');
-  }
   // The request took the game before an earlier rewind replaced it.
   if (game.retired) {
     throw RouteError.badRequest('This game was rewound. Refresh this page.');
   }
-  rewinding.add(game.id);
-  try {
-    return await rewind(game, player, saveId, cards);
-  } finally {
-    rewinding.delete(game.id);
-  }
+  return await withTableLock(game.id, () => rewind(game, player, saveId, cards));
 }
 
 async function rewind(live: IGame, player: IPlayer, saveId: number, cards: RewindCards): Promise<IGame> {

@@ -1791,7 +1791,8 @@ export class Player implements IPlayer {
         console.warn(message);
       }
     }
-    if (!input.optional) {
+    // A frozen game runs no clock, also at the prompts that reloading or rewinding it reaches.
+    if (!input.optional && !this.game.frozen) {
       this.timer.start();
     }
     this.waitingFor = input;

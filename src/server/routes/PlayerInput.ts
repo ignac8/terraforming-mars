@@ -17,6 +17,7 @@ import {INVALID_REQUEST_ID, INVALID_RUN_ID, RESPONDING_TOO_QUICKLY} from '../../
 import {RouteError} from './RouteError';
 import {readBody} from './readBody';
 import {stringToNumber} from '../database/utils';
+import {isTableLocked} from '../rewind/tableLock';
 
 export const playerInputMetrics = {
   responseInterval: new prometheus.Histogram({
@@ -96,6 +97,7 @@ export class PlayerInput extends Handler {
       const entity = JSON.parse(body);
       validateRunId(entity);
       validateNotRewound(player);
+      validateNotHeld(player);
       validateRequestId(player, entity);
 
       // Placed here because it fits in a temporally cohesive sense.
@@ -162,6 +164,16 @@ function validateRunId(entity: any) {
 function validateNotRewound(player: IPlayer) {
   if (player.game.retired) {
     throw new AppError(INVALID_REQUEST_ID, 'This game was rewound. Click OK to refresh this page.');
+  }
+}
+
+// While the game is frozen or a rewind or freeze runs, no answer is applied.
+function validateNotHeld(player: IPlayer) {
+  if (player.game.frozen) {
+    throw new AppError(INVALID_REQUEST_ID, 'The judge froze the game. Click OK to refresh this page.');
+  }
+  if (isTableLocked(player.game.id)) {
+    throw new AppError(INVALID_REQUEST_ID, 'The table is being rewound or frozen. Click OK to refresh this page.');
   }
 }
 

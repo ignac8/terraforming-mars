@@ -8,6 +8,8 @@ import {RouteTestScaffolding} from './RouteTestScaffolding';
 import {GameId} from '../../src/common/Types';
 import {statusCode} from '../../src/common/http/statusCode';
 import {Server} from '../../src/server/models/ServerModel';
+import {testGame} from '../TestGame';
+import {SelectOption} from '../../src/server/inputs/SelectOption';
 
 describe('ApiWaitingFor', () => {
   let scaffolding: RouteTestScaffolding;
@@ -82,6 +84,38 @@ describe('ApiWaitingFor', () => {
     await scaffolding.get(ApiWaitingFor.INSTANCE, res);
     expect(res.statusCode).eq(statusCode.ok);
     expect(res.content).eq('{"result":"WAIT","waitingFor":["black","red"]}');
+  });
+
+  for (const run of [
+    {frozen: true, undoCount: 'stale', result: 'REFRESH'},
+    {frozen: true, undoCount: 'current', result: 'WAIT'},
+    {frozen: false, undoCount: 'stale', result: 'REFRESH'},
+    {frozen: false, undoCount: 'current', result: 'GO'},
+  ] as const) {
+    it(`answers ${run.result} to a required input when frozen is ${run.frozen} and the undo count is ${run.undoCount}`, async () => {
+      const [game, player] = testGame(2);
+      await scaffolding.ctx.gameLoader.add(game);
+      player.setWaitingFor(new SelectOption('Input'));
+      game.frozen = run.frozen;
+      game.undoCount = 1;
+      const undoCount = run.undoCount === 'current' ? 1 : 0;
+
+      scaffolding.url = `/api/waitingfor?id=${player.id}&gameAge=${game.gameAge}&undoCount=${undoCount}`;
+      await scaffolding.get(ApiWaitingFor.INSTANCE, res);
+
+      expect(res.statusCode).eq(statusCode.ok);
+      expect(JSON.parse(res.content).result).eq(run.result);
+    });
+  }
+
+  it('refreshes a spectator whose undo count is ahead of the game', async () => {
+    const [game] = testGame(2);
+    await scaffolding.ctx.gameLoader.add(game);
+
+    scaffolding.url = `/api/waitingfor?id=${game.spectatorId}&gameAge=${game.gameAge}&undoCount=${game.undoCount + 1}`;
+    await scaffolding.get(ApiWaitingFor.INSTANCE, res);
+
+    expect(JSON.parse(res.content).result).eq('REFRESH');
   });
 
   describe('judge', () => {

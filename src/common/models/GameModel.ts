@@ -60,4 +60,6 @@ export type GameModel = {
   turmoil: TurmoilModel | undefined;
   undoCount: number;
   venusScaleLevel: number;
+  /** Set while the judge has frozen the game. */
+  frozen?: boolean;
 }

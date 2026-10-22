@@ -37,6 +37,7 @@ import {Tag} from '../src/common/cards/Tag';
 import {restoreTestDatabase, setTestDatabase} from './testing/setup';
 import {InMemoryDatabase} from './testing/InMemoryDatabase';
 import {SnapshotDatabase} from './testing/SnapshotDatabase';
+import {BeginnerCorporation} from '../src/server/cards/corporation/BeginnerCorporation';
 import {Spacefarer} from '../src/server/milestones/terraCimmeria/Spacefarer';
 import {Suburbian} from '../src/server/awards/modular/Suburbian';
 import {SpaceName} from '../src/common/boards/SpaceName';
@@ -687,6 +688,25 @@ describe('Game', () => {
     } finally {
       restoreTestDatabase();
     }
+  });
+
+  it('reloads a frozen game with every clock stopped', () => {
+    const [game, player, player2] = testGame(2);
+    // Players with corporations, so a reload goes to the action phase.
+    player.playedCards.push(new BeginnerCorporation());
+    player2.playedCards.push(new BeginnerCorporation());
+    game.phase = Phase.ACTION;
+    player.takeAction();
+    expect(game.activePlayer.timer.serialize().running).is.true;
+    // As a freeze leaves the game.
+    game.frozen = true;
+    game.players.forEach((p) => p.timer.pause());
+
+    const loaded = Game.deserialize(game.serialize());
+
+    expect(loaded.phase).eq(Phase.ACTION);
+    expect(loaded.activePlayer.getWaitingFor()).is.not.undefined;
+    expect(loaded.players.map((p) => p.timer.serialize().running)).deep.eq([false, false]);
   });
 
   it('tracks the save rows written at the end of the game', async () => {

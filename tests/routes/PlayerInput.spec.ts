@@ -15,10 +15,13 @@ import {statusCode} from '@/common/http/statusCode';
 import {FakeClock} from '../common/FakeClock';
 import {INVALID_REQUEST_ID, RESPONDING_TOO_QUICKLY} from '@/common/app/AppErrorId';
 import {rewindGame} from '../../src/server/rewind/RewindService';
+import {stateHash} from '../../src/server/rewind/stateHash';
+import {withTableLock} from '../../src/server/rewind/tableLock';
 import {clearReplayCache} from '../../src/server/replay/ReplayService';
 import {restoreTestDatabase, setTestDatabase} from '../testing/setup';
 import {SnapshotDatabase} from '../testing/SnapshotDatabase';
 import {testGame} from '../TestGame';
+import {Phase} from '../../src/common/Phase';
 
 describe('PlayerInput', () => {
   let scaffolding: RouteTestScaffolding;
@@ -299,6 +302,43 @@ describe('PlayerInput', () => {
       expect(db.games.get(game.id)!).has.length(saves);
     } finally {
       restoreTestDatabase();
+    }
+  });
+
+  it('refuses an answer while the game is frozen or its table is locked, and changes nothing', async () => {
+    for (const hold of ['frozen', 'locked'] as const) {
+      const db = new SnapshotDatabase();
+      setTestDatabase(db);
+      let release = () => {};
+      let locked: Promise<void> | undefined;
+      try {
+        const [game, player] = testGame(2);
+        await scaffolding.ctx.gameLoader.add(game);
+        game.phase = Phase.ACTION;
+        player.takeAction();
+        const index = cast(player.getWaitingFor(), OrOptions).options.findIndex((option) => option.title === 'Pass for this generation');
+        const requestId = player.getWaitingFor()?.requestId;
+        if (hold === 'frozen') {
+          game.frozen = true;
+        } else {
+          locked = withTableLock(game.id, () => new Promise((resolve) => release = resolve));
+        }
+        const inputs = structuredClone(game.inputsSinceSave);
+        const hash = stateHash(game.serialize());
+        const saves = db.games.get(game.id)?.length ?? 0;
+
+        await send(PlayerInput.INSTANCE, player.id, JSON.stringify({requestId, type: 'or', index, response: {type: 'option'}}));
+
+        expect(res.statusCode, hold).eq(statusCode.badRequest);
+        expect(JSON.parse(res.content).id, hold).eq(INVALID_REQUEST_ID);
+        expect(game.inputsSinceSave, hold).deep.eq(inputs);
+        expect(stateHash(game.serialize()), hold).eq(hash);
+        expect(db.games.get(game.id)?.length ?? 0, hold).eq(saves);
+      } finally {
+        release();
+        await locked;
+        restoreTestDatabase();
+      }
     }
   });
 });

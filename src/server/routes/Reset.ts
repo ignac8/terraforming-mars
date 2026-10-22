@@ -6,6 +6,7 @@ import {IPlayer} from '../IPlayer';
 import {Request} from '../Request';
 import {Response} from '../Response';
 import {RouteError} from './RouteError';
+import {isTableLocked} from '../rewind/tableLock';
 
 /**
  * Reloads the game from the last action.
@@ -47,6 +48,13 @@ export class Reset extends Handler {
       throw RouteError.notFound();
     }
     this.checkPlayerPassword(player, ctx);
+    // A forced reload mid-rewind would serve an object the rewind is about to retire.
+    if (game.frozen) {
+      throw RouteError.badRequest('The game is frozen.');
+    }
+    if (isTableLocked(game.id)) {
+      throw RouteError.badRequest('The table is being rewound or frozen. Click OK to refresh this page.');
+    }
     if (player.game.activePlayer.id !== player.id) {
       throw RouteError.badRequest('Not the active player');
     }

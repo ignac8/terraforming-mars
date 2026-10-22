@@ -99,6 +99,7 @@ export class Server {
       turmoil: getTurmoilModel(game),
       undoCount: game.undoCount,
       venusScaleLevel: game.getVenusScaleLevel(),
+      frozen: game.frozen,
     };
   }
 
@@ -110,8 +111,11 @@ export class Server {
     const thisPlayerIndex = players.findIndex((p) => p.color === player.color);
     const thisPlayer: PublicPlayerModel = players[thisPlayerIndex];
 
+    const privates = this.getPrivateFields(player);
     const rv: PlayerViewModel = {
-      ...this.getPrivateFields(player),
+      ...privates,
+      // A frozen game takes no input. The judge still sees every prompt.
+      waitingFor: game.frozen ? undefined : privates.waitingFor,
       game: this.getGameModel(player.game),
       id: player.id,
       password: player.password,

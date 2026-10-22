@@ -13,6 +13,7 @@ import {CardName} from '../../src/common/cards/CardName';
 import {toName, cast} from '../../src/common/utils/utils';
 import {cardsFromJSON} from '../../src/server/createCard';
 import {SelectCard} from '../../src/server/inputs/SelectCard';
+import {SelectOption} from '../../src/server/inputs/SelectOption';
 
 describe('ServerModel', () => {
   let player: TestPlayer;
@@ -173,6 +174,16 @@ describe('ServerModel', () => {
     expect(json).does.not.include('player-two-secret');
     expect(json).does.not.include(player.id);
     expect(json).does.not.include(player2.id);
+  });
+
+  it('hides a frozen player\'s prompt but not the judge\'s view of it', () => {
+    [game, player] = testGame(2, {judgeLink: true});
+    player.setWaitingFor(new SelectOption('Input'));
+    game.frozen = true;
+
+    expect(Server.getPlayerModel(player).waitingFor).is.undefined;
+    const index = game.playersInGenerationOrder.indexOf(player);
+    expect(Server.getJudgeModel(game).privates[index].waitingFor).is.not.undefined;
   });
 
   it('the judge model needs a judge id', () => {

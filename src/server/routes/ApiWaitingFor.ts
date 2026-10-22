@@ -36,9 +36,12 @@ export class ApiWaitingFor extends Handler {
 
   private getPlayerWaitingForModel(player: IPlayer, game: IGame, gameAge: number, undoCount: number): WaitingForModel {
     const inputs = this.playersWithRequiredInputs(game);
-    if (this.playerHasRequiredInput(player)) {
+    // A changed undo count can leave the player at the same prompt, e.g. a rewind to it, so it goes first.
+    if (game.undoCount !== undoCount) {
+      return {result: 'REFRESH', waitingFor: inputs};
+    } else if (this.playerHasRequiredInput(player) && !game.frozen) {
       return {result: 'GO', waitingFor: inputs};
-    } else if (game.gameAge > gameAge || game.undoCount > undoCount) {
+    } else if (game.gameAge > gameAge) {
       return {result: 'REFRESH', waitingFor: inputs};
     }
     return {result: 'WAIT', waitingFor: inputs};
@@ -47,7 +50,8 @@ export class ApiWaitingFor extends Handler {
   private getSpectatorWaitingForModel(game: IGame, gameAge: number, undoCount: number): WaitingForModel {
     const inputs = this.playersWithRequiredInputs(game);
 
-    if (game.gameAge > gameAge || game.undoCount > undoCount) {
+    // A page can hold a higher count than the server, e.g. a patch that a restart lost.
+    if (game.gameAge > gameAge || game.undoCount !== undoCount) {
       return {result: 'REFRESH', waitingFor: inputs};
     }
     return {result: 'WAIT', waitingFor: inputs};

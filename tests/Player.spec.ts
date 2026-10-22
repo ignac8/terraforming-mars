@@ -91,6 +91,19 @@ describe('Player', () => {
     expect(player.inputRequestedAt).eq(5000);
   });
 
+  it('starts no clock while the game is frozen', () => {
+    for (const frozen of [false, true]) {
+      const [game, player] = testGame(1);
+      player.clearWaitingFor();
+      player.timer = Timer.newInstance();
+      game.frozen = frozen;
+
+      player.setWaitingFor(new SelectOption('Input'));
+
+      expect(player.timer.serialize().running, String(frozen)).eq(!frozen);
+    }
+  });
+
   it('does not stop the timer when processing optional input', () => {
     const [player, clock] = playerWithRunningTimer();
     const elapsed = player.timer.getElapsed();
