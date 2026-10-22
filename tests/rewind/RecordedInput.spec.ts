@@ -72,16 +72,22 @@ describe('RecordedInput', () => {
     expect(rows[index]!.inputs![0].stateHash).eq(stateHash(rows[index - 1]!));
   });
 
-  it('round-trips the inputs since the last save', () => {
+  it('round-trips the inputs since the last save, and a save that has none', () => {
     player.takeAction();
     const waitingFor = player.getWaitingFor()!;
     game.recordInput(player, waitingFor, {type: 'or', index: 0, response: {type: 'option'}});
-    const serialized = game.serialize();
-    expect(serialized.inputs).has.length(1);
-    // Reloading takes the next action, which saves the game again with the same inputs.
-    Game.deserialize(structuredClone(serialized));
-    const rows = db.games.get(game.id)!;
-    expect(rows[rows.length - 1]!.inputs).deep.eq(serialized.inputs);
+    for (const recorded of [true, false]) {
+      const serialized = game.serialize();
+      expect(serialized.inputs).has.length(1);
+      // A save written before inputs were recorded.
+      if (!recorded) {
+        delete serialized.inputs;
+      }
+      // Reloading takes the next action, which saves the game again with the same inputs.
+      Game.deserialize(structuredClone(serialized));
+      const rows = db.games.get(game.id)!;
+      expect(rows[rows.length - 1]!.inputs, String(recorded)).deep.eq(serialized.inputs);
+    }
   });
 
   it('the save at the end of the game carries the inputs and the completing save none', async () => {

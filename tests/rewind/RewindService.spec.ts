@@ -126,6 +126,24 @@ describe('RewindService', () => {
     }
   });
 
+  it('replays from a save written before inputs were recorded, once a reload has saved it again', async () => {
+    player.process({type: 'card', cards: []});
+    for (const row of rows()) {
+      delete row.inputs;
+    }
+    // A restart loads the game from its newest save, which saves it again under the same id.
+    const reloaded = Game.deserialize(structuredClone(rows()[rows().length - 1]));
+    await GameLoader.getInstance().add(reloaded);
+    const reloadedPlayer = reloaded.getPlayerById(player.id);
+    choose(reloadedPlayer, 'Convert 8 heat into temperature');
+    choose(reloadedPlayer, 'Convert 8 heat into temperature');
+    const count = await rebuilds('replayed');
+
+    await rewindGame(reloaded, reloadedPlayer, rows().length - 1, 'same');
+
+    expect(await rebuilds('replayed')).eq(count + 1);
+  });
+
   it('deals the same research cards with the same cards, and other ones after a shuffle', async () => {
     for (const cards of ['same', 'shuffle'] as const) {
       await play();

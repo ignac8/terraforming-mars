@@ -145,8 +145,11 @@ export class Game implements IGame, Logger {
   public gameLog: Array<LogMessage> = createGameLog();
   public rewinds: Array<RewindRecord> = [];
   public undoCount: number = 0; // Each undo increases it
-  /** The inputs processed since the last save. */
-  public inputsSinceSave: Array<RecordedInput> = [];
+  /**
+   * The inputs processed since the last save. Undefined when the game was loaded from a save
+   * written before inputs were recorded, so saving it again keeps that save without inputs.
+   */
+  public inputsSinceSave: Array<RecordedInput> | undefined = [];
   public inputsThisRound = 0;
   public resettable: boolean = false;
   /** A sandbox game is a read-only view of a past save. It never writes a save. */
@@ -584,15 +587,15 @@ export class Game implements IGame, Logger {
       response: structuredClone(input),
       stateHash: stateHash(this.serialize()),
     };
-    this.inputsSinceSave.push(recorded);
+    (this.inputsSinceSave ??= []).push(recorded);
     return recorded;
   }
 
   /** Takes back a record from `recordInput`, for an answer the game then rejected. */
   public forgetInput(recorded: RecordedInput | undefined): void {
-    const index = recorded === undefined ? -1 : this.inputsSinceSave.lastIndexOf(recorded);
+    const index = recorded === undefined ? -1 : this.inputsSinceSave?.lastIndexOf(recorded) ?? -1;
     if (index !== -1) {
-      this.inputsSinceSave.splice(index, 1);
+      this.inputsSinceSave?.splice(index, 1);
     }
   }
 
@@ -624,7 +627,6 @@ export class Game implements IGame, Logger {
       globalsPerGeneration: this.globalsPerGeneration,
       id: this.id,
       initialDraftIteration: this.initialDraftIteration,
-      inputs: [...this.inputsSinceSave],
       lastSaveId: this.lastSaveId,
       milestones: this.milestones.map(toName),
       moonData: MoonData.serialize(this.moonData),
@@ -656,6 +658,9 @@ export class Game implements IGame, Logger {
     }
     if (this.clonedGamedId !== undefined) {
       result.clonedGamedId = this.clonedGamedId;
+    }
+    if (this.inputsSinceSave !== undefined) {
+      result.inputs = [...this.inputsSinceSave];
     }
     if (this.rewinds.length > 0) {
       result.rewinds = this.rewinds;
@@ -1993,7 +1998,7 @@ export class Game implements IGame, Logger {
     game.phase = d.phase;
     game.oxygenLevel = d.oxygenLevel;
     game.undoCount = d.undoCount ?? 0;
-    game.inputsSinceSave = d.inputs ?? [];
+    game.inputsSinceSave = d.inputs;
     game.temperature = d.temperature;
     game.venusScaleLevel = d.venusScaleLevel;
     game.activePlayer = game.getPlayerById(d.activePlayer);

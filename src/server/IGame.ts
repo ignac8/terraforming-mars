@@ -71,8 +71,11 @@ export interface IGame extends Logger {
   /** Rewinds of this game, each hiding the line of play it abandoned. */
   rewinds: Array<RewindRecord>;
   undoCount: number; // Each undo increases it
-  /** The inputs processed since the last save. */
-  inputsSinceSave: Array<RecordedInput>;
+  /**
+   * The inputs processed since the last save. Undefined when the game was loaded from a save
+   * written before inputs were recorded, so saving it again keeps that save without inputs.
+   */
+  inputsSinceSave: Array<RecordedInput> | undefined;
   /** Remembers `input`, the answer `player` gave to `waitingFor`, with the state it is about to be applied to. Sandbox games record nothing. */
   recordInput(player: IPlayer, waitingFor: PlayerInput, input: InputResponse): RecordedInput | undefined;
   /** Takes back a record from `recordInput`, for an answer the game then rejected. */
