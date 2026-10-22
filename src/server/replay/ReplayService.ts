@@ -265,7 +265,10 @@ async function allMoves(game: IGame): Promise<AllMoves> {
   return {status: 'available', moves: buildMoveList(saves, rewinds, log), finished: true};
 }
 
-/** The save ids of the game's move list, the same for every viewer. Undefined when its history is gone (compressed). */
+/**
+ * The save ids of the game's move list, the same for every viewer. Undefined when its history is gone (compressed),
+ * or when the game has ended and its final save has not landed yet.
+ */
 export async function historySaveIds(game: IGame): Promise<Array<number> | undefined> {
   const all = await allMoves(game);
   return all.status === 'available' ? all.moves.map((move) => move.saveId) : undefined;
