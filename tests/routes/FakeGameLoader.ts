@@ -34,6 +34,8 @@ export class FakeGameLoader implements IGameLoader {
   }
   public mark() {
   }
+  public unmark() {
+  }
   public completeGame(_game: Game): Promise<void> {
     return Promise.resolve(undefined);
   }

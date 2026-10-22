@@ -34,6 +34,8 @@ export interface IGameLoader {
    * @param {GameId} gameId the game to be removed from the cache. Only call this for completed games.
    */
   mark(gameId: GameId): void;
+  /** Takes back `mark`, for a finished game that a rewind reopened. */
+  unmark(gameId: GameId): void;
 
   /**
    * Saves a game (but takes into account that the game might have already been purged.)

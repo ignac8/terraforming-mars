@@ -259,6 +259,10 @@ export class GameLoader implements IGameLoader {
     this.cache.mark(gameId);
   }
 
+  public unmark(gameId: GameId) {
+    this.cache.unmark(gameId);
+  }
+
   public sweep(): void {
     this.cache.sweep();
   }

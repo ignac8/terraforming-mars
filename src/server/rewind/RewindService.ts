@@ -123,6 +123,8 @@ async function rewind(live: IGame, player: IPlayer, saveId: number, cards: Rewin
       console.warn(`rewind: unable to reopen ${live.id}`, e);
       throw RouteError.badRequest(UNRESTORABLE);
     }
+    // Finishing marked the game to leave memory, which would tear it down mid-play.
+    GameLoader.getInstance().unmark(live.id);
     forgetReplay(live.id);
   }
 
@@ -172,6 +174,7 @@ async function rewind(live: IGame, player: IPlayer, saveId: number, cards: Rewin
     if (finished) {
       // Queues the game for compression again. Its results are not restored.
       await Database.getInstance().markFinished(live.id).catch((err) => console.warn(`rewind: unable to mark ${live.id} finished again`, err));
+      GameLoader.getInstance().mark(live.id);
     }
     if (e instanceof RouteError) {
       throw e;

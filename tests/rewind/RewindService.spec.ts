@@ -15,8 +15,9 @@ import {Phase} from '../../src/common/Phase';
 import {Timer} from '../../src/common/Timer';
 import {PlayerId} from '../../src/common/Types';
 import {cast} from '../../src/common/utils/utils';
-import {restoreTestDatabase, setTestDatabase} from '../testing/setup';
+import {restoreTestDatabase, restoreTestGameLoader, setTestDatabase, setTestGameLoader} from '../testing/setup';
 import {SnapshotDatabase} from '../testing/SnapshotDatabase';
+import {FakeClock} from '../common/FakeClock';
 import {TestPlayer} from '../TestPlayer';
 import {testGame} from '../TestingUtils';
 
@@ -88,6 +89,7 @@ describe('RewindService', () => {
 
   afterEach(() => {
     restoreTestDatabase();
+    restoreTestGameLoader();
   });
 
   it('restores the moment before the move and appends one save', async () => {
@@ -289,6 +291,29 @@ describe('RewindService', () => {
     expect(calls).deep.eq(['markFinished', 'reopenFinishedGame', 'markFinished']);
     const moves = await getReplayMoves(restored, restored.spectatorId);
     expect(moves.status === 'available' && moves.moves[moves.moves.length - 1].saveId).eq(rows().length - 1);
+  });
+
+  it('keeps a rewound finished game in memory, and a finished game whose rewind failed is evicted as before', async () => {
+    for (const fails of [false, true]) {
+      const database = new SnapshotDatabase();
+      setTestDatabase(database);
+      const clock = new FakeClock();
+      const loader = GameLoader.newTestInstance({sleepMillis: 0, evictMillis: 100, idleMillis: 0, sweep: 'manual'}, clock);
+      setTestGameLoader(loader);
+      await play({lastGeneration: true, database});
+      if (fails) {
+        db.saveGame = () => {
+          throw new Error('disk full');
+        };
+      }
+
+      const rewinding = rewindGame(game, player, convert, 'same');
+      await (fails ? refusal(rewinding) : rewinding);
+      clock.millis = 1000;
+      loader.sweep();
+
+      expect(await loader.isCached(game.id), String(fails)).eq(!fails);
+    }
   });
 
   it('writes nothing from a replaced game, even when it ends', async () => {

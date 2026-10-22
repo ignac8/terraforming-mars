@@ -64,6 +64,11 @@ export class Cache extends EventEmitter {
     this.evictionSchedule.set(gameId, this.clock.now() + this.config.evictMillis);
   }
 
+  /** Takes back a mark(), for a finished game that play resumed. */
+  public unmark(gameId: GameId) {
+    this.evictionSchedule.delete(gameId);
+  }
+
   /** Records that `gameId` was just accessed, resetting its idle time. */
   public touch(gameId: GameId) {
     this.lastAccess.set(gameId, this.clock.now());
