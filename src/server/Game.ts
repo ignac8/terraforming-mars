@@ -162,7 +162,7 @@ export class Game implements IGame, Logger {
   public finishing: Promise<void> | undefined = undefined;
   /** Set while the judge has frozen the game: no input is accepted and no clock runs. */
   public frozen: boolean = false;
-  /** The open or rewinding vote, as plain data (V4 keeps its timer and ended votes in its own memory). */
+  /** The open or rewinding vote, as plain data. */
   public rewindVote: SerializedRewindVote | undefined = undefined;
   public rewindRequestLimits: RewindRequestLimits | undefined = undefined;
   /** The save row this object last wrote or was loaded from. Patches go to this row only. Undefined for a sandbox and before the first save. */

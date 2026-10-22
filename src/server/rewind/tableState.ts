@@ -3,7 +3,7 @@ import {SerializedTimer} from '../../common/SerializedTimer';
 import {RewindCards} from '../../common/replay/ReplayModel';
 import {SerializedGame} from '../SerializedGame';
 
-/** An open or rewinding rewind vote as it is stored. Ended votes are never stored (V4 shows them from memory for a minute). */
+/** An open or rewinding rewind vote as it is stored. Ended votes are never stored. */
 export type SerializedRewindVote = {
   id: number;
   requester: PlayerId;

@@ -91,7 +91,7 @@ export interface IGame extends Logger {
   readonly finishing: Promise<void> | undefined;
   /** Set while the judge has frozen the game: no input is accepted and no clock runs. */
   frozen: boolean;
-  /** The open or rewinding vote, as plain data (V4 keeps its timer and ended votes in its own memory). */
+  /** The open or rewinding vote, as plain data. */
   rewindVote: SerializedRewindVote | undefined;
   rewindRequestLimits: RewindRequestLimits | undefined;
   /** The save row this object last wrote or was loaded from. Patches go to this row only. Undefined for a sandbox and before the first save. */
@@ -104,7 +104,7 @@ export interface IGame extends Logger {
    * Call it only on the object GameLoader currently serves. A player undo (`restoreGameAt`) or a LoadGame
    * rollback replaces the object without retiring it, and once the new object writes the old object's row id
    * again, the newest-row check no longer keeps the old object's patch off it. Callers check that the object
-   * is still the live game first (V4's isLive guard).
+   * is still the live game first.
    */
   persistTableState(): Promise<void>;
   generation: number;
