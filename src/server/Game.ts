@@ -597,10 +597,10 @@ export class Game implements IGame, Logger {
     return written;
   }
 
-  public persistTableState(): Promise<void> {
+  public persistTableState(): Promise<boolean> {
     const patched = Promise.all([this.lastWrite, this.lastPatch]).then(async () => {
       if (this.isSandbox || this.retired || this.ownSaveId === undefined) {
-        return;
+        return false;
       }
       // The state of this moment, so the last patch wins.
       const patch: TableStatePatch = {
@@ -610,9 +610,9 @@ export class Game implements IGame, Logger {
         undoCount: this.undoCount,
         timers: this.players.map((p) => ({player: p.id, timer: p.timer.serialize()})),
       };
-      await Database.getInstance().updateNewestSave(this.id, this.ownSaveId, patch);
+      return await Database.getInstance().updateNewestSave(this.id, this.ownSaveId, patch);
     });
-    this.lastPatch = patched.catch(() => {});
+    this.lastPatch = patched.then(() => {}, () => {});
     return patched;
   }
 
