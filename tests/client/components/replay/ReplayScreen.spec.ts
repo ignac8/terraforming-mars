@@ -15,6 +15,7 @@ import {LogMessageDataType} from '@/common/logs/LogMessageDataType';
 import {fakePublicPlayerModel} from '../testHelpers';
 
 const id = 's-spectator-id' as SpectatorId;
+const finishedGame = {finished: true, canRewind: false, defaultViewAs: 'all'} as const;
 
 describe('ReplayScreen', () => {
   let originalFetch: any;
@@ -34,7 +35,7 @@ describe('ReplayScreen', () => {
     calls = [];
     holdView = undefined;
     playerNames = {};
-    movesAnswer = {status: 'available', moves: [
+    movesAnswer = {status: 'available', ...finishedGame, moves: [
       {saveId: 10, messages: []},
       {saveId: 11, messages: []},
     ]};
@@ -69,7 +70,7 @@ describe('ReplayScreen', () => {
     const wrapper = mountScreen();
     await flushPromises();
     expect(wrapper.text()).to.contain('Replay is not ready yet');
-    movesAnswer = {status: 'available', moves: [{saveId: 10, messages: []}]};
+    movesAnswer = {status: 'available', ...finishedGame, moves: [{saveId: 10, messages: []}]};
     await wrapper.find('.replay-retry').trigger('click');
     await flushPromises();
     expect(wrapper.text()).not.to.contain('Replay is not ready yet');
@@ -172,7 +173,7 @@ describe('ReplayScreen', () => {
   });
 
   describe('autoplay', () => {
-    const threeMoves: ReplayMovesModel = {status: 'available', moves: [
+    const threeMoves: ReplayMovesModel = {status: 'available', ...finishedGame, moves: [
       {saveId: 10, messages: []},
       {saveId: 11, messages: []},
       {saveId: 12, messages: []},
@@ -200,7 +201,7 @@ describe('ReplayScreen', () => {
     });
 
     it('does nothing when playing a game of one move', async () => {
-      const wrapper = await mountPlayable({status: 'available', moves: [{saveId: 10, messages: []}]});
+      const wrapper = await mountPlayable({status: 'available', ...finishedGame, moves: [{saveId: 10, messages: []}]});
       const panel = () => wrapper.findComponent(ReplayPanel);
       const callCount = calls.length;
       panel().vm.$emit('play');

@@ -6,9 +6,10 @@ import {loadSandboxGame} from './sandbox';
 import {Phase} from '../../common/Phase';
 import {GameId, ParticipantId} from '../../common/Types';
 import {playerColors, toJudgeMessage} from '../routes/GameLogs';
-import {ReplayMovesModel} from '../../common/replay/ReplayModel';
+import {ReplayMove, ReplayMovesModel} from '../../common/replay/ReplayModel';
 import {LogMessage} from '../../common/logs/LogMessage';
 import {isAbandonedSave, RewindRecord} from '../rewind/RewindRecord';
+import {canRewind} from '../rewind/access';
 import {buildMoveList, SaveEntry} from './moveList';
 
 const MAX_CACHED_GAMES = 50;
@@ -16,11 +17,15 @@ const MAX_CACHED_GAMES = 50;
 // A finished game does not change, so what its move list is built from is kept: the saves, the
 // rewinds and the one log that every save is a prefix of. The list holds every message, so it
 // is the same for all viewers; each request filters the private lines for its own viewer.
-// Oldest entries go first.
-type CachedGame = {saves: Array<SaveEntry>, rewinds: Array<RewindRecord>, log: Array<LogMessage>};
+// A running game keeps only its saves, which rows being append-only lets the next request
+// extend. Its rewinds and log are the live game's. Oldest entries go first.
+type CachedGame =
+  | {finished: true, saves: Array<SaveEntry>, rewinds: Array<RewindRecord>, log: Array<LogMessage>}
+  | {finished: false, saves: Array<SaveEntry>};
+type FinishedGame = Extract<CachedGame, {finished: true}>;
 const cache = new Map<GameId, CachedGame>();
 
-type Built = {status: 'available', game: CachedGame} | {status: 'not-finished'} | {status: 'expired'};
+type Built = {status: 'available', game: FinishedGame} | {status: 'not-finished'} | {status: 'expired'};
 
 // Builds in progress, so viewers who ask at the same time share one pass over the saves.
 const building = new Map<GameId, Promise<Built>>();
@@ -59,6 +64,16 @@ export function forgetReplay(gameId: GameId): void {
       sandboxes.delete(key);
     }
   }
+}
+
+function remember(gameId: GameId, entry: CachedGame): void {
+  if (!cache.has(gameId) && cache.size >= MAX_CACHED_GAMES) {
+    for (const oldest of cache.keys()) {
+      cache.delete(oldest);
+      break;
+    }
+  }
+  cache.set(gameId, entry);
 }
 
 function rememberFinished(gameId: GameId): void {
@@ -149,7 +164,7 @@ async function readGame(game: IGame): Promise<{result: Built, finished: boolean}
     }
     throw e;
   }
-  return {result: {status: 'available', game: {saves, rewinds: newest.rewinds ?? [], log: newest.gameLog}}, finished: true};
+  return {result: {status: 'available', game: {finished: true, saves, rewinds: newest.rewinds ?? [], log: newest.gameLog}}, finished: true};
 }
 
 function build(game: IGame): Promise<Built> {
@@ -160,13 +175,7 @@ function build(game: IGame): Promise<Built> {
         rememberFinished(game.id);
       }
       if (result.status === 'available') {
-        if (cache.size >= MAX_CACHED_GAMES) {
-          for (const oldest of cache.keys()) {
-            cache.delete(oldest);
-            break;
-          }
-        }
-        cache.set(game.id, result.game);
+        remember(game.id, result.game);
       }
     }
     return result;
@@ -179,28 +188,64 @@ function build(game: IGame): Promise<Built> {
   return pending;
 }
 
-export async function getReplayMoves(game: IGame, viewerId: ParticipantId): Promise<ReplayMovesModel> {
-  // The live phase comes first: a game that a rollback reopened must not serve its old list.
-  if (game.phase !== Phase.END) {
-    return {status: 'not-finished'};
+// The saves of a running game, read again only for the ids above the newest one seen. A rollback
+// during the read forgets the entry, and then the result is not remembered.
+async function readRunningSaves(game: IGame): Promise<Array<SaveEntry>> {
+  const known = cache.get(game.id);
+  const saves = known !== undefined && !known.finished ? known.saves : [];
+  const newest = saves.length > 0 ? saves[saves.length - 1].saveId : -1;
+  const added: Array<SaveEntry> = [];
+  for (const saveId of (await getSortedSaveIds(game)).filter((id) => id > newest)) {
+    added.push({saveId, logLength: (await getSave(game, saveId)).gameLog.length});
   }
-  const cached = cache.get(game.id);
-  const result: Built = cached !== undefined ?
-    {status: 'available', game: cached} :
-    await (building.get(game.id) ?? build(game));
-  if (result.status !== 'available') {
-    return result;
+  const all = [...saves, ...added];
+  if (cache.get(game.id) === known) {
+    remember(game.id, {finished: false, saves: all});
   }
+  return all;
+}
+
+function movesFor(game: IGame, viewerId: ParticipantId, moves: Array<ReplayMove>): Array<ReplayMove> {
   // The judge page shows every private line, so the judge's replay does too, in the same form.
   const colors = viewerId === game.judgeId ? playerColors(game) : undefined;
-  const {saves, rewinds, log} = result.game;
-  const moves = buildMoveList(saves, rewinds, log).map(({saveId, messages}) => ({
+  return moves.map(({saveId, messages}) => ({
     saveId,
     messages: colors !== undefined ?
       messages.map((m) => toJudgeMessage(m, colors)) :
       messages.filter((m) => m.playerId === undefined || m.playerId === viewerId),
   }));
-  return {status: 'available', moves};
+}
+
+export async function getReplayMoves(game: IGame, viewerId: ParticipantId): Promise<ReplayMovesModel> {
+  // The live phase comes first: a game that a rollback reopened must not serve its old list.
+  if (game.phase !== Phase.END) {
+    if (!canRewind(game, viewerId)) {
+      return {status: 'not-finished'};
+    }
+    const saves = await readRunningSaves(game);
+    return {
+      status: 'available',
+      moves: movesFor(game, viewerId, buildMoveList(saves, game.rewinds, game.gameLog)),
+      finished: false,
+      canRewind: true,
+      defaultViewAs: game.players[0].color,
+    };
+  }
+  const cached = cache.get(game.id);
+  const result: Built = cached?.finished ?
+    {status: 'available', game: cached} :
+    await (building.get(game.id) ?? build(game));
+  if (result.status !== 'available') {
+    return result;
+  }
+  const {saves, rewinds, log} = result.game;
+  return {
+    status: 'available',
+    moves: movesFor(game, viewerId, buildMoveList(saves, rewinds, log)),
+    finished: true,
+    canRewind: canRewind(game, viewerId),
+    defaultViewAs: 'all',
+  };
 }
 
 /**

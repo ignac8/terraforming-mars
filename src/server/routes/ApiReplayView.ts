@@ -6,6 +6,7 @@ import {Response} from '../Response';
 import {RouteError} from './RouteError';
 import {isFinished, loadReplayState} from '../replay/ReplayService';
 import {buildReplayView} from '../replay/replayView';
+import {canRewind} from '../rewind/access';
 import {PLAYER_COLORS} from '../../common/Color';
 import {ReplayViewAs} from '../../common/replay/ReplayModel';
 import {isJudgeId, isPlayerId} from '../../common/Types';
@@ -38,7 +39,12 @@ export class ApiReplayView extends Handler {
     // A replay needs a finished game. This is answered before any password check, which can claim
     // an unclaimed seat: a replay read must not write to a running game.
     if (!await isFinished(game)) {
-      throw RouteError.badRequest('game not finished');
+      if (!canRewind(game, id)) {
+        throw RouteError.badRequest('game not finished');
+      }
+      if (viewAs !== game.players[0].color) {
+        throw RouteError.badRequest('only your own view while the game runs');
+      }
     }
     if (judge) {
       // An unclaimed judge seat is not claimed here: a replay read never writes to a game.

@@ -1,5 +1,8 @@
 import {expect} from 'chai';
 import {testGame} from '../TestGame';
+import {OrOptions} from '../../src/server/inputs/OrOptions';
+import {SelectSpace} from '../../src/server/inputs/SelectSpace';
+import {cast} from '../../src/common/utils/utils';
 import {TestPlayer} from '../TestPlayer';
 import {IGame} from '../../src/server/IGame';
 import {SerializedGame} from '../../src/server/SerializedGame';
@@ -11,6 +14,7 @@ import {Phase} from '../../src/common/Phase';
 import {PlayerId} from '../../src/common/Types';
 import {ReplayMove, ReplayMovesModel} from '../../src/common/replay/ReplayModel';
 import {InMemoryDatabase} from '../testing/InMemoryDatabase';
+import {SnapshotDatabase} from '../testing/SnapshotDatabase';
 import {restoreTestDatabase, setTestDatabase} from '../testing/setup';
 
 describe('ReplayService', () => {
@@ -240,7 +244,7 @@ describe('ReplayService', () => {
     const copy = db.games.get(game.id)!;
     function other(i: number): IGame {
       db.games.set(`g-${i}`, copy);
-      return {id: `g-${i}`, phase: Phase.END} as IGame;
+      return {id: `g-${i}`, phase: Phase.END, players: [], gameOptions: {undoOption: false}} as unknown as IGame;
     }
     const first = other(0);
     await getReplayMoves(first, player.id);
@@ -365,6 +369,13 @@ describe('ReplayService', () => {
     expect(replayed.generation).eq(4);
   });
 
+  it('loadReplayState answers notFound for an abandoned save that is already cached', async () => {
+    storeLengths([0, 2, 4, 5]);
+    await loadReplayState(game, 1);
+    game.rewinds = [{saveId: 2, restoredSaveId: 1, logStart: 2, logEnd: 3}];
+    expect(await errorOf(loadReplayState(game, 1))).deep.include({kind: 'notFound'});
+  });
+
   describe('after a rewind', () => {
     beforeEach(() => {
       // Save 2 restored save 1, so saves 1 up to 2 are the abandoned line.
@@ -382,6 +393,82 @@ describe('ReplayService', () => {
     it('loadReplayState answers notFound for an abandoned save', async () => {
       expect(await errorOf(loadReplayState(game, 1))).deep.include({kind: 'notFound'});
       expect((await loadReplayState(game, 2)).isSandbox).is.true;
+    });
+  });
+
+  describe('a running game', () => {
+    let sdb: SnapshotDatabase;
+
+    beforeEach(() => {
+      sdb = new SnapshotDatabase();
+      setTestDatabase(sdb);
+    });
+
+    // Converts plants into a greenery, an action that saves the game when the next one is taken.
+    function act(who: TestPlayer) {
+      who.plants = 8;
+      who.popWaitingFor();
+      who.takeAction();
+      const action = cast(who.getWaitingFor(), OrOptions);
+      const index = action.options.findIndex((option) => option instanceof SelectSpace);
+      const select = cast(action.options[index], SelectSpace);
+      who.process({type: 'or', index, response: {type: 'space', spaceId: select.spaces[0].id}});
+    }
+
+    function countReads() {
+      const reads: Array<number> = [];
+      const getGameVersion = sdb.getGameVersion.bind(sdb);
+      sdb.getGameVersion = (gameId, saveId) => {
+        reads.push(saveId);
+        return getGameVersion(gameId, saveId);
+      };
+      return reads;
+    }
+
+    it('lists the moves for its player with Player undo', async () => {
+      const [solo, soloPlayer] = testGame(1, {undoOption: true});
+      act(soloPlayer);
+      act(soloPlayer);
+      const r = await getReplayMoves(solo, soloPlayer.id);
+      expect(r).to.include({status: 'available', finished: false, canRewind: true, defaultViewAs: soloPlayer.color});
+      expect((r as {moves: Array<ReplayMove>}).moves).is.not.empty;
+    });
+
+    it('keeps the history from everyone else', async () => {
+      const [off, offPlayer] = testGame(1, {undoOption: false});
+      const [on, onPlayer] = testGame(1, {undoOption: true});
+      const [two, twoPlayer] = testGame(2, {undoOption: true});
+      for (const [g, who, viewer] of [[off, offPlayer, offPlayer.id], [on, onPlayer, on.spectatorId], [two, twoPlayer, twoPlayer.id]] as const) {
+        act(who);
+        expect(await getReplayMoves(g, viewer)).deep.eq({status: 'not-finished'});
+      }
+    });
+
+    it('reads only the new saves on the next request', async () => {
+      const [solo, soloPlayer] = testGame(1, {undoOption: true});
+      act(soloPlayer);
+      act(soloPlayer);
+      const first = (await getReplayMoves(solo, soloPlayer.id)) as {moves: Array<ReplayMove>};
+      const known = await sdb.getSaveIds(solo.id);
+      const reads = countReads();
+      act(soloPlayer);
+      act(soloPlayer);
+      const second = (await getReplayMoves(solo, soloPlayer.id)) as {moves: Array<ReplayMove>};
+      const added = (await sdb.getSaveIds(solo.id)).filter((id) => !known.includes(id));
+      expect(added).is.not.empty;
+      expect(reads.sort()).deep.eq(added.sort());
+      expect(second.moves.length).gt(first.moves.length);
+    });
+
+    it('answers for a finished game with finished and canRewind', async () => {
+      const [solo, soloPlayer] = testGame(1, {undoOption: true});
+      act(soloPlayer);
+      act(soloPlayer);
+      const rows = sdb.games.get(solo.id)!;
+      rows[rows.length - 1] = {...rows[rows.length - 1]!, phase: Phase.END};
+      solo.phase = Phase.END;
+      expect(await getReplayMoves(solo, soloPlayer.id)).to.include({status: 'available', finished: true, canRewind: true, defaultViewAs: 'all'});
+      expect(await getReplayMoves(solo, solo.spectatorId)).to.include({status: 'available', finished: true, canRewind: false});
     });
   });
 

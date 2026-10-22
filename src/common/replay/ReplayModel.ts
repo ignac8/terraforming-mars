@@ -5,12 +5,14 @@ import {SpectatorModel} from '../models/SpectatorModel';
 
 export type ReplayMove = {saveId: number; messages: Array<LogMessage>};
 
+export type ReplayViewAs = 'all' | Color;
+
+export type RewindCards = 'same' | 'shuffle';
+
 export type ReplayMovesModel =
-  | {status: 'available'; moves: Array<ReplayMove>}
+  | {status: 'available'; moves: Array<ReplayMove>; finished: boolean; canRewind: boolean; defaultViewAs: ReplayViewAs}
   | {status: 'not-finished'}
   | {status: 'expired'};
-
-export type ReplayViewAs = 'all' | Color;
 
 export type ReplayPrivates = PrivatePlayerFields & {color: Color};
 

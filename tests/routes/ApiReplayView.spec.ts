@@ -255,4 +255,24 @@ describe('ApiReplayView', () => {
     expect(body.viewAs).eq(player.color);
     expect(body.privates).deep.eq([]);
   });
+
+  it('refuses every view but their own to the player of a running game', async () => {
+    const [solo, soloPlayer] = testGame(1, {undoOption: true});
+    await scaffolding.ctx.gameLoader.add(solo);
+    const base: SerializedGame = solo.serialize();
+    db.games.set(solo.id, [base, base]);
+    for (const as of ['all', PLAYER_COLORS.find((c) => c !== soloPlayer.color)!]) {
+      res = new MockResponse();
+      await get(`id=${soloPlayer.id}&save=0&as=${as}`);
+      expect(res.statusCode).eq(statusCode.badRequest);
+      expect(res.content).eq('Bad request: only your own view while the game runs');
+    }
+    res = new MockResponse();
+    await get(`id=${solo.spectatorId}&save=0&as=${soloPlayer.color}`);
+    expect(res.content).eq('Bad request: game not finished');
+    res = new MockResponse();
+    await get(`id=${soloPlayer.id}&save=0&as=${soloPlayer.color}`);
+    expect(res.statusCode).eq(statusCode.ok);
+    expect(JSON.parse(res.content).viewAs).eq(soloPlayer.color);
+  });
 });
