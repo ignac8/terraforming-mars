@@ -267,10 +267,11 @@ async function allMoves(game: IGame, undone: boolean = false): Promise<AllMoves>
 
 /**
  * The save ids of the game's move list, the same for every viewer. Undefined when its history is gone (compressed),
- * or when the game has ended and its final save has not landed yet.
+ * or when the game has ended and its final save has not landed yet. `undone`: the judge's list, with the moves that
+ * rewinds undid.
  */
-export async function historySaveIds(game: IGame): Promise<Array<number> | undefined> {
-  const all = await allMoves(game);
+export async function historySaveIds(game: IGame, options: {undone?: boolean} = {}): Promise<Array<number> | undefined> {
+  const all = await allMoves(game, options.undone === true);
   return all.status === 'available' ? all.moves.map((move) => move.saveId) : undefined;
 }
 

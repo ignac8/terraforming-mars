@@ -7,7 +7,7 @@ import {Phase} from '../../common/Phase';
 import {Log} from '../../common/logs/Log';
 import {LogMessageData} from '../../common/logs/LogMessageData';
 import {LogMessageDataType} from '../../common/logs/LogMessageDataType';
-import {isHiddenLogIndex, visibleLog} from '../rewind/RewindRecord';
+import {activeRewinds, hiddenBy, visibleLog} from '../rewind/RewindRecord';
 
 /**
  * What a judge sees of a log line: a private line loses its `playerId` and carries the owner's
@@ -87,8 +87,9 @@ export class GameLogs {
   // Default view keeps the payload small. An explicit generation request should
   // always return the full generation, including the current one.
   private selectLogs(game: IGame, generation: number | undefined, keep: (message: LogMessage) => boolean, showUndone: boolean): Array<Line> {
+    const active = activeRewinds(game.rewinds);
     const lines = game.gameLog
-      .map((message, idx) => ({message, undone: isHiddenLogIndex(idx, game.rewinds)}))
+      .map((message, idx) => ({message, undone: hiddenBy(idx, active)}))
       .filter((line) => showUndone || !line.undone);
     if (generation === undefined) {
       return lines.filter((line) => keep(line.message)).slice(-50);

@@ -290,10 +290,19 @@ describe('ReplayPanel', () => {
       expect(entries.map((entry) => entry.find('.replay-undone-badge').exists())).deep.equal([false, true, false]);
     });
 
-    it('offers no rewind to an undone move, nor a vote for one', () => {
-      for (const props of [{canRewind: true}, {canVoteRewind: true}]) {
-        expect(mountPanel({...props, moves: withUndone, index: 1}).findComponent(RewindControls).exists(), JSON.stringify(props)).is.false;
-        expect(mountPanel({...props, moves: withUndone, index: 2}).findComponent(RewindControls).exists(), JSON.stringify(props)).is.true;
+    it('offers the judge a rewind to an undone move, and no one else a rewind or a vote for one', () => {
+      for (const [props, offered] of [
+        [{canRewind: true, canShowUndone: true}, true],
+        [{canRewind: true}, false],
+        [{canVoteRewind: true}, false],
+        [{canVoteRewind: true, canShowUndone: true}, false],
+      ] as const) {
+        const controls = mountPanel({...props, moves: withUndone, index: 1}).findComponent(RewindControls);
+        expect(controls.exists(), JSON.stringify(props)).equals(offered);
+        if (offered) {
+          expect(controls.props('undone')).is.true;
+        }
+        expect(mountPanel({...props, moves: withUndone, index: 2}).findComponent(RewindControls).props('undone'), JSON.stringify(props)).is.false;
       }
     });
   });

@@ -78,5 +78,6 @@
   "At this move": "W tym ruchu",
   "Show undone moves": "Pokaż cofnięte ruchy",
   "undone": "cofnięty",
-  "Only the judge sees undone moves.": "Cofnięte ruchy widzi tylko sędzia."
+  "Only the judge sees undone moves.": "Cofnięte ruchy widzi tylko sędzia.",
+  "This brings back moves that an earlier rewind undid, and undoes the moves played since.": "Przywraca to ruchy cofnięte wcześniej i cofa ruchy rozegrane od tamtej pory."
 }

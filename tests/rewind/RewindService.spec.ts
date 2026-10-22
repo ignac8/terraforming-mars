@@ -7,8 +7,10 @@ import {GameLoader} from '../../src/server/database/GameLoader';
 import {OrOptions} from '../../src/server/inputs/OrOptions';
 import {SelectCard} from '../../src/server/inputs/SelectCard';
 import {Server} from '../../src/server/models/ServerModel';
-import {clearReplayCache, getReplayMoves, loadReplayState} from '../../src/server/replay/ReplayService';
+import {clearReplayCache, getReplayMoves, historySaveIds, loadReplayState} from '../../src/server/replay/ReplayService';
+import {readRebuildSaves} from '../../src/server/rewind/rebuild';
 import {MAX_REWINDS, RewindActor, rewindGame, rewindMetrics, rewindTable} from '../../src/server/rewind/RewindService';
+import {GameLogs} from '../../src/server/routes/GameLogs';
 import {sameState} from '../../src/server/rewind/stateHash';
 import {isTableLocked} from '../../src/server/rewind/tableLock';
 import {barUntilNextGeneration, mayRequest} from '../../src/server/rewind/vote/RewindVote';
@@ -46,7 +48,7 @@ function rows(): Array<SerializedGame> {
 // True when `row` holds the moment `saved` holds. The log and the rewinds are left out.
 function holdsMoment(row: SerializedGame, saved: SerializedGame): boolean {
   const {rewinds: _rewinds, ...state} = row;
-  return sameState({...state, gameLog: saved.gameLog}, saved);
+  return sameState({...state, gameLog: saved.gameLog}, {...saved, rewinds: undefined});
 }
 
 async function refusal(rewind: Promise<unknown>): Promise<RouteError> {
@@ -56,6 +58,10 @@ async function refusal(rewind: Promise<unknown>): Promise<RouteError> {
     return cast(e, RouteError);
   }
   throw new Error('The rewind was not refused');
+}
+
+async function rebuilds(result: string): Promise<number> {
+  return (await rewindMetrics.rebuilds.get()).values.find((v) => v.labels.result === result)?.value ?? 0;
 }
 
 describe('RewindService', () => {
@@ -89,10 +95,6 @@ describe('RewindService', () => {
     convert = game.lastSaveId - 1;
     choose(player, 'Pass for this generation');
     pass = game.lastSaveId - 2;
-  }
-
-  async function rebuilds(result: string): Promise<number> {
-    return (await rewindMetrics.rebuilds.get()).values.find((v) => v.labels.result === result)?.value ?? 0;
   }
 
   beforeEach(() => play());
@@ -425,7 +427,7 @@ describe('RewindService whole table', () => {
   // A two-player game, played to the research phase of the generation after next. With the draft
   // variant it plays the second generation's draft too, and stops when the third generation's draft
   // starts: a pick logs nothing, so no drafting save but the newest is a move in the history.
-  async function playTable(options: {draftVariant?: boolean, tournamentExpansion?: boolean} = {}) {
+  async function playTable(options: {draftVariant?: boolean, tournamentExpansion?: boolean, judgeUndo?: boolean} = {}) {
     clearReplayCache();
     db = new SnapshotDatabase();
     setTestDatabase(db);
@@ -685,5 +687,134 @@ describe('RewindService whole table', () => {
     buyer.process({type: 'card', cards: [cast(buyer.getWaitingFor(), SelectCard).cards[0].name]});
     expect(buyer.cardsInHand).has.length(hand + 1);
     expect(Server.getPlayer(buyer, false).cardsInHandNbr).eq(hand);
+  });
+
+  describe('to a move an earlier rewind undid', () => {
+    // The save the first rewind wrote.
+    let first: number;
+    // The save after `target` on the line the first rewind undid: player 2 had converted heat once.
+    let undone: number;
+
+    // The judge rewinds to `target`, and player 2 converts heat twice on the line that brings.
+    async function rewindAndPlayOn(): Promise<IGame> {
+      await playTable({judgeUndo: true});
+      const live = await rewindTable(game, target, {cards: 'same', clocks: 'keep'}, judge);
+      first = live.rewinds[0].saveId;
+      undone = target + 1;
+      for (let i = 0; i < 2; i++) {
+        choose(live.getPlayerById(player2.id), 'Convert 8 heat into temperature');
+      }
+      return live;
+    }
+
+    const UNDONE_MARKER = 'The judge brought back undone moves and rewound the game to generation ${0}';
+
+    it('lets only the judge rewind to an undone move', async () => {
+      for (const cards of ['same', 'shuffle'] as const) {
+        const live = await rewindAndPlayOn();
+        expect(await historySaveIds(live), cards).not.include(undone);
+        expect(await historySaveIds(live, {undone: true}), cards).include(undone);
+        const before = structuredClone(rows());
+        for (const by of [{kind: 'vote', requester: live.getPlayerById(player2.id)}, {kind: 'player', player: live.getPlayerById(player.id)}] as const) {
+          const e = await refusal(rewindTable(live, undone, {cards, clocks: 'keep'}, by));
+          expect(e.detail, `${cards} ${by.kind}`).eq('That move is not in this game\'s history.');
+          expect(rows(), `${cards} ${by.kind}`).deep.eq(before);
+          expect(live.retired, `${cards} ${by.kind}`).is.false;
+        }
+        const count = await rebuilds('replayed');
+
+        const restored = await rewindTable(live, undone, {cards, clocks: 'back', freeze: true}, judge);
+
+        expect(rows(), cards).has.length(before.length + 1);
+        if (cards === 'same') {
+          expect(holdsMoment(rows()[before.length], before[undone])).is.true;
+        }
+        expect(await rebuilds('replayed'), cards).eq(count + 1);
+        const marker = restored.gameLog[restored.gameLog.length - 1];
+        expect(marker.message, cards).eq(cards === 'same' ? UNDONE_MARKER : 'The judge brought back undone moves, rewound the game to generation ${0} and shuffled the hidden piles');
+      }
+    });
+
+    it('replays along the undone line from its own base', async () => {
+      let live = await rewindAndPlayOn();
+      // A save on the line the first rewind undid, whose replay starts at the research save before it; then, once the
+      // judge rewound to it, a save on the first rewind's line, whose replay starts at the first rewind's save.
+      for (const run of [{saveId: undone, base: secondResearch}, {saveId: first + 1, base: first}]) {
+        const label = String(run.saveId);
+        const saves = await readRebuildSaves(live, run.saveId);
+        expect(saves.map((save) => save.lastSaveId), label).deep.eq(Array.from({length: run.saveId - run.base + 1}, (_, i) => run.base + i));
+        const saved = structuredClone(rows()[run.saveId]);
+        const count = await rebuilds('replayed');
+
+        live = await rewindTable(live, run.saveId, {cards: 'same', clocks: 'keep'}, judge);
+
+        expect(await rebuilds('replayed'), label).eq(count + 1);
+        expect(holdsMoment(rows()[rows().length - 1], saved), label).is.true;
+      }
+    });
+
+    it('restores an undone moment from its own save when its replay does not match, and refuses one that does not load', async () => {
+      let live = await rewindAndPlayOn();
+      rows()[undone].inputs![0].stateHash = 'x';
+      const saved = structuredClone(rows()[undone]);
+      const count = await rebuilds('mismatch');
+
+      await rewindTable(live, undone, {cards: 'same', clocks: 'keep'}, judge);
+
+      expect(await rebuilds('mismatch')).eq(count + 1);
+      expect(holdsMoment(rows()[rows().length - 1], saved)).is.true;
+
+      live = await rewindAndPlayOn();
+      rows()[undone].first = 'p-unknown' as PlayerId;
+      const before = structuredClone(rows());
+
+      const e = await refusal(rewindTable(live, undone, {cards: 'same', clocks: 'keep'}, judge));
+
+      expect(e.detail).eq('That moment can\'t be restored with this version of the game. Nothing was changed.');
+      expect(rows()).deep.eq(before);
+      expect(live.retired).is.false;
+    });
+
+    it('shows the brought-back line and hides the one it replaced, across a third rewind', async () => {
+      const live = await rewindAndPlayOn();
+      const listed = async (g: IGame) => {
+        const answer = await getReplayMoves(g, g.judgeId!);
+        const saveIds = answer.status === 'available' ? answer.moves.map((move) => move.saveId) : [];
+        expect(new Set(saveIds).size).eq(saveIds.length);
+        return saveIds;
+      };
+      const markers = (g: IGame, message: string) =>
+        new GameLogs().getLogsForGameView(player.id, g, undefined).filter((m) => m.message === message).length;
+      const REWOUND = 'The judge rewound the game to generation ${0}';
+
+      // The moves from `target` on are back, and the first rewind's save and marker are gone.
+      const second = await rewindTable(live, undone, {cards: 'same', clocks: 'keep'}, judge);
+      const secondSave = second.rewinds[1].saveId;
+      let saveIds = await listed(second);
+      expect(saveIds).include(target).include(secondSave).not.include(first).not.include(first + 1);
+      expect([markers(second, REWOUND), markers(second, UNDONE_MARKER)]).deep.eq([0, 1]);
+
+      // A rewind to a save on the first rewind's line brings that line and its marker back, and hides the second
+      // rewind's line and marker.
+      const third = await rewindTable(second, first + 1, {cards: 'same', clocks: 'keep'}, judge);
+      saveIds = await listed(third);
+      expect(saveIds).include(first).include(third.rewinds[2].saveId).not.include(target).not.include(secondSave);
+      expect([markers(third, REWOUND), markers(third, UNDONE_MARKER)]).deep.eq([1, 1]);
+      expect((await refusal(loadReplayState(third, secondSave))).kind).eq('notFound');
+      expect((await loadReplayState(third, secondSave, {undone: true})).lastSaveId).eq(secondSave);
+    });
+
+    it('counts a rewind to an undone move toward the limit', async () => {
+      const live = await rewindAndPlayOn();
+      // Records that touch no save, older than the first rewind's, so its line stays undone.
+      live.rewinds = [...Array.from({length: MAX_REWINDS - 1}, () => ({saveId: -1, restoredSaveId: -1, logStart: 0, logEnd: 0})), ...live.rewinds];
+      expect(await historySaveIds(live, {undone: true})).include(undone);
+      const before = structuredClone(rows());
+
+      const e = await refusal(rewindTable(live, undone, {cards: 'same', clocks: 'keep'}, judge));
+
+      expect(e.detail).eq('This game was rewound too many times.');
+      expect(rows()).deep.eq(before);
+    });
   });
 });

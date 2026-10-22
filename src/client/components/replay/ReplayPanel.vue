@@ -60,12 +60,13 @@
 
     <!-- The key forgets a half-made choice when another move is picked. -->
     <RewindControls
-      v-if="(canRewind || canVoteRewind) && index !== undefined && !selectedUndone && !(live && collapsed)"
+      v-if="(canRewind || canVoteRewind) && index !== undefined && (!selectedUndone || judgeRewindsUndone) && !(live && collapsed)"
       :key="index"
       :mode="canRewind ? 'rewind' : 'vote'"
       :disabled="rewinding"
       :blocked="requestBlocked"
       :clocks="clocks"
+      :undone="selectedUndone"
       @rewind="(cards, rewindClocks) => $emit('rewind', cards, rewindClocks)"
       @request="(cards) => $emit('request', cards)"/>
 
@@ -215,9 +216,13 @@ export default defineComponent({
       };
       return [...this.players].sort((a, b) => rank(a) - rank(b));
     },
-    /** A move that a rewind undid can be looked at, not rewound to. */
+    /** The selected move is one that a rewind undid. */
     selectedUndone(): boolean {
       return this.index !== undefined && this.moves[this.index]?.undone === true;
+    },
+    /** Only the judge, who may see the undone moves, may rewind to one. Nobody may vote for one. */
+    judgeRewindsUndone(): boolean {
+      return this.canShowUndone && this.canRewind;
     },
     speeds(): ReadonlyArray<number> {
       return SPEEDS;

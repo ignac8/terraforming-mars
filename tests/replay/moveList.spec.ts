@@ -1,8 +1,10 @@
 import {expect} from 'chai';
 import {LogMessage} from '../../src/common/logs/LogMessage';
 import {LogMessageType} from '../../src/common/logs/LogMessageType';
+import {ReplayMove} from '../../src/common/replay/ReplayModel';
 import {buildMoveList, SaveEntry} from '../../src/server/replay/moveList';
-import {RewindRecord, visibleLog} from '../../src/server/rewind/RewindRecord';
+import {activeRewinds, isAbandonedSave, isHiddenLogIndex, RewindRecord, visibleLog} from '../../src/server/rewind/RewindRecord';
+import {everyHistory, RewindHistory} from '../rewind/RewindHistory';
 
 describe('buildMoveList', () => {
   const log = Array.from({length: 12}, (_, i) => new LogMessage(LogMessageType.DEFAULT, `line ${i}`, []));
@@ -73,6 +75,100 @@ describe('buildMoveList', () => {
       for (const run of runs) {
         expect(buildMoveList(saves, run.rewinds, log).some((m) => m.undone !== undefined)).is.false;
       }
+    });
+
+    it('leaves the marker of a rewind whose save a later rewind restored to the later rewind\'s save alone', () => {
+      // Save 4, the first rewind's, is undone. Its marker, line 6, still shows: the second rewind restored it.
+      const moves = buildMoveList(saves, runs[3].rewinds, log, true);
+      expect(moves.filter((m) => m.messages.includes(log[6])).map((m) => m.saveId)).deep.eq([6]);
+      expect(moves.find((m) => m.saveId === 4)?.messages).deep.eq([log[7], log[8]]);
+      expect(moves.flatMap((m) => m.messages).map((m) => log.indexOf(m)).sort((a, b) => a - b)).deep.eq(log.map((_, idx) => idx));
+    });
+  });
+
+  describe('after rewinds that bring undone moves back', () => {
+    // The save a marker belongs to: its rewind's own, or the save of a later rewind that restored that one.
+    function holdsMarker(saveId: number, record: RewindRecord, rewinds: ReadonlyArray<RewindRecord>): boolean {
+      let r = rewinds.find((x) => x.saveId === saveId);
+      while (r !== undefined && r !== record) {
+        const restored = r.restoredSaveId;
+        r = rewinds.find((x) => x.saveId === restored);
+      }
+      return r === record;
+    }
+
+    function checkInvariants(history: RewindHistory, label: string): Array<ReplayMove> {
+      const {saves, rewinds, log} = history;
+      const active = activeRewinds(rewinds);
+      const indexOf = (m: LogMessage) => log.indexOf(m);
+
+      // The visible saves and lines are the ones that were visible when the save now restored was the newest.
+      for (let saveId = 0; saveId <= history.newest; saveId++) {
+        expect(isAbandonedSave(saveId, rewinds), `${label} save ${saveId}`).eq(!history.visibleSaves.has(saveId));
+      }
+      for (let idx = 0; idx < log.length; idx++) {
+        expect(isHiddenLogIndex(idx, rewinds), `${label} line ${idx}`).eq(!history.visibleLines.has(idx));
+      }
+
+      // The visible saves are the played line: each follows the one before, or is the save of an active rewind that
+      // stands for the save that would follow, itself or through the rewind whose save it restored.
+      const visible = saves.map((s) => s.saveId).filter((saveId) => !isAbandonedSave(saveId, rewinds));
+      for (let i = 1; i < visible.length; i++) {
+        const [p, q] = [visible[i - 1], visible[i]];
+        let standsFor = q;
+        for (let r = active.find((x) => x.saveId === q); r !== undefined; r = active.find((x) => x.saveId === standsFor)) {
+          standsFor = r.restoredSaveId;
+        }
+        expect(q === p + 1 || standsFor === p + 1, `${label} ${p} then ${q}`).is.true;
+      }
+
+      // Every visible line is in exactly one move, in order.
+      const moves = buildMoveList(saves, rewinds, log);
+      expect(moves.flatMap((m) => m.messages), label).deep.eq(visibleLog(log, rewinds));
+
+      // A marker shows exactly when its rewind is active, with that rewind's save or a later rewind's that restored it.
+      for (const record of rewinds) {
+        const holders = moves.filter((m) => m.messages.includes(log[record.logEnd]));
+        expect(holders.length, `${label} marker of ${record.saveId}`).eq(active.includes(record) ? 1 : 0);
+        for (const holder of holders) {
+          expect(holdsMarker(holder.saveId, record, rewinds), `${label} marker of ${record.saveId} in ${holder.saveId}`).is.true;
+        }
+      }
+
+      // The switch only adds the undone saves, with lines that are hidden, and every line is then in exactly one move.
+      const all = buildMoveList(saves, rewinds, log, true);
+      expect(all.filter((m) => m.undone !== true), label).deep.eq(moves);
+      for (const move of all.filter((m) => m.undone === true)) {
+        expect(isAbandonedSave(move.saveId, rewinds), `${label} undone ${move.saveId}`).is.true;
+        expect(move.messages.every((m) => isHiddenLogIndex(indexOf(m), rewinds)), `${label} undone ${move.saveId}`).is.true;
+      }
+      expect(all.flatMap((m) => m.messages).map(indexOf).sort((a, b) => a - b), label).deep.eq(log.map((_, idx) => idx));
+      return moves;
+    }
+
+    it('keeps the played line whole when a rewind brings back a stretch an earlier rewind undid, and again after a third', () => {
+      // Saves 0 to 9; A restores save 4 and writes save 10; saves 11 and 12; B restores save 7, inside A's stretch, and
+      // writes save 13; save 14; C restores save 11, inside B's stretch on A's line, and writes save 15.
+      const history = new RewindHistory(9);
+      history.rewind(4);
+      history.move().move();
+      expect(checkInvariants(history, 'A').map((m) => m.saveId)).deep.eq([0, 1, 2, 3, 10, 11, 12]);
+      history.rewind(7);
+      history.move();
+      expect(checkInvariants(history, 'B').map((m) => m.saveId)).deep.eq([0, 1, 2, 3, 4, 5, 6, 13, 14]);
+      history.rewind(11);
+      expect(checkInvariants(history, 'C').map((m) => m.saveId)).deep.eq([0, 1, 2, 3, 10, 15]);
+    });
+
+    it('keeps the played line whole after any three rewinds', () => {
+      let bringsBack = 0;
+      for (const {history, targets} of everyHistory(6, 3)) {
+        checkInvariants(history, String(targets));
+        if (!history.everyTargetVisible) {
+          bringsBack++;
+        }
+      }
+      expect(bringsBack).gt(100);
     });
   });
 });

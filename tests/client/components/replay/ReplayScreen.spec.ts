@@ -1184,7 +1184,7 @@ describe('ReplayScreen', () => {
         expect(wrapper.findComponent(JudgeHome).props('showUndone')).is.false;
       });
 
-      it('are previewed with the parameter, without the rewind controls', async () => {
+      it('are previewed with the parameter, and rewound to through the judge route with the clocks going back', async () => {
         movesAnswer = withUndone;
         const wrapper = mountJudge();
         expand(wrapper);
@@ -1192,12 +1192,18 @@ describe('ReplayScreen', () => {
         await switchOf(wrapper).setValue(true);
         await flushPromises();
 
-        for (const [index, saveId, undone] of [[1, 11, true], [2, 12, false]] as const) {
+        for (const [index, saveId, undone] of [[2, 12, false], [1, 11, true]] as const) {
           panel(wrapper).vm.$emit('select', index);
           await flushPromises();
           expect(calls[calls.length - 1], String(index)).to.equal(`api/replay/view?id=${judgeId}&save=${saveId}&as=all${undone ? '&undone=1' : ''}`);
-          expect(wrapper.find('.rewind-controls').exists(), String(index)).equals(!undone);
+          expect(wrapper.find('.rewind-controls').exists(), String(index)).is.true;
         }
+        expect((wrapper.find('.rewind-controls input[value=back]').element as HTMLInputElement).checked).is.true;
+        await wrapper.find('.rewind-start').trigger('click');
+        expect(wrapper.find('.rewind-confirm-undone').exists()).is.true;
+        await wrapper.find('.rewind-confirm-button').trigger('click');
+        await flushPromises();
+        expect(judgeRequests).to.deep.equal([{url: `api/judge/rewind?id=${judgeId}`, body: {saveId: 11, cards: 'same', clocks: 'back'}}]);
       });
 
       it('stay on the move that is shown when the list changes, and go back to the live game when it is gone', async () => {

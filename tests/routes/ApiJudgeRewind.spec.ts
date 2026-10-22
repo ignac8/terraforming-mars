@@ -132,6 +132,23 @@ describe('ApiJudgeRewind', () => {
     expect(model.game.frozen).is.true;
   });
 
+  it('rewinds the judge to an undone move and leaves the game frozen', async () => {
+    await start();
+    // Player 2 moves again, so the save after `target` holds a move that the first rewind undoes.
+    choose(player2, 'Convert 8 heat into temperature');
+    await post(valid());
+    game = (await GameLoader.getInstance().getGame(game.id))!;
+    game.frozen = false;
+
+    await post(JSON.stringify({saveId: target + 1, cards: 'same', clocks: 'back'}));
+
+    expect(res.statusCode).eq(statusCode.ok);
+    const restored = (await GameLoader.getInstance().getGame(game.id))!;
+    expect(restored.rewinds.map((rewind) => rewind.restoredSaveId)).deep.eq([target, target + 1]);
+    expect(restored.frozen).is.true;
+    expect((JSON.parse(res.content) as JudgeModel).game.frozen).is.true;
+  });
+
   it('passes the judge\'s clocks and cards choices on, freezes the table, and the marker names the judge', async () => {
     for (const clocks of ['keep', 'back'] as const) {
       for (const cards of ['same', 'shuffle'] as const) {

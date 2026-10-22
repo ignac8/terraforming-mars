@@ -76,6 +76,16 @@ describe('RewindControls', () => {
     });
   });
 
+  it('says that a rewind to an undone move brings it back', async () => {
+    for (const undone of [false, true]) {
+      const wrapper = mount(RewindControls, {...globalConfig, props: {disabled: false, undone}});
+      await wrapper.find('.rewind-start').trigger('click');
+      expect(wrapper.find('.rewind-confirm-undone').exists(), String(undone)).equals(undone);
+      await wrapper.find('.rewind-confirm-button').trigger('click');
+      expect(wrapper.emitted('rewind'), String(undone)).to.deep.equal([['same', 'keep']]);
+    }
+  });
+
   it('cancelling emits nothing and asks again next time', async () => {
     const wrapper = mountControls();
     await wrapper.find('.rewind-start').trigger('click');
