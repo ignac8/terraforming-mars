@@ -80,6 +80,7 @@ import {AlliedParty} from '../common/turmoil/Types';
 import {PlayedCards} from './cards/PlayedCards';
 import {From} from './logs/From';
 import {SelectStandardProjectToPlay} from './inputs/SelectStandardProjectToPlay';
+import {Turmoil} from './turmoil/Turmoil';
 
 // Resources a player must keep after paying to claim a milestone.
 const MILESTONE_RESERVE_UNITS: Partial<Record<MilestoneName, Units>> = {
@@ -255,8 +256,7 @@ export class Player implements IPlayer {
         policyId: p.policies[0].id,
       },
     };
-    const alliedPolicy = this.game.turmoil?.getPartyByName(p.name).policies.find((t) => t.id === p.policies[0].id);
-
+    const alliedPolicy = Turmoil.getTurmoil(this.game).getPartyByName(p.name).policies.find((t) => t.id === p.policies[0].id);
     alliedPolicy?.onPolicyStartForPlayer?.(this);
   }
 
