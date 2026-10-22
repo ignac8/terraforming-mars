@@ -161,4 +161,32 @@ describe('Timer', () => {
       expect(t.countedElapsed(), `first action pending: ${run.first}`).eq(run.expected);
     }
   });
+
+  it('does nothing when pausing a timer that is not running', () => {
+    timer.resume();
+    timer.stop();
+    clock.millis = 10;
+    timer.resume();
+    clock.millis = 15;
+    timer.stop();
+    const before = timer.serialize();
+    expect(before.sumElapsed).eq(5);
+
+    clock.millis = 40;
+    timer.pause();
+    expect(timer.serialize()).deep.eq(before);
+    expect(timer.getElapsed()).eq(5);
+  });
+
+  it('drops the open interval when resuming a running timer', () => {
+    timer.resume();
+    timer.stop();
+    clock.millis = 10;
+    timer.resume();
+    clock.millis = 17;
+    timer.resume();
+    clock.millis = 20;
+    timer.pause();
+    expect(timer.countedElapsed()).eq(3);
+  });
 });
