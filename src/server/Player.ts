@@ -45,7 +45,6 @@ import {ConvertHeat} from './cards/base/standardActions/ConvertHeat';
 import {KELVINISTS_POLICY_3} from './turmoil/parties/Kelvinists';
 import {GlobalParameter} from '../common/GlobalParameter';
 import {LogHelper} from './LogHelper';
-import {UndoActionOption} from './inputs/UndoActionOption';
 import {PathfindersExpansion} from './pathfinders/PathfindersExpansion';
 import {ColoniesHandler} from './colonies/ColoniesHandler';
 import {MonsInsurance} from './cards/promo/MonsInsurance';
@@ -1735,12 +1734,6 @@ export class Player implements IPlayer {
     const sellPatents = new SellPatentsStandardProject();
     if (sellPatents.canAct(this)) {
       action.options.push(sellPatents.action(this));
-    }
-
-    // Propose undo action only if you have done one action this turn.
-    // One-player games rewind from the panel instead.
-    if (this.actionsTakenThisRound > 0 && this.game.gameOptions.undoOption && this.game.players.length > 1) {
-      action.options.push(new UndoActionOption());
     }
 
     return action;

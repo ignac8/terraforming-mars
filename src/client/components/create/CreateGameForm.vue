@@ -263,7 +263,7 @@
                                 <span v-i18n>Player undo</span>&nbsp;<a :href="wikiUrls.allowUndo" class="tooltip" v-i18n data-tooltip="Link opens in a new tab/window" target="_blank">&#9432;</a>
                             </label>
                             <div v-if="undoOption">
-                              <span v-i18n>Solo and MarsBot games: rewind to any earlier move. Games with more players keep the old undo for now.</span>
+                              <span v-i18n>Rewind to any earlier move. With more than one player, every other player must agree.</span>
                             </div>
 
                             <input type="checkbox" v-model="seededGame" id="seeded-checkbox">

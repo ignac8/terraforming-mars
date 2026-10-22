@@ -763,14 +763,14 @@ describe('Player', () => {
     expect(player.megaCredits).eq(14);
   });
 
-  it('offers the undo action only in games with more than one player', () => {
-    for (const [count, expected] of [[1, false], [2, true]] as const) {
+  it('never offers the one-step undo', () => {
+    for (const count of [1, 2]) {
       const [/* game */, player] = testGame(count, {undoOption: true});
       player.actionsTakenThisRound = 1;
 
       const actions = cast(player.getActions(), OrOptions);
 
-      expect(actions.options.some((option) => option instanceof UndoActionOption), `${count} players`).eq(expected);
+      expect(actions.options.some((option) => option instanceof UndoActionOption), `${count} players`).is.false;
     }
   });
 
