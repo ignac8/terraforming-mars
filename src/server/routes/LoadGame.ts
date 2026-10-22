@@ -41,6 +41,10 @@ export class LoadGame extends Handler {
       throw RouteError.badRequest('The table is being rewound or frozen. Click OK to refresh this page.');
     }
     await withTableLock(gameId, async () => {
+      // A rollback past the row a freeze patched would load the game unfrozen, without telling the judge.
+      if ((await ctx.gameLoader.getGame(gameId))?.frozen) {
+        throw RouteError.badRequest('The game is frozen.');
+      }
       const rollbackCount = gameReq.rollbackCount;
       if (rollbackCount > 0) {
         try {

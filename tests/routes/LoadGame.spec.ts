@@ -218,7 +218,9 @@ describe('LoadGame', () => {
       const loader = scaffolding.ctx.gameLoader;
       const getGame = loader.getGame.bind(loader);
       loader.getGame = (gameId, bypassCache) => {
-        events.push('load');
+        if (bypassCache) {
+          events.push('load');
+        }
         return getGame(gameId, bypassCache);
       };
 
@@ -235,6 +237,8 @@ describe('LoadGame', () => {
 
     it('holds the table while it rolls back', async () => {
       const [game, player] = testGame(1, {undoOption: true});
+      // A game with no log lines gets them read back from the database, which this one has no copy of.
+      game.log('Hello');
       await scaffolding.ctx.gameLoader.add(game);
 
       const response = put({gameId: game.id, rollbackCount: 2});
@@ -269,6 +273,19 @@ describe('LoadGame', () => {
       expect(res.statusCode).eq(statusCode.badRequest);
       expect(res.content).eq('Bad request: The table is being rewound or frozen. Click OK to refresh this page.');
       expect(events).is.empty;
+    });
+
+    it('is refused while the game is frozen, and deletes nothing', async () => {
+      const [game] = testGame(2);
+      await scaffolding.ctx.gameLoader.add(game);
+      game.frozen = true;
+
+      await put({gameId: game.id, rollbackCount: 2});
+
+      expect(res.statusCode).eq(statusCode.badRequest);
+      expect(res.content).eq('Bad request: The game is frozen.');
+      expect(events).is.empty;
+      expect(isTableLocked(game.id)).is.false;
     });
 
     it('reports a failed delete', async () => {
