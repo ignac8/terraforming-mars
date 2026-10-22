@@ -397,6 +397,29 @@ describe('ReplayScreen', () => {
       expect(wrapper.find('.rewind-refusal').exists()).is.false;
     });
 
+    it('keeps the refusal on screen when the moves cannot be read again after it', async () => {
+      vi.spyOn(console, 'error').mockImplementation(() => {});
+      const wrapper = mountRewindable();
+      await flushPromises();
+      wrapper.findComponent(ReplayPanel).vm.$emit('select', 1);
+      await flushPromises();
+      const fetchOk = (global as any).fetch;
+      (global as any).fetch = (url: string) => {
+        if (url.startsWith('api/rewind')) {
+          return Promise.resolve({ok: false, status: 400, text: () => Promise.resolve('That moment cannot be rewound, nothing was changed')});
+        }
+        return Promise.resolve({ok: false, status: 500, text: () => Promise.resolve('Server down')});
+      };
+      wrapper.findComponent(RewindControls).vm.$emit('rewind', 'same');
+      await flushPromises();
+
+      // The panel went with the moves, and stays gone.
+      expect(wrapper.findComponent(ReplayPanel).exists()).is.false;
+      expect(wrapper.find('.replay-error').text()).to.contain('Server down');
+      expect(wrapper.find('.rewind-refusal').text()).to.contain('nothing was changed');
+      (global as any).fetch = fetchOk;
+    });
+
     it('shows a refused rewind in the language of the player', async () => {
       vi.spyOn(console, 'error').mockImplementation(() => {});
       PreferencesManager.INSTANCE.set('lang', 'pl');

@@ -32,6 +32,10 @@
       <PlayerHome v-else-if="playerView !== undefined" :playerView="playerView" :replay="true"/>
       <ReplayHands v-if="spectatorView !== undefined" :privates="replayView.privates" :players="spectatorView.players"/>
     </template>
+    <!-- The panel, which shows the refusal otherwise, is gone while the moves load again, and stays gone if that fails. -->
+    <div v-if="refusal !== undefined && panelView === undefined" class="replay-message">
+      <p class="replay-error rewind-refusal">{{ refusal }}</p>
+    </div>
     <ReplayPanel
       v-if="panelView !== undefined"
       :moves="moves"
