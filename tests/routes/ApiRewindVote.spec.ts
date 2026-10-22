@@ -137,6 +137,22 @@ describe('ApiRewindVote', () => {
     expect(calls).deep.eq(['markFinished', 'reopenFinishedGame', 'markFinished']);
   });
 
+  it('refuses a request for the final position of a finished game, which nobody played from', async () => {
+    await endGame();
+    const entries = await t.entries();
+    const final = entries[entries.length - 1];
+    expect(final.mover).is.undefined;
+
+    for (const asker of [t.p1, t.p2]) {
+      const res = await t.post(asker.id, {action: 'request', saveId: final.saveId, cards: 'same'});
+
+      expect(res.statusCode).eq(statusCode.badRequest);
+      expect(res.content).eq('Bad request: You can only ask to rewind your own moves.');
+      expect(t.newest().rewindVote).is.undefined;
+      expect((await t.poll(asker.id)).vote).is.undefined;
+    }
+  });
+
   it('keeps the open vote of a finished game across a reload', async () => {
     await t.start({playerPasswords: true});
     await endGame();
