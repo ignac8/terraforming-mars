@@ -121,8 +121,8 @@ export class VoteTable {
   }
 
   /** Posts an answer to the player's prompt, the way the game page does, but without a request id. */
-  public input(id: PlayerId, body: object): Promise<MockResponse> {
-    return this.call(PlayerInput.INSTANCE, `/player/input?id=${id}`, 'post', JSON.stringify(body));
+  public input(id: PlayerId, body: object, query = ''): Promise<MockResponse> {
+    return this.call(PlayerInput.INSTANCE, `/player/input?id=${id}${query}`, 'post', JSON.stringify(body));
   }
 
   /** Deletes the newest `count` saves and reloads the game, as the operator's load_game form does. */
@@ -131,14 +131,14 @@ export class VoteTable {
   }
 
   /** Posts the action titled `title` for the player asked for an action. */
-  public async act(id: PlayerId, title: string): Promise<MockResponse> {
+  public async act(id: PlayerId, title: string, query = ''): Promise<MockResponse> {
     const player = (await this.live()).getPlayerById(id);
     const index = cast(player.getWaitingFor(), OrOptions).options.findIndex((option) => option.title === title);
-    return this.input(id, {type: 'or', index, response: {type: 'option'}});
+    return this.input(id, {type: 'or', index, response: {type: 'option'}}, query);
   }
 
-  public async poll(id: PlayerId): Promise<RewindVotePoll> {
-    const res = await this.get(id);
+  public async poll(id: PlayerId, query = ''): Promise<RewindVotePoll> {
+    const res = await this.get(id, query);
     if (res.statusCode !== 200) {
       throw new Error(`poll answered ${res.statusCode}: ${res.content}`);
     }

@@ -7,6 +7,7 @@ import {LogMessageDataType} from '../../src/common/logs/LogMessageDataType';
 import {statusCode} from '../../src/common/http/statusCode';
 import {MAX_OXYGEN_LEVEL, MAX_TEMPERATURE} from '../../src/common/constants';
 import {Phase} from '../../src/common/Phase';
+import {IPlayer} from '../../src/server/IPlayer';
 import {Timer} from '../../src/common/Timer';
 import {RewindVotePoll} from '../../src/common/rewind/RewindVoteModel';
 import {CONVERT_HEAT, flush, VoteTable} from '../rewind/vote/voteTable';
@@ -23,9 +24,15 @@ describe('ApiRewindVote', () => {
     return JSON.parse(res.content);
   }
 
+  // The password query of a seat, which a player claims by moving through the input route in a game with player passwords.
+  async function seat(player: IPlayer): Promise<string> {
+    const password = (await t.live()).getPlayerById(player.id).password;
+    return password === undefined ? '' : `&password=${password}`;
+  }
+
   // Player 2, who is not asked for anything, asks to rewind to `target`.
   async function request(): Promise<number> {
-    const poll = answer(await t.post(t.p2.id, {action: 'request', saveId: target, cards: 'same'}));
+    const poll = answer(await t.post(t.p2.id, {action: 'request', saveId: target, cards: 'same'}, await seat(t.p2)));
     expect(poll.vote?.status).eq('open');
     return poll.vote!.voteId;
   }
@@ -84,6 +91,7 @@ describe('ApiRewindVote', () => {
   }
 
   it('reopens a finished game when everyone agrees', async () => {
+    await t.start({playerPasswords: true});
     const calls: Array<string> = [];
     for (const method of ['markFinished', 'reopenFinishedGame'] as const) {
       const original = t.db[method].bind(t.db);
@@ -96,7 +104,7 @@ describe('ApiRewindVote', () => {
     expect(calls).deep.eq(['markFinished']);
 
     const voteId = await request();
-    const poll = answer(await t.post(t.p1.id, {action: 'yes', voteId}));
+    const poll = answer(await t.post(t.p1.id, {action: 'yes', voteId}, await seat(t.p1)));
 
     expect(poll.vote?.status).eq('passed');
     const restored = await t.live();
@@ -104,23 +112,24 @@ describe('ApiRewindVote', () => {
     expect(restored.phase).eq(Phase.ACTION);
     expect(calls).deep.eq(['markFinished', 'reopenFinishedGame']);
 
-    answer(await t.act(t.p2.id, 'Pass for this generation'));
+    answer(await t.act(t.p2.id, 'Pass for this generation', await seat(t.p2)));
     await restored.finishing;
     expect(restored.phase).eq(Phase.END);
     expect(calls).deep.eq(['markFinished', 'reopenFinishedGame', 'markFinished']);
   });
 
   it('keeps the open vote of a finished game across a reload', async () => {
+    await t.start({playerPasswords: true});
     await endGame();
     const voteId = await request();
     await flush();
 
     t.restart();
 
-    const poll = await t.poll(t.p1.id);
+    const poll = await t.poll(t.p1.id, await seat(t.p1));
     expect(poll.vote?.status).eq('open');
     expect(poll.vote?.voteId).eq(voteId);
-    expect(answer(await t.post(t.p1.id, {action: 'yes', voteId})).vote?.status).eq('passed');
+    expect(answer(await t.post(t.p1.id, {action: 'yes', voteId}, await seat(t.p1))).vote?.status).eq('passed');
     expect((await t.live()).phase).eq(Phase.ACTION);
   });
 
@@ -220,6 +229,45 @@ describe('ApiRewindVote', () => {
       const cancelled = answer(await t.post(t.p2.id, {action: 'cancel', voteId: poll.vote!.voteId}, `&password=${password}`));
       expect(cancelled.vote?.status, label).eq('cancelled');
     }
+  });
+
+  it('refuses every vote action on a finished game of a table without player passwords', async () => {
+    const voteId = await request();
+    t.game.phase = Phase.END;
+
+    for (const body of [
+      {action: 'request', saveId: target, cards: 'same'},
+      {action: 'yes', voteId},
+      {action: 'no', voteId},
+      {action: 'cancel', voteId},
+    ]) {
+      const res = await t.post(t.p1.id, body);
+      expect(res.statusCode, body.action).eq(statusCode.badRequest);
+      expect(res.content, body.action).eq('Bad request: A finished game can only be rewound at a table with player passwords.');
+    }
+    expect((await t.poll(t.p1.id)).vote?.status).eq('open');
+  });
+
+  it('needs the seat password for every vote action of a finished game', async () => {
+    const password = '0123456789ab';
+    await t.start({playerPasswords: true});
+    target = (await t.moves()).slice(-2)[0];
+    t.p1.password = password;
+    t.p2.password = password;
+    const voteId = answer(await t.post(t.p2.id, {action: 'request', saveId: target, cards: 'same'}, `&password=${password}`)).vote!.voteId;
+    t.game.phase = Phase.END;
+
+    for (const body of [
+      {action: 'request', saveId: target, cards: 'same'},
+      {action: 'yes', voteId},
+      {action: 'no', voteId},
+      {action: 'cancel', voteId},
+    ]) {
+      expect((await t.post(t.p1.id, body)).statusCode, body.action).eq(statusCode.unauthorized);
+      expect((await t.post(t.p1.id, body, '&password=wrong')).statusCode, body.action).eq(statusCode.unauthorized);
+    }
+    expect((await t.poll(t.p1.id, `&password=${password}`)).vote?.status).eq('open');
+    expect(answer(await t.post(t.p1.id, {action: 'no', voteId}, `&password=${password}`)).vote?.status).eq('declined');
   });
 
   it('refuses a spectator id and a judge id', async () => {

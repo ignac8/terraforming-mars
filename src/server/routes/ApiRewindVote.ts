@@ -7,8 +7,11 @@ import {RouteError} from './RouteError';
 import {Request} from '../Request';
 import {Response} from '../Response';
 import {IPlayer} from '../IPlayer';
+import {Phase} from '../../common/Phase';
 import {RewindCards} from '../../common/replay/ReplayModel';
 import {RewindVotePoll} from '../../common/rewind/RewindVoteModel';
+
+const NEEDS_PASSWORDS = 'A finished game can only be rewound at a table with player passwords.';
 
 type VoteRequest =
   | {action: 'request', saveId: number, cards: RewindCards}
@@ -51,6 +54,10 @@ export class ApiRewindVote extends Handler {
 
   public override async post(req: Request, res: Response, ctx: Context): Promise<void> {
     const player = await this.seat(ctx);
+    // A finished game shows every seat's id, so without seat passwords the id alone would let a stranger reopen it.
+    if (player.game.phase === Phase.END && !player.game.gameOptions.playerPasswords) {
+      throw RouteError.badRequest(NEEDS_PASSWORDS);
+    }
     const vote = parse(await readBody(req));
     let poll: RewindVotePoll;
     switch (vote.action) {
