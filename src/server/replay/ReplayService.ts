@@ -6,17 +6,24 @@ import {loadSandboxGame} from './sandbox';
 import {Phase} from '../../common/Phase';
 import {GameId, ParticipantId} from '../../common/Types';
 import {playerColors, toJudgeMessage} from '../routes/GameLogs';
-import {ReplayMove, ReplayMovesModel} from '../../common/replay/ReplayModel';
+import {ReplayMovesModel} from '../../common/replay/ReplayModel';
+import {LogMessage} from '../../common/logs/LogMessage';
+import {isAbandonedSave, RewindRecord} from '../rewind/RewindRecord';
+import {buildMoveList, SaveEntry} from './moveList';
 
 const MAX_CACHED_GAMES = 50;
 
-// A finished game does not change, so its move list is kept. The list holds every message, so
-// it is the same for all viewers; each request filters the private lines for its own viewer.
+// A finished game does not change, so what its move list is built from is kept: the saves, the
+// rewinds and the one log that every save is a prefix of. The list holds every message, so it
+// is the same for all viewers; each request filters the private lines for its own viewer.
 // Oldest entries go first.
-const cache = new Map<GameId, Array<ReplayMove>>();
+type CachedGame = {saves: Array<SaveEntry>, rewinds: Array<RewindRecord>, log: Array<LogMessage>};
+const cache = new Map<GameId, CachedGame>();
+
+type Built = {status: 'available', game: CachedGame} | {status: 'not-finished'} | {status: 'expired'};
 
 // Builds in progress, so viewers who ask at the same time share one pass over the saves.
-const building = new Map<GameId, Promise<ReplayMovesModel>>();
+const building = new Map<GameId, Promise<Built>>();
 
 const MAX_FINISHED_GAMES = 1000;
 
@@ -113,7 +120,7 @@ export async function isFinished(game: IGame): Promise<boolean> {
 
 // Reads the saves one at a time and keeps only what the list needs, so at most one save is in
 // memory at once, besides the newest, which is read first.
-async function buildMoves(game: IGame): Promise<{result: ReplayMovesModel, finished: boolean}> {
+async function readGame(game: IGame): Promise<{result: Built, finished: boolean}> {
   const saveIds = await getSortedSaveIds(game);
   if (saveIds.length === 0) {
     return {result: {status: 'not-finished'}, finished: false};
@@ -129,7 +136,7 @@ async function buildMoves(game: IGame): Promise<{result: ReplayMovesModel, finis
     return {result: {status: 'expired'}, finished: true};
   }
 
-  const saves: Array<{saveId: number, logLength: number}> = [];
+  const saves: Array<SaveEntry> = [];
   try {
     for (const saveId of saveIds) {
       const save = saveId === newestId ? newest : await getSave(game, saveId);
@@ -142,25 +149,11 @@ async function buildMoves(game: IGame): Promise<{result: ReplayMovesModel, finis
     }
     throw e;
   }
-  const finalLog = newest.gameLog;
-
-  // A save with the same log length as the next one changed nothing a viewer can see,
-  // e.g. the two saves at the end of the game.
-  const kept = saves.filter((entry, idx) => {
-    const next = saves[idx + 1];
-    return next === undefined || next.logLength !== entry.logLength;
-  });
-
-  const moves: Array<ReplayMove> = kept.map((entry, idx) => {
-    const next = kept[idx + 1];
-    const end = next === undefined ? entry.logLength : next.logLength;
-    return {saveId: entry.saveId, messages: finalLog.slice(entry.logLength, end)};
-  });
-  return {result: {status: 'available', moves}, finished: true};
+  return {result: {status: 'available', game: {saves, rewinds: newest.rewinds ?? [], log: newest.gameLog}}, finished: true};
 }
 
-function build(game: IGame): Promise<ReplayMovesModel> {
-  const pending: Promise<ReplayMovesModel> = buildMoves(game).then(({result, finished}) => {
+function build(game: IGame): Promise<Built> {
+  const pending: Promise<Built> = readGame(game).then(({result, finished}) => {
     // Not remembered if a rollback made forgetReplay run in the meantime.
     if (building.get(game.id) === pending) {
       if (finished) {
@@ -173,7 +166,7 @@ function build(game: IGame): Promise<ReplayMovesModel> {
             break;
           }
         }
-        cache.set(game.id, result.moves);
+        cache.set(game.id, result.game);
       }
     }
     return result;
@@ -192,15 +185,16 @@ export async function getReplayMoves(game: IGame, viewerId: ParticipantId): Prom
     return {status: 'not-finished'};
   }
   const cached = cache.get(game.id);
-  const result: ReplayMovesModel = cached !== undefined ?
-    {status: 'available', moves: cached} :
+  const result: Built = cached !== undefined ?
+    {status: 'available', game: cached} :
     await (building.get(game.id) ?? build(game));
   if (result.status !== 'available') {
     return result;
   }
   // The judge page shows every private line, so the judge's replay does too, in the same form.
   const colors = viewerId === game.judgeId ? playerColors(game) : undefined;
-  const moves = result.moves.map(({saveId, messages}) => ({
+  const {saves, rewinds, log} = result.game;
+  const moves = buildMoveList(saves, rewinds, log).map(({saveId, messages}) => ({
     saveId,
     messages: colors !== undefined ?
       messages.map((m) => toJudgeMessage(m, colors)) :
@@ -214,6 +208,9 @@ export async function getReplayMoves(game: IGame, viewerId: ParticipantId): Prom
  * callers share it, so they must only read it.
  */
 export function loadReplayState(game: IGame, saveId: number): Promise<IGame> {
+  if (isAbandonedSave(saveId, game.rewinds)) {
+    return Promise.reject(RouteError.notFound());
+  }
   const key = `${game.id}/${saveId}`;
   const cached = sandboxes.get(key);
   if (cached !== undefined) {

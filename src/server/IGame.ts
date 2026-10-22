@@ -35,6 +35,7 @@ import {UnderworldData} from './underworld/UnderworldData';
 import {OrOptions} from './inputs/OrOptions';
 import {IStandardProjectCard} from './cards/IStandardProjectCard';
 import {GlobalParameterTracks} from '@/server/boards/GlobalParameterTracks';
+import {RewindRecord} from './rewind/RewindRecord';
 
 export interface Score {
   corporation: String;
@@ -64,6 +65,8 @@ export interface IGame extends Logger {
   createdTime: Date;
   gameAge: number; // Each log event increases it
   gameLog: Array<LogMessage>;
+  /** Rewinds of this game, each hiding the line of play it abandoned. */
+  rewinds: Array<RewindRecord>;
   undoCount: number; // Each undo increases it
   inputsThisRound: number;
   resettable: boolean;

@@ -103,6 +103,20 @@ describe('ApiGameLogs', () => {
     expect(messages).is.empty;
   });
 
+  it('hides the abandoned lines of a rewind', async () => {
+    const [game, player] = testGame(1);
+    await scaffolding.ctx.gameLoader.add(game);
+    game.gameLog.length = 0;
+    for (let i = 0; i < 5; i++) {
+      game.log(`Log ${i}`);
+    }
+    game.rewinds = [{saveId: 3, restoredSaveId: 1, logStart: 1, logEnd: 3}];
+
+    scaffolding.url = '/api/game/logs?id=' + player.id;
+    await scaffolding.get(ApiGameLogs.INSTANCE, res);
+    expect(JSON.parse(res.content).map((m: {message: string}) => m.message)).deep.eq(['Log 0', 'Log 3', 'Log 4']);
+  });
+
   [{idx: 0, color: 'Yellow'}, {idx: 1, color: 'Orange'}, {idx: 2, color: 'Blue'}].forEach((entry) => {
     it('omits private logs for other players: ' + entry.color, async () => {
       const yellowPlayer = TestPlayer.YELLOW.newPlayer();

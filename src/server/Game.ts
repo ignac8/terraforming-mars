@@ -75,6 +75,7 @@ import {Logger} from './logs/Logger';
 import {addDays, stringToNumber} from './database/utils';
 import {Tag} from '../common/cards/Tag';
 import {IGame, ResearchSnapshot, Score} from './IGame';
+import {RewindRecord} from './rewind/RewindRecord';
 import {GlobalParameterMaximums} from '../common/boards/GlobalParameterMaximums';
 import {MarsBoard} from './boards/MarsBoard';
 import {UnderworldData} from './underworld/UnderworldData';
@@ -137,6 +138,7 @@ export class Game implements IGame, Logger {
   public createdTime: Date = new Date(0);
   public gameAge: number = 0; // Each log event increases it
   public gameLog: Array<LogMessage> = createGameLog();
+  public rewinds: Array<RewindRecord> = [];
   public undoCount: number = 0; // Each undo increases it
   public inputsThisRound = 0;
   public resettable: boolean = false;
@@ -601,6 +603,9 @@ export class Game implements IGame, Logger {
     }
     if (this.clonedGamedId !== undefined) {
       result.clonedGamedId = this.clonedGamedId;
+    }
+    if (this.rewinds.length > 0) {
+      result.rewinds = this.rewinds;
     }
     if (this.turmoil !== undefined) {
       result.turmoil = this.turmoil.serialize();
@@ -1922,6 +1927,7 @@ export class Game implements IGame, Logger {
     game.clonedGamedId = d.clonedGamedId;
     game.gameAge = d.gameAge;
     game.gameLog = d.gameLog;
+    game.rewinds = d.rewinds ?? [];
     game.generation = d.generation;
     game.phase = d.phase;
     game.oxygenLevel = d.oxygenLevel;

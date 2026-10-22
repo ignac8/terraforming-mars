@@ -365,6 +365,26 @@ describe('ReplayService', () => {
     expect(replayed.generation).eq(4);
   });
 
+  describe('after a rewind', () => {
+    beforeEach(() => {
+      // Save 2 restored save 1, so saves 1 up to 2 are the abandoned line.
+      storeLengths([0, 2, 4, 5]);
+      const rows = db.games.get(game.id)!;
+      const rewinds = [{saveId: 2, restoredSaveId: 1, logStart: 2, logEnd: 3}];
+      rows[3] = {...rows[3]!, rewinds};
+      game.rewinds = rewinds;
+    });
+
+    it('lists only the saves of the line that was kept', async () => {
+      expect((await moves()).map((m) => m.saveId)).deep.eq([0, 2, 3]);
+    });
+
+    it('loadReplayState answers notFound for an abandoned save', async () => {
+      expect(await errorOf(loadReplayState(game, 1))).deep.include({kind: 'notFound'});
+      expect((await loadReplayState(game, 2)).isSandbox).is.true;
+    });
+  });
+
   it('loadReplayState rejects a save id the game does not have', async () => {
     storeLengths([0, 2, 5]);
     for (const saveId of [3, -1]) {

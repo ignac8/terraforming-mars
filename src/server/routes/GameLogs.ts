@@ -7,6 +7,7 @@ import {Phase} from '../../common/Phase';
 import {Log} from '../../common/logs/Log';
 import {LogMessageData} from '../../common/logs/LogMessageData';
 import {LogMessageDataType} from '../../common/logs/LogMessageDataType';
+import {visibleLog} from '../rewind/RewindRecord';
 
 /**
  * What a judge sees of a log line: a private line loses its `playerId` and carries the owner's
@@ -74,10 +75,11 @@ export class GameLogs {
   // Default view keeps the payload small. An explicit generation request should
   // always return the full generation, including the current one.
   private selectLogs(game: IGame, generation: number | undefined, keep: (message: LogMessage) => boolean): Array<LogMessage> {
+    const log = visibleLog(game.gameLog, game.rewinds);
     if (generation === undefined) {
-      return game.gameLog.filter(keep).slice(-50);
+      return log.filter(keep).slice(-50);
     }
-    return this.getLogsForGeneration(game.gameLog, generation).filter(keep);
+    return this.getLogsForGeneration(log, generation).filter(keep);
   }
 
   public getLogsForGameEnd(game: IGame): Array<string> {
@@ -85,7 +87,7 @@ export class GameLogs {
       throw new Error('Game is not over');
     }
 
-    return game.gameLog.map((message) => Log.applyData(message, (datum: LogMessageData) => {
+    return visibleLog(game.gameLog, game.rewinds).map((message) => Log.applyData(message, (datum: LogMessageData) => {
       if (datum.type === undefined || datum.value === undefined) {
         return '';
       }

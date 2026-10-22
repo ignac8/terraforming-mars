@@ -863,6 +863,7 @@ describe('Game', () => {
       'playersInGenerationOrder',
       'monsInsuranceOwner',
       'resettable',
+      'rewinds', // Serialized only once a rewind has happened.
       'rng',
       'underworldDraftEnabled',
       'doubleDownPrelude',

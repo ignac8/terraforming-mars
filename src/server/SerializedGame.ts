@@ -18,6 +18,7 @@ import {AwardName} from '../common/ma/AwardName';
 import {GlobalParameter} from '../common/GlobalParameter';
 import {MilestoneName} from '../common/ma/MilestoneName';
 import {Tag} from '../common/cards/Tag';
+import {RewindRecord} from './rewind/RewindRecord';
 
 export type SerializedGame = {
     activePlayer: PlayerId;
@@ -59,6 +60,7 @@ export type SerializedGame = {
     preludeDeck: SerializedDeck,
     projectDeck: SerializedDeck,
     researchedPlayers: Array<PlayerId>;
+    rewinds?: Array<RewindRecord>;
     seed: number;
     someoneHasRemovedOtherPlayersPlants: boolean;
     spectatorId: SpectatorId;
