@@ -120,26 +120,41 @@ describe('ApiJudgeRewind', () => {
     expect(model.game.frozen).is.true;
   });
 
-  it('passes the judge\'s clocks choice on, and the marker names the judge', async () => {
+  it('passes the judge\'s clocks and cards choices on, freezes the table, and the marker names the judge', async () => {
     for (const clocks of ['keep', 'back'] as const) {
-      await start();
-      const players = [player, player2];
-      players.forEach((p, i) => {
-        p.timer = Timer.deserialize({sumElapsed: 600_000 + i, startedAt: 0, running: false, afterFirstAction: true, lastStoppedAt: 0});
-      });
-      // Timers are not part of the moment's state, so the replay still matches the changed row.
-      (db.games.get(game.id) as Array<SerializedGame>)[target].players.forEach((p, i) => {
-        p.timer.sumElapsed = 300_000 + i;
-      });
+      for (const cards of ['same', 'shuffle'] as const) {
+        const label = `${clocks} ${cards}`;
+        await start();
+        const rows = db.games.get(game.id) as Array<SerializedGame>;
+        const players = [player, player2];
+        players.forEach((p, i) => {
+          p.timer = Timer.deserialize({sumElapsed: 600_000 + i, startedAt: 0, running: false, afterFirstAction: true, lastStoppedAt: 0});
+        });
+        // Timers are not part of the moment's state, so the replay still matches the changed row.
+        rows[target].players.forEach((p, i) => {
+          p.timer.sumElapsed = 300_000 + i;
+        });
+        const saved = structuredClone(rows[target]);
 
-      await post(JSON.stringify({saveId: target, cards: 'same', clocks}));
+        await post(JSON.stringify({saveId: target, cards, clocks}));
 
-      expect(res.statusCode, clocks).eq(statusCode.ok);
-      const restored = (await GameLoader.getInstance().getGame(game.id))!;
-      players.forEach((p, i) => {
-        expect(restored.getPlayerById(p.id).timer.serialize().sumElapsed, clocks).eq((clocks === 'keep' ? 600_000 : 300_000) + i);
-      });
-      expect(restored.gameLog[restored.gameLog.length - 1].message, clocks).eq('The judge rewound the game to generation ${0}');
+        expect(res.statusCode, label).eq(statusCode.ok);
+        const restored = (await GameLoader.getInstance().getGame(game.id))!;
+        expect(restored.frozen, label).is.true;
+        // Back is the stored moment's clocks, keep is each player's live total.
+        players.forEach((p, i) => {
+          expect(restored.getPlayerById(p.id).timer.serialize().sumElapsed, label).eq((clocks === 'keep' ? 600_000 : 300_000) + i);
+        });
+        const drawPile = rows[rows.length - 1].projectDeck.drawPile;
+        if (cards === 'same') {
+          expect(drawPile, label).deep.eq(saved.projectDeck.drawPile);
+        } else {
+          expect(drawPile, label).not.deep.eq(saved.projectDeck.drawPile);
+        }
+        const marker = restored.gameLog[restored.gameLog.length - 1];
+        expect(marker.message, label).eq('The judge rewound the game to generation ${0}' + (cards === 'shuffle' ? ' and shuffled the hidden piles' : ''));
+        expect(marker.playerId, label).is.undefined;
+      }
     }
   });
 
