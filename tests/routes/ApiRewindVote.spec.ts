@@ -3,6 +3,7 @@ import {SerializedGame} from '../../src/server/SerializedGame';
 import {sameState} from '../../src/server/rewind/stateHash';
 import {isTableLocked} from '../../src/server/rewind/tableLock';
 import {INVALID_REQUEST_ID} from '../../src/common/app/AppErrorId';
+import {LogMessageDataType} from '../../src/common/logs/LogMessageDataType';
 import {statusCode} from '../../src/common/http/statusCode';
 import {Phase} from '../../src/common/Phase';
 import {Timer} from '../../src/common/Timer';
@@ -40,7 +41,7 @@ describe('ApiRewindVote', () => {
 
   afterEach(() => t.stop());
 
-  it('rewinds the table when the other player agrees, keeping the clocks', async () => {
+  it('rewinds the table when the other player agrees, keeping the clocks, unfrozen, naming the requester', async () => {
     // Standing clocks, so the time kept is exact.
     [t.p1, t.p2].forEach((p, i) => {
       p.timer = Timer.deserialize({sumElapsed: 600_000 + i, startedAt: 0, running: false, afterFirstAction: true, lastStoppedAt: 0});
@@ -60,6 +61,10 @@ describe('ApiRewindVote', () => {
     [t.p1, t.p2].forEach((p, i) => {
       expect(restored.getPlayerById(p.id).timer.serialize().sumElapsed).eq(600_000 + i);
     });
+    expect(restored.frozen).is.false;
+    const marker = t.newest().gameLog[t.newest().gameLog.length - 1];
+    expect(marker.message).eq('${0} rewound the game to generation ${1} after a unanimous vote');
+    expect(marker.data[0]).deep.eq({type: LogMessageDataType.PLAYER, value: t.p2.color});
   });
 
   it('ends an open vote when anyone moves', async () => {

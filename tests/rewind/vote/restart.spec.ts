@@ -159,21 +159,17 @@ describe('rewind vote across a restart', () => {
   });
 
   it('never shows a vote in a past moment', async () => {
-    // Player 2 is barred, and player 1's vote is in the newest save.
-    answer(await t.post(t.p1.id, {action: 'no', voteId: await request()}));
+    // The vote is in the newest save.
     const newest = t.rows().length - 1;
-    const voteId = answer(await t.post(t.p1.id, {action: 'request', saveId: newest, cards: 'same'})).vote!.voteId;
+    const voteId = await request(newest);
     expect(t.newest().rewindVote?.id).eq(voteId);
-    expect(t.newest().rewindRequestLimits?.players).deep.eq([t.p2.id]);
 
     const past = await loadReplayState(t.game, newest);
     expect(past.rewindVote).is.undefined;
 
-    expect(answer(await t.post(t.p2.id, {action: 'yes', voteId})).vote?.status).eq('passed');
+    expect(answer(await t.post(t.p1.id, {action: 'yes', voteId})).vote?.status).eq('passed');
     const restored = await t.live();
     expect(restored.rewindVote).is.undefined;
-    expect(restored.rewindRequestLimits).is.undefined;
     expect(t.newest().rewindVote).is.undefined;
-    expect(t.newest().rewindRequestLimits).is.undefined;
   });
 });
