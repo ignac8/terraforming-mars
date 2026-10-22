@@ -68,7 +68,7 @@
   "${0} declined the rewind.": "${0} nie zgadza się na cofnięcie gry.",
   "The rewind request was cancelled.": "Prośba o cofnięcie gry została wycofana.",
   "The rewind request expired.": "Prośba o cofnięcie gry wygasła.",
-  "A move was made, so the rewind request ended.": "Wykonano ruch, więc prośba o cofnięcie gry wygasła.",
+  "A move was made, so the rewind request ended.": "Wykonano ruch, więc prośba o cofnięcie gry została zakończona.",
   "The rewind did not happen.": "Gra nie została cofnięta.",
   "A finished game can only be rewound at a table with player passwords.": "Zakończoną grę można cofnąć tylko przy stole z hasłami graczy.",
   "Freeze": "Zamroź",
