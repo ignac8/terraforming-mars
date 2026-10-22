@@ -549,9 +549,10 @@ export class Game implements IGame, Logger {
     }
   }
 
-  public save(): void {
+  /** Writes the game as its next save. The promise settles when the write does. */
+  public save(): Promise<void> {
     if (this.retired) {
-      return;
+      return Promise.resolve();
     }
     if (this.isSandbox) {
       if (this.onSandboxSave !== undefined) {
@@ -561,13 +562,14 @@ export class Game implements IGame, Logger {
         this.inputsSinceSave = [];
         this.onSandboxSave(this, saved);
       }
-      return;
+      return Promise.resolve();
     }
     // A sandbox that became the live game no longer reports its saves.
     this.onSandboxSave = undefined;
-    GameLoader.getInstance().saveGame(this);
+    const written = GameLoader.getInstance().saveGame(this);
     // The database serialized the game, inputs included, when saveGame was called.
     this.inputsSinceSave = [];
+    return written;
   }
 
   /** Remembers `input`, the answer `player` gave to `waitingFor`, with the state it is about to be applied to. */

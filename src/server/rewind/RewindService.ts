@@ -167,9 +167,7 @@ async function rewind(live: IGame, player: IPlayer, saveId: number, cards: Rewin
     await GameLoader.getInstance().add(restored);
   } catch (e) {
     if (live.retired) {
-      live.retired = false;
-      // Its next save overwrites any row the attempt wrote.
-      live.lastSaveId = Math.max(live.lastSaveId, record.saveId);
+      await restoreLive(swap);
     }
     if (finished) {
       // Queues the game for compression again. Its results are not restored.
@@ -183,6 +181,8 @@ async function rewind(live: IGame, player: IPlayer, saveId: number, cards: Rewin
   }
   rewindMetrics.rebuilds.inc({result});
   if (finished) {
+    // A request that took the old, finished object during the hand-over can have listed its moves
+    // before the rewind's save landed.
     forgetReplay(live.id);
   }
   return restored;
@@ -207,14 +207,39 @@ function warnMismatch(live: IGame, saveId: number, replayed: ReplayResult): void
   console.warn(`rewind: the replay of ${live.id} to save ${saveId} does not match: ${replayed.reason}`);
 }
 
-type Swap = {live: IGame, player: IPlayer, record: RewindRecord, cards: RewindCards};
+type Swap = {
+  live: IGame,
+  player: IPlayer,
+  record: RewindRecord,
+  cards: RewindCards,
+  /** The write of the save `record.saveId`, once promote has started it. */
+  written?: Promise<void>,
+};
+
+/**
+ * Makes the live game live again after a swap that failed once promote had retired it.
+ *
+ * Promote may have written the rebuilt game as the newest save, so the live game is written over it,
+ * after that write has settled, so the two can't land in the wrong order.
+ */
+async function restoreLive({live, record, written}: Swap): Promise<void> {
+  await written?.catch(() => {});
+  live.lastSaveId = record.saveId;
+  live.retired = false;
+  try {
+    await live.save();
+  } catch (e) {
+    console.warn(`rewind: unable to write ${live.id} back as save ${record.saveId}`, e);
+  }
+}
 
 /**
  * Makes the rebuilt `sandbox` the live game and writes it as the save `record.saveId`.
  *
  * It runs inside the sandbox's save of the moment, before play goes on, so it can't leave half a rewind.
  */
-function promote(sandbox: Game, {live, player, record, cards}: Swap): void {
+function promote(sandbox: Game, swap: Swap): void {
+  const {live, player, record, cards} = swap;
   sandbox.gameLog = [...live.gameLog];
   sandbox.gameAge = live.gameAge;
   const message = cards === 'shuffle' ?
@@ -245,7 +270,7 @@ function promote(sandbox: Game, {live, player, record, cards}: Swap): void {
   sandbox.lastSaveId = record.saveId;
   sandbox.isSandbox = false;
   live.retired = true;
-  sandbox.save();
+  swap.written = sandbox.save();
   // Play goes on to the next prompt before the hand-over. A save on the way, like the research
   // phase after a pass, comes after the moment, so it isn't written.
   sandbox.isSandbox = true;

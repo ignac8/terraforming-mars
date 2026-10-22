@@ -165,7 +165,8 @@ export interface IGame extends Logger {
   /** Initiates the first research phase, which is when a player chooses their starting hand, corps and preludes. */
   gotoInitialResearchPhase(): void;
   gotoResearchPhase(): void;
-  save(): void;
+  /** Writes the game as its next save. The promise settles when the write does. */
+  save(): Promise<void>;
   serialize(): SerializedGame;
   isSoloMode() :boolean;
   // Retrieve a player by its id

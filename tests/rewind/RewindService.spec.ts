@@ -102,6 +102,7 @@ describe('RewindService', () => {
     expect(holdsMoment(row, before[convert])).is.true;
     expect(row.rewinds).deep.eq([{saveId: before.length, restoredSaveId: convert, logStart: before[convert].gameLog.length, logEnd: game.gameLog.length}]);
     expect(row.inputs).deep.eq([]);
+    expect(row.undoCount).eq(game.undoCount + 1);
 
     // Loading the game saves it again, under the same id, before it asks for input. The record stays.
     Game.deserialize(structuredClone(row));
@@ -191,6 +192,32 @@ describe('RewindService', () => {
       expect(rows()).deep.eq(before);
       expect(await GameLoader.getInstance().getGame(game.id)).eq(game);
       expect(game.retired).is.false;
+    }
+  });
+
+  it('writes the live game back over a rebuilt game that was saved before the rewind failed', async () => {
+    for (const lastGeneration of [false, true]) {
+      await play({lastGeneration});
+      const saveGame = db.saveGame.bind(db);
+      let failed = false;
+      db.saveGame = (g) => {
+        const written = saveGame(g);
+        if (!failed) {
+          failed = true;
+          throw new Error('disk full');
+        }
+        return written;
+      };
+
+      await refusal(rewindGame(game, player, convert, 'same'));
+
+      expect(game.retired).is.false;
+      expect(sameState(rows()[rows().length - 1], game.serialize())).is.true;
+      if (lastGeneration) {
+        expect((await getReplayMoves(game, game.spectatorId)).status).eq('available');
+      }
+      const restored = await rewindGame(game, player, convert, 'same');
+      expect(restored.phase).eq(Phase.ACTION);
     }
   });
 
