@@ -853,7 +853,7 @@ describe('Game', () => {
     assertIsJSON(serialized);
     const serializedKeys = Object.keys(serialized);
 
-    const unserializedFieldsInGame: Array<keyof Game> = [
+    const unserializedFieldsInGame: Array<keyof Game | 'onSandboxSave'> = [
       'createdTime',
       'discardedColonies',
       'inDoubleDown',
@@ -861,6 +861,7 @@ describe('Game', () => {
       'inputsThisRound',
       'inTurmoil',
       'isSandbox',
+      'onSandboxSave',
       'playersInGenerationOrder',
       'monsInsuranceOwner',
       'resettable',

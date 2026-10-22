@@ -1,4 +1,5 @@
 import {expect} from 'chai';
+import {Game} from '../../src/server/Game';
 import {IGame} from '../../src/server/IGame';
 import {SerializedGame} from '../../src/server/SerializedGame';
 import {OrOptions} from '../../src/server/inputs/OrOptions';
@@ -106,6 +107,17 @@ describe('rebuild', () => {
       expect(saves[0].lastSaveId).eq(base);
       expect(saves[saves.length - 1].lastSaveId).eq(target);
     }
+  });
+
+  it('stops reporting saves once the sandbox becomes a live game', () => {
+    let calls = 0;
+    const sandbox = Game.deserialize(structuredClone(db.games.get(game.id)![research]!), {sandbox: true, onSave: () => calls++});
+    expect(calls).eq(1);
+    sandbox.isSandbox = false;
+    sandbox.save();
+    sandbox.isSandbox = true;
+    sandbox.save();
+    expect(calls).eq(1);
   });
 
   it('leaves the shared clock where it was', async () => {

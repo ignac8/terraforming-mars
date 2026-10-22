@@ -41,6 +41,7 @@ class ReplayMismatch extends Error {}
  * Loads saves[0] into a sandbox and replays the recorded inputs of saves[1..] with every check.
  * When all checks up to the last save pass, `onTarget` runs inside the sandbox's save of the last save,
  * before play continues. Never changes Timer's shared last stop time.
+ * Errors raised after the target save matched, by `onTarget` or by the play after it, are thrown, not reported as a mismatch.
  */
 export function replayToSave(saves: ReadonlyArray<SerializedGame>, onTarget?: (game: Game) => void): ReplayResult {
   if (saves.length < 2) {
@@ -90,7 +91,7 @@ function replay(saves: ReadonlyArray<SerializedGame>, onTarget: ((game: Game) =>
     if (stateHash(sandbox.serialize()) !== input.stateHash) {
       return mismatch(`the state before input ${i} differs from the recording`);
     }
-    const player = sandbox.allPlayers.find((p) => p.id === input.playerId);
+    const player = sandbox.players.find((p) => p.id === input.playerId);
     const waitingFor = player?.getWaitingFor();
     if (player === undefined || waitingFor === undefined || !samePrompt(waitingFor, input.prompt)) {
       return mismatch(`input ${i} answers a prompt the replay does not show`);

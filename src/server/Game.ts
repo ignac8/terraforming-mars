@@ -151,7 +151,7 @@ export class Game implements IGame, Logger {
   public resettable: boolean = false;
   /** A sandbox game is a read-only view of a past save. It never writes a save. */
   public isSandbox: boolean = false;
-  private onSandboxSave: DeserializeOptions['onSave'];
+  private onSandboxSave: DeserializeOptions['onSave'] = undefined;
   public globalsPerGeneration: Array<Partial<Record<GlobalParameter, number>>> = [];
 
   public generation: number = 1;
@@ -556,6 +556,8 @@ export class Game implements IGame, Logger {
       }
       return;
     }
+    // A sandbox that became the live game no longer reports its saves.
+    this.onSandboxSave = undefined;
     GameLoader.getInstance().saveGame(this);
     // The database serialized the game, inputs included, when saveGame was called.
     this.inputsSinceSave = [];
