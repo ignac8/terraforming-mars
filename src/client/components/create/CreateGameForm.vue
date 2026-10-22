@@ -260,13 +260,10 @@
                             </template>
                                                         <input type="checkbox" v-model="undoOption" id="undo-checkbox" :disabled="expansions.tournament">
                             <label for="undo-checkbox">
-                                <span v-i18n>Allow undo</span>&nbsp;<a :href="wikiUrls.allowUndo" class="tooltip" v-i18n data-tooltip="Link opens in a new tab/window" target="_blank">&#9432;</a>
+                                <span v-i18n>Player undo</span>&nbsp;<a :href="wikiUrls.allowUndo" class="tooltip" v-i18n data-tooltip="Link opens in a new tab/window" target="_blank">&#9432;</a>
                             </label>
                             <div v-if="undoOption">
-                              <span v-i18n>Undo is now in best effort support.</span>
-                              <a href="https://github.com/terraforming-mars/terraforming-mars/discussions/7647" target="_blank">&#9432;</a>
-                              <br>
-                              <span v-i18n>No effort will be spent to fix it.</span>
+                              <span v-i18n>Solo and MarsBot games: rewind to any earlier move. Games with more players keep the old undo for now.</span>
                             </div>
 
                             <input type="checkbox" v-model="seededGame" id="seeded-checkbox">

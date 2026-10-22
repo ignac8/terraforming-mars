@@ -1737,8 +1737,9 @@ export class Player implements IPlayer {
       action.options.push(sellPatents.action(this));
     }
 
-    // Propose undo action only if you have done one action this turn
-    if (this.actionsTakenThisRound > 0 && this.game.gameOptions.undoOption) {
+    // Propose undo action only if you have done one action this turn.
+    // One-player games rewind from the panel instead.
+    if (this.actionsTakenThisRound > 0 && this.game.gameOptions.undoOption && this.game.players.length > 1) {
       action.options.push(new UndoActionOption());
     }
 

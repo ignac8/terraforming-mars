@@ -57,5 +57,7 @@
   "${0} removed ${1} resource(s) from ${2}'s ${3}": "${0} fjernet ${1} ressurs(er) fra ${2}s ${3}",
   "${0} gained ${1} TR": "${0} fikk ${1} TR",
   "${0} lost ${1} TR": "${0} mistet ${1} TR",
-  "${0} fizzled. ${1} gains 15 M€.": "${0} mislyktes. ${1} får 15 M€."
+  "${0} fizzled. ${1} gains 15 M€.": "${0} mislyktes. ${1} får 15 M€.",
+  "Allow undo": "Tillat å angre",
+  "undo": "Angring tillatt"
 }

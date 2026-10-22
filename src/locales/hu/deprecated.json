@@ -66,5 +66,7 @@
   "${0} gained ${1} TR": "${0} szerzett ${1} TR-t.",
   "${0} lost ${1} TR": "${0} elveszített ${1} TR-t.",
   "${0} fizzled. ${1} gains 15 M€.": "${0} elfogyott. ${1} kap 15 M€-et.",
-  "Player spent ${0} steel and gained ${1} heat": "A játékos elköltött ${0} acélt és szerzett ${1} hőt."
+  "Player spent ${0} steel and gained ${1} heat": "A játékos elköltött ${0} acélt és szerzett ${1} hőt.",
+  "Allow undo": "Visszavonás engedélyezése",
+  "undo": "visszavonás"
 }

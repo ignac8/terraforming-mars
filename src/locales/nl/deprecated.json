@@ -38,5 +38,7 @@
   "${0} gained 1 Science tag": "${0} ontving 1 wetenschaps-label",
   "${0} removed ${1} resource(s) from ${2}'s ${3}": "${0} verwijderde ${1} grondstof(fen) van ${2} (${3})",
   "${0} gained ${1} TR": "${0} kreeg ${1} TN",
-  "${0} lost ${1} TR": "${0} verloor ${1} TN"
+  "${0} lost ${1} TR": "${0} verloor ${1} TN",
+  "Allow undo": "Ongedaan maken toestaan",
+  "undo": "ongedaan gemaken"
 }

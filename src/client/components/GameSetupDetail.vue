@@ -71,7 +71,7 @@
               <div v-if="gameOptions.fastModeOption" class="game-config fastmode" v-i18n>fast mode</div>
               <div v-if="gameOptions.showTimers" class="game-config timer" v-i18n>timer</div>
               <div v-if="gameOptions.showOtherPlayersVP" class="game-config realtime-vp" v-i18n>real-time vp</div>
-              <div v-if="gameOptions.undoOption" class="game-config undo" v-i18n>undo</div>
+              <div v-if="gameOptions.undoOption" class="game-config undo" v-i18n>player undo</div>
               <div v-if="gameOptions.playerPasswords" class="game-config" v-i18n>player passwords</div>
             </li>
             <li v-if="gameOptions.twoCorpsVariant"><div class="setup-item" v-i18n>Merger</div></li>

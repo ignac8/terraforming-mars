@@ -80,5 +80,9 @@
   "${0} gained ${1} TR from ${2}": "${0} nosti MKL:äänsä ${1} askelta lähteestä ${2}",
   "${0} lost ${1} TR": "${0} laski MKL:äänsä ${1} askelta",
   "${0} fizzled. ${1} gains 15 M€.": "${0} epäonnistui. ${1} saa 15 M€.",
-  "Player spent ${0} steel and gained ${1} heat": "Pelaaja käytti ${0} terästä ja sai ${1} lämpöä"
+  "Player spent ${0} steel and gained ${1} heat": "Pelaaja käytti ${0} terästä ja sai ${1} lämpöä",
+  "Allow undo": "Salli peruminen",
+  "Undo is now in best effort support.": "Peruminen ei välttämättä toimi aina.",
+  "No effort will be spent to fix it.": "Sitä ei aiota parantaa.",
+  "undo": "peru"
 }

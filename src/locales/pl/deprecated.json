@@ -37,5 +37,6 @@
   "${0} gained 1 Science tag": "${0} otrzymuje 1 symbol Nauki",
   "${0} removed ${1} resource(s) from ${2}'s ${3}": "${0} usuwa ${2} jednostek z karty ${3} gracza ${2}",
   "${0} gained ${1} TR": "${0} podnosi swój WT o ${1}",
-  "${0} lost ${1} TR": "${0} traci ${1} WT"
+  "${0} lost ${1} TR": "${0} traci ${1} WT",
+  "Allow undo": "Zezwól na cofanie tury"
 }

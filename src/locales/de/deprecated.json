@@ -82,5 +82,9 @@
   "${0} gained ${1} TR from ${2}": "${0} erhielt ${1} TW von ${2}",
   "${0} lost ${1} TR": "${0} verlor ${1} TW",
   "${0} fizzled. ${1} gains 15 M€.": "${0} hat gepatzt. ${1} erhält 15 M€.",
-  "Player spent ${0} steel and gained ${1} heat": "Spieler hat ${0} Stahl ausgegeben und ${1} Wärme erhalten"
+  "Player spent ${0} steel and gained ${1} heat": "Spieler hat ${0} Stahl ausgegeben und ${1} Wärme erhalten",
+  "Allow undo": "Zug rückgängig machen erlauben",
+  "Undo is now in best effort support.": "Rückgängig ist nach besten Mühen unterstützt.",
+  "No effort will be spent to fix it.": "Es wird keine Bemühungen geben die Probleme zu beheben.",
+  "undo": "rückgängig"
 }

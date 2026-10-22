@@ -79,5 +79,6 @@
   "${0} gained ${1} TR": "${0} a gagné ${1} NT",
   "${0} gained ${1} TR from ${2}": "${0} a gagné ${1} NT de ${2}",
   "${0} lost ${1} TR": "${0} a perdu ${1} NT",
-  "Player spent ${0} steel and gained ${1} heat": "Le joueur a dépensé ${0} acier(s) et a gagné ${1} chaleur(s)"
+  "Player spent ${0} steel and gained ${1} heat": "Le joueur a dépensé ${0} acier(s) et a gagné ${1} chaleur(s)",
+  "Allow undo": "Autoriser annulation"
 }

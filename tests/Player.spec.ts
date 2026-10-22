@@ -6,6 +6,7 @@ import {IoMiningIndustries} from '../src/server/cards/base/IoMiningIndustries';
 import {PowerSupplyConsortium} from '../src/server/cards/base/PowerSupplyConsortium';
 import {SaturnSystems} from '../src/server/cards/corporation/SaturnSystems';
 import {SelectOption} from '../src/server/inputs/SelectOption';
+import {UndoActionOption} from '../src/server/inputs/UndoActionOption';
 import {Resource} from '../src/common/Resource';
 import {SerializedPlayer} from '../src/server/SerializedPlayer';
 import {SerializedTimer} from '../src/common/SerializedTimer';
@@ -747,6 +748,17 @@ describe('Player', () => {
 
     expect(player.cardsInHand).to.have.members([cards[0], cards[2]]);
     expect(player.megaCredits).eq(14);
+  });
+
+  it('offers the undo action only in games with more than one player', () => {
+    for (const [count, expected] of [[1, false], [2, true]] as const) {
+      const [/* game */, player] = testGame(count, {undoOption: true});
+      player.actionsTakenThisRound = 1;
+
+      const actions = cast(player.getActions(), OrOptions);
+
+      expect(actions.options.some((option) => option instanceof UndoActionOption), `${count} players`).eq(expected);
+    }
   });
 
   describe('saves', () => {

@@ -29,7 +29,7 @@
     "Initial Draft rounds:": "初始轮抽次数",
     "Random first player": "随机起始玩家和顺位",
     "Show real-time VP": "显示实时分数",
-    "Allow undo": "允许撤回",
+    "Player undo": "允许撤回",
     "7 Heat Into Temperature": "七热升温",
     "NEXT CARD:": "下一张卡:",
 
@@ -464,7 +464,7 @@
     "End": "结束",
     "Sell": "卖出",
     "Undo": "反悔",
-    "undo": "反悔",
+    "player undo": "反悔",
     "12 Gens": "12个时代",
     "GEN": "时代",
     "Generation Marker": "时代标记",

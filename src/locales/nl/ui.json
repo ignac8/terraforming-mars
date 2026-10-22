@@ -61,7 +61,7 @@
     "Initial Draft rounds": "Initiële Draft-variant",
     "Random first player": "Willekeurige startspeler",
     "Show real-time VP": "Toon real-time overwinningspunten",
-    "Allow undo": "Ongedaan maken toestaan",
+    "Player undo": "Ongedaan maken toestaan",
     "7 Heat Into Temperature": "7 warmte in temperatuur",
     "NEXT CARD:": "VOLGENDE KAART: ",
     "GENERATION 1 OF 12": "GENERATIE ${0} van ${1}",
@@ -612,7 +612,7 @@
     "Hide": "Verbergen",
     "Show": "Tonen",
     "Undo": "Ongedaan gemaken",
-    "undo": "ongedaan gemaken",
+    "player undo": "ongedaan gemaken",
     "12 Gens": "12 Generatiesn",
 
     "Your selected cards:": "Je geselecteerde kaarten:",
