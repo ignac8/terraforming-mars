@@ -152,6 +152,10 @@ export class Game implements IGame, Logger {
   /** A sandbox game is a read-only view of a past save. It never writes a save. */
   public isSandbox: boolean = false;
   private onSandboxSave: DeserializeOptions['onSave'] = undefined;
+  /** Set on a game object that a rewind replaced. Like a sandbox, it never writes a save. Not serialized. */
+  public retired: boolean = false;
+  /** Settles once the game's last saves and its finished mark are written. Unset until the game ends in this process. */
+  public finishing: Promise<void> | undefined = undefined;
   public globalsPerGeneration: Array<Partial<Record<GlobalParameter, number>>> = [];
 
   public generation: number = 1;
@@ -546,6 +550,9 @@ export class Game implements IGame, Logger {
   }
 
   public save(): void {
+    if (this.retired) {
+      return;
+    }
     if (this.isSandbox) {
       if (this.onSandboxSave !== undefined) {
         // As the database does: the state is stored under the current id, and the game moves on to the next.
@@ -1280,7 +1287,7 @@ export class Game implements IGame, Logger {
       this.log('This game id was ${0}', (b) => b.rawString(id));
     }
 
-    if (this.isSandbox) {
+    if (this.isSandbox || this.retired) {
       this.phase = Phase.END;
       return;
     }
@@ -1299,7 +1306,11 @@ export class Game implements IGame, Logger {
     // The database serialized the game, inputs included, when saveGame was called.
     this.inputsSinceSave = [];
     await saved;
-    gameLoader.completeGame(this);
+    // A game a rewind replaced doesn't finish: completeGame would save under the id the rewind took.
+    if (this.retired) {
+      return;
+    }
+    await gameLoader.completeGame(this);
   }
 
   // Part of final greenery placement.
@@ -1347,7 +1358,7 @@ export class Game implements IGame, Logger {
     }
     this.updatePlayerVPForTheGeneration();
     this.updateGlobalsForTheGeneration();
-    this.gotoEndGame();
+    this.finishing = this.gotoEndGame();
   }
 
   private startActionsForPlayer(player: IPlayer) {

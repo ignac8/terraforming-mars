@@ -81,6 +81,10 @@ export interface IGame extends Logger {
   resettable: boolean;
   /** True for a read-only view of a past save: it never writes to the database or the game cache. */
   readonly isSandbox: boolean;
+  /** True for a game object that a rewind replaced. It takes no input and never writes a save. */
+  retired: boolean;
+  /** Settles once the game's last saves and its finished mark are written. Unset until the game ends in this process. */
+  readonly finishing: Promise<void> | undefined;
   generation: number;
   readonly players: ReadonlyArray<IPlayer>;
   readonly playersInGenerationOrder: ReadonlyArray<IPlayer>;

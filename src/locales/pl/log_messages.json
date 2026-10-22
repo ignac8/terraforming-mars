@@ -254,5 +254,7 @@
   "Pay 10:r:megacredits: to increase your :p:energy: and :p:heat: 1 step": "Wydaj 10 M€, aby podnieść produkcję energii i ciepła o 1 poziom.",
   "When you raise temperature, gain 3:r:megacredits: per step raised": "Kiedy podnosisz poziom temperatury otrzymujesz 3 M€ za każdy podniesiony poziom.",
   "Convert 6:r:heat: into temperature": "Wydaj 6 jednostek ciepła, aby podnieść temperaturę o 1 poziom.",
-  "When you place a tile, gain 2:r:heat:": "Kiedy umieszczasz dowolny obszar na planszy, otrzymujesz 2 jednostki ciepła."
+  "When you place a tile, gain 2:r:heat:": "Kiedy umieszczasz dowolny obszar na planszy, otrzymujesz 2 jednostki ciepła.",
+  "${0} rewound the game to generation ${1}": "${0} cofa grę do pokolenia ${1}",
+  "${0} rewound the game to generation ${1} and shuffled the hidden piles": "${0} cofa grę do pokolenia ${1} i tasuje ukryte talie"
 }

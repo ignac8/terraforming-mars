@@ -95,6 +95,7 @@ export class PlayerInput extends Handler {
       }
       const entity = JSON.parse(body);
       validateRunId(entity);
+      validateNotRewound(player);
       validateRequestId(player, entity);
 
       // Placed here because it fits in a temporally cohesive sense.
@@ -155,6 +156,13 @@ function validateRunId(entity: any) {
   }
   // Clearing this out to be compatible with the input response processors.
   delete entity.runId;
+}
+
+// The game was taken before the body arrived. A rewind may have replaced it in the meantime.
+function validateNotRewound(player: IPlayer) {
+  if (player.game.retired) {
+    throw new AppError(INVALID_REQUEST_ID, 'This game was rewound. Click OK to refresh this page.');
+  }
 }
 
 // Rejects a response sent for an input the player has since moved past, e.g. from a page

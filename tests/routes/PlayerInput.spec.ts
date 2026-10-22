@@ -14,6 +14,11 @@ import {Payment} from '../../src/common/inputs/Payment';
 import {statusCode} from '@/common/http/statusCode';
 import {FakeClock} from '../common/FakeClock';
 import {INVALID_REQUEST_ID, RESPONDING_TOO_QUICKLY} from '@/common/app/AppErrorId';
+import {rewindGame} from '../../src/server/rewind/RewindService';
+import {clearReplayCache} from '../../src/server/replay/ReplayService';
+import {restoreTestDatabase, setTestDatabase} from '../testing/setup';
+import {SnapshotDatabase} from '../testing/SnapshotDatabase';
+import {testGame} from '../TestGame';
 
 describe('PlayerInput', () => {
   let scaffolding: RouteTestScaffolding;
@@ -265,5 +270,35 @@ describe('PlayerInput', () => {
       await send(PlayerInput.INSTANCE, player.id, JSON.stringify({requestId, ...powerPlant}));
       expect(res.statusCode).eq(statusCode.ok);
     });
+  });
+
+  it('refuses an input on a game a rewind replaced', async () => {
+    const db = new SnapshotDatabase();
+    setTestDatabase(db);
+    try {
+      clearReplayCache();
+      const [game, player] = testGame(1, {undoOption: true});
+      // The route took this object before the rewind replaced it.
+      await scaffolding.ctx.gameLoader.add(game);
+      player.takeAction();
+      const pass = (): OrOptionsResponse => {
+        const index = cast(player.getWaitingFor(), OrOptions).options.findIndex((option) => option.title === 'Pass for this generation');
+        return {type: 'or', index, response: {type: 'option'}};
+      };
+      player.process(pass());
+      const research = game.lastSaveId - 1;
+      player.process({type: 'card', cards: []});
+      const requestId = player.getWaitingFor()?.requestId;
+      await rewindGame(game, player, research, 'same');
+      const saves = db.games.get(game.id)!.length;
+
+      await send(PlayerInput.INSTANCE, player.id, JSON.stringify({requestId, ...pass()}));
+
+      expect(res.statusCode).eq(statusCode.badRequest);
+      expect(JSON.parse(res.content).id).eq(INVALID_REQUEST_ID);
+      expect(db.games.get(game.id)!).has.length(saves);
+    } finally {
+      restoreTestDatabase();
+    }
   });
 });

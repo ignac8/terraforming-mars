@@ -862,6 +862,8 @@ describe('Game', () => {
       'inTurmoil',
       'isSandbox',
       'onSandboxSave',
+      'retired',
+      'finishing',
       'playersInGenerationOrder',
       'monsInsuranceOwner',
       'resettable',
