@@ -779,6 +779,22 @@ describe('ReplayScreen', () => {
         expect(rewinds).to.deep.equal([]);
       });
 
+      it('shows the vote at once after asking for it, without waiting for the next poll', async () => {
+        const wrapper = mountVote(true);
+        await flushPromises();
+        await open(wrapper);
+        await flushPromises();
+        panel(wrapper).vm.$emit('select', 0);
+        await flushPromises();
+        const vote = {voteId: 7, status: 'open', requester: 'blue', saveId: 10, moveNumber: 1, generation: 1, cards: 'same', votes: [{color: 'red', choice: 'pending'}], expiresInMs: 60_000};
+        voteAnswer = () => respond({undoCount: 0, vote, mayRequest: true});
+        expect(wrapper.find('.rewind-vote-open').exists()).is.false;
+        await wrapper.find('.rewind-start').trigger('click');
+        await wrapper.find('.rewind-confirm-button').trigger('click');
+        await flushPromises();
+        expect(wrapper.find('.rewind-vote-open').exists()).is.true;
+      });
+
       it('shows why a request was refused, where view errors show', async () => {
         const wrapper = mountVote(false);
         await open(wrapper);

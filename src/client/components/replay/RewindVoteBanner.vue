@@ -200,6 +200,14 @@ export default defineComponent({
         this.pollTimer = setTimeout(() => this.poll(), this.pollMs);
       }
     },
+    /** Reads the vote now, e.g. after this page asked for one, instead of at the next poll. */
+    async refresh(): Promise<void> {
+      try {
+        await this.receive(() => fetchVote(this.participantId, this.password));
+      } catch (err) {
+        console.warn('Unable to read the rewind vote', err);
+      }
+    },
     async act(action: 'yes' | 'no' | 'cancel'): Promise<void> {
       if (this.vote === undefined || this.acting) {
         return;

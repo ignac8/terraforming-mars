@@ -8,6 +8,7 @@
       :password="passwordFragment"
       :undoCount="liveView.game.undoCount"
       :players="liveView.players"
+      ref="voteBanner"
       @show="showMove"
       @mayRequest="(mayRequest) => requestBlocked = !mayRequest"/>
     <template v-if="liveView !== undefined">
@@ -363,6 +364,7 @@ export default defineComponent({
       this.clearRefusal();
       try {
         await postVote(this.participantId, {action: 'request', saveId: this.moves[this.index].saveId, cards}, this.passwordFragment);
+        (this.$refs.voteBanner as InstanceType<typeof RewindVoteBanner> | undefined)?.refresh?.();
       } catch (err) {
         console.error(err);
         this.error = err instanceof Error ? translateRefusal(err.message) : String(err);
