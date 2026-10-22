@@ -172,6 +172,8 @@ export interface IGame extends Logger {
   save(): Promise<void>;
   serialize(): SerializedGame;
   isSoloMode() :boolean;
+  /** Writes the scores of the game, as it ends. */
+  saveGameResults(): void;
   // Retrieve a player by its id
   getPlayerById(id: PlayerId): IPlayer;
   defer<T>(action: DeferredAction<T>, priority?: Priority): AndThen<T>;

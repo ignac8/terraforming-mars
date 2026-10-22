@@ -6,7 +6,7 @@ import {SerializedGame} from '../../src/server/SerializedGame';
 import {GameLoader} from '../../src/server/database/GameLoader';
 import {OrOptions} from '../../src/server/inputs/OrOptions';
 import {SelectCard} from '../../src/server/inputs/SelectCard';
-import {clearReplayCache, getReplayMoves} from '../../src/server/replay/ReplayService';
+import {clearReplayCache, getReplayMoves, loadReplayState} from '../../src/server/replay/ReplayService';
 import {rewindGame, rewindMetrics} from '../../src/server/rewind/RewindService';
 import {sameState} from '../../src/server/rewind/stateHash';
 import {RouteError} from '../../src/server/routes/RouteError';
@@ -239,6 +239,33 @@ describe('RewindService', () => {
       const restored = await rewindGame(game, player, convert, 'same');
       expect(restored.phase).eq(Phase.ACTION);
     }
+  });
+
+  it('restores the results and the replay of a finished game whose rewind failed after its save', async () => {
+    const loader = GameLoader.newTestInstance({sleepMillis: 0, evictMillis: 100, idleMillis: 0, sweep: 'manual'}, new FakeClock());
+    setTestGameLoader(loader);
+    await play({lastGeneration: true});
+    await game.finishing;
+    const saveId = rows().length;
+    // The rebuilt game's save lands but reports it late, and the hand-over fails meanwhile.
+    let release = () => {};
+    const saveGame = db.saveGame.bind(db);
+    db.saveGame = (g) => {
+      db.saveGame = saveGame;
+      saveGame(g);
+      return new Promise((resolve) => release = resolve);
+    };
+    loader.add = () => Promise.reject(new Error('add failed'));
+
+    const rewinding = refusal(rewindGame(game, player, convert, 'same'));
+    await new Promise((resolve) => setImmediate(resolve));
+    // A replay view of the rebuilt save, asked for while it is the newest one.
+    expect((await loadReplayState(game, saveId)).phase).eq(Phase.ACTION);
+    release();
+    await rewinding;
+
+    expect(db.hasGameResults(game.id)).is.true;
+    expect((await loadReplayState(game, saveId)).phase).eq(Phase.END);
   });
 
   it('writes one save when the answer that wrote the moment went on to save again', async () => {

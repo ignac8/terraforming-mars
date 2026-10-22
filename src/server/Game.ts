@@ -1299,14 +1299,7 @@ export class Game implements IGame, Logger {
       return;
     }
 
-    const scores: Array<Score> = [];
-    this.players.forEach((player) => {
-      const corporation = player.playedCards.filter(isICorporationCard).map(toName).join('|');
-      const vpb = player.getVictoryPoints();
-      scores.push({corporation: corporation, playerScore: vpb.total});
-    });
-
-    Database.getInstance().saveGameResults(this.id, this.players.length, this.generation, this.gameOptions, scores);
+    this.saveGameResults();
     this.phase = Phase.END;
     const gameLoader = GameLoader.getInstance();
     const saved = gameLoader.saveGame(this);
@@ -1318,6 +1311,17 @@ export class Game implements IGame, Logger {
       return;
     }
     await gameLoader.completeGame(this);
+  }
+
+  public saveGameResults(): void {
+    const scores: Array<Score> = [];
+    this.players.forEach((player) => {
+      const corporation = player.playedCards.filter(isICorporationCard).map(toName).join('|');
+      const vpb = player.getVictoryPoints();
+      scores.push({corporation: corporation, playerScore: vpb.total});
+    });
+
+    Database.getInstance().saveGameResults(this.id, this.players.length, this.generation, this.gameOptions, scores);
   }
 
   // Part of final greenery placement.
