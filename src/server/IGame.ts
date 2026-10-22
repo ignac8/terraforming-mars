@@ -33,6 +33,9 @@ import {Logger} from './logs/Logger';
 import {GlobalParameter} from '../common/GlobalParameter';
 import {UnderworldData} from './underworld/UnderworldData';
 import {OrOptions} from './inputs/OrOptions';
+import {PlayerInput} from './PlayerInput';
+import {InputResponse} from '../common/inputs/InputResponse';
+import {RecordedInput} from './rewind/RecordedInput';
 import {IStandardProjectCard} from './cards/IStandardProjectCard';
 import {GlobalParameterTracks} from '@/server/boards/GlobalParameterTracks';
 import {RewindRecord} from './rewind/RewindRecord';
@@ -68,6 +71,12 @@ export interface IGame extends Logger {
   /** Rewinds of this game, each hiding the line of play it abandoned. */
   rewinds: Array<RewindRecord>;
   undoCount: number; // Each undo increases it
+  /** The inputs processed since the last save. */
+  inputsSinceSave: Array<RecordedInput>;
+  /** Remembers `input`, the answer `player` gave to `waitingFor`, with the state it is about to be applied to. Sandbox games record nothing. */
+  recordInput(player: IPlayer, waitingFor: PlayerInput, input: InputResponse): RecordedInput | undefined;
+  /** Takes back a record from `recordInput`, for an answer the game then rejected. */
+  forgetInput(recorded: RecordedInput | undefined): void;
   inputsThisRound: number;
   resettable: boolean;
   /** True for a read-only view of a past save: it never writes to the database or the game cache. */

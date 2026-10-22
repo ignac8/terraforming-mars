@@ -19,6 +19,7 @@ import {GlobalParameter} from '../common/GlobalParameter';
 import {MilestoneName} from '../common/ma/MilestoneName';
 import {Tag} from '../common/cards/Tag';
 import {RewindRecord} from './rewind/RewindRecord';
+import {RecordedInput} from './rewind/RecordedInput';
 
 export type SerializedGame = {
     activePlayer: PlayerId;
@@ -47,6 +48,8 @@ export type SerializedGame = {
     globalsPerGeneration: Array<Partial<Record<GlobalParameter, number>>>;
     id: GameId;
     initialDraftIteration: number;
+    /** The inputs processed since the previous save. Missing in games saved before they were recorded. */
+    inputs?: Array<RecordedInput>;
     lastSaveId: number;
     milestones: Array<MilestoneName>;
     moonData: SerializedMoonData | undefined;

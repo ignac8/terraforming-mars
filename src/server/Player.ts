@@ -1762,6 +1762,7 @@ export class Player implements IPlayer {
     }
     const waitingFor = this.waitingFor;
     const waitingForCb = this.waitingForCb;
+    const recorded = this.game.recordInput(this, waitingFor, input);
     this.waitingFor = undefined;
     this.waitingForCb = undefined;
     try {
@@ -1771,6 +1772,7 @@ export class Player implements IPlayer {
       this.defer(waitingFor.process(input, this));
       waitingForCb();
     } catch (err) {
+      this.game.forgetInput(recorded);
       this.setWaitingFor(waitingFor, waitingForCb);
       throw err;
     }

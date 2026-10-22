@@ -30,6 +30,9 @@ import {IPlayer} from './IPlayer';
 import {Player} from './Player';
 import {PlayerId, GameId, SpectatorId, SpaceId, JudgeId, Password, isJudgeId, safeCast} from '../common/Types';
 import {PlayerInput} from './PlayerInput';
+import {InputResponse} from '../common/inputs/InputResponse';
+import {RecordedInput} from './rewind/RecordedInput';
+import {stateHash} from './rewind/stateHash';
 import {CardResource} from '../common/CardResource';
 import {Resource} from '../common/Resource';
 import {AndThen, DeferredAction, IDeferredAction, SimpleDeferredAction} from './deferredActions/DeferredAction';
@@ -140,6 +143,8 @@ export class Game implements IGame, Logger {
   public gameLog: Array<LogMessage> = createGameLog();
   public rewinds: Array<RewindRecord> = [];
   public undoCount: number = 0; // Each undo increases it
+  /** The inputs processed since the last save. */
+  public inputsSinceSave: Array<RecordedInput> = [];
   public inputsThisRound = 0;
   public resettable: boolean = false;
   /** A sandbox game is a read-only view of a past save. It is never serialized. */
@@ -542,6 +547,32 @@ export class Game implements IGame, Logger {
       return;
     }
     GameLoader.getInstance().saveGame(this);
+    // The database serialized the game, inputs included, when saveGame was called.
+    this.inputsSinceSave = [];
+  }
+
+  /** Remembers `input`, the answer `player` gave to `waitingFor`, with the state it is about to be applied to. */
+  public recordInput(player: IPlayer, waitingFor: PlayerInput, input: InputResponse): RecordedInput | undefined {
+    if (this.isSandbox) {
+      return undefined;
+    }
+    const title = waitingFor.title;
+    const recorded: RecordedInput = {
+      playerId: player.id,
+      prompt: {type: waitingFor.type, title: typeof title === 'string' ? title : title.message},
+      response: structuredClone(input),
+      stateHash: stateHash(this.serialize()),
+    };
+    this.inputsSinceSave.push(recorded);
+    return recorded;
+  }
+
+  /** Takes back a record from `recordInput`, for an answer the game then rejected. */
+  public forgetInput(recorded: RecordedInput | undefined): void {
+    const index = recorded === undefined ? -1 : this.inputsSinceSave.lastIndexOf(recorded);
+    if (index !== -1) {
+      this.inputsSinceSave.splice(index, 1);
+    }
   }
 
   public serialize(): SerializedGame {
@@ -572,6 +603,7 @@ export class Game implements IGame, Logger {
       globalsPerGeneration: this.globalsPerGeneration,
       id: this.id,
       initialDraftIteration: this.initialDraftIteration,
+      inputs: [...this.inputsSinceSave],
       lastSaveId: this.lastSaveId,
       milestones: this.milestones.map(toName),
       moonData: MoonData.serialize(this.moonData),
@@ -1251,7 +1283,10 @@ export class Game implements IGame, Logger {
     Database.getInstance().saveGameResults(this.id, this.players.length, this.generation, this.gameOptions, scores);
     this.phase = Phase.END;
     const gameLoader = GameLoader.getInstance();
-    await gameLoader.saveGame(this);
+    const saved = gameLoader.saveGame(this);
+    // The database serialized the game, inputs included, when saveGame was called.
+    this.inputsSinceSave = [];
+    await saved;
     gameLoader.completeGame(this);
   }
 
@@ -1932,6 +1967,7 @@ export class Game implements IGame, Logger {
     game.phase = d.phase;
     game.oxygenLevel = d.oxygenLevel;
     game.undoCount = d.undoCount ?? 0;
+    game.inputsSinceSave = d.inputs ?? [];
     game.temperature = d.temperature;
     game.venusScaleLevel = d.venusScaleLevel;
     game.activePlayer = game.getPlayerById(d.activePlayer);
