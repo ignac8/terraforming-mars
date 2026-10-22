@@ -29,10 +29,35 @@ import {RouteTestScaffolding} from '../routes/RouteTestScaffolding';
 import {TestPlayer} from '../TestPlayer';
 import {testGame} from '../TestingUtils';
 
+let db: SnapshotDatabase;
+let game: IGame;
+let player: TestPlayer;
+
+function choose(p: IPlayer, title: string) {
+  const action = cast(p.getWaitingFor(), OrOptions);
+  p.process({type: 'or', index: action.options.findIndex((option) => option.title === title), response: {type: 'option'}});
+}
+
+function rows(): Array<SerializedGame> {
+  return db.games.get(game.id) as Array<SerializedGame>;
+}
+
+// True when `row` holds the moment `saved` holds. The log and the rewinds are left out.
+function holdsMoment(row: SerializedGame, saved: SerializedGame): boolean {
+  const {rewinds: _rewinds, ...state} = row;
+  return sameState({...state, gameLog: saved.gameLog}, saved);
+}
+
+async function refusal(rewind: Promise<unknown>): Promise<RouteError> {
+  try {
+    await rewind;
+  } catch (e) {
+    return cast(e, RouteError);
+  }
+  throw new Error('The rewind was not refused');
+}
+
 describe('RewindService', () => {
-  let db: SnapshotDatabase;
-  let game: IGame;
-  let player: TestPlayer;
   // Saves of the second generation played: its research phase, the action prompt after two heat
   // conversions, and the save that passing writes before production runs.
   let research: number;
@@ -40,11 +65,6 @@ describe('RewindService', () => {
   let pass: number;
   // The cards that research phase offered.
   let researchCards: Array<CardName>;
-
-  function choose(p: IPlayer, title: string) {
-    const action = cast(p.getWaitingFor(), OrOptions);
-    p.process({type: 'or', index: action.options.findIndex((option) => option.title === title), response: {type: 'option'}});
-  }
 
   // A solo game with Player undo, played to the research phase of the generation after next. With
   // `lastGeneration`, the second generation played is the last one, and passing ends the game.
@@ -70,27 +90,8 @@ describe('RewindService', () => {
     pass = game.lastSaveId - 2;
   }
 
-  function rows(): Array<SerializedGame> {
-    return db.games.get(game.id) as Array<SerializedGame>;
-  }
-
-  // True when `row` holds the moment `saved` holds. The log and the rewinds are left out.
-  function holdsMoment(row: SerializedGame, saved: SerializedGame): boolean {
-    const {rewinds: _rewinds, ...state} = row;
-    return sameState({...state, gameLog: saved.gameLog}, saved);
-  }
-
   async function rebuilds(result: string): Promise<number> {
     return (await rewindMetrics.rebuilds.get()).values.find((v) => v.labels.result === result)?.value ?? 0;
-  }
-
-  async function refusal(rewind: Promise<unknown>): Promise<RouteError> {
-    try {
-      await rewind;
-    } catch (e) {
-      return cast(e, RouteError);
-    }
-    throw new Error('The rewind was not refused');
   }
 
   beforeEach(() => play());
@@ -407,231 +408,263 @@ describe('RewindService', () => {
     const [other, otherPlayer] = testGame(1);
     expect((await refusal(rewindGame(other, otherPlayer, 0, 'same'))).kind).eq('forbidden');
   });
+});
 
-  describe('whole table', () => {
-    let player2: TestPlayer;
-    // The second generation's research save, or its first drafting save with the draft variant.
-    let research: number;
-    // The save before player 2's last action of the second generation, after player 1 moved.
-    let target: number;
+describe('RewindService whole table', () => {
+  let player2: TestPlayer;
+  // The second generation's research save.
+  let secondResearch: number;
+  // The save before player 2's last action of the second generation, after player 1 moved.
+  let target: number;
+  // With the draft variant, the save that starts the third generation's draft.
+  let draft: number;
 
-    // A two-player game, played to the research phase of the generation after next. With the draft
-    // variant it stops when the second generation's draft starts: a pick logs nothing, so no drafting
-    // save but the newest is a move in the history.
-    async function playTable(options: {draftVariant?: boolean, tournamentExpansion?: boolean} = {}) {
-      clearReplayCache();
-      db = new SnapshotDatabase();
-      setTestDatabase(db);
-      [game, player, player2] = testGame(2, {judgeLink: true, ...options});
-      await GameLoader.getInstance().add(game);
-      game.phase = Phase.ACTION;
-      player.heat = 40;
-      player2.heat = 40;
-      player.takeAction();
-      choose(player, 'Pass for this generation');
-      choose(player2, 'Pass for this generation');
-      research = game.lastSaveId - 1;
-      if (options.draftVariant) {
-        return;
+  // A two-player game, played to the research phase of the generation after next. With the draft
+  // variant it plays the second generation's draft too, and stops when the third generation's draft
+  // starts: a pick logs nothing, so no drafting save but the newest is a move in the history.
+  async function playTable(options: {draftVariant?: boolean, tournamentExpansion?: boolean} = {}) {
+    clearReplayCache();
+    db = new SnapshotDatabase();
+    setTestDatabase(db);
+    [game, player, player2] = testGame(2, {judgeLink: true, ...options});
+    await GameLoader.getInstance().add(game);
+    // Set outside any input, so the first generation's saves don't replay: rebuilds start at the
+    // second generation's research save.
+    game.phase = Phase.ACTION;
+    player.heat = 40;
+    player2.heat = 40;
+    player.takeAction();
+    choose(player, 'Pass for this generation');
+    choose(player2, 'Pass for this generation');
+    if (options.draftVariant) {
+      for (let round = 0; round < 3; round++) {
+        for (const p of [player, player2]) {
+          p.process({type: 'card', cards: [cast(p.getWaitingFor(), SelectCard).cards[0].name]});
+        }
       }
-      player.process({type: 'card', cards: []});
-      player2.process({type: 'card', cards: []});
-      // Player 2 goes first in the second generation.
-      choose(player2, 'Convert 8 heat into temperature');
-      choose(player2, 'Convert 8 heat into temperature');
-      choose(player, 'Convert 8 heat into temperature');
-      choose(player, 'Pass for this generation');
-      target = game.lastSaveId - 1;
-      choose(player2, 'Convert 8 heat into temperature');
-      choose(player2, 'Pass for this generation');
     }
+    secondResearch = game.lastSaveId - 1;
+    player.process({type: 'card', cards: []});
+    player2.process({type: 'card', cards: []});
+    if (options.draftVariant) {
+      choose(player2, 'Pass for this generation');
+      choose(player, 'Pass for this generation');
+      draft = game.lastSaveId - 1;
+      return;
+    }
+    // Player 2 goes first in the second generation.
+    choose(player2, 'Convert 8 heat into temperature');
+    choose(player2, 'Convert 8 heat into temperature');
+    choose(player, 'Convert 8 heat into temperature');
+    choose(player, 'Pass for this generation');
+    target = game.lastSaveId - 1;
+    choose(player2, 'Convert 8 heat into temperature');
+    choose(player2, 'Pass for this generation');
+  }
 
-    const judge: RewindActor = {kind: 'judge'};
+  const judge: RewindActor = {kind: 'judge'};
 
-    it('rewinds both players to before the other player\'s move and appends one save', async () => {
+  afterEach(() => {
+    restoreTestDatabase();
+    restoreTestGameLoader();
+  });
+
+  it('rewinds both players to before the other player\'s move and appends one save', async () => {
+    await playTable();
+    const before = structuredClone(rows());
+
+    const restored = await rewindTable(game, target, {cards: 'same', clocks: 'keep'}, judge);
+
+    expect(await GameLoader.getInstance().getGame(game.id)).eq(restored);
+    expect(rows().slice(0, before.length)).deep.eq(before);
+    expect(rows()).has.length(before.length + 1);
+    const row = rows()[before.length];
+    expect(holdsMoment(row, before[target])).is.true;
+    const marker = row.gameLog[row.gameLog.length - 1];
+    expect(marker.message).eq('The judge rewound the game to generation ${0}');
+    expect(marker.playerId).is.undefined;
+    expect(marker.data.some((d) => d.type === LogMessageDataType.PLAYER)).is.false;
+  });
+
+  it('refuses an input that arrives while the table is being rewound', async () => {
+    for (const kind of ['judge', 'vote'] as const) {
       await playTable();
+      const by: RewindActor = kind === 'judge' ? {kind} : {kind, requester: player2};
+      // The route takes the game from its own loader, so it keeps the old object after the swap.
+      const scaffolding = new RouteTestScaffolding();
+      await scaffolding.ctx.gameLoader.add(game);
+      const post = async (body: string): Promise<MockResponse> => {
+        const req = new MockRequest();
+        const res = new MockResponse();
+        scaffolding.req = req;
+        scaffolding.url = `/player/input?id=${player.id}`;
+        const posting = scaffolding.post(PlayerInput.INSTANCE, res);
+        const emit = Promise.resolve().then(() => {
+          req.emitString(body);
+          req.emitter.emit('end');
+        });
+        await Promise.all([emit, posting]);
+        return res;
+      };
+      let release = () => {};
+      const listed = new Promise<void>((resolve) => release = resolve);
+      const getSaveIds = db.getSaveIds.bind(db);
+      db.getSaveIds = async (gameId) => {
+        await listed;
+        return getSaveIds(gameId);
+      };
       const before = structuredClone(rows());
+      const inputs = structuredClone(game.inputsSinceSave);
+      const answer = JSON.stringify({requestId: player.getWaitingFor()?.requestId, type: 'card', cards: []});
 
-      const restored = await rewindTable(game, target, {cards: 'same', clocks: 'keep'}, judge);
+      const rewinding = rewindTable(game, target, {cards: 'same', clocks: 'keep'}, by);
+      expect(isTableLocked(game.id), kind).is.true;
+      let res = await post(answer);
 
-      expect(await GameLoader.getInstance().getGame(game.id)).eq(restored);
-      expect(rows().slice(0, before.length)).deep.eq(before);
-      expect(rows()).has.length(before.length + 1);
-      const row = rows()[before.length];
-      expect(holdsMoment(row, before[target])).is.true;
-      const marker = row.gameLog[row.gameLog.length - 1];
-      expect(marker.message).eq('The judge rewound the game to generation ${0}');
-      expect(marker.playerId).is.undefined;
-      expect(marker.data.some((d) => d.type === LogMessageDataType.PLAYER)).is.false;
-    });
+      expect(res.statusCode, kind).eq(statusCode.badRequest);
+      expect(JSON.parse(res.content).id, kind).eq(INVALID_REQUEST_ID);
+      expect(JSON.parse(res.content).message, kind).eq('The table is being rewound or frozen. Click OK to refresh this page.');
+      expect(game.inputsSinceSave, kind).deep.eq(inputs);
+      expect(rows(), kind).has.length(before.length);
 
-    it('refuses an input that arrives while the table is being rewound', async () => {
-      for (const kind of ['judge', 'vote'] as const) {
-        await playTable();
-        const by: RewindActor = kind === 'judge' ? {kind} : {kind, requester: player2};
-        // The route takes the game from its own loader, so it keeps the old object after the swap.
-        const scaffolding = new RouteTestScaffolding();
-        await scaffolding.ctx.gameLoader.add(game);
-        const post = async (body: string): Promise<MockResponse> => {
-          const req = new MockRequest();
-          const res = new MockResponse();
-          scaffolding.req = req;
-          scaffolding.url = `/player/input?id=${player.id}`;
-          const posting = scaffolding.post(PlayerInput.INSTANCE, res);
-          const emit = Promise.resolve().then(() => {
-            req.emitString(body);
-            req.emitter.emit('end');
-          });
-          await Promise.all([emit, posting]);
-          return res;
-        };
-        let release = () => {};
-        const listed = new Promise<void>((resolve) => release = resolve);
-        const getSaveIds = db.getSaveIds.bind(db);
-        db.getSaveIds = async (gameId) => {
-          await listed;
-          return getSaveIds(gameId);
-        };
-        const before = structuredClone(rows());
-        const inputs = structuredClone(game.inputsSinceSave);
-        const answer = JSON.stringify({requestId: player.getWaitingFor()?.requestId, type: 'card', cards: []});
+      release();
+      await rewinding;
+      expect(rows(), kind).has.length(before.length + 1);
+      expect(holdsMoment(rows()[before.length], before[target]), kind).is.true;
 
-        const rewinding = rewindTable(game, target, {cards: 'same', clocks: 'keep'}, by);
-        expect(isTableLocked(game.id), kind).is.true;
-        let res = await post(answer);
+      res = await post(answer);
+      expect(JSON.parse(res.content).message, kind).eq('This game was rewound. Click OK to refresh this page.');
+    }
+  });
 
-        expect(res.statusCode, kind).eq(statusCode.badRequest);
-        expect(JSON.parse(res.content).id, kind).eq(INVALID_REQUEST_ID);
-        expect(game.inputsSinceSave, kind).deep.eq(inputs);
-        expect(rows(), kind).has.length(before.length);
-
-        release();
-        await rewinding;
-        expect(rows(), kind).has.length(before.length + 1);
-        expect(holdsMoment(rows()[before.length], before[target]), kind).is.true;
-
-        res = await post(answer);
-        expect(JSON.parse(res.content).message, kind).eq('This game was rewound. Click OK to refresh this page.');
+  it('keeps every clock with keep and restores the moment\'s clocks with back', async () => {
+    for (const run of [{clocks: 'keep', running: false}, {clocks: 'keep', running: true}, {clocks: 'back', running: false}] as const) {
+      await playTable();
+      const players = [player, player2];
+      players.forEach((p, i) => {
+        p.timer = Timer.deserialize({sumElapsed: 600_000 + i, startedAt: Date.now() - 5000, running: run.running, afterFirstAction: true, lastStoppedAt: 0});
+      });
+      // Timers are not part of the moment's state, so the replay still matches the changed row.
+      for (const [i, p] of rows()[target].players.entries()) {
+        p.timer.sumElapsed = 300_000 + i;
       }
-    });
+      const saved = structuredClone(rows()[target]);
 
-    it('keeps every clock with keep and restores the moment\'s clocks with back', async () => {
-      for (const run of [{clocks: 'keep', running: false}, {clocks: 'keep', running: true}, {clocks: 'back', running: false}] as const) {
-        await playTable();
-        const players = [player, player2];
-        players.forEach((p, i) => {
-          p.timer = Timer.deserialize({sumElapsed: 600_000 + i, startedAt: Date.now() - 5000, running: run.running, afterFirstAction: true, lastStoppedAt: 0});
-        });
-        // Timers are not part of the moment's state, so the replay still matches the changed row.
-        for (const [i, p] of rows()[target].players.entries()) {
-          p.timer.sumElapsed = 300_000 + i;
+      const restored = await rewindTable(game, target, {cards: 'same', clocks: run.clocks}, judge);
+
+      players.forEach((p, i) => {
+        const sumElapsed = restored.getPlayerById(p.id).timer.serialize().sumElapsed;
+        if (run.clocks === 'back') {
+          expect(sumElapsed, run.clocks).eq(saved.players.find((s) => s.id === p.id)!.timer.sumElapsed);
+        } else if (run.running) {
+          // The interval in progress counts too.
+          expect(sumElapsed, run.clocks).gte(605_000 + i).lte(p.timer.countedElapsed());
+        } else {
+          expect(sumElapsed, run.clocks).eq(600_000 + i);
         }
-        const saved = structuredClone(rows()[target]);
+      });
+    }
+  });
 
-        const restored = await rewindTable(game, target, {cards: 'same', clocks: run.clocks}, judge);
+  it('carries the freeze into the rewound game and its save, and starts no clock', async () => {
+    for (const run of [{live: true, option: undefined}, {live: false, option: true}]) {
+      await playTable();
+      game.frozen = run.live;
+      // Standing clocks. Stopping one that never started would add the time since 1970.
+      const players = [player, player2];
+      players.forEach((p, i) => {
+        p.timer = Timer.deserialize({sumElapsed: 600_000 + i, startedAt: 0, running: false, afterFirstAction: true, lastStoppedAt: 0});
+      });
 
-        players.forEach((p, i) => {
-          const sumElapsed = restored.getPlayerById(p.id).timer.serialize().sumElapsed;
-          if (run.clocks === 'back') {
-            expect(sumElapsed, run.clocks).eq(saved.players.find((s) => s.id === p.id)!.timer.sumElapsed);
-          } else if (run.running) {
-            // The interval in progress counts too.
-            expect(sumElapsed, run.clocks).gte(605_000 + i).lte(p.timer.countedElapsed());
-          } else {
-            expect(sumElapsed, run.clocks).eq(600_000 + i);
-          }
-        });
-      }
-    });
+      const restored = await rewindTable(game, target, {cards: 'same', clocks: 'keep', freeze: run.option}, judge);
 
-    it('carries the freeze into the rewound game and its save, and starts no clock', async () => {
-      for (const run of [{live: true, option: undefined}, {live: false, option: true}]) {
-        await playTable();
-        game.frozen = run.live;
-        // Standing clocks. Stopping one that never started would add the time since 1970.
-        const players = [player, player2];
-        players.forEach((p, i) => {
-          p.timer = Timer.deserialize({sumElapsed: 600_000 + i, startedAt: 0, running: false, afterFirstAction: true, lastStoppedAt: 0});
-        });
+      expect(restored.frozen, String(run.live)).is.true;
+      expect(rows()[rows().length - 1].frozen, String(run.live)).is.true;
+      players.forEach((p, i) => {
+        const timer = restored.getPlayerById(p.id).timer.serialize();
+        expect(timer.running, String(run.live)).is.false;
+        expect(timer.sumElapsed, String(run.live)).eq(600_000 + i);
+      });
+    }
+  });
 
-        const restored = await rewindTable(game, target, {cards: 'same', clocks: 'keep', freeze: run.option}, judge);
+  it('starts the prompted players\' clocks at the hand-over, not at the shared last stop', async () => {
+    // A replay; a load that asks before it saves the moment; a load that asks after it.
+    for (const run of [{cards: 'same', at: 'action', asked: 1}, {cards: 'shuffle', at: 'action', asked: 1}, {cards: 'shuffle', at: 'research', asked: 2}] as const) {
+      await playTable();
+      const label = `${run.cards} ${run.at}`;
+      const lastStoppedAt = (Timer as any).lastStoppedAt;
+      try {
+        // Loading saves only moves the shared last stop forward, so it can lie ahead of now.
+        const clock = new FakeClock();
+        clock.millis = Date.now() + 3_600_000;
+        const probe = Timer.newInstance(clock);
+        probe.start();
+        probe.stop();
 
-        expect(restored.frozen, String(run.live)).is.true;
-        expect(rows()[rows().length - 1].frozen, String(run.live)).is.true;
-        players.forEach((p, i) => {
-          const timer = restored.getPlayerById(p.id).timer.serialize();
-          expect(timer.running, String(run.live)).is.false;
-          expect(timer.sumElapsed, String(run.live)).eq(600_000 + i);
-        });
-      }
-    });
+        const restored = await rewindTable(game, run.at === 'action' ? target : secondResearch, {cards: run.cards, clocks: 'keep'}, judge);
 
-    it('starts the prompted players\' clocks at the hand-over, not at the shared last stop', async () => {
-      // A replay; a load that asks before it saves the moment; a load that asks after it.
-      for (const run of [{cards: 'same', at: 'action', asked: 1}, {cards: 'shuffle', at: 'action', asked: 1}, {cards: 'shuffle', at: 'research', asked: 2}] as const) {
-        await playTable();
-        const label = `${run.cards} ${run.at}`;
-        const lastStoppedAt = (Timer as any).lastStoppedAt;
-        try {
-          // Loading saves only moves the shared last stop forward, so it can lie ahead of now.
-          const clock = new FakeClock();
-          clock.millis = Date.now() + 3_600_000;
-          const probe = Timer.newInstance(clock);
-          probe.start();
-          probe.stop();
-
-          const restored = await rewindTable(game, run.at === 'action' ? target : research, {cards: run.cards, clocks: 'keep'}, judge);
-
-          const running = restored.players.filter((p) => p.timer.serialize().running);
-          expect(running.map((p) => p.id), label).deep.eq(restored.players.filter((p) => p.getWaitingFor() !== undefined).map((p) => p.id));
-          expect(running, label).has.length(run.asked);
-          for (const p of running) {
-            expect(p.timer.getElapsed() - p.timer.serialize().sumElapsed, label).gte(0).lt(1000);
-          }
-        } finally {
-          (Timer as any).lastStoppedAt = lastStoppedAt;
+        const running = restored.players.filter((p) => p.timer.serialize().running);
+        expect(running.map((p) => p.id), label).deep.eq(restored.players.filter((p) => p.getWaitingFor() !== undefined).map((p) => p.id));
+        expect(running, label).has.length(run.asked);
+        for (const p of running) {
+          expect(p.timer.getElapsed() - p.timer.serialize().sumElapsed, label).gte(0).lt(1000);
         }
+      } finally {
+        (Timer as any).lastStoppedAt = lastStoppedAt;
       }
-    });
+    }
+  });
 
-    it('asks both players again from the saved draft hands, with one new save', async () => {
+  it('asks both players again from the saved draft hands, with one new save', async () => {
+    // 'same' replays to the moment; a shuffle loads the save, and drafting asks again without saving.
+    for (const cards of ['same', 'shuffle'] as const) {
       await playTable({draftVariant: true});
       const before = structuredClone(rows());
+      const warn = console.warn;
+      const warnings: Array<unknown> = [];
+      console.warn = (...args) => warnings.push(args);
+      let restored: IGame;
+      try {
+        restored = await rewindTable(game, draft, {cards, clocks: 'keep'}, judge);
+      } finally {
+        console.warn = warn;
+      }
 
-      const restored = await rewindTable(game, research, {cards: 'same', clocks: 'keep'}, judge);
-
-      expect(rows()).has.length(before.length + 1);
+      // A warning would mean the replay did not match the recording.
+      expect(warnings, cards).deep.eq([]);
+      expect(rows(), cards).has.length(before.length + 1);
       for (const p of [player, player2]) {
         const offered = cast(restored.getPlayerById(p.id).getWaitingFor(), SelectCard).cards.map((card) => card.name);
-        expect(offered).deep.eq(before[research].players.find((s) => s.id === p.id)!.draftHand);
+        expect(offered, cards).deep.eq(before[draft].players.find((s) => s.id === p.id)!.draftHand);
       }
-    });
+    }
+  });
 
-    it('refuses a rewind past the limit and changes nothing', async () => {
-      await playTable();
-      // Records that touch no save.
-      game.rewinds = Array.from({length: MAX_REWINDS}, () => ({saveId: -1, restoredSaveId: -1, logStart: 0, logEnd: 0}));
-      const before = structuredClone(rows());
+  it('refuses a rewind past the limit and changes nothing', async () => {
+    await playTable();
+    // Records that touch no save.
+    game.rewinds = Array.from({length: MAX_REWINDS}, () => ({saveId: -1, restoredSaveId: -1, logStart: 0, logEnd: 0}));
+    const before = structuredClone(rows());
 
-      const e = await refusal(rewindTable(game, target, {cards: 'same', clocks: 'keep'}, judge));
+    const e = await refusal(rewindTable(game, target, {cards: 'same', clocks: 'keep'}, judge));
 
-      expect(e.detail).eq('This game was rewound too many times.');
-      expect(rows()).deep.eq(before);
-      expect(game.retired).is.false;
-    });
+    expect(e.detail).eq('This game was rewound too many times.');
+    expect(rows()).deep.eq(before);
+    expect(game.retired).is.false;
+  });
 
-    it('hides research purchases again after a rewind into a tournament research phase', async () => {
-      await playTable({tournamentExpansion: true});
-      const hand = rows()[research].players.find((s) => s.id === player2.id)!.cardsInHand.length;
+  it('hides research purchases again after a rewind into a tournament research phase', async () => {
+    await playTable({tournamentExpansion: true});
+    const hand = rows()[secondResearch].players.find((s) => s.id === player2.id)!.cardsInHand.length;
 
-      const restored = await rewindTable(game, research, {cards: 'same', clocks: 'keep'}, judge);
+    const restored = await rewindTable(game, secondResearch, {cards: 'same', clocks: 'keep'}, judge);
 
-      expect(restored.researchSnapshot).is.not.undefined;
-      const buyer = restored.getPlayerById(player2.id);
-      buyer.megaCredits = 3;
-      buyer.process({type: 'card', cards: [cast(buyer.getWaitingFor(), SelectCard).cards[0].name]});
-      expect(buyer.cardsInHand).has.length(hand + 1);
-      expect(Server.getPlayer(buyer, false).cardsInHandNbr).eq(hand);
-    });
+    expect(restored.researchSnapshot).is.not.undefined;
+    const buyer = restored.getPlayerById(player2.id);
+    buyer.megaCredits = 3;
+    buyer.process({type: 'card', cards: [cast(buyer.getWaitingFor(), SelectCard).cards[0].name]});
+    expect(buyer.cardsInHand).has.length(hand + 1);
+    expect(Server.getPlayer(buyer, false).cardsInHandNbr).eq(hand);
   });
 });
