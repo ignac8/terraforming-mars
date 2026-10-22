@@ -238,6 +238,7 @@ import {passwordParam} from '@/client/utils/playerPassword';
 import {FINISHED_GAME_VOTE_POLL_MS} from '@/common/rewind/RewindVoteModel';
 import {isPlayerId, PlayerId} from '@/common/Types';
 import {GameModel} from '@/common/models/GameModel';
+import {WaitingForModel} from '@/common/models/WaitingForModel';
 import {PublicPlayerModel, ViewModel} from '@/common/models/PlayerModel';
 import Board from '@/client/components/Board.vue';
 import MoonBoard from '@/client/components/moon/MoonBoard.vue';
@@ -281,6 +282,10 @@ export default defineComponent({
     votesOnRewind(): boolean {
       return isPlayerId(this.participant.id) && this.participant.players.length > 1 &&
         this.game.gameOptions.undoOption && !this.game.gameOptions.judgeUndo;
+    },
+    /** A rewind reopens the game for every page on this screen. The vote banner reloads players who vote, so the others poll. */
+    pollsForRewind(): boolean {
+      return !this.votesOnRewind && (this.game.gameOptions.undoOption || this.game.gameOptions.judgeUndo);
     },
     /** Only read where `votesOnRewind` holds. */
     playerId(): PlayerId {
@@ -391,9 +396,10 @@ export default defineComponent({
       return constants;
     },
   },
-  data(): {tileView: TileView} {
+  data(): {tileView: TileView, rewindPollTimer: ReturnType<typeof setTimeout> | undefined} {
     return {
       tileView: 'show',
+      rewindPollTimer: undefined,
     };
   },
   components: {
@@ -412,8 +418,33 @@ export default defineComponent({
     if (getPreferences().experimental_ui) {
       setFaviconStatus('ended');
     }
+    if (this.pollsForRewind) {
+      this.scheduleRewindPoll();
+    }
+  },
+  unmounted() {
+    clearTimeout(this.rewindPollTimer);
   },
   methods: {
+    scheduleRewindPoll(): void {
+      this.rewindPollTimer = setTimeout(() => this.pollForRewind(), FINISHED_GAME_VOTE_POLL_MS);
+    },
+    /** The waiting-for route answers REFRESH when the undo count is no longer the one this page shows. */
+    async pollForRewind(): Promise<void> {
+      try {
+        const query = `?id=${this.participant.id}${passwordParam(this.participant)}&gameAge=${this.game.gameAge}&undoCount=${this.game.undoCount}`;
+        const resp = await fetch(paths.API_WAITING_FOR + query);
+        if (resp.ok && (await resp.json() as WaitingForModel).result === 'REFRESH') {
+          const page = isPlayerId(this.participant.id) ? paths.PLAYER : paths.SPECTATOR;
+          window.location.href = `${page}?id=${this.participant.id}${passwordParam(this.participant)}`;
+          return;
+        }
+      } catch (err) {
+        // A restart or a failing server. The next poll tries again.
+        console.warn('Unable to look for a rewind', err);
+      }
+      this.scheduleRewindPoll();
+    },
     cycleTileView(): void {
       this.tileView = nextTileView(this.tileView);
     },
