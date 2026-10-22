@@ -54,5 +54,20 @@
   "This game was rewound too many times.": "Tę grę cofnięto już zbyt wiele razy.",
   "Incorrect password": "Nieprawidłowe hasło",
   "forbidden": "Brak dostępu",
-  "Not found": "Nie znaleziono"
+  "Not found": "Nie znaleziono",
+  "Ask the others to rewind to before this move": "Poproś pozostałych o cofnięcie gry do stanu sprzed tego ruchu",
+  "Every other player must agree. Any move ends the vote.": "Wszyscy pozostali gracze muszą się zgodzić. Każdy ruch kończy głosowanie.",
+  "Ask": "Poproś",
+  "Any move ends the vote.": "Każdy ruch kończy głosowanie.",
+  "${0} asks to rewind to before move ${1} of generation ${2}.": "${0} prosi o cofnięcie gry do stanu sprzed ruchu ${1} w pokoleniu ${2}.",
+  "Waiting": "Czeka",
+  "Time left: ${0}": "Pozostało: ${0}",
+  "Show this move": "Pokaż ten ruch",
+  "Open the replay": "Otwórz powtórkę",
+  "Everyone agreed. The game is being rewound.": "Wszyscy się zgodzili. Gra jest cofana.",
+  "${0} declined the rewind.": "${0} nie zgadza się na cofnięcie gry.",
+  "The rewind request was cancelled.": "Prośba o cofnięcie gry została wycofana.",
+  "The rewind request expired.": "Prośba o cofnięcie gry wygasła.",
+  "A move was made, so the rewind request ended.": "Wykonano ruch, więc prośba o cofnięcie gry wygasła.",
+  "The rewind did not happen.": "Gra nie została cofnięta."
 }

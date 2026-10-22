@@ -1,5 +1,14 @@
 <template>
   <div class="replay-screen">
+    <!-- Outside the live and past views, so a player previewing a move still sees the vote. -->
+    <RewindVoteBanner
+      v-if="liveView !== undefined && votesOnRewind"
+      :participantId="liveView.id"
+      :password="passwordFragment"
+      :undoCount="liveView.game.undoCount"
+      :players="liveView.players"
+      @show="showMove"
+      @mayRequest="(mayRequest) => requestBlocked = !mayRequest"/>
     <template v-if="liveView !== undefined">
       <div v-if="index !== undefined && replayView === undefined" class="replay-message" v-i18n>Loading replay...</div>
       <PlayerHome v-else-if="index !== undefined && playerView !== undefined" key="past" :playerView="playerView" :replay="true"/>
@@ -47,6 +56,8 @@
       :speed="speed"
       :live="liveView !== undefined"
       :canRewind="canRewind"
+      :canVoteRewind="canVoteRewind"
+      :requestBlocked="requestBlocked"
       :rewinding="rewinding"
       :loading="status !== 'available'"
       @select="select"
@@ -56,7 +67,8 @@
       @update:speed="changeSpeed"
       @update:collapsed="changeCollapsed"
       @back="backToLive"
-      @rewind="rewind">
+      @rewind="rewind"
+      @request="requestRewind">
       <template #error>
         <div v-if="refusal !== undefined" class="replay-error rewind-refusal">{{ refusal }}</div>
         <div v-if="error !== undefined" class="replay-error replay-error--floating">{{ error }}</div>
@@ -71,9 +83,10 @@ import PlayerHome from '@/client/components/PlayerHome.vue';
 import SpectatorHome from '@/client/components/SpectatorHome.vue';
 import ReplayHands from '@/client/components/replay/ReplayHands.vue';
 import ReplayPanel from '@/client/components/replay/ReplayPanel.vue';
+import RewindVoteBanner from '@/client/components/replay/RewindVoteBanner.vue';
 import {vueRoot} from '@/client/components/vueRoot';
 import {setTranslationContext} from '@/client/directives/i18n';
-import {fetchReplayMoves, fetchReplayView, postRewind, ReplayResponseError, translateRefusal} from '@/client/utils/fetchReplay';
+import {fetchReplayMoves, fetchReplayView, postRewind, postVote, ReplayResponseError, translateRefusal} from '@/client/utils/fetchReplay';
 import {passwordParam} from '@/client/utils/playerPassword';
 import {paths} from '@/common/app/paths';
 import {PlayerViewModel, ViewModel} from '@/common/models/PlayerModel';
@@ -98,6 +111,10 @@ type DataModel = {
   viewAs: ReplayViewAs;
   /** Whether the moves answer allows rewinding to a move. */
   canRewind: boolean;
+  /** Whether the moves answer allows asking the other players to rewind to a move. */
+  canVoteRewind: boolean;
+  /** The player has asked for a rewind this generation already, or one is open. */
+  requestBlocked: boolean;
   /** The game age the moves were read at, so the live page knows when they are out of date. */
   movesGameAge: number | undefined;
   /** The panel is open, so the live page keeps its moves current. */
@@ -132,7 +149,7 @@ type DataModel = {
 // selected, then that moment shows, read-only, until the player goes back to the live game.
 export default defineComponent({
   name: 'ReplayScreen',
-  components: {PlayerHome, ReplayHands, ReplayPanel, SpectatorHome},
+  components: {PlayerHome, ReplayHands, ReplayPanel, RewindVoteBanner, SpectatorHome},
   props: {
     participantId: {
       type: String as () => ParticipantId,
@@ -151,6 +168,8 @@ export default defineComponent({
       index: this.liveView === undefined ? 0 : undefined,
       viewAs: 'all',
       canRewind: false,
+      canVoteRewind: false,
+      requestBlocked: false,
       movesGameAge: undefined,
       expanded: false,
       rewinding: false,
@@ -168,6 +187,14 @@ export default defineComponent({
     };
   },
   computed: {
+    /** The page of a player at a table where a rewind is put to a vote. The judge of a Judge undo game rewinds without one. */
+    votesOnRewind(): boolean {
+      const view = this.liveView;
+      return view !== undefined && view.players.length > 1 && view.game.gameOptions.undoOption && !view.game.gameOptions.judgeUndo;
+    },
+    passwordFragment(): string {
+      return this.liveView === undefined ? '' : passwordParam(this.liveView);
+    },
     spectatorView(): SpectatorModel | undefined {
       return this.replayView?.viewAs === 'all' ? this.replayView.view as SpectatorModel : undefined;
     },
@@ -200,6 +227,7 @@ export default defineComponent({
           // The list the page showed is gone, and must not stay to be picked or rewound to.
           this.moves = [];
           this.canRewind = false;
+          this.canVoteRewind = false;
           if (this.index !== undefined && this.liveView !== undefined) {
             this.backToLive();
           }
@@ -220,6 +248,7 @@ export default defineComponent({
           }
           this.moves = moves;
           this.canRewind = answer.canRewind;
+          this.canVoteRewind = answer.canVoteRewind;
           this.movesGameAge = gameAge;
           this.status = 'available';
           if (this.liveView === undefined) {
@@ -321,6 +350,34 @@ export default defineComponent({
         await Promise.allSettled(reads);
         await this.$nextTick();
         this.refusalSettled = this.refusal === refusal;
+      }
+    },
+    /** Asks the other players to rewind the game to before the selected move. The vote banner picks the vote up. */
+    async requestRewind(cards: RewindCards): Promise<void> {
+      if (this.index === undefined || this.rewinding || !isPlayerId(this.participantId)) {
+        return;
+      }
+      this.rewinding = true;
+      this.error = undefined;
+      this.clearRefusal();
+      try {
+        await postVote(this.participantId, {action: 'request', saveId: this.moves[this.index].saveId, cards}, this.passwordFragment);
+      } catch (err) {
+        console.error(err);
+        this.error = err instanceof Error ? translateRefusal(err.message) : String(err);
+      } finally {
+        this.rewinding = false;
+      }
+    },
+    /** Shows the move a vote is about, reading the moves first when the page does not have it yet. */
+    async showMove(saveId: number): Promise<void> {
+      let at = this.moves.findIndex((move) => move.saveId === saveId);
+      if (at < 0) {
+        await this.loadMoves();
+        at = this.moves.findIndex((move) => move.saveId === saveId);
+      }
+      if (at >= 0) {
+        await this.select(at);
       }
     },
     clearRefusal(): void {

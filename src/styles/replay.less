@@ -99,6 +99,83 @@
   }
 }
 
+// Over the top of the game page, which is where a vote that every player has to answer is seen.
+.rewind-vote-banner {
+  position: fixed;
+  top: 8px;
+  left: 50%;
+  z-index: 60;
+  box-sizing: border-box;
+  width: 420px;
+  max-width: calc(100vw - @replay-sidebar-clearance - 8px);
+  padding: 6px 10px;
+  transform: translateX(-50%);
+  border: 1px solid #666;
+  border-radius: 6px;
+  background: fade(@bg_dynamic, 94%);
+  color: @text_main;
+  font-size: 13px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.6);
+
+  button,
+  .rewind-vote-replay {
+    padding: 2px 8px;
+    border: 1px solid #777;
+    border-radius: 4px;
+    background: @bg_main;
+    color: @text_main;
+    font: inherit;
+    text-decoration: none;
+    cursor: pointer;
+
+    &:disabled {
+      opacity: 0.4;
+      cursor: default;
+    }
+  }
+}
+
+.rewind-vote-title {
+  font-weight: bold;
+}
+
+.rewind-vote-choices {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+  margin: 4px 0;
+  padding: 0;
+  list-style: none;
+}
+
+.rewind-vote-name {
+  margin-right: 4px;
+  padding: 0 4px;
+  border-radius: 3px;
+  color: #fff;
+  text-shadow: 0 0 2px #000;
+}
+
+.rewind-vote-note {
+  opacity: 0.8;
+}
+
+.rewind-vote-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 4px;
+}
+
+.rewind-vote-error {
+  color: #ff6b5e;
+}
+
+.rewind-blocked {
+  margin-top: 4px;
+  opacity: 0.8;
+}
+
 .replay-moves {
   position: relative;
   max-height: 180px;

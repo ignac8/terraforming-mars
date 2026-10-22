@@ -7,11 +7,12 @@ import ReplayPanel from '@/client/components/replay/ReplayPanel.vue';
 import ReplayHands from '@/client/components/replay/ReplayHands.vue';
 import PlayerHome from '@/client/components/PlayerHome.vue';
 import SpectatorHome from '@/client/components/SpectatorHome.vue';
-import {fakeGameModel, fakePlayerViewModel, fakePublicPlayerModel, fakeSpectatorModel} from '../testHelpers';
+import {fakeGameModel, fakeGameOptionsModel, fakePlayerViewModel, fakePublicPlayerModel, fakeSpectatorModel} from '../testHelpers';
 import {ReplayMove, ReplayMovesModel, ReplayViewModel} from '@/common/replay/ReplayModel';
 import {PlayerId, SpectatorId} from '@/common/Types';
 import {PlayerViewModel} from '@/common/models/PlayerModel';
 import RewindControls from '@/client/components/replay/RewindControls.vue';
+import RewindVoteBanner from '@/client/components/replay/RewindVoteBanner.vue';
 import WaitingFor from '@/client/components/WaitingFor.vue';
 import {CardName} from '@/common/cards/CardName';
 import {translateMessage} from '@/client/directives/i18n';
@@ -42,6 +43,10 @@ describe('ReplayScreen', () => {
   /** The POSTs to the rewind route. */
   let rewinds: Array<{url: string, body: unknown}>;
   let rewindAnswer: () => Promise<unknown>;
+  /** The POSTs to the vote route. */
+  let votes: Array<{url: string, body: unknown}>;
+  /** What the vote route answers, to polls and to POSTs. */
+  let voteAnswer: () => Promise<unknown>;
 
   function respond(body: unknown) {
     return Promise.resolve({ok: true, status: 200, json: () => Promise.resolve(body), text: () => Promise.resolve('')});
@@ -54,6 +59,8 @@ describe('ReplayScreen', () => {
     playerNames = {};
     rewinds = [];
     rewindAnswer = () => respond(playedView());
+    votes = [];
+    voteAnswer = () => respond({undoCount: 0, vote: undefined, mayRequest: true});
     movesAnswer = {status: 'available', ...finishedGame, moves: [
       {saveId: 10, messages: []},
       {saveId: 11, messages: []},
@@ -62,6 +69,12 @@ describe('ReplayScreen', () => {
       calls.push(url);
       if (url.startsWith('api/replay/moves')) {
         return respond(movesAnswer);
+      }
+      if (url.startsWith('api/rewind/vote')) {
+        if (init?.body !== undefined) {
+          votes.push({url, body: JSON.parse(init.body as string)});
+        }
+        return voteAnswer();
       }
       if (url.startsWith('api/rewind')) {
         rewinds.push({url, body: JSON.parse(init?.body as string)});
@@ -692,6 +705,117 @@ describe('ReplayScreen', () => {
       expand(wrapper);
       await flushPromises();
       expect(moveRequests()).has.length(3);
+    });
+
+    describe('at a table that votes on a rewind', () => {
+      const voteMoves = {...liveMoves, canRewind: false, canVoteRewind: true} as const;
+      const red = () => fakePublicPlayerModel({color: 'red', id: 'p-red-id' as any, name: 'red'});
+
+      function voteView(gameOptions: Parameters<typeof fakeGameOptionsModel>[0] = {undoOption: true}, players = 2): PlayerViewModel {
+        return playedView({
+          waitingFor,
+          players: [fakePublicPlayerModel({color: 'blue', id: playerId}), red()].slice(0, players),
+          game: fakeGameModel({gameAge: 3, gameOptions: fakeGameOptionsModel(gameOptions)}),
+        });
+      }
+
+      function mountVote(real: boolean, view = voteView()) {
+        return shallowMount(ReplayScreen, {
+          ...globalConfig,
+          global: {...globalConfig.global, stubs: {PlayerHome: false, ReplayPanel: false, RewindControls: !real, RewindVoteBanner: !real}},
+          props: {participantId: playerId, liveView: view},
+        });
+      }
+
+      /** Opens the panel the way a player does, which the panel keeps to itself. */
+      const open = (wrapper: ReturnType<typeof mountLive>) => wrapper.find('.replay-collapse').trigger('click');
+
+      beforeEach(() => {
+        movesAnswer = voteMoves as any;
+      });
+
+      it('shows the vote banner to the players of a table with Player undo, and to no one else', async () => {
+        for (const [gameOptions, players, shown] of [
+          [{undoOption: true}, 2, true],
+          [{undoOption: false}, 2, false],
+          [{undoOption: true, judgeUndo: true}, 2, false],
+          [{undoOption: true}, 1, false],
+        ] as const) {
+          const wrapper = mountVote(false, voteView(gameOptions, players));
+          expect(wrapper.findComponent(RewindVoteBanner).exists(), JSON.stringify([gameOptions, players])).equals(shown);
+          wrapper.unmount();
+        }
+      });
+
+      it('gives the banner the players, the undo count and the password of the page', async () => {
+        const wrapper = mountVote(false, {...voteView(), password: '0123456789ab', game: fakeGameModel({undoCount: 3, gameOptions: fakeGameOptionsModel({undoOption: true})})});
+        const banner = wrapper.findComponent(RewindVoteBanner);
+        expect(banner.props('participantId')).to.equal(playerId);
+        expect(banner.props('undoCount')).to.equal(3);
+        expect(banner.props('password')).to.equal('&password=0123456789ab');
+        expect(banner.props('players')).has.length(2);
+      });
+
+      it('asks the others to rewind to the selected move, as a request for a vote', async () => {
+        const wrapper = mountVote(false, {...voteView(), password: '0123456789ab'});
+        await open(wrapper);
+        await flushPromises();
+        panel(wrapper).vm.$emit('select', 1);
+        await flushPromises();
+        const controls = wrapper.findComponent(RewindControls);
+        expect(controls.props('mode')).to.equal('vote');
+        controls.vm.$emit('request', 'shuffle');
+        await flushPromises();
+        expect(votes).to.deep.equal([{url: `api/rewind/vote?id=${playerId}&password=0123456789ab`, body: {action: 'request', saveId: 11, cards: 'shuffle'}}]);
+        expect(rewinds).to.deep.equal([]);
+      });
+
+      it('shows why a request was refused, where view errors show', async () => {
+        const wrapper = mountVote(false);
+        await open(wrapper);
+        await flushPromises();
+        panel(wrapper).vm.$emit('select', 0);
+        await flushPromises();
+        voteAnswer = () => Promise.resolve({ok: false, status: 400, text: () => Promise.resolve('Bad request: A rewind vote is already open.')});
+        wrapper.findComponent(RewindControls).vm.$emit('request', 'same');
+        await flushPromises();
+        expect(wrapper.find('.replay-error--floating').text()).to.equal('A rewind vote is already open.');
+      });
+
+      it('keeps the banner while a past move is previewed', async () => {
+        const wrapper = mountVote(false);
+        await open(wrapper);
+        await flushPromises();
+        panel(wrapper).vm.$emit('select', 1);
+        await flushPromises();
+        expect(wrapper.findComponent(PlayerHome).props('replay')).is.true;
+        expect(wrapper.findComponent(RewindVoteBanner).exists()).is.true;
+      });
+
+      it('shows the move of the vote, reading the moves first when the panel never did', async () => {
+        const wrapper = mountVote(false);
+        wrapper.findComponent(RewindVoteBanner).vm.$emit('show', 11);
+        await flushPromises();
+        expect(calls).to.deep.equal([
+          `api/replay/moves?id=${playerId}`,
+          `api/replay/view?id=${playerId}&save=11&as=blue`,
+        ]);
+        expect(panel(wrapper).props('index')).to.equal(1);
+      });
+
+      it('disables the request while the banner says the player may not ask again', async () => {
+        for (const mayRequest of [false, true]) {
+          voteAnswer = () => respond({undoCount: 0, vote: undefined, mayRequest});
+          const wrapper = mountVote(true);
+          await flushPromises();
+          await open(wrapper);
+          await flushPromises();
+          panel(wrapper).vm.$emit('select', 0);
+          await flushPromises();
+          expect(wrapper.find('.rewind-start').attributes('disabled') === undefined, String(mayRequest)).equals(mayRequest);
+          wrapper.unmount();
+        }
+      });
     });
   });
 });

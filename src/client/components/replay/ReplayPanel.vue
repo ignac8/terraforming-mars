@@ -53,7 +53,14 @@
     </ul>
 
     <!-- The key forgets a half-made choice when another move is picked. -->
-    <RewindControls v-if="canRewind && index !== undefined && !(live && collapsed)" :key="index" :disabled="rewinding" @rewind="(cards) => $emit('rewind', cards)"/>
+    <RewindControls
+      v-if="(canRewind || canVoteRewind) && index !== undefined && !(live && collapsed)"
+      :key="index"
+      :mode="canRewind ? 'rewind' : 'vote'"
+      :disabled="rewinding"
+      :blocked="requestBlocked"
+      @rewind="(cards) => $emit('rewind', cards)"
+      @request="(cards) => $emit('request', cards)"/>
 
     <!-- Errors, rendered inside the panel: a refused rewind under the rewind controls, and others in a box
          that on a narrow screen sits just above the panel instead of under it. -->
@@ -118,6 +125,16 @@ export default defineComponent({
       type: Boolean,
       default: false,
     },
+    /** Whether the selected move can be asked for by vote. */
+    canVoteRewind: {
+      type: Boolean,
+      default: false,
+    },
+    /** The player may not ask for a rewind again yet. */
+    requestBlocked: {
+      type: Boolean,
+      default: false,
+    },
     /** True until the moves have been read, so an empty list is not yet known to be empty. */
     loading: {
       type: Boolean,
@@ -138,6 +155,7 @@ export default defineComponent({
     'update:collapsed': (_collapsed: boolean) => true,
     'back': () => true,
     'rewind': (_cards: RewindCards) => true,
+    'request': (_cards: RewindCards) => true,
   },
   data() {
     return {collapsed: this.live};

@@ -197,9 +197,10 @@ export default defineComponent({
         return false;
       }
     },
-    /** A solo or MarsBot game with Player undo keeps its history on the game page, where the player can rewind it. */
+    /** A game with Player undo keeps its history on the game page, where a solo player rewinds it and a table votes on it. Judge undo leaves that to the judge. */
     hasHistory(): boolean {
-      return this.playerView !== undefined && this.playerView.players.length === 1 && this.playerView.game.gameOptions.undoOption;
+      const view = this.playerView;
+      return view !== undefined && view.game.gameOptions.undoOption && (view.players.length === 1 || !view.game.gameOptions.judgeUndo);
     },
   },
   methods: {

@@ -26,6 +26,22 @@ describe('RewindControls', () => {
     expect(wrapper.emitted('rewind')).to.deep.equal([['same']]);
   });
 
+  describe('in vote mode', () => {
+    it('asks the others, with the cards that were chosen, instead of rewinding', async () => {
+      const wrapper = mount(RewindControls, {...globalConfig, props: {disabled: false, mode: 'vote'}});
+      await wrapper.find('input[value=shuffle]').setValue(true);
+      await wrapper.find('.rewind-start').trigger('click');
+      await wrapper.find('.rewind-confirm-button').trigger('click');
+      expect(wrapper.emitted('request')).to.deep.equal([['shuffle']]);
+      expect(wrapper.emitted('rewind')).is.undefined;
+    });
+
+    it('cannot be started while blocked', async () => {
+      const wrapper = mount(RewindControls, {...globalConfig, props: {disabled: false, mode: 'vote', blocked: true}});
+      expect(wrapper.find('.rewind-start').attributes('disabled')).not.is.undefined;
+    });
+  });
+
   it('cancelling emits nothing and asks again next time', async () => {
     const wrapper = mountControls();
     await wrapper.find('.rewind-start').trigger('click');

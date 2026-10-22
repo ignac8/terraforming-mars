@@ -157,7 +157,7 @@ describe('App', () => {
   });
 
   describe('player home', () => {
-    async function mountPlayerHome(players: number, undoOption: boolean) {
+    async function mountPlayerHome(players: number, undoOption: boolean, judgeUndo = false) {
       const wrapper = shallowMount(App, {
         ...globalConfig,
         global: {
@@ -170,7 +170,7 @@ describe('App', () => {
       });
       const playerView = fakePlayerViewModel({
         players: Array.from({length: players}, () => fakePublicPlayerModel()),
-        game: fakeGameModel({gameOptions: fakeGameOptionsModel({undoOption})}),
+        game: fakeGameModel({gameOptions: fakeGameOptionsModel({undoOption, judgeUndo})}),
       });
       await wrapper.setData({screen: 'player-home', playerView});
       return wrapper;
@@ -182,11 +182,17 @@ describe('App', () => {
       expect(wrapper.find('.player-home-stub').exists()).is.false;
     });
 
+    it('keeps the history of a multiplayer game with Player undo on the game page, where its players vote on a rewind', async () => {
+      const wrapper = await mountPlayerHome(2, true);
+      expect(wrapper.findComponent({name: 'ReplayScreenStub'}).props('liveView')).to.equal(wrapper.vm.playerView);
+      expect(wrapper.find('.player-home-stub').exists()).is.false;
+    });
+
     it('shows every other game as it always has', async () => {
-      for (const [players, undoOption] of [[1, false], [2, true]] as const) {
-        const wrapper = await mountPlayerHome(players, undoOption);
-        expect(wrapper.find('.replay-screen-stub').exists(), `${players} ${undoOption}`).is.false;
-        expect(wrapper.find('.player-home-stub').exists(), `${players} ${undoOption}`).is.true;
+      for (const [players, undoOption, judgeUndo] of [[1, false, false], [2, false, false], [2, true, true]] as const) {
+        const wrapper = await mountPlayerHome(players, undoOption, judgeUndo);
+        expect(wrapper.find('.replay-screen-stub').exists(), `${players} ${undoOption} ${judgeUndo}`).is.false;
+        expect(wrapper.find('.player-home-stub').exists(), `${players} ${undoOption} ${judgeUndo}`).is.true;
       }
     });
   });

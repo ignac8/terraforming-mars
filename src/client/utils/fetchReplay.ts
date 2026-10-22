@@ -1,6 +1,7 @@
 import {paths} from '@/common/app/paths';
 import {PlayerViewModel} from '@/common/models/PlayerModel';
 import {ReplayMovesModel, ReplayViewAs, ReplayViewModel, RewindCards} from '@/common/replay/ReplayModel';
+import {RewindVotePoll} from '@/common/rewind/RewindVoteModel';
 import {isJudgeId, isPlayerId, ParticipantId, PlayerId} from '@/common/Types';
 import {translateText} from '@/client/directives/i18n';
 import {passwordParam, passwordQuery} from '@/client/utils/playerPassword';
@@ -36,7 +37,7 @@ function addressBarPasswordParam(): string {
 // seat. The live game page passes the fragment `passwordParam` makes from its model. The replay page
 // has none to pass, so a player or judge id reads the address bar. A spectator has no seat. Either way
 // the password goes out once.
-function seatPasswordParam(id: ParticipantId, passwordFragment: string | undefined): string {
+export function seatPasswordParam(id: ParticipantId, passwordFragment: string | undefined): string {
   if (!isJudgeId(id) && !isPlayerId(id)) {
     return '';
   }
@@ -66,6 +67,26 @@ export async function postRewind(id: PlayerId, saveId: number, cards: RewindCard
     method: 'POST',
     headers: {'Content-Type': 'application/json'},
     body: JSON.stringify({saveId, cards}),
+  });
+  return readJson(resp);
+}
+
+/** What a player sends to the vote route: ask for a rewind, or answer the open vote. */
+export type VoteBody =
+  | {action: 'request', saveId: number, cards: RewindCards}
+  | {action: 'yes' | 'no' | 'cancel', voteId: number};
+
+/** The open rewind vote of the table, if any, and whether this player may still ask for one. `password` is the seat's, as `passwordParam` makes it. */
+export async function fetchVote(id: PlayerId, password: string): Promise<RewindVotePoll> {
+  return readJson(await fetch(`${paths.API_REWIND_VOTE}?id=${id}${seatPasswordParam(id, password)}`));
+}
+
+/** Asks for a rewind or answers the open vote, and answers what `fetchVote` would. */
+export async function postVote(id: PlayerId, body: VoteBody, password: string): Promise<RewindVotePoll> {
+  const resp = await fetch(`${paths.API_REWIND_VOTE}?id=${id}${seatPasswordParam(id, password)}`, {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify(body),
   });
   return readJson(resp);
 }
