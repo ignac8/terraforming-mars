@@ -18,6 +18,8 @@ import {ApiMetrics} from '../routes/ApiMetrics';
 import {ApiPlayer} from '../routes/ApiPlayer';
 import {ApiProfile} from '../routes/ApiProfile';
 import {ApiJudge} from '../routes/ApiJudge';
+import {ApiJudgeFreeze} from '../routes/ApiJudgeFreeze';
+import {ApiJudgeRewind} from '../routes/ApiJudgeRewind';
 import {ApiReplayMoves} from '../routes/ApiReplayMoves';
 import {ApiReplayView} from '../routes/ApiReplayView';
 import {ApiSpectator} from '../routes/ApiSpectator';
@@ -106,6 +108,8 @@ const handlers: Map<string, IHandler> = new Map(
     [paths.API_PLAYER, ApiPlayer.INSTANCE],
     [paths.API_STATS, ApiStats.INSTANCE],
     [paths.API_JUDGE, ApiJudge.INSTANCE],
+    [paths.API_JUDGE_FREEZE, ApiJudgeFreeze.INSTANCE],
+    [paths.API_JUDGE_REWIND, ApiJudgeRewind.INSTANCE],
     [paths.API_SPECTATOR, ApiSpectator.INSTANCE],
     [paths.API_WAITING_FOR, ApiWaitingFor.INSTANCE],
     [paths.AUTOPASS, Autopass.INSTANCE],
