@@ -66,6 +66,7 @@ import PlayerHome from '@/client/components/PlayerHome.vue';
 import SpectatorHome from '@/client/components/SpectatorHome.vue';
 import ReplayHands from '@/client/components/replay/ReplayHands.vue';
 import ReplayPanel from '@/client/components/replay/ReplayPanel.vue';
+import {vueRoot} from '@/client/components/vueRoot';
 import {setTranslationContext} from '@/client/directives/i18n';
 import {fetchReplayMoves, fetchReplayView, postRewind, ReplayResponseError, translateRefusal} from '@/client/utils/fetchReplay';
 import {paths} from '@/common/app/paths';
@@ -193,6 +194,8 @@ export default defineComponent({
           this.movesGameAge = gameAge;
           this.status = 'available';
           if (this.liveView === undefined) {
+            // Read again, the list can be shorter than the one the move was picked from.
+            this.index = Math.min(this.index ?? 0, this.moves.length - 1);
             await this.loadView();
           }
         }
@@ -275,8 +278,15 @@ export default defineComponent({
         window.location.href = `${paths.PLAYER}?id=${this.participantId}`;
       } catch (err) {
         console.error(err);
-        this.refusal = err instanceof Error ? translateRefusal(err.message) : String(err);
+        const refusal = err instanceof Error ? translateRefusal(err.message) : String(err);
         this.rewinding = false;
+        // The game can have changed without this page, e.g. by a rewind from another page, so it is read again.
+        if (this.liveView !== undefined) {
+          this.backToLive();
+          vueRoot(this).updatePlayer();
+        }
+        this.loadMoves();
+        this.refusal = refusal;
       }
     },
     /** A move picked by hand. It takes over from autoplay, which would otherwise carry on from a stale position. */

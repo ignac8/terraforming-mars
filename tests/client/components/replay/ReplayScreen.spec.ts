@@ -373,6 +373,10 @@ describe('ReplayScreen', () => {
       rewindAnswer = () => Promise.resolve({ok: false, status: 400, text: () => Promise.resolve('That moment cannot be rewound, nothing was changed')});
       const wrapper = mountRewindable();
       await flushPromises();
+      wrapper.findComponent(ReplayPanel).vm.$emit('select', 1);
+      await flushPromises();
+      // The game lost its second move meanwhile, e.g. to a rewind from another page.
+      movesAnswer = {...movesAnswer, moves: [{saveId: 10, messages: []}]};
       wrapper.findComponent(RewindControls).vm.$emit('rewind', 'same');
       await flushPromises();
       const refusal = wrapper.find('.replay-panel .rewind-refusal');
@@ -381,8 +385,11 @@ describe('ReplayScreen', () => {
       expect(wrapper.find('.replay-error--floating').exists()).is.false;
       expect(window.location.href).to.equal('http://localhost/replay');
       expect(wrapper.findComponent(SpectatorHome).exists()).is.true;
+      // The list is read again, and the view is of a move it still has.
+      expect(wrapper.findComponent(ReplayPanel).props('moves')).has.length(1);
+      expect(calls[calls.length - 1]).to.contain('save=10');
       // It answers the move it was asked for, so picking another one clears it.
-      wrapper.findComponent(ReplayPanel).vm.$emit('select', 1);
+      wrapper.findComponent(ReplayPanel).vm.$emit('select', 0);
       await flushPromises();
       expect(wrapper.find('.rewind-refusal').exists()).is.false;
     });
@@ -509,6 +516,31 @@ describe('ReplayScreen', () => {
       await flushPromises();
       expect(wrapper.findComponent(WaitingFor).exists()).is.true;
       expect(wrapper.find('.replay-error--floating').text()).to.contain('Not your game');
+    });
+
+    it('reads the moves and the live game again after a refused rewind', async () => {
+      vi.spyOn(console, 'error').mockImplementation(() => {});
+      const updatePlayer = vi.fn();
+      const wrapper = shallowMount(ReplayScreen, {
+        ...globalConfig,
+        global: {...globalConfig.global, stubs: {PlayerHome: false, ReplayPanel: false}, mocks: {updatePlayer}},
+        props: {participantId: playerId, liveView: liveView()},
+      });
+      await wrapper.find('.replay-collapse').trigger('click');
+      await flushPromises();
+      panel(wrapper).vm.$emit('select', 1);
+      await flushPromises();
+      // Another page rewound the game to before its second move.
+      movesAnswer = {...liveMoves, moves: [liveMoves.moves[0]]};
+      rewindAnswer = () => Promise.resolve({ok: false, status: 404, text: () => Promise.resolve('Not found: That move is not in this game\'s history.')});
+      wrapper.findComponent(RewindControls).vm.$emit('rewind', 'same');
+      await flushPromises();
+
+      expect(panel(wrapper).props('moves')).has.length(1);
+      expect(wrapper.findComponent(RewindControls).exists()).is.false;
+      expect(wrapper.findComponent(WaitingFor).exists()).is.true;
+      expect(updatePlayer.mock.calls).has.length(1);
+      expect(wrapper.find('.rewind-refusal').text()).to.contain('not in this game');
     });
 
     it('reloads the moves when the game moves on while the panel is open, and not while it is closed', async () => {
