@@ -196,6 +196,15 @@ describe('VoteService', () => {
     expect(await outcomes('passed')).eq(1);
   });
 
+  it('starts the rewind once when the last two yes votes arrive together', async () => {
+    const opened = await service.request(game, p2, saveId, 'same');
+
+    const polls = await Promise.all([service.cast(game, p1, opened.vote!.voteId, 'yes'), service.cast(game, p3, opened.vote!.voteId, 'yes')]);
+
+    expect(rewinds).has.length(1);
+    expect(polls.some((poll) => poll.vote!.status === 'passed')).is.true;
+  });
+
   it('starts the rewind in the same step as the last yes', async () => {
     const opened = await service.request(game, p2, saveId, 'same');
     await service.cast(game, p1, opened.vote!.voteId, 'yes');
@@ -399,6 +408,36 @@ describe('VoteService', () => {
     expect(logs).includes(`rewind vote ${opened.vote!.voteId} of ${game.id} expired`);
   });
 
+  it('settles an overdue vote first in every method, before any timer has fired', async () => {
+    const methods = {
+      poll: async () => {
+        service.poll(game, p3);
+      },
+      cast: async (id: number) => {
+        await refusal(service.cast(game, p1, id, 'yes'));
+      },
+      cancel: async (id: number) => {
+        await refusal(service.cancel(game, p2, id));
+      },
+      request: async () => {
+        await service.request(game, p3, saveId, 'same');
+      },
+    };
+    for (const [name, call] of Object.entries(methods)) {
+      service.resetForTesting();
+      game.rewindVote = undefined;
+      game.rewindRequestLimits = undefined;
+      const opened = await service.request(game, p2, saveId, 'same');
+      clock.millis += VOTE_EXPIRY_MS;
+
+      await call(opened.vote!.voteId);
+
+      expect(game.rewindRequestLimits?.players, name).deep.eq([p2.id]);
+      expect(game.rewindVote?.requester === p2.id, name).is.false;
+      expect(logs, name).includes(`rewind vote ${opened.vote!.voteId} of ${game.id} expired`);
+    }
+  });
+
   it('arms the timer again when it fires before the vote is due', async () => {
     await service.request(game, p2, saveId, 'same');
     clock.millis += VOTE_EXPIRY_MS - 5;
@@ -440,6 +479,16 @@ describe('VoteService', () => {
         expect(service.poll(game, p2).mayRequest).is.false;
       }
     }
+  });
+
+  it('ends a restored vote on a move', async () => {
+    game.rewindVote = {id: 5, requester: p2.id, saveId, moveNumber: 2, generation: game.generation, cards: 'same', yes: [p2.id], status: 'open', expiresAt: clock.now() + 30_000};
+    await service.resume(game);
+
+    act(p1);
+    await flush();
+
+    expect(status(game, p2)).eq('moved-on');
   });
 
   it('issues vote ids above a restored one', async () => {
