@@ -19,7 +19,7 @@ describe('SendDelegateToArea', () => {
   });
 
   function setReserve(count: number) {
-    while (turmoil.getAvailableDelegateCount(player) > count) {
+    while (turmoil.delegateReserve.get(player) > count) {
       turmoil.delegateReserve.remove(player);
     }
   }
@@ -34,7 +34,7 @@ describe('SendDelegateToArea', () => {
     input.cb(PartyName.GREENS);
 
     expect(turmoil.getPartyByName(PartyName.GREENS).delegates.get(player)).eq(1);
-    expect(turmoil.getAvailableDelegateCount(player)).eq(2);
+    expect(turmoil.delegateReserve.get(player)).eq(2);
     expect(player.totalDelegatesPlaced).eq(1);
     expect(sentLogs()).has.length(1);
     expect(sentLogs()[0].data[1].value).eq('1');
@@ -65,7 +65,7 @@ describe('SendDelegateToArea', () => {
     input.cb(PartyName.GREENS);
 
     expect(turmoil.getPartyByName(PartyName.GREENS).delegates.get(player)).eq(1);
-    expect(turmoil.getAvailableDelegateCount(player)).eq(0);
+    expect(turmoil.delegateReserve.get(player)).eq(0);
     expect(player.totalDelegatesPlaced).eq(1);
     expect(sentLogs()).has.length(1);
     expect(sentLogs()[0].data[1].value).eq('1');

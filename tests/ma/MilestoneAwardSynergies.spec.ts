@@ -17,7 +17,7 @@ describe('MilestoneAwardSynergies', () => {
         }
       }
     }
-    expect(asymmetric.slice(0, 5)).deep.eq([]);
+    expect(asymmetric).deep.eq([]);
   });
 
   it('random selection does not fail the synergy rules', () => {

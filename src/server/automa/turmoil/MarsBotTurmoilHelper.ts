@@ -35,7 +35,7 @@ export class MarsBotTurmoilHelper {
    *  Tier 6: Next party clockwise from the Dominance marker, circling around. Always yields one.
    */
   public selectParty(): PartyName | undefined {
-    if (!this.turmoil.hasDelegatesInReserve(this.marsBotPlayer)) {
+    if (!this.turmoil.delegateReserve.has(this.marsBotPlayer)) {
       return undefined;
     }
 

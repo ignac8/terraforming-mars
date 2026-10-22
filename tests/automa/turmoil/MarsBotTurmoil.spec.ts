@@ -50,7 +50,7 @@ describe('MarsBot Turmoil — Setup', () => {
   it('T-1: MarsBot has 7 delegates in the reserve', () => {
     const {game, marsBot} = createTurmoilGame();
     const turmoil = Turmoil.getTurmoil(game);
-    expect(turmoil.getAvailableDelegateCount(marsBot.player)).to.equal(DELEGATES_PER_PLAYER);
+    expect(turmoil.delegateReserve.get(marsBot.player)).to.equal(DELEGATES_PER_PLAYER);
   });
 
   it('T-3: Party Politics (B21) is in the initial action deck', () => {
@@ -205,7 +205,7 @@ describe('MarsBot Turmoil — Party Politics delegate selection (T-7)', () => {
     for (let i = 0; i < DELEGATES_PER_PLAYER; i++) {
       turmoil.sendDelegateToParty(marsBotPlayer, PartyName.MARS, game);
     }
-    expect(turmoil.hasDelegatesInReserve(marsBotPlayer)).to.be.false;
+    expect(turmoil.delegateReserve.has(marsBotPlayer)).to.be.false;
 
     const selected = turmoilHelper(game).selectParty();
     expect(selected).to.be.undefined;
@@ -222,13 +222,13 @@ describe('MarsBot Turmoil — Party Politics resolver (T-8)', () => {
     const turmoil = Turmoil.getTurmoil(game);
     const marsBotPlayer = marsBot.player;
 
-    const reserveBefore = turmoil.getAvailableDelegateCount(marsBotPlayer);
+    const reserveBefore = turmoil.delegateReserve.get(marsBotPlayer);
     // Trigger the Party Politics bonus card directly
     const card = createCorpBonusCard(BonusCardId.B21_PARTY_POLITICS);
     // Access private bonusResolver via type cast for testing
     (marsBot as any).bonusResolver.resolve(card);
 
-    const reserveAfter = turmoil.getAvailableDelegateCount(marsBotPlayer);
+    const reserveAfter = turmoil.delegateReserve.get(marsBotPlayer);
     // At least 1 delegate placed (possibly 2 if T-8 triggered)
     expect(reserveAfter).to.be.lessThan(reserveBefore);
   });
@@ -258,10 +258,10 @@ describe('MarsBot Turmoil — Party Politics resolver (T-8)', () => {
     if (targetCard.cost % 3 === 0) {
       // Put this card on top so it gets flipped for T-8 (draw() uses pop(), so push = top)
       game.projectDeck.drawPile.push(targetCard);
-      const reserveBefore = turmoil.getAvailableDelegateCount(marsBotPlayer);
+      const reserveBefore = turmoil.delegateReserve.get(marsBotPlayer);
       const card = createCorpBonusCard(BonusCardId.B21_PARTY_POLITICS);
       (marsBot as any).bonusResolver.resolve(card);
-      const reserveAfter = turmoil.getAvailableDelegateCount(marsBotPlayer);
+      const reserveAfter = turmoil.delegateReserve.get(marsBotPlayer);
       // Should have placed 2 delegates
       expect(reserveBefore - reserveAfter).to.be.at.least(2);
     }
@@ -440,12 +440,12 @@ describe('MarsBot Turmoil — serialization', () => {
     const {game, marsBot} = createTurmoilGame();
     const turmoil = Turmoil.getTurmoil(game);
     turmoil.sendDelegateToParty(marsBot.player, PartyName.REDS, game);
-    const remaining = turmoil.getAvailableDelegateCount(marsBot.player);
+    const remaining = turmoil.delegateReserve.get(marsBot.player);
 
     const restored = Game.deserialize(game.serialize());
 
     const restoredBot = restored.automaHooks!.marsBot.player;
-    expect(Turmoil.getTurmoil(restored).getAvailableDelegateCount(restoredBot)).to.eq(remaining);
+    expect(Turmoil.getTurmoil(restored).delegateReserve.get(restoredBot)).to.eq(remaining);
   });
 
   it('MarsBot automa state serializes correctly with turmoil', () => {
@@ -648,7 +648,7 @@ describe('MarsBot Turmoil — Chairman rules (T-11b T-11c)', () => {
     // Place 2 MarsBot delegates in Reds; make Reds dominant
     turmoil.sendDelegateToParty(marsBotPlayer, PartyName.REDS, game);
     turmoil.sendDelegateToParty(marsBotPlayer, PartyName.REDS, game);
-    const reserveAfterPlacement = turmoil.getAvailableDelegateCount(marsBotPlayer);
+    const reserveAfterPlacement = turmoil.delegateReserve.get(marsBotPlayer);
     const reds = turmoil.getPartyByName(PartyName.REDS);
     turmoil.dominantParty = reds;
 
@@ -661,7 +661,7 @@ describe('MarsBot Turmoil — Chairman rules (T-11b T-11c)', () => {
     // - The remaining MarsBot delegates (1) go back to reserve
     // - The OLD chairman (NEUTRAL) also returns to reserve
     // So MarsBot reserve should be: reserveAfterPlacement + 1 (non-leader returned)
-    expect(turmoil.getAvailableDelegateCount(marsBotPlayer)).to.equal(reserveAfterPlacement + 1);
+    expect(turmoil.delegateReserve.get(marsBotPlayer)).to.equal(reserveAfterPlacement + 1);
     // MarsBot is the new chairman
     expect(turmoil.chairman).to.equal(marsBotPlayer);
     // Reds party is now clean
@@ -709,7 +709,7 @@ describe('MarsBot Turmoil — Difficulty options (T-14 T-15)', () => {
     });
     expect(game.automaHooks!.marsBot.player.terraformRating).to.equal(MARSBOT_STARTING_TR - 10);
     expect(delegatesInParties(game)).to.equal(0);
-    expect(Turmoil.getTurmoil(game).getAvailableDelegateCount(game.automaHooks!.marsBot.player)).to.equal(DELEGATES_PER_PLAYER);
+    expect(Turmoil.getTurmoil(game).delegateReserve.get(game.automaHooks!.marsBot.player)).to.equal(DELEGATES_PER_PLAYER);
   });
 
   it('T-14: automaTurmoilTRReduction=7 → MarsBot starts at 13 TR and still seeds no delegates', () => {
@@ -732,7 +732,7 @@ describe('MarsBot Turmoil — Difficulty options (T-14 T-15)', () => {
     });
     const marsBotPlayer = game.automaHooks!.marsBot.player;
     expect(delegatesInParties(game)).to.equal(1);
-    expect(Turmoil.getTurmoil(game).getAvailableDelegateCount(marsBotPlayer)).to.equal(DELEGATES_PER_PLAYER - 1);
+    expect(Turmoil.getTurmoil(game).delegateReserve.get(marsBotPlayer)).to.equal(DELEGATES_PER_PLAYER - 1);
     expect(marsBotPlayer.terraformRating).to.equal(MARSBOT_STARTING_TR - 10);
   });
 
@@ -745,7 +745,7 @@ describe('MarsBot Turmoil — Difficulty options (T-14 T-15)', () => {
     });
     const marsBotPlayer = game.automaHooks!.marsBot.player;
     expect(delegatesInParties(game)).to.equal(2);
-    expect(Turmoil.getTurmoil(game).getAvailableDelegateCount(marsBotPlayer)).to.equal(DELEGATES_PER_PLAYER - 2);
+    expect(Turmoil.getTurmoil(game).delegateReserve.get(marsBotPlayer)).to.equal(DELEGATES_PER_PLAYER - 2);
   });
 
   it('T-14 + T-15 combine: reduction 7 and 2 seeded delegates', () => {
@@ -798,7 +798,7 @@ describe('MarsBot C37 Septem Tribus — Turmoil interaction (Rules-covered: C37)
     const {game, marsBot} = createTurmoilGame();
     marsBot.setCorpAndSetup(getMarsBotCorp(CardName.SEPTUM_TRIBUS)!);
 
-    expect(Turmoil.getTurmoil(game).getAvailableDelegateCount(marsBot.player)).to.equal(2 * DELEGATES_PER_PLAYER);
+    expect(Turmoil.getTurmoil(game).delegateReserve.get(marsBot.player)).to.equal(2 * DELEGATES_PER_PLAYER);
   });
 
   it('C37: sets up without Turmoil', () => {

@@ -284,7 +284,7 @@ describe('AmazonisPlanitiaBoard', () => {
     });
 
     function setReserve(count: number) {
-      while (turmoil.getAvailableDelegateCount(player) > count) {
+      while (turmoil.delegateReserve.get(player) > count) {
         turmoil.delegateReserve.remove(player);
       }
     }
@@ -327,7 +327,7 @@ describe('AmazonisPlanitiaBoard', () => {
 
     it('other players delegates do not count', () => {
       setReserve(0);
-      expect(turmoil.getAvailableDelegateCount('NEUTRAL')).greaterThan(0);
+      expect(turmoil.delegateReserve.get('NEUTRAL')).greaterThan(0);
       expect(offered()).does.not.include(B2);
     });
 
@@ -352,7 +352,7 @@ describe('AmazonisPlanitiaBoard', () => {
       runAllActions(game);
       assertAddDelegateAction(player, player.popWaitingFor(), 2);
       expect(player.totalDelegatesPlaced).eq(2);
-      expect(turmoil.getAvailableDelegateCount(player)).eq(0);
+      expect(turmoil.delegateReserve.get(player)).eq(0);
     });
 
     it('placing on a single delegate space counts one delegate', () => {
