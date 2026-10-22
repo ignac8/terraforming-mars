@@ -138,18 +138,19 @@ describe('ApiRewindVote', () => {
   });
 
   it('refuses a request for the final position of a finished game, which nobody played from', async () => {
+    await t.start({playerPasswords: true});
     await endGame();
     const entries = await t.entries();
     const final = entries[entries.length - 1];
     expect(final.mover).is.undefined;
 
     for (const asker of [t.p1, t.p2]) {
-      const res = await t.post(asker.id, {action: 'request', saveId: final.saveId, cards: 'same'});
+      const res = await t.post(asker.id, {action: 'request', saveId: final.saveId, cards: 'same'}, await seat(asker));
 
       expect(res.statusCode).eq(statusCode.badRequest);
       expect(res.content).eq('Bad request: You can only ask to rewind your own moves.');
       expect(t.newest().rewindVote).is.undefined;
-      expect((await t.poll(asker.id)).vote).is.undefined;
+      expect((await t.poll(asker.id, await seat(asker))).vote).is.undefined;
     }
   });
 
@@ -302,7 +303,7 @@ describe('ApiRewindVote', () => {
   it('needs the seat password for every vote action of a finished game', async () => {
     const password = '0123456789ab';
     await t.start({playerPasswords: true});
-    target = (await t.moves()).slice(-2)[0];
+    target = (await t.moves()).slice(-3)[0];
     t.p1.password = password;
     t.p2.password = password;
     const voteId = answer(await t.post(t.p2.id, {action: 'request', saveId: target, cards: 'same'}, `&password=${password}`)).vote!.voteId;
