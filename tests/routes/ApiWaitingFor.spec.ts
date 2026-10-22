@@ -108,6 +108,30 @@ describe('ApiWaitingFor', () => {
     });
   }
 
+  it('lists whom a player or spectator waits for only while the game is not frozen, and the judge always', async () => {
+    const [game, player] = testGame(2, {judgeLink: true});
+    game.judgePassword = 'secret';
+    await scaffolding.ctx.gameLoader.add(game);
+    player.setWaitingFor(new SelectOption('Input'));
+    const counts = `gameAge=${game.gameAge}&undoCount=${game.undoCount}`;
+    const views = [
+      {who: 'player', query: `id=${player.id}&${counts}`, listedWhenFrozen: false},
+      {who: 'spectator', query: `id=${game.spectatorId}&${counts}`, listedWhenFrozen: false},
+      {who: 'judge', query: `id=${game.judgeId}&password=secret&signature=${Server.getJudgeSignature(game)}`, listedWhenFrozen: true},
+    ];
+
+    for (const frozen of [true, false]) {
+      game.frozen = frozen;
+      for (const view of views) {
+        res = new MockResponse();
+        scaffolding.url = `/api/waitingfor?${view.query}`;
+        await scaffolding.get(ApiWaitingFor.INSTANCE, res);
+        const listed = !frozen || view.listedWhenFrozen;
+        expect(JSON.parse(res.content).waitingFor, `${view.who} frozen ${frozen}`).deep.eq(listed ? [player.color] : []);
+      }
+    }
+  });
+
   it('refreshes a spectator whose undo count is ahead of the game', async () => {
     const [game] = testGame(2);
     await scaffolding.ctx.gameLoader.add(game);

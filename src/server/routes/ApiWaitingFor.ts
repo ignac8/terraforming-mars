@@ -25,13 +25,19 @@ export class ApiWaitingFor extends Handler {
     return player.game.phase === Phase.END;
   }
 
-  private playersWithRequiredInputs(game: IGame) {
+  /** Whose prompts are waiting to be answered, whether or not the game lets them be. */
+  private playersWithPendingInputs(game: IGame) {
     return game.playersInGenerationOrder
       .filter((player) => {
         const waitingFor = player.getWaitingFor();
         return waitingFor !== undefined && !waitingFor.optional;
       })
       .map((player) => player.color);
+  }
+
+  /** Whom the players and spectators are waiting for. Nobody, while a judge has the game frozen. */
+  private playersWithRequiredInputs(game: IGame) {
+    return game.frozen ? [] : this.playersWithPendingInputs(game);
   }
 
   private getPlayerWaitingForModel(player: IPlayer, game: IGame, gameAge: number, undoCount: number): WaitingForModel {
@@ -58,7 +64,8 @@ export class ApiWaitingFor extends Handler {
   }
 
   private getJudgeWaitingForModel(game: IGame, signature: string): WaitingForModel {
-    const inputs = this.playersWithRequiredInputs(game);
+    // The judge sees who would act once the game is unfrozen.
+    const inputs = this.playersWithPendingInputs(game);
 
     if (signature !== Server.getJudgeSignature(game)) {
       return {result: 'REFRESH', waitingFor: inputs};
