@@ -1,31 +1,33 @@
 <template>
-  <div v-if="vote !== undefined || error !== undefined" class="rewind-vote-banner">
-    <template v-if="vote !== undefined && vote.status === 'open'">
-      <div class="rewind-vote-open">
-        <div class="rewind-vote-title">{{ title }}</div>
-        <div class="rewind-vote-cards" v-i18n>{{ vote.cards === 'shuffle' ? 'Shuffle hidden piles' : 'Same cards' }}</div>
-        <ul class="rewind-vote-choices">
-          <li v-for="choice in vote.votes" :key="choice.color" class="rewind-vote-choice" :class="'rewind-vote-choice--' + choice.choice">
-            <span class="rewind-vote-name" :class="'player_bg_color_' + choice.color">{{ nameOf(choice.color) }}</span>
-            <span v-i18n>{{ choice.choice === 'yes' ? 'Yes' : choice.choice === 'no' ? 'No' : 'Waiting' }}</span>
-          </li>
-        </ul>
-        <div class="rewind-vote-countdown">{{ countdown }}</div>
-        <div class="rewind-vote-note" v-i18n>Any move ends the vote.</div>
-      </div>
-      <div class="rewind-vote-actions">
-        <template v-if="canAnswer">
-          <button class="rewind-vote-yes" type="button" :disabled="acting" @click="act('yes')" v-i18n>Yes</button>
-          <button class="rewind-vote-no" type="button" :disabled="acting" @click="act('no')" v-i18n>No</button>
-        </template>
-        <button v-if="isRequester" class="rewind-vote-cancel" type="button" :disabled="acting" @click="act('cancel')" v-i18n>Cancel</button>
-        <a v-if="replayUrl !== undefined" class="rewind-vote-replay" :href="replayUrl" v-i18n>Open the replay</a>
-        <button v-else class="rewind-vote-show" type="button" @click="$emit('show', vote.saveId)" v-i18n>Show this move</button>
-      </div>
-    </template>
-    <div v-else-if="vote !== undefined" class="rewind-vote-ended">{{ endedLine }}</div>
-    <div v-if="error !== undefined" class="rewind-vote-error">{{ error }}</div>
-  </div>
+  <Teleport :to="stack" :disabled="stack === null">
+    <div v-if="vote !== undefined || error !== undefined" class="rewind-vote-banner">
+      <template v-if="vote !== undefined && vote.status === 'open'">
+        <div class="rewind-vote-open">
+          <div class="rewind-vote-title">{{ title }}</div>
+          <div class="rewind-vote-cards" v-i18n>{{ vote.cards === 'shuffle' ? 'Shuffle hidden piles' : 'Same cards' }}</div>
+          <ul class="rewind-vote-choices">
+            <li v-for="choice in vote.votes" :key="choice.color" class="rewind-vote-choice" :class="'rewind-vote-choice--' + choice.choice">
+              <span class="rewind-vote-name" :class="'player_bg_color_' + choice.color">{{ nameOf(choice.color) }}</span>
+              <span v-i18n>{{ choice.choice === 'yes' ? 'Yes' : choice.choice === 'no' ? 'No' : 'Waiting' }}</span>
+            </li>
+          </ul>
+          <div class="rewind-vote-countdown">{{ countdown }}</div>
+          <div class="rewind-vote-note" v-i18n>Any move ends the vote.</div>
+        </div>
+        <div class="rewind-vote-actions">
+          <template v-if="canAnswer">
+            <button class="rewind-vote-yes" type="button" :disabled="acting" @click="act('yes')" v-i18n>Yes</button>
+            <button class="rewind-vote-no" type="button" :disabled="acting" @click="act('no')" v-i18n>No</button>
+          </template>
+          <button v-if="isRequester" class="rewind-vote-cancel" type="button" :disabled="acting" @click="act('cancel')" v-i18n>Cancel</button>
+          <a v-if="replayUrl !== undefined" class="rewind-vote-replay" :href="replayUrl" v-i18n>Open the replay</a>
+          <button v-else class="rewind-vote-show" type="button" @click="$emit('show', vote.saveId)" v-i18n>Show this move</button>
+        </div>
+      </template>
+      <div v-else-if="vote !== undefined" class="rewind-vote-ended">{{ endedLine }}</div>
+      <div v-if="error !== undefined" class="rewind-vote-error">{{ error }}</div>
+    </div>
+  </Teleport>
 </template>
 
 <script lang="ts">
@@ -56,6 +58,8 @@ type DataModel = {
   pollTimer: ReturnType<typeof setTimeout> | undefined;
   clockTimer: ReturnType<typeof setInterval> | undefined;
   stopped: boolean;
+  /** The app's fixed banner stack, which the banner shows in. A page without one (a test) shows it in place. */
+  stack: HTMLElement | null;
 }
 
 // The open rewind vote of the table, polled from the server. It shows a vote while it is open and for a minute
@@ -117,6 +121,7 @@ export default defineComponent({
       pollTimer: undefined,
       clockTimer: undefined,
       stopped: false,
+      stack: null,
     };
   },
   computed: {
@@ -253,6 +258,8 @@ export default defineComponent({
     },
   },
   mounted() {
+    // Looked up here, not in `data`, because App renders the stack and this page in the same pass.
+    this.stack = document.getElementById('rewind-banners');
     this.poll();
   },
   unmounted() {

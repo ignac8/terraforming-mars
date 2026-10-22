@@ -500,7 +500,7 @@ describe('ReplayScreen', () => {
     function mountReplay(real = false) {
       return shallowMount(ReplayScreen, {
         ...globalConfig,
-        global: {...globalConfig.global, stubs: {ReplayPanel: false, RewindControls: real ? false : true, RewindVoteBanner: !real}},
+        global: {...globalConfig.global, stubs: {teleport: false, ReplayPanel: false, RewindControls: real ? false : true, RewindVoteBanner: !real}},
         props: {participantId: playerId},
       });
     }
@@ -880,7 +880,7 @@ describe('ReplayScreen', () => {
       function mountVote(real: boolean, view = voteView()) {
         return shallowMount(ReplayScreen, {
           ...globalConfig,
-          global: {...globalConfig.global, stubs: {PlayerHome: false, ReplayPanel: false, RewindControls: !real, RewindVoteBanner: !real}},
+          global: {...globalConfig.global, stubs: {teleport: false, PlayerHome: false, ReplayPanel: false, RewindControls: !real, RewindVoteBanner: !real}},
           props: {participantId: playerId, liveView: view},
         });
       }

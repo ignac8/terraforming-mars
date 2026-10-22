@@ -99,17 +99,33 @@
   }
 }
 
-// Over the top of the game page, which is where a vote that every player has to answer is seen.
-.rewind-vote-banner {
+// Fixed above the game page, the top bar (z-index 105) and the sidebar (z-index 99), and clear of the sidebar. The frozen banner and the
+// vote banner stack in it, and a spacer in the page's flow (BannerStack) is as tall as it is, so at scroll 0 nothing is covered.
+// Below the preferences panel and the settings button (z-index 110) and the popups (z-index 9999).
+.rewind-banners {
   position: fixed;
-  top: 8px;
-  left: 50%;
-  z-index: 60;
+  top: 0;
+  left: @replay-sidebar-clearance;
+  right: 8px;
+  z-index: 108;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+// On touch screens the sidebar is zoomed to twice its width (preferences.less).
+@media (hover: none) and (pointer: coarse) and (orientation: portrait) {
+  .rewind-banners {
+    left: @replay-sidebar-clearance * 2;
+  }
+}
+
+.rewind-vote-banner {
   box-sizing: border-box;
   width: 420px;
-  max-width: calc(100vw - @replay-sidebar-clearance - 8px);
+  max-width: 100%;
+  margin: 4px auto;
   padding: 6px 10px;
-  transform: translateX(-50%);
   border: 1px solid #666;
   border-radius: 6px;
   background: fade(@bg_dynamic, 94%);
@@ -327,6 +343,7 @@
 }
 
 .frozen-banner {
+  order: -1;
   padding: 8px 16px;
   text-align: center;
   font-size: 18px;

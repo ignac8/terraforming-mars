@@ -236,7 +236,7 @@ describe('App', () => {
                 PlayerHome: {template: '<div/>'},
                 SpectatorHome: {template: '<div/>'},
                 JudgeHome: {template: '<div/>'},
-                FrozenBanner: {template: '<div class="frozen-banner-stub"/>'},
+                BannerStack: {props: ['frozen'], template: '<div v-if="frozen" class="frozen-banner-stub"/>'},
               },
             },
           });
@@ -250,7 +250,7 @@ describe('App', () => {
     it('does not show the banner on a replay URL', async () => {
       const wrapper = shallowMount(App, {
         ...globalConfig,
-        global: {...globalConfig.global, stubs: {FrozenBanner: {template: '<div class="frozen-banner-stub"/>'}}},
+        global: {...globalConfig.global, stubs: {BannerStack: {props: ['frozen'], template: '<div v-if="frozen" class="frozen-banner-stub"/>'}}},
       });
       const view = {id: 'x', players: [], game: {phase: 'action', gameAge: 1, undoCount: 0, frozen: true, gameOptions: {undoOption: false}}};
       await wrapper.setData({screen: 'replay', replayParticipantId: 'p-x', playerView: view});

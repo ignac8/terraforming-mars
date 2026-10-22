@@ -132,6 +132,22 @@ describe('RewindVoteBanner', () => {
     expect(refused.find('.rewind-vote-error').exists()).is.false;
   });
 
+  it('shows in the fixed banner stack of the app, when the page has one', async () => {
+    const stack = document.createElement('div');
+    stack.id = 'rewind-banners';
+    document.body.appendChild(stack);
+    answers = [answer(poll(openVote()))];
+    const wrapper = mountBanner();
+    try {
+      await flushPromises();
+      expect(stack.querySelector('.rewind-vote-banner')).is.not.null;
+      expect(wrapper.find('.rewind-vote-banner').exists()).is.false;
+    } finally {
+      wrapper.unmount();
+      stack.remove();
+    }
+  });
+
   it('asks the page to show the move of the vote', async () => {
     answers = [answer(poll(openVote()))];
     const wrapper = mountBanner();

@@ -11,7 +11,7 @@
         </form>
       </dialog>
     </section>
-    <FrozenBanner v-if="frozen"/>
+    <BannerStack :frozen="frozen"/>
     <div class="main-container">
       <StartScreen v-if="screen === 'start-screen'"/>
       <CreateGameForm
@@ -101,7 +101,7 @@ import {hasShowModal, showModal, windowHasHTMLDialogElement} from './HTMLDialogE
 import dialogPolyfill from 'dialog-polyfill';
 import {setDocumentTitle} from '../utils/documentTitle';
 import {reloadForChunkError} from '@/client/utils/chunkReload';
-import FrozenBanner from '@/client/components/replay/FrozenBanner.vue';
+import BannerStack from '@/client/components/replay/BannerStack.vue';
 
 type Screen = 'admin' |
             'create-game-form' |
@@ -169,7 +169,7 @@ export default defineComponent({
     };
   },
   components: {
-    FrozenBanner,
+    BannerStack,
     StartScreen,
     CreateGameForm,
     LoadGameForm,
