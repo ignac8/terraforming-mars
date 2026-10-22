@@ -35,6 +35,11 @@
         v-else-if="screen === 'spectator-home' && spectator !== undefined"
         :spectator="spectator"
       />
+      <ReplayScreen
+        v-else-if="screen === 'judge-home' && judge !== undefined && judgeHasHistory"
+        :participantId="judge.id"
+        :liveJudge="judge"
+      />
       <JudgeHome
         v-else-if="screen === 'judge-home' && judge !== undefined"
         :judge="judge"
@@ -201,6 +206,10 @@ export default defineComponent({
     hasHistory(): boolean {
       const view = this.playerView;
       return view !== undefined && view.game.gameOptions.undoOption && (view.players.length === 1 || !view.game.gameOptions.judgeUndo);
+    },
+    /** A game with Judge undo keeps its history on the judge page, where the judge rewinds and freezes it. */
+    judgeHasHistory(): boolean {
+      return this.judge?.game.gameOptions.judgeUndo === true;
     },
   },
   methods: {

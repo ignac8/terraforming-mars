@@ -1,6 +1,6 @@
 import {expect} from 'chai';
 import {afterEach, beforeEach} from 'vitest';
-import {fetchReplayMoves, fetchReplayView, postRewind, translateRefusal} from '@/client/utils/fetchReplay';
+import {fetchReplayMoves, fetchReplayView, postJudgeFreeze, postJudgeRewind, postRewind, ReplayResponseError, translateRefusal} from '@/client/utils/fetchReplay';
 import {PreferencesManager} from '@/client/utils/PreferencesManager';
 import {fakePlayerViewModel} from '../components/testHelpers';
 
@@ -107,6 +107,43 @@ describe('fetchReplay', () => {
       await postRewind(playerId, 3, 'same');
 
       expect(urls).deep.eq([`api/rewind?id=${playerId}`]);
+    });
+  });
+
+  describe('the judge routes', () => {
+    const judgeId = 'j-judge-id';
+    let posts: Array<{url: string, init: any}>;
+
+    beforeEach(() => {
+      posts = [];
+      // The routes answer the judge's model, which these calls leave to the next poll.
+      (global as any).fetch = async (url: string, init: any) => {
+        posts.push({url, init});
+        return {ok: true, status: 200, json: () => Promise.reject(new Error('the body is not read'))};
+      };
+    });
+
+    it('post the rewind and the freeze with the password of the address bar', async () => {
+      window.history.replaceState({}, '', `/judge?id=${judgeId}&password=a%26b`);
+
+      await postJudgeRewind(judgeId, 3, 'shuffle', 'keep');
+      await postJudgeFreeze(judgeId, true);
+
+      expect(posts.map(({url, init}) => [url, init.method, JSON.parse(init.body)])).deep.eq([
+        [`api/judge/rewind?id=${judgeId}&password=a%26b`, 'POST', {saveId: 3, cards: 'shuffle', clocks: 'keep'}],
+        [`api/judge/freeze?id=${judgeId}&password=a%26b`, 'POST', {frozen: true}],
+      ]);
+    });
+
+    it('throw what the server refused with', async () => {
+      (global as any).fetch = async () => ({ok: false, status: 400, text: () => Promise.resolve('Bad request: The game is not frozen.')});
+
+      for (const call of [() => postJudgeRewind(judgeId, 3, 'same', 'back'), () => postJudgeFreeze(judgeId, false)]) {
+        const error = await call().then(() => undefined, (err) => err);
+        expect(error).instanceOf(ReplayResponseError);
+        expect(error.status).eq(400);
+        expect(error.message).eq('Bad request: The game is not frozen.');
+      }
     });
   });
 

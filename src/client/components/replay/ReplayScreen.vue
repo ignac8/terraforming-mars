@@ -11,10 +11,15 @@
       ref="voteBanner"
       @show="showMove"
       @mayRequest="(mayRequest) => requestBlocked = !mayRequest"/>
-    <template v-if="liveView !== undefined">
+    <template v-if="isLive">
       <div v-if="index !== undefined && replayView === undefined" class="replay-message" v-i18n>Loading replay...</div>
-      <PlayerHome v-else-if="index !== undefined && playerView !== undefined" key="past" :playerView="playerView" :replay="true"/>
-      <PlayerHome v-else key="live" :playerView="liveView"/>
+      <template v-else-if="index !== undefined && replayView !== undefined">
+        <SpectatorHome v-if="spectatorView !== undefined" key="past-all" :spectator="spectatorView" :replay="true"/>
+        <PlayerHome v-else-if="playerView !== undefined" key="past" :playerView="playerView" :replay="true"/>
+        <ReplayHands v-if="spectatorView !== undefined" :privates="replayView.privates" :players="spectatorView.players"/>
+      </template>
+      <JudgeHome v-else-if="liveJudge !== undefined" key="live-judge" :judge="liveJudge"/>
+      <PlayerHome v-else-if="liveView !== undefined" key="live" :playerView="liveView"/>
     </template>
     <div v-else-if="status === 'loading'" class="replay-message" v-i18n>Loading replay...</div>
     <div v-else-if="status === 'not-finished'" class="replay-message">
@@ -56,11 +61,14 @@
       :viewModel="panelView"
       :playing="playing"
       :speed="speed"
-      :live="liveView !== undefined"
+      :live="isLive"
       :canRewind="canRewind"
       :canVoteRewind="canVoteRewind"
       :requestBlocked="requestBlocked"
-      :rewinding="rewinding"
+      :rewinding="rewinding || freezing"
+      :frozen="judgeFrozen"
+      :viewAsInLive="liveJudge !== undefined"
+      :clocks="clockRows"
       :loading="status !== 'available'"
       @select="select"
       @update:viewAs="changeViewAs"
@@ -70,6 +78,7 @@
       @update:collapsed="changeCollapsed"
       @back="backToLive"
       @rewind="rewind"
+      @freeze="freeze"
       @request="requestRewind">
       <template #error>
         <div v-if="refusal !== undefined" class="replay-error rewind-refusal">{{ refusal }}</div>
@@ -82,19 +91,23 @@
 <script lang="ts">
 import {defineComponent} from 'vue';
 import PlayerHome from '@/client/components/PlayerHome.vue';
+import JudgeHome from '@/client/components/judge/JudgeHome.vue';
 import SpectatorHome from '@/client/components/SpectatorHome.vue';
 import ReplayHands from '@/client/components/replay/ReplayHands.vue';
 import ReplayPanel from '@/client/components/replay/ReplayPanel.vue';
 import RewindVoteBanner from '@/client/components/replay/RewindVoteBanner.vue';
 import {vueRoot} from '@/client/components/vueRoot';
 import {setTranslationContext} from '@/client/directives/i18n';
-import {fetchReplayMoves, fetchReplayView, postRewind, postVote, ReplayResponseError, translateRefusal} from '@/client/utils/fetchReplay';
+import {fetchReplayMoves, fetchReplayView, postJudgeFreeze, postJudgeRewind, postRewind, postVote, ReplayResponseError, seatPasswordParam, translateRefusal} from '@/client/utils/fetchReplay';
 import {passwordParam} from '@/client/utils/playerPassword';
 import {paths} from '@/common/app/paths';
+import {JudgeModel} from '@/common/models/JudgeModel';
 import {PlayerViewModel, ViewModel} from '@/common/models/PlayerModel';
 import {SpectatorModel} from '@/common/models/SpectatorModel';
-import {ReplayMove, ReplayMovesModel, ReplayViewAs, ReplayViewModel, RewindCards} from '@/common/replay/ReplayModel';
-import {isPlayerId, ParticipantId} from '@/common/Types';
+import {ReplayMove, ReplayMovesModel, ReplayViewAs, ReplayViewModel, RewindCards, RewindClockRow, RewindClocks} from '@/common/replay/ReplayModel';
+import {Phase} from '@/common/Phase';
+import {Timer} from '@/common/Timer';
+import {isJudgeId, isPlayerId, ParticipantId} from '@/common/Types';
 
 type Status = 'loading' | 'available' | 'not-finished' | 'expired' | 'not-found' | 'error';
 
@@ -123,6 +136,8 @@ type DataModel = {
   expanded: boolean;
   /** A rewind request is on its way. */
   rewinding: boolean;
+  /** A freeze or unfreeze is on its way. */
+  freezing: boolean;
   /** Numbers moves requests so that a slow answer never replaces a newer one. */
   latestMovesRequest: number;
   /** The view of `index` as `viewAs`. It lags behind them for as long as the next view is loading. */
@@ -148,10 +163,11 @@ type DataModel = {
 // shown, rebuilt from the game's saves. Nothing here ever talks to the live game, except to rewind it.
 //
 // With `liveView` it sits on the live game page instead. The live home screen shows until a move is
-// selected, then that moment shows, read-only, until the player goes back to the live game.
+// selected, then that moment shows, read-only, until the player goes back to the live game. With `liveJudge`
+// it is the judge's page, which also freezes the game and may look at every hand.
 export default defineComponent({
   name: 'ReplayScreen',
-  components: {PlayerHome, ReplayHands, ReplayPanel, RewindVoteBanner, SpectatorHome},
+  components: {JudgeHome, PlayerHome, ReplayHands, ReplayPanel, RewindVoteBanner, SpectatorHome},
   props: {
     participantId: {
       type: String as () => ParticipantId,
@@ -162,12 +178,17 @@ export default defineComponent({
       type: Object as () => PlayerViewModel,
       default: undefined,
     },
+    /** The live game as the judge sees it, when the screen is on the judge page. */
+    liveJudge: {
+      type: Object as () => JudgeModel,
+      default: undefined,
+    },
   },
   data(): DataModel {
     return {
       status: 'loading',
       moves: [],
-      index: this.liveView === undefined ? 0 : undefined,
+      index: this.liveView === undefined && this.liveJudge === undefined ? 0 : undefined,
       viewAs: 'all',
       canRewind: false,
       canVoteRewind: false,
@@ -175,6 +196,7 @@ export default defineComponent({
       movesGameAge: undefined,
       expanded: false,
       rewinding: false,
+      freezing: false,
       latestMovesRequest: 0,
       replayView: undefined,
       shownIndex: 0,
@@ -194,8 +216,36 @@ export default defineComponent({
       const view = this.liveView;
       return view !== undefined && view.players.length > 1 && view.game.gameOptions.undoOption && !view.game.gameOptions.judgeUndo;
     },
+    /** The live game of whoever is looking at it: the player, or the judge. */
+    liveModel(): PlayerViewModel | JudgeModel | undefined {
+      return this.liveView ?? this.liveJudge;
+    },
+    isLive(): boolean {
+      return this.liveModel !== undefined;
+    },
     passwordFragment(): string {
-      return this.liveView === undefined ? '' : passwordParam(this.liveView);
+      return this.liveModel === undefined ? '' : passwordParam(this.liveModel);
+    },
+    /** Whether the game is frozen, for the judge only, who can freeze a game that is still running. */
+    judgeFrozen(): boolean | undefined {
+      const game = this.liveJudge?.game;
+      return game === undefined || game.phase === Phase.END ? undefined : game.frozen === true;
+    },
+    /** What each clock reads in the live game and at the move shown, which a judge who rewinds chooses between. */
+    clockRows(): Array<RewindClockRow> | undefined {
+      if (!isJudgeId(this.participantId) || this.replayView === undefined) {
+        return undefined;
+      }
+      const live = this.liveJudge?.players;
+      return this.replayView.view.players.map((player) => {
+        const current = live?.find((p) => p.color === player.color);
+        return {
+          color: player.color,
+          name: player.name,
+          now: current === undefined ? '' : Timer.toString(current.timer),
+          then: Timer.toString(player.timer),
+        };
+      });
     },
     spectatorView(): SpectatorModel | undefined {
       return this.replayView?.viewAs === 'all' ? this.replayView.view as SpectatorModel : undefined;
@@ -205,8 +255,8 @@ export default defineComponent({
     },
     /** What the panel names players and generations from. It is hidden until there is something to show. */
     panelView(): ViewModel | undefined {
-      if (this.liveView !== undefined) {
-        return this.replayView?.view ?? this.liveView;
+      if (this.liveModel !== undefined) {
+        return this.replayView?.view ?? this.liveModel;
       }
       return this.status === 'available' ? this.replayView?.view : undefined;
     },
@@ -214,13 +264,13 @@ export default defineComponent({
   methods: {
     async loadMoves(): Promise<void> {
       const request = ++this.latestMovesRequest;
-      const gameAge = this.liveView?.game.gameAge;
-      if (this.liveView === undefined) {
+      const gameAge = this.liveModel?.game.gameAge;
+      if (!this.isLive) {
         this.status = 'loading';
       }
       this.error = undefined;
       try {
-        const answer = await fetchReplayMoves(this.participantId, this.liveView && passwordParam(this.liveView));
+        const answer = await fetchReplayMoves(this.participantId, this.liveModel && passwordParam(this.liveModel));
         if (request !== this.latestMovesRequest) {
           return;
         }
@@ -230,18 +280,18 @@ export default defineComponent({
           this.moves = [];
           this.canRewind = false;
           this.canVoteRewind = false;
-          if (this.index !== undefined && this.liveView !== undefined) {
+          if (this.index !== undefined && this.isLive) {
             this.backToLive();
           }
         }
-        if (answer.status === 'available' && moves.length === 0 && this.liveView !== undefined) {
+        if (answer.status === 'available' && moves.length === 0 && this.isLive) {
           // A game with no move made yet, for the panel to say so.
           this.movesGameAge = gameAge;
           this.status = 'available';
         } else if (answer.status !== 'available' || moves.length === 0) {
           // No moves yet is the same as the saves not having landed.
           this.status = answer.status !== 'available' ? answer.status : 'not-finished';
-          if (this.liveView !== undefined) {
+          if (this.isLive) {
             this.error = this.$t('Replay is not ready yet. Try again in a moment.');
           }
         } else {
@@ -253,7 +303,7 @@ export default defineComponent({
           this.canVoteRewind = answer.canVoteRewind;
           this.movesGameAge = gameAge;
           this.status = 'available';
-          if (this.liveView === undefined) {
+          if (!this.isLive) {
             // Read again, the list can be shorter than the one the move was picked from.
             this.index = Math.min(this.index ?? 0, this.moves.length - 1);
             await this.loadView();
@@ -266,7 +316,7 @@ export default defineComponent({
         console.error(err);
         // The moves endpoint answers 400 and 404 only for an id that names no game, which no retry fixes.
         // On the live page the game is there, so whatever went wrong is shown in the panel.
-        if (this.liveView === undefined && err instanceof ReplayResponseError && (err.status === 400 || err.status === 404)) {
+        if (!this.isLive && err instanceof ReplayResponseError && (err.status === 400 || err.status === 404)) {
           this.status = 'not-found';
           return;
         }
@@ -281,7 +331,7 @@ export default defineComponent({
         return;
       }
       try {
-        const answer = await fetchReplayView(this.participantId, this.moves[index].saveId, viewAs, this.liveView && passwordParam(this.liveView));
+        const answer = await fetchReplayView(this.participantId, this.moves[index].saveId, viewAs, this.liveModel && passwordParam(this.liveModel));
         if (request !== this.latestRequest) {
           return;
         }
@@ -301,7 +351,7 @@ export default defineComponent({
         if (this.replayView !== undefined) {
           this.index = this.shownIndex;
           this.viewAs = this.replayView.viewAs;
-        } else if (this.liveView !== undefined) {
+        } else if (this.isLive) {
           this.index = undefined;
         }
       }
@@ -312,20 +362,24 @@ export default defineComponent({
       this.index = undefined;
       this.replayView = undefined;
       this.error = undefined;
-      if (this.liveView !== undefined) {
-        setTranslationContext(this.liveView);
+      if (this.liveModel !== undefined) {
+        setTranslationContext(this.liveModel);
       }
     },
     /** The panel opens and closes. On the live page the moves are only read while it is open. */
     changeCollapsed(collapsed: boolean): void {
       this.expanded = !collapsed;
-      if (this.liveView !== undefined && this.expanded && this.movesGameAge !== this.liveView.game.gameAge) {
+      if (this.liveModel !== undefined && this.expanded && this.movesGameAge !== this.liveModel.game.gameAge) {
         this.loadMoves();
       }
     },
-    /** Rewinds the game to before the selected move, then goes to the game page of the player. */
-    async rewind(cards: RewindCards): Promise<void> {
-      if (this.index === undefined || this.rewinding || !isPlayerId(this.participantId)) {
+    /**
+     * Rewinds the game to before the selected move, then goes to the game page of the player. The judge's rewind keeps
+     * the game frozen, and goes back to the judge page, which is the page itself when it is the live one.
+     */
+    async rewind(cards: RewindCards, clocks: RewindClocks): Promise<void> {
+      const id = this.participantId;
+      if (this.index === undefined || this.rewinding || this.freezing || !(isPlayerId(id) || isJudgeId(id))) {
         return;
       }
       this.pause();
@@ -333,18 +387,28 @@ export default defineComponent({
       this.error = undefined;
       this.clearRefusal();
       try {
-        await postRewind(this.participantId, this.moves[this.index].saveId, cards, this.liveView);
-        // The page is on its way out, so it stays disabled.
-        window.location.href = `${paths.PLAYER}?id=${this.participantId}`;
+        const saveId = this.moves[this.index].saveId;
+        if (isJudgeId(id)) {
+          await postJudgeRewind(id, saveId, cards, clocks);
+          // The page is on its way out, so it stays disabled.
+          if (this.liveJudge !== undefined) {
+            window.location.reload();
+          } else {
+            window.location.href = `${paths.JUDGE}?id=${id}${seatPasswordParam(id, undefined)}`;
+          }
+        } else {
+          await postRewind(id, saveId, cards, this.liveView);
+          window.location.href = `${paths.PLAYER}?id=${id}`;
+        }
       } catch (err) {
         console.error(err);
         const refusal = err instanceof Error ? translateRefusal(err.message) : String(err);
         this.rewinding = false;
         // The game can have changed without this page, e.g. by a rewind from another page, so it is read again.
         const reads: Array<Promise<unknown>> = [];
-        if (this.liveView !== undefined) {
+        if (this.isLive) {
           this.backToLive();
-          reads.push(vueRoot(this).updatePlayer());
+          reads.push(this.liveJudge === undefined ? vueRoot(this).updatePlayer() : vueRoot(this).updateJudge());
         }
         reads.push(this.loadMoves());
         this.refusal = refusal;
@@ -370,6 +434,26 @@ export default defineComponent({
         this.error = err instanceof Error ? translateRefusal(err.message) : String(err);
       } finally {
         this.rewinding = false;
+      }
+    },
+    /** Freezes the game, or unfreezes it, and reads the game again to show which it is now. */
+    async freeze(): Promise<void> {
+      if (this.liveJudge === undefined || this.rewinding || this.freezing || this.judgeFrozen === undefined) {
+        return;
+      }
+      this.freezing = true;
+      this.error = undefined;
+      this.clearRefusal();
+      try {
+        await postJudgeFreeze(this.liveJudge.id, !this.judgeFrozen);
+      } catch (err) {
+        console.error(err);
+        this.refusal = err instanceof Error ? translateRefusal(err.message) : String(err);
+      }
+      try {
+        await vueRoot(this).updateJudge();
+      } finally {
+        this.freezing = false;
       }
     },
     /** Shows the move a vote is about, reading the moves first when the page does not have it yet. */
@@ -454,7 +538,7 @@ export default defineComponent({
   },
   watch: {
     // The table was rewound, so a past move that is shown and the moves listed belong to a game that is gone.
-    'liveView.game.undoCount'() {
+    'liveModel.game.undoCount'() {
       this.pause();
       this.backToLive();
       this.latestMovesRequest++;
@@ -467,7 +551,7 @@ export default defineComponent({
       }
     },
     // The game moved on, so the moves the open panel lists are missing the newest ones.
-    'liveView.game.gameAge'() {
+    'liveModel.game.gameAge'() {
       if (this.refusalSettled) {
         this.clearRefusal();
       }
@@ -477,7 +561,7 @@ export default defineComponent({
     },
   },
   mounted() {
-    if (this.liveView === undefined) {
+    if (!this.isLive) {
       this.loadMoves();
     }
   },

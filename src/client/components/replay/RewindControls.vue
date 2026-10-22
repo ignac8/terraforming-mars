@@ -10,6 +10,34 @@
         <span v-i18n>Shuffle hidden piles</span>
       </label>
     </div>
+    <template v-if="clocks !== undefined">
+      <div class="rewind-cards">
+        <label class="rewind-cards-option">
+          <input type="radio" name="rewind-clocks" value="back" v-model="clockChoice">
+          <span v-i18n>Clocks go back</span>
+        </label>
+        <label class="rewind-cards-option">
+          <input type="radio" name="rewind-clocks" value="keep" v-model="clockChoice">
+          <span v-i18n>Keep clocks</span>
+        </label>
+      </div>
+      <table class="rewind-clocks">
+        <thead>
+          <tr>
+            <th></th>
+            <th v-if="showNow" v-i18n>Now</th>
+            <th v-i18n>At this move</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="row in clocks" :key="row.color" class="rewind-clock-row">
+            <td><span class="rewind-clock-player" :class="'player_bg_color_' + row.color">{{ row.name }}</span></td>
+            <td v-if="showNow">{{ row.now }}</td>
+            <td>{{ row.then }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </template>
     <button v-if="!confirming" class="rewind-start" type="button" :disabled="disabled || blocked" @click="confirming = true" v-i18n>{{ mode === 'vote' ? 'Ask the others to rewind to before this move' : 'Rewind to before this move' }}</button>
     <div v-else class="rewind-confirm">
       <span class="rewind-confirm-text" v-i18n>{{ mode === 'vote' ? 'Every other player must agree. Any move ends the vote.' : 'Moves after this one will be undone.' }}</span>
@@ -22,10 +50,11 @@
 
 <script lang="ts">
 import {defineComponent} from 'vue';
-import {RewindCards} from '@/common/replay/ReplayModel';
+import {RewindCards, RewindClockRow, RewindClocks} from '@/common/replay/ReplayModel';
 
 // The choices for rewinding to the selected move. It only emits once the player has confirmed. In vote mode the
-// player asks the others to rewind rather than rewinding, so it emits `request`.
+// player asks the others to rewind rather than rewinding, so it emits `request`. With `clocks`, whoever rewinds may
+// also choose whether the clocks go back; without them a rewind keeps every clock.
 export default defineComponent({
   name: 'RewindControls',
   props: {
@@ -43,16 +72,27 @@ export default defineComponent({
       type: Boolean,
       default: false,
     },
+    /** One row per player. Given only to a judge, who chooses what the clocks do. */
+    clocks: {
+      type: Array as () => Array<RewindClockRow>,
+      default: undefined,
+    },
   },
   emits: {
-    rewind: (_cards: RewindCards) => true,
+    rewind: (_cards: RewindCards, _clocks: RewindClocks) => true,
     request: (_cards: RewindCards) => true,
   },
   data() {
     return {
       cards: 'same' as RewindCards,
+      clockChoice: 'back' as RewindClocks,
       confirming: false,
     };
+  },
+  computed: {
+    showNow(): boolean {
+      return this.clocks?.some((row) => row.now !== '') === true;
+    },
   },
   methods: {
     confirm(): void {
@@ -60,7 +100,7 @@ export default defineComponent({
       if (this.mode === 'vote') {
         this.$emit('request', this.cards);
       } else {
-        this.$emit('rewind', this.cards);
+        this.$emit('rewind', this.cards, this.clocks === undefined ? 'keep' : this.clockChoice);
       }
     },
   },

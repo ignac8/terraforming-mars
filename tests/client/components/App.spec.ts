@@ -51,7 +51,7 @@ describe('App', () => {
   });
 
   // Mounts the judge page at `url` for a game in `phase`, served a judge model with one player.
-  async function mountJudgePage(phase: string, url = '/judge?id=j1', password?: string) {
+  async function mountJudgePage(phase: string, url = '/judge?id=j1', password?: string, judgeUndo = false) {
     window.history.replaceState({}, '', url);
     const judge = {
       id: 'j1',
@@ -60,7 +60,7 @@ describe('App', () => {
       signature: 'sig',
       players: [{color: 'red', name: 'Alice'}],
       privates: [],
-      game: {phase, gameAge: 1, undoCount: 0},
+      game: {phase, gameAge: 1, undoCount: 0, gameOptions: {judgeUndo}},
     };
     vi.stubGlobal('fetch', vi.fn(async () => ({ok: true, status: 200, json: async () => judge}) as Response));
     const alertStub = vi.fn();
@@ -68,11 +68,27 @@ describe('App', () => {
     // The real screen imports the whole judge page, which would load after the test ends.
     const wrapper = shallowMount(App, {
       ...globalConfig,
-      global: {...globalConfig.global, stubs: {JudgeHome: {template: '<div class="stub-judge"></div>'}}},
+      global: {...globalConfig.global, stubs: {
+        JudgeHome: {template: '<div class="stub-judge"></div>'},
+        ReplayScreen: {name: 'ReplayScreenStub', props: ['participantId', 'liveJudge'], template: '<div class="replay-screen-stub"/>'},
+      }},
     });
     await flushPromises();
     return {wrapper, alertStub};
   }
+
+  it('keeps the history of a judge undo game on the judge page, where the judge rewinds it', async () => {
+    for (const judgeUndo of [true, false]) {
+      const {wrapper} = await mountJudgePage('action', '/judge?id=j1', undefined, judgeUndo);
+      const screen = wrapper.findComponent({name: 'ReplayScreenStub'});
+      expect(screen.exists(), String(judgeUndo)).equals(judgeUndo);
+      expect(wrapper.find('.stub-judge').exists(), String(judgeUndo)).equals(!judgeUndo);
+      if (judgeUndo) {
+        expect(screen.props('participantId')).eq('j1');
+        expect(screen.props('liveJudge')).to.equal((wrapper.vm as any).judge);
+      }
+    }
+  });
 
   it('keeps a finished judge game on the judge screen', async () => {
     const {wrapper, alertStub} = await mountJudgePage('end');

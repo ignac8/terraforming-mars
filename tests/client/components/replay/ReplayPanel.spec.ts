@@ -234,13 +234,36 @@ describe('ReplayPanel', () => {
   describe('rewinding', () => {
     it('offers it for the selected move and passes the choice on', () => {
       const wrapper = mountPanel({canRewind: true, index: 1});
-      wrapper.findComponent(RewindControls).vm.$emit('rewind', 'shuffle');
-      expect(wrapper.emitted('rewind')).to.deep.equal([['shuffle']]);
+      wrapper.findComponent(RewindControls).vm.$emit('rewind', 'shuffle', 'back');
+      expect(wrapper.emitted('rewind')).to.deep.equal([['shuffle', 'back']]);
     });
 
     it('offers it for no move when none is selected, or when rewinding is not allowed', () => {
       expect(mountPanel({canRewind: true, live: true, index: undefined}).findComponent(RewindControls).exists()).is.false;
       expect(mountPanel({canRewind: false, index: 1}).findComponent(RewindControls).exists()).is.false;
     });
+  });
+
+  describe('freezing', () => {
+    it('offers the judge freeze or unfreeze in the header, also while the panel is collapsed', async () => {
+      for (const [frozen, label] of [[false, 'Freeze'], [true, 'Unfreeze']] as const) {
+        const wrapper = mountPanel({live: true, frozen});
+        expect(wrapper.find('.replay-controls').exists(), label).is.false;
+        const button = wrapper.find('.replay-header .replay-freeze');
+        expect(button.text(), label).equals(label);
+        await button.trigger('click');
+        expect(wrapper.emitted('freeze'), label).to.have.length(1);
+      }
+    });
+
+    it('offers it to no one who has no frozen state to show, and not while a rewind runs', () => {
+      expect(mountPanel({live: true}).find('.replay-freeze').exists()).is.false;
+      expect(mountPanel({live: true, frozen: false, rewinding: true}).find('.replay-freeze').attributes('disabled')).not.is.undefined;
+    });
+  });
+
+  it('lets the judge choose a view on the live game page, where a player has none', () => {
+    expect(mountPanel({live: true}).find('.replay-view-as').exists()).is.false;
+    expect(mountPanel({live: true, viewAsInLive: true}).find('.replay-view-as').exists()).is.true;
   });
 });

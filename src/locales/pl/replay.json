@@ -69,5 +69,11 @@
   "The rewind request was cancelled.": "Prośba o cofnięcie gry została wycofana.",
   "The rewind request expired.": "Prośba o cofnięcie gry wygasła.",
   "A move was made, so the rewind request ended.": "Wykonano ruch, więc prośba o cofnięcie gry wygasła.",
-  "The rewind did not happen.": "Gra nie została cofnięta."
+  "The rewind did not happen.": "Gra nie została cofnięta.",
+  "Freeze": "Zamroź",
+  "Unfreeze": "Odmroź",
+  "Clocks go back": "Zegary wracają",
+  "Keep clocks": "Zegary bez zmian",
+  "Now": "Teraz",
+  "At this move": "W tym ruchu"
 }

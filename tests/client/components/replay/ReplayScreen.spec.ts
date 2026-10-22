@@ -7,10 +7,12 @@ import ReplayPanel from '@/client/components/replay/ReplayPanel.vue';
 import ReplayHands from '@/client/components/replay/ReplayHands.vue';
 import PlayerHome from '@/client/components/PlayerHome.vue';
 import SpectatorHome from '@/client/components/SpectatorHome.vue';
-import {fakeGameModel, fakeGameOptionsModel, fakePlayerViewModel, fakePublicPlayerModel, fakeSpectatorModel} from '../testHelpers';
+import {fakeGameModel, fakeGameOptionsModel, fakePlayerViewModel, fakePublicPlayerModel, fakeSpectatorModel, fakeTimerModel, fakeViewModel} from '../testHelpers';
 import {ReplayMove, ReplayMovesModel, ReplayViewModel} from '@/common/replay/ReplayModel';
-import {PlayerId, SpectatorId} from '@/common/Types';
-import {PlayerViewModel} from '@/common/models/PlayerModel';
+import {JudgeId, PlayerId, SpectatorId} from '@/common/Types';
+import {PlayerViewModel, PublicPlayerModel} from '@/common/models/PlayerModel';
+import {JudgeModel} from '@/common/models/JudgeModel';
+import JudgeHome from '@/client/components/judge/JudgeHome.vue';
 import RewindControls from '@/client/components/replay/RewindControls.vue';
 import RewindVoteBanner from '@/client/components/replay/RewindVoteBanner.vue';
 import WaitingFor from '@/client/components/WaitingFor.vue';
@@ -47,6 +49,11 @@ describe('ReplayScreen', () => {
   let votes: Array<{url: string, body: unknown}>;
   /** What the vote route answers, to polls and to POSTs. */
   let voteAnswer: () => Promise<unknown>;
+  /** The POSTs to the judge routes. */
+  let judgeRequests: Array<{url: string, body: unknown}>;
+  let judgeAnswer: () => Promise<unknown>;
+  /** The players of the views it is asked about, when a test needs more than the one. */
+  let pastPlayers: (() => Array<PublicPlayerModel>) | undefined;
 
   function respond(body: unknown) {
     return Promise.resolve({ok: true, status: 200, json: () => Promise.resolve(body), text: () => Promise.resolve('')});
@@ -61,6 +68,9 @@ describe('ReplayScreen', () => {
     rewindAnswer = () => respond(playedView());
     votes = [];
     voteAnswer = () => respond({undoCount: 0, vote: undefined, mayRequest: true});
+    judgeRequests = [];
+    judgeAnswer = () => respond({});
+    pastPlayers = undefined;
     movesAnswer = {status: 'available', ...finishedGame, moves: [
       {saveId: 10, messages: []},
       {saveId: 11, messages: []},
@@ -69,6 +79,10 @@ describe('ReplayScreen', () => {
       calls.push(url);
       if (url.startsWith('api/replay/moves')) {
         return respond(movesAnswer);
+      }
+      if (url.startsWith('api/judge/')) {
+        judgeRequests.push({url, body: JSON.parse(init?.body as string)});
+        return judgeAnswer();
       }
       if (url.startsWith('api/rewind/vote')) {
         if (init?.body !== undefined) {
@@ -84,7 +98,7 @@ describe('ReplayScreen', () => {
       const viewAs = params.get('as') as ReplayViewModel['viewAs'];
       const saveId = Number(params.get('save'));
       const view = viewAs === 'all' ? fakeSpectatorModel() : playedView();
-      view.players = [fakePublicPlayerModel({color: 'blue', name: playerNames[viewAs] ?? 'blue'})];
+      view.players = pastPlayers?.() ?? [fakePublicPlayerModel({color: 'blue', name: playerNames[viewAs] ?? 'blue'})];
       await holdView?.(saveId);
       const answer: ReplayViewModel = {saveId, viewAs, view, privates: []};
       return respond(answer);
@@ -858,6 +872,166 @@ describe('ReplayScreen', () => {
           wrapper.unmount();
         }
       });
+    });
+  });
+
+  describe('on the judge page', () => {
+    const judgeId = 'j-judge-id' as JudgeId;
+    const judgeMoves = {status: 'available', finished: false, canRewind: true, canVoteRewind: false, defaultViewAs: 'all', moves: [
+      {saveId: 10, messages: played},
+      {saveId: 11, messages: played},
+    ]} as const;
+    const hour = 3_600_000;
+    const withClock = (color: 'blue' | 'red', name: string, sumElapsed: number) =>
+      fakePublicPlayerModel({color, name, id: undefined, timer: {...fakeTimerModel(), sumElapsed}});
+
+    beforeEach(() => {
+      movesAnswer = judgeMoves as any;
+      vi.stubGlobal('location', {href: `http://localhost/judge?id=${judgeId}`, search: '', reload: vi.fn()});
+    });
+
+    afterEach(() => {
+      vi.unstubAllGlobals();
+    });
+
+    /** A running game's model leaves the players' ids out. */
+    function judgeModel(game: Parameters<typeof fakeGameModel>[0] = {}): JudgeModel {
+      const players = [withClock('blue', 'Blue player', 80 * 60_000), withClock('red', 'Red player', 30 * 60_000)];
+      return {
+        ...fakeViewModel({players, game: fakeGameModel({gameAge: 3, gameOptions: fakeGameOptionsModel({judgeUndo: true}), ...game})}),
+        id: judgeId,
+        color: 'neutral',
+        password: undefined,
+        signature: 'sig',
+        privates: [],
+      } as unknown as JudgeModel;
+    }
+
+    function mountJudge(judge = judgeModel(), mocks: Record<string, unknown> = {}) {
+      return shallowMount(ReplayScreen, {
+        ...globalConfig,
+        global: {...globalConfig.global, stubs: {ReplayPanel: false, RewindControls: false}, mocks},
+        props: {participantId: judgeId, liveJudge: judge},
+      });
+    }
+
+    const panel = (wrapper: ReturnType<typeof mountJudge>) => wrapper.findComponent(ReplayPanel);
+    /** Opens the panel the way the judge does, which the panel keeps to itself. */
+    const expand = (wrapper: ReturnType<typeof mountJudge>) => wrapper.find('.replay-collapse').trigger('click');
+
+    async function rewindTo(wrapper: ReturnType<typeof mountJudge>, index: number, choose: Array<string> = []) {
+      expand(wrapper);
+      await flushPromises();
+      panel(wrapper).vm.$emit('select', index);
+      await flushPromises();
+      for (const value of choose) {
+        await wrapper.find(`.rewind-controls input[value=${value}]`).setValue(true);
+      }
+      await wrapper.find('.rewind-start').trigger('click');
+      await wrapper.find('.rewind-confirm-button').trigger('click');
+      await flushPromises();
+    }
+
+    it('shows the judge page, and previews a move for all hands', async () => {
+      const wrapper = mountJudge();
+      await flushPromises();
+      expect(wrapper.findComponent(JudgeHome).props('judge')).to.equal(wrapper.props('liveJudge'));
+      expect(calls).to.deep.equal([]);
+      expand(wrapper);
+      await flushPromises();
+      panel(wrapper).vm.$emit('select', 1);
+      await flushPromises();
+      expect(calls[calls.length - 1]).to.equal(`api/replay/view?id=${judgeId}&save=11&as=all`);
+      expect(wrapper.findComponent(SpectatorHome).props('replay')).is.true;
+      expect(wrapper.findComponent(ReplayHands).exists()).is.true;
+      expect(wrapper.findComponent(JudgeHome).exists()).is.false;
+
+      panel(wrapper).vm.$emit('back');
+      await flushPromises();
+      expect(wrapper.findComponent(JudgeHome).exists()).is.true;
+      expect(wrapper.findComponent(SpectatorHome).exists()).is.false;
+    });
+
+    it('rewinds to the selected move with the cards and clocks chosen, then reloads the page', async () => {
+      const wrapper = mountJudge();
+      await flushPromises();
+      await rewindTo(wrapper, 1, ['shuffle', 'keep']);
+      expect(judgeRequests).to.deep.equal([{url: `api/judge/rewind?id=${judgeId}`, body: {saveId: 11, cards: 'shuffle', clocks: 'keep'}}]);
+      expect(rewinds).to.deep.equal([]);
+      expect((window.location.reload as ReturnType<typeof vi.fn>).mock.calls).has.length(1);
+    });
+
+    it('puts each clock beside the same player\'s clock at the selected move, whatever order the past view lists them in', async () => {
+      pastPlayers = () => [withClock('red', 'Red player', 20 * 60_000), withClock('blue', 'Blue player', hour)];
+      const wrapper = mountJudge();
+      expand(wrapper);
+      await flushPromises();
+      panel(wrapper).vm.$emit('select', 0);
+      await flushPromises();
+      const rows = wrapper.findAll('.rewind-clock-row').map((row) => row.findAll('td').map((cell) => cell.text()));
+      expect(rows).to.deep.equal([['Red player', '30:00', '20:00'], ['Blue player', '1:20:00', '1:00:00']]);
+    });
+
+    it('goes back to the live game and reads it again when the rewind is refused', async () => {
+      vi.spyOn(console, 'error').mockImplementation(() => {});
+      judgeAnswer = () => Promise.resolve({ok: false, status: 400, text: () => Promise.resolve('Bad request: That move is not in this game\'s history.')});
+      const updateJudge = vi.fn();
+      const wrapper = mountJudge(judgeModel(), {updateJudge});
+      await rewindTo(wrapper, 1);
+      expect((window.location.reload as ReturnType<typeof vi.fn>).mock.calls).is.empty;
+      expect(updateJudge.mock.calls).has.length(1);
+      expect(wrapper.findComponent(JudgeHome).exists()).is.true;
+      expect(wrapper.find('.replay-panel .rewind-refusal').text()).equals('That move is not in this game\'s history.');
+    });
+
+    it('freezes and unfreezes the game, then reads the game again', async () => {
+      for (const frozen of [false, true]) {
+        judgeRequests = [];
+        const updateJudge = vi.fn();
+        const wrapper = mountJudge(judgeModel({frozen}), {updateJudge});
+        await flushPromises();
+        await wrapper.find('.replay-freeze').trigger('click');
+        await flushPromises();
+        expect(judgeRequests, String(frozen)).to.deep.equal([{url: `api/judge/freeze?id=${judgeId}`, body: {frozen: !frozen}}]);
+        expect(updateJudge.mock.calls, String(frozen)).has.length(1);
+        wrapper.unmount();
+      }
+    });
+
+    it('shows why a freeze was refused in the panel', async () => {
+      vi.spyOn(console, 'error').mockImplementation(() => {});
+      judgeAnswer = () => Promise.resolve({ok: false, status: 400, text: () => Promise.resolve('Bad request: The game is already frozen.')});
+      const wrapper = mountJudge(judgeModel(), {updateJudge: vi.fn()});
+      await flushPromises();
+      await wrapper.find('.replay-freeze').trigger('click');
+      await flushPromises();
+      expect(wrapper.find('.replay-panel .rewind-refusal').text()).equals('The game is already frozen.');
+    });
+
+    it('offers no freeze for a finished game', async () => {
+      const wrapper = mountJudge(judgeModel({phase: 'end'}));
+      await flushPromises();
+      expect(wrapper.find('.replay-freeze').exists()).is.false;
+    });
+
+    it('rewinds from the replay page through the judge route, and goes back to the judge page with the password', async () => {
+      vi.stubGlobal('location', {href: `http://localhost/replay?id=${judgeId}`, search: '?id=j-judge-id&password=a%26b', reload: vi.fn()});
+      const wrapper = shallowMount(ReplayScreen, {
+        ...globalConfig,
+        global: {...globalConfig.global, stubs: {ReplayPanel: false, RewindControls: false}},
+        props: {participantId: judgeId},
+      });
+      await flushPromises();
+      wrapper.findComponent(ReplayPanel).vm.$emit('select', 1);
+      await flushPromises();
+      // It has no live game to show a clock beside, so only the clocks at the move show.
+      expect(wrapper.findAll('.rewind-clock-row')).to.have.length(1);
+      expect(wrapper.find('.rewind-clock-row').findAll('td')).to.have.length(2);
+      await wrapper.find('.rewind-start').trigger('click');
+      await wrapper.find('.rewind-confirm-button').trigger('click');
+      await flushPromises();
+      expect(judgeRequests).to.deep.equal([{url: `api/judge/rewind?id=${judgeId}&password=a%26b`, body: {saveId: 11, cards: 'same', clocks: 'back'}}]);
+      expect(window.location.href).to.equal(`judge?id=${judgeId}&password=a%26b`);
     });
   });
 });

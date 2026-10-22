@@ -7,6 +7,7 @@
         <template v-if="index === undefined"><span v-i18n>live</span></template>
         <template v-else><span v-i18n>move</span> {{ index + 1 }} / {{ moves.length }}</template>
       </span>
+      <button v-if="frozen !== undefined" class="replay-freeze" type="button" :disabled="rewinding" @click="$emit('freeze')" v-i18n>{{ frozen ? 'Unfreeze' : 'Freeze' }}</button>
       <button class="replay-collapse" type="button" @click="toggle" v-i18n>{{ collapsed ? 'Show' : 'Hide' }}</button>
     </div>
 
@@ -25,7 +26,7 @@
       </select>
     </div>
 
-    <div v-if="!live" class="replay-view-as">
+    <div v-if="!live || viewAsInLive" class="replay-view-as">
       <span v-i18n>View as</span>
       <button class="replay-view-all" type="button" :class="{'replay-view-active': viewAs === 'all'}" @click="$emit('update:viewAs', 'all')" v-i18n>All hands</button>
       <button
@@ -59,7 +60,8 @@
       :mode="canRewind ? 'rewind' : 'vote'"
       :disabled="rewinding"
       :blocked="requestBlocked"
-      @rewind="(cards) => $emit('rewind', cards)"
+      :clocks="clocks"
+      @rewind="(cards, clocks) => $emit('rewind', cards, clocks)"
       @request="(cards) => $emit('request', cards)"/>
 
     <!-- Errors, rendered inside the panel: a refused rewind under the rewind controls, and others in a box
@@ -74,12 +76,12 @@ import LogMessageComponent from '@/client/components/logpanel/LogMessageComponen
 import RewindControls from '@/client/components/replay/RewindControls.vue';
 import {PublicPlayerModel, ViewModel} from '@/common/models/PlayerModel';
 import {PLAYER_COLORS} from '@/common/Color';
-import {ReplayMove, ReplayViewAs, RewindCards} from '@/common/replay/ReplayModel';
+import {ReplayMove, ReplayViewAs, RewindCards, RewindClockRow, RewindClocks} from '@/common/replay/ReplayModel';
 
 const SPEEDS = [0.5, 1, 2, 4];
 
 // A small panel floating over the replayed game: transport controls, the list of moves and who to view as.
-// On the live game page it previews past moves instead: no autoplay, no choice of view, and it starts
+// On the live game page it previews past moves instead: no autoplay, no choice of view (except for the judge), and it starts
 // collapsed. It owns nothing but whether the move list is collapsed; the screen decides what every control does.
 export default defineComponent({
   name: 'ReplayPanel',
@@ -145,6 +147,21 @@ export default defineComponent({
       type: Boolean,
       default: false,
     },
+    /** Whether the game is frozen, for the judge, who gets a button for it. Undefined for everyone else. */
+    frozen: {
+      type: Boolean,
+      default: undefined,
+    },
+    /** The choice of view stays on the live game page, where the judge picks a move to see all hands at. */
+    viewAsInLive: {
+      type: Boolean,
+      default: false,
+    },
+    /** What each clock reads, for the rewind controls of the judge. */
+    clocks: {
+      type: Array as () => Array<RewindClockRow>,
+      default: undefined,
+    },
   },
   emits: {
     'select': (_index: number) => true,
@@ -154,8 +171,9 @@ export default defineComponent({
     'update:speed': (_speed: number) => true,
     'update:collapsed': (_collapsed: boolean) => true,
     'back': () => true,
-    'rewind': (_cards: RewindCards) => true,
+    'rewind': (_cards: RewindCards, _clocks: RewindClocks) => true,
     'request': (_cards: RewindCards) => true,
+    'freeze': () => true,
   },
   data() {
     return {collapsed: this.live};

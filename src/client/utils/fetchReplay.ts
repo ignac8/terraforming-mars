@@ -1,8 +1,8 @@
 import {paths} from '@/common/app/paths';
 import {PlayerViewModel} from '@/common/models/PlayerModel';
-import {ReplayMovesModel, ReplayViewAs, ReplayViewModel, RewindCards} from '@/common/replay/ReplayModel';
+import {ReplayMovesModel, ReplayViewAs, ReplayViewModel, RewindCards, RewindClocks} from '@/common/replay/ReplayModel';
 import {RewindVotePoll} from '@/common/rewind/RewindVoteModel';
-import {isJudgeId, isPlayerId, ParticipantId, PlayerId} from '@/common/Types';
+import {isJudgeId, isPlayerId, JudgeId, ParticipantId, PlayerId} from '@/common/Types';
 import {translateText} from '@/client/directives/i18n';
 import {passwordParam, passwordQuery} from '@/client/utils/playerPassword';
 
@@ -18,12 +18,16 @@ export class ReplayResponseError extends Error {
   }
 }
 
-async function readJson<T>(resp: Response): Promise<T> {
+async function checkOk(resp: Response): Promise<void> {
   if (!resp.ok) {
     // The server explains 400s and 404s in a text body.
     const text = await resp.text();
     throw new ReplayResponseError(text || `Replay request failed, response code ${resp.status}`, resp.status);
   }
+}
+
+async function readJson<T>(resp: Response): Promise<T> {
+  await checkOk(resp);
   return resp.json();
 }
 
@@ -69,6 +73,28 @@ export async function postRewind(id: PlayerId, saveId: number, cards: RewindCard
     body: JSON.stringify({saveId, cards}),
   });
   return readJson(resp);
+}
+
+async function postJudge(path: string, id: JudgeId, body: object): Promise<void> {
+  const resp = await fetch(`${path}?id=${id}${addressBarPasswordParam()}`, {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify(body),
+  });
+  await checkOk(resp);
+}
+
+/**
+ * Rewinds the running game to before the move saved as `saveId`, as the judge, who leaves it frozen. The routes answer
+ * the judge's model of the rewound game, which is left to the next poll. The judge password comes from the address bar.
+ */
+export function postJudgeRewind(id: JudgeId, saveId: number, cards: RewindCards, clocks: RewindClocks): Promise<void> {
+  return postJudge(paths.API_JUDGE_REWIND, id, {saveId, cards, clocks});
+}
+
+/** Freezes the game, or unfreezes it. The judge password comes from the address bar. */
+export function postJudgeFreeze(id: JudgeId, frozen: boolean): Promise<void> {
+  return postJudge(paths.API_JUDGE_FREEZE, id, {frozen});
 }
 
 /** What a player sends to the vote route: ask for a rewind, or answer the open vote. */
