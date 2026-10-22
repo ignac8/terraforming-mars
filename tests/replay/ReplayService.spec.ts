@@ -470,4 +470,78 @@ describe('ReplayService', () => {
     rows[1] = middle;
     expect((await moves()).map((m) => m.saveId)).deep.eq([0, 1, 2]);
   });
+
+  describe('sandbox cache', () => {
+    let reads: number;
+
+    // Counts every database read, the list of saves included.
+    function countReads() {
+      reads = 0;
+      const getGameVersion = db.getGameVersion.bind(db);
+      const getSaveIds = db.getSaveIds.bind(db);
+      db.getGameVersion = (gameId, saveId) => {
+        reads++;
+        return getGameVersion(gameId, saveId);
+      };
+      db.getSaveIds = (gameId) => {
+        reads++;
+        return getSaveIds(gameId);
+      };
+    }
+
+    beforeEach(() => {
+      storeLengths([0, 2, 5]);
+      countReads();
+    });
+
+    it('serves a second view of the same save from memory', async () => {
+      const first = await loadReplayState(game, 1);
+      const readsAfterFirst = reads;
+      const second = await loadReplayState(game, 1);
+      expect(second).eq(first);
+      expect(reads).eq(readsAfterFirst);
+    });
+
+    it('reads the save again after forgetReplay', async () => {
+      const first = await loadReplayState(game, 1);
+      forgetReplay(game.id);
+      expect(await loadReplayState(game, 1)).not.eq(first);
+    });
+
+    it('does not keep the newest save of a running game', async () => {
+      game.phase = Phase.ACTION;
+      const first = await loadReplayState(game, 2);
+      expect(await loadReplayState(game, 2)).not.eq(first);
+      // Older saves of a running game do not change.
+      const older = await loadReplayState(game, 1);
+      expect(await loadReplayState(game, 1)).eq(older);
+    });
+
+    it('drops the least recently used sandbox beyond eight', async () => {
+      storeLengths([0, 1, 2, 3, 4, 5, 6, 7, 8, 9]);
+      const loaded = [];
+      for (let saveId = 0; saveId <= 7; saveId++) {
+        loaded.push(await loadReplayState(game, saveId));
+      }
+      // A hit makes save 0 the most recent, so save 1 is the oldest.
+      expect(await loadReplayState(game, 0)).eq(loaded[0]);
+      await loadReplayState(game, 8);
+      expect(await loadReplayState(game, 0)).eq(loaded[0]);
+      expect(await loadReplayState(game, 1)).not.eq(loaded[1]);
+    });
+
+    it('does not keep a failed load', async () => {
+      const getGameVersion = db.getGameVersion.bind(db);
+      db.getGameVersion = () => Promise.reject(new Error('Game not found'));
+      expect(await errorOf(loadReplayState(game, 1))).instanceOf(RouteError);
+      db.getGameVersion = getGameVersion;
+      expect((await loadReplayState(game, 1)).isSandbox).is.true;
+    });
+
+    it('lets simultaneous views share one read', async () => {
+      const [a, b] = await Promise.all([loadReplayState(game, 1), loadReplayState(game, 1)]);
+      expect(b).eq(a);
+      expect(reads).eq(2);
+    });
+  });
 });

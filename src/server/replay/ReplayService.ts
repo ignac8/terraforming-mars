@@ -24,10 +24,18 @@ const MAX_FINISHED_GAMES = 1000;
 // check for it needs no database reads the next time. Oldest entries go first.
 const finishedGames = new Set<GameId>();
 
+const MAX_CACHED_SANDBOXES = 8;
+
+// Sandboxes of recent views, keyed `${gameId}/${saveId}`, so paging through a replay does not
+// deserialize a save for every request. Viewers only read a sandbox, so they share it. The map
+// is in order of use: the least recently used entry goes first.
+const sandboxes = new Map<string, Promise<IGame>>();
+
 export function clearReplayCache(): void {
   cache.clear();
   building.clear();
   finishedGames.clear();
+  sandboxes.clear();
 }
 
 /**
@@ -39,6 +47,11 @@ export function forgetReplay(gameId: GameId): void {
   cache.delete(gameId);
   building.delete(gameId);
   finishedGames.delete(gameId);
+  for (const key of sandboxes.keys()) {
+    if (key.startsWith(`${gameId}/`)) {
+      sandboxes.delete(key);
+    }
+  }
 }
 
 function rememberFinished(gameId: GameId): void {
@@ -196,15 +209,50 @@ export async function getReplayMoves(game: IGame, viewerId: ParticipantId): Prom
   return {status: 'available', moves};
 }
 
-/** Returns the game as it was at `saveId`. The game is a sandbox: it never writes anything. */
-export async function loadReplayState(game: IGame, saveId: number): Promise<IGame> {
+/**
+ * Returns the game as it was at `saveId`. The game is a sandbox: it never writes anything, and
+ * callers share it, so they must only read it.
+ */
+export function loadReplayState(game: IGame, saveId: number): Promise<IGame> {
+  const key = `${game.id}/${saveId}`;
+  const cached = sandboxes.get(key);
+  if (cached !== undefined) {
+    sandboxes.delete(key);
+    sandboxes.set(key, cached);
+    return cached;
+  }
+  const pending: Promise<IGame> = readSandbox(game, saveId).then(({sandbox, keep}) => {
+    if (!keep && sandboxes.get(key) === pending) {
+      sandboxes.delete(key);
+    }
+    return sandbox;
+  }, (e) => {
+    if (sandboxes.get(key) === pending) {
+      sandboxes.delete(key);
+    }
+    throw e;
+  });
+  sandboxes.set(key, pending);
+  if (sandboxes.size > MAX_CACHED_SANDBOXES) {
+    for (const oldest of sandboxes.keys()) {
+      sandboxes.delete(oldest);
+      break;
+    }
+  }
+  return pending;
+}
+
+// `keep` is false for the newest save of a running game, which a reload re-saves in place under
+// the same id.
+async function readSandbox(game: IGame, saveId: number): Promise<{sandbox: IGame, keep: boolean}> {
   const saveIds = await getSortedSaveIds(game);
   if (!saveIds.includes(saveId)) {
     throw RouteError.notFound();
   }
   const save = await getSave(game, saveId);
   try {
-    return loadSandboxGame(save);
+    const keep = game.phase === Phase.END || saveId !== saveIds[saveIds.length - 1];
+    return {sandbox: loadSandboxGame(save), keep};
   } catch (e) {
     // A save that this version of the code cannot read.
     throw unreadable(game, saveId, e);
