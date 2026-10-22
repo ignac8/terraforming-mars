@@ -34,6 +34,7 @@ export type GameOptionsModel = {
   requiresVenusTrackCompletion: boolean,
   twoCorpsVariant: boolean,
   undoOption: boolean,
+  judgeUndo: boolean,
 
   // These are only supplied for the JSON, and
   // some of them can be a bit large.

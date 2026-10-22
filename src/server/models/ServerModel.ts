@@ -515,6 +515,7 @@ export class Server {
       requiresVenusTrackCompletion: options.requiresVenusTrackCompletion,
       twoCorpsVariant: options.twoCorpsVariant,
       undoOption: options.undoOption,
+      judgeUndo: options.judgeUndo,
 
       // These are only supplied for the JSON, and
       // some of them can be a bit large.

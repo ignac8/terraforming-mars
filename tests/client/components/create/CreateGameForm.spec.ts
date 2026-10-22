@@ -206,6 +206,24 @@ describe('CreateGameForm', () => {
     expect(wrapper.find('#judgeLink-checkbox').exists()).eq(false);
   });
 
+  it('offers judge undo only while the judge link is on', async () => {
+    const wrapper = shallowMount(CreateGameForm, {...globalConfig});
+    await wrapper.vm.$nextTick();
+    const vm = wrapper.vm as any;
+
+    expect(vm.expansions.tournament).eq(true);
+    expect(wrapper.find('#judgeUndo-checkbox').exists()).eq(false);
+    expect(vm.newGameConfig.judgeUndo).eq(false);
+
+    await wrapper.find('#judgeLink-checkbox').setValue(true);
+    await wrapper.find('#judgeUndo-checkbox').setValue(true);
+    expect(vm.newGameConfig.judgeUndo).eq(true);
+
+    await wrapper.find('#judgeLink-checkbox').setValue(false);
+    expect(wrapper.find('#judgeUndo-checkbox').exists()).eq(false);
+    expect(vm.newGameConfig.judgeUndo).eq(false);
+  });
+
   it('applies tournament locks when restoring saved tournament settings', async () => {
     createGameSettingsStorage.save(createNewGameConfig({
       players: [

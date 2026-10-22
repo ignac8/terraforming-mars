@@ -189,6 +189,7 @@ export class ApiCreateGame extends Handler {
         deltaProjectExpansion: gameReq.expansions.deltaProject,
         tournamentExpansion: tournament,
         judgeLink: tournament && gameReq.judgeLink === true,
+        judgeUndo: tournament && gameReq.judgeLink === true && gameReq.judgeUndo === true,
         undoOption: gameReq.undoOption,
         venusNextExtension: gameReq.expansions.venus,
       };

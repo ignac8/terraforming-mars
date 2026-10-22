@@ -51,6 +51,8 @@ export type GameOptions = {
   tournamentExpansion: boolean;
   /** Tournament games only: gives the game a judge id and so a read-only judge view. */
   judgeLink: boolean;
+  /** Tournament games with a judge link only: the judge may freeze the game and rewind the table. */
+  judgeUndo: boolean;
 
   expansions: Record<Expansion, boolean>,
 
@@ -238,6 +240,7 @@ export const DEFAULT_GAME_OPTIONS: GameOptions = {
   deltaProjectExpansion: false,
   tournamentExpansion: false,
   judgeLink: false,
+  judgeUndo: false,
   undoOption: false,
   venusNextExtension: false,
   twoCorpsVariant: false,

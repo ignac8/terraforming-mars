@@ -266,6 +266,25 @@ describe('ApiCreateGame', () => {
     expect(judgeIds[2]).is.undefined;
   });
 
+  it('gives a game judge undo only with the tournament preset, a judge link and the option', async () => {
+    const base = newGameConfigForTest();
+    const tournamentExpansions = {...base.expansions, tournament: true};
+    for (const tournament of [true, false]) {
+      for (const judgeLink of [true, false]) {
+        for (const judgeUndo of [true, false]) {
+          req = new MockRequest();
+          res = new MockResponse();
+          scaffolding = new RouteTestScaffolding(req);
+          await postConfig({...base, expansions: tournament ? tournamentExpansions : base.expansions, judgeLink, judgeUndo});
+          expect(res.statusCode).eq(statusCode.ok);
+          const model = JSON.parse(res.content) as SimpleGameModel;
+          const game = await scaffolding.ctx.gameLoader.getGame(model.id);
+          expect(game!.gameOptions.judgeUndo, `${tournament} ${judgeLink} ${judgeUndo}`).eq(tournament && judgeLink && judgeUndo);
+        }
+      }
+    }
+  });
+
   it('keeps handicap in non-tournament games', async () => {
     const config = {
       ...newGameConfigForTest(),

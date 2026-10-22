@@ -99,6 +99,7 @@ describe('ApiGame', () => {
           'soloTR': false,
           'twoCorpsVariant': false,
           'undoOption': false,
+          'judgeUndo': false,
 
           'aresHazards': true,
           'customCeos': [],

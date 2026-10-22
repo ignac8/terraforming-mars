@@ -431,6 +431,13 @@
                                 <label for="judgeLink-checkbox">
                                     <span v-i18n>Judge link</span>
                                 </label>
+
+                                <template v-if="judgeLink">
+                                    <input type="checkbox" name="judgeUndo" v-model="judgeUndo" id="judgeUndo-checkbox">
+                                    <label for="judgeUndo-checkbox" title="The judge can freeze the game and rewind the whole table to any earlier move.">
+                                        <span v-i18n>Judge undo</span>
+                                    </label>
+                                </template>
                             </template>
                         </div>
 
@@ -743,6 +750,7 @@ export default defineComponent({
         showOtherPlayersVP: this.showOtherPlayersVP,
         playerPasswords: this.playerPasswords,
         judgeLink: this.expansions.tournament && this.judgeLink,
+        judgeUndo: this.expansions.tournament && this.judgeLink && this.judgeUndo,
         customCorporationsList: this.customCorporations,
         customColoniesList: this.customColonies,
         customCeos: this.customCeos,

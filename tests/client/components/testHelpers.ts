@@ -69,6 +69,7 @@ export function fakeGameOptionsModel(overrides?: RecursivePartial<GameOptionsMod
     requiresVenusTrackCompletion: false,
     twoCorpsVariant: false,
     undoOption: false,
+    judgeUndo: false,
 
     aresHazards: false,
     customCeos: [],
