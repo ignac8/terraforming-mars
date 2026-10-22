@@ -1,7 +1,9 @@
 import {expect} from 'chai';
 import {Reset} from '../../src/server/routes/Reset';
-import {withTableLock} from '../../src/server/rewind/tableLock';
+import {isTableLocked, withTableLock} from '../../src/server/rewind/tableLock';
+import {RouteError} from '../../src/server/routes/RouteError';
 import {statusCode} from '../../src/common/http/statusCode';
+import {cast} from '../../src/common/utils/utils';
 import {testGame} from '../TestGame';
 import {MockResponse} from './HttpMocks';
 import {RouteTestScaffolding} from './RouteTestScaffolding';
@@ -36,5 +38,40 @@ describe('Reset', () => {
         expect(res.content).eq('Bad request: The table is being rewound or frozen. Click OK to refresh this page.');
       }
     }
+  });
+
+  it('holds the table while it reloads', async () => {
+    const scaffolding = new RouteTestScaffolding();
+    const res = new MockResponse();
+    const [game, player] = testGame(1);
+    const loader = scaffolding.ctx.gameLoader;
+    await loader.add(game);
+    const getGame = loader.getGame.bind(loader);
+    let reached = () => {};
+    const atReload = new Promise<void>((resolve) => reached = resolve);
+    let release = () => {};
+    loader.getGame = (id, forceLoad) => {
+      if (!forceLoad) {
+        return getGame(id);
+      }
+      reached();
+      return new Promise((resolve) => release = () => resolve(game));
+    };
+
+    scaffolding.url = `/reset?id=${player.id}`;
+    const resetting = scaffolding.get(Reset.INSTANCE, res);
+    await atReload;
+    try {
+      expect(isTableLocked(game.id)).is.true;
+      let refused: unknown;
+      await withTableLock(game.id, async () => {}).catch((e) => refused = e);
+      expect(cast(refused, RouteError).detail).eq('A rewind is already running.');
+    } finally {
+      release();
+      await resetting;
+    }
+
+    expect(res.statusCode).eq(statusCode.ok);
+    expect(isTableLocked(game.id)).is.false;
   });
 });

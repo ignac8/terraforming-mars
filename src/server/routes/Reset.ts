@@ -6,7 +6,7 @@ import {IPlayer} from '../IPlayer';
 import {Request} from '../Request';
 import {Response} from '../Response';
 import {RouteError} from './RouteError';
-import {isTableLocked} from '../rewind/tableLock';
+import {isTableLocked, withTableLock} from '../rewind/tableLock';
 
 /**
  * Reloads the game from the last action.
@@ -59,12 +59,16 @@ export class Reset extends Handler {
       throw RouteError.badRequest('Not the active player');
     }
 
-    const reloadedGame = await ctx.gameLoader.getGame(player.game.id, /** force reload */ true);
-    if (reloadedGame === undefined) {
-      throw RouteError.badRequest('Could not reset');
-    }
-    const reloadedPlayer = reloadedGame.getPlayerById(player.id);
-    reloadedGame.inputsThisRound = 0;
-    responses.writeJson(res, ctx, Server.getPlayerModel(reloadedPlayer));
+    // The reload replaces the cached game, so no rewind may run meanwhile. The table is free: it was checked
+    // with no await since.
+    await withTableLock(game.id, async () => {
+      const reloadedGame = await ctx.gameLoader.getGame(game.id, /** force reload */ true);
+      if (reloadedGame === undefined) {
+        throw RouteError.badRequest('Could not reset');
+      }
+      const reloadedPlayer = reloadedGame.getPlayerById(playerId);
+      reloadedGame.inputsThisRound = 0;
+      responses.writeJson(res, ctx, Server.getPlayerModel(reloadedPlayer));
+    });
   }
 }
