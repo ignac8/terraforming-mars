@@ -5,6 +5,7 @@ import {Database} from '../../database/Database';
 import {getReplayMoves} from '../../replay/ReplayService';
 import {RouteError} from '../../routes/RouteError';
 import {canVoteRewind} from '../access';
+import {isTableLocked} from '../tableLock';
 import {SerializedRewindVote} from '../tableState';
 import {
   barUntilNextGeneration,
@@ -35,7 +36,8 @@ const TRY_AGAIN = 'That didn\'t work. Try again.';
 const UNRESTORABLE = 'That moment can\'t be restored. Nothing was changed.';
 const OWN_MOVES_ONLY = 'You can only ask to rewind your own moves.';
 const GAME_REWOUND = 'This game was rewound. Refresh this page.';
-const GAME_FROZEN = 'The judge froze the game. Click OK to refresh this page.';
+const GAME_FROZEN = 'The game is frozen, so no rewind can be asked for or answered.';
+const REWIND_RUNNING = 'A rewind is already running.';
 
 export type VoteEffects = {
   /** rewindTable(game, saveId, {cards, clocks: 'keep'}, {kind: 'vote', requester}). Must take the table lock synchronously on call. */
@@ -73,7 +75,7 @@ export class VoteService {
     return {
       undoCount: game.undoCount,
       vote: voteModel(game, this.endedOf(game), this.clock.now()),
-      mayRequest: mayRequest(game.rewindRequestLimits, game, player.id) && canVoteRewind(game, player.id),
+      mayRequest: !game.frozen && mayRequest(game.rewindRequestLimits, game, player.id) && canVoteRewind(game, player.id),
     };
   }
 
@@ -138,7 +140,7 @@ export class VoteService {
       throw RouteError.badRequest('This vote has ended.');
     }
     if (vote.status === 'rewinding') {
-      throw RouteError.badRequest('A rewind is already running.');
+      throw RouteError.badRequest(REWIND_RUNNING);
     }
     if (player.id === vote.requester) {
       throw RouteError.badRequest('You asked for this rewind. You can cancel it.');
@@ -202,7 +204,7 @@ export class VoteService {
       throw RouteError.forbidden();
     }
     if (vote.status === 'rewinding') {
-      throw RouteError.badRequest('A rewind is already running.');
+      throw RouteError.badRequest(REWIND_RUNNING);
     }
     this.end(game, 'cancelled', {});
     await this.write(game);
@@ -256,6 +258,10 @@ export class VoteService {
     }
     if (game.retired) {
       throw RouteError.badRequest(GAME_REWOUND);
+    }
+    // A rewind or a freeze by someone else is running. Nothing about the vote changes, and the judge's action decides its end.
+    if (isTableLocked(game.id)) {
+      throw RouteError.badRequest(REWIND_RUNNING);
     }
   }
 
