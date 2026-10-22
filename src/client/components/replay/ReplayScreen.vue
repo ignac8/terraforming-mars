@@ -113,6 +113,8 @@ type DataModel = {
   error: string | undefined;
   /** Why the server refused the last rewind. */
   refusal: string | undefined;
+  /** The page has read the game again after the refusal, so the next game update makes it stale. */
+  refusalSettled: boolean;
   playing: boolean;
   speed: number;
   /** Numbers view requests so that a slow answer never replaces a newer one. */
@@ -156,6 +158,7 @@ export default defineComponent({
       shownIndex: 0,
       error: undefined,
       refusal: undefined,
+      refusalSettled: false,
       playing: false,
       speed: 1,
       latestRequest: 0,
@@ -296,7 +299,7 @@ export default defineComponent({
       this.pause();
       this.rewinding = true;
       this.error = undefined;
-      this.refusal = undefined;
+      this.clearRefusal();
       try {
         await postRewind(this.participantId, this.moves[this.index].saveId, cards, this.liveView);
         // The page is on its way out, so it stays disabled.
@@ -306,18 +309,27 @@ export default defineComponent({
         const refusal = err instanceof Error ? translateRefusal(err.message) : String(err);
         this.rewinding = false;
         // The game can have changed without this page, e.g. by a rewind from another page, so it is read again.
+        const reads: Array<Promise<unknown>> = [];
         if (this.liveView !== undefined) {
           this.backToLive();
-          vueRoot(this).updatePlayer();
+          reads.push(vueRoot(this).updatePlayer());
         }
-        this.loadMoves();
+        reads.push(this.loadMoves());
         this.refusal = refusal;
+        // The game update that reading brings is the one the refusal answers, so it stays for it.
+        await Promise.all(reads);
+        await this.$nextTick();
+        this.refusalSettled = this.refusal === refusal;
       }
+    },
+    clearRefusal(): void {
+      this.refusal = undefined;
+      this.refusalSettled = false;
     },
     /** A move picked by hand. It takes over from autoplay, which would otherwise carry on from a stale position. */
     select(index: number): Promise<void> {
       this.pause();
-      this.refusal = undefined;
+      this.clearRefusal();
       return this.goTo(index);
     },
     goTo(index: number): Promise<void> {
@@ -382,6 +394,9 @@ export default defineComponent({
   watch: {
     // The game moved on, so the moves the open panel lists are missing the newest ones.
     'liveView.game.gameAge'() {
+      if (this.refusalSettled) {
+        this.clearRefusal();
+      }
       if (this.expanded) {
         this.loadMoves();
       }
