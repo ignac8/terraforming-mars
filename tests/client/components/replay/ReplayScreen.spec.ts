@@ -895,7 +895,7 @@ describe('ReplayScreen', () => {
     });
 
     /** A running game's model leaves the players' ids out. */
-    function judgeModel(game: Parameters<typeof fakeGameModel>[0] = {}): JudgeModel {
+    function judgeModel(game: Parameters<typeof fakeGameModel>[0] = {}, password?: string): JudgeModel {
       const players = [withClock('blue', 'Blue player', 80 * 60_000), withClock('red', 'Red player', 30 * 60_000)];
       return {
         game: fakeGameModel({gameAge: 3, gameOptions: fakeGameOptionsModel({judgeUndo: true}), ...game}),
@@ -904,7 +904,7 @@ describe('ReplayScreen', () => {
         runId: 'run-id',
         id: judgeId,
         color: 'neutral',
-        password: undefined,
+        password,
         signature: 'sig',
         privates: [],
       };
@@ -1015,6 +1015,17 @@ describe('ReplayScreen', () => {
         expect(updateJudge.mock.calls, String(frozen)).has.length(1);
         wrapper.unmount();
       }
+    });
+
+    it('sends the password of the claimed seat, from the judge page and not from the address bar', async () => {
+      const wrapper = mountJudge(judgeModel({}, 'abc'));
+      await flushPromises();
+      await rewindTo(wrapper, 1);
+      const frozen = mountJudge(judgeModel({}, 'abc'), {updateJudge: vi.fn()});
+      await flushPromises();
+      await frozen.find('.replay-freeze').trigger('click');
+      await flushPromises();
+      expect(judgeRequests.map(({url}) => url)).to.deep.equal([`api/judge/rewind?id=${judgeId}&password=abc`, `api/judge/freeze?id=${judgeId}&password=abc`]);
     });
 
     it('shows why a freeze was refused in the panel', async () => {
