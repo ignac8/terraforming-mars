@@ -41,6 +41,9 @@ describe('VoteService', () => {
   let timers: Array<Timer>;
   let live: boolean;
   let failPersist: boolean;
+  // Each persist call waits for the next gate, if any. `failNext` makes the call that is waiting on one fail.
+  let persistGates: Array<Promise<void>>;
+  let failNext: boolean;
   // While set, the rewind waits for it; it settles the rewind with the outcome it is given.
   let hold: boolean;
   let settleRewind: (outcome: {error: unknown} | {restored: IGame}) => void;
@@ -100,6 +103,14 @@ describe('VoteService', () => {
         return restored;
       },
       persist: async (g) => {
+        const gate = persistGates.shift();
+        if (gate !== undefined) {
+          await gate;
+          if (failNext) {
+            failNext = false;
+            throw new Error('write failed');
+          }
+        }
         if (failPersist) {
           throw new Error('write failed');
         }
@@ -130,6 +141,8 @@ describe('VoteService', () => {
     timers = [];
     live = true;
     failPersist = false;
+    persistGates = [];
+    failNext = false;
     hold = false;
     rewindError = undefined;
     clock = new FakeClock();
@@ -386,6 +399,43 @@ describe('VoteService', () => {
 
     expect(game.rewindVote).is.undefined;
     expect(timers.every((t) => t.cancelled)).is.true;
+  });
+
+  it('answers with the vote when a yes landed while its opening write failed', async () => {
+    let release = () => {};
+    persistGates = [new Promise<void>((resolve) => {
+      release = resolve;
+    })];
+    failNext = true;
+    const opening = service.request(game, p2, saveId, 'same');
+    await flush();
+    await service.cast(game, p1, game.rewindVote!.id, 'yes');
+    release();
+
+    const poll = await opening;
+
+    expect(poll.vote!.status).eq('open');
+    expect(game.rewindVote!.yes).deep.eq([p2.id, p1.id]);
+  });
+
+  it('refuses a vote or a cancel on a game that was rewound while it settled the vote', async () => {
+    for (const method of ['cast', 'cancel'] as const) {
+      const opened = await service.request(game, p2, saveId, 'same');
+      let release = () => {};
+      persistGates = [new Promise<void>((resolve) => {
+        release = resolve;
+      })];
+      clock.millis += VOTE_EXPIRY_MS;
+      const call = method === 'cast' ? service.cast(game, p1, opened.vote!.voteId, 'yes') : service.cancel(game, p2, opened.vote!.voteId);
+      await flush();
+      game.retired = true;
+      release();
+
+      expect((await refusal(call)).detail, method).eq('This game was rewound. Refresh this page.');
+
+      game.retired = false;
+      game.rewindRequestLimits = undefined;
+    }
   });
 
   it('keeps a change in memory when it can\'t be written, and the next write carries it', async () => {

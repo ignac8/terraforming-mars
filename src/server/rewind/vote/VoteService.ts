@@ -78,6 +78,7 @@ export class VoteService {
     await this.settle(game);
     this.checkMayRequest(game, player);
     const history = await getReplayMoves(game, player.id);
+    // Any status but 'available' (a finished game's history may not be ready) reads as a move that is not there.
     const index = history.status === 'available' ? history.moves.findIndex((move) => move.saveId === saveId) : -1;
     if (index < 0) {
       throw RouteError.notFound('That move is not in this game\'s history.');
@@ -113,8 +114,8 @@ export class VoteService {
       if (game.rewindVote === vote && vote.status === 'open' && vote.yes.length === 1) {
         game.rewindVote = undefined;
         this.disarm(game);
+        throw RouteError.badRequest(TRY_AGAIN);
       }
-      throw RouteError.badRequest(TRY_AGAIN);
     }
     return this.poll(game, player);
   }
@@ -123,6 +124,7 @@ export class VoteService {
   public async cast(game: IGame, player: IPlayer, voteId: number, choice: 'yes' | 'no'): Promise<RewindVotePoll> {
     this.checkMayTake(game, player);
     await this.settle(game);
+    this.checkMayTake(game, player);
     const vote = game.rewindVote;
     if (vote === undefined || vote.id !== voteId) {
       throw RouteError.badRequest('This vote has ended.');
@@ -175,6 +177,7 @@ export class VoteService {
   public async cancel(game: IGame, player: IPlayer, voteId: number): Promise<RewindVotePoll> {
     this.checkMayTake(game, player);
     await this.settle(game);
+    this.checkMayTake(game, player);
     const vote = game.rewindVote;
     if (vote === undefined || vote.id !== voteId) {
       throw RouteError.badRequest('This vote has ended.');
