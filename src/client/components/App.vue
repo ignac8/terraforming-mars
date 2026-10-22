@@ -78,7 +78,6 @@ const LoadGameForm = defineAsyncComponent(() => import(/* webpackChunkName: "loa
 const PlayerHome = defineAsyncComponent(() => import(/* webpackChunkName: "player-home" */ '@/client/components/PlayerHome.vue'));
 const SpectatorHome = defineAsyncComponent(() => import(/* webpackChunkName: "spectator-home" */ '@/client/components/SpectatorHome.vue'));
 const ReplayScreen = defineAsyncComponent(() => import(/* webpackChunkName: "replay" */ '@/client/components/replay/ReplayScreen.vue'));
-import FrozenBanner from '@/client/components/replay/FrozenBanner.vue';
 const StartScreen = defineAsyncComponent(() => import(/* webpackChunkName: "start-screen" */ '@/client/components/StartScreen.vue'));
 import {$t, setTranslationContext} from '@/client/directives/i18n';
 import {paths} from '@/common/app/paths';
@@ -97,6 +96,7 @@ import {hasShowModal, showModal, windowHasHTMLDialogElement} from './HTMLDialogE
 import dialogPolyfill from 'dialog-polyfill';
 import {setDocumentTitle} from '../utils/documentTitle';
 import {reloadForChunkError} from '@/client/utils/chunkReload';
+import FrozenBanner from '@/client/components/replay/FrozenBanner.vue';
 
 type Screen = 'admin' |
             'create-game-form' |

@@ -368,6 +368,7 @@ describe('WaitingFor', () => {
     expect(urls[0]).does.not.include('gameAge');
     expect(updateJudge.mock.calls).has.length(1);
   });
+
   describe('at a required prompt', () => {
     const requiredPrompt = {type: 'option', title: 'test', buttonLabel: 'save'} as any;
 
@@ -434,6 +435,24 @@ describe('WaitingFor', () => {
       await vi.advanceTimersByTimeAsync(5000);
 
       expect(polls.count).eq(0);
+    });
+
+    it('plays no turn cue when a refresh finds the player already at a prompt', async () => {
+      vi.useFakeTimers();
+      stubPolls(200, {result: 'REFRESH', waitingFor: []});
+      const turn = stubTurnCue();
+      const view = viewWith({gameOptions: {judgeUndo: true}});
+      const updatePlayer = vi.fn(async () => {
+        // What App does with a fetched view.
+        (wrapper.vm.$root as any).playerView = {...view, waitingFor: requiredPrompt};
+        return true;
+      });
+      const wrapper = mountAt(view, requiredPrompt, {updatePlayer});
+
+      await vi.advanceTimersByTimeAsync(1500);
+
+      expect(updatePlayer.mock.calls).has.length(1);
+      expect(turn.cues()).eq(0);
     });
 
     it('plays the turn cue when a refresh brings back a turn, in every game', async () => {
