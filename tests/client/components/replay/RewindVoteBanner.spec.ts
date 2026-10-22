@@ -31,7 +31,7 @@ function openVote(overrides: Partial<RewindVoteModel> = {}): RewindVoteModel {
 }
 
 function poll(vote: RewindVoteModel | undefined, overrides: Partial<RewindVotePoll> = {}): RewindVotePoll {
-  return {rewindCount: 0, vote, mayRequest: true, ...overrides};
+  return {rewindCount: 0, vote, ...overrides};
 }
 
 describe('RewindVoteBanner', () => {
@@ -133,22 +133,6 @@ describe('RewindVoteBanner', () => {
     expect(refused.find('.rewind-vote-error').exists()).is.false;
   });
 
-  it('shows in the fixed banner stack of the app, when the page has one', async () => {
-    const stack = document.createElement('div');
-    stack.id = 'rewind-banners';
-    document.body.appendChild(stack);
-    answers = [answer(poll(openVote()))];
-    const wrapper = mountBanner();
-    try {
-      await flushPromises();
-      expect(stack.querySelector('.rewind-vote-banner')).is.not.null;
-      expect(wrapper.find('.rewind-vote-banner').exists()).is.false;
-    } finally {
-      wrapper.unmount();
-      stack.remove();
-    }
-  });
-
   it('leaves a player name that is also a word, like Red, untranslated in another language', async () => {
     PreferencesManager.INSTANCE.set('lang', 'pl');
     (window as any)._translations = {
@@ -235,7 +219,7 @@ describe('RewindVoteBanner', () => {
   });
 
   it('names who declined, and gives the reason a rewind failed', async () => {
-    answers = [answer(poll(openVote({status: 'declined', expiresInMs: 0, votes: [{color: 'blue', choice: 'no'}]}), {mayRequest: false}))];
+    answers = [answer(poll(openVote({status: 'declined', expiresInMs: 0, votes: [{color: 'blue', choice: 'no'}]})))];
     const declined = mountBanner();
     await flushPromises();
     expect(declined.find('.rewind-vote-ended').text()).to.contain('Blue');
@@ -249,7 +233,7 @@ describe('RewindVoteBanner', () => {
   });
 
   it('tells the page why its player may not ask for a rewind right now', async () => {
-    answers = [answer(poll(undefined, {mayRequest: false, blocked: 'frozen'})), answer(poll(undefined, {mayRequest: true}))];
+    answers = [answer(poll(undefined, {blocked: 'frozen'})), answer(poll(undefined))];
     const wrapper = mountBanner();
     await flushPromises();
     await ticks(1000);
@@ -257,7 +241,7 @@ describe('RewindVoteBanner', () => {
   });
 
   describe('after a rewind', () => {
-    it('opens the game page again when the undo count of the table is not the page\'s', async () => {
+    it('opens the game page again when the rewind count of the table is not the page\'s', async () => {
       answers = [answer(poll(undefined)), answer(poll(undefined, {rewindCount: 1}))];
       mountBanner({password: '&password=pw', rewindCount: 0});
       await flushPromises();

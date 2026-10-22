@@ -268,7 +268,7 @@ describe('VoteService', () => {
     act(p1);
     await flush();
     expect(status(game, p2)).eq('moved-on');
-    expect(service.poll(game, p2).mayRequest).is.true;
+    expect(service.poll(game, p2).blocked).is.undefined;
     expect(game.rewindVote).is.undefined;
 
     hold = true;
@@ -305,8 +305,8 @@ describe('VoteService', () => {
       await ends[end](opened.vote!.voteId);
 
       const barred = end === 'no' || end === 'expiry';
-      expect(service.poll(game, p2).mayRequest, end).eq(!barred);
-      expect(service.poll(game, p3).mayRequest, end).is.true;
+      expect(service.poll(game, p2).blocked, end).eq(barred ? 'barred' : undefined);
+      expect(service.poll(game, p3).blocked, end).is.undefined;
       expect(await outcomes(outcome[end]), end).eq(before + 1);
       expect(timers.every((t) => t.cancelled), end).is.true;
       if (barred) {
@@ -329,7 +329,6 @@ describe('VoteService', () => {
     const opened = await service.request(game, p2, saveId, 'same');
     for (const player of [p2, p3]) {
       expect(service.poll(game, player).blocked, player.color).eq('vote-open');
-      expect(service.poll(game, player).mayRequest, player.color).is.false;
     }
 
     await service.cast(game, p1, opened.vote!.voteId, 'no');
@@ -351,7 +350,7 @@ describe('VoteService', () => {
       const poll = await service.cast(game, p3, opened.vote!.voteId, 'yes');
 
       expect(poll.vote, run.reason).deep.include({status: 'failed', reason: run.reason});
-      expect(poll.mayRequest).is.true;
+      expect(poll.blocked).is.undefined;
       expect(persists[persists.length - 1].rewindVote).is.undefined;
       expect(await outcomes('failed')).eq(before + 1);
     }
@@ -572,8 +571,7 @@ describe('VoteService', () => {
       const poll: RewindVotePoll = service.poll(game, p2);
       expect(poll.vote!.status, run.result).eq(run.result);
       expect(persists, run.result).has.length(run.writes);
-      // Nobody asks while a vote is open.
-      expect(poll.mayRequest, run.result).eq(!run.barred && run.result !== 'open');
+      expect(poll.blocked, run.result).eq(run.result === 'open' ? 'vote-open' : run.barred ? 'barred' : undefined);
       if (run.result === 'failed') {
         expect(poll.vote!.reason).eq(RESTARTED_BEFORE_REWIND);
       }
@@ -583,7 +581,7 @@ describe('VoteService', () => {
         timers[0].fn();
         await flush();
         expect(status(game, p2)).eq('expired');
-        expect(service.poll(game, p2).mayRequest).is.false;
+        expect(service.poll(game, p2).blocked).eq('barred');
       }
     }
   });

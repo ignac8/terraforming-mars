@@ -53,7 +53,7 @@ describe('a judge at a table that votes', () => {
     expect(t.newest().rewindRequestLimits).is.undefined;
 
     expect((await t.judgeFreeze(false)).statusCode).eq(statusCode.ok);
-    expect((await t.poll(t.p2.id, await seat(t.p2))).mayRequest).is.true;
+    expect((await t.poll(t.p2.id, await seat(t.p2))).blocked).is.undefined;
     await request();
   });
 
@@ -88,7 +88,7 @@ describe('a judge at a table that votes', () => {
     // Polling is not refused, and it says the request control is off.
     const poll = await t.poll(t.p1.id, await seat(t.p1));
     expect(poll.vote).is.undefined;
-    expect(poll.mayRequest).is.false;
+    expect(poll.blocked).eq('frozen');
   });
 
   it('refuses a yes and a no while the game is frozen, and lets the asker cancel', async () => {
@@ -121,7 +121,7 @@ describe('a judge at a table that votes', () => {
     expect(live.rewindRequestLimits).is.undefined;
     // The rewound game is frozen until the judge unfreezes it.
     await t.judgeFreeze(false);
-    expect((await t.poll(t.p2.id, await seat(t.p2))).mayRequest).is.true;
+    expect((await t.poll(t.p2.id, await seat(t.p2))).blocked).is.undefined;
   });
 
   it('refuses a judge freeze or rewind while the last yes rewinds the table', async () => {

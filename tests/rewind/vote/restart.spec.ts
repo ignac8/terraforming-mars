@@ -64,7 +64,7 @@ describe('rewind vote across a restart', () => {
     expect(t.newest().rewindRequestLimits?.players).deep.eq([t.p2.id]);
     const poll = await t.poll(t.p2.id);
     expect(poll.vote?.status).eq('expired');
-    expect(poll.mayRequest).is.false;
+    expect(poll.blocked).eq('barred');
   });
 
   it('passes or declines a vote with the first request after a restart', async () => {
@@ -83,7 +83,7 @@ describe('rewind vote across a restart', () => {
         expect(t.rows()).has.length(before + 1);
       } else {
         expect(poll.vote?.status).eq('declined');
-        expect((await t.poll(t.p2.id)).mayRequest).is.false;
+        expect((await t.poll(t.p2.id)).blocked).eq('barred');
         expect(t.rows()).has.length(before);
       }
     }

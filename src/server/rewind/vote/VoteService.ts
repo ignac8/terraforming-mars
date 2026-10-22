@@ -77,7 +77,6 @@ export class VoteService {
     return {
       rewindCount: game.rewinds.length,
       vote: voteModel(game, this.endedOf(game), this.clock.now()),
-      mayRequest: blocked === undefined && canVoteRewind(game, player.id),
       blocked,
     };
   }

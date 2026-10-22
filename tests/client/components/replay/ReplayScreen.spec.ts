@@ -69,7 +69,7 @@ describe('ReplayScreen', () => {
     rewinds = [];
     rewindAnswer = () => respond(playedView());
     votes = [];
-    voteAnswer = () => respond({rewindCount: 0, vote: undefined, mayRequest: true});
+    voteAnswer = () => respond({rewindCount: 0, vote: undefined});
     judgeRequests = [];
     judgeAnswer = () => respond({});
     pastPlayers = undefined;
@@ -539,7 +539,7 @@ describe('ReplayScreen', () => {
     it('knows the seat of the player by colour, also when every hand is shown, so they can answer', async () => {
       movesAnswer = voteMoves(true);
       const vote = {voteId: 7, status: 'open', requester: 'red', saveId: 11, moveNumber: 2, generation: 1, cards: 'same', votes: [{color: 'blue', choice: 'pending'}], expiresInMs: 60_000};
-      voteAnswer = () => respond({rewindCount: 0, vote, mayRequest: true});
+      voteAnswer = () => respond({rewindCount: 0, vote});
       const wrapper = mountReplay(true);
       await flushPromises();
       expect(wrapper.find('.rewind-vote-yes').exists()).is.true;
@@ -590,7 +590,7 @@ describe('ReplayScreen', () => {
       const wrapper = mountReplay(true);
       await flushPromises();
       const vote = {voteId: 7, status: 'open', requester: 'blue', saveId: 10, moveNumber: 1, generation: 1, cards: 'same', votes: [{color: 'red', choice: 'pending'}], expiresInMs: 60_000};
-      voteAnswer = () => respond({rewindCount: 0, vote, mayRequest: true});
+      voteAnswer = () => respond({rewindCount: 0, vote});
       expect(wrapper.find('.rewind-vote-open').exists()).is.false;
       await wrapper.find('.rewind-start').trigger('click');
       await wrapper.find('.rewind-confirm-button').trigger('click');
@@ -908,13 +908,13 @@ describe('ReplayScreen', () => {
 
       it('lets the player answer a vote on the page', async () => {
         const vote = {voteId: 7, status: 'open', requester: 'red', saveId: 11, moveNumber: 2, generation: 1, cards: 'same', votes: [{color: 'blue', choice: 'pending'}], expiresInMs: 60_000};
-        voteAnswer = () => respond({rewindCount: 0, vote, mayRequest: true});
+        voteAnswer = () => respond({rewindCount: 0, vote});
         const wrapper = mountVote(true);
         await flushPromises();
         expect(wrapper.find('.rewind-vote-yes').exists()).is.true;
       });
 
-      it('gives the banner the players, the undo count and the password of the page', async () => {
+      it('gives the banner the players, the rewind count and the password of the page', async () => {
         const wrapper = mountVote(false, {...voteView(), password: '0123456789ab', game: fakeGameModel({rewindCount: 3, gameOptions: fakeGameOptionsModel({undoOption: true})})});
         const banner = wrapper.findComponent(RewindVoteBanner);
         expect(banner.props('participantId')).to.equal(playerId);
@@ -945,7 +945,7 @@ describe('ReplayScreen', () => {
         panel(wrapper).vm.$emit('select', 0);
         await flushPromises();
         const vote = {voteId: 7, status: 'open', requester: 'blue', saveId: 10, moveNumber: 1, generation: 1, cards: 'same', votes: [{color: 'red', choice: 'pending'}], expiresInMs: 60_000};
-        voteAnswer = () => respond({rewindCount: 0, vote, mayRequest: true});
+        voteAnswer = () => respond({rewindCount: 0, vote});
         expect(wrapper.find('.rewind-vote-open').exists()).is.false;
         await wrapper.find('.rewind-start').trigger('click');
         await wrapper.find('.rewind-confirm-button').trigger('click');
@@ -1018,7 +1018,7 @@ describe('ReplayScreen', () => {
             voteOpen = true;
             return Promise.resolve({ok: false, status: 400, json: () => Promise.reject(new Error('no json')), text: () => Promise.resolve('Bad request: A rewind vote is already open.')});
           }
-          return respond(voteOpen ? {rewindCount: 0, vote, mayRequest: false, blocked: 'vote-open'} : {rewindCount: 0, vote: undefined, mayRequest: true});
+          return respond(voteOpen ? {rewindCount: 0, vote, blocked: 'vote-open'} : {rewindCount: 0, vote: undefined});
         };
         const wrapper = mountVote(true);
         await flushPromises();
@@ -1039,15 +1039,14 @@ describe('ReplayScreen', () => {
 
       it('disables the request while the banner says the player may not ask', async () => {
         for (const blocked of ['barred', 'frozen', 'vote-open', undefined] as const) {
-          const mayRequest = blocked === undefined;
-          voteAnswer = () => respond({rewindCount: 0, vote: undefined, mayRequest, blocked});
+          voteAnswer = () => respond({rewindCount: 0, vote: undefined, blocked});
           const wrapper = mountVote(true);
           await flushPromises();
           await open(wrapper);
           await flushPromises();
           panel(wrapper).vm.$emit('select', 0);
           await flushPromises();
-          expect(wrapper.find('.rewind-start').attributes('disabled') === undefined, String(mayRequest)).equals(mayRequest);
+          expect(wrapper.find('.rewind-start').attributes('disabled') === undefined, String(blocked)).equals(blocked === undefined);
           wrapper.unmount();
         }
       });
