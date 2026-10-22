@@ -102,7 +102,7 @@ describe('App', () => {
       color: 'red',
       password: 'new',
       players: [{color: 'red', name: 'Alice'}],
-      game: {phase: 'action', gameAge: 1, undoCount: 0},
+      game: {phase: 'action', gameAge: 1, undoCount: 0, gameOptions: {undoOption: false}},
     };
     vi.stubGlobal('fetch', vi.fn(async () => ({ok: true, status: 200, json: async () => player}) as Response));
     // The real screen imports the whole player page, which would load after the test ends.
