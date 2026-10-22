@@ -62,7 +62,7 @@ function modelOf(
 export function voteModel(game: IGame, ended: EndedVote | undefined, now: number): RewindVoteModel | undefined {
   const vote = game.rewindVote;
   if (vote !== undefined) {
-    return modelOf(game, vote, vote.status, Math.max(0, vote.expiresAt - now), undefined, undefined);
+    return modelOf(game, vote, vote.status, vote.status === 'open' ? Math.max(0, vote.expiresAt - now) : 0, undefined, undefined);
   }
   if (ended !== undefined && now < ended.endedAt + ENDED_VOTE_SHOWN_MS) {
     return modelOf(game, ended.vote, ended.status, 0, ended.no, ended.reason);

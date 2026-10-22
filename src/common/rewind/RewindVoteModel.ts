@@ -14,7 +14,7 @@ export type RewindVoteModel = {
   cards: RewindCards;
   /** Every player but the requester, in generation order. */
   votes: Array<{color: Color; choice: RewindVoteChoice}>;
-  /** 0 once the vote has ended. Relative, so client clock skew doesn't matter. */
+  /** 0 unless the vote is open. Relative, so client clock skew doesn't matter. */
   expiresInMs: number;
   /** For 'failed': the refusal text. */
   reason?: string;

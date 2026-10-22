@@ -57,6 +57,14 @@ describe('RewindVote', () => {
     expect(model.votes).deep.eq(others.map((p) => ({color: p.color, choice: p === player2 ? 'yes' : 'pending'})));
   });
 
+  it('counts down only while the vote is open', () => {
+    const [game, player1] = testGame(2);
+    game.rewindVote = vote(player1.id, [player1.id], {expiresAt: 9000});
+    expect(voteModel(game, undefined, 4000)!.expiresInMs).eq(5000);
+    game.rewindVote = vote(player1.id, [player1.id], {expiresAt: 9000, status: 'rewinding'});
+    expect(voteModel(game, undefined, 4000)!.expiresInMs).eq(0);
+  });
+
   it('marks the player who said no, and shows no time once ended', () => {
     const [game, player1, player2, player3] = testGame(3);
     const ended: EndedVote = {vote: vote(player1.id, [player1.id, player2.id]), status: 'declined', endedAt: 5000, no: player3.id, reason: 'why'};
