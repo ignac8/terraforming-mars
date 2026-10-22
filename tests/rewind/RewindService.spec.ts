@@ -9,6 +9,7 @@ import {SelectCard} from '../../src/server/inputs/SelectCard';
 import {Server} from '../../src/server/models/ServerModel';
 import {clearReplayCache, getReplayMoves, historySaveIds, loadReplayState} from '../../src/server/replay/ReplayService';
 import {readRebuildSaves} from '../../src/server/rewind/rebuild';
+import {activeRewinds} from '../../src/server/rewind/RewindRecord';
 import {MAX_REWINDS, RewindActor, rewindGame, rewindMetrics, rewindTable} from '../../src/server/rewind/RewindService';
 import {GameLogs} from '../../src/server/routes/GameLogs';
 import {sameState} from '../../src/server/rewind/stateHash';
@@ -709,8 +710,24 @@ describe('RewindService whole table', () => {
 
     const UNDONE_MARKER = 'The judge brought back undone moves and rewound the game to generation ${0}';
 
+    // What the rewinds tell operators.
+    let logs: Array<string>;
+    const originalLog = console.log;
+
+    beforeEach(() => {
+      logs = [];
+      console.log = (...args: Array<unknown>) => {
+        logs.push(args.join(' '));
+      };
+    });
+
+    afterEach(() => {
+      console.log = originalLog;
+    });
+
     it('lets only the judge rewind to an undone move', async () => {
       for (const cards of ['same', 'shuffle'] as const) {
+        logs = [];
         const live = await rewindAndPlayOn();
         expect(await historySaveIds(live), cards).not.include(undone);
         expect(await historySaveIds(live, {undone: true}), cards).include(undone);
@@ -732,7 +749,21 @@ describe('RewindService whole table', () => {
         expect(await rebuilds('replayed'), cards).eq(count + 1);
         const marker = restored.gameLog[restored.gameLog.length - 1];
         expect(marker.message, cards).eq(cards === 'same' ? UNDONE_MARKER : 'The judge brought back undone moves, rewound the game to generation ${0} and shuffled the hidden piles');
+        expect(logs, cards).include(`rewind: ${game.id} restores undone save ${undone}`);
       }
+    });
+
+    it('marks a rewind to the save an earlier rewind restored as an ordinary one, since nothing comes back', async () => {
+      const live = await rewindAndPlayOn();
+      // The first rewind's save stands for `target`, so `target` is listed as undone, with the moves it undid.
+      expect(await historySaveIds(live, {undone: true})).include(target);
+      const saved = structuredClone(rows()[target]);
+
+      const restored = await rewindTable(live, target, {cards: 'same', clocks: 'keep'}, judge);
+
+      expect(holdsMoment(rows()[rows().length - 1], saved)).is.true;
+      expect(restored.gameLog[restored.gameLog.length - 1].message).eq('The judge rewound the game to generation ${0}');
+      expect(logs.filter((line) => line.includes('restores undone save'))).deep.eq([]);
     });
 
     it('replays along the undone line from its own base', async () => {
@@ -804,10 +835,13 @@ describe('RewindService whole table', () => {
       expect((await loadReplayState(third, secondSave, {undone: true})).lastSaveId).eq(secondSave);
     });
 
-    it('counts a rewind to an undone move toward the limit', async () => {
+    it('counts a rewind to an undone move toward the limit, and every rewind, active or not', async () => {
       const live = await rewindAndPlayOn();
-      // Records that touch no save, older than the first rewind's, so its line stays undone.
-      live.rewinds = [...Array.from({length: MAX_REWINDS - 1}, () => ({saveId: -1, restoredSaveId: -1, logStart: 0, logEnd: 0})), ...live.rewinds];
+      // Records that touch no save, older than the first rewind's, which leaves them out of its active set: only the
+      // first rewind is active, and its line stays undone.
+      const filler = target + 0.5;
+      live.rewinds = [...Array.from({length: MAX_REWINDS - 1}, () => ({saveId: filler, restoredSaveId: filler, logStart: 0, logEnd: 0})), ...live.rewinds];
+      expect(activeRewinds(live.rewinds)).has.length(1);
       expect(await historySaveIds(live, {undone: true})).include(undone);
       const before = structuredClone(rows());
 

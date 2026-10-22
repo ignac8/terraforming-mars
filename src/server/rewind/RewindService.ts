@@ -10,7 +10,7 @@ import {loadSandboxGame} from '../replay/sandbox';
 import {RouteError} from '../routes/RouteError';
 import {canRewind} from './access';
 import {readRebuildSaves, replayToSave, ReplayResult} from './rebuild';
-import {isAbandonedSave, RewindRecord} from './RewindRecord';
+import {activeRewinds, isAbandonedSave, RewindRecord} from './RewindRecord';
 import {shuffleHiddenPiles} from './shuffleHiddenPiles';
 import {withTableLock} from './tableLock';
 import {Phase} from '../../common/Phase';
@@ -76,7 +76,9 @@ async function rewind(live: IGame, saveId: number, options: RewindOptions, by: R
   if (history === undefined || !history.includes(saveId)) {
     throw RouteError.notFound('That move is not in this game\'s history.');
   }
-  const restoresUndone = isAbandonedSave(saveId, live.rewinds);
+  // The save that an active rewind restored is abandoned too, since that rewind's save stands for it, but a rewind to
+  // it brings nothing back. Active stretches never overlap, so every other abandoned save brings moves back.
+  const restoresUndone = isAbandonedSave(saveId, live.rewinds) && !activeRewinds(live.rewinds).some((r) => r.restoredSaveId === saveId);
   const {cards} = options;
 
   let saves: Array<SerializedGame>;
@@ -321,7 +323,7 @@ function promote(sandbox: Game, swap: Swap): void {
 /** Writes the line that marks the rewind, naming who did it. Only the judge brings back moves that a rewind undid. */
 function logRewind(game: Game, by: RewindActor, cards: RewindCards, restoresUndone: boolean): void {
   const shuffled = cards === 'shuffle';
-  if (restoresUndone) {
+  if (restoresUndone && by.kind === 'judge') {
     game.log(shuffled ?
       'The judge brought back undone moves, rewound the game to generation ${0} and shuffled the hidden piles' :
       'The judge brought back undone moves and rewound the game to generation ${0}',

@@ -140,7 +140,14 @@ describe('ApiJudgeRewind', () => {
     game = (await GameLoader.getInstance().getGame(game.id))!;
     game.frozen = false;
 
-    await post(JSON.stringify({saveId: target + 1, cards: 'same', clocks: 'back'}));
+    // The rewind tells operators it restored an undone save.
+    const log = console.log;
+    console.log = () => {};
+    try {
+      await post(JSON.stringify({saveId: target + 1, cards: 'same', clocks: 'back'}));
+    } finally {
+      console.log = log;
+    }
 
     expect(res.statusCode).eq(statusCode.ok);
     const restored = (await GameLoader.getInstance().getGame(game.id))!;
