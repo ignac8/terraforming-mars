@@ -374,6 +374,27 @@ describe('RewindService', () => {
     }
   });
 
+  it('keeps a rewound finished game in memory when a load marks it for eviction again during the rewind', async () => {
+    const database = new SnapshotDatabase();
+    setTestDatabase(database);
+    const clock = new FakeClock();
+    const loader = GameLoader.newTestInstance({sleepMillis: 0, evictMillis: 100, idleMillis: 0, sweep: 'manual'}, clock);
+    setTestGameLoader(loader);
+    await play({lastGeneration: true, database});
+    // A reader that loads the finished game while the rewind runs marks it, as loading any finished game does.
+    const saveGame = database.saveGame.bind(database);
+    database.saveGame = (saved) => {
+      loader.mark(saved.id);
+      return saveGame(saved);
+    };
+
+    const restored = await rewindGame(game, player, convert, 'same');
+    clock.millis = 1000;
+    loader.sweep();
+
+    expect(await loader.isServed(restored)).is.true;
+  });
+
   it('writes nothing from a replaced game, even when it ends', async () => {
     db = new SnapshotDatabase();
     setTestDatabase(db);

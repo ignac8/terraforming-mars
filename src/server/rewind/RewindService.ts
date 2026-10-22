@@ -187,6 +187,10 @@ async function rewind(live: IGame, saveId: number, options: RewindOptions, by: R
     }
     settleClocks(restored);
     await GameLoader.getInstance().add(restored);
+    if (finished) {
+      // Loading the finished game meanwhile, e.g. for a page that polls it, marked it again.
+      GameLoader.getInstance().unmark(live.id);
+    }
   } catch (e) {
     if (live.retired) {
       await restoreLive(swap);

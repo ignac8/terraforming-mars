@@ -12,6 +12,7 @@ import {InMemoryDatabase} from '../testing/InMemoryDatabase';
 import {FakeClock} from '../common/FakeClock';
 import {Phase} from '../../src/common/Phase';
 import {clearReplayCache, isFinished} from '../../src/server/replay/ReplayService';
+import {withTableLock} from '../../src/server/rewind/tableLock';
 
 class TestDatabase extends InMemoryDatabase {
   public failure: 'getGameIds' | 'getParticipants' | undefined = undefined;
@@ -285,6 +286,22 @@ describe('GameLoader', () => {
     instance.sweep();
 
     // The game is unloaded from memory; it will lazily reload from the DB.
+    expect(await instance.isCached('gameid')).is.false;
+  });
+
+  it('sweep leaves a game whose table is locked, until the lock is released', async () => {
+    await instance.getGame('gameid');
+    instance.mark('gameid');
+    clock.millis = 200;
+    let release = () => {};
+    const held = withTableLock('gameid', () => new Promise<void>((resolve) => release = resolve));
+
+    instance.sweep();
+    expect(await instance.isCached('gameid')).is.true;
+
+    release();
+    await held;
+    instance.sweep();
     expect(await instance.isCached('gameid')).is.false;
   });
 
