@@ -21,7 +21,7 @@ import {LogMessage} from '@/common/logs/LogMessage';
 
 const id = 's-spectator-id' as SpectatorId;
 const playerId = 'p-blue-id' as PlayerId;
-const finishedGame = {finished: true, canRewind: false, defaultViewAs: 'all'} as const;
+const finishedGame = {finished: true, canRewind: false, canVoteRewind: false, defaultViewAs: 'all'} as const;
 /** The messages of a move that was made. */
 const played: Array<LogMessage> = [{message: 'Played', data: [], timestamp: 0}];
 
@@ -332,7 +332,7 @@ describe('ReplayScreen', () => {
   });
 
   describe('rewinding', () => {
-    const rewindable = {finished: true, canRewind: true, defaultViewAs: 'all'} as const;
+    const rewindable = {finished: true, canRewind: true, canVoteRewind: false, defaultViewAs: 'all'} as const;
 
     beforeEach(() => {
       vi.stubGlobal('location', {href: 'http://localhost/replay'});
@@ -433,7 +433,7 @@ describe('ReplayScreen', () => {
     });
 
     it('sends the seat password of the live game page', async () => {
-      movesAnswer = {status: 'available', finished: false, canRewind: true, defaultViewAs: 'blue', moves: [{saveId: 10, messages: played}, {saveId: 11, messages: played}]};
+      movesAnswer = {status: 'available', finished: false, canRewind: true, canVoteRewind: false, defaultViewAs: 'blue', moves: [{saveId: 10, messages: played}, {saveId: 11, messages: played}]};
       const wrapper = shallowMount(ReplayScreen, {
         ...globalConfig,
         global: {...globalConfig.global, stubs: {ReplayPanel: false}},
@@ -450,7 +450,7 @@ describe('ReplayScreen', () => {
   });
 
   describe('on the live game page', () => {
-    const liveMoves = {status: 'available', finished: false, canRewind: true, defaultViewAs: 'blue', moves: [
+    const liveMoves = {status: 'available', finished: false, canRewind: true, canVoteRewind: false, defaultViewAs: 'blue', moves: [
       {saveId: 10, messages: played},
       {saveId: 11, messages: played},
     ]} as const;
@@ -557,7 +557,7 @@ describe('ReplayScreen', () => {
       panel(wrapper).vm.$emit('select', 1);
       await flushPromises();
       // Another page rewound the game to before its second move.
-      movesAnswer = {status: 'available', finished: false, canRewind: true, defaultViewAs: 'blue', moves: [{saveId: 10, messages: played}]};
+      movesAnswer = {status: 'available', finished: false, canRewind: true, canVoteRewind: false, defaultViewAs: 'blue', moves: [{saveId: 10, messages: played}]};
       rewindAnswer = () => Promise.resolve({ok: false, status: 404, text: () => Promise.resolve('Not found: That move is not in this game\'s history.')});
       wrapper.findComponent(RewindControls).vm.$emit('rewind', 'same');
       await flushPromises();
@@ -660,6 +660,18 @@ describe('ReplayScreen', () => {
       expect(wrapper.find('.replay-error--floating').exists()).is.false;
       // The empty list is known, so opening the panel again does not read it again.
       expect(moveRequests()).has.length(1);
+    });
+
+    it('sends the seat password with the history requests', async () => {
+      const wrapper = mountLive(playedView({waitingFor, game: fakeGameModel({gameAge: 3}), password: '0123456789ab'}));
+      expand(wrapper);
+      await flushPromises();
+      panel(wrapper).vm.$emit('select', 1);
+      await flushPromises();
+      expect(calls).to.deep.equal([
+        `api/replay/moves?id=${playerId}&password=0123456789ab`,
+        `api/replay/view?id=${playerId}&save=11&as=blue&password=0123456789ab`,
+      ]);
     });
 
     it('reloads the moves when the game moves on while the panel is open, and not while it is closed', async () => {

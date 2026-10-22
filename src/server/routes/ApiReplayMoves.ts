@@ -23,9 +23,10 @@ export class ApiReplayMoves extends Handler {
         throw RouteError.notFound();
       }
       // The password checks can claim an unclaimed seat. A replay read never writes to a game and
-      // never hands a password back, so only a finished game with a claimed judge seat is checked.
-      // An unclaimed seat lets the judge link through, as the link alone is the credential.
-      if (judgeGame.judgePassword !== undefined && await isFinished(judgeGame)) {
+      // never hands a password back, so only a claimed judge seat is checked. An unclaimed seat lets
+      // the judge link through. A running judge-undo game's history carries every private line, so
+      // the link alone is not enough once the seat is claimed.
+      if (judgeGame.judgePassword !== undefined) {
         this.checkJudgePassword(judgeGame, ctx);
       }
       responses.writeJson(res, ctx, await getReplayMoves(judgeGame, judgeId));
@@ -36,10 +37,14 @@ export class ApiReplayMoves extends Handler {
     if (game === undefined) {
       throw RouteError.notFound('game not found');
     }
-    // The moves carry the viewer's private log lines, so a player needs the seat password.
-    // Only a finished game is checked, see above.
-    if (isPlayerId(id) && await isFinished(game)) {
-      this.checkPlayerPassword(game.getPlayerById(id), ctx);
+    // The moves carry the viewer's private log lines, so a player needs the seat password. A running
+    // game's claimed seat is checked without any exemption, and never claimed.
+    if (isPlayerId(id)) {
+      if (await isFinished(game)) {
+        this.checkPlayerPassword(game.getPlayerById(id), ctx);
+      } else {
+        this.checkClaimedSeat(game.getPlayerById(id), ctx);
+      }
     }
     responses.writeJson(res, ctx, await getReplayMoves(game, id));
   }

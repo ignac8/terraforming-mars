@@ -32,21 +32,23 @@ function addressBarPasswordParam(): string {
   return passwordQuery(new URLSearchParams(window.location.search).get('password'));
 }
 
-// A judge link with a claimed seat needs its password, sent as a query parameter like every other
-// judge request. Players and spectators need none to read a replay.
-function judgePasswordParam(id: ParticipantId): string {
-  return isJudgeId(id) ? addressBarPasswordParam() : '';
+// A claimed seat needs its password, sent as a query parameter like every other request of the
+// seat. A judge link takes it from the address bar. A player's own page passes the one it was given,
+// and the replay page has none to pass, so it reads the address bar. A spectator sends none.
+function seatPasswordParam(id: ParticipantId, password: string | undefined): string {
+  return isJudgeId(id) || password === undefined ? addressBarPasswordParam() : passwordQuery(password);
 }
 
-export async function fetchReplayMoves(id: ParticipantId): Promise<ReplayMovesModel> {
-  return readJson(await fetch(`${paths.API_REPLAY_MOVES}?id=${id}${judgePasswordParam(id)}`));
+/** `password` is the seat's, from the live game page. */
+export async function fetchReplayMoves(id: ParticipantId, password?: string): Promise<ReplayMovesModel> {
+  return readJson(await fetch(`${paths.API_REPLAY_MOVES}?id=${id}${seatPasswordParam(id, password)}`));
 }
 
 /** Rejects with an `AbortError` when a newer call replaced this one. */
-export async function fetchReplayView(id: ParticipantId, saveId: number, viewAs: ReplayViewAs): Promise<ReplayViewModel> {
+export async function fetchReplayView(id: ParticipantId, saveId: number, viewAs: ReplayViewAs, password?: string): Promise<ReplayViewModel> {
   viewAbortController?.abort();
   viewAbortController = new AbortController();
-  const url = `${paths.API_REPLAY_VIEW}?id=${id}&save=${saveId}&as=${viewAs}${judgePasswordParam(id)}`;
+  const url = `${paths.API_REPLAY_VIEW}?id=${id}&save=${saveId}&as=${viewAs}${seatPasswordParam(id, password)}`;
   return readJson(await fetch(url, {signal: viewAbortController.signal}));
 }
 

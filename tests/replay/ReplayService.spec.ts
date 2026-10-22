@@ -434,13 +434,58 @@ describe('ReplayService', () => {
       expect((r as {moves: Array<ReplayMove>}).moves).is.not.empty;
     });
 
+    // Every test game has the same id, so each one starts from an empty database and replay cache.
+    function freshDatabase() {
+      sdb = new SnapshotDatabase();
+      setTestDatabase(sdb);
+      clearReplayCache();
+    }
+
+    it('lists the moves for everyone who may rewind it', async () => {
+      const runs = [
+        {options: {judgeLink: true, judgeUndo: true}, viewer: (g: IGame) => g.judgeId!, expected: () => ({canRewind: true, canVoteRewind: false, defaultViewAs: 'all'})},
+        {options: {undoOption: true}, viewer: (_g: IGame, p: TestPlayer) => p.id, expected: (p: TestPlayer) => ({canRewind: false, canVoteRewind: true, defaultViewAs: p.color})},
+        {options: {undoOption: true}, viewer: (_g: IGame, _p: TestPlayer, p2: TestPlayer) => p2.id, expected: (_p: TestPlayer, p2: TestPlayer) => ({canRewind: false, canVoteRewind: true, defaultViewAs: p2.color})},
+      ];
+      for (const run of runs) {
+        freshDatabase();
+        const [g, p, p2] = testGame(2, run.options);
+        act(p);
+        act(p);
+        const r = await getReplayMoves(g, run.viewer(g, p, p2));
+        expect(r).to.include({status: 'available', finished: false, ...run.expected(p, p2)});
+        expect((r as {moves: Array<ReplayMove>}).moves).is.not.empty;
+      }
+    });
+
+    it('shows a vote player only their own private lines', async () => {
+      const [voted, votedPlayer, votedPlayer2] = testGame(2, {undoOption: true});
+      act(votedPlayer);
+      voted.log('private to one', undefined, {reservedFor: votedPlayer});
+      voted.log('private to two', undefined, {reservedFor: votedPlayer2});
+      act(votedPlayer);
+      const r = await getReplayMoves(voted, votedPlayer.id) as {moves: Array<ReplayMove>};
+      const lines = r.moves.flatMap((m) => m.messages.map((l) => l.message));
+      expect(lines).includes('private to one');
+      expect(lines).not.includes('private to two');
+    });
+
     it('keeps the history from everyone else', async () => {
-      const [off, offPlayer] = testGame(1, {undoOption: false});
-      const [on, onPlayer] = testGame(1, {undoOption: true});
-      const [two, twoPlayer] = testGame(2, {undoOption: true});
-      for (const [g, who, viewer] of [[off, offPlayer, offPlayer.id], [on, onPlayer, on.spectatorId], [two, twoPlayer, twoPlayer.id]] as const) {
-        act(who);
-        expect(await getReplayMoves(g, viewer)).deep.eq({status: 'not-finished'});
+      const runs = [
+        {players: 1, options: {undoOption: false}, viewer: (_g: IGame, p: TestPlayer) => p.id},
+        {players: 1, options: {undoOption: true}, viewer: (g: IGame) => g.spectatorId},
+        {players: 2, options: {judgeLink: true}, viewer: (g: IGame) => g.judgeId!},
+        {players: 2, options: {judgeLink: true, judgeUndo: true}, viewer: (_g: IGame, p: TestPlayer) => p.id},
+        {players: 2, options: {judgeLink: true, judgeUndo: true, undoOption: true}, viewer: (_g: IGame, p: TestPlayer) => p.id},
+        {players: 2, options: {judgeLink: true, judgeUndo: true}, viewer: (g: IGame) => g.spectatorId},
+        {players: 2, options: {undoOption: false}, viewer: (_g: IGame, p: TestPlayer) => p.id},
+        {players: 2, options: {undoOption: true}, viewer: (g: IGame) => g.spectatorId},
+      ];
+      for (const run of runs) {
+        freshDatabase();
+        const [g, p] = testGame(run.players, run.options);
+        act(p);
+        expect(await getReplayMoves(g, run.viewer(g, p)), JSON.stringify(run)).deep.eq({status: 'not-finished'});
       }
     });
 
@@ -509,8 +554,26 @@ describe('ReplayService', () => {
       const rows = sdb.games.get(solo.id)!;
       rows[rows.length - 1] = {...rows[rows.length - 1]!, phase: Phase.END};
       solo.phase = Phase.END;
-      expect(await getReplayMoves(solo, soloPlayer.id)).to.include({status: 'available', finished: true, canRewind: true, defaultViewAs: 'all'});
-      expect(await getReplayMoves(solo, solo.spectatorId)).to.include({status: 'available', finished: true, canRewind: false});
+      expect(await getReplayMoves(solo, soloPlayer.id)).to.include({status: 'available', finished: true, canRewind: true, canVoteRewind: false, defaultViewAs: 'all'});
+      expect(await getReplayMoves(solo, solo.spectatorId)).to.include({status: 'available', finished: true, canRewind: false, canVoteRewind: false});
+    });
+
+    it('answers a finished game with who could rewind or vote on it', async () => {
+      const runs = [
+        {options: {judgeLink: true, judgeUndo: true}, viewer: (g: IGame) => g.judgeId!, expected: {canRewind: true, canVoteRewind: false}},
+        {options: {undoOption: true}, viewer: (_g: IGame, p: TestPlayer) => p.id, expected: {canRewind: false, canVoteRewind: true}},
+        {options: {undoOption: true}, viewer: (g: IGame) => g.spectatorId, expected: {canRewind: false, canVoteRewind: false}},
+      ];
+      for (const run of runs) {
+        freshDatabase();
+        const [g, p] = testGame(2, run.options);
+        act(p);
+        act(p);
+        const rows = sdb.games.get(g.id)!;
+        rows[rows.length - 1] = {...rows[rows.length - 1]!, phase: Phase.END};
+        g.phase = Phase.END;
+        expect(await getReplayMoves(g, run.viewer(g, p)), JSON.stringify(run)).to.include({status: 'available', finished: true, ...run.expected});
+      }
     });
   });
 

@@ -10,7 +10,7 @@ export type ReplayViewAs = 'all' | Color;
 export type RewindCards = 'same' | 'shuffle';
 
 export type ReplayMovesModel =
-  | {status: 'available'; moves: Array<ReplayMove>; finished: boolean; canRewind: boolean; defaultViewAs: ReplayViewAs}
+  | {status: 'available'; moves: Array<ReplayMove>; finished: boolean; canRewind: boolean; canVoteRewind: boolean; defaultViewAs: ReplayViewAs}
   | {status: 'not-finished'}
   | {status: 'expired'};
 

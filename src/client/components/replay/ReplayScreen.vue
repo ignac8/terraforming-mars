@@ -190,7 +190,7 @@ export default defineComponent({
       }
       this.error = undefined;
       try {
-        const answer = await fetchReplayMoves(this.participantId);
+        const answer = await fetchReplayMoves(this.participantId, this.liveView?.password);
         if (request !== this.latestMovesRequest) {
           return;
         }
@@ -249,7 +249,7 @@ export default defineComponent({
         return;
       }
       try {
-        const answer = await fetchReplayView(this.participantId, this.moves[index].saveId, viewAs);
+        const answer = await fetchReplayView(this.participantId, this.moves[index].saveId, viewAs, this.liveView?.password);
         if (request !== this.latestRequest) {
           return;
         }

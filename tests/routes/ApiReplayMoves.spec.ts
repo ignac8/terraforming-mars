@@ -170,11 +170,11 @@ describe('ApiReplayMoves', () => {
       expect(player.password).is.undefined;
     });
 
-    it('says not-finished before the judge password check while the newest save is not END', async () => {
+    it('says not-finished to a judge with the password while the newest save is not END', async () => {
       const base: SerializedGame = game.serialize();
       db.games.set(game.id, [base, base, {...base, phase: Phase.ACTION}]);
       game.phase = Phase.END;
-      scaffolding.url = `/api/replay/moves?id=${game.judgeId}&password=wrong`;
+      scaffolding.url = `/api/replay/moves?id=${game.judgeId}&password=secret`;
       await scaffolding.get(ApiReplayMoves.INSTANCE, res);
       expect(res.statusCode).eq(statusCode.ok);
       expect(JSON.parse(res.content)).deep.eq({status: 'not-finished'});
@@ -229,5 +229,64 @@ describe('ApiReplayMoves', () => {
     await scaffolding.get(ApiReplayMoves.INSTANCE, res);
     expect(res.statusCode).eq(statusCode.ok);
     expect(JSON.parse(res.content)).deep.eq({status: 'not-finished'});
+  });
+  describe('a running game with history for those who may rewind', () => {
+    // Every test game has the same id, so only the newest one is found.
+    async function runningGame(options: Parameters<typeof testGame>[1]) {
+      const [running, first] = testGame(2, {playerPasswords: true, ...options});
+      await scaffolding.ctx.gameLoader.add(running);
+      const base: SerializedGame = running.serialize();
+      db.games.set(running.id, [base, base]);
+      clearReplayCache();
+      return {running, first};
+    }
+
+    async function read(query: string) {
+      res = new MockResponse();
+      scaffolding.url = `/api/replay/moves?${query}`;
+      await scaffolding.get(ApiReplayMoves.INSTANCE, res);
+    }
+
+    it('asks for a claimed seat\'s password', async () => {
+      const seats = [
+        {options: {judgeLink: true, judgeUndo: true}, claim: (g: IGame) => {
+          g.judgePassword = 'secret';
+        }, viewer: (g: IGame) => g.judgeId},
+        {options: {undoOption: true}, claim: (_g: IGame, p: TestPlayer) => {
+          p.password = 'secret';
+        }, viewer: (_g: IGame, p: TestPlayer) => p.id},
+      ];
+      for (const seat of seats) {
+        const {running, first} = await runningGame(seat.options);
+        seat.claim(running, first);
+        for (const [query, expected] of [['', statusCode.unauthorized], ['&password=wrong', statusCode.unauthorized], ['&password=secret', statusCode.ok]] as const) {
+          await read(`id=${seat.viewer(running, first)}${query}`);
+          expect(res.statusCode, `${JSON.stringify(seat.options)}${query}`).eq(expected);
+          if (expected === statusCode.ok) {
+            expect(JSON.parse(res.content).status).eq('available');
+          }
+        }
+      }
+    });
+
+    it('does not claim a seat when it is read', async () => {
+      const judged = await runningGame({judgeLink: true, judgeUndo: true});
+      await read(`id=${judged.running.judgeId}`);
+      expect(res.statusCode).eq(statusCode.ok);
+      expect(JSON.parse(res.content).status).eq('available');
+      expect(judged.running.judgePassword).is.undefined;
+      const voted = await runningGame({undoOption: true});
+      await read(`id=${voted.first.id}`);
+      expect(res.statusCode).eq(statusCode.ok);
+      expect(JSON.parse(res.content).status).eq('available');
+      expect(voted.first.password).is.undefined;
+    });
+
+    it('keeps the history from a player of a game nobody may rewind, with the right password too', async () => {
+      const noUndo = await runningGame({undoOption: false});
+      noUndo.first.password = 'secret';
+      await read(`id=${noUndo.first.id}&password=secret`);
+      expect(JSON.parse(res.content)).deep.eq({status: 'not-finished'});
+    });
   });
 });

@@ -121,6 +121,18 @@ export abstract class Handler implements IHandler {
   }
 
   /**
+   * Checks a claimed seat's password, in running and finished games alike, and never claims an unclaimed seat.
+   * Unlike `checkPlayerPassword` it has no solo and no finished-game exemption. It is for history reads, which
+   * must not write to a running game, and for every vote route.
+   */
+  protected checkClaimedSeat(player: IPlayer, ctx: Context): void {
+    if (player.game.gameOptions.playerPasswords === false || this.isServerIdValid(ctx) || player.password === undefined) {
+      return;
+    }
+    this.requirePassword(player.password, ctx);
+  }
+
+  /**
    * Gates the judge seat. The first request claims it and is let through. If it carries a
    * well-formed password (the format the server generates), that password becomes the seat's,
    * so a judge tab that outlives the stored claim keeps working. Otherwise a fresh password is

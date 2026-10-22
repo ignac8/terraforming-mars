@@ -275,4 +275,86 @@ describe('ApiReplayView', () => {
     expect(res.statusCode).eq(statusCode.ok);
     expect(JSON.parse(res.content).viewAs).eq(soloPlayer.color);
   });
+  describe('a running game with history for those who may rewind', () => {
+    // Every test game has the same id, so only the newest one is found. Two rows, so that save 0 can be read.
+    async function runningGame(options: Parameters<typeof testGame>[1]) {
+      const [running, first, second] = testGame(2, {playerPasswords: true, ...options});
+      await scaffolding.ctx.gameLoader.add(running);
+      const base: SerializedGame = running.serialize();
+      db.games.set(running.id, [base, base]);
+      clearReplayCache();
+      return {running, first, second};
+    }
+
+    it('shows the judge any view of a judge-undo game', async () => {
+      const {running, first} = await runningGame({judgeLink: true, judgeUndo: true});
+      for (const as of ['all', first.color]) {
+        res = new MockResponse();
+        await get(`id=${running.judgeId}&save=0&as=${as}`);
+        expect(res.statusCode, as).eq(statusCode.ok);
+        expect(JSON.parse(res.content).viewAs).eq(as);
+      }
+    });
+
+    it('shows a vote player only their own view', async () => {
+      const {first, second} = await runningGame({undoOption: true});
+      for (const [as, expected] of [[first.color, statusCode.ok], ['all', statusCode.badRequest], [second.color, statusCode.badRequest]] as const) {
+        res = new MockResponse();
+        await get(`id=${first.id}&save=0&as=${as}`);
+        expect(res.statusCode, as).eq(expected);
+        if (expected === statusCode.badRequest) {
+          expect(res.content).eq('Bad request: only your own view while the game runs');
+        }
+      }
+    });
+
+    it('refuses the view to those who may not rewind', async () => {
+      const runs = [
+        {options: {judgeLink: true}, viewer: (g: IGame) => g.judgeId},
+        {options: {judgeLink: true, judgeUndo: true}, viewer: (_g: IGame, p: TestPlayer) => p.id},
+        {options: {judgeLink: true, judgeUndo: true}, viewer: (g: IGame) => g.spectatorId},
+        {options: {undoOption: false}, viewer: (_g: IGame, p: TestPlayer) => p.id},
+        {options: {undoOption: true}, viewer: (g: IGame) => g.spectatorId},
+      ];
+      for (const run of runs) {
+        const {running, first} = await runningGame(run.options);
+        res = new MockResponse();
+        await get(`id=${run.viewer(running, first)}&save=0&as=${first.color}`);
+        expect(res.statusCode, JSON.stringify(run.options)).eq(statusCode.badRequest);
+        expect(res.content).eq('Bad request: game not finished');
+      }
+    });
+
+    it('asks for a claimed seat\'s password', async () => {
+      const seats = [
+        {options: {judgeLink: true, judgeUndo: true}, claim: (g: IGame) => {
+          g.judgePassword = 'secret';
+        }, viewer: (g: IGame) => g.judgeId, as: () => 'all'},
+        {options: {undoOption: true}, claim: (_g: IGame, p: TestPlayer) => {
+          p.password = 'secret';
+        }, viewer: (_g: IGame, p: TestPlayer) => p.id, as: (p: TestPlayer) => p.color},
+      ];
+      for (const seat of seats) {
+        const {running, first} = await runningGame(seat.options);
+        seat.claim(running, first);
+        for (const [query, expected] of [['', statusCode.unauthorized], ['&password=wrong', statusCode.unauthorized], ['&password=secret', statusCode.ok]] as const) {
+          res = new MockResponse();
+          await get(`id=${seat.viewer(running, first)}&save=0&as=${seat.as(first)}${query}`);
+          expect(res.statusCode, `${JSON.stringify(seat.options)}${query}`).eq(expected);
+        }
+      }
+    });
+
+    it('does not claim a seat when it is read', async () => {
+      const judged = await runningGame({judgeLink: true, judgeUndo: true});
+      await get(`id=${judged.running.judgeId}&save=0&as=all`);
+      expect(res.statusCode).eq(statusCode.ok);
+      expect(judged.running.judgePassword).is.undefined;
+      const voted = await runningGame({undoOption: true});
+      res = new MockResponse();
+      await get(`id=${voted.first.id}&save=0&as=${voted.first.color}`);
+      expect(res.statusCode).eq(statusCode.ok);
+      expect(voted.first.password).is.undefined;
+    });
+  });
 });

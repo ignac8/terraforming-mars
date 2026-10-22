@@ -9,7 +9,7 @@ import {playerColors, toJudgeMessage} from '../routes/GameLogs';
 import {ReplayMove, ReplayMovesModel} from '../../common/replay/ReplayModel';
 import {LogMessage} from '../../common/logs/LogMessage';
 import {isAbandonedSave, RewindRecord} from '../rewind/RewindRecord';
-import {canRewind} from '../rewind/access';
+import {canBrowseHistory, canRewind, canVoteRewind, judgeCanRewind} from '../rewind/access';
 import {buildMoveList, SaveEntry} from './moveList';
 
 const MAX_CACHED_GAMES = 50;
@@ -248,16 +248,19 @@ function movesFor(game: IGame, viewerId: ParticipantId, moves: Array<ReplayMove>
 export async function getReplayMoves(game: IGame, viewerId: ParticipantId): Promise<ReplayMovesModel> {
   // The live phase comes first: a game that a rollback reopened must not serve its old list.
   if (game.phase !== Phase.END) {
-    if (!canRewind(game, viewerId)) {
+    if (!canBrowseHistory(game, viewerId)) {
       return {status: 'not-finished'};
     }
     const saves = await readRunningSaves(game);
+    // Everyone but the judge sees only their own view while the game runs.
+    const own = game.players.find((p) => p.id === viewerId);
     return {
       status: 'available',
       moves: movesFor(game, viewerId, buildMoveList(saves, game.rewinds, game.gameLog)),
       finished: false,
-      canRewind: true,
-      defaultViewAs: game.players[0].color,
+      canRewind: canRewind(game, viewerId) || judgeCanRewind(game, viewerId),
+      canVoteRewind: canVoteRewind(game, viewerId),
+      defaultViewAs: own?.color ?? 'all',
     };
   }
   const cached = cache.get(game.id);
@@ -272,7 +275,8 @@ export async function getReplayMoves(game: IGame, viewerId: ParticipantId): Prom
     status: 'available',
     moves: movesFor(game, viewerId, buildMoveList(saves, rewinds, log)),
     finished: true,
-    canRewind: canRewind(game, viewerId),
+    canRewind: canRewind(game, viewerId) || judgeCanRewind(game, viewerId),
+    canVoteRewind: canVoteRewind(game, viewerId),
     defaultViewAs: 'all',
   };
 }
