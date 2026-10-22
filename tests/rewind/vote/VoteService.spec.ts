@@ -9,7 +9,7 @@ import {SelectSpace} from '../../../src/server/inputs/SelectSpace';
 import {clearReplayCache, getReplayMoves} from '../../../src/server/replay/ReplayService';
 import {RouteError} from '../../../src/server/routes/RouteError';
 import {RESTARTED_BEFORE_REWIND, VoteEffects, VoteService, voteMetrics} from '../../../src/server/rewind/vote/VoteService';
-import {VOTE_EXPIRY_MS} from '../../../src/server/rewind/vote/RewindVote';
+import {ENDED_VOTE_SHOWN_MS, VOTE_EXPIRY_MS} from '../../../src/server/rewind/vote/RewindVote';
 import {RewindCards} from '../../../src/common/replay/ReplayModel';
 import {RewindVotePoll} from '../../../src/common/rewind/RewindVoteModel';
 import {cast} from '../../../src/common/utils/utils';
@@ -216,6 +216,17 @@ describe('VoteService', () => {
 
     expect(rewinds).has.length(1);
     expect(polls.some((poll) => poll.vote!.status === 'passed')).is.true;
+  });
+
+  it('refuses a final yes that arrives together with the same player\'s', async () => {
+    const opened = await service.request(game, p2, saveId, 'same');
+    await service.cast(game, p1, opened.vote!.voteId, 'yes');
+
+    const results = await Promise.allSettled([service.cast(game, p3, opened.vote!.voteId, 'yes'), service.cast(game, p3, opened.vote!.voteId, 'yes')]);
+
+    expect(rewinds).has.length(1);
+    expect(results.map((r) => r.status).sort()).deep.eq(['fulfilled', 'rejected']);
+    expect(((results.find((r) => r.status === 'rejected') as PromiseRejectedResult).reason as RouteError).detail).eq('A rewind is already running.');
   });
 
   it('starts the rewind in the same step as the last yes', async () => {
@@ -590,6 +601,43 @@ describe('VoteService', () => {
     service.moved(replaced);
     expect(status(game, p2)).eq('cancelled');
     expect(status(replaced, replaced.getPlayerById(p2.id))).eq('moved-on');
+  });
+
+  it('shows the newest ended vote, and forgets a passed one when its time is up', async () => {
+    const passedMemory = () => (service as unknown as {passed: Map<string, unknown>}).passed;
+    const restoredVote = () => ({id: 5, requester: p2.id, saveId, moveNumber: 2, generation: game.generation, cards: 'same' as const, yes: [p2.id], status: 'open' as const, expiresAt: clock.now() + 30_000});
+    restored.rewindVote = restoredVote();
+    service.moved(restored);
+    expect(status(restored, p2)).eq('moved-on');
+    clock.millis += 1_000;
+
+    const opened = await service.request(game, p2, saveId, 'same');
+    await service.cast(game, p1, opened.vote!.voteId, 'yes');
+    await service.cast(game, p3, opened.vote!.voteId, 'yes');
+    expect(status(restored, p2)).eq('passed');
+
+    // A later vote on the restored object ends differently and is the one to show.
+    clock.millis += 10_000;
+    restored.rewindVote = restoredVote();
+    service.moved(restored);
+    expect(status(restored, p2)).eq('moved-on');
+    expect(status(game, p2)).eq('passed');
+
+    clock.millis += ENDED_VOTE_SHOWN_MS;
+    expect(status(game, p2)).is.undefined;
+    expect(passedMemory().size).eq(0);
+  });
+
+  it('does not keep a game object that is no longer served for its timer', async () => {
+    const timersOf = () => (service as unknown as {timers: Map<IGame, unknown>}).timers;
+    await service.request(game, p2, saveId, 'same');
+    expect(timersOf().has(game)).is.true;
+    live = false;
+
+    timers[0].fn();
+    await flush();
+
+    expect(timersOf().has(game)).is.false;
   });
 
   it('does nothing for an object the loader no longer serves', async () => {

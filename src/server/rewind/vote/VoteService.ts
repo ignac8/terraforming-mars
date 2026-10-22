@@ -283,6 +283,8 @@ export class VoteService {
 
   private async onTimer(game: IGame): Promise<void> {
     if (!await this.effects.isLive(game)) {
+      // Nothing will end this object's vote, and the map must not keep the object.
+      this.timers.delete(game);
       return;
     }
     await this.settle(game);
