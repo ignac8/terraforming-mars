@@ -72,10 +72,11 @@ export async function withDatabaseMetrics<T>(operation: string, fn: () => Promis
  * Wraps any IDatabase implementation with Prometheus operation-count, latency, and error metrics,
  * generically, for whatever crosses the IDatabase interface boundary.
  *
- * saveGameResults is intentionally left unwrapped and just passed through: it's void/callback-based,
- * not Promise-based, so this can't observe its real completion or errors the way it can for every
- * other method here. A backend that wants accurate metrics for it has to instrument it itself, using
- * the same `databaseMetrics` this class uses (see PostgreSQL.ts).
+ * saveGameResults is intentionally left unwrapped and just passed through, with its return value: it
+ * returns a promise only from a backend that writes asynchronously, and nothing from the others, so
+ * this can't observe its real completion or errors the way it can for every other method here. A
+ * backend that wants accurate metrics for it has to instrument it itself, using the same
+ * `databaseMetrics` this class uses (see PostgreSQL.ts).
  */
 export class MetricsDelegate implements IDatabase {
   constructor(private delegate: IDatabase) {}

@@ -273,8 +273,9 @@ export class PostgreSQL implements IDatabase {
     return this.compose(this.resolveGameText(row), row.log, row.options);
   }
 
-  // Not part of IDatabase: void/callback-based, so MetricsDelegate can't observe its completion or
-  // errors the way it can for Promise-returning methods. Instrumented directly here instead.
+  // MetricsDelegate passes saveGameResults through unwrapped, because the other backends write the row
+  // synchronously and the interface lets them return nothing. Instrumented directly here instead,
+  // and the promise settles when the INSERT does.
   saveGameResults(gameId: GameId, players: number, generations: number, gameOptions: GameOptions, scores: Array<Score>): Promise<void> {
     const operation = 'saveGameResults';
     const startMs = Date.now();
