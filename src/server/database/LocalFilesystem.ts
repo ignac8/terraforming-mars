@@ -44,7 +44,7 @@ export class LocalFilesystem implements IDatabase {
     return path.resolve(this.historyFolder, `${gameId}-${saveIdString}.json`);
   }
 
-  private completedFilename(gameId: GameId) {
+  protected completedFilename(gameId: GameId) {
     return path.resolve(this.completedFolder, `${gameId}.json`);
   }
 

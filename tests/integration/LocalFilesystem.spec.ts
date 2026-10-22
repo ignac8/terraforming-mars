@@ -55,7 +55,7 @@ class TestLocalFilesystem extends LocalFilesystem implements ITestDatabase {
   }
 
   hasGameResults(gameId: GameId): Promise<boolean> {
-    return Promise.resolve(fs.existsSync(path.join(this.dbFolder, 'completed', `${gameId}.json`)));
+    return Promise.resolve(fs.existsSync(this.completedFilename(gameId)));
   }
 }
 

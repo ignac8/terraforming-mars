@@ -74,13 +74,13 @@ describeDatabaseSuite({
       expect(await db.hasGameResults(game.id)).is.true;
 
       await db.reopenFinishedGame(game.id);
+      await db.saveGame(game);
 
       expect(queued()).is.false;
       expect(await db.hasGameResults(game.id)).is.false;
-      expect(await db.status(game.id)).eq('finished');
-      await db.purgeUnfinishedGames('0');
+      await db.purgeUnfinishedGames('-1');
       await db.compressCompletedGames('0');
-      expect(await db.getSaveIds(game.id)).has.members([0, 1, 2]);
+      expect(await db.getSaveIds(game.id)).has.members([0, 1, 2, 3]);
       await db.markFinished(game.id);
       expect(queued()).is.true;
     });

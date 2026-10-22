@@ -231,13 +231,14 @@ export function describeDatabaseSuite<T extends ITestDatabase>(dtor: DatabaseTes
         expect(await db.hasGameResults(game.id)).is.true;
 
         await db.reopenFinishedGame(game.id);
+        await db.saveGame(game);
 
         expect(await db.completedTime(game.id)).is.undefined;
         expect(await db.hasGameResults(game.id)).is.false;
         expect(await db.status(game.id)).eq('finished');
-        await db.purgeUnfinishedGames('0');
+        await db.purgeUnfinishedGames('-1');
         await db.compressCompletedGames('0');
-        expect(await db.getSaveIds(game.id)).has.members([0, 1, 2, 3]);
+        expect(await db.getSaveIds(game.id)).has.members([0, 1, 2, 3, 4]);
         await db.markFinished(game.id);
         expect(await db.completedTime(game.id)).is.not.undefined;
       });
