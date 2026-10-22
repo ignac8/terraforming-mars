@@ -8,7 +8,7 @@ import ReplayHands from '@/client/components/replay/ReplayHands.vue';
 import PlayerHome from '@/client/components/PlayerHome.vue';
 import SpectatorHome from '@/client/components/SpectatorHome.vue';
 import {fakeGameModel, fakePlayerViewModel, fakePublicPlayerModel, fakeSpectatorModel} from '../testHelpers';
-import {ReplayMovesModel, ReplayViewModel} from '@/common/replay/ReplayModel';
+import {ReplayMove, ReplayMovesModel, ReplayViewModel} from '@/common/replay/ReplayModel';
 import {PlayerId, SpectatorId} from '@/common/Types';
 import {PlayerViewModel} from '@/common/models/PlayerModel';
 import RewindControls from '@/client/components/replay/RewindControls.vue';
@@ -552,7 +552,7 @@ describe('ReplayScreen', () => {
         const wrapper = mountLive();
         await wrapper.find('.replay-collapse').trigger('click');
         await flushPromises();
-        expect(panel(wrapper).props('moves').map((move) => move.saveId), String(finished)).to.deep.equal(finished ? [10, 11] : [10]);
+        expect(panel(wrapper).props('moves').map((move: ReplayMove) => move.saveId), String(finished)).to.deep.equal(finished ? [10, 11] : [10]);
       }
     });
 
