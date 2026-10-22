@@ -6,7 +6,7 @@ import {SerializedGame} from '../../src/server/SerializedGame';
 import {GameLoader} from '../../src/server/database/GameLoader';
 import {OrOptions} from '../../src/server/inputs/OrOptions';
 import {clearReplayCache, getReplayMoves} from '../../src/server/replay/ReplayService';
-import {withTableLock} from '../../src/server/rewind/tableLock';
+import {isTableLocked, withTableLock} from '../../src/server/rewind/tableLock';
 import {JudgeModel} from '../../src/common/models/JudgeModel';
 import {Phase} from '../../src/common/Phase';
 import {Timer} from '../../src/common/Timer';
@@ -76,7 +76,7 @@ describe('ApiJudgeRewind', () => {
   // The route reads the body off the 'data'/'end' events, so the body has to be emitted after
   // post() is called and the route has taken the game, but before post() is awaited. Each call gets a fresh request and response.
   // With `replacement`, the loader serves that object to every read after the first.
-  async function post(body: string, options: {query?: string, id?: string, replacement?: IGame} = {}) {
+  async function post(body: string, options: {query?: string, id?: string, replacement?: IGame, onServed?: () => void} = {}) {
     const req = new MockRequest();
     res = new MockResponse();
     const scaffolding = new RouteTestScaffolding(req);
@@ -87,6 +87,18 @@ describe('ApiJudgeRewind', () => {
       const getGame = loader.getGame.bind(loader);
       let reads = 0;
       loader.getGame = (id) => ++reads === 1 ? getGame(id) : Promise.resolve(replacement);
+    }
+    if (options.onServed !== undefined) {
+      const onServed = options.onServed;
+      const getGame = loader.getGame.bind(loader);
+      let reads = 0;
+      // A thenable: onServed runs in the first step after the awaiting request goes on.
+      loader.getGame = (id) => ++reads === 1 ? getGame(id) : {
+        then(resolve: (g: IGame | undefined) => void) {
+          resolve(game);
+          queueMicrotask(onServed);
+        },
+      } as unknown as Promise<IGame | undefined>;
     }
     scaffolding.url = `/api/judge/rewind?id=${options.id ?? game.judgeId}${options.query ?? '&password=' + PASSWORD}`;
     const response = scaffolding.post(ApiJudgeRewind.INSTANCE, res);
@@ -224,6 +236,16 @@ describe('ApiJudgeRewind', () => {
       expect(res.content, body).eq('Bad request: invalid rewind');
     }
     expect(await GameLoader.getInstance().getGame(game.id)).eq(game);
+  });
+
+  it('holds the table lock in the step after it finds the game is still served', async () => {
+    await start();
+    let locked: boolean | undefined;
+
+    await post(valid(), {onServed: () => locked = isTableLocked(game.id)});
+
+    expect(res.statusCode).eq(statusCode.ok);
+    expect(locked).is.true;
   });
 
   it('refuses when the loader serves another object than the one the request took', async () => {

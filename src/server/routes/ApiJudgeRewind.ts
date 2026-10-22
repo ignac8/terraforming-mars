@@ -5,7 +5,7 @@ import {rewindTable} from '../rewind/RewindService';
 import {Handler} from './Handler';
 import {Context} from './IHandler';
 import {readBody} from './readBody';
-import {requireServedGame} from './requireServedGame';
+import {ifServedGame} from './ifServedGame';
 import {RouteError} from './RouteError';
 import {Request} from '../Request';
 import {Response} from '../Response';
@@ -48,8 +48,7 @@ export class ApiJudgeRewind extends Handler {
       throw RouteError.forbidden();
     }
     const {saveId, cards, clocks} = parse(await readBody(req));
-    await requireServedGame(game, ctx);
-    const restored = await rewindTable(game, saveId, {cards, clocks, freeze: true}, {kind: 'judge'});
+    const restored = await ifServedGame(game, ctx, () => rewindTable(game, saveId, {cards, clocks, freeze: true}, {kind: 'judge'}));
     responses.writeJson(res, ctx, Server.getJudgeModel(restored));
   }
 }

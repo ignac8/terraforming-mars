@@ -4,7 +4,7 @@ import {PlayerInput} from '../../src/server/routes/PlayerInput';
 import {Handler} from '../../src/server/routes/Handler';
 import {IGame} from '../../src/server/IGame';
 import {OrOptions} from '../../src/server/inputs/OrOptions';
-import {withTableLock} from '../../src/server/rewind/tableLock';
+import {isTableLocked, withTableLock} from '../../src/server/rewind/tableLock';
 import {INVALID_REQUEST_ID} from '../../src/common/app/AppErrorId';
 import {JudgeModel} from '../../src/common/models/JudgeModel';
 import {Phase} from '../../src/common/Phase';
@@ -165,6 +165,26 @@ describe('ApiJudgeFreeze', () => {
     expect(res.statusCode).eq(statusCode.badRequest);
     expect(res.content).eq('Bad request: The game runs again, but that was not saved. A restart would freeze it again.');
     expect(game.frozen).is.false;
+  });
+
+  it('holds the table lock in the step after it finds the game is still served', async () => {
+    await start();
+    let locked: boolean | undefined;
+    const loader = scaffolding.ctx.gameLoader;
+    const getGame = loader.getGame.bind(loader);
+    let reads = 0;
+    // A thenable: the callback runs in the first step after the awaiting request goes on.
+    loader.getGame = (id) => ++reads === 1 ? getGame(id) : {
+      then(resolve: (g: IGame | undefined) => void) {
+        resolve(game);
+        queueMicrotask(() => locked = isTableLocked(game.id));
+      },
+    } as unknown as Promise<IGame | undefined>;
+
+    await freeze(true);
+
+    expect(res.statusCode).eq(statusCode.ok);
+    expect(locked).is.true;
   });
 
   it('refuses when the loader serves another object than the one the request took', async () => {

@@ -5,7 +5,7 @@ import {freezeGame, unfreezeGame} from '../rewind/freeze';
 import {Handler} from './Handler';
 import {Context} from './IHandler';
 import {readBody} from './readBody';
-import {requireServedGame} from './requireServedGame';
+import {ifServedGame} from './ifServedGame';
 import {RouteError} from './RouteError';
 import {Request} from '../Request';
 import {Response} from '../Response';
@@ -40,8 +40,7 @@ export class ApiJudgeFreeze extends Handler {
       throw RouteError.forbidden();
     }
     const frozen = parse(await readBody(req));
-    await requireServedGame(game, ctx);
-    const saved = await (frozen ? freezeGame(game) : unfreezeGame(game));
+    const saved = await ifServedGame(game, ctx, () => frozen ? freezeGame(game) : unfreezeGame(game));
     // The change is made, in memory only: a restart brings the game back as it was saved.
     if (!saved) {
       throw RouteError.badRequest(frozen ? FREEZE_NOT_SAVED : UNFREEZE_NOT_SAVED);
