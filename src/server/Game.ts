@@ -120,6 +120,8 @@ function placesTile(action: IDeferredAction<any>): boolean {
 export type DeserializeOptions = {
   /** When true the game never writes to the database or the game cache. Used to show past moments of a game. */
   sandbox?: boolean;
+  /** Sandbox only: called at every save the sandbox makes, with the state as a save would store it. */
+  onSave?: (game: Game, saved: SerializedGame) => void;
 };
 
 export class Game implements IGame, Logger {
@@ -147,8 +149,9 @@ export class Game implements IGame, Logger {
   public inputsSinceSave: Array<RecordedInput> = [];
   public inputsThisRound = 0;
   public resettable: boolean = false;
-  /** A sandbox game is a read-only view of a past save. It is never serialized. */
+  /** A sandbox game is a read-only view of a past save. It never writes a save. */
   public isSandbox: boolean = false;
+  private onSandboxSave: DeserializeOptions['onSave'];
   public globalsPerGeneration: Array<Partial<Record<GlobalParameter, number>>> = [];
 
   public generation: number = 1;
@@ -544,6 +547,13 @@ export class Game implements IGame, Logger {
 
   public save(): void {
     if (this.isSandbox) {
+      if (this.onSandboxSave !== undefined) {
+        // As the database does: the state is stored under the current id, and the game moves on to the next.
+        const saved = this.serialize();
+        this.lastSaveId++;
+        this.inputsSinceSave = [];
+        this.onSandboxSave(this, saved);
+      }
       return;
     }
     GameLoader.getInstance().saveGame(this);
@@ -1896,6 +1906,7 @@ export class Game implements IGame, Logger {
 
     const game = new Game(d.id, d.name, players, first, d.activePlayer, d.spectatorId, gameOptions, rng, board, projectDeck, corporationDeck, preludeDeck, ceoDeck, d.tags);
     game.isSandbox = options.sandbox === true;
+    game.onSandboxSave = options.onSave;
     game.resettable = true;
     game.spectatorId = d.spectatorId;
     game.judgeId = d.judgeId;

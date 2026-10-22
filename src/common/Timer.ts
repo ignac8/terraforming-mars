@@ -61,6 +61,16 @@ export class Timer {
     };
   }
 
+  /** Runs `f` and then puts the shared last stop time back, for work that isn't play at a table, such as a replay. */
+  public static keepingLastStop<T>(f: () => T): T {
+    const lastStoppedAt = Timer.lastStoppedAt;
+    try {
+      return f();
+    } finally {
+      Timer.lastStoppedAt = lastStoppedAt;
+    }
+  }
+
   public static deserialize(d: SerializedTimer): Timer {
     const timer = new Timer(REAL_CLOCK);
     timer.sumElapsed = d.sumElapsed;
