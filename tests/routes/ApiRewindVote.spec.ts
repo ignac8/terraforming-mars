@@ -5,10 +5,12 @@ import {isTableLocked} from '../../src/server/rewind/tableLock';
 import {INVALID_REQUEST_ID} from '../../src/common/app/AppErrorId';
 import {LogMessageDataType} from '../../src/common/logs/LogMessageDataType';
 import {statusCode} from '../../src/common/http/statusCode';
+import {MAX_OXYGEN_LEVEL, MAX_TEMPERATURE} from '../../src/common/constants';
 import {Phase} from '../../src/common/Phase';
 import {Timer} from '../../src/common/Timer';
 import {RewindVotePoll} from '../../src/common/rewind/RewindVoteModel';
 import {CONVERT_HEAT, flush, VoteTable} from '../rewind/vote/voteTable';
+import {maxOutOceans, setOxygenLevel, setTemperature} from '../TestingUtils';
 import {MockResponse} from './HttpMocks';
 
 describe('ApiRewindVote', () => {
@@ -65,6 +67,61 @@ describe('ApiRewindVote', () => {
     const marker = t.newest().gameLog[t.newest().gameLog.length - 1];
     expect(marker.message).eq('${0} rewound the game to generation ${1} after a unanimous vote');
     expect(marker.data[0]).deep.eq({type: LogMessageDataType.PLAYER, value: t.p2.color});
+  });
+
+  // Both players pass with Mars terraformed, so the game ends. `target` is the moment before the last pass.
+  async function endGame(): Promise<void> {
+    maxOutOceans(t.p1);
+    setTemperature(t.game, MAX_TEMPERATURE);
+    setOxygenLevel(t.game, MAX_OXYGEN_LEVEL);
+    t.p1.plants = 0;
+    t.p2.plants = 0;
+    answer(await t.act(t.p1.id, 'Pass for this generation'));
+    target = t.rows().length - 1;
+    answer(await t.act(t.p2.id, 'Pass for this generation'));
+    await t.game.finishing;
+    expect(t.game.phase).eq(Phase.END);
+  }
+
+  it('reopens a finished game when everyone agrees', async () => {
+    const calls: Array<string> = [];
+    for (const method of ['markFinished', 'reopenFinishedGame'] as const) {
+      const original = t.db[method].bind(t.db);
+      t.db[method] = (gameId) => {
+        calls.push(method);
+        return original(gameId);
+      };
+    }
+    await endGame();
+    expect(calls).deep.eq(['markFinished']);
+
+    const voteId = await request();
+    const poll = answer(await t.post(t.p1.id, {action: 'yes', voteId}));
+
+    expect(poll.vote?.status).eq('passed');
+    const restored = await t.live();
+    expect(restored).is.not.eq(t.game);
+    expect(restored.phase).eq(Phase.ACTION);
+    expect(calls).deep.eq(['markFinished', 'reopenFinishedGame']);
+
+    answer(await t.act(t.p2.id, 'Pass for this generation'));
+    await restored.finishing;
+    expect(restored.phase).eq(Phase.END);
+    expect(calls).deep.eq(['markFinished', 'reopenFinishedGame', 'markFinished']);
+  });
+
+  it('keeps the open vote of a finished game across a reload', async () => {
+    await endGame();
+    const voteId = await request();
+    await flush();
+
+    t.restart();
+
+    const poll = await t.poll(t.p1.id);
+    expect(poll.vote?.status).eq('open');
+    expect(poll.vote?.voteId).eq(voteId);
+    expect(answer(await t.post(t.p1.id, {action: 'yes', voteId})).vote?.status).eq('passed');
+    expect((await t.live()).phase).eq(Phase.ACTION);
   });
 
   it('ends an open vote when anyone moves', async () => {

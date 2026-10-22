@@ -480,6 +480,93 @@ describe('ReplayScreen', () => {
     });
   });
 
+  describe('on the replay URL of a table that votes on a rewind', () => {
+    // The replay views carry no player ids, as a running game's model carries none.
+    const blue = () => fakePublicPlayerModel({color: 'blue', id: undefined, name: 'blue'});
+    const red = () => fakePublicPlayerModel({color: 'red', id: undefined, name: 'red'});
+
+    function voteMoves(finished: boolean, canVoteRewind = true): ReplayMovesModel {
+      const messages = finished ? [] : played;
+      return {
+        status: 'available', finished, canRewind: false, canVoteRewind, viewerColor: 'blue', defaultViewAs: finished ? 'all' : 'blue',
+        moves: [{saveId: 10, messages}, {saveId: 11, messages}],
+      };
+    }
+
+    beforeEach(() => {
+      pastPlayers = () => [blue(), red()];
+    });
+
+    function mountReplay(real = false) {
+      return shallowMount(ReplayScreen, {
+        ...globalConfig,
+        global: {...globalConfig.global, stubs: {ReplayPanel: false, RewindControls: real ? false : true, RewindVoteBanner: !real}},
+        props: {participantId: playerId},
+      });
+    }
+
+    it('shows the vote controls and the banner to a player who may vote, and to no one else', async () => {
+      for (const canVoteRewind of [true, false]) {
+        movesAnswer = voteMoves(true, canVoteRewind);
+        const wrapper = mountReplay();
+        await flushPromises();
+        wrapper.findComponent(ReplayPanel).vm.$emit('select', 1);
+        await flushPromises();
+        expect(wrapper.findComponent(RewindVoteBanner).exists(), String(canVoteRewind)).equals(canVoteRewind);
+        expect(wrapper.findComponent(RewindControls).exists(), String(canVoteRewind)).equals(canVoteRewind);
+        if (canVoteRewind) {
+          expect(wrapper.findComponent(RewindControls).props('mode')).equals('vote');
+        }
+        wrapper.unmount();
+      }
+    });
+
+    it('knows the seat of the player by colour, also when every hand is shown, so they can answer', async () => {
+      movesAnswer = voteMoves(true);
+      const vote = {voteId: 7, status: 'open', requester: 'red', saveId: 11, moveNumber: 2, generation: 1, cards: 'same', votes: [{color: 'blue', choice: 'pending'}], expiresInMs: 60_000};
+      voteAnswer = () => respond({undoCount: 0, vote, mayRequest: true});
+      const wrapper = mountReplay(true);
+      await flushPromises();
+      expect(wrapper.find('.rewind-vote-yes').exists()).is.true;
+    });
+
+    it('polls a finished game slowly, and reads the seat password from the address bar', async () => {
+      for (const [finished, pollMs] of [[true, 10_000], [false, 3000]] as const) {
+        movesAnswer = voteMoves(finished);
+        const wrapper = mountReplay();
+        await flushPromises();
+        const banner = wrapper.findComponent(RewindVoteBanner);
+        expect(banner.props('pollMs'), String(finished)).equals(pollMs);
+        expect(banner.props('password')).equals('');
+        wrapper.unmount();
+      }
+    });
+
+    it('lets a player of a running game pick no view but their own, and of a finished game any', async () => {
+      for (const finished of [true, false]) {
+        movesAnswer = voteMoves(finished);
+        const wrapper = mountReplay();
+        await flushPromises();
+        expect(wrapper.find('.replay-view-as').exists(), String(finished)).equals(finished);
+        wrapper.unmount();
+      }
+    });
+
+    it('shows the vote at once after asking for it', async () => {
+      movesAnswer = voteMoves(true);
+      const wrapper = mountReplay(true);
+      await flushPromises();
+      const vote = {voteId: 7, status: 'open', requester: 'blue', saveId: 10, moveNumber: 1, generation: 1, cards: 'same', votes: [{color: 'red', choice: 'pending'}], expiresInMs: 60_000};
+      voteAnswer = () => respond({undoCount: 0, vote, mayRequest: true});
+      expect(wrapper.find('.rewind-vote-open').exists()).is.false;
+      await wrapper.find('.rewind-start').trigger('click');
+      await wrapper.find('.rewind-confirm-button').trigger('click');
+      await flushPromises();
+      expect(votes).to.deep.equal([{url: `api/rewind/vote?id=${playerId}`, body: {action: 'request', saveId: 10, cards: 'same'}}]);
+      expect(wrapper.find('.rewind-vote-open').exists()).is.true;
+    });
+  });
+
   describe('on the live game page', () => {
     const liveMoves = {status: 'available', finished: false, canRewind: true, canVoteRewind: false, defaultViewAs: 'blue', moves: [
       {saveId: 10, messages: played},

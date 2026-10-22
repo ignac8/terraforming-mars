@@ -17,7 +17,12 @@ export type RewindClocks = 'back' | 'keep';
 export type RewindClockRow = {color: Color; name: string; now: string; then: string};
 
 export type ReplayMovesModel =
-  | {status: 'available'; moves: Array<ReplayMove>; finished: boolean; canRewind: boolean; canVoteRewind: boolean; defaultViewAs: ReplayViewAs}
+  | {
+    status: 'available'; moves: Array<ReplayMove>; finished: boolean; canRewind: boolean; canVoteRewind: boolean;
+    defaultViewAs: ReplayViewAs;
+    /** The colour of the player who asked. Replay views carry no player ids, so this is how a player's page knows its own seat. */
+    viewerColor?: Color;
+  }
   | {status: 'not-finished'}
   | {status: 'expired'};
 

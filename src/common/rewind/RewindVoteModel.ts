@@ -22,3 +22,9 @@ export type RewindVoteModel = {
 
 /** What the vote route answers. `undoCount` rising tells a page that a rewind happened. `mayRequest` is false for a player barred this generation. */
 export type RewindVotePoll = {undoCount: number; vote: RewindVoteModel | undefined; mayRequest: boolean};
+
+/**
+ * How often a page of a finished game polls the vote. A finished game is evicted from memory soon after it ends,
+ * and every poll that finds it gone reads it from the database again.
+ */
+export const FINISHED_GAME_VOTE_POLL_MS = 10_000;

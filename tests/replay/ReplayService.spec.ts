@@ -595,6 +595,18 @@ describe('ReplayService', () => {
         expect(await getReplayMoves(g, run.viewer(g, p)), JSON.stringify(run)).to.include({status: 'available', finished: true, ...run.expected});
       }
     });
+
+    it('names the colour of the player who asks, also when the game is finished and the default view is all hands', async () => {
+      freshDatabase();
+      const [g, p, p2] = testGame(2, {undoOption: true});
+      act(p);
+      act(p);
+      const rows = sdb.games.get(g.id)!;
+      rows[rows.length - 1] = {...rows[rows.length - 1]!, phase: Phase.END};
+      g.phase = Phase.END;
+      expect(await getReplayMoves(g, p2.id)).to.include({status: 'available', defaultViewAs: 'all', viewerColor: p2.color});
+      expect(await getReplayMoves(g, g.spectatorId)).to.include({status: 'available', viewerColor: undefined});
+    });
   });
 
   it('loadReplayState rejects a save id the game does not have', async () => {

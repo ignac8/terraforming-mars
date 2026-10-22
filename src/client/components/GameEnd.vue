@@ -1,5 +1,14 @@
 <template>
   <div id="game-end" class="game_end_cont">
+      <RewindVoteBanner
+        v-if="votesOnRewind"
+        :participantId="playerId"
+        :color="participant.color"
+        :password="seatPassword"
+        :undoCount="game.undoCount"
+        :players="participant.players"
+        :pollMs="votePollMs"
+        :replayUrl="replayUrl"/>
       <h1><HomeLink>{{ constants.APP_NAME }} - Game finished!</HomeLink></h1>
       <div class="game_end">
           <div v-if="isSoloGame">
@@ -226,6 +235,8 @@ import {setFaviconStatus} from '@/client/utils/favicon';
 import {getPreferences} from '@/client/utils/PreferencesManager';
 import {paths} from '@/common/app/paths';
 import {passwordParam} from '@/client/utils/playerPassword';
+import {FINISHED_GAME_VOTE_POLL_MS} from '@/common/rewind/RewindVoteModel';
+import {isPlayerId, PlayerId} from '@/common/Types';
 import {GameModel} from '@/common/models/GameModel';
 import {PublicPlayerModel, ViewModel} from '@/common/models/PlayerModel';
 import Board from '@/client/components/Board.vue';
@@ -234,6 +245,7 @@ import {nextTileView, TileView} from '@/client/components/board/TileView';
 import PlanetaryTracks from '@/client/components/pathfinders/PlanetaryTracks.vue';
 import DeltaProjectBoard from '@/client/components/delta/DeltaProjectBoard.vue';
 import LogPanel from '@/client/components/logpanel/LogPanel.vue';
+import RewindVoteBanner from '@/client/components/replay/RewindVoteBanner.vue';
 import AppButton from '@/client/components/common/AppButton.vue';
 import HomeLink from '@/client/components/common/HomeLink.vue';
 import VictoryPointChart, {DataSet} from '@/client/components/gameend/VictoryPointChart.vue';
@@ -264,6 +276,21 @@ export default defineComponent({
     },
     downloadLogUrl() {
       return `${paths.END_GAME_LOG}?id=${this.participant.id}`;
+    },
+    /** The players of a table with Player undo vote to rewind a finished game. The judge of a Judge undo game rewinds without one. */
+    votesOnRewind(): boolean {
+      return isPlayerId(this.participant.id) && this.participant.players.length > 1 &&
+        this.game.gameOptions.undoOption && !this.game.gameOptions.judgeUndo;
+    },
+    /** Only read where `votesOnRewind` holds. */
+    playerId(): PlayerId {
+      return this.participant.id as PlayerId;
+    },
+    seatPassword(): string {
+      return passwordParam(this.participant);
+    },
+    votePollMs(): number {
+      return FINISHED_GAME_VOTE_POLL_MS;
     },
     replayUrl(): string {
       return `${paths.REPLAY}?id=${this.participant.id}${passwordParam(this.participant)}`;
@@ -378,6 +405,7 @@ export default defineComponent({
     PlanetaryTracks,
     DeltaProjectBoard,
     VictoryPointChart,
+    RewindVoteBanner,
   },
   mounted() {
     setDocumentTitle('🏁 | ' + this.game.name);

@@ -30,7 +30,7 @@
       </select>
     </div>
 
-    <div v-if="!live || viewAsInLive" class="replay-view-as">
+    <div v-if="(!live || viewAsInLive) && !ownViewOnly" class="replay-view-as">
       <span v-i18n>View as</span>
       <button class="replay-view-all" type="button" :class="{'replay-view-active': viewAs === 'all'}" @click="$emit('update:viewAs', 'all')" v-i18n>All hands</button>
       <button
@@ -134,6 +134,11 @@ export default defineComponent({
     },
     /** Whether the selected move can be asked for by vote. */
     canVoteRewind: {
+      type: Boolean,
+      default: false,
+    },
+    /** The viewer may only see their own view, which the page already shows, so there is nothing to pick. */
+    ownViewOnly: {
       type: Boolean,
       default: false,
     },

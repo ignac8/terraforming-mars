@@ -299,6 +299,7 @@ export async function getReplayMoves(game: IGame, viewerId: ParticipantId, optio
     canRewind: canRewind(game, viewerId) || judgeCanRewind(game, viewerId),
     canVoteRewind: canVoteRewind(game, viewerId),
     defaultViewAs: all.finished ? 'all' : own?.color ?? 'all',
+    viewerColor: own?.color,
   };
 }
 

@@ -11,6 +11,17 @@
       ref="voteBanner"
       @show="showMove"
       @mayRequest="(mayRequest) => requestBlocked = !mayRequest"/>
+    <!-- On the replay URL the page has no game of its own, so it knows the player by their colour from the moves answer. -->
+    <RewindVoteBanner
+      v-else-if="replayVoter !== undefined"
+      :participantId="replayVoter.id"
+      :color="replayVoter.color"
+      :password="passwordFragment"
+      :players="replayVoter.players"
+      :pollMs="votePollMs"
+      ref="voteBanner"
+      @show="showMove"
+      @mayRequest="(mayRequest) => requestBlocked = !mayRequest"/>
     <template v-if="isLive">
       <div v-if="index !== undefined && replayView === undefined" class="replay-message" v-i18n>Loading replay...</div>
       <template v-else-if="index !== undefined && replayView !== undefined">
@@ -65,6 +76,7 @@
       :canRewind="canRewind"
       :canVoteRewind="canVoteRewind"
       :requestBlocked="requestBlocked"
+      :ownViewOnly="ownViewOnly"
       :rewinding="rewinding || freezing"
       :frozen="judgeFrozen"
       :viewAsInLive="liveJudge !== undefined"
@@ -104,13 +116,15 @@ import {setTranslationContext} from '@/client/directives/i18n';
 import {fetchReplayMoves, fetchReplayView, judgeCredentials, postJudgeFreeze, postJudgeRewind, postRewind, postVote, ReplayResponseError, translateRefusal} from '@/client/utils/fetchReplay';
 import {passwordParam} from '@/client/utils/playerPassword';
 import {paths} from '@/common/app/paths';
+import {Color} from '@/common/Color';
 import {JudgeModel} from '@/common/models/JudgeModel';
-import {PlayerViewModel, ViewModel} from '@/common/models/PlayerModel';
+import {PlayerViewModel, PublicPlayerModel, ViewModel} from '@/common/models/PlayerModel';
 import {SpectatorModel} from '@/common/models/SpectatorModel';
 import {ReplayMove, ReplayMovesModel, ReplayViewAs, ReplayViewModel, RewindCards, RewindClockRow, RewindClocks} from '@/common/replay/ReplayModel';
 import {Phase} from '@/common/Phase';
+import {FINISHED_GAME_VOTE_POLL_MS} from '@/common/rewind/RewindVoteModel';
 import {Timer} from '@/common/Timer';
-import {isJudgeId, isPlayerId, ParticipantId} from '@/common/Types';
+import {isJudgeId, isPlayerId, ParticipantId, PlayerId} from '@/common/Types';
 
 type Status = 'loading' | 'available' | 'not-finished' | 'expired' | 'not-found' | 'error';
 
@@ -133,6 +147,10 @@ type DataModel = {
   canVoteRewind: boolean;
   /** The player is barred from asking for a rewind until the next generation. */
   requestBlocked: boolean;
+  /** Whether the game the moves belong to has ended. */
+  finished: boolean;
+  /** The colour of the player the moves were read for, which the replay views leave out. */
+  viewerColor: Color | undefined;
   /** The game age the moves were read at, so the live page knows when they are out of date. */
   movesGameAge: number | undefined;
   /** The panel is open, so the live page keeps its moves current. */
@@ -198,6 +216,8 @@ export default defineComponent({
       canRewind: false,
       canVoteRewind: false,
       requestBlocked: false,
+      finished: false,
+      viewerColor: undefined,
       movesGameAge: undefined,
       expanded: false,
       rewinding: false,
@@ -221,6 +241,22 @@ export default defineComponent({
     votesOnRewind(): boolean {
       const view = this.liveView;
       return view !== undefined && view.players.length > 1 && view.game.gameOptions.undoOption && !view.game.gameOptions.judgeUndo;
+    },
+    /** The player on the replay URL of a table that votes on a rewind, once the page has what the banner needs. */
+    replayVoter(): {id: PlayerId; color: Color; players: Array<PublicPlayerModel>} | undefined {
+      const players = this.panelView?.players;
+      if (this.isLive || !isPlayerId(this.participantId) || !this.canVoteRewind || this.viewerColor === undefined || players === undefined) {
+        return undefined;
+      }
+      return {id: this.participantId, color: this.viewerColor, players};
+    },
+    /** A finished game is evicted from memory, and every poll that finds it gone reads it from the database again. */
+    votePollMs(): number | undefined {
+      return this.finished ? FINISHED_GAME_VOTE_POLL_MS : undefined;
+    },
+    /** A running game shows a player their own view only, and so the replay URL offers no other. */
+    ownViewOnly(): boolean {
+      return !this.isLive && this.canVoteRewind && !this.finished;
     },
     /** The live game of whoever is looking at it: the player, or the judge. */
     liveModel(): PlayerViewModel | JudgeModel | undefined {
@@ -318,6 +354,8 @@ export default defineComponent({
           this.moves = moves;
           this.canRewind = answer.canRewind;
           this.canVoteRewind = answer.canVoteRewind;
+          this.finished = answer.finished;
+          this.viewerColor = answer.viewerColor;
           this.movesGameAge = gameAge;
           this.status = 'available';
           const at = moves.findIndex((move) => move.saveId === selected);
