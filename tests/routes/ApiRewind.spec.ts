@@ -2,9 +2,12 @@ import {expect} from 'chai';
 import {ApiRewind} from '../../src/server/routes/ApiRewind';
 import {IGame} from '../../src/server/IGame';
 import {IPlayer} from '../../src/server/IPlayer';
+import {Database} from '../../src/server/database/Database';
 import {GameLoader} from '../../src/server/database/GameLoader';
 import {OrOptions} from '../../src/server/inputs/OrOptions';
 import {clearReplayCache} from '../../src/server/replay/ReplayService';
+import {rewindGame} from '../../src/server/rewind/RewindService';
+import {RouteError} from '../../src/server/routes/RouteError';
 import {PlayerViewModel} from '../../src/common/models/PlayerModel';
 import {statusCode} from '../../src/common/http/statusCode';
 import {Phase} from '../../src/common/Phase';
@@ -88,6 +91,19 @@ describe('ApiRewind', () => {
       expect(restored).is.not.eq(game);
       expect(restored?.rewinds.map((rewind) => rewind.restoredSaveId)).deep.eq([convert]);
       expect(view.game.undoCount).eq(game.undoCount + 1);
+    });
+
+    it('refuses a rewind from a game object that a rollback replaced', async () => {
+      const saves = await Database.getInstance().getSaveIds(game.id);
+      const reloaded = await GameLoader.getInstance().getGame(game.id, /* bypass the cache */ true);
+      expect(reloaded).is.not.eq(game);
+
+      let refused: unknown;
+      await rewindGame(game, player, convert, 'same').catch((e) => refused = e);
+
+      expect(cast(refused, RouteError).detail).eq('This game was rewound. Refresh this page.');
+      expect(await Database.getInstance().getSaveIds(game.id)).deep.eq(saves);
+      expect(await GameLoader.getInstance().getGame(game.id)).eq(reloaded);
     });
 
     it('refuses the spectator id of a finished game', async () => {

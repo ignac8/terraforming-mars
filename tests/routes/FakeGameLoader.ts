@@ -36,6 +36,9 @@ export class FakeGameLoader implements IGameLoader {
   }
   public unmark() {
   }
+  public isServed(game: IGame): Promise<boolean> {
+    return Promise.resolve(this.games.get(game.id) === game);
+  }
   public completeGame(_game: Game): Promise<void> {
     return Promise.resolve(undefined);
   }

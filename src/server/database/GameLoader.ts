@@ -195,6 +195,12 @@ export class GameLoader implements IGameLoader {
     return d.games.get(gameId) !== undefined;
   }
 
+  /** Whether `game` is the object the cache serves for its id. It only reads the cache, so it never loads a game. */
+  public async isServed(game: IGame): Promise<boolean> {
+    const d = await this.cache.getGames();
+    return d.games.get(game.id) === game;
+  }
+
   public async getGame(id: GameId | ParticipantId, forceLoad: boolean = false): Promise<IGame | undefined> {
     const d = await this.cache.getGames();
     const gameId = isGameId(id) ? id : d.participantIds.get(id);

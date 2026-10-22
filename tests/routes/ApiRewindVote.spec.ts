@@ -10,6 +10,7 @@ import {Phase} from '../../src/common/Phase';
 import {IPlayer} from '../../src/server/IPlayer';
 import {Timer} from '../../src/common/Timer';
 import {RewindVotePoll} from '../../src/common/rewind/RewindVoteModel';
+import {voteService} from '../../src/server/rewind/vote/effects';
 import {CONVERT_HEAT, flush, VoteTable} from '../rewind/vote/voteTable';
 import {maxOutOceans, setOxygenLevel, setTemperature} from '../TestingUtils';
 import {MockResponse} from './HttpMocks';
@@ -193,6 +194,22 @@ describe('ApiRewindVote', () => {
     timer.fn();
     await flush();
     expect(t.newest()).deep.eq(row);
+  });
+
+  it('refuses the last yes from a game object that a rollback replaced', async () => {
+    const voteId = await request();
+    const stale = t.game;
+    answer(await t.rollBack(1));
+    const rows = t.rows().length;
+    const reloaded = await t.live();
+    expect(reloaded).is.not.eq(stale);
+
+    const poll = await voteService.cast(stale, stale.getPlayerById(t.p1.id), voteId, 'yes');
+
+    expect(poll.vote?.status).eq('failed');
+    expect(poll.vote?.reason).eq('This game was rewound. Refresh this page.');
+    expect(t.rows()).has.length(rows);
+    expect(await t.live()).eq(reloaded);
   });
 
   it('refuses a vote from a stale tab', async () => {

@@ -30,6 +30,7 @@ export const rewindMetrics = {
 const UNRESTORABLE = 'That moment can\'t be restored. Nothing was changed.';
 const UNLOADABLE = 'That moment can\'t be restored with this version of the game. Nothing was changed.';
 const PICK_EARLIER = 'Pick an earlier move.';
+const GAME_REWOUND = 'This game was rewound. Refresh this page.';
 
 /** Who rewinds: the player of a solo game, the judge, or the player whose request a vote accepted. */
 export type RewindActor = {kind: 'player', player: IPlayer} | {kind: 'judge'} | {kind: 'vote', requester: IPlayer};
@@ -62,9 +63,10 @@ export async function rewindGame(game: IGame, player: IPlayer, saveId: number, c
 }
 
 async function rewind(live: IGame, saveId: number, options: RewindOptions, by: RewindActor): Promise<IGame> {
-  // The request took the game before an earlier rewind replaced it.
-  if (live.retired) {
-    throw RouteError.badRequest('This game was rewound. Refresh this page.');
+  // The request took the game before an earlier rewind replaced it, or before a rollback or a reload did, which
+  // leave the game they replace as it was.
+  if (live.retired || !await GameLoader.getInstance().isServed(live)) {
+    throw RouteError.badRequest(GAME_REWOUND);
   }
   // Every request reads the rewind records, so their number is bounded.
   if (live.rewinds.length >= MAX_REWINDS) {
