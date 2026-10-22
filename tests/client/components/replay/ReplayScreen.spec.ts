@@ -791,6 +791,23 @@ describe('ReplayScreen', () => {
         expect(wrapper.find('.replay-error--floating').text()).to.equal('A rewind vote is already open.');
       });
 
+      it('goes back to the live game and reads the moves again when the table was rewound under it', async () => {
+        const wrapper = mountVote(false);
+        await open(wrapper);
+        await flushPromises();
+        panel(wrapper).vm.$emit('select', 1);
+        await flushPromises();
+        expect(panel(wrapper).props('index')).to.equal(1);
+        const read = moveRequests().length;
+        const rewound = voteView();
+        rewound.game = fakeGameModel({gameAge: 3, undoCount: 1, gameOptions: fakeGameOptionsModel({undoOption: true})});
+        await wrapper.setProps({liveView: rewound});
+        await flushPromises();
+        expect(panel(wrapper).props('index')).is.undefined;
+        expect(wrapper.findComponent(PlayerHome).props('replay')).is.false;
+        expect(moveRequests()).to.have.length(read + 1);
+      });
+
       it('keeps the banner while a past move is previewed', async () => {
         const wrapper = mountVote(false);
         await open(wrapper);

@@ -451,6 +451,19 @@ export default defineComponent({
     },
   },
   watch: {
+    // The table was rewound, so a past move that is shown and the moves listed belong to a game that is gone.
+    'liveView.game.undoCount'() {
+      this.pause();
+      this.backToLive();
+      this.latestMovesRequest++;
+      this.moves = [];
+      this.canRewind = false;
+      this.canVoteRewind = false;
+      this.movesGameAge = undefined;
+      if (this.expanded) {
+        this.loadMoves();
+      }
+    },
     // The game moved on, so the moves the open panel lists are missing the newest ones.
     'liveView.game.gameAge'() {
       if (this.refusalSettled) {
