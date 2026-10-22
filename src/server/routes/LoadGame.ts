@@ -10,6 +10,7 @@ import {GameId, isGameId, isPlayerId, isSpectatorId} from '../../common/Types';
 import {RouteError} from './RouteError';
 import {readBody} from './readBody';
 import {forgetReplay} from '../replay/ReplayService';
+import {isTableLocked, withTableLock} from '../rewind/tableLock';
 
 export class LoadGame extends Handler {
   public static readonly INSTANCE = new LoadGame();
@@ -35,25 +36,31 @@ export class LoadGame extends Handler {
     if (gameId === undefined) {
       throw RouteError.notFound('Invalid game id');
     }
-    const rollbackCount = gameReq.rollbackCount;
-    if (rollbackCount > 0) {
-      try {
-        await Database.getInstance().deleteGameNbrSaves(gameId, rollbackCount);
-      } catch (error) {
-        console.error(error);
-        throw RouteError.internalServerError();
-      } finally {
-        // Not after the reload only: the abandoned list must not be served while the game loads.
-        forgetReplay(gameId);
+    // The rollback deletes saves and replaces the cached game, so it never runs during a rewind or a freeze.
+    if (isTableLocked(gameId)) {
+      throw RouteError.badRequest('The table is being rewound or frozen. Click OK to refresh this page.');
+    }
+    await withTableLock(gameId, async () => {
+      const rollbackCount = gameReq.rollbackCount;
+      if (rollbackCount > 0) {
+        try {
+          await Database.getInstance().deleteGameNbrSaves(gameId, rollbackCount);
+        } catch (error) {
+          console.error(error);
+          throw RouteError.internalServerError();
+        } finally {
+          // Not after the reload only: the abandoned list must not be served while the game loads.
+          forgetReplay(gameId);
+        }
       }
-    }
-    const game = await ctx.gameLoader.getGame(gameId, /* bypassCache */ true);
-    // A rollback can remove the END save, and with it what the replay knew about the game.
-    forgetReplay(gameId);
-    if (game === undefined) {
-      console.warn(`unable to find ${gameId} in database`);
-      throw RouteError.notFound('game_id not found');
-    }
-    responses.writeJson(res, ctx, Server.getSimpleGameModel(game));
+      const game = await ctx.gameLoader.getGame(gameId, /* bypassCache */ true);
+      // A rollback can remove the END save, and with it what the replay knew about the game.
+      forgetReplay(gameId);
+      if (game === undefined) {
+        console.warn(`unable to find ${gameId} in database`);
+        throw RouteError.notFound('game_id not found');
+      }
+      responses.writeJson(res, ctx, Server.getSimpleGameModel(game));
+    });
   }
 }

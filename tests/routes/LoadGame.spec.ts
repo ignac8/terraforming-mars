@@ -15,6 +15,10 @@ import {IGame} from '../../src/server/IGame';
 import {LogMessage} from '../../src/common/logs/LogMessage';
 import {LogMessageType} from '../../src/common/logs/LogMessageType';
 import {clearReplayCache, getReplayMoves} from '../../src/server/replay/ReplayService';
+import {rewindGame} from '../../src/server/rewind/RewindService';
+import {isTableLocked, withTableLock} from '../../src/server/rewind/tableLock';
+import {RouteError} from '../../src/server/routes/RouteError';
+import {cast} from '../../src/common/utils/utils';
 
 describe('LoadGame', () => {
   let scaffolding: RouteTestScaffolding;
@@ -227,6 +231,44 @@ describe('LoadGame', () => {
 
       expect(events).deep.eq([`delete ${game.id} 2`, 'delete done', 'load']);
       expect(res.statusCode).eq(statusCode.ok);
+    });
+
+    it('holds the table while it rolls back', async () => {
+      const [game, player] = testGame(1, {undoOption: true});
+      await scaffolding.ctx.gameLoader.add(game);
+
+      const response = put({gameId: game.id, rollbackCount: 2});
+      await new Promise((resolve) => setTimeout(resolve, 0));
+      try {
+        expect(events).deep.eq([`delete ${game.id} 2`]);
+        expect(isTableLocked(game.id)).is.true;
+        let refused: unknown;
+        await rewindGame(game, player, 0, 'same').catch((e) => refused = e);
+        expect(cast(refused, RouteError).detail).eq('A rewind is already running.');
+      } finally {
+        finishDelete();
+        await response;
+      }
+
+      expect(res.statusCode).eq(statusCode.ok);
+      expect(isTableLocked(game.id)).is.false;
+    });
+
+    it('is refused while the table is held', async () => {
+      const [game] = testGame(2);
+      await scaffolding.ctx.gameLoader.add(game);
+      let release = () => {};
+      const held = withTableLock(game.id, () => new Promise<void>((resolve) => release = resolve));
+      try {
+        await put({gameId: game.id, rollbackCount: 2});
+      } finally {
+        release();
+        await held;
+      }
+
+      expect(res.statusCode).eq(statusCode.badRequest);
+      expect(res.content).eq('Bad request: The table is being rewound or frozen. Click OK to refresh this page.');
+      expect(events).is.empty;
     });
 
     it('reports a failed delete', async () => {
