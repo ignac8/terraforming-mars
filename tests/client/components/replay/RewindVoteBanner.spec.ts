@@ -161,6 +161,20 @@ describe('RewindVoteBanner', () => {
     expect(wrapper.find('.rewind-vote-countdown').exists()).is.false;
   });
 
+  it('runs the clock of the countdown only while a vote is open', async () => {
+    answers = [answer(poll(undefined))];
+    const wrapper = mountBanner({pollMs: 10_000});
+    await flushPromises();
+    const idle = vi.getTimerCount();
+    answers = [answer(poll(openVote()))];
+    await ticks(10_000);
+    expect(vi.getTimerCount()).to.equal(idle + 1);
+    answers = [answer(poll(openVote({status: 'expired', expiresInMs: 0})))];
+    await ticks(10_000);
+    expect(vi.getTimerCount()).to.equal(idle);
+    wrapper.unmount();
+  });
+
   it('says why a vote ended, and offers nothing to do about it', async () => {
     for (const status of ['rewinding', 'passed', 'declined', 'cancelled', 'expired', 'moved-on', 'failed'] as const) {
       answers = [answer(poll(openVote({status, expiresInMs: 0, reason: 'That moment can\'t be restored. Nothing was changed.'})))];

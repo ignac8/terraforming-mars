@@ -187,7 +187,18 @@ export default defineComponent({
       if (!keepError) {
         this.error = undefined;
       }
+      this.syncClock();
       this.$emit('mayRequest', answer.mayRequest);
+    },
+    /** The countdown has a clock only while there is a vote to count down. */
+    syncClock(): void {
+      const open = this.vote?.status === 'open';
+      if (open && this.clockTimer === undefined) {
+        this.clockTimer = setInterval(() => this.now = Date.now(), 1000);
+      } else if (!open && this.clockTimer !== undefined) {
+        clearInterval(this.clockTimer);
+        this.clockTimer = undefined;
+      }
     },
     async poll(): Promise<void> {
       try {
@@ -234,11 +245,10 @@ export default defineComponent({
       this.stopped = true;
       clearTimeout(this.pollTimer);
       clearInterval(this.clockTimer);
+      this.clockTimer = undefined;
     },
   },
   mounted() {
-    this.now = Date.now();
-    this.clockTimer = setInterval(() => this.now = Date.now(), 1000);
     this.poll();
   },
   unmounted() {
