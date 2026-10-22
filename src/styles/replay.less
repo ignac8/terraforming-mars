@@ -83,8 +83,11 @@
   font-weight: bold;
 }
 
+// Sized by its text rather than by 0, so a header that is too narrow wraps its other items onto a second row instead of
+// squeezing this one into a column.
 .replay-position {
-  flex: 1;
+  flex: 1 0 auto;
+  white-space: nowrap;
   text-align: center;
 }
 
