@@ -342,6 +342,8 @@ export class VoteService {
       if (!await this.effects.isLive(game)) {
         return false;
       }
+      // Whether the patch landed is not acted on: the vote stays in memory and the next save carries it, and a restart
+      // loses at worst an open vote that would have expired anyway.
       await this.effects.persist(game);
       return true;
     } catch (e) {
