@@ -917,6 +917,16 @@ describe('Game', () => {
     expect(without.judgePassword).is.undefined;
   });
 
+  it('loads an old save without judgeUndo with the option off and keeps it when on', () => {
+    const player = TestPlayer.BLUE.newPlayer();
+    const on = Game.newInstance('gameid', [player], player, 'spectatorid', {judgeLink: true, judgeUndo: true});
+    expect(Game.deserialize(on.serialize()).gameOptions.judgeUndo).is.true;
+
+    const old = Game.newInstance('gameid', [player], player, 'spectatorid', {judgeLink: true}).serialize();
+    delete (old.gameOptions as Partial<typeof old.gameOptions>).judgeUndo;
+    expect(Game.deserialize(old).gameOptions.judgeUndo).is.false;
+  });
+
   it('deserializing a game without moon data still loads', () => {
     const player = TestPlayer.BLUE.newPlayer();
     const game = Game.newInstance('gameid', [player], player, 'spectatorid', {moonExpansion: false});

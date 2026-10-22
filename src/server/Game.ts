@@ -1909,6 +1909,8 @@ export class Game implements IGame, Logger {
   public static deserialize(d: SerializedGame, options: DeserializeOptions = {}): Game {
     const gameOptions = d.gameOptions;
     gameOptions.boardName = normalizeBoardName(gameOptions.boardName);
+    // Saves from before Judge undo have no such field.
+    gameOptions.judgeUndo = gameOptions.judgeUndo ?? false;
     if (gameOptions.escapeVelocity !== undefined) {
       gameOptions.escapeVelocity = sanitizeEscapeVelocityOptions(gameOptions.escapeVelocity);
     }
