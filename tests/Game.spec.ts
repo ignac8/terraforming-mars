@@ -1012,6 +1012,7 @@ describe('Game', () => {
       'frozen', // Serialized only when true.
       'rewindVote', // Serialized only when set.
       'rewindRequestLimits', // Serialized only for the current generation.
+      'onRewindVoteMove', // A callback.
       'ownSaveId',
       'lastWrite',
       'lastPatch',
