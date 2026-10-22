@@ -59,10 +59,12 @@ describe('buildMoveList', () => {
       expect(moves[4].messages).deep.eq(log.slice(9, 11));
     });
 
-    it('puts every line in exactly one move, in order', () => {
-      for (const rewinds of [[first], runs[2].rewinds]) {
-        const moves = buildMoveList(saves, rewinds, log, true);
-        expect(moves.flatMap((m) => m.messages), JSON.stringify(rewinds)).deep.eq(log);
+    it('puts every line in exactly one move, in order unless a later rewind\'s save took an earlier marker', () => {
+      for (const [rewinds, inOrder] of [[[first], true], [runs[2].rewinds, true], [runs[3].rewinds, false]] as const) {
+        const indexes = buildMoveList(saves, rewinds, log, true).flatMap((m) => m.messages).map((m) => log.indexOf(m));
+        const all = log.map((_, idx) => idx);
+        expect([...indexes].sort((a, b) => a - b), JSON.stringify(rewinds)).deep.eq(all);
+        expect(indexes.join() === all.join(), JSON.stringify(rewinds)).eq(inOrder);
       }
     });
 
@@ -82,7 +84,6 @@ describe('buildMoveList', () => {
       const moves = buildMoveList(saves, runs[3].rewinds, log, true);
       expect(moves.filter((m) => m.messages.includes(log[6])).map((m) => m.saveId)).deep.eq([6]);
       expect(moves.find((m) => m.saveId === 4)?.messages).deep.eq([log[7], log[8]]);
-      expect(moves.flatMap((m) => m.messages).map((m) => log.indexOf(m)).sort((a, b) => a - b)).deep.eq(log.map((_, idx) => idx));
     });
   });
 
