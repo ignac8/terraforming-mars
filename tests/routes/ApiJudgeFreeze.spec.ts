@@ -95,6 +95,17 @@ describe('ApiJudgeFreeze', () => {
     expect(res.statusCode).eq(statusCode.ok);
   });
 
+  it('lets the serverId link freeze without claiming the judge seat', async () => {
+    await start();
+    game.judgePassword = undefined;
+
+    await freeze(true, '&serverId=1');
+
+    expect(res.statusCode).eq(statusCode.ok);
+    expect(game.frozen).is.true;
+    expect(game.judgePassword).is.undefined;
+  });
+
   it('refuses a finished game', async () => {
     await start();
     game.phase = Phase.END;

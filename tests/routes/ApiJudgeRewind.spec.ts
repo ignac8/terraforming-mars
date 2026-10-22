@@ -183,6 +183,16 @@ describe('ApiJudgeRewind', () => {
     expect(await getReplayMoves(restored, restored.spectatorId)).deep.eq({status: 'not-finished'});
   });
 
+  it('lets the serverId link rewind without claiming the judge seat', async () => {
+    await start();
+    game.judgePassword = undefined;
+
+    await post(valid(), {query: '&serverId=1'});
+
+    expect(res.statusCode).eq(statusCode.ok);
+    expect(game.judgePassword).is.undefined;
+  });
+
   it('refuses a game without judge undo, and a table whose lock is held', async () => {
     await start({judgeUndo: false});
     await post(valid());
