@@ -456,8 +456,50 @@ describe('ReplayService', () => {
       const second = (await getReplayMoves(solo, soloPlayer.id)) as {moves: Array<ReplayMove>};
       const added = (await sdb.getSaveIds(solo.id)).filter((id) => !known.includes(id));
       expect(added).is.not.empty;
-      expect(reads.sort()).deep.eq(added.sort());
+      // The newest save seen before is read again, since a reload can save it in place.
+      expect(reads.sort()).deep.eq([Math.max(...known), ...added].sort());
       expect(second.moves.length).gt(first.moves.length);
+    });
+
+    it('does not remember saves read before a rollback that ran during the first read', async () => {
+      const [solo, soloPlayer] = testGame(1, {undoOption: true});
+      act(soloPlayer);
+      act(soloPlayer);
+      const newest = Math.max(...await sdb.getSaveIds(solo.id));
+      const getGameVersion = sdb.getGameVersion.bind(sdb);
+      sdb.getGameVersion = async (gameId, saveId) => {
+        const save = await getGameVersion(gameId, saveId);
+        if (saveId === newest) {
+          // An undo lands while the list is read: the newest row goes, and the replay is forgotten.
+          await sdb.deleteGameNbrSaves(gameId, 1);
+          forgetReplay(gameId);
+        }
+        return save;
+      };
+      await getReplayMoves(solo, soloPlayer.id);
+      sdb.getGameVersion = getGameVersion;
+      const r = (await getReplayMoves(solo, soloPlayer.id)) as {moves: Array<ReplayMove>};
+      expect(r.moves.map((m) => m.saveId)).does.not.include(newest);
+    });
+
+    it('starts over when a row it knew is gone', async () => {
+      const [solo, soloPlayer] = testGame(1, {undoOption: true});
+      act(soloPlayer);
+      act(soloPlayer);
+      await getReplayMoves(solo, soloPlayer.id);
+      const newest = Math.max(...await sdb.getSaveIds(solo.id));
+      // The row goes after the ids were listed and before it is read.
+      const getGameVersion = sdb.getGameVersion.bind(sdb);
+      let removed = false;
+      sdb.getGameVersion = async (gameId, saveId) => {
+        if (!removed) {
+          removed = true;
+          await sdb.deleteGameNbrSaves(gameId, 1);
+        }
+        return getGameVersion(gameId, saveId);
+      };
+      const r = (await getReplayMoves(solo, soloPlayer.id)) as {moves: Array<ReplayMove>};
+      expect(r.moves.map((m) => m.saveId)).does.not.include(newest);
     });
 
     it('answers for a finished game with finished and canRewind', async () => {

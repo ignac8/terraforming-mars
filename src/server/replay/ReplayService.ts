@@ -17,8 +17,9 @@ const MAX_CACHED_GAMES = 50;
 // A finished game does not change, so what its move list is built from is kept: the saves, the
 // rewinds and the one log that every save is a prefix of. The list holds every message, so it
 // is the same for all viewers; each request filters the private lines for its own viewer.
-// A running game keeps only its saves, which rows being append-only lets the next request
-// extend. Its rewinds and log are the live game's. Oldest entries go first.
+// A running game keeps only its saves. Rows are append-only between rollbacks, which undo and
+// load_game are and forgetReplay covers, so the next request extends them. Its rewinds and log
+// are the live game's. Oldest entries go first.
 type CachedGame =
   | {finished: true, saves: Array<SaveEntry>, rewinds: Array<RewindRecord>, log: Array<LogMessage>}
   | {finished: false, saves: Array<SaveEntry>};
@@ -29,6 +30,9 @@ type Built = {status: 'available', game: FinishedGame} | {status: 'not-finished'
 
 // Builds in progress, so viewers who ask at the same time share one pass over the saves.
 const building = new Map<GameId, Promise<Built>>();
+
+// Reads of a running game's saves in progress, shared the same way.
+const runningReads = new Map<GameId, Promise<Array<SaveEntry>>>();
 
 const MAX_FINISHED_GAMES = 1000;
 
@@ -46,6 +50,7 @@ const sandboxes = new Map<string, Promise<IGame>>();
 export function clearReplayCache(): void {
   cache.clear();
   building.clear();
+  runningReads.clear();
   finishedGames.clear();
   sandboxes.clear();
 }
@@ -58,6 +63,7 @@ export function clearReplayCache(): void {
 export function forgetReplay(gameId: GameId): void {
   cache.delete(gameId);
   building.delete(gameId);
+  runningReads.delete(gameId);
   finishedGames.delete(gameId);
   for (const key of sandboxes.keys()) {
     if (key.startsWith(`${gameId}/`)) {
@@ -188,21 +194,44 @@ function build(game: IGame): Promise<Built> {
   return pending;
 }
 
-// The saves of a running game, read again only for the ids above the newest one seen. A rollback
-// during the read forgets the entry, and then the result is not remembered.
-async function readRunningSaves(game: IGame): Promise<Array<SaveEntry>> {
+// Extends `known` with the saves from its newest one on. The newest one is read again, since a
+// reload can save it in place with a longer log.
+async function extendRunningSaves(game: IGame, known: ReadonlyArray<SaveEntry>): Promise<Array<SaveEntry>> {
+  const from = known.length > 0 ? known[known.length - 1].saveId : 0;
+  const saves = known.slice(0, -1);
+  for (const saveId of (await getSortedSaveIds(game)).filter((id) => id >= from)) {
+    saves.push({saveId, logLength: (await getSave(game, saveId)).gameLog.length});
+  }
+  return saves;
+}
+
+// The saves of a running game. Requests that arrive together share one read. A rollback during
+// the read runs forgetReplay, and then the result is not remembered.
+function readRunningSaves(game: IGame): Promise<Array<SaveEntry>> {
+  const inFlight = runningReads.get(game.id);
+  if (inFlight !== undefined) {
+    return inFlight;
+  }
   const known = cache.get(game.id);
-  const saves = known !== undefined && !known.finished ? known.saves : [];
-  const newest = saves.length > 0 ? saves[saves.length - 1].saveId : -1;
-  const added: Array<SaveEntry> = [];
-  for (const saveId of (await getSortedSaveIds(game)).filter((id) => id > newest)) {
-    added.push({saveId, logLength: (await getSave(game, saveId)).gameLog.length});
-  }
-  const all = [...saves, ...added];
-  if (cache.get(game.id) === known) {
-    remember(game.id, {finished: false, saves: all});
-  }
-  return all;
+  const pending: Promise<Array<SaveEntry>> = extendRunningSaves(game, known !== undefined && !known.finished ? known.saves : [])
+    .catch(() => {
+      // A row can vanish between listing the ids and reading it, as in a rollback. Start over once.
+      cache.delete(game.id);
+      return extendRunningSaves(game, []);
+    })
+    .then((saves) => {
+      if (runningReads.get(game.id) === pending) {
+        remember(game.id, {finished: false, saves});
+      }
+      return saves;
+    })
+    .finally(() => {
+      if (runningReads.get(game.id) === pending) {
+        runningReads.delete(game.id);
+      }
+    });
+  runningReads.set(game.id, pending);
+  return pending;
 }
 
 function movesFor(game: IGame, viewerId: ParticipantId, moves: Array<ReplayMove>): Array<ReplayMove> {

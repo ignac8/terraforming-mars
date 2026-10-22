@@ -5,7 +5,7 @@ import {isAbandonedSave, isHiddenLogIndex, RewindRecord} from '../rewind/RewindR
 export type SaveEntry = {saveId: number; logLength: number};
 
 /**
- * Turns the saves of a finished game into its list of moves. `saves` are in ascending id order,
+ * Turns the saves of a game into its list of moves. `saves` are in ascending id order,
  * and `log` is the game's whole log, of which every save's log is a prefix.
  *
  * A save's messages run from its start to the next save's log length, without the lines that a
