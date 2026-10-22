@@ -79,6 +79,7 @@ import {addDays, stringToNumber} from './database/utils';
 import {Tag} from '../common/cards/Tag';
 import {IGame, ResearchSnapshot, Score} from './IGame';
 import {RewindRecord} from './rewind/RewindRecord';
+import {RewindRequestLimits, SerializedRewindVote, TableStatePatch} from './rewind/tableState';
 import {GlobalParameterMaximums} from '../common/boards/GlobalParameterMaximums';
 import {MarsBoard} from './boards/MarsBoard';
 import {UnderworldData} from './underworld/UnderworldData';
@@ -159,6 +160,17 @@ export class Game implements IGame, Logger {
   public retired: boolean = false;
   /** Settles once the game's last saves and its finished mark are written. Unset until the game ends in this process. */
   public finishing: Promise<void> | undefined = undefined;
+  /** Set while the judge has frozen the game: no input is accepted and no clock runs. */
+  public frozen: boolean = false;
+  /** The open or rewinding vote, as plain data (V4 keeps its timer and ended votes in its own memory). */
+  public rewindVote: SerializedRewindVote | undefined = undefined;
+  public rewindRequestLimits: RewindRequestLimits | undefined = undefined;
+  /** The save row this object last wrote or was loaded from. Patches go to this row only. Undefined for a sandbox and before the first save. */
+  public ownSaveId: number | undefined = undefined;
+  /** Settles once every save row this object started writing is written, or has failed. */
+  private lastWrite: Promise<void> = Promise.resolve();
+  /** Settles once the last persistTableState has. */
+  private lastPatch: Promise<void> = Promise.resolve();
   public globalsPerGeneration: Array<Partial<Record<GlobalParameter, number>>> = [];
 
   public generation: number = 1;
@@ -569,10 +581,44 @@ export class Game implements IGame, Logger {
     }
     // A sandbox that became the live game no longer reports its saves.
     this.onSandboxSave = undefined;
-    const written = GameLoader.getInstance().saveGame(this);
+    const written = this.trackWrite(() => GameLoader.getInstance().saveGame(this));
     // The database serialized the game, inputs included, when saveGame was called.
     this.inputsSinceSave = [];
     return written;
+  }
+
+  /** Starts `start`, a write of this game's next save row, and remembers the row and the write. */
+  private trackWrite(start: () => Promise<void>): Promise<void> {
+    // Every backend takes the save id before its first await.
+    const saveId = this.lastSaveId;
+    const written = start();
+    this.ownSaveId = saveId;
+    this.lastWrite = Promise.all([this.lastWrite, written.catch(() => {})]).then(() => {});
+    return written;
+  }
+
+  public persistTableState(): Promise<void> {
+    const patched = Promise.all([this.lastWrite, this.lastPatch]).then(async () => {
+      if (this.isSandbox || this.retired || this.ownSaveId === undefined) {
+        return;
+      }
+      // The state of this moment, so the last patch wins.
+      const patch: TableStatePatch = {
+        frozen: this.frozen,
+        rewindVote: this.rewindVote,
+        rewindRequestLimits: this.currentRequestLimits(),
+        undoCount: this.undoCount,
+        timers: this.players.map((p) => ({player: p.id, timer: p.timer.serialize()})),
+      };
+      await Database.getInstance().updateNewestSave(this.id, this.ownSaveId, patch);
+    });
+    this.lastPatch = patched.catch(() => {});
+    return patched;
+  }
+
+  /** The request limits, when they are this generation's. Older ones bar no one. */
+  private currentRequestLimits(): RewindRequestLimits | undefined {
+    return this.rewindRequestLimits?.generation === this.generation ? this.rewindRequestLimits : undefined;
   }
 
   /** Remembers `input`, the answer `player` gave to `waitingFor`, with the state it is about to be applied to. */
@@ -664,6 +710,16 @@ export class Game implements IGame, Logger {
     }
     if (this.rewinds.length > 0) {
       result.rewinds = this.rewinds;
+    }
+    if (this.frozen) {
+      result.frozen = true;
+    }
+    if (this.rewindVote !== undefined) {
+      result.rewindVote = this.rewindVote;
+    }
+    const rewindRequestLimits = this.currentRequestLimits();
+    if (rewindRequestLimits !== undefined) {
+      result.rewindRequestLimits = rewindRequestLimits;
     }
     if (this.turmoil !== undefined) {
       result.turmoil = this.turmoil.serialize();
@@ -1302,7 +1358,7 @@ export class Game implements IGame, Logger {
     this.saveGameResults();
     this.phase = Phase.END;
     const gameLoader = GameLoader.getInstance();
-    const saved = gameLoader.saveGame(this);
+    const saved = this.trackWrite(() => gameLoader.saveGame(this));
     // The database serialized the game, inputs included, when saveGame was called.
     this.inputsSinceSave = [];
     await saved;
@@ -1310,7 +1366,7 @@ export class Game implements IGame, Logger {
     if (this.retired) {
       return;
     }
-    await gameLoader.completeGame(this);
+    await this.trackWrite(() => gameLoader.completeGame(this));
   }
 
   public saveGameResults(): void | Promise<void> {
@@ -2000,6 +2056,14 @@ export class Game implements IGame, Logger {
     game.gameAge = d.gameAge;
     game.gameLog = d.gameLog;
     game.rewinds = d.rewinds ?? [];
+    // A sandbox views a past save: it is never frozen, holds no vote and bars no one.
+    if (!game.isSandbox) {
+      game.frozen = d.frozen ?? false;
+      game.rewindVote = d.rewindVote;
+      game.rewindRequestLimits = d.rewindRequestLimits;
+      // Save k stores lastSaveId k.
+      game.ownSaveId = d.lastSaveId;
+    }
     game.generation = d.generation;
     game.phase = d.phase;
     game.oxygenLevel = d.oxygenLevel;

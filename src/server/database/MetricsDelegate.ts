@@ -5,6 +5,7 @@ import {GameOptions} from '../game/GameOptions';
 import {GameId, ParticipantId} from '../../common/Types';
 import {SerializedGame} from '../SerializedGame';
 import {Session, SessionId} from '../auth/Session';
+import {TableStatePatch} from '../rewind/tableState';
 
 // Operation names that get routed to `maintenanceLatency` instead of `operationLatency`. These are
 // batch/background jobs (purge, compress) that run on a much longer timescale than a typical
@@ -111,6 +112,10 @@ export class MetricsDelegate implements IDatabase {
 
   saveGame(game: IGame): Promise<void> {
     return withDatabaseMetrics('saveGame', () => this.delegate.saveGame(game));
+  }
+
+  updateNewestSave(gameId: GameId, saveId: number, patch: TableStatePatch): Promise<boolean> {
+    return withDatabaseMetrics('updateNewestSave', () => this.delegate.updateNewestSave(gameId, saveId, patch));
   }
 
   saveGameResults(gameId: GameId, players: number, generations: number, gameOptions: GameOptions, scores: Array<Score>): void | Promise<void> {

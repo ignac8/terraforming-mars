@@ -28,8 +28,13 @@ function canonical(value: Json): string {
 // Leaves out what legitimately differs between a live game and a replay of it. The log is
 // replaced by its length: timestamps differ in a replay, but a missing or extra line still shows.
 // Seat passwords are claimed by page loads, not by inputs, so a replay can't reproduce them.
+// The table state (a freeze, a vote, the request bar) is patched into saves without an input.
 function comparable(d: SerializedGame): string {
-  const {gameLog, lastSaveId: _lastSaveId, undoCount: _undoCount, gameAge: _gameAge, inputs: _inputs, judgePassword: _judgePassword, ...rest} = d;
+  const {
+    gameLog, lastSaveId: _lastSaveId, undoCount: _undoCount, gameAge: _gameAge, inputs: _inputs, judgePassword: _judgePassword,
+    frozen: _frozen, rewindVote: _rewindVote, rewindRequestLimits: _rewindRequestLimits,
+    ...rest
+  } = d;
   const players = d.players.map(({timer: _timer, password: _password, ...player}) => player);
   return canonical({...rest, players, gameLog: gameLog.length} as unknown as Json);
 }

@@ -1,6 +1,6 @@
 import dotenv from 'dotenv';
 import {expect} from 'chai';
-import {describeDatabaseSuite} from '../database/databaseSuite';
+import {describeDatabaseSuite, tableStatePatch} from '../database/databaseSuite';
 import {ITestDatabase, Status} from '../database/ITestDatabase';
 import {IGame} from '../../src/server/IGame';
 import {Game} from '../../src/server/Game';
@@ -107,6 +107,12 @@ class TestPostgreSQL extends PostgreSQL implements ITestDatabase {
   // `game` and `participants` rows behind.
   public async deleteGamesRows(gameId: GameId): Promise<void> {
     await this.client.query('DELETE FROM games WHERE game_id = $1', [gameId]);
+  }
+
+  // The shared log and options of a game, as stored.
+  public async getLogRow(gameId: GameId): Promise<{log: string, options: string}> {
+    const res = await this.client.query('SELECT log, options FROM game WHERE game_id = $1', [gameId]);
+    return res.rows[0];
   }
 
   public async dropGameTable(): Promise<void> {
@@ -759,6 +765,29 @@ describeDatabaseSuite({
       expect(raw.gameCompressed).is.null;
       const plain = await db.getGameVersion(game.id, 0);
       expect(plain.players[0].megaCredits).eq(456);
+    });
+
+    it('patches a save in the column it was stored in, and leaves the shared log alone', async () => {
+      const db = dbFactory();
+      const player = TestPlayer.BLACK.newPlayer();
+      const game = Game.newInstance('game-id-patched-column', [player], player, 'spectatorid');
+      await db.awaitAllSaves();
+      for (const compressOnWrite of [false, true]) {
+        db.setCompressOnWrite(compressOnWrite);
+        const saveId = game.lastSaveId;
+        await db.saveGame(game);
+        const logRow = await db.getLogRow(game.id);
+        // A patch that went through saveGame would store this line.
+        game.log('after the save');
+
+        expect(await db.updateNewestSave(game.id, saveId, tableStatePatch(game))).is.true;
+
+        const raw = await db.getRawGame(game.id, saveId);
+        expect(raw.game === null, String(compressOnWrite)).eq(compressOnWrite);
+        expect(raw.gameCompressed === null, String(compressOnWrite)).eq(!compressOnWrite);
+        expect((await db.getGameVersion(game.id, saveId)).frozen).is.true;
+        expect(await db.getLogRow(game.id)).deep.eq(logRow);
+      }
     });
 
     it('reads an uncompressed row while compression is enabled', async () => {

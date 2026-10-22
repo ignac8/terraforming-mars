@@ -3,6 +3,7 @@ import {GameOptions} from '../game/GameOptions';
 import {GameId, ParticipantId} from '../../common/Types';
 import {SerializedGame} from '../SerializedGame';
 import {Session, SessionId} from '../auth/Session';
+import {TableStatePatch} from '../rewind/tableState';
 
 export type GameIdLedger = {gameId: GameId, participantIds: Array<ParticipantId>}
 
@@ -73,6 +74,13 @@ export interface IDatabase {
      * Do not call directly.
      */
     saveGame(game: IGame): Promise<void>;
+
+    /**
+     * Sets the TableStatePatch fields of save `saveId`, in place, when that save is the game's newest. `false` or
+     * `undefined` removes the key. Adds no row, changes no other field, never touches the shared log. Resolves false
+     * and changes nothing when `saveId` is missing or not the newest.
+     */
+    updateNewestSave(gameId: GameId, saveId: number, patch: TableStatePatch): Promise<boolean>;
 
     /**
      * Stores the results of a game in perpetuity in a separate table from normal

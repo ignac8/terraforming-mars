@@ -36,6 +36,7 @@ import {OrOptions} from './inputs/OrOptions';
 import {PlayerInput} from './PlayerInput';
 import {InputResponse} from '../common/inputs/InputResponse';
 import {RecordedInput} from './rewind/RecordedInput';
+import {RewindRequestLimits, SerializedRewindVote} from './rewind/tableState';
 import {IStandardProjectCard} from './cards/IStandardProjectCard';
 import {GlobalParameterTracks} from '@/server/boards/GlobalParameterTracks';
 import {RewindRecord} from './rewind/RewindRecord';
@@ -88,6 +89,19 @@ export interface IGame extends Logger {
   retired: boolean;
   /** Settles once the game's last saves and its finished mark are written. Unset until the game ends in this process. */
   readonly finishing: Promise<void> | undefined;
+  /** Set while the judge has frozen the game: no input is accepted and no clock runs. */
+  frozen: boolean;
+  /** The open or rewinding vote, as plain data (V4 keeps its timer and ended votes in its own memory). */
+  rewindVote: SerializedRewindVote | undefined;
+  rewindRequestLimits: RewindRequestLimits | undefined;
+  /** The save row this object last wrote or was loaded from. Patches go to this row only. Undefined for a sandbox and before the first save. */
+  ownSaveId: number | undefined;
+  /**
+   * Writes the table state (TableStatePatch) into this game's own save row, after every write of this game already started.
+   * A sandbox or retired game writes nothing, and a row that is no longer the newest is left alone; both resolve.
+   * Rejects only when the database call throws. The next patch or save carries the whole state again.
+   */
+  persistTableState(): Promise<void>;
   generation: number;
   readonly players: ReadonlyArray<IPlayer>;
   readonly playersInGenerationOrder: ReadonlyArray<IPlayer>;

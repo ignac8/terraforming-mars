@@ -5,6 +5,7 @@ import {GameIdLedger, IDatabase} from '../../src/server/database/IDatabase';
 import {GameId, ParticipantId} from '../../src/common/Types';
 import {Session, SessionId} from '../../src/server/auth/Session';
 import {Clock} from '../../src/common/Timer';
+import {TableStatePatch, withTableState} from '../../src/server/rewind/tableState';
 
 export class InMemoryDatabase implements IDatabase {
   public games: Map<GameId, Array<SerializedGame | undefined>> = new Map();
@@ -77,6 +78,15 @@ export class InMemoryDatabase implements IDatabase {
     row[game.lastSaveId] = game.serialize();
     game.lastSaveId++;
     return Promise.resolve();
+  }
+  updateNewestSave(gameId: GameId, saveId: number, patch: TableStatePatch): Promise<boolean> {
+    const row = this.games.get(gameId);
+    const save = row?.[saveId];
+    if (row === undefined || save === undefined || saveId !== row.length - 1) {
+      return Promise.resolve(false);
+    }
+    row[saveId] = withTableState(save, structuredClone(patch));
+    return Promise.resolve(true);
   }
   saveGameResults(gameId: GameId, _players: number, _generations: number, _gameOptions: GameOptions, _scores: Score[]): void {
     this.gameResults.add(gameId);

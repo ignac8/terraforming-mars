@@ -15,6 +15,7 @@ import {Clock} from '@/common/Timer';
 import {parseInterned} from './parseInterned';
 import {LogMessage} from '@/common/logs/LogMessage';
 import {compressToBrotli, decompressFromBrotli} from './compression';
+import {TableStatePatch, withTableState} from '../rewind/tableState';
 
 type StoredSerializedGame = Omit<SerializedGame, 'gameOptions' | 'gameLog'> & {logLength: number};
 
@@ -470,6 +471,50 @@ export class PostgreSQL implements IDatabase {
     }
     // Awaited, so the markFinished that follows the last save never runs alongside this delete.
     await this.trim(game).catch(() => databaseMetrics.operationErrors.inc({operation: 'trim'}));
+  }
+
+  // Rewrites the stored row only: never the shared log or the options, and never a row that is gone.
+  async updateNewestSave(gameId: GameId, saveId: number, patch: TableStatePatch): Promise<boolean> {
+    let releaseError: Error | undefined;
+    // While the client is checked out the pool doesn't listen for its 'error' events, so this does.
+    const onError = () => databaseMetrics.operationErrors.inc({operation: 'updateNewestSave:connection'});
+    const client = await this.client.connect();
+    client.on('error', onError);
+    try {
+      await client.query('BEGIN');
+      const newest = await client.query('SELECT MAX(save_id) AS save_id FROM games WHERE game_id = $1', [gameId]);
+      if (newest.rows[0].save_id !== saveId) {
+        await client.query('ROLLBACK');
+        return false;
+      }
+      const res = await client.query('SELECT game, game_compressed FROM games WHERE game_id = $1 AND save_id = $2 FOR UPDATE', [gameId, saveId]);
+      if (res.rows.length === 0) {
+        await client.query('ROLLBACK');
+        return false;
+      }
+      const row = res.rows[0];
+      const stored: StoredSerializedGame = JSON.parse(this.resolveGameText(row));
+      const text = JSON.stringify(withTableState(stored, patch));
+      // Into the column the row used, so a row never carries both.
+      if (row.game_compressed !== null) {
+        await client.query('UPDATE games SET game_compressed = $3 WHERE game_id = $1 AND save_id = $2', [gameId, saveId, compressToBrotli(text)]);
+      } else {
+        await client.query('UPDATE games SET game = $3 WHERE game_id = $1 AND save_id = $2', [gameId, saveId, text]);
+      }
+      await client.query('COMMIT');
+      return true;
+    } catch (err) {
+      try {
+        await client.query('ROLLBACK');
+      } catch (rollbackErr) {
+        // The connection is in an unknown state. Release it with an error so the pool discards it.
+        releaseError = rollbackErr instanceof Error ? rollbackErr : new Error(String(rollbackErr));
+      }
+      throw err;
+    } finally {
+      client.removeListener('error', onError);
+      client.release(releaseError);
+    }
   }
 
   // Not part of IDatabase, so invisible to MetricsDelegate.

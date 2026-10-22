@@ -22,6 +22,17 @@ describe('stateHash', () => {
     expect(sameState(a, b)).is.false;
   });
 
+  it('ignores the table state', () => {
+    const [game, player] = testGame(2);
+    const a = game.serialize();
+    const b = structuredClone(a);
+    b.frozen = true;
+    b.rewindVote = {id: 1, requester: player.id, saveId: 1, moveNumber: 1, generation: 1, cards: 'same', yes: [player.id], status: 'open', expiresAt: 1};
+    b.rewindRequestLimits = {generation: 1, players: [player.id]};
+    expect(stateHash(b)).eq(stateHash(a));
+    expect(sameState(a, b)).is.true;
+  });
+
   it('does not depend on key order, and notices a missing log line', () => {
     const [game] = testGame(1);
     const a = game.serialize();

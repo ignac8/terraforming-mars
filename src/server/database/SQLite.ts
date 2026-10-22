@@ -11,6 +11,7 @@ import {DEFAULT_COMPRESS_COMPLETED_GAMES_DAYS, compressCutoffSeconds, daysAgoToS
 import {MultiMap} from 'mnemonist';
 import {Session, SessionId} from '../auth/Session';
 import {toID} from '../../common/utils/utils';
+import {TableStatePatch, withTableState} from '../rewind/tableState';
 
 export const IN_MEMORY_SQLITE_PATH = ':memory:';
 
@@ -227,6 +228,25 @@ export class SQLite implements IDatabase {
       } catch (e) {
         console.error(e);
       }
+    }
+  }
+
+  updateNewestSave(gameId: GameId, saveId: number, patch: TableStatePatch): Promise<boolean> {
+    // One transaction with no await inside, so no other statement runs between the check and the update.
+    const update = this.db.transaction((): boolean => {
+      const newest = this.db.prepare('SELECT MAX(save_id) AS save_id FROM games WHERE game_id = ?').get(gameId) as {save_id: number | null};
+      if (newest.save_id !== saveId) {
+        return false;
+      }
+      const row = this.db.prepare('SELECT game FROM games WHERE game_id = ? AND save_id = ?').get(gameId, saveId) as {game: string};
+      const game = withTableState(JSON.parse(row.game) as SerializedGame, patch);
+      this.db.prepare('UPDATE games SET game = ? WHERE game_id = ? AND save_id = ?').run(JSON.stringify(game), gameId, saveId);
+      return true;
+    });
+    try {
+      return Promise.resolve(update());
+    } catch (err) {
+      return Promise.reject(err);
     }
   }
 

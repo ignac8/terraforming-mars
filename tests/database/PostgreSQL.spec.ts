@@ -193,6 +193,21 @@ describe('PostgreSQL', () => {
     expect(game.lastSaveId).eq(0);
   });
 
+  it('patches on one connection, and handles it dying mid-patch', async () => {
+    pool.dropSocket = ['SELECT MAX', 'ROLLBACK'];
+
+    // Without an 'error' listener, EventEmitter.emit('error') throws.
+    const patching = db.updateNewestSave(game.id, 0, {frozen: true, rewindVote: undefined, rewindRequestLimits: undefined, undoCount: 0, timers: []});
+    let error: unknown;
+    await patching.catch((e) => error = e);
+
+    expect(String(error)).contains('socket closed');
+    expect(pool.statements.map((s) => s.connection + ' ' + s.sql)).deep.eq(['conn1 BEGIN', 'conn1 SELECT MAX(save_id) AS', 'conn1 ROLLBACK']);
+    expect(pool.released).has.length(1);
+    expect(pool.released[0].err).is.not.undefined;
+    expect(pool.clients[0].listenerCount('error')).eq(0);
+  });
+
   it('does not leave error listeners behind on the client', async () => {
     await db.saveGame(game);
 

@@ -20,6 +20,7 @@ import {MilestoneName} from '../common/ma/MilestoneName';
 import {Tag} from '../common/cards/Tag';
 import {RewindRecord} from './rewind/RewindRecord';
 import {RecordedInput} from './rewind/RecordedInput';
+import {RewindRequestLimits, SerializedRewindVote} from './rewind/tableState';
 
 export type SerializedGame = {
     activePlayer: PlayerId;
@@ -39,6 +40,8 @@ export type SerializedGame = {
     draftRound: number;
     exploitationOfVenusInEffect: boolean;
     first: PlayerId;
+    /** Written only when true. */
+    frozen?: boolean;
     fundedAwards: Array<SerializedFundedAward>;
     gagarinBase: Array<SpaceId>;
     gameAge: number;
@@ -64,6 +67,10 @@ export type SerializedGame = {
     projectDeck: SerializedDeck,
     researchedPlayers: Array<PlayerId>;
     rewinds?: Array<RewindRecord>;
+    /** Written only when set. */
+    rewindVote?: SerializedRewindVote;
+    /** Written only for the game's current generation. */
+    rewindRequestLimits?: RewindRequestLimits;
     seed: number;
     someoneHasRemovedOtherPlayersPlants: boolean;
     spectatorId: SpectatorId;
