@@ -55,7 +55,8 @@
     <!-- The key forgets a half-made choice when another move is picked. -->
     <RewindControls v-if="canRewind && index !== undefined && !(live && collapsed)" :key="index" :disabled="rewinding" @rewind="(cards) => $emit('rewind', cards)"/>
 
-    <!-- Rendered inside the panel, so that on a narrow screen it can sit just above it instead of under it. -->
+    <!-- Errors, rendered inside the panel: a refused rewind under the rewind controls, and others in a box
+         that on a narrow screen sits just above the panel instead of under it. -->
     <slot name="error"></slot>
   </div>
 </template>

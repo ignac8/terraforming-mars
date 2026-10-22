@@ -368,16 +368,23 @@ describe('ReplayScreen', () => {
       expect(window.location.href).to.equal(`player?id=${playerId}`);
     });
 
-    it('shows the message of a refused rewind and changes nothing', async () => {
+    it('shows the message of a refused rewind in the panel, under the rewind controls, and changes nothing', async () => {
       vi.spyOn(console, 'error').mockImplementation(() => {});
       rewindAnswer = () => Promise.resolve({ok: false, status: 400, text: () => Promise.resolve('That moment cannot be rewound, nothing was changed')});
       const wrapper = mountRewindable();
       await flushPromises();
       wrapper.findComponent(RewindControls).vm.$emit('rewind', 'same');
       await flushPromises();
-      expect(wrapper.find('.replay-error--floating').text()).to.contain('nothing was changed');
+      const refusal = wrapper.find('.replay-panel .rewind-refusal');
+      expect(refusal.text()).to.contain('nothing was changed');
+      expect(refusal.element.previousElementSibling).to.equal(wrapper.findComponent(RewindControls).element);
+      expect(wrapper.find('.replay-error--floating').exists()).is.false;
       expect(window.location.href).to.equal('http://localhost/replay');
       expect(wrapper.findComponent(SpectatorHome).exists()).is.true;
+      // It answers the move it was asked for, so picking another one clears it.
+      wrapper.findComponent(ReplayPanel).vm.$emit('select', 1);
+      await flushPromises();
+      expect(wrapper.find('.rewind-refusal').exists()).is.false;
     });
 
     it('shows a refused rewind in the language of the player', async () => {
@@ -389,7 +396,7 @@ describe('ReplayScreen', () => {
       await flushPromises();
       wrapper.findComponent(RewindControls).vm.$emit('rewind', 'same');
       await flushPromises();
-      expect(wrapper.find('.replay-error--floating').text()).to.equal('Cofanie gry już trwa.');
+      expect(wrapper.find('.rewind-refusal').text()).to.equal('Cofanie gry już trwa.');
     });
 
     it('sends the seat password of the live game page', async () => {

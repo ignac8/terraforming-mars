@@ -53,6 +53,7 @@
       @back="backToLive"
       @rewind="rewind">
       <template #error>
+        <div v-if="refusal !== undefined" class="replay-error rewind-refusal">{{ refusal }}</div>
         <div v-if="error !== undefined" class="replay-error replay-error--floating">{{ error }}</div>
       </template>
     </ReplayPanel>
@@ -97,6 +98,8 @@ type DataModel = {
   shownIndex: number;
   /** Why the last request failed. */
   error: string | undefined;
+  /** Why the server refused the last rewind. */
+  refusal: string | undefined;
   playing: boolean;
   speed: number;
   /** Numbers view requests so that a slow answer never replaces a newer one. */
@@ -139,6 +142,7 @@ export default defineComponent({
       replayView: undefined,
       shownIndex: 0,
       error: undefined,
+      refusal: undefined,
       playing: false,
       speed: 1,
       latestRequest: 0,
@@ -264,19 +268,21 @@ export default defineComponent({
       this.pause();
       this.rewinding = true;
       this.error = undefined;
+      this.refusal = undefined;
       try {
         await postRewind(this.participantId, this.moves[this.index].saveId, cards, this.liveView);
         // The page is on its way out, so it stays disabled.
         window.location.href = `${paths.PLAYER}?id=${this.participantId}`;
       } catch (err) {
         console.error(err);
-        this.error = err instanceof Error ? translateRefusal(err.message) : String(err);
+        this.refusal = err instanceof Error ? translateRefusal(err.message) : String(err);
         this.rewinding = false;
       }
     },
     /** A move picked by hand. It takes over from autoplay, which would otherwise carry on from a stale position. */
     select(index: number): Promise<void> {
       this.pause();
+      this.refusal = undefined;
       return this.goTo(index);
     },
     goTo(index: number): Promise<void> {
