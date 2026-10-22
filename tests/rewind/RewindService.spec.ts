@@ -11,6 +11,7 @@ import {clearReplayCache, getReplayMoves, loadReplayState} from '../../src/serve
 import {MAX_REWINDS, RewindActor, rewindGame, rewindMetrics, rewindTable} from '../../src/server/rewind/RewindService';
 import {sameState} from '../../src/server/rewind/stateHash';
 import {isTableLocked} from '../../src/server/rewind/tableLock';
+import {barUntilNextGeneration, mayRequest} from '../../src/server/rewind/vote/RewindVote';
 import {PlayerInput} from '../../src/server/routes/PlayerInput';
 import {RouteError} from '../../src/server/routes/RouteError';
 import {INVALID_REQUEST_ID} from '../../src/common/app/AppErrorId';
@@ -418,6 +419,8 @@ describe('RewindService whole table', () => {
   let target: number;
   // With the draft variant, the save that starts the third generation's draft.
   let draft: number;
+  // Without it, the third generation's research save, the newest save.
+  let thirdResearch: number;
 
   // A two-player game, played to the research phase of the generation after next. With the draft
   // variant it plays the second generation's draft too, and stops when the third generation's draft
@@ -460,6 +463,7 @@ describe('RewindService whole table', () => {
     target = game.lastSaveId - 1;
     choose(player2, 'Convert 8 heat into temperature');
     choose(player2, 'Pass for this generation');
+    thirdResearch = game.lastSaveId - 1;
   }
 
   const judge: RewindActor = {kind: 'judge'};
@@ -638,6 +642,21 @@ describe('RewindService whole table', () => {
         const offered = cast(restored.getPlayerById(p.id).getWaitingFor(), SelectCard).cards.map((card) => card.name);
         expect(offered, cards).deep.eq(before[draft].players.find((s) => s.id === p.id)!.draftHand);
       }
+    }
+  });
+
+  it('keeps who may not ask for a rewind this generation, unless the rewind goes back a generation', async () => {
+    for (const run of [{to: 'this generation', barred: true}, {to: 'an earlier generation', barred: false}] as const) {
+      await playTable();
+      game.rewindRequestLimits = barUntilNextGeneration(undefined, game, player.id);
+      const limits = structuredClone(game.rewindRequestLimits);
+
+      const restored = await rewindTable(game, run.barred ? thirdResearch : target, {cards: 'same', clocks: 'keep'}, {kind: 'vote', requester: player2});
+
+      const row = rows()[rows().length - 1];
+      expect(restored.rewindRequestLimits, run.to).deep.eq(run.barred ? limits : undefined);
+      expect(row.rewindRequestLimits, run.to).deep.eq(run.barred ? limits : undefined);
+      expect(mayRequest(restored.rewindRequestLimits, restored, player.id), run.to).eq(!run.barred);
     }
   });
 

@@ -276,8 +276,13 @@ function promote(sandbox: Game, swap: Swap): void {
   // This save is the result of the rewind, not of inputs.
   sandbox.inputsSinceSave = [];
   // The save carries the freeze, so a reload of it is frozen exactly when the game is. The sandbox
-  // holds no vote and bars no one, and none of that is copied.
+  // holds no vote, and the live game's vote is not copied.
   sandbox.frozen = options.freeze === true || live.frozen;
+  // A player may ask for a rewind once per generation, so a rewind within the generation keeps who
+  // has asked. A rewind into an earlier generation bars no one.
+  sandbox.rewindRequestLimits = live.rewindRequestLimits?.generation === sandbox.generation ?
+    structuredClone(live.rewindRequestLimits) :
+    undefined;
   for (const [i, p] of sandbox.players.entries()) {
     const was = live.getPlayerById(p.id);
     // 'keep' counts the interval in progress too: under escape velocity it is time spent.
