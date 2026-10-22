@@ -150,6 +150,14 @@ export class LocalFilesystem implements IDatabase {
     return Promise.resolve();
   }
 
+  reopenFinishedGame(gameId: GameId): Promise<void> {
+    const filename = this.completedFilename(gameId);
+    if (existsSync(filename)) {
+      unlinkSync(filename);
+    }
+    return Promise.resolve();
+  }
+
   purgeUnfinishedGames(): Promise<Array<GameId>> {
     // Not implemented.
     return Promise.resolve([]);

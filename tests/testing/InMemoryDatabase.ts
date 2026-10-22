@@ -9,6 +9,8 @@ import {Clock} from '../../src/common/Timer';
 export class InMemoryDatabase implements IDatabase {
   public games: Map<GameId, Array<SerializedGame | undefined>> = new Map();
   protected completedGames: Map<GameId, Date> = new Map();
+  protected finishedGames: Set<GameId> = new Set();
+  protected gameResults: Set<GameId> = new Set();
   protected sessions: Map<SessionId, Session> = new Map();
   private clock: Clock;
 
@@ -76,8 +78,8 @@ export class InMemoryDatabase implements IDatabase {
     game.lastSaveId++;
     return Promise.resolve();
   }
-  saveGameResults(_gameId: GameId, _players: number, _generations: number, _gameOptions: GameOptions, _scores: Score[]): void {
-    throw new Error('Method not implemented.');
+  saveGameResults(gameId: GameId, _players: number, _generations: number, _gameOptions: GameOptions, _scores: Score[]): void {
+    this.gameResults.add(gameId);
   }
   loadCloneableGame(gameId: GameId): Promise<SerializedGame> {
     return this.getGameVersion(gameId, 0);
@@ -94,11 +96,17 @@ export class InMemoryDatabase implements IDatabase {
     return Promise.resolve();
   }
   markFinished(gameId: GameId): Promise<void> {
+    this.finishedGames.add(gameId);
     this.completedGames.set(gameId, new Date(this.clock.now()));
     return Promise.resolve();
   }
+  reopenFinishedGame(gameId: GameId): Promise<void> {
+    this.completedGames.delete(gameId);
+    this.gameResults.delete(gameId);
+    return Promise.resolve();
+  }
   purgeUnfinishedGames(): Promise<Array<GameId>> {
-    const keys = [...this.games.keys()];
+    const keys = [...this.games.keys()].filter((key) => !this.finishedGames.has(key));
     for (const key of keys) {
       this.games.delete(key);
     }

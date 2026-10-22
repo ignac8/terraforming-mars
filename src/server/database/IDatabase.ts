@@ -108,6 +108,12 @@ export interface IDatabase {
     markFinished(gameId: GameId): Promise<void>;
 
     /**
+     * A finished game plays on after a rewind. Removes its results and takes it off the compression
+     * queue. Its status stays 'finished', so the purge of unfinished games never deletes it.
+     */
+    reopenFinishedGame(gameId: GameId): Promise<void>;
+
+    /**
      * A maintenance task that purges abandoned solo games older
      * than a given date range.
      *

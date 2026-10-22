@@ -39,6 +39,10 @@ class TestSQLite extends SQLite implements ITestDatabase {
     return row.completed_time;
   }
 
+  async hasGameResults(gameId: GameId): Promise<boolean> {
+    return (await this.asyncGet('SELECT 1 FROM game_results WHERE game_id = ?', [gameId])) !== undefined;
+  }
+
   setCompletedTime(gameId: GameId, timestampSeconds: number): Promise<RunResult> {
     return this.asyncRun('UPDATE completed_game SET completed_time = to_timestamp(?) WHERE game_id = ?', [timestampSeconds, gameId]);
   }
@@ -56,6 +60,31 @@ describeDatabaseSuite({
     size_bytes: -1,
   },
   otherTests: (dbFactory) => {
+    it('a reopened game keeps its saves and its finished status, and can finish again', async () => {
+      const db = dbFactory() as TestSQLite;
+      const player = TestPlayer.BLACK.newPlayer();
+      const game = Game.newInstance('game-reopened', [player], player, 'spectatorid');
+      await db.lastSaveGamePromise;
+      await db.saveGame(game);
+      await db.saveGame(game);
+      db.saveGameResults(game.id, 1, 5, game.gameOptions, []);
+      await db.markFinished(game.id);
+      const queued = () => db.database.prepare('SELECT 1 FROM completed_game WHERE game_id = ?').get(game.id) !== undefined;
+      expect(queued()).is.true;
+      expect(await db.hasGameResults(game.id)).is.true;
+
+      await db.reopenFinishedGame(game.id);
+
+      expect(queued()).is.false;
+      expect(await db.hasGameResults(game.id)).is.false;
+      expect(await db.status(game.id)).eq('finished');
+      await db.purgeUnfinishedGames('0');
+      await db.compressCompletedGames('0');
+      expect(await db.getSaveIds(game.id)).has.members([0, 1, 2]);
+      await db.markFinished(game.id);
+      expect(queued()).is.true;
+    });
+
     describe('compressCompletedGames default', () => {
       const savedEnv = process.env.COMPRESS_COMPLETED_GAMES_DAYS;
       beforeEach(() => {

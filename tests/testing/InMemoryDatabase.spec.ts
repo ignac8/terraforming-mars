@@ -17,7 +17,7 @@ class TestInMemoryDatabase extends InMemoryDatabase implements ITestDatabase {
   }
 
   status(gameId: GameId): Promise<Status> {
-    if (this.completedGames.has(gameId)) {
+    if (this.finishedGames.has(gameId)) {
       return Promise.resolve('finished');
     } else if (this.games.has(gameId)) {
       return Promise.resolve('running');
@@ -30,6 +30,9 @@ class TestInMemoryDatabase extends InMemoryDatabase implements ITestDatabase {
   setCompletedTime(gameId: GameId, timestampSeconds: number): Promise<unknown> {
     this.completedGames.set(gameId, new Date(timestampSeconds * 1000));
     return Promise.resolve();
+  }
+  hasGameResults(gameId: GameId): Promise<boolean> {
+    return Promise.resolve(this.gameResults.has(gameId));
   }
 }
 

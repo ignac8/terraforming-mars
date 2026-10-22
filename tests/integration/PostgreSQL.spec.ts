@@ -94,6 +94,11 @@ class TestPostgreSQL extends PostgreSQL implements ITestDatabase {
     return row.completed_time;
   }
 
+  async hasGameResults(gameId: GameId): Promise<boolean> {
+    const res = await this.client.query('SELECT 1 FROM game_results WHERE game_id = $1', [gameId]);
+    return res.rows.length > 0;
+  }
+
   setCompletedTime(gameId: GameId, timestampSeconds: number): Promise<QueryResult<any>> {
     return this.client.query('UPDATE completed_game SET completed_time = to_timestamp($1) WHERE game_id = $2', [timestampSeconds, gameId]);
   }

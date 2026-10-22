@@ -124,6 +124,10 @@ export class MetricsDelegate implements IDatabase {
     return withDatabaseMetrics('markFinished', () => this.delegate.markFinished(gameId));
   }
 
+  reopenFinishedGame(gameId: GameId): Promise<void> {
+    return withDatabaseMetrics('reopenFinishedGame', () => this.delegate.reopenFinishedGame(gameId));
+  }
+
   purgeUnfinishedGames(maxGameDays?: string): Promise<Array<GameId>> {
     return withDatabaseMetrics('purgeUnfinishedGames', () => this.delegate.purgeUnfinishedGames(maxGameDays));
   }

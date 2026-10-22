@@ -140,6 +140,11 @@ export class SQLite implements IDatabase {
     await Promise.all([promise1, promise2]);
   }
 
+  async reopenFinishedGame(gameId: GameId): Promise<void> {
+    await this.asyncRun('DELETE FROM completed_game WHERE game_id = ?', [gameId]);
+    await this.asyncRun('DELETE FROM game_results WHERE game_id = ?', [gameId]);
+  }
+
 
   async purgeUnfinishedGames(maxGameDays: string | undefined = process.env.MAX_GAME_DAYS): Promise<Array<GameId>> {
     // Purge unfinished games older than MAX_GAME_DAYS days. If this .env variable is not present, unfinished games will not be purged.

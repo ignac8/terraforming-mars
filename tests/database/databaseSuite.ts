@@ -213,6 +213,34 @@ export function describeDatabaseSuite<T extends ITestDatabase>(dtor: DatabaseTes
         await db.compressCompletedGames('2');
         expect(await db.getSaveIds(game.id)).has.members([0, 1, 2]);
       });
+
+      it('a reopened game keeps its saves and its finished status, and can finish again', async () => {
+        const player = TestPlayer.BLACK.newPlayer();
+        const game = Game.newInstance('game-id-reopened', [player], player, 'spectatorid');
+        await db.lastSaveGamePromise;
+        await db.saveGame(game);
+        await db.saveGame(game);
+        await db.saveGame(game);
+        db.saveGameResults(game.id, 1, 5, game.gameOptions, []);
+        await db.markFinished(game.id);
+        await db.setCompletedTime(game.id, 100);
+        // saveGameResults does not report when it is done.
+        for (let i = 0; i < 100 && !(await db.hasGameResults(game.id)); i++) {
+          await new Promise((resolve) => setTimeout(resolve, 10));
+        }
+        expect(await db.hasGameResults(game.id)).is.true;
+
+        await db.reopenFinishedGame(game.id);
+
+        expect(await db.completedTime(game.id)).is.undefined;
+        expect(await db.hasGameResults(game.id)).is.false;
+        expect(await db.status(game.id)).eq('finished');
+        await db.purgeUnfinishedGames('0');
+        await db.compressCompletedGames('0');
+        expect(await db.getSaveIds(game.id)).has.members([0, 1, 2, 3]);
+        await db.markFinished(game.id);
+        expect(await db.completedTime(game.id)).is.not.undefined;
+      });
     }
 
     it('gets player count', async () => {

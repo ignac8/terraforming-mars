@@ -312,6 +312,11 @@ export class PostgreSQL implements IDatabase {
     await Promise.all([promise1, promise2, promise3]);
   }
 
+  async reopenFinishedGame(gameId: GameId): Promise<void> {
+    await this.client.query('DELETE FROM completed_game WHERE game_id = $1', [gameId]);
+    await this.client.query('DELETE FROM game_results WHERE game_id = $1', [gameId]);
+  }
+
   // Purge unfinished games older than MAX_GAME_DAYS days. If this environment variable is absent, it uses the default of 10 days.
   async purgeUnfinishedGames(maxGameDays: string | undefined = process.env.MAX_GAME_DAYS): Promise<Array<GameId>> {
     const dateToSeconds = daysAgoToSeconds(maxGameDays, 10);
