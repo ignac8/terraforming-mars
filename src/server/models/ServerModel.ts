@@ -289,7 +289,8 @@ export class Server {
       handicap: useHandicap ? player.handicap : undefined,
       heat: player.heat,
       heatProduction: player.production.heat,
-      id: game.phase === Phase.END ? player.id : undefined,
+      // A finished game rewinds on a player's id alone when there are no seat passwords to check, and a solo seat never has one.
+      id: game.phase === Phase.END && (modelIsForThisPlayer || !game.isSoloMode()) ? player.id : undefined,
       influence: game.turmoil?.getInfluence(player) ?? 0,
       isActive: player.id === game.activePlayer.id,
       lastCardPlayed: player.lastCardPlayed,

@@ -7,6 +7,7 @@ import {OrOptions} from '../../src/server/inputs/OrOptions';
 import {clearReplayCache} from '../../src/server/replay/ReplayService';
 import {PlayerViewModel} from '../../src/common/models/PlayerModel';
 import {statusCode} from '../../src/common/http/statusCode';
+import {Phase} from '../../src/common/Phase';
 import {cast} from '../../src/common/utils/utils';
 import {restoreTestDatabase, setTestDatabase} from '../testing/setup';
 import {SnapshotDatabase} from '../testing/SnapshotDatabase';
@@ -39,12 +40,12 @@ describe('ApiRewind', () => {
 
   // The route reads the body off the 'data'/'end' events, so the body has to be emitted after
   // post() is called but before it is awaited. Each call gets a fresh request and response.
-  async function post(body: string, query = '') {
+  async function post(body: string, query = '', id: string = player.id) {
     req = new MockRequest();
     res = new MockResponse();
     scaffolding = new RouteTestScaffolding(req);
     await scaffolding.ctx.gameLoader.add(game);
-    scaffolding.url = `/api/rewind?id=${player.id}${query}`;
+    scaffolding.url = `/api/rewind?id=${id}${query}`;
     const response = scaffolding.post(ApiRewind.INSTANCE, res);
     const emit = Promise.resolve().then(() => {
       req.emitString(body);
@@ -87,6 +88,16 @@ describe('ApiRewind', () => {
       expect(restored).is.not.eq(game);
       expect(restored?.rewinds.map((rewind) => rewind.restoredSaveId)).deep.eq([convert]);
       expect(view.game.undoCount).eq(game.undoCount + 1);
+    });
+
+    it('refuses the spectator id of a finished game', async () => {
+      game.phase = Phase.END;
+
+      await post(JSON.stringify({saveId: convert, cards: 'same'}), '', game.spectatorId);
+
+      expect(res.statusCode).eq(statusCode.badRequest);
+      expect(res.content).eq('Bad request: invalid player id');
+      expect((await GameLoader.getInstance().getGame(game.id))).eq(game);
     });
 
     it('passes the refusal of the service through, with its reason', async () => {

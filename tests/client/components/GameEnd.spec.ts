@@ -173,6 +173,14 @@ describe('GameEnd', () => {
     });
   });
 
+  it('links a player to their page only when the model carries their id', () => {
+    const solo = fakePublicPlayerModel({color: 'blue', name: 'Blue', id: undefined});
+    const wrapper = shallowMount(GameEnd, {...globalConfig, props: {participant: {...fakeSpectatorModel(), players: [solo]}}});
+
+    expect(wrapper.find('.game_end_table a').exists()).is.false;
+    expect(wrapper.find('.game_end_table').text()).contains('Blue');
+  });
+
   it('shows the dogs', () => {
     const wrapper = shallowMount(GameEnd, {
       ...globalConfig,

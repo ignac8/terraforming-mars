@@ -89,7 +89,8 @@
                   <tbody>
                       <tr v-for="p in playersInPlace" :key="p.color" :class="getEndGamePlayerRowColorClass(p.color)">
                           <td>
-                            <a :href="'player?id='+p.id+'&noredirect'">{{ p.name }}</a>
+                            <a v-if="p.id !== undefined" :href="'player?id='+p.id+'&noredirect'">{{ p.name }}</a>
+                            <template v-else>{{ p.name }}</template>
                             <div class="column-corporation">
                               <div v-for="(corporationName, index) in getCorporationName(p)" :key="index" v-i18n>{{ corporationName }}</div>
                             </div>
@@ -125,7 +126,7 @@
               <div class="game-end-flexrow">
                   <div v-for="p in playersInPlace" :key="p.color" class="game-end-column">
                       <div class="game-end-winner-scorebreak-player-title">
-                          <div :class="'game-end-player ' + getEndGamePlayerRowColorClass(p.color)"><a :href="'player?id='+p.id+'&noredirect'">{{p.name}}</a></div>
+                          <div :class="'game-end-player ' + getEndGamePlayerRowColorClass(p.color)"><a v-if="p.id !== undefined" :href="'player?id='+p.id+'&noredirect'">{{p.name}}</a><template v-else>{{p.name}}</template></div>
                       </div>
                       <div v-for="v in p.victoryPointsBreakdown.detailsCards" :key="v.cardName">
                         <div class="game-end-column-row">
