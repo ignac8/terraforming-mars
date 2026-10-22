@@ -23,6 +23,7 @@ import {restoreTestDatabase, setTestDatabase} from '../testing/setup';
 import {SnapshotDatabase} from '../testing/SnapshotDatabase';
 import {testGame} from '../TestGame';
 import {Phase} from '../../src/common/Phase';
+import {GameLoader} from '../../src/server/database/GameLoader';
 
 describe('PlayerInput', () => {
   let scaffolding: RouteTestScaffolding;
@@ -314,6 +315,8 @@ describe('PlayerInput', () => {
       const [game, player] = testGame(1, {undoOption: true});
       // The route took this object before the rewind replaced it.
       await scaffolding.ctx.gameLoader.add(game);
+      // The rewind replaces the object that the game loader serves.
+      await GameLoader.getInstance().add(game);
       player.takeAction();
       const pass = (): OrOptionsResponse => {
         const index = cast(player.getWaitingFor(), OrOptions).options.findIndex((option) => option.title === 'Pass for this generation');
