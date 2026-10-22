@@ -33,25 +33,26 @@ function addressBarPasswordParam(): string {
 }
 
 // A claimed seat needs its password, sent as a query parameter like every other request of the
-// seat. A judge link takes it from the address bar. A player's own page passes the one it was given,
-// and the replay page has none to pass, so it reads the address bar. A spectator has no seat.
-function seatPasswordParam(id: ParticipantId, password: string | undefined): string {
-  if (isJudgeId(id) || (isPlayerId(id) && password === undefined)) {
-    return addressBarPasswordParam();
+// seat. The live game page passes the fragment `passwordParam` makes from its model. The replay page
+// has none to pass, so a player or judge id reads the address bar. A spectator has no seat. Either way
+// the password goes out once.
+function seatPasswordParam(id: ParticipantId, passwordFragment: string | undefined): string {
+  if (!isJudgeId(id) && !isPlayerId(id)) {
+    return '';
   }
-  return isPlayerId(id) ? passwordQuery(password) : '';
+  return passwordFragment === undefined || passwordFragment === '' ? addressBarPasswordParam() : passwordFragment;
 }
 
-/** `password` is the seat's, from the live game page. */
-export async function fetchReplayMoves(id: ParticipantId, password?: string): Promise<ReplayMovesModel> {
-  return readJson(await fetch(`${paths.API_REPLAY_MOVES}?id=${id}${seatPasswordParam(id, password)}`));
+/** `passwordFragment` is the seat's, as `passwordParam` makes it on the live game page. */
+export async function fetchReplayMoves(id: ParticipantId, passwordFragment?: string): Promise<ReplayMovesModel> {
+  return readJson(await fetch(`${paths.API_REPLAY_MOVES}?id=${id}${seatPasswordParam(id, passwordFragment)}`));
 }
 
 /** Rejects with an `AbortError` when a newer call replaced this one. */
-export async function fetchReplayView(id: ParticipantId, saveId: number, viewAs: ReplayViewAs, password?: string): Promise<ReplayViewModel> {
+export async function fetchReplayView(id: ParticipantId, saveId: number, viewAs: ReplayViewAs, passwordFragment?: string): Promise<ReplayViewModel> {
   viewAbortController?.abort();
   viewAbortController = new AbortController();
-  const url = `${paths.API_REPLAY_VIEW}?id=${id}&save=${saveId}&as=${viewAs}${seatPasswordParam(id, password)}`;
+  const url = `${paths.API_REPLAY_VIEW}?id=${id}&save=${saveId}&as=${viewAs}${seatPasswordParam(id, passwordFragment)}`;
   return readJson(await fetch(url, {signal: viewAbortController.signal}));
 }
 

@@ -47,8 +47,8 @@ describe('fetchReplay', () => {
   it('does not send a password for a spectator', async () => {
     window.history.replaceState({}, '', '/replay?id=s-spectator-id&password=secret');
 
-    await fetchReplayMoves('s-spectator-id', 'secret');
-    await fetchReplayView('s-spectator-id', 3, 'all', 'secret');
+    await fetchReplayMoves('s-spectator-id', '&password=secret');
+    await fetchReplayView('s-spectator-id', 3, 'all', '&password=secret');
 
     expect(urls).deep.eq([
       'api/replay/moves?id=s-spectator-id',
@@ -56,11 +56,23 @@ describe('fetchReplay', () => {
     ]);
   });
 
+  it('sends the password of a judge page once', async () => {
+    window.history.replaceState({}, '', '/replay?id=j-judge-id&password=from-address');
+
+    await fetchReplayMoves('j-judge-id', '&password=a%26b');
+    await fetchReplayView('j-judge-id', 3, 'all', '&password=a%26b');
+
+    expect(urls).deep.eq([
+      'api/replay/moves?id=j-judge-id&password=a%26b',
+      'api/replay/view?id=j-judge-id&save=3&as=all&password=a%26b',
+    ]);
+  });
+
   it('sends a player the seat password it was given, or else the one in the address bar', async () => {
     window.history.replaceState({}, '', '/replay?id=p-player-id&password=from-address');
 
-    await fetchReplayMoves('p-player-id', 'a&b');
-    await fetchReplayView('p-player-id', 3, 'blue', 'a&b');
+    await fetchReplayMoves('p-player-id', '&password=a%26b');
+    await fetchReplayView('p-player-id', 3, 'blue', '&password=a%26b');
     await fetchReplayMoves('p-player-id');
     await fetchReplayView('p-player-id', 3, 'blue');
 

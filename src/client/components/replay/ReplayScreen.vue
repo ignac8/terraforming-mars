@@ -74,6 +74,7 @@ import ReplayPanel from '@/client/components/replay/ReplayPanel.vue';
 import {vueRoot} from '@/client/components/vueRoot';
 import {setTranslationContext} from '@/client/directives/i18n';
 import {fetchReplayMoves, fetchReplayView, postRewind, ReplayResponseError, translateRefusal} from '@/client/utils/fetchReplay';
+import {passwordParam} from '@/client/utils/playerPassword';
 import {paths} from '@/common/app/paths';
 import {PlayerViewModel, ViewModel} from '@/common/models/PlayerModel';
 import {SpectatorModel} from '@/common/models/SpectatorModel';
@@ -190,7 +191,7 @@ export default defineComponent({
       }
       this.error = undefined;
       try {
-        const answer = await fetchReplayMoves(this.participantId, this.liveView?.password);
+        const answer = await fetchReplayMoves(this.participantId, this.liveView && passwordParam(this.liveView));
         if (request !== this.latestMovesRequest) {
           return;
         }
@@ -249,7 +250,7 @@ export default defineComponent({
         return;
       }
       try {
-        const answer = await fetchReplayView(this.participantId, this.moves[index].saveId, viewAs, this.liveView?.password);
+        const answer = await fetchReplayView(this.participantId, this.moves[index].saveId, viewAs, this.liveView && passwordParam(this.liveView));
         if (request !== this.latestRequest) {
           return;
         }
