@@ -54,6 +54,8 @@ describe('ReplayScreen', () => {
   let judgeAnswer: () => Promise<unknown>;
   /** The players of the views it is asked about, when a test needs more than the one. */
   let pastPlayers: (() => Array<PublicPlayerModel>) | undefined;
+  /** Holds the answer to a moves request back until the returned promise resolves. */
+  let holdMoves: (() => Promise<void>) | undefined;
 
   function respond(body: unknown) {
     return Promise.resolve({ok: true, status: 200, json: () => Promise.resolve(body), text: () => Promise.resolve('')});
@@ -71,6 +73,7 @@ describe('ReplayScreen', () => {
     judgeRequests = [];
     judgeAnswer = () => respond({});
     pastPlayers = undefined;
+    holdMoves = undefined;
     movesAnswer = {status: 'available', ...finishedGame, moves: [
       {saveId: 10, messages: []},
       {saveId: 11, messages: []},
@@ -78,6 +81,7 @@ describe('ReplayScreen', () => {
     (global as any).fetch = async (url: string, init?: {body?: unknown}) => {
       calls.push(url);
       if (url.startsWith('api/replay/moves')) {
+        await holdMoves?.();
         return respond(movesAnswer);
       }
       if (url.startsWith('api/judge/')) {
@@ -529,6 +533,22 @@ describe('ReplayScreen', () => {
       await flushPromises();
       expect(wrapper.findComponent(WaitingFor).exists()).is.true;
       expect(wrapper.findComponent(PlayerHome).props('replay')).is.false;
+    });
+
+    it('goes back to the live game when the move previewed has dropped out of the list', async () => {
+      const wrapper = mountLive();
+      expand(wrapper);
+      await flushPromises();
+      panel(wrapper).vm.$emit('select', 1);
+      await flushPromises();
+      expect(panel(wrapper).props('index')).equals(1);
+
+      // Save 11 was saved again in place, so its range holds no line of its own and the list leaves it out.
+      movesAnswer = {...liveMoves, moves: [{saveId: 10, messages: played}, {saveId: 12, messages: played}]};
+      await wrapper.setProps({liveView: liveView(4)});
+      await flushPromises();
+      expect(panel(wrapper).props('index')).is.undefined;
+      expect(wrapper.findComponent(WaitingFor).exists()).is.true;
     });
 
     it('shows no input while the first preview is still loading', async () => {
@@ -1120,6 +1140,40 @@ describe('ReplayScreen', () => {
         await flushPromises();
         expect(panel(wrapper).props('index')).is.undefined;
         expect(wrapper.findComponent(JudgeHome).exists()).is.true;
+      });
+
+      it('keep the board on screen while the list is read again, and move to the nearest move when the one shown is gone', async () => {
+        for (const [remaining, shown] of [[[10, 12], 10], [[12, 13], 12]] as const) {
+          movesAnswer = withUndone;
+          const wrapper = shallowMount(ReplayScreen, {
+            ...globalConfig,
+            global: {...globalConfig.global, stubs: {ReplayPanel: false, RewindControls: false}},
+            props: {participantId: judgeId},
+          });
+          await flushPromises();
+          await switchOf(wrapper).setValue(true);
+          await flushPromises();
+          panel(wrapper).vm.$emit('select', 1);
+          await flushPromises();
+          expect(calls[calls.length - 1]).to.equal(`api/replay/view?id=${judgeId}&save=11&as=all&undone=1`);
+
+          let release = () => {};
+          holdMoves = () => new Promise((resolve) => {
+            release = resolve;
+          });
+          movesAnswer = {...judgeMoves, moves: remaining.map((saveId) => ({saveId, messages: played}))} as any;
+          await switchOf(wrapper).setValue(false);
+          await flushPromises();
+          expect(wrapper.findComponent(SpectatorHome).exists(), String(remaining)).is.true;
+          expect(wrapper.text(), String(remaining)).not.to.contain('Loading replay...');
+
+          holdMoves = undefined;
+          release();
+          await flushPromises();
+          expect(calls[calls.length - 1], String(remaining)).to.equal(`api/replay/view?id=${judgeId}&save=${shown}&as=all`);
+          expect(panel(wrapper).props('index'), String(remaining)).equals(remaining.indexOf(shown));
+          wrapper.unmount();
+        }
       });
 
       it('are offered to the judge of a game that allows it, and to no one else', async () => {

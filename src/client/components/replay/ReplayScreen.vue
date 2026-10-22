@@ -279,7 +279,8 @@ export default defineComponent({
     async loadMoves(): Promise<void> {
       const request = ++this.latestMovesRequest;
       const gameAge = this.liveModel?.game.gameAge;
-      if (!this.isLive) {
+      // A list that is read again keeps the board on screen, as when the judge switches the undone moves.
+      if (!this.isLive && this.status !== 'available') {
         this.status = 'loading';
       }
       this.error = undefined;
@@ -322,9 +323,14 @@ export default defineComponent({
           const at = moves.findIndex((move) => move.saveId === selected);
           if (at >= 0) {
             this.index = at;
-          } else if (this.isLive && this.index !== undefined) {
+          } else if (selected !== undefined) {
             // The move is gone from the list, as an undone one is when the judge hides them.
-            this.backToLive();
+            if (this.isLive) {
+              this.backToLive();
+            } else {
+              // The nearest move before it, else the first.
+              this.index = Math.max(0, moves.filter((move) => move.saveId < selected).length - 1);
+            }
           }
           if (!this.isLive) {
             // Read again, the list can be shorter than the one the move was picked from.
