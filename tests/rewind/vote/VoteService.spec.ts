@@ -368,16 +368,18 @@ describe('VoteService', () => {
     expect(next.vote!.voteId).not.eq(id);
   });
 
-  it('lets only players of a multiplayer game with player undo and without judge undo ask', async () => {
+  it('lets only players of a multiplayer game with player undo ask, whether it has a judge or not', async () => {
     const runs = [
-      {players: 3, options: {undoOption: false}},
-      {players: 1, options: {undoOption: true}},
-      {players: 3, options: {undoOption: true, judgeLink: true, judgeUndo: true}},
+      {players: 3, options: {undoOption: false}, kind: 'forbidden'},
+      {players: 1, options: {undoOption: true}, kind: 'forbidden'},
+      {players: 3, options: {undoOption: false, judgeLink: true, judgeUndo: true}, kind: 'forbidden'},
+      // Past the access check, and refused for a move that is not in the history of that other game.
+      {players: 3, options: {undoOption: true, judgeLink: true, judgeUndo: true}, kind: 'notFound'},
     ];
     for (const run of runs) {
       const [g, p] = testGame(run.players, run.options, '-other');
       act(p);
-      expect((await refusal(service.request(g, p, saveId, 'same'))).kind, JSON.stringify(run)).eq('forbidden');
+      expect((await refusal(service.request(g, p, saveId, 'same'))).kind, JSON.stringify(run)).eq(run.kind);
     }
   });
 
@@ -626,7 +628,7 @@ describe('VoteService', () => {
   });
 
   it('shows the newest ended vote, and forgets a passed one when its time is up', async () => {
-    const passedMemory = () => (service as unknown as {passed: Map<string, unknown>}).passed;
+    const passedMemory = () => (service as unknown as {carried: Map<string, unknown>}).carried;
     const restoredVote = () => ({id: 5, requester: p2.id, saveId, moveNumber: 2, generation: game.generation, cards: 'same' as const, yes: [p2.id], status: 'open' as const, expiresAt: clock.now() + 30_000});
     restored.rewindVote = restoredVote();
     service.moved(restored);

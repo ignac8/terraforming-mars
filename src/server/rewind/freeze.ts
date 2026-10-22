@@ -2,9 +2,11 @@ import {IGame} from '../IGame';
 import {RouteError} from '../routes/RouteError';
 import {Phase} from '../../common/Phase';
 import {withTableLock} from './tableLock';
+import {voteService} from './vote/effects';
 
 /**
  * Stops every input and every clock of `game` until unfreezeGame, and saves that into the newest save.
+ * An open rewind vote ends.
  * Refuses a finished game, a frozen one and a replaced game object.
  *
  * Resolves to whether the freeze reached the database. When it did not, the game is frozen in memory
@@ -23,6 +25,8 @@ export function freezeGame(game: IGame): Promise<boolean> {
     game.frozen = true;
     game.players.forEach((player) => player.timer.pause());
     game.undoCount++;
+    // The same patch that saves the freeze saves the end of the vote.
+    voteService.endForJudge(game, 'froze');
     return persist(game, 'freeze');
   });
 }

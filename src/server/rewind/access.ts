@@ -19,10 +19,9 @@ export function checkMayShowUndone(game: IGame, participantId: ParticipantId): v
   }
 }
 
-/** A player of a multiplayer game with Player undo and without Judge undo: may browse its history and ask for a rewind by vote. */
+/** A player of a multiplayer game with Player undo: may browse its history and ask for a rewind by vote, also at a table with a judge. */
 export function canVoteRewind(game: IGame, participantId: ParticipantId): boolean {
-  return game.players.length > 1 && game.gameOptions.undoOption && !game.gameOptions.judgeUndo &&
-    game.players.some((p) => p.id === participantId);
+  return game.players.length > 1 && game.gameOptions.undoOption && game.players.some((p) => p.id === participantId);
 }
 
 /** Who may browse a running game's history: whoever could rewind it. */

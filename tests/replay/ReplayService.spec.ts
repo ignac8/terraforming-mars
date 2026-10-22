@@ -496,7 +496,6 @@ describe('ReplayService', () => {
         {players: 1, options: {undoOption: true}, viewer: (g: IGame) => g.spectatorId},
         {players: 2, options: {judgeLink: true}, viewer: (g: IGame) => g.judgeId!},
         {players: 2, options: {judgeLink: true, judgeUndo: true}, viewer: (_g: IGame, p: TestPlayer) => p.id},
-        {players: 2, options: {judgeLink: true, judgeUndo: true, undoOption: true}, viewer: (_g: IGame, p: TestPlayer) => p.id},
         {players: 2, options: {judgeLink: true, judgeUndo: true}, viewer: (g: IGame) => g.spectatorId},
         {players: 2, options: {undoOption: false}, viewer: (_g: IGame, p: TestPlayer) => p.id},
         {players: 2, options: {undoOption: true}, viewer: (g: IGame) => g.spectatorId},

@@ -6,6 +6,8 @@ import {OrOptions} from '../../../src/server/inputs/OrOptions';
 import {clearReplayCache, getReplayMoves} from '../../../src/server/replay/ReplayService';
 import {voteClock, voteEffects, voteService} from '../../../src/server/rewind/vote/effects';
 import {Handler} from '../../../src/server/routes/Handler';
+import {ApiJudgeFreeze} from '../../../src/server/routes/ApiJudgeFreeze';
+import {ApiJudgeRewind} from '../../../src/server/routes/ApiJudgeRewind';
 import {ApiRewindVote} from '../../../src/server/routes/ApiRewindVote';
 import {LoadGame} from '../../../src/server/routes/LoadGame';
 import {PlayerInput} from '../../../src/server/routes/PlayerInput';
@@ -24,6 +26,7 @@ import {TestPlayer} from '../../TestPlayer';
 import {testGame} from '../../TestingUtils';
 
 export const CONVERT_HEAT = 'Convert 8 heat into temperature';
+export const JUDGE_PASSWORD = '0123456789ab';
 
 /**
  * A two-player game with Player undo, served by a real loader over a SnapshotDatabase, played to the
@@ -55,6 +58,7 @@ export class VoteTable {
       return {cancel: () => {}};
     };
     [this.game, this.p1, this.p2] = testGame(2, {undoOption: true, ...options});
+    this.game.judgePassword = JUDGE_PASSWORD;
     await this.loader.add(this.game);
     this.game.phase = Phase.ACTION;
     this.p1.heat = 40;
@@ -124,6 +128,16 @@ export class VoteTable {
 
   public post(id: ParticipantId, body: object | string, query = ''): Promise<MockResponse> {
     return this.call(ApiRewindVote.INSTANCE, `/api/rewind/vote?id=${id}${query}`, 'post', typeof body === 'string' ? body : JSON.stringify(body));
+  }
+
+  /** The judge freezes or unfreezes the game. Only for a table started with a judge link. */
+  public judgeFreeze(frozen: boolean): Promise<MockResponse> {
+    return this.call(ApiJudgeFreeze.INSTANCE, `/api/judge/freeze?id=${this.game.judgeId}&password=${JUDGE_PASSWORD}`, 'post', JSON.stringify({frozen}));
+  }
+
+  /** The judge rewinds the table to `saveId`. Only for a table started with a judge link. */
+  public judgeRewind(saveId: number): Promise<MockResponse> {
+    return this.call(ApiJudgeRewind.INSTANCE, `/api/judge/rewind?id=${this.game.judgeId}&password=${JUDGE_PASSWORD}`, 'post', JSON.stringify({saveId, cards: 'same', clocks: 'keep'}));
   }
 
   /** Posts an answer to the player's prompt, the way the game page does, but without a request id. */

@@ -1,7 +1,7 @@
 import {Color} from '../Color';
 import {RewindCards} from '../replay/ReplayModel';
 
-export type RewindVoteStatus = 'open' | 'rewinding' | 'passed' | 'declined' | 'cancelled' | 'expired' | 'moved-on' | 'failed';
+export type RewindVoteStatus = 'open' | 'rewinding' | 'passed' | 'declined' | 'cancelled' | 'expired' | 'moved-on' | 'froze' | 'judge-rewound' | 'failed';
 export type RewindVoteChoice = 'yes' | 'no' | 'pending';
 
 export type RewindVoteModel = {

@@ -35,6 +35,7 @@ const TRY_AGAIN = 'That didn\'t work. Try again.';
 const UNRESTORABLE = 'That moment can\'t be restored. Nothing was changed.';
 const OWN_MOVES_ONLY = 'You can only ask to rewind your own moves.';
 const GAME_REWOUND = 'This game was rewound. Refresh this page.';
+const GAME_FROZEN = 'The judge froze the game. Click OK to refresh this page.';
 
 export type VoteEffects = {
   /** rewindTable(game, saveId, {cards, clocks: 'keep'}, {kind: 'vote', requester}). Must take the table lock synchronously on call. */
@@ -57,10 +58,11 @@ let lastVoteId = Date.now();
 
 export class VoteService {
   // A replaced game object (a rollback, a player undo) must not touch the live object's timer or ended vote,
-  // so both are kept per object. A vote that passed is the one an object answers for its restored successor.
+  // so both are kept per object. A vote that passed, or that a judge's rewind ended, is the one an object answers for
+  // its restored successor.
   private readonly timers = new Map<IGame, {cancel(): void}>();
   private ended = new WeakMap<IGame, EndedVote>();
-  private readonly passed = new Map<GameId, EndedVote>();
+  private readonly carried = new Map<GameId, EndedVote>();
 
   constructor(private readonly effects: VoteEffects, private readonly clock: Clock = new Clock()) {}
 
@@ -111,7 +113,7 @@ export class VoteService {
     };
     game.rewindVote = vote;
     this.ended.delete(game);
-    this.passed.delete(game.id);
+    this.carried.delete(game.id);
     this.arm(game);
     console.log(`rewind vote ${vote.id} of ${game.id} opened by ${player.id} for save ${saveId}`);
     if (!await this.write(game)) {
@@ -130,6 +132,7 @@ export class VoteService {
     this.checkMayTake(game, player);
     await this.settle(game);
     this.checkMayTake(game, player);
+    this.checkNotFrozen(game);
     const vote = game.rewindVote;
     if (vote === undefined || vote.id !== voteId) {
       throw RouteError.badRequest('This vote has ended.');
@@ -177,6 +180,14 @@ export class VoteService {
     this.end(game, 'failed', {reason});
     await this.write(game);
     return this.poll(game, player);
+  }
+
+  /**
+   * Ends the game's open vote because the judge froze or rewound the game. Nobody is barred from asking, and nothing is
+   * written: a freeze writes the table state itself, and a rewound game's save carries no vote.
+   */
+  public endForJudge(game: IGame, status: 'froze' | 'judge-rewound'): void {
+    this.end(game, status, {});
   }
 
   public async cancel(game: IGame, player: IPlayer, voteId: number): Promise<RewindVotePoll> {
@@ -235,7 +246,7 @@ export class VoteService {
     }
     this.timers.clear();
     this.ended = new WeakMap();
-    this.passed.clear();
+    this.carried.clear();
     lastVoteId = Date.now();
   }
 
@@ -248,8 +259,16 @@ export class VoteService {
     }
   }
 
+  /** A request and an answer wait until the judge unfreezes the game. Cancelling does not. */
+  private checkNotFrozen(game: IGame): void {
+    if (game.frozen) {
+      throw RouteError.badRequest(GAME_FROZEN);
+    }
+  }
+
   private checkMayRequest(game: IGame, player: IPlayer): void {
     this.checkMayTake(game, player);
+    this.checkNotFrozen(game);
     if (game.rewindVote !== undefined) {
       throw RouteError.badRequest('A rewind vote is already open.');
     }
@@ -260,12 +279,12 @@ export class VoteService {
 
   /** The newest ended vote this object, or the game it was restored into, has to show. */
   private endedOf(game: IGame): EndedVote | undefined {
-    const passed = this.passed.get(game.id);
-    if (passed !== undefined && this.clock.now() >= passed.endedAt + ENDED_VOTE_SHOWN_MS) {
-      this.passed.delete(game.id);
+    const carried = this.carried.get(game.id);
+    if (carried !== undefined && this.clock.now() >= carried.endedAt + ENDED_VOTE_SHOWN_MS) {
+      this.carried.delete(game.id);
     }
     const own = this.ended.get(game);
-    const shown = this.passed.get(game.id);
+    const shown = this.carried.get(game.id);
     return shown !== undefined && (own === undefined || shown.endedAt > own.endedAt) ? shown : own;
   }
 
@@ -327,8 +346,8 @@ export class VoteService {
     if (options.reason !== undefined) {
       ended.reason = options.reason;
     }
-    if (status === 'passed') {
-      this.passed.set(game.id, ended);
+    if (status === 'passed' || status === 'judge-rewound') {
+      this.carried.set(game.id, ended);
     } else {
       this.ended.set(game, ended);
     }
