@@ -13,6 +13,7 @@ import {
   isDue,
   mayRequest,
   voteModel,
+  ENDED_VOTE_SHOWN_MS,
   VOTE_EXPIRY_MS,
 } from './RewindVote';
 import {Clock} from '../../../common/Timer';
@@ -50,16 +51,15 @@ function defaultSchedule(fn: () => void, ms: number): {cancel(): void} {
   return {cancel: () => clearTimeout(timer)};
 }
 
-type Memory = {
-  timer?: {cancel(): void};
-  ended?: EndedVote;
-};
-
 // Seeded with the time, so a tab that holds an id from before a restart can only match the same vote.
 let lastVoteId = Date.now();
 
 export class VoteService {
-  private readonly memory = new Map<GameId, Memory>();
+  // A replaced game object (a rollback, a player undo) must not touch the live object's timer or ended vote,
+  // so both are kept per object. A vote that passed is the one an object answers for its restored successor.
+  private readonly timers = new Map<IGame, {cancel(): void}>();
+  private ended = new WeakMap<IGame, EndedVote>();
+  private readonly passed = new Map<GameId, EndedVote>();
 
   constructor(private readonly effects: VoteEffects, private readonly clock: Clock = new Clock()) {}
 
@@ -69,7 +69,7 @@ export class VoteService {
     }
     return {
       undoCount: game.undoCount,
-      vote: voteModel(game, this.memory.get(game.id)?.ended, this.clock.now()),
+      vote: voteModel(game, this.endedOf(game), this.clock.now()),
       mayRequest: mayRequest(game.rewindRequestLimits, game, player.id) && canVoteRewind(game, player.id),
     };
   }
@@ -104,7 +104,8 @@ export class VoteService {
       expiresAt: this.clock.now() + VOTE_EXPIRY_MS,
     };
     game.rewindVote = vote;
-    this.memoryOf(game).ended = undefined;
+    this.ended.delete(game);
+    this.passed.delete(game.id);
     this.arm(game);
     console.log(`rewind vote ${vote.id} of ${game.id} opened by ${player.id} for save ${saveId}`);
     if (!await this.write(game)) {
@@ -221,10 +222,12 @@ export class VoteService {
 
   /** Forgets every timer and ended vote, and the vote ids handed out, as a process restart does. */
   public resetForTesting(): void {
-    for (const memory of this.memory.values()) {
-      memory.timer?.cancel();
+    for (const timer of this.timers.values()) {
+      timer.cancel();
     }
-    this.memory.clear();
+    this.timers.clear();
+    this.ended = new WeakMap();
+    this.passed.clear();
     lastVoteId = Date.now();
   }
 
@@ -247,13 +250,15 @@ export class VoteService {
     }
   }
 
-  private memoryOf(game: IGame): Memory {
-    let memory = this.memory.get(game.id);
-    if (memory === undefined) {
-      memory = {};
-      this.memory.set(game.id, memory);
+  /** The newest ended vote this object, or the game it was restored into, has to show. */
+  private endedOf(game: IGame): EndedVote | undefined {
+    const passed = this.passed.get(game.id);
+    if (passed !== undefined && this.clock.now() >= passed.endedAt + ENDED_VOTE_SHOWN_MS) {
+      this.passed.delete(game.id);
     }
-    return memory;
+    const own = this.ended.get(game);
+    const shown = this.passed.get(game.id);
+    return shown !== undefined && (own === undefined || shown.endedAt > own.endedAt) ? shown : own;
   }
 
   /** Starts the timer of the game's open vote, and has an accepted move end the vote. */
@@ -262,19 +267,15 @@ export class VoteService {
     if (vote === undefined) {
       return;
     }
-    const memory = this.memoryOf(game);
-    memory.timer?.cancel();
+    this.timers.get(game)?.cancel();
     const schedule = this.effects.schedule ?? defaultSchedule;
-    memory.timer = schedule(() => void this.onTimer(game), Math.max(0, vote.expiresAt - this.clock.now()));
+    this.timers.set(game, schedule(() => void this.onTimer(game), Math.max(0, vote.expiresAt - this.clock.now())));
     game.onRewindVoteMove = () => this.moved(game);
   }
 
   private disarm(game: IGame): void {
-    const memory = this.memory.get(game.id);
-    memory?.timer?.cancel();
-    if (memory !== undefined) {
-      memory.timer = undefined;
-    }
+    this.timers.get(game)?.cancel();
+    this.timers.delete(game);
   }
 
   private async onTimer(game: IGame): Promise<void> {
@@ -316,7 +317,11 @@ export class VoteService {
     if (options.reason !== undefined) {
       ended.reason = options.reason;
     }
-    this.memoryOf(game).ended = ended;
+    if (status === 'passed') {
+      this.passed.set(game.id, ended);
+    } else {
+      this.ended.set(game, ended);
+    }
     game.rewindVote = undefined;
     if (options.bar === true) {
       game.rewindRequestLimits = barUntilNextGeneration(game.rewindRequestLimits, game, vote.requester);

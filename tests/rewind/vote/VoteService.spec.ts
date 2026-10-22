@@ -523,6 +523,24 @@ describe('VoteService', () => {
     expect(loaded.rewindVote).is.undefined;
   });
 
+  it('leaves the timer and the ended vote of one object alone when another object of the game moves', async () => {
+    const rows = db.games.get(game.id)!;
+    const replaced = Game.deserialize(structuredClone(rows[rows.length - 1]!));
+    const open = () => ({id: 5, requester: p2.id, saveId, moveNumber: 2, generation: game.generation, cards: 'same' as const, yes: [p2.id], status: 'open' as const, expiresAt: clock.now() + 30_000});
+
+    const first = await service.request(game, p2, saveId, 'same');
+    replaced.rewindVote = open();
+    service.moved(replaced);
+    expect(timers.every((t) => !t.cancelled)).is.true;
+    expect(status(game, p2)).eq('open');
+
+    await service.cancel(game, p2, first.vote!.voteId);
+    replaced.rewindVote = open();
+    service.moved(replaced);
+    expect(status(game, p2)).eq('cancelled');
+    expect(status(replaced, replaced.getPlayerById(p2.id))).eq('moved-on');
+  });
+
   it('does nothing for an object the loader no longer serves', async () => {
     const opened = await service.request(game, p2, saveId, 'same');
     persists = [];
