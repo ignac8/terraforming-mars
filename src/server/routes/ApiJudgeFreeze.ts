@@ -24,6 +24,9 @@ function parse(body: string): boolean {
   return entity.frozen;
 }
 
+const FREEZE_NOT_SAVED = 'The game is frozen, but that was not saved. A restart would undo it.';
+const UNFREEZE_NOT_SAVED = 'The game runs again, but that was not saved. A restart would freeze it again.';
+
 /**
  * Freezes or unfreezes the game of the judge in the `id` parameter, and answers the judge's view of it.
  * The body names the state the judge wants, so a stale judge tab is refused instead of flipping the freeze back.
@@ -48,6 +51,3 @@ export class ApiJudgeFreeze extends Handler {
     responses.writeJson(res, ctx, Server.getJudgeModel(game));
   }
 }
-
-const FREEZE_NOT_SAVED = 'The game is frozen, but that was not saved. A restart would undo it.';
-const UNFREEZE_NOT_SAVED = 'The game runs again, but that was not saved. A restart would freeze it again.';
