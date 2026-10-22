@@ -264,7 +264,7 @@ describe('RewindService', () => {
     release();
     await rewinding;
 
-    expect(db.hasGameResults(game.id)).is.true;
+    expect(await db.hasGameResults(game.id)).is.true;
     expect((await loadReplayState(game, saveId)).phase).eq(Phase.END);
   });
 

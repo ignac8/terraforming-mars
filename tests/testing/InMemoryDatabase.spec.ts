@@ -31,9 +31,6 @@ class TestInMemoryDatabase extends InMemoryDatabase implements ITestDatabase {
     this.completedGames.set(gameId, new Date(timestampSeconds * 1000));
     return Promise.resolve();
   }
-  hasGameResults(gameId: GameId): Promise<boolean> {
-    return Promise.resolve(this.gameResults.has(gameId));
-  }
 }
 
 describeDatabaseSuite({

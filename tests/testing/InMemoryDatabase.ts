@@ -81,8 +81,8 @@ export class InMemoryDatabase implements IDatabase {
   saveGameResults(gameId: GameId, _players: number, _generations: number, _gameOptions: GameOptions, _scores: Score[]): void {
     this.gameResults.add(gameId);
   }
-  hasGameResults(gameId: GameId): boolean {
-    return this.gameResults.has(gameId);
+  hasGameResults(gameId: GameId): Promise<boolean> {
+    return Promise.resolve(this.gameResults.has(gameId));
   }
   loadCloneableGame(gameId: GameId): Promise<SerializedGame> {
     return this.getGameVersion(gameId, 0);
