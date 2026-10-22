@@ -17,10 +17,13 @@ import {CardName} from '@/common/cards/CardName';
 import {translateMessage} from '@/client/directives/i18n';
 import {LogMessageDataType} from '@/common/logs/LogMessageDataType';
 import {PreferencesManager} from '@/client/utils/PreferencesManager';
+import {LogMessage} from '@/common/logs/LogMessage';
 
 const id = 's-spectator-id' as SpectatorId;
 const playerId = 'p-blue-id' as PlayerId;
 const finishedGame = {finished: true, canRewind: false, defaultViewAs: 'all'} as const;
+/** The messages of a move that was made. */
+const played: Array<LogMessage> = [{message: 'Played', data: [], timestamp: 0}];
 
 /** A player with something on the table, which is when the home screen shows its actions block. */
 function playedView(overrides: Parameters<typeof fakePlayerViewModel>[0] = {}): PlayerViewModel {
@@ -407,7 +410,7 @@ describe('ReplayScreen', () => {
     });
 
     it('sends the seat password of the live game page', async () => {
-      movesAnswer = {status: 'available', finished: false, canRewind: true, defaultViewAs: 'blue', moves: [{saveId: 10, messages: []}, {saveId: 11, messages: []}]};
+      movesAnswer = {status: 'available', finished: false, canRewind: true, defaultViewAs: 'blue', moves: [{saveId: 10, messages: played}, {saveId: 11, messages: played}]};
       const wrapper = shallowMount(ReplayScreen, {
         ...globalConfig,
         global: {...globalConfig.global, stubs: {ReplayPanel: false}},
@@ -425,8 +428,8 @@ describe('ReplayScreen', () => {
 
   describe('on the live game page', () => {
     const liveMoves = {status: 'available', finished: false, canRewind: true, defaultViewAs: 'blue', moves: [
-      {saveId: 10, messages: []},
-      {saveId: 11, messages: []},
+      {saveId: 10, messages: played},
+      {saveId: 11, messages: played},
     ]} as const;
     const waitingFor = {type: 'option', title: 'Take your action', buttonLabel: 'OK'} as any;
 
@@ -531,7 +534,7 @@ describe('ReplayScreen', () => {
       panel(wrapper).vm.$emit('select', 1);
       await flushPromises();
       // Another page rewound the game to before its second move.
-      movesAnswer = {status: 'available', finished: false, canRewind: true, defaultViewAs: 'blue', moves: [{saveId: 10, messages: []}]};
+      movesAnswer = {status: 'available', finished: false, canRewind: true, defaultViewAs: 'blue', moves: [{saveId: 10, messages: played}]};
       rewindAnswer = () => Promise.resolve({ok: false, status: 404, text: () => Promise.resolve('Not found: That move is not in this game\'s history.')});
       wrapper.findComponent(RewindControls).vm.$emit('rewind', 'same');
       await flushPromises();
@@ -541,6 +544,16 @@ describe('ReplayScreen', () => {
       expect(wrapper.findComponent(WaitingFor).exists()).is.true;
       expect(updatePlayer.mock.calls).has.length(1);
       expect(wrapper.find('.rewind-refusal').text()).to.contain('not in this game');
+    });
+
+    it('lists no move for the live game itself, and keeps the last position of a finished game', async () => {
+      for (const finished of [false, true]) {
+        movesAnswer = {...liveMoves, finished, moves: [{saveId: 10, messages: played}, {saveId: 11, messages: []}]};
+        const wrapper = mountLive();
+        await wrapper.find('.replay-collapse').trigger('click');
+        await flushPromises();
+        expect(panel(wrapper).props('moves').map((move) => move.saveId), String(finished)).to.deep.equal(finished ? [10, 11] : [10]);
+      }
     });
 
     it('reloads the moves when the game moves on while the panel is open, and not while it is closed', async () => {

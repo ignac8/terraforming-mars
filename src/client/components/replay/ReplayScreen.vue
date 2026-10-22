@@ -72,10 +72,17 @@ import {fetchReplayMoves, fetchReplayView, postRewind, ReplayResponseError, tran
 import {paths} from '@/common/app/paths';
 import {PlayerViewModel, ViewModel} from '@/common/models/PlayerModel';
 import {SpectatorModel} from '@/common/models/SpectatorModel';
-import {ReplayMove, ReplayViewAs, ReplayViewModel, RewindCards} from '@/common/replay/ReplayModel';
+import {ReplayMove, ReplayMovesModel, ReplayViewAs, ReplayViewModel, RewindCards} from '@/common/replay/ReplayModel';
 import {isPlayerId, ParticipantId} from '@/common/Types';
 
 type Status = 'loading' | 'available' | 'not-finished' | 'expired' | 'not-found' | 'error';
+
+// The moves of a running game end with its newest save. Until a move follows that save, it is the live
+// game itself, which is no move to list. A finished game keeps it: it is the final position.
+function listedMoves(answer: Extract<ReplayMovesModel, {status: 'available'}>): Array<ReplayMove> {
+  const last = answer.moves[answer.moves.length - 1];
+  return !answer.finished && last?.messages.length === 0 ? answer.moves.slice(0, -1) : answer.moves;
+}
 
 type DataModel = {
   status: Status;
@@ -179,7 +186,8 @@ export default defineComponent({
         if (request !== this.latestMovesRequest) {
           return;
         }
-        if (answer.status !== 'available' || answer.moves.length === 0) {
+        const moves = answer.status === 'available' ? listedMoves(answer) : [];
+        if (answer.status !== 'available' || moves.length === 0) {
           // No moves yet is the same as the saves not having landed.
           this.status = answer.status !== 'available' ? answer.status : 'not-finished';
           if (this.liveView !== undefined) {
@@ -189,7 +197,7 @@ export default defineComponent({
           if (this.moves.length === 0) {
             this.viewAs = answer.defaultViewAs;
           }
-          this.moves = answer.moves;
+          this.moves = moves;
           this.canRewind = answer.canRewind;
           this.movesGameAge = gameAge;
           this.status = 'available';
