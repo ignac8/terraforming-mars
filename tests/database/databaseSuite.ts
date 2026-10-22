@@ -371,6 +371,24 @@ export function describeDatabaseSuite<T extends ITestDatabase>(dtor: DatabaseTes
       expect((await db.getGameVersion(game.id, 1)).players[0].megaCredits).eq(200);
     });
 
+    it('two saveGame calls in a row write two rows', async () => {
+      const player = TestPlayer.BLACK.newPlayer();
+      const game = Game.newInstance('game-id', [player], player, 'spectatorid');
+      await db.lastSaveGamePromise;
+      expect(game.lastSaveId).eq(1);
+
+      // The second call starts before the first one finishes.
+      player.megaCredits = 100;
+      const first = db.saveGame(game);
+      player.megaCredits = 200;
+      const second = db.saveGame(game);
+      await Promise.all([first, second]);
+
+      expect(await db.getSaveIds(game.id)).has.members([0, 1, 2]);
+      expect((await db.getGameVersion(game.id, 1)).players[0].megaCredits).eq(100);
+      expect((await db.getGameVersion(game.id, 2)).players[0].megaCredits).eq(200);
+    });
+
     it('participantIds', async () => {
       expect(await db.getParticipants()).is.empty;
       testGame(2, {}, '1');

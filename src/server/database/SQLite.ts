@@ -198,17 +198,21 @@ export class SQLite implements IDatabase {
 
   async saveGame(game: IGame): Promise<void> {
     const gameJSON = JSON.stringify(game.serialize());
+    // Take the save id together with the snapshot above, so a save that starts before this one
+    // finishes gets the next id.
+    const thisSaveId = game.lastSaveId;
+    game.lastSaveId = thisSaveId + 1;
 
     // This app has a bad habit of re-saving the same state. It hasn't been fully cleaned, but OK.
     // If this is the first time we're saving the game, then store the participants. No need
     // to store them again.
-    const isFirstSave = game.lastSaveId === 0 &&
+    const isFirstSave = thisSaveId === 0 &&
       await this.asyncGet('SELECT 1 FROM games WHERE game_id = ? AND save_id = 0', [game.id]) === undefined;
 
     // Insert
     await this.runQuietly(
       'INSERT INTO games (game_id, save_id, game, players) VALUES (?, ?, ?, ?) ON CONFLICT (game_id, save_id) DO UPDATE SET game = ?',
-      [game.id, game.lastSaveId, gameJSON, game.players.length, gameJSON]);
+      [game.id, thisSaveId, gameJSON, game.players.length, gameJSON]);
 
     if (isFirstSave) {
       const participantIds: Array<ParticipantId> = game.players.map(toID);
@@ -224,9 +228,6 @@ export class SQLite implements IDatabase {
         console.error(e);
       }
     }
-
-    // This must occur after the save.
-    game.lastSaveId++;
   }
 
   deleteGameNbrSaves(gameId: GameId, rollbackCount: number): Promise<void> {
