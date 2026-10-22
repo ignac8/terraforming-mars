@@ -15,6 +15,7 @@ export const paths = {
   API_JUDGE: 'api/judge',
   API_REPLAY_MOVES: 'api/replay/moves',
   API_REPLAY_VIEW: 'api/replay/view',
+  API_REWIND: 'api/rewind',
   API_SPECTATOR: 'api/spectator',
   API_STATS: 'api/stats',
   API_WAITING_FOR: 'api/waitingfor',

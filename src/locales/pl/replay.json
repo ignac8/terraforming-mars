@@ -15,5 +15,21 @@
   "Go to end": "Przejdź na koniec",
   "Speed": "Prędkość",
   "View as": "Widok",
-  "All hands": "Wszystkie ręce"
+  "All hands": "Wszystkie ręce",
+  "Dealt corporations": "Rozdane korporacje",
+  "Dealt preludes": "Rozdane preludia",
+  "Dealt CEOs": "Rozdani CEO",
+  "Dealt project cards": "Rozdane karty projektów",
+  "Picked corporation": "Wybrana korporacja",
+  "Preludes in hand": "Preludia w ręce",
+  "CEOs in hand": "CEO w ręce",
+  "History": "Historia",
+  "live": "na żywo",
+  "Back to live game": "Wróć do bieżącej gry",
+  "Same cards": "Te same karty",
+  "Shuffle hidden piles": "Przetasuj ukryte talie",
+  "Rewind to before this move": "Cofnij grę do stanu sprzed tego ruchu",
+  "Moves after this one will be undone.": "Ruchy po tym zostaną cofnięte.",
+  "Rewind": "Cofnij grę",
+  "Cancel": "Anuluj"
 }

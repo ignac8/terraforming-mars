@@ -6,6 +6,7 @@ import {globalConfig} from '@tests/client/components/getLocalVue';
 import App from '@/client/components/App.vue';
 import {translateMessage} from '@/client/directives/i18n';
 import {LogMessageDataType} from '@/common/logs/LogMessageDataType';
+import {fakeGameModel, fakeGameOptionsModel, fakePlayerViewModel, fakePublicPlayerModel} from '@tests/client/components/testHelpers';
 
 // The real replay screen would load the whole game UI, which isn't what the routing tests are about.
 vi.mock('@/client/components/replay/ReplayScreen.vue', () => ({default: {template: '<div class="replay-screen-stub"/>'}}));
@@ -132,6 +133,41 @@ describe('App', () => {
     await (wrapper.vm as any).updateJudge();
 
     expect(alertStub.mock.calls).deep.eq([['Incorrect judge password. Reopen the judge page from your browser history, or ask the organizer for the judge link with its password.']]);
+  });
+
+  describe('player home', () => {
+    async function mountPlayerHome(players: number, undoOption: boolean) {
+      const wrapper = shallowMount(App, {
+        ...globalConfig,
+        global: {
+          ...globalConfig.global,
+          stubs: {
+            ReplayScreen: {name: 'ReplayScreenStub', props: ['liveView'], template: '<div class="replay-screen-stub"/>'},
+            PlayerHome: {template: '<div class="player-home-stub"/>'},
+          },
+        },
+      });
+      const playerView = fakePlayerViewModel({
+        players: Array.from({length: players}, () => fakePublicPlayerModel()),
+        game: fakeGameModel({gameOptions: fakeGameOptionsModel({undoOption})}),
+      });
+      await wrapper.setData({screen: 'player-home', playerView});
+      return wrapper;
+    }
+
+    it('keeps the history of a solo game with Player undo on the game page', async () => {
+      const wrapper = await mountPlayerHome(1, true);
+      expect(wrapper.findComponent({name: 'ReplayScreenStub'}).props('liveView')).to.equal(wrapper.vm.playerView);
+      expect(wrapper.find('.player-home-stub').exists()).is.false;
+    });
+
+    it('shows every other game as it always has', async () => {
+      for (const [players, undoOption] of [[1, false], [2, true]] as const) {
+        const wrapper = await mountPlayerHome(players, undoOption);
+        expect(wrapper.find('.replay-screen-stub').exists(), `${players} ${undoOption}`).is.false;
+        expect(wrapper.find('.player-home-stub').exists(), `${players} ${undoOption}`).is.true;
+      }
+    });
   });
 
   describe('replay route', () => {

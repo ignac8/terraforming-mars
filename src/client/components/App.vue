@@ -21,6 +21,11 @@
         v-else-if="screen === 'game-home' && game !== undefined"
         :game="game"
       />
+      <ReplayScreen
+        v-else-if="screen === 'player-home' && playerView !== undefined && hasHistory"
+        :participantId="playerView.id"
+        :liveView="playerView"
+      />
       <PlayerHome
         v-else-if="screen === 'player-home' && playerView !== undefined"
         :player-view="playerView"
@@ -175,6 +180,10 @@ export default defineComponent({
   computed: {
     participant(): ViewModel | undefined {
       return this.playerView ?? this.spectator;
+    },
+    /** A solo or MarsBot game with Player undo keeps its history on the game page, where the player can rewind it. */
+    hasHistory(): boolean {
+      return this.playerView !== undefined && this.playerView.players.length === 1 && this.playerView.game.gameOptions.undoOption;
     },
   },
   methods: {

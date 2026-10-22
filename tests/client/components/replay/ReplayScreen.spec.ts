@@ -7,15 +7,25 @@ import ReplayPanel from '@/client/components/replay/ReplayPanel.vue';
 import ReplayHands from '@/client/components/replay/ReplayHands.vue';
 import PlayerHome from '@/client/components/PlayerHome.vue';
 import SpectatorHome from '@/client/components/SpectatorHome.vue';
-import {fakePlayerViewModel, fakeSpectatorModel} from '../testHelpers';
+import {fakeGameModel, fakePlayerViewModel, fakePublicPlayerModel, fakeSpectatorModel} from '../testHelpers';
 import {ReplayMovesModel, ReplayViewModel} from '@/common/replay/ReplayModel';
-import {SpectatorId} from '@/common/Types';
+import {PlayerId, SpectatorId} from '@/common/Types';
+import {PlayerViewModel} from '@/common/models/PlayerModel';
+import RewindControls from '@/client/components/replay/RewindControls.vue';
+import WaitingFor from '@/client/components/WaitingFor.vue';
+import {CardName} from '@/common/cards/CardName';
 import {translateMessage} from '@/client/directives/i18n';
 import {LogMessageDataType} from '@/common/logs/LogMessageDataType';
-import {fakePublicPlayerModel} from '../testHelpers';
 
 const id = 's-spectator-id' as SpectatorId;
+const playerId = 'p-blue-id' as PlayerId;
 const finishedGame = {finished: true, canRewind: false, defaultViewAs: 'all'} as const;
+
+/** A player with something on the table, which is when the home screen shows its actions block. */
+function playedView(overrides: Parameters<typeof fakePlayerViewModel>[0] = {}): PlayerViewModel {
+  const thisPlayer = fakePublicPlayerModel({color: 'blue', tableau: [{name: CardName.ECOLINE}]});
+  return fakePlayerViewModel({id: playerId, thisPlayer, players: [thisPlayer], ...overrides});
+}
 
 describe('ReplayScreen', () => {
   let originalFetch: any;
@@ -25,6 +35,9 @@ describe('ReplayScreen', () => {
   let holdView: ((saveId: number) => Promise<void> | undefined) | undefined;
   /** Names the players of the view it is asked about. */
   let playerNames: Record<string, string>;
+  /** The POSTs to the rewind route. */
+  let rewinds: Array<{url: string, body: unknown}>;
+  let rewindAnswer: () => Promise<unknown>;
 
   function respond(body: unknown) {
     return Promise.resolve({ok: true, status: 200, json: () => Promise.resolve(body), text: () => Promise.resolve('')});
@@ -35,19 +48,25 @@ describe('ReplayScreen', () => {
     calls = [];
     holdView = undefined;
     playerNames = {};
+    rewinds = [];
+    rewindAnswer = () => respond(playedView());
     movesAnswer = {status: 'available', ...finishedGame, moves: [
       {saveId: 10, messages: []},
       {saveId: 11, messages: []},
     ]};
-    (global as any).fetch = async (url: string) => {
+    (global as any).fetch = async (url: string, init?: {body?: unknown}) => {
       calls.push(url);
       if (url.startsWith('api/replay/moves')) {
         return respond(movesAnswer);
       }
+      if (url.startsWith('api/rewind')) {
+        rewinds.push({url, body: JSON.parse(init?.body as string)});
+        return rewindAnswer();
+      }
       const params = new URL(url, 'http://localhost/').searchParams;
       const viewAs = params.get('as') as ReplayViewModel['viewAs'];
       const saveId = Number(params.get('save'));
-      const view = viewAs === 'all' ? fakeSpectatorModel() : fakePlayerViewModel();
+      const view = viewAs === 'all' ? fakeSpectatorModel() : playedView();
       view.players = [fakePublicPlayerModel({color: 'blue', name: playerNames[viewAs] ?? 'blue'})];
       await holdView?.(saveId);
       const answer: ReplayViewModel = {saveId, viewAs, view, privates: []};
@@ -304,5 +323,174 @@ describe('ReplayScreen', () => {
     wrapper.findComponent(ReplayPanel).vm.$emit('select', 1);
     await flushPromises();
     expect(wrapper.find('.replay-panel .replay-error--floating').text()).to.contain('Save not found');
+  });
+
+  describe('rewinding', () => {
+    const rewindable = {finished: true, canRewind: true, defaultViewAs: 'all'} as const;
+
+    beforeEach(() => {
+      vi.stubGlobal('location', {href: 'http://localhost/replay'});
+      movesAnswer = {status: 'available', ...rewindable, moves: [{saveId: 10, messages: []}, {saveId: 11, messages: []}]};
+    });
+
+    afterEach(() => {
+      vi.unstubAllGlobals();
+    });
+
+    function mountRewindable() {
+      return shallowMount(ReplayScreen, {
+        ...globalConfig,
+        global: {...globalConfig.global, stubs: {ReplayPanel: false}},
+        props: {participantId: playerId},
+      });
+    }
+
+    it('offers the rewind controls only when the moves answer allows a rewind', async () => {
+      for (const canRewind of [true, false]) {
+        movesAnswer = {status: 'available', ...rewindable, canRewind, moves: [{saveId: 10, messages: []}]};
+        const wrapper = mountRewindable();
+        await flushPromises();
+        expect(wrapper.findComponent(RewindControls).exists(), String(canRewind)).equals(canRewind);
+      }
+    });
+
+    it('rewinds to the selected move, then opens the game page of the player', async () => {
+      const wrapper = mountRewindable();
+      await flushPromises();
+      wrapper.findComponent(ReplayPanel).vm.$emit('select', 1);
+      await flushPromises();
+      wrapper.findComponent(RewindControls).vm.$emit('rewind', 'shuffle');
+      await flushPromises();
+      expect(rewinds).to.deep.equal([{url: `api/rewind?id=${playerId}`, body: {saveId: 11, cards: 'shuffle'}}]);
+      expect(window.location.href).to.equal(`player?id=${playerId}`);
+    });
+
+    it('shows the message of a refused rewind and changes nothing', async () => {
+      vi.spyOn(console, 'error').mockImplementation(() => {});
+      rewindAnswer = () => Promise.resolve({ok: false, status: 400, text: () => Promise.resolve('That moment cannot be rewound, nothing was changed')});
+      const wrapper = mountRewindable();
+      await flushPromises();
+      wrapper.findComponent(RewindControls).vm.$emit('rewind', 'same');
+      await flushPromises();
+      expect(wrapper.find('.replay-error--floating').text()).to.contain('nothing was changed');
+      expect(window.location.href).to.equal('http://localhost/replay');
+      expect(wrapper.findComponent(SpectatorHome).exists()).is.true;
+    });
+  });
+
+  describe('on the live game page', () => {
+    const liveMoves = {status: 'available', finished: false, canRewind: true, defaultViewAs: 'blue', moves: [
+      {saveId: 10, messages: []},
+      {saveId: 11, messages: []},
+    ]} as const;
+    const waitingFor = {type: 'option', title: 'Take your action', buttonLabel: 'OK'} as any;
+
+    beforeEach(() => {
+      movesAnswer = liveMoves as any;
+    });
+
+    function liveView(gameAge = 3): PlayerViewModel {
+      return playedView({waitingFor, game: fakeGameModel({gameAge})});
+    }
+
+    function mountLive(view = liveView()) {
+      return shallowMount(ReplayScreen, {
+        ...globalConfig,
+        global: {...globalConfig.global, stubs: {PlayerHome: false, ReplayPanel: false}},
+        props: {participantId: playerId, liveView: view},
+      });
+    }
+
+    const panel = (wrapper: ReturnType<typeof mountLive>) => wrapper.findComponent(ReplayPanel);
+    const expand = (wrapper: ReturnType<typeof mountLive>) => panel(wrapper).vm.$emit('update:collapsed', false);
+    const moveRequests = () => calls.filter((c) => c.startsWith('api/replay/moves'));
+
+    it('shows the live game with its inputs, and loads no moves until the panel is opened', async () => {
+      const wrapper = mountLive();
+      await flushPromises();
+      expect(wrapper.findComponent(WaitingFor).exists()).is.true;
+      expect(wrapper.findComponent(PlayerHome).props('replay')).is.false;
+      expect(calls).to.deep.equal([]);
+      expand(wrapper);
+      await flushPromises();
+      expect(calls).to.deep.equal([`api/replay/moves?id=${playerId}`]);
+    });
+
+    it('previews a move as the player with no way to send input, and comes back to the live game', async () => {
+      const wrapper = mountLive();
+      expand(wrapper);
+      await flushPromises();
+      panel(wrapper).vm.$emit('select', 1);
+      await flushPromises();
+      expect(calls[calls.length - 1]).to.equal(`api/replay/view?id=${playerId}&save=11&as=blue`);
+      expect(wrapper.findComponent(PlayerHome).props('replay')).is.true;
+      expect(wrapper.findComponent(WaitingFor).exists()).is.false;
+      expect(wrapper.find('.player_home_block--actions').exists()).is.false;
+
+      panel(wrapper).vm.$emit('back');
+      await flushPromises();
+      expect(wrapper.findComponent(WaitingFor).exists()).is.true;
+      expect(wrapper.findComponent(PlayerHome).props('replay')).is.false;
+    });
+
+    it('shows no input while the first preview is still loading', async () => {
+      const wrapper = mountLive();
+      expand(wrapper);
+      await flushPromises();
+      let release!: () => void;
+      holdView = () => new Promise<void>((resolve) => release = resolve);
+      panel(wrapper).vm.$emit('select', 1);
+      await flushPromises();
+      expect(wrapper.findComponent(WaitingFor).exists()).is.false;
+      release();
+      await flushPromises();
+      expect(wrapper.findComponent(PlayerHome).props('replay')).is.true;
+    });
+
+    it('goes back to the live game with the reason when a preview cannot be loaded', async () => {
+      vi.spyOn(console, 'error').mockImplementation(() => {});
+      const wrapper = mountLive();
+      expand(wrapper);
+      await flushPromises();
+      const working = (global as any).fetch;
+      (global as any).fetch = (url: string) => url.startsWith('api/replay/view') ?
+        Promise.resolve({ok: false, status: 400, text: () => Promise.resolve('Save not found')}) :
+        working(url);
+      panel(wrapper).vm.$emit('select', 1);
+      await flushPromises();
+      expect(wrapper.findComponent(WaitingFor).exists()).is.true;
+      expect(wrapper.find('.replay-error--floating').text()).to.contain('Save not found');
+      expect(panel(wrapper).props('index')).is.undefined;
+    });
+
+    it('keeps the live game and shows the reason when the moves cannot be loaded', async () => {
+      vi.spyOn(console, 'error').mockImplementation(() => {});
+      (global as any).fetch = () => Promise.resolve({ok: false, status: 400, text: () => Promise.resolve('Not your game')});
+      const wrapper = mountLive();
+      expand(wrapper);
+      await flushPromises();
+      expect(wrapper.findComponent(WaitingFor).exists()).is.true;
+      expect(wrapper.find('.replay-error--floating').text()).to.contain('Not your game');
+    });
+
+    it('reloads the moves when the game moves on while the panel is open, and not while it is closed', async () => {
+      const wrapper = mountLive();
+      await wrapper.setProps({liveView: liveView(4)});
+      await flushPromises();
+      expect(moveRequests()).has.length(0);
+      expand(wrapper);
+      await flushPromises();
+      await wrapper.setProps({liveView: liveView(5)});
+      await flushPromises();
+      expect(moveRequests()).has.length(2);
+      panel(wrapper).vm.$emit('update:collapsed', true);
+      await wrapper.setProps({liveView: liveView(6)});
+      await flushPromises();
+      expect(moveRequests()).has.length(2);
+      // Opened again, it catches up with what it missed.
+      expand(wrapper);
+      await flushPromises();
+      expect(moveRequests()).has.length(3);
+    });
   });
 });

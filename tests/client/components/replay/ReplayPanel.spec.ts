@@ -4,6 +4,7 @@ import {afterEach} from 'vitest';
 import {nextTick} from 'vue';
 import {globalConfig} from '../getLocalVue';
 import ReplayPanel from '@/client/components/replay/ReplayPanel.vue';
+import RewindControls from '@/client/components/replay/RewindControls.vue';
 import {fakeGameModel, fakePublicPlayerModel, fakeViewModel} from '../testHelpers';
 import {ReplayMove} from '@/common/replay/ReplayModel';
 import {LogMessage} from '@/common/logs/LogMessage';
@@ -191,5 +192,55 @@ describe('ReplayPanel', () => {
     const wrapper = mountPanel();
     await wrapper.find('.replay-speed').setValue('4');
     expect(wrapper.emitted('update:speed')).to.deep.equal([[4]]);
+  });
+
+  describe('on the live game page', () => {
+    function mountLive(props: Record<string, unknown> = {}) {
+      return mountPanel({live: true, index: undefined, ...props});
+    }
+
+    it('has no play, speed or view-as controls', async () => {
+      const wrapper = mountLive({index: 1});
+      await wrapper.find('.replay-collapse').trigger('click');
+      expect(wrapper.find('.replay-forward').exists()).is.true;
+      for (const selector of ['.replay-play', '.replay-speed', '.replay-view-as']) {
+        expect(wrapper.find(selector).exists(), selector).is.false;
+      }
+    });
+
+    it('starts collapsed, and says when the move list is shown', async () => {
+      const wrapper = mountLive();
+      expect(wrapper.find('.replay-moves').exists()).is.false;
+      await wrapper.find('.replay-collapse').trigger('click');
+      expect(wrapper.find('.replay-moves').exists()).is.true;
+      expect(wrapper.emitted('update:collapsed')).to.deep.equal([[false]]);
+    });
+
+    it('offers the way back to the live game only while a move is selected', async () => {
+      expect(mountLive().find('.replay-back-to-live').exists()).is.false;
+      const wrapper = mountLive({index: 1});
+      await wrapper.find('.replay-back-to-live').trigger('click');
+      expect(wrapper.emitted('back')).to.have.length(1);
+    });
+
+    it('steps back from the live game to the last move', async () => {
+      const wrapper = mountLive();
+      await wrapper.find('.replay-collapse').trigger('click');
+      await wrapper.find('.replay-back').trigger('click');
+      expect(wrapper.emitted('select')).to.deep.equal([[2]]);
+    });
+  });
+
+  describe('rewinding', () => {
+    it('offers it for the selected move and passes the choice on', () => {
+      const wrapper = mountPanel({canRewind: true, index: 1});
+      wrapper.findComponent(RewindControls).vm.$emit('rewind', 'shuffle');
+      expect(wrapper.emitted('rewind')).to.deep.equal([['shuffle']]);
+    });
+
+    it('offers it for no move when none is selected, or when rewinding is not allowed', () => {
+      expect(mountPanel({canRewind: true, live: true, index: undefined}).findComponent(RewindControls).exists()).is.false;
+      expect(mountPanel({canRewind: false, index: 1}).findComponent(RewindControls).exists()).is.false;
+    });
   });
 });

@@ -1,23 +1,31 @@
 <template>
   <div class="replay-panel" :class="{'replay-panel--collapsed': collapsed}">
     <div class="replay-header">
-      <span class="replay-title" v-i18n>Replay</span>
-      <span class="replay-position"><span v-i18n>Gen</span> {{ generation }} · <span v-i18n>move</span> {{ index + 1 }} / {{ moves.length }}</span>
-      <button class="replay-collapse" type="button" @click="collapsed = !collapsed" v-i18n>{{ collapsed ? 'Show' : 'Hide' }}</button>
+      <span class="replay-title" v-i18n>{{ live ? 'History' : 'Replay' }}</span>
+      <span class="replay-position">
+        <span v-i18n>Gen</span> {{ generation }} ·
+        <template v-if="index === undefined"><span v-i18n>live</span></template>
+        <template v-else><span v-i18n>move</span> {{ index + 1 }} / {{ moves.length }}</template>
+      </span>
+      <button class="replay-collapse" type="button" @click="toggle" v-i18n>{{ collapsed ? 'Show' : 'Hide' }}</button>
     </div>
 
-    <div class="replay-controls">
-      <button class="replay-start" type="button" :title="$t('Go to start')" :aria-label="$t('Go to start')" :disabled="index === 0" @click="select(0)">&#x23EE;</button>
-      <button class="replay-back" type="button" :title="$t('Step back')" :aria-label="$t('Step back')" :disabled="index === 0" @click="select(index - 1)">&#x25C0;</button>
-      <button class="replay-play" type="button" :title="playLabel" :aria-label="playLabel" @click="playing ? $emit('pause') : $emit('play')">{{ playing ? '\u23F8' : '\u25B6' }}</button>
-      <button class="replay-forward" type="button" :title="$t('Step forward')" :aria-label="$t('Step forward')" :disabled="index >= last" @click="select(index + 1)">&#x25B6;&#x25B6;</button>
-      <button class="replay-end" type="button" :title="$t('Go to end')" :aria-label="$t('Go to end')" :disabled="index >= last" @click="select(last)">&#x23ED;</button>
-      <select class="replay-speed" :title="$t('Speed')" :aria-label="$t('Speed')" :value="speed" @change="onSpeed">
+    <div v-if="live && index !== undefined" class="replay-live-row">
+      <button class="replay-back-to-live" type="button" @click="$emit('back')" v-i18n>Back to live game</button>
+    </div>
+
+    <div v-if="!(live && collapsed)" class="replay-controls">
+      <button class="replay-start" type="button" :title="$t('Go to start')" :aria-label="$t('Go to start')" :disabled="atStart" @click="select(0)">&#x23EE;</button>
+      <button class="replay-back" type="button" :title="$t('Step back')" :aria-label="$t('Step back')" :disabled="atStart" @click="stepBack">&#x25C0;</button>
+      <button v-if="!live" class="replay-play" type="button" :title="playLabel" :aria-label="playLabel" @click="playing ? $emit('pause') : $emit('play')">{{ playing ? '\u23F8' : '\u25B6' }}</button>
+      <button class="replay-forward" type="button" :title="$t('Step forward')" :aria-label="$t('Step forward')" :disabled="atEnd" @click="stepForward">&#x25B6;&#x25B6;</button>
+      <button class="replay-end" type="button" :title="$t('Go to end')" :aria-label="$t('Go to end')" :disabled="atEnd" @click="select(last)">&#x23ED;</button>
+      <select v-if="!live" class="replay-speed" :title="$t('Speed')" :aria-label="$t('Speed')" :value="speed" @change="onSpeed">
         <option v-for="option in speeds" :key="option" :value="option">{{ option }}&times;</option>
       </select>
     </div>
 
-    <div class="replay-view-as">
+    <div v-if="!live" class="replay-view-as">
       <span v-i18n>View as</span>
       <button class="replay-view-all" type="button" :class="{'replay-view-active': viewAs === 'all'}" @click="$emit('update:viewAs', 'all')" v-i18n>All hands</button>
       <button
@@ -41,7 +49,11 @@
           <LogMessageComponent v-for="(message, j) in move.messages" :key="j" :message="message" :viewModel="viewModel"/>
         </ul>
       </li>
+      <li v-if="moves.length === 0" class="replay-moves-empty" v-i18n>Loading replay...</li>
     </ul>
+
+    <!-- The key forgets a half-made choice when another move is picked. -->
+    <RewindControls v-if="canRewind && index !== undefined && !(live && collapsed)" :key="index" :disabled="rewinding" @rewind="(cards) => $emit('rewind', cards)"/>
 
     <!-- Rendered inside the panel, so that on a narrow screen it can sit just above it instead of under it. -->
     <slot name="error"></slot>
@@ -51,25 +63,28 @@
 <script lang="ts">
 import {defineComponent} from 'vue';
 import LogMessageComponent from '@/client/components/logpanel/LogMessageComponent.vue';
+import RewindControls from '@/client/components/replay/RewindControls.vue';
 import {PublicPlayerModel, ViewModel} from '@/common/models/PlayerModel';
 import {PLAYER_COLORS} from '@/common/Color';
-import {ReplayMove, ReplayViewAs} from '@/common/replay/ReplayModel';
+import {ReplayMove, ReplayViewAs, RewindCards} from '@/common/replay/ReplayModel';
 
 const SPEEDS = [0.5, 1, 2, 4];
 
 // A small panel floating over the replayed game: transport controls, the list of moves and who to view as.
-// It owns nothing but whether the move list is collapsed; the screen decides what every control does.
+// On the live game page it previews past moves instead: no autoplay, no choice of view, and it starts
+// collapsed. It owns nothing but whether the move list is collapsed; the screen decides what every control does.
 export default defineComponent({
   name: 'ReplayPanel',
-  components: {LogMessageComponent},
+  components: {LogMessageComponent, RewindControls},
   props: {
     moves: {
       type: Array as () => Array<ReplayMove>,
       required: true,
     },
+    /** The selected move. Only the live game page has none, and then the live game shows. */
     index: {
       type: Number,
-      required: true,
+      default: undefined,
     },
     viewAs: {
       type: String as () => ReplayViewAs,
@@ -92,10 +107,34 @@ export default defineComponent({
       type: Number,
       required: true,
     },
+    /** True on the live game page. */
+    live: {
+      type: Boolean,
+      default: false,
+    },
+    /** Whether the selected move can be rewound to. */
+    canRewind: {
+      type: Boolean,
+      default: false,
+    },
+    /** True while a rewind is under way. */
+    rewinding: {
+      type: Boolean,
+      default: false,
+    },
   },
-  emits: ['select', 'update:viewAs', 'play', 'pause', 'update:speed'],
+  emits: {
+    'select': (_index: number) => true,
+    'update:viewAs': (_viewAs: ReplayViewAs) => true,
+    'play': () => true,
+    'pause': () => true,
+    'update:speed': (_speed: number) => true,
+    'update:collapsed': (_collapsed: boolean) => true,
+    'back': () => true,
+    'rewind': (_cards: RewindCards) => true,
+  },
   data() {
-    return {collapsed: false};
+    return {collapsed: this.live};
   },
   computed: {
     last(): number {
@@ -116,11 +155,30 @@ export default defineComponent({
     speeds(): ReadonlyArray<number> {
       return SPEEDS;
     },
+    atStart(): boolean {
+      return this.index === 0 || this.moves.length === 0;
+    },
+    /** The live game counts as the end of the list. */
+    atEnd(): boolean {
+      return this.index === undefined || this.index >= this.last;
+    },
     playLabel(): string {
       return this.playing ? this.$t('Pause') : this.$t('Play replay');
     },
   },
   methods: {
+    toggle(): void {
+      this.collapsed = !this.collapsed;
+      this.$emit('update:collapsed', this.collapsed);
+    },
+    stepBack(): void {
+      this.select(this.index === undefined ? this.last : this.index - 1);
+    },
+    stepForward(): void {
+      if (this.index !== undefined) {
+        this.select(this.index + 1);
+      }
+    },
     select(index: number): void {
       if (index < 0 || index > this.last || index === this.index) {
         return;

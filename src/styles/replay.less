@@ -70,7 +70,8 @@
 
 .replay-header,
 .replay-controls,
-.replay-view-as {
+.replay-view-as,
+.replay-live-row {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
@@ -105,6 +106,37 @@
   padding: 0;
   overflow-y: auto;
   list-style: none;
+}
+
+.replay-moves-empty {
+  padding: 2px 4px;
+  opacity: 0.7;
+}
+
+.rewind-controls {
+  margin-top: 6px;
+  padding-top: 6px;
+  border-top: 1px solid #666;
+}
+
+.rewind-cards,
+.rewind-confirm {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 12px;
+  margin-bottom: 4px;
+}
+
+.rewind-cards-option {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+}
+
+.rewind-confirm-text {
+  flex: 1 0 100%;
 }
 
 .replay-move {

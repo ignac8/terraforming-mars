@@ -1,6 +1,7 @@
 import {paths} from '@/common/app/paths';
-import {ReplayMovesModel, ReplayViewAs, ReplayViewModel} from '@/common/replay/ReplayModel';
-import {isJudgeId, ParticipantId} from '@/common/Types';
+import {PlayerViewModel} from '@/common/models/PlayerModel';
+import {ReplayMovesModel, ReplayViewAs, ReplayViewModel, RewindCards} from '@/common/replay/ReplayModel';
+import {isJudgeId, ParticipantId, PlayerId} from '@/common/Types';
 import {passwordQuery} from '@/client/utils/playerPassword';
 
 // Replaying steps through views quickly, so a new view request cancels the one still in flight.
@@ -44,4 +45,14 @@ export async function fetchReplayView(id: ParticipantId, saveId: number, viewAs:
   viewAbortController = new AbortController();
   const url = `${paths.API_REPLAY_VIEW}?id=${id}&save=${saveId}&as=${viewAs}${judgePasswordParam(id)}`;
   return readJson(await fetch(url, {signal: viewAbortController.signal}));
+}
+
+/** Rewinds the running game to before the move saved as `saveId`, and answers the player's view of the rewound game. */
+export async function postRewind(id: PlayerId, saveId: number, cards: RewindCards): Promise<PlayerViewModel> {
+  const resp = await fetch(`${paths.API_REWIND}?id=${id}`, {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({saveId, cards}),
+  });
+  return readJson(resp);
 }
