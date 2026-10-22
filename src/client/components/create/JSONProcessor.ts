@@ -128,6 +128,7 @@ export class JSONProcessor {
       ...Object.values(oldExpansionFields),
       'board',
       'escapeVelocity',
+      'judgeUndo', // Saved while Judge undo was a separate option
       'players',
       'solarPhaseOption',
       'constants'];

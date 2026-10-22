@@ -54,7 +54,6 @@ export type CreateGameModel = {
   showOtherPlayersVP: boolean;
   playerPasswords: boolean;
   judgeLink: boolean;
-  judgeUndo: boolean;
   showPreludesList: boolean;
   showTimers: boolean;
   shuffleMapOption: boolean;

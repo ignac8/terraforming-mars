@@ -94,7 +94,6 @@
   "Random first player": "Losowy pierwszy gracz",
   "Show real-time VP": "Pokaż PZ w czasie rzeczywistym",
   "Player undo": "Cofanie ruchów gracza",
-  "Judge undo": "Cofanie przez sędziego",
   "The judge can freeze the game and rewind the whole table to any earlier move.": "Sędzia może zamrozić grę i cofnąć cały stół do dowolnego wcześniejszego ruchu.",
   "judge undo": "cofanie przez sędziego",
   "Player undo needs player passwords, so a stranger cannot rewind a finished game.": "Cofanie ruchów gracza wymaga haseł graczy, żeby obca osoba nie mogła cofnąć zakończonej gry.",

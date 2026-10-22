@@ -318,7 +318,7 @@ describe('TournamentMode', () => {
       'clonedGamedId', // cloning is out of scope (user decision)
       'escapeVelocity', // tournament games may use the clock
       'judgeLink', // the organizer's opt-in, off unless asked for
-      'judgeUndo', // the organizer's opt-in, needs judgeLink
+      'judgeUndo', // on whenever there is a judge link
       'removeNegativeGlobalEventsOption', // inert: Turmoil is forced off
       'showTimers',
       'soloTR',
@@ -326,7 +326,7 @@ describe('TournamentMode', () => {
       'startingCorporations', // inert: tournament dealing always uses the pool size
       'startingPreludes', // inert: Prelude is forced off
       'tournamentExpansion',
-      'undoOption', // Player undo is the creator's choice, a game with Judge undo and several players drops it in ApiCreateGame
+      'undoOption', // the creator's choice
     ];
     expect([...forced, ...passthrough].sort()).deep.eq(Object.keys(DEFAULT_GAME_OPTIONS).sort());
   });

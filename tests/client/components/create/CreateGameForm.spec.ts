@@ -238,73 +238,10 @@ describe('CreateGameForm', () => {
     expect(vm.newGameConfig).deep.include({undoOption: false, playerPasswords: true});
 
     await wrapper.find('#undo-checkbox').setValue(true);
-    expect(vm.newGameConfig).deep.include({undoOption: true, judgeUndo: false, playerPasswords: true});
+    expect(vm.newGameConfig).deep.include({undoOption: true, playerPasswords: true});
 
     await wrapper.find('#judgeLink-checkbox').setValue(true);
-    await wrapper.find('#undo-checkbox').setValue(false);
-    await wrapper.find('#judgeUndo-checkbox').setValue(true);
-    expect(vm.newGameConfig).deep.include({undoOption: false, judgeUndo: true});
-  });
-
-  it('lets only one of Player undo and Judge undo stand at a table of several players', async () => {
-    const wrapper = shallowMount(CreateGameForm, {...globalConfig});
-    await wrapper.vm.$nextTick();
-    const vm = wrapper.vm as any;
-    vm.playersCount = 2;
-    vm.judgeLink = true;
-    await wrapper.vm.$nextTick();
-
-    await wrapper.find('#undo-checkbox').setValue(true);
-    await wrapper.find('#judgeUndo-checkbox').setValue(true);
-    expect([vm.undoOption, vm.judgeUndo], 'Judge undo ticked after').deep.eq([false, true]);
-
-    await wrapper.find('#undo-checkbox').setValue(true);
-    expect([vm.undoOption, vm.judgeUndo], 'Player undo ticked after').deep.eq([true, false]);
-  });
-
-  it('lets a solo game keep both Player undo and Judge undo', async () => {
-    const wrapper = shallowMount(CreateGameForm, {...globalConfig});
-    await wrapper.vm.$nextTick();
-    const vm = wrapper.vm as any;
-    vm.playersCount = 1;
-    vm.judgeLink = true;
-    vm.judgeUndo = true;
-    await wrapper.vm.$nextTick();
-
-    await wrapper.find('#undo-checkbox').setValue(true);
-
-    expect(vm.newGameConfig).deep.include({undoOption: true, judgeUndo: true});
-  });
-
-  it('drops Player undo when a second player joins a table that has both', async () => {
-    const wrapper = shallowMount(CreateGameForm, {...globalConfig});
-    await wrapper.vm.$nextTick();
-    const vm = wrapper.vm as any;
-    vm.playersCount = 1;
-    vm.judgeLink = true;
-    vm.judgeUndo = true;
-    vm.undoOption = true;
-    await wrapper.vm.$nextTick();
-    expect(vm.newGameConfig).deep.include({undoOption: true, judgeUndo: true});
-
-    vm.playersCount = 2;
-    await wrapper.vm.$nextTick();
-
-    expect(vm.newGameConfig).deep.include({undoOption: false, judgeUndo: true});
-  });
-
-  it('does not let a hidden Judge undo clear Player undo', async () => {
-    const wrapper = shallowMount(CreateGameForm, {...globalConfig});
-    await wrapper.vm.$nextTick();
-    const vm = wrapper.vm as any;
-    vm.playersCount = 2;
-    vm.judgeUndo = true; // judgeLink is off, so Judge undo is not in force
-    await wrapper.vm.$nextTick();
-
-    await wrapper.find('#undo-checkbox').setValue(true);
-
-    expect(vm.undoOption).eq(true);
-    expect(vm.newGameConfig).deep.include({undoOption: true, judgeUndo: false});
+    expect(vm.newGameConfig).deep.include({undoOption: true, judgeLink: true});
   });
 
   it('sends the judge option only for tournament games', async () => {
@@ -324,22 +261,18 @@ describe('CreateGameForm', () => {
     expect(wrapper.find('#judgeLink-checkbox').exists()).eq(false);
   });
 
-  it('offers judge undo only while the judge link is on', async () => {
+  it('has no separate Judge undo option: a judge link brings it', async () => {
     const wrapper = shallowMount(CreateGameForm, {...globalConfig});
     await wrapper.vm.$nextTick();
     const vm = wrapper.vm as any;
-
-    expect(vm.expansions.tournament).eq(true);
-    expect(wrapper.find('#judgeUndo-checkbox').exists()).eq(false);
-    expect(vm.newGameConfig.judgeUndo).eq(false);
+    vm.playersCount = 2;
+    await wrapper.vm.$nextTick();
 
     await wrapper.find('#judgeLink-checkbox').setValue(true);
-    await wrapper.find('#judgeUndo-checkbox').setValue(true);
-    expect(vm.newGameConfig.judgeUndo).eq(true);
 
-    await wrapper.find('#judgeLink-checkbox').setValue(false);
     expect(wrapper.find('#judgeUndo-checkbox').exists()).eq(false);
-    expect(vm.newGameConfig.judgeUndo).eq(false);
+    expect(vm.newGameConfig).not.have.property('judgeUndo');
+    expect(wrapper.find('label[for="judgeLink-checkbox"]').attributes('title')).contains('freeze the game');
   });
 
   it('applies tournament locks when restoring saved tournament settings', async () => {
@@ -365,33 +298,6 @@ describe('CreateGameForm', () => {
 
     expectTournamentLocks(wrapper.vm as any);
     expect((wrapper.vm as any).undoOption).eq(true);
-  });
-
-  it('restores settings that hold both undo options with Judge undo winning at a table', async () => {
-    const both = {judgeLink: true, judgeUndo: true, undoOption: true};
-    // The order of the keys is the order the form is set in, so try each.
-    for (const [label, players, undoOption, options] of [
-      ['two players, undo last', 2, false, both],
-      ['two players, undo first', 2, false, {undoOption: true, judgeLink: true, judgeUndo: true}],
-      ['two players, judge last', 2, false, {judgeLink: true, undoOption: true, judgeUndo: true}],
-      ['solo', 1, true, both],
-    ] as const) {
-      createGameSettingsStorage.save(createNewGameConfig({
-        players: [
-          {name: 'Alice', color: 'red', beginner: false, handicap: 0, first: true},
-          {name: 'Bob', color: 'blue', beginner: false, handicap: 0, first: false},
-        ].slice(0, players),
-        expansions: {...DEFAULT_EXPANSIONS, tournament: true},
-        ...options,
-      }));
-
-      const wrapper = shallowMount(CreateGameForm, {...globalConfig});
-      await wrapper.vm.$nextTick();
-      await wrapper.vm.$nextTick();
-
-      const vm = wrapper.vm as any;
-      expect(vm.newGameConfig, label).deep.include({undoOption, judgeUndo: true});
-    }
   });
 
   it('applies tournament locks when restoring the legacy flat tournament key', async () => {

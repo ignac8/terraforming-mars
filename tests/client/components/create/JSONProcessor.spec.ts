@@ -120,7 +120,6 @@ const TEMPLATE_EXPECTED: CreateGameModel = {
   showOtherPlayersVP: false,
   playerPasswords: false,
   judgeLink: false,
-  judgeUndo: false,
   showColoniesList: false,
   showCorporationList: false,
   showPreludesList: false,
@@ -200,6 +199,11 @@ const cases: Array<Case> = [
       "Old card name 'EcoLine' in customCorporations; use 'Ecoline'",
       "Unknown card name 'Bad Prelude Name' in customPreludes",
     ],
+  },
+  {
+    description: 'ignores the Judge undo of settings saved while it was a separate option',
+    input: {...TEMPLATE_INPUT, judgeLink: true, judgeUndo: true},
+    expected: {...TEMPLATE_EXPECTED, judgeLink: true},
   },
   {
     description: 'new escape velocity values',

@@ -47,8 +47,6 @@ export type NewGameConfig = {
   playerPasswords: boolean;
   /** Tournament games only: ask for a judge link. */
   judgeLink?: boolean;
-  /** Tournament games with a judge link only: ask for judge undo. */
-  judgeUndo?: boolean;
 
   // Extensions
   // aresHazards: boolean;
