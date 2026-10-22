@@ -7,7 +7,7 @@ import ReplayPanel from '@/client/components/replay/ReplayPanel.vue';
 import ReplayHands from '@/client/components/replay/ReplayHands.vue';
 import PlayerHome from '@/client/components/PlayerHome.vue';
 import SpectatorHome from '@/client/components/SpectatorHome.vue';
-import {fakeGameModel, fakeGameOptionsModel, fakePlayerViewModel, fakePublicPlayerModel, fakeSpectatorModel, fakeTimerModel, fakeViewModel} from '../testHelpers';
+import {fakeGameModel, fakeGameOptionsModel, fakePlayerViewModel, fakePublicPlayerModel, fakeSpectatorModel, fakeTimerModel} from '../testHelpers';
 import {ReplayMove, ReplayMovesModel, ReplayViewModel} from '@/common/replay/ReplayModel';
 import {JudgeId, PlayerId, SpectatorId} from '@/common/Types';
 import {PlayerViewModel, PublicPlayerModel} from '@/common/models/PlayerModel';
@@ -898,13 +898,16 @@ describe('ReplayScreen', () => {
     function judgeModel(game: Parameters<typeof fakeGameModel>[0] = {}): JudgeModel {
       const players = [withClock('blue', 'Blue player', 80 * 60_000), withClock('red', 'Red player', 30 * 60_000)];
       return {
-        ...fakeViewModel({players, game: fakeGameModel({gameAge: 3, gameOptions: fakeGameOptionsModel({judgeUndo: true}), ...game})}),
+        game: fakeGameModel({gameAge: 3, gameOptions: fakeGameOptionsModel({judgeUndo: true}), ...game}),
+        players,
+        thisPlayer: undefined,
+        runId: 'run-id',
         id: judgeId,
         color: 'neutral',
         password: undefined,
         signature: 'sig',
         privates: [],
-      } as unknown as JudgeModel;
+      };
     }
 
     function mountJudge(judge = judgeModel(), mocks: Record<string, unknown> = {}) {
