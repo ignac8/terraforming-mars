@@ -133,6 +133,9 @@ export class ApiCreateGame extends Handler {
         }
       }
 
+      // A judge is for a table of several players.
+      const judgeLink = tournament && gameReq.judgeLink === true && players.length > 1;
+
       const boardName = gameReq.boards[Math.floor(Math.random() * gameReq.boards.length)];
 
       const gameOptions: GameOptions = {
@@ -189,9 +192,9 @@ export class ApiCreateGame extends Handler {
         underworldExpansion: gameReq.expansions.underworld,
         deltaProjectExpansion: gameReq.expansions.deltaProject,
         tournamentExpansion: tournament,
-        judgeLink: tournament && gameReq.judgeLink === true,
+        judgeLink,
         // A judge can always rewind and freeze.
-        judgeUndo: tournament && gameReq.judgeLink === true,
+        judgeUndo: judgeLink,
         undoOption: gameReq.undoOption,
         venusNextExtension: gameReq.expansions.venus,
       };

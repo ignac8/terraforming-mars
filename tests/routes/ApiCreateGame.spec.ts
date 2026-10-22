@@ -11,6 +11,11 @@ import {FakeClock} from '../common/FakeClock';
 import {CardName} from '../../src/common/cards/CardName';
 import {isJudgeId} from '../../src/common/Types';
 
+const TWO_PLAYERS = [
+  {name: 'a', color: 'red', beginner: false, handicap: 0, first: true},
+  {name: 'b', color: 'blue', beginner: false, handicap: 0, first: false},
+];
+
 // A complete create-game request for a one-player game.
 function newGameConfigForTest(): NewGameConfig {
   return {
@@ -264,13 +269,14 @@ describe('ApiCreateGame', () => {
     expect(game!.players.map((p) => p.handicap)).deep.eq([0, 0]);
   });
 
-  it('gives a tournament game a judge id only when asked', async () => {
-    const base = newGameConfigForTest();
+  it('gives a tournament game of several players a judge id only when asked', async () => {
+    const base = {...newGameConfigForTest(), players: TWO_PLAYERS};
     const tournamentExpansions = {...base.expansions, tournament: true};
     const configs = [
       {...base, expansions: tournamentExpansions, judgeLink: true},
       {...base, expansions: tournamentExpansions},
       {...base, judgeLink: true},
+      {...base, players: base.players.slice(0, 1), expansions: tournamentExpansions, judgeLink: true},
     ];
     const judgeIds: Array<string | undefined> = [];
     for (const config of configs) {
@@ -286,6 +292,7 @@ describe('ApiCreateGame', () => {
     expect(isJudgeId(judgeIds[0]!)).is.true;
     expect(judgeIds[1]).is.undefined;
     expect(judgeIds[2]).is.undefined;
+    expect(judgeIds[3]).is.undefined;
   });
 
   it('keeps Player undo in a tournament game, with or without a judge link', async () => {
@@ -308,14 +315,14 @@ describe('ApiCreateGame', () => {
         const game = await scaffolding.ctx.gameLoader.getGame(model.id);
         const options = game!.gameOptions;
         expect(options.undoOption, label).is.true;
-        expect(options.judgeUndo, label).eq(judgeLink);
+        expect(options.judgeUndo, label).eq(judgeLink && players.length > 1);
         expect(options.playerPasswords, label).is.true;
       }
     }
   });
 
   it('gives a game judge undo with the tournament preset and a judge link, whatever judge undo says', async () => {
-    const base = newGameConfigForTest();
+    const base = {...newGameConfigForTest(), players: TWO_PLAYERS};
     const tournamentExpansions = {...base.expansions, tournament: true};
     for (const tournament of [true, false]) {
       for (const judgeLink of [true, false]) {

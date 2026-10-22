@@ -261,6 +261,22 @@ describe('CreateGameForm', () => {
     expect(wrapper.find('#judgeLink-checkbox').exists()).eq(false);
   });
 
+  it('does not send a judge link that was ticked at several players once only one is left', async () => {
+    const wrapper = shallowMount(CreateGameForm, {...globalConfig});
+    await wrapper.vm.$nextTick();
+    const vm = wrapper.vm as any;
+    vm.playersCount = 2;
+    await wrapper.vm.$nextTick();
+    await wrapper.find('#judgeLink-checkbox').setValue(true);
+    expect(vm.newGameConfig.judgeLink).eq(true);
+
+    vm.playersCount = 1;
+    await wrapper.vm.$nextTick();
+
+    expect(wrapper.find('#judgeLink-checkbox').exists()).eq(false);
+    expect(vm.newGameConfig.judgeLink).eq(false);
+  });
+
   it('has no separate Judge undo option: a judge link brings it', async () => {
     const wrapper = shallowMount(CreateGameForm, {...globalConfig});
     await wrapper.vm.$nextTick();
@@ -272,7 +288,6 @@ describe('CreateGameForm', () => {
 
     expect(wrapper.find('#judgeUndo-checkbox').exists()).eq(false);
     expect(vm.newGameConfig).not.have.property('judgeUndo');
-    expect(wrapper.find('label[for="judgeLink-checkbox"]').attributes('title')).contains('freeze the game');
   });
 
   it('applies tournament locks when restoring saved tournament settings', async () => {

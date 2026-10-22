@@ -755,7 +755,7 @@ export default defineComponent({
         draftVariant: this.draftVariant,
         showOtherPlayersVP: this.showOtherPlayersVP,
         playerPasswords: this.playerPasswordsChecked,
-        judgeLink: this.expansions.tournament && this.judgeLink,
+        judgeLink: this.expansions.tournament && this.judgeLink && this.playersCount > 1,
         customCorporationsList: this.customCorporations,
         customColoniesList: this.customColonies,
         customCeos: this.customCeos,
