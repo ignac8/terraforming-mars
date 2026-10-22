@@ -1143,7 +1143,7 @@ describe('ReplayScreen', () => {
       });
 
       it('keep the board on screen while the list is read again, and move to the nearest move when the one shown is gone', async () => {
-        for (const [remaining, shown] of [[[10, 12], 10], [[12, 13], 12]] as const) {
+        for (const [remaining, shown] of [[[10, 12], 10], [[12, 13], 12]] as Array<[Array<number>, number]>) {
           movesAnswer = withUndone;
           const wrapper = shallowMount(ReplayScreen, {
             ...globalConfig,
