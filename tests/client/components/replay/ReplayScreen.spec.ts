@@ -552,6 +552,24 @@ describe('ReplayScreen', () => {
       }
     });
 
+    it('lets the solo player of a running game pick no view but their own, and the judge any', async () => {
+      for (const [participantId, finished, shown] of [
+        [playerId, true, true],
+        [playerId, false, false],
+        ['j-judge-id' as JudgeId, false, true],
+      ] as const) {
+        movesAnswer = {...voteMoves(finished, false), canRewind: true, defaultViewAs: 'all'};
+        const wrapper = shallowMount(ReplayScreen, {
+          ...globalConfig,
+          global: {...globalConfig.global, stubs: {ReplayPanel: false, RewindControls: true, RewindVoteBanner: true}},
+          props: {participantId},
+        });
+        await flushPromises();
+        expect(wrapper.find('.replay-view-as').exists(), `${participantId} ${finished}`).equals(shown);
+        wrapper.unmount();
+      }
+    });
+
     it('shows the vote at once after asking for it', async () => {
       movesAnswer = voteMoves(true);
       const wrapper = mountReplay(true);

@@ -256,7 +256,7 @@ export default defineComponent({
     },
     /** A running game shows a player their own view only, and so the replay URL offers no other. */
     ownViewOnly(): boolean {
-      return !this.isLive && this.canVoteRewind && !this.finished;
+      return !this.isLive && !this.finished && (this.canVoteRewind || (this.canRewind && isPlayerId(this.participantId)));
     },
     /** The live game of whoever is looking at it: the player, or the judge. */
     liveModel(): PlayerViewModel | JudgeModel | undefined {
