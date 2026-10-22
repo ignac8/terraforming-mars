@@ -1,8 +1,5 @@
 import {GameLoader} from '../../database/GameLoader';
 import {rewindTable} from '../RewindService';
-// VoteService.ts sits on an import cycle (VoteService → ReplayService → Game → GameLoader → this file), so it is
-// reached only through this file. Loading VoteService.ts first throws "Cannot access 'VoteService' before
-// initialization" at the `new VoteService` below.
 import {VoteEffects, VoteService} from './VoteService';
 import {Clock} from '../../../common/Timer';
 
@@ -28,3 +25,7 @@ export const voteEffects: VoteEffects = {
 };
 
 export const voteService = new VoteService(voteEffects, voteClock);
+
+// A vote the game was saved with is expired, re-armed or failed on every load. The loader takes this as a hook
+// instead of importing the vote service, which would put the service on an import cycle through Game.
+GameLoader.setLoadHook((game) => voteService.resume(game));

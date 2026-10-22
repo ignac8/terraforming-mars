@@ -12,8 +12,6 @@ import {durationToMilliseconds} from '../utils/durations';
 import {CacheConfig} from './CacheConfig';
 import {Clock} from '../../common/Timer';
 import {forgetReplay} from '../replay/ReplayService';
-// Closes an import cycle; the vote service is imported only through effects.ts (see the note there).
-import {voteService} from '../rewind/vote/effects';
 
 const metrics = {
   initialize: new prometheus.Gauge({
@@ -87,6 +85,7 @@ const metrics = {
  */
 export class GameLoader implements IGameLoader {
   private static instance: GameLoader;
+  private static loadHook: ((game: IGame) => Promise<void>) | undefined = undefined;
 
   private cache: Cache;
   private readonly config: CacheConfig;
@@ -112,6 +111,14 @@ export class GameLoader implements IGameLoader {
       GameLoader.instance = new GameLoader(config, new Clock());
     }
     return GameLoader.instance;
+  }
+
+  /**
+   * Sets what runs at the end of every `add`, once the game is the one served. The rewind vote's effects module sets
+   * it, so that a vote the game was saved with is resumed without the loader importing the vote code.
+   */
+  public static setLoadHook(hook: (game: IGame) => Promise<void>): void {
+    GameLoader.loadHook = hook;
   }
 
   public static newTestInstance(config: CacheConfig, clock: Clock): GameLoader {
@@ -171,7 +178,7 @@ export class GameLoader implements IGameLoader {
     // Every load passes through here, and the game is served from here on, so a vote it was saved with
     // is expired, re-armed or failed now (never in deserialize, which also builds sandboxes).
     if (game.rewindVote !== undefined) {
-      await voteService.resume(game);
+      await GameLoader.loadHook?.(game);
     }
   }
 
