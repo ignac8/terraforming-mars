@@ -12,6 +12,7 @@ import {durationToMilliseconds} from '../utils/durations';
 import {CacheConfig} from './CacheConfig';
 import {Clock} from '../../common/Timer';
 import {forgetReplay} from '../replay/ReplayService';
+// Closes an import cycle; the vote service is imported only through effects.ts (see the note there).
 import {voteService} from '../rewind/vote/effects';
 
 const metrics = {

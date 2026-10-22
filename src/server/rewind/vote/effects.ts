@@ -1,5 +1,8 @@
 import {GameLoader} from '../../database/GameLoader';
 import {rewindTable} from '../RewindService';
+// VoteService.ts sits on an import cycle (VoteService → ReplayService → Game → GameLoader → this file), so it is
+// reached only through this file. Loading VoteService.ts first throws "Cannot access 'VoteService' before
+// initialization" at the `new VoteService` below.
 import {VoteEffects, VoteService} from './VoteService';
 import {Clock} from '../../../common/Timer';
 
