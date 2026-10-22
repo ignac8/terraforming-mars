@@ -231,19 +231,23 @@ export default defineComponent({
       const game = this.liveJudge?.game;
       return game === undefined || game.phase === Phase.END ? undefined : game.frozen === true;
     },
-    /** What each clock reads in the live game and at the move shown, which a judge who rewinds chooses between. */
+    /**
+     * What each clock reads in the live game and at the move selected, which a judge who rewinds chooses between.
+     * The view lags behind the selected move while it loads, so the clocks at the move are left out until it is there.
+     */
     clockRows(): Array<RewindClockRow> | undefined {
-      if (!isJudgeId(this.participantId) || this.replayView === undefined) {
+      if (!isJudgeId(this.participantId)) {
         return undefined;
       }
+      const shown = this.replayView !== undefined && this.shownIndex === this.index;
       const live = this.liveJudge?.players;
-      return this.replayView.view.players.map((player) => {
+      return (this.replayView?.view.players ?? live ?? []).map((player) => {
         const current = live?.find((p) => p.color === player.color);
         return {
           color: player.color,
           name: player.name,
           now: current === undefined ? '' : Timer.toString(current.timer),
-          then: Timer.toString(player.timer),
+          then: shown ? Timer.toString(player.timer) : '…',
         };
       });
     },

@@ -972,6 +972,22 @@ describe('ReplayScreen', () => {
       expect(rows).to.deep.equal([['Red player', '30:00', '20:00'], ['Blue player', '1:20:00', '1:00:00']]);
     });
 
+    it('leaves out the clocks at a move until its view has loaded', async () => {
+      pastPlayers = () => [withClock('blue', 'Blue player', hour)];
+      const wrapper = mountJudge();
+      expand(wrapper);
+      await flushPromises();
+      const atMove = () => wrapper.findAll('.rewind-clock-row').map((row) => row.findAll('td')[2].text());
+      let release = () => {};
+      holdView = (saveId) => saveId === 11 ? new Promise((resolve) => release = () => resolve()) : undefined;
+      panel(wrapper).vm.$emit('select', 1);
+      await flushPromises();
+      expect(atMove()).to.deep.equal(['…', '…']);
+      release();
+      await flushPromises();
+      expect(atMove()).to.deep.equal(['1:00:00']);
+    });
+
     it('goes back to the live game and reads it again when the rewind is refused', async () => {
       vi.spyOn(console, 'error').mockImplementation(() => {});
       judgeAnswer = () => Promise.resolve({ok: false, status: 400, text: () => Promise.resolve('Bad request: That move is not in this game\'s history.')});
