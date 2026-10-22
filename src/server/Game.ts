@@ -714,12 +714,13 @@ export class Game implements IGame, Logger {
     if (this.frozen) {
       result.frozen = true;
     }
+    // Copies, so a save held in memory doesn't change with the live vote.
     if (this.rewindVote !== undefined) {
-      result.rewindVote = this.rewindVote;
+      result.rewindVote = structuredClone(this.rewindVote);
     }
     const rewindRequestLimits = this.currentRequestLimits();
     if (rewindRequestLimits !== undefined) {
-      result.rewindRequestLimits = rewindRequestLimits;
+      result.rewindRequestLimits = structuredClone(rewindRequestLimits);
     }
     if (this.turmoil !== undefined) {
       result.turmoil = this.turmoil.serialize();

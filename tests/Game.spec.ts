@@ -669,6 +669,26 @@ describe('Game', () => {
     expect(game.serialize()).not.to.have.any.keys('frozen', 'rewindVote', 'rewindRequestLimits');
   });
 
+  it('saves a copy of the table state', async () => {
+    const db = new InMemoryDatabase();
+    setTestDatabase(db);
+    try {
+      const [game, player, player2] = testGame(2);
+      game.rewindVote = {id: 1, requester: player.id, saveId: 0, moveNumber: 1, generation: game.generation, cards: 'same', yes: [player.id], status: 'open', expiresAt: 1};
+      game.rewindRequestLimits = {generation: game.generation, players: [player.id]};
+      await game.save();
+
+      game.rewindVote.yes.push(player2.id);
+      game.rewindRequestLimits.players.push(player2.id);
+
+      const saved = await db.getGame(game.id);
+      expect(saved.rewindVote?.yes).deep.eq([player.id]);
+      expect(saved.rewindRequestLimits?.players).deep.eq([player.id]);
+    } finally {
+      restoreTestDatabase();
+    }
+  });
+
   it('tracks the save rows written at the end of the game', async () => {
     const db = new SnapshotDatabase();
     setTestDatabase(db);
