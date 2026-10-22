@@ -558,7 +558,7 @@ describe('ReplayScreen', () => {
         [playerId, false, false],
         ['j-judge-id' as JudgeId, false, true],
       ] as const) {
-        movesAnswer = {...voteMoves(finished, false), canRewind: true, defaultViewAs: 'all'};
+        movesAnswer = {status: 'available', finished, canRewind: true, canVoteRewind: false, defaultViewAs: 'all', moves: [{saveId: 10, messages: finished ? [] : played}]};
         const wrapper = shallowMount(ReplayScreen, {
           ...globalConfig,
           global: {...globalConfig.global, stubs: {ReplayPanel: false, RewindControls: true, RewindVoteBanner: true}},
