@@ -1015,7 +1015,7 @@ describe('ReplayScreen', () => {
     });
 
     it('rewinds from the replay page through the judge route, and goes back to the judge page with the password', async () => {
-      vi.stubGlobal('location', {href: `http://localhost/replay?id=${judgeId}`, search: '?id=j-judge-id&password=a%26b', reload: vi.fn()});
+      vi.stubGlobal('location', {href: `http://localhost/replay?id=${judgeId}`, search: '?id=j-judge-id&password=a%26b&serverId=1', reload: vi.fn()});
       const wrapper = shallowMount(ReplayScreen, {
         ...globalConfig,
         global: {...globalConfig.global, stubs: {ReplayPanel: false, RewindControls: false}},
@@ -1030,7 +1030,8 @@ describe('ReplayScreen', () => {
       await wrapper.find('.rewind-start').trigger('click');
       await wrapper.find('.rewind-confirm-button').trigger('click');
       await flushPromises();
-      expect(judgeRequests).to.deep.equal([{url: `api/judge/rewind?id=${judgeId}&password=a%26b`, body: {saveId: 11, cards: 'same', clocks: 'back'}}]);
+      expect(judgeRequests).to.deep.equal([{url: `api/judge/rewind?id=${judgeId}&password=a%26b&serverId=1`, body: {saveId: 11, cards: 'same', clocks: 'back'}}]);
+      // The link back to the judge page carries the password only.
       expect(window.location.href).to.equal(`judge?id=${judgeId}&password=a%26b`);
     });
   });

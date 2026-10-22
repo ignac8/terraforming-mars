@@ -389,7 +389,7 @@ export default defineComponent({
       try {
         const saveId = this.moves[this.index].saveId;
         if (isJudgeId(id)) {
-          await postJudgeRewind(id, saveId, cards, clocks);
+          await postJudgeRewind(id, saveId, cards, clocks, this.liveJudge && passwordParam(this.liveJudge));
           // The page is on its way out, so it stays disabled.
           if (this.liveJudge !== undefined) {
             window.location.reload();
@@ -445,7 +445,7 @@ export default defineComponent({
       this.error = undefined;
       this.clearRefusal();
       try {
-        await postJudgeFreeze(this.liveJudge.id, !this.judgeFrozen);
+        await postJudgeFreeze(this.liveJudge.id, !this.judgeFrozen, passwordParam(this.liveJudge));
       } catch (err) {
         console.error(err);
         this.refusal = err instanceof Error ? translateRefusal(err.message) : String(err);

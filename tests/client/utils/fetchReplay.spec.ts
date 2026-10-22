@@ -135,6 +135,36 @@ describe('fetchReplay', () => {
       ]);
     });
 
+    it('carry the serverId of the address bar, which keeps an open judge seat from being claimed', async () => {
+      window.history.replaceState({}, '', `/judge?id=${judgeId}&serverId=a%26b`);
+      (global as any).fetch = async (url: string) => {
+        urls.push(url);
+        return {ok: true, status: 200, json: () => Promise.resolve({})};
+      };
+
+      await postJudgeRewind(judgeId, 3, 'same', 'back');
+      await postJudgeFreeze(judgeId, true);
+      await fetchReplayMoves(judgeId);
+      await fetchReplayView(judgeId, 3, 'all');
+      await fetchReplayMoves('p-player-id');
+
+      expect(urls).deep.eq([
+        `api/judge/rewind?id=${judgeId}&serverId=a%26b`,
+        `api/judge/freeze?id=${judgeId}&serverId=a%26b`,
+        `api/replay/moves?id=${judgeId}&serverId=a%26b`,
+        `api/replay/view?id=${judgeId}&save=3&as=all&serverId=a%26b`,
+        'api/replay/moves?id=p-player-id',
+      ]);
+    });
+
+    it('take the password the judge page was given over the one in the address bar', async () => {
+      window.history.replaceState({}, '', `/judge?id=${judgeId}&password=old`);
+
+      await postJudgeFreeze(judgeId, true, '&password=new');
+
+      expect(posts.map(({url}) => url)).deep.eq([`api/judge/freeze?id=${judgeId}&password=new`]);
+    });
+
     it('throw what the server refused with', async () => {
       (global as any).fetch = async () => ({ok: false, status: 400, text: () => Promise.resolve('Bad request: The game is not frozen.')});
 

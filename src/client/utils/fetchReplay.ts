@@ -48,16 +48,23 @@ export function seatPasswordParam(id: ParticipantId, passwordFragment: string | 
   return passwordFragment === undefined || passwordFragment === '' ? addressBarPasswordParam() : passwordFragment;
 }
 
+// A serverId visit leaves an open judge seat unclaimed, and a judge request that carries neither the seat's password
+// nor the serverId would claim it. So a judge's requests carry the serverId of the address bar as well.
+function judgeCredentials(id: ParticipantId, passwordFragment: string | undefined): string {
+  const serverId = isJudgeId(id) ? new URLSearchParams(window.location.search).get('serverId') : null;
+  return seatPasswordParam(id, passwordFragment) + (serverId === null ? '' : '&serverId=' + encodeURIComponent(serverId));
+}
+
 /** `passwordFragment` is the seat's, as `passwordParam` makes it on the live game page. */
 export async function fetchReplayMoves(id: ParticipantId, passwordFragment?: string): Promise<ReplayMovesModel> {
-  return readJson(await fetch(`${paths.API_REPLAY_MOVES}?id=${id}${seatPasswordParam(id, passwordFragment)}`));
+  return readJson(await fetch(`${paths.API_REPLAY_MOVES}?id=${id}${judgeCredentials(id, passwordFragment)}`));
 }
 
 /** Rejects with an `AbortError` when a newer call replaced this one. */
 export async function fetchReplayView(id: ParticipantId, saveId: number, viewAs: ReplayViewAs, passwordFragment?: string): Promise<ReplayViewModel> {
   viewAbortController?.abort();
   viewAbortController = new AbortController();
-  const url = `${paths.API_REPLAY_VIEW}?id=${id}&save=${saveId}&as=${viewAs}${seatPasswordParam(id, passwordFragment)}`;
+  const url = `${paths.API_REPLAY_VIEW}?id=${id}&save=${saveId}&as=${viewAs}${judgeCredentials(id, passwordFragment)}`;
   return readJson(await fetch(url, {signal: viewAbortController.signal}));
 }
 
@@ -75,8 +82,8 @@ export async function postRewind(id: PlayerId, saveId: number, cards: RewindCard
   return readJson(resp);
 }
 
-async function postJudge(path: string, id: JudgeId, body: object): Promise<void> {
-  const resp = await fetch(`${path}?id=${id}${addressBarPasswordParam()}`, {
+async function postJudge(path: string, id: JudgeId, body: object, passwordFragment: string | undefined): Promise<void> {
+  const resp = await fetch(`${path}?id=${id}${judgeCredentials(id, passwordFragment)}`, {
     method: 'POST',
     headers: {'Content-Type': 'application/json'},
     body: JSON.stringify(body),
@@ -86,15 +93,16 @@ async function postJudge(path: string, id: JudgeId, body: object): Promise<void>
 
 /**
  * Rewinds the running game to before the move saved as `saveId`, as the judge, who leaves it frozen. The routes answer
- * the judge's model of the rewound game, which is left to the next poll. The judge password comes from the address bar.
+ * the judge's model of the rewound game, which is left to the next poll. `passwordFragment` is the judge's, as
+ * `passwordParam` makes it on the judge page. Without it the password comes from the address bar.
  */
-export function postJudgeRewind(id: JudgeId, saveId: number, cards: RewindCards, clocks: RewindClocks): Promise<void> {
-  return postJudge(paths.API_JUDGE_REWIND, id, {saveId, cards, clocks});
+export function postJudgeRewind(id: JudgeId, saveId: number, cards: RewindCards, clocks: RewindClocks, passwordFragment?: string): Promise<void> {
+  return postJudge(paths.API_JUDGE_REWIND, id, {saveId, cards, clocks}, passwordFragment);
 }
 
-/** Freezes the game, or unfreezes it. The judge password comes from the address bar. */
-export function postJudgeFreeze(id: JudgeId, frozen: boolean): Promise<void> {
-  return postJudge(paths.API_JUDGE_FREEZE, id, {frozen});
+/** Freezes the game, or unfreezes it. `passwordFragment` is as for `postJudgeRewind`. */
+export function postJudgeFreeze(id: JudgeId, frozen: boolean, passwordFragment?: string): Promise<void> {
+  return postJudge(paths.API_JUDGE_FREEZE, id, {frozen}, passwordFragment);
 }
 
 /** What a player sends to the vote route: ask for a rewind, or answer the open vote. */
