@@ -56,6 +56,7 @@ export class PlayerInput extends Handler {
     return this.processInput(req, res, ctx, player);
   }
 
+  // No prompt offers the one-step undo any more, so this and performUndo never run. They stay so upstream merges apply cleanly.
   private isWaitingForUndo(player: IPlayer, entity: InputResponse): boolean {
     const waitingFor = player.getWaitingFor();
     if (entity.type === 'or' && waitingFor instanceof OrOptions) {

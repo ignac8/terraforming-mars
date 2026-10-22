@@ -255,6 +255,7 @@ export class GameLoader implements IGameLoader {
     metrics.logsRestored.inc();
   }
 
+  // Only the one-step undo calls this, and no prompt offers that any more. It stays so upstream merges apply cleanly.
   public async restoreGameAt(gameId: GameId, saveId: number): Promise<IGame> {
     const current = await this.getGame(gameId);
     if (current === undefined) {
