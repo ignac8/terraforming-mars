@@ -75,6 +75,7 @@
       :live="isLive"
       :canRewind="canRewind"
       :canVoteRewind="canVoteRewind"
+      :viewerColor="viewerColor"
       :requestBlocked="requestBlocked"
       :ownViewOnly="ownViewOnly"
       :rewinding="rewinding || freezing"

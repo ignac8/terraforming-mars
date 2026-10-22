@@ -60,7 +60,7 @@
 
     <!-- The key forgets a half-made choice when another move is picked. -->
     <RewindControls
-      v-if="(canRewind || canVoteRewind) && index !== undefined && (!selectedUndone || judgeRewindsUndone) && !(live && collapsed)"
+      v-if="(canRewind || votesOnSelected) && index !== undefined && (!selectedUndone || judgeRewindsUndone) && !(live && collapsed)"
       :key="index"
       :mode="canRewind ? 'rewind' : 'vote'"
       :disabled="rewinding"
@@ -81,7 +81,7 @@ import {defineComponent} from 'vue';
 import LogMessageComponent from '@/client/components/logpanel/LogMessageComponent.vue';
 import RewindControls from '@/client/components/replay/RewindControls.vue';
 import {PublicPlayerModel, ViewModel} from '@/common/models/PlayerModel';
-import {PLAYER_COLORS} from '@/common/Color';
+import {Color, PLAYER_COLORS} from '@/common/Color';
 import {ReplayMove, ReplayViewAs, RewindCards, RewindClockRow, RewindClocks} from '@/common/replay/ReplayModel';
 
 const SPEEDS = [0.5, 1, 2, 4];
@@ -133,10 +133,15 @@ export default defineComponent({
       type: Boolean,
       default: false,
     },
-    /** Whether the selected move can be asked for by vote. */
+    /** Whether the viewer can ask for a rewind by vote, which they may do only about their own moves. */
     canVoteRewind: {
       type: Boolean,
       default: false,
+    },
+    /** The colour of the viewer, who is a player, to tell their own moves. */
+    viewerColor: {
+      type: String as () => Color,
+      default: undefined,
     },
     /** The viewer may only see their own view, which the page already shows, so there is nothing to pick. */
     ownViewOnly: {
@@ -219,6 +224,11 @@ export default defineComponent({
     /** The selected move is one that a rewind undid. */
     selectedUndone(): boolean {
       return this.index !== undefined && this.moves[this.index]?.undone === true;
+    },
+    /** The viewer can ask for a rewind to the selected move: they made it. */
+    votesOnSelected(): boolean {
+      const mover = this.index === undefined ? undefined : this.moves[this.index]?.mover;
+      return this.canVoteRewind && mover !== undefined && mover === this.viewerColor;
     },
     /** Only the judge, who may see the undone moves, may rewind to one. Nobody may vote for one. */
     judgeRewindsUndone(): boolean {

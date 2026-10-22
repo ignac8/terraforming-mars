@@ -33,6 +33,7 @@ export const voteMetrics = {
 export const RESTARTED_BEFORE_REWIND = 'The server restarted before the rewind ran. Ask again.';
 const TRY_AGAIN = 'That didn\'t work. Try again.';
 const UNRESTORABLE = 'That moment can\'t be restored. Nothing was changed.';
+const OWN_MOVES_ONLY = 'You can only ask to rewind your own moves.';
 const GAME_REWOUND = 'This game was rewound. Refresh this page.';
 
 export type VoteEffects = {
@@ -82,6 +83,10 @@ export class VoteService {
     const index = history.status === 'available' ? history.moves.findIndex((move) => move.saveId === saveId) : -1;
     if (index < 0) {
       throw RouteError.notFound('That move is not in this game\'s history.');
+    }
+    // A move of unknown player is refused too.
+    if (history.status === 'available' && history.moves[index].mover !== player.color) {
+      throw RouteError.badRequest(OWN_MOVES_ONLY);
     }
     let generation: number;
     try {

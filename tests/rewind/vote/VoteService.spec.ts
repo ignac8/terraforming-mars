@@ -3,6 +3,7 @@ import {Game} from '../../../src/server/Game';
 import {IGame} from '../../../src/server/IGame';
 import {IPlayer} from '../../../src/server/IPlayer';
 import {OrOptions} from '../../../src/server/inputs/OrOptions';
+import {SerializedGame} from '../../../src/server/SerializedGame';
 import {SelectCard} from '../../../src/server/inputs/SelectCard';
 import {SelectInitialCards} from '../../../src/server/inputs/SelectInitialCards';
 import {SelectSpace} from '../../../src/server/inputs/SelectSpace';
@@ -33,7 +34,9 @@ describe('VoteService', () => {
   let p3: TestPlayer;
   let clock: FakeClock;
   let service: VoteService;
+  // A move of player 2, and one of player 3.
   let saveId: number;
+  let saveId3: number;
 
   // What the fake effects saw.
   let persists: Array<Snapshot>;
@@ -150,14 +153,15 @@ describe('VoteService', () => {
     service = new VoteService(newEffects(), clock);
     service.resetForTesting();
     [game, p1, p2, p3] = testGame(3, {undoOption: true});
-    act(p1);
-    act(p1);
-    act(p1);
+    act(p2);
+    act(p2);
+    act(p3);
     const history = await getReplayMoves(game, p2.id);
     if (history.status !== 'available') {
       throw new Error('No history');
     }
     saveId = history.moves[1].saveId;
+    saveId3 = history.moves[2].saveId;
     restored = Object.create(game);
     restored.undoCount = game.undoCount + 1;
     restored.rewindVote = undefined;
@@ -184,12 +188,29 @@ describe('VoteService', () => {
   });
 
   it('refuses a second request, also one that started before the first opened', async () => {
-    const results = await Promise.allSettled([service.request(game, p2, saveId, 'same'), service.request(game, p3, saveId, 'same')]);
+    const results = await Promise.allSettled([service.request(game, p2, saveId, 'same'), service.request(game, p2, saveId, 'same')]);
 
     expect(results.map((r) => r.status).sort()).deep.eq(['fulfilled', 'rejected']);
     const rejected = results.find((r) => r.status === 'rejected') as PromiseRejectedResult;
     expect(rejected.reason.detail).eq('A rewind vote is already open.');
     expect(persists).has.length(1);
+  });
+
+  it('refuses a move that is not the requester\'s own, or whose player is not known, and stores nothing', async () => {
+    for (const run of [{asker: p3, own: true}, {asker: p2, own: false}]) {
+      if (!run.own) {
+        // A save written before answers were recorded.
+        delete (db.games.get(game.id) as Array<SerializedGame>)[saveId + 1].inputs;
+        clearReplayCache();
+      }
+
+      const refused = await refusal(service.request(game, run.asker, saveId, 'same'));
+
+      expect(refused.detail, String(run.own)).eq('You can only ask to rewind your own moves.');
+      expect(game.rewindVote, String(run.own)).is.undefined;
+      expect(persists, String(run.own)).is.empty;
+      expect(timers, String(run.own)).is.empty;
+    }
   });
 
   it('rewinds with the requester\'s cards once every other player agrees', async () => {
@@ -397,7 +418,7 @@ describe('VoteService', () => {
 
     game.generation++;
     persists = [];
-    await service.request(game, p3, saveId, 'same');
+    await service.request(game, p3, saveId3, 'same');
     act(p1);
     await flush();
     expect(persists.map((s) => s.rewindVote?.status)).deep.eq(['open', undefined]);
@@ -481,7 +502,7 @@ describe('VoteService', () => {
         await refusal(service.cancel(game, p2, id));
       },
       request: async () => {
-        await service.request(game, p3, saveId, 'same');
+        await service.request(game, p3, saveId3, 'same');
       },
     };
     for (const [name, call] of Object.entries(methods)) {

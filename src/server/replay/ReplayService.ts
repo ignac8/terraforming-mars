@@ -4,7 +4,7 @@ import {RouteError} from '../routes/RouteError';
 import {SerializedGame} from '../SerializedGame';
 import {loadSandboxGame} from './sandbox';
 import {Phase} from '../../common/Phase';
-import {GameId, ParticipantId} from '../../common/Types';
+import {GameId, ParticipantId, PlayerId} from '../../common/Types';
 import {playerColors, toJudgeMessage} from '../routes/GameLogs';
 import {ReplayMove, ReplayMovesModel} from '../../common/replay/ReplayModel';
 import {LogMessage} from '../../common/logs/LogMessage';
@@ -139,6 +139,10 @@ export async function isFinished(game: IGame): Promise<boolean> {
   return true;
 }
 
+function entryOf(saveId: number, save: SerializedGame): SaveEntry {
+  return {saveId, logLength: save.gameLog.length, answeredBy: save.inputs?.[0]?.playerId};
+}
+
 // Reads the saves one at a time and keeps only what the list needs, so at most one save is in
 // memory at once, besides the newest, which is read first.
 async function readGame(game: IGame): Promise<{result: Built, finished: boolean}> {
@@ -161,7 +165,7 @@ async function readGame(game: IGame): Promise<{result: Built, finished: boolean}
   try {
     for (const saveId of saveIds) {
       const save = saveId === newestId ? newest : await getSave(game, saveId);
-      saves.push({saveId, logLength: save.gameLog.length});
+      saves.push(entryOf(saveId, save));
     }
   } catch (e) {
     // Compression can strike while the saves are read. Only the first and last remain then.
@@ -200,7 +204,7 @@ async function extendRunningSaves(game: IGame, known: ReadonlyArray<SaveEntry>):
   const from = known.length > 0 ? known[known.length - 1].saveId : 0;
   const saves = known.slice(0, -1);
   for (const saveId of (await getSortedSaveIds(game)).filter((id) => id >= from)) {
-    saves.push({saveId, logLength: (await getSave(game, saveId)).gameLog.length});
+    saves.push(entryOf(saveId, await getSave(game, saveId)));
   }
   return saves;
 }
@@ -249,10 +253,13 @@ type AllMoves = {status: 'available', moves: Array<ReplayMove>, finished: boolea
 
 // Every move of the game with every message, the same for every viewer. `undone` adds the moves that rewinds undid.
 async function allMoves(game: IGame, undone: boolean = false): Promise<AllMoves> {
+  const colors = new Map(game.players.map((p) => [p.id, p.color]));
   // The live phase comes first: a game that a rollback reopened must not serve its old list.
   if (game.phase !== Phase.END) {
     const saves = await readRunningSaves(game);
-    return {status: 'available', moves: buildMoveList(saves, game.rewinds, game.gameLog, undone), finished: false};
+    // The newest save's move is the one the game is at, which its inputs since that save tell.
+    const movers = {colors, newest: game.inputsSinceSave?.[0]?.playerId};
+    return {status: 'available', moves: buildMoveList(saves, game.rewinds, game.gameLog, undone, movers), finished: false};
   }
   const cached = cache.get(game.id);
   const result: Built = cached?.finished ?
@@ -262,7 +269,18 @@ async function allMoves(game: IGame, undone: boolean = false): Promise<AllMoves>
     return result;
   }
   const {saves, rewinds, log} = result.game;
-  return {status: 'available', moves: buildMoveList(saves, rewinds, log, undone), finished: true};
+  return {status: 'available', moves: buildMoveList(saves, rewinds, log, undone, {colors}), finished: true};
+}
+
+/**
+ * The player who made the move from the state of save `saveId`: who gave the first answer recorded in the save
+ * after it, or in the live game when it is the newest. Undefined when that is not known, as for a save written
+ * before answers were recorded, or when no answer follows it.
+ */
+export async function moverOf(game: IGame, saveId: number): Promise<PlayerId | undefined> {
+  const next = (await getSortedSaveIds(game)).find((id) => id > saveId);
+  const inputs = next === undefined ? game.inputsSinceSave : (await getSave(game, next)).inputs;
+  return inputs?.[0]?.playerId;
 }
 
 /**

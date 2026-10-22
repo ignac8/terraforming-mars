@@ -489,7 +489,7 @@ describe('ReplayScreen', () => {
       const messages = finished ? [] : played;
       return {
         status: 'available', finished, canRewind: false, canVoteRewind, viewerColor: 'blue', defaultViewAs: finished ? 'all' : 'blue',
-        moves: [{saveId: 10, messages}, {saveId: 11, messages}],
+        moves: [{saveId: 10, messages, mover: 'blue'}, {saveId: 11, messages, mover: 'blue'}],
       };
     }
 
@@ -517,6 +517,21 @@ describe('ReplayScreen', () => {
         if (canVoteRewind) {
           expect(wrapper.findComponent(RewindControls).props('mode')).equals('vote');
         }
+        wrapper.unmount();
+      }
+    });
+
+    it('offers the request on the player\'s own moves only', async () => {
+      for (const [index, offered] of [[0, true], [1, false]] as const) {
+        movesAnswer = {
+          status: 'available', finished: true, canRewind: false, canVoteRewind: true, viewerColor: 'blue', defaultViewAs: 'all',
+          moves: [{saveId: 10, messages: [], mover: 'blue'}, {saveId: 11, messages: [], mover: 'red'}],
+        };
+        const wrapper = mountReplay();
+        await flushPromises();
+        wrapper.findComponent(ReplayPanel).vm.$emit('select', index);
+        await flushPromises();
+        expect(wrapper.findComponent(RewindControls).exists(), String(index)).equals(offered);
         wrapper.unmount();
       }
     });
@@ -847,7 +862,10 @@ describe('ReplayScreen', () => {
     });
 
     describe('at a table that votes on a rewind', () => {
-      const voteMoves = {...liveMoves, canRewind: false, canVoteRewind: true} as const;
+      const voteMoves = {
+        ...liveMoves, canRewind: false, canVoteRewind: true, viewerColor: 'blue',
+        moves: [{saveId: 10, messages: played, mover: 'blue'}, {saveId: 11, messages: played, mover: 'blue'}],
+      } as const;
       // A running game's model leaves the players' ids out.
       const red = () => fakePublicPlayerModel({color: 'red', id: undefined, name: 'red'});
 

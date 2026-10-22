@@ -1,8 +1,14 @@
+import {Color} from '../../common/Color';
 import {LogMessage} from '../../common/logs/LogMessage';
 import {ReplayMove} from '../../common/replay/ReplayModel';
+import {PlayerId} from '../../common/Types';
 import {abandonedBy, activeRewinds, hiddenBy, RewindRecord} from '../rewind/RewindRecord';
 
-export type SaveEntry = {saveId: number; logLength: number};
+/** `answeredBy`: who gave the first answer the save recorded, which was applied to the state of the save before it. */
+export type SaveEntry = {saveId: number; logLength: number; answeredBy?: PlayerId};
+
+/** What tells who made each move: the players' colours, and, for the newest save, the live game's first answer since. */
+export type Movers = {colors: ReadonlyMap<PlayerId, Color>; newest?: PlayerId};
 
 // Where a save that `record` wrote starts. A rewind's marker belongs to the state it restored,
 // so when that state is itself the product of a rewind, the earlier marker comes along.
@@ -29,8 +35,11 @@ function markerStart(record: RewindRecord, rewinds: ReadonlyArray<RewindRecord>)
  * rewind restored that save, stays with the later rewind's save. The save before a rewind's save ends
  * at the rewind's `logEnd`, where the marker starts, even though the rewind's save has a longer log.
  * An undone save with no lines of its own is left out like any other, so it is never a rewind target.
+ *
+ * With `movers`, each move names its player: the one who gave the first answer recorded in the next save by id,
+ * which was applied to the state of this save. The newest save has no next one, so the live game's answer stands.
  */
-export function buildMoveList(saves: ReadonlyArray<SaveEntry>, rewinds: ReadonlyArray<RewindRecord>, log: ReadonlyArray<LogMessage>, showUndone: boolean = false): Array<ReplayMove> {
+export function buildMoveList(saves: ReadonlyArray<SaveEntry>, rewinds: ReadonlyArray<RewindRecord>, log: ReadonlyArray<LogMessage>, showUndone: boolean = false, movers?: Movers): Array<ReplayMove> {
   const active = activeRewinds(rewinds);
   const moves: Array<ReplayMove> = [];
   saves.forEach(({saveId, logLength}, idx) => {
@@ -44,7 +53,9 @@ export function buildMoveList(saves: ReadonlyArray<SaveEntry>, rewinds: Readonly
     const end = next === undefined ? log.length : (rewinds.find((r) => r.saveId === next.saveId)?.logEnd ?? next.logLength);
     const messages = log.slice(start, end).filter((_, i) => hiddenBy(start + i, active) === undone);
     if (messages.length > 0 || next === undefined) {
-      moves.push(undone ? {saveId, messages, undone} : {saveId, messages});
+      const answered = next === undefined ? movers?.newest : next.answeredBy;
+      const mover = answered === undefined ? undefined : movers?.colors.get(answered);
+      moves.push({saveId, messages, ...(undone ? {undone} : {}), ...(mover === undefined ? {} : {mover})});
     }
   });
   return moves;

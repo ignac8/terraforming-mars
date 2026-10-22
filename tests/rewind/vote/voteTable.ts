@@ -12,6 +12,7 @@ import {PlayerInput} from '../../../src/server/routes/PlayerInput';
 import {Phase} from '../../../src/common/Phase';
 import {Clock} from '../../../src/common/Timer';
 import {ParticipantId, PlayerId} from '../../../src/common/Types';
+import {ReplayMove} from '../../../src/common/replay/ReplayModel';
 import {RewindVotePoll} from '../../../src/common/rewind/RewindVoteModel';
 import {cast} from '../../../src/common/utils/utils';
 import {restoreTestDatabase, restoreTestGameLoader, setTestDatabase, setTestGameLoader} from '../../testing/setup';
@@ -94,13 +95,18 @@ export class VoteTable {
     return rows[rows.length - 1];
   }
 
-  /** The save ids of the moves `player` sees in the history of the live game, oldest first. */
-  public async moves(player: IPlayer = this.p2): Promise<Array<number>> {
+  /** The moves `player` sees in the history of the live game, oldest first. */
+  public async entries(player: IPlayer = this.p2): Promise<Array<ReplayMove>> {
     const history = await getReplayMoves(await this.live(), player.id);
     if (history.status !== 'available') {
       throw new Error(`no history: ${history.status}`);
     }
-    return history.moves.map((move) => move.saveId);
+    return history.moves;
+  }
+
+  /** The save ids of the moves `player` sees in the history of the live game, oldest first. */
+  public async moves(player: IPlayer = this.p2): Promise<Array<number>> {
+    return (await this.entries(player)).map((move) => move.saveId);
   }
 
   /** The game object the loader serves now. */

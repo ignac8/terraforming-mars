@@ -26,7 +26,7 @@ describe('rewind vote across a restart', () => {
 
   beforeEach(async () => {
     await t.start();
-    target = (await t.moves()).slice(-2)[0];
+    target = (await t.moves()).slice(-3)[0];
   });
 
   afterEach(() => t.stop());
@@ -70,7 +70,7 @@ describe('rewind vote across a restart', () => {
   it('passes or declines a vote with the first request after a restart', async () => {
     for (const choice of ['yes', 'no'] as const) {
       await t.start();
-      target = (await t.moves()).slice(-2)[0];
+      target = (await t.moves()).slice(-3)[0];
       const voteId = await request();
       const before = t.rows().length;
       t.restart();
@@ -89,7 +89,7 @@ describe('rewind vote across a restart', () => {
     }
 
     await t.start();
-    target = (await t.moves()).slice(-2)[0];
+    target = (await t.moves()).slice(-3)[0];
     const voteId = await request();
     t.restart();
     t.clock.millis += VOTE_EXPIRY_MS;
@@ -161,7 +161,7 @@ describe('rewind vote across a restart', () => {
   it('never shows a vote in a past moment', async () => {
     // The vote is in the newest save.
     const newest = t.rows().length - 1;
-    const voteId = await request(newest);
+    const voteId = await request();
     expect(t.newest().rewindVote?.id).eq(voteId);
 
     const past = await loadReplayState(t.game, newest);

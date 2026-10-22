@@ -264,9 +264,9 @@ describe('ReplayPanel', () => {
 
   describe('undone moves', () => {
     const withUndone: Array<ReplayMove> = [
-      {saveId: 1, messages: [message('alpha', 1)]},
-      {saveId: 2, messages: [message('beta', 2)], undone: true},
-      {saveId: 3, messages: [message('gamma', 3)]},
+      {saveId: 1, messages: [message('alpha', 1)], mover: 'blue'},
+      {saveId: 2, messages: [message('beta', 2)], undone: true, mover: 'blue'},
+      {saveId: 3, messages: [message('gamma', 3)], mover: 'blue'},
     ];
 
     it('offers the judge a switch, and passes the choice on', async () => {
@@ -294,8 +294,8 @@ describe('ReplayPanel', () => {
       for (const [props, offered] of [
         [{canRewind: true, canShowUndone: true}, true],
         [{canRewind: true}, false],
-        [{canVoteRewind: true}, false],
-        [{canVoteRewind: true, canShowUndone: true}, false],
+        [{canVoteRewind: true, viewerColor: 'blue'}, false],
+        [{canVoteRewind: true, viewerColor: 'blue', canShowUndone: true}, false],
       ] as const) {
         const controls = mountPanel({...props, moves: withUndone, index: 1}).findComponent(RewindControls);
         expect(controls.exists(), JSON.stringify(props)).equals(offered);
@@ -305,6 +305,20 @@ describe('ReplayPanel', () => {
         expect(mountPanel({...props, moves: withUndone, index: 2}).findComponent(RewindControls).props('undone'), JSON.stringify(props)).is.false;
       }
     });
+  });
+
+  it('offers a vote only on a move the viewer made, and the judge a rewind to any', () => {
+    const made: Array<ReplayMove> = [{...moves[0], mover: 'blue'}, {...moves[1], mover: 'red'}, moves[2]];
+    // The viewer is told by colour: a running game's players have no ids.
+    const players = [fakePublicPlayerModel({color: 'blue', id: undefined}), fakePublicPlayerModel({color: 'red', id: undefined})];
+    for (const [index, viewerColor, offered] of [[0, 'blue', true], [1, 'blue', false], [2, 'blue', false], [1, 'red', true], [0, undefined, false]] as const) {
+      const controls = mountPanel({canVoteRewind: true, moves: made, players, index, viewerColor}).findComponent(RewindControls);
+      expect(controls.exists(), `${index} ${viewerColor}`).equals(offered);
+      if (offered) {
+        expect(controls.props('mode')).equals('vote');
+      }
+    }
+    expect(mountPanel({canRewind: true, moves: made, index: 1}).findComponent(RewindControls).props('mode')).equals('rewind');
   });
 
   it('lets the judge choose a view on the live game page, where a player has none', () => {

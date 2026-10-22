@@ -46,16 +46,19 @@ describe('ApiRewindVote', () => {
 
   beforeEach(async () => {
     await t.start();
-    target = (await t.moves()).slice(-2)[0];
+    target = (await t.moves()).slice(-3)[0];
   });
 
   afterEach(() => t.stop());
 
-  it('rewinds the table when the other player agrees, keeping the clocks, unfrozen, naming the requester', async () => {
+  it('rewinds the table when the other player agrees, keeping the requester\'s clock, unfrozen, naming the requester', async () => {
     // Standing clocks, so the time kept is exact.
     [t.p1, t.p2].forEach((p, i) => {
       p.timer = Timer.deserialize({sumElapsed: 600_000 + i, startedAt: 0, running: false, afterFirstAction: true, lastStoppedAt: 0});
     });
+    for (const [i, p] of t.rows()[target].players.entries()) {
+      p.timer.sumElapsed = 300_000 + i;
+    }
     const saved = structuredClone(t.rows()[target]);
     const before = t.rows().length;
     const voteId = await request();
@@ -68,13 +71,28 @@ describe('ApiRewindVote', () => {
     expect(t.rows()).has.length(before + 1);
     expect(holdsMoment(t.newest(), saved)).is.true;
     expect(t.newest().rewindVote).is.undefined;
-    [t.p1, t.p2].forEach((p, i) => {
-      expect(restored.getPlayerById(p.id).timer.serialize().sumElapsed).eq(600_000 + i);
-    });
+    // Player 2 asked about their own move and keeps their time. Player 1's clock goes back.
+    expect(restored.getPlayerById(t.p2.id).timer.serialize().sumElapsed).eq(600_001);
+    expect(restored.getPlayerById(t.p1.id).timer.serialize().sumElapsed).eq(300_000);
     expect(restored.frozen).is.false;
     const marker = t.newest().gameLog[t.newest().gameLog.length - 1];
     expect(marker.message).eq('${0} rewound the game to generation ${1} after a unanimous vote');
     expect(marker.data[0]).deep.eq({type: LogMessageDataType.PLAYER, value: t.p2.color});
+  });
+
+  it('refuses a move of another player, and one of unknown player, and opens no vote', async () => {
+    const entries = await t.entries();
+    // The second generation: player 2's two moves, player 1's move, and the newest save, which nobody has answered.
+    expect(entries.slice(-4).map((move) => move.mover)).deep.eq([t.p2.color, t.p2.color, t.p1.color, undefined]);
+
+    for (const [asker, saveId] of [[t.p2, entries[entries.length - 2].saveId], [t.p2, entries[entries.length - 1].saveId], [t.p1, target]] as const) {
+      const res = await t.post(asker.id, {action: 'request', saveId, cards: 'same'});
+
+      expect(res.statusCode, String(saveId)).eq(statusCode.badRequest);
+      expect(res.content, String(saveId)).eq('Bad request: You can only ask to rewind your own moves.');
+      expect(t.newest().rewindVote).is.undefined;
+      expect((await t.live()).rewindVote).is.undefined;
+    }
   });
 
   // Both players pass with Mars terraformed, so the game ends. `target` is the moment before the last pass.
@@ -230,7 +248,7 @@ describe('ApiRewindVote', () => {
     const password = '0123456789ab';
     for (const finished of [false, true]) {
       await t.start({playerPasswords: true});
-      target = (await t.moves()).slice(-2)[0];
+      target = (await t.moves()).slice(-3)[0];
       t.p2.password = password;
       const poll = answer(await t.post(t.p2.id, {action: 'request', saveId: target, cards: 'same'}, `&password=${password}`));
       if (finished) {

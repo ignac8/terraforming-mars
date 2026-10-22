@@ -7,7 +7,7 @@ import {GameLoader} from '../../src/server/database/GameLoader';
 import {OrOptions} from '../../src/server/inputs/OrOptions';
 import {SelectCard} from '../../src/server/inputs/SelectCard';
 import {Server} from '../../src/server/models/ServerModel';
-import {clearReplayCache, getReplayMoves, historySaveIds, loadReplayState} from '../../src/server/replay/ReplayService';
+import {clearReplayCache, getReplayMoves, historySaveIds, loadReplayState, moverOf} from '../../src/server/replay/ReplayService';
 import {readRebuildSaves} from '../../src/server/rewind/rebuild';
 import {activeRewinds} from '../../src/server/rewind/RewindRecord';
 import {MAX_REWINDS, RewindActor, rewindGame, rewindMetrics, rewindTable} from '../../src/server/rewind/RewindService';
@@ -23,7 +23,8 @@ import {statusCode} from '../../src/common/http/statusCode';
 import {LogMessageDataType} from '../../src/common/logs/LogMessageDataType';
 import {Phase} from '../../src/common/Phase';
 import {Timer} from '../../src/common/Timer';
-import {PlayerId} from '../../src/common/Types';
+import {ParticipantId, PlayerId} from '../../src/common/Types';
+import {ReplayMove} from '../../src/common/replay/ReplayModel';
 import {cast} from '../../src/common/utils/utils';
 import {restoreTestDatabase, restoreTestGameLoader, setTestDatabase, setTestGameLoader} from '../testing/setup';
 import {SnapshotDatabase} from '../testing/SnapshotDatabase';
@@ -59,6 +60,14 @@ async function refusal(rewind: Promise<unknown>): Promise<RouteError> {
     return cast(e, RouteError);
   }
   throw new Error('The rewind was not refused');
+}
+
+async function movesOf(g: IGame, viewerId: ParticipantId): Promise<Array<ReplayMove>> {
+  const history = await getReplayMoves(g, viewerId);
+  if (history.status !== 'available') {
+    throw new Error(`no history: ${history.status}`);
+  }
+  return history.moves;
 }
 
 async function rebuilds(result: string): Promise<number> {
@@ -565,7 +574,8 @@ describe('RewindService whole table', () => {
     }
   });
 
-  it('keeps every clock with keep and restores the moment\'s clocks with back', async () => {
+  it('keeps the clock of the player whose move is undone with keep, and restores every other clock, and all with back', async () => {
+    // Player 2 made the move after the target.
     for (const run of [{clocks: 'keep', running: false}, {clocks: 'keep', running: true}, {clocks: 'back', running: false}] as const) {
       await playTable();
       const players = [player, player2];
@@ -581,17 +591,68 @@ describe('RewindService whole table', () => {
       const restored = await rewindTable(game, target, {cards: 'same', clocks: run.clocks}, judge);
 
       players.forEach((p, i) => {
+        const label = `${run.clocks} ${run.running} player ${i + 1}`;
         const sumElapsed = restored.getPlayerById(p.id).timer.serialize().sumElapsed;
-        if (run.clocks === 'back') {
-          expect(sumElapsed, run.clocks).eq(saved.players.find((s) => s.id === p.id)!.timer.sumElapsed);
+        if (run.clocks === 'back' || p === player) {
+          expect(sumElapsed, label).eq(saved.players.find((s) => s.id === p.id)!.timer.sumElapsed);
         } else if (run.running) {
           // The interval in progress counts too.
-          expect(sumElapsed, run.clocks).gte(605_000 + i).lte(p.timer.countedElapsed());
+          expect(sumElapsed, label).gte(605_000 + i).lte(p.timer.countedElapsed());
         } else {
-          expect(sumElapsed, run.clocks).eq(600_000 + i);
+          expect(sumElapsed, label).eq(600_000 + i);
         }
       });
     }
+  });
+
+  it('keeps every clock with keep when nothing says whose move is undone', async () => {
+    await playTable();
+    expect(rows()[target + 1].inputs?.[0]?.playerId).eq(player2.id);
+    // A save written before answers were recorded.
+    delete rows()[target + 1].inputs;
+    const players = [player, player2];
+    players.forEach((p, i) => {
+      p.timer = Timer.deserialize({sumElapsed: 600_000 + i, startedAt: 0, running: false, afterFirstAction: true, lastStoppedAt: 0});
+    });
+    for (const [i, p] of rows()[target].players.entries()) {
+      p.timer.sumElapsed = 300_000 + i;
+    }
+
+    const restored = await rewindTable(game, target, {cards: 'same', clocks: 'keep'}, judge);
+
+    players.forEach((p, i) => {
+      expect(restored.getPlayerById(p.id).timer.serialize().sumElapsed).eq(600_000 + i);
+    });
+  });
+
+  it('reads the mover of the first move after a rewind from the row after the rewind\'s row', async () => {
+    await playTable({judgeUndo: true});
+    const restored = await rewindTable(game, target, {cards: 'same', clocks: 'back'}, judge);
+    // A rewind's own row holds no answers.
+    const own = rows().length - 1;
+    expect(rows()[own].inputs).deep.eq([]);
+    choose(restored.getPlayerById(player2.id), 'Convert 8 heat into temperature');
+
+    expect(await moverOf(restored, own)).eq(player2.id);
+    expect((await movesOf(restored, restored.judgeId!)).find((move) => move.saveId === own)?.mover).eq(player2.color);
+  });
+
+  it('names whose move each entry of the move list is, the newest from the live game\'s answers', async () => {
+    await playTable({judgeUndo: true});
+    const before = await movesOf(game, game.judgeId!);
+    const at = before.findIndex((move) => move.saveId === target);
+    expect(before[at].mover).eq(player2.color);
+    expect(before[at - 1].mover).eq(player.color);
+    // Nobody has answered since the newest save.
+    expect(before[before.length - 1].saveId).eq(thirdResearch);
+    expect(before[before.length - 1].mover).is.undefined;
+
+    player.process({type: 'card', cards: []});
+    expect(game.inputsSinceSave).has.length(1);
+
+    expect(await moverOf(game, thirdResearch)).eq(player.id);
+    const after = await movesOf(game, game.judgeId!);
+    expect(after[after.length - 1].mover).eq(player.color);
   });
 
   it('carries the freeze into the rewound game and its save, and starts no clock', async () => {
@@ -608,10 +669,8 @@ describe('RewindService whole table', () => {
 
       expect(restored.frozen, String(run.live)).is.true;
       expect(rows()[rows().length - 1].frozen, String(run.live)).is.true;
-      players.forEach((p, i) => {
-        const timer = restored.getPlayerById(p.id).timer.serialize();
-        expect(timer.running, String(run.live)).is.false;
-        expect(timer.sumElapsed, String(run.live)).eq(600_000 + i);
+      players.forEach((p) => {
+        expect(restored.getPlayerById(p.id).timer.serialize().running, String(run.live)).is.false;
       });
     }
   });

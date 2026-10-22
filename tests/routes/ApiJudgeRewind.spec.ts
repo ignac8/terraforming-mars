@@ -177,9 +177,10 @@ describe('ApiJudgeRewind', () => {
         expect(res.statusCode, label).eq(statusCode.ok);
         const restored = (await GameLoader.getInstance().getGame(game.id))!;
         expect(restored.frozen, label).is.true;
-        // Back is the stored moment's clocks, keep is each player's live total.
+        // Back is the stored moment's clocks. Keep is the live total of player 2, who made the undone move, and the stored
+        // clock of the other player.
         players.forEach((p, i) => {
-          expect(restored.getPlayerById(p.id).timer.serialize().sumElapsed, label).eq((clocks === 'keep' ? 600_000 : 300_000) + i);
+          expect(restored.getPlayerById(p.id).timer.serialize().sumElapsed, label).eq((clocks === 'keep' && p === player2 ? 600_000 : 300_000) + i);
         });
         const drawPile = rows[rows.length - 1].projectDeck.drawPile;
         if (cards === 'same') {

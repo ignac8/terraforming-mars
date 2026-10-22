@@ -15,7 +15,7 @@ class VoteClock extends Clock {
 export const voteClock = new VoteClock();
 
 export const voteEffects: VoteEffects = {
-  // A vote rewind never touches the clocks.
+  // The requester made the move that is undone, so their clock stays and everyone else's goes back.
   rewind: (game, saveId, cards, requester) => rewindTable(game, saveId, {cards, clocks: 'keep'}, {kind: 'vote', requester}),
   persist: async (game) => {
     // Whether the patch landed is not needed: the vote service acts the same either way (see VoteService.write).
