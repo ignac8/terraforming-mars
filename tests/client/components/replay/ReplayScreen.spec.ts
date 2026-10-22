@@ -376,7 +376,7 @@ describe('ReplayScreen', () => {
       wrapper.findComponent(ReplayPanel).vm.$emit('select', 1);
       await flushPromises();
       // The game lost its second move meanwhile, e.g. to a rewind from another page.
-      movesAnswer = {...movesAnswer, moves: [{saveId: 10, messages: []}]};
+      movesAnswer = {status: 'available', ...rewindable, moves: [{saveId: 10, messages: []}]};
       wrapper.findComponent(RewindControls).vm.$emit('rewind', 'same');
       await flushPromises();
       const refusal = wrapper.find('.replay-panel .rewind-refusal');
@@ -531,7 +531,7 @@ describe('ReplayScreen', () => {
       panel(wrapper).vm.$emit('select', 1);
       await flushPromises();
       // Another page rewound the game to before its second move.
-      movesAnswer = {...liveMoves, moves: [liveMoves.moves[0]]};
+      movesAnswer = {status: 'available', finished: false, canRewind: true, defaultViewAs: 'blue', moves: [{saveId: 10, messages: []}]};
       rewindAnswer = () => Promise.resolve({ok: false, status: 404, text: () => Promise.resolve('Not found: That move is not in this game\'s history.')});
       wrapper.findComponent(RewindControls).vm.$emit('rewind', 'same');
       await flushPromises();
