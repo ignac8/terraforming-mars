@@ -1064,8 +1064,8 @@ describe('ReplayScreen', () => {
       await wrapper.find('.rewind-confirm-button').trigger('click');
       await flushPromises();
       expect(judgeRequests).to.deep.equal([{url: `api/judge/rewind?id=${judgeId}&password=a%26b&serverId=1`, body: {saveId: 11, cards: 'same', clocks: 'back'}}]);
-      // The link back to the judge page carries the password only.
-      expect(window.location.href).to.equal(`judge?id=${judgeId}&password=a%26b`);
+      // The link back to the judge page carries the serverId too, or its first poll would claim an open seat.
+      expect(window.location.href).to.equal(`judge?id=${judgeId}&password=a%26b&serverId=1`);
     });
   });
 });

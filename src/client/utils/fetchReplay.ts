@@ -49,8 +49,9 @@ export function seatPasswordParam(id: ParticipantId, passwordFragment: string | 
 }
 
 // A serverId visit leaves an open judge seat unclaimed, and a judge request that carries neither the seat's password
-// nor the serverId would claim it. So a judge's requests carry the serverId of the address bar as well.
-function judgeCredentials(id: ParticipantId, passwordFragment: string | undefined): string {
+// nor the serverId would claim it. So a judge's requests carry the serverId of the address bar as well, and so does the
+// link back to the judge page, whose first poll would claim the seat otherwise.
+export function judgeCredentials(id: ParticipantId, passwordFragment: string | undefined): string {
   const serverId = isJudgeId(id) ? new URLSearchParams(window.location.search).get('serverId') : null;
   return seatPasswordParam(id, passwordFragment) + (serverId === null ? '' : '&serverId=' + encodeURIComponent(serverId));
 }

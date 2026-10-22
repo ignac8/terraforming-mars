@@ -98,7 +98,7 @@ import ReplayPanel from '@/client/components/replay/ReplayPanel.vue';
 import RewindVoteBanner from '@/client/components/replay/RewindVoteBanner.vue';
 import {vueRoot} from '@/client/components/vueRoot';
 import {setTranslationContext} from '@/client/directives/i18n';
-import {fetchReplayMoves, fetchReplayView, postJudgeFreeze, postJudgeRewind, postRewind, postVote, ReplayResponseError, seatPasswordParam, translateRefusal} from '@/client/utils/fetchReplay';
+import {fetchReplayMoves, fetchReplayView, judgeCredentials, postJudgeFreeze, postJudgeRewind, postRewind, postVote, ReplayResponseError, translateRefusal} from '@/client/utils/fetchReplay';
 import {passwordParam} from '@/client/utils/playerPassword';
 import {paths} from '@/common/app/paths';
 import {JudgeModel} from '@/common/models/JudgeModel';
@@ -398,7 +398,7 @@ export default defineComponent({
           if (this.liveJudge !== undefined) {
             window.location.reload();
           } else {
-            window.location.href = `${paths.JUDGE}?id=${id}${seatPasswordParam(id, undefined)}`;
+            window.location.href = `${paths.JUDGE}?id=${id}${judgeCredentials(id, undefined)}`;
           }
         } else {
           await postRewind(id, saveId, cards, this.liveView);
