@@ -113,6 +113,36 @@ export class Timer {
   }
 
   /**
+   * Closes the interval in progress (counted only after the first action, as `stop` counts it) and stops.
+   * Never moves the shared last stop time. Does nothing on a timer that isn't running.
+   */
+  public pause(): void {
+    if (!this.running) {
+      return;
+    }
+    this.sumElapsed = this.countedElapsed();
+    this.running = false;
+  }
+
+  /**
+   * Starts a new interval now. Unlike `start`, never begins at the shared last stop time.
+   *
+   * On a running timer it drops the open interval uncounted, so callers that mean to count it pause first.
+   */
+  public resume(): void {
+    this.running = true;
+    this.startedAt = this.clock.now();
+  }
+
+  /**
+   * The time that counts so far: the closed intervals, plus the open one once the first action is done.
+   */
+  public countedElapsed(): number {
+    const open = this.running && this.afterFirstAction ? this.clock.now() - this.startedAt : 0;
+    return this.sumElapsed + open;
+  }
+
+  /**
    * Refund `millis` time off this timer's elapsed time, but never less than 0 elapsed time.
    */
   rebate(millis: number) {
