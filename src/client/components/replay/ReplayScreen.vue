@@ -44,6 +44,7 @@
       :live="liveView !== undefined"
       :canRewind="canRewind"
       :rewinding="rewinding"
+      :loading="status !== 'available'"
       @select="select"
       @update:viewAs="changeViewAs"
       @play="play"
@@ -187,7 +188,11 @@ export default defineComponent({
           return;
         }
         const moves = answer.status === 'available' ? listedMoves(answer) : [];
-        if (answer.status !== 'available' || moves.length === 0) {
+        if (answer.status === 'available' && moves.length === 0 && this.liveView !== undefined) {
+          // A game with no move made yet, for the panel to say so.
+          this.movesGameAge = gameAge;
+          this.status = 'available';
+        } else if (answer.status !== 'available' || moves.length === 0) {
           // No moves yet is the same as the saves not having landed.
           this.status = answer.status !== 'available' ? answer.status : 'not-finished';
           if (this.liveView !== undefined) {

@@ -49,7 +49,7 @@
           <LogMessageComponent v-for="(message, j) in move.messages" :key="j" :message="message" :viewModel="viewModel"/>
         </ul>
       </li>
-      <li v-if="moves.length === 0" class="replay-moves-empty" v-i18n>Loading replay...</li>
+      <li v-if="moves.length === 0" class="replay-moves-empty" v-i18n>{{ loading ? 'Loading replay...' : 'No moves yet' }}</li>
     </ul>
 
     <!-- The key forgets a half-made choice when another move is picked. -->
@@ -117,6 +117,11 @@ export default defineComponent({
     canRewind: {
       type: Boolean,
       default: false,
+    },
+    /** True until the moves have been read, so an empty list is not yet known to be empty. */
+    loading: {
+      type: Boolean,
+      default: true,
     },
     /** True while a rewind is under way. */
     rewinding: {

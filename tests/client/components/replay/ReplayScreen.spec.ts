@@ -556,6 +556,18 @@ describe('ReplayScreen', () => {
       }
     });
 
+    it('says there are no moves yet for a game whose only save is the live game itself', async () => {
+      movesAnswer = {...liveMoves, moves: [{saveId: 10, messages: []}]};
+      const wrapper = mountLive();
+      await wrapper.find('.replay-collapse').trigger('click');
+      await flushPromises();
+      expect(wrapper.find('.replay-moves-empty').text()).to.equal('No moves yet');
+      expect(wrapper.text()).not.to.contain('Replay is not ready yet');
+      expect(wrapper.find('.replay-error--floating').exists()).is.false;
+      // The empty list is known, so opening the panel again does not read it again.
+      expect(moveRequests()).has.length(1);
+    });
+
     it('reloads the moves when the game moves on while the panel is open, and not while it is closed', async () => {
       const wrapper = mountLive();
       await wrapper.setProps({liveView: liveView(4)});
