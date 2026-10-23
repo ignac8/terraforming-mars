@@ -27,7 +27,7 @@
       <template v-else-if="index !== undefined && replayView !== undefined">
         <SpectatorHome v-if="spectatorView !== undefined" key="past-all" :spectator="spectatorView" :replay="true"/>
         <PlayerHome v-else-if="playerView !== undefined" key="past" :playerView="playerView" :replay="true"/>
-        <ReplayHands v-if="spectatorView !== undefined" :privates="replayView.privates" :players="spectatorView.players"/>
+        <ReplayHands v-if="spectatorView !== undefined" :participantId="participantId" :privates="replayView.privates" :players="spectatorView.players"/>
       </template>
       <JudgeHome v-else-if="liveJudge !== undefined" key="live-judge" :judge="liveJudge" :showUndone="showUndone"/>
       <PlayerHome v-else-if="liveView !== undefined" key="live" :playerView="liveView"/>
@@ -57,7 +57,7 @@
     <template v-else>
       <SpectatorHome v-if="spectatorView !== undefined" :spectator="spectatorView" :replay="true"/>
       <PlayerHome v-else-if="playerView !== undefined" :playerView="playerView" :replay="true"/>
-      <ReplayHands v-if="spectatorView !== undefined" :privates="replayView.privates" :players="spectatorView.players"/>
+      <ReplayHands v-if="spectatorView !== undefined" :participantId="participantId" :privates="replayView.privates" :players="spectatorView.players"/>
     </template>
     <!-- The panel, which shows the refusal otherwise, is gone while the moves load again, and stays gone if that fails. -->
     <div v-if="refusal !== undefined && panelView === undefined" class="replay-message">

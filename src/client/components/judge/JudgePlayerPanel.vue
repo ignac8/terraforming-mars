@@ -27,14 +27,11 @@ import AppButton from '@/client/components/common/AppButton.vue';
 import Card from '@/client/components/card/Card.vue';
 import DynamicTitle from '@/client/components/common/DynamicTitle.vue';
 import JudgePendingChoice from '@/client/components/judge/JudgePendingChoice.vue';
-import {isPanelHidden, setPanelHidden} from '@/client/utils/judgePanelStorage';
-import {CardModel} from '@/common/models/CardModel';
+import {isPanelHidden, setPanelHidden} from '@/client/utils/panelHiddenStorage';
+import {privateCardSections, PrivateCardSection} from '@/client/utils/privateCardSections';
 import {JudgePlayerModel} from '@/common/models/JudgeModel';
 import {PublicPlayerModel} from '@/common/models/PlayerModel';
 import {JudgeId} from '@/common/Types';
-
-// A setup section only matters while the player picks a corporation and starting cards.
-type Section = {title: string, cards: ReadonlyArray<CardModel>, setup?: boolean};
 
 // Everything one player holds that the table can't see, for a judge. Read-only.
 // The judge can hide a player's block down to the name row, and the page remembers that per judge link.
@@ -67,22 +64,8 @@ export default defineComponent({
     },
   },
   computed: {
-    visibleSections(): Array<Section> {
-      const p = this.privates;
-      const sections: Array<Section> = [
-        {title: 'Cards In Hand', cards: p.cardsInHand},
-        {title: 'Drafted cards', cards: p.draftedCards},
-        {title: 'Dealt corporations', cards: p.dealtCorporationCards, setup: true},
-        {title: 'Dealt preludes', cards: p.dealtPreludeCards, setup: true},
-        {title: 'Dealt CEOs', cards: p.dealtCeoCards, setup: true},
-        {title: 'Dealt project cards', cards: p.dealtProjectCards, setup: true},
-        {title: 'Picked corporation', cards: p.pickedCorporationCard, setup: true},
-        {title: 'Preludes in hand', cards: p.preludeCardsInHand},
-        {title: 'CEOs in hand', cards: p.ceoCardsInHand},
-      ];
-      // The server keeps the dealt cards all game. Like the player page, show them only until something is in play.
-      const inSetup = this.player.tableau.length === 0;
-      return sections.filter((section) => section.cards.length > 0 && (inSetup || section.setup !== true));
+    visibleSections(): Array<PrivateCardSection> {
+      return privateCardSections(this.privates, this.player.tableau.length);
     },
   },
 });
