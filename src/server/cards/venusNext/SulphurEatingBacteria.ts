@@ -63,7 +63,7 @@ export class SulphurEatingBacteria extends Card implements IActionCard {
     const megaCreditsGained = 3 * amount;
     player.megaCredits += megaCreditsGained;
 
-    player.game.log('${0} removed ${1}:cr:microbe: from ${2} to gain ${3}:r:megacredits:', (b) =>
+    player.game.log('${0} removed ${1}:cr:microbe: from ${2} to gain ${3}:r:mc:', (b) =>
       b.player(player).number(amount).card(this).number(megaCreditsGained));
 
     return undefined;

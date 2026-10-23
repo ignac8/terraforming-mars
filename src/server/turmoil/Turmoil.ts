@@ -235,7 +235,7 @@ export class Turmoil {
    */
   public runTurmoilPhase(game: IGame, cb: () => void = () => {}): void {
     // 1 - All player lose 1 TR
-    game.log('All players lose 1:icon:tr:.');
+    game.log('All players lose 1:i:tr:.');
     game.players.forEach((player) => {
       player.decreaseTerraformRating();
     });
@@ -362,7 +362,7 @@ export class Turmoil {
       chairman.defer(() => {
         if (steps > 0) {
           chairman.increaseTerraformRating(steps);
-          game.log('${0} is the new chairman and gains ${1}:icon:tr:', (b) => b.player(chairman).number(steps));
+          game.log('${0} is the new chairman and gains ${1}:i:tr:', (b) => b.player(chairman).number(steps));
         } else {
           game.log('${0} is the new chairman', (b) => b.player(chairman));
         }
