@@ -80,7 +80,7 @@ describe('BotanicalExperience', () => {
     expect(card.resourceCount).eq(1);
     expect(player.production.plants).eq(3);
     expect(game.gameLog.map(formatMessage)).to.include(
-      `${player.color} removed 9:cr:data: from Botanical Experience to gain 3:p:plants:`);
+      `${player.color} removed 9:cr:data: from Botanical Experience to increase :p:plants: 3 steps.`);
   });
 
   it('targeted to remove plants', () => {

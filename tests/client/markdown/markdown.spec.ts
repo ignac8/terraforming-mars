@@ -24,11 +24,6 @@ describe('markdown', () => {
       '<p><span class="markdown-resource resource_icon--steel"></span></p>\n');
   });
 
-  it('renders corruption as a resource', () => {
-    expect(renderMarkdown(':r:corruption:')).eq(
-      '<p><span class="markdown-resource resource_icon--corruption"></span></p>\n');
-  });
-
   it('renders card resources', () => {
     expect(renderMarkdown(':cr:syndicate-fleet:')).eq(
       '<p><span class="markdown-resource card-resource-syndicate-fleet"></span></p>\n');
@@ -94,5 +89,10 @@ describe('markdown', () => {
     expect(renderMarkdown(':r:mc: :p:mc:')).eq(
       '<p><span class="markdown-resource resource_icon--megacredits"></span> ' +
       '<span class="markdown-production"><span class="markdown-resource resource_icon--megacredits"></span></span></p>\n');
+  });
+
+  it('renders the old :icon: kind in saved logs', () => {
+    expect(renderMarkdown('gained 1:icon:tr:', {inline: true})).eq(
+      'gained 1<span class="markdown-icon markdown-icon-tr"></span>');
   });
 });

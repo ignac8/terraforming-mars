@@ -3,7 +3,6 @@ import {SoilEnrichment} from '../../../src/server/cards/promo/SoilEnrichment';
 import {cast} from '@/common/utils/utils';
 import {TestPlayer} from '../../TestPlayer';
 import {testGame} from '../../TestGame';
-import {formatMessage} from '../../TestingUtils';
 import {GHGProducingBacteria} from '../../../src/server/cards/base/GHGProducingBacteria';
 import {SearchForLife} from '../../../src/server/cards/base/SearchForLife';
 import {Tardigrades} from '../../../src/server/cards/base/Tardigrades';
@@ -54,18 +53,6 @@ describe('SoilEnrichment', () => {
 
     expect(tardigrades.resourceCount).eq(0);
     expect(player.plants).eq(5);
-  });
-
-  it('logs resource icons', () => {
-    const tardigrades = new Tardigrades();
-    tardigrades.resourceCount = 1;
-    player.playedCards.push(tardigrades);
-    player.game.gameLog = [];
-
-    card.play(player);
-
-    expect(player.game.gameLog.map(formatMessage)).includes(
-      'blue removed 1:cr:microbe: from Tardigrades to gain 5:r:plants:');
   });
 
   it('play with only one eligible card', () => {

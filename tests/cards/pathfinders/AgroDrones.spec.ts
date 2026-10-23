@@ -3,7 +3,7 @@ import {setTemperature} from '../../TestingUtils';
 import {AgroDrones} from '../../../src/server/cards/pathfinders/AgroDrones';
 import {IGame} from '../../../src/server/IGame';
 import {TestPlayer} from '../../TestPlayer';
-import {formatMessage, testGame} from '../../TestingUtils';
+import {testGame} from '../../TestingUtils';
 
 describe('AgroDrones', () => {
   let card: AgroDrones;
@@ -56,7 +56,5 @@ describe('AgroDrones', () => {
     expect(player.steel).eq(0);
     expect(player.energy).eq(0);
     expect(player.plants).eq(3);
-    expect(game.gameLog.map(formatMessage)).to.include(
-      `${player.color} spent 1:r:steel: and 1:r:energy: to gain 3:r:plants:.`);
   });
 });

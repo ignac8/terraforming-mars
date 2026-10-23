@@ -95,7 +95,7 @@ export abstract class MarketCard extends Card implements IActionCard {
       player.stock.deduct(this.tradeResource, unitsSold);
       PathfindersExpansion.addToSolBank(player);
 
-      player.game.log('${0} sold ${1}${2}', (b) => b.player(player).number(unitsSold).resource(this.tradeResource));
+      player.game.log('${0} sold ${1} ${2}', (b) => b.player(player).number(unitsSold).string(this.tradeResource));
       return undefined;
     });
   }

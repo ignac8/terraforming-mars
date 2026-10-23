@@ -19,6 +19,8 @@ const MARKDOWN_ICON_KINDS: Record<string, (name: string) => ReadonlyArray<string
   expansion: (name) => [`expansion-icon expansion-icon-${name}`],
   tag: (name) => [`markdown-tag tag-${name}`],
   i: (name) => [`markdown-icon markdown-icon-${name}`],
+  // Fork: game logs saved before the move to upstream's :i: still use :icon:, e.g. `1:icon:tr:`.
+  icon: (name) => [`markdown-icon markdown-icon-${name}`],
   r: (name) => [`markdown-resource resource_icon--${resourceName(name)}`],
   p: (name) => ['markdown-production', `markdown-resource resource_icon--${resourceName(name)}`],
   cr: (name) => [`markdown-resource card-resource-${name}`],

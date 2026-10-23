@@ -20,39 +20,6 @@ import {PartyHooks} from '../turmoil/parties/PartyHooks';
 import {message} from '../logs/MessageBuilder';
 import {Units} from '../../common/Units';
 import {PRODUCTION_MINIMUMS} from '../../common/constants';
-import {Resource} from '../../common/Resource';
-import {Log} from '../../common/logs/Log';
-import {LogMessageDataType} from '../../common/logs/LogMessageDataType';
-
-const BONUS_RESOURCES: Partial<Record<SpaceBonus, Resource>> = {
-  [SpaceBonus.TITANIUM]: Resource.TITANIUM,
-  [SpaceBonus.STEEL]: Resource.STEEL,
-  [SpaceBonus.PLANT]: Resource.PLANTS,
-  [SpaceBonus.HEAT]: Resource.HEAT,
-  [SpaceBonus.MEGACREDITS]: Resource.MEGACREDITS,
-  [SpaceBonus.ENERGY]: Resource.ENERGY,
-};
-
-const BONUS_CARD_RESOURCES: Partial<Record<SpaceBonus, CardResource>> = {
-  [SpaceBonus.ANIMAL]: CardResource.ANIMAL,
-  [SpaceBonus.MICROBE]: CardResource.MICROBE,
-  [SpaceBonus.DATA]: CardResource.DATA,
-  [SpaceBonus.SCIENCE]: CardResource.SCIENCE,
-  [SpaceBonus.ASTEROID]: CardResource.ASTEROID,
-};
-
-/** Describes `count` of a space bonus for a log message, with an icon when the bonus has one. */
-function bonusText(bonus: SpaceBonus, count: number): string {
-  const resource = BONUS_RESOURCES[bonus];
-  if (resource !== undefined) {
-    return `${count}${Log.shortcode({type: LogMessageDataType.RESOURCE, value: resource})}`;
-  }
-  const cardResource = BONUS_CARD_RESOURCES[bonus];
-  if (cardResource !== undefined) {
-    return `${count}${Log.shortcode({type: LogMessageDataType.CARD_RESOURCE, value: cardResource})}`;
-  }
-  return `${count} ${SpaceBonus.toString(bonus)}`;
-}
 
 export class AresHandler {
   private constructor() {}
@@ -145,11 +112,11 @@ export class AresHandler {
       }
     }
 
-    const bonusesText = Array.from(bonuses.multiplicities())
-      .map(([bonus, count]) => bonusText(bonus, count))
+    const bonusText = Array.from(bonuses.multiplicities())
+      .map(([bonus, count]) => `${count} ${SpaceBonus.toString(bonus)}`)
       .join(', ');
     const tileText = adjacentSpace.tile !== undefined ? tileTypeToString[adjacentSpace.tile.tileType] : 'no tile';
-    player.game.log('${0} gains ${1} for placing next to ${2}', (b) => b.player(player).string(bonusesText).string(tileText));
+    player.game.log('${0} gains ${1} for placing next to ${2}', (b) => b.player(player).string(bonusText).string(tileText));
 
     if (giveAresTileOwnerBonus) {
       let ownerBonus = 1;
@@ -309,7 +276,7 @@ export class AresHandler {
     const steps = HAZARD_STEPS[hazardSeverity(initialTileType)];
     if (steps > 0) {
       player.increaseTerraformRating(steps);
-      player.game.log('${0}\'s :icon:tr: increases ${1} step(s) for removing ${2}', (b) => b.player(player).number(steps).tileType(initialTileType));
+      player.game.log('${0}\'s TR increases ${1} step(s) for removing ${2}', (b) => b.player(player).number(steps).tileType(initialTileType));
     }
   }
 

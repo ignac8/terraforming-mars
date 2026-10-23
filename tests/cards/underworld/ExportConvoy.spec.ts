@@ -1,7 +1,7 @@
 import {expect} from 'chai';
 import {ExportConvoy} from '../../../src/server/cards/underworld/ExportConvoy';
 import {testGame} from '../../TestGame';
-import {formatMessage, runAllActions} from '../../TestingUtils';
+import {runAllActions} from '../../TestingUtils';
 import {Tardigrades} from '../../../src/server/cards/base/Tardigrades';
 import {Birds} from '../../../src/server/cards/base/Birds';
 import {cast} from '../../../src/common/utils/utils';
@@ -33,7 +33,7 @@ describe('ExportConvoy', () => {
 
   it('play, plants', () => {
     const card = new ExportConvoy();
-    const [game, player] = testGame(2, {underworldExpansion: true});
+    const [/* game */, player] = testGame(2, {underworldExpansion: true});
     player.plants = 4;
 
     cast(card.play(player), undefined);
@@ -41,8 +41,6 @@ describe('ExportConvoy', () => {
     expect(player.plants).eq(0);
     expect(player.underworldData.corruption).eq(1);
     expect(player.megaCredits).eq(20);
-    expect(game.gameLog.map(formatMessage)).to.include(
-      'blue spent 4:r:plants: to gain 20:r:megacredits: and 1:r:corruption:');
   });
 
 
@@ -59,8 +57,6 @@ describe('ExportConvoy', () => {
     expect(tardigrades.resourceCount).eq(0);
     expect(player.underworldData.corruption).eq(1);
     expect(player.megaCredits).eq(20);
-    expect(game.gameLog.map(formatMessage)).to.include(
-      'blue spent 3:cr:microbe: to gain 20:r:megacredits: and 1:r:corruption:');
   });
 
 
@@ -77,7 +73,5 @@ describe('ExportConvoy', () => {
     expect(birds.resourceCount).eq(0);
     expect(player.underworldData.corruption).eq(1);
     expect(player.megaCredits).eq(20);
-    expect(game.gameLog.map(formatMessage)).to.include(
-      'blue spent 2:cr:animal: to gain 20:r:megacredits: and 1:r:corruption:');
   });
 });

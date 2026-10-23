@@ -17,7 +17,9 @@
         <span v-else-if="data.type === LogMessageDataType.COLONY" class="log-card background-color-colony" v-i18n>
           {{data.value}}
         </span>
-        <span v-else-if="data.type === LogMessageDataType.UNDERGROUND_TOKEN" class="log-excavation-token" v-html="inlineMarkdown($t(undergroundResourceTokenMarkdown[data.value]))"></span>
+        <span v-else-if="data.type === LogMessageDataType.UNDERGROUND_TOKEN" class="log-excavation-token" v-i18n>
+          {{undergroundResourceTokenDescription[data.value]}}
+        </span>
         <span v-else-if="data.type === LogMessageDataType.SPACE" class="log-space-id" @click.prevent="$emit('spaceClicked', data.value)">
             <svg width="20" height="14" viewBox="0 0 28 38">
               <circle cx="14" cy="19" r="16" stroke="black" stroke-width="1" transform="translate(0, 2)" :fill="data.value.startsWith('m') ? 'gray' : '#b7410e'" />
@@ -51,7 +53,7 @@ import {ViewModel} from '@/common/models/PlayerModel';
 import {tileTypeToString} from '@/common/TileType';
 import {Log} from '@/common/logs/Log';
 import {getCard} from '@/client/cards/ClientCardManifest';
-import {undergroundResourceTokenMarkdown} from '@/common/underworld/UndergroundResourceToken';
+import {undergroundResourceTokenDescription} from '@/common/underworld/UndergroundResourceToken';
 import {SpaceId} from '@/common/Types';
 import {spacesById} from '@/client/utils/spacesById';
 import {getPreferences} from '@/client/utils/PreferencesManager';
@@ -176,8 +178,8 @@ export default defineComponent({
     LogMessageDataType(): typeof LogMessageDataType {
       return LogMessageDataType;
     },
-    undergroundResourceTokenMarkdown(): typeof undergroundResourceTokenMarkdown {
-      return undergroundResourceTokenMarkdown;
+    undergroundResourceTokenDescription(): typeof undergroundResourceTokenDescription {
+      return undergroundResourceTokenDescription;
     },
     tileTypeToString(): typeof tileTypeToString {
       return tileTypeToString;

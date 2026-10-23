@@ -112,7 +112,7 @@ describe('Bjorn', () => {
     game.generation = 10;
 
     card.action(player);
-    expect(formatMessage(game.gameLog.pop()!)).to.eq('blue stole 12:r:megacredits: from the neutral player');
+    expect(formatMessage(game.gameLog.pop()!)).to.eq('blue stole 12:r:mc: from the neutral player');
   });
 
   it('Takes OPG action, players that lost money can play Law Suit', () => {

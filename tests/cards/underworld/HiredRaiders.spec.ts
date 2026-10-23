@@ -52,7 +52,7 @@ describe('HiredRaiders', () => {
     player.underworldData.corruption = 2;
 
     cast(card.play(player), undefined);
-    expect(formatMessage(game.gameLog.pop()!)).to.eq('blue stole 6:r:megacredits: from the neutral player');
+    expect(formatMessage(game.gameLog.pop()!)).to.eq('blue stole 6:r:mc: from the neutral player');
     expect(player.megaCredits).to.eq(6);
   });
 });
