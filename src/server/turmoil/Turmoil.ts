@@ -19,7 +19,6 @@ import {IPlayer} from '../IPlayer';
 import {SendDelegateToArea} from '../deferredActions/SendDelegateToArea';
 import {SelectParty} from '../inputs/SelectParty';
 import {IPolicy, policyDescription} from './Policy';
-import {descriptionWithIcons} from './DescriptionIcons';
 import {PlayerId} from '../../common/Types';
 import {ChoosePolicyBonus} from '../deferredActions/ChoosePolicyBonus';
 import {toID} from '../../common/utils/utils';
@@ -416,7 +415,7 @@ export class Turmoil {
     if (bonus === undefined) {
       throw new Error(`Bonus id ${bonusId} not found in party ${rulingParty.name}`);
     }
-    game.log('The ruling bonus is: ${0}', (b) => b.string(descriptionWithIcons(bonus.description)));
+    game.log('The ruling bonus is: ${0}', (b) => b.string(bonus.description));
 
     // Mars Frontier Alliance
     if (alliedPlayer?.alliedParty) {
@@ -437,7 +436,7 @@ export class Turmoil {
       throw new Error(`Policy id ${policyId} not found in party ${rulingParty.name}`);
     }
     const description = policyDescription(policy, undefined);
-    game.log('The ruling policy is: ${0}', (b) => b.string(descriptionWithIcons(description)));
+    game.log('The ruling policy is: ${0}', (b) => b.string(description));
     policy.onPolicyStart?.(game);
   }
 

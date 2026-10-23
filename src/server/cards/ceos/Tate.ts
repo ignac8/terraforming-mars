@@ -36,7 +36,7 @@ export class Tate extends CeoCard {
 
     const options = tags.map((tag) => {
       return new SelectOption(message('Search for ${0} tags', (b) => b.string(tag)), 'Search').andThen(() => {
-        game.log('${0} searched for ${1} tags', (b) => b.player(player).string(`:tag:${tag}:`));
+        game.log('${0} searched for ${1} tags', (b) => b.player(player).string(tag));
         player.drawCardKeepSome(5, {keepMax: 2, tag: tag, paying: true, logDrawnCard: true});
         return undefined;
       });

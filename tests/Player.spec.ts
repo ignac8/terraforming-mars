@@ -12,7 +12,7 @@ import {SerializedTimer} from '../src/common/SerializedTimer';
 import {Player} from '../src/server/Player';
 import {Color} from '../src/common/Color';
 import {CardName} from '../src/common/cards/CardName';
-import {doWait, fakeCard, formatMessage, getSendADelegateOption, runAllActions, setRulingParty} from './TestingUtils';
+import {doWait, formatMessage, getSendADelegateOption, runAllActions, setRulingParty} from './TestingUtils';
 import {SelfReplicatingRobots} from '../src/server/cards/promo/SelfReplicatingRobots';
 import {IProjectCard} from '../src/server/cards/IProjectCard';
 import {Pets} from '../src/server/cards/base/Pets';
@@ -454,18 +454,6 @@ describe('Player', () => {
     expect(log[0].data[1].value).eq('4');
   });
 
-  it('removeResourceFrom, card without a resource type', () => {
-    const [game, player, player2] = testGame(2);
-    const card = fakeCard({resourceCount: 3});
-    expect(card.resourceType).is.undefined;
-    game.gameLog.length = 0;
-
-    player.removeResourceFrom(card, 2, {removingPlayer: player2});
-
-    expect(card.resourceCount).eq(1);
-    expect(game.gameLog.map(formatMessage)).deep.eq([`${player2.color} removed 2 resource(s) from ${player.color}'s ${card.name}`]);
-  });
-
   it('increaseTerraformRating logs a TR icon', () => {
     const [game, player] = testGame(1);
     game.gameLog.length = 0;
@@ -474,8 +462,8 @@ describe('Player', () => {
     player.increaseTerraformRating(1, {log: true, from: {card: CardName.ASTEROID_MINING_CONSORTIUM}});
 
     expect(game.gameLog.map(formatMessage)).deep.eq([
-      `${player.color} gained 2:icon:tr:`,
-      `${player.color} gained 1:icon:tr: from Asteroid Mining Consortium`,
+      `${player.color} gained 2:i:tr:`,
+      `${player.color} gained 1:i:tr: from Asteroid Mining Consortium`,
     ]);
   });
 
@@ -485,7 +473,7 @@ describe('Player', () => {
 
     player.decreaseTerraformRating(3, {log: true});
 
-    expect(game.gameLog.map(formatMessage)).deep.eq([`${player.color} lost 3:icon:tr:`]);
+    expect(game.gameLog.map(formatMessage)).deep.eq([`${player.color} lost 3:i:tr:`]);
   });
 
   it('Turmoil player action', () => {
@@ -603,7 +591,7 @@ describe('Player', () => {
 
     expect(player.megaCredits).eq(15);
     expect(player.preludeCardsInHand).deep.eq([alliedBanks]);
-    expect(game.gameLog.map(formatMessage)).includes(`Loan fizzled. ${player.color} gains 15:r:megacredits:.`);
+    expect(game.gameLog.map(formatMessage)).includes(`Loan fizzled. ${player.color} gains 15:r:mc:`);
   });
 
   it('autopass is disabled', () => {

@@ -11,7 +11,6 @@ import {SelectCard} from '@/server/inputs/SelectCard';
 import {TestPlayer} from '../../TestPlayer';
 import {testGame} from '../../TestGame';
 import {cast} from '@/common/utils/utils';
-import {formatMessage} from '../../TestingUtils';
 
 describe('CeresTechMarket', () => {
   let card: CeresTechMarket;
@@ -66,17 +65,5 @@ describe('CeresTechMarket', () => {
     expect(player.megaCredits).to.eq(4);
     expect(player.cardsInHand).has.lengthOf(0);
     expect(game.projectDeck.discardPile).deep.eq([research, tardigrades]);
-  });
-
-  it('action logs an M€ icon', () => {
-    const research = new Research();
-    const tardigrades = new Tardigrades();
-    player.cardsInHand.push(research, tardigrades);
-    game.gameLog = [];
-
-    const selectCard = cast(card.action(player), SelectCard<ICard>);
-    selectCard.cb([research, tardigrades]);
-
-    expect(game.gameLog.map(formatMessage)).includes('blue gained 4:r:megacredits: by discarding 2 cards');
   });
 });

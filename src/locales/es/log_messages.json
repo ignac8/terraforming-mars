@@ -84,6 +84,5 @@
     "drew":"ha robado",
     "bought":"ha comprado",
     "sold":"ha vendido",
-    "Discarded ${0} cards ${1}": "${0} carta/s han sido descartadas ${1}",
-    "Pay 10:r:megacredits: to draw 3 cards": "Paga 10 М€ para robar 3 cartas"
+    "Discarded ${0} cards ${1}": "${0} carta/s han sido descartadas ${1}"
 }

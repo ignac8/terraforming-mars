@@ -66,8 +66,8 @@ export class TradeWithHecateSpeditions implements IColonyTrader {
 
   private tradeWithColony(card: ICard, player: IPlayer, colony: IColony) {
     card.resourceCount -= this.tradeCost;
-    player.game.log('${0} spent ${1}${2} from ${3} to trade with ${4}',
-      (b) => b.player(player).number(this.tradeCost).cardResource(CardResource.SUPPLY_CHAIN).card(card).colony(colony));
+    player.game.log('${0} spent ${1} ${2} from ${3} to trade with ${4}',
+      (b) => b.player(player).number(this.tradeCost).string('supply chain resources').card(card).colony(colony));
     colony.trade(player);
   }
 

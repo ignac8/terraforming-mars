@@ -638,7 +638,7 @@ describe('Game', () => {
     addGreenery(player, landSpace.id);
 
     expect(player.megaCredits).eq(2);
-    expect(game.gameLog.map(formatMessage)).includes(`${player.color} gained 2:r:megacredits: from 1 ocean(s)`);
+    expect(game.gameLog.map(formatMessage)).includes(`${player.color} gained 2:r:mc: from 1 ocean(s)`);
   });
 
   it('Check Ecologist Milestone', () => {

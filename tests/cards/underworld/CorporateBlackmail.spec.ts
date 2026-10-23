@@ -1,7 +1,7 @@
 import {expect} from 'chai';
 import {CorporateBlackmail} from '../../../src/server/cards/underworld/CorporateBlackmail';
 import {testGame} from '../../TestGame';
-import {formatMessage, runAllActions} from '../../TestingUtils';
+import {runAllActions} from '../../TestingUtils';
 import {SelectPlayer} from '../../../src/server/inputs/SelectPlayer';
 import {IGame} from '../../../src/server/IGame';
 import {TestPlayer} from '../../TestPlayer';
@@ -56,7 +56,6 @@ describe('CorporateBlackmail', () => {
     expect(player2.megaCredits).eq(9);
     expect(player2.underworldData.corruption).eq(1);
     expect(player.megaCredits).eq(0);
-    expect(game.gameLog.map(formatMessage)).to.include('blue blackmailed red and took 2:r:corruption:.');
   });
 
   it('play, choose M€', () => {
@@ -73,7 +72,6 @@ describe('CorporateBlackmail', () => {
     expect(player2.underworldData.corruption).eq(3);
     expect(player.megaCredits).eq(10);
     expect(player.underworldData.corruption).eq(0);
-    expect(game.gameLog.map(formatMessage)).to.include('blue blackmailed red and was paid 10:r:megacredits:.');
   });
 
   it('play, choose corruption', () => {

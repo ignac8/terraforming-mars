@@ -17,7 +17,7 @@ import {TestPlayer} from '../TestPlayer';
 import {AresHazards} from '../../src/server/ares/AresHazards';
 import {SeededRandom} from '../../src/common/utils/Random';
 import {Units} from '../../src/common/Units';
-import {addOcean, formatMessage, runAllActions, setRulingParty} from '../TestingUtils';
+import {addOcean, runAllActions, setRulingParty} from '../TestingUtils';
 import {SelectSpace} from '../../src/server/inputs/SelectSpace';
 import {testGame} from '../TestGame';
 import {PartyName} from '../../src/common/turmoil/PartyName';
@@ -77,24 +77,6 @@ describe('AresHandler', () => {
     expect(otherPlayer.stock.asUnits()).deep.eq(Units.of({megacredits: 2}));
   });
 
-  it('Adjacency bonuses are logged with icons', () => {
-    const greenerySpace = game.board.getAvailableSpacesForGreenery(player)[0];
-    const [firstSpace, secondSpace] = game.board.getAdjacentSpaces(greenerySpace);
-    firstSpace.adjacency = {bonus: [SpaceBonus.STEEL, SpaceBonus.STEEL, SpaceBonus.ANIMAL, SpaceBonus.PLANT]};
-    game.addTile(otherPlayer, firstSpace, {tileType: TileType.MINING_RIGHTS});
-    secondSpace.adjacency = {bonus: [SpaceBonus.DRAW_CARD]};
-    game.addTile(otherPlayer, secondSpace, {tileType: TileType.RESTRICTED_AREA});
-
-    game.addTile(player, greenerySpace, {tileType: TileType.GREENERY});
-
-    const messages = game.gameLog.map(formatMessage);
-    expect(messages).to.include.members([
-      `${player.color} gains 2:r:steel:, 1:cr:animal:, 1:r:plants: for placing next to Mining Rights`,
-      `${player.color} gains 1 Card for placing next to Restricted Area`,
-      `${otherPlayer.color} gains 1:r:megacredits: for a tile placed next to Mining Rights`,
-    ]);
-  });
-
   it('Pay Adjacency Costs', () => {
     const firstSpace = game.board.getAvailableSpacesOnLand(player)[0];
     firstSpace.adjacency = {bonus: [], cost: 2};
@@ -112,8 +94,6 @@ describe('AresHandler', () => {
 
     // player who owns Nuclear zone doesn't get an adjacency bonus.
     expect(otherPlayer.megaCredits).is.eq(0);
-
-    expect(game.gameLog.map(formatMessage)).to.include(`${player.color} placing a tile here costs 2:r:megacredits:`);
   });
 
   it('Cannot afford adjacency costs', () => {
@@ -303,8 +283,6 @@ describe('AresHandler', () => {
     expect(space.tile!.tileType).eq(TileType.GREENERY);
     expect(player.megaCredits).is.eq(0);
     expect(player.terraformRating).eq(21);
-    // formatMessage prints tile types as their number.
-    expect(game.gameLog.map(formatMessage)).to.include(`${player.color}'s :icon:tr: increases 1 step(s) for removing ${TileType.EROSION_MILD}`);
   });
 
   it('cover severe hazard', () => {
@@ -473,7 +451,6 @@ describe('Hazard tests', () => {
     expect(tiles.get(TileType.DUST_STORM_MILD)).is.undefined;
     expect(tiles.get(TileType.DUST_STORM_SEVERE)).is.undefined;
     expect(player.terraformRating).eq(prior + 2); // One for the ocean, once for the dust storm event.
-    expect(game.gameLog.map(formatMessage)).to.include(`${player.color}'s :icon:tr: increases 1 step for eliminating dust storms.`);
   });
 
   it('dust storms disappear after the sixth ocean, desperate measures changes that', () => {

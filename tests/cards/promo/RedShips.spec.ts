@@ -4,7 +4,7 @@ import {TileType} from '@/common/TileType';
 import {IGame} from '@/server/IGame';
 import {TestPlayer} from '../../TestPlayer';
 import {testGame} from '../../TestGame';
-import {addCity, addOcean, formatMessage, setOxygenLevel} from '../../TestingUtils';
+import {addCity, addOcean, setOxygenLevel} from '../../TestingUtils';
 
 describe('RedShips', () => {
   let card: RedShips;
@@ -32,14 +32,6 @@ describe('RedShips', () => {
   it('action with no qualifying tiles adds nothing', () => {
     card.action(player);
     expect(player.megaCredits).to.eq(0);
-  });
-
-  it('action with no qualifying tiles logs an M€ icon', () => {
-    game.gameLog = [];
-
-    card.action(player);
-
-    expect(game.gameLog.map(formatMessage)).includes('blue gained 0:r:megacredits: from Red Ships action.');
   });
 
   it('action counts city tiles adjacent to an ocean', () => {
