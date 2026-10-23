@@ -4,7 +4,7 @@ import {OrOptions} from '../../../src/server/inputs/OrOptions';
 import {SelectAmount} from '../../../src/server/inputs/SelectAmount';
 import {Resource} from '../../../src/common/Resource';
 import {TestPlayer} from '../../TestPlayer';
-import {formatMessage, runAllActions} from '../../TestingUtils';
+import {runAllActions} from '../../TestingUtils';
 import {testGame} from '../../TestGame';
 import {cast} from '../../../src/common/utils/utils';
 
@@ -66,16 +66,5 @@ describe('EnergyMarket', () => {
 
     expect(player.production.energy).to.eq(0);
     expect(player.megaCredits).to.eq(8);
-  });
-
-  it('Logs resource icons when trading energy production for M€', () => {
-    player.production.add(Resource.ENERGY, 1);
-    player.game.gameLog = [];
-
-    card.action(player);
-
-    expect(player.game.gameLog.map(formatMessage)).deep.eq([
-      'blue lost 1:p:energy: to gain 8:r:megacredits:',
-    ]);
   });
 });

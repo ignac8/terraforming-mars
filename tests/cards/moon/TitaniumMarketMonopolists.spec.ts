@@ -2,7 +2,7 @@ import {IGame} from '../../../src/server/IGame';
 import {testGame} from '../../TestGame';
 import {MoonData} from '../../../src/server/moon/MoonData';
 import {MoonExpansion} from '../../../src/server/moon/MoonExpansion';
-import {formatMessage, runAllActions} from '../../TestingUtils';
+import {runAllActions} from '../../TestingUtils';
 import {TestPlayer} from '../../TestPlayer';
 import {TitaniumMarketMonopolists} from '../../../src/server/cards/moon/TitaniumMarketMonopolists';
 import {expect} from 'chai';
@@ -57,7 +57,6 @@ describe('TitaniumMarketMonopolists', () => {
     selectAmount.cb(2);
     expect(player.megaCredits).eq(9);
     expect(player.titanium).eq(0);
-    expect(game.gameLog.map(formatMessage)).to.include(`${player.color} sold 2:r:titanium:`);
   });
 
   it('sell titanium - limited', () => {

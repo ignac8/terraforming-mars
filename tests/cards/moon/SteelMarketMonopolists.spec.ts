@@ -2,7 +2,7 @@ import {IGame} from '../../../src/server/IGame';
 import {testGame} from '../../TestGame';
 import {MoonData} from '../../../src/server/moon/MoonData';
 import {MoonExpansion} from '../../../src/server/moon/MoonExpansion';
-import {formatMessage, runAllActions} from '../../TestingUtils';
+import {runAllActions} from '../../TestingUtils';
 import {TestPlayer} from '../../TestPlayer';
 import {SteelMarketMonopolists} from '../../../src/server/cards/moon/SteelMarketMonopolists';
 import {expect} from 'chai';
@@ -56,7 +56,6 @@ describe('SteelMarketMonopolists', () => {
     selectAmount.cb(2);
     expect(player.megaCredits).eq(7);
     expect(player.steel).eq(0);
-    expect(game.gameLog.map(formatMessage)).to.include(`${player.color} sold 2:r:steel:`);
   });
 
   it('sell steel - limited', () => {

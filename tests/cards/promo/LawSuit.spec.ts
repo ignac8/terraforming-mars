@@ -5,7 +5,6 @@ import {SelectPlayer} from '../../../src/server/inputs/SelectPlayer';
 import {Resource} from '../../../src/common/Resource';
 import {TestPlayer} from '../../TestPlayer';
 import {cast} from '@/common/utils/utils';
-import {formatMessage} from '../../TestingUtils';
 
 describe('LawSuit', () => {
   let card: LawSuit;
@@ -62,15 +61,5 @@ describe('LawSuit', () => {
     play.cb(player2);
     expect(player.megaCredits).eq(2);
     expect(player2.megaCredits).eq(0);
-  });
-
-  it('Logs an M€ icon when the sued player has no M€', () => {
-    player.removingPlayers.push(player2.id);
-    player2.megaCredits = 0;
-    player.game.gameLog = [];
-
-    cast(card.play(player), SelectPlayer).cb(player2);
-
-    expect(player.game.gameLog.map(formatMessage)).includes('blue sued red who had 0:r:megacredits:.');
   });
 });

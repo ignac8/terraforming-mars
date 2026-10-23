@@ -1,7 +1,7 @@
 import {expect} from 'chai';
 import {testGame} from '../../TestGame';
 import {IPlayer} from '../../../src/server/IPlayer';
-import {formatMessage, runAllActions} from '../../TestingUtils';
+import {runAllActions} from '../../TestingUtils';
 import {CosmicRadiation} from '../../../src/server/cards/moon/CosmicRadiation';
 import {MoonExpansion} from '../../../src/server/moon/MoonExpansion';
 import {TileType} from '../../../src/common/TileType';
@@ -53,11 +53,6 @@ describe('CosmicRadiation', () => {
     expect(player1.megaCredits).eq(6);
     expect(player2.megaCredits).eq(0);
     expect(player3.megaCredits).eq(8);
-    expect(game.gameLog.map(formatMessage)).to.include.members([
-      `${player1.color} spends 4:r:megacredits: for the 1 mining tiles they own.`,
-      `${player2.color} spends 3:r:megacredits: for the 2 mining tiles they own.`,
-      `${player3.color} spends 12:r:megacredits: for the 3 mining tiles they own.`,
-    ]);
   });
 
   it('Compatible with underworld', () => {

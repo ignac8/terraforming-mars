@@ -3,6 +3,7 @@ import {IPlayer} from '../../IPlayer';
 import {Tag} from '../../../common/cards/Tag';
 import {CardName} from '../../../common/cards/CardName';
 import {CardRenderer} from '../render/CardRenderer';
+import {Size} from '../../../common/cards/render/Size';
 import {PlaceTilesInAnyOrder} from '../../deferredActions/PlaceTilesInAnyOrder';
 import {DiscardCards} from '../../deferredActions/DiscardCards';
 import {ICorporationCard} from '../corporation/ICorporationCard';
@@ -18,7 +19,7 @@ export class UnitedNationsMarsInitiativeTournament extends UnitedNationsMarsInit
         cardNumber: 'T15',
         description: 'You start with 40 M€. Place 1 ocean, 1 city, and 1 greenery tile, collecting no space bonuses from those placements. Discard 3 cards.',
         renderData: CardRenderer.builder((b) => {
-          b.megacredits(40).oceans(1).asterix().city().asterix().greenery().asterix().text('-3').cards(1);
+          b.megacredits(40).oceans(1, {size: Size.SMALL}).city({size: Size.SMALL}).greenery({size: Size.SMALL}).asterix().text('-3').cards(1);
           b.corpBox('action', (ce) => {
             ce.action('If your Terraform Rating was raised this generation, you may pay 3 M€ to raise it 1 step more.', (eb) => {
               eb.megacredits(3).startAction.tr(1).asterix();

@@ -22,8 +22,7 @@ export class PalladinShippingTournament extends PalladinShipping implements ICor
       metadata: {
         cardNumber: 'T13',
         renderData: CardRenderer.builder((b) => {
-          b.megacredits(36).titanium(5, {digit}).production((pb) => pb.megacredits(1)).br;
-          b.cards(3).br;
+          b.megacredits(36).titanium(5, {digit}).production((pb) => pb.megacredits(1)).cards(3, {digit}).br;
           b.corpBox('effect-action', (cea) => {
             cea.vSpace(Size.LARGE);
             cea.effect('When you play a space event, gain 1 titanium.', (eb) => {

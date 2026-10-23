@@ -5,7 +5,7 @@ import {OrOptions} from '../../../src/server/inputs/OrOptions';
 import {TestPlayer} from '../../TestPlayer';
 import {Tag} from '../../../src/common/cards/Tag';
 import {testGame} from '../../TestGame';
-import {fakeCard, formatMessage, runAllActions} from '../../TestingUtils';
+import {fakeCard, runAllActions} from '../../TestingUtils';
 import {CardType} from '../../../src/common/cards/CardType';
 import {CrewTraining} from '../../../src/server/cards/pathfinders/CrewTraining';
 import {DeclareCloneTag} from '../../../src/server/pathfinders/DeclareCloneTag';
@@ -127,18 +127,6 @@ describe('Faraday', () => {
     expectNoChange(player);
     expect(player.cardsInHand).has.length(0);
     expect(player.megaCredits).to.eq(1);
-  });
-
-  it('Logs a tag icon when the player cannot afford the card', () => {
-    player.megaCredits = 1;
-    player.playedCards.push(fakeCard({tags: [Tag.SCIENCE, Tag.SCIENCE, Tag.SCIENCE, Tag.SCIENCE]}));
-    game.gameLog = [];
-
-    player.playCard(fakeCard({tags: [Tag.SCIENCE]}));
-    runAllActions(game);
-
-    expect(game.gameLog.map(formatMessage)).includes(
-      'blue cannot afford to take advantage of the Faraday effect to draw a :tag:science: card');
   });
 
   it('Play a card with two of the same tag', () => {

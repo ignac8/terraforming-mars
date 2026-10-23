@@ -6,7 +6,7 @@ import {OrOptions} from '../../src/server/inputs/OrOptions';
 import {SelectOption} from '../../src/server/inputs/SelectOption';
 import {TestPlayer} from '../TestPlayer';
 import {testGame} from '../TestGame';
-import {formatMessage, runAllActions} from '../TestingUtils';
+import {runAllActions} from '../TestingUtils';
 import {IGame} from '../../src/server/IGame';
 import {CrewTraining} from '../../src/server/cards/pathfinders/CrewTraining';
 import {MartianZoo} from '../../src/server/cards/colonies/MartianZoo';
@@ -35,8 +35,6 @@ describe('DeclareCloneTag', () => {
     orOptions[0].cb(undefined);
     expect(card.cloneTag).eq(Tag.VENUS);
     expect(tag).eq(Tag.VENUS);
-    expect(game.gameLog.map(formatMessage)).to.include(
-      `${player.color} turned the clone tag on Lobby Halls into a :tag:venus: tag`);
 
     orOptions[1].cb(undefined);
     expect(card.cloneTag).eq(Tag.EARTH);

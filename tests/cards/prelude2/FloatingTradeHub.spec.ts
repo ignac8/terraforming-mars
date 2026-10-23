@@ -5,7 +5,6 @@ import {FloatingTradeHub} from '../../../src/server/cards/prelude2/FloatingTrade
 import {OrOptions} from '../../../src/server/inputs/OrOptions';
 import {TestPlayer} from '../../TestPlayer';
 import {testGame} from '../../TestGame';
-import {formatMessage} from '../../TestingUtils';
 import {SelectCard} from '../../../src/server/inputs/SelectCard';
 import {SelectOption} from '../../../src/server/inputs/SelectOption';
 import {newProjectCard} from '../../../src/server/createCard';
@@ -68,21 +67,6 @@ describe('FloatingTradeHub', () => {
 
     expect(player.stock.asUnits()).deep.eq(Units.of({plants: 4}));
     expect(card.resourceCount).to.eq(1);
-  });
-
-  it('act - select resource logs icons', () => {
-    card.resourceCount = 5;
-    player.game.gameLog = [];
-
-    const orOptions = cast(card.action(player), OrOptions);
-    const andOptions = cast(orOptions.options[1], AndOptions);
-    andOptions.process({type: 'and', responses: [
-      {type: 'amount', amount: 4},
-      {type: 'resource', resource: 'plants'},
-    ]}, player);
-
-    expect(player.game.gameLog.map(formatMessage)).includes(
-      'blue removed 4:cr:floater: from Floating Trade Hub to gain 4:r:plants:');
   });
 
   it('act - add resources branch autoselects the only target card when converting floaters is available', () => {

@@ -41,8 +41,8 @@ export class SuitableInfrastructure extends PreludeCard {
     if (game.phase === Phase.ACTION || game.phase === Phase.PRELUDES) {
       this.oncePerAction.oncePerAction(game, () => {
         player.stock.add(Resource.MEGACREDITS, 2);
-        game.log('${0} gained ${1}${2} from ${3}',
-          (b) => b.player(player).number(2).resource(Resource.MEGACREDITS).card(this));
+        game.log('${0} gained ${1} ${2} from ${3}',
+          (b) => b.player(player).number(2).string('M€').card(this));
       });
     }
   }

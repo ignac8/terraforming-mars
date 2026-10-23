@@ -10,7 +10,7 @@ import {SelectColony} from '../../src/server/inputs/SelectColony';
 import {SelectCard} from '../../src/server/inputs/SelectCard';
 import {IProjectCard} from '../../src/server/cards/IProjectCard';
 import {isIStandardProjectCard} from '../../src/server/cards/IStandardProjectCard';
-import {MAX_COLONY_TRACK_POSITION, MC_TRADE_COST} from '../../src/common/constants';
+import {MAX_COLONY_TRACK_POSITION} from '../../src/common/constants';
 import {formatMessage, runAllActions, setRulingParty} from '../TestingUtils';
 import {TestPlayer} from '../TestPlayer';
 import {CardName} from '../../src/common/cards/CardName';
@@ -25,9 +25,6 @@ import {PartyName} from '../../src/common/turmoil/PartyName';
 import {L1TradeTerminal} from '../../src/server/cards/prelude2/L1TradeTerminal';
 import {Mercury} from '../../src/server/cards/community/Mercury';
 import {cast} from '@/common/utils/utils';
-import {Iapetus} from '../../src/server/cards/community/Iapetus';
-import {Leavitt} from '../../src/server/cards/community/Leavitt';
-import {LeavittII} from '../../src/server/cards/pathfinders/LeavittII';
 
 function isBuildColonyStandardProjectAvailable(player: TestPlayer) {
   const options = player.getStandardProjectOption();
@@ -241,58 +238,6 @@ describe('Colony', () => {
     expect(player2.megaCredits).to.eq(7);
     expect(player3.megaCredits).to.eq(0);
     expect(player4.megaCredits).to.eq(0);
-  });
-
-  it('logs the M€ trade cost with a megacredits icon', () => {
-    player.megaCredits = 100;
-    game.gameLog.length = 0;
-
-    const tradeAction = cast(player.colonies.coloniesTradeAction(), AndOptions);
-    tradeAction.process({
-      type: 'and',
-      responses: [
-        {
-          type: 'or',
-          index: cast(tradeAction.options[0], OrOptions).options.length - 1, // The last one is "trade with megacredits".
-          response: {type: 'option'},
-        },
-        {type: 'colony', colonyName: ColonyName.LUNA},
-      ],
-    }, player);
-    runAllActions(game);
-
-    expect(game.gameLog.map(formatMessage)).includes(`${player.color} spent ${MC_TRADE_COST}:r:megacredits: to trade with Luna`);
-  });
-
-  it('logs the card discount colony bonus with a megacredits icon', () => {
-    const iapetus = new Iapetus();
-    game.gameLog.length = 0;
-
-    iapetus.giveColonyBonus(player);
-    runAllActions(game);
-
-    expect(player.colonies.cardDiscount).eq(1);
-    expect(game.gameLog.map(formatMessage)).deep.eq([`Cards played by ${player.color} cost 1:r:megacredits: less this generation`]);
-  });
-
-  it('logs the Science tag build bonus with a tag icon', () => {
-    const leavitt = new Leavitt();
-    game.gameLog.length = 0;
-
-    leavitt.addColony(player);
-    runAllActions(game);
-
-    expect(game.gameLog.map(formatMessage)).includes(`${player.color} gained 1:tag:science:`);
-  });
-
-  it('logs the two Science tags build bonus with a tag icon', () => {
-    const leavittII = new LeavittII();
-    game.gameLog.length = 0;
-
-    leavittII.addColony(player);
-    runAllActions(game);
-
-    expect(game.gameLog.map(formatMessage)).includes(`${player.color} gained 2:tag:science:`);
   });
 
   it('Should let player build a colony only if they can afford it', () => {

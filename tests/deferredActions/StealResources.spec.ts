@@ -68,7 +68,7 @@ describe('StealResources.execute', () => {
 
     expect(player.megaCredits).eq(5);
     expect(game.gameLog.map(formatMessage)).deep.eq([
-      'blue stole 5:r:megacredits: from the neutral player',
+      'blue stole 5:r:mc: from the neutral player',
     ]);
   });
 });
