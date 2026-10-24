@@ -1005,7 +1005,7 @@
   "Place any final greenery from plants": "Розмістіть будь-яку остаточний ліс з рослин",
   "Don't place a greenery": "Не розміщуйте ліс",
 
-  "Wetlands: counts as an ocean and a greenery. Does not count toward 9 oceans.": "Болота: вважається океаном і лісом. Не враховується при підрахунку 9 океанів.",
+  "Wetlands: counts as an ocean and a greenery. Does not count toward ${0} oceans.": "Болота: вважається океаном і лісом. Не враховується при підрахунку ${0} океанів.",
   "Red City: 1 VP per empty adjacent area. No greeneries may be placed next to it.": "Червоне місто: 1 Очко терраформування за порожнє сусіднє поле. Поруч не можна розміщувати ліси.",
   "Martian Nature Wonders": "Дива марсіанської природи",
   "Crashlanding": "Катастрофа при посадці",

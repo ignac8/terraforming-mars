@@ -855,7 +855,7 @@
     "Place any final greenery from plants": "最終配置フェイズ",
     "Don't place a greenery": "緑地を配置出来ません",
 
-    "Wetlands: counts as an ocean and a greenery. Does not count toward 9 oceans.": "",
+    "Wetlands: counts as an ocean and a greenery. Does not count toward ${0} oceans.": "",
     "Red City: 1 VP per empty adjacent area. No greeneries may be placed next to it.": "",
     "Martian Nature Wonders": "火星の神秘",
     "Crashlanding": "不時着",

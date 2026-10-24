@@ -177,5 +177,5 @@
   "Requires Unity is ruling or that you have 2 delegates there. Raise your M€ production 3 steps and place a city tile ON THE RESERVED AREA.": "Kijátszási feltétel: az Egység van hatalmon, vagy legalább 2 saját küldött a pártban. Növeld a M€-termelésed 3 értékkel, és rakd le ezt a Városlapkát a SZÁMÁRA FENNTARTOTT TERÜLETRE!",
   "Wetlands": "Vízes élőhelyek",
   "(Requires 2 ocean tiles. Lose 4 plants. Place this tile on an UNRESERVED SPACE ADJACENT TO AT LEAST 2 OCEANS. Raise oxygen 1 step. Gain 1 TR.)": "Kijátszási feltétel: legalább 2 Óceánlapka! Veszíts el 4 palántát! Rakd le ezt a lapkát egy NEM FENNTARTOTT TERÜLETRE AMI 2 ÓCEÁNNAL SZOMSZÉDOS! Növeld az oxigénszintet 1 értékkel! Kapsz 1 TR-t.",
-  "(Effect: Wetlands counts as a greenery tile and an ocean tile, except it can't be covered and is not one of the 9 oceans required to end the game.)": "Hatás: Ez a lapka Növényzet- és Óceánlapkának is számít, kivéve, hogy nem lehet letakarni, és nem számít bele a 9 Óceánlapkába."
+  "(Effect: Wetlands counts as a greenery tile and an ocean tile, except it can't be covered and is not one of the oceans required to end the game.)": "Hatás: Ez a lapka Növényzet- és Óceánlapkának is számít, kivéve, hogy nem lehet letakarni, és nem számít bele a 9 Óceánlapkába."
 }
