@@ -398,7 +398,7 @@
   "jovian": "jovien",
   "mars": "",
   "moon": "lune",
-  "Player spent ${0} steel and gained ${1} heat": "Le joueur a dépensé ${0} acier(s) et a gagné ${1} chaleur(s)",
+  "${0} spent ${1}:r:steel: and gained ${2}:r:heat:": "Le joueur a dépensé ${1} acier(s) et a gagné ${2} chaleur(s)",
   "${0} turned the clone tag on ${1} into a ${2} tag": "${0} a changé le badge Clone sur ${1} en un badge ${2}",
   "${0} raised the ${1} planetary track ${2} step(s)": "${0} a augmenté la piste planétaire de ${1} de ${2}",
   "Global Event ${0} raised the ${1} planetary track ${2} step(s)": "L'Évènement Global ${0} a augmenté la piste planétaire de ${1} de ${2}",

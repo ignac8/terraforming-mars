@@ -501,5 +501,5 @@
   "${0} selected Global Event ${1} for the current global event": "${0} вибрав(ла) глобальну подію ${1} як поточну глобальну подію",
   "Neutral delegate added to ${0}": "Нейтральний делегат доданий до ${0}",
   "${0} sent 1 Neutral delegate in ${1} area": "${0} відправив(ла) 1 нейтрального делегата в область ${1}",
-  "Player spent ${0} steel and gained ${1} heat": "Гравець витратив ${0} сталі та отримав ${1} тепла"
+  "${0} spent ${1}:r:steel: and gained ${2}:r:heat:": "Гравець витратив ${1} сталі та отримав ${2} тепла"
 }

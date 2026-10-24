@@ -430,7 +430,7 @@
   "jovian": "Jupiter",
   "mars": "Mars",
   "moon": "Kuu",
-  "Player spent ${0} steel and gained ${1} heat": "Pelaaja käytti ${0} terästä ja sai ${1} lämpöä",
+  "${0} spent ${1}:r:steel: and gained ${2}:r:heat:": "Pelaaja käytti ${1} terästä ja sai ${2} lämpöä",
   "${0} turned the clone tag on ${1} into a ${2} tag": "${0} muutti klooniympyrän kortilla ${1} ${2}-ympyräksi",
   "${0} raised the ${1} planetary track ${2} step(s)": "${0} nosti ${1}-planeettarataa ${2} askel(ta)",
   "Global Event ${0} raised the ${1} planetary track ${2} step(s)": "Globaali tapahtuma ${0} nosti ${1}-planeettarataa ${2} askel(ta)",
