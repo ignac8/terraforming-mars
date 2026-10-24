@@ -1029,6 +1029,7 @@ describe('Game', () => {
       'researchSnapshot',
       'heldResearchLogs',
       'globalParameterTracks',
+      'standardProjects',
     ];
     const serializedValuesNotInGame: Array<keyof SerializedGame> = [
       'seed',
