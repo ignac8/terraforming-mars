@@ -427,6 +427,42 @@ describe('WaitingFor', () => {
       expect(updatePlayer.mock.calls).has.length(1);
     });
 
+    it('takes the next turn after a poll from the answered prompt comes back late', async () => {
+      vi.useFakeTimers();
+      // Holds each poll until the test answers it.
+      const inFlight: Array<(answer: WaitingForModel) => void> = [];
+      vi.stubGlobal('XMLHttpRequest', class {
+        status = 200;
+        response: WaitingForModel | undefined = undefined;
+        onload = () => {};
+        open() {}
+        send() {
+          inFlight.push((answer) => {
+            this.response = answer;
+            this.onload();
+          });
+        }
+      });
+      const updatePlayer = vi.fn(async () => true);
+      const turn = stubTurnCue();
+      const view = viewWith({gameOptions: {judgeUndo: true}});
+      const wrapper = mountAt(view, requiredPrompt, {updatePlayer});
+
+      // A watch-mode poll is on the wire when the player's answer comes back with the next view.
+      await vi.advanceTimersByTimeAsync(1000);
+      await wrapper.setProps({playerView: {...view}, waitingfor: {...requiredPrompt, optional: true}});
+      inFlight[0]({result: 'WAIT', waitingFor: []});
+
+      // The next poll finds the player's next turn.
+      await vi.advanceTimersByTimeAsync(1000);
+      expect(inFlight).has.length(2);
+      inFlight[1]({result: 'GO', waitingFor: []});
+      await flushPromises();
+
+      expect(updatePlayer.mock.calls).has.length(1);
+      expect(turn.cues()).eq(1);
+    });
+
     it('does not poll without judge undo', async () => {
       vi.useFakeTimers();
       const polls = stubPolls(200, {result: 'REFRESH', waitingFor: []});

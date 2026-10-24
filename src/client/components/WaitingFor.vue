@@ -225,9 +225,12 @@ export default defineComponent({
       const vueApp = this;
       const root = vueRoot(this);
       clearTimeout(ui_update_timeout_id);
+      // A poll still on the wire when a new view restarted polling (or stop() ended it) must not carry on:
+      // its watch flag belongs to the old view, and in watch mode a GO is never acted on.
+      const isCurrent = () => ui_update_timeout_id === timer;
       // A new view restarts polling through the playerView watcher. Without one, nothing would.
       const pollAgainUnlessUpdated = (updated: boolean) => {
-        if (!updated) {
+        if (!updated && isCurrent()) {
           vueApp.waitForUpdate(watch);
         }
       };
@@ -248,9 +251,15 @@ export default defineComponent({
           '&gameAge=' + this.playerView.game.gameAge + '&undoCount=' + this.playerView.game.undoCount;
         xhr.open('GET', paths.API_WAITING_FOR + window.location.search + query);
         xhr.onerror = function() {
+          if (!isCurrent()) {
+            return;
+          }
           pollFailed('Error fetching state', CANNOT_CONTACT_SERVER);
         };
         xhr.onload = () => {
+          if (!isCurrent()) {
+            return;
+          }
           if (xhr.status === statusCode.ok) {
             failedPolls = 0;
             const result = xhr.response as WaitingForModel;
@@ -292,7 +301,8 @@ export default defineComponent({
         xhr.responseType = 'json';
         xhr.send();
       };
-      ui_update_timeout_id = window.setTimeout(askForUpdate, raw_settings.waitingForTimeout);
+      const timer = window.setTimeout(askForUpdate, raw_settings.waitingForTimeout);
+      ui_update_timeout_id = timer;
     },
     /**
      * While this player makes a simultaneous choice (e.g. drafting), keep the other
