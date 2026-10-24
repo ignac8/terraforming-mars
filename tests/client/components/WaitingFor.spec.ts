@@ -281,6 +281,24 @@ describe('WaitingFor', () => {
     return polls;
   }
 
+  // Holds each poll on the wire until the test answers it, so the page can change while a poll is in flight.
+  function holdPolls() {
+    const inFlight: Array<(answer: WaitingForModel) => void> = [];
+    vi.stubGlobal('XMLHttpRequest', class {
+      status = 200;
+      response: WaitingForModel | undefined = undefined;
+      onload = () => {};
+      open() {}
+      send() {
+        inFlight.push((answer) => {
+          this.response = answer;
+          this.onload();
+        });
+      }
+    });
+    return inFlight;
+  }
+
   const spectatorView = {id: 's-spectator-id', players: [], game: {phase: Phase.ACTION, gameAge: 1, undoCount: 0}};
 
   // `rootMethods` stand in for the App methods WaitingFor calls through vueRoot.
@@ -429,20 +447,7 @@ describe('WaitingFor', () => {
 
     it('takes the next turn after a poll from the answered prompt comes back late', async () => {
       vi.useFakeTimers();
-      // Holds each poll until the test answers it.
-      const inFlight: Array<(answer: WaitingForModel) => void> = [];
-      vi.stubGlobal('XMLHttpRequest', class {
-        status = 200;
-        response: WaitingForModel | undefined = undefined;
-        onload = () => {};
-        open() {}
-        send() {
-          inFlight.push((answer) => {
-            this.response = answer;
-            this.onload();
-          });
-        }
-      });
+      const inFlight = holdPolls();
       const updatePlayer = vi.fn(async () => true);
       const turn = stubTurnCue();
       const view = viewWith({gameOptions: {judgeUndo: true}});
@@ -461,6 +466,19 @@ describe('WaitingFor', () => {
 
       expect(updatePlayer.mock.calls).has.length(1);
       expect(turn.cues()).eq(1);
+    });
+
+    it('stops polling when the page closes with a poll in flight', async () => {
+      vi.useFakeTimers();
+      const inFlight = holdPolls();
+      const wrapper = mountAt(viewWith({gameOptions: {judgeUndo: true}}), requiredPrompt, {updatePlayer: async () => true});
+
+      await vi.advanceTimersByTimeAsync(1000);
+      wrapper.unmount();
+      inFlight[0]({result: 'WAIT', waitingFor: []});
+      await vi.advanceTimersByTimeAsync(5000);
+
+      expect(inFlight).has.length(1);
     });
 
     it('does not poll without judge undo', async () => {
