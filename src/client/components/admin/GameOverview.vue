@@ -7,7 +7,8 @@
   <template v-if="game !== undefined">
     <td v-for="player in game.players" :key="player.color">
       <span class="player-name" :class="'player_bg_color_'+ player.color">
-        <a calassc target="blank" :href="'player?id=' + player.id">{{player.name}}</a>
+        <a v-if="player.id !== undefined" calassc target="blank" :href="'player?id=' + player.id">{{player.name}}</a>
+        <template v-else>{{player.name}}</template>
       </span>
     </td>
     <td><a target="blank" :href="'spectator?id=' + game.spectatorId" v-i18n class="player-name spectator">Spectator</a></td>
