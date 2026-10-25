@@ -6,6 +6,10 @@ import {AntiGravityTechnology} from '../../src/server/cards/base/AntiGravityTech
 import {testGame} from '../TestGame';
 import {fakeCard} from '../TestingUtils';
 import {Tag} from '../../src/common/cards/Tag';
+import {marsBotCanClaimMilestone} from '@/server/automa/MarsBotMilestoneAwardEval';
+import {THARSIS_MARSBOT_BOARD} from '@/server/automa/boards/TharsisMarsBot';
+import {VENUS_MARSBOT_TRACK} from '@/server/automa/boards/VenusMarsBot';
+import {fakeMarsBot, setAllTracks, setTrack} from '../automa/FakeMarsBot';
 
 describe('Diversifier', () => {
   let milestone: Diversifier;
@@ -43,5 +47,19 @@ describe('Diversifier', () => {
     player.playedCards.push(fakeCard({tags: [Tag.WILD, Tag.WILD, Tag.WILD, Tag.WILD, Tag.WILD, Tag.WILD, Tag.WILD]}));
     expect(milestone.getScore(player)).eq(8);
     expect(milestone.canClaim(player)).is.true;
+  });
+
+  it('MarsBot needs space 3 on 7 tracks, so Venus can stand in for one other track', () => {
+    const bot = fakeMarsBot({tracks: [...THARSIS_MARSBOT_BOARD, VENUS_MARSBOT_TRACK]});
+    setAllTracks(bot, 3);
+    setTrack(bot, Tag.VENUS, 2);
+
+    for (const run of [
+      {plant: 2, expected: false},
+      {plant: 3, expected: true},
+    ]) {
+      setTrack(bot, Tag.PLANT, run.plant);
+      expect(marsBotCanClaimMilestone(milestone, bot), JSON.stringify(run)).eq(run.expected);
+    }
   });
 });
