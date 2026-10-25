@@ -9,6 +9,8 @@ import {GanymedeColony} from '../../../src/server/cards/base/GanymedeColony';
 import {LargeConvoy} from '../../../src/server/cards/base/LargeConvoy';
 import {EnergyTapping} from '../../../src/server/cards/base/EnergyTapping';
 import {SpaceStation} from '../../../src/server/cards/base/SpaceStation';
+import {marsBotCanClaimMilestone} from '@/server/automa/MarsBotMilestoneAwardEval';
+import {fakeMarsBot} from '../../automa/FakeMarsBot';
 
 
 describe('Philantropist', () => {
@@ -57,5 +59,20 @@ describe('Philantropist', () => {
     player.playedCards.push(new SpaceStation());
     expect(milestone.getScore(player)).eq(5);
     expect(milestone.canClaim(player)).is.true;
+  });
+
+  it('MarsBot counts the cards with VP in its played pile', () => {
+    // Events and cards with negative VP do not count.
+    const cards = [
+      new DustSeals(), new AntiGravityTechnology(), new Ants(), new GanymedeColony(), new LargeConvoy(), new EnergyTapping(),
+    ];
+
+    for (const run of [
+      {playedProjectCards: cards, expected: false},
+      {playedProjectCards: [...cards, new SpaceStation()], expected: true},
+    ]) {
+      const bot = fakeMarsBot({playedProjectCards: run.playedProjectCards});
+      expect(marsBotCanClaimMilestone(milestone, bot), `${run.playedProjectCards.length} cards`).eq(run.expected);
+    }
   });
 });

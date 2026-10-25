@@ -2,6 +2,8 @@ import {BaseMilestone} from '../IMilestone';
 import {IPlayer} from '../../IPlayer';
 import {sum} from '../../../common/utils/utils';
 import {Units} from '../../../common/Units';
+import {IMarsBot} from '@/server/automa/MarsBotCorpTypes';
+import {marsBotTrackPositionsWithoutVenus} from '@/server/automa/MarsBotMilestoneAwardEval';
 
 export class Producer extends BaseMilestone {
   constructor() {
@@ -13,5 +15,14 @@ export class Producer extends BaseMilestone {
 
   public getScore(player: IPlayer): number {
     return sum(Units.values(player.production.asUnits()));
+  }
+
+  /**
+   * Requires the three most advanced tracks other than Venus to add up to 16
+   * (rulebook C, p.14).
+   */
+  public marsBotCanClaim(bot: IMarsBot): boolean {
+    const [first, second, third] = marsBotTrackPositionsWithoutVenus(bot).sort((a, b) => b - a);
+    return first + second + third >= 16;
   }
 }

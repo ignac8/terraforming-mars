@@ -1,6 +1,26 @@
 import {BaseMilestone} from '../IMilestone';
 import {IPlayer} from '../../IPlayer';
 import {CardType} from '../../../common/cards/CardType';
+import {ICard} from '@/server/cards/ICard';
+import {IMarsBot} from '@/server/automa/MarsBotCorpTypes';
+
+function hasPositiveVictoryPoints(card: ICard): boolean {
+  const victoryPoints = card.metadata.victoryPoints;
+
+  if (card.type === CardType.EVENT) {
+    return false;
+  }
+  if (victoryPoints === undefined) {
+    return false;
+  }
+
+  if (typeof victoryPoints === 'number') {
+    return victoryPoints > 0;
+  } else {
+    return victoryPoints.points > 0;
+  }
+}
+
 export class Philantropist extends BaseMilestone {
   constructor() {
     super(
@@ -11,23 +31,11 @@ export class Philantropist extends BaseMilestone {
   }
 
   public getScore(player: IPlayer): number {
-    const cardsWithVP = player.tableau.filter((card) => {
-      const victoryPoints = card.metadata.victoryPoints;
+    return player.tableau.filter(hasPositiveVictoryPoints).length;
+  }
 
-      if (card.type === CardType.EVENT) {
-        return false;
-      }
-      if (victoryPoints === undefined) {
-        return false;
-      }
-
-      if (typeof victoryPoints === 'number') {
-        return victoryPoints > 0;
-      } else {
-        return victoryPoints.points > 0;
-      }
-    });
-
-    return cardsWithVP.length;
+  /** Counts the cards with VP in MarsBot's played pile (rulebook C, p.13). */
+  public marsBotCanClaim(bot: IMarsBot): boolean {
+    return bot.playedProjectCards.filter(hasPositiveVictoryPoints).length >= this.threshold;
   }
 }
