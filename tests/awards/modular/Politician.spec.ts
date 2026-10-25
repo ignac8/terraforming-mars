@@ -2,6 +2,8 @@ import {expect} from 'chai';
 import {testGame} from '../../TestGame';
 import {Politician} from '../../../src/server/awards/modular/Politician';
 import {PartyName} from '../../../src/common/turmoil/PartyName';
+import {marsBotAwardScore} from '@/server/automa/MarsBotMilestoneAwardEval';
+import {fakeMarsBot} from '../../automa/FakeMarsBot';
 
 describe('Politician', () => {
   let award: Politician;
@@ -25,5 +27,11 @@ describe('Politician', () => {
 
     turmoil.chairman = player2;
     expect(award.getScore(player2)).to.eq(4); // 4 as player2 is party leader and have delegate in dominant party and is chairman (so 1 party leader and 3 influence)
+  });
+
+  it('MarsBot always scores 5', () => {
+    const bot = fakeMarsBot({gameOptions: {turmoilExtension: true}});
+
+    expect(marsBotAwardScore(new Politician(), bot)).eq(5);
   });
 });

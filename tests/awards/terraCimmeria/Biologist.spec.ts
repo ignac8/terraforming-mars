@@ -5,6 +5,8 @@ import {testGame} from '../../TestGame';
 import {fakeCard} from '../../TestingUtils';
 import {Tag} from '../../../src/common/cards/Tag';
 import {Chimera} from '../../../src/server/cards/pathfinders/Chimera';
+import {marsBotAwardScore} from '@/server/automa/MarsBotMilestoneAwardEval';
+import {fakeMarsBot, setTrack} from '../../automa/FakeMarsBot';
 
 describe('Biologist', () => {
   let award: Biologist;
@@ -42,5 +44,12 @@ describe('Biologist', () => {
     expect(award.getScore(player)).eq(4);
     player.playedCards.push(fakeCard({tags: [Tag.WILD]}));
     expect(award.getScore(player)).eq(4);
+  });
+
+  it('MarsBot scores its Bio track plus 5', () => {
+    const bot = fakeMarsBot();
+    setTrack(bot, Tag.PLANT, 3);
+
+    expect(marsBotAwardScore(award, bot)).eq(8);
   });
 });
