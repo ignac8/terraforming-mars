@@ -1,3 +1,4 @@
+import {BoardName} from '@/common/boards/BoardName';
 import {Tag} from '@/common/cards/Tag';
 import {IAward} from '@/server/awards/IAward';
 import {IMarsBot} from '@/server/automa/MarsBotCorpTypes';
@@ -37,4 +38,20 @@ export function marsBotTrackPositionsWithoutVenus(bot: IMarsBot): Array<number> 
   return bot.marsBotBoard.tracks
     .filter((track) => !track.definition.tags.includes(Tag.VENUS))
     .map((track) => track.position);
+}
+
+/** Returns the space MarsBot has reached on every track, Venus included when it is in play. */
+export function marsBotAllTrackPositions(bot: IMarsBot): Array<number> {
+  return bot.marsBotBoard.tracks.map((track) => track.position);
+}
+
+/**
+ * Returns whether the automa rules for `boardName` apply, which they do when the game is played on
+ * that map without the Milestones & Awards expansion.
+ *
+ * With the expansion MarsBot follows the expansion's rules on any map (rulebook C, p.13).
+ */
+export function marsBotUsesMapSet(bot: IMarsBot, boardName: BoardName): boolean {
+  const options = bot.game.gameOptions;
+  return !options.modularMA && options.boardName === boardName;
 }
