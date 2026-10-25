@@ -1081,7 +1081,7 @@ export class Game implements IGame, Logger {
     // Automa instant win: MarsBot wins when max generation is reached, game ends immediately.
     if (this.automaHooks !== undefined && this.automaHooks.marsBot.isInstantWin()) {
       this.log('MarsBot wins! (Generation limit reached)');
-      this.gotoEndGame();
+      this.finishing = this.gotoEndGame();
       return;
     }
 
