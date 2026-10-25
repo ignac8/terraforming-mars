@@ -136,6 +136,7 @@ export class Server {
       draftedCards: cardsToModel(player, player.draftedCards, {showCalculatedCost: true}),
       pickedCorporationCard: player.pickedCorporationCard ? cardsToModel(player, [player.pickedCorporationCard]) : [],
       preludeCardsInHand: cardsToModel(player, player.preludeCardsInHand),
+      requestId: player.requestId,
       waitingFor: this.getWaitingFor(player, player.getWaitingFor()),
     };
   }
@@ -162,7 +163,7 @@ export class Server {
 
   /** Changes whenever anything a judge sees changes, including a pending draft or research pick. */
   public static getJudgeSignature(game: IGame): string {
-    const requestIds = game.playersInGenerationOrder.map((p) => p.getWaitingFor()?.requestId ?? '-');
+    const requestIds = game.playersInGenerationOrder.map((p) => p.requestId ?? '-');
     return [game.lastSaveId, game.gameAge, game.undoCount, ...requestIds].join(':');
   }
 
@@ -256,7 +257,6 @@ export class Server {
     // nested in OrOptions, AndOptions, or SelectInitialCards are not sent.
     const model = waitingFor.toModel(player);
     model.warning = waitingFor.warning;
-    model.requestId = waitingFor.requestId;
     return model;
     // showReset: player.game.inputsThisRound > 0 && player.game.resettable === true && player.game.phase === Phase.ACTION,
   }
