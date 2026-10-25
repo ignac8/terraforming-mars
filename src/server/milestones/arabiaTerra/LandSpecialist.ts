@@ -1,6 +1,7 @@
 import {BaseMilestone} from '../IMilestone';
 import {IPlayer} from '../../IPlayer';
 import {isSpecialTileSpace, Board} from '../../boards/Board';
+import {IMarsBot} from '@/server/automa/MarsBotCorpTypes';
 
 export class LandSpecialist extends BaseMilestone {
   constructor() {
@@ -21,5 +22,13 @@ export class LandSpecialist extends BaseMilestone {
       .length;
 
     return marsCount + moonCount;
+  }
+
+  /**
+   * Counts the bonus cards MarsBot destroyed, since it places no special tiles (rulebook C, p.10,
+   * where this milestone is called Specialist).
+   */
+  public marsBotCanClaim(bot: IMarsBot): boolean {
+    return bot.destroyedBonusCards >= 3;
   }
 }
