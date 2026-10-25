@@ -1,6 +1,8 @@
 import {Tag} from '../../common/cards/Tag';
 import {IPlayer} from '../IPlayer';
 import {BaseMilestone} from './IMilestone';
+import {IMarsBot} from '@/server/automa/MarsBotCorpTypes';
+import {marsBotTrackPosition} from '@/server/automa/MarsBotMilestoneAwardEval';
 
 export class VSpacefarer extends BaseMilestone {
   constructor() {
@@ -12,5 +14,10 @@ export class VSpacefarer extends BaseMilestone {
 
   public getScore(player: IPlayer): number {
     return player.tags.count(Tag.SPACE, 'milestone');
+  }
+
+  /** Requires space 5 of the Space track (rulebook C, p.10). */
+  public marsBotCanClaim(bot: IMarsBot): boolean {
+    return marsBotTrackPosition(bot, Tag.SPACE) >= 5;
   }
 }
