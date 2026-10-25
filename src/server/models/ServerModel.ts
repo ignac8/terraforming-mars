@@ -117,6 +117,7 @@ export class Server {
       password: player.password,
       color: player.color,
       runId: runId,
+      requestId: player.requestId,
       thisPlayer: thisPlayer,
       players: players,
       autopass: player.autopass,
@@ -136,7 +137,6 @@ export class Server {
       draftedCards: cardsToModel(player, player.draftedCards, {showCalculatedCost: true}),
       pickedCorporationCard: player.pickedCorporationCard ? cardsToModel(player, [player.pickedCorporationCard]) : [],
       preludeCardsInHand: cardsToModel(player, player.preludeCardsInHand),
-      requestId: player.requestId,
       waitingFor: this.getWaitingFor(player, player.getWaitingFor()),
     };
   }
