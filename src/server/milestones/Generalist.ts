@@ -1,5 +1,7 @@
 import {BaseMilestone} from './IMilestone';
 import {IPlayer} from '../IPlayer';
+import {IMarsBot} from '@/server/automa/MarsBotCorpTypes';
+import {marsBotTrackPositionsWithoutVenus} from '@/server/automa/MarsBotMilestoneAwardEval';
 
 export class Generalist extends BaseMilestone {
   constructor() {
@@ -33,5 +35,10 @@ export class Generalist extends BaseMilestone {
     }
 
     return score;
+  }
+
+  /** Requires space 2 on every track except Venus (rulebook C, pp.2, 9). */
+  public marsBotCanClaim(bot: IMarsBot): boolean {
+    return marsBotTrackPositionsWithoutVenus(bot).every((position) => position >= 2);
   }
 }
