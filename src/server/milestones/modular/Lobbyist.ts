@@ -1,6 +1,7 @@
 import {BaseMilestone} from '../IMilestone';
 import {IPlayer} from '../../IPlayer';
 import {Turmoil} from '../../turmoil/Turmoil';
+import {IMarsBot} from '@/server/automa/MarsBotCorpTypes';
 
 export class Lobbyist extends BaseMilestone {
   constructor() {
@@ -22,5 +23,15 @@ export class Lobbyist extends BaseMilestone {
     // if (turmoil.chairman === player) {
     //   delegateCount++;
     // }
+  }
+
+  /** Requires the Chairman and 2 Party Leaders (rulebook C, p.13). */
+  public marsBotCanClaim(bot: IMarsBot): boolean {
+    const turmoil = bot.game.turmoil;
+    if (turmoil === undefined) {
+      return false;
+    }
+    return turmoil.chairman === bot.player &&
+      turmoil.parties.filter((party) => party.partyLeader === bot.player).length >= 2;
   }
 }

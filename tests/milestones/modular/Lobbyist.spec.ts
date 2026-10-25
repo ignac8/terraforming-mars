@@ -6,6 +6,8 @@ import {PartyName} from '../../../src/common/turmoil/PartyName';
 import {IGame} from '../../../src/server/IGame';
 import {TestPlayer} from '../../TestPlayer';
 import {IParty} from '../../../src/server/turmoil/parties/IParty';
+import {marsBotCanClaimMilestone} from '@/server/automa/MarsBotMilestoneAwardEval';
+import {fakeMarsBot} from '../../automa/FakeMarsBot';
 
 describe('Lobbyist', () => {
   let milestone: Lobbyist;
@@ -64,5 +66,22 @@ describe('Lobbyist', () => {
   it('Gives 0 score without Turmoil', () => {
     const [/* game */, player] = testGame(1, {turmoilExtension: false});
     expect(milestone.getScore(player)).to.eq(0);
+  });
+
+  it('MarsBot needs the Chairman and 2 Party Leaders, and fails without Turmoil', () => {
+    for (const run of [
+      {turmoilExtension: true, chairman: true, leaders: 1, expected: false},
+      {turmoilExtension: true, chairman: false, leaders: 2, expected: false},
+      {turmoilExtension: true, chairman: true, leaders: 2, expected: true},
+      {turmoilExtension: false, chairman: false, leaders: 0, expected: false},
+    ]) {
+      const bot = fakeMarsBot({gameOptions: {turmoilExtension: run.turmoilExtension}});
+      const turmoil = bot.game.turmoil;
+      if (turmoil !== undefined) {
+        turmoil.chairman = run.chairman ? bot.player : 'NEUTRAL';
+        turmoil.parties.slice(0, run.leaders).forEach((party) => party.partyLeader = bot.player);
+      }
+      expect(marsBotCanClaimMilestone(milestone, bot), JSON.stringify(run)).eq(run.expected);
+    }
   });
 });

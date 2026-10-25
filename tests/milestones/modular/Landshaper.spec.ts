@@ -7,6 +7,10 @@ import {Space} from '../../../src/server/boards/Space';
 import {TileType} from '../../../src/common/TileType';
 import {BoardName} from '../../../src/common/boards/BoardName';
 import {MoonExpansion} from '../../../src/server/moon/MoonExpansion';
+import {Tag} from '@/common/cards/Tag';
+import {marsBotCanClaimMilestone} from '@/server/automa/MarsBotMilestoneAwardEval';
+import {addCity, addGreenery} from '../../TestingUtils';
+import {fakeMarsBot, setTrack} from '../../automa/FakeMarsBot';
 
 describe('Landshaper', () => {
   let milestone: Landshaper;
@@ -75,5 +79,24 @@ describe('Landshaper', () => {
     game.simpleAddTile(player, spaces[1], {tileType: TileType.GREENERY});
     game.simpleAddTile(player, moonSpaces[0], {tileType: TileType.LUNA_TRAIN_STATION});
     expect(milestone.canClaim(player)).to.be.true;
+  });
+
+  it('MarsBot needs 1 city, 1 greenery and space 5 of the Building track', () => {
+    for (const run of [
+      {city: true, greenery: true, building: 4, expected: false},
+      {city: true, greenery: true, building: 5, expected: true},
+      {city: false, greenery: true, building: 5, expected: false},
+      {city: true, greenery: false, building: 5, expected: false},
+    ]) {
+      const bot = fakeMarsBot();
+      setTrack(bot, Tag.BUILDING, run.building);
+      if (run.city) {
+        addCity(bot.player);
+      }
+      if (run.greenery) {
+        addGreenery(bot.player);
+      }
+      expect(marsBotCanClaimMilestone(milestone, bot), JSON.stringify(run)).eq(run.expected);
+    }
   });
 });
