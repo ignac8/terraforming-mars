@@ -1,6 +1,7 @@
 import {SerializedGame} from '../SerializedGame';
 import {Random} from '../../common/utils/Random';
 import {inplaceShuffle} from '../utils/shuffle';
+import {shuffleMarsBotHiddenPiles} from '../automa/shuffleMarsBotHiddenPiles';
 
 /**
  * Reorders every pile no player has seen, in a serialized game, and gives the game a new
@@ -18,6 +19,9 @@ export function shuffleHiddenPiles(d: SerializedGame, random: Random): void {
   }
   if (d.underworldData !== undefined) {
     inplaceShuffle(d.underworldData.tokens, random);
+  }
+  if (d.automaState !== undefined) {
+    shuffleMarsBotHiddenPiles(d.automaState, random);
   }
 
   d.seed = random.next();

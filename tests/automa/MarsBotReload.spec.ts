@@ -14,6 +14,7 @@ import {Asteroid} from '../../src/server/cards/base/Asteroid';
 import {Research} from '../../src/server/cards/base/Research';
 import {Greenhouses} from '../../src/server/cards/base/Greenhouses';
 import {Tag} from '../../src/common/cards/Tag';
+import {loadSandboxGame} from '../../src/server/replay/sandbox';
 
 function createAutomaGame(): {game: IGame, marsBot: MarsBot} {
   const [game] = testGame(1, {
@@ -228,4 +229,21 @@ describe('MarsBotReload', () => {
     const restored = Game.deserialize(game.serialize());
     expect(restored.automaHooks!.marsBot.playedProjectCards[0].tags).deep.eq(tags);
   });
+
+  // A replay or a rewind loads the save and expects the same random draws from there on.
+  for (const [label, expansions] of [
+    ['base', {}],
+    ['Venus', {venusNextExtension: true}],
+    ['Colonies', {coloniesExtension: true}],
+    ['Venus and Colonies', {venusNextExtension: true, coloniesExtension: true}],
+  ] as const) {
+    it(`leaves the random generator where the save left it (${label})`, () => {
+      const [game] = testGame(1, {automaOption: true, automaDifficulty: 'easy', boardName: BoardName.THARSIS, ...expansions});
+      // Nothing is re-entered on load.
+      game.phase = Phase.END;
+
+      expect(loadSandboxGame(game.serialize()).rng.current).eq(game.rng.current);
+      expect(Game.deserialize(game.serialize()).rng.current).eq(game.rng.current);
+    });
+  }
 });

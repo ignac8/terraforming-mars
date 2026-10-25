@@ -141,7 +141,7 @@ export class AutomaGameSetup {
     (marsBotPlayer as any).stock = marsBotStock;
     (marsBotPlayer as any).production = marsBotProduction;
 
-    const marsBot = new MarsBot(game, marsBotPlayer, humanPlayer, boardData, gameOptions.automaDifficulty, rng);
+    const marsBot = new MarsBot(game, marsBotPlayer, humanPlayer, boardData, gameOptions.automaDifficulty, rng, existingPlayer !== undefined);
 
     // Wire MarsBot reference into overridden stock/production
     marsBotStock.setMarsBot(marsBot);
