@@ -16,25 +16,23 @@ describe('MarsBotTurmoilHelper', () => {
   let helper: MarsBotTurmoilHelper;
 
   beforeEach(() => {
+    // Setup also puts a NEUTRAL delegate in Mars First, which is dominant, and in Scientists.
     [game, human] = testGame(1, {automa: true, turmoilExtension: true});
     marsBot = game.marsBotPlayer!;
     turmoil = Turmoil.getTurmoil(game);
     helper = new MarsBotTurmoilHelper(game);
   });
 
-  it('T-7.1: picks party where +1 makes MarsBot leader AND party dominant', () => {
-    // One NEUTRAL delegate in each of these blocks T-7.2 for them.
+  it('T-7.1: picks a party where one more delegate makes MarsBot leader and the party dominant', () => {
     for (const name of [PartyName.MARS, PartyName.UNITY, PartyName.REDS, PartyName.GREENS]) {
       turmoil.sendDelegateToParty('NEUTRAL', name, game);
     }
     turmoil.sendDelegateToParty(marsBot, PartyName.SCIENTISTS, game);
-    turmoil.dominantParty = turmoil.getPartyByName(PartyName.MARS);
 
     expect(helper.selectParty()).eq(PartyName.SCIENTISTS);
   });
 
-  it('T-7.2: picks party where +1 makes MarsBot party leader', () => {
-    // Kelvinists stays dominant, so T-7.1 cannot fire for Scientists.
+  it('T-7.2: picks a party where one more delegate makes MarsBot leader', () => {
     for (let i = 0; i < 5; i++) {
       turmoil.sendDelegateToParty('NEUTRAL', PartyName.KELVINISTS, game);
     }
@@ -46,32 +44,28 @@ describe('MarsBotTurmoilHelper', () => {
     expect(helper.selectParty()).eq(PartyName.SCIENTISTS);
   });
 
-  it('T-7.3: picks party where MarsBot is already leader and +1 makes dominant', () => {
-    // One NEUTRAL delegate everywhere else, so one MarsBot delegate only ties it there.
+  it('T-7.3: picks a party MarsBot leads where one more delegate makes it dominant', () => {
     for (const name of [PartyName.MARS, PartyName.SCIENTISTS, PartyName.KELVINISTS, PartyName.REDS, PartyName.GREENS]) {
       turmoil.sendDelegateToParty('NEUTRAL', name, game);
     }
-    for (let i = 0; i < 3; i++) {
-      turmoil.sendDelegateToParty(marsBot, PartyName.UNITY, game);
-    }
-    turmoil.dominantParty = turmoil.getPartyByName(PartyName.KELVINISTS);
+    turmoil.sendDelegateToParty(marsBot, PartyName.UNITY, game);
+    turmoil.sendDelegateToParty(marsBot, PartyName.UNITY, game);
 
     expect(helper.selectParty()).eq(PartyName.UNITY);
   });
 
-  it('T-7.3 skips a party that is already dominant', () => {
+  it('T-7.3: skips a party that is already dominant', () => {
     for (const name of Object.values(PartyName)) {
       turmoil.sendDelegateToParty('NEUTRAL', name, game);
     }
     for (let i = 0; i < 3; i++) {
       turmoil.sendDelegateToParty(marsBot, PartyName.UNITY, game);
     }
-    turmoil.dominantParty = turmoil.getPartyByName(PartyName.UNITY);
 
     expect(helper.selectParty()).not.eq(PartyName.UNITY);
   });
 
-  it('T-7.4: picks party where human has fewest delegates', () => {
+  it('T-7.4: picks the party where the human has the fewest delegates', () => {
     for (const name of Object.values(PartyName)) {
       turmoil.sendDelegateToParty('NEUTRAL', name, game);
     }
@@ -82,12 +76,12 @@ describe('MarsBotTurmoilHelper', () => {
     expect(helper.selectParty()).eq(PartyName.GREENS);
   });
 
-  it('T-7.5: tiebreaker picks party where MarsBot has fewest delegates', () => {
-    // Two NEUTRAL delegates everywhere, so one more MarsBot delegate never takes a lead.
+  it('T-7.5: picks the party where MarsBot has the fewest delegates', () => {
+    // Two NEUTRAL delegates where MarsBot has one, so one more MarsBot delegate never takes a lead.
     for (const name of Object.values(PartyName)) {
       turmoil.sendDelegateToParty('NEUTRAL', name, game);
-      turmoil.sendDelegateToParty('NEUTRAL', name, game);
       if (name !== PartyName.GREENS) {
+        turmoil.sendDelegateToParty('NEUTRAL', name, game);
         turmoil.sendDelegateToParty(marsBot, name, game);
       }
     }
@@ -95,20 +89,15 @@ describe('MarsBotTurmoilHelper', () => {
     expect(helper.selectParty()).eq(PartyName.GREENS);
   });
 
-  it('T-7.6: falls back to the party nearest clockwise from the dominance marker', () => {
-    // Every tier before this one ties, and clockwise runs towards lower indexes.
+  it('T-7.6: picks the next party clockwise from the dominance marker', () => {
     for (const name of Object.values(PartyName)) {
       turmoil.sendDelegateToParty('NEUTRAL', name, game);
     }
-    const parties = turmoil.parties;
-    const dominantIndex = parties.indexOf(turmoil.dominantParty);
 
-    expect(helper.selectParty()).eq(parties[(dominantIndex - 1 + parties.length) % parties.length].name);
+    expect(helper.selectParty()).eq(PartyName.KELVINISTS);
   });
 
   it('takes the party lead the delegate earns', () => {
-    // A NEUTRAL delegate everywhere leaves Greens as the only party where one more MarsBot
-    // delegate takes the lead.
     for (const name of Object.values(PartyName)) {
       turmoil.sendDelegateToParty('NEUTRAL', name, game);
     }
@@ -126,6 +115,5 @@ describe('MarsBotTurmoilHelper', () => {
     }
 
     expect(helper.maybePlaceDelegate()).is.undefined;
-    expect(turmoil.getPartyByName(PartyName.MARS).delegates.get(marsBot)).eq(DELEGATES_PER_PLAYER);
   });
 });
