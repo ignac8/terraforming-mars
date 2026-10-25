@@ -1,5 +1,7 @@
 import {BaseMilestone} from './IMilestone';
 import {IPlayer} from '../IPlayer';
+import {IMarsBot} from '@/server/automa/MarsBotCorpTypes';
+import {marsBotAllTrackPositions} from '@/server/automa/MarsBotMilestoneAwardEval';
 
 export class Specialist extends BaseMilestone {
   constructor() {
@@ -15,5 +17,10 @@ export class Specialist extends BaseMilestone {
       player.production.plants,
       player.production.energy,
       player.production.heat);
+  }
+
+  /** Requires space 10 on any one track (rulebook C, p.9). */
+  public marsBotCanClaim(bot: IMarsBot): boolean {
+    return marsBotAllTrackPositions(bot).some((position) => position >= 10);
   }
 }
