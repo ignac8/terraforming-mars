@@ -6,9 +6,11 @@
       <li v-for="(player, index) in (game === undefined ? [] : game.players)" :key="player.color">
         <span class="turn-order" v-i18n>{{getTurnOrder(index)}}</span>
         <span :class="'color-square ' + getPlayerCubeColorClass(player.color)">{{playerSymbol(player.color)}}</span>
-        <span class="player-name"><a :href="getHref(player.id)">{{player.name}}</a></span>
-        <AppButton title="copy" size="tiny" @click="copyUrl(player.id)"/>
-        <span v-if="isPlayerUrlCopied(player.id)" class="copied-notice"><span v-i18n>Copied!</span></span>
+        <span class="player-name"><a v-if="player.id !== undefined" :href="getHref(player.id)">{{player.name}}</a><template v-else>{{player.name}}</template></span>
+        <template v-if="player.id !== undefined">
+          <AppButton title="copy" size="tiny" @click="copyUrl(player.id)"/>
+          <span v-if="isPlayerUrlCopied(player.id)" class="copied-notice"><span v-i18n>Copied!</span></span>
+        </template>
       </li>
       <li v-if="game !== undefined">
         <p></p>

@@ -271,8 +271,8 @@ export class Server {
       handicap: useHandicap ? player.handicap : undefined,
       heat: player.heat,
       heatProduction: player.production.heat,
-      // A finished game rewinds on a player's id alone when there are no seat passwords to check, and a solo seat never has one.
-      id: game.phase === Phase.END && (modelIsForThisPlayer || !game.isSoloMode()) ? player.id : undefined,
+      // A finished solo or MarsBot game can still be rewound with its player's id, so only that player sees it.
+      id: game.phase === Phase.END && (modelIsForThisPlayer || game.players.length > 1) ? player.id : undefined,
       influence: game.turmoil?.getInfluence(player) ?? 0,
       isActive: player.id === game.activePlayer.id,
       lastCardPlayed: player.lastCardPlayed,

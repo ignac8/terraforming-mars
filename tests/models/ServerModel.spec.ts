@@ -62,13 +62,18 @@ describe('ServerModel', () => {
     expect(response.players[1].victoryPointsBreakdown.total).eq(0);
   });
 
-  it('Should show a finished game\'s player ids to everyone, except those of a solo game to anyone but its player', () => {
-    for (const [players, spectatorSeesId] of [[2, true], [1, false]] as const) {
-      [game, player] = testGame(players);
+  it('Should show a finished game\'s player ids to everyone, except those of a solo or MarsBot game to anyone but its player', () => {
+    const cases = [
+      {name: '2 players', players: 2, automaOption: false, spectatorSeesId: true},
+      {name: 'solo', players: 1, automaOption: false, spectatorSeesId: false},
+      {name: 'MarsBot', players: 1, automaOption: true, spectatorSeesId: false},
+    ];
+    for (const {name, players, automaOption, spectatorSeesId} of cases) {
+      [game, player] = testGame(players, {automaOption});
       game.phase = Phase.END;
 
-      expect(Server.getPlayerModel(player).players.map((p) => p.id), String(players)).includes(player.id);
-      expect(Server.getSpectatorModel(game).players.map((p) => p.id).includes(player.id), String(players)).eq(spectatorSeesId);
+      expect(Server.getPlayerModel(player).players.map((p) => p.id), name).includes(player.id);
+      expect(Server.getSpectatorModel(game).players.map((p) => p.id).includes(player.id), name).eq(spectatorSeesId);
     }
   });
 

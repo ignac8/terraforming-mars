@@ -18,6 +18,7 @@ export type SimpleGameModel = {
 
 type SimplePlayerModel = {
     color: Color;
-    id: PlayerId;
+    /** Left out by api/game once a solo game ends. */
+    id?: PlayerId;
     name: string;
 }
