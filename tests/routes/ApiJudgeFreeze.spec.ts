@@ -58,7 +58,7 @@ describe('ApiJudgeFreeze', () => {
   function pass() {
     const waitingFor = cast(player.getWaitingFor(), OrOptions);
     const index = waitingFor.options.findIndex((option) => option.title === 'Pass for this generation');
-    return send(PlayerInput.INSTANCE, `/player/input?id=${player.id}`, JSON.stringify({requestId: waitingFor.requestId, type: 'or', index, response: {type: 'option'}}));
+    return send(PlayerInput.INSTANCE, `/player/input?id=${player.id}`, JSON.stringify({requestId: player.requestId, type: 'or', index, response: {type: 'option'}}));
   }
 
   afterEach(() => {

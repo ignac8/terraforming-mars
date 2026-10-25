@@ -231,7 +231,8 @@ describe('WaitingFor', () => {
       global: {...globalConfig.global, stubs: {'PlayerInputFactory': true}},
       props: {
         playerView: playerView as PlayerViewModel,
-        waitingfor: {type: 'option', title: 'test', buttonLabel: 'save', requestId: 'request-1'},
+        waitingfor: {type: 'option', title: 'test', buttonLabel: 'save'},
+        requestId: 'request-1',
       },
     });
     const root = wrapper.vm.$root as any;

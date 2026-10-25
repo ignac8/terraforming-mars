@@ -37,7 +37,6 @@ import {Clock, Timer} from '../common/Timer';
 import {TurmoilHandler} from './turmoil/TurmoilHandler';
 import {AllOptions, DrawCards, DrawOptions} from './deferredActions/DrawCards';
 import {Units} from '../common/Units';
-import {MilestoneName} from '../common/ma/MilestoneName';
 import {MoonExpansion} from './moon/MoonExpansion';
 import {ConvertPlants} from './cards/base/standardActions/ConvertPlants';
 import {ConvertHeat} from './cards/base/standardActions/ConvertHeat';
@@ -63,6 +62,7 @@ import {Supercapacitors} from './cards/promo/Supercapacitors';
 import {CanAffordOptions, CardAction, IPlayer} from './IPlayer';
 import {IPreludeCard} from './cards/prelude/IPreludeCard';
 import {copyAndClear, inplaceRemove, sum, toName} from '../common/utils/utils';
+import {generateRandomId} from './utils/server-ids';
 import {PreludesExpansion} from './preludes/PreludesExpansion';
 import {ChooseCards} from './deferredActions/ChooseCards';
 import {UnderworldPlayerData} from '../common/underworld/UnderworldPlayerData';
@@ -79,12 +79,6 @@ import {PlayedCards} from './cards/PlayedCards';
 import {From} from './logs/From';
 import {SelectStandardProjectToPlay} from './inputs/SelectStandardProjectToPlay';
 import {Turmoil} from './turmoil/Turmoil';
-
-// Resources a player must keep after paying to claim a milestone.
-const MILESTONE_RESERVE_UNITS: Partial<Record<MilestoneName, Units>> = {
-  Merchant: Units.every(2),
-  Merchant3: Units.every(3),
-};
 
 const THROW_STATE_ERRORS = Boolean(process.env.THROW_STATE_ERRORS);
 const DEFAULT_GLOBAL_PARAMETER_STEPS = {
@@ -191,6 +185,7 @@ export class Player implements IPlayer {
 
   public user?: DiscordId;
   public inputRequestedAt?: number;
+  public requestId?: string;
   public clock: Clock = new Clock();
 
   public password?: Password;
@@ -998,9 +993,17 @@ export class Player implements IPlayer {
       this.cardCost += corporationCard.cardCost - constants.CARD_COST;
     }
 
+    // Luna Trade Federation may pay with its starting titanium, which only arrives when the corp is played.
+    // TODO(kberg): Always pay with SelectPaymentDeferred, which pays with M€ when there's no choice,
+    // and log "kept N project cards" in its andThen.
+    let deferredCardCost = 0;
     if (additionalCorp === false && corporationCard.name !== CardName.BEGINNER_CORPORATION) {
       const diff = this.cardsInHand.length * this.cardCost;
-      this.stock.deduct(Resource.MEGACREDITS, diff);
+      if (corporationCard.name === CardName.LUNA_TRADE_FEDERATION) {
+        deferredCardCost = diff;
+      } else {
+        this.stock.deduct(Resource.MEGACREDITS, diff);
+      }
       if (diff > 0) {
         PathfindersExpansion.addToSolBank(this);
       }
@@ -1010,6 +1013,9 @@ export class Player implements IPlayer {
     const numberOfCardInHand = this.cardsInHand.length;
     ColoniesHandler.maybeActivateColonies(this.game, corporationCard);
     this.defer(corporationCard.play(this));
+    if (deferredCardCost > 0) {
+      this.game.defer(new SelectPaymentDeferred(this, deferredCardCost, {title: 'Select how to pay for your project cards'}));
+    }
     if (corporationCard.initialAction !== undefined && corporationCard.initialActionText !== undefined) {
       this.pendingInitialActions.push(corporationCard);
     }
@@ -1138,7 +1144,12 @@ export class Player implements IPlayer {
     } else {
       const baseCost = this.milestoneCost();
       const cost = baseCost + ((milestone.name === 'Briber') ? 12 : 0);
-      const reserveUnits = MILESTONE_RESERVE_UNITS[milestone.name] ?? Units.EMPTY;
+      let reserveUnits = Units.EMPTY;
+      if (milestone.name === 'Merchant') {
+        reserveUnits = Units.every(2);
+      } else if (milestone.name === 'Merchant3') {
+        reserveUnits = Units.every(3);
+      }
       this.game.defer(new SelectPaymentDeferred(this, cost, {title: 'Select how to pay for milestone', reserveUnits: reserveUnits})).andThen(() => {
         recordClaim();
       });
@@ -1713,8 +1724,10 @@ export class Player implements IPlayer {
     const waitingFor = this.waitingFor;
     const waitingForCb = this.waitingForCb;
     const recorded = this.game.recordInput(this, waitingFor, input);
+    const requestId = this.requestId;
     this.waitingFor = undefined;
     this.waitingForCb = undefined;
+    this.requestId = undefined;
     try {
       if (!waitingFor.optional) {
         this.timer.stop();
@@ -1724,6 +1737,8 @@ export class Player implements IPlayer {
     } catch (err) {
       this.game.forgetInput(recorded);
       this.setWaitingFor(waitingFor, waitingForCb);
+      // The player is still answering the same request.
+      this.requestId = requestId;
       throw err;
     }
     if (this.game.rewindVote !== undefined) {
@@ -1750,6 +1765,7 @@ export class Player implements IPlayer {
     }
     this.waitingFor = input;
     this.waitingForCb = cb;
+    this.requestId = generateRandomId('');
     this.inputRequestedAt = this.clock.now();
     this.game.inputsThisRound++;
   }
@@ -1782,6 +1798,7 @@ export class Player implements IPlayer {
     const waitingFor = this.waitingFor;
     this.waitingFor = undefined;
     this.waitingForCb = undefined;
+    this.requestId = undefined;
     if (waitingFor !== undefined && !waitingFor.optional) {
       this.timer.stop();
     }

@@ -40,6 +40,7 @@ import {RewindRequestLimits, SerializedRewindVote} from './rewind/tableState';
 import {IStandardProjectCard} from './cards/IStandardProjectCard';
 import {GlobalParameterTracks} from '@/server/boards/GlobalParameterTracks';
 import {RewindRecord} from './rewind/RewindRecord';
+import {Resource} from '@/common/Resource';
 
 export interface Score {
   corporation: String;
@@ -288,12 +289,21 @@ export interface IGame extends Logger {
 
   /**
    * Gives all the bonuses from a space on the map.
+   *
+   * `onStandardResource` is called with the resource chosen for a STANDARD_RESOURCE bonus.
    */
-  grantSpaceBonuses(player: IPlayer, space: Space, tilePlaced?: boolean): void;
+  grantSpaceBonuses(player: IPlayer, space: Space, onStandardResource?: (resource: Resource) => void): void;
   /**
-   * Gives one bonus from rewards on `space`. Space can be omitted.
+   * Gives all the bonuses from a space as placement bonuses, so cards can react to a
+   * chosen standard resource (see ICard.onStandardResourcePlacementBonus).
    */
-  grantSpaceBonus(player: IPlayer, spaceBonus: SpaceBonus, count?: number, space?: Space): void;
+  grantSpaceBonusesAsPlacement(player: IPlayer, space: Space): void;
+  /**
+   * Gives one bonus from rewards on a space.
+   *
+   * `onStandardResource` is called with the resource chosen for a STANDARD_RESOURCE bonus.
+   */
+  grantSpaceBonus(player: IPlayer, spaceBonus: SpaceBonus, count?: number, onStandardResource?: (resource: Resource) => void): void;
   addGreenery(player: IPlayer, space: Space, shouldRaiseOxygen?: boolean, options?: {grantSpaceBonuses?: boolean}): void;
   addCity(player: IPlayer, space: Space, cardName?: CardName | undefined, options?: {grantSpaceBonuses?: boolean}): void;
   canAddOcean(): boolean;

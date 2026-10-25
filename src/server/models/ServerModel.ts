@@ -122,6 +122,7 @@ export class Server {
       password: player.password,
       color: player.color,
       runId: runId,
+      requestId: player.requestId,
       thisPlayer: thisPlayer,
       players: players,
       autopass: player.autopass,
@@ -167,7 +168,7 @@ export class Server {
 
   /** Changes whenever anything a judge sees changes, including a pending draft or research pick. */
   public static getJudgeSignature(game: IGame): string {
-    const requestIds = game.playersInGenerationOrder.map((p) => p.getWaitingFor()?.requestId ?? '-');
+    const requestIds = game.playersInGenerationOrder.map((p) => p.requestId ?? '-');
     return [game.lastSaveId, game.gameAge, game.undoCount, ...requestIds].join(':');
   }
 
@@ -261,7 +262,6 @@ export class Server {
     // nested in OrOptions, AndOptions, or SelectInitialCards are not sent.
     const model = waitingFor.toModel(player);
     model.warning = waitingFor.warning;
-    model.requestId = waitingFor.requestId;
     return model;
     // showReset: player.game.inputsThisRound > 0 && player.game.resettable === true && player.game.phase === Phase.ACTION,
   }

@@ -13,9 +13,9 @@ import {MiningGuild} from '../../../src/server/cards/corporation/MiningGuild';
 import {SpaceBonus} from '../../../src/common/boards/SpaceBonus';
 import {Units} from '../../../src/common/Units';
 import {cast} from '../../../src/common/utils/utils';
-import {SelectResource} from '../../../src/server/inputs/SelectResource';
-import {Resource} from '../../../src/common/Resource';
-import {GeologicalSurvey} from '../../../src/server/cards/ares/GeologicalSurvey';
+import {SelectResource} from '@/server/inputs/SelectResource';
+import {Resource} from '@/common/Resource';
+import {GeologicalSurvey} from '@/server/cards/ares/GeologicalSurvey';
 
 function toSpaceIdDigit(space: Space) {
   return parseInt(space.id);
@@ -38,7 +38,7 @@ describe('SurveyMission', () => {
 
   beforeEach(() => {
     card = new SurveyMission();
-    [game, player] = testGame(1, {pathfindersExpansion: true});
+    [game, player] = testGame(1);
     board = EmptyBoard.newInstance();
     const availableSpaces = [
       '03', '04', '05',
@@ -118,39 +118,6 @@ describe('SurveyMission', () => {
     expect(player.plants).eq(1);
     expect(player.production.asUnits()).deep.eq(Units.of({steel: 1}));
   });
-
-  it('Compatible with Mining Guild and a standard resource bonus', () => {
-    player.playedCards.push(new MiningGuild());
-    const selectSpace = cast(card.play(player), SelectSpace);
-
-    const space = board.getSpaceOrThrow('04');
-    space.bonus = [SpaceBonus.STANDARD_RESOURCE];
-    selectSpace.cb(space);
-    runAllActions(game);
-    cast(player.popWaitingFor(), SelectResource).cb(Resource.STEEL);
-    runAllActions(game);
-
-    expect(player.steel).eq(6);
-    expect(player.production.asUnits()).deep.eq(Units.of({steel: 1}));
-  });
-
-  it('Ares survey cards ignore a standard resource bonus from a claim', () => {
-    [game, player] = testGame(1, {pathfindersExpansion: true, aresExtension: true, aresHazards: false});
-    game.board = board;
-    player.playedCards.push(new MiningGuild(), new GeologicalSurvey());
-    const selectSpace = cast(card.play(player), SelectSpace);
-
-    const space = board.getSpaceOrThrow('04');
-    space.bonus = [SpaceBonus.STANDARD_RESOURCE];
-    selectSpace.cb(space);
-    runAllActions(game);
-    cast(player.popWaitingFor(), SelectResource).cb(Resource.STEEL);
-    runAllActions(game);
-
-    expect(player.steel).eq(6);
-    expect(player.production.asUnits()).deep.eq(Units.of({steel: 1}));
-  });
-
   it('Protected hazard spaces are included in valid triplets', () => {
     const space10 = board.getSpaceOrThrow('10');
     space10.bonus = [SpaceBonus.HEAT, SpaceBonus.PLANT];
@@ -191,5 +158,37 @@ describe('SurveyMission', () => {
 
     player.megaCredits = 6;
     expect(cast(card.play(player), SelectSpace).spaces).to.include(space04);
+  });
+
+  it('Compatible with Mining Guild and a standard resource bonus', () => {
+    player.playedCards.push(new MiningGuild());
+    const selectSpace = cast(card.play(player), SelectSpace);
+
+    const space = board.getSpaceOrThrow('04');
+    space.bonus = [SpaceBonus.STANDARD_RESOURCE];
+    selectSpace.cb(space);
+    runAllActions(game);
+    cast(player.popWaitingFor(), SelectResource).cb(Resource.STEEL);
+    runAllActions(game);
+
+    expect(player.steel).eq(6);
+    expect(player.production.asUnits()).deep.eq(Units.of({steel: 1}));
+  });
+
+  it('Does not trigger Geological Survey when gaining a standard resource bonus', () => {
+    [game, player] = testGame(1, {aresExtension: true});
+    game.board = board;
+    player.playedCards.push(new MiningGuild(), new GeologicalSurvey());
+    const selectSpace = cast(card.play(player), SelectSpace);
+
+    const space = board.getSpaceOrThrow('04');
+    space.bonus = [SpaceBonus.STANDARD_RESOURCE];
+    selectSpace.cb(space);
+    runAllActions(game);
+    cast(player.popWaitingFor(), SelectResource).cb(Resource.STEEL);
+    runAllActions(game);
+
+    expect(player.steel).eq(6);
+    expect(player.production.asUnits()).deep.eq(Units.of({steel: 1}));
   });
 });

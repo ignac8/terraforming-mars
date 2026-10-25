@@ -93,6 +93,10 @@ export default defineComponent({
       type: Object as () => PlayerInputModel | undefined,
       default: undefined,
     },
+    requestId: {
+      type: String as () => string | undefined,
+      default: undefined,
+    },
   },
   data(): DataModel {
     return {
@@ -165,7 +169,7 @@ export default defineComponent({
         {
           method: 'POST',
           headers: {'Content-Type': 'application/json'},
-          body: JSON.stringify({runId: this.playerView.runId, requestId: this.waitingfor?.requestId, ...out}),
+          body: JSON.stringify({runId: this.playerView.runId, requestId: this.requestId, ...out}),
         });
     },
     reset() {

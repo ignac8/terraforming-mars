@@ -552,7 +552,7 @@ describe('RewindService whole table', () => {
       };
       const before = structuredClone(rows());
       const inputs = structuredClone(game.inputsSinceSave);
-      const answer = JSON.stringify({requestId: player.getWaitingFor()?.requestId, type: 'card', cards: []});
+      const answer = JSON.stringify({requestId: player.requestId, type: 'card', cards: []});
 
       const rewinding = rewindTable(game, target, {cards: 'same', clocks: 'keep'}, by);
       expect(isTableLocked(game.id), kind).is.true;
