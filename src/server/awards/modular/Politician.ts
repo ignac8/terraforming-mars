@@ -12,4 +12,9 @@ export class Politician implements IAward {
     const partyLeaderCount = turmoil.parties.filter((party) => party.partyLeader === player).length;
     return partyLeaderCount + turmoil.getInfluence(player);
   }
+
+  /** Scores a flat 5 (rulebook C, p.15). */
+  public marsBotScore(): number {
+    return 5;
+  }
 }
