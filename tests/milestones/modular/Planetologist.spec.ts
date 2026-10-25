@@ -5,6 +5,11 @@ import {Chimera} from '../../../src/server/cards/pathfinders/Chimera';
 import {fakeCard} from '../../TestingUtils';
 import {Tag} from '../../../src/common/cards/Tag';
 import {testGame} from '../../TestGame';
+import {BoardName} from '@/common/boards/BoardName';
+import {marsBotCanClaimMilestone} from '@/server/automa/MarsBotMilestoneAwardEval';
+import {THARSIS_MARSBOT_BOARD} from '@/server/automa/boards/TharsisMarsBot';
+import {VENUS_MARSBOT_TRACK} from '@/server/automa/boards/VenusMarsBot';
+import {fakeMarsBot, setTrack} from '../../automa/FakeMarsBot';
 
 describe('Planetologist', () => {
   const canClaimRuns = [
@@ -37,5 +42,23 @@ describe('Planetologist', () => {
     player.playedCards.push(fakeCard({tags: [Tag.JOVIAN]}));
     expect(milestone.getScore(player)).eq(6);
     expect(milestone.canClaim(player)).is.true;
+  });
+
+  it('MarsBot follows the Terra Cimmeria rule there and the expansion rule elsewhere', () => {
+    const terraCimmeria = {boardName: BoardName.TERRA_CIMMERIA_NOVA};
+    const expansion = {boardName: BoardName.TERRA_CIMMERIA_NOVA, modularMA: true};
+
+    for (const run of [
+      {gameOptions: terraCimmeria, power: 0, earth: 3, venus: 1, expected: false},
+      {gameOptions: terraCimmeria, power: 0, earth: 3, venus: 2, expected: true},
+      {gameOptions: expansion, power: 0, earth: 2, venus: 3, expected: false},
+      {gameOptions: expansion, power: 3, earth: 3, venus: 0, expected: true},
+    ]) {
+      const bot = fakeMarsBot({tracks: [...THARSIS_MARSBOT_BOARD, VENUS_MARSBOT_TRACK], gameOptions: run.gameOptions});
+      setTrack(bot, Tag.POWER, run.power);
+      setTrack(bot, Tag.EARTH, run.earth);
+      setTrack(bot, Tag.VENUS, run.venus);
+      expect(marsBotCanClaimMilestone(new Planetologist(), bot), JSON.stringify(run)).eq(run.expected);
+    }
   });
 });

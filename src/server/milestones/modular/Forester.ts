@@ -25,4 +25,9 @@ export class CForester extends Forester {
   constructor() {
     super('C. Forester', 3);
   }
+
+  /** Requires space 10 of the Bio track (rulebook C, p.9). */
+  public override marsBotCanClaim(bot: IMarsBot): boolean {
+    return marsBotTrackPosition(bot, Tag.PLANT) >= 10;
+  }
 }
