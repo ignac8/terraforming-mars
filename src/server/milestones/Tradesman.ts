@@ -1,5 +1,8 @@
 import {BaseMilestone} from './IMilestone';
 import {IPlayer} from '../IPlayer';
+import {Tag} from '@/common/cards/Tag';
+import {IMarsBot} from '@/server/automa/MarsBotCorpTypes';
+import {marsBotTrackPosition} from '@/server/automa/MarsBotMilestoneAwardEval';
 
 export class Tradesman extends BaseMilestone {
   constructor() {
@@ -16,5 +19,13 @@ export class Tradesman extends BaseMilestone {
     } else {
       return nonStandardResources.size;
     }
+  }
+
+  /**
+   * Requires space 2 on the Energy, Earth and Venus tracks (rulebook C, p.10, where this milestone
+   * is called Trader).
+   */
+  public marsBotCanClaim(bot: IMarsBot): boolean {
+    return [Tag.POWER, Tag.EARTH, Tag.VENUS].every((tag) => marsBotTrackPosition(bot, tag) >= 2);
   }
 }

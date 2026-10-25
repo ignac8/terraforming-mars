@@ -80,6 +80,8 @@ export interface IMarsBot {
   readonly floaters: number;
   /** Project cards the bot has drawn and resolved, in the order it played them. */
   readonly playedProjectCards: ReadonlyArray<IProjectCard>;
+  /** How many bonus cards were destroyed while the bot resolved them. */
+  readonly destroyedBonusCards: number;
   addFloaters(count: number): void;
   /** Removes floaters, stopping at zero. */
   spendFloaters(count: number): void;

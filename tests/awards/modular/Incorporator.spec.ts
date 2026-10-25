@@ -3,6 +3,8 @@ import {testGame} from '../../TestGame';
 import {Incorporator} from '../../../src/server/awards/modular/Incorporator';
 import {fakeCard} from '../../TestingUtils';
 import {CardType} from '../../../src/common/cards/CardType';
+import {marsBotAwardScore} from '@/server/automa/MarsBotMilestoneAwardEval';
+import {fakeMarsBot} from '../../automa/FakeMarsBot';
 
 describe('Incorporator', () => {
   const getScoreRuns = [
@@ -21,4 +23,16 @@ describe('Incorporator', () => {
       expect(award.getScore(player)).eq(run.expected);
     });
   }
+
+  it('MarsBot counts the cards costing 10 M€ or less in its played pile, events included', () => {
+    const bot = fakeMarsBot({
+      playedProjectCards: [
+        fakeCard({cost: 9, type: CardType.EVENT}),
+        fakeCard({cost: 10, type: CardType.ACTIVE}),
+        fakeCard({cost: 11, type: CardType.AUTOMATED}),
+      ],
+    });
+
+    expect(marsBotAwardScore(new Incorporator(), bot)).eq(2);
+  });
 });
