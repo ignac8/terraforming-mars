@@ -8,6 +8,7 @@ import {NaturalPreserve} from '../../../src/server/cards/base/NaturalPreserve';
 import {EmptyBoard} from '../../testing/EmptyBoard';
 import {Founder} from '../../../src/server/awards/modular/Founder';
 import {cast} from '../../../src/common/utils/utils';
+import {TileType} from '@/common/TileType';
 
 describe('Founder', () => {
   let founder: Founder;
@@ -48,5 +49,13 @@ describe('Founder', () => {
     addCity(player3, adjacentSpaces[1].id);
 
     expect(scores()).deep.eq([0, 1, 1]);
+  });
+
+  it('Does not count the Neural Instance tile as a special tile', () => {
+    const neuralInstance = game.board.getAvailableSpacesOnLand(player)[0];
+    game.simpleAddTile(player2, neuralInstance, {tileType: TileType.NEURAL_INSTANCE});
+    addGreenery(player, game.board.getAdjacentSpaces(neuralInstance)[0].id);
+
+    expect(scores()).deep.eq([0, 0, 0]);
   });
 });
