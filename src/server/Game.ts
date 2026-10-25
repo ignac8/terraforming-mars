@@ -204,6 +204,7 @@ export class Game implements IGame, Logger {
 
   public underworldDraftEnabled = true;
   public readonly globalParameterTracks: GlobalParameterTracks;
+  public readonly standardProjects: ReadonlyArray<IStandardProjectCard>;
 
   public automaHooks: AutomaGameHooks | undefined;
 
@@ -265,6 +266,7 @@ export class Game implements IGame, Logger {
 
     this.tags = tags;
     this.globalParameterTracks = getGlobalParameterTracks(gameOptions.boardName);
+    this.standardProjects = this.computeStandardProjects();
   }
 
   private setFirstPlayer(first: IPlayer) {
@@ -599,11 +601,7 @@ export class Game implements IGame, Logger {
    * Run every deferred action, including any added while running them, and then call `cb`.
    */
   public drainQueue(cb: () => void): void {
-    if (this.deferredActions.length === 0) {
-      cb();
-      return;
-    }
-    this.deferredActions.runAll(() => this.drainQueue(cb));
+    this.deferredActions.runAll(cb);
   }
 
   public milestoneClaimed(milestone: IMilestone): boolean {
@@ -1493,7 +1491,7 @@ export class Game implements IGame, Logger {
 
   public grantPlacementBonuses(player: IPlayer, space: Space, coveringExistingTile: boolean = false) {
     if (!coveringExistingTile) {
-      this.grantSpaceBonuses(player, space, /* tilePlaced= */ true);
+      this.grantSpaceBonusesAsPlacement(player, space);
     }
 
     const adjacentOceanCount = this.board.getAdjacentSpaces(space).filter(Board.isOceanSpace).length;
@@ -1538,14 +1536,20 @@ export class Game implements IGame, Logger {
     LogHelper.logTilePlacement(player, space, tile.tileType);
   }
 
-  public grantSpaceBonuses(player: IPlayer, space: Space, tilePlaced: boolean = false) {
+  public grantSpaceBonuses(player: IPlayer, space: Space, onStandardResource?: (resource: Resource) => void) {
     const bonuses = MultiSet.from(space.bonus);
     bonuses.forEachMultiplicity((count: number, bonus: SpaceBonus) => {
-      this.grantSpaceBonus(player, bonus, count, tilePlaced ? space : undefined);
+      this.grantSpaceBonus(player, bonus, count, onStandardResource);
     });
   }
 
-  public grantSpaceBonus(player: IPlayer, spaceBonus: SpaceBonus, count: number = 1, space?: Space) {
+  public grantSpaceBonusesAsPlacement(player: IPlayer, space: Space) {
+    this.grantSpaceBonuses(player, space, (resource) => {
+      this.triggerForAllCards((p, c) => c.onStandardResourcePlacementBonus?.(p, player, space, resource));
+    });
+  }
+
+  public grantSpaceBonus(player: IPlayer, spaceBonus: SpaceBonus, count: number = 1, onStandardResource?: (resource: Resource) => void) {
     switch (spaceBonus) {
     case SpaceBonus.DRAW_CARD:
       player.drawCard(count);
@@ -1619,9 +1623,7 @@ export class Game implements IGame, Logger {
       player.defer(new SelectResource('Select a standard resource to gain')
         .andThen((resource) => {
           player.stock.add(resource, 1, {log: true});
-          if (space !== undefined) {
-            this.triggerForAllCards((p, c) => c.onStandardResourcePlacementBonus?.(p, player, space, resource));
-          }
+          onStandardResource?.(resource);
           return undefined;
         }));
       break;
@@ -1718,7 +1720,7 @@ export class Game implements IGame, Logger {
     }
   }
 
-  public getStandardProjects(): Array<IStandardProjectCard> {
+  private computeStandardProjects(): Array<IStandardProjectCard> {
     const gameOptions = this.gameOptions;
     return new GameCards(gameOptions)
       .getStandardProjects()
