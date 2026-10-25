@@ -1,6 +1,8 @@
 import {IMilestone} from '../IMilestone';
 import {IPlayer} from '../../IPlayer';
 import {Units} from '../../../common/Units';
+import {IMarsBot} from '@/server/automa/MarsBotCorpTypes';
+import {marsBotTrackPositionsWithoutVenus} from '@/server/automa/MarsBotMilestoneAwardEval';
 
 const TWO_OF_EACH: Units = Units.every(2);
 
@@ -17,5 +19,10 @@ export class Merchant implements IMilestone {
 
   public canClaim(player: IPlayer): boolean {
     return player.canAfford({cost: player.milestoneCost(), reserveUnits: TWO_OF_EACH});
+  }
+
+  /** Requires space 2 on every track except Venus (rulebook C, p.13). */
+  public marsBotCanClaim(bot: IMarsBot): boolean {
+    return marsBotTrackPositionsWithoutVenus(bot).every((position) => position >= 2);
   }
 }

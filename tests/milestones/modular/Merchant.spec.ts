@@ -10,6 +10,11 @@ import {Units} from '../../../src/common/Units';
 import {ALL_RESOURCES} from '../../../src/common/Resource';
 import {NirgalEnterprises} from '../../../src/server/cards/prelude2/NirgalEnterprises';
 import {StagedProtests} from '../../../src/server/cards/underworld/StagedProtests';
+import {Tag} from '@/common/cards/Tag';
+import {marsBotCanClaimMilestone} from '@/server/automa/MarsBotMilestoneAwardEval';
+import {THARSIS_MARSBOT_BOARD} from '@/server/automa/boards/TharsisMarsBot';
+import {VENUS_MARSBOT_TRACK} from '@/server/automa/boards/VenusMarsBot';
+import {fakeMarsBot, setAllTracks, setTrack} from '../../automa/FakeMarsBot';
 
 describe('Merchant', () => {
   let milestone: Merchant;
@@ -136,5 +141,19 @@ describe('Merchant', () => {
       expect(() => selectPayment.process({type: 'payment', payment: Payment.of({megacredits: 2, titanium: 3})}, player))
         .to.throw();
     });
+  });
+
+  it('MarsBot needs space 2 on every track except Venus', () => {
+    const bot = fakeMarsBot({tracks: [...THARSIS_MARSBOT_BOARD, VENUS_MARSBOT_TRACK]});
+    setAllTracks(bot, 2);
+    setTrack(bot, Tag.VENUS, 0);
+
+    for (const run of [
+      {plant: 1, expected: false},
+      {plant: 2, expected: true},
+    ]) {
+      setTrack(bot, Tag.PLANT, run.plant);
+      expect(marsBotCanClaimMilestone(milestone, bot), JSON.stringify(run)).eq(run.expected);
+    }
   });
 });
