@@ -1,6 +1,9 @@
 import {BaseMilestone} from '../IMilestone';
 import {IPlayer} from '../../IPlayer';
 import {isSpecialTileSpace, Board} from '../../boards/Board';
+import {Tag} from '@/common/cards/Tag';
+import {IMarsBot} from '@/server/automa/MarsBotCorpTypes';
+import {marsBotTrackPosition} from '@/server/automa/MarsBotMilestoneAwardEval';
 
 export class Landshaper extends BaseMilestone {
   constructor() {
@@ -34,5 +37,12 @@ export class Landshaper extends BaseMilestone {
     }
 
     return score;
+  }
+
+  /** Requires 1 city, 1 greenery and space 5 of the Building track (rulebook C, p.13). */
+  public marsBotCanClaim(bot: IMarsBot): boolean {
+    return bot.game.board.getCities(bot.player).length >= 1 &&
+      bot.game.board.getGreeneries(bot.player).length >= 1 &&
+      marsBotTrackPosition(bot, Tag.BUILDING) >= 5;
   }
 }
