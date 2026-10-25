@@ -3,6 +3,7 @@ import {IPlayer} from '../../IPlayer';
 import {Board, isSpecialTileSpace} from '../../boards/Board';
 import {Space} from '@/server/boards/Space';
 import {TileType} from '@/common/TileType';
+import {IMarsBot} from '@/server/automa/MarsBotCorpTypes';
 
 export class Founder implements IAward {
   public readonly name = 'Founder';
@@ -12,6 +13,11 @@ export class Founder implements IAward {
     // Only MarsBot counts its Neural Instance tile as special (rulebook C, p.9).
     return this.countNextToSpecialTiles(
       player, (space) => isSpecialTileSpace(space) && space.tile?.tileType !== TileType.NEURAL_INSTANCE);
+  }
+
+  /** Counts the Neural Instance tile as a special tile (rulebook C, p.9). */
+  public marsBotScore(bot: IMarsBot): number {
+    return this.countNextToSpecialTiles(bot.player, isSpecialTileSpace);
   }
 
   private countNextToSpecialTiles(player: IPlayer, isSpecial: (space: Space) => boolean): number {

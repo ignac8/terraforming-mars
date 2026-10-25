@@ -9,6 +9,8 @@ import {EmptyBoard} from '../../testing/EmptyBoard';
 import {Founder} from '../../../src/server/awards/modular/Founder';
 import {cast} from '../../../src/common/utils/utils';
 import {TileType} from '@/common/TileType';
+import {marsBotAwardScore} from '@/server/automa/MarsBotMilestoneAwardEval';
+import {fakeMarsBot} from '../../automa/FakeMarsBot';
 
 describe('Founder', () => {
   let founder: Founder;
@@ -57,5 +59,16 @@ describe('Founder', () => {
     addGreenery(player, game.board.getAdjacentSpaces(neuralInstance)[0].id);
 
     expect(scores()).deep.eq([0, 0, 0]);
+  });
+
+  it('MarsBot counts the Neural Instance tile as a special tile', () => {
+    const bot = fakeMarsBot();
+    const board = EmptyBoard.newInstance();
+    bot.game.board = board;
+    const neuralInstance = board.getAvailableSpacesOnLand(bot.player)[0];
+    bot.game.simpleAddTile(bot.player, neuralInstance, {tileType: TileType.NEURAL_INSTANCE});
+    addGreenery(bot.player, board.getAdjacentSpaces(neuralInstance)[0].id);
+
+    expect(marsBotAwardScore(founder, bot)).eq(1);
   });
 });
