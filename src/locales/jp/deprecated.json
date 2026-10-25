@@ -105,5 +105,7 @@
     "Pay 10:r:megacredits: to increase your :p:energy: and :p:heat: 1 step": "10MC支払い、電力産出+1. 温熱産出+1(何回でも実行可能)",
     "When you raise temperature, gain 3:r:megacredits: per step raised": "温度+1段階する毎に、3MC獲得",
     "Convert 6:r:heat: into temperature": "温熱を温度へ変換するコストが8→6温熱になる(何回でも実行可能)",
-    "When you place a tile, gain 2:r:heat:": "タイル配置時、2温熱獲得"
+    "When you place a tile, gain 2:r:heat:": "タイル配置時、2温熱獲得",
+  "Allow undo": "巻き戻し",
+  "undo": "巻き戻し"
 }

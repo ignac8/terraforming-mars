@@ -17,6 +17,7 @@ import {INVALID_REQUEST_ID, INVALID_RUN_ID, RESPONDING_TOO_QUICKLY} from '../../
 import {RouteError} from './RouteError';
 import {readBody} from './readBody';
 import {stringToNumber} from '../database/utils';
+import {isTableLocked, withTableLock} from '../rewind/tableLock';
 
 export const playerInputMetrics = {
   responseInterval: new prometheus.Histogram({
@@ -54,6 +55,7 @@ export class PlayerInput extends Handler {
     return this.processInput(req, res, ctx, player);
   }
 
+  // No prompt offers the one-step undo any more, so this and performUndo never run. They stay so upstream merges apply cleanly.
   private isWaitingForUndo(player: IPlayer, entity: InputResponse): boolean {
     const waitingFor = player.getWaitingFor();
     if (entity.type === 'or' && waitingFor instanceof OrOptions) {
@@ -94,13 +96,17 @@ export class PlayerInput extends Handler {
       }
       const entity = JSON.parse(body);
       validateRunId(entity);
+      validateNotRewound(player);
+      validateNotHeld(player);
       validateRequestId(player, entity);
 
       // Placed here because it fits in a temporally cohesive sense.
       this.resetTableauCardState(player);
 
       if (this.isWaitingForUndo(player, entity)) {
-        await this.performUndo(req, res, ctx, player);
+        // The undo deletes saves and replaces the cached game, so no rewind may run meanwhile.
+        // The table is free: validateNotHeld checked it with no await since.
+        await withTableLock(player.game.id, () => this.performUndo(req, res, ctx, player));
       } else {
         player.process(entity);
         responses.writeJson(res, ctx, Server.getPlayerModel(player));
@@ -154,6 +160,23 @@ function validateRunId(entity: any) {
   }
   // Clearing this out to be compatible with the input response processors.
   delete entity.runId;
+}
+
+// The game was taken before the body arrived. A rewind may have replaced it in the meantime.
+function validateNotRewound(player: IPlayer) {
+  if (player.game.retired) {
+    throw new AppError(INVALID_REQUEST_ID, 'This game was rewound. Click OK to refresh this page.');
+  }
+}
+
+// While the game is frozen or a rewind or freeze runs, no answer is applied.
+function validateNotHeld(player: IPlayer) {
+  if (player.game.frozen) {
+    throw new AppError(INVALID_REQUEST_ID, 'The judge froze the game. Click OK to refresh this page.');
+  }
+  if (isTableLocked(player.game.id)) {
+    throw new AppError(INVALID_REQUEST_ID, 'The table is being rewound or frozen. Click OK to refresh this page.');
+  }
 }
 
 // Rejects a response sent for an input the player has since moved past, e.g. from a page

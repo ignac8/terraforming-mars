@@ -93,7 +93,8 @@
   "Corporation Draft:": "Selekcja korporacji",
   "Random first player": "Losowy pierwszy gracz",
   "Show real-time VP": "Pokaż PZ w czasie rzeczywistym",
-  "Allow undo": "Zezwól na cofanie tury",
+  "Player undo": "Cofanie ruchów gracza",
+  "Rewind to any earlier move. With more than one player, every other player must agree, and only while the game runs.": "Cofnij się do dowolnego wcześniejszego ruchu. Przy więcej niż jednym graczu wszyscy pozostali gracze muszą się zgodzić, i tylko w trakcie gry.",
   "7 Heat Into temperature": "7 jednostek ciepła aby podnieść temperaturę",
   "NEXT CARD:": "następna karta:",
   "GENERATION 1 OF 12": "Pokolenie 1 z 12",
@@ -415,6 +416,7 @@
   "Build": "Zbuduj",
   "End": "Zakończ",
   "Sell": "Sprzedaj",
+  "player undo": "cofanie ruchów gracza",
   "Undo": "Cofnij",
   "Hide": "Ukryj",
   "Show": "Pokaż",
@@ -521,5 +523,8 @@
   "Copy the text below and then paste it in": "Skopiuj tekst i wklej go",
   "#bug-reports Discord channel": "na kanale Discorda #bug-reports",
   "a GitHub issue": "jako błąd na stronie GitHub",
-  "Reorder Cards": "Zmień kolejność kart"
+  "Reorder Cards": "Zmień kolejność kart",
+  "The server has restarted. Click OK to refresh this page.": "Serwer został uruchomiony ponownie. Kliknij OK, aby odświeżyć tę stronę.",
+  "This game was rewound. Click OK to refresh this page.": "Ta gra została cofnięta. Kliknij OK, aby odświeżyć tę stronę.",
+  "This page is out of date. Click OK to refresh it.": "Ta strona jest nieaktualna. Kliknij OK, aby ją odświeżyć."
 }

@@ -1,6 +1,6 @@
 import dotenv from 'dotenv';
 import {expect} from 'chai';
-import {describeDatabaseSuite} from '../database/databaseSuite';
+import {describeDatabaseSuite, tableStatePatch} from '../database/databaseSuite';
 import {ITestDatabase, Status} from '../database/ITestDatabase';
 import {IGame} from '../../src/server/IGame';
 import {Game} from '../../src/server/Game';
@@ -15,6 +15,7 @@ import {GameId} from '../../src/common/Types';
 import {QueryResult} from 'pg';
 import {SelectInitialCards} from '../../src/server/inputs/SelectInitialCards';
 import {cast, range} from '../../src/common/utils/utils';
+import {SerializedGame} from '../../src/server/SerializedGame';
 
 dotenv.config({path: 'tests/integration/.env', debug: true, quiet: true});
 
@@ -94,6 +95,11 @@ class TestPostgreSQL extends PostgreSQL implements ITestDatabase {
     return row.completed_time;
   }
 
+  async hasGameResults(gameId: GameId): Promise<boolean> {
+    const res = await this.client.query('SELECT 1 FROM game_results WHERE game_id = $1', [gameId]);
+    return res.rows.length > 0;
+  }
+
   setCompletedTime(gameId: GameId, timestampSeconds: number): Promise<QueryResult<any>> {
     return this.client.query('UPDATE completed_game SET completed_time = to_timestamp($1) WHERE game_id = $2', [timestampSeconds, gameId]);
   }
@@ -102,6 +108,12 @@ class TestPostgreSQL extends PostgreSQL implements ITestDatabase {
   // `game` and `participants` rows behind.
   public async deleteGamesRows(gameId: GameId): Promise<void> {
     await this.client.query('DELETE FROM games WHERE game_id = $1', [gameId]);
+  }
+
+  // The shared log and options of a game, as stored.
+  public async getLogRow(gameId: GameId): Promise<{log: string, options: string}> {
+    const res = await this.client.query('SELECT log, options FROM game WHERE game_id = $1', [gameId]);
+    return res.rows[0];
   }
 
   public async dropGameTable(): Promise<void> {
@@ -453,8 +465,23 @@ describeDatabaseSuite({
       expect(revisedPlayer.actionsTakenThisRound).eq(4);
     });
 
+    it('keeps every save by default', async () => {
+      const db = dbFactory();
+
+      const player = TestPlayer.BLACK.newPlayer();
+      const game = Game.newInstance('game-id-1212', [player], player, 'spectatorid');
+      await db.lastSaveGamePromise;
+
+      for (let i = 0; i < 20; i++) {
+        await db.saveGame(game);
+      }
+
+      expect(await db.getSaveIds(game.id)).has.members([...Array(21).keys()]);
+    });
+
     it('trim', async () => {
       const db = dbFactory();
+      db.setTrimCount(10);
 
       const player = TestPlayer.BLACK.newPlayer();
       const game = Game.newInstance('game-id-1212', [player], player, 'spectatorid');
@@ -739,6 +766,42 @@ describeDatabaseSuite({
       expect(raw.gameCompressed).is.null;
       const plain = await db.getGameVersion(game.id, 0);
       expect(plain.players[0].megaCredits).eq(456);
+    });
+
+    it('patches a save in the column it was stored in, and leaves the shared log alone', async () => {
+      // A save without its table state, as JSON.
+      function gameState(d: SerializedGame) {
+        const {frozen: _frozen, rewindVote: _rewindVote, rewindRequestLimits: _rewindRequestLimits, undoCount: _undoCount, ...rest} = d;
+        return JSON.stringify({...rest, players: d.players.map(({timer: _timer, ...p}) => p)});
+      }
+      const db = dbFactory();
+      const player = TestPlayer.BLACK.newPlayer();
+      const game = Game.newInstance('game-id-patched-column', [player], player, 'spectatorid');
+      await db.awaitAllSaves();
+      for (const compressOnWrite of [false, true]) {
+        db.setCompressOnWrite(compressOnWrite);
+        const saveId = game.lastSaveId;
+        await db.saveGame(game);
+        const logRow = await db.getLogRow(game.id);
+        const before = await db.getGameVersion(game.id, saveId);
+        // A patch that went through saveGame would store this line.
+        game.log('after the save');
+        const patch = tableStatePatch(game);
+
+        expect(await db.updateNewestSave(game.id, saveId, patch)).is.true;
+
+        const raw = await db.getRawGame(game.id, saveId);
+        expect(raw.game === null, String(compressOnWrite)).eq(compressOnWrite);
+        expect(raw.gameCompressed === null, String(compressOnWrite)).eq(!compressOnWrite);
+        const after = await db.getGameVersion(game.id, saveId);
+        expect(after.frozen).is.true;
+        expect(after.rewindVote).deep.eq(patch.rewindVote);
+        expect(after.rewindRequestLimits).deep.eq(patch.rewindRequestLimits);
+        expect(after.undoCount).eq(patch.undoCount);
+        expect(after.players[0].timer).deep.eq(patch.timers[0].timer);
+        expect(gameState(after)).eq(gameState(before));
+        expect(await db.getLogRow(game.id)).deep.eq(logRow);
+      }
     });
 
     it('reads an uncompressed row while compression is enabled', async () => {

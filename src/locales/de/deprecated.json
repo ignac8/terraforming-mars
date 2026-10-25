@@ -133,5 +133,9 @@
   "When you raise temperature, gain 3:r:megacredits: per step raised": "Wenn du die Temperatur erhöhst, erhalte 3 M€ pro erhöhtem Schritt",
   "Convert 6:r:heat: into temperature": "Setze 6 Wärme ein, um die Temperatur um 1 zu erhöhen",
   "When you place a tile, gain 2:r:heat:": "Wenn du ein beliebiges Plättchen platzierst, erhalte 2 Wärme",
-  "gain 1:p:megacredits:": "erhöhe deine M€-Produktion um 1"
+  "gain 1:p:megacredits:": "erhöhe deine M€-Produktion um 1",
+  "Allow undo": "Zug rückgängig machen erlauben",
+  "Undo is now in best effort support.": "Rückgängig ist nach besten Mühen unterstützt.",
+  "No effort will be spent to fix it.": "Es wird keine Bemühungen geben die Probleme zu beheben.",
+  "undo": "rückgängig"
 }

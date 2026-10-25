@@ -36,6 +36,8 @@ import {TiredEarth} from '../src/server/cards/pathfinders/TiredEarth';
 import {Tag} from '../src/common/cards/Tag';
 import {restoreTestDatabase, setTestDatabase} from './testing/setup';
 import {InMemoryDatabase} from './testing/InMemoryDatabase';
+import {SnapshotDatabase} from './testing/SnapshotDatabase';
+import {BeginnerCorporation} from '../src/server/cards/corporation/BeginnerCorporation';
 import {Spacefarer} from '../src/server/milestones/terraCimmeria/Spacefarer';
 import {Suburbian} from '../src/server/awards/modular/Suburbian';
 import {SpaceName} from '../src/common/boards/SpaceName';
@@ -588,6 +590,149 @@ describe('Game', () => {
     }
   });
 
+  it('patches after a save still on its way', async () => {
+    const db = new InMemoryDatabase();
+    setTestDatabase(db);
+    try {
+      const [game] = testGame(2);
+      // As PostgreSQL does: the save id is taken at once, and the row lands later.
+      let release = () => {};
+      db.saveGame = (g) => {
+        const saveId = g.lastSaveId;
+        g.lastSaveId = saveId + 1;
+        const saved = structuredClone(g.serialize());
+        return new Promise((resolve) => release = () => {
+          db.games.get(g.id)![saveId] = saved;
+          resolve();
+        });
+      };
+      game.save();
+      game.frozen = true;
+      const patched = game.persistTableState();
+      await new Promise((resolve) => setTimeout(resolve, 0));
+      release();
+      await patched;
+
+      expect((await db.getGame(game.id)).frozen).is.true;
+    } finally {
+      restoreTestDatabase();
+    }
+  });
+
+  it('leaves the row of a game that replaced this one alone', async () => {
+    for (const retired of [false, true]) {
+      const db = new SnapshotDatabase();
+      setTestDatabase(db);
+      try {
+        const [game] = testGame(2);
+        await game.save();
+        if (retired) {
+          // A rewind's row may not have landed yet.
+          game.retired = true;
+        } else {
+          const replacement = Game.deserialize(await db.getGame(game.id));
+          replacement.lastSaveId = game.lastSaveId;
+          await replacement.save();
+        }
+        const newest = structuredClone(await db.getGame(game.id));
+        game.frozen = true;
+
+        await game.persistTableState();
+
+        expect(await db.getGame(game.id), String(retired)).deep.eq(newest);
+      } finally {
+        restoreTestDatabase();
+      }
+    }
+  });
+
+  it('round-trips the table state and never brings it into a sandbox', () => {
+    const [game, player] = testGame(2);
+    game.frozen = true;
+    game.rewindVote = {id: 1, requester: player.id, saveId: 0, moveNumber: 1, generation: game.generation, cards: 'same', yes: [player.id], status: 'open', expiresAt: 1};
+    game.rewindRequestLimits = {generation: game.generation, players: [player.id]};
+    const d = game.serialize();
+
+    const loaded = Game.deserialize(d);
+    expect(loaded.frozen).is.true;
+    expect(loaded.rewindVote).deep.eq(game.rewindVote);
+    expect(loaded.rewindRequestLimits).deep.eq(game.rewindRequestLimits);
+    expect(loaded.ownSaveId).eq(d.lastSaveId);
+    const sandbox = Game.deserialize(d, {sandbox: true});
+    expect(sandbox.frozen).is.false;
+    expect(sandbox.rewindVote).is.undefined;
+    expect(sandbox.rewindRequestLimits).is.undefined;
+    expect(sandbox.ownSaveId).is.undefined;
+
+    game.frozen = false;
+    game.rewindVote = undefined;
+    game.rewindRequestLimits = {generation: game.generation - 1, players: [player.id]};
+    expect(game.serialize()).not.to.have.any.keys('frozen', 'rewindVote', 'rewindRequestLimits');
+  });
+
+  it('saves a copy of the table state', async () => {
+    const db = new InMemoryDatabase();
+    setTestDatabase(db);
+    try {
+      const [game, player, player2] = testGame(2);
+      game.rewindVote = {id: 1, requester: player.id, saveId: 0, moveNumber: 1, generation: game.generation, cards: 'same', yes: [player.id], status: 'open', expiresAt: 1};
+      game.rewindRequestLimits = {generation: game.generation, players: [player.id]};
+      await game.save();
+
+      game.rewindVote.yes.push(player2.id);
+      game.rewindRequestLimits.players.push(player2.id);
+
+      const saved = await db.getGame(game.id);
+      expect(saved.rewindVote?.yes).deep.eq([player.id]);
+      expect(saved.rewindRequestLimits?.players).deep.eq([player.id]);
+    } finally {
+      restoreTestDatabase();
+    }
+  });
+
+  it('reloads a frozen game with every clock stopped', () => {
+    const [game, player, player2] = testGame(2);
+    // Players with corporations, so a reload goes to the action phase.
+    player.playedCards.push(new BeginnerCorporation());
+    player2.playedCards.push(new BeginnerCorporation());
+    game.phase = Phase.ACTION;
+    player.takeAction();
+    expect(game.activePlayer.timer.serialize().running).is.true;
+    // As a freeze leaves the game.
+    game.frozen = true;
+    game.players.forEach((p) => p.timer.pause());
+
+    const loaded = Game.deserialize(game.serialize());
+
+    expect(loaded.phase).eq(Phase.ACTION);
+    expect(loaded.activePlayer.getWaitingFor()).is.not.undefined;
+    expect(loaded.players.map((p) => p.timer.serialize().running)).deep.eq([false, false]);
+  });
+
+  it('tracks the save rows written at the end of the game', async () => {
+    const db = new SnapshotDatabase();
+    setTestDatabase(db);
+    try {
+      const [game, player, player2] = testGame(2);
+      setTemperature(game, constants.MAX_TEMPERATURE);
+      setOxygenLevel(game, constants.MAX_OXYGEN_LEVEL);
+      maxOutOceans(player);
+      player.plants = 0;
+      player2.plants = 0;
+      game.playerHasPassed(player);
+      game.playerHasPassed(player2);
+      player.popWaitingFor();
+      player2.popWaitingFor();
+      game.playerIsFinishedTakingActions();
+      await game.finishing;
+
+      expect(game.phase).eq(Phase.END);
+      expect(game.ownSaveId).eq(Math.max(...await db.getSaveIds(game.id)));
+    } finally {
+      restoreTestDatabase();
+    }
+  });
+
   it('Should return players in turn order', () => {
     const player1 = new Player('p1', 'blue', false, 0, 'p1-id');
     const player2 = new Player('p2', 'green', false, 0, 'p2-id');
@@ -853,16 +998,29 @@ describe('Game', () => {
     assertIsJSON(serialized);
     const serializedKeys = Object.keys(serialized);
 
-    const unserializedFieldsInGame: Array<keyof Game | '_marsBotPlayer'> = [
+    const unserializedFieldsInGame: Array<keyof Game | '_marsBotPlayer' | 'onSandboxSave' | 'lastWrite' | 'lastPatch'> = [
       '_marsBotPlayer',
       'createdTime',
       'discardedColonies',
       'inDoubleDown',
+      'inputsSinceSave', // Serialized as `inputs`.
       'inputsThisRound',
       'inTurmoil',
+      'isSandbox',
+      'onSandboxSave',
+      'retired',
+      'finishing',
+      'frozen', // Serialized only when true.
+      'rewindVote', // Serialized only when set.
+      'rewindRequestLimits', // Serialized only for the current generation.
+      'onRewindVoteMove', // A callback.
+      'ownSaveId',
+      'lastWrite',
+      'lastPatch',
       'playersInGenerationOrder',
       'monsInsuranceOwner',
       'resettable',
+      'rewinds', // Serialized only once a rewind has happened.
       'rng',
       'underworldDraftEnabled',
       'doubleDownPrelude',
@@ -872,7 +1030,8 @@ describe('Game', () => {
     const serializedValuesNotInGame: Array<keyof SerializedGame> = [
       'seed',
       'currentSeed',
-      'createdTimeMs'];
+      'createdTimeMs',
+      'inputs'];
 
     const gameKeys = Object.keys(game);
 

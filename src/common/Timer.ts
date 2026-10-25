@@ -61,6 +61,16 @@ export class Timer {
     };
   }
 
+  /** Runs `f` and then puts the shared last stop time back, for work that isn't play at a table, such as a replay. */
+  public static keepingLastStop<T>(f: () => T): T {
+    const lastStoppedAt = Timer.lastStoppedAt;
+    try {
+      return f();
+    } finally {
+      Timer.lastStoppedAt = lastStoppedAt;
+    }
+  }
+
   public static deserialize(d: SerializedTimer): Timer {
     const timer = new Timer(REAL_CLOCK);
     timer.sumElapsed = d.sumElapsed;
@@ -100,6 +110,36 @@ export class Timer {
       return;
     }
     this.sumElapsed += Timer.lastStoppedAt - this.startedAt;
+  }
+
+  /**
+   * Closes the interval in progress (counted only after the first action, as `stop` counts it) and stops.
+   * Never moves the shared last stop time. Does nothing on a timer that isn't running.
+   */
+  public pause(): void {
+    if (!this.running) {
+      return;
+    }
+    this.sumElapsed = this.countedElapsed();
+    this.running = false;
+  }
+
+  /**
+   * Starts a new interval now. Unlike `start`, never begins at the shared last stop time.
+   *
+   * On a running timer it drops the open interval uncounted, so callers that mean to count it pause first.
+   */
+  public resume(): void {
+    this.running = true;
+    this.startedAt = this.clock.now();
+  }
+
+  /**
+   * The time that counts so far: the closed intervals, plus the open one once the first action is done.
+   */
+  public countedElapsed(): number {
+    const open = this.running && this.afterFirstAction ? this.clock.now() - this.startedAt : 0;
+    return this.sumElapsed + open;
   }
 
   /**

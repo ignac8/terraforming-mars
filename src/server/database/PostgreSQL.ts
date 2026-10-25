@@ -5,7 +5,7 @@ import {IGame, Score} from '../IGame';
 import {GameOptions} from '../game/GameOptions';
 import {GameId, ParticipantId, isGameId, safeCast} from '../../common/Types';
 import {SerializedGame} from '../SerializedGame';
-import {daysAgoToSeconds, stringToBoolean, stringToNumber} from './utils';
+import {DEFAULT_COMPRESS_COMPLETED_GAMES_DAYS, compressCutoffSeconds, daysAgoToSeconds, stringToBoolean, stringToNumber} from './utils';
 import {GameIdLedger} from './IDatabase';
 import {Session, SessionId} from '../auth/Session';
 import {toID} from '../../common/utils/utils';
@@ -15,12 +15,13 @@ import {Clock} from '@/common/Timer';
 import {parseInterned} from './parseInterned';
 import {LogMessage} from '@/common/logs/LogMessage';
 import {compressToBrotli, decompressFromBrotli} from './compression';
+import {TableStatePatch, withTableState} from '../rewind/tableState';
 
 type StoredSerializedGame = Omit<SerializedGame, 'gameOptions' | 'gameLog'> & {logLength: number};
 
 export const POSTGRESQL_TABLES = ['game', 'games', 'game_results', 'participants', 'completed_game', 'session'] as const;
 
-const POSTGRES_TRIM_COUNT = stringToNumber(process.env.POSTGRES_TRIM_COUNT, 10);
+const POSTGRES_TRIM_COUNT = stringToNumber(process.env.POSTGRES_TRIM_COUNT, 0);
 const DB_COMPRESS_ON_WRITE = stringToBoolean(process.env.DB_COMPRESS_ON_WRITE, false);
 
 // How often the (expensive) table/database size stats are actually recomputed. Scrapes that land
@@ -273,19 +274,24 @@ export class PostgreSQL implements IDatabase {
     return this.compose(this.resolveGameText(row), row.log, row.options);
   }
 
-  // Not part of IDatabase: void/callback-based, so MetricsDelegate can't observe its completion or
-  // errors the way it can for Promise-returning methods. Instrumented directly here instead.
-  saveGameResults(gameId: GameId, players: number, generations: number, gameOptions: GameOptions, scores: Array<Score>): void {
+  // MetricsDelegate passes saveGameResults through unwrapped, because the other backends write the row
+  // synchronously and the interface lets them return nothing. Instrumented directly here instead,
+  // and the promise settles when the INSERT does.
+  saveGameResults(gameId: GameId, players: number, generations: number, gameOptions: GameOptions, scores: Array<Score>): Promise<void> {
     const operation = 'saveGameResults';
     const startMs = Date.now();
     databaseMetrics.operationCount.inc({operation});
-    this.client.query('INSERT INTO game_results (game_id, seed_game_id, players, generations, game_options, scores) VALUES($1, $2, $3, $4, $5, $6)', [gameId, gameOptions.clonedGamedId, players, generations, gameOptions, JSON.stringify(scores)], (err) => {
-      databaseMetrics.operationLatency.observe({operation}, Date.now() - startMs);
-      if (err) {
-        databaseMetrics.operationErrors.inc({operation});
-        console.error('PostgreSQL:saveGameResults', err);
-        throw err;
-      }
+    return new Promise((resolve, reject) => {
+      this.client.query('INSERT INTO game_results (game_id, seed_game_id, players, generations, game_options, scores) VALUES($1, $2, $3, $4, $5, $6)', [gameId, gameOptions.clonedGamedId, players, generations, gameOptions, JSON.stringify(scores)], (err) => {
+        databaseMetrics.operationLatency.observe({operation}, Date.now() - startMs);
+        if (err) {
+          databaseMetrics.operationErrors.inc({operation});
+          console.error('PostgreSQL:saveGameResults', err);
+          reject(err);
+        } else {
+          resolve();
+        }
+      });
     });
   }
 
@@ -310,6 +316,11 @@ export class PostgreSQL implements IDatabase {
     const promise2 = this.client.query('UPDATE game SET status = \'finished\' WHERE game_id = $1', [gameId]);
     const promise3 = this.client.query('INSERT INTO completed_game(game_id) VALUES ($1)', [gameId]);
     await Promise.all([promise1, promise2, promise3]);
+  }
+
+  async reopenFinishedGame(gameId: GameId): Promise<void> {
+    await this.client.query('DELETE FROM completed_game WHERE game_id = $1', [gameId]);
+    await this.client.query('DELETE FROM game_results WHERE game_id = $1', [gameId]);
   }
 
   // Purge unfinished games older than MAX_GAME_DAYS days. If this environment variable is absent, it uses the default of 10 days.
@@ -337,11 +348,8 @@ export class PostgreSQL implements IDatabase {
   }
 
 
-  async compressCompletedGames(compressCompletedGamesDays: string | undefined = process.env.COMPRESS_COMPLETED_GAMES_DAYS): Promise<void> {
-    if (compressCompletedGamesDays === undefined) {
-      return;
-    }
-    const dateToSeconds = daysAgoToSeconds(compressCompletedGamesDays, 0);
+  async compressCompletedGames(compressCompletedGamesDays: string = process.env.COMPRESS_COMPLETED_GAMES_DAYS ?? DEFAULT_COMPRESS_COMPLETED_GAMES_DAYS): Promise<void> {
+    const dateToSeconds = compressCutoffSeconds(compressCompletedGamesDays);
     const selectResult = await this.client.query('SELECT DISTINCT game_id FROM completed_game WHERE completed_time < to_timestamp($1)', [dateToSeconds]);
     const gameIds = selectResult.rows.slice(0, 1000).map((row) => row.game_id);
     console.log(`${gameIds.length} completed games to be compressed.`);
@@ -462,6 +470,50 @@ export class PostgreSQL implements IDatabase {
     await this.trim(game).catch(() => databaseMetrics.operationErrors.inc({operation: 'trim'}));
   }
 
+  // Rewrites the stored row only: never the shared log or the options, and never a row that is gone.
+  async updateNewestSave(gameId: GameId, saveId: number, patch: TableStatePatch): Promise<boolean> {
+    let releaseError: Error | undefined;
+    // While the client is checked out the pool doesn't listen for its 'error' events, so this does.
+    const onError = () => databaseMetrics.operationErrors.inc({operation: 'updateNewestSave:connection'});
+    const client = await this.client.connect();
+    client.on('error', onError);
+    try {
+      await client.query('BEGIN');
+      const newest = await client.query('SELECT MAX(save_id) AS save_id FROM games WHERE game_id = $1', [gameId]);
+      if (newest.rows[0].save_id !== saveId) {
+        await client.query('ROLLBACK');
+        return false;
+      }
+      const res = await client.query('SELECT game, game_compressed FROM games WHERE game_id = $1 AND save_id = $2 FOR UPDATE', [gameId, saveId]);
+      if (res.rows.length === 0) {
+        await client.query('ROLLBACK');
+        return false;
+      }
+      const row = res.rows[0];
+      const stored: StoredSerializedGame = JSON.parse(this.resolveGameText(row));
+      const text = JSON.stringify(withTableState(stored, patch));
+      // Into the column the row used, so a row never carries both.
+      if (row.game_compressed !== null) {
+        await client.query('UPDATE games SET game_compressed = $3 WHERE game_id = $1 AND save_id = $2', [gameId, saveId, compressToBrotli(text)]);
+      } else {
+        await client.query('UPDATE games SET game = $3 WHERE game_id = $1 AND save_id = $2', [gameId, saveId, text]);
+      }
+      await client.query('COMMIT');
+      return true;
+    } catch (err) {
+      try {
+        await client.query('ROLLBACK');
+      } catch (rollbackErr) {
+        // The connection is in an unknown state. Release it with an error so the pool discards it.
+        releaseError = rollbackErr instanceof Error ? rollbackErr : new Error(String(rollbackErr));
+      }
+      throw err;
+    } finally {
+      client.removeListener('error', onError);
+      client.release(releaseError);
+    }
+  }
+
   // Not part of IDatabase, so invisible to MetricsDelegate.
   private async trim(game: IGame) {
     if (this.trimCount <= 0) {
@@ -479,6 +531,13 @@ export class PostgreSQL implements IDatabase {
       console.error(`invalid rollback count for ${gameId}: ${rollbackCount}`);
       // Should this be an error?
       return;
+    }
+    // A game that runs again is no longer waiting to have its saves compressed. This goes first and
+    // may fail without failing the rollback, so the delete of the saves alone decides the outcome.
+    try {
+      await this.client.query('DELETE FROM completed_game WHERE game_id = $1', [gameId]);
+    } catch (err) {
+      console.warn(`PostgreSQL: unable to take ${gameId} off the compression queue`, err);
     }
     await this.client.query('DELETE FROM games WHERE ctid IN (SELECT ctid FROM games WHERE game_id = $1 ORDER BY save_id DESC LIMIT $2)', [gameId, rollbackCount]);
   }

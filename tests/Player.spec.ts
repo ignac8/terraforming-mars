@@ -6,6 +6,7 @@ import {IoMiningIndustries} from '../src/server/cards/base/IoMiningIndustries';
 import {PowerSupplyConsortium} from '../src/server/cards/base/PowerSupplyConsortium';
 import {SaturnSystems} from '../src/server/cards/corporation/SaturnSystems';
 import {SelectOption} from '../src/server/inputs/SelectOption';
+import {UndoActionOption} from '../src/server/inputs/UndoActionOption';
 import {Resource} from '../src/common/Resource';
 import {SerializedPlayer} from '../src/server/SerializedPlayer';
 import {SerializedTimer} from '../src/common/SerializedTimer';
@@ -39,6 +40,8 @@ import {EnergyTapping} from '../src/server/cards/base/EnergyTapping';
 import {cast} from '@/common/utils/utils';
 import {Timer} from '../src/common/Timer';
 import {FakeClock} from './common/FakeClock';
+import {InMemoryDatabase} from './testing/InMemoryDatabase';
+import {restoreTestDatabase, setTestDatabase} from './testing/setup';
 
 function playerWithRunningTimer(): [Player, FakeClock] {
   const player = new Player('blue', 'blue', false, 0, 'p-blue');
@@ -86,6 +89,19 @@ describe('Player', () => {
     clock.millis = 5000;
     player.setWaitingFor(new SelectOption('Input'));
     expect(player.inputRequestedAt).eq(5000);
+  });
+
+  it('starts no clock while the game is frozen', () => {
+    for (const frozen of [false, true]) {
+      const [game, player] = testGame(1);
+      player.clearWaitingFor();
+      player.timer = Timer.newInstance();
+      game.frozen = frozen;
+
+      player.setWaitingFor(new SelectOption('Input'));
+
+      expect(player.timer.serialize().running, String(frozen)).eq(!frozen);
+    }
   });
 
   it('does not stop the timer when processing optional input', () => {
@@ -734,5 +750,33 @@ describe('Player', () => {
 
     expect(player.cardsInHand).to.have.members([cards[0], cards[2]]);
     expect(player.megaCredits).eq(14);
+  });
+
+  it('never offers the one-step undo', () => {
+    for (const count of [1, 2]) {
+      const [/* game */, player] = testGame(count, {undoOption: true});
+      player.actionsTakenThisRound = 1;
+
+      const actions = cast(player.getActions(), OrOptions);
+
+      expect(actions.options.some((option) => option instanceof UndoActionOption), `${count} players`).is.false;
+    }
+  });
+
+  describe('saves', () => {
+    it('saves before every action, also without undo', () => {
+      const db = new InMemoryDatabase();
+      setTestDatabase(db);
+      try {
+        const [game, player] = testGame(2, {undoOption: false});
+        player.actionsTakenThisRound = 1; // second action of the turn
+        const before = db.games.get(game.id)?.length ?? 0;
+        player.takeAction();
+        runAllActions(game);
+        expect(db.games.get(game.id)?.length ?? 0).eq(before + 1);
+      } finally {
+        restoreTestDatabase();
+      }
+    });
   });
 });

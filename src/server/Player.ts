@@ -45,7 +45,6 @@ import {ConvertHeat} from './cards/base/standardActions/ConvertHeat';
 import {KELVINISTS_POLICY_3} from './turmoil/parties/Kelvinists';
 import {GlobalParameter} from '../common/GlobalParameter';
 import {LogHelper} from './LogHelper';
-import {UndoActionOption} from './inputs/UndoActionOption';
 import {PathfindersExpansion} from './pathfinders/PathfindersExpansion';
 import {ColoniesHandler} from './colonies/ColoniesHandler';
 import {MonsInsurance} from './cards/promo/MonsInsurance';
@@ -1445,9 +1444,7 @@ export class Player implements IPlayer {
     this.game.drainQueue(() => {
       const game = this.game;
 
-      if (this.actionsTakenThisRound === 0 || game.gameOptions.undoOption) {
-        game.save();
-      }
+      game.save();
 
       const headStartIsInEffect = this.headStartIsInEffect();
       this.game.inDoubleDown = false;
@@ -1671,11 +1668,6 @@ export class Player implements IPlayer {
       action.options.push(sellPatents.action(this));
     }
 
-    // Propose undo action only if you have done one action this turn
-    if (this.actionsTakenThisRound > 0 && this.game.gameOptions.undoOption) {
-      action.options.push(new UndoActionOption());
-    }
-
     return action;
   }
 
@@ -1698,6 +1690,7 @@ export class Player implements IPlayer {
     }
     const waitingFor = this.waitingFor;
     const waitingForCb = this.waitingForCb;
+    const recorded = this.game.recordInput(this, waitingFor, input);
     this.waitingFor = undefined;
     this.waitingForCb = undefined;
     try {
@@ -1707,8 +1700,12 @@ export class Player implements IPlayer {
       this.defer(waitingFor.process(input, this));
       waitingForCb();
     } catch (err) {
+      this.game.forgetInput(recorded);
       this.setWaitingFor(waitingFor, waitingForCb);
       throw err;
+    }
+    if (this.game.rewindVote !== undefined) {
+      this.game.onRewindVoteMove?.();
     }
   }
 
@@ -1725,7 +1722,8 @@ export class Player implements IPlayer {
         console.warn(message);
       }
     }
-    if (!input.optional) {
+    // A frozen game runs no clock, also at the prompts that reloading or rewinding it reaches.
+    if (!input.optional && !this.game.frozen) {
       this.timer.start();
     }
     this.waitingFor = input;

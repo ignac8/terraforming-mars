@@ -61,7 +61,6 @@
     "Initial Draft rounds": "Initiële Draft-variant",
     "Random first player": "Willekeurige startspeler",
     "Show real-time VP": "Toon real-time overwinningspunten",
-    "Allow undo": "Ongedaan maken toestaan",
     "7 Heat Into Temperature": "7 warmte in temperatuur",
     "NEXT CARD:": "VOLGENDE KAART: ",
     "GENERATION 1 OF 12": "GENERATIE ${0} van ${1}",
@@ -612,7 +611,6 @@
     "Hide": "Verbergen",
     "Show": "Tonen",
     "Undo": "Ongedaan gemaken",
-    "undo": "ongedaan gemaken",
     "12 Gens": "12 Generatiesn",
 
     "Your selected cards:": "Je geselecteerde kaarten:",
@@ -747,5 +745,7 @@
     "Increase plants production 1 step": "Verhoog plantenproductie met 1",
     "Increase energy production 1 step": "Verhoog energieproductie met 1",
     "Increase heat production 1 step": "Verhoog warmteproductie met 1",
-    "Reorder Cards": "Kaarten herschikken"
+    "Reorder Cards": "Kaarten herschikken",
+    "Player undo": "Ongedaan maken toestaan",
+    "player undo": "ongedaan gemaken"
 }

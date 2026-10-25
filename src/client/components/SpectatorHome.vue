@@ -26,7 +26,7 @@
       :discardPileSize = "game.discardPileSize"
       :otherDeckSizes = "game.otherDeckSizes"/>
 
-    <div class="player_home_block nofloat">
+    <div v-if="!replay" class="player_home_block nofloat">
 <LogPanel :viewModel="spectator" :step="game.step" @spaceClicked="onSpaceClicked"/>
     </div>
 
@@ -54,11 +54,11 @@
         </div>
       </div>
     </div>
-    <WaitingFor v-show="false" v-if="game.phase !== 'end'" :playerView="spectator" :waitingfor="undefined"/>
+    <WaitingFor v-show="false" v-if="!replay && game.phase !== 'end'" :playerView="spectator" :waitingfor="undefined"/>
     <div>
       <a :href="'/spectator?id=' +game.spectatorId" target="_blank" rel="noopener noreferrer" v-i18n>Spectator link</a>
     </div>
-    <PurgeWarning :expectedPurgeTimeMs="game.expectedPurgeTimeMs"/>
+    <PurgeWarning v-if="!replay" :expectedPurgeTimeMs="game.expectedPurgeTimeMs"/>
     <KeyboardShortcuts v-show="keyboardShortcutOpened" @close="keyboardShortcutOpened = false"/>
   </div>
 </template>
@@ -87,6 +87,11 @@ export default defineComponent({
     spectator: {
       type: Object as () => SpectatorModel,
       required: true,
+    },
+    /** True while replaying a finished game: no polling, so the replayed model is never replaced by the live one. */
+    replay: {
+      type: Boolean,
+      default: false,
     },
   },
   computed: {

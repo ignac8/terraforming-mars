@@ -142,6 +142,7 @@ describe('MarsBotReload', () => {
     const saves: Array<SerializedGame> = [];
     game.save = () => {
       saves.push(game.serialize());
+      return Promise.resolve();
     };
 
     human.process({type: 'initialCards', responses: [

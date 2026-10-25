@@ -131,5 +131,9 @@
   "When you raise temperature, gain 3:r:megacredits: per step raised": "Kun nostat lämpötilaa, hanki 3 M€ jokaista nostettua askelta kohden",
   "Convert 6:r:heat: into temperature": "Muunna 6 lämpöä lämpötilaksi",
   "When you place a tile, gain 2:r:heat:": "Kun asetat laatan, saat 2 lämpöä",
-  "gain 1:p:megacredits:": "nosta M€-tuotantoa 1 askel"
+  "gain 1:p:megacredits:": "nosta M€-tuotantoa 1 askel",
+  "Allow undo": "Salli peruminen",
+  "Undo is now in best effort support.": "Peruminen ei välttämättä toimi aina.",
+  "No effort will be spent to fix it.": "Sitä ei aiota parantaa.",
+  "undo": "peru"
 }
