@@ -550,7 +550,7 @@ describe('RewindService whole table', () => {
 
     expect(res.statusCode).eq(statusCode.badRequest);
     expect(JSON.parse(res.content).id).eq(INVALID_REQUEST_ID);
-    expect(JSON.parse(res.content).message).eq('The table is being rewound or frozen. Click OK to refresh this page.');
+    expect(JSON.parse(res.content).message).eq('The table is being rewound. Click OK to refresh this page.');
     expect(game.inputsSinceSave).deep.eq(inputs);
     expect(rows()).has.length(before.length);
 

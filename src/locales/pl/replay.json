@@ -31,7 +31,7 @@
   "invalid vote": "Nieprawidłowe żądanie głosowania.",
   "A rewind is already running.": "Cofanie gry już trwa.",
   "The judge froze the game. Click OK to refresh this page.": "Sędzia zamroził grę. Kliknij OK, aby odświeżyć stronę.",
-  "The table is being rewound or frozen. Click OK to refresh this page.": "Trwa cofanie albo zamrażanie gry. Kliknij OK, aby odświeżyć stronę.",
+  "The table is being rewound. Click OK to refresh this page.": "Trwa cofanie gry. Kliknij OK, aby odświeżyć stronę.",
   "The game is frozen.": "Gra jest zamrożona.",
   "The game is frozen, so no rewind can be asked for or answered.": "Gra jest zamrożona, więc nie można prosić o cofnięcie gry ani na tę prośbę odpowiadać.",
   "A rewind vote is already open.": "Głosowanie nad cofnięciem gry już trwa.",

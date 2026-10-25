@@ -37,6 +37,8 @@ describe('Rewinding a MarsBot game', () => {
   let research: number;
   // The cards the first draft round of that generation offered.
   let firstPile: Array<CardName>;
+  // Where the random generator stood when that pile was offered.
+  let firstSeed: number;
   // The action prompt after the draft and one heat conversion.
   let convert: number;
 
@@ -54,6 +56,7 @@ describe('Rewinding a MarsBot game', () => {
     expect(game.phase).eq(Phase.RESEARCH);
     research = game.lastSaveId - 1;
     firstPile = offered(player);
+    firstSeed = game.rng.current;
     // Every draft pick, against MarsBot's random ones, then the buy.
     while (cast(player.getWaitingFor(), SelectCard).title.toString().startsWith('Draft round')) {
       player.process({type: 'card', cards: [offered(player)[0]]});
@@ -73,6 +76,7 @@ describe('Rewinding a MarsBot game', () => {
     const restored = await rewindGame(game, player, research, 'same');
 
     expect(offered(restored.getPlayerById(player.id))).deep.eq(firstPile);
+    expect(restored.rng.current).eq(firstSeed);
   });
 
   it('replays MarsBot\'s draft picks to a later move without a mismatch', async () => {

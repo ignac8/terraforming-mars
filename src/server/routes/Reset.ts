@@ -52,7 +52,7 @@ export class Reset extends Handler {
       throw RouteError.badRequest('The game is frozen.');
     }
     if (isTableLocked(game.id)) {
-      throw RouteError.badRequest('The table is being rewound or frozen. Click OK to refresh this page.');
+      throw RouteError.badRequest('The table is being rewound. Click OK to refresh this page.');
     }
     if (player.game.activePlayer.id !== player.id) {
       throw RouteError.badRequest('Not the active player');

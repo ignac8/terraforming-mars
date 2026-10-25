@@ -175,7 +175,7 @@ function validateNotHeld(player: IPlayer) {
     throw new AppError(INVALID_REQUEST_ID, 'The judge froze the game. Click OK to refresh this page.');
   }
   if (isTableLocked(player.game.id)) {
-    throw new AppError(INVALID_REQUEST_ID, 'The table is being rewound or frozen. Click OK to refresh this page.');
+    throw new AppError(INVALID_REQUEST_ID, 'The table is being rewound. Click OK to refresh this page.');
   }
 }
 

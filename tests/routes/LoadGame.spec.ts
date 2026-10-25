@@ -271,7 +271,7 @@ describe('LoadGame', () => {
       }
 
       expect(res.statusCode).eq(statusCode.badRequest);
-      expect(res.content).eq('Bad request: The table is being rewound or frozen. Click OK to refresh this page.');
+      expect(res.content).eq('Bad request: The table is being rewound. Click OK to refresh this page.');
       expect(events).is.empty;
     });
 

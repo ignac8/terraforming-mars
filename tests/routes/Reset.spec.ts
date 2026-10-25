@@ -35,7 +35,7 @@ describe('Reset', () => {
       if (hold === 'frozen') {
         expect(res.content).eq('Bad request: The game is frozen.');
       } else if (hold === 'locked') {
-        expect(res.content).eq('Bad request: The table is being rewound or frozen. Click OK to refresh this page.');
+        expect(res.content).eq('Bad request: The table is being rewound. Click OK to refresh this page.');
       }
     }
   });

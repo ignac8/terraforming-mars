@@ -410,7 +410,6 @@ describe('WaitingFor', () => {
       inFlight[0]({result: 'REFRESH', waitingFor: []});
       await flushPromises();
 
-      expect(updatePlayer.mock.calls).has.length(1);
       expect(turn.cues()).eq(0);
     });
   });

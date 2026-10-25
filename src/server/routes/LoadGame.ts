@@ -38,7 +38,7 @@ export class LoadGame extends Handler {
     }
     // The rollback deletes saves and replaces the cached game, so it never runs during a rewind or a freeze.
     if (isTableLocked(gameId)) {
-      throw RouteError.badRequest('The table is being rewound or frozen. Click OK to refresh this page.');
+      throw RouteError.badRequest('The table is being rewound. Click OK to refresh this page.');
     }
     await withTableLock(gameId, async () => {
       // A rollback past the row a freeze patched would load the game unfrozen, without telling the judge.
