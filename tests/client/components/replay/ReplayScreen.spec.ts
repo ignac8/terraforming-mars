@@ -11,7 +11,7 @@ import {fakeGameModel, fakeGameOptionsModel, fakePlayerViewModel, fakePublicPlay
 import {ReplayMove, ReplayMovesModel, ReplayViewModel} from '@/common/replay/ReplayModel';
 import {JudgeId, PlayerId, SpectatorId} from '@/common/Types';
 import {PlayerViewModel, PublicPlayerModel} from '@/common/models/PlayerModel';
-import {JudgeModel} from '@/common/models/JudgeModel';
+import {JudgeModel, JudgePlayerModel} from '@/common/models/JudgeModel';
 import JudgeHome from '@/client/components/judge/JudgeHome.vue';
 import RewindControls from '@/client/components/replay/RewindControls.vue';
 import RewindVoteBanner from '@/client/components/replay/RewindVoteBanner.vue';
@@ -1131,6 +1131,53 @@ describe('ReplayScreen', () => {
       await flushPromises();
       expect(wrapper.findComponent(JudgeHome).exists()).is.true;
       expect(wrapper.findComponent(SpectatorHome).exists()).is.false;
+    });
+
+    it('shows the live game as the player the judge picks, kept up to date, with no input', async () => {
+      const privates = (color: 'blue' | 'red', hand: CardName): JudgePlayerModel => ({
+        color,
+        cardsInHand: [{name: hand}],
+        ceoCardsInHand: [],
+        dealtCorporationCards: [],
+        dealtPreludeCards: [],
+        dealtCeoCards: [],
+        dealtProjectCards: [],
+        draftedCards: [],
+        pickedCorporationCard: [],
+        preludeCardsInHand: [],
+        waitingFor: {type: 'or', title: 'Take your first action', buttonLabel: 'Confirm', options: [], initialIdx: 0},
+      } as JudgePlayerModel);
+      const judge = {...judgeModel(), privates: [privates('blue', CardName.BIRDS), privates('red', CardName.ANTS)]};
+      const wrapper = mountJudge(judge);
+      await flushPromises();
+      const home = () => wrapper.findComponent(PlayerHome);
+      const shown = () => home().props('playerView') as PlayerViewModel;
+
+      panel(wrapper).vm.$emit('update:viewAs', 'red');
+      await flushPromises();
+      expect(calls).to.deep.equal([]);
+      expect(wrapper.findComponent(JudgeHome).exists()).is.false;
+      expect(home().props('replay')).is.true;
+      expect(shown().thisPlayer?.color).equals('red');
+      expect(shown().cardsInHand.map((card) => card.name)).to.deep.equal([CardName.ANTS]);
+      expect(shown().waitingFor).is.undefined;
+      expect(shown().id).equals(judgeId);
+      // The judge page still polls, as JudgeHome does when it shows.
+      expect(wrapper.findComponent(WaitingFor).props('playerView')).equals(wrapper.props('liveJudge'));
+
+      await wrapper.setProps({liveJudge: {...judge, privates: [privates('blue', CardName.BIRDS), privates('red', CardName.TARDIGRADES)]}});
+      expect(shown().cardsInHand.map((card) => card.name)).to.deep.equal([CardName.TARDIGRADES]);
+
+      // Reading the moves when the panel opens keeps the pick.
+      expand(wrapper);
+      await flushPromises();
+      expect(shown().thisPlayer?.color).equals('red');
+      expect(wrapper.find('.replay-view-active').text()).equals('Red player');
+
+      panel(wrapper).vm.$emit('update:viewAs', 'all');
+      await flushPromises();
+      expect(wrapper.findComponent(JudgeHome).exists()).is.true;
+      expect(home().exists()).is.false;
     });
 
     it('rewinds to the selected move with the cards and clocks chosen, then reloads the page', async () => {
