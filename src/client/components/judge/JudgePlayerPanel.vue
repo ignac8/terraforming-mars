@@ -15,7 +15,7 @@
 
       <div v-if="privates.waitingFor !== undefined" class="player_home_block nofloat">
         <h3 class="judge-player-panel-section" v-i18n>Pending choice</h3>
-        <JudgePendingChoice :input="privates.waitingFor"/>
+        <JudgePendingChoice :input="privates.waitingFor" :shown="shownCards"/>
       </div>
     </template>
   </div>
@@ -29,6 +29,7 @@ import DynamicTitle from '@/client/components/common/DynamicTitle.vue';
 import JudgePendingChoice from '@/client/components/judge/JudgePendingChoice.vue';
 import {isPanelHidden, setPanelHidden} from '@/client/utils/panelHiddenStorage';
 import {privateCardSections, PrivateCardSection} from '@/client/utils/privateCardSections';
+import {CardName} from '@/common/cards/CardName';
 import {JudgePlayerModel} from '@/common/models/JudgeModel';
 import {PublicPlayerModel} from '@/common/models/PlayerModel';
 import {JudgeId} from '@/common/Types';
@@ -66,6 +67,10 @@ export default defineComponent({
   computed: {
     visibleSections(): Array<PrivateCardSection> {
       return privateCardSections(this.privates, this.player.tableau.length);
+    },
+    /** The cards above and on the table, which the pending choice leaves out. */
+    shownCards(): Array<CardName> {
+      return [...this.visibleSections.flatMap((section) => section.cards), ...this.player.tableau].map((card) => card.name);
     },
   },
 });

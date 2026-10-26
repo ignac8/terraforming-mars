@@ -132,6 +132,25 @@ describe('JudgePlayerPanel', () => {
     expect(wrapper.text()).to.include('Select a card to keep');
   });
 
+  it('leaves out of the pending choice the cards in the sections and on the table', () => {
+    const waitingFor = asComplete<SelectCardModel>({
+      type: 'card',
+      title: 'Take your first action',
+      cards: [{name: CardName.ANTS}, {name: CardName.HELION}, {name: CardName.COMET}],
+    });
+    const wrapper = mount(JudgePlayerPanel, {
+      ...globalConfig,
+      props: {
+        judgeId: 'j-judge',
+        privates: privates({...hand, waitingFor}),
+        player: fakePublicPlayerModel({color: 'red', name: 'Alice', tableau: [{name: CardName.HELION}]}),
+      },
+    });
+
+    expect(wrapper.findComponent({name: 'JudgePendingChoice'}).props('shown')).to.have.members([CardName.ANTS, CardName.HELION]);
+    expect(wrapper.find('.judge-pending-choice').findAllComponents({name: 'Card'})).has.length(1);
+  });
+
   it('shows no pending choice when nothing is waiting', () => {
     const wrapper = mountPanel();
 

@@ -15,8 +15,8 @@ function cardInput(title: string, ...names: Array<CardName>): SelectCardModel {
   });
 }
 
-function mountInput(input: PlayerInputModel) {
-  return mount(JudgePendingChoice, {...globalConfig, props: {input}});
+function mountInput(input: PlayerInputModel, shown: Array<CardName> = []) {
+  return mount(JudgePendingChoice, {...globalConfig, props: {input, shown}});
 }
 
 describe('JudgePendingChoice', () => {
@@ -39,63 +39,51 @@ describe('JudgePendingChoice', () => {
     }
   });
 
-  it('shows the cards inside a nested setup choice', () => {
-    const wrapper = mountInput(asComplete<PlayerInputModel>({
-      type: 'initialCards',
-      title: 'Select initial cards',
-      options: [
-        cardInput('Select corporation', CardName.ECOLINE),
-        cardInput('Select project cards', CardName.ANTS),
-      ],
-    }));
-
-    expect(wrapper.text()).to.include('Select initial cards');
-    expect(wrapper.text()).to.include('Select corporation');
-    expect(wrapper.text()).to.include('Select project cards');
-    expect(wrapper.text()).to.include(CardName.ANTS);
-    expect(wrapper.find('.card-ecoline').exists()).is.true;
-    expect(wrapper.find('button').exists()).is.false;
-  });
-
-  it('lists the title of every option of an or input and the cards of those that have them', () => {
+  it('shows the title of the choice and the cards of every option, but not the options themselves', () => {
     const wrapper = mountInput(asComplete<PlayerInputModel>({
       type: 'or',
-      title: 'Take action',
+      title: 'Take your first action',
       options: [
-        cardInput('Play a project card', CardName.ANTS),
+        cardInput('Play project card', CardName.ANTS),
         {type: 'option', title: 'Pass for this generation'},
-        {type: 'option', title: 'Do nothing'},
+        asComplete<PlayerInputModel>({type: 'and', title: 'Choose both', options: [cardInput('First pick', CardName.BIRDS)]}),
       ],
     }));
 
-    expect(wrapper.text()).to.include('Take action');
-    expect(wrapper.text()).to.include('Play a project card');
-    expect(wrapper.text()).to.include('Pass for this generation');
-    expect(wrapper.text()).to.include('Do nothing');
-    expect(wrapper.findAllComponents({name: 'Card'})).has.length(1);
-  });
-
-  it('shows every part of an and input', () => {
-    const wrapper = mountInput(asComplete<PlayerInputModel>({
-      type: 'and',
-      title: 'Choose both',
-      options: [
-        cardInput('First pick', CardName.ANTS),
-        cardInput('Second pick', CardName.BIRDS),
-      ],
-    }));
-
-    expect(wrapper.text()).to.include('Choose both');
-    expect(wrapper.text()).to.include('First pick');
-    expect(wrapper.text()).to.include('Second pick');
+    expect(wrapper.find('.judge-pending-choice-title').text()).eq('Take your first action');
+    expect(wrapper.text()).to.not.include('Play project card');
+    expect(wrapper.text()).to.not.include('Pass for this generation');
+    expect(wrapper.text()).to.not.include('First pick');
     expect(wrapper.findAllComponents({name: 'Card'})).has.length(2);
   });
 
-  it('shows the cards of a projectCard input', () => {
+  it('leaves out the cards the judge already sees, and the standard projects', () => {
     const wrapper = mountInput(asComplete<PlayerInputModel>({
-      type: 'projectCard',
-      title: 'Play project card',
-      cards: [{name: CardName.ANTS}],
+      type: 'or',
+      title: 'Take your first action',
+      options: [
+        cardInput('Play project card', CardName.ANTS),
+        cardInput('Standard projects', CardName.POWER_PLANT_STANDARD_PROJECT, CardName.ASTEROID_STANDARD_PROJECT),
+        cardInput('Perform an action from a played card', CardName.BIRDS),
+      ],
+    }), [CardName.ANTS, CardName.BIRDS]);
+
+    expect(wrapper.text()).to.include('Take your first action');
+    expect(wrapper.findAllComponents({name: 'Card'})).has.length(0);
+    expect(wrapper.find('.judge-pending-choice-cards').exists()).is.false;
+  });
+
+  it('shows a draft hand, which the judge sees nowhere else', () => {
+    const wrapper = mountInput(cardInput('Select a card to keep and pass the rest', CardName.ANTS, CardName.BIRDS, CardName.COMET), [CardName.ECOLINE]);
+
+    expect(wrapper.findAllComponents({name: 'Card'})).has.length(3);
+  });
+
+  it('shows a card once when several options offer it', () => {
+    const wrapper = mountInput(asComplete<PlayerInputModel>({
+      type: 'or',
+      title: 'Take action',
+      options: [cardInput('First', CardName.ANTS), cardInput('Second', CardName.ANTS)],
     }));
 
     expect(wrapper.findAllComponents({name: 'Card'})).has.length(1);
