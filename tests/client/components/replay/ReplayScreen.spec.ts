@@ -11,6 +11,8 @@ import {fakeGameModel, fakeGameOptionsModel, fakePlayerViewModel, fakePublicPlay
 import {ReplayMove, ReplayMovesModel, ReplayViewModel} from '@/common/replay/ReplayModel';
 import {PlayerId, SpectatorId} from '@/common/Types';
 import {PlayerViewModel, PublicPlayerModel} from '@/common/models/PlayerModel';
+import {PendingChoiceModel} from '@/common/models/PendingChoiceModel';
+import JudgePendingChoice from '@/client/components/judge/JudgePendingChoice.vue';
 import RewindControls from '@/client/components/replay/RewindControls.vue';
 import RewindVoteBanner from '@/client/components/replay/RewindVoteBanner.vue';
 import WaitingFor from '@/client/components/WaitingFor.vue';
@@ -49,6 +51,8 @@ describe('ReplayScreen', () => {
   let voteAnswer: () => Promise<unknown>;
   /** The players of the views it is asked about, when a test needs more than the one. */
   let pastPlayers: (() => Array<PublicPlayerModel>) | undefined;
+  /** What the player of a player view was choosing among. */
+  let pastChoice: PendingChoiceModel | undefined;
   /** Holds the answer to a moves request back until the returned promise resolves. */
   let holdMoves: (() => Promise<void>) | undefined;
 
@@ -66,6 +70,7 @@ describe('ReplayScreen', () => {
     votes = [];
     voteAnswer = () => respond({rewindCount: 0, vote: undefined});
     pastPlayers = undefined;
+    pastChoice = undefined;
     holdMoves = undefined;
     movesAnswer = {status: 'available', ...finishedGame, moves: [
       {saveId: 10, messages: []},
@@ -93,7 +98,7 @@ describe('ReplayScreen', () => {
       const view = viewAs === 'all' ? fakeSpectatorModel() : playedView();
       view.players = pastPlayers?.() ?? [fakePublicPlayerModel({color: 'blue', name: playerNames[viewAs] ?? 'blue'})];
       await holdView?.(saveId);
-      const answer: ReplayViewModel = {saveId, viewAs, view, privates: []};
+      const answer: ReplayViewModel = {saveId, viewAs, view, privates: [], pendingChoice: viewAs === 'all' ? undefined : pastChoice};
       return respond(answer);
     };
   });
@@ -173,6 +178,24 @@ describe('ReplayScreen', () => {
     expect(home.props('replay')).is.true;
     expect(wrapper.findComponent(SpectatorHome).exists()).is.false;
     expect(wrapper.findComponent(ReplayHands).exists()).is.false;
+  });
+
+  it('shows what the player viewed as was choosing among at a past move', async () => {
+    pastChoice = {title: 'Select card(s) to buy', cards: [{name: CardName.COMET}, {name: CardName.ANTS}]};
+    const wrapper = mountScreen();
+    await flushPromises();
+    const choice = () => wrapper.findComponent(JudgePendingChoice);
+    expect(choice().exists()).is.false;
+
+    wrapper.findComponent(ReplayPanel).vm.$emit('update:viewAs', 'blue');
+    await flushPromises();
+    expect(wrapper.findComponent(PlayerHome).props('playerView').thisPlayer.tableau.map((c: {name: CardName}) => c.name)).to.deep.equal([CardName.ECOLINE]);
+    expect(choice().props('choice')).to.deep.equal(pastChoice);
+    expect(choice().props('shown')).to.deep.equal([CardName.ECOLINE]);
+
+    wrapper.findComponent(ReplayPanel).vm.$emit('update:viewAs', 'all');
+    await flushPromises();
+    expect(choice().exists()).is.false;
   });
 
   it('selecting a move loads its view', async () => {

@@ -25,6 +25,9 @@
         <SpectatorHome v-if="spectatorView !== undefined" key="past-all" :spectator="spectatorView" :replay="true"/>
         <PlayerHome v-else-if="playerView !== undefined" key="past" :playerView="playerView" :replay="true"/>
         <ReplayHands v-if="spectatorView !== undefined" :participantId="participantId" :privates="replayView.privates" :players="spectatorView.players"/>
+        <div v-else-if="viewedChoice !== undefined" class="replay-hands">
+          <JudgePendingChoice :choice="viewedChoice.choice" :shown="viewedChoice.shown" headingClass="replay-hands-section"/>
+        </div>
       </template>
       <PlayerHome v-else-if="liveView !== undefined" key="live" :playerView="liveView"/>
     </template>
@@ -54,6 +57,9 @@
       <SpectatorHome v-if="spectatorView !== undefined" :spectator="spectatorView" :replay="true"/>
       <PlayerHome v-else-if="playerView !== undefined" :playerView="playerView" :replay="true"/>
       <ReplayHands v-if="spectatorView !== undefined" :participantId="participantId" :privates="replayView.privates" :players="spectatorView.players"/>
+      <div v-else-if="viewedChoice !== undefined" class="replay-hands">
+        <JudgePendingChoice :choice="viewedChoice.choice" :shown="viewedChoice.shown" headingClass="replay-hands-section"/>
+      </div>
     </template>
     <!-- The panel, which shows the refusal otherwise, is gone while the moves load again, and stays gone if that fails. -->
     <div v-if="refusal !== undefined && panelView === undefined" class="replay-message">
@@ -96,6 +102,7 @@
 <script lang="ts">
 import {defineComponent} from 'vue';
 import PlayerHome from '@/client/components/PlayerHome.vue';
+import JudgePendingChoice from '@/client/components/judge/JudgePendingChoice.vue';
 import SpectatorHome from '@/client/components/SpectatorHome.vue';
 import ReplayHands from '@/client/components/replay/ReplayHands.vue';
 import ReplayPanel from '@/client/components/replay/ReplayPanel.vue';
@@ -103,8 +110,11 @@ import RewindVoteBanner from '@/client/components/replay/RewindVoteBanner.vue';
 import {vueRoot} from '@/client/components/vueRoot';
 import {setTranslationContext} from '@/client/directives/i18n';
 import {fetchReplayMoves, fetchReplayView, postRewind, postVote, ReplayResponseError, translateRefusal} from '@/client/utils/fetchReplay';
+import {shownCardNames} from '@/client/utils/unseenPendingCards';
 import {paths} from '@/common/app/paths';
+import {CardName} from '@/common/cards/CardName';
 import {Color} from '@/common/Color';
+import {PendingChoiceModel} from '@/common/models/PendingChoiceModel';
 import {PlayerViewModel, PublicPlayerModel, ViewModel} from '@/common/models/PlayerModel';
 import {SpectatorModel} from '@/common/models/SpectatorModel';
 import {ReplayMove, ReplayMovesModel, ReplayViewAs, ReplayViewModel, RewindCards} from '@/common/replay/ReplayModel';
@@ -172,7 +182,7 @@ type DataModel = {
 // selected, then that moment shows, read-only, until the player goes back to the live game.
 export default defineComponent({
   name: 'ReplayScreen',
-  components: {PlayerHome, ReplayHands, ReplayPanel, RewindVoteBanner, SpectatorHome},
+  components: {JudgePendingChoice, PlayerHome, ReplayHands, ReplayPanel, RewindVoteBanner, SpectatorHome},
   props: {
     participantId: {
       type: String as () => ParticipantId,
@@ -242,6 +252,15 @@ export default defineComponent({
     },
     playerView(): PlayerViewModel | undefined {
       return this.replayView !== undefined && this.replayView.viewAs !== 'all' ? this.replayView.view as PlayerViewModel : undefined;
+    },
+    /** What the player shown on their own screen was choosing among at the move, and what of it the screen already shows. */
+    viewedChoice(): {choice: PendingChoiceModel, shown: Array<CardName>} | undefined {
+      const view = this.playerView;
+      const choice = this.replayView?.pendingChoice;
+      if (view === undefined || choice === undefined) {
+        return undefined;
+      }
+      return {choice, shown: shownCardNames(view, view.thisPlayer.tableau)};
     },
     /** What the panel names players and generations from. It is hidden until there is something to show. */
     panelView(): ViewModel | undefined {

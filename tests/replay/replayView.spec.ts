@@ -68,6 +68,26 @@ describe('buildReplayView', () => {
     expect(all.privates.map((p) => p.waitingFor)).deep.eq([undefined, undefined]);
   });
 
+  it('carries the cards a player chooses from, but not the prompt, as in the research phase', () => {
+    // A research phase save comes back with each player choosing which drafted cards to buy, which only the prompt holds.
+    [game, player, player2] = testGame(2, {draftVariant: true});
+    [player, player2].forEach((p) => p.playedCards.push(new BeginnerCorporation()));
+    player.draftedCards = [new Ants(), new Algae()];
+    player2.draftedCards = [new Tardigrades()];
+    const research = loadSandboxGame({...game.serialize(), phase: Phase.RESEARCH});
+    const names = (choice: {cards: ReadonlyArray<{name: CardName}>} | undefined) => choice?.cards.map((c) => c.name);
+
+    const all = buildReplayView(research, game.spectatorId, 3, 'all');
+    const choiceOf = (color: string) => all.privates.find((p) => p.color === color)!;
+    expect(names(choiceOf(player.color).pendingChoice)).deep.eq([CardName.ANTS, CardName.ALGAE]);
+    expect(names(choiceOf(player2.color).pendingChoice)).deep.eq([CardName.TARDIGRADES]);
+    expect(all.privates.map((p) => p.waitingFor)).deep.eq([undefined, undefined]);
+
+    const one = buildReplayView(research, game.spectatorId, 3, player.color);
+    expect(names(one.pendingChoice)).deep.eq([CardName.ANTS, CardName.ALGAE]);
+    expect((one.view as PlayerViewModel).waitingFor).is.undefined;
+  });
+
   it('never hands out a player id, not even after the game ended', () => {
     const ended = loadSandboxGame({...save, phase: Phase.END});
     const ids = [player.id, player2.id];

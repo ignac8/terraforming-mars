@@ -65,5 +65,6 @@
   "The rewind did not happen.": "Gra nie została cofnięta.",
   "A finished game can no longer be rewound by a vote.": "Zakończonej gry nie można już cofnąć głosowaniem.",
   "Now": "Teraz",
-  "undone": "cofnięty"
+  "undone": "cofnięty",
+  "Pending choice": "Oczekujący wybór"
 }

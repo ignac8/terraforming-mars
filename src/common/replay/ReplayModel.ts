@@ -1,5 +1,6 @@
 import {Color} from '../Color';
 import {LogMessage} from '../logs/LogMessage';
+import {PendingChoiceModel} from '../models/PendingChoiceModel';
 import {PlayerViewModel, PrivatePlayerFields} from '../models/PlayerModel';
 import {SpectatorModel} from '../models/SpectatorModel';
 
@@ -34,7 +35,8 @@ export type ReplayMovesModel =
   | {status: 'not-finished'}
   | {status: 'expired'};
 
-export type ReplayPrivates = PrivatePlayerFields & {color: Color};
+/** `pendingChoice`: what the player was choosing among at the move, whose prompt is never sent. */
+export type ReplayPrivates = PrivatePlayerFields & {color: Color; pendingChoice?: PendingChoiceModel};
 
 export type ReplayViewModel = {
   saveId: number;
@@ -42,4 +44,6 @@ export type ReplayViewModel = {
   view: PlayerViewModel | SpectatorModel;
   /** Every player's private cards when `viewAs` is `'all'`, otherwise empty. */
   privates: Array<ReplayPrivates>;
+  /** What the player viewed as was choosing among at the move. Only when `viewAs` is a player. */
+  pendingChoice?: PendingChoiceModel;
 };
