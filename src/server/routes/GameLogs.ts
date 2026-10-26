@@ -13,7 +13,8 @@ export class GameLogs {
     let foundStart = generation === 1;
     const newMessages = [];
     for (const message of messages) {
-      if (message.type === LogMessageType.NEW_GENERATION) {
+      // Older saves can have holes in their logs.
+      if (message?.type === LogMessageType.NEW_GENERATION) {
         const value = Number(message.data[0]?.value);
         if (value === generation) {
           foundStart = true;
@@ -56,7 +57,7 @@ export class GameLogs {
       throw new Error('Game is not over');
     }
 
-    return visibleLog(game.gameLog, game.rewinds).map((message) => Log.applyData(message, (datum: LogMessageData) => {
+    return visibleLog(game.gameLog, game.rewinds).filter((message) => message !== undefined && message !== null).map((message) => Log.applyData(message, (datum: LogMessageData) => {
       if (datum.type === undefined || datum.value === undefined) {
         return '';
       }

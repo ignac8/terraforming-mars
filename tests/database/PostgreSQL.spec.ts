@@ -147,6 +147,22 @@ describe('PostgreSQL', () => {
     expect(game.lastSaveId).eq(2);
   });
 
+  it('writes overlapping saves of one game one after the other', async () => {
+    await Promise.all([db.saveGame(game), db.saveGame(game)]);
+
+    expect(pool.statements).deep.eq([
+      {connection: 'conn1', sql: 'BEGIN'},
+      {connection: 'conn1', sql: 'INSERT INTO games'},
+      {connection: 'conn1', sql: 'INSERT INTO game'},
+      {connection: 'conn1', sql: 'INSERT INTO participants'},
+      {connection: 'conn1', sql: 'COMMIT'},
+      {connection: 'conn2', sql: 'BEGIN'},
+      {connection: 'conn2', sql: 'INSERT INTO games'},
+      {connection: 'conn2', sql: 'INSERT INTO game'},
+      {connection: 'conn2', sql: 'COMMIT'},
+    ]);
+  });
+
   it('rolls back on the same connection when an insert fails', async () => {
     pool.failing = ['INSERT INTO game (game_id, log'];
 

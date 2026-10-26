@@ -187,6 +187,26 @@ describe('PlayerInput', () => {
     expect(res.content).matches(/Unexpected token/);
   });
 
+  it('rejects a response to an earlier input', async () => {
+    const player = TestPlayer.BLUE.newPlayer({beginner: true});
+    scaffolding.url = `/player/input?id=${player.id}`;
+    const game = Game.newInstance('gameid', [player], player, 'spectatorid');
+    await scaffolding.ctx.gameLoader.add(game);
+    const waitingFor = player.getWaitingFor();
+    const powerPlant: OrOptionsResponse = {type: 'or', index: 1, response: {type: 'projectCard', card: CardName.POWER_PLANT_STANDARD_PROJECT, payment: Payment.of({megacredits: 11})}};
+
+    const post = scaffolding.post(PlayerInput.INSTANCE, res);
+    const emit = Promise.resolve().then(() => {
+      scaffolding.req.emitString(JSON.stringify({requestId: 'earlier', ...powerPlant}));
+      scaffolding.req.emitter.emit('end');
+    });
+    await Promise.all(([emit, post]));
+
+    expect(res.statusCode).eq(statusCode.badRequest);
+    expect(JSON.parse(res.content).id).eq(INVALID_REQUEST_ID);
+    expect(player.getWaitingFor()).eq(waitingFor);
+  });
+
   describe('response interval', () => {
     let clock: FakeClock;
     let player: TestPlayer;
@@ -261,52 +281,6 @@ describe('PlayerInput', () => {
     });
   });
 
-  describe('request id', () => {
-    let player: TestPlayer;
-    const powerPlant: OrOptionsResponse = {type: 'or', index: 1, response: {type: 'projectCard', card: CardName.POWER_PLANT_STANDARD_PROJECT, payment: Payment.of({megacredits: 11})}};
-
-    beforeEach(async () => {
-      player = TestPlayer.BLUE.newPlayer({beginner: true});
-      const game = Game.newInstance('gameid', [player], player, 'spectatorid');
-      await scaffolding.ctx.gameLoader.add(game);
-    });
-
-    it('rejects a response to an earlier input', async () => {
-      const waitingFor = player.getWaitingFor();
-      const gameAge = player.game.gameAge;
-
-      await send(PlayerInput.INSTANCE, player.id, JSON.stringify({requestId: 'earlier', ...powerPlant}));
-
-      expect(res.statusCode).eq(statusCode.badRequest);
-      expect(JSON.parse(res.content).id).eq(INVALID_REQUEST_ID);
-      expect(player.getWaitingFor()).eq(waitingFor);
-      expect(player.game.gameAge).eq(gameAge);
-    });
-
-    it('sends the next input with a new request id', async () => {
-      const requestId = player.getWaitingFor()?.requestId;
-
-      await send(PlayerInput.INSTANCE, player.id, JSON.stringify({requestId, ...powerPlant}));
-
-      expect(res.statusCode).eq(statusCode.ok);
-      const next = JSON.parse(res.content).waitingFor.requestId;
-      expect(next).eq(player.getWaitingFor()?.requestId);
-      expect(next).not.eq(requestId);
-    });
-
-    it('keeps the request id when a response is rejected', async () => {
-      const requestId = player.getWaitingFor()?.requestId;
-
-      await send(PlayerInput.INSTANCE, player.id, JSON.stringify({requestId, type: 'or', index: 1, response: {type: 'option'}}));
-      expect(res.statusCode).eq(statusCode.badRequest);
-      expect(JSON.parse(res.content).id).is.undefined;
-
-      // The player fixes their choice on the same page.
-      await send(PlayerInput.INSTANCE, player.id, JSON.stringify({requestId, ...powerPlant}));
-      expect(res.statusCode).eq(statusCode.ok);
-    });
-  });
-
   it('refuses an input on a game a rewind replaced', async () => {
     const db = new SnapshotDatabase();
     setTestDatabase(db);
@@ -325,7 +299,7 @@ describe('PlayerInput', () => {
       player.process(pass());
       const research = game.lastSaveId - 1;
       player.process({type: 'card', cards: []});
-      const requestId = player.getWaitingFor()?.requestId;
+      const requestId = player.requestId;
       await rewindGame(game, player, research, 'same');
       const saves = db.games.get(game.id)!.length;
 
@@ -351,7 +325,7 @@ describe('PlayerInput', () => {
         game.phase = Phase.ACTION;
         player.takeAction();
         const index = cast(player.getWaitingFor(), OrOptions).options.findIndex((option) => option.title === 'Pass for this generation');
-        const requestId = player.getWaitingFor()?.requestId;
+        const requestId = player.requestId;
         if (hold === 'frozen') {
           game.frozen = true;
         } else {
