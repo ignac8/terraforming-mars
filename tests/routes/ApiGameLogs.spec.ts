@@ -94,6 +94,21 @@ describe('ApiGameLogs', () => {
     expect(messages[messages.length - 1].data[0].value).eq('1');
   });
 
+  it('pulls a generation from a log with holes', async () => {
+    const [game, player] = testGame(1);
+    await scaffolding.ctx.gameLoader.add(game);
+    game.gameLog.length = 0;
+    game.log('Generation ${0}', (b) => b.forNewGeneration().number(1));
+    game.gameLog.length = 2;
+    game.log('After the hole');
+
+    scaffolding.url = '/api/game/logs?id=' + player.id + '&generation=1';
+    await scaffolding.get(ApiGameLogs.INSTANCE, res);
+
+    expect(res.statusCode).eq(statusCode.ok);
+    expect(JSON.parse(res.content).map((m: {message: string}) => m.message)).deep.eq(['Generation ${0}', 'After the hole']);
+  });
+
   it('pulls logs for missing generation', async () => {
     const [game, player] = testGame(1);
     scaffolding.url = '/api/game/logs?id=' + player.id + '&generation=2';

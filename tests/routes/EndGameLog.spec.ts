@@ -55,6 +55,21 @@ describe('EndGameLog', () => {
     expect(res.content).to.match(/^First player this generation is player1/);
   });
 
+  it('pulls logs with holes at game end', async () => {
+    const [game, player] = testGame(2);
+    scaffolding.url = '/end_game_log?id=' + player.id;
+    game.phase = Phase.END;
+    await scaffolding.ctx.gameLoader.add(game);
+    game.gameLog.length = 0;
+    game.log('Before the hole');
+    game.gameLog.length = 2;
+    game.log('After the hole');
+
+    await scaffolding.get(EndGameLog.INSTANCE, res);
+
+    expect(res.content).eq('Before the hole\nAfter the hole');
+  });
+
   it('pulls logs for spectator', async () => {
     const [game] = testGame(2);
     game.phase = Phase.END;
