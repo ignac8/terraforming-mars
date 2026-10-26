@@ -8,7 +8,7 @@ import JudgePlayerPanel from '@/client/components/judge/JudgePlayerPanel.vue';
 import {CardName} from '@/common/cards/CardName';
 import {Color} from '@/common/Color';
 import {JudgePlayerModel} from '@/common/models/JudgeModel';
-import {SelectCardModel} from '@/common/models/PlayerInputModel';
+import {PlayerInputModel, SelectCardModel} from '@/common/models/PlayerInputModel';
 import {JudgeId} from '@/common/Types';
 import {playerColorClass} from '@/common/utils/utils';
 
@@ -149,6 +149,18 @@ describe('JudgePlayerPanel', () => {
 
     expect(wrapper.findComponent({name: 'JudgePendingChoice'}).props('shown')).to.have.members([CardName.ANTS, CardName.HELION]);
     expect(wrapper.find('.judge-pending-choice').findAllComponents({name: 'Card'})).has.length(1);
+  });
+
+  it('shows no pending choice when it holds no card the judge cannot already see', () => {
+    for (const waitingFor of [
+      asComplete<SelectCardModel>({type: 'card', title: 'Take your first action', cards: [{name: CardName.ANTS}]}),
+      asComplete<PlayerInputModel>({type: 'option', title: 'Pass for this generation'}),
+    ]) {
+      const wrapper = mountPanel({...hand, waitingFor});
+
+      expect(wrapper.findComponent({name: 'JudgePendingChoice'}).exists(), String(waitingFor.title)).is.false;
+      expect(wrapper.text()).to.not.include('Pending choice');
+    }
   });
 
   it('shows no pending choice when nothing is waiting', () => {
