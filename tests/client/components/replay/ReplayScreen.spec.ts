@@ -12,6 +12,8 @@ import {ReplayMove, ReplayMovesModel, ReplayViewModel} from '@/common/replay/Rep
 import {JudgeId, PlayerId, SpectatorId} from '@/common/Types';
 import {PlayerViewModel, PublicPlayerModel} from '@/common/models/PlayerModel';
 import {JudgeModel, JudgePlayerModel} from '@/common/models/JudgeModel';
+import {PendingChoiceModel} from '@/common/models/PendingChoiceModel';
+import JudgePendingChoice from '@/client/components/judge/JudgePendingChoice.vue';
 import JudgeHome from '@/client/components/judge/JudgeHome.vue';
 import RewindControls from '@/client/components/replay/RewindControls.vue';
 import RewindVoteBanner from '@/client/components/replay/RewindVoteBanner.vue';
@@ -54,6 +56,8 @@ describe('ReplayScreen', () => {
   let judgeAnswer: () => Promise<unknown>;
   /** The players of the views it is asked about, when a test needs more than the one. */
   let pastPlayers: (() => Array<PublicPlayerModel>) | undefined;
+  /** What the player of a player view was choosing among. */
+  let pastChoice: PendingChoiceModel | undefined;
   /** Holds the answer to a moves request back until the returned promise resolves. */
   let holdMoves: (() => Promise<void>) | undefined;
 
@@ -73,6 +77,7 @@ describe('ReplayScreen', () => {
     judgeRequests = [];
     judgeAnswer = () => respond({});
     pastPlayers = undefined;
+    pastChoice = undefined;
     holdMoves = undefined;
     movesAnswer = {status: 'available', ...finishedGame, moves: [
       {saveId: 10, messages: []},
@@ -104,7 +109,7 @@ describe('ReplayScreen', () => {
       const view = viewAs === 'all' ? fakeSpectatorModel() : playedView();
       view.players = pastPlayers?.() ?? [fakePublicPlayerModel({color: 'blue', name: playerNames[viewAs] ?? 'blue'})];
       await holdView?.(saveId);
-      const answer: ReplayViewModel = {saveId, viewAs, view, privates: []};
+      const answer: ReplayViewModel = {saveId, viewAs, view, privates: [], pendingChoice: viewAs === 'all' ? undefined : pastChoice};
       return respond(answer);
     };
   });
@@ -1180,6 +1185,35 @@ describe('ReplayScreen', () => {
       await flushPromises();
       expect(wrapper.findComponent(JudgeHome).exists()).is.true;
       expect(home().exists()).is.false;
+    });
+
+    it('shows what the player viewed as was choosing among at a past move, and at the live game', async () => {
+      pastChoice = {title: 'Select card(s) to buy', cards: [{name: CardName.COMET}, {name: CardName.ANTS}]};
+      const offer = {type: 'card', title: 'Select card(s) to buy', buttonLabel: 'Buy', cards: [{name: CardName.BIRDS}, {name: CardName.ANTS}], min: 0, max: 2} as const;
+      const red = {
+        color: 'red', cardsInHand: [{name: CardName.ANTS}], ceoCardsInHand: [], dealtCorporationCards: [], dealtPreludeCards: [],
+        dealtCeoCards: [], dealtProjectCards: [], draftedCards: [], pickedCorporationCard: [], preludeCardsInHand: [], waitingFor: offer,
+      } as unknown as JudgePlayerModel;
+      const wrapper = mountJudge({...judgeModel(), privates: [red]});
+      await flushPromises();
+      const choice = () => wrapper.findComponent(JudgePendingChoice);
+
+      panel(wrapper).vm.$emit('update:viewAs', 'red');
+      await flushPromises();
+      expect(choice().props('choice')).to.deep.equal({title: 'Select card(s) to buy', cards: [{name: CardName.BIRDS}, {name: CardName.ANTS}]});
+      expect(choice().props('shown')).to.include(CardName.ANTS);
+
+      expand(wrapper);
+      await flushPromises();
+      panel(wrapper).vm.$emit('select', 1);
+      await flushPromises();
+      expect(wrapper.findComponent(PlayerHome).props('playerView').thisPlayer.tableau.map((c: {name: CardName}) => c.name)).to.deep.equal([CardName.ECOLINE]);
+      expect(choice().props('choice')).to.deep.equal(pastChoice);
+      expect(choice().props('shown')).to.deep.equal([CardName.ECOLINE]);
+
+      panel(wrapper).vm.$emit('update:viewAs', 'all');
+      await flushPromises();
+      expect(choice().exists()).is.false;
     });
 
     it('rewinds to the selected move with the cards and clocks chosen, then reloads the page', async () => {

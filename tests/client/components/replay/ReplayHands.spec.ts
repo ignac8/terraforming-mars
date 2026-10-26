@@ -55,6 +55,23 @@ describe('ReplayHands', () => {
     expect(wrapper.findAll('.replay-hands-section')).has.length(0);
   });
 
+  it('shows what each player was choosing among, past what their block already shows', () => {
+    const offer = {title: 'Select card(s) to buy', cards: [{name: CardName.COMET}, {name: CardName.ANTS}]};
+    const wrapper = mount(ReplayHands, {
+      ...globalConfig,
+      props: {
+        participantId: 'p-viewer',
+        players: [blue, red],
+        privates: [{...privatesOf('blue', [CardName.ANTS]), pendingChoice: offer}, privatesOf('red', [CardName.ALGAE])],
+      },
+    });
+    const players = wrapper.findAll('.replay-hands-player');
+    const choice = players[0].find('.judge-pending-choice');
+    expect(choice.find('.judge-pending-choice-title').text()).eq('Select card(s) to buy');
+    expect(choice.findAllComponents(Card).map((card: {props(): any}) => card.props().card.name)).to.deep.equal([CardName.COMET]);
+    expect(players[1].find('.judge-pending-choice').exists()).is.false;
+  });
+
   describe('dealt cards', () => {
     const dealt = {
       dealtCorporationCards: [{name: CardName.ECOLINE}],

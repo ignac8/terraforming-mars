@@ -158,7 +158,7 @@ describe('JudgePlayerPanel', () => {
     ]) {
       const wrapper = mountPanel({...hand, waitingFor});
 
-      expect(wrapper.findComponent({name: 'JudgePendingChoice'}).exists(), String(waitingFor.title)).is.false;
+      expect(wrapper.find('.judge-pending-choice').exists(), String(waitingFor.title)).is.false;
       expect(wrapper.text()).to.not.include('Pending choice');
     }
   });
@@ -166,7 +166,8 @@ describe('JudgePlayerPanel', () => {
   it('shows no pending choice when nothing is waiting', () => {
     const wrapper = mountPanel();
 
-    expect(wrapper.findComponent({name: 'JudgePendingChoice'}).exists()).is.false;
+    expect(wrapper.find('.judge-pending-choice').exists()).is.false;
+    expect(wrapper.text()).to.not.include('Pending choice');
   });
 
   describe('hiding', () => {

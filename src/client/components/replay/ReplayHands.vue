@@ -12,6 +12,7 @@
             <Card :card="card"/>
           </div>
         </div>
+        <JudgePendingChoice :choice="choiceOf(player)" :shown="shownOf(player)" headingClass="replay-hands-section"/>
       </template>
     </div>
   </div>
@@ -28,12 +29,16 @@ import {ReplayPrivates} from '@/common/replay/ReplayModel';
 import {ParticipantId} from '@/common/Types';
 import {isPanelHidden, setPanelHidden} from '@/client/utils/panelHiddenStorage';
 import {privateCardSections, PrivateCardSection} from '@/client/utils/privateCardSections';
+import {shownCardNames} from '@/client/utils/unseenPendingCards';
+import JudgePendingChoice from '@/client/components/judge/JudgePendingChoice.vue';
+import {CardName} from '@/common/cards/CardName';
+import {PendingChoiceModel} from '@/common/models/PendingChoiceModel';
 
-// Everything each player holds that the table can't see. Read-only.
+// Everything each player holds that the table can't see, and the cards they were choosing among. Read-only.
 // A player's block can be hidden down to the name row, and the screen remembers that per participant link.
 export default defineComponent({
   name: 'ReplayHands',
-  components: {AppButton, Card, DynamicTitle},
+  components: {AppButton, Card, DynamicTitle, JudgePendingChoice},
   props: {
     participantId: {
       type: String as () => ParticipantId,
@@ -71,6 +76,13 @@ export default defineComponent({
       }
       // The tableau is the player's at the moment shown, so the dealt cards go once something is in play.
       return privateCardSections(p, player.tableau.length);
+    },
+    choiceOf(player: PublicPlayerModel): PendingChoiceModel | undefined {
+      return this.privatesByColor.get(player.color)?.pendingChoice;
+    },
+    shownOf(player: PublicPlayerModel): Array<CardName> {
+      const p = this.privatesByColor.get(player.color);
+      return p === undefined ? [] : shownCardNames(p, player.tableau);
     },
   },
   computed: {

@@ -28,9 +28,15 @@
         <SpectatorHome v-if="spectatorView !== undefined" key="past-all" :spectator="spectatorView" :replay="true"/>
         <PlayerHome v-else-if="playerView !== undefined" key="past" :playerView="playerView" :replay="true"/>
         <ReplayHands v-if="spectatorView !== undefined" :participantId="participantId" :privates="replayView.privates" :players="spectatorView.players"/>
+        <div v-else-if="viewedChoice !== undefined" class="replay-hands">
+          <JudgePendingChoice :choice="viewedChoice.choice" :shown="viewedChoice.shown" headingClass="replay-hands-section"/>
+        </div>
       </template>
       <template v-else-if="liveJudgeAs !== undefined">
         <PlayerHome key="live-judge-as" :playerView="liveJudgeAs" :replay="true" :log="liveJudge" :showUndone="showUndone"/>
+        <div v-if="viewedChoice !== undefined" class="replay-hands">
+          <JudgePendingChoice :choice="viewedChoice.choice" :shown="viewedChoice.shown" headingClass="replay-hands-section"/>
+        </div>
         <!-- JudgeHome polls the judge page, and it is not there. -->
         <WaitingFor v-show="false" v-if="liveJudge.game.phase !== 'end'" :playerView="liveJudge" :waitingfor="undefined"/>
       </template>
@@ -63,6 +69,9 @@
       <SpectatorHome v-if="spectatorView !== undefined" :spectator="spectatorView" :replay="true"/>
       <PlayerHome v-else-if="playerView !== undefined" :playerView="playerView" :replay="true"/>
       <ReplayHands v-if="spectatorView !== undefined" :participantId="participantId" :privates="replayView.privates" :players="spectatorView.players"/>
+      <div v-else-if="viewedChoice !== undefined" class="replay-hands">
+        <JudgePendingChoice :choice="viewedChoice.choice" :shown="viewedChoice.shown" headingClass="replay-hands-section"/>
+      </div>
     </template>
     <!-- The panel, which shows the refusal otherwise, is gone while the moves load again, and stays gone if that fails. -->
     <div v-if="refusal !== undefined && panelView === undefined" class="replay-message">
@@ -113,6 +122,7 @@
 import {defineComponent} from 'vue';
 import PlayerHome from '@/client/components/PlayerHome.vue';
 import JudgeHome from '@/client/components/judge/JudgeHome.vue';
+import JudgePendingChoice from '@/client/components/judge/JudgePendingChoice.vue';
 import SpectatorHome from '@/client/components/SpectatorHome.vue';
 import WaitingFor from '@/client/components/WaitingFor.vue';
 import ReplayHands from '@/client/components/replay/ReplayHands.vue';
@@ -122,9 +132,12 @@ import {vueRoot} from '@/client/components/vueRoot';
 import {setTranslationContext} from '@/client/directives/i18n';
 import {fetchReplayMoves, fetchReplayView, judgeCredentials, postJudgeFreeze, postJudgeRewind, postRewind, postVote, ReplayResponseError, translateRefusal} from '@/client/utils/fetchReplay';
 import {passwordParam} from '@/client/utils/playerPassword';
+import {shownCardNames} from '@/client/utils/unseenPendingCards';
 import {paths} from '@/common/app/paths';
+import {CardName} from '@/common/cards/CardName';
 import {Color} from '@/common/Color';
 import {JudgeModel} from '@/common/models/JudgeModel';
+import {PendingChoiceModel, pendingChoiceOf} from '@/common/models/PendingChoiceModel';
 import {PlayerViewModel, PublicPlayerModel, ViewModel} from '@/common/models/PlayerModel';
 import {SpectatorModel} from '@/common/models/SpectatorModel';
 import {ReplayMove, ReplayMovesModel, ReplayViewAs, ReplayViewModel, RewindCards, RewindClockRow, RewindClocks} from '@/common/replay/ReplayModel';
@@ -199,7 +212,7 @@ type DataModel = {
 // it is the judge's page, which also freezes the game and may look at every hand.
 export default defineComponent({
   name: 'ReplayScreen',
-  components: {JudgeHome, PlayerHome, ReplayHands, ReplayPanel, RewindVoteBanner, SpectatorHome, WaitingFor},
+  components: {JudgeHome, JudgePendingChoice, PlayerHome, ReplayHands, ReplayPanel, RewindVoteBanner, SpectatorHome, WaitingFor},
   props: {
     participantId: {
       type: String as () => ParticipantId,
@@ -340,6 +353,20 @@ export default defineComponent({
         runId: judge.runId,
         autopass: false,
       };
+    },
+    /**
+     * What the player shown on their own screen is choosing among, and what of it the screen already shows. At a past
+     * move the replay view brings it. On the judge's live page it comes from the judge's model.
+     */
+    viewedChoice(): {choice: PendingChoiceModel, shown: Array<CardName>} | undefined {
+      const live = this.liveJudgeAs;
+      const view = live ?? this.playerView;
+      const waitingFor = live === undefined ? undefined : this.liveJudge?.privates.find((p) => p.color === live.color)?.waitingFor;
+      const choice = live === undefined ? this.replayView?.pendingChoice : waitingFor && pendingChoiceOf(waitingFor);
+      if (view === undefined || choice === undefined) {
+        return undefined;
+      }
+      return {choice, shown: shownCardNames(view, view.thisPlayer.tableau)};
     },
     /** What the panel names players and generations from. It is hidden until there is something to show. */
     panelView(): ViewModel | undefined {

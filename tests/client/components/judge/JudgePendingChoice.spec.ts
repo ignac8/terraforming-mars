@@ -5,6 +5,7 @@ import {asComplete} from '../utils/models';
 import JudgePendingChoice from '@/client/components/judge/JudgePendingChoice.vue';
 import {CardName} from '@/common/cards/CardName';
 import {LogMessageDataType} from '@/common/logs/LogMessageDataType';
+import {pendingChoiceOf} from '@/common/models/PendingChoiceModel';
 import {PlayerInputModel, SelectCardModel} from '@/common/models/PlayerInputModel';
 
 function cardInput(title: string, ...names: Array<CardName>): SelectCardModel {
@@ -15,14 +16,15 @@ function cardInput(title: string, ...names: Array<CardName>): SelectCardModel {
   });
 }
 
-function mountInput(input: PlayerInputModel, shown: Array<CardName> = []) {
-  return mount(JudgePendingChoice, {...globalConfig, props: {input, shown}});
+function mountInput(input: PlayerInputModel | undefined, shown: Array<CardName> = []) {
+  return mount(JudgePendingChoice, {...globalConfig, props: {choice: input && pendingChoiceOf(input), shown}});
 }
 
 describe('JudgePendingChoice', () => {
-  it('shows the cards of a card input', () => {
+  it('shows the cards of a card input under a heading', () => {
     const wrapper = mountInput(cardInput('Select a card', CardName.ANTS, CardName.BIRDS));
 
+    expect(wrapper.find('h3').text()).eq('Pending choice');
     expect(wrapper.text()).to.include('Select a card');
     expect(wrapper.findAllComponents({name: 'Card'})).has.length(2);
     expect(wrapper.text()).to.include(CardName.ANTS);
@@ -57,7 +59,7 @@ describe('JudgePendingChoice', () => {
     expect(wrapper.findAllComponents({name: 'Card'})).has.length(2);
   });
 
-  it('leaves out the cards the judge already sees, and the standard projects', () => {
+  it('shows nothing when every card is one the viewer already sees, or a standard project', () => {
     const wrapper = mountInput(asComplete<PlayerInputModel>({
       type: 'or',
       title: 'Take your first action',
@@ -68,12 +70,15 @@ describe('JudgePendingChoice', () => {
       ],
     }), [CardName.ANTS, CardName.BIRDS]);
 
-    expect(wrapper.text()).to.include('Take your first action');
-    expect(wrapper.findAllComponents({name: 'Card'})).has.length(0);
-    expect(wrapper.find('.judge-pending-choice-cards').exists()).is.false;
+    expect(wrapper.html()).eq('<!--v-if-->');
   });
 
-  it('shows a draft hand, which the judge sees nowhere else', () => {
+  it('shows nothing for an input with no cards, or no input at all', () => {
+    expect(mountInput(asComplete<PlayerInputModel>({type: 'option', title: 'Pass'})).html()).eq('<!--v-if-->');
+    expect(mountInput(undefined).html()).eq('<!--v-if-->');
+  });
+
+  it('shows a draft hand, which the viewer sees nowhere else', () => {
     const wrapper = mountInput(cardInput('Select a card to keep and pass the rest', CardName.ANTS, CardName.BIRDS, CardName.COMET), [CardName.ECOLINE]);
 
     expect(wrapper.findAllComponents({name: 'Card'})).has.length(3);
@@ -89,23 +94,17 @@ describe('JudgePendingChoice', () => {
     expect(wrapper.findAllComponents({name: 'Card'})).has.length(1);
   });
 
-  it('shows only the title when the input has no cards', () => {
-    const wrapper = mountInput(asComplete<PlayerInputModel>({type: 'option', title: 'Pass'}));
-
-    expect(wrapper.text()).eq('Pass');
-    expect(wrapper.findAllComponents({name: 'Card'})).has.length(0);
-  });
-
   it('renders a Message title as text', () => {
-    const wrapper = mountInput(asComplete<PlayerInputModel>({
-      type: 'option',
+    const wrapper = mountInput(asComplete<SelectCardModel>({
+      type: 'card',
       title: {
-        message: 'Select a place for ${0}',
+        message: 'Select a card for ${0}',
         data: [{type: LogMessageDataType.RAW_STRING, value: 'Greenery'}],
       },
+      cards: [{name: CardName.ANTS}],
     }));
 
-    expect(wrapper.text()).eq('Select a place for Greenery');
+    expect(wrapper.find('.judge-pending-choice-title').text()).eq('Select a card for Greenery');
   });
 
   it('renders no buttons or inputs', () => {
