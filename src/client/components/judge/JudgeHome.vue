@@ -7,7 +7,7 @@
       </div>
     </div>
 
-    <Sidebar v-trim-whitespace
+    <Sidebar
       :actingPlayer="false"
       :playerColor="judge.color"
       :generation="game.generation"
@@ -29,7 +29,7 @@
       <LogPanel :viewModel="judge" :step="game.step" @spaceClicked="onSpaceClicked"/>
     </div>
 
-    <PlayersOverview class="player_home_block player_home_block--players nofloat" :playerView="judge" v-trim-whitespace id="shortkey-playersoverview"/>
+    <PlayersOverview class="player_home_block player_home_block--players nofloat" :playerView="judge" id="shortkey-playersoverview"/>
 
     <GameBoardView
       ref="gameBoardView"

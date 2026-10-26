@@ -197,7 +197,11 @@ export default defineComponent({
     getVisibilityState(targetVar: string): boolean {
       return (this as unknown as MainAppData).componentsVisibility[targetVar] ? true : false;
     },
-    /** Resolves to whether the view was replaced. */
+    /**
+     * Fetches and shows the latest player, spectator or judge view.
+     *
+     * Resolves to false when the fetch fails.
+     */
     update(path: typeof paths.PLAYER | typeof paths.SPECTATOR | typeof paths.JUDGE): Promise<boolean> {
       const currentPathname = getLastPathSegment();
       const app = this as unknown as MainAppData;
@@ -277,13 +281,13 @@ export default defineComponent({
           return false;
         });
     },
-    updatePlayer() {
+    updatePlayer(): Promise<boolean> {
       return this.update(paths.PLAYER);
     },
-    updateSpectator() {
+    updateSpectator(): Promise<boolean> {
       return this.update(paths.SPECTATOR);
     },
-    updateJudge() {
+    updateJudge(): Promise<boolean> {
       return this.update(paths.JUDGE);
     },
   },
