@@ -13,7 +13,8 @@
         </div>
       </div>
 
-      <div v-if="privates.waitingFor !== undefined" class="player_home_block nofloat">
+      <!-- Only when it holds cards the judge sees nowhere else, like a draft hand. -->
+      <div v-if="privates.waitingFor !== undefined && hasUnseenPendingCards" class="player_home_block nofloat">
         <h3 class="judge-player-panel-section" v-i18n>Pending choice</h3>
         <JudgePendingChoice :input="privates.waitingFor" :shown="shownCards"/>
       </div>
@@ -29,6 +30,7 @@ import DynamicTitle from '@/client/components/common/DynamicTitle.vue';
 import JudgePendingChoice from '@/client/components/judge/JudgePendingChoice.vue';
 import {isPanelHidden, setPanelHidden} from '@/client/utils/panelHiddenStorage';
 import {privateCardSections, PrivateCardSection} from '@/client/utils/privateCardSections';
+import {unseenPendingCards} from '@/client/utils/unseenPendingCards';
 import {CardName} from '@/common/cards/CardName';
 import {JudgePlayerModel} from '@/common/models/JudgeModel';
 import {PublicPlayerModel} from '@/common/models/PlayerModel';
@@ -71,6 +73,10 @@ export default defineComponent({
     /** The cards above and on the table, which the pending choice leaves out. */
     shownCards(): Array<CardName> {
       return [...this.visibleSections.flatMap((section) => section.cards), ...this.player.tableau].map((card) => card.name);
+    },
+    hasUnseenPendingCards(): boolean {
+      const waitingFor = this.privates.waitingFor;
+      return waitingFor !== undefined && unseenPendingCards(waitingFor, this.shownCards).length > 0;
     },
   },
 });
