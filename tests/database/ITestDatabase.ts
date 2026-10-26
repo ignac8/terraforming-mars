@@ -28,4 +28,8 @@ export interface ITestDatabase extends IDatabase {
    * Updates completed_game with the specified time.
    */
   setCompletedTime(gameId: GameId, timestampSeconds: number): Promise<unknown>;
+  /**
+   * Whether the results stored by saveGameResults() are still there for this game.
+   */
+  hasGameResults(gameId: GameId): Promise<boolean>;
 }

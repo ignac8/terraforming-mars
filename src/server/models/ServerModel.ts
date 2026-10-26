@@ -9,7 +9,7 @@ import {Space} from '../boards/Space';
 import {IPlayer} from '../IPlayer';
 import {PlayerInput} from '../PlayerInput';
 import {PlayerInputModel} from '../../common/models/PlayerInputModel';
-import {PlayerViewModel, Protection, PublicPlayerModel} from '../../common/models/PlayerModel';
+import {PlayerViewModel, PrivatePlayerFields, Protection, PublicPlayerModel} from '../../common/models/PlayerModel';
 import {SpaceHighlight, SpaceModel} from '../../common/models/SpaceModel';
 import {TileType} from '../../common/TileType';
 import {Phase} from '../../common/Phase';
@@ -95,8 +95,10 @@ export class Server {
       tags: game.tags,
       turmoil: getTurmoilModel(game),
       undoCount: game.undoCount,
+      rewindCount: game.rewinds.length,
       venusScaleLevel: game.getVenusScaleLevel(),
       marsBot: game.automaHooks?.toModel(),
+      frozen: game.frozen,
     };
   }
 
@@ -108,7 +110,26 @@ export class Server {
     const thisPlayerIndex = players.findIndex((p) => p.color === player.color);
     const thisPlayer: PublicPlayerModel = players[thisPlayerIndex];
 
+    const privates = this.getPrivateFields(player);
     const rv: PlayerViewModel = {
+      ...privates,
+      // A frozen game takes no input.
+      waitingFor: game.frozen ? undefined : privates.waitingFor,
+      game: this.getGameModel(player.game),
+      id: player.id,
+      color: player.color,
+      runId: runId,
+      requestId: player.requestId,
+      thisPlayer: thisPlayer,
+      players: players,
+      autopass: player.autopass,
+    };
+    return rv;
+  }
+
+  /** The fields of a player's view that only that seat may see. */
+  public static getPrivateFields(player: IPlayer): PrivatePlayerFields {
+    return {
       cardsInHand: cardsToModel(player, player.cardsInHand, {showCalculatedCost: true}),
       ceoCardsInHand: cardsToModel(player, Array.from(player.ceoCardsInHand)),
       dealtCorporationCards: cardsToModel(player, player.dealtCorporationCards),
@@ -116,19 +137,10 @@ export class Server {
       dealtCeoCards: cardsToModel(player, player.dealtCeoCards),
       dealtProjectCards: cardsToModel(player, player.dealtProjectCards),
       draftedCards: cardsToModel(player, player.draftedCards, {showCalculatedCost: true}),
-      game: this.getGameModel(player.game),
-      id: player.id,
-      color: player.color,
-      runId: runId,
       pickedCorporationCard: player.pickedCorporationCard ? cardsToModel(player, [player.pickedCorporationCard]) : [],
       preludeCardsInHand: cardsToModel(player, player.preludeCardsInHand),
-      requestId: player.requestId,
-      thisPlayer: thisPlayer,
       waitingFor: this.getWaitingFor(player, player.getWaitingFor()),
-      players: players,
-      autopass: player.autopass,
     };
-    return rv;
   }
 
   public static getSpectatorModel(game: IGame): SpectatorModel {
@@ -259,7 +271,8 @@ export class Server {
       handicap: useHandicap ? player.handicap : undefined,
       heat: player.heat,
       heatProduction: player.production.heat,
-      id: game.phase === Phase.END ? player.id : undefined,
+      // A finished solo or MarsBot game can still be rewound with its player's id, so only that player sees it.
+      id: game.phase === Phase.END && (modelIsForThisPlayer || game.players.length > 1) ? player.id : undefined,
       influence: game.turmoil?.getInfluence(player) ?? 0,
       isActive: player.id === game.activePlayer.id,
       lastCardPlayed: player.lastCardPlayed,

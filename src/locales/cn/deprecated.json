@@ -44,5 +44,7 @@
     "When you raise temperature, gain 3:r:megacredits: per step raised": "每提升 1 温度，获得 3 M€",
     "Convert 6:r:heat: into temperature": "变为每 6 热资源 提高温度",
     "When you place a tile, gain 2:r:heat:": "每当你放置 1 板块，获得 2 热资源",
-    "gain 1:p:megacredits:": "增加 M€ 产能 1级"
+    "gain 1:p:megacredits:": "增加 M€ 产能 1级",
+  "Allow undo": "允许撤回",
+  "undo": "反悔"
 }

@@ -49,5 +49,6 @@
   "Pay 10:r:megacredits: to increase your :p:energy: and :p:heat: 1 step": "Pague 10 M€ para aumentar suas produções de energia e calor 1 nível",
   "When you raise temperature, gain 3:r:megacredits: per step raised": "Quando você aumenta a temperatura, ganhe 3 M€ por nível aumentado",
   "Convert 6:r:heat: into temperature": "Converta 6 de calor para aumentar a temperatura",
-  "When you place a tile, gain 2:r:heat:": "Quando você coloca um tile, ganhe 2 de calor"
+  "When you place a tile, gain 2:r:heat:": "Quando você coloca um tile, ganhe 2 de calor",
+  "Allow undo": "Permitir desfazer"
 }

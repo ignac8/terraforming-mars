@@ -112,5 +112,7 @@
   "Pay 10:r:megacredits: to increase your :p:energy: and :p:heat: 1 step": "Fizess 10 M€-et, hogy megnöveld az energia és hőtermelésed 1-1 értékkel!",
   "When you raise temperature, gain 3:r:megacredits: per step raised": "Ha emeled a hőmérsékletet, kapsz 3 M€-et növelésenként",
   "Convert 6:r:heat: into temperature": "6 hőt alakíts át hőmérsékletre!",
-  "When you place a tile, gain 2:r:heat:": "Ha lapkát helyezel le, kapsz 2 hőt"
+  "When you place a tile, gain 2:r:heat:": "Ha lapkát helyezel le, kapsz 2 hőt",
+  "Allow undo": "Visszavonás engedélyezése",
+  "undo": "visszavonás"
 }

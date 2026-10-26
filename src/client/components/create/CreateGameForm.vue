@@ -254,13 +254,10 @@
                             </template>
                                                         <input type="checkbox" v-model="undoOption" id="undo-checkbox">
                             <label for="undo-checkbox">
-                                <span v-i18n>Allow undo</span>&nbsp;<a :href="wikiUrls.allowUndo" class="tooltip" v-i18n data-tooltip="Link opens in a new tab/window" target="_blank">&#9432;</a>
+                                <span v-i18n>Player undo</span>&nbsp;<a :href="wikiUrls.allowUndo" class="tooltip" v-i18n data-tooltip="Link opens in a new tab/window" target="_blank">&#9432;</a>
                             </label>
                             <div v-if="undoOption">
-                              <span v-i18n>Undo is now in best effort support.</span>
-                              <a href="https://github.com/terraforming-mars/terraforming-mars/discussions/7647" target="_blank">&#9432;</a>
-                              <br>
-                              <span v-i18n>No effort will be spent to fix it.</span>
+                              <span v-i18n>Rewind to any earlier move. With more than one player, every other player must agree, and only while the game runs.</span>
                             </div>
 
                             <input type="checkbox" v-model="seededGame" id="seeded-checkbox">

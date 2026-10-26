@@ -291,6 +291,7 @@
           <div class="game_end_block--log game-end-column">
             <LogPanel :viewModel="participant"/>
             <a :href="downloadLogUrl" target="_blank" v-i18n>Download game log</a>
+            <div><a :href="replayUrl" class="game-end-replay-link" v-i18n>Replay</a></div>
           </div>
         </div>
       </div>
@@ -305,7 +306,10 @@ import {setDocumentTitle} from '@/client/utils/documentTitle';
 import {setFaviconStatus} from '@/client/utils/favicon';
 import {getPreferences} from '@/client/utils/PreferencesManager';
 import {paths} from '@/common/app/paths';
+import {FINISHED_GAME_VOTE_POLL_MS} from '@/common/rewind/RewindVoteModel';
+import {isPlayerId} from '@/common/Types';
 import {GameModel} from '@/common/models/GameModel';
+import {WaitingForModel} from '@/common/models/WaitingForModel';
 import {PublicPlayerModel, ViewModel} from '@/common/models/PlayerModel';
 import Board from '@/client/components/Board.vue';
 import MoonBoard from '@/client/components/moon/MoonBoard.vue';
@@ -343,6 +347,16 @@ export default defineComponent({
     },
     downloadLogUrl() {
       return `${paths.END_GAME_LOG}?id=${this.participant.id}`;
+    },
+    /**
+     * A solo game with Player undo can be rewound after it ends, from its replay, which reopens the game for every
+     * page on this screen. A finished multiplayer game is not rewound by vote.
+     */
+    pollsForRewind(): boolean {
+      return this.game.gameOptions.undoOption && this.participant.players.length === 1;
+    },
+    replayUrl(): string {
+      return `${paths.REPLAY}?id=${this.participant.id}`;
     },
     playersInPlace(): Array<PublicPlayerModel> {
       const sorted = this.participant.players.toSorted(function(a:PublicPlayerModel, b:PublicPlayerModel) {
@@ -466,9 +480,10 @@ export default defineComponent({
       return constants;
     },
   },
-  data(): {tileView: TileView} {
+  data(): {tileView: TileView, rewindPollTimer: ReturnType<typeof setTimeout> | undefined} {
     return {
       tileView: 'show',
+      rewindPollTimer: undefined,
     };
   },
   components: {
@@ -486,8 +501,33 @@ export default defineComponent({
     if (getPreferences().experimental_ui) {
       setFaviconStatus('ended');
     }
+    if (this.pollsForRewind) {
+      this.scheduleRewindPoll();
+    }
+  },
+  unmounted() {
+    clearTimeout(this.rewindPollTimer);
   },
   methods: {
+    scheduleRewindPoll(): void {
+      this.rewindPollTimer = setTimeout(() => this.pollForRewind(), FINISHED_GAME_VOTE_POLL_MS);
+    },
+    /** The waiting-for route answers REFRESH when the undo count is no longer the one this page shows. */
+    async pollForRewind(): Promise<void> {
+      try {
+        const query = `?id=${this.participant.id}&gameAge=${this.game.gameAge}&undoCount=${this.game.undoCount}`;
+        const resp = await fetch(paths.API_WAITING_FOR + query);
+        if (resp.ok && (await resp.json() as WaitingForModel).result === 'REFRESH') {
+          const page = isPlayerId(this.participant.id) ? paths.PLAYER : paths.SPECTATOR;
+          window.location.href = `${page}?id=${this.participant.id}`;
+          return;
+        }
+      } catch (err) {
+        // A restart or a failing server. The next poll tries again.
+        console.warn('Unable to look for a rewind', err);
+      }
+      this.scheduleRewindPoll();
+    },
     cycleTileView(): void {
       this.tileView = nextTileView(this.tileView);
     },

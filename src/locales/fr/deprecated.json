@@ -96,5 +96,6 @@
   "1:tag:science:": "1 badge Science",
   "Gain 6:r:megacredits: when placing a tile here": "Gagnez 6 M€ lorsque vous placez une tuile ici",
   "${0} spent ${1}${2} to gain 20:r:megacredits: and 1:r:corruption:": "${0} a dépensé ${1} ${2} pour gagner 20 M€ et 1 corruption",
-  "gain 1:p:megacredits:": ""
+  "gain 1:p:megacredits:": "",
+  "Allow undo": "Autoriser annulation"
 }

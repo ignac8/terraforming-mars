@@ -99,5 +99,7 @@
   "1:tag:science:": "1 мітка науки",
   "Gain 6:r:megacredits: when placing a tile here": "Отримайте 6 M€ при розміщенні тайлу тут",
   "${0} spent ${1}${2} to gain 20:r:megacredits: and 1:r:corruption:": "${0} витратив(ла) ${1} ${2}, щоб отримати 20 M€ та 1 корупцію",
-  "gain 1:p:megacredits:": "збільшити виробництво M€ на 1"
+  "gain 1:p:megacredits:": "збільшити виробництво M€ на 1",
+  "Allow undo": "Дозволити скасування",
+  "undo": "скасувати"
 }

@@ -117,6 +117,7 @@ describe('MarsBot and the player\'s Splice', () => {
     // The database stores saves as JSON, so the copy doesn't follow the live game.
     game.save = () => {
       saves.push(JSON.parse(JSON.stringify(game.serialize())));
+      return Promise.resolve();
     };
     marsBot.actionDeck = [new SulphurEatingBacteria()];
     human.megaCredits = 0;

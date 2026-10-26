@@ -11,6 +11,7 @@ import {timeAsync} from '../utils/timer';
 import {durationToMilliseconds} from '../utils/durations';
 import {CacheConfig} from './CacheConfig';
 import {Clock} from '../../common/Timer';
+import {forgetReplay} from '../replay/ReplayService';
 
 const metrics = {
   initialize: new prometheus.Gauge({
@@ -84,6 +85,7 @@ const metrics = {
  */
 export class GameLoader implements IGameLoader {
   private static instance: GameLoader;
+  private static loadHook: ((game: IGame) => Promise<void>) | undefined = undefined;
 
   private cache: Cache;
   private readonly config: CacheConfig;
@@ -109,6 +111,14 @@ export class GameLoader implements IGameLoader {
       GameLoader.instance = new GameLoader(config, new Clock());
     }
     return GameLoader.instance;
+  }
+
+  /**
+   * Sets what runs at the end of every `add`, once the game is the one served. The rewind vote's effects module sets
+   * it, so that a vote the game was saved with is resumed without the loader importing the vote code.
+   */
+  public static setLoadHook(hook: (game: IGame) => Promise<void>): void {
+    GameLoader.loadHook = hook;
   }
 
   public static newTestInstance(config: CacheConfig, clock: Clock): GameLoader {
@@ -162,6 +172,11 @@ export class GameLoader implements IGameLoader {
     if (isNew) {
       metrics.gamesCreated.inc({players: String(game.players.length)});
     }
+    // Every load passes through here, and the game is served from here on, so a vote it was saved with
+    // is expired, re-armed or failed now (never in deserialize, which also builds sandboxes).
+    if (game.rewindVote !== undefined) {
+      await GameLoader.loadHook?.(game);
+    }
   }
 
   public async getIds(): Promise<Array<GameIdLedger>> {
@@ -175,6 +190,12 @@ export class GameLoader implements IGameLoader {
   public async isCached(gameId: GameId): Promise<boolean> {
     const d = await this.cache.getGames();
     return d.games.get(gameId) !== undefined;
+  }
+
+  /** Whether `game` is the object the cache serves for its id. It only reads the cache, so it never loads a game. */
+  public async isServed(game: IGame): Promise<boolean> {
+    const d = await this.cache.getGames();
+    return d.games.get(game.id) === game;
   }
 
   public async getGame(id: GameId | PlayerId | SpectatorId, forceLoad: boolean = false): Promise<IGame | undefined> {
@@ -231,6 +252,7 @@ export class GameLoader implements IGameLoader {
     metrics.logsRestored.inc();
   }
 
+  // Only the one-step undo calls this, and no prompt offers that any more. It stays so upstream merges apply cleanly.
   public async restoreGameAt(gameId: GameId, saveId: number): Promise<IGame> {
     const current = await this.getGame(gameId);
     if (current === undefined) {
@@ -241,6 +263,8 @@ export class GameLoader implements IGameLoader {
     const deletes = (currentSaveId - saveId) - 1;
     if (deletes > 0) {
       await Database.getInstance().deleteGameNbrSaves(gameId, deletes);
+      // The replay's list of this game's saves is out of date now.
+      forgetReplay(gameId);
     }
     const serializedGame = await Database.getInstance().getGame(gameId);
     const game = Game.deserialize(serializedGame);
@@ -251,6 +275,10 @@ export class GameLoader implements IGameLoader {
 
   public mark(gameId: GameId) {
     this.cache.mark(gameId);
+  }
+
+  public unmark(gameId: GameId) {
+    this.cache.unmark(gameId);
   }
 
   public sweep(): void {

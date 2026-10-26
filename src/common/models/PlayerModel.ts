@@ -103,3 +103,8 @@ export interface PlayerViewModel extends ViewModel {
   thisPlayer: PublicPlayerModel;
   waitingFor: PlayerInputModel | undefined;
 }
+
+/** The parts of a player's view that only that seat may see. */
+export type PrivatePlayerFields = Pick<PlayerViewModel,
+  'cardsInHand' | 'ceoCardsInHand' | 'dealtCorporationCards' | 'dealtPreludeCards' | 'dealtCeoCards' |
+  'dealtProjectCards' | 'draftedCards' | 'pickedCorporationCard' | 'preludeCardsInHand' | 'waitingFor'>;

@@ -63,7 +63,7 @@
 	"Initial Draft rounds": "Startdraft-runder",
 	"Random first player": "Tilfeldig startspiller",
 	"Show real-time VP": "Vis sanntids seierspoeng",
-	"Allow undo": "Tillat å angre",
+	"Player undo": "Tillat å angre",
 	"7 Heat Into Temperature": "7 varme til temperatur",
 	"NEXT CARD:": "NESTE KORT: ",
 	"GENERATION 1 OF 12": "GENERASJON ${0} av ${1}",
@@ -754,7 +754,7 @@
 	"Hide": "Skjul",
 	"Show": "Vis",
 	"Undo": "Angring tillatt",
-	"undo": "Angring tillatt",
+	"player undo": "Angring tillatt",
 	"12 Gens": "12 Generationer",
 
 	"Your selected cards:": "Dine valgte kort",

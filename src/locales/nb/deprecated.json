@@ -92,5 +92,7 @@
 	"When you raise temperature, gain 3:r:megacredits: per step raised": "Når du øker temperaturen, få 3 M€ per trinn økt.",
 	"Convert 6:r:heat: into temperature": "Konverter 6 varme til temperatur.",
 	"When you place a tile, gain 2:r:heat:": "Når du plasserer en brikke, få 2 varme.",
-	"gain 1:p:megacredits:": "øk din M€-produksjon med 1"
+	"gain 1:p:megacredits:": "øk din M€-produksjon med 1",
+  "Allow undo": "Tillat å angre",
+  "undo": "Angring tillatt"
 }

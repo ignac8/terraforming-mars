@@ -108,5 +108,7 @@
     "Pay 10:r:megacredits: to increase your :p:energy: and :p:heat: 1 step": "10 M€을 소비하여 자신의 열 생산력 및 에너지 생산력을 1씩 증가(플레이어당 사용 횟수 제한은 없음)",
     "When you raise temperature, gain 3:r:megacredits: per step raised": "기온을 상승시킬 때마다 올린 단계당 3 M€ 획득",
     "Convert 6:r:heat: into temperature": "기온을 열 자원 6개로 변환",
-    "When you place a tile, gain 2:r:heat:": "아무 타일을 1장 놓을 때마다 열 자원 2개 획득"
+    "When you place a tile, gain 2:r:heat:": "아무 타일을 1장 놓을 때마다 열 자원 2개 획득",
+  "Allow undo": "되돌리기 허용",
+  "undo": "되돌리기"
 }

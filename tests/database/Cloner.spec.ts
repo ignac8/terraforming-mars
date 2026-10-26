@@ -142,6 +142,21 @@ describe('Cloner, automa games', () => {
     const oldPlayerIds = ['p-old-player1-id', 'p-g-old-game-id-marsbot'];
     expect(pathsHolding({...state, gameLog}, oldPlayerIds), 'player ids').deep.eq([]);
   });
+
+  it('does not carry the table state into a clone', () => {
+    const player = new Player('old-player1', 'yellow', false, 0, 'p-old-player1-id');
+    const game = Game.newInstance('g-old-game-id', [player], player, 'spectatorid');
+    game.frozen = true;
+    game.rewindVote = {id: 1, requester: player.id, saveId: 0, moveNumber: 1, generation: game.generation, cards: 'same', yes: [player.id], status: 'open', expiresAt: 1};
+    game.rewindRequestLimits = {generation: game.generation, players: [player.id]};
+
+    const newPlayer = new Player('new-player1', 'red', false, 0, 'p-new-player1-id');
+    const clone = Cloner.clone('g-new-id', [newPlayer], 0, game.serialize());
+
+    expect(clone.frozen).is.false;
+    expect(clone.rewindVote).is.undefined;
+    expect(clone.rewindRequestLimits).is.undefined;
+  });
 });
 
 /** Every path in `obj` whose string value mentions one of `needles`, for a legible failure. */

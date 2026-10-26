@@ -48,8 +48,8 @@
       </div>
     </template>
 
-    <DynamicTitle v-if="playerView.pickedCorporationCard.length === 0" title="Select initial cards:" :color="thisPlayer.color"/>
-    <WaitingFor v-if="game.phase !== 'end'" :playerView="playerView" :waitingfor="playerView.waitingFor" :requestId="playerView.requestId"/>
+    <DynamicTitle v-if="!replay && playerView.pickedCorporationCard.length === 0" title="Select initial cards:" :color="thisPlayer.color"/>
+    <WaitingFor v-if="!replay && game.phase !== 'end'" :playerView="playerView" :waitingfor="playerView.waitingFor" :requestId="playerView.requestId"/>
 
     <DynamicTitle title="Game details" :color="thisPlayer.color"/>
 
@@ -127,6 +127,10 @@ export default defineComponent({
     tileView: {
       type: String as () => TileView,
       required: true,
+    },
+    replay: {
+      type: Boolean,
+      default: false,
     },
   },
   emits: ['toggleTileView'],

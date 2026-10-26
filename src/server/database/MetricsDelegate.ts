@@ -5,6 +5,7 @@ import {GameOptions} from '../game/GameOptions';
 import {GameId, ParticipantId} from '../../common/Types';
 import {SerializedGame} from '../SerializedGame';
 import {Session, SessionId} from '../auth/Session';
+import {TableStatePatch} from '../rewind/tableState';
 
 // Operation names that get routed to `maintenanceLatency` instead of `operationLatency`. These are
 // batch/background jobs (purge, compress) that run on a much longer timescale than a typical
@@ -72,10 +73,11 @@ export async function withDatabaseMetrics<T>(operation: string, fn: () => Promis
  * Wraps any IDatabase implementation with Prometheus operation-count, latency, and error metrics,
  * generically, for whatever crosses the IDatabase interface boundary.
  *
- * saveGameResults is intentionally left unwrapped and just passed through: it's void/callback-based,
- * not Promise-based, so this can't observe its real completion or errors the way it can for every
- * other method here. A backend that wants accurate metrics for it has to instrument it itself, using
- * the same `databaseMetrics` this class uses (see PostgreSQL.ts).
+ * saveGameResults is intentionally left unwrapped and just passed through, with its return value: it
+ * returns a promise only from a backend that writes asynchronously, and nothing from the others, so
+ * this can't observe its real completion or errors the way it can for every other method here. A
+ * backend that wants accurate metrics for it has to instrument it itself, using the same
+ * `databaseMetrics` this class uses (see PostgreSQL.ts).
  */
 export class MetricsDelegate implements IDatabase {
   constructor(private delegate: IDatabase) {}
@@ -112,8 +114,12 @@ export class MetricsDelegate implements IDatabase {
     return withDatabaseMetrics('saveGame', () => this.delegate.saveGame(game));
   }
 
-  saveGameResults(gameId: GameId, players: number, generations: number, gameOptions: GameOptions, scores: Array<Score>): void {
-    this.delegate.saveGameResults(gameId, players, generations, gameOptions, scores);
+  updateNewestSave(gameId: GameId, saveId: number, patch: TableStatePatch): Promise<boolean> {
+    return withDatabaseMetrics('updateNewestSave', () => this.delegate.updateNewestSave(gameId, saveId, patch));
+  }
+
+  saveGameResults(gameId: GameId, players: number, generations: number, gameOptions: GameOptions, scores: Array<Score>): void | Promise<void> {
+    return this.delegate.saveGameResults(gameId, players, generations, gameOptions, scores);
   }
 
   deleteGameNbrSaves(gameId: GameId, rollbackCount: number): Promise<void> {
@@ -122,6 +128,10 @@ export class MetricsDelegate implements IDatabase {
 
   markFinished(gameId: GameId): Promise<void> {
     return withDatabaseMetrics('markFinished', () => this.delegate.markFinished(gameId));
+  }
+
+  reopenFinishedGame(gameId: GameId): Promise<void> {
+    return withDatabaseMetrics('reopenFinishedGame', () => this.delegate.reopenFinishedGame(gameId));
   }
 
   purgeUnfinishedGames(maxGameDays?: string): Promise<Array<GameId>> {

@@ -104,4 +104,89 @@ describe('Timer', () => {
     timer.rebate(10_000_000); // Doesn't go below zero.
     expect(timer.getElapsed()).eq(0);
   });
+
+  it('pauses without counting the frozen time', () => {
+    timer.resume();
+    clock.millis = 1;
+    timer.stop(); // The first action is not timed.
+    clock.millis = 2;
+    timer.resume();
+    clock.millis = 12;
+    timer.pause();
+    clock.millis = 60;
+    timer.resume();
+    clock.millis = 70;
+    expect(timer.getElapsed()).eq(20);
+  });
+
+  it('does not use up the untimed first action', () => {
+    timer.resume();
+    clock.millis = 10;
+    timer.pause();
+    expect(timer.countedElapsed()).eq(0);
+    expect(timer.serialize().afterFirstAction).eq(false);
+    timer.resume();
+    clock.millis = 15;
+    timer.stop();
+    expect(timer.getElapsed()).eq(0);
+  });
+
+  it('leaves the shared last stop time alone', () => {
+    const probe = Timer.newInstance(clock);
+    clock.millis = 5;
+    probe.stop();
+    timer.resume();
+    clock.millis = 12;
+    timer.pause();
+    clock.millis = 20;
+    timer.resume();
+    expect(timer.serialize().startedAt).eq(20);
+    expect(timer.serialize().lastStoppedAt).eq(5);
+
+    const other = Timer.newInstance(clock);
+    other.start();
+    expect(other.serialize().startedAt).eq(5);
+  });
+
+  it('counts the open interval only after the first action', () => {
+    for (const run of [{first: true, expected: 0}, {first: false, expected: 7}]) {
+      const t = Timer.newInstance(clock);
+      clock.millis = 100;
+      t.resume();
+      if (!run.first) {
+        t.stop();
+        t.resume();
+      }
+      clock.millis += 7;
+      expect(t.countedElapsed(), `first action pending: ${run.first}`).eq(run.expected);
+    }
+  });
+
+  it('does nothing when pausing a timer that is not running', () => {
+    timer.resume();
+    timer.stop();
+    clock.millis = 10;
+    timer.resume();
+    clock.millis = 15;
+    timer.stop();
+    const before = timer.serialize();
+    expect(before.sumElapsed).eq(5);
+
+    clock.millis = 40;
+    timer.pause();
+    expect(timer.serialize()).deep.eq(before);
+    expect(timer.getElapsed()).eq(5);
+  });
+
+  it('drops the open interval when resuming a running timer', () => {
+    timer.resume();
+    timer.stop();
+    clock.millis = 10;
+    timer.resume();
+    clock.millis = 17;
+    timer.resume();
+    clock.millis = 20;
+    timer.pause();
+    expect(timer.countedElapsed()).eq(3);
+  });
 });

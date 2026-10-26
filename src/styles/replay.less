@@ -1,0 +1,308 @@
+.replay-message {
+  max-width: 480px;
+  margin: 80px auto;
+  padding: 0 16px;
+  text-align: center;
+  font-size: 20px;
+  color: @text_main;
+}
+
+.replay-error {
+  color: #ff6b5e;
+}
+
+// Clear of the sidebar (.sidebar_cont: fixed, 60px wide, z-index 99), which would otherwise cover the left edge.
+@replay-sidebar-clearance: 68px;
+
+.replay-error--floating {
+  position: fixed;
+  left: @replay-sidebar-clearance;
+  bottom: 8px;
+  z-index: 60;
+  max-width: 320px;
+  padding: 6px 10px;
+  border-radius: 4px;
+  background: @bg_dynamic;
+}
+
+.replay-hands {
+  padding: 0 8px 360px;
+}
+
+.replay-hands-header {
+  align-items: baseline;
+  gap: 12px;
+}
+
+.replay-hands-section {
+  margin: 8px 0 4px;
+  color: @text_main;
+}
+
+// Floats over the board in the bottom-right corner, above the page but below dialogs (z-index 100+).
+.replay-panel {
+  position: fixed;
+  right: 8px;
+  bottom: 8px;
+  z-index: 60;
+  box-sizing: border-box;
+  width: 340px;
+  max-width: calc(100vw - 16px);
+  padding: 6px 8px;
+  border: 1px solid #666;
+  border-radius: 6px;
+  background: fade(@bg_dynamic, 94%);
+  color: @text_main;
+  font-size: 13px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.6);
+
+  button,
+  select {
+    padding: 2px 8px;
+    border: 1px solid #777;
+    border-radius: 4px;
+    background: @bg_main;
+    color: @text_main;
+    font: inherit;
+    cursor: pointer;
+
+    &:disabled {
+      opacity: 0.4;
+      cursor: default;
+    }
+  }
+}
+
+.replay-header,
+.replay-controls,
+.replay-view-as,
+.replay-live-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+  margin-bottom: 4px;
+}
+
+.replay-title {
+  font-weight: bold;
+}
+
+// Sized by its text rather than by 0, so a header that is too narrow wraps its other items onto a second row instead of
+// squeezing this one into a column.
+.replay-position {
+  flex: 1 0 auto;
+  white-space: nowrap;
+  text-align: center;
+}
+
+.replay-view-as {
+  .replay-view-active {
+    outline: 2px solid @text_action;
+  }
+
+  .replay-view-player {
+    color: #fff;
+    text-shadow: 0 0 2px #000;
+  }
+}
+
+// Fixed above the game page, the top bar (z-index 105) and the sidebar (z-index 99), and clear of the sidebar. The
+// vote banner sits in it, and a spacer in the page's flow (BannerStack) is as tall as it is, so at scroll 0 nothing is covered.
+// Above the whole sidebar layer, which on game pages includes the preferences panel and the settings button (they sit in
+// .sidebar_cont, a stacking context of its own), and below the popups (z-index 9999).
+.rewind-banners {
+  position: fixed;
+  top: 0;
+  left: @replay-sidebar-clearance;
+  right: 8px;
+  z-index: 108;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  // The stack is wider than a vote banner, so only the banners take clicks; the page shows through and works beside them.
+  pointer-events: none;
+
+  > * {
+    pointer-events: auto;
+  }
+}
+
+// On touch screens the sidebar is zoomed to twice its width (preferences.less).
+@media (hover: none) and (pointer: coarse) and (orientation: portrait) {
+  .rewind-banners {
+    left: @replay-sidebar-clearance * 2;
+  }
+}
+
+.rewind-vote-banner {
+  box-sizing: border-box;
+  width: 420px;
+  max-width: 100%;
+  margin: 4px auto;
+  padding: 6px 10px;
+  border: 1px solid #666;
+  border-radius: 6px;
+  background: fade(@bg_dynamic, 94%);
+  color: @text_main;
+  font-size: 13px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.6);
+
+  button,
+  .rewind-vote-replay {
+    padding: 2px 8px;
+    border: 1px solid #777;
+    border-radius: 4px;
+    background: @bg_main;
+    color: @text_main;
+    font: inherit;
+    text-decoration: none;
+    cursor: pointer;
+
+    &:disabled {
+      opacity: 0.4;
+      cursor: default;
+    }
+  }
+}
+
+.rewind-vote-title {
+  font-weight: bold;
+}
+
+.rewind-vote-choices {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+  margin: 4px 0;
+  padding: 0;
+  list-style: none;
+}
+
+.rewind-vote-name {
+  margin-right: 4px;
+  padding: 0 4px;
+  border-radius: 3px;
+  color: #fff;
+  text-shadow: 0 0 2px #000;
+}
+
+.rewind-vote-note {
+  opacity: 0.8;
+}
+
+.rewind-vote-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 4px;
+}
+
+.rewind-vote-error {
+  color: #ff6b5e;
+}
+
+.rewind-blocked {
+  margin-top: 4px;
+  opacity: 0.8;
+}
+
+.replay-moves {
+  position: relative;
+  max-height: 180px;
+  margin: 4px 0 0;
+  padding: 0;
+  overflow-y: auto;
+  list-style: none;
+}
+
+.replay-moves-empty {
+  padding: 2px 4px;
+  opacity: 0.7;
+}
+
+.rewind-controls {
+  margin-top: 6px;
+  padding-top: 6px;
+  border-top: 1px solid #666;
+}
+
+.rewind-cards,
+.rewind-confirm {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 12px;
+  margin-bottom: 4px;
+}
+
+.rewind-cards-option {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+}
+
+.rewind-confirm-text {
+  flex: 1 0 100%;
+}
+
+.rewind-refusal {
+  margin-top: 6px;
+  padding: 4px 6px;
+  border-left: 3px solid #ff6b5e;
+  border-radius: 3px;
+  background: fade(#ff6b5e, 12%);
+}
+
+.replay-move {
+  display: flex;
+  gap: 6px;
+  padding: 2px 4px;
+  border-radius: 3px;
+  cursor: pointer;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.08);
+  }
+}
+
+.replay-move-current {
+  background: @bg_action;
+  color: @text_action;
+}
+
+.replay-move-number {
+  flex: none;
+  min-width: 2em;
+  text-align: right;
+  opacity: 0.7;
+}
+
+.replay-move-messages {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+@media only screen and (max-width: 767px) {
+  .replay-panel {
+    left: @replay-sidebar-clearance;
+    width: auto;
+    max-width: none;
+  }
+
+  .replay-moves {
+    max-height: 120px;
+  }
+
+  // The panel is as wide as the screen here and would cover the error, so the error moves onto the panel's top edge.
+  .replay-error--floating {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 100%;
+    margin-bottom: 4px;
+    max-width: none;
+  }
+}

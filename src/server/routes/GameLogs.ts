@@ -6,6 +6,7 @@ import {Phase} from '../../common/Phase';
 import {Log} from '../../common/logs/Log';
 import {LogMessageData} from '../../common/logs/LogMessageData';
 import {LogMessageDataType} from '../../common/logs/LogMessageDataType';
+import {visibleLog} from '../rewind/RewindRecord';
 
 export class GameLogs {
   private getLogsForGeneration(messages: Array<LogMessage>, generation: number): Array<LogMessage> {
@@ -41,12 +42,14 @@ export class GameLogs {
       }
     };
 
+    // The lines a rewind hid are from another line of play, so they neither show nor start or end a generation.
+    const log = visibleLog(game.gameLog, game.rewinds);
     // Default view keeps the payload small. An explicit generation request should
     // always return the full generation, including the current one.
     if (generation === undefined) {
-      return game.gameLog.filter(messagesForPlayer).slice(-50);
+      return log.filter(messagesForPlayer).slice(-50);
     }
-    return this.getLogsForGeneration(game.gameLog, generation).filter(messagesForPlayer);
+    return this.getLogsForGeneration(log, generation).filter(messagesForPlayer);
   }
 
   public getLogsForGameEnd(game: IGame): Array<string> {
@@ -54,7 +57,7 @@ export class GameLogs {
       throw new Error('Game is not over');
     }
 
-    return game.gameLog.filter((message) => message !== undefined && message !== null).map((message) => Log.applyData(message, (datum: LogMessageData) => {
+    return visibleLog(game.gameLog, game.rewinds).filter((message) => message !== undefined && message !== null).map((message) => Log.applyData(message, (datum: LogMessageData) => {
       if (datum.type === undefined || datum.value === undefined) {
         return '';
       }

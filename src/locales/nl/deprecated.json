@@ -74,5 +74,7 @@
     "When you raise temperature, gain 3:r:megacredits: per step raised": "Wanneer je de temperatuur verhoogt, ontvang je 3 M€ per verhoogde stap",
     "Convert 6:r:heat: into temperature": "Zet 6 warmte om in temperatuur",
     "When you place a tile, gain 2:r:heat:": "Wanneer je een tegel plaatst, ontvang je 2 warmte",
-    "gain 1:p:megacredits:": "verhoog je M€-productie met 1"
+    "gain 1:p:megacredits:": "verhoog je M€-productie met 1",
+  "Allow undo": "Ongedaan maken toestaan",
+  "undo": "ongedaan gemaken"
 }

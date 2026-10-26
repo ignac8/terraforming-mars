@@ -250,7 +250,14 @@ export default defineComponent({
             } else if (result.result === 'REFRESH') {
               // Something changed, let's refresh UI
               if (isPlayerId(this.playerView.id)) {
-                if (!await root.updatePlayer()) {
+                // A refresh that hands the turn back (a rewind) is not a GO answer, so it cues the turn here.
+                const hadTurn = this.waitingfor !== undefined && !this.waitingfor.optional;
+                const updated = await root.updatePlayer();
+                const prompt = root.playerView?.waitingFor;
+                if (updated && !hadTurn && prompt !== undefined && !prompt.optional) {
+                  this.notify();
+                }
+                if (!updated) {
                   vueApp.waitForUpdate();
                 }
               } else if (!await root.updateSpectator()) {
