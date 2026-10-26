@@ -15,7 +15,7 @@
 
       <div v-if="privates.waitingFor !== undefined" class="player_home_block nofloat">
         <h3 class="judge-player-panel-section" v-i18n>Pending choice</h3>
-        <JudgePendingChoice :input="privates.waitingFor"/>
+        <JudgePendingChoice :input="privates.waitingFor" :shown="shownCards"/>
       </div>
     </template>
   </div>
@@ -28,6 +28,7 @@ import Card from '@/client/components/card/Card.vue';
 import DynamicTitle from '@/client/components/common/DynamicTitle.vue';
 import JudgePendingChoice from '@/client/components/judge/JudgePendingChoice.vue';
 import {isPanelHidden, setPanelHidden} from '@/client/utils/judgePanelStorage';
+import {CardName} from '@/common/cards/CardName';
 import {CardModel} from '@/common/models/CardModel';
 import {JudgePlayerModel} from '@/common/models/JudgeModel';
 import {PublicPlayerModel} from '@/common/models/PlayerModel';
@@ -83,6 +84,10 @@ export default defineComponent({
       // The server keeps the dealt cards all game. Like the player page, show them only until something is in play.
       const inSetup = this.player.tableau.length === 0;
       return sections.filter((section) => section.cards.length > 0 && (inSetup || section.setup !== true));
+    },
+    /** The cards above and on the table, which the pending choice leaves out. */
+    shownCards(): Array<CardName> {
+      return [...this.visibleSections.flatMap((section) => section.cards), ...this.player.tableau].map((card) => card.name);
     },
   },
 });
