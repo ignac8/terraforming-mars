@@ -1,8 +1,46 @@
 import {expect} from 'chai';
-import {setTranslationContext, translateMessage} from '@/client/directives/i18n';
+import {vi} from 'vitest';
+import {setTranslationContext, setTranslationsForTest, translateMessage, translateText} from '@/client/directives/i18n';
+import {PreferencesManager} from '@/client/utils/PreferencesManager';
 import {LogMessageDataType} from '@/common/logs/LogMessageDataType';
 import {PlayerViewModel} from '@/common/models/PlayerModel';
 import {Message} from '@/common/logs/Message';
+
+describe('i18n', () => {
+  afterEach(() => {
+    localStorage.removeItem('lang');
+    PreferencesManager.resetForTest();
+    setTranslationsForTest(undefined);
+  });
+
+  it('returns English text unchanged when lang is en', () => {
+    setTranslationsForTest({'Goal': 'Ziel'});
+    expect(translateText('Goal')).eq('Goal');
+  });
+
+  it('translates text', () => {
+    PreferencesManager.INSTANCE.set('lang', 'de');
+    setTranslationsForTest({'Goal': 'Ziel'});
+    expect(translateText('Goal')).eq('Ziel');
+  });
+
+  it('does not look up strings made only of icons and numbers', () => {
+    PreferencesManager.INSTANCE.set('lang', 'de');
+    setTranslationsForTest({'Goal': 'Ziel'});
+    const log = vi.spyOn(console, 'log').mockImplementation(() => {});
+    try {
+      expect(translateText('-3:r:mc: -1:r:steel:')).eq('-3:r:mc: -1:r:steel:');
+    } finally {
+      log.mockRestore();
+    }
+  });
+
+  it('translates text that contains icons', () => {
+    PreferencesManager.INSTANCE.set('lang', 'de');
+    setTranslationsForTest({'Gain 3:r:mc:': 'Erhalte 3:r:mc:'});
+    expect(translateText('Gain 3:r:mc:')).eq('Erhalte 3:r:mc:');
+  });
+});
 
 describe('translateMessage', () => {
   const removePlantsFrom = (): Message => ({

@@ -215,12 +215,6 @@ export default defineComponent({
       const vueApp = this;
       const root = vueRoot(this);
       clearTimeout(ui_update_timeout_id);
-      // A new view restarts polling through the playerView watcher. Without one, nothing would.
-      const pollAgainUnlessUpdated = (updated: boolean) => {
-        if (!updated) {
-          vueApp.waitForUpdate();
-        }
-      };
       const pollFailed = (title: string, message: string) => {
         failedPolls++;
         if (failedPolls < ALERT_AFTER_FAILED_POLLS) {
@@ -236,23 +230,31 @@ export default defineComponent({
         xhr.onerror = function() {
           pollFailed('Error fetching state', CANNOT_CONTACT_SERVER);
         };
-        xhr.onload = () => {
+        xhr.onload = async () => {
           if (xhr.status === statusCode.ok) {
             failedPolls = 0;
             const result = xhr.response as WaitingForModel;
             this.playersWaitingFor = result.waitingFor;
             if (result.result === 'GO') {
               // Will only apply to player, not spectator.
-              root.updatePlayer().then(pollAgainUnlessUpdated);
+              const updated = root.updatePlayer();
               this.notify();
+              // When the fetch works, root.playerView changes and the playerView watcher
+              // calls start(), which decides whether to keep polling. When it fails
+              // nothing changes, so poll again here.
+              if (!await updated) {
+                vueApp.waitForUpdate();
+              }
               // We don't need to wait anymore - it's our turn
               return;
             } else if (result.result === 'REFRESH') {
               // Something changed, let's refresh UI
               if (isPlayerId(this.playerView.id)) {
-                root.updatePlayer().then(pollAgainUnlessUpdated);
-              } else {
-                root.updateSpectator().then(pollAgainUnlessUpdated);
+                if (!await root.updatePlayer()) {
+                  vueApp.waitForUpdate();
+                }
+              } else if (!await root.updateSpectator()) {
+                vueApp.waitForUpdate();
               }
 
               return;
