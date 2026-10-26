@@ -90,6 +90,8 @@ export class GameLogs {
     const active = activeRewinds(game.rewinds);
     const lines = game.gameLog
       .map((message, idx) => ({message, undone: hiddenBy(idx, active)}))
+      // Older saves can have holes in their logs.
+      .filter((line) => line.message !== undefined && line.message !== null)
       .filter((line) => showUndone || !line.undone);
     if (generation === undefined) {
       return lines.filter((line) => keep(line.message)).slice(-50);
@@ -102,7 +104,7 @@ export class GameLogs {
       throw new Error('Game is not over');
     }
 
-    return visibleLog(game.gameLog, game.rewinds).map((message) => Log.applyData(message, (datum: LogMessageData) => {
+    return visibleLog(game.gameLog, game.rewinds).filter((message) => message !== undefined && message !== null).map((message) => Log.applyData(message, (datum: LogMessageData) => {
       if (datum.type === undefined || datum.value === undefined) {
         return '';
       }
