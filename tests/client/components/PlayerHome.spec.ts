@@ -7,7 +7,8 @@ import CardSortButtons from '@/client/components/CardSortButtons.vue';
 import SortableCards from '@/client/components/SortableCards.vue';
 import WaitingFor from '@/client/components/WaitingFor.vue';
 import PlayerSetupView from '@/client/components/PlayerSetupView.vue';
-import {fakePlayerViewModel, fakePublicPlayerModel} from './testHelpers';
+import LogPanel from '@/client/components/logpanel/LogPanel.vue';
+import {fakePlayerViewModel, fakePublicPlayerModel, fakeViewModel} from './testHelpers';
 import {FakeLocalStorage} from './FakeLocalStorage';
 import {CardName} from '@/common/cards/CardName';
 import raw_settings from '@/genfiles/settings.json';
@@ -66,7 +67,7 @@ describe('PlayerHome', () => {
   });
 
   describe('replay', () => {
-    function mountHome(playerView: ReturnType<typeof fakePlayerViewModel>, replay?: boolean) {
+    function mountHome(playerView: ReturnType<typeof fakePlayerViewModel>, replay?: boolean, extra: Record<string, unknown> = {}) {
       return shallowMount(PlayerHome, {
         ...globalConfig,
         parentComponent: {
@@ -75,7 +76,7 @@ describe('PlayerHome', () => {
             setVisibilityState: () => {},
           },
         } as any,
-        props: {playerView, replay, settings: raw_settings},
+        props: {playerView, replay, settings: raw_settings, ...extra},
       });
     }
 
@@ -95,6 +96,20 @@ describe('PlayerHome', () => {
     it('shows the purge warning only outside a replay', () => {
       expect(mountHome(playedView()).findComponent(PurgeWarning).exists()).is.true;
       expect(mountHome(playedView(), true).findComponent(PurgeWarning).exists()).is.false;
+    });
+
+    it('shows no log when replaying, unless it is given the live log to show', () => {
+      expect(mountHome(playedView(), true).findComponent(LogPanel).exists()).is.false;
+
+      const log = fakeViewModel({id: 'j-judge-id' as any});
+      const panel = mountHome(playedView(), true, {log, showUndone: true}).findComponent(LogPanel);
+      expect(panel.props('viewModel')).to.deep.equal(log);
+      expect(panel.props('showUndone')).is.true;
+    });
+
+    it('logs as its own player outside a replay', () => {
+      const playerView = playedView();
+      expect(mountHome(playerView).findComponent(LogPanel).props('viewModel')).to.deep.equal(playerView);
     });
 
     it('tells the setup view not to render WaitingFor when replaying', () => {

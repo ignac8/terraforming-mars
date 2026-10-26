@@ -42,8 +42,8 @@
     <PlayersOverview class="player_home_block player_home_block--players nofloat" :playerView="playerView" id="shortkey-playersoverview"/>
 
       <a class="hotkey-target"></a>
-      <div v-if="!replay" class="player_home_block nofloat">
-        <LogPanel :viewModel="playerView" :step="game.step" @spaceClicked="onSpaceClicked"/>
+      <div v-if="!replay || log !== undefined" class="player_home_block nofloat">
+        <LogPanel :viewModel="log ?? playerView" :step="game.step" :showUndone="showUndone" @spaceClicked="onSpaceClicked"/>
       </div>
 
       <a class="hotkey-target"></a>
@@ -173,7 +173,7 @@ import UndergroundTokens from '@/client/components/underworld/UndergroundTokens.
 import KeyboardShortcuts from '@/client/components/KeyboardShortcuts.vue';
 import {getPreferences, Preferences, PreferencesManager} from '@/client/utils/PreferencesManager';
 import {GameModel} from '@/common/models/GameModel';
-import {PlayerViewModel, PublicPlayerModel} from '@/common/models/PlayerModel';
+import {PlayerViewModel, PublicPlayerModel, ViewModel} from '@/common/models/PlayerModel';
 import {CardType} from '@/common/cards/CardType';
 import {getCardsByType, isCardActivated} from '@/client/utils/CardUtils';
 import {sortActiveCards} from '@/client/utils/ActiveCardsSortingOrder';
@@ -233,6 +233,16 @@ export default defineComponent({
     },
     /** True while replaying a finished game: read-only, so no input forms and no polling. */
     replay: {
+      type: Boolean,
+      default: false,
+    },
+    /** A live game seen read-only by someone else, the judge, whose own log shows here. */
+    log: {
+      type: Object as () => ViewModel,
+      default: undefined,
+    },
+    /** The log shows the lines that rewinds undid, as the judge asked. */
+    showUndone: {
       type: Boolean,
       default: false,
     },

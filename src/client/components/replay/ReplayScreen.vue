@@ -30,7 +30,7 @@
         <ReplayHands v-if="spectatorView !== undefined" :participantId="participantId" :privates="replayView.privates" :players="spectatorView.players"/>
       </template>
       <template v-else-if="liveJudgeAs !== undefined">
-        <PlayerHome key="live-judge-as" :playerView="liveJudgeAs" :replay="true"/>
+        <PlayerHome key="live-judge-as" :playerView="liveJudgeAs" :replay="true" :log="liveJudge" :showUndone="showUndone"/>
         <!-- JudgeHome polls the judge page, and it is not there. -->
         <WaitingFor v-show="false" v-if="liveJudge.game.phase !== 'end'" :playerView="liveJudge" :waitingfor="undefined"/>
       </template>

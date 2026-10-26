@@ -1162,8 +1162,10 @@ describe('ReplayScreen', () => {
       expect(shown().cardsInHand.map((card) => card.name)).to.deep.equal([CardName.ANTS]);
       expect(shown().waitingFor).is.undefined;
       expect(shown().id).equals(judgeId);
-      // The judge page still polls, as JudgeHome does when it shows.
+      // The judge page still polls, as JudgeHome does when it shows, and the log is the judge's.
       expect(wrapper.findComponent(WaitingFor).props('playerView')).equals(wrapper.props('liveJudge'));
+      expect(home().props('log')).equals(wrapper.props('liveJudge'));
+      expect(home().props('showUndone')).is.false;
 
       await wrapper.setProps({liveJudge: {...judge, privates: [privates('blue', CardName.BIRDS), privates('red', CardName.TARDIGRADES)]}});
       expect(shown().cardsInHand.map((card) => card.name)).to.deep.equal([CardName.TARDIGRADES]);
