@@ -29,6 +29,11 @@
         <PlayerHome v-else-if="playerView !== undefined" key="past" :playerView="playerView" :replay="true"/>
         <ReplayHands v-if="spectatorView !== undefined" :participantId="participantId" :privates="replayView.privates" :players="spectatorView.players"/>
       </template>
+      <template v-else-if="liveJudgeAs !== undefined">
+        <PlayerHome key="live-judge-as" :playerView="liveJudgeAs" :replay="true"/>
+        <!-- JudgeHome polls the judge page, and it is not there. -->
+        <WaitingFor v-show="false" v-if="liveJudge.game.phase !== 'end'" :playerView="liveJudge" :waitingfor="undefined"/>
+      </template>
       <JudgeHome v-else-if="liveJudge !== undefined" key="live-judge" :judge="liveJudge" :showUndone="showUndone"/>
       <PlayerHome v-else-if="liveView !== undefined" key="live" :playerView="liveView"/>
     </template>
@@ -109,6 +114,7 @@ import {defineComponent} from 'vue';
 import PlayerHome from '@/client/components/PlayerHome.vue';
 import JudgeHome from '@/client/components/judge/JudgeHome.vue';
 import SpectatorHome from '@/client/components/SpectatorHome.vue';
+import WaitingFor from '@/client/components/WaitingFor.vue';
 import ReplayHands from '@/client/components/replay/ReplayHands.vue';
 import ReplayPanel from '@/client/components/replay/ReplayPanel.vue';
 import RewindVoteBanner from '@/client/components/replay/RewindVoteBanner.vue';
@@ -193,7 +199,7 @@ type DataModel = {
 // it is the judge's page, which also freezes the game and may look at every hand.
 export default defineComponent({
   name: 'ReplayScreen',
-  components: {JudgeHome, PlayerHome, ReplayHands, ReplayPanel, RewindVoteBanner, SpectatorHome},
+  components: {JudgeHome, PlayerHome, ReplayHands, ReplayPanel, RewindVoteBanner, SpectatorHome, WaitingFor},
   props: {
     participantId: {
       type: String as () => ParticipantId,
@@ -307,6 +313,34 @@ export default defineComponent({
     playerView(): PlayerViewModel | undefined {
       return this.replayView !== undefined && this.replayView.viewAs !== 'all' ? this.replayView.view as PlayerViewModel : undefined;
     },
+    /**
+     * The live game as the player the judge picked, made from the judge's own model, so it stays current with every
+     * poll. Read-only like a past move: no prompt, and the judge's id and no password.
+     */
+    liveJudgeAs(): PlayerViewModel | undefined {
+      const judge = this.liveJudge;
+      if (judge === undefined || this.index !== undefined || this.viewAs === 'all') {
+        return undefined;
+      }
+      const thisPlayer = judge.players.find((p) => p.color === this.viewAs);
+      const privates = judge.privates.find((p) => p.color === this.viewAs);
+      if (thisPlayer === undefined || privates === undefined) {
+        return undefined;
+      }
+      return {
+        ...privates,
+        waitingFor: undefined,
+        game: judge.game,
+        players: judge.players,
+        thisPlayer,
+        color: thisPlayer.color,
+        id: judge.id as unknown as PlayerId,
+        password: undefined,
+        requestId: undefined,
+        runId: judge.runId,
+        autopass: false,
+      };
+    },
     /** What the panel names players and generations from. It is hidden until there is something to show. */
     panelView(): ViewModel | undefined {
       if (this.liveModel !== undefined) {
@@ -350,7 +384,8 @@ export default defineComponent({
             this.error = this.$t('Replay is not ready yet. Try again in a moment.');
           }
         } else {
-          if (this.moves.length === 0) {
+          // The judge's live page offers the choice before any moves are read, and keeps it.
+          if (this.moves.length === 0 && this.liveJudge === undefined) {
             this.viewAs = answer.defaultViewAs;
           }
           // The list changes when the judge switches the undone moves on or off, so the move stays the one it was.
