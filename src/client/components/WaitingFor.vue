@@ -48,6 +48,7 @@ import {Color} from '@/common/Color';
 import {gameDocumentTitle} from '../utils/documentTitle';
 import {setFaviconStatus, setFaviconTurnFrame} from '@/client/utils/favicon';
 import {watchesForRefresh} from '@/client/utils/watchesForRefresh';
+import {localColors, localPlayerView} from '@/client/utils/localColors';
 
 let ui_update_timeout_id: number | undefined;
 let otherPlayersTimer: number | undefined;
@@ -188,7 +189,7 @@ export default defineComponent({
       fetch(url, options)
         .then(async (response) => {
           if (response.ok) {
-            this.updatePlayerView(await response.json());
+            this.updatePlayerView(localPlayerView(await response.json()));
             return;
           }
 
@@ -266,7 +267,7 @@ export default defineComponent({
           }
           if (xhr.status === statusCode.ok) {
             failedPolls = 0;
-            const result = xhr.response as WaitingForModel;
+            const result = localColors(xhr.response as WaitingForModel);
             this.playersWaitingFor = result.waitingFor;
             if (result.result === 'GO' && !watch) {
               // Will only apply to player, not spectator.
@@ -320,7 +321,7 @@ export default defineComponent({
         try {
           const response = await fetch(paths.API_PLAYER + window.location.search);
           if (response.ok) {
-            const latest: PlayerViewModel = await response.json();
+            const latest = localColors<PlayerViewModel>(await response.json());
             playerView.players = latest.players;
           } else {
             console.warn('Unable to update other players', response.status, response.statusText);

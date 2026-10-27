@@ -2,6 +2,7 @@ import {paths} from '@/common/app/paths';
 import {LogMessage} from '@/common/logs/LogMessage';
 import {ViewModel} from '@/common/models/PlayerModel';
 import {passwordParam} from '@/client/utils/playerPassword';
+import {localColors} from '@/client/utils/localColors';
 
 let abortController: AbortController | undefined;
 
@@ -23,7 +24,7 @@ export async function fetchLogs(view: ViewModel, generation: number, undone: boo
       console.error(`error updating messages, response code ${resp.status}`);
       return undefined;
     }
-    return await resp.json();
+    return localColors(await resp.json());
   } catch (err: any) {
     if (err.name === 'AbortError') {
       // ignore aborted requests
