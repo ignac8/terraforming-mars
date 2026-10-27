@@ -30,15 +30,20 @@ async function readJson<T>(resp: Response): Promise<T> {
   return resp.json();
 }
 
-export async function fetchReplayMoves(id: ParticipantId): Promise<ReplayMovesModel> {
-  return readJson(await fetch(`${paths.API_REPLAY_MOVES}?id=${id}`));
+// The solo player asks for the moves a rewind undid, which only the player of a solo or MarsBot game is given.
+function undoneParam(undone: boolean): string {
+  return undone ? '&undone=1' : '';
 }
 
-/** Rejects with an `AbortError` when a newer call replaced this one. */
-export async function fetchReplayView(id: ParticipantId, saveId: number, viewAs: ReplayViewAs): Promise<ReplayViewModel> {
+export async function fetchReplayMoves(id: ParticipantId, undone: boolean = false): Promise<ReplayMovesModel> {
+  return readJson(await fetch(`${paths.API_REPLAY_MOVES}?id=${id}${undoneParam(undone)}`));
+}
+
+/** Rejects with an `AbortError` when a newer call replaced this one. `undone`: the save is one that a rewind undid. */
+export async function fetchReplayView(id: ParticipantId, saveId: number, viewAs: ReplayViewAs, undone: boolean = false): Promise<ReplayViewModel> {
   viewAbortController?.abort();
   viewAbortController = new AbortController();
-  const url = `${paths.API_REPLAY_VIEW}?id=${id}&save=${saveId}&as=${viewAs}`;
+  const url = `${paths.API_REPLAY_VIEW}?id=${id}&save=${saveId}&as=${viewAs}${undoneParam(undone)}`;
   return readJson(await fetch(url, {signal: viewAbortController.signal}));
 }
 

@@ -18,6 +18,8 @@ export class ApiReplayMoves extends Handler {
     if (game === undefined) {
       throw RouteError.notFound('game not found');
     }
-    responses.writeJson(res, ctx, await getReplayMoves(game, id));
+    // Only the player of a solo or MarsBot game sees the moves that a rewind undid, and only when asked (see getReplayMoves).
+    const undone = ctx.urlParams.stringOrUndefined('undone') === '1';
+    responses.writeJson(res, ctx, await getReplayMoves(game, id, {undone}));
   }
 }

@@ -5,7 +5,7 @@ import {PlayerViewModel, PrivatePlayerFields} from '../models/PlayerModel';
 import {SpectatorModel} from '../models/SpectatorModel';
 
 /**
- * `undone`: a rewind abandoned this move. Only the judge's list shows such moves, and only when asked.
+ * `undone`: a rewind abandoned this move. Only the solo player's list shows such moves, and only when asked.
  * `movers`: the colours of the players who answered to make the move, in the order of their first answer, when the
  * saves tell. A step that several players answered together, like research, is every one of theirs. Colours and not
  * ids, because a running game's public models carry no player ids.

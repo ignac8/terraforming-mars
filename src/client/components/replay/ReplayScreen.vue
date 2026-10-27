@@ -82,6 +82,8 @@
       :ownViewOnly="ownViewOnly"
       :rewinding="rewinding"
       :loading="status !== 'available'"
+      :canShowUndone="canShowUndone"
+      :showUndone="showUndone"
       @select="select"
       @update:viewAs="changeViewAs"
       @play="play"
@@ -90,7 +92,8 @@
       @update:collapsed="changeCollapsed"
       @back="backToLive"
       @rewind="rewind"
-      @request="requestRewind">
+      @request="requestRewind"
+      @update:showUndone="changeShowUndone">
       <template #error>
         <div v-if="refusal !== undefined" class="replay-error rewind-refusal">{{ refusal }}</div>
         <div v-if="error !== undefined" class="replay-error replay-error--floating">{{ error }}</div>
@@ -152,6 +155,8 @@ type DataModel = {
   expanded: boolean;
   /** A rewind request is on its way. */
   rewinding: boolean;
+  /** The list shows the moves that rewinds undid. */
+  showUndone: boolean;
   /** Numbers moves requests so that a slow answer never replaces a newer one. */
   latestMovesRequest: number;
   /** The view of `index` as `viewAs`. It lags behind them for as long as the next view is loading. */
@@ -208,6 +213,7 @@ export default defineComponent({
       movesGameAge: undefined,
       expanded: false,
       rewinding: false,
+      showUndone: false,
       latestMovesRequest: 0,
       replayView: undefined,
       shownIndex: 0,
@@ -239,6 +245,10 @@ export default defineComponent({
     /** A running game shows a player their own view only, and so the replay URL offers no other. */
     ownViewOnly(): boolean {
       return !this.isLive && !this.finished && (this.canVoteRewind || (this.canRewind && isPlayerId(this.participantId)));
+    },
+    /** The solo player gets a switch for the moves that rewinds undid. */
+    canShowUndone(): boolean {
+      return this.canRewind && isPlayerId(this.participantId);
     },
     /** The live game of the player looking at it. */
     liveModel(): PlayerViewModel | undefined {
@@ -274,13 +284,13 @@ export default defineComponent({
     async loadMoves(): Promise<void> {
       const request = ++this.latestMovesRequest;
       const gameAge = this.liveModel?.game.gameAge;
-      // A list that is read again keeps the board on screen.
+      // A list that is read again keeps the board on screen, as when the player switches the undone moves.
       if (!this.isLive && this.status !== 'available') {
         this.status = 'loading';
       }
       this.error = undefined;
       try {
-        const answer = await fetchReplayMoves(this.participantId);
+        const answer = await fetchReplayMoves(this.participantId, this.showUndone);
         if (request !== this.latestMovesRequest) {
           return;
         }
@@ -308,7 +318,7 @@ export default defineComponent({
           if (this.moves.length === 0) {
             this.viewAs = answer.defaultViewAs;
           }
-          // A list read again can differ, so the move stays the one it was.
+          // A list read again can differ, as when the player switches the undone moves, so the move stays the one it was.
           const selected = this.index === undefined ? undefined : this.moves[this.index]?.saveId;
           this.moves = moves;
           this.canRewind = answer.canRewind;
@@ -321,7 +331,7 @@ export default defineComponent({
           if (at >= 0) {
             this.index = at;
           } else if (selected !== undefined) {
-            // The move is gone from the list.
+            // The move is gone from the list, as an undone one is when the player hides them.
             if (this.isLive) {
               this.backToLive();
             } else {
@@ -358,7 +368,7 @@ export default defineComponent({
       }
       try {
         const move = this.moves[index];
-        const answer = await fetchReplayView(this.participantId, move.saveId, viewAs);
+        const answer = await fetchReplayView(this.participantId, move.saveId, viewAs, move.undone === true);
         if (request !== this.latestRequest) {
           return;
         }
@@ -382,6 +392,11 @@ export default defineComponent({
           this.index = undefined;
         }
       }
+    },
+    async changeShowUndone(showUndone: boolean): Promise<void> {
+      this.pause();
+      this.showUndone = showUndone;
+      await this.loadMoves();
     },
     /** Leaves the past moment for the live game, which has been waiting for input the whole time. */
     backToLive(): void {

@@ -7,6 +7,10 @@
         <template v-if="index === undefined"><span v-i18n>live</span></template>
         <template v-else><span v-i18n>move</span> {{ index + 1 }} / {{ moves.length }}</template>
       </span>
+      <label v-if="canShowUndone" class="replay-show-undone">
+        <input type="checkbox" :checked="showUndone" @change="onShowUndone">
+        <span v-i18n>Show undone moves</span>
+      </label>
       <button class="replay-collapse" type="button" @click="toggle" v-i18n>{{ collapsed ? 'Show' : 'Hide' }}</button>
     </div>
 
@@ -42,9 +46,10 @@
         v-for="(move, i) in moves"
         :key="move.saveId"
         class="replay-move"
-        :class="{'replay-move-current': i === index}"
+        :class="{'replay-move-current': i === index, 'replay-move-undone': move.undone}"
         @click="select(i)">
         <span class="replay-move-number">{{ i + 1 }}</span>
+        <span v-if="move.undone" class="replay-undone-badge" v-i18n>undone</span>
         <ul class="replay-move-messages">
           <LogMessageComponent v-for="(message, j) in move.messages" :key="j" :message="message" :viewModel="viewModel"/>
         </ul>
@@ -54,11 +59,12 @@
 
     <!-- The key forgets a half-made choice when another move is picked. -->
     <RewindControls
-      v-if="(canRewind || votesOnSelected) && index !== undefined && !(live && collapsed)"
+      v-if="(canRewind || votesOnSelected) && index !== undefined && (!selectedUndone || soloRewindsUndone) && !(live && collapsed)"
       :key="index"
       :mode="canRewind ? 'rewind' : 'vote'"
       :disabled="rewinding"
       :blocked="requestBlock"
+      :undone="selectedUndone"
       @rewind="(cards) => $emit('rewind', cards)"
       @request="(cards) => $emit('request', cards)"/>
 
@@ -156,6 +162,16 @@ export default defineComponent({
       type: Boolean,
       default: false,
     },
+    /** The solo player gets a switch for the moves that rewinds undid. */
+    canShowUndone: {
+      type: Boolean,
+      default: false,
+    },
+    /** The list shows the moves that rewinds undid. */
+    showUndone: {
+      type: Boolean,
+      default: false,
+    },
   },
   emits: {
     'select': (_index: number) => true,
@@ -167,6 +183,7 @@ export default defineComponent({
     'back': () => true,
     'rewind': (_cards: RewindCards) => true,
     'request': (_cards: RewindCards) => true,
+    'update:showUndone': (_showUndone: boolean) => true,
   },
   data() {
     return {collapsed: this.live};
@@ -187,10 +204,18 @@ export default defineComponent({
       };
       return [...this.players].sort((a, b) => rank(a) - rank(b));
     },
+    /** The selected move is one that a rewind undid. */
+    selectedUndone(): boolean {
+      return this.index !== undefined && this.moves[this.index]?.undone === true;
+    },
     /** The viewer can ask for a rewind to the selected move: they are among those who made it. */
     votesOnSelected(): boolean {
       const movers = this.index === undefined ? undefined : this.moves[this.index]?.movers;
       return this.canVoteRewind && this.viewerColor !== undefined && movers?.includes(this.viewerColor) === true;
+    },
+    /** Only the solo player, who may see the undone moves, may rewind to one. Nobody may vote for one. */
+    soloRewindsUndone(): boolean {
+      return this.canShowUndone && this.canRewind;
     },
     speeds(): ReadonlyArray<number> {
       return SPEEDS;
@@ -224,6 +249,9 @@ export default defineComponent({
         return;
       }
       this.$emit('select', index);
+    },
+    onShowUndone(event: Event): void {
+      this.$emit('update:showUndone', (event.target as HTMLInputElement).checked);
     },
     onSpeed(event: Event): void {
       this.$emit('update:speed', Number((event.target as HTMLSelectElement).value));

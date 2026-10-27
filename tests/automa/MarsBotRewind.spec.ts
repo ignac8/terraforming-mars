@@ -91,4 +91,18 @@ describe('Rewinding a MarsBot game', () => {
     expect(restored.getPlayerById(player.id).heat).eq(saved.players[0].heat);
     expect(restored.automaHooks!.marsBot.serialize()).deep.eq(saved.automaState);
   });
+
+  it('brings back the moves an earlier rewind undid, MarsBot\'s draft picks with them', async () => {
+    // The first rewind undid the draft and both conversions.
+    const first = await rewindGame(game, player, research, 'same');
+    const mismatches = await rebuilds('mismatch');
+    const saved = structuredClone(rows()[convert]);
+
+    const restored = await rewindGame(first, first.getPlayerById(player.id), convert, 'same');
+
+    expect(await rebuilds('mismatch')).eq(mismatches);
+    expect(restored.getPlayerById(player.id).heat).eq(saved.players[0].heat);
+    expect(restored.automaHooks!.marsBot.serialize()).deep.eq(saved.automaState);
+    expect(restored.gameLog[restored.gameLog.length - 1].message).eq('${0} brought back undone moves and rewound the game to generation ${1}');
+  });
 });

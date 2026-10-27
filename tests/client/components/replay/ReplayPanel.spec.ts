@@ -249,6 +249,51 @@ describe('ReplayPanel', () => {
     });
   });
 
+  describe('undone moves', () => {
+    const withUndone: Array<ReplayMove> = [
+      {saveId: 1, messages: [message('alpha', 1)], movers: ['blue']},
+      {saveId: 2, messages: [message('beta', 2)], undone: true, movers: ['blue']},
+      {saveId: 3, messages: [message('gamma', 3)], movers: ['blue']},
+    ];
+
+    it('offers the solo player a switch, and passes the choice on', async () => {
+      for (const showUndone of [false, true]) {
+        const wrapper = mountPanel({canShowUndone: true, showUndone});
+        const input = wrapper.find('.replay-header .replay-show-undone input');
+        expect((input.element as HTMLInputElement).checked).equals(showUndone);
+        await input.setValue(!showUndone);
+        expect(wrapper.emitted('update:showUndone'), String(showUndone)).to.deep.equal([[!showUndone]]);
+      }
+    });
+
+    it('offers it to no one else', () => {
+      expect(mountPanel().find('.replay-show-undone').exists()).is.false;
+    });
+
+    it('dims an undone move and badges it, and no other', () => {
+      const wrapper = mountPanel({moves: withUndone});
+      const entries = wrapper.findAll('.replay-move');
+      expect(entries.map((entry) => entry.classes('replay-move-undone'))).deep.equal([false, true, false]);
+      expect(entries.map((entry) => entry.find('.replay-undone-badge').exists())).deep.equal([false, true, false]);
+    });
+
+    it('offers the solo player a rewind to an undone move, and no one else a rewind or a vote for one', () => {
+      for (const [props, offered] of [
+        [{canRewind: true, canShowUndone: true}, true],
+        [{canRewind: true}, false],
+        [{canVoteRewind: true, viewerColor: 'blue'}, false],
+        [{canVoteRewind: true, viewerColor: 'blue', canShowUndone: true}, false],
+      ] as const) {
+        const controls = mountPanel({...props, moves: withUndone, index: 1}).findComponent(RewindControls);
+        expect(controls.exists(), JSON.stringify(props)).equals(offered);
+        if (offered) {
+          expect(controls.props('undone')).is.true;
+        }
+        expect(mountPanel({...props, moves: withUndone, index: 2}).findComponent(RewindControls).props('undone'), JSON.stringify(props)).is.false;
+      }
+    });
+  });
+
   it('offers a vote only on a move the viewer made, alone or with others, and a solo player a rewind to any', () => {
     const made: Array<ReplayMove> = [{...moves[0], movers: ['blue']}, {...moves[1], movers: ['red', 'blue']}, moves[2]];
     // The viewer is told by colour: a running game's players have no ids.

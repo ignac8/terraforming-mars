@@ -66,5 +66,7 @@
   "A finished game can no longer be rewound by a vote.": "Zakończonej gry nie można już cofnąć głosowaniem.",
   "Now": "Teraz",
   "undone": "cofnięty",
-  "Pending choice": "Oczekujący wybór"
+  "Pending choice": "Oczekujący wybór",
+  "Show undone moves": "Pokaż cofnięte ruchy",
+  "This brings back moves that an earlier rewind undid, and undoes the moves played since.": "Przywraca to ruchy cofnięte wcześniej i cofa ruchy rozegrane od tamtej pory."
 }

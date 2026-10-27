@@ -6,7 +6,7 @@ import {Response} from '../Response';
 import {RouteError} from './RouteError';
 import {isFinished, loadReplayState} from '../replay/ReplayService';
 import {buildReplayView} from '../replay/replayView';
-import {canBrowseHistory} from '../rewind/access';
+import {canBrowseHistory, checkMayShowUndone} from '../rewind/access';
 import {PLAYER_COLORS} from '../../common/Color';
 import {ReplayViewAs} from '../../common/replay/ReplayModel';
 import {PlayerId} from '../../common/Types';
@@ -34,6 +34,11 @@ export class ApiReplayView extends Handler {
     if (game === undefined) {
       throw RouteError.notFound('game not found');
     }
+    // Only the player of a solo or MarsBot game sees a save that a rewind undid, and only when asked.
+    const undone = ctx.urlParams.stringOrUndefined('undone') === '1';
+    if (undone) {
+      checkMayShowUndone(game, id);
+    }
     // A running game's history is for whoever could rewind it, and only in their own view.
     if (!await isFinished(game)) {
       if (!canBrowseHistory(game, id)) {
@@ -44,7 +49,7 @@ export class ApiReplayView extends Handler {
       }
     }
 
-    const sandbox = await loadReplayState(game, saveId);
+    const sandbox = await loadReplayState(game, saveId, {undone});
     responses.writeJson(res, ctx, buildReplayView(sandbox, id, saveId, viewAs));
   }
 }

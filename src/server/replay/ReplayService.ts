@@ -8,7 +8,7 @@ import {GameId, ParticipantId, PlayerId} from '../../common/Types';
 import {ReplayMove, ReplayMovesModel} from '../../common/replay/ReplayModel';
 import {LogMessage} from '../../common/logs/LogMessage';
 import {isAbandonedSave, RewindRecord} from '../rewind/RewindRecord';
-import {canBrowseHistory, canRewind, canVoteRewind} from '../rewind/access';
+import {canBrowseHistory, canRewind, canVoteRewind, checkMayShowUndone} from '../rewind/access';
 import {answerersOf, buildMoveList, SaveEntry} from './moveList';
 
 const MAX_CACHED_GAMES = 50;
@@ -253,15 +253,15 @@ function movesFor(viewerId: ParticipantId, moves: Array<ReplayMove>): Array<Repl
 
 type AllMoves = {status: 'available', moves: Array<ReplayMove>, finished: boolean} | {status: 'not-finished'} | {status: 'expired'};
 
-// Every move of the game with every message, the same for every viewer.
-async function allMoves(game: IGame): Promise<AllMoves> {
+// Every move of the game with every message, the same for every viewer. `undone` adds the moves that rewinds undid.
+async function allMoves(game: IGame, undone: boolean = false): Promise<AllMoves> {
   const colors = new Map(game.players.map((p) => [p.id, p.color]));
   // The live phase comes first: a game that a rollback reopened must not serve its old list.
   if (game.phase !== Phase.END) {
     const saves = await readRunningSaves(game);
     // The newest save's move is the one the game is at, which its inputs since that save tell.
     const movers = {colors, newest: answersSince(game, saves[saves.length - 1]?.saveId ?? -1)};
-    return {status: 'available', moves: buildMoveList(saves, game.rewinds, game.gameLog, false, movers), finished: false};
+    return {status: 'available', moves: buildMoveList(saves, game.rewinds, game.gameLog, undone, movers), finished: false};
   }
   const cached = cache.get(game.id);
   const result: Built = cached?.finished ?
@@ -271,7 +271,7 @@ async function allMoves(game: IGame): Promise<AllMoves> {
     return result;
   }
   const {saves, rewinds, log} = result.game;
-  return {status: 'available', moves: buildMoveList(saves, rewinds, log, false, {colors}), finished: true};
+  return {status: 'available', moves: buildMoveList(saves, rewinds, log, undone, {colors}), finished: true};
 }
 
 /**
@@ -286,18 +286,27 @@ export async function moversOf(game: IGame, saveId: number): Promise<Array<Playe
 
 /**
  * The save ids of the game's move list, the same for every viewer. Undefined when its history is gone (compressed),
- * or when the game has ended and its final save has not landed yet.
+ * or when the game has ended and its final save has not landed yet. `undone`: the solo player's list, with the moves
+ * that rewinds undid.
  */
-export async function historySaveIds(game: IGame): Promise<Array<number> | undefined> {
-  const all = await allMoves(game);
+export async function historySaveIds(game: IGame, options: {undone?: boolean} = {}): Promise<Array<number> | undefined> {
+  const all = await allMoves(game, options.undone === true);
   return all.status === 'available' ? all.moves.map((move) => move.saveId) : undefined;
 }
 
-export async function getReplayMoves(game: IGame, viewerId: ParticipantId): Promise<ReplayMovesModel> {
+/**
+ * `undone`: the list with the moves that rewinds undid, each marked. Refused unless the viewer
+ * is the player of a solo or MarsBot game with Player undo.
+ */
+export async function getReplayMoves(game: IGame, viewerId: ParticipantId, options: {undone?: boolean} = {}): Promise<ReplayMovesModel> {
+  const undone = options.undone === true;
+  if (undone) {
+    checkMayShowUndone(game, viewerId);
+  }
   if (game.phase !== Phase.END && !canBrowseHistory(game, viewerId)) {
     return {status: 'not-finished'};
   }
-  const all = await allMoves(game);
+  const all = await allMoves(game, undone);
   if (all.status !== 'available') {
     return all;
   }
@@ -316,10 +325,11 @@ export async function getReplayMoves(game: IGame, viewerId: ParticipantId): Prom
 
 /**
  * Returns the game as it was at `saveId`. The game is a sandbox: it never writes anything, and
- * callers share it, so they must only read it.
+ * callers share it, so they must only read it. `undone`: a save that a rewind abandoned may be
+ * loaded too. Only the solo player's routes pass it.
  */
-export function loadReplayState(game: IGame, saveId: number): Promise<IGame> {
-  if (isAbandonedSave(saveId, game.rewinds)) {
+export function loadReplayState(game: IGame, saveId: number, options: {undone?: boolean} = {}): Promise<IGame> {
+  if (options.undone !== true && isAbandonedSave(saveId, game.rewinds)) {
     return Promise.reject(RouteError.notFound());
   }
   const key = `${game.id}/${saveId}`;

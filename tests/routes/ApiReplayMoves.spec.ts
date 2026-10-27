@@ -224,28 +224,47 @@ describe('ApiReplayMoves', () => {
     const texts = (moves: Array<{messages: Array<{message: string}>}>) => moves.flatMap((m) => m.messages.map((l) => l.message));
 
     for (const finished of [false, true]) {
+      it(`shows the solo player the undone moves when asked, ${finished ? 'after the game' : 'while it runs'}`, async () => {
+        const {first} = await rewound(1, {undoOption: true}, finished);
+
+        await read(`id=${first.id}&undone=1`);
+        expect(res.statusCode).eq(statusCode.ok);
+        const moves = JSON.parse(res.content).moves;
+        expect(moves.map((m: any) => [m.saveId, m.undone === true])).deep.eq([[0, false], [1, false], [2, true], [3, true], [4, true], [5, false]]);
+        expect(texts(moves.filter((m: any) => m.undone))).deep.eq(UNDONE_LINES);
+
+        await read(`id=${first.id}`);
+        const plain = JSON.parse(res.content).moves;
+        expect(plain.map((m: any) => m.saveId)).deep.eq([0, 1, 5]);
+        expect(plain.some((m: any) => m.undone !== undefined)).is.false;
+        for (const line of UNDONE_LINES) {
+          expect(texts(plain)).not.includes(line);
+        }
+      });
+    }
+
+    for (const finished of [false, true]) {
       const runs = [
-        {who: 'the solo player', players: 1, viewer: (_g: IGame, p: TestPlayer) => p.id},
-        {who: 'a player of a table', players: 2, viewer: (_g: IGame, p: TestPlayer) => p.id},
-        // A running game keeps its history from a spectator.
-        ...(finished ? [{who: 'a spectator', players: 2, viewer: (g: IGame) => g.spectatorId}] : []),
+        {who: 'a player of a table', players: 2, options: {undoOption: true}, viewer: (_g: IGame, p: TestPlayer) => p.id},
+        {who: 'a spectator', players: 2, options: {undoOption: true}, viewer: (g: IGame) => g.spectatorId},
+        {who: 'a spectator of a solo game', players: 1, options: {undoOption: true}, viewer: (g: IGame) => g.spectatorId},
+        {who: 'the player of a solo game without Player undo', players: 1, options: {}, viewer: (_g: IGame, p: TestPlayer) => p.id},
       ];
       for (const run of runs) {
-        it(`leaves out the moves the rewind undid for ${run.who}, ${finished ? 'after the game' : 'while it runs'}`, async () => {
-          const {added, first} = await rewound(run.players, {undoOption: true}, finished);
+        it(`refuses the undone moves to ${run.who}, ${finished ? 'after the game' : 'while it runs'}`, async () => {
+          const {added, first} = await rewound(run.players, run.options, finished);
+          await read(`id=${run.viewer(added, first)}&undone=1`);
+          expect(res.statusCode).eq(statusCode.forbidden);
+          expect(res.content).not.contains('line');
 
-          // An undone parameter, as an older page sent it to a judge, shows nothing more.
-          for (const query of ['', '&undone=1']) {
-            await read(`id=${run.viewer(added, first)}${query}`);
-
-            expect(res.statusCode).eq(statusCode.ok);
-            const moves = JSON.parse(res.content).moves;
-            expect(moves.map((m: any) => m.saveId), query).deep.eq([0, 1, 5]);
-            expect(moves.some((m: any) => m.undone !== undefined), query).is.false;
-            for (const line of UNDONE_LINES) {
-              expect(texts(moves), query).not.includes(line);
-            }
+          // Without the parameter nobody gets a move the rewind undid.
+          await read(`id=${run.viewer(added, first)}`);
+          expect(res.statusCode).eq(statusCode.ok);
+          const answer = JSON.parse(res.content);
+          for (const line of UNDONE_LINES) {
+            expect(texts(answer.moves ?? [])).not.includes(line);
           }
+          expect((answer.moves ?? []).some((m: any) => m.undone !== undefined)).is.false;
         });
       }
     }

@@ -475,6 +475,102 @@ describe('ReplayScreen', () => {
       expect(wrapper.find('.rewind-refusal').text()).to.equal('Cofanie gry już trwa.');
     });
 
+    describe('the undone moves', () => {
+      const withUndone: ReplayMovesModel = {status: 'available', ...rewindable, moves: [
+        {saveId: 10, messages: played},
+        {saveId: 11, messages: played, undone: true},
+        {saveId: 12, messages: played},
+      ]};
+      const withoutUndone: ReplayMovesModel = {status: 'available', ...rewindable, moves: [{saveId: 10, messages: played}, {saveId: 12, messages: played}]};
+      const movesCalls = () => calls.filter((url) => url.startsWith('api/replay/moves'));
+      const switchOf = (wrapper: ReturnType<typeof mountRewindable>) => wrapper.find('.replay-show-undone input');
+      const panel = (wrapper: ReturnType<typeof mountRewindable>) => wrapper.findComponent(ReplayPanel);
+
+      function mountWithControls() {
+        return shallowMount(ReplayScreen, {
+          ...globalConfig,
+          global: {...globalConfig.global, stubs: {ReplayPanel: false, RewindControls: false}},
+          props: {participantId: playerId},
+        });
+      }
+
+      it('are off when the page loads, and read again with the parameter when the switch is turned on and off', async () => {
+        movesAnswer = withoutUndone;
+        const wrapper = mountRewindable();
+        await flushPromises();
+        expect(movesCalls()).to.deep.equal([`api/replay/moves?id=${playerId}`]);
+
+        movesAnswer = withUndone;
+        await switchOf(wrapper).setValue(true);
+        await flushPromises();
+        expect(movesCalls()[1]).to.equal(`api/replay/moves?id=${playerId}&undone=1`);
+        expect(wrapper.findAll('.replay-move-undone')).to.have.length(1);
+
+        movesAnswer = withoutUndone;
+        await switchOf(wrapper).setValue(false);
+        await flushPromises();
+        expect(movesCalls()[2]).to.equal(`api/replay/moves?id=${playerId}`);
+        expect(wrapper.findAll('.replay-move-undone')).to.have.length(0);
+      });
+
+      it('are shown with the parameter, and rewound to through the rewind route', async () => {
+        movesAnswer = withUndone;
+        const wrapper = mountWithControls();
+        await flushPromises();
+        await switchOf(wrapper).setValue(true);
+        await flushPromises();
+
+        for (const [index, saveId, undone] of [[2, 12, false], [1, 11, true]] as const) {
+          panel(wrapper).vm.$emit('select', index);
+          await flushPromises();
+          expect(calls[calls.length - 1], String(index)).to.equal(`api/replay/view?id=${playerId}&save=${saveId}&as=all${undone ? '&undone=1' : ''}`);
+          expect(wrapper.find('.rewind-controls').exists(), String(index)).is.true;
+        }
+        await wrapper.find('.rewind-start').trigger('click');
+        expect(wrapper.find('.rewind-confirm-undone').exists()).is.true;
+        await wrapper.find('.rewind-confirm-button').trigger('click');
+        await flushPromises();
+        expect(rewinds).to.deep.equal([{url: `api/rewind?id=${playerId}`, body: {saveId: 11, cards: 'same'}}]);
+      });
+
+      it('stay on the move that is shown when the list changes, and move to the nearest move when it is gone', async () => {
+        movesAnswer = withUndone;
+        const wrapper = mountRewindable();
+        await flushPromises();
+        await switchOf(wrapper).setValue(true);
+        await flushPromises();
+        panel(wrapper).vm.$emit('select', 2);
+        await flushPromises();
+
+        // Move 12 is index 1 once the undone move is out of the list.
+        movesAnswer = withoutUndone;
+        await switchOf(wrapper).setValue(false);
+        await flushPromises();
+        expect(panel(wrapper).props('index')).equals(1);
+
+        movesAnswer = withUndone;
+        await switchOf(wrapper).setValue(true);
+        await flushPromises();
+        panel(wrapper).vm.$emit('select', 1);
+        await flushPromises();
+        movesAnswer = withoutUndone;
+        await switchOf(wrapper).setValue(false);
+        await flushPromises();
+        expect(panel(wrapper).props('index')).equals(0);
+        expect(calls[calls.length - 1]).to.equal(`api/replay/view?id=${playerId}&save=10&as=all`);
+      });
+
+      it('are offered to the solo player, and to no one else', async () => {
+        for (const [participantId, canRewind, expected] of [[playerId, true, true], [playerId, false, false], [id, true, false]] as const) {
+          movesAnswer = {status: 'available', ...rewindable, canRewind, moves: [{saveId: 10, messages: played}]};
+          const wrapper = shallowMount(ReplayScreen, {...globalConfig, props: {participantId}});
+          await flushPromises();
+          expect(wrapper.findComponent(ReplayPanel).props('canShowUndone'), `${participantId} ${canRewind}`).equals(expected);
+          wrapper.unmount();
+        }
+      });
+    });
+
     it('rewinds a solo game from the live game page by the id of the player alone', async () => {
       movesAnswer = {status: 'available', finished: false, canRewind: true, canVoteRewind: false, defaultViewAs: 'blue', moves: [{saveId: 10, messages: played}, {saveId: 11, messages: played}]};
       const wrapper = shallowMount(ReplayScreen, {

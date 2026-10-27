@@ -10,7 +10,7 @@ import {loadSandboxGame} from '../replay/sandbox';
 import {RouteError} from '../routes/RouteError';
 import {canRewind} from './access';
 import {readRebuildSaves, replayToSave, ReplayResult} from './rebuild';
-import {RewindRecord} from './RewindRecord';
+import {activeRewinds, isAbandonedSave, RewindRecord} from './RewindRecord';
 import {shuffleHiddenPiles} from './shuffleHiddenPiles';
 import {withTableLock} from './tableLock';
 import {Phase} from '../../common/Phase';
@@ -71,11 +71,15 @@ async function rewind(live: IGame, saveId: number, options: RewindOptions, by: R
   if (live.rewinds.length >= MAX_REWINDS) {
     throw RouteError.badRequest('This game was rewound too many times.');
   }
-  // The list leaves out saves that show no move, abandoned saves and compressed history.
-  const history = await historySaveIds(live);
+  // The list leaves out saves that show no move, and compressed history. Only the solo player's list has the
+  // abandoned saves: a rewind to one brings its line back.
+  const history = await historySaveIds(live, {undone: by.kind === 'player'});
   if (history === undefined || !history.includes(saveId)) {
     throw RouteError.notFound('That move is not in this game\'s history.');
   }
+  // The save that an active rewind restored is abandoned too, since that rewind's save stands for it, but a rewind to
+  // it brings nothing back. Active stretches never overlap, so every other abandoned save brings moves back.
+  const restoresUndone = isAbandonedSave(saveId, live.rewinds) && !activeRewinds(live.rewinds).some((r) => r.restoredSaveId === saveId);
   const {cards} = options;
 
   let saves: Array<SerializedGame>;
@@ -152,7 +156,7 @@ async function rewind(live: IGame, saveId: number, options: RewindOptions, by: R
     logStart: target.gameLog.length,
     logEnd: live.gameLog.length,
   };
-  const swap: Swap = {live, by, record, options, target, movers};
+  const swap: Swap = {live, by, record, options, target, restoresUndone, movers};
   let restored: Game | undefined;
   try {
     if (replay) {
@@ -213,6 +217,9 @@ async function rewind(live: IGame, saveId: number, options: RewindOptions, by: R
     throw RouteError.badRequest(UNRESTORABLE);
   }
   rewindMetrics.rebuilds.inc({result});
+  if (restoresUndone) {
+    console.log(`rewind: ${live.id} restores undone save ${saveId}`);
+  }
   if (finished) {
     // A request that took the old, finished object during the hand-over can have listed its moves
     // before the rewind's save landed.
@@ -247,6 +254,8 @@ type Swap = {
   options: RewindOptions,
   /** The stored save of the moment. Its clocks are the moment's, which a replay's are not. */
   target: SerializedGame,
+  /** The moment is on a line that an earlier rewind abandoned, which this rewind brings back. */
+  restoresUndone: boolean,
   /** Who made the move the rewind undoes, when that is known: empty when not. */
   movers: Array<PlayerId>,
   /** The write of the save `record.saveId`, once promote has started it. */
@@ -276,10 +285,10 @@ async function restoreLive({live, record, written}: Swap): Promise<void> {
  * It runs inside the sandbox's save of the moment, before play goes on, so it can't leave half a rewind.
  */
 function promote(sandbox: Game, swap: Swap): void {
-  const {live, by, record, options, target, movers} = swap;
+  const {live, by, record, options, target, restoresUndone, movers} = swap;
   sandbox.gameLog = [...live.gameLog];
   sandbox.gameAge = live.gameAge;
-  logRewind(sandbox, by, options.cards);
+  logRewind(sandbox, by, options.cards, restoresUndone);
   sandbox.rewinds = [...live.rewinds, record];
   // Open pages see a higher count and refresh.
   sandbox.undoCount = live.undoCount + 1;
@@ -319,9 +328,16 @@ function promote(sandbox: Game, swap: Swap): void {
   sandbox.isSandbox = true;
 }
 
-/** Writes the line that marks the rewind, naming who did it. */
-function logRewind(game: Game, by: RewindActor, cards: RewindCards): void {
+/** Writes the line that marks the rewind, naming who did it. Only the solo player brings back moves that a rewind undid. */
+function logRewind(game: Game, by: RewindActor, cards: RewindCards, restoresUndone: boolean): void {
   const shuffled = cards === 'shuffle';
+  if (restoresUndone && by.kind === 'player') {
+    game.log(shuffled ?
+      '${0} brought back undone moves, rewound the game to generation ${1} and shuffled the hidden piles' :
+      '${0} brought back undone moves and rewound the game to generation ${1}',
+    (b) => b.player(game.getPlayerById(by.player.id)).number(game.generation));
+    return;
+  }
   switch (by.kind) {
   case 'player':
     game.log(shuffled ?

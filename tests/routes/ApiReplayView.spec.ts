@@ -216,23 +216,36 @@ describe('ApiReplayView', () => {
     }
 
     for (const finished of [false, true]) {
+      it(`shows the solo player the save when asked for the undone moves, and not otherwise, ${finished ? 'after the game' : 'while it runs'}`, async () => {
+        const {first} = await rewound(1, finished);
+
+        await get(`id=${first.id}&save=${UNDONE_SAVE}&as=${first.color}&undone=1`);
+        expect(res.statusCode).eq(statusCode.ok);
+        expect(JSON.parse(res.content).saveId).eq(UNDONE_SAVE);
+
+        res = new MockResponse();
+        await get(`id=${first.id}&save=${UNDONE_SAVE}&as=${first.color}`);
+        expect(res.statusCode).eq(statusCode.notFound);
+      });
+    }
+
+    for (const finished of [false, true]) {
       const runs = [
-        {who: 'the solo player', players: 1, viewer: (_g: IGame, p: TestPlayer) => p.id},
         {who: 'a player of a table', players: 2, viewer: (_g: IGame, p: TestPlayer) => p.id},
         // A running game keeps its history from a spectator.
         ...(finished ? [{who: 'a spectator', players: 2, viewer: (g: IGame) => g.spectatorId}] : []),
       ];
       for (const run of runs) {
-        it(`does not find the save for ${run.who}, also when asked for the undone moves, ${finished ? 'after the game' : 'while it runs'}`, async () => {
+        it(`refuses the save to ${run.who}, also when asked for the undone moves, ${finished ? 'after the game' : 'while it runs'}`, async () => {
           const {game: other, first} = await rewound(run.players, finished);
           const id = run.viewer(other, first);
 
-          // An undone parameter, as an older page sent it to a judge, shows nothing more.
-          for (const query of ['', '&undone=1']) {
-            res = new MockResponse();
-            await get(`id=${id}&save=${UNDONE_SAVE}&as=${first.color}${query}`);
-            expect(res.statusCode, query).eq(statusCode.notFound);
-          }
+          res = new MockResponse();
+          await get(`id=${id}&save=${UNDONE_SAVE}&as=${first.color}`);
+          expect(res.statusCode).eq(statusCode.notFound);
+          res = new MockResponse();
+          await get(`id=${id}&save=${UNDONE_SAVE}&as=${first.color}&undone=1`);
+          expect(res.statusCode).eq(statusCode.forbidden);
 
           res = new MockResponse();
           await get(`id=${id}&save=${KEPT_SAVE}&as=${first.color}`);

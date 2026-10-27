@@ -13,6 +13,7 @@
     <button v-if="!confirming" class="rewind-start" type="button" :disabled="disabled || blocked !== undefined" @click="confirming = true" v-i18n>{{ mode === 'vote' ? 'Ask the others to rewind to before this move' : 'Rewind to before this move' }}</button>
     <div v-else class="rewind-confirm">
       <span class="rewind-confirm-text" v-i18n>{{ mode === 'vote' ? 'Every other player must agree. Any move ends the vote.' : 'Moves after this one will be undone.' }}</span>
+      <span v-if="undone" class="rewind-confirm-text rewind-confirm-undone" v-i18n>This brings back moves that an earlier rewind undid, and undoes the moves played since.</span>
       <button class="rewind-confirm-button" type="button" :disabled="disabled" @click="confirm" v-i18n>{{ mode === 'vote' ? 'Ask' : 'Rewind' }}</button>
       <button class="rewind-cancel" type="button" @click="confirming = false" v-i18n>Cancel</button>
     </div>
@@ -44,6 +45,11 @@ export default defineComponent({
     blocked: {
       type: String as () => RequestBlock,
       default: undefined,
+    },
+    /** The move is one an earlier rewind undid, which only the solo player rewinds to. */
+    undone: {
+      type: Boolean,
+      default: false,
     },
   },
   emits: {
