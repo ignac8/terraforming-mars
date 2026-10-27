@@ -229,5 +229,7 @@
   "${0} rewound the game to generation ${1} after a unanimous vote": "${0} cofa grę do pokolenia ${1} po jednomyślnym głosowaniu",
   "${0} rewound the game to generation ${1} after a unanimous vote and shuffled the hidden piles": "${0} cofa grę do pokolenia ${1} po jednomyślnym głosowaniu i tasuje ukryte talie",
   "The judge brought back undone moves and rewound the game to generation ${0}": "Sędzia przywraca cofnięte wcześniej ruchy i cofa grę do pokolenia ${0}",
-  "The judge brought back undone moves, rewound the game to generation ${0} and shuffled the hidden piles": "Sędzia przywraca cofnięte wcześniej ruchy, cofa grę do pokolenia ${0} i tasuje ukryte talie"
+  "The judge brought back undone moves, rewound the game to generation ${0} and shuffled the hidden piles": "Sędzia przywraca cofnięte wcześniej ruchy, cofa grę do pokolenia ${0} i tasuje ukryte talie",
+  "${0} brought back undone moves and rewound the game to generation ${1}": "${0} przywraca cofnięte wcześniej ruchy i cofa grę do pokolenia ${1}",
+  "${0} brought back undone moves, rewound the game to generation ${1} and shuffled the hidden piles": "${0} przywraca cofnięte wcześniej ruchy, cofa grę do pokolenia ${1} i tasuje ukryte talie"
 }

@@ -358,6 +358,39 @@ describe('ApiReplayMoves', () => {
       }
     }
 
+    describe('of a solo game', () => {
+      async function solo(options: Parameters<typeof testGame>[1], finished: boolean) {
+        const [soloGame, player] = testGame(1, options);
+        await scaffolding.ctx.gameLoader.add(soloGame);
+        storeRewoundSaves(db, soloGame, finished);
+        clearReplayCache();
+        return player;
+      }
+
+      for (const finished of [false, true]) {
+        it(`shows the player of a solo game with Player undo the undone moves when asked, ${finished ? 'after the game' : 'while it runs'}`, async () => {
+          const player = await solo({undoOption: true}, finished);
+
+          await read(`id=${player.id}&undone=1`);
+          expect(res.statusCode).eq(statusCode.ok);
+          const moves = JSON.parse(res.content).moves;
+          expect(moves.map((m: any) => [m.saveId, m.undone === true])).deep.eq([[0, false], [1, false], [2, true], [3, true], [4, true], [5, false]]);
+          expect(texts(moves.filter((m: any) => m.undone))).deep.eq(UNDONE_LINES);
+
+          await read(`id=${player.id}`);
+          const plain = JSON.parse(res.content).moves;
+          expect(plain.map((m: any) => m.saveId)).deep.eq([0, 1, 5]);
+          expect(plain.some((m: any) => m.undone !== undefined)).is.false;
+        });
+      }
+
+      it('refuses the undone moves to the player of a solo game without Player undo', async () => {
+        const player = await solo({}, true);
+        await read(`id=${player.id}&undone=1`);
+        expect(res.statusCode).eq(statusCode.forbidden);
+      });
+    });
+
     it('checks the judge password before it shows the undone moves', async () => {
       const {game: judged} = await rewound({judgeLink: true, judgeUndo: true}, true);
       judged.judgePassword = 'secret';

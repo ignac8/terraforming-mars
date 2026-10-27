@@ -291,8 +291,8 @@ export async function moversOf(game: IGame, saveId: number): Promise<Array<Playe
 
 /**
  * The save ids of the game's move list, the same for every viewer. Undefined when its history is gone (compressed),
- * or when the game has ended and its final save has not landed yet. `undone`: the judge's list, with the moves that
- * rewinds undid.
+ * or when the game has ended and its final save has not landed yet. `undone`: the list of the judge or the
+ * solo player, with the moves that rewinds undid.
  */
 export async function historySaveIds(game: IGame, options: {undone?: boolean} = {}): Promise<Array<number> | undefined> {
   const all = await allMoves(game, options.undone === true);
@@ -300,8 +300,8 @@ export async function historySaveIds(game: IGame, options: {undone?: boolean} = 
 }
 
 /**
- * `undone`: the judge's list with the moves that rewinds undid, each marked. Refused unless the viewer
- * is the judge of a Judge undo game.
+ * `undone`: the list with the moves that rewinds undid, each marked. Refused unless the viewer
+ * is the judge of a Judge undo game or the player of a solo game (see checkMayShowUndone).
  */
 export async function getReplayMoves(game: IGame, viewerId: ParticipantId, options: {undone?: boolean} = {}): Promise<ReplayMovesModel> {
   const undone = options.undone === true;
@@ -331,7 +331,7 @@ export async function getReplayMoves(game: IGame, viewerId: ParticipantId, optio
 /**
  * Returns the game as it was at `saveId`. The game is a sandbox: it never writes anything, and
  * callers share it, so they must only read it. `undone`: a save that a rewind abandoned may be
- * loaded too. Only the judge's routes pass it.
+ * loaded too. Only the requests of the judge and the solo player pass it.
  */
 export function loadReplayState(game: IGame, saveId: number, options: {undone?: boolean} = {}): Promise<IGame> {
   if (options.undone !== true && isAbandonedSave(saveId, game.rewinds)) {

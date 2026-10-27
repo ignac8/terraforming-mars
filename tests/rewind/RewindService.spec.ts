@@ -422,11 +422,81 @@ describe('RewindService', () => {
 
   it('refuses a move that is not in the history', async () => {
     const restored = await rewindGame(game, player, research, 'same');
-    // The first rewind abandoned every save from `research` on, `convert` among them.
-    for (const saveId of [convert, 999]) {
-      const e = await refusal(rewindGame(restored, restored.getPlayerById(player.id), saveId, 'same'));
-      expect(e.kind).eq('notFound');
-    }
+    const e = await refusal(rewindGame(restored, restored.getPlayerById(player.id), 999, 'same'));
+    expect(e.kind).eq('notFound');
+  });
+
+  describe('a rewind to an undone move', () => {
+    // What the rewinds tell operators.
+    let logs: Array<string>;
+    const originalLog = console.log;
+
+    beforeEach(() => {
+      logs = [];
+      console.log = (...args: Array<unknown>) => {
+        logs.push(args.join(' '));
+      };
+    });
+
+    afterEach(() => {
+      console.log = originalLog;
+    });
+
+    it('brings back the moves an earlier rewind undid, and undoes the ones played since', async () => {
+      for (const cards of ['same', 'shuffle'] as const) {
+        await play();
+        logs = [];
+        const original = (await movesOf(game, player.id)).map((m) => m.saveId);
+        // The first rewind abandoned every save from `research` on, `convert` among them.
+        const first = await rewindGame(game, player, research, 'same');
+        const firstSave = first.rewinds[0].saveId;
+        expect((await movesOf(first, player.id)).map((m) => m.saveId), cards).not.include(convert);
+        const before = structuredClone(rows());
+
+        const restored = await rewindGame(first, first.getPlayerById(player.id), convert, cards);
+
+        expect(rows(), cards).has.length(before.length + 1);
+        if (cards === 'same') {
+          expect(holdsMoment(rows()[before.length], before[convert]), cards).is.true;
+        }
+        expect(restored.getPlayerById(player.id).heat, cards).eq(before[convert].players[0].heat);
+        expect(restored.gameLog[restored.gameLog.length - 1].message, cards).eq(cards === 'same' ?
+          '${0} brought back undone moves and rewound the game to generation ${1}' :
+          '${0} brought back undone moves, rewound the game to generation ${1} and shuffled the hidden piles');
+        expect(logs, cards).include(`rewind: ${game.id} restores undone save ${convert}`);
+        // The moves up to `convert` are back, the new rewind's save standing for `convert`, and the first rewind's is undone.
+        const saveIds = (await movesOf(restored, player.id)).map((m) => m.saveId);
+        expect(saveIds, cards).deep.eq([...original.filter((id) => id < convert), restored.rewinds[1].saveId]);
+        const undone = await getReplayMoves(restored, player.id, {undone: true});
+        expect(undone.status === 'available' && undone.moves.find((m) => m.saveId === firstSave)?.undone, cards).is.true;
+      }
+    });
+
+    it('marks a rewind to the save an earlier rewind restored as an ordinary one, since nothing comes back', async () => {
+      const first = await rewindGame(game, player, research, 'same');
+
+      const restored = await rewindGame(first, first.getPlayerById(player.id), research, 'same');
+
+      expect(restored.gameLog[restored.gameLog.length - 1].message).eq('${0} rewound the game to generation ${1}');
+      expect(logs.filter((line) => line.includes('restores undone save'))).deep.eq([]);
+    });
+
+    it('brings back undone moves of a finished game', async () => {
+      await play({lastGeneration: true});
+      const first = await rewindGame(game, player, research, 'same');
+      // The research step is back, and passing at once ends the game.
+      const p = first.getPlayerById(player.id);
+      cast(p.getWaitingFor(), SelectCard);
+      p.process({type: 'card', cards: []});
+      choose(p, 'Pass for this generation');
+      await first.finishing;
+      expect(first.phase).eq(Phase.END);
+
+      const restored = await rewindGame(first, first.getPlayerById(player.id), convert, 'same');
+
+      expect(restored.phase).not.eq(Phase.END);
+      expect(restored.gameLog[restored.gameLog.length - 1].message).eq('${0} brought back undone moves and rewound the game to generation ${1}');
+    });
   });
 
   it('refuses a second rewind while one runs, a replaced game, and players who cannot rewind', async () => {
@@ -885,14 +955,15 @@ describe('RewindService whole table', () => {
       console.log = originalLog;
     });
 
-    it('lets only the judge rewind to an undone move', async () => {
+    it('lets the judge rewind to an undone move, and no vote', async () => {
       for (const cards of ['same', 'shuffle'] as const) {
         logs = [];
         const live = await rewindAndPlayOn();
         expect(await historySaveIds(live), cards).not.include(undone);
         expect(await historySaveIds(live, {undone: true}), cards).include(undone);
         const before = structuredClone(rows());
-        for (const by of [{kind: 'vote', requester: live.getPlayerById(player2.id)}, {kind: 'player', player: live.getPlayerById(player.id)}] as const) {
+        // A player actor is only ever the player of a solo game (see rewindGame), so a table has only the vote.
+        for (const by of [{kind: 'vote', requester: live.getPlayerById(player2.id)}] as const) {
           const e = await refusal(rewindTable(live, undone, {cards, clocks: 'keep'}, by));
           expect(e.detail, `${cards} ${by.kind}`).eq('That move is not in this game\'s history.');
           expect(rows(), `${cards} ${by.kind}`).deep.eq(before);

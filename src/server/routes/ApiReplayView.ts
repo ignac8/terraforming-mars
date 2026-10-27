@@ -36,7 +36,7 @@ export class ApiReplayView extends Handler {
     if (game === undefined || (judge && game.judgeId !== id)) {
       throw RouteError.notFound('game not found');
     }
-    // Only the judge of a Judge undo game sees a save that a rewind undid, and only when asked. A
+    // Only the judge of a Judge undo game and the player of a solo game see a save that a rewind undid, and only when asked. A
     // claimed judge seat is checked first, as below, so a refusal does not tell a stranger anything.
     const undone = ctx.urlParams.stringOrUndefined('undone') === '1';
     if (undone) {

@@ -73,9 +73,9 @@ async function rewind(live: IGame, saveId: number, options: RewindOptions, by: R
   if (live.rewinds.length >= MAX_REWINDS) {
     throw RouteError.badRequest('This game was rewound too many times.');
   }
-  // The list leaves out saves that show no move, and compressed history. Only the judge's list has the abandoned
-  // saves: a rewind to one brings its line back.
-  const history = await historySaveIds(live, {undone: by.kind === 'judge'});
+  // The list leaves out saves that show no move, and compressed history. Only the judge's list and the solo player's
+  // have the abandoned saves: a rewind to one brings its line back.
+  const history = await historySaveIds(live, {undone: by.kind === 'judge' || by.kind === 'player'});
   if (history === undefined || !history.includes(saveId)) {
     throw RouteError.notFound('That move is not in this game\'s history.');
   }
@@ -333,7 +333,10 @@ function promote(sandbox: Game, swap: Swap): void {
   sandbox.isSandbox = true;
 }
 
-/** Writes the line that marks the rewind, naming who did it. Only the judge brings back moves that a rewind undid. */
+/**
+ * Writes the line that marks the rewind, naming who did it. Only the judge and the solo player bring back moves that a
+ * rewind undid.
+ */
 function logRewind(game: Game, by: RewindActor, cards: RewindCards, restoresUndone: boolean): void {
   const shuffled = cards === 'shuffle';
   if (restoresUndone && by.kind === 'judge') {
@@ -341,6 +344,13 @@ function logRewind(game: Game, by: RewindActor, cards: RewindCards, restoresUndo
       'The judge brought back undone moves, rewound the game to generation ${0} and shuffled the hidden piles' :
       'The judge brought back undone moves and rewound the game to generation ${0}',
     (b) => b.number(game.generation));
+    return;
+  }
+  if (restoresUndone && by.kind === 'player') {
+    game.log(shuffled ?
+      '${0} brought back undone moves, rewound the game to generation ${1} and shuffled the hidden piles' :
+      '${0} brought back undone moves and rewound the game to generation ${1}',
+    (b) => b.player(game.getPlayerById(by.player.id)).number(game.generation));
     return;
   }
   switch (by.kind) {

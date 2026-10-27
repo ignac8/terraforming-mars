@@ -79,7 +79,7 @@ export default defineComponent({
       type: Array as () => Array<RewindClockRow>,
       default: undefined,
     },
-    /** The move is one an earlier rewind undid, which only the judge rewinds to. */
+    /** The move is one an earlier rewind undid, which only the judge and the solo player rewind to. */
     undone: {
       type: Boolean,
       default: false,

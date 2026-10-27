@@ -7,7 +7,7 @@
         <template v-if="index === undefined"><span v-i18n>live</span></template>
         <template v-else><span v-i18n>move</span> {{ index + 1 }} / {{ moves.length }}</template>
       </span>
-      <label v-if="canShowUndone" class="replay-show-undone" :title="$t('Only the judge sees undone moves.')">
+      <label v-if="canShowUndone" class="replay-show-undone">
         <input type="checkbox" :checked="showUndone" @change="onShowUndone">
         <span v-i18n>Show undone moves</span>
       </label>
@@ -60,7 +60,7 @@
 
     <!-- The key forgets a half-made choice when another move is picked. -->
     <RewindControls
-      v-if="(canRewind || votesOnSelected) && index !== undefined && (!selectedUndone || judgeRewindsUndone) && !(live && collapsed)"
+      v-if="(canRewind || votesOnSelected) && index !== undefined && (!selectedUndone || rewindsUndone) && !(live && collapsed)"
       :key="index"
       :mode="canRewind ? 'rewind' : 'vote'"
       :disabled="rewinding"
@@ -231,8 +231,8 @@ export default defineComponent({
       const movers = this.index === undefined ? undefined : this.moves[this.index]?.movers;
       return this.canVoteRewind && this.viewerColor !== undefined && movers?.includes(this.viewerColor) === true;
     },
-    /** Only the judge, who may see the undone moves, may rewind to one. Nobody may vote for one. */
-    judgeRewindsUndone(): boolean {
+    /** Only the judge and the solo player, who may see the undone moves, may rewind to one. Nobody may vote for one. */
+    rewindsUndone(): boolean {
       return this.canShowUndone && this.canRewind;
     },
     speeds(): ReadonlyArray<number> {

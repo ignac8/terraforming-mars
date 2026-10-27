@@ -15,7 +15,8 @@ export class ApiReplayMoves extends Handler {
   }
 
   public override async get(_req: Request, res: Response, ctx: Context): Promise<void> {
-    // Only the judge of a Judge undo game sees the moves that a rewind undid, and only when asked.
+    // Only the judge of a Judge undo game and the player of a solo game see the moves that a rewind undid, and only
+    // when asked.
     const undone = ctx.urlParams.stringOrUndefined('undone') === '1';
     // A judge never plays, so a judge id has no seat of its own. The judge sees every private log
     // line, marked with its owner's color (see getReplayMoves).
@@ -54,6 +55,6 @@ export class ApiReplayMoves extends Handler {
         this.checkClaimedSeat(game.getPlayerById(id), ctx);
       }
     }
-    responses.writeJson(res, ctx, await getReplayMoves(game, id));
+    responses.writeJson(res, ctx, await getReplayMoves(game, id, {undone}));
   }
 }

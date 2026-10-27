@@ -12,9 +12,12 @@ export function judgeCanRewind(game: IGame, participantId: ParticipantId): boole
   return game.gameOptions.judgeUndo && game.judgeId !== undefined && participantId === game.judgeId;
 }
 
-/** The refusal of a request for the moves and lines a rewind undid, which only the judge of a Judge undo game may make. */
+/**
+ * The refusal of a request for the moves and lines a rewind undid, which only the judge of a Judge undo game and the
+ * player of a solo or MarsBot game may make.
+ */
 export function checkMayShowUndone(game: IGame, participantId: ParticipantId): void {
-  if (!judgeCanRewind(game, participantId)) {
+  if (!judgeCanRewind(game, participantId) && !canRewind(game, participantId)) {
     throw RouteError.forbidden();
   }
 }

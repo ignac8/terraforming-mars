@@ -1423,8 +1423,9 @@ describe('ReplayScreen', () => {
         }
       });
 
-      it('are offered to the judge of a game that allows it, and to no one else', async () => {
-        for (const [participantId, canRewind, expected] of [[judgeId, true, true], [judgeId, false, false], [id, true, false]] as const) {
+      it('are offered to the judge of a game that allows it and to the solo player, and to no one else', async () => {
+        // A player's moves answer allows a rewind only to the player of a solo game.
+        for (const [participantId, canRewind, expected] of [[judgeId, true, true], [judgeId, false, false], [playerId, true, true], [playerId, false, false], [id, true, false]] as const) {
           movesAnswer = {...judgeMoves, canRewind} as any;
           const wrapper = shallowMount(ReplayScreen, {...globalConfig, props: {participantId}});
           await flushPromises();

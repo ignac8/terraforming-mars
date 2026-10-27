@@ -56,14 +56,14 @@ export function judgeCredentials(id: ParticipantId, passwordFragment: string | u
   return seatPasswordParam(id, passwordFragment) + (serverId === null ? '' : '&serverId=' + encodeURIComponent(serverId));
 }
 
-// The judge asks for the moves a rewind undid, which only the judge of a Judge undo game is given.
+// The judge or the solo player asks for the moves a rewind undid, which only they are given.
 function undoneParam(undone: boolean): string {
   return undone ? '&undone=1' : '';
 }
 
 /**
- * `passwordFragment` is the seat's, as `passwordParam` makes it on the live game page. `undone`: the judge's list with the
- * moves that rewinds undid.
+ * `passwordFragment` is the seat's, as `passwordParam` makes it on the live game page. `undone`: the list of the judge or the
+ * solo player, with the moves that rewinds undid.
  */
 export async function fetchReplayMoves(id: ParticipantId, passwordFragment?: string, undone: boolean = false): Promise<ReplayMovesModel> {
   return readJson(await fetch(`${paths.API_REPLAY_MOVES}?id=${id}${judgeCredentials(id, passwordFragment)}${undoneParam(undone)}`));

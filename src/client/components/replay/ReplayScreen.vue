@@ -296,9 +296,9 @@ export default defineComponent({
       const game = this.liveJudge?.game;
       return game === undefined || game.phase === Phase.END ? undefined : game.frozen === true;
     },
-    /** The judge of a Judge undo game may look at the moves that rewinds undid. */
+    /** The judge of a Judge undo game and the player of a solo game may look at the moves that rewinds undid. */
     canShowUndone(): boolean {
-      return this.liveJudge !== undefined || (isJudgeId(this.participantId) && this.canRewind);
+      return this.liveJudge !== undefined || ((isJudgeId(this.participantId) || isPlayerId(this.participantId)) && this.canRewind);
     },
     /**
      * What each clock reads in the live game and at the move selected, which a judge who rewinds chooses between.
