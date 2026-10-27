@@ -324,14 +324,19 @@ export class Server {
 
     if (game.phase === Phase.END || game.isSoloMode() ||
         game.gameOptions.showOtherPlayersVP === true || modelIsForThisPlayer) {
-      model.victoryPointsBreakdown = player.getVictoryPoints();
-      model.victoryPointsByGeneration = player.victoryPointsByGeneration;
-      model.globalParameterSteps = player.globalParameterSteps;
+      this.addVictoryPoints(model, player);
     }
 
     model.deltaProject = player.deltaProjectData;
 
     return model;
+  }
+
+  /** Fills in the VP of `player`, which a model for anyone else leaves at zero while the game runs. */
+  public static addVictoryPoints(model: PublicPlayerModel, player: IPlayer): void {
+    model.victoryPointsBreakdown = player.getVictoryPoints();
+    model.victoryPointsByGeneration = player.victoryPointsByGeneration;
+    model.globalParameterSteps = player.globalParameterSteps;
   }
 
   private static getResourceProtections(player: IPlayer) {

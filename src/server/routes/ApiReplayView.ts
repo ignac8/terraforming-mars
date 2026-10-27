@@ -40,7 +40,8 @@ export class ApiReplayView extends Handler {
       checkMayShowUndone(game, id);
     }
     // A running game's history is for whoever could rewind it, and only in their own view.
-    if (!await isFinished(game)) {
+    const running = !await isFinished(game);
+    if (running) {
       if (!canBrowseHistory(game, id)) {
         throw RouteError.badRequest('game not finished');
       }
@@ -50,7 +51,8 @@ export class ApiReplayView extends Handler {
     }
 
     const sandbox = await loadReplayState(game, saveId, {undone});
-    responses.writeJson(res, ctx, buildReplayView(sandbox, id, saveId, viewAs));
+    // Once the game is over, everyone sees every player's VP.
+    responses.writeJson(res, ctx, buildReplayView(sandbox, id, saveId, viewAs, !running));
   }
 }
 

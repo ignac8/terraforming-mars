@@ -134,6 +134,21 @@ describe('ApiReplayView', () => {
     expect(body.privates).has.length(2);
   });
 
+  it('shows every player\'s VP at a move before the end of a finished game', async () => {
+    // Save 1 is before the end, where only the viewed player's VP would show.
+    const other = game.players.find((p) => p !== player) as TestPlayer;
+    player.terraformRating = 23;
+    other.terraformRating = 27;
+    finishGame();
+    for (const as of ['all', player.color]) {
+      res = new MockResponse();
+      await get(`id=${game.spectatorId}&save=1&as=${as}`);
+      const view = JSON.parse(res.content).view;
+      expect(view.allVictoryPoints, as).is.true;
+      expect(view.players.map((p: any) => p.victoryPointsBreakdown.total), as).deep.eq([23, 27]);
+    }
+  });
+
   it('shows one player for as=<color>, to a spectator', async () => {
     finishGame();
     await get(`id=${game.spectatorId}&save=1&as=${player.color}`);
@@ -173,6 +188,16 @@ describe('ApiReplayView', () => {
       clearReplayCache();
       return {running, first, second};
     }
+
+    it('shows a vote player only their own VP', async () => {
+      const {running, first, second} = await runningGame({undoOption: true});
+      second.terraformRating = 27;
+      db.games.set(running.id, [running.serialize(), running.serialize()]);
+      await get(`id=${first.id}&save=0&as=${first.color}`);
+      const view = JSON.parse(res.content).view;
+      expect(view.allVictoryPoints).is.undefined;
+      expect(view.players.map((p: any) => p.victoryPointsBreakdown.total)).deep.eq([20, 0]);
+    });
 
     it('shows a vote player only their own view', async () => {
       const {first, second} = await runningGame({undoOption: true});

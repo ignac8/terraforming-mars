@@ -4,7 +4,7 @@ import {RouteError} from '../routes/RouteError';
 import {ParticipantId, PlayerId} from '../../common/Types';
 import {PlayerInputModel} from '../../common/models/PlayerInputModel';
 import {PendingChoiceModel, pendingChoiceOf} from '../../common/models/PendingChoiceModel';
-import {PlayerViewModel, PublicPlayerModel} from '../../common/models/PlayerModel';
+import {PlayerViewModel, PublicPlayerModel, ViewModel} from '../../common/models/PlayerModel';
 import {ReplayViewAs, ReplayViewModel} from '../../common/replay/ReplayModel';
 
 /**
@@ -12,10 +12,16 @@ import {ReplayViewAs, ReplayViewModel} from '../../common/replay/ReplayModel';
  *
  * The view carries the viewer's own id and no prompts, so nothing in it can be used to act in the game. What a
  * prompt offered, like the cards on offer in the research phase, comes as a read-only summary.
+ *
+ * `allVictoryPoints`: show every player's VP, as of the save, and not only the viewed player's.
  */
-export function buildReplayView(sandbox: IGame, viewerId: ParticipantId, saveId: number, viewAs: ReplayViewAs): ReplayViewModel {
+export function buildReplayView(
+  sandbox: IGame, viewerId: ParticipantId, saveId: number, viewAs: ReplayViewAs, allVictoryPoints: boolean = false): ReplayViewModel {
   if (viewAs === 'all') {
     const view = Server.getSpectatorModel(sandbox);
+    if (allVictoryPoints) {
+      addVictoryPoints(view, sandbox);
+    }
     view.players.forEach(scrub);
     return {
       saveId,
@@ -33,6 +39,9 @@ export function buildReplayView(sandbox: IGame, viewerId: ParticipantId, saveId:
     throw RouteError.badRequest('unknown color');
   }
   const view: PlayerViewModel = Server.getPlayerModel(player);
+  if (allVictoryPoints) {
+    addVictoryPoints(view, sandbox);
+  }
   view.players.forEach(scrub);
   // The viewer may be a spectator, so this is not always a PlayerId.
   return {
@@ -42,6 +51,17 @@ export function buildReplayView(sandbox: IGame, viewerId: ParticipantId, saveId:
     privates: [],
     pendingChoice: summary(view.waitingFor),
   };
+}
+
+// `thisPlayer` is one of `players`, so it is filled in too.
+function addVictoryPoints(view: ViewModel, sandbox: IGame): void {
+  for (const player of sandbox.players) {
+    const model = view.players.find((p) => p.color === player.color);
+    if (model !== undefined) {
+      Server.addVictoryPoints(model, player);
+    }
+  }
+  view.allVictoryPoints = true;
 }
 
 function summary(waitingFor: PlayerInputModel | undefined): PendingChoiceModel | undefined {

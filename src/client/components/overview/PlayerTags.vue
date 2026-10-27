@@ -257,7 +257,7 @@ export default defineComponent({
       return this.player.cardsInHandNbr ?? 0;
     },
     hideVpCount(): boolean {
-      return !this.playerView.game.gameOptions.showOtherPlayersVP && !this.isThisPlayer;
+      return !this.playerView.game.gameOptions.showOtherPlayersVP && !this.isThisPlayer && this.playerView.allVictoryPoints !== true;
     },
     isEscapeVelocityOn(): boolean {
       return this.playerView.game.gameOptions.escapeVelocity !== undefined;
