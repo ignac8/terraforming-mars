@@ -4,6 +4,7 @@ import {ReplayMovesModel, ReplayViewAs, ReplayViewModel, RewindCards} from '@/co
 import {RewindVotePoll} from '@/common/rewind/RewindVoteModel';
 import {ParticipantId, PlayerId} from '@/common/Types';
 import {translateText} from '@/client/directives/i18n';
+import {localColors, serverColor} from '@/client/utils/localColors';
 
 // Replaying steps through views quickly, so a new view request cancels the one still in flight.
 // Kept apart from fetchLogs' controller so the two never cancel each other.
@@ -27,7 +28,7 @@ async function checkOk(resp: Response): Promise<void> {
 
 async function readJson<T>(resp: Response): Promise<T> {
   await checkOk(resp);
-  return resp.json();
+  return localColors(await resp.json());
 }
 
 // The solo player asks for the moves a rewind undid, which only the player of a solo or MarsBot game is given.
@@ -43,7 +44,7 @@ export async function fetchReplayMoves(id: ParticipantId, undone: boolean = fals
 export async function fetchReplayView(id: ParticipantId, saveId: number, viewAs: ReplayViewAs, undone: boolean = false): Promise<ReplayViewModel> {
   viewAbortController?.abort();
   viewAbortController = new AbortController();
-  const url = `${paths.API_REPLAY_VIEW}?id=${id}&save=${saveId}&as=${viewAs}${undoneParam(undone)}`;
+  const url = `${paths.API_REPLAY_VIEW}?id=${id}&save=${saveId}&as=${serverColor(viewAs)}${undoneParam(undone)}`;
   return readJson(await fetch(url, {signal: viewAbortController.signal}));
 }
 

@@ -39,6 +39,13 @@ describe('localColors', () => {
     expect(serverColor('blue')).eq('blue');
   });
 
+  it('swaps players in rewind votes', () => {
+    localPlayerView({thisPlayer: {color: 'red'}} as PlayerViewModel);
+
+    expect(localColors({vote: {requester: 'red', votes: [{color: 'green', choice: 'yes'}]}}))
+      .deep.eq({vote: {requester: 'green', votes: [{color: 'red', choice: 'yes'}]}});
+  });
+
   it('swaps players in log messages', () => {
     localPlayerView({thisPlayer: {color: 'red'}} as PlayerViewModel);
 
