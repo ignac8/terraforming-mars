@@ -91,6 +91,16 @@ describe('CreateGameForm', () => {
     expect(vm.expansions.ceo).to.be.false;
   });
 
+  it('turns Player undo on by default', () => {
+    const wrapper = shallowMount(CreateGameForm, {...globalConfig});
+    const vm = wrapper.vm as any;
+
+    expect((wrapper.find('#undo-checkbox').element as HTMLInputElement).checked).to.be.true;
+    expect(vm.newGameConfig.undoOption).to.be.true;
+    vm.undoOption = false;
+    expect(vm.newGameConfig.undoOption).to.be.false;
+  });
+
   it('offers skipping MarsBot\'s corporation at final greeneries, off by default', () => {
     const wrapper = shallowMount(CreateGameForm, {...globalConfig});
     const vm = wrapper.vm as any;
