@@ -73,7 +73,8 @@ export class ApiReplayView extends Handler {
     }
 
     const sandbox = await loadReplayState(game, saveId, {undone});
-    responses.writeJson(res, ctx, buildReplayView(sandbox, id, saveId, viewAs));
+    // The judge sees every player's VP live, and once the game is over so does everyone.
+    responses.writeJson(res, ctx, buildReplayView(sandbox, id, saveId, viewAs, judge || !running));
   }
 }
 

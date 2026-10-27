@@ -248,6 +248,21 @@ describe('ApiReplayView', () => {
     });
   });
 
+  it('shows every player\'s VP at a move before the end of a finished game', async () => {
+    // Save 1 is before the end, where only the viewed player's VP would show.
+    const other = game.players.find((p) => p !== player) as TestPlayer;
+    player.terraformRating = 23;
+    other.terraformRating = 27;
+    finishGame();
+    for (const as of ['all', player.color]) {
+      res = new MockResponse();
+      await get(`id=${game.spectatorId}&save=1&as=${as}`);
+      const view = JSON.parse(res.content).view;
+      expect(view.allVictoryPoints, as).is.true;
+      expect(view.players.map((p: any) => p.victoryPointsBreakdown.total), as).deep.eq([23, 27]);
+    }
+  });
+
   it('shows one player for as=<color>, to a spectator', async () => {
     finishGame();
     await get(`id=${game.spectatorId}&save=1&as=${player.color}`);
@@ -295,6 +310,25 @@ describe('ApiReplayView', () => {
         expect(res.statusCode, as).eq(statusCode.ok);
         expect(JSON.parse(res.content).viewAs).eq(as);
       }
+    });
+
+    it('shows the judge every player\'s VP, and a vote player only their own', async () => {
+      const judged = await runningGame({judgeLink: true, judgeUndo: true});
+      judged.second.terraformRating = 27;
+      db.games.set(judged.running.id, [judged.running.serialize(), judged.running.serialize()]);
+      await get(`id=${judged.running.judgeId}&save=0&as=${judged.first.color}`);
+      const judgeView = JSON.parse(res.content).view;
+      expect(judgeView.allVictoryPoints).is.true;
+      expect(judgeView.players.map((p: any) => p.victoryPointsBreakdown.total)).deep.eq([20, 27]);
+
+      const voted = await runningGame({undoOption: true});
+      voted.second.terraformRating = 27;
+      db.games.set(voted.running.id, [voted.running.serialize(), voted.running.serialize()]);
+      res = new MockResponse();
+      await get(`id=${voted.first.id}&save=0&as=${voted.first.color}`);
+      const playerView = JSON.parse(res.content).view;
+      expect(playerView.allVictoryPoints).is.undefined;
+      expect(playerView.players.map((p: any) => p.victoryPointsBreakdown.total)).deep.eq([20, 0]);
     });
 
     it('shows a vote player only their own view', async () => {

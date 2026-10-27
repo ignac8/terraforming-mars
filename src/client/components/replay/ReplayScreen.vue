@@ -352,6 +352,7 @@ export default defineComponent({
         requestId: undefined,
         runId: judge.runId,
         autopass: false,
+        allVictoryPoints: judge.allVictoryPoints,
       };
     },
     /**

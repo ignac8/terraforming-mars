@@ -187,6 +187,19 @@ describe('ServerModel', () => {
     expect(json).does.not.include(player2.id);
   });
 
+  it('judge model shows every player\'s VP while the game runs', () => {
+    [game, player, player2] = testGame(2, {judgeLink: true});
+    player2.terraformRating = 25;
+
+    const model = Server.getJudgeModel(game);
+
+    expect(model.allVictoryPoints).is.true;
+    expect(model.players.map((p) => p.victoryPointsBreakdown.total)).deep.eq([20, 25]);
+    // Anyone else's view of another player shows no VP.
+    expect(Server.getSpectatorModel(game).allVictoryPoints).is.undefined;
+    expect(Server.getPlayerModel(player).players[1].victoryPointsBreakdown.total).eq(0);
+  });
+
   it('hides a frozen player\'s prompt but not the judge\'s view of it', () => {
     [game, player] = testGame(2, {judgeLink: true});
     player.setWaitingFor(new SelectOption('Input'));

@@ -1152,7 +1152,7 @@ describe('ReplayScreen', () => {
         preludeCardsInHand: [],
         waitingFor: {type: 'or', title: 'Take your first action', buttonLabel: 'Confirm', options: [], initialIdx: 0},
       } as JudgePlayerModel);
-      const judge = {...judgeModel(), privates: [privates('blue', CardName.BIRDS), privates('red', CardName.ANTS)]};
+      const judge = {...judgeModel(), allVictoryPoints: true, privates: [privates('blue', CardName.BIRDS), privates('red', CardName.ANTS)]};
       const wrapper = mountJudge(judge);
       await flushPromises();
       const home = () => wrapper.findComponent(PlayerHome);
@@ -1167,6 +1167,7 @@ describe('ReplayScreen', () => {
       expect(shown().cardsInHand.map((card) => card.name)).to.deep.equal([CardName.ANTS]);
       expect(shown().waitingFor).is.undefined;
       expect(shown().id).equals(judgeId);
+      expect(shown().allVictoryPoints).is.true;
       // The judge page still polls, as JudgeHome does when it shows, and the log is the judge's.
       expect(wrapper.findComponent(WaitingFor).props('playerView')).equals(wrapper.props('liveJudge'));
       expect(home().props('log')).equals(wrapper.props('liveJudge'));

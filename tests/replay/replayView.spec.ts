@@ -99,6 +99,35 @@ describe('buildReplayView', () => {
     }
   });
 
+  describe('VP', () => {
+    beforeEach(() => {
+      player.terraformRating = 23;
+      player2.terraformRating = 27;
+      sandbox = loadSandboxGame(game.serialize());
+    });
+
+    const totals = (r: ReturnType<typeof buildReplayView>) => r.view.players.map((p) => [p.color, p.victoryPointsBreakdown.total]);
+
+    for (const viewAs of ['all', 'player2'] as const) {
+      it(`shows every player's VP when asked, as ${viewAs}`, () => {
+        const r = buildReplayView(sandbox, game.spectatorId, 3, viewAs === 'all' ? 'all' : player2.color, true);
+        expect(r.view.allVictoryPoints).is.true;
+        expect(totals(r)).deep.eq([[player.color, 23], [player2.color, 27]]);
+        if (viewAs !== 'all') {
+          expect(r.view.thisPlayer?.victoryPointsBreakdown.total).eq(27);
+        }
+      });
+    }
+
+    it('shows only the viewed player\'s VP otherwise', () => {
+      const one = buildReplayView(sandbox, game.spectatorId, 3, player2.color);
+      expect(one.view.allVictoryPoints).is.undefined;
+      expect(totals(one)).deep.eq([[player.color, 0], [player2.color, 27]]);
+      const all = buildReplayView(sandbox, game.spectatorId, 3, 'all');
+      expect(totals(all)).deep.eq([[player.color, 0], [player2.color, 0]]);
+    });
+  });
+
   it('rejects an unknown color', () => {
     // Two players use two colors, the others are free.
     const unused = (['red', 'green', 'yellow', 'blue', 'black', 'purple', 'orange', 'pink'] as const)
