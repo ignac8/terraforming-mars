@@ -4,6 +4,7 @@ import {ReplayMovesModel, ReplayViewAs, ReplayViewModel, RewindCards, RewindCloc
 import {RewindVotePoll} from '@/common/rewind/RewindVoteModel';
 import {isJudgeId, isPlayerId, JudgeId, ParticipantId, PlayerId} from '@/common/Types';
 import {translateText} from '@/client/directives/i18n';
+import {localColors, serverColor} from '@/client/utils/localColors';
 import {passwordParam, passwordQuery} from '@/client/utils/playerPassword';
 
 // Replaying steps through views quickly, so a new view request cancels the one still in flight.
@@ -28,7 +29,7 @@ async function checkOk(resp: Response): Promise<void> {
 
 async function readJson<T>(resp: Response): Promise<T> {
   await checkOk(resp);
-  return resp.json();
+  return localColors(await resp.json());
 }
 
 // The replay page has no model to read a password from, so it comes from the address bar, where
@@ -73,7 +74,7 @@ export async function fetchReplayMoves(id: ParticipantId, passwordFragment?: str
 export async function fetchReplayView(id: ParticipantId, saveId: number, viewAs: ReplayViewAs, passwordFragment?: string, undone: boolean = false): Promise<ReplayViewModel> {
   viewAbortController?.abort();
   viewAbortController = new AbortController();
-  const url = `${paths.API_REPLAY_VIEW}?id=${id}&save=${saveId}&as=${viewAs}${judgeCredentials(id, passwordFragment)}${undoneParam(undone)}`;
+  const url = `${paths.API_REPLAY_VIEW}?id=${id}&save=${saveId}&as=${serverColor(viewAs)}${judgeCredentials(id, passwordFragment)}${undoneParam(undone)}`;
   return readJson(await fetch(url, {signal: viewAbortController.signal}));
 }
 

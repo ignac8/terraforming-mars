@@ -14,6 +14,8 @@ import {getPreferences} from '@/client/utils/PreferencesManager';
 const COLOR_KEYS: ReadonlySet<string> = new Set([
   'color', 'coOwner', 'excavator', 'chairman', 'partyLeader', 'visitor', 'activePlayer',
   'lobby', 'passedPlayers', 'colonies', 'players', 'waitingFor',
+  // Replays and rewind votes.
+  'movers', 'viewerColor', 'defaultViewAs', 'viewAs', 'requester',
 ]);
 
 type Swap = ReadonlyMap<string, Color>;
