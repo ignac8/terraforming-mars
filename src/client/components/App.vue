@@ -86,6 +86,7 @@ import dialogPolyfill from 'dialog-polyfill';
 import {setDocumentTitle} from '../utils/documentTitle';
 import {reloadForChunkError} from '@/client/utils/chunkReload';
 import BannerStack from '@/client/components/replay/BannerStack.vue';
+import {localPlayerView} from '@/client/utils/localColors';
 
 type Screen = 'admin' |
             'create-game-form' |
@@ -223,7 +224,7 @@ export default defineComponent({
         })
         .then((model: ViewModel) => {
           if (path === paths.PLAYER) {
-            app.playerView = model as PlayerViewModel;
+            app.playerView = localPlayerView(model as PlayerViewModel);
             setTranslationContext(app.playerView);
           } else if (path === paths.SPECTATOR) {
             app.spectator = model as SpectatorModel;
