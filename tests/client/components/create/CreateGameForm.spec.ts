@@ -111,6 +111,20 @@ describe('CreateGameForm', () => {
     expect(vm.newGameConfig.automaFinalGreeneryNoCorpEffects).to.be.true;
   });
 
+  it('offers keeping the original cards only with Promos, off by default', async () => {
+    const wrapper = shallowMount(CreateGameForm, {...globalConfig});
+    const vm = wrapper.vm as any;
+
+    expect(wrapper.find('#keepReplacedCards-checkbox').exists()).to.be.true;
+    expect(vm.newGameConfig.keepReplacedCards).to.be.false;
+    vm.keepReplacedCards = true;
+    expect(vm.newGameConfig.keepReplacedCards).to.be.true;
+
+    vm.expansions.promo = false;
+    await vm.$nextTick();
+    expect(wrapper.find('#keepReplacedCards-checkbox').exists()).to.be.false;
+  });
+
   it('offers MarsBot colony VP only with Colonies, off by default', async () => {
     const wrapper = shallowMount(CreateGameForm, {...globalConfig});
     const vm = wrapper.vm as any;

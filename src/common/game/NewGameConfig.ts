@@ -75,6 +75,7 @@ export type NewGameConfig = {
   altVenusBoard: boolean;
   escapeVelocity: EscapeVelocityOptions | undefined;
   twoCorpsVariant: boolean;
+  keepReplacedCards?: boolean;
   customCeos: ReadonlyArray<CardName>;
   startingCeos: number;
   startingPreludes: number;

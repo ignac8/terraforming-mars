@@ -74,6 +74,8 @@ export type GameOptions = {
   altVenusBoard: boolean;
   escapeVelocity?: EscapeVelocityOptions;
   twoCorpsVariant: boolean;
+  /** Keep the original cards that an official module replaces, e.g. base Deimos Down next to the Big Box one. */
+  keepReplacedCards: boolean;
 
   // Automa (MarsBot solo variant)
   automaOption: boolean;
@@ -176,6 +178,7 @@ export const DEFAULT_GAME_OPTIONS: GameOptions = {
   undoOption: false,
   venusNextExtension: false,
   twoCorpsVariant: false,
+  keepReplacedCards: false,
   automaOption: false,
   automaDifficulty: 'normal',
   automaCorpOption: false,

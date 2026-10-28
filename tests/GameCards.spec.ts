@@ -19,6 +19,39 @@ describe('GameCards', () => {
     expect(names).to.not.contain(CardName.CAPITAL);
   });
 
+  it('keeps the cards the Big Box promos replace when keepReplacedCards is on', () => {
+    const gameOptions: GameOptions = {
+      ...DEFAULT_GAME_OPTIONS,
+      promoCardsOption: true,
+    };
+    const replaced = [CardName.DEIMOS_DOWN, CardName.GREAT_DAM, CardName.MAGNETIC_FIELD_GENERATORS];
+    const replacements = [CardName.DEIMOS_DOWN_PROMO, CardName.GREAT_DAM_PROMO, CardName.MAGNETIC_FIELD_GENERATORS_PROMO];
+
+    let names = new GameCards(gameOptions).getProjectCards().map(toName);
+    expect(names).to.include.members(replacements);
+    expect(names).to.not.include.any.members(replaced);
+
+    gameOptions.keepReplacedCards = true;
+    names = new GameCards(gameOptions).getProjectCards().map(toName);
+    expect(names).to.include.members([...replaced, ...replacements]);
+  });
+
+  it('keepReplacedCards does not keep cards a fan module replaces', () => {
+    const gameOptions: GameOptions = {
+      ...DEFAULT_GAME_OPTIONS,
+      promoCardsOption: true,
+      aresExtension: true,
+      keepReplacedCards: true,
+    };
+    const names = new GameCards(gameOptions).getProjectCards().map(toName);
+    expect(names).to.not.include.any.members([
+      CardName.CAPITAL,
+      CardName.DEIMOS_DOWN,
+      CardName.DEIMOS_DOWN_PROMO,
+    ]);
+    expect(names).to.include(CardName.DEIMOS_DOWN_ARES);
+  });
+
   it('correctly separates 71 corporate era cards', () => {
     // include corporate era
     const gameOptions: GameOptions = {

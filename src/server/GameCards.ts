@@ -24,6 +24,7 @@ import {ICeoCard} from './cards/ceos/ICeoCard';
 import {PRELUDE2_CARD_MANIFEST} from './cards/prelude2/Prelude2CardManifest';
 import {STAR_WARS_CARD_MANIFEST} from './cards/starwars/StarwarsCardManifest';
 import {UNDERWORLD_CARD_MANIFEST} from './cards/underworld/UnderworldCardManifest';
+import {OFFICIAL_MODULES} from '../common/cards/GameModule';
 
 /**
  * Returns the cards available to a game based on its `GameOptions`.
@@ -150,6 +151,10 @@ export class GameCards {
       cards.push(...this.instantiate(cardManifest));
     }
 
+    const replacingManifests = this.gameOptions.keepReplacedCards ?
+      this.moduleManifests.filter((manifest) => !OFFICIAL_MODULES.includes(manifest.module)) :
+      this.moduleManifests;
+
     const filtered = cards.filter((card) => {
       // Remove banned cards
       if (this.gameOptions.bannedCards.includes(card.name)) {
@@ -157,7 +162,7 @@ export class GameCards {
       }
 
       // Remove cards that are replaced by new versions in other manifests
-      for (const manifest of this.moduleManifests) {
+      for (const manifest of replacingManifests) {
         if (manifest.cardsToRemove.has(card.name)) {
           return false;
         }

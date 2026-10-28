@@ -252,6 +252,14 @@
                                     <span v-i18n>Merger</span>&nbsp;<a :href="wikiUrls.merger" class="tooltip" v-i18n data-tooltip="Link opens in a new tab/window" target="_blank">&#9432;</a>
                               </label>
                             </template>
+
+                            <template v-if="expansions.promo">
+                              <input type="checkbox" v-model="keepReplacedCards" id="keepReplacedCards-checkbox">
+                              <label for="keepReplacedCards-checkbox" title="Also shuffle in the original Deimos Down, Great Dam and Magnetic Field Generators next to their Big Box versions">
+                                    <div class="create-game-expansion-icon expansion-icon-promo"></div>
+                                    <span v-i18n>Keep original cards</span>
+                              </label>
+                            </template>
                                                         <input type="checkbox" v-model="undoOption" id="undo-checkbox">
                             <label for="undo-checkbox">
                                 <span v-i18n>Player undo</span>&nbsp;<a :href="wikiUrls.allowUndo" class="tooltip" v-i18n data-tooltip="Link opens in a new tab/window" target="_blank">&#9432;</a>
@@ -903,6 +911,7 @@ export default defineComponent({
           penaltyVPPerPeriod: this.escapeVelocityPenalty,
         } : undefined,
         twoCorpsVariant: this.twoCorpsVariant,
+        keepReplacedCards: this.keepReplacedCards,
         startingCeos: this.startingCeos,
         startingPreludes: this.startingPreludes,
         automaOption: this.automaOption,
