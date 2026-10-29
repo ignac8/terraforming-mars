@@ -2,7 +2,6 @@ import {IPlayer} from '../../IPlayer';
 import {IAward} from '../IAward';
 import {Tag} from '../../../common/cards/Tag';
 import {IMarsBot} from '../../automa/MarsBotCorpTypes';
-import {marsBotTrackPosition} from '../../automa/MarsBotMilestoneAwardEval';
 
 export class Traveller implements IAward {
   public readonly name = 'Traveller';
@@ -13,6 +12,6 @@ export class Traveller implements IAward {
 
   /** The automa rules score the higher of MarsBot's Jovian and earth tracks, plus 5. */
   public marsBotScore(bot: IMarsBot): number {
-    return Math.max(marsBotTrackPosition(bot, Tag.JOVIAN), marsBotTrackPosition(bot, Tag.EARTH)) + 5;
+    return Math.max(bot.marsBotBoard.trackPosition(Tag.JOVIAN), bot.marsBotBoard.trackPosition(Tag.EARTH)) + 5;
   }
 }

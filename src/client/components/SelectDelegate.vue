@@ -2,9 +2,9 @@
   <div>
     <div v-if="showtitle === true">{{ $t(playerinput.title) }}</div>
     <label v-for="player in (playerinput.players || [])" :key="player" class="form-radio form-inline">
-      <input type="radio" v-model="selectedPlayer" :value="player" >
+      <input type="radio" v-model="selectedPlayer" :value="player">
       <i class="form-icon"></i>
-      <span v-if="player === 'NEUTRAL'" >Neutral</span>
+      <span v-if="player === 'NEUTRAL'">Neutral</span>
       <SelectPlayerRow v-else :player="playerView.players.find((otherPlayer) => otherPlayer.color === player)" :fallbackName="playerView.game?.marsBot?.name" />
     </label>
     <AppButton v-if="showsave === true" size="big" @click="saveData" :title="$t(playerinput.buttonLabel)" />
@@ -19,6 +19,7 @@ import {SelectDelegateModel} from '@/common/models/PlayerInputModel';
 import {PlayerViewModel} from '@/common/models/PlayerModel';
 import SelectPlayerRow from '@/client/components/SelectPlayerRow.vue';
 import {SelectDelegateResponse} from '@/common/inputs/InputResponse';
+import {serverColor} from '@/client/utils/localColors';
 
 interface DataModel {
   selectedPlayer: ColorWithNeutral | undefined;
@@ -60,7 +61,7 @@ export default defineComponent({
   methods: {
     saveData() {
       if (this.selectedPlayer !== undefined) {
-        this.onsave({type: 'delegate', player: this.selectedPlayer});
+        this.onsave({type: 'delegate', player: serverColor(this.selectedPlayer)});
       }
     },
   },

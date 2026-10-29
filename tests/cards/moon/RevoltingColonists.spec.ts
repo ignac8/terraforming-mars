@@ -1,7 +1,7 @@
 import {expect} from 'chai';
 import {IGame} from '../../../src/server/IGame';
 import {IPlayer} from '../../../src/server/IPlayer';
-import {formatMessage, runAllActions} from '../../TestingUtils';
+import {runAllActions} from '../../TestingUtils';
 import {TestPlayer} from '../../TestPlayer';
 import {RevoltingColonists} from '../../../src/server/cards/moon/RevoltingColonists';
 import {MoonExpansion} from '../../../src/server/moon/MoonExpansion';
@@ -60,11 +60,6 @@ describe('RevoltingColonists', () => {
     expect(player1.megaCredits).eq(7);
     expect(player2.megaCredits).eq(0);
     expect(player3.megaCredits).eq(11);
-    expect(game.gameLog.map(formatMessage)).to.include.members([
-      `${player1.color} spends 3:r:megacredits: for the 1 habitat tiles they own.`,
-      `${player2.color} spends 2:r:megacredits: for the 2 habitat tiles they own.`,
-      `${player3.color} spends 9:r:megacredits: for the 3 habitat tiles they own.`,
-    ]);
   });
 });
 

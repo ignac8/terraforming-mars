@@ -6,6 +6,7 @@ import {Database} from './Database';
 import {CacheConfig} from './CacheConfig';
 import {Clock} from '../../common/Timer';
 import {partition} from '@/common/utils/utils';
+import {isTableLocked} from '../rewind/tableLock';
 
 export class Cache extends EventEmitter {
   private loaded = false;
@@ -64,6 +65,11 @@ export class Cache extends EventEmitter {
     this.evictionSchedule.set(gameId, this.clock.now() + this.config.evictMillis);
   }
 
+  /** Takes back a mark(), for a finished game that play resumed. */
+  public unmark(gameId: GameId) {
+    this.evictionSchedule.delete(gameId);
+  }
+
   /** Records that `gameId` was just accessed, resetting its idle time. */
   public touch(gameId: GameId) {
     this.lastAccess.set(gameId, this.clock.now());
@@ -87,7 +93,8 @@ export class Cache extends EventEmitter {
     let evicted = 0;
     let trimmed = 0;
     for (const [gameId, game] of this.games) {
-      if (game === undefined) {
+      // A table operation reads and replaces the game, so it must stay as it is until the operation ends.
+      if (game === undefined || isTableLocked(gameId)) {
         continue;
       }
       if (this.shouldEvict(gameId, game)) {

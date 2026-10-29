@@ -1,7 +1,6 @@
 import {TagBasedMilestone} from './TagBasedMilestone';
 import {Tag} from '../../common/cards/Tag';
 import {IMarsBot} from '../automa/MarsBotCorpTypes';
-import {marsBotTrackPosition} from '../automa/MarsBotMilestoneAwardEval';
 
 export class Architect extends TagBasedMilestone {
   constructor() {
@@ -10,6 +9,6 @@ export class Architect extends TagBasedMilestone {
 
   /** The automa rules put MarsBot's threshold at space 6 of its city-tag track. */
   public marsBotCanClaim(bot: IMarsBot): boolean {
-    return marsBotTrackPosition(bot, Tag.CITY) >= 6;
+    return bot.marsBotBoard.trackPosition(Tag.CITY) >= 6;
   }
 }

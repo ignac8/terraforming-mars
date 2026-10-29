@@ -3,7 +3,6 @@ import {IPlayer} from '../../IPlayer';
 import {isSpecialTileSpace, Board} from '../../boards/Board';
 import {Tag} from '../../../common/cards/Tag';
 import {IMarsBot} from '../../automa/MarsBotCorpTypes';
-import {marsBotTrackPosition} from '../../automa/MarsBotMilestoneAwardEval';
 
 export class Landshaper extends BaseMilestone {
   constructor() {
@@ -43,6 +42,6 @@ export class Landshaper extends BaseMilestone {
   public marsBotCanClaim(bot: IMarsBot): boolean {
     return bot.game.board.getCities(bot.player).length >= 1 &&
       bot.game.board.getGreeneries(bot.player).length >= 1 &&
-      marsBotTrackPosition(bot, Tag.BUILDING) >= 5;
+      bot.marsBotBoard.trackPosition(Tag.BUILDING) >= 5;
   }
 }

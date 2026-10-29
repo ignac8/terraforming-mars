@@ -1,4 +1,5 @@
 import {expect} from 'chai';
+import {Context} from 'mocha';
 import {EventEmitter} from 'events';
 import pg from 'pg';
 import {PostgreSQL} from '../../src/server/database/PostgreSQL';
@@ -11,6 +12,8 @@ type Statement = {connection: string, sql: string};
 // statement sent through pool.query(), which can land on any connection.
 class FakePool {
   public statements: Array<Statement> = [];
+  // The parameters of each statement sent through pool.query().
+  public poolParams: Array<Array<unknown> | undefined> = [];
   public released: Array<{connection: string, err: Error | boolean | undefined}> = [];
   // Statements that start with any of these fail.
   public failing: Array<string> = [];
@@ -51,7 +54,8 @@ class FakePool {
     return Promise.resolve({rows: [{inserted: true}]});
   }
 
-  public query(sql: string) {
+  public query(sql: string, params?: Array<unknown>) {
+    this.poolParams.push(params);
     return this.run('pool', sql);
   }
 
@@ -76,6 +80,21 @@ class TestPostgreSQL extends PostgreSQL {
   constructor(public readonly pool: FakePool, trimCount = 0) {
     super();
     this.trimCount = trimCount;
+  }
+
+  protected override get client(): pg.Pool {
+    return this.pool as unknown as pg.Pool;
+  }
+}
+
+// Keeps the trimCount PostgreSQL picks by default.
+class DefaultPostgreSQL extends PostgreSQL {
+  constructor(public readonly pool: FakePool) {
+    super();
+  }
+
+  public get defaultTrimCount() {
+    return this.trimCount;
   }
 
   protected override get client(): pg.Pool {
@@ -128,6 +147,22 @@ describe('PostgreSQL', () => {
     expect(game.lastSaveId).eq(2);
   });
 
+  it('writes overlapping saves of one game one after the other', async () => {
+    await Promise.all([db.saveGame(game), db.saveGame(game)]);
+
+    expect(pool.statements).deep.eq([
+      {connection: 'conn1', sql: 'BEGIN'},
+      {connection: 'conn1', sql: 'INSERT INTO games'},
+      {connection: 'conn1', sql: 'INSERT INTO game'},
+      {connection: 'conn1', sql: 'INSERT INTO participants'},
+      {connection: 'conn1', sql: 'COMMIT'},
+      {connection: 'conn2', sql: 'BEGIN'},
+      {connection: 'conn2', sql: 'INSERT INTO games'},
+      {connection: 'conn2', sql: 'INSERT INTO game'},
+      {connection: 'conn2', sql: 'COMMIT'},
+    ]);
+  });
+
   it('rolls back on the same connection when an insert fails', async () => {
     pool.failing = ['INSERT INTO game (game_id, log'];
 
@@ -174,6 +209,21 @@ describe('PostgreSQL', () => {
     expect(game.lastSaveId).eq(0);
   });
 
+  it('patches on one connection, and handles it dying mid-patch', async () => {
+    pool.dropSocket = ['SELECT MAX', 'ROLLBACK'];
+
+    // Without an 'error' listener, EventEmitter.emit('error') throws.
+    const patching = db.updateNewestSave(game.id, 0, {frozen: true, rewindVote: undefined, rewindRequestLimits: undefined, undoCount: 0, timers: []});
+    let error: unknown;
+    await patching.catch((e) => error = e);
+
+    expect(String(error)).contains('socket closed');
+    expect(pool.statements.map((s) => s.connection + ' ' + s.sql)).deep.eq(['conn1 BEGIN', 'conn1 SELECT MAX(save_id) AS', 'conn1 ROLLBACK']);
+    expect(pool.released).has.length(1);
+    expect(pool.released[0].err).is.not.undefined;
+    expect(pool.clients[0].listenerCount('error')).eq(0);
+  });
+
   it('does not leave error listeners behind on the client', async () => {
     await db.saveGame(game);
 
@@ -211,5 +261,68 @@ describe('PostgreSQL', () => {
     expect(pool.statements.at(-1)).deep.eq({connection: 'pool', sql: 'DELETE FROM games'});
     expect(pool.statements.map((s) => s.sql)).includes('COMMIT');
     expect(game.lastSaveId).eq(1);
+  });
+
+  it('takes a rolled back game off the compression queue', async () => {
+    await db.deleteGameNbrSaves(game.id, 2);
+
+    expect(pool.statements).deep.eq([
+      {connection: 'pool', sql: 'DELETE FROM completed_game'},
+      {connection: 'pool', sql: 'DELETE FROM games'},
+    ]);
+    expect(pool.poolParams[0]).deep.eq([game.id]);
+  });
+
+  it('still deletes the saves when leaving the compression queue fails', async () => {
+    const warnings: Array<Array<unknown>> = [];
+    const originalWarn = console.warn;
+    console.warn = (...args: Array<unknown>) => {
+      warnings.push(args);
+    };
+    try {
+      pool.failing = ['DELETE FROM completed_game'];
+
+      await db.deleteGameNbrSaves(game.id, 2);
+
+      expect(pool.statements.map((s) => s.sql)).deep.eq(['DELETE FROM completed_game', 'DELETE FROM games']);
+      expect(warnings).has.length(1);
+      expect(String(warnings[0][0])).contains(game.id);
+    } finally {
+      console.warn = originalWarn;
+    }
+  });
+
+  describe('defaults', () => {
+    const savedCompress = process.env.COMPRESS_COMPLETED_GAMES_DAYS;
+    afterEach(() => {
+      if (savedCompress === undefined) {
+        delete process.env.COMPRESS_COMPLETED_GAMES_DAYS;
+      } else {
+        process.env.COMPRESS_COMPLETED_GAMES_DAYS = savedCompress;
+      }
+    });
+
+    it('keeps every save unless POSTGRES_TRIM_COUNT is set', function(this: Context) {
+      // The default is read when the module loads, so this only holds when the variable is unset.
+      if (process.env.POSTGRES_TRIM_COUNT !== undefined) {
+        this.skip();
+      }
+      expect(new DefaultPostgreSQL(pool).defaultTrimCount).eq(0);
+    });
+
+    it('looks for completed games to compress even when COMPRESS_COMPLETED_GAMES_DAYS is unset', async () => {
+      delete process.env.COMPRESS_COMPLETED_GAMES_DAYS;
+
+      await db.compressCompletedGames();
+
+      expect(pool.statements[0]).deep.eq({connection: 'pool', sql: 'SELECT DISTINCT game_id'});
+    });
+
+    it('compresses games completed over 14 days ago when the days are negative', async () => {
+      await db.compressCompletedGames('-5');
+
+      const cutoff = pool.poolParams[0]![0] as number;
+      expect(cutoff).closeTo(Date.now() / 1000 - 14 * 86400, 5);
+    });
   });
 });

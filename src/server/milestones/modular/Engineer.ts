@@ -2,7 +2,6 @@ import {BaseMilestone} from '../IMilestone';
 import {IPlayer} from '../../IPlayer';
 import {Tag} from '../../../common/cards/Tag';
 import {IMarsBot} from '../../automa/MarsBotCorpTypes';
-import {marsBotTrackPosition} from '../../automa/MarsBotMilestoneAwardEval';
 
 export class Engineer extends BaseMilestone {
   constructor() {
@@ -18,6 +17,6 @@ export class Engineer extends BaseMilestone {
 
   /** MarsBot needs its power and earth tracks to add up to 10. Vastitas Borealis words it the same way. */
   public marsBotCanClaim(bot: IMarsBot): boolean {
-    return marsBotTrackPosition(bot, Tag.POWER) + marsBotTrackPosition(bot, Tag.EARTH) >= 10;
+    return bot.marsBotBoard.trackPosition(Tag.POWER) + bot.marsBotBoard.trackPosition(Tag.EARTH) >= 10;
   }
 }

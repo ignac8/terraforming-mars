@@ -3,7 +3,7 @@ import {IPlayer} from '../../IPlayer';
 import {Tag} from '../../../common/cards/Tag';
 import {IMarsBot} from '../../automa/MarsBotCorpTypes';
 import {BoardName} from '../../../common/boards/BoardName';
-import {marsBotTrackPosition, marsBotUsesMapSet} from '../../automa/MarsBotMilestoneAwardEval';
+import {marsBotUsesMapSet} from '../../automa/MarsBotMilestoneAwardEval';
 
 export class Fundraiser extends BaseMilestone {
   constructor() {
@@ -22,6 +22,6 @@ export class Fundraiser extends BaseMilestone {
    */
   public marsBotCanClaim(bot: IMarsBot): boolean {
     const threshold = marsBotUsesMapSet(bot, BoardName.TERRA_CIMMERIA_NOVA) ? 10 : 8;
-    return marsBotTrackPosition(bot, Tag.EVENT) >= threshold;
+    return bot.marsBotBoard.trackPosition(Tag.EVENT) >= threshold;
   }
 }

@@ -61,6 +61,16 @@ export class Timer {
     };
   }
 
+  /** Runs `f` and then puts the shared last stop time back, for work that isn't play at a table, such as a replay. */
+  public static keepingLastStop<T>(f: () => T): T {
+    const lastStoppedAt = Timer.lastStoppedAt;
+    try {
+      return f();
+    } finally {
+      Timer.lastStoppedAt = lastStoppedAt;
+    }
+  }
+
   public static deserialize(d: SerializedTimer): Timer {
     const timer = new Timer(REAL_CLOCK);
     timer.sumElapsed = d.sumElapsed;
@@ -103,6 +113,36 @@ export class Timer {
   }
 
   /**
+   * Closes the interval in progress (counted only after the first action, as `stop` counts it) and stops.
+   * Never moves the shared last stop time. Does nothing on a timer that isn't running.
+   */
+  public pause(): void {
+    if (!this.running) {
+      return;
+    }
+    this.sumElapsed = this.countedElapsed();
+    this.running = false;
+  }
+
+  /**
+   * Starts a new interval now. Unlike `start`, never begins at the shared last stop time.
+   *
+   * On a running timer it drops the open interval uncounted, so callers that mean to count it pause first.
+   */
+  public resume(): void {
+    this.running = true;
+    this.startedAt = this.clock.now();
+  }
+
+  /**
+   * The time that counts so far: the closed intervals, plus the open one once the first action is done.
+   */
+  public countedElapsed(): number {
+    const open = this.running && this.afterFirstAction ? this.clock.now() - this.startedAt : 0;
+    return this.sumElapsed + open;
+  }
+
+  /**
    * Refund `millis` time off this timer's elapsed time, but never less than 0 elapsed time.
    */
   rebate(millis: number) {
@@ -111,10 +151,10 @@ export class Timer {
 
   /**
    * Returns the total elapsed time for this timer, in milliseconds. If this timer is currently running,
-   * it includes the elapsed time of this interval.
+   * it includes the elapsed time of this interval, unless it is the first action, which is not timed.
    */
   public getElapsed(): number {
-    return this.sumElapsed + (this.running ? this.clock.now() - this.startedAt : 0);
+    return this.sumElapsed + (this.running && this.afterFirstAction ? this.clock.now() - this.startedAt : 0);
   }
 
   /**
@@ -132,7 +172,7 @@ export class Timer {
    * Used to display the timer.
    */
   public static toString(d: SerializedTimer, clock: Clock = REAL_CLOCK) : string {
-    const elapsedMs = d.sumElapsed + (d.running ? clock.now() - d.startedAt : 0);
+    const elapsedMs = d.sumElapsed + (d.running && d.afterFirstAction ? clock.now() - d.startedAt : 0);
     const hours = Math.floor(elapsedMs / 3_600_000);
     const asString = new Date(elapsedMs).toISOString();
     if (hours > 0) {

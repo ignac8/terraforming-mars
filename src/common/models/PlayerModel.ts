@@ -21,6 +21,8 @@ export interface ViewModel {
   color: Color;
   thisPlayer: PublicPlayerModel | undefined;
   runId: string;
+  /** Every player's VP is filled in, not only the viewer's: the replay of a finished game. */
+  allVictoryPoints?: boolean;
 }
 
 type AlliedPartyModel = {
@@ -98,6 +100,13 @@ export interface PlayerViewModel extends ViewModel {
   ceoCardsInHand: ReadonlyArray<CardModel>;
   pickedCorporationCard: ReadonlyArray<CardModel>; // Why Array?
   preludeCardsInHand: ReadonlyArray<CardModel>;
+  /** The id of `waitingFor`, sent back with the response to it. */
+  requestId: string | undefined;
   thisPlayer: PublicPlayerModel;
   waitingFor: PlayerInputModel | undefined;
 }
+
+/** The parts of a player's view that only that seat may see. */
+export type PrivatePlayerFields = Pick<PlayerViewModel,
+  'cardsInHand' | 'ceoCardsInHand' | 'dealtCorporationCards' | 'dealtPreludeCards' | 'dealtCeoCards' |
+  'dealtProjectCards' | 'draftedCards' | 'pickedCorporationCard' | 'preludeCardsInHand' | 'waitingFor'>;

@@ -1,10 +1,10 @@
 <template>
   <dialog ref="dialog" class="bug-dialog">
     <p class="center"><span v-i18n>Copy the text below and then paste it in</span><br>
-        <a href="https://github.com/terraforming-mars/terraforming-mars/issues/new?template=from-heroku.md" target="_blank"  v-i18n>a GitHub issue</a>
-        <span v-i18n>or the</span> <a href="https://discord.com/channels/737945098695999559/742721510376210583" target="_blank"  v-i18n>#bug-reports Discord channel</a>
+      <a href="https://github.com/terraforming-mars/terraforming-mars/issues/new?template=from-heroku.md" target="_blank" v-i18n>a GitHub issue</a>
+      <span v-i18n>or the</span> <a href="https://discord.com/channels/737945098695999559/742721510376210583" target="_blank" v-i18n>#bug-reports Discord channel</a>
     </p>
-    <textarea ref="textarea" readonly rows="6" cols = "50" v-model="message"></textarea>
+    <textarea ref="textarea" readonly rows="6" cols="50" v-model="message"></textarea>
     <div class="dialog-menu centered-content">
       <div>
         <button class="btn btn-lg btn-primary" @click="copyTextArea" v-i18n>Copy to Clipboard</button>
@@ -25,6 +25,7 @@ import {vueRoot} from '@/client/components/vueRoot';
 import {PlayerViewModel} from '@/common/models/PlayerModel';
 import {SpectatorId} from '@/common/Types';
 import {getPreferences} from '../utils/PreferencesManager';
+import {serverColor} from '@/client/utils/localColors';
 
 import dialogPolyfill from 'dialog-polyfill';
 
@@ -96,7 +97,7 @@ export default defineComponent({
         Object.assign(
           content,
           {
-            color: playerView.thisPlayer.color,
+            color: serverColor(playerView.thisPlayer.color),
             expansions: Object.entries(playerView.game.gameOptions.expansions)
               .filter(([_k, v]) => v === true)
               .map(([k, _v]) => k)

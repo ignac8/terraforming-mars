@@ -7,7 +7,7 @@ import {Turmoil} from '../../../src/server/turmoil/Turmoil';
 import {IGame} from '../../../src/server/IGame';
 import {DeclareCloneTag} from '../../../src/server/pathfinders/DeclareCloneTag';
 import {Tag} from '../../../src/common/cards/Tag';
-import {IDeferredAction} from '../../../src/server//deferredActions/DeferredAction';
+import {IDeferredAction} from '../../../src/server/deferredActions/DeferredAction';
 import {cast} from '@/common/utils/utils';
 import {assertAddDelegateAction} from '../../turmoil/turmoilAssertions';
 
@@ -36,7 +36,7 @@ describe('LobbyHalls', () => {
   });
 
   it('play, has a delegate', () => {
-    expect(turmoil.getAvailableDelegateCount(player)).eq(7);
+    expect(turmoil.delegateReserve.get(player)).eq(7);
     expect(card.tags).deep.eq([Tag.CLONE, Tag.BUILDING]);
 
     card.play(player);

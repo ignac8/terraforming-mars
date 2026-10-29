@@ -10,7 +10,6 @@ import {CardName} from '@/common/cards/CardName';
 import {PreferencesManager} from '@/client/utils/PreferencesManager';
 import {Resource} from '@/common/Resource';
 import {CardResource} from '@/common/CardResource';
-import {UndergroundResourceToken} from '@/common/underworld/UndergroundResourceToken';
 
 describe('LogMessageComponent', () => {
   it('mounts without errors', () => {
@@ -22,6 +21,22 @@ describe('LogMessageComponent', () => {
       },
     });
     expect(wrapper.exists()).to.be.true;
+  });
+
+  it('calls the parent click listener once per click', async () => {
+    let clicks = 0;
+    const wrapper = shallowMount(LogMessageComponent, {
+      ...globalConfig,
+      props: {
+        message: new LogMessage(LogMessageType.DEFAULT, 'Test message', []),
+        viewModel: fakeViewModel(),
+      },
+      attrs: {onClick: () => clicks++},
+    });
+
+    await wrapper.find('li').trigger('click');
+
+    expect(clicks).to.eq(1);
   });
 
   it('renders CARD type as a single card span', () => {
@@ -137,7 +152,7 @@ describe('LogMessageComponent', () => {
 
   it('renders icons in plain text and STRING data', () => {
     const message = new LogMessage(LogMessageType.DEFAULT, 'spent :r:energy: for ${0}', [
-      {type: LogMessageDataType.STRING, value: ':p:megacredits:'},
+      {type: LogMessageDataType.STRING, value: ':p:mc:'},
     ]);
     const wrapper = shallowMount(LogMessageComponent, {
       ...globalConfig,
@@ -168,47 +183,16 @@ describe('LogMessageComponent', () => {
     expect(html).includes('<span class="markdown-resource card-resource-syndicate-fleet"></span>');
   });
 
-  function undergroundTokenHtml(token: UndergroundResourceToken): string {
-    const message = new LogMessage(LogMessageType.DEFAULT, '${0}', [
-      {type: LogMessageDataType.UNDERGROUND_TOKEN, value: token},
+  it('renders MARKDOWN data as icons only', () => {
+    const message = new LogMessage(LogMessageType.DEFAULT, '[ ${0} ]', [
+      {type: LogMessageDataType.MARKDOWN, value: '-3:r:mc: *x*'},
     ]);
     const wrapper = shallowMount(LogMessageComponent, {
       ...globalConfig,
       props: {message, viewModel: fakeViewModel()},
     });
-    return wrapper.find('.log-excavation-token').html();
-  }
 
-  it('renders UNDERGROUND_TOKEN data as icons', () => {
-    expect(undergroundTokenHtml('titanium2')).includes(
-      '2<span class="markdown-resource resource_icon--titanium"></span>');
-    expect(undergroundTokenHtml('corruption1')).includes(
-      '1<span class="markdown-resource resource_icon--corruption"></span>');
-    expect(undergroundTokenHtml('steel1production')).includes(
-      '1<span class="markdown-production"><span class="markdown-resource resource_icon--steel"></span></span>');
-    expect(undergroundTokenHtml('microbe2')).includes(
-      '2<span class="markdown-resource card-resource-microbe"></span>');
-    expect(undergroundTokenHtml('tr')).includes('1<span class="markdown-icon markdown-icon-tr"></span>');
-    expect(undergroundTokenHtml('sciencetag')).includes('1<span class="markdown-tag tag-science"></span>');
-  });
-
-  it('renders UNDERGROUND_TOKEN data without icons as plain text', () => {
-    const html = undergroundTokenHtml('card2');
-
-    expect(html).includes('draw 2 cards');
-    expect(html).does.not.include('markdown-');
-  });
-
-  it('translates UNDERGROUND_TOKEN data before rendering icons', () => {
-    PreferencesManager.INSTANCE.set('lang', 'de');
-    (window as any)._translations = {'1:r:titanium: and 1:r:plants:': '1:r:titanium: und 1:r:plants:'};
-    try {
-      const html = undergroundTokenHtml('titaniumandplant');
-
-      expect(html).includes('resource_icon--titanium"></span> und 1<span class="markdown-resource resource_icon--plants">');
-    } finally {
-      PreferencesManager.resetForTest();
-      delete (window as any)._translations;
-    }
+    const html = wrapper.html();
+    expect(html).includes('-3<span class="markdown-resource resource_icon--megacredits"></span> *x*');
   });
 });

@@ -1010,7 +1010,7 @@ export class MarsBotBonusResolver {
 
     // T-8: If ≥1 delegate still in reserve AND MarsBot has ≥5 MC:
     //       flip a project deck card — if its cost is divisible by 3, spend 5 MC and place another delegate
-    if (turmoil.hasDelegatesInReserve(this.marsBot) && this.turnResolver.megacredits >= 5) {
+    if (turmoil.delegateReserve.has(this.marsBot) && this.turnResolver.megacredits >= 5) {
       const flipped = this.game.projectDeck.draw(this.game);
       if (flipped !== undefined) {
         this.game.log('MarsBot flips ${0} (cost ${1}) for Party Politics T-8 check', (b) => b.card(flipped).number(flipped.cost));
@@ -1034,7 +1034,7 @@ export class MarsBotBonusResolver {
     // Up to 2 delegates, each to the party with the fewest MarsBot delegates, then the fewest
     // player delegates, then a random one. 2 M€ for each delegate it can't place.
     for (let i = 0; i < 2; i++) {
-      if (!turmoil.hasDelegatesInReserve(this.marsBot)) {
+      if (!turmoil.delegateReserve.has(this.marsBot)) {
         this.turnResolver.gainMc(2);
         this.game.log('MarsBot resolves Gray Eminence: no delegate in reserve, +2 M€');
         continue;

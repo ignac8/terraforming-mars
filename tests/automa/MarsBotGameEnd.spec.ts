@@ -7,6 +7,8 @@ import {BoardName} from '../../src/common/boards/BoardName';
 import {TileType} from '../../src/common/TileType';
 import {Phase} from '../../src/common/Phase';
 import {calculateVictoryPoints} from '../../src/server/game/calculateVictoryPoints';
+import {restoreTestDatabase, setTestDatabase} from '../testing/setup';
+import {InMemoryDatabase} from '../testing/InMemoryDatabase';
 
 function createAutomaGame(difficulty: 'easy' | 'normal' | 'hard' | 'brutal' = 'normal'): {game: IGame, human: TestPlayer, marsBot: MarsBot} {
   const [game, human] = testGame(1, {automaOption: true, automaDifficulty: difficulty, boardName: BoardName.THARSIS});
@@ -170,6 +172,29 @@ describe('MarsBot Game End Model', () => {
 
       expect(marsBot.isInstantWin()).to.be.false;
       expect(marsBot.toModel().instantWin).to.be.false;
+    });
+
+    it('MarsBot instant win leaves a finishing promise that settles once the game is marked finished', async () => {
+      const db = new InMemoryDatabase();
+      const finished: Array<string> = [];
+      const markFinished = db.markFinished.bind(db);
+      db.markFinished = (gameId) => {
+        finished.push(gameId);
+        return markFinished(gameId);
+      };
+      setTestDatabase(db);
+      try {
+        const {game} = createAutomaGame();
+        (game as any).generation = 19;
+
+        (game as any).startGeneration();
+        await game.finishing;
+
+        expect(game.phase).eq(Phase.END);
+        expect(finished).deep.eq([game.id]);
+      } finally {
+        restoreTestDatabase();
+      }
     });
   });
 

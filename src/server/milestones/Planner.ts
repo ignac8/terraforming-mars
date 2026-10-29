@@ -1,7 +1,7 @@
 import {BaseMilestone} from './IMilestone';
 import {IPlayer} from '../IPlayer';
-import {IMarsBot} from '../automa/MarsBotCorpTypes';
-import {marsBotMarsTrackPositions} from '../automa/MarsBotMilestoneAwardEval';
+import {IMarsBot} from '@/server/automa/MarsBotCorpTypes';
+import {Tag} from '@/common/cards/Tag';
 
 export class Planner extends BaseMilestone {
   constructor() {
@@ -14,8 +14,10 @@ export class Planner extends BaseMilestone {
     return player.cardsInHand.length;
   }
 
-  /** MarsBot has no hand. It plans by advancing every Mars track to at least 4. */
+  /** Requires space 4 on every track except Venus (rulebook A, p.8; rulebook C, p.2). */
   public marsBotCanClaim(bot: IMarsBot): boolean {
-    return marsBotMarsTrackPositions(bot).every((position) => position >= 4);
+    return bot.marsBotBoard.tracks
+      .filter((track) => !track.definition.tags.includes(Tag.VENUS))
+      .every((track) => track.position >= 4);
   }
 }

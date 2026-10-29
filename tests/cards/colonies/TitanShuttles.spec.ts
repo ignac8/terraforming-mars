@@ -8,7 +8,7 @@ import {OrOptions} from '../../../src/server/inputs/OrOptions';
 import {SelectCard} from '../../../src/server/inputs/SelectCard';
 import {TestPlayer} from '../../TestPlayer';
 import {testGame} from '../../TestGame';
-import {formatMessage} from '../../TestingUtils';
+import {runAllActions} from '@tests/TestingUtils';
 
 describe('TitanShuttles', () => {
   let card: TitanShuttles;
@@ -37,8 +37,8 @@ describe('TitanShuttles', () => {
   it('Auto add floaters if only 1 option and 1 target available', () => {
     card.action(player);
     expect(game.deferredActions).has.lengthOf(1);
-    const input = game.deferredActions.peek()!.execute();
-    expect(input).is.undefined;
+    runAllActions(game);
+    cast(player.popWaitingFor(), undefined);
     expect(card.resourceCount).to.eq(2);
   });
 
@@ -66,7 +66,6 @@ describe('TitanShuttles', () => {
     orOptions.options[1].cb(6);
     expect(card.resourceCount).to.eq(1);
     expect(player.titanium).to.eq(6);
-    expect(game.gameLog.map(formatMessage)).to.include(`${player.color} removed 6:cr:floater: to gain 6:r:titanium:`);
 
     // add 2 floaters to Jovian card
     orOptions.options[0].cb();

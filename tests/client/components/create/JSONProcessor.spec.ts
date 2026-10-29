@@ -125,10 +125,11 @@ const TEMPLATE_EXPECTED: CreateGameModel = {
   showIncludedCards: false,
   customColonies: [],
   customCorporations: [],
+  customMA: undefined,
   customPreludes: [],
   bannedCards: [],
   includedCards: [],
-  board: 'tharsis' as BoardName,
+  boards: ['tharsis' as BoardName],
   seed: 0.40189423667985547,
   seededGame: false,
   solarPhaseOption: false,
@@ -154,6 +155,7 @@ const TEMPLATE_EXPECTED: CreateGameModel = {
   escapeVelocityPeriod: 2,
   escapeVelocityPenalty: 1,
   twoCorpsVariant: false,
+  keepReplacedCards: false,
   customCeos: [],
   startingCeos: 3,
   startingPreludes: 4,
@@ -241,6 +243,17 @@ const cases: Array<Case> = [
       escapeVelocityPenalty: 3,
       escapeVelocityPeriod: 2,
       escapeVelocityThreshold: 35,
+    },
+  },
+  {
+    description: 'empty boards loads as Tharsis',
+    input: {
+      ...TEMPLATE_INPUT,
+      boards: [],
+    },
+    expected: {
+      ...TEMPLATE_EXPECTED,
+      boards: [BoardName.THARSIS],
     },
   },
 ];

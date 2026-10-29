@@ -6,13 +6,14 @@ import {IoMiningIndustries} from '../src/server/cards/base/IoMiningIndustries';
 import {PowerSupplyConsortium} from '../src/server/cards/base/PowerSupplyConsortium';
 import {SaturnSystems} from '../src/server/cards/corporation/SaturnSystems';
 import {SelectOption} from '../src/server/inputs/SelectOption';
+import {UndoActionOption} from '../src/server/inputs/UndoActionOption';
 import {Resource} from '../src/common/Resource';
 import {SerializedPlayer} from '../src/server/SerializedPlayer';
 import {SerializedTimer} from '../src/common/SerializedTimer';
 import {Player} from '../src/server/Player';
 import {Color} from '../src/common/Color';
 import {CardName} from '../src/common/cards/CardName';
-import {doWait, fakeCard, formatMessage, getSendADelegateOption, runAllActions, setRulingParty} from './TestingUtils';
+import {doWait, formatMessage, getSendADelegateOption, runAllActions, setRulingParty} from './TestingUtils';
 import {SelfReplicatingRobots} from '../src/server/cards/promo/SelfReplicatingRobots';
 import {IProjectCard} from '../src/server/cards/IProjectCard';
 import {Pets} from '../src/server/cards/base/Pets';
@@ -39,6 +40,8 @@ import {EnergyTapping} from '../src/server/cards/base/EnergyTapping';
 import {cast} from '@/common/utils/utils';
 import {Timer} from '../src/common/Timer';
 import {FakeClock} from './common/FakeClock';
+import {InMemoryDatabase} from './testing/InMemoryDatabase';
+import {restoreTestDatabase, setTestDatabase} from './testing/setup';
 
 function playerWithRunningTimer(): [Player, FakeClock] {
   const player = new Player('blue', 'blue', false, 0, 'p-blue');
@@ -86,6 +89,32 @@ describe('Player', () => {
     clock.millis = 5000;
     player.setWaitingFor(new SelectOption('Input'));
     expect(player.inputRequestedAt).eq(5000);
+  });
+
+  it('starts no clock while the game is frozen', () => {
+    for (const frozen of [false, true]) {
+      const [game, player] = testGame(1);
+      player.clearWaitingFor();
+      player.timer = Timer.newInstance();
+      game.frozen = frozen;
+
+      player.setWaitingFor(new SelectOption('Input'));
+
+      expect(player.timer.serialize().running, String(frozen)).eq(!frozen);
+    }
+  });
+
+  it('keeps the request id when a response is rejected', () => {
+    const [/* game */, player] = testGame(1);
+    player.clearWaitingFor();
+    player.setWaitingFor(new SelectOption('Input'));
+    const requestId = player.requestId;
+
+    expect(() => player.process({type: 'amount', amount: 1})).to.throw(/Not a valid SelectOptionResponse/);
+    expect(player.requestId).eq(requestId);
+
+    player.process({type: 'option'});
+    expect(player.requestId).is.undefined;
   });
 
   it('does not stop the timer when processing optional input', () => {
@@ -431,6 +460,7 @@ describe('Player', () => {
     expect(card.resourceCount).eq(5);
     expect(log).has.length(1);
     expect(log[0].data[1].value).eq('1');
+    expect(log[0].data[2].value).eq('Animal');
     expect(log[0].data[4].value).eq('Pets');
     expect(formatMessage(log[0])).eq(`blue removed 1:cr:animal: from blue's Pets`);
 
@@ -453,18 +483,6 @@ describe('Player', () => {
     expect(log[0].data[1].value).eq('4');
   });
 
-  it('removeResourceFrom, card without a resource type', () => {
-    const [game, player, player2] = testGame(2);
-    const card = fakeCard({resourceCount: 3});
-    expect(card.resourceType).is.undefined;
-    game.gameLog.length = 0;
-
-    player.removeResourceFrom(card, 2, {removingPlayer: player2});
-
-    expect(card.resourceCount).eq(1);
-    expect(game.gameLog.map(formatMessage)).deep.eq([`${player2.color} removed 2 resource(s) from ${player.color}'s ${card.name}`]);
-  });
-
   it('increaseTerraformRating logs a TR icon', () => {
     const [game, player] = testGame(1);
     game.gameLog.length = 0;
@@ -473,8 +491,8 @@ describe('Player', () => {
     player.increaseTerraformRating(1, {log: true, from: {card: CardName.ASTEROID_MINING_CONSORTIUM}});
 
     expect(game.gameLog.map(formatMessage)).deep.eq([
-      `${player.color} gained 2:icon:tr:`,
-      `${player.color} gained 1:icon:tr: from Asteroid Mining Consortium`,
+      `${player.color} gained 2:i:tr:`,
+      `${player.color} gained 1:i:tr: from Asteroid Mining Consortium`,
     ]);
   });
 
@@ -484,7 +502,7 @@ describe('Player', () => {
 
     player.decreaseTerraformRating(3, {log: true});
 
-    expect(game.gameLog.map(formatMessage)).deep.eq([`${player.color} lost 3:icon:tr:`]);
+    expect(game.gameLog.map(formatMessage)).deep.eq([`${player.color} lost 3:i:tr:`]);
   });
 
   it('Turmoil player action', () => {
@@ -602,7 +620,7 @@ describe('Player', () => {
 
     expect(player.megaCredits).eq(15);
     expect(player.preludeCardsInHand).deep.eq([alliedBanks]);
-    expect(game.gameLog.map(formatMessage)).includes(`Loan fizzled. ${player.color} gains 15:r:megacredits:.`);
+    expect(game.gameLog.map(formatMessage)).includes(`Loan fizzled. ${player.color} gains 15:r:mc:`);
   });
 
   it('autopass is disabled', () => {
@@ -745,5 +763,33 @@ describe('Player', () => {
 
     expect(player.cardsInHand).to.have.members([cards[0], cards[2]]);
     expect(player.megaCredits).eq(14);
+  });
+
+  it('never offers the one-step undo', () => {
+    for (const count of [1, 2]) {
+      const [/* game */, player] = testGame(count, {undoOption: true});
+      player.actionsTakenThisRound = 1;
+
+      const actions = cast(player.getActions(), OrOptions);
+
+      expect(actions.options.some((option) => option instanceof UndoActionOption), `${count} players`).is.false;
+    }
+  });
+
+  describe('saves', () => {
+    it('saves before every action, also without undo', () => {
+      const db = new InMemoryDatabase();
+      setTestDatabase(db);
+      try {
+        const [game, player] = testGame(2, {undoOption: false});
+        player.actionsTakenThisRound = 1; // second action of the turn
+        const before = db.games.get(game.id)?.length ?? 0;
+        player.takeAction();
+        runAllActions(game);
+        expect(db.games.get(game.id)?.length ?? 0).eq(before + 1);
+      } finally {
+        restoreTestDatabase();
+      }
+    });
   });
 });

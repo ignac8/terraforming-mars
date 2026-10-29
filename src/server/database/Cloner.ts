@@ -35,6 +35,10 @@ export class Cloner {
         [AutomaGameSetup.createMarsBotPlayer(newGameId).id]);
     }
     serialized.id = newGameId;
+    // A clone is a new table: not frozen, no vote, no one barred from asking.
+    delete serialized.frozen;
+    delete serialized.rewindVote;
+    delete serialized.rewindRequestLimits;
 
     for (let idx = 0; idx < players.length; idx++) {
       this.updatePlayer(players[idx], serialized.players[idx]);

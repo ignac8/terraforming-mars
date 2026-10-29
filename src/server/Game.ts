@@ -26,6 +26,9 @@ import {IPlayer} from './IPlayer';
 import {Player} from './Player';
 import {PlayerId, GameId, SpectatorId, SpaceId} from '../common/Types';
 import {PlayerInput} from './PlayerInput';
+import {InputResponse} from '../common/inputs/InputResponse';
+import {RecordedInput} from './rewind/RecordedInput';
+import {stateHash} from './rewind/stateHash';
 import {CardResource} from '../common/CardResource';
 import {Resource} from '../common/Resource';
 import {AndThen, DeferredAction, SimpleDeferredAction} from './deferredActions/DeferredAction';
@@ -67,6 +70,8 @@ import {Logger} from './logs/Logger';
 import {addDays, stringToNumber} from './database/utils';
 import {Tag} from '../common/cards/Tag';
 import {IGame, Score} from './IGame';
+import {RewindRecord} from './rewind/RewindRecord';
+import {RewindRequestLimits, SerializedRewindVote, TableStatePatch} from './rewind/tableState';
 import {GlobalParameterMaximums} from '../common/boards/GlobalParameterMaximums';
 import {MarsBoard} from './boards/MarsBoard';
 import {UnderworldData} from './underworld/UnderworldData';
@@ -101,6 +106,13 @@ export function setGameLog(f: () => Array<LogMessage>) {
   createGameLog = f;
 }
 
+export type DeserializeOptions = {
+  /** When true the game never writes to the database or the game cache. Used to show past moments of a game. */
+  sandbox?: boolean;
+  /** Sandbox only: called at every save the sandbox makes, with the state as a save would store it. */
+  onSave?: (game: Game, saved: SerializedGame) => void;
+};
+
 export class Game implements IGame, Logger {
   public readonly id: GameId;
   public readonly name: string;
@@ -126,9 +138,34 @@ export class Game implements IGame, Logger {
   public createdTime: Date = new Date(0);
   public gameAge: number = 0; // Each log event increases it
   public gameLog: Array<LogMessage> = createGameLog();
+  public rewinds: Array<RewindRecord> = [];
   public undoCount: number = 0; // Each undo increases it
+  /**
+   * The inputs processed since the last save. Undefined when the game was loaded from a save
+   * written before inputs were recorded, so saving it again keeps that save without inputs.
+   */
+  public inputsSinceSave: Array<RecordedInput> | undefined = [];
   public inputsThisRound = 0;
   public resettable: boolean = false;
+  /** A sandbox game is a read-only view of a past save. It never writes a save. */
+  public isSandbox: boolean = false;
+  private onSandboxSave: DeserializeOptions['onSave'] = undefined;
+  /** Set on a game object that a rewind replaced. Like a sandbox, it never writes a save. Not serialized. */
+  public retired: boolean = false;
+  /** Settles once the game's last saves and its finished mark are written. Unset until the game ends in this process. */
+  public finishing: Promise<void> | undefined = undefined;
+  /** Set while the game is frozen: no input is accepted and no clock runs. */
+  public frozen: boolean = false;
+  /** The open or rewinding vote, as plain data. */
+  public rewindVote: SerializedRewindVote | undefined = undefined;
+  public rewindRequestLimits: RewindRequestLimits | undefined = undefined;
+  public onRewindVoteMove: (() => void) | undefined = undefined;
+  /** The save row this object last wrote or was loaded from. Patches go to this row only. Undefined for a sandbox and before the first save. */
+  public ownSaveId: number | undefined = undefined;
+  /** Settles once every save row this object started writing is written, or has failed. */
+  private lastWrite: Promise<void> = Promise.resolve();
+  /** Settles once the last persistTableState has. */
+  private lastPatch: Promise<void> = Promise.resolve();
   public globalsPerGeneration: Array<Partial<Record<GlobalParameter, number>>> = [];
 
   public generation: number = 1;
@@ -204,6 +241,7 @@ export class Game implements IGame, Logger {
 
   public underworldDraftEnabled = true;
   public readonly globalParameterTracks: GlobalParameterTracks;
+  public readonly standardProjects: ReadonlyArray<IStandardProjectCard>;
 
   public automaHooks: AutomaGameHooks | undefined;
 
@@ -265,6 +303,7 @@ export class Game implements IGame, Logger {
 
     this.tags = tags;
     this.globalParameterTracks = getGlobalParameterTracks(gameOptions.boardName);
+    this.standardProjects = this.computeStandardProjects();
   }
 
   private setFirstPlayer(first: IPlayer) {
@@ -356,6 +395,9 @@ export class Game implements IGame, Logger {
       gameOptions.initialDraftVariant = false;
       gameOptions.preludeDraftVariant = false;
       gameOptions.randomMA = RandomMAOptionType.NONE;
+      gameOptions.customMA = undefined;
+
+      // Single player game player starts with 14TR
       players[0].setTerraformRating(14);
     }
 
@@ -500,8 +542,85 @@ export class Game implements IGame, Logger {
     }
   }
 
-  public save(): void {
-    GameLoader.getInstance().saveGame(this);
+  /** Writes the game as its next save. The promise settles when the write does. */
+  public save(): Promise<void> {
+    if (this.retired) {
+      return Promise.resolve();
+    }
+    if (this.isSandbox) {
+      if (this.onSandboxSave !== undefined) {
+        // As the database does: the state is stored under the current id, and the game moves on to the next.
+        const saved = this.serialize();
+        this.lastSaveId++;
+        this.inputsSinceSave = [];
+        this.onSandboxSave(this, saved);
+      }
+      return Promise.resolve();
+    }
+    // A sandbox that became the live game no longer reports its saves.
+    this.onSandboxSave = undefined;
+    const written = this.trackWrite(() => GameLoader.getInstance().saveGame(this));
+    // The database serialized the game, inputs included, when saveGame was called.
+    this.inputsSinceSave = [];
+    return written;
+  }
+
+  /** Starts `start`, a write of this game's next save row, and remembers the row and the write. */
+  private trackWrite(start: () => Promise<void>): Promise<void> {
+    // Every backend takes the save id before its first await.
+    const saveId = this.lastSaveId;
+    const written = start();
+    this.ownSaveId = saveId;
+    this.lastWrite = Promise.all([this.lastWrite, written.catch(() => {})]).then(() => {});
+    return written;
+  }
+
+  public persistTableState(): Promise<boolean> {
+    const patched = Promise.all([this.lastWrite, this.lastPatch]).then(async () => {
+      if (this.isSandbox || this.retired || this.ownSaveId === undefined) {
+        return false;
+      }
+      // The state of this moment, so the last patch wins.
+      const patch: TableStatePatch = {
+        frozen: this.frozen,
+        rewindVote: this.rewindVote,
+        rewindRequestLimits: this.currentRequestLimits(),
+        undoCount: this.undoCount,
+        timers: this.players.map((p) => ({player: p.id, timer: p.timer.serialize()})),
+      };
+      return await Database.getInstance().updateNewestSave(this.id, this.ownSaveId, patch);
+    });
+    this.lastPatch = patched.then(() => {}, () => {});
+    return patched;
+  }
+
+  /** The request limits, when they are this generation's. Older ones bar no one. */
+  private currentRequestLimits(): RewindRequestLimits | undefined {
+    return this.rewindRequestLimits?.generation === this.generation ? this.rewindRequestLimits : undefined;
+  }
+
+  /** Remembers `input`, the answer `player` gave to `waitingFor`, with the state it is about to be applied to. */
+  public recordInput(player: IPlayer, waitingFor: PlayerInput, input: InputResponse): RecordedInput | undefined {
+    if (this.isSandbox) {
+      return undefined;
+    }
+    const title = waitingFor.title;
+    const recorded: RecordedInput = {
+      playerId: player.id,
+      prompt: {type: waitingFor.type, title: typeof title === 'string' ? title : title.message},
+      response: structuredClone(input),
+      stateHash: stateHash(this.serialize()),
+    };
+    (this.inputsSinceSave ??= []).push(recorded);
+    return recorded;
+  }
+
+  /** Takes back a record from `recordInput`, for an answer the game then rejected. */
+  public forgetInput(recorded: RecordedInput | undefined): void {
+    const index = recorded === undefined ? -1 : this.inputsSinceSave?.lastIndexOf(recorded) ?? -1;
+    if (index !== -1) {
+      this.inputsSinceSave?.splice(index, 1);
+    }
   }
 
   public serialize(): SerializedGame {
@@ -562,6 +681,23 @@ export class Game implements IGame, Logger {
     if (this.clonedGamedId !== undefined) {
       result.clonedGamedId = this.clonedGamedId;
     }
+    if (this.inputsSinceSave !== undefined) {
+      result.inputs = [...this.inputsSinceSave];
+    }
+    if (this.rewinds.length > 0) {
+      result.rewinds = this.rewinds;
+    }
+    if (this.frozen) {
+      result.frozen = true;
+    }
+    // Copies, so a save held in memory doesn't change with the live vote.
+    if (this.rewindVote !== undefined) {
+      result.rewindVote = structuredClone(this.rewindVote);
+    }
+    const rewindRequestLimits = this.currentRequestLimits();
+    if (rewindRequestLimits !== undefined) {
+      result.rewindRequestLimits = structuredClone(rewindRequestLimits);
+    }
     if (this.turmoil !== undefined) {
       result.turmoil = this.turmoil.serialize();
     }
@@ -599,11 +735,7 @@ export class Game implements IGame, Logger {
    * Run every deferred action, including any added while running them, and then call `cb`.
    */
   public drainQueue(cb: () => void): void {
-    if (this.deferredActions.length === 0) {
-      cb();
-      return;
-    }
-    this.deferredActions.runAll(() => this.drainQueue(cb));
+    this.deferredActions.runAll(cb);
   }
 
   public milestoneClaimed(milestone: IMilestone): boolean {
@@ -950,7 +1082,7 @@ export class Game implements IGame, Logger {
     // Automa instant win: MarsBot wins when max generation is reached, game ends immediately.
     if (this.automaHooks !== undefined && this.automaHooks.marsBot.isInstantWin()) {
       this.log('MarsBot wins! (Generation limit reached)');
-      this.gotoEndGame();
+      this.finishing = this.gotoEndGame();
       return;
     }
 
@@ -1192,6 +1324,26 @@ export class Game implements IGame, Logger {
       this.log('This game id was ${0}', (b) => b.rawString(id));
     }
 
+    if (this.isSandbox || this.retired) {
+      this.phase = Phase.END;
+      return;
+    }
+
+    this.saveGameResults();
+    this.phase = Phase.END;
+    const gameLoader = GameLoader.getInstance();
+    const saved = this.trackWrite(() => gameLoader.saveGame(this));
+    // The database serialized the game, inputs included, when saveGame was called.
+    this.inputsSinceSave = [];
+    await saved;
+    // A game a rewind replaced doesn't finish: completeGame would save under the id the rewind took.
+    if (this.retired) {
+      return;
+    }
+    await this.trackWrite(() => gameLoader.completeGame(this));
+  }
+
+  public saveGameResults(): void | Promise<void> {
     const scores: Array<Score> = [];
     this.players.forEach((player) => {
       const corporation = player.playedCards.filter(isICorporationCard).map(toName).join('|');
@@ -1199,11 +1351,7 @@ export class Game implements IGame, Logger {
       scores.push({corporation: corporation, playerScore: vpb.total});
     });
 
-    Database.getInstance().saveGameResults(this.id, this.players.length, this.generation, this.gameOptions, scores);
-    this.phase = Phase.END;
-    const gameLoader = GameLoader.getInstance();
-    await gameLoader.saveGame(this);
-    gameLoader.completeGame(this);
+    return Database.getInstance().saveGameResults(this.id, this.players.length, this.generation, this.gameOptions, scores);
   }
 
   // Part of final greenery placement.
@@ -1252,7 +1400,7 @@ export class Game implements IGame, Logger {
     }
     this.updatePlayerVPForTheGeneration();
     this.updateGlobalsForTheGeneration();
-    this.gotoEndGame();
+    this.finishing = this.gotoEndGame();
   }
 
   public startActionsForPlayer(player: IPlayer) {
@@ -1493,14 +1641,14 @@ export class Game implements IGame, Logger {
 
   public grantPlacementBonuses(player: IPlayer, space: Space, coveringExistingTile: boolean = false) {
     if (!coveringExistingTile) {
-      this.grantSpaceBonuses(player, space, /* tilePlaced= */ true);
+      this.grantSpaceBonusesAsPlacement(player, space);
     }
 
     const adjacentOceanCount = this.board.getAdjacentSpaces(space).filter(Board.isOceanSpace).length;
     const oceanAdjacencyBonus = adjacentOceanCount * player.oceanBonus;
     if (oceanAdjacencyBonus > 0) {
       player.stock.add(Resource.MEGACREDITS, oceanAdjacencyBonus);
-      this.log('${0} gained ${1}:r:megacredits: from ${2} ocean(s)', (b) => b.player(player).number(oceanAdjacencyBonus).number(adjacentOceanCount));
+      this.log('${0} gained ${1}:r:mc: from ${2} ocean(s)', (b) => b.player(player).number(oceanAdjacencyBonus).number(adjacentOceanCount));
     }
   }
 
@@ -1538,14 +1686,20 @@ export class Game implements IGame, Logger {
     LogHelper.logTilePlacement(player, space, tile.tileType);
   }
 
-  public grantSpaceBonuses(player: IPlayer, space: Space, tilePlaced: boolean = false) {
+  public grantSpaceBonuses(player: IPlayer, space: Space, onStandardResource?: (resource: Resource) => void) {
     const bonuses = MultiSet.from(space.bonus);
     bonuses.forEachMultiplicity((count: number, bonus: SpaceBonus) => {
-      this.grantSpaceBonus(player, bonus, count, tilePlaced ? space : undefined);
+      this.grantSpaceBonus(player, bonus, count, onStandardResource);
     });
   }
 
-  public grantSpaceBonus(player: IPlayer, spaceBonus: SpaceBonus, count: number = 1, space?: Space) {
+  public grantSpaceBonusesAsPlacement(player: IPlayer, space: Space) {
+    this.grantSpaceBonuses(player, space, (resource) => {
+      this.triggerForAllCards((p, c) => c.onStandardResourcePlacementBonus?.(p, player, space, resource));
+    });
+  }
+
+  public grantSpaceBonus(player: IPlayer, spaceBonus: SpaceBonus, count: number = 1, onStandardResource?: (resource: Resource) => void) {
     switch (spaceBonus) {
     case SpaceBonus.DRAW_CARD:
       player.drawCard(count);
@@ -1619,9 +1773,7 @@ export class Game implements IGame, Logger {
       player.defer(new SelectResource('Select a standard resource to gain')
         .andThen((resource) => {
           player.stock.add(resource, 1, {log: true});
-          if (space !== undefined) {
-            this.triggerForAllCards((p, c) => c.onStandardResourcePlacementBonus?.(p, player, space, resource));
-          }
+          onStandardResource?.(resource);
           return undefined;
         }));
       break;
@@ -1718,7 +1870,7 @@ export class Game implements IGame, Logger {
     }
   }
 
-  public getStandardProjects(): Array<IStandardProjectCard> {
+  private computeStandardProjects(): Array<IStandardProjectCard> {
     const gameOptions = this.gameOptions;
     return new GameCards(gameOptions)
       .getStandardProjects()
@@ -1788,7 +1940,7 @@ export class Game implements IGame, Logger {
     return addDays(this.createdTime, days).getTime();
   }
 
-  public static deserialize(d: SerializedGame): Game {
+  public static deserialize(d: SerializedGame, options: DeserializeOptions = {}): Game {
     const gameOptions = d.gameOptions;
     gameOptions.boardName = normalizeBoardName(gameOptions.boardName);
     if (gameOptions.escapeVelocity !== undefined) {
@@ -1819,6 +1971,8 @@ export class Game implements IGame, Logger {
     const ceoDeck = CeoDeck.deserialize(d.ceoDeck, rng);
 
     const game = new Game(d.id, d.name, players, first, d.activePlayer, d.spectatorId, gameOptions, rng, board, projectDeck, corporationDeck, preludeDeck, ceoDeck, d.tags, marsBotPlayer);
+    game.isSandbox = options.sandbox === true;
+    game.onSandboxSave = options.onSave;
     game.resettable = true;
     game.spectatorId = d.spectatorId;
     game.createdTime = new Date(d.createdTimeMs);
@@ -1883,10 +2037,20 @@ export class Game implements IGame, Logger {
     game.clonedGamedId = d.clonedGamedId;
     game.gameAge = d.gameAge;
     game.gameLog = d.gameLog;
+    game.rewinds = d.rewinds ?? [];
+    // A sandbox views a past save: it is never frozen, holds no vote and bars no one.
+    if (!game.isSandbox) {
+      game.frozen = d.frozen ?? false;
+      game.rewindVote = d.rewindVote;
+      game.rewindRequestLimits = d.rewindRequestLimits;
+      // Save k stores lastSaveId k.
+      game.ownSaveId = d.lastSaveId;
+    }
     game.generation = d.generation;
     game.phase = d.phase;
     game.oxygenLevel = d.oxygenLevel;
     game.undoCount = d.undoCount ?? 0;
+    game.inputsSinceSave = d.inputs;
     game.temperature = d.temperature;
     game.venusScaleLevel = d.venusScaleLevel;
 
@@ -1917,8 +2081,6 @@ export class Game implements IGame, Logger {
       if (game.phase === Phase.INITIALDRAFTING) {
         switch (game.initialDraftIteration) {
         case 1:
-          newInitialDraft(game).restoreDraft();
-          break;
         case 2:
           newInitialDraft(game).restoreDraft();
           break;
@@ -1943,10 +2105,10 @@ export class Game implements IGame, Logger {
       // There's nowhere that we need to go for end game.
     } else {
       // We should be in ACTION phase, let's prompt the active player for actions
-      game.activePlayer.takeAction(/* saveBeforeTakingAction */ false);
+      game.activePlayer.takeAction();
     }
 
-    if (game.phase === Phase.END) {
+    if (game.phase === Phase.END && !game.isSandbox) {
       GameLoader.getInstance().mark(game.id);
     }
     return game;

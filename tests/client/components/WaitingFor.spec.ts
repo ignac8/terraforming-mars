@@ -3,9 +3,11 @@ import {defineComponent} from 'vue';
 import {globalConfig} from './getLocalVue';
 import {expect} from 'chai';
 import {afterEach, vi} from 'vitest';
+import {SoundManager} from '@/client/utils/SoundManager';
 import WaitingFor from '@/client/components/WaitingFor.vue';
 import {RecursivePartial} from '@/common/utils/utils';
 import {PlayerViewModel, PublicPlayerModel} from '@/common/models/PlayerModel';
+import {WaitingForModel} from '@/common/models/WaitingForModel';
 import {Phase} from '@/common/Phase';
 import {INVALID_REQUEST_ID} from '@/common/app/AppErrorId';
 
@@ -227,7 +229,8 @@ describe('WaitingFor', () => {
       global: {...globalConfig.global, stubs: {'PlayerInputFactory': true}},
       props: {
         playerView: playerView as PlayerViewModel,
-        waitingfor: {type: 'option', title: 'test', buttonLabel: 'save', requestId: 'request-1'},
+        waitingfor: {type: 'option', title: 'test', buttonLabel: 'save'},
+        requestId: 'request-1',
       },
     });
     const root = wrapper.vm.$root as any;
@@ -259,5 +262,156 @@ describe('WaitingFor', () => {
     await submit(inputError(undefined));
 
     expect(vi.getTimerCount()).eq(0);
+  });
+
+  // Answers every poll the same way and counts them.
+  function stubPolls(pollStatus: number, pollResponse?: WaitingForModel) {
+    const polls = {count: 0};
+    vi.stubGlobal('XMLHttpRequest', class {
+      status = pollStatus;
+      response = pollResponse;
+      onload = () => {};
+      open() {}
+      send() {
+        polls.count++;
+        this.onload();
+      }
+    });
+    return polls;
+  }
+
+  // `rootMethods` stand in for the App methods WaitingFor calls through vueRoot.
+  function mountSpectator(rootMethods: Record<string, unknown>) {
+    const spectator = {id: 's-spectator-id', players: [], game: {phase: Phase.ACTION, gameAge: 1, undoCount: 0}};
+    return mount(WaitingFor, {
+      ...globalConfig,
+      global: {...globalConfig.global, stubs: {'PlayerInputFactory': true}, mocks: rootMethods},
+      props: {playerView: spectator as unknown as PlayerViewModel},
+    });
+  }
+
+  it('keeps polling after a failed refresh', async () => {
+    vi.useFakeTimers();
+    const polls = stubPolls(200, {result: 'REFRESH', waitingFor: []});
+    // The spectator fetch fails, so the view never changes.
+    mountSpectator({updateSpectator: async () => false});
+
+    await vi.advanceTimersByTimeAsync(2500);
+
+    expect(polls.count).eq(2);
+  });
+
+  it('retries failed polls quietly before alerting', async () => {
+    vi.useFakeTimers();
+    const polls = stubPolls(502);
+    const showAlert = vi.fn();
+    mountSpectator({showAlert});
+
+    await vi.advanceTimersByTimeAsync(5500);
+    expect(polls.count).eq(5);
+    expect(showAlert.mock.calls).is.empty;
+
+    await vi.advanceTimersByTimeAsync(30000);
+    expect(showAlert.mock.calls).has.length(1);
+  });
+
+  describe('at a required prompt', () => {
+    const requiredPrompt = {type: 'option', title: 'test', buttonLabel: 'save'} as any;
+
+    function viewWith(): PlayerViewModel {
+      return {
+        id: 'p-player-id',
+        thisPlayer: {color: 'red'},
+        players: [{color: 'red'}, {color: 'blue'}],
+        game: {phase: Phase.ACTION, gameAge: 1, undoCount: 0},
+      } as unknown as PlayerViewModel;
+    }
+
+    // `rootMethods` stand in for the App methods WaitingFor calls through vueRoot.
+    function mountAt(view: PlayerViewModel, waitingfor: unknown, rootMethods: Record<string, unknown> = {}) {
+      return mount(WaitingFor, {
+        ...globalConfig,
+        global: {...globalConfig.global, stubs: {'PlayerInputFactory': PlayerInputFactoryStub}, mocks: rootMethods},
+        props: {playerView: view, waitingfor: waitingfor as any},
+      });
+    }
+
+    // Counts the turn cues. Each one plays the sound and shows a notification.
+    function stubTurnCue() {
+      vi.spyOn(SoundManager, 'playActivePlayerSound').mockImplementation(() => {});
+      let notifications = 0;
+      vi.stubGlobal('Notification', class {
+        static permission = 'granted';
+        constructor() {
+          notifications++;
+        }
+      });
+      return {cues: () => notifications};
+    }
+
+    // Holds each poll on the wire until the test answers it, so the page can change while a poll is in flight.
+    function holdPolls() {
+      const inFlight: Array<(answer: WaitingForModel) => void> = [];
+      vi.stubGlobal('XMLHttpRequest', class {
+        status = 200;
+        response: WaitingForModel | undefined = undefined;
+        onload = () => {};
+        open() {}
+        send() {
+          inFlight.push((answer) => {
+            this.response = answer;
+            this.onload();
+          });
+        }
+      });
+      return inFlight;
+    }
+
+    it('plays the turn cue when a refresh brings back a turn', async () => {
+      vi.useFakeTimers();
+      stubPolls(200, {result: 'REFRESH', waitingFor: []});
+      const turn = stubTurnCue();
+      const resumed = {...viewWith(), waitingFor: requiredPrompt};
+      let swapped = false;
+      // The page has no prompt, so it polls.
+      const wrapper = mountAt(viewWith(), undefined, {
+        updatePlayer: async () => {
+          if (swapped) {
+            return false;
+          }
+          swapped = true;
+          // What App does with a fetched view.
+          (wrapper.vm.$root as any).playerView = resumed;
+          await wrapper.setProps({playerView: resumed, waitingfor: requiredPrompt});
+          return true;
+        },
+      });
+
+      await vi.advanceTimersByTimeAsync(5000);
+
+      expect(turn.cues()).eq(1);
+    });
+
+    it('plays no turn cue when a refresh finds the player already at a prompt', async () => {
+      vi.useFakeTimers();
+      const inFlight = holdPolls();
+      const turn = stubTurnCue();
+      const view = viewWith();
+      const updatePlayer = vi.fn(async () => {
+        // What App does with a fetched view.
+        (wrapper.vm.$root as any).playerView = {...view, waitingFor: requiredPrompt};
+        return true;
+      });
+      const wrapper = mountAt(view, {...requiredPrompt, optional: true}, {updatePlayer});
+
+      // A poll for the optional prompt is on the wire when the player's own answer comes back with a prompt they must answer.
+      await vi.advanceTimersByTimeAsync(1000);
+      expect(inFlight).has.length(1);
+      await wrapper.setProps({playerView: {...view}, waitingfor: requiredPrompt});
+      inFlight[0]({result: 'REFRESH', waitingFor: []});
+      await flushPromises();
+
+      expect(turn.cues()).eq(0);
+    });
   });
 });

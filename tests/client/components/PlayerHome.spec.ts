@@ -1,9 +1,12 @@
 import {shallowMount} from '@vue/test-utils';
 import {expect} from 'chai';
 import {globalConfig} from './getLocalVue';
+import PurgeWarning from '@/client/components/common/PurgeWarning.vue';
 import PlayerHome from '@/client/components/PlayerHome.vue';
 import CardSortButtons from '@/client/components/CardSortButtons.vue';
 import SortableCards from '@/client/components/SortableCards.vue';
+import WaitingFor from '@/client/components/WaitingFor.vue';
+import PlayerSetupView from '@/client/components/PlayerSetupView.vue';
 import {fakePlayerViewModel, fakePublicPlayerModel} from './testHelpers';
 import {FakeLocalStorage} from './FakeLocalStorage';
 import {CardName} from '@/common/cards/CardName';
@@ -60,5 +63,43 @@ describe('PlayerHome', () => {
     await wrapper.vm.$nextTick();
 
     expect(wrapper.findComponent(SortableCards).props('sortOrder')).to.deep.eq({key: 'vp', reversed: false});
+  });
+
+  describe('replay', () => {
+    function mountHome(playerView: ReturnType<typeof fakePlayerViewModel>, replay?: boolean) {
+      return shallowMount(PlayerHome, {
+        ...globalConfig,
+        parentComponent: {
+          methods: {
+            getVisibilityState: () => true,
+            setVisibilityState: () => {},
+          },
+        } as any,
+        props: {playerView, replay, settings: raw_settings},
+      });
+    }
+
+    function playedView() {
+      const thisPlayer = fakePublicPlayerModel({tableau: [{name: CardName.ECOLINE}]});
+      return fakePlayerViewModel({thisPlayer, players: [thisPlayer]});
+    }
+
+    it('renders WaitingFor by default', () => {
+      expect(mountHome(playedView()).findComponent(WaitingFor).exists()).is.true;
+    });
+
+    it('renders no WaitingFor when replaying', () => {
+      expect(mountHome(playedView(), true).findComponent(WaitingFor).exists()).is.false;
+    });
+
+    it('shows the purge warning only outside a replay', () => {
+      expect(mountHome(playedView()).findComponent(PurgeWarning).exists()).is.true;
+      expect(mountHome(playedView(), true).findComponent(PurgeWarning).exists()).is.false;
+    });
+
+    it('tells the setup view not to render WaitingFor when replaying', () => {
+      const wrapper = mountHome(fakePlayerViewModel(), true);
+      expect(wrapper.findComponent(PlayerSetupView).props('replay')).is.true;
+    });
   });
 });

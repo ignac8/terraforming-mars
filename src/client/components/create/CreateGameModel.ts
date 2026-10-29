@@ -3,8 +3,10 @@ import {ColonyName} from '@/common/colonies/ColonyName';
 import {RandomMAOptionType} from '@/common/ma/RandomMAOptionType';
 import {GameId} from '@/common/Types';
 import {AgendaStyle} from '@/common/turmoil/Types';
-import {BoardNameType, NewPlayerModel} from '@/common/game/NewGameConfig';
+import {NewPlayerModel} from '@/common/game/NewGameConfig';
+import {CustomMA} from '@/common/ma/CustomMA';
 import {Expansion} from '@/common/cards/GameModule';
+import {BoardName} from '@/common/boards/BoardName';
 
 export type CreateGameModel = {
   /* A checkbox when selected selects all official expansions */
@@ -12,12 +14,13 @@ export type CreateGameModel = {
   altVenusBoard: boolean;
   aresExtremeVariant: boolean;
   bannedCards: Array<CardName>;
-  board: BoardNameType;
+  boards: Array<BoardName>;
   ceosDraftVariant: boolean | undefined;
   clonedGameId: GameId | undefined;
   customCeos: Array<CardName>;
   customColonies: Array<ColonyName>;
   customCorporations: Array<CardName>;
+  customMA: CustomMA | undefined;
   customPreludes: Array<CardName>;
   draftVariant: boolean;
   escapeVelocityBonusSeconds: number;
@@ -60,6 +63,7 @@ export type CreateGameModel = {
   startingCorporations: number;
   startingPreludes: number;
   twoCorpsVariant: boolean;
+  keepReplacedCards: boolean;
   undoOption: boolean;
   automaOption: boolean;
   automaDifficulty: 'easy' | 'normal' | 'hard' | 'brutal';

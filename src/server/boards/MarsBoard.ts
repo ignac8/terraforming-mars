@@ -115,15 +115,6 @@ export class MarsBoard extends Board {
     return greeneries;
   }
 
-  /**
-   * A delegate bonus cannot be skipped, so a space with one is unavailable unless the player has
-   * enough delegates for all of it. The lobby delegate is part of the player's reserve.
-   */
-  public override getAvailableSpacesOnLand(player: IPlayer, canAffordOptions?: CanAffordOptions, subjectToHazardAdjacency: boolean = true): ReadonlyArray<Space> {
-    return super.getAvailableSpacesOnLand(player, canAffordOptions, subjectToHazardAdjacency)
-      .filter((space) => MarsBoard.hasDelegatesForPlacementBonus(player, space));
-  }
-
   public getAvailableSpacesForType(player: IPlayer, type: PlacementType, canAffordOptions?: CanAffordOptions | undefined): ReadonlyArray<Space> {
     switch (type) {
     case 'land': return this.getAvailableSpacesOnLand(player, canAffordOptions);
@@ -189,10 +180,6 @@ export class MarsBoard extends Board {
     return spacesOnLand.filter(
       (space) => this.getAdjacentSpaces(space).some((adjacentSpace) => Board.isCitySpace(adjacentSpace)) === false,
     );
-  }
-
-  public hasAvailableCitySpaceWithBonus(player: IPlayer, bonus: SpaceBonus): boolean {
-    return this.getAvailableSpacesForCity(player).some((s) => s.bonus.includes(bonus));
   }
 
   /**
@@ -278,22 +265,8 @@ export class MarsBoard extends Board {
   }
 
   /**
-   * Returns true when the player has enough delegates for the space's delegate placement bonus.
-   * Always true for spaces without one, and in games without Turmoil.
-   */
-  public static hasDelegatesForPlacementBonus(player: IPlayer, space: Space): boolean {
-    const turmoil = player.game.turmoil;
-    // MarsBot never collects placement bonuses.
-    if (turmoil === undefined || player.game.automaHooks?.isAutomaPlayer(player)) {
-      return true;
-    }
-    const delegates = space.bonus.filter((bonus) => bonus === SpaceBonus.DELEGATE).length;
-    return turmoil.getAvailableDelegateCount(player) >= delegates;
-  }
-
-  /**
    * Returns true when the player can afford the M€ (and Reds TR tax) that each of the
-   * space's placement bonuses will charge, and has the delegates for its delegate bonus.
+   * space's placement bonuses will charge.
    *
    * Used by cards that hand the player a non-tile-placement choice of space and then call
    * `grantSpaceBonuses` (Mars Nomads, Gagarin Mobile Base, Survey Mission). Without this
@@ -319,7 +292,7 @@ export class MarsBoard extends Board {
         return false;
       }
     }
-    return MarsBoard.hasDelegatesForPlacementBonus(player, space);
+    return true;
   }
 
   public getAvailableIsolatedSpaces(player: IPlayer, canAffordOptions?: CanAffordOptions): ReadonlyArray<Space> {

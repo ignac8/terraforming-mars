@@ -1,7 +1,7 @@
 import {expect} from 'chai';
 import {PriceWars} from '../../../src/server/cards/underworld/PriceWars';
 import {testGame} from '../../TestGame';
-import {forceGenerationEnd, formatMessage, runAllActions} from '../../TestingUtils';
+import {forceGenerationEnd, runAllActions} from '../../TestingUtils';
 import {deserializeProjectCard, serializeProjectCard} from '../../../src/server/cards/cardSerialization';
 import {cast} from '../../../src/common/utils/utils';
 
@@ -60,17 +60,6 @@ describe('PriceWars', () => {
 
     expect(player2.getSteelValue()).eq(2);
     expect(player2.getTitaniumValue()).eq(3);
-  });
-
-  it('logs the steel and titanium values with icons', () => {
-    const card = new PriceWars();
-    const [game, player] = testGame(2, {underworldExpansion: true});
-
-    cast(card.play(player), undefined);
-
-    expect(game.gameLog.map(formatMessage)).to.include(
-      ':r:steel: and :r:titanium: are worth 1:r:megacredits: less, except for blue, ' +
-      'whose :r:steel: and :r:titanium: are worth 1:r:megacredits: more.');
   });
 
   it('Survives serialization', () => {

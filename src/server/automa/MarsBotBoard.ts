@@ -69,6 +69,12 @@ export class MarsBotBoard {
     }
   }
 
+  /** The space reached on the track that carries `tag`, or 0 when no track carries it. */
+  public trackPosition(tag: Tag): number {
+    const index = this.tagToTrack[tag];
+    return index === undefined ? 0 : this.tracks[index].position;
+  }
+
   /** Index of the least-advanced track (first index if tied). */
   public getLeastAdvancedTrackIndex(excludeVenus: boolean = false): number {
     const limit = excludeVenus ? Math.min(this.tracks.length, 7) : this.tracks.length;

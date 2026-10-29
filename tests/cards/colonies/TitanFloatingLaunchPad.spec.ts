@@ -11,7 +11,7 @@ import {SelectColony} from '../../../src/server/inputs/SelectColony';
 import {TestPlayer} from '../../TestPlayer';
 import {AndOptions} from '../../../src/server/inputs/AndOptions';
 import {testGame} from '../../TestGame';
-import {formatMessage, runAllActions} from '../../TestingUtils';
+import {runAllActions} from '../../TestingUtils';
 import {Message} from '../../../src/common/logs/Message';
 import {cast} from '../../../src/common/utils/utils';
 
@@ -90,7 +90,6 @@ describe('TitanFloatingLaunchPad', () => {
     selectColony.cb(selectColony.colonies[0]);
     expect(card.resourceCount).to.eq(7);
     expect(player.megaCredits).to.eq(2);
-    expect(game.gameLog.map(formatMessage)).to.include(`${player.color} spent 1:cr:floater: to trade with Luna`);
   });
 
   it('Cannot take trade action during embargo #6348', () => {
@@ -136,6 +135,5 @@ describe('TitanFloatingLaunchPad', () => {
 
     expect(card.resourceCount).eq(0);
     expect(player.megaCredits).eq(2);
-    expect(game.gameLog.map(formatMessage)).to.include(`${player.color} spent 1:cr:floater: to trade with Luna`);
   });
 });

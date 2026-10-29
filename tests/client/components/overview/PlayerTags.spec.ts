@@ -167,6 +167,28 @@ describe('PlayerTags', () => {
     expect(wrapper.find('[data-test="substitution-science"]').exists()).to.eq(false);
   });
 
+  describe('VP', () => {
+    const vp = () => wrapper.findAllComponents({name: 'TagCount'}).find((t) => t.props('tag') === 'vp')!.props('count');
+    const other = (allVictoryPoints?: boolean) => wrapper.setProps({
+      player: {...wrapper.props('player'), color: 'red'},
+      playerView: {...wrapper.props('playerView'), allVictoryPoints},
+    });
+
+    it('shows the viewer\'s own VP', () => {
+      expect(vp()).eq(1);
+    });
+
+    it('hides another player\'s VP', async () => {
+      await other(undefined);
+      expect(vp()).eq('?');
+    });
+
+    it('shows another player\'s VP when the view has every player\'s', async () => {
+      await other(true);
+      expect(vp()).eq(1);
+    });
+  });
+
   it('updates when the player changes', async () => {
     const player: PublicPlayerModel = wrapper.props('player');
     await wrapper.setProps({

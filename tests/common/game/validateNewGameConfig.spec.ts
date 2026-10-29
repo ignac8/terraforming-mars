@@ -3,6 +3,7 @@ import {validationDetails, Helpers, validateNewGameConfig, ValidationErrors} fro
 import {NewGameConfig, NewPlayerModel} from '../../../src/common/game/NewGameConfig';
 import {RandomBoardOption} from '../../../src/common/boards/RandomBoardOption';
 import {BoardName} from '../../../src/common/boards/BoardName';
+import {boardOptions} from '@/common/boards/randomBoardOptions';
 import {RandomMAOptionType} from '../../../src/common/ma/RandomMAOptionType';
 import {CardName} from '../../../src/common/cards/CardName';
 import {ColonyName} from '../../../src/common/colonies/ColonyName';
@@ -38,7 +39,7 @@ function newGameConfig(overrides: Partial<NewGameConfig> = {}): NewGameConfig {
       underworld: false,
       deltaProject: false,
     },
-    board: RandomBoardOption.OFFICIAL,
+    boards: boardOptions(RandomBoardOption.OFFICIAL),
     seed: 0,
     randomFirstPlayer: false,
     clonedGamedId: undefined,
@@ -95,6 +96,8 @@ const NO_ERRORS: ValidationErrors = {
   prelude2WithoutPrelude: false,
   deltaProjectWithoutPrelude: false,
   notEnoughCorporations: 0,
+  modularMAInDevelopment: false,
+  invalidCustomMA: '',
 };
 
 function helpers(
@@ -177,12 +180,12 @@ describe('validateNewGameConfig', () => {
 
   it('alt venus board on amazonis', () => {
     const expansions = {...newGameConfig().expansions, venus: true};
-    expect(validate({expansions, altVenusBoard: true, board: BoardName.AMAZONIS_PLANITIA}).altVenusBoardOnAmazonis).is.true;
-    expect(validate({expansions, altVenusBoard: true, board: RandomBoardOption.ALL}).altVenusBoardOnAmazonis).is.true;
-    expect(validate({expansions, altVenusBoard: true, board: RandomBoardOption.OFFICIAL}).altVenusBoardOnAmazonis).is.false;
-    expect(validate({expansions, altVenusBoard: true, board: BoardName.THARSIS}).altVenusBoardOnAmazonis).is.false;
-    expect(validate({expansions, altVenusBoard: false, board: BoardName.AMAZONIS_PLANITIA}).altVenusBoardOnAmazonis).is.false;
-    expect(validate({altVenusBoard: true, board: BoardName.AMAZONIS_PLANITIA}).altVenusBoardOnAmazonis).is.false;
+    expect(validate({expansions, altVenusBoard: true, boards: [BoardName.AMAZONIS_PLANITIA]}).altVenusBoardOnAmazonis).is.true;
+    expect(validate({expansions, altVenusBoard: true, boards: boardOptions(RandomBoardOption.ALL)}).altVenusBoardOnAmazonis).is.true;
+    expect(validate({expansions, altVenusBoard: true, boards: boardOptions(RandomBoardOption.OFFICIAL)}).altVenusBoardOnAmazonis).is.false;
+    expect(validate({expansions, altVenusBoard: true, boards: [BoardName.THARSIS]}).altVenusBoardOnAmazonis).is.false;
+    expect(validate({expansions, altVenusBoard: false, boards: [BoardName.AMAZONIS_PLANITIA]}).altVenusBoardOnAmazonis).is.false;
+    expect(validate({altVenusBoard: true, boards: [BoardName.AMAZONIS_PLANITIA]}).altVenusBoardOnAmazonis).is.false;
   });
 
   it('prelude 2 without prelude', () => {
@@ -197,6 +200,11 @@ describe('validateNewGameConfig', () => {
     expect(validate({expansions: {...expansions, deltaProject: true}}).deltaProjectWithoutPrelude).is.true;
     expect(validate({expansions: {...expansions, deltaProject: true, prelude: true}}).deltaProjectWithoutPrelude).is.false;
     expect(validate({expansions: {...expansions, prelude: true}}).deltaProjectWithoutPrelude).is.false;
+  });
+
+  it('warns that the official random milestones and awards are in development', () => {
+    expect(validate({modularMA: true}).modularMAInDevelopment).is.true;
+    expect(validate({modularMA: false}).modularMAInDevelopment).is.false;
   });
 
   it('not enough corporations', () => {
@@ -272,6 +280,17 @@ describe('validateNewGameConfig', () => {
     expect(validate({customCeos: [CardName.KAREN], startingCeos: 0}).notEnoughCeos).eq(2 * CEO_CARDS_DEALT_PER_PLAYER);
     expect(validate({customCeos: [CardName.KAREN], startingCeos: 1}).notEnoughCeos).eq(2 * CEO_CARDS_DEALT_PER_PLAYER);
     expect(validate({customCeos: [CardName.KAREN], startingCeos: 4}).notEnoughCeos).eq(2 * 4);
+  });
+
+  it('invalid custom milestones and awards', () => {
+    const customMA = {
+      milestones: ['Terraformer', 'Gardener', 'Builder', 'Mayor', 'Planner'],
+      awards: ['Banker', 'Scientist', 'Thermalist', 'Miner', 'Celebrity'],
+    } as const;
+    expect(validate({randomMA: RandomMAOptionType.MANUAL, customMA}).invalidCustomMA).eq('');
+    expect(validate({randomMA: RandomMAOptionType.MANUAL}).invalidCustomMA).eq('randomMA Manual requires customMA');
+    expect(validate({randomMA: RandomMAOptionType.LIMITED, customMA}).invalidCustomMA).eq('customMA requires randomMA to be Manual');
+    expect(validate({randomMA: RandomMAOptionType.MANUAL, customMA: {...customMA, awards: ['Banker']}}).invalidCustomMA).eq('customMA must have 5 awards');
   });
 
   it('messages', () => {

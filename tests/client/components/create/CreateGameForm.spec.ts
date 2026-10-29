@@ -13,6 +13,7 @@ import {CardName} from '@/common/cards/CardName';
 import {CreateGameModel} from '@/client/components/create/CreateGameModel';
 import {ValidationErrors} from '@/common/game/validateNewGameConfig';
 import {ColonyName} from '@/common/colonies/ColonyName';
+import {RandomMAOptionType} from '@/common/ma/RandomMAOptionType';
 
 // Minimal serialized Create Game payload used by settings restore tests.
 function createNewGameConfig(overrides: JSONObject = {}):  NewGameConfig {
@@ -23,7 +24,7 @@ function createNewGameConfig(overrides: JSONObject = {}):  NewGameConfig {
       {name: 'Bob', color: 'blue', beginner: false, handicap: 0, first: true},
     ],
     expansions: DEFAULT_EXPANSIONS,
-    board: BoardName.HELLAS,
+    boards: [BoardName.HELLAS],
     draftVariant: false,
     solarPhaseOption: true,
     ...overrides,
@@ -91,6 +92,16 @@ describe('CreateGameForm', () => {
     expect(vm.expansions.ceo).to.be.false;
   });
 
+  it('turns Player undo on by default', () => {
+    const wrapper = shallowMount(CreateGameForm, {...globalConfig});
+    const vm = wrapper.vm as any;
+
+    expect((wrapper.find('#undo-checkbox').element as HTMLInputElement).checked).to.be.true;
+    expect(vm.newGameConfig.undoOption).to.be.true;
+    vm.undoOption = false;
+    expect(vm.newGameConfig.undoOption).to.be.false;
+  });
+
   it('offers skipping MarsBot\'s corporation at final greeneries, off by default', () => {
     const wrapper = shallowMount(CreateGameForm, {...globalConfig});
     const vm = wrapper.vm as any;
@@ -99,6 +110,20 @@ describe('CreateGameForm', () => {
     expect(vm.newGameConfig.automaFinalGreeneryNoCorpEffects).to.be.false;
     vm.automaFinalGreeneryNoCorpEffects = true;
     expect(vm.newGameConfig.automaFinalGreeneryNoCorpEffects).to.be.true;
+  });
+
+  it('offers keeping the original cards only with Promos, off by default', async () => {
+    const wrapper = shallowMount(CreateGameForm, {...globalConfig});
+    const vm = wrapper.vm as any;
+
+    expect(wrapper.find('#keepReplacedCards-checkbox').exists()).to.be.true;
+    expect(vm.newGameConfig.keepReplacedCards).to.be.false;
+    vm.keepReplacedCards = true;
+    expect(vm.newGameConfig.keepReplacedCards).to.be.true;
+
+    vm.expansions.promo = false;
+    await vm.$nextTick();
+    expect(wrapper.find('#keepReplacedCards-checkbox').exists()).to.be.false;
   });
 
   it('offers MarsBot colony VP only with Colonies, off by default', async () => {
@@ -216,6 +241,22 @@ describe('CreateGameForm', () => {
     expect(isBoardDisabled(BoardName.ARABIA_TERRA)).is.false;
   });
 
+  for (const run of [
+    {boards: [BoardName.AMAZONIS_PLANITIA, BoardName.HELLAS, BoardName.ARABIA_TERRA], expected: [BoardName.HELLAS]},
+    {boards: [BoardName.AMAZONIS_PLANITIA, BoardName.ARABIA_TERRA], expected: [BoardName.THARSIS]},
+  ] as const) {
+    it(`enabling automa keeps only the selected MarsBot boards ${JSON.stringify(run)}`, async () => {
+      const wrapper = shallowMount(CreateGameForm, {...globalConfig});
+      const vm = wrapper.vm as any;
+      vm.automaOption = false;
+      await vm.$nextTick();
+      vm.boards = [...run.boards];
+      vm.automaOption = true;
+      await vm.$nextTick();
+      expect(vm.boards).deep.eq(run.expected);
+    });
+  }
+
   it('enabling automa disables fan-made expansions and force-offs incompatible options', async () => {
     const wrapper = shallowMount(CreateGameForm, {...globalConfig});
     const vm = wrapper.vm as any;
@@ -294,7 +335,7 @@ describe('CreateGameForm', () => {
     expect((wrapper.vm as any).playersCount).eq(2);
     expect((wrapper.vm as any).players[0].name).eq('Alice');
     expect((wrapper.vm as any).players[1].name).eq('Bob');
-    expect((wrapper.vm as any).board).eq(BoardName.HELLAS);
+    expect((wrapper.vm as any).boards).deep.eq([BoardName.HELLAS]);
     expect((wrapper.vm as any).draftVariant).eq(false);
     expect((wrapper.vm as any).expansions.venus).eq(true);
     expect((wrapper.vm as any).solarPhaseOption).eq(true);
@@ -375,12 +416,12 @@ describe('CreateGameForm', () => {
     });
     await wrapper.vm.$nextTick();
 
-    expect((wrapper.vm as any).board).eq(BoardName.HELLAS);
+    expect((wrapper.vm as any).boards).deep.eq([BoardName.HELLAS]);
 
     (wrapper.vm as any).resetSettings();
     await wrapper.vm.$nextTick();
 
-    expect((wrapper.vm as any).board).eq(BoardName.THARSIS);
+    expect((wrapper.vm as any).boards).deep.eq([BoardName.THARSIS]);
     expect((wrapper.vm as any).draftVariant).eq(true);
     expect(createGameSettingsStorage.load()).eq(undefined);
     expect(wrapper.findAllComponents({name: 'AppButton'}).map((button) => button.props('title'))).includes('Reset');
@@ -414,18 +455,32 @@ describe('CreateGameForm', () => {
       (wrapper.vm as any).randomFirstPlayer = false;
       (wrapper.vm as any).players[0].name = 'Alice';
       (wrapper.vm as any).players[1].name = 'Bob';
-      (wrapper.vm as any).board = BoardName.ELYSIUM;
+      (wrapper.vm as any).boards = [BoardName.ELYSIUM];
 
       await (wrapper.vm as any).createGame();
 
       const savedSettings = createGameSettingsStorage.load();
-      expect(savedSettings?.board).eq(BoardName.ELYSIUM);
+      expect(savedSettings?.boards).deep.eq([BoardName.ELYSIUM]);
       expect((savedSettings?.players as Array<{name: string}>).map((player) => player.name)).deep.eq(['Alice', 'Bob']);
     } finally {
       global.fetch = originalFetch;
       global.alert = originalAlert;
     }
   });
+  it('toggling random milestones and awards leaves manual milestones and awards', () => {
+    const wrapper = shallowMount(CreateGameForm, {
+      ...globalConfig,
+    });
+    const model = wrapper.vm as unknown as CreateGameModel;
+    model.randomMA = RandomMAOptionType.MANUAL;
+    model.customMA = {milestones: ['Terraformer'], awards: ['Banker']};
+    expect((wrapper.vm as any).isRandomMAEnabled).is.false;
+
+    (wrapper.vm as any).randomMAToggle();
+    expect(model.randomMA).eq(RandomMAOptionType.LIMITED);
+    expect(model.customMA).is.undefined;
+  });
+
   it('validates the form settings', () => {
     expect(validateTwoPlayerGame((model) => model.customCorporations = cardNames(3)).notEnoughCorporations).eq(4);
     expect(validateTwoPlayerGame((model) => model.customCorporations = cardNames(4)).notEnoughCorporations).eq(0);

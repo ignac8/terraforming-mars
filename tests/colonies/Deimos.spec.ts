@@ -32,7 +32,7 @@ describe('Deimos', () => {
     runAllActions(game);
 
     expect(player.megaCredits).eq(3);
-    expect(game.gameLog.map(formatMessage)).deep.eq(['blue gained 3:r:megacredits:']);
+    expect(game.gameLog.map(formatMessage)).deep.eq(['blue gained 3:r:mc:']);
   });
 
   it('colony bonus with no hazard tiles gives nothing and logs nothing', () => {

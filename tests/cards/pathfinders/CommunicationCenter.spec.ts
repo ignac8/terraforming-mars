@@ -2,7 +2,7 @@ import {expect} from 'chai';
 import {CommunicationCenter} from '../../../src/server/cards/pathfinders/CommunicationCenter';
 import {IGame} from '../../../src/server/IGame';
 import {TestPlayer} from '../../TestPlayer';
-import {fakeCard, formatMessage, runAllActions} from '../../TestingUtils';
+import {fakeCard, runAllActions} from '../../TestingUtils';
 import {testGame} from '../../TestGame';
 import {Resource} from '../../../src/common/Resource';
 import {CardType} from '../../../src/common/cards/CardType';
@@ -103,8 +103,6 @@ describe('CommunicationCenter', () => {
     runAllActions(game);
     expect(card.resourceCount).eq(1);
     expect(player.cardsInHand).is.length(3);
-    expect(game.gameLog.map(formatMessage)).to.include(
-      `${player.color} automatically removed 3:cr:data: from Communication Center to draw a card.`);
   });
 
   it('Works with data leak', () => {

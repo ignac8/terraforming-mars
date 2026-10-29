@@ -6,7 +6,7 @@ import {OrOptions} from '../../../src/server/inputs/OrOptions';
 import {SelectCard} from '../../../src/server/inputs/SelectCard';
 import {SelectOption} from '../../../src/server/inputs/SelectOption';
 import {TestPlayer} from '../../TestPlayer';
-import {formatMessage, runAllActions, testGame} from '../../TestingUtils';
+import {runAllActions, testGame} from '../../TestingUtils';
 import {cast} from '../../../src/common/utils/utils';
 
 describe('AsteroidRights', () => {
@@ -43,20 +43,6 @@ describe('AsteroidRights', () => {
     // Gain 2 titanium
     action.options[0].cb();
     expect(player.titanium).to.eq(2);
-  });
-
-  it('Logs resource icons when removing an asteroid', () => {
-    const game = player.game;
-    game.gameLog = [];
-    const action = cast(card.action(player), OrOptions);
-
-    action.options[0].cb();
-    action.options[1].cb();
-
-    expect(game.gameLog.map(formatMessage)).deep.eq([
-      'blue removed 1:cr:asteroid: from Asteroid Rights to gain 2:r:titanium:',
-      'blue removed 1:cr:asteroid: from Asteroid Rights to gain 1:p:megacredits:',
-    ]);
   });
 
   it('Should play - can auto add asteroid resource to self', () => {

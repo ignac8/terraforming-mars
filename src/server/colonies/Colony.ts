@@ -249,7 +249,7 @@ export abstract class Colony implements IColony {
 
     case ColonyBenefit.GAIN_CARD_DISCOUNT:
       player.colonies.cardDiscount += 1;
-      game.log('Cards played by ${0} cost 1:r:megacredits: less this generation', (b) => b.player(player));
+      game.log('Cards played by ${0} cost 1:r:mc: less this generation', (b) => b.player(player));
       return undefined;
 
     case ColonyBenefit.GAIN_PRODUCTION:
@@ -269,13 +269,13 @@ export abstract class Colony implements IColony {
     case ColonyBenefit.GAIN_SCIENCE_TAG:
       player.tags.extraScienceTags += 1;
       player.playCard(new ScienceTagCard(), undefined, 'nothing');
-      game.log('${0} gained 1:tag:science:', (b) => b.player(player));
+      game.log('${0} gained 1 Science tag', (b) => b.player(player));
       return undefined;
 
     case ColonyBenefit.GAIN_SCIENCE_TAGS_AND_CLONE_TAG:
       player.tags.extraScienceTags += 2;
       player.playCard(new ScienceTagCard(), undefined, 'nothing');
-      game.log('${0} gained 2:tag:science:', (b) => b.player(player));
+      game.log('${0} gained 2 Science tags', (b) => b.player(player));
       return undefined;
 
     case ColonyBenefit.GAIN_INFLUENCE:
@@ -287,7 +287,7 @@ export abstract class Colony implements IColony {
 
     case ColonyBenefit.PLACE_DELEGATES:
       if (game.turmoil) {
-        const availablePlayerDelegates = game.turmoil.getAvailableDelegateCount(player);
+        const availablePlayerDelegates = game.turmoil.delegateReserve.get(player);
         const qty = Math.min(quantity, availablePlayerDelegates);
         for (let i = 0; i < qty; i++) {
           game.defer(new SendDelegateToArea(player));

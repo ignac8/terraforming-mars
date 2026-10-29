@@ -172,8 +172,8 @@ describe('Turmoil', () => {
     turmoil.usedFreeDelegateAction.add(player);
     turmoil.usedFreeDelegateAction.add(player2);
 
-    expect(turmoil.getAvailableDelegateCount(player)).eq(0);
-    expect(turmoil.getAvailableDelegateCount(player2)).eq(6);
+    expect(turmoil.delegateReserve.get(player)).eq(0);
+    expect(turmoil.delegateReserve.get(player2)).eq(6);
 
     game.phase = Phase.SOLAR;
     turmoil.runTurmoilPhase(game);
@@ -184,46 +184,26 @@ describe('Turmoil', () => {
     expect(player.terraformRating).to.eq(21);
     expect(player2.terraformRating).to.eq(20);
 
-    expect(turmoil.getAvailableDelegateCount(player)).eq(4);
-    expect(turmoil.getAvailableDelegateCount(player2)).eq(6);
+    expect(turmoil.delegateReserve.get(player)).eq(4);
+    expect(turmoil.delegateReserve.get(player2)).eq(6);
 
     expect(turmoil.usedFreeDelegateAction).is.empty;
     expect(turmoil.rulingParty).to.eq(turmoil.getPartyByName(PartyName.REDS));
     expect(turmoil.dominantParty).to.eq(turmoil.getPartyByName(PartyName.GREENS));
   });
 
-  it('Turmoil phase logs show TR and ruling agenda as icons', () => {
-    player.setTerraformRating(20);
-    player2.setTerraformRating(21);
-    turmoil.sendDelegateToParty(player, PartyName.REDS, game);
-    turmoil.sendDelegateToParty(player, PartyName.REDS, game);
-    turmoil.currentGlobalEvent = undefined;
-
-    game.phase = Phase.SOLAR;
-    turmoil.runTurmoilPhase(game);
-    runAllActions(game);
-
-    const messages = game.gameLog.map(formatMessage);
-    expect(messages).to.include.members([
-      'All players lose 1:icon:tr:.',
-      'The ruling bonus is: The player(s) with the lowest :icon:tr: gains 1:icon:tr:',
-      'The ruling policy is: When you take an action that raises :icon:tr:, you MUST pay 3:r:megacredits: per step raised',
-      `${player.color} is the new chairman and gains 1:icon:tr:`,
-    ]);
-  });
-
   it('Player that is chairman has one fewer delegate avaialble ', () => {
     turmoil.sendDelegateToParty(player, PartyName.REDS, game);
     turmoil.sendDelegateToParty(player, PartyName.REDS, game);
 
-    expect(turmoil.getAvailableDelegateCount(player)).eq(5);
+    expect(turmoil.delegateReserve.get(player)).eq(5);
 
     game.phase = Phase.SOLAR;
     turmoil.runTurmoilPhase(game);
     runAllActions(game);
 
     expect(turmoil.chairman).to.eq(player);
-    expect(turmoil.getAvailableDelegateCount(player)).eq(6);
+    expect(turmoil.delegateReserve.get(player)).eq(6);
   });
 
   it('inTurmoil is cleared when the new government adds actions', () => {

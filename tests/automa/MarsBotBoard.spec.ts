@@ -194,4 +194,22 @@ describe('MarsBotBoard', () => {
       expect(track.canAdvance()).to.be.false;
     });
   });
+
+  describe('trackPosition', () => {
+    it('reads the track carrying the tag', () => {
+      const board = new MarsBotBoard(THARSIS_MARSBOT_BOARD);
+      for (let i = 0; i < 6; i++) {
+        board.tracks[4].advance();
+      }
+
+      expect(board.trackPosition(Tag.POWER)).to.eq(6);
+      expect(board.trackPosition(Tag.JOVIAN)).to.eq(6);
+    });
+
+    it('is 0 for a tag without a track', () => {
+      const board = new MarsBotBoard(THARSIS_MARSBOT_BOARD);
+
+      expect(board.trackPosition(Tag.WILD)).to.eq(0);
+    });
+  });
 });

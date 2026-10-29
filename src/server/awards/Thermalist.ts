@@ -1,8 +1,7 @@
 import {IAward} from './IAward';
 import {IPlayer} from '../IPlayer';
-import {Tag} from '../../common/cards/Tag';
-import {IMarsBot} from '../automa/MarsBotCorpTypes';
-import {marsBotTrackPosition} from '../automa/MarsBotMilestoneAwardEval';
+import {Tag} from '@/common/cards/Tag';
+import {IMarsBot} from '@/server/automa/MarsBotCorpTypes';
 
 export class Thermalist implements IAward {
   public readonly name = 'Thermalist';
@@ -15,8 +14,7 @@ export class Thermalist implements IAward {
     }
   }
 
-  /** The automa rules score MarsBot's Thermalist as its fifth track plus 5. */
   public marsBotScore(bot: IMarsBot): number {
-    return marsBotTrackPosition(bot, Tag.POWER) + 5;
+    return bot.marsBotBoard.trackPosition(Tag.POWER) + 5;
   }
 }

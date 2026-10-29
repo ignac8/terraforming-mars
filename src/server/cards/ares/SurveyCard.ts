@@ -65,7 +65,7 @@ export abstract class SurveyCard extends Card implements IProjectCard {
     if (!this.validPlaceAndPhase(cardOwner, activePlayer, space)) {
       return;
     }
-    // Claiming a space (Survey Mission) places no tile.
+    // Claiming a space (e.g. Survey Mission) or moving Mars Nomads places no tile.
     if (space.tile === undefined) {
       return;
     }

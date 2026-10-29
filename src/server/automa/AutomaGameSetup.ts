@@ -141,7 +141,7 @@ export class AutomaGameSetup {
     (marsBotPlayer as any).stock = marsBotStock;
     (marsBotPlayer as any).production = marsBotProduction;
 
-    const marsBot = new MarsBot(game, marsBotPlayer, humanPlayer, boardData, gameOptions.automaDifficulty, rng);
+    const marsBot = new MarsBot(game, marsBotPlayer, humanPlayer, boardData, gameOptions.automaDifficulty, rng, existingPlayer !== undefined);
 
     // Wire MarsBot reference into overridden stock/production
     marsBotStock.setMarsBot(marsBot);
@@ -261,7 +261,7 @@ export class AutomaGameSetup {
       game.projectDeck.discardPile.push(card);
     }
     // Place 1 MarsBot delegate in a random party (only if reserve is non-empty)
-    if (!turmoil.hasDelegatesInReserve(marsBotPlayer)) {
+    if (!turmoil.delegateReserve.has(marsBotPlayer)) {
       return;
     }
     const parties = turmoil.parties;

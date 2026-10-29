@@ -1,24 +1,24 @@
 <template>
   <div>
-  <template v-if="waitingfor === undefined || waitingfor.optional">
-    <template v-if="waitingfor === undefined">
-      {{ $t('Not your turn to take any actions') }}
+    <template v-if="waitingfor === undefined || waitingfor.optional">
+      <template v-if="waitingfor === undefined">
+        {{ $t('Not your turn to take any actions') }}
+      </template>
+      <template v-else>
+        {{ $t('Waiting for other players') }}
+      </template>
+      <template v-if="playersWaitingFor.length > 0">
+        (⌛ <span v-for="color in playersWaitingFor" class="log-player" :class="playerColorClass(color, 'bg')" :key="color">{{ getPlayerName(color) }}</span>)
+      </template>
     </template>
-    <template v-else>
-      {{ $t('Waiting for other players') }}
-    </template>
-    <template v-if="playersWaitingFor.length > 0">
-      (⌛ <span v-for="color in playersWaitingFor" class="log-player" :class="playerColorClass(color, 'bg')" :key="color">{{ getPlayerName(color) }}</span>)
-    </template>
-  </template>
-  <div v-if="waitingfor !== undefined" class="wf-root">
-    <PlayerInputFactory :players="playerView.players"
-                          :playerView="playerView"
-                          :playerinput="waitingfor"
-                          :onsave="onsave"
-                          :showsave="true"
-                          :showtitle="true"
-                          :key="inputKey" />
+    <div v-if="waitingfor !== undefined" class="wf-root">
+      <PlayerInputFactory :players="playerView.players"
+        :playerView="playerView"
+        :playerinput="waitingfor"
+        :onsave="onsave"
+        :showsave="true"
+        :showtitle="true"
+        :key="inputKey" />
     </div>
   </div>
 </template>
@@ -45,11 +45,16 @@ import {INVALID_REQUEST_ID, INVALID_RUN_ID, AppErrorResponse} from '@/common/app
 import {Color} from '@/common/Color';
 import {gameDocumentTitle} from '../utils/documentTitle';
 import {setFaviconStatus, setFaviconTurnFrame} from '@/client/utils/favicon';
+import {localColors, localPlayerView} from '@/client/utils/localColors';
 
 let ui_update_timeout_id: number | undefined;
 let otherPlayersTimer: number | undefined;
 let documentTitleTimer: number | undefined;
 let animationFrame = 0;
+let failedPolls = 0;
+
+// Failed polls in a row before the player is told. Enough to ride out a server restart.
+const ALERT_AFTER_FAILED_POLLS = 30;
 
 // How often to refresh other players' status during simultaneous phases.
 const OTHER_PLAYERS_INTERVAL = 3000;
@@ -83,6 +88,10 @@ export default defineComponent({
     },
     waitingfor: {
       type: Object as () => PlayerInputModel | undefined,
+      default: undefined,
+    },
+    requestId: {
+      type: String as () => string | undefined,
       default: undefined,
     },
   },
@@ -151,7 +160,7 @@ export default defineComponent({
         {
           method: 'POST',
           headers: {'Content-Type': 'application/json'},
-          body: JSON.stringify({runId: this.playerView.runId, requestId: this.waitingfor?.requestId, ...out}),
+          body: JSON.stringify({runId: this.playerView.runId, requestId: this.requestId, ...out}),
         });
     },
     reset() {
@@ -170,7 +179,7 @@ export default defineComponent({
       fetch(url, options)
         .then(async (response) => {
           if (response.ok) {
-            this.updatePlayerView(await response.json());
+            this.updatePlayerView(localPlayerView(await response.json()));
             return;
           }
 
@@ -207,35 +216,60 @@ export default defineComponent({
       const vueApp = this;
       const root = vueRoot(this);
       clearTimeout(ui_update_timeout_id);
+      const pollFailed = (title: string, message: string) => {
+        failedPolls++;
+        if (failedPolls < ALERT_AFTER_FAILED_POLLS) {
+          vueApp.waitForUpdate();
+          return;
+        }
+        failedPolls = 0;
+        root.showAlert(title, message, () => vueApp.waitForUpdate());
+      };
       const askForUpdate = () => {
         const xhr = new XMLHttpRequest();
         xhr.open('GET', paths.API_WAITING_FOR + window.location.search + '&gameAge=' + this.playerView.game.gameAge + '&undoCount=' + this.playerView.game.undoCount);
         xhr.onerror = function() {
-          root.showAlert('Error fetching state', CANNOT_CONTACT_SERVER, () => vueApp.waitForUpdate());
+          pollFailed('Error fetching state', CANNOT_CONTACT_SERVER);
         };
-        xhr.onload = () => {
+        xhr.onload = async () => {
           if (xhr.status === statusCode.ok) {
-            const result = xhr.response as WaitingForModel;
+            failedPolls = 0;
+            const result = localColors(xhr.response as WaitingForModel);
             this.playersWaitingFor = result.waitingFor;
             if (result.result === 'GO') {
               // Will only apply to player, not spectator.
-              root.updatePlayer();
+              const updated = root.updatePlayer();
               this.notify();
+              // When the fetch works, root.playerView changes and the playerView watcher
+              // calls start(), which decides whether to keep polling. When it fails
+              // nothing changes, so poll again here.
+              if (!await updated) {
+                vueApp.waitForUpdate();
+              }
               // We don't need to wait anymore - it's our turn
               return;
             } else if (result.result === 'REFRESH') {
               // Something changed, let's refresh UI
               if (isPlayerId(this.playerView.id)) {
-                root.updatePlayer();
-              } else {
-                root.updateSpectator();
+                // A refresh that hands the turn back (a rewind) is not a GO answer, so it cues the turn here.
+                const hadTurn = this.waitingfor !== undefined && !this.waitingfor.optional;
+                const updated = await root.updatePlayer();
+                const prompt = root.playerView?.waitingFor;
+                if (updated && !hadTurn && prompt !== undefined && !prompt.optional) {
+                  this.notify();
+                }
+                if (!updated) {
+                  vueApp.waitForUpdate();
+                }
+              } else if (!await root.updateSpectator()) {
+                vueApp.waitForUpdate();
               }
 
               return;
             }
             vueApp.waitForUpdate();
           } else {
-            root.showAlert('Error with input', `Received unexpected response from server (${xhr.status}). This is often due to the server restarting.`, () => vueApp.waitForUpdate());
+            pollFailed('Error with input', `Received unexpected response from server (${xhr.status}). This is often due to the server restarting.`);
           }
         };
         xhr.responseType = 'json';
@@ -255,7 +289,7 @@ export default defineComponent({
         try {
           const response = await fetch(paths.API_PLAYER + window.location.search);
           if (response.ok) {
-            const latest: PlayerViewModel = await response.json();
+            const latest = localColors<PlayerViewModel>(await response.json());
             playerView.players = latest.players;
           } else {
             console.warn('Unable to update other players', response.status, response.statusText);

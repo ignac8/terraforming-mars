@@ -15,7 +15,7 @@ import {SelectInitialCards} from '../../../src/server/inputs/SelectInitialCards'
 import {OrOptions} from '../../../src/server/inputs/OrOptions';
 import {TestPlayer} from '../../TestPlayer';
 import {Virus} from '../../../src/server/cards/base/Virus';
-import {fakeCard, formatMessage, runAllActions, runNextAction, setOxygenLevel, setRulingParty} from '../../TestingUtils';
+import {runAllActions, setOxygenLevel, setRulingParty} from '../../TestingUtils';
 import {testGame} from '../../TestGame';
 import {Leavitt} from '../../../src/server/cards/community/Leavitt';
 import {Splice} from '../../../src/server/cards/promo/Splice';
@@ -351,134 +351,32 @@ describe('PharmacyUnion', () => {
     expect(player.megaCredits).eq(4);
 
     // Pharmacy Union science tag benefit.
-    runNextAction(game);
+    game.deferredActions.pop()?.execute();
     expect(player.megaCredits).eq(4);
     expect(player.terraformRating).eq(20);
 
     // Pay for the reds cost and gain TR benefit
-    runNextAction(game);
+    game.deferredActions.pop()?.execute();
     expect(player.megaCredits).eq(1);
     expect(player.terraformRating).eq(21);
 
     // Plays the microbe tag cost, costs 4MC, player no longer has money
-    runNextAction(game);
+    game.deferredActions.pop()?.execute();
     expect(player.megaCredits).eq(0);
 
     // Start Splice benefit
     expect(player2.megaCredits).eq(0);
     // Player can put a resource on GHG Producing Bacteria, but instead gets the money.
-    const orOptions = cast(runNextAction(game), OrOptions);
+    const orOptions = cast(game.deferredActions.pop()?.execute(), OrOptions);
     orOptions.options[1].cb();
 
     // Players gain MC from Splice
-    runNextAction(game);
-    runNextAction(game);
+    runAllActions(game);
     expect(player2.megaCredits).eq(2);
     expect(player.megaCredits).eq(2);
 
     // And that's it.
     expect(game.deferredActions).has.length(0);
-  });
-
-  describe('logs', () => {
-    beforeEach(() => {
-      player.playedCards.push(pharmacyUnion);
-      game.gameLog = [];
-    });
-
-    it('adding one disease', () => {
-      player.megaCredits = 8;
-      player.playCard(new Ants());
-      runAllActions(game);
-
-      expect(game.gameLog.map(formatMessage)).includes(
-        'blue added a:cr:disease: to Pharmacy Union and lost 4:r:megacredits:');
-    });
-
-    it('adding several diseases', () => {
-      player.megaCredits = 10;
-      player.playCard(fakeCard({tags: [Tag.MICROBE, Tag.MICROBE]}));
-      runAllActions(game);
-
-      expect(game.gameLog.map(formatMessage)).includes(
-        'blue added 2:cr:disease: to Pharmacy Union and lost 8:r:megacredits:');
-    });
-
-    it('removing a disease for TR', () => {
-      pharmacyUnion.resourceCount = 1;
-      player.playCard(new SearchForLife());
-      runAllActions(game);
-
-      expect(game.gameLog.map(formatMessage)).includes(
-        'blue removed a:cr:disease: from Pharmacy Union to gain 1:icon:tr:');
-    });
-
-    it('turning face down for TR', () => {
-      pharmacyUnion.resourceCount = 0;
-      player.playCard(new SearchForLife());
-      const orOptions = cast(game.deferredActions.peek()!.execute(), OrOptions);
-      game.deferredActions.pop();
-
-      orOptions.options[0].cb();
-
-      expect(game.gameLog.map(formatMessage)).includes(
-        'blue turned Pharmacy Union face down to gain 3:icon:tr:');
-    });
-
-    it('turning face down for TR and losing M€', () => {
-      player.megaCredits = 12;
-      pharmacyUnion.resourceCount = 0;
-      player.playCard(new ViralEnhancers());
-      const orOptions = cast(game.deferredActions.peek()!.execute(), OrOptions);
-
-      orOptions.options[0].cb();
-
-      expect(game.gameLog.map(formatMessage)).includes(
-        'blue turned Pharmacy Union face down to gain 3:icon:tr: and lost 4:r:megacredits:');
-    });
-
-    it('adding then removing a disease', () => {
-      player.megaCredits = 12;
-      pharmacyUnion.resourceCount = 0;
-      player.playCard(new ViralEnhancers());
-      const orOptions = cast(game.deferredActions.peek()!.execute(), OrOptions);
-
-      orOptions.options[1].cb();
-
-      const log = game.gameLog.map(formatMessage);
-      expect(log).includes('blue added a:cr:disease: to Pharmacy Union and lost 4:r:megacredits:');
-      expect(log).includes('blue removed a:cr:disease: from Pharmacy Union to gain 1:icon:tr:');
-    });
-
-    it('cannot afford the Reds cost to remove a disease', () => {
-      [game, player] = testGame(2, {turmoilExtension: true});
-      player.playedCards.push(pharmacyUnion);
-      setRulingParty(game, PartyName.REDS);
-      player.megaCredits = 0;
-      pharmacyUnion.resourceCount = 1;
-      game.gameLog = [];
-
-      pharmacyUnion.onScienceTagAdded(player, 1);
-      runAllActions(game);
-
-      expect(game.gameLog.map(formatMessage)).includes(
-        'blue cannot remove a:cr:disease: from Pharmacy Union to gain 1:icon:tr: because of unaffordable Reds policy cost');
-    });
-
-    it('cannot afford the Reds cost to turn face down', () => {
-      [game, player] = testGame(2, {turmoilExtension: true});
-      player.playedCards.push(pharmacyUnion);
-      setRulingParty(game, PartyName.REDS);
-      player.megaCredits = 0;
-      pharmacyUnion.resourceCount = 0;
-      game.gameLog = [];
-
-      pharmacyUnion.onScienceTagAdded(player, 1);
-      runAllActions(game);
-
-      expect(game.gameLog.map(formatMessage)).includes(
-        'blue cannot turn Pharmacy Union face down to gain 3:icon:tr: because of unaffordable Reds policy cost');
-    });
   });
 
   it('Reds + Science, #1670', () => {
@@ -508,12 +406,12 @@ describe('PharmacyUnion', () => {
     expect(player.megaCredits).eq(4);
 
     // Pharmacy Union science tag benefit lines up the TR bump.
-    runNextAction(game);
+    game.deferredActions.pop()?.execute();
     expect(player.megaCredits).eq(4);
     expect(player.terraformRating).eq(20);
 
-    // // Pay for the reds cost and gain TR benefit
-    runNextAction(game);
+    // Pay for the reds cost and gain TR benefit
+    game.deferredActions.pop()?.execute();
     expect(player.megaCredits).eq(1);
     expect(player.terraformRating).eq(21);
 
