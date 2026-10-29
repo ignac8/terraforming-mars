@@ -65,6 +65,40 @@ describe('Reds', () => {
     expect(player.terraformRating).to.eq(21);
   });
 
+  // MarsBot games use the 2-player rules (Nick, BGG 3594202): MarsBot's TR is compared,
+  // but MarsBot itself ignores the ruling bonus (automa rulebook C).
+  it('Ruling bonus 1: MarsBot\'s TR counts', () => {
+    const [game, human] = testGame(1, {automa: true, turmoilExtension: true});
+    const marsBot = game.marsBotPlayer!;
+
+    human.setTerraformRating(30);
+    marsBot.setTerraformRating(25);
+    REDS_BONUS_1.grant(game);
+    expect(human.terraformRating).to.eq(30);
+    expect(marsBot.terraformRating).to.eq(25);
+
+    human.setTerraformRating(25);
+    REDS_BONUS_1.grant(game);
+    expect(human.terraformRating).to.eq(26);
+    expect(marsBot.terraformRating).to.eq(25);
+  });
+
+  it('Ruling bonus 2: MarsBot\'s TR counts', () => {
+    const [game, human] = testGame(1, {automa: true, turmoilExtension: true});
+    const marsBot = game.marsBotPlayer!;
+
+    human.setTerraformRating(20);
+    marsBot.setTerraformRating(25);
+    REDS_BONUS_2.grant(game);
+    expect(human.terraformRating).to.eq(20);
+    expect(marsBot.terraformRating).to.eq(25);
+
+    human.setTerraformRating(25);
+    REDS_BONUS_2.grant(game);
+    expect(human.terraformRating).to.eq(24);
+    expect(marsBot.terraformRating).to.eq(25);
+  });
+
   it('Ruling bonus 1 logs the TR gained', () => {
     player.increaseTerraformRating();
 
