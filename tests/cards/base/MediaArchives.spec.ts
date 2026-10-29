@@ -5,6 +5,10 @@ import {IceAsteroid} from '../../../src/server/cards/base/IceAsteroid';
 import {ImportedHydrogen} from '../../../src/server/cards/base/ImportedHydrogen';
 import {testGame} from '../../TestingUtils';
 import {cast} from '../../../src/common/utils/utils';
+import {Tag} from '../../../src/common/cards/Tag';
+import {MarsBotBoard} from '../../../src/server/automa/MarsBotBoard';
+import {MarsBotTags} from '../../../src/server/automa/MarsBotTags';
+import {THARSIS_MARSBOT_BOARD} from '../../../src/server/automa/boards/TharsisMarsBot';
 
 describe('MediaArchives', () => {
   it('Should play', () => {
@@ -17,5 +21,23 @@ describe('MediaArchives', () => {
 
     // Every player's events count, not just your own.
     expect(player.megaCredits).to.eq(3);
+  });
+
+  // MarsBot has no played events: its event track counts instead.
+  it('counts MarsBot\'s event track', () => {
+    const card = new MediaArchives();
+    const [game, player] = testGame(1, {automa: true});
+    const marsBot = game.marsBotPlayer!;
+    const marsBotBoard = new MarsBotBoard(THARSIS_MARSBOT_BOARD);
+    marsBot.tags = new MarsBotTags(marsBot, marsBotBoard);
+    const eventTrack = marsBotBoard.tracks[marsBotBoard.tagToTrack[Tag.EVENT]!];
+    for (let i = 0; i < 4; i++) {
+      eventTrack.advance();
+    }
+    player.playedCards.push(card, new Virus());
+
+    cast(card.play(player), undefined);
+
+    expect(player.megaCredits).to.eq(1 + 4);
   });
 });

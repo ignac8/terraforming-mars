@@ -10,6 +10,7 @@ import {Space} from '../boards/Space';
 import {once} from './Lazy';
 import {Turmoil} from '../turmoil/Turmoil';
 import {CardName} from '../../common/cards/CardName';
+import {Tag} from '../../common/cards/Tag';
 
 /**
  * Counts things in game state.
@@ -233,7 +234,8 @@ export class Counter implements ICounter {
 
     if (countable.eventsPlayed !== undefined) {
       if (countable.all === true) {
-        sum += utils.sum(game.players.map((p) => p.getPlayedEventsCount()));
+        // MarsBot has no played events. The automa rules count its event track instead.
+        sum += utils.sum(game.allPlayers.map((p) => p === game.marsBotPlayer ? p.tags.count(Tag.EVENT, 'raw') : p.getPlayedEventsCount()));
       } else {
         sum += player.getPlayedEventsCount();
       }
