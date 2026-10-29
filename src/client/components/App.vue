@@ -11,13 +11,13 @@
         </form>
       </dialog>
     </section>
-    <BannerStack :frozen="frozen"/>
+    <BannerStack :frozen="frozen" />
     <div class="main-container">
-      <StartScreen v-if="screen === 'start-screen'"/>
+      <StartScreen v-if="screen === 'start-screen'" />
       <CreateGameForm
         v-else-if="screen === 'create-game-form'"
       />
-      <LoadGameForm v-else-if="screen === 'load'"/>
+      <LoadGameForm v-else-if="screen === 'load'" />
       <GameHome
         v-else-if="screen === 'game-home' && game !== undefined"
         :game="game"
@@ -51,14 +51,14 @@
       <GamesOverview
         v-else-if="screen === 'games-overview'"
       />
-      <CardList v-else-if="screen === 'cards'"/>
+      <CardList v-else-if="screen === 'cards'" />
       <ReplayScreen
         v-else-if="screen === 'replay' && replayParticipantId !== undefined"
         :participantId="replayParticipantId"
       />
-      <AdminHome v-else-if="screen === 'admin'"/>
-      <LoginHome v-else-if="screen === 'login-home'"/>
-      <Help v-else-if="screen === 'help'"/>
+      <AdminHome v-else-if="screen === 'admin'" />
+      <LoginHome v-else-if="screen === 'login-home'" />
+      <Help v-else-if="screen === 'help'" />
     </div>
     <div class="notice" v-i18n>
       Not affiliated with FryxGames, Asmodee Digital or Steam in any way.

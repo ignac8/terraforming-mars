@@ -3,7 +3,7 @@
 
     <div v-if="game.phase === 'end'">
       <div class="player_home_block">
-        <DynamicTitle title="This game is over!" :color="judge.color"/>
+        <DynamicTitle title="This game is over!" :color="judge.color" />
         <a :href="replayUrl" class="judge-replay-link" v-i18n>Replay</a>
       </div>
     </div>
@@ -13,24 +13,24 @@
       :playerColor="judge.color"
       :generation="game.generation"
       :coloniesCount="game.colonies.length"
-      :temperature = "game.temperature"
-      :oxygen = "game.oxygenLevel"
-      :oceans = "game.oceans"
-      :venus = "game.venusScaleLevel"
-      :turmoil = "game.turmoil"
+      :temperature="game.temperature"
+      :oxygen="game.oxygenLevel"
+      :oceans="game.oceans"
+      :venus="game.venusScaleLevel"
+      :turmoil="game.turmoil"
       :moonData="game.moon"
-      :gameOptions = "game.gameOptions"
-      :playerNumber = "judge.players.length"
-      :lastSoloGeneration = "game.lastSoloGeneration"
-      :deckSize = "game.deckSize"
-      :discardPileSize = "game.discardPileSize"
-      :otherDeckSizes = "game.otherDeckSizes"/>
+      :gameOptions="game.gameOptions"
+      :playerNumber="judge.players.length"
+      :lastSoloGeneration="game.lastSoloGeneration"
+      :deckSize="game.deckSize"
+      :discardPileSize="game.discardPileSize"
+      :otherDeckSizes="game.otherDeckSizes" />
 
     <div class="player_home_block nofloat">
-      <LogPanel :viewModel="judge" :step="game.step" :showUndone="showUndone" @spaceClicked="onSpaceClicked"/>
+      <LogPanel :viewModel="judge" :step="game.step" :showUndone="showUndone" @spaceClicked="onSpaceClicked" />
     </div>
 
-    <PlayersOverview class="player_home_block player_home_block--players nofloat" :playerView="judge" id="shortkey-playersoverview"/>
+    <PlayersOverview class="player_home_block player_home_block--players nofloat" :playerView="judge" id="shortkey-playersoverview" />
 
     <GameBoardView
       ref="gameBoardView"
@@ -42,15 +42,15 @@
 
     <div v-if="game.colonies.length > 0" class="player_home_block" ref="colonies" id="shortkey-colonies">
       <a name="colonies" class="player_home_anchor"></a>
-      <DynamicTitle title="Colonies" :color="judge.color"/>
+      <DynamicTitle title="Colonies" :color="judge.color" />
       <div class="colonies-fleets-cont">
         <div class="colonies-player-fleets" v-for="player in judge.players" :key="player.color">
-            <div :class="'colonies-fleet colonies-fleet-'+ player.color" v-for="idx in range(Math.max(0, player.fleetSize - player.tradesThisGeneration))" :key="idx"></div>
+          <div :class="'colonies-fleet colonies-fleet-'+ player.color" v-for="idx in range(Math.max(0, player.fleetSize - player.tradesThisGeneration))" :key="idx"></div>
         </div>
       </div>
       <div class="player_home_colony_cont">
         <div class="player_home_colony" v-for="colony in game.colonies" :key="colony.name">
-            <Colony :colony="colony" :active="colony.isActive"/>
+          <Colony :colony="colony" :active="colony.isActive" />
         </div>
       </div>
     </div>
@@ -60,11 +60,11 @@
       :key="entry.privates.color"
       :judgeId="judge.id"
       :privates="entry.privates"
-      :player="entry.player"/>
+      :player="entry.player" />
 
-    <WaitingFor v-show="false" v-if="game.phase !== 'end'" :playerView="judge" :waitingfor="undefined"/>
-    <PurgeWarning :expectedPurgeTimeMs="game.expectedPurgeTimeMs"/>
-    <KeyboardShortcuts v-show="keyboardShortcutOpened" @close="keyboardShortcutOpened = false"/>
+    <WaitingFor v-show="false" v-if="game.phase !== 'end'" :playerView="judge" :waitingfor="undefined" />
+    <PurgeWarning :expectedPurgeTimeMs="game.expectedPurgeTimeMs" />
+    <KeyboardShortcuts v-show="keyboardShortcutOpened" @close="keyboardShortcutOpened = false" />
   </div>
 </template>
 

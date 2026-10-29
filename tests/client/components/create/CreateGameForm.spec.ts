@@ -13,6 +13,7 @@ import {CardName} from '@/common/cards/CardName';
 import {CreateGameModel} from '@/client/components/create/CreateGameModel';
 import {ValidationErrors} from '@/common/game/validateNewGameConfig';
 import {ColonyName} from '@/common/colonies/ColonyName';
+import {RandomMAOptionType} from '@/common/ma/RandomMAOptionType';
 
 // Minimal serialized Create Game payload used by settings restore tests.
 function createNewGameConfig(overrides: JSONObject = {}):  NewGameConfig {
@@ -88,6 +89,8 @@ describe('CreateGameForm', () => {
       expect(vm[list], list).is.empty;
     }
     expect(vm.expansions.prelude).eq(false);
+    expect(vm.randomMA).eq(RandomMAOptionType.NONE);
+    expect(vm.customMA).is.undefined;
   }
 
   function seedLockedFields(vm: any) {
@@ -105,6 +108,8 @@ describe('CreateGameForm', () => {
     vm.customCeos = ['Floyd'];
     vm.bannedCards = ['Mine'];
     vm.includedCards = ['Mine'];
+    vm.randomMA = RandomMAOptionType.MANUAL;
+    vm.customMA = {milestones: ['Terraformer'], awards: ['Banker']};
   }
 
   it('applies tournament locks on first load', async () => {
@@ -493,6 +498,19 @@ describe('CreateGameForm', () => {
       global.fetch = originalFetch;
       global.alert = originalAlert;
     }
+  });
+  it('toggling random milestones and awards leaves manual milestones and awards', () => {
+    const wrapper = shallowMount(CreateGameForm, {
+      ...globalConfig,
+    });
+    const model = wrapper.vm as unknown as CreateGameModel;
+    model.randomMA = RandomMAOptionType.MANUAL;
+    model.customMA = {milestones: ['Terraformer'], awards: ['Banker']};
+    expect((wrapper.vm as any).isRandomMAEnabled).is.false;
+
+    (wrapper.vm as any).randomMAToggle();
+    expect(model.randomMA).eq(RandomMAOptionType.LIMITED);
+    expect(model.customMA).is.undefined;
   });
 
   it('validates the form settings', () => {

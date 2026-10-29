@@ -24,6 +24,22 @@ describe('LogMessageComponent', () => {
     expect(wrapper.exists()).to.be.true;
   });
 
+  it('calls the parent click listener once per click', async () => {
+    let clicks = 0;
+    const wrapper = shallowMount(LogMessageComponent, {
+      ...globalConfig,
+      props: {
+        message: new LogMessage(LogMessageType.DEFAULT, 'Test message', []),
+        viewModel: fakeViewModel(),
+      },
+      attrs: {onClick: () => clicks++},
+    });
+
+    await wrapper.find('li').trigger('click');
+
+    expect(clicks).to.eq(1);
+  });
+
   it('marks a line that has an owner with the owner color', () => {
     const message = new LogMessage(LogMessageType.DEFAULT, 'Test message', []);
     message.owner = 'red';

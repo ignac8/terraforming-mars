@@ -302,7 +302,7 @@ describe('TournamentMode', () => {
       'altVenusBoard', 'aresExtension', 'aresExtremeVariant', 'bannedCards',
       'ceoExtension', 'ceosDraftVariant', 'coloniesExtension', 'communityCardsOption',
       'corporateEra', 'customCeos', 'customColoniesList', 'customCorporationsList',
-      'customPreludes', 'deltaProjectExpansion', 'draftVariant', 'expansions',
+      'customMA', 'customPreludes', 'deltaProjectExpansion', 'draftVariant', 'expansions',
       'fastModeOption', 'includeFanMA', 'includedCards', 'initialDraftVariant',
       'modularMA', 'moonExpansion', 'moonStandardProjectVariant',
       'moonStandardProjectVariant1', 'pathfindersExpansion', 'playerPasswords',

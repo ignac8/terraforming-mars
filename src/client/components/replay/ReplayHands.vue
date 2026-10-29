@@ -2,17 +2,17 @@
   <div class="replay-hands">
     <div v-for="player in players" :key="player.color" class="replay-hands-player">
       <div class="hiding-card-button-row replay-hands-header">
-        <DynamicTitle :title="player.name" :color="player.color"/>
-        <AppButton class="replay-hands-toggle" size="small" :disableOnServerBusy="false" :title="isHidden(player.color) ? 'Show' : 'Hide'" @click="toggle(player.color)"/>
+        <DynamicTitle :title="player.name" :color="player.color" />
+        <AppButton class="replay-hands-toggle" size="small" :disableOnServerBusy="false" :title="isHidden(player.color) ? 'Show' : 'Hide'" @click="toggle(player.color)" />
       </div>
       <template v-if="!isHidden(player.color)">
         <div v-for="section in sectionsOf(player)" :key="section.title" class="player_home_block player_home_block--hand">
           <h3 class="replay-hands-section" v-i18n>{{ section.title }}</h3>
           <div v-for="card in section.cards" :key="card.name" class="cardbox">
-            <Card :card="card"/>
+            <Card :card="card" />
           </div>
         </div>
-        <JudgePendingChoice :choice="choiceOf(player)" :shown="shownOf(player)" headingClass="replay-hands-section"/>
+        <JudgePendingChoice :choice="choiceOf(player)" :shown="shownOf(player)" headingClass="replay-hands-section" />
       </template>
     </div>
   </div>

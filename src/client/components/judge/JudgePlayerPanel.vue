@@ -1,19 +1,19 @@
 <template>
   <div class="judge-player-panel">
     <div class="hiding-card-button-row judge-player-panel-header">
-      <DynamicTitle :title="player.name" :color="player.color"/>
-      <AppButton class="judge-player-panel-toggle" size="small" :disableOnServerBusy="false" :title="hidden ? 'Show' : 'Hide'" @click="toggle"/>
+      <DynamicTitle :title="player.name" :color="player.color" />
+      <AppButton class="judge-player-panel-toggle" size="small" :disableOnServerBusy="false" :title="hidden ? 'Show' : 'Hide'" @click="toggle" />
     </div>
 
     <template v-if="!hidden">
       <div v-for="section in visibleSections" :key="section.title" class="player_home_block player_home_block--hand">
         <h3 class="judge-player-panel-section" v-i18n>{{ section.title }}</h3>
         <div v-for="card in section.cards" :key="card.name" class="cardbox">
-          <Card :card="card"/>
+          <Card :card="card" />
         </div>
       </div>
 
-      <JudgePendingChoice :choice="pendingChoice" :shown="shownCards"/>
+      <JudgePendingChoice :choice="pendingChoice" :shown="shownCards" />
     </template>
   </div>
 </template>

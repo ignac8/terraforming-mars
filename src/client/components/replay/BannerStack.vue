@@ -1,5 +1,5 @@
 <template>
-  <div id="rewind-banners" ref="stack" class="rewind-banners"><FrozenBanner v-if="frozen"/></div>
+  <div id="rewind-banners" ref="stack" class="rewind-banners"><FrozenBanner v-if="frozen" /></div>
   <div class="rewind-banners-spacer" :style="{height: height + 'px'}"></div>
 </template>
 
