@@ -50,21 +50,6 @@ describe('MarsBotBonusDeck', () => {
     expect(deck.discardPile.length).to.eq(1);
   });
 
-  // Nick: reshuffle when a draw finds the deck empty (BGG 3387297), by which time the last card is discarded too.
-  it('the last card drawn joins the next reshuffle', () => {
-    for (let i = 0; i < 7; i++) {
-      deck.discard(deck.draw(logger)!);
-    }
-    const last = deck.draw(logger)!;
-    expect(deck.drawPile).is.empty;
-    expect(deck.discardPile.length).to.eq(7);
-
-    deck.discard(last);
-    deck.draw(logger);
-    expect(deck.drawPile.length).to.eq(7);
-    expect(deck.discardPile).is.empty;
-  });
-
   it('reshuffles discard when draw pile empty', () => {
     // Draw all 8 cards
     const cards = [];

@@ -4,24 +4,11 @@ import {Deck} from '../cards/Deck';
 import {SerializedDeck} from '../cards/SerializedDeck';
 import {Random} from '../../common/utils/Random';
 import {inplaceRemove} from '../../common/utils/utils';
-import {Logger} from '../logs/Logger';
 
 /** The MarsBot bonus card deck. */
 export class MarsBotBonusDeck extends Deck<MarsBotBonusDeckCard> {
   public constructor(deck: Array<MarsBotBonusDeckCard>, discarded: Array<MarsBotBonusDeckCard>, random: Random) {
     super('marsbot', deck, discarded, random);
-  }
-
-  /**
-   * Reshuffles only when a draw finds the deck empty (Nick, BGG 3387297), when the last card drawn is in the
-   * discards too. Deck.draw also reshuffles right after drawing the last card, which leaves that card out.
-   */
-  public override draw(logger: Logger, source: 'top' | 'bottom' = 'top'): MarsBotBonusDeckCard | undefined {
-    if (this.drawPile.length === 0 && this.discardPile.length !== 0) {
-      logger.log('The marsbot discard pile has been shuffled to form a new deck.');
-      this.shuffle();
-    }
-    return source === 'top' ? this.drawPile.pop() : this.drawPile.shift();
   }
 
   private static create(cards: Array<MarsBotBonusCard>, random: Random): MarsBotBonusDeck {
