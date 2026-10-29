@@ -656,7 +656,7 @@ describe('RewindService whole table', () => {
           expect(sumElapsed, label).eq(saved.players.find((s) => s.id === p.id)!.timer.sumElapsed);
         } else if (run.running) {
           // The interval in progress counts too.
-          expect(sumElapsed, label).gte(605_000 + i).lte(p.timer.countedElapsed());
+          expect(sumElapsed, label).gte(605_000 + i).lte(p.timer.getElapsed());
         } else {
           expect(sumElapsed, label).eq(600_000 + i);
         }

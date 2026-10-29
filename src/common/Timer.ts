@@ -120,7 +120,7 @@ export class Timer {
     if (!this.running) {
       return;
     }
-    this.sumElapsed = this.countedElapsed();
+    this.sumElapsed = this.getElapsed();
     this.running = false;
   }
 
@@ -132,14 +132,6 @@ export class Timer {
   public resume(): void {
     this.running = true;
     this.startedAt = this.clock.now();
-  }
-
-  /**
-   * The time that counts so far: the closed intervals, plus the open one once the first action is done.
-   */
-  public countedElapsed(): number {
-    const open = this.running && this.afterFirstAction ? this.clock.now() - this.startedAt : 0;
-    return this.sumElapsed + open;
   }
 
   /**
