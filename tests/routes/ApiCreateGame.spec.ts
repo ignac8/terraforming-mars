@@ -247,6 +247,14 @@ describe('ApiCreateGame', () => {
     expect(res.content).contains('MarsBot can\'t play these milestones and awards: Networker, Entrepreneur');
   });
 
+  it('rejects MarsBot with more than one player', async () => {
+    const config = newGameConfigForTest();
+    const players = [config.players[0], {...config.players[0], name: 'Robot 2', color: 'red', first: false}];
+    await postConfig({...config, players, automa: true});
+    expect(res.statusCode).eq(statusCode.badRequest);
+    expect(res.content).contains('MarsBot plays against one player only');
+  });
+
   it('rejects custom milestones and awards unless they are manual', async () => {
     await postConfig({...newGameConfigForTest(), randomMA: RandomMAOptionType.LIMITED, customMA});
     expect(res.statusCode).eq(statusCode.badRequest);
