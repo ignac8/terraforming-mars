@@ -3,6 +3,7 @@ import {expect} from 'chai';
 import {globalConfig} from '../getLocalVue';
 import {fakeGameModel, fakePublicPlayerModel} from '../testHelpers';
 import JudgeHome from '@/client/components/judge/JudgeHome.vue';
+import TopBar from '@/client/components/TopBar.vue';
 import {CardName} from '@/common/cards/CardName';
 import {Color} from '@/common/Color';
 import {JudgeModel, JudgePlayerModel} from '@/common/models/JudgeModel';
@@ -50,6 +51,7 @@ function mountJudge(judge: JudgeModel) {
         GameBoardView: true,
         LogPanel: true,
         PlayersOverview: true,
+        TopBar: true,
         WaitingFor: true,
       },
     },
@@ -63,6 +65,14 @@ function mountJudge(judge: JudgeModel) {
 }
 
 describe('JudgeHome', () => {
+  it('pins the active player in the top bar', () => {
+    const judge = judgeModel([privates('red', CardName.ANTS), privates('blue', CardName.BIRDS)]);
+    judge.players[1].isActive = true;
+    const wrapper = mountJudge(judge);
+
+    expect(wrapper.findComponent(TopBar).props('player')?.color).eq('blue');
+  });
+
   it('shows one hidden-info block per player', () => {
     const wrapper = mountJudge(judgeModel([privates('red', CardName.ANTS), privates('blue', CardName.BIRDS)]));
 

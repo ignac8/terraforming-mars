@@ -1,5 +1,6 @@
 <template>
   <div id="judge-home" :class="(game.turmoil ? 'with-turmoil': '')">
+    <TopBar v-if="activePlayer !== undefined" :playerView="judge" :player="activePlayer" />
 
     <div v-if="game.phase === 'end'">
       <div class="player_home_block">
@@ -81,6 +82,7 @@ import JudgePlayerPanel from '@/client/components/judge/JudgePlayerPanel.vue';
 import LogPanel from '@/client/components/logpanel/LogPanel.vue';
 import Sidebar from '@/client/components/Sidebar.vue';
 import WaitingFor from '@/client/components/WaitingFor.vue';
+import TopBar from '@/client/components/TopBar.vue';
 import PlayersOverview from '@/client/components/overview/PlayersOverview.vue';
 import PurgeWarning from '@/client/components/common/PurgeWarning.vue';
 import KeyboardShortcuts from '@/client/components/KeyboardShortcuts.vue';
@@ -109,6 +111,10 @@ export default defineComponent({
     game(): GameModel {
       return this.judge.game;
     },
+    /** The top bar follows whoever is taking their turn. */
+    activePlayer(): PublicPlayerModel | undefined {
+      return this.judge.players.find((p) => p.isActive);
+    },
     replayUrl(): string {
       return `${paths.REPLAY}?id=${this.judge.id}${passwordParam(this.judge)}`;
     },
@@ -134,6 +140,7 @@ export default defineComponent({
     PlayersOverview,
     PurgeWarning,
     Sidebar,
+    TopBar,
     WaitingFor,
   },
   methods: {
