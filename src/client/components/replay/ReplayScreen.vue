@@ -9,7 +9,7 @@
       :players="liveView.players"
       ref="voteBanner"
       @show="showMove"
-      @requestBlock="changeRequestBlock"/>
+      @requestBlock="changeRequestBlock" />
     <!-- On the replay URL the page has no game of its own, so it knows the player by their colour from the moves answer. -->
     <RewindVoteBanner
       v-else-if="replayVoter !== undefined"
@@ -18,18 +18,18 @@
       :players="replayVoter.players"
       ref="voteBanner"
       @show="showMove"
-      @requestBlock="changeRequestBlock"/>
+      @requestBlock="changeRequestBlock" />
     <template v-if="isLive">
       <div v-if="index !== undefined && replayView === undefined" class="replay-message" v-i18n>Loading replay...</div>
       <template v-else-if="index !== undefined && replayView !== undefined">
-        <SpectatorHome v-if="spectatorView !== undefined" key="past-all" :spectator="spectatorView" :replay="true"/>
-        <PlayerHome v-else-if="playerView !== undefined" key="past" :playerView="playerView" :replay="true"/>
-        <ReplayHands v-if="spectatorView !== undefined" :participantId="participantId" :privates="replayView.privates" :players="spectatorView.players"/>
+        <SpectatorHome v-if="spectatorView !== undefined" key="past-all" :spectator="spectatorView" :replay="true" />
+        <PlayerHome v-else-if="playerView !== undefined" key="past" :playerView="playerView" :replay="true" />
+        <ReplayHands v-if="spectatorView !== undefined" :participantId="participantId" :privates="replayView.privates" :players="spectatorView.players" />
         <div v-else-if="viewedChoice !== undefined" class="replay-hands">
-          <JudgePendingChoice :choice="viewedChoice.choice" :shown="viewedChoice.shown" headingClass="replay-hands-section"/>
+          <JudgePendingChoice :choice="viewedChoice.choice" :shown="viewedChoice.shown" headingClass="replay-hands-section" />
         </div>
       </template>
-      <PlayerHome v-else-if="liveView !== undefined" key="live" :playerView="liveView"/>
+      <PlayerHome v-else-if="liveView !== undefined" key="live" :playerView="liveView" />
     </template>
     <div v-else-if="status === 'loading'" class="replay-message" v-i18n>Loading replay...</div>
     <div v-else-if="status === 'not-finished'" class="replay-message">
@@ -54,11 +54,11 @@
       <span v-else v-i18n>Loading replay...</span>
     </div>
     <template v-else>
-      <SpectatorHome v-if="spectatorView !== undefined" :spectator="spectatorView" :replay="true"/>
-      <PlayerHome v-else-if="playerView !== undefined" :playerView="playerView" :replay="true"/>
-      <ReplayHands v-if="spectatorView !== undefined" :participantId="participantId" :privates="replayView.privates" :players="spectatorView.players"/>
+      <SpectatorHome v-if="spectatorView !== undefined" :spectator="spectatorView" :replay="true" />
+      <PlayerHome v-else-if="playerView !== undefined" :playerView="playerView" :replay="true" />
+      <ReplayHands v-if="spectatorView !== undefined" :participantId="participantId" :privates="replayView.privates" :players="spectatorView.players" />
       <div v-else-if="viewedChoice !== undefined" class="replay-hands">
-        <JudgePendingChoice :choice="viewedChoice.choice" :shown="viewedChoice.shown" headingClass="replay-hands-section"/>
+        <JudgePendingChoice :choice="viewedChoice.choice" :shown="viewedChoice.shown" headingClass="replay-hands-section" />
       </div>
     </template>
     <!-- The panel, which shows the refusal otherwise, is gone while the moves load again, and stays gone if that fails. -->

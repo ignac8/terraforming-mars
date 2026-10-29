@@ -1,300 +1,300 @@
 <template>
   <div id="game-end" class="game_end_cont">
-      <h1><HomeLink>{{ constants.APP_NAME }} - Game finished!</HomeLink></h1>
-      <div class="game_end">
-          <div v-if="isAutomaGame && game.marsBot">
-              <div v-if="game.marsBot.instantWin" class="game_end_fail">
-                  <h2><span v-i18n>MarsBot wins!</span> (<span v-i18n>Generation</span> {{game.generation}} <span v-i18n>reached</span>)</h2>
-              </div>
-              <div v-else-if="automaHumanWins" class="game_end_success">
-                  <h2><span v-i18n>You beat MarsBot!</span> ({{participant.players[0].victoryPointsBreakdown.total}} vs {{game.marsBot.vpBreakdown?.total || 0}})</h2>
-              </div>
-              <div v-else class="game_end_fail">
-                  <h2><span v-i18n>MarsBot wins!</span> ({{game.marsBot.vpBreakdown?.total || 0}} vs {{participant.players[0].victoryPointsBreakdown.total}})</h2>
-                  <div class="game_end_notice" v-if="game.marsBot.vpBreakdown?.total === participant.players[0].victoryPointsBreakdown.total">
-                    <span v-i18n>Tie goes to MarsBot!</span>
-                  </div>
-              </div>
-          </div>
-          <div v-else-if="isSoloGame">
-              <div v-if="game.isSoloModeWin">
-                  <div class="game_end_success">
-                      <h2 v-i18n>You win!</h2>
-                      <div class="game_end_solo_img">
-                          <img src="assets/solo_win.png" >
-                      </div>
-                      <div class="game_end_notice">
-                        <span v-i18n>But it isn't the reason to stop making Mars better.</span>
-                      </div>
-                      <ul class="game_end_list">
-                          <li v-i18n>Try to win with expansions enabled</li>
-                          <li v-i18n>Try to win before the last generation</li>
-                          <li><span v-i18n>Can you get</span> {{ participant.players[0].victoryPointsBreakdown.total + 10 }}<span v-i18n>+ Victory Points?</span></li>
-                      </ul>
-                  </div>
-              </div>
-              <div v-else>
-                  <div class="game_end_fail">
-                      <h2 v-i18n>Sorry, you lose.</h2>
-                      <div class="game_end_notice">
-                        <span v-i18n>Next time you will get more luck!</span><br>
-                        <span v-i18n>Also, take into account these small hints to win:</span>
-                      </div>
-                      <ul class="game_end_list" v-i18n>
-                          <li>Concentrate more on Global parameters, not on Victory Points</li>
-                          <li>Don't be greedy with card selection</li>
-                          <li>Try to increase heat production, not Megacredits</li>
-                          <li>Try starting with the Beginner corporation</li>
-                      </ul>
-                  </div>
-              </div>
-          </div>
-          <div class="game_end_navigation">
-            <div>
-              <a href="new-game">
-                  <AppButton size="big" type="back" />
-                  <span v-i18n>Create New Game</span>
-              </a>
-
-              <a href=".">
-                  <AppButton size="big" type="back" />
-                  <span v-i18n>Go to main page</span>
-              </a>
-            </div>
-          </div>
-          <div v-if="!isAutomaGame && (!isSoloGame || game.isSoloModeWin)" class="game-end-winner-announcement">
-              <span v-for="p in winners" :key="p.color"><span :class="'log-player ' + getEndGamePlayerRowColorClass(p.color)">{{ p.name }}</span></span> <span v-i18n>won!</span>
-          </div>
-          <div class="game_end_victory_points">
-              <h2><span v-i18n>Victory point breakdown after</span> {{game.generation}} <span v-i18n>generations</span></h2>
-              <table class="table game_end_table">
-                  <thead>
-                      <tr v-i18n>
-                          <th><div class="card-delegate"></div></th>
-                          <th><div class="tr"></div></th>
-                          <th><div class="m-and-a tooltip tooltip-top" :data-tooltip="$t('Milestones points')">M</div></th>
-                          <th><div class="m-and-a tooltip tooltip-top" :data-tooltip="$t('Awards points')">A</div></th>
-                          <th><div class="table-forest-tile"></div></th>
-                          <th><div class="table-city-tile"></div></th>
-                          <th v-if="game.moon !== undefined"><div class="table-moon-road-tile"></div></th>
-                          <th v-if="game.moon !== undefined"><div class="table-moon-habitat-tile"></div></th>
-                          <th v-if="game.moon !== undefined"><div class="table-moon-mine-tile"></div></th>
-                          <th v-if="game.pathfinders !== undefined"><div class="table-planetary-track"></div></th>
-                          <th><div class="vp">VP</div></th>
-                          <th v-if="game.gameOptions.escapeVelocity" class="clock-icon tooltip tooltip-top" :data-tooltip="$t('Escape Velocity penalty')">&#x23F3;</th>
-                          <th class="game-end-total"><div class="game-end-total-column">Total</div></th>
-                          <th><div class="mc-icon"></div></th>
-                          <th v-if="game.gameOptions.showTimers" class="clock-icon">&#x1F551;</th>
-                          <th><div class="table-red-arrow tooltip tooltip-top" :data-tooltip="$t('Actions taken this game')"></div></th>
-                      </tr>
-                  </thead>
-                  <tbody>
-                      <tr v-for="p in playersInPlace" :key="p.color" :class="getEndGamePlayerRowColorClass(p.color)">
-                          <td>
-                            <a :href="'player?id='+p.id+'&noredirect'">{{ p.name }}</a>
-                            <div class="column-corporation">
-                              <div v-for="(corporationName, index) in getCorporationName(p)" :key="index" v-i18n>{{ corporationName }}</div>
-                            </div>
-                          </td>
-                          <td>{{ p.victoryPointsBreakdown.terraformRating }}</td>
-                          <td>{{ p.victoryPointsBreakdown.milestones }}</td>
-                          <td>{{ p.victoryPointsBreakdown.awards }}</td>
-                          <td>{{ p.victoryPointsBreakdown.greenery }}</td>
-                          <td>{{ p.victoryPointsBreakdown.city }}</td>
-                          <td v-if="game.moon !== undefined">{{ p.victoryPointsBreakdown.moonRoads }}</td>
-                          <td v-if="game.moon !== undefined">{{ p.victoryPointsBreakdown.moonHabitats }}</td>
-                          <td v-if="game.moon !== undefined">{{ p.victoryPointsBreakdown.moonMines }}</td>
-                          <td v-if="game.pathfinders !== undefined"> {{ p.victoryPointsBreakdown.planetaryTracks}}</td>
-                          <td>{{ p.victoryPointsBreakdown.victoryPoints }}</td>
-                          <td v-if="game.gameOptions.escapeVelocity">{{ p.victoryPointsBreakdown.escapeVelocity }}</td>
-                          <td class="game-end-total">{{ p.victoryPointsBreakdown.total }}</td>
-                          <td class="game-end-mc">
-                            <div>{{ p.megacredits }}</div>
-                          </td>
-                          <td v-if="game.gameOptions.showTimers"><div class="game-end-timer">{{ getTimer(p) }}</div></td>
-                          <td><div class="game-end-timer">{{ p.actionsTakenThisGame }}</div></td>
-                      </tr>
-                      <tr v-if="isAutomaGame && game.marsBot?.vpBreakdown" :class="getEndGamePlayerRowColorClass(game.marsBot.color)">
-                          <td>{{ game.marsBot.name }} ({{game.marsBot.difficulty}})
-                            <div v-if="game.marsBot.corpName" class="column-corporation"><div v-i18n>{{ game.marsBot.corpName }}</div></div>
-                          </td>
-                          <td>{{game.marsBot.vpBreakdown.terraformRating}}</td>
-                          <td>{{game.marsBot.vpBreakdown.milestones}}</td>
-                          <td>{{game.marsBot.vpBreakdown.awards}}</td>
-                          <td>{{game.marsBot.vpBreakdown.greenery}}</td>
-                          <td>{{game.marsBot.vpBreakdown.cityAdjacentGreenery}}</td>
-                          <td v-if="game.moon !== undefined">-</td>
-                          <td v-if="game.moon !== undefined">-</td>
-                          <td v-if="game.moon !== undefined">-</td>
-                          <td v-if="game.pathfinders !== undefined">-</td>
-                          <td>{{marsBotOtherVP}}</td>
-                          <td v-if="game.gameOptions.escapeVelocity">-</td>
-                          <td class="game-end-total">{{game.marsBot.vpBreakdown.total}}</td>
-                          <td class="game-end-mc">{{game.marsBot.megacredits}}</td>
-                          <td v-if="game.gameOptions.showTimers">-</td>
-                          <td>-</td>
-                      </tr>
-                  </tbody>
-              </table>
-              <!-- MarsBot VP detail shown in the column section below -->
-              <br>
-              <h2 v-i18n>Victory points details</h2>
-              <VictoryPointChart
-                :datasets="vpDataset"
-                :generation="game.generation"
-                :animation="true"
-                :id="'victory-point-chart'"
-                />
-              <div class="game-end-flexrow">
-                  <div v-for="p in playersInPlace" :key="p.color" class="game-end-column">
-                      <div class="game-end-winner-scorebreak-player-title">
-                          <div :class="'game-end-player ' + getEndGamePlayerRowColorClass(p.color)"><a :href="'player?id='+p.id+'&noredirect'">{{p.name}}</a></div>
-                      </div>
-                      <div v-for="v in p.victoryPointsBreakdown.detailsCards" :key="v.cardName">
-                        <div class="game-end-column-row">
-                          <div class="game-end-column-vp">{{v.victoryPoint}}</div>
-                          <div class="game-end-column-text" v-i18n>{{v.cardName}}</div>
-                        </div>
-                      </div>
-                      <div class="game-end-column-row">
-                        <div class="game-end-column-vp">&nbsp;</div>
-                        <div class="game-end-column-text">&nbsp;</div>
-                      </div>
-                      <div v-for="v in p.victoryPointsBreakdown.detailsMilestones" :key="v.message">
-                        <div class="game-end-column-row">
-                          <div class="game-end-column-vp">{{v.victoryPoint}}</div>
-                          <div class="game-end-column-text">{{translateMilestoneDetails(v)}}</div>
-                        </div>
-                      </div>
-                      <div v-for="v in p.victoryPointsBreakdown.detailsAwards" :key="v.message">
-                        <div class="game-end-column-row">
-                          <div class="game-end-column-vp">{{v.victoryPoint}}</div>
-                          <div class="game-end-column-text">{{translateAwardDetails(v)}}</div>
-                        </div>
-                      </div>
-                      <div v-for="v in p.victoryPointsBreakdown.detailsPlanetaryTracks" :key="v.tag">
-                        <div class="game-end-column-row">
-                          <div class="game-end-column-vp">{{v.points}}</div>
-                          <div class="game-end-column-text" v-i18n>Most tags on the {{v.tag}} track</div>
-                        </div>
-                      </div>
-                  </div>
-                  <div v-if="isAutomaGame && game.marsBot?.vpBreakdown" class="game-end-column">
-                      <div class="game-end-winner-scorebreak-player-title">
-                          <div :class="'game-end-player ' + getEndGamePlayerRowColorClass(game.marsBot.color)">{{ game.marsBot.name }}</div>
-                      </div>
-                      <div v-if="game.marsBot.vpBreakdown.turmoilVP" class="game-end-column-row">
-                        <div class="game-end-column-vp">{{game.marsBot.vpBreakdown.turmoilVP}}</div>
-                        <div class="game-end-column-text" v-i18n>Turmoil Points</div>
-                      </div>
-                      <div v-if="game.marsBot.vpBreakdown.neuralInstance > 0" class="game-end-column-row">
-                        <div class="game-end-column-vp">{{game.marsBot.vpBreakdown.neuralInstance}}</div>
-                        <div class="game-end-column-text" v-i18n>Neural Instance</div>
-                      </div>
-                      <div v-if="game.marsBot.vpBreakdown.mcToVP > 0" class="game-end-column-row">
-                        <div class="game-end-column-vp">{{game.marsBot.vpBreakdown.mcToVP}}</div>
-                        <div class="game-end-column-text"><span v-i18n>MC to VP</span> ({{game.marsBot.mcPerVP || '?'}} MC/VP)</div>
-                      </div>
-                      <div v-if="game.marsBot.vpBreakdown.cardVP > 0" class="game-end-column-row">
-                        <div class="game-end-column-vp">{{game.marsBot.vpBreakdown.cardVP}}</div>
-                        <div class="game-end-column-text" v-i18n>Card VP (hard mode)</div>
-                      </div>
-                      <div v-if="game.marsBot.vpBreakdown.vermin" class="game-end-column-row">
-                        <div class="game-end-column-vp">{{game.marsBot.vpBreakdown.vermin}}</div>
-                        <div class="game-end-column-text" v-i18n>Vermin</div>
-                      </div>
-                      <div v-if="game.marsBot.vpBreakdown.leftoverResourcesVP" class="game-end-column-row">
-                        <div class="game-end-column-vp">{{game.marsBot.vpBreakdown.leftoverResourcesVP}}</div>
-                        <div class="game-end-column-text" v-i18n>Leftover resources</div>
-                      </div>
-                      <div v-if="game.marsBot.vpBreakdown.corpVP" class="game-end-column-row">
-                        <div class="game-end-column-vp">{{game.marsBot.vpBreakdown.corpVP}}</div>
-                        <div class="game-end-column-text"><span v-i18n>Corporation</span> ({{game.marsBot.corpName}})</div>
-                      </div>
-                      <div class="game-end-column-row">
-                        <div class="game-end-column-vp">&nbsp;</div>
-                        <div class="game-end-column-text">&nbsp;</div>
-                      </div>
-                      <div v-for="(v, i) in game.marsBot.vpBreakdown.detailsMilestones" :key="'m'+i">
-                        <div class="game-end-column-row">
-                          <div class="game-end-column-vp">{{v.victoryPoint}}</div>
-                          <div class="game-end-column-text">{{translateMilestoneDetails(v)}}</div>
-                        </div>
-                      </div>
-                      <div v-for="(v, i) in game.marsBot.vpBreakdown.detailsAwards" :key="'a'+i">
-                        <div class="game-end-column-row">
-                          <div class="game-end-column-vp">{{v.victoryPoint}}</div>
-                          <div class="game-end-column-text">{{translateAwardDetails(v)}}</div>
-                        </div>
-                      </div>
-                  </div>
-              </div>
-          </div>
-          <div class="game_end_victory_points">
-              <h2 v-i18n>Global Parameter Contributions</h2>
-              <table class="table game_end_table">
-                  <thead>
-                      <tr>
-                          <th><div class="card-delegate"></div></th>
-                          <th><div class="tile temperature-tile"></div></th>
-                          <th><div class="tile oxygen-tile"></div></th>
-                          <th><div class="tile ocean-tile"></div></th>
-                          <th v-if="game.gameOptions.expansions.venus"><div class="tile venus-tile"></div></th>
-                          <th v-if="game.gameOptions.expansions.moon"><div class="table-moon-habitat-tile"></div></th>
-                          <th v-if="game.gameOptions.expansions.moon"><div class="table-moon-mine-tile"></div></th>
-                          <th v-if="game.gameOptions.expansions.moon"><div class="table-moon-road-tile"></div></th>
-                          <th><div class="game-end-total-column">Total</div></th>
-                      </tr>
-                  </thead>
-                  <tbody>
-                      <tr v-for="data in playerContributionsData" :key="data.color" :class="getEndGamePlayerRowColorClass(data.color)">
-                          <td>{{ data.player }}</td>
-                          <td>{{ data.temp }}</td>
-                          <td>{{ data.oxygen }}</td>
-                          <td>{{ data.oceans }}</td>
-                          <td v-if="game.gameOptions.expansions.venus">{{ data.venus }}</td>
-                          <td v-if="game.gameOptions.expansions.moon">{{ data.moonHabitat }}</td>
-                          <td v-if="game.gameOptions.expansions.moon">{{ data.moonMining }}</td>
-                          <td v-if="game.gameOptions.expansions.moon">{{ data.moonLogistic }}</td>
-                          <td class="game-end-total">{{ data.total }}</td>
-                      </tr>
-                  </tbody>
-              </table>
-          </div>
-          <div class="game-end-flexrow">
-          <div class="game_end_block--board game-end-column">
-              <VictoryPointChart
-                :datasets="globalsDataset"
-                :generation="game.generation"
-                :animation="true"
-                :id="'global-parameter-chart'"
-                :yAxisLabel="'% completed'"
-              />
-              <h2 v-i18n>Final situation on the board</h2>
-              <Board
-                  :spaces="game.spaces"
-                  :expansions="game.gameOptions.expansions"
-                  :venusScaleLevel="game.venusScaleLevel"
-                  :altVenusBoard="game.gameOptions.altVenusBoard"
-                  :boardName ="game.gameOptions.boardName"
-                  :oceans_count="game.oceans"
-                  :oxygen_level="game.oxygenLevel"
-                  :temperature="game.temperature"
-                  :tileView="tileView"
-                  @toggleTileView="cycleTileView()"/>
-            <MoonBoard v-if="game.moon !== undefined" :model="game.moon" :tileView="tileView"/>
-            <div v-if="game.gameOptions.expansions.pathfinders">
-              <PlanetaryTracks :tracks="game.pathfinders" :gameOptions="game.gameOptions"/>
-            </div>
-            <DeltaProjectBoard v-if="game.gameOptions.expansions.deltaProject" :players="participant.players"/>
-          </div>
-          <div class="game_end_block--log game-end-column">
-            <LogPanel :viewModel="participant"/>
-            <a :href="downloadLogUrl" target="_blank" v-i18n>Download game log</a>
-            <div><a :href="replayUrl" class="game-end-replay-link" v-i18n>Replay</a></div>
+    <h1><HomeLink>{{ constants.APP_NAME }} - Game finished!</HomeLink></h1>
+    <div class="game_end">
+      <div v-if="isAutomaGame && game.marsBot">
+        <div v-if="game.marsBot.instantWin" class="game_end_fail">
+          <h2><span v-i18n>MarsBot wins!</span> (<span v-i18n>Generation</span> {{ game.generation }} <span v-i18n>reached</span>)</h2>
+        </div>
+        <div v-else-if="automaHumanWins" class="game_end_success">
+          <h2><span v-i18n>You beat MarsBot!</span> ({{ participant.players[0].victoryPointsBreakdown.total }} vs {{ game.marsBot.vpBreakdown?.total || 0 }})</h2>
+        </div>
+        <div v-else class="game_end_fail">
+          <h2><span v-i18n>MarsBot wins!</span> ({{ game.marsBot.vpBreakdown?.total || 0 }} vs {{ participant.players[0].victoryPointsBreakdown.total }})</h2>
+          <div class="game_end_notice" v-if="game.marsBot.vpBreakdown?.total === participant.players[0].victoryPointsBreakdown.total">
+            <span v-i18n>Tie goes to MarsBot!</span>
           </div>
         </div>
       </div>
+      <div v-else-if="isSoloGame">
+        <div v-if="game.isSoloModeWin">
+          <div class="game_end_success">
+            <h2 v-i18n>You win!</h2>
+            <div class="game_end_solo_img">
+              <img src="assets/solo_win.png">
+            </div>
+            <div class="game_end_notice">
+              <span v-i18n>But it isn't the reason to stop making Mars better.</span>
+            </div>
+            <ul class="game_end_list">
+              <li v-i18n>Try to win with expansions enabled</li>
+              <li v-i18n>Try to win before the last generation</li>
+              <li><span v-i18n>Can you get</span> {{ participant.players[0].victoryPointsBreakdown.total + 10 }}<span v-i18n>+ Victory Points?</span></li>
+            </ul>
+          </div>
+        </div>
+        <div v-else>
+          <div class="game_end_fail">
+            <h2 v-i18n>Sorry, you lose.</h2>
+            <div class="game_end_notice">
+              <span v-i18n>Next time you will get more luck!</span><br>
+              <span v-i18n>Also, take into account these small hints to win:</span>
+            </div>
+            <ul class="game_end_list" v-i18n>
+              <li>Concentrate more on Global parameters, not on Victory Points</li>
+              <li>Don't be greedy with card selection</li>
+              <li>Try to increase heat production, not Megacredits</li>
+              <li>Try starting with the Beginner corporation</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+      <div class="game_end_navigation">
+        <div>
+          <a href="new-game">
+            <AppButton size="big" type="back" />
+            <span v-i18n>Create New Game</span>
+          </a>
+
+          <a href=".">
+            <AppButton size="big" type="back" />
+            <span v-i18n>Go to main page</span>
+          </a>
+        </div>
+      </div>
+      <div v-if="!isAutomaGame && (!isSoloGame || game.isSoloModeWin)" class="game-end-winner-announcement">
+        <span v-for="p in winners" :key="p.color"><span :class="'log-player ' + getEndGamePlayerRowColorClass(p.color)">{{ p.name }}</span></span> <span v-i18n>won!</span>
+      </div>
+      <div class="game_end_victory_points">
+        <h2><span v-i18n>Victory point breakdown after</span> {{ game.generation }} <span v-i18n>generations</span></h2>
+        <table class="table game_end_table">
+          <thead>
+            <tr v-i18n>
+              <th><div class="card-delegate"></div></th>
+              <th><div class="tr"></div></th>
+              <th><div class="m-and-a tooltip tooltip-top" :data-tooltip="$t('Milestones points')">M</div></th>
+              <th><div class="m-and-a tooltip tooltip-top" :data-tooltip="$t('Awards points')">A</div></th>
+              <th><div class="table-forest-tile"></div></th>
+              <th><div class="table-city-tile"></div></th>
+              <th v-if="game.moon !== undefined"><div class="table-moon-road-tile"></div></th>
+              <th v-if="game.moon !== undefined"><div class="table-moon-habitat-tile"></div></th>
+              <th v-if="game.moon !== undefined"><div class="table-moon-mine-tile"></div></th>
+              <th v-if="game.pathfinders !== undefined"><div class="table-planetary-track"></div></th>
+              <th><div class="vp">VP</div></th>
+              <th v-if="game.gameOptions.escapeVelocity" class="clock-icon tooltip tooltip-top" :data-tooltip="$t('Escape Velocity penalty')">&#x23F3;</th>
+              <th class="game-end-total"><div class="game-end-total-column">Total</div></th>
+              <th><div class="mc-icon"></div></th>
+              <th v-if="game.gameOptions.showTimers" class="clock-icon">&#x1F551;</th>
+              <th><div class="table-red-arrow tooltip tooltip-top" :data-tooltip="$t('Actions taken this game')"></div></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="p in playersInPlace" :key="p.color" :class="getEndGamePlayerRowColorClass(p.color)">
+              <td>
+                <a :href="'player?id='+p.id+'&noredirect'">{{ p.name }}</a>
+                <div class="column-corporation">
+                  <div v-for="(corporationName, index) in getCorporationName(p)" :key="index" v-i18n>{{ corporationName }}</div>
+                </div>
+              </td>
+              <td>{{ p.victoryPointsBreakdown.terraformRating }}</td>
+              <td>{{ p.victoryPointsBreakdown.milestones }}</td>
+              <td>{{ p.victoryPointsBreakdown.awards }}</td>
+              <td>{{ p.victoryPointsBreakdown.greenery }}</td>
+              <td>{{ p.victoryPointsBreakdown.city }}</td>
+              <td v-if="game.moon !== undefined">{{ p.victoryPointsBreakdown.moonRoads }}</td>
+              <td v-if="game.moon !== undefined">{{ p.victoryPointsBreakdown.moonHabitats }}</td>
+              <td v-if="game.moon !== undefined">{{ p.victoryPointsBreakdown.moonMines }}</td>
+              <td v-if="game.pathfinders !== undefined"> {{ p.victoryPointsBreakdown.planetaryTracks }}</td>
+              <td>{{ p.victoryPointsBreakdown.victoryPoints }}</td>
+              <td v-if="game.gameOptions.escapeVelocity">{{ p.victoryPointsBreakdown.escapeVelocity }}</td>
+              <td class="game-end-total">{{ p.victoryPointsBreakdown.total }}</td>
+              <td class="game-end-mc">
+                <div>{{ p.megacredits }}</div>
+              </td>
+              <td v-if="game.gameOptions.showTimers"><div class="game-end-timer">{{ getTimer(p) }}</div></td>
+              <td><div class="game-end-timer">{{ p.actionsTakenThisGame }}</div></td>
+            </tr>
+            <tr v-if="isAutomaGame && game.marsBot?.vpBreakdown" :class="getEndGamePlayerRowColorClass(game.marsBot.color)">
+              <td>{{ game.marsBot.name }} ({{ game.marsBot.difficulty }})
+                <div v-if="game.marsBot.corpName" class="column-corporation"><div v-i18n>{{ game.marsBot.corpName }}</div></div>
+              </td>
+              <td>{{ game.marsBot.vpBreakdown.terraformRating }}</td>
+              <td>{{ game.marsBot.vpBreakdown.milestones }}</td>
+              <td>{{ game.marsBot.vpBreakdown.awards }}</td>
+              <td>{{ game.marsBot.vpBreakdown.greenery }}</td>
+              <td>{{ game.marsBot.vpBreakdown.cityAdjacentGreenery }}</td>
+              <td v-if="game.moon !== undefined">-</td>
+              <td v-if="game.moon !== undefined">-</td>
+              <td v-if="game.moon !== undefined">-</td>
+              <td v-if="game.pathfinders !== undefined">-</td>
+              <td>{{ marsBotOtherVP }}</td>
+              <td v-if="game.gameOptions.escapeVelocity">-</td>
+              <td class="game-end-total">{{ game.marsBot.vpBreakdown.total }}</td>
+              <td class="game-end-mc">{{ game.marsBot.megacredits }}</td>
+              <td v-if="game.gameOptions.showTimers">-</td>
+              <td>-</td>
+            </tr>
+          </tbody>
+        </table>
+        <!-- MarsBot VP detail shown in the column section below -->
+        <br>
+        <h2 v-i18n>Victory points details</h2>
+        <VictoryPointChart
+          :datasets="vpDataset"
+          :generation="game.generation"
+          :animation="true"
+          :id="'victory-point-chart'"
+        />
+        <div class="game-end-flexrow">
+          <div v-for="p in playersInPlace" :key="p.color" class="game-end-column">
+            <div class="game-end-winner-scorebreak-player-title">
+              <div :class="'game-end-player ' + getEndGamePlayerRowColorClass(p.color)"><a :href="'player?id='+p.id+'&noredirect'">{{ p.name }}</a></div>
+            </div>
+            <div v-for="v in p.victoryPointsBreakdown.detailsCards" :key="v.cardName">
+              <div class="game-end-column-row">
+                <div class="game-end-column-vp">{{ v.victoryPoint }}</div>
+                <div class="game-end-column-text" v-i18n>{{ v.cardName }}</div>
+              </div>
+            </div>
+            <div class="game-end-column-row">
+              <div class="game-end-column-vp">&nbsp;</div>
+              <div class="game-end-column-text">&nbsp;</div>
+            </div>
+            <div v-for="v in p.victoryPointsBreakdown.detailsMilestones" :key="v.message">
+              <div class="game-end-column-row">
+                <div class="game-end-column-vp">{{ v.victoryPoint }}</div>
+                <div class="game-end-column-text">{{ translateMilestoneDetails(v) }}</div>
+              </div>
+            </div>
+            <div v-for="v in p.victoryPointsBreakdown.detailsAwards" :key="v.message">
+              <div class="game-end-column-row">
+                <div class="game-end-column-vp">{{ v.victoryPoint }}</div>
+                <div class="game-end-column-text">{{ translateAwardDetails(v) }}</div>
+              </div>
+            </div>
+            <div v-for="v in p.victoryPointsBreakdown.detailsPlanetaryTracks" :key="v.tag">
+              <div class="game-end-column-row">
+                <div class="game-end-column-vp">{{ v.points }}</div>
+                <div class="game-end-column-text" v-i18n>Most tags on the {{ v.tag }} track</div>
+              </div>
+            </div>
+          </div>
+          <div v-if="isAutomaGame && game.marsBot?.vpBreakdown" class="game-end-column">
+            <div class="game-end-winner-scorebreak-player-title">
+              <div :class="'game-end-player ' + getEndGamePlayerRowColorClass(game.marsBot.color)">{{ game.marsBot.name }}</div>
+            </div>
+            <div v-if="game.marsBot.vpBreakdown.turmoilVP" class="game-end-column-row">
+              <div class="game-end-column-vp">{{ game.marsBot.vpBreakdown.turmoilVP }}</div>
+              <div class="game-end-column-text" v-i18n>Turmoil Points</div>
+            </div>
+            <div v-if="game.marsBot.vpBreakdown.neuralInstance > 0" class="game-end-column-row">
+              <div class="game-end-column-vp">{{ game.marsBot.vpBreakdown.neuralInstance }}</div>
+              <div class="game-end-column-text" v-i18n>Neural Instance</div>
+            </div>
+            <div v-if="game.marsBot.vpBreakdown.mcToVP > 0" class="game-end-column-row">
+              <div class="game-end-column-vp">{{ game.marsBot.vpBreakdown.mcToVP }}</div>
+              <div class="game-end-column-text"><span v-i18n>MC to VP</span> ({{ game.marsBot.mcPerVP || '?' }} MC/VP)</div>
+            </div>
+            <div v-if="game.marsBot.vpBreakdown.cardVP > 0" class="game-end-column-row">
+              <div class="game-end-column-vp">{{ game.marsBot.vpBreakdown.cardVP }}</div>
+              <div class="game-end-column-text" v-i18n>Card VP (hard mode)</div>
+            </div>
+            <div v-if="game.marsBot.vpBreakdown.vermin" class="game-end-column-row">
+              <div class="game-end-column-vp">{{ game.marsBot.vpBreakdown.vermin }}</div>
+              <div class="game-end-column-text" v-i18n>Vermin</div>
+            </div>
+            <div v-if="game.marsBot.vpBreakdown.leftoverResourcesVP" class="game-end-column-row">
+              <div class="game-end-column-vp">{{ game.marsBot.vpBreakdown.leftoverResourcesVP }}</div>
+              <div class="game-end-column-text" v-i18n>Leftover resources</div>
+            </div>
+            <div v-if="game.marsBot.vpBreakdown.corpVP" class="game-end-column-row">
+              <div class="game-end-column-vp">{{ game.marsBot.vpBreakdown.corpVP }}</div>
+              <div class="game-end-column-text"><span v-i18n>Corporation</span> ({{ game.marsBot.corpName }})</div>
+            </div>
+            <div class="game-end-column-row">
+              <div class="game-end-column-vp">&nbsp;</div>
+              <div class="game-end-column-text">&nbsp;</div>
+            </div>
+            <div v-for="(v, i) in game.marsBot.vpBreakdown.detailsMilestones" :key="'m'+i">
+              <div class="game-end-column-row">
+                <div class="game-end-column-vp">{{ v.victoryPoint }}</div>
+                <div class="game-end-column-text">{{ translateMilestoneDetails(v) }}</div>
+              </div>
+            </div>
+            <div v-for="(v, i) in game.marsBot.vpBreakdown.detailsAwards" :key="'a'+i">
+              <div class="game-end-column-row">
+                <div class="game-end-column-vp">{{ v.victoryPoint }}</div>
+                <div class="game-end-column-text">{{ translateAwardDetails(v) }}</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="game_end_victory_points">
+        <h2 v-i18n>Global Parameter Contributions</h2>
+        <table class="table game_end_table">
+          <thead>
+            <tr>
+              <th><div class="card-delegate"></div></th>
+              <th><div class="tile temperature-tile"></div></th>
+              <th><div class="tile oxygen-tile"></div></th>
+              <th><div class="tile ocean-tile"></div></th>
+              <th v-if="game.gameOptions.expansions.venus"><div class="tile venus-tile"></div></th>
+              <th v-if="game.gameOptions.expansions.moon"><div class="table-moon-habitat-tile"></div></th>
+              <th v-if="game.gameOptions.expansions.moon"><div class="table-moon-mine-tile"></div></th>
+              <th v-if="game.gameOptions.expansions.moon"><div class="table-moon-road-tile"></div></th>
+              <th><div class="game-end-total-column">Total</div></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="data in playerContributionsData" :key="data.color" :class="getEndGamePlayerRowColorClass(data.color)">
+              <td>{{ data.player }}</td>
+              <td>{{ data.temp }}</td>
+              <td>{{ data.oxygen }}</td>
+              <td>{{ data.oceans }}</td>
+              <td v-if="game.gameOptions.expansions.venus">{{ data.venus }}</td>
+              <td v-if="game.gameOptions.expansions.moon">{{ data.moonHabitat }}</td>
+              <td v-if="game.gameOptions.expansions.moon">{{ data.moonMining }}</td>
+              <td v-if="game.gameOptions.expansions.moon">{{ data.moonLogistic }}</td>
+              <td class="game-end-total">{{ data.total }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="game-end-flexrow">
+        <div class="game_end_block--board game-end-column">
+          <VictoryPointChart
+            :datasets="globalsDataset"
+            :generation="game.generation"
+            :animation="true"
+            :id="'global-parameter-chart'"
+            :yAxisLabel="'% completed'"
+          />
+          <h2 v-i18n>Final situation on the board</h2>
+          <Board
+            :spaces="game.spaces"
+            :expansions="game.gameOptions.expansions"
+            :venusScaleLevel="game.venusScaleLevel"
+            :altVenusBoard="game.gameOptions.altVenusBoard"
+            :boardName="game.gameOptions.boardName"
+            :oceans_count="game.oceans"
+            :oxygen_level="game.oxygenLevel"
+            :temperature="game.temperature"
+            :tileView="tileView"
+            @toggleTileView="cycleTileView()" />
+          <MoonBoard v-if="game.moon !== undefined" :model="game.moon" :tileView="tileView" />
+          <div v-if="game.gameOptions.expansions.pathfinders">
+            <PlanetaryTracks :tracks="game.pathfinders" :gameOptions="game.gameOptions" />
+          </div>
+          <DeltaProjectBoard v-if="game.gameOptions.expansions.deltaProject" :players="participant.players" />
+        </div>
+        <div class="game_end_block--log game-end-column">
+          <LogPanel :viewModel="participant" />
+          <a :href="downloadLogUrl" target="_blank" v-i18n>Download game log</a>
+          <div><a :href="replayUrl" class="game-end-replay-link" v-i18n>Replay</a></div>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 

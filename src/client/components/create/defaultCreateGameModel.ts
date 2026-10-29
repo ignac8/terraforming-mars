@@ -45,6 +45,7 @@ export function defaultCreateGameModel(): CreateGameModel {
     customCeos: [],
     customColonies: [],
     customCorporations: [],
+    customMA: undefined,
     customPreludes: [],
     bannedCards: [],
     includedCards: [],

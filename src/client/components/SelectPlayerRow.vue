@@ -1,5 +1,5 @@
 <template>
-  <span>{{playerName}}</span>
+  <span>{{ playerName }}</span>
 </template>
 
 <script lang="ts">

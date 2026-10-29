@@ -19,6 +19,7 @@ import {durationToMilliseconds} from '../utils/durations';
 import {readBody} from './readBody';
 import {RouteError} from './RouteError';
 import {CEO_CARDS_DEALT_PER_PLAYER} from '../../common/constants';
+import {validateCustomMA} from '../../common/ma/CustomMA';
 import {hasNegativeEscapeVelocityOption, sanitizeEscapeVelocityOptions} from '../../common/game/escapeVelocity';
 import {MARSBOT_BOARD_NAMES} from '../../common/automa/MarsBotBoards';
 
@@ -98,7 +99,7 @@ export class ApiCreateGame extends Handler {
   // TODO(kberg): much of this code can be moved outside of handler, and that
   // would be better.
   public override async post(req: Request, res: Response, ctx: Context): Promise<void> {
-    const withinQuota = this.quotaHandlers.map((handler) => handler.measure(ctx)).every((ok) => ok);
+    const withinQuota = this.quotaHandlers.every((handler) => handler.isWithinQuota(ctx));
     if (!withinQuota) {
       responses.quotaExceeded(req, res);
       return;
@@ -159,6 +160,7 @@ export class ApiCreateGame extends Handler {
         customCeos: gameReq.customCeos,
         customColoniesList: gameReq.customColoniesList,
         customCorporationsList: gameReq.customCorporationsList,
+        customMA: gameReq.customMA,
         customPreludes: gameReq.customPreludes,
         draftVariant: gameReq.draftVariant,
         escapeVelocity: gameReq.escapeVelocity === undefined ? undefined : sanitizeEscapeVelocityOptions(gameReq.escapeVelocity),
@@ -206,6 +208,12 @@ export class ApiCreateGame extends Handler {
         automaFinalGreeneryNoCorpEffects: gameReq.automaFinalGreeneryNoCorpEffects ?? false,
       };
 
+      try {
+        validateCustomMA(gameOptions.customMA, gameOptions.randomMA, gameOptions.venusNextExtension);
+      } catch (e) {
+        throw RouteError.badRequest(e instanceof Error ? e.message : String(e));
+      }
+
       let game: IGame;
       if (gameOptions.clonedGamedId !== undefined && !gameOptions.clonedGamedId.startsWith('#')) {
         const serialized = await Database.getInstance().getGameVersion(gameOptions.clonedGamedId, 0);
@@ -215,6 +223,8 @@ export class ApiCreateGame extends Handler {
         game = Game.newInstance(gameId, players, players[firstPlayerIdx], spectatorId, gameOptions, seed);
       }
       ctx.gameLoader.add(game);
+      // Only games that are actually created count against the quota.
+      this.quotaHandlers.forEach((handler) => handler.record(ctx));
       responses.writeJson(res, ctx, Server.getSimpleGameModel(game));
     } catch (error) {
       if (error instanceof RouteError) {

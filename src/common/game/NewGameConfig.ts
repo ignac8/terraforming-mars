@@ -6,6 +6,7 @@ import {RandomMAOptionType} from '../ma/RandomMAOptionType';
 import {AgendaStyle} from '../turmoil/Types';
 import {GameId} from '../Types';
 import {Expansion} from '../cards/GameModule';
+import {CustomMA} from '../ma/CustomMA';
 
 export interface NewPlayerModel {
   name: string;
@@ -79,6 +80,7 @@ export type NewGameConfig = {
   customCeos: ReadonlyArray<CardName>;
   startingCeos: number;
   startingPreludes: number;
+  customMA?: CustomMA;
   automaOption?: boolean;
   automaDifficulty?: 'easy' | 'normal' | 'hard' | 'brutal';
   automaCorpOption?: boolean;

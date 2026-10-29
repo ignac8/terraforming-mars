@@ -51,7 +51,7 @@
         <span class="replay-move-number">{{ i + 1 }}</span>
         <span v-if="move.undone" class="replay-undone-badge" v-i18n>undone</span>
         <ul class="replay-move-messages">
-          <LogMessageComponent v-for="(message, j) in move.messages" :key="j" :message="message" :viewModel="viewModel"/>
+          <LogMessageComponent v-for="(message, j) in move.messages" :key="j" :message="message" :viewModel="viewModel" />
         </ul>
       </li>
       <li v-if="moves.length === 0" class="replay-moves-empty" v-i18n>{{ loading ? 'Loading replay...' : 'No moves yet' }}</li>
@@ -66,7 +66,7 @@
       :blocked="requestBlock"
       :undone="selectedUndone"
       @rewind="(cards) => $emit('rewind', cards)"
-      @request="(cards) => $emit('request', cards)"/>
+      @request="(cards) => $emit('request', cards)" />
 
     <!-- Errors, rendered inside the panel: a refused rewind under the rewind controls, and others in a box
          that on a narrow screen sits just above the panel instead of under it. -->
