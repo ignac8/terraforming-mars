@@ -1,6 +1,7 @@
-import {MarsBotBonusCard, MarsBotBonusDeckCard, createBaseBonusCards, createCorpBonusCard} from './MarsBotBonusCard';
+import {MarsBotBonusCard, MarsBotBonusDeckCard, createBaseBonusCards, createCorpBonusCard, marsBotBonusCardsFromJSON} from './MarsBotBonusCard';
 import {BonusCardId} from '../../common/automa/AutomaTypes';
 import {Deck} from '../cards/Deck';
+import {SerializedDeck} from '../cards/SerializedDeck';
 import {Random} from '../../common/utils/Random';
 import {inplaceRemove} from '../../common/utils/utils';
 
@@ -23,6 +24,12 @@ export class MarsBotBonusDeck extends Deck<MarsBotBonusDeckCard> {
   /** Create the base game bonus deck (B01-B08), shuffled. */
   public static createBase(random: Random, shuffle: boolean = true): MarsBotBonusDeck {
     return MarsBotBonusDeck.create(createBaseBonusCards(), random, shuffle);
+  }
+
+  public static deserialize(d: SerializedDeck, random: Random): Deck<MarsBotBonusDeckCard> {
+    const deck = marsBotBonusCardsFromJSON(d.drawPile);
+    const discarded = marsBotBonusCardsFromJSON(d.discardPile);
+    return new MarsBotBonusDeck(deck, discarded, random);
   }
 
   /** Create bonus deck with Venus Next: replace B06 (Lobbyists) with B15 (Lobbyists Venus). */

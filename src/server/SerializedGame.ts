@@ -97,8 +97,7 @@ export type SerializedAutomaState = {
     goesFirst: boolean;
     difficulty: 'easy' | 'normal' | 'hard' | 'brutal';
     actionDeckCardNames: Array<string>;
-    bonusDeckDrawPile: Array<string>;
-    bonusDeckDiscardPile: Array<string>;
+    bonusDeck: SerializedDeck;
     neuralInstanceSpaceId: string | undefined;
     playedProjectCardNames: Array<string>;
     /** The last generation whose Hard mode first-turn milestone check has run; older saves lack it. */
@@ -130,4 +129,7 @@ export type SerializedAutomaState = {
     // Older saved games hold megacredits and floaters under these names.
     mcSupply?: number;
     floaterCount?: number;
+    // Older saved games hold the bonus deck as these two piles, bonus cards by id and project cards by name.
+    bonusDeckDrawPile?: Array<string>;
+    bonusDeckDiscardPile?: Array<string>;
 }

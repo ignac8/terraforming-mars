@@ -186,7 +186,7 @@ describe('MarsBot Limitations Fixed', () => {
     it('serialize includes bonus deck state', () => {
       const {marsBot} = createAutomaGame();
       const state = marsBot.serialize();
-      expect(state.bonusDeckDrawPile.length).to.be.lte(8);
+      expect(state.bonusDeck.drawPile.length).to.be.lte(8);
     });
 
     it('serialize includes regressed positions', () => {

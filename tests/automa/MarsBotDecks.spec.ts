@@ -8,6 +8,7 @@ import {BonusCardId} from '../../src/common/automa/AutomaTypes';
 import {BoardName} from '../../src/common/boards/BoardName';
 import {CardName} from '../../src/common/cards/CardName';
 import {GameOptions} from '../../src/server/game/GameOptions';
+import {SerializedAutomaState} from '../../src/server/SerializedGame';
 import {getMarsBotCorp} from '../../src/server/automa/corps/MarsBotCorpRegistry';
 import {MarsBotCorpResolver} from '../../src/server/automa/corps/MarsBotCorpResolver';
 import {ConstRandom} from '../../src/common/utils/Random';
@@ -326,6 +327,32 @@ describe('MarsBot decks', () => {
 
     expect(restored.bonusDeck.drawPile.map((c) => c.name)).deep.eq(marsBot.bonusDeck.drawPile.map((c) => c.name));
     expect(restored.bonusDeck.discardPile.map((c) => c.name)).deep.eq([CardName.TARDIGRADES]);
+  });
+
+  it('loads the bonus deck of an older save, which holds bonus cards by id, and plays on from it', () => {
+    const {game, marsBot} = createAutomaGame({venusNextExtension: true, coloniesExtension: true});
+    const corporateCompetition = marsBot.bonusDeck.findAndRemove(BonusCardId.B08_CORPORATE_COMPETITION)!;
+    const invasiveSpecies = marsBot.bonusDeck.findAndRemove(BonusCardId.B02_INVASIVE_SPECIES)!;
+    marsBot.addBonusCardToBottomOfBonusDeck(BonusCardId.B30_INTERFACE_HYPERLINK);
+    marsBot.bonusDeck.discard(marsBot.bonusDeck.drawPile.pop()!, new Tardigrades());
+    marsBot.bonusDeck.drawPile.push(new Asteroid(), invasiveSpecies);
+    // MarsBot has no M€ for Corporate Competition, so it draws another bonus card
+    marsBot.actionDeck = [corporateCompetition];
+    const serialized = game.serialize();
+    const state = serialized.automaState!;
+    delete (state as Partial<SerializedAutomaState>).bonusDeck;
+    state.bonusDeckDrawPile = marsBot.bonusDeck.drawPile.map((c) => c.id ?? c.name);
+    state.bonusDeckDiscardPile = marsBot.bonusDeck.discardPile.map((c) => c.id ?? c.name);
+
+    const restored = Game.deserialize(serialized).automaHooks!.marsBot;
+
+    expect(restored.bonusDeck.drawPile).deep.eq(marsBot.bonusDeck.drawPile);
+    expect(restored.bonusDeck.discardPile).deep.eq(marsBot.bonusDeck.discardPile);
+
+    restored.takeTurn();
+
+    expect(restored.bonusDeck.drawPile.at(-1)?.name).eq(CardName.ASTEROID);
+    expect(restored.bonusDeck.discardPile.slice(-2).map((c) => c.id)).deep.eq([BonusCardId.B02_INVASIVE_SPECIES, BonusCardId.B08_CORPORATE_COMPETITION]);
   });
 
   it('lets the player add a microbe to the microbe card they play against Splice', () => {

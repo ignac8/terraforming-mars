@@ -40,6 +40,12 @@ const SET_ASIDE_BONUS_CARDS: ReadonlySet<BonusCardId> = new Set([
   BonusCardId.B21_PARTY_POLITICS,
 ]);
 
+/** The name of a card in an older save's bonus deck, which stores bonus cards by id. */
+function bonusDeckCardName(idOrName: string): CardName {
+  const isId = Object.values(BonusCardId).includes(idOrName as BonusCardId);
+  return isId ? createCorpBonusCard(idOrName as BonusCardId).name : idOrName as CardName;
+}
+
 /**
  * MarsBot: the automa manager. Owns the board, decks, and coordinates turns.
  *
@@ -795,8 +801,7 @@ export class MarsBot implements IMarsBot {
       goesFirst: this.goesFirst,
       difficulty: this.difficulty,
       actionDeckCardNames: this.actionDeck.map((c) => this.isProjectCard(c) ? c.name : (c as MarsBotBonusCard).id),
-      bonusDeckDrawPile: this.bonusDeck.drawPile.map((c) => c.id ?? c.name),
-      bonusDeckDiscardPile: this.bonusDeck.discardPile.map((c) => c.id ?? c.name),
+      bonusDeck: this.bonusDeck.serialize(),
       neuralInstanceSpaceId: this.neuralInstanceSpace?.id,
       playedProjectCardNames: this.playedProjectCards.map((c) => c.name),
       firstTurnCheckedGeneration: this.firstTurnCheckedGeneration,
@@ -939,16 +944,16 @@ export class MarsBot implements IMarsBot {
       this.actionDeck = this.deserializeDeckCards(state.actionDeckCardNames);
     }
 
-    // Restore bonus deck (bonus cards + project cards a corporation put there)
-    if (state.bonusDeckDrawPile !== undefined) {
-      this.bonusDeck.drawPile = this.deserializeDeckCards(state.bonusDeckDrawPile);
-    }
-    if (state.bonusDeckDiscardPile !== undefined) {
-      this.bonusDeck.discardPile = this.deserializeDeckCards(state.bonusDeckDiscardPile);
-    }
+    // Restore bonus deck (bonus cards + project cards a corporation put there). The bonus resolver
+    // holds this.bonusDeck, so the restored piles replace its own.
+    const bonusDeck = MarsBotBonusDeck.deserialize(state.bonusDeck ?? {
+      // Older saves hold the piles under their own keys, bonus cards by id
+      drawPile: (state.bonusDeckDrawPile ?? []).map(bonusDeckCardName),
+      discardPile: (state.bonusDeckDiscardPile ?? []).map(bonusDeckCardName),
+    }, this.random);
     // Older saves discarded these to the bonus deck after they resolved
-    this.bonusDeck.drawPile = this.bonusDeck.drawPile.filter((c) => !this.returnsToActionDeck(c));
-    this.bonusDeck.discardPile = this.bonusDeck.discardPile.filter((c) => !this.returnsToActionDeck(c));
+    this.bonusDeck.drawPile = bonusDeck.drawPile.filter((c) => !this.returnsToActionDeck(c));
+    this.bonusDeck.discardPile = bonusDeck.discardPile.filter((c) => !this.returnsToActionDeck(c));
 
     // Restore played project cards
     if (state.playedProjectCardNames !== undefined) {
@@ -976,7 +981,7 @@ export class MarsBot implements IMarsBot {
 
   // ---- Utilities ----
 
-  /** Rebuilds serialized deck cards: bonus cards are stored by id, project cards by name. */
+  /** Rebuilds the saved action deck: bonus cards are stored by id, project cards by name. */
   private deserializeDeckCards(names: ReadonlyArray<string>): Array<IProjectCard | MarsBotBonusCard> {
     const cards: Array<IProjectCard | MarsBotBonusCard> = [];
     for (const name of names) {

@@ -1,6 +1,7 @@
 import {CardName} from '@/common/cards/CardName';
 import {BonusCardId} from '../../common/automa/AutomaTypes';
 import {IProjectCard} from '../cards/IProjectCard';
+import {newProjectCard} from '../createCard';
 
 export type MarsBotBonusCard = {
   readonly id: BonusCardId;
@@ -72,12 +73,13 @@ const BONUS_CARD_NAMES: Map<BonusCardId, CardName> = new Map([
   [BonusCardId.B32_INVESTORS, CardName.AUTOMA_INVESTORS],
 ]);
 
-/** Restore bonus cards from their serialized names. */
-export function marsBotBonusCardsFromJSON(names: ReadonlyArray<CardName>): Array<MarsBotBonusCard> {
-  const byName = new Map(createBaseBonusCards().map((card) => [card.name, card]));
-  const cards: Array<MarsBotBonusCard> = [];
+/** Restore bonus deck cards from their serialized names: bonus cards, and project cards a corporation put there. */
+export function marsBotBonusCardsFromJSON(names: ReadonlyArray<CardName>): Array<MarsBotBonusDeckCard> {
+  const byName = new Map(Array.from(BONUS_CARD_NAMES, ([id, name]) => [name, id]));
+  const cards: Array<MarsBotBonusDeckCard> = [];
   for (const name of names) {
-    const card = byName.get(name);
+    const id = byName.get(name);
+    const card = id !== undefined ? bonusCard(id, name) : newProjectCard(name);
     if (card !== undefined) {
       cards.push(card);
     } else {
