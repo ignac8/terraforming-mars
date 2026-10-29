@@ -1,5 +1,6 @@
 <template>
   <div id="spectator-home" :class="(game.turmoil ? 'with-turmoil': '')">
+    <TopBar v-if="activePlayer !== undefined" :playerView="spectator" :player="activePlayer" />
 
     <div v-if="game.phase === 'end'">
       <div class="player_home_block">
@@ -68,6 +69,8 @@ import {defineComponent} from 'vue';
 
 import {GameModel} from '@/common/models/GameModel';
 import {SpectatorModel} from '@/common/models/SpectatorModel';
+import {PublicPlayerModel} from '@/common/models/PlayerModel';
+import TopBar from '@/client/components/TopBar.vue';
 import Colony from '@/client/components/colonies/Colony.vue';
 import DynamicTitle from '@/client/components/common/DynamicTitle.vue';
 import GameBoardView from '@/client/components/GameBoardView.vue';
@@ -98,6 +101,10 @@ export default defineComponent({
     game(): GameModel {
       return this.spectator.game;
     },
+    /** The top bar follows whoever is taking their turn. */
+    activePlayer(): PublicPlayerModel | undefined {
+      return this.spectator.players.find((p) => p.isActive);
+    },
   },
   components: {
     Colony,
@@ -108,6 +115,7 @@ export default defineComponent({
     PlayersOverview,
     PurgeWarning,
     Sidebar,
+    TopBar,
     WaitingFor,
   },
   methods: {

@@ -4,6 +4,7 @@ import {globalConfig} from './getLocalVue';
 import SpectatorHome from '@/client/components/SpectatorHome.vue';
 import PurgeWarning from '@/client/components/common/PurgeWarning.vue';
 import WaitingFor from '@/client/components/WaitingFor.vue';
+import TopBar from '@/client/components/TopBar.vue';
 import {fakeGameModel, fakePublicPlayerModel} from './testHelpers';
 
 describe('SpectatorHome', () => {
@@ -30,6 +31,19 @@ describe('SpectatorHome', () => {
       },
     });
     expect(wrapper.exists()).to.be.true;
+  });
+
+  it('pins the active player in the top bar', () => {
+    const red = fakePublicPlayerModel({color: 'red'});
+    const blue = fakePublicPlayerModel({color: 'blue', isActive: true});
+    const spectator = {game: fakeGameModel(), players: [red, blue], id: 's-spectator-id', thisPlayer: undefined, runId: 'run-id', color: 'neutral'};
+    const wrapper = shallowMount(SpectatorHome, {
+      ...globalConfig,
+      parentComponent: {methods: {getVisibilityState: () => true, setVisibilityState: () => {}}} as any,
+      props: {spectator: spectator as any},
+    });
+
+    expect(wrapper.findComponent(TopBar).props('player')?.color).eq('blue');
   });
 
   it('renders no WaitingFor when replaying', () => {
