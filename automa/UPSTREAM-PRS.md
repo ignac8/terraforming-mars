@@ -37,6 +37,29 @@ plus a `game` reference installed at load), and card hooks take the real
 | [#8647](https://github.com/terraforming-mars/terraforming-mars/pull/8647) | `marsbot-draft-rules` | Four `MarsBotDraftResolver` fixes (opened 2026-10-29): wild tags count in the most-tags draft (3781613), event cards count their Event tag through `marsBotCardTags`, Aridor scores both tags on its track alike (our reading of B p.3, labelled so in the body), and a tag priority that protects every card discards the one with the fewest matches (3398289, 3781613). One test each, each failing without its fix | Resolver and spec are identical; automa's `MarsBotTags.ts` also has `printedVictoryPoints` |
 | rankedTiers (PR pending) | `ranking-tiers` -> `ranked-tiers` | `rankedTiers` in `utils.ts` plus refits of the three copies of the first/second-with-friendly-ties walk: `Election`, `Revolution` and the award scoring in `calculateVictoryPoints`. Adds the missing tie-for-first and two-player tests, and a `calculateVictoryPoints.spec.ts` covering that two player games award no second place. Answers kberg's note on #8209 that this ranking exists in more than one place | Automa's award refit keeps the MarsBot player push from `automaHooks` |
 
+### Held on the fork (2026-10-29)
+
+These stay stacked on their parent branches, each with a comment saying what it waits on. The map chain sits on
+`marsbot-ma-core-v1`, and #8626 merged in a different shape (`MarsBotBoard.trackPosition` and the
+`marsBotCanClaim`/`marsBotScore` hooks instead of `marsBotTrackPosition` and the eval module), so every map gets
+rebuilt off upstream main before it goes up, and its fork PR is closed with "Moved upstream".
+
+| Fork PR | Branch (on) | Waits on | Before it goes up |
+|---------|-------------|----------|-------------------|
+| [#48](https://github.com/ignac8/terraforming-mars/pull/48) | `marsbot-turmoil` (on `marsbot-setup`) | #8625 (`game.marsBotPlayer`) | 4 commits behind `marsbot-setup` since the #8625 review; rebuild off upstream main |
+| [#49](https://github.com/ignac8/terraforming-mars/pull/49) | `marsbot-ma-hellas` (on `marsbot-ma-core-v1`) | Merged-core rebuild, #8646, #8645 | Drop its own `playedProjectCards` (#8646) and `marsBotUsesMapSet` (#8645's `marsBotMapSet`); the Rim Settler test board puts Power and Jovian on one track. Its map helpers serve #50-#57 |
+| [#50](https://github.com/ignac8/terraforming-mars/pull/50) | `marsbot-ma-elysium` (on hellas) | Rebuild, #8646 (`playedProjectCards`) | |
+| [#51](https://github.com/ignac8/terraforming-mars/pull/51) | `marsbot-ma-venus` (on elysium) | Rebuild, #49's map helpers | No upstream PR blocks it |
+| [#52](https://github.com/ignac8/terraforming-mars/pull/52) | `marsbot-ma-modular-milestones` (on venus) | Rebuild, #8646 (`playedProjectCards`) | |
+| [#53](https://github.com/ignac8/terraforming-mars/pull/53) | `marsbot-ma-modular-awards` (on modular milestones) | Rebuild, #8646 (`playedProjectCards`) | Administrator needs the events filter from automa c22369dc7 |
+| [#54](https://github.com/ignac8/terraforming-mars/pull/54) | `marsbot-ma-terra-cimmeria-nova` (on modular awards) | Rebuild, #8645 (`marsBotMapSet`), #52 (Forester) | 424e16bd9 changes human Founder scoring: own PR with a rulebook cite, or drop it |
+| [#55](https://github.com/ignac8/terraforming-mars/pull/55) | `marsbot-ma-utopia-planitia` (on terra cimmeria) | Rebuild, #8646 (`playedProjectCards`, `destroyedBonusCards`) | e30d60ecd (its own `destroyedBonusCards`) drops out |
+| [#56](https://github.com/ignac8/terraforming-mars/pull/56) | `marsbot-ma-vastitas-borealis` (on utopia planitia) | Rebuild, #8645 (`marsBotMapSet`) | |
+| [#57](https://github.com/ignac8/terraforming-mars/pull/57) | `marsbot-ma-amazonis-planitia` (on vastitas borealis) | Rebuild, #8646 (`playedProjectCards`) | |
+
+Fork #25 (HE3 log) and #29 (ocean count text) wait on no PR: they change translation keys and stay on the fork
+until we send them up. Both conflict with upstream main now and need main merged in first.
+
 ## Closed
 
 kberg closed these on 2026-09-29 without a comment; their last review rounds had gone unanswered. #8369 came
