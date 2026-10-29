@@ -517,7 +517,7 @@ describe('RewindService whole table', () => {
 
   // A two-player game, played to the research phase of the generation after next. With the draft
   // variant it plays the second generation's draft too, and stops when the third generation's draft
-  // starts: a pick logs nothing, so no drafting save but the newest is a move in the history.
+  // starts: a pick logs nothing, so its moves are silent ones.
   async function playTable(options: {draftVariant?: boolean} = {}) {
     clearReplayCache();
     db = new SnapshotDatabase();
@@ -861,6 +861,39 @@ describe('RewindService whole table', () => {
       for (const p of [player, player2]) {
         const offered = cast(restored.getPlayerById(p.id).getWaitingFor(), SelectCard).cards.map((card) => card.name);
         expect(offered, cards).deep.eq(before[draft].players.find((s) => s.id === p.id)!.draftHand);
+      }
+    }
+  });
+
+  it('lists a draft pick as a move, and asks both players again from its hands', async () => {
+    for (const cards of ['same', 'shuffle'] as const) {
+      await playTable({draftVariant: true});
+      // The third generation's first round, and one pick of the second. A rewind to the second generation's
+      // draft would replay from the first generation's saves, which this table does not make by input.
+      for (const p of [player, player2, player]) {
+        p.process({type: 'card', cards: [cast(p.getWaitingFor(), SelectCard).cards[0].name]});
+      }
+      const before = structuredClone(rows());
+      // Both players hold one drafted card of the third generation.
+      const pick = before.findIndex((save) => save.phase === Phase.DRAFTING && save.generation === 3 && save.players.every((p) => p.draftedCards.length === 1));
+      expect(pick, cards).is.greaterThan(draft);
+      expect((await movesOf(game, player.id)).find((move) => move.saveId === pick)?.silent, cards).is.true;
+
+      const warn = console.warn;
+      const warnings: Array<unknown> = [];
+      console.warn = (...args) => warnings.push(args);
+      let restored: IGame;
+      try {
+        restored = await rewindTable(game, pick, {cards, clocks: 'keep'}, vote());
+      } finally {
+        console.warn = warn;
+      }
+
+      // A warning would mean the replay did not match the recording.
+      expect(warnings, cards).deep.eq([]);
+      for (const p of [player, player2]) {
+        const offered = cast(restored.getPlayerById(p.id).getWaitingFor(), SelectCard).cards.map((card) => card.name);
+        expect(offered, cards).deep.eq(before[pick].players.find((s) => s.id === p.id)!.draftHand);
       }
     }
   });

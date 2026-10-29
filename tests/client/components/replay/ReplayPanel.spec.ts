@@ -136,6 +136,13 @@ describe('ReplayPanel', () => {
     expect(text).to.contain('Played beta');
   });
 
+  it('labels a silent move a draft pick, with the picker\'s colour', () => {
+    const rows = mountPanel({moves: [...moves, {saveId: 4, messages: [], silent: true, movers: ['red']}]}).findAll('.replay-move');
+    expect(rows[3].find('.replay-move-silent').text()).to.equal('Draft pick');
+    expect(rows[3].find('.replay-move-mover').classes()).to.contain('player_bg_color_red');
+    expect(rows[2].find('.replay-move-silent').exists()).is.false;
+  });
+
   it('clicking a move selects it', async () => {
     const wrapper = mountPanel();
     await wrapper.findAll('.replay-move')[1].trigger('click');

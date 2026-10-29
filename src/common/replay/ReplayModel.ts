@@ -9,8 +9,9 @@ import {SpectatorModel} from '../models/SpectatorModel';
  * `movers`: the colours of the players who answered to make the move, in the order of their first answer, when the
  * saves tell. A step that several players answered together, like research, is every one of theirs. Colours and not
  * ids, because a running game's public models carry no player ids.
+ * `silent`: a player answered but nothing was logged, which only a draft pick does.
  */
-export type ReplayMove = {saveId: number; messages: Array<LogMessage>; undone?: boolean; movers?: Array<Color>};
+export type ReplayMove = {saveId: number; messages: Array<LogMessage>; undone?: boolean; silent?: boolean; movers?: Array<Color>};
 
 export type ReplayViewAs = 'all' | Color;
 
