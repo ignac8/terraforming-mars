@@ -69,6 +69,10 @@ export abstract class Party {
 
       // Add NEUTRAL in the list
       playersToCheck.push('NEUTRAL');
+      // MarsBot takes no turns, but its delegates can still lead the party.
+      if (game.marsBotPlayer !== undefined) {
+        playersToCheck.push(game.marsBotPlayer);
+      }
 
       playersToCheck.some((nextPlayer) => {
         if (this.delegates.get(nextPlayer) === max) {
