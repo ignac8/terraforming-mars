@@ -196,9 +196,8 @@ export class MarsBotTilePlacer {
    */
   public findCitySpaceNextToHumanGreenery(): Space | undefined {
     const board = this.game.board;
-    const eligible = board.getAvailableSpacesForCity(this.marsBot).filter((space) =>
+    return this.findCitySpace((space) =>
       board.getAdjacentSpaces(space).some((s) => Board.isGreenerySpace(s) && Board.spaceOwnedBy(s, this.humanPlayer)));
-    return this.selectBestSpace(eligible, (space) => board.getAdjacentSpaces(space).filter(Board.isGreenerySpace).length);
   }
 
   /**
