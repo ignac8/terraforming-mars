@@ -149,20 +149,21 @@ export class MarsBot implements IMarsBot {
     boardData: ReadonlyArray<TrackDefinition>,
     public readonly difficulty: DifficultyLevel,
     private readonly random: Random,
-    /** True when a save is loaded: restoreState replaces the bonus deck, so it is built without a shuffle. */
+    /** True when a save is loaded: restoreState fills the bonus deck, so it starts empty. */
     restoring: boolean = false,
   ) {
     this.marsBotBoard = new MarsBotBoard(boardData);
     const opts = game.gameOptions;
-    const shuffle = !restoring;
-    if (opts.coloniesExtension && opts.venusNextExtension) {
-      this.bonusDeck = MarsBotBonusDeck.createWithVenusAndColonies(random, shuffle);
+    if (restoring) {
+      this.bonusDeck = new MarsBotBonusDeck([], [], random);
+    } else if (opts.coloniesExtension && opts.venusNextExtension) {
+      this.bonusDeck = MarsBotBonusDeck.createWithVenusAndColonies(random);
     } else if (opts.coloniesExtension) {
-      this.bonusDeck = MarsBotBonusDeck.createWithColonies(random, shuffle);
+      this.bonusDeck = MarsBotBonusDeck.createWithColonies(random);
     } else if (opts.venusNextExtension) {
-      this.bonusDeck = MarsBotBonusDeck.createWithVenus(random, shuffle);
+      this.bonusDeck = MarsBotBonusDeck.createWithVenus(random);
     } else {
-      this.bonusDeck = MarsBotBonusDeck.createBase(random, shuffle);
+      this.bonusDeck = MarsBotBonusDeck.createBase(random);
     }
     // C-6: the 2nd Trade Fleet starts on space 9 of the Energy track, on every map
     if (opts.coloniesExtension) {
