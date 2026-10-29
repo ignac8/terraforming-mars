@@ -116,6 +116,10 @@ export class ApiCreateGame extends Handler {
       if (gameReq.boards.length === 0) {
         throw RouteError.badRequest('Must select at least one board');
       }
+      // Game setup only adds MarsBot to a one-player game; with more it would sit there and never act.
+      if (gameReq.automa === true && gameReq.players.length > 1) {
+        throw RouteError.badRequest('MarsBot plays against one player only');
+      }
       const gameId = safeCast(generateRandomId('g'), isGameId);
       const spectatorId = safeCast(generateRandomId('s'), isSpectatorId);
       const players = gameReq.players.map((p) => {
