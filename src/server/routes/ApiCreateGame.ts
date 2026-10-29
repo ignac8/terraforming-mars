@@ -22,6 +22,7 @@ import {CEO_CARDS_DEALT_PER_PLAYER} from '../../common/constants';
 import {validateCustomMA} from '../../common/ma/CustomMA';
 import {hasNegativeEscapeVelocityOption, sanitizeEscapeVelocityOptions} from '../../common/game/escapeVelocity';
 import {MARSBOT_BOARD_NAMES} from '../../common/automa/MarsBotBoards';
+import {AutomaGameSetup} from '../automa/AutomaGameSetup';
 
 function parseQuotaConfig(struct: any): QuotaConfig {
   let {limit} = struct;
@@ -212,6 +213,16 @@ export class ApiCreateGame extends Handler {
         validateCustomMA(gameOptions.customMA, gameOptions.randomMA, gameOptions.venusNextExtension);
       } catch (e) {
         throw RouteError.badRequest(e instanceof Error ? e.message : String(e));
+      }
+      if (gameOptions.automaOption && gameOptions.customMA !== undefined) {
+        // Game setup would drop these silently and leave fewer than 5.
+        const unsupported = [
+          ...gameOptions.customMA.milestones.filter((name) => !AutomaGameSetup.supportsMilestone(name, gameOptions)),
+          ...gameOptions.customMA.awards.filter((name) => !AutomaGameSetup.supportsAward(name, gameOptions)),
+        ];
+        if (unsupported.length > 0) {
+          throw RouteError.badRequest('MarsBot can\'t play these milestones and awards: ' + unsupported.join(', '));
+        }
       }
 
       let game: IGame;

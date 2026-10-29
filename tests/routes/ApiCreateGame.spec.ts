@@ -237,6 +237,16 @@ describe('ApiCreateGame', () => {
     expect(game!.awards.map((a) => a.name)).deep.eq(customMA.awards);
   });
 
+  it('rejects custom milestones and awards MarsBot can\'t play', async () => {
+    const unplayable = {
+      milestones: ['Terraformer', 'Gardener', 'Builder', 'Mayor', 'Networker'],
+      awards: ['Banker', 'Scientist', 'Thermalist', 'Miner', 'Entrepreneur'],
+    };
+    await postConfig({...newGameConfigForTest(), automaOption: true, randomMA: RandomMAOptionType.MANUAL, customMA: unplayable});
+    expect(res.statusCode).eq(statusCode.badRequest);
+    expect(res.content).contains('MarsBot can\'t play these milestones and awards: Networker, Entrepreneur');
+  });
+
   it('rejects custom milestones and awards unless they are manual', async () => {
     await postConfig({...newGameConfigForTest(), randomMA: RandomMAOptionType.LIMITED, customMA});
     expect(res.statusCode).eq(statusCode.badRequest);
