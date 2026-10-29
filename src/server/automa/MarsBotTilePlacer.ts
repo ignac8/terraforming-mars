@@ -7,9 +7,11 @@ import {SpaceBonus} from '../../common/boards/SpaceBonus';
 import {BoardName} from '../../common/boards/BoardName';
 import {HELLAS_BONUS_OCEAN_COST, TERRA_CIMMERIA_COLONY_COST, VASTITAS_BOREALIS_NOVA_BONUS_TEMPERATURE_COST} from '../../common/constants';
 import {eligibleColoniesForMarsBot, placeColonyForMarsBot, selectRandomColony} from './colonies/MarsBotColonyPlacer';
+import {Comparator, comparing, compound, reversed} from '../../common/utils/Ordering';
 
-/** Narrows the spaces still tied after the ones before it. Never returns an empty list. */
-type Tiebreaker = (tied: ReadonlyArray<Space>) => ReadonlyArray<Space>;
+/** What one tiebreaker compares. The higher score wins. */
+type Score = (space: Space) => number;
+type Scored = {space: Space, scores: ReadonlyArray<number>};
 type TiebreakerName = 'oceans' | 'icons' | 'polarRegion' | 'southernRegion' | 'specialTiles' | 'edgeElseOceans';
 
 /**
@@ -270,8 +272,8 @@ export class MarsBotTilePlacer {
    */
   private selectBestSpace(
     spaces: ReadonlyArray<Space>,
-    primaryScore: (space: Space) => number,
-    beforeRandomScore: (space: Space) => number = () => 0,
+    primaryScore: Score,
+    beforeRandomScore: Score = () => 0,
   ): Space | undefined {
     if (spaces.length === 0) {
       return undefined;
@@ -281,41 +283,46 @@ export class MarsBotTilePlacer {
     }
 
     const extraIcons = this.extraIcons();
-    const tiebreakers = [
-      mostOf(primaryScore),
-      ...this.tiebreakerNames().map((name) => this.tiebreaker(name, extraIcons)),
-      mostOf(beforeRandomScore),
+    const keys: ReadonlyArray<Score> = [
+      primaryScore,
+      ...this.tiebreakerNames().flatMap((name) => this.tiebreaker(name, extraIcons)),
+      beforeRandomScore,
     ];
+    const scored: Array<Scored> = spaces.map((space) => ({space, scores: keys.map((key) => key(space))}));
 
-    let tied = spaces;
-    for (const tiebreaker of tiebreakers) {
-      tied = tiebreaker(tied);
-      if (tied.length === 1) {
-        return tied[0];
-      }
+    // Highest first, each score breaking the ties of the ones before it
+    const ranking: Comparator<Scored> =
+      reversed(compound(...keys.map((_, i) => comparing((s: Scored) => s.scores[i]))));
+    scored.sort(ranking);
+
+    // Find all tied for best. The sort is stable, so they stay in board order for the random tiebreak.
+    const best = scored[0];
+    const tied = scored.filter((s) => ranking(s, best) === 0);
+
+    if (tied.length === 1) {
+      return tied[0].space;
     }
 
-    return this.randomTiebreak(tied);
+    return this.randomTiebreak(tied.map((t) => t.space));
   }
 
-  private tiebreaker(name: TiebreakerName, extraIcons: ReadonlySet<ExtraIcon>): Tiebreaker {
+  /** The scores a map's tiebreaker compares, in order. */
+  private tiebreaker(name: TiebreakerName, extraIcons: ReadonlySet<ExtraIcon>): ReadonlyArray<Score> {
     const board = this.game.board;
     switch (name) {
     case 'oceans':
-      return mostOf((space) => this.adjacentOceans(space));
+      return [(space) => this.adjacentOceans(space)];
     case 'icons':
-      return mostOf((space) => this.tiebreakIcons(space, extraIcons));
+      return [(space) => this.tiebreakIcons(space, extraIcons)];
     case 'polarRegion':
-      return preferring((space) => space.y >= board.bottomRow - 1);
+      return [preferring((space) => space.y >= board.bottomRow - 1)];
     case 'southernRegion':
-      return preferring((space) => space.y >= board.bottomRow - 3);
+      return [preferring((space) => space.y >= board.bottomRow - 3)];
     case 'specialTiles':
-      return preferring((space) => board.getAdjacentSpaces(space).some(isSpecialTileSpace));
+      return [preferring((space) => board.getAdjacentSpaces(space).some(isSpecialTileSpace))];
     case 'edgeElseOceans':
-      return (tied) => {
-        const edges = tied.filter((space) => space.edge);
-        return edges.length > 0 ? edges : mostOf((space) => this.adjacentOceans(space))(tied);
-      };
+      // Any edge space beats the rest. Only when none is left do the oceans count.
+      return [preferring((space) => space.edge), (space) => space.edge ? 0 : this.adjacentOceans(space)];
     }
   }
 
@@ -456,19 +463,7 @@ export class MarsBotTilePlacer {
   }
 }
 
-/** Keeps the spaces with the highest score. */
-function mostOf(score: (space: Space) => number): Tiebreaker {
-  return (tied) => {
-    const scores = tied.map(score);
-    const best = Math.max(...scores);
-    return tied.filter((_, i) => scores[i] === best);
-  };
-}
-
-/** Keeps the spaces that satisfy `wanted`, when any do. */
-function preferring(wanted: (space: Space) => boolean): Tiebreaker {
-  return (tied) => {
-    const preferred = tied.filter(wanted);
-    return preferred.length > 0 ? preferred : tied;
-  };
+/** Puts the spaces that satisfy `wanted` ahead of the rest. */
+function preferring(wanted: (space: Space) => boolean): Score {
+  return (space) => wanted(space) ? 1 : 0;
 }
