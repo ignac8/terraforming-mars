@@ -335,6 +335,20 @@
   list-style: none;
 }
 
+// A move that logged nothing, a draft pick: the picker's colour and a label.
+.replay-move-silent {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-style: italic;
+}
+
+.replay-move-mover {
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+}
+
 @media only screen and (max-width: 767px) {
   .replay-panel {
     left: @replay-sidebar-clearance;

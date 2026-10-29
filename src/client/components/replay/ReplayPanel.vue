@@ -53,6 +53,10 @@
         <span v-if="move.undone" class="replay-undone-badge" v-i18n>undone</span>
         <ul class="replay-move-messages">
           <LogMessageComponent v-for="(message, j) in move.messages" :key="j" :message="message" :viewModel="viewModel" />
+          <li v-if="move.silent" class="replay-move-silent">
+            <span v-for="color in move.movers ?? []" :key="color" :class="['replay-move-mover', 'player_bg_color_' + color]"></span>
+            <span v-i18n>Draft pick</span>
+          </li>
         </ul>
       </li>
       <li v-if="moves.length === 0" class="replay-moves-empty" v-i18n>{{ loading ? 'Loading replay...' : 'No moves yet' }}</li>

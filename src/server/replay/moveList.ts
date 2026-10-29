@@ -32,15 +32,17 @@ function markerStart(record: RewindRecord, rewinds: ReadonlyArray<RewindRecord>)
  * where the rewind's abandoned lines end, so the rewind's marker line is its own. If that rewind
  * restored a save that an earlier rewind wrote, the earlier marker stays with it too. Abandoned
  * saves are left out, and so are saves that changed nothing a viewer can see, e.g. the two saves
- * at the end of the game, except the newest one. What is abandoned and hidden is what the active
- * rewinds abandoned and hid (see `activeRewinds`).
+ * at the end of the game, except the newest one. A save with no lines is kept when the next save
+ * recorded an answer: a draft pick logs nothing, and such a move is marked `silent`. What is
+ * abandoned and hidden is what the active rewinds abandoned and hid (see `activeRewinds`).
  *
  * With `showUndone`, the abandoned saves are listed too, in id order, each with `undone: true`, and
  * they hold the lines that were hidden, and only those, so every line is in exactly one move. An undone
  * save that a rewind wrote starts at its own marker, and a marker that still shows, because a later
  * rewind restored that save, stays with the later rewind's save. The save before a rewind's save ends
  * at the rewind's `logEnd`, where the marker starts, even though the rewind's save has a longer log.
- * An undone save with no lines of its own is left out like any other, so it is never a rewind target.
+ * An undone save with no lines of its own is left out like any other, so it is never a rewind target, unless the
+ * save after it recorded an answer, as for an undone draft pick.
  *
  * With `movers`, each move names its players: those who gave the answers recorded in the next save by id,
  * which were applied to the state of this save. The newest save has no next one, so the live game's answers stand.
@@ -58,10 +60,11 @@ export function buildMoveList(saves: ReadonlyArray<SaveEntry>, rewinds: Readonly
     const next = saves[idx + 1];
     const end = next === undefined ? log.length : (rewinds.find((r) => r.saveId === next.saveId)?.logEnd ?? next.logLength);
     const messages = log.slice(start, end).filter((_, i) => hiddenBy(start + i, active) === undone);
-    if (messages.length > 0 || next === undefined) {
-      const answered = next === undefined ? movers?.newest : next.answeredBy;
+    const answered = next === undefined ? movers?.newest : next.answeredBy;
+    const silent = messages.length === 0 && next !== undefined && (answered ?? []).length > 0;
+    if (messages.length > 0 || next === undefined || silent) {
       const colors = (answered ?? []).flatMap((id) => movers?.colors.get(id) ?? []);
-      moves.push({saveId, messages, ...(undone ? {undone} : {}), ...(colors.length === 0 ? {} : {movers: colors})});
+      moves.push({saveId, messages, ...(undone ? {undone} : {}), ...(silent ? {silent} : {}), ...(colors.length === 0 ? {} : {movers: colors})});
     }
   });
   return moves;
