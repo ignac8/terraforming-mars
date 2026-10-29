@@ -32,12 +32,6 @@ export function marsBotAwardScore(award: IAward, bot: IMarsBot): number {
   return award.marsBotScore?.(bot) ?? award.getScore(bot.player);
 }
 
-/** The position of the track `tag` advances, or 0 when no track carries the tag. */
-export function marsBotTrackPosition(bot: IMarsBot, tag: Tag): number {
-  const index = bot.marsBotBoard.tagToTrack[tag];
-  return index === undefined ? 0 : bot.marsBotBoard.tracks[index].position;
-}
-
 /** Every track position, the Venus track included when in play. */
 export function marsBotAllTrackPositions(bot: IMarsBot): Array<number> {
   return bot.marsBotBoard.tracks.map((track) => track.position);

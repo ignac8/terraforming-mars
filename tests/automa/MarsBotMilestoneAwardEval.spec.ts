@@ -1,10 +1,9 @@
 import {expect} from 'chai';
-import {marsBotCanClaimMilestone, marsBotAwardScore, marsBotTrackPosition} from '../../src/server/automa/MarsBotMilestoneAwardEval';
+import {marsBotCanClaimMilestone, marsBotAwardScore} from '../../src/server/automa/MarsBotMilestoneAwardEval';
 import {IMarsBot} from '../../src/server/automa/MarsBotCorpTypes';
 import {MarsBotBoard} from '../../src/server/automa/MarsBotBoard';
 import {MarsBotTags} from '../../src/server/automa/MarsBotTags';
 import {THARSIS_MARSBOT_BOARD} from '../../src/server/automa/boards/TharsisMarsBot';
-import {Tag} from '../../src/common/cards/Tag';
 import {testGame} from '../TestGame';
 import {Builder} from '../../src/server/milestones/Builder';
 import {Banker} from '../../src/server/awards/Banker';
@@ -63,20 +62,6 @@ describe('MarsBotMilestoneAwardEval', () => {
 
     // Banker reads M€ production for a player, and the bot's first and third tracks here.
     expect(marsBotAwardScore(new Banker(), bot)).to.eq(5);
-  });
-
-  it('marsBotTrackPosition reads the track carrying the tag', () => {
-    const {board, bot} = createBot();
-    advance(board, 4, 6);
-
-    expect(marsBotTrackPosition(bot, Tag.POWER)).to.eq(6);
-    expect(marsBotTrackPosition(bot, Tag.JOVIAN)).to.eq(6);
-  });
-
-  it('marsBotTrackPosition is 0 for a tag without a track', () => {
-    const {bot} = createBot();
-
-    expect(marsBotTrackPosition(bot, Tag.WILD)).to.eq(0);
   });
 
   it('Magnate counts only green cards in the played pile (BGG 3534424)', () => {
