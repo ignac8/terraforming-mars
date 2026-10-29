@@ -154,15 +154,6 @@ describe('ApiCreateGame', () => {
     expect(game!.gameOptions.boardName).eq(BoardName.THARSIS);
   });
 
-  it('plays against MarsBot when a page from before the rename sends automaOption', async () => {
-    await postConfig({...newGameConfigForTest(), automaOption: true, boards: [BoardName.AMAZONIS_PLANITIA, BoardName.ARABIA_TERRA]});
-    expect(res.statusCode).eq(statusCode.ok);
-    const model = JSON.parse(res.content) as SimpleGameModel;
-    const game = await scaffolding.ctx.gameLoader.getGame(model.id);
-    expect(game!.marsBotPlayer).is.not.undefined;
-    expect(game!.gameOptions.boardName).eq(BoardName.THARSIS);
-  });
-
   it('red rover solo game', async () => {
     const post = scaffolding.post(apiCreateGame, res);
     const emit = Promise.resolve().then(() => {

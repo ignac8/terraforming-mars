@@ -135,10 +135,8 @@ export class ApiCreateGame extends Handler {
         }
       }
 
-      // A page loaded before the automaOption to automa rename still sends automaOption.
-      const automa = gameReq.automa ?? gameReq.automaOption ?? false;
       let boards = gameReq.boards;
-      if (automa) {
+      if (gameReq.automa === true) {
         boards = boards.filter((name) => MARSBOT_BOARD_NAMES.includes(name));
         if (boards.length === 0) {
           boards = [BoardName.THARSIS];
@@ -151,7 +149,7 @@ export class ApiCreateGame extends Handler {
         aresExtension: gameReq.expansions.ares,
         aresHazards: true, // Not a runtime option.
         aresExtremeVariant: gameReq.aresExtremeVariant,
-        automa: automa,
+        automa: gameReq.automa ?? false,
         bannedCards: gameReq.bannedCards,
         boardName: boardName,
         ceoExtension: gameReq.expansions.ceo,
