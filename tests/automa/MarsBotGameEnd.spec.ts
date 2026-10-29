@@ -11,7 +11,7 @@ import {restoreTestDatabase, setTestDatabase} from '../testing/setup';
 import {InMemoryDatabase} from '../testing/InMemoryDatabase';
 
 function createAutomaGame(difficulty: 'easy' | 'normal' | 'hard' | 'brutal' = 'normal'): {game: IGame, human: TestPlayer, marsBot: MarsBot} {
-  const [game, human] = testGame(1, {automaOption: true, automaDifficulty: difficulty, boardName: BoardName.THARSIS});
+  const [game, human] = testGame(1, {automa: true, automaDifficulty: difficulty, boardName: BoardName.THARSIS});
   return {game, human, marsBot: game.automaHooks!.marsBot};
 }
 

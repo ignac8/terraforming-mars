@@ -33,7 +33,7 @@ export type GameOptionsModel = {
   requiresVenusTrackCompletion: boolean,
   twoCorpsVariant: boolean,
   undoOption: boolean,
-  automaOption: boolean,
+  automa: boolean,
   automaDifficulty: 'easy' | 'normal' | 'hard' | 'brutal',
   automaCorpOption: boolean,
   automaTurmoilTRReduction: 7 | 10,

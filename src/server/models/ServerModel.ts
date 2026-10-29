@@ -182,9 +182,9 @@ export class Server {
           score: milestone.getScore(player),
           claimable: milestone.canClaim(player),
         }));
-        if (game.automaHooks !== undefined) {
+        if (game.automaHooks !== undefined && game.marsBotPlayer !== undefined) {
           scores.push({
-            color: game.automaHooks.marsBotPlayer.color,
+            color: game.marsBotPlayer.color,
             score: game.automaHooks.getMarsBotMilestoneScore(milestone),
             claimable: game.automaHooks.canMarsBotClaimMilestone(milestone),
           });
@@ -215,9 +215,9 @@ export class Server {
           color: player.color,
           score: scorer.get(player),
         }));
-        if (game.automaHooks !== undefined) {
+        if (game.automaHooks !== undefined && game.marsBotPlayer !== undefined) {
           scores.push({
-            color: game.automaHooks.marsBotPlayer.color,
+            color: game.marsBotPlayer.color,
             score: game.automaHooks.getMarsBotAwardScore(award),
           });
         }
@@ -505,7 +505,7 @@ export class Server {
       requiresVenusTrackCompletion: options.requiresVenusTrackCompletion,
       twoCorpsVariant: options.twoCorpsVariant,
       undoOption: options.undoOption,
-      automaOption: options.automaOption,
+      automa: options.automa,
       automaDifficulty: options.automaDifficulty,
       automaCorpOption: options.automaCorpOption,
       automaTurmoilTRReduction: options.automaTurmoilTRReduction ?? 10,

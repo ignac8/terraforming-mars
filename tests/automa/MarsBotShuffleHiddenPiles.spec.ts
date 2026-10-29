@@ -11,7 +11,7 @@ describe('shuffleHiddenPiles in a MarsBot game', () => {
   let before: SerializedGame;
 
   beforeEach(() => {
-    const [game] = testGame(1, {automaOption: true, automaDifficulty: 'easy', boardName: BoardName.THARSIS});
+    const [game] = testGame(1, {automa: true, automaDifficulty: 'easy', boardName: BoardName.THARSIS});
     d = game.serialize();
     before = structuredClone(d);
   });

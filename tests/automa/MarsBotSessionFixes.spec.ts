@@ -28,7 +28,7 @@ import {ColonyName} from '../../src/common/colonies/ColonyName';
 
 function createAutomaGame(difficulty: 'easy' | 'normal' | 'hard' | 'brutal' = 'normal'): {game: IGame, human: TestPlayer, marsBot: MarsBot} {
   const [game, human] = testGame(1, {
-    automaOption: true,
+    automa: true,
     automaDifficulty: difficulty,
     boardName: BoardName.THARSIS,
   });
@@ -718,7 +718,7 @@ describe('MarsBotSessionFixes', () => {
     const serialized = game.serialize();
     const restored = Game.deserialize(serialized);
 
-    const restoredMarsBot = restored.automaHooks!.marsBotPlayer;
+    const restoredMarsBot = restored.marsBotPlayer!;
     expect(restored.board.getCities(restoredMarsBot).length).to.eq(1);
     expect(restored.board.getGreeneries(restoredMarsBot).length).to.eq(1);
   });
@@ -752,7 +752,7 @@ describe('MarsBotSessionFixes', () => {
 
 function createVenusAutomaGame(difficulty: 'normal' | 'hard' = 'normal'): {game: IGame, human: TestPlayer, marsBot: MarsBot} {
   const [game, human] = testGame(1, {
-    automaOption: true,
+    automa: true,
     automaDifficulty: difficulty,
     boardName: BoardName.THARSIS,
     venusNextExtension: true,
@@ -944,7 +944,7 @@ describe('MarsBotVenusNext', () => {
 
   it('floater spending: Brutal non-draft spends only 5 floaters (not 10)', () => {
     const [game] = testGame(1, {
-      automaOption: true,
+      automa: true,
       automaDifficulty: 'brutal',
       boardName: BoardName.THARSIS,
       venusNextExtension: true,
@@ -962,7 +962,7 @@ describe('MarsBotVenusNext', () => {
 
   it('floater spending: Brutal draft keeps 4th free via skipDiscard', () => {
     const [game] = testGame(1, {
-      automaOption: true,
+      automa: true,
       automaDifficulty: 'brutal',
       boardName: BoardName.THARSIS,
       venusNextExtension: true,

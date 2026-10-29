@@ -77,7 +77,7 @@ describe('CreateGameForm', () => {
     const wrapper = shallowMount(CreateGameForm, {...globalConfig});
     const vm = wrapper.vm as any;
 
-    expect(vm.automaOption).to.be.true;
+    expect(vm.automa).to.be.true;
     expect(vm.automaCorpOption).to.be.true;
     expect(vm.automaNoGenerationLimit).to.be.false;
     expect(wrapper.find('#automa-no-generation-limit-checkbox').exists()).to.be.true;
@@ -162,7 +162,7 @@ describe('CreateGameForm', () => {
     }
 
     // Solo without MarsBot hides Multiplayer Options, but the MarsBot switch stays.
-    vm.automaOption = false;
+    vm.automa = false;
     await vm.$nextTick();
     expect(stackHeadings()).to.deep.eq(['MarsBot Options']);
 
@@ -236,7 +236,7 @@ describe('CreateGameForm', () => {
     expect(isBoardDisabled(BoardName.ARABIA_TERRA)).is.true;
     expect(isBoardDisabled(BoardName.AMAZONIS_PLANITIA)).is.true;
 
-    vm.automaOption = false;
+    vm.automa = false;
     await vm.$nextTick();
     expect(isBoardDisabled(BoardName.ARABIA_TERRA)).is.false;
   });
@@ -248,10 +248,10 @@ describe('CreateGameForm', () => {
     it(`enabling automa keeps only the selected MarsBot boards ${JSON.stringify(run)}`, async () => {
       const wrapper = shallowMount(CreateGameForm, {...globalConfig});
       const vm = wrapper.vm as any;
-      vm.automaOption = false;
+      vm.automa = false;
       await vm.$nextTick();
       vm.boards = [...run.boards];
-      vm.automaOption = true;
+      vm.automa = true;
       await vm.$nextTick();
       expect(vm.boards).deep.eq(run.expected);
     });
@@ -261,7 +261,7 @@ describe('CreateGameForm', () => {
     const wrapper = shallowMount(CreateGameForm, {...globalConfig});
     const vm = wrapper.vm as any;
 
-    vm.automaOption = false;
+    vm.automa = false;
     await vm.$nextTick();
     // User turns on fan-made expansions and incompatible options while automa is off.
     vm.altVenusBoard = true;
@@ -276,7 +276,7 @@ describe('CreateGameForm', () => {
     vm.customColonies = ['Ceres'];
     vm.solarPhaseOption = true;
 
-    vm.automaOption = true;
+    vm.automa = true;
     await vm.$nextTick();
 
     // Incompatible options and fan-made expansions are forced off.
@@ -292,16 +292,16 @@ describe('CreateGameForm', () => {
     expect(vm.expansions.moon).to.be.false;
     expect(vm.expansions.ceo).to.be.false;
     // Automa does not force-enable official expansions; user's prior off-state is kept.
-    vm.automaOption = false;
+    vm.automa = false;
     await vm.$nextTick();
     vm.expansions.venus = false;
-    vm.automaOption = true;
+    vm.automa = true;
     await vm.$nextTick();
     expect(vm.expansions.venus).to.be.false;
   });
 
   // Generic guard for the whole bug class: any control that is greyed/disabled
-  // under automa AND force-set by the automaOption watcher must have a matching
+  // under automa AND force-set by the automa watcher must have a matching
   // default in defaultCreateGameModel. Since the form defaults to automa-on and
   // watchers do not fire on mount, the default state must already equal the
   // state the watcher enforces. Toggling automa off->on re-runs the watcher; if
@@ -309,14 +309,14 @@ describe('CreateGameForm', () => {
   it('default automa-on state already matches what the automa watcher enforces', async () => {
     const wrapper = shallowMount(CreateGameForm, {...globalConfig});
     const vm = wrapper.vm as any;
-    expect(vm.automaOption).to.be.true;
+    expect(vm.automa).to.be.true;
 
     const snapshot = () => JSON.parse(JSON.stringify(vm.$data));
     const defaultState = snapshot();
 
-    vm.automaOption = false;
+    vm.automa = false;
     await vm.$nextTick();
-    vm.automaOption = true;
+    vm.automa = true;
     await vm.$nextTick();
 
     expect(snapshot()).to.deep.equal(defaultState);
@@ -346,14 +346,14 @@ describe('CreateGameForm', () => {
     process.env.TM_MARSBOT_ONLY = '1';
     try {
       // Two players, MarsBot off: the saved settings must not win over the switch.
-      createGameSettingsStorage.save(createNewGameConfig({automaOption: false}));
+      createGameSettingsStorage.save(createNewGameConfig({automa: false}));
 
       const wrapper = shallowMount(CreateGameForm, {...globalConfig});
       await wrapper.vm.$nextTick();
       const vm = wrapper.vm as any;
 
       expect(vm.playersCount).eq(1);
-      expect(vm.automaOption).eq(true);
+      expect(vm.automa).eq(true);
       expect(wrapper.find('.create-game').classes()).to.include('create-game--marsbot-only');
       // Nothing to choose from: no player count, no MarsBot toggle, no first player.
       expect(wrapper.findAll('input[name="playersCount"]')).has.length(0);
@@ -367,9 +367,9 @@ describe('CreateGameForm', () => {
       expect(wrapper.find('#undo-checkbox').exists()).eq(true);
 
       // Turning MarsBot off (a loaded settings file could) is undone.
-      vm.automaOption = false;
+      vm.automa = false;
       await vm.$nextTick();
-      expect(vm.automaOption).eq(true);
+      expect(vm.automa).eq(true);
     } finally {
       if (marsBotOnly === undefined) {
         delete process.env.TM_MARSBOT_ONLY;

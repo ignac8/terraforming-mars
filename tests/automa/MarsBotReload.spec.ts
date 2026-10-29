@@ -18,7 +18,7 @@ import {loadSandboxGame} from '../../src/server/replay/sandbox';
 
 function createAutomaGame(): {game: IGame, marsBot: MarsBot} {
   const [game] = testGame(1, {
-    automaOption: true,
+    automa: true,
     automaDifficulty: 'easy',
     boardName: BoardName.THARSIS,
   });
@@ -99,6 +99,21 @@ describe('MarsBotReload', () => {
     expect(restored.automaHooks!.marsBot.player.terraformRating).to.eq(marsBot.player.terraformRating);
   });
 
+  it('plays against MarsBot in saves from before automaOption was renamed to automa', () => {
+    const {game} = createAutomaGame();
+    const serialized = game.serialize();
+    const {automa, ...gameOptions} = serialized.gameOptions;
+    serialized.gameOptions = {...gameOptions, automaOption: automa} as unknown as SerializedGame['gameOptions'];
+
+    const restored = Game.deserialize(serialized);
+
+    expect(restored.marsBotPlayer).is.not.undefined;
+    expect(restored.automaHooks).is.not.undefined;
+    expect(restored.isSoloMode()).is.false;
+    expect(restored.gameOptions.automa).is.true;
+    expect(restored.gameOptions).not.to.have.property('automaOption');
+  });
+
   it('records the bot as a global-parameter contributor when it raises parameters', () => {
     const {game, marsBot} = createAutomaGame();
     game.phase = Phase.ACTION;
@@ -134,7 +149,7 @@ describe('MarsBotReload', () => {
 
   it('saves MarsBot\'s corporation before the player\'s first action', () => {
     const [game, human] = testGame(1, {
-      automaOption: true,
+      automa: true,
       automaCorpOption: true,
       automaDifficulty: 'easy',
       boardName: BoardName.THARSIS,
@@ -238,7 +253,7 @@ describe('MarsBotReload', () => {
     ['Venus and Colonies', {venusNextExtension: true, coloniesExtension: true}],
   ] as const) {
     it(`leaves the random generator where the save left it (${label})`, () => {
-      const [game] = testGame(1, {automaOption: true, automaDifficulty: 'easy', boardName: BoardName.THARSIS, ...expansions});
+      const [game] = testGame(1, {automa: true, automaDifficulty: 'easy', boardName: BoardName.THARSIS, ...expansions});
       // Nothing is re-entered on load.
       game.phase = Phase.END;
 

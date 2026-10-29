@@ -81,6 +81,8 @@ export type NewGameConfig = {
   startingCeos: number;
   startingPreludes: number;
   customMA?: CustomMA;
+  automa?: boolean;
+  /** The old name of `automa`. A page loaded before the rename still sends it. */
   automaOption?: boolean;
   automaDifficulty?: 'easy' | 'normal' | 'hard' | 'brutal';
   automaCorpOption?: boolean;

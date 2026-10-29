@@ -21,7 +21,7 @@ import {cast} from '../../src/common/utils/utils';
 import {SelectSpace} from '../../src/server/inputs/SelectSpace';
 
 function createAutomaGame(difficulty: 'easy' | 'normal' | 'hard' | 'brutal' = 'normal'): {game: IGame, human: TestPlayer, marsBot: MarsBot} {
-  const [game, human] = testGame(1, {automaOption: true, automaDifficulty: difficulty, boardName: BoardName.THARSIS});
+  const [game, human] = testGame(1, {automa: true, automaDifficulty: difficulty, boardName: BoardName.THARSIS});
   return {game, human, marsBot: game.automaHooks!.marsBot};
 }
 
@@ -123,7 +123,7 @@ describe('MarsBot Fixes', () => {
     }
 
     it('ends the game when the three Mars parameters are maxed even though Venus is not', () => {
-      const [game, human] = testGame(1, {automaOption: true, venusNextExtension: true, boardName: BoardName.THARSIS});
+      const [game, human] = testGame(1, {automa: true, venusNextExtension: true, boardName: BoardName.THARSIS});
       terraformMars(game, human);
 
       expect(game.getVenusScaleLevel()).to.be.lessThan(MAX_VENUS_SCALE);
@@ -133,7 +133,7 @@ describe('MarsBot Fixes', () => {
 
     it('still waits for Venus when the game requires the Venus track', () => {
       const [game, human] = testGame(1, {
-        automaOption: true, venusNextExtension: true, requiresVenusTrackCompletion: true, boardName: BoardName.THARSIS,
+        automa: true, venusNextExtension: true, requiresVenusTrackCompletion: true, boardName: BoardName.THARSIS,
       });
       terraformMars(game, human);
 

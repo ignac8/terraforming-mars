@@ -164,7 +164,7 @@ export function validateNewGameConfig(config: NewGameConfig, helpers: Helpers): 
     });
   }
 
-  if (playerCount === 1 && config.expansions.corpera === false && config.automaOption !== true) {
+  if (playerCount === 1 && config.expansions.corpera === false && config.automa !== true) {
     errors.soloWithoutCorporateEra = true;
   }
 

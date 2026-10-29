@@ -14,7 +14,7 @@ function getMarsBotFromGame(game: ReturnType<typeof testGame>[0]): MarsBot {
 
 describe('MarsBot Colonies — 2nd Trade Fleet Cube (C-6, C-27)', () => {
   it('places white cube at Energy track position 9 when coloniesExtension enabled (C-6)', () => {
-    const [game] = testGame(1, {automaOption: true, coloniesExtension: true, boardName: BoardName.THARSIS});
+    const [game] = testGame(1, {automa: true, coloniesExtension: true, boardName: BoardName.THARSIS});
     const marsBot = getMarsBotFromGame(game);
 
     const energyTrackIdx = marsBot.marsBotBoard.tagToTrack[Tag.POWER];
@@ -27,7 +27,7 @@ describe('MarsBot Colonies — 2nd Trade Fleet Cube (C-6, C-27)', () => {
   });
 
   it('does NOT place trade fleet cube when coloniesExtension is disabled', () => {
-    const [game] = testGame(1, {automaOption: true, coloniesExtension: false, boardName: BoardName.THARSIS});
+    const [game] = testGame(1, {automa: true, coloniesExtension: false, boardName: BoardName.THARSIS});
     const marsBot = getMarsBotFromGame(game);
     const energyTrackIdx = marsBot.marsBotBoard.tagToTrack[Tag.POWER];
     expect(energyTrackIdx).to.not.be.undefined;
@@ -36,13 +36,13 @@ describe('MarsBot Colonies — 2nd Trade Fleet Cube (C-6, C-27)', () => {
   });
 
   it('tradeFleetCubeKey is set when coloniesExtension enabled (C-6)', () => {
-    const [game] = testGame(1, {automaOption: true, coloniesExtension: true, boardName: BoardName.THARSIS});
+    const [game] = testGame(1, {automa: true, coloniesExtension: true, boardName: BoardName.THARSIS});
     const marsBot = getMarsBotFromGame(game);
     expect(marsBot.tradeFleetCubeKey).to.eq('4:9');
   });
 
   it('follows the Energy track on Vastitas Borealis, where it also carries the City tag', () => {
-    const [game] = testGame(1, {automaOption: true, coloniesExtension: true, boardName: BoardName.VASTITAS_BOREALIS_NOVA});
+    const [game] = testGame(1, {automa: true, coloniesExtension: true, boardName: BoardName.VASTITAS_BOREALIS_NOVA});
     const marsBot = getMarsBotFromGame(game);
     const energyTrackIdx = marsBot.marsBotBoard.tagToTrack[Tag.POWER]!;
     expect(marsBot.marsBotBoard.tagToTrack[Tag.CITY]).to.eq(energyTrackIdx);
@@ -50,13 +50,13 @@ describe('MarsBot Colonies — 2nd Trade Fleet Cube (C-6, C-27)', () => {
   });
 
   it('hasSecondTradeFleet starts false', () => {
-    const [game] = testGame(1, {automaOption: true, coloniesExtension: true, boardName: BoardName.THARSIS});
+    const [game] = testGame(1, {automa: true, coloniesExtension: true, boardName: BoardName.THARSIS});
     const marsBot = getMarsBotFromGame(game);
     expect(marsBot.hasSecondTradeFleet).to.be.false;
   });
 
   it('unlocks 2nd trade fleet when Energy track reaches position 9 (C-27)', () => {
-    const [game] = testGame(1, {automaOption: true, coloniesExtension: true, boardName: BoardName.THARSIS});
+    const [game] = testGame(1, {automa: true, coloniesExtension: true, boardName: BoardName.THARSIS});
     const marsBot = getMarsBotFromGame(game);
     const energyTrackIdx = marsBot.marsBotBoard.tagToTrack[Tag.POWER]!;
     while (marsBot.marsBotBoard.tracks[energyTrackIdx].position < 9) {
@@ -66,7 +66,7 @@ describe('MarsBot Colonies — 2nd Trade Fleet Cube (C-6, C-27)', () => {
   });
 
   it('does not unlock 2nd trade fleet on Event track position 9', () => {
-    const [game] = testGame(1, {automaOption: true, coloniesExtension: true, boardName: BoardName.THARSIS});
+    const [game] = testGame(1, {automa: true, coloniesExtension: true, boardName: BoardName.THARSIS});
     const marsBot = getMarsBotFromGame(game);
     const eventTrackIdx = marsBot.marsBotBoard.tagToTrack[Tag.EVENT]!;
     while (marsBot.marsBotBoard.tracks[eventTrackIdx].position < 9) {
@@ -76,7 +76,7 @@ describe('MarsBot Colonies — 2nd Trade Fleet Cube (C-6, C-27)', () => {
   });
 
   it('still resolves the printed space: Energy 9 raises the temperature', () => {
-    const [game] = testGame(1, {automaOption: true, coloniesExtension: true, boardName: BoardName.THARSIS});
+    const [game] = testGame(1, {automa: true, coloniesExtension: true, boardName: BoardName.THARSIS});
     const marsBot = getMarsBotFromGame(game);
     marsBot.marsBotBoard.tracks[4].position = 8;
     const temperature = game.getTemperature();
@@ -88,7 +88,7 @@ describe('MarsBot Colonies — 2nd Trade Fleet Cube (C-6, C-27)', () => {
   });
 
   it('shares Energy 9 with Helion\'s white cube: the card replaces the temperature and the fleet unlocks', () => {
-    const [game] = testGame(1, {automaOption: true, coloniesExtension: true, boardName: BoardName.THARSIS});
+    const [game] = testGame(1, {automa: true, coloniesExtension: true, boardName: BoardName.THARSIS});
     const marsBot = getMarsBotFromGame(game);
     marsBot.setCorpAndSetup(getMarsBotCorp(CardName.HELION)!);
     marsBot.marsBotBoard.tracks[4].position = 8;
@@ -103,7 +103,7 @@ describe('MarsBot Colonies — 2nd Trade Fleet Cube (C-6, C-27)', () => {
   });
 
   it('keeps the Event track cube in games saved before the cube moved', () => {
-    const [game] = testGame(1, {automaOption: true, coloniesExtension: true, boardName: BoardName.THARSIS});
+    const [game] = testGame(1, {automa: true, coloniesExtension: true, boardName: BoardName.THARSIS});
     const marsBot = getMarsBotFromGame(game);
     const state = marsBot.serialize();
     state.trackCubePositions = [{trackIndex: 2, position: 9, cubeType: 'white'}];
@@ -118,7 +118,7 @@ describe('MarsBot Colonies — 2nd Trade Fleet Cube (C-6, C-27)', () => {
   });
 
   it('keeps the Event track cube of an old Helion save, where Energy 9 holds Helion\'s own cube', () => {
-    const [game] = testGame(1, {automaOption: true, coloniesExtension: true, boardName: BoardName.THARSIS});
+    const [game] = testGame(1, {automa: true, coloniesExtension: true, boardName: BoardName.THARSIS});
     const marsBot = getMarsBotFromGame(game);
     marsBot.setCorpAndSetup(getMarsBotCorp(CardName.HELION)!);
     const state = marsBot.serialize();
@@ -138,7 +138,7 @@ describe('MarsBot Colonies — 2nd Trade Fleet Cube (C-6, C-27)', () => {
   });
 
   it('keeps the Energy track cube of a save from after the move when a corporation has white cubes on Event 9', () => {
-    const [game] = testGame(1, {automaOption: true, coloniesExtension: true, boardName: BoardName.THARSIS});
+    const [game] = testGame(1, {automa: true, coloniesExtension: true, boardName: BoardName.THARSIS});
     const marsBot = getMarsBotFromGame(game);
     const state = marsBot.serialize();
     state.trackCubePositions = [
@@ -153,7 +153,7 @@ describe('MarsBot Colonies — 2nd Trade Fleet Cube (C-6, C-27)', () => {
   });
 
   it('keeps a new Helion game working: one shared cube on Energy 9, saved and restored', () => {
-    const [game] = testGame(1, {automaOption: true, coloniesExtension: true, boardName: BoardName.THARSIS});
+    const [game] = testGame(1, {automa: true, coloniesExtension: true, boardName: BoardName.THARSIS});
     const marsBot = getMarsBotFromGame(game);
     marsBot.setCorpAndSetup(getMarsBotCorp(CardName.HELION)!);
     const state = marsBot.serialize();
@@ -168,7 +168,7 @@ describe('MarsBot Colonies — 2nd Trade Fleet Cube (C-6, C-27)', () => {
   });
 
   it('serializes and restores the fleet cube key', () => {
-    const [game] = testGame(1, {automaOption: true, coloniesExtension: true, boardName: BoardName.THARSIS});
+    const [game] = testGame(1, {automa: true, coloniesExtension: true, boardName: BoardName.THARSIS});
     const marsBot = getMarsBotFromGame(game);
     marsBot.tradeFleetCubeKey = '2:9';
 
@@ -181,7 +181,7 @@ describe('MarsBot Colonies — 2nd Trade Fleet Cube (C-6, C-27)', () => {
   });
 
   it('does NOT unlock 2nd trade fleet without coloniesExtension', () => {
-    const [game] = testGame(1, {automaOption: true, coloniesExtension: false, boardName: BoardName.THARSIS});
+    const [game] = testGame(1, {automa: true, coloniesExtension: false, boardName: BoardName.THARSIS});
     const marsBot = getMarsBotFromGame(game);
     const energyTrackIdx = marsBot.marsBotBoard.tagToTrack[Tag.POWER]!;
     while (marsBot.marsBotBoard.tracks[energyTrackIdx].position < 9) {
@@ -191,7 +191,7 @@ describe('MarsBot Colonies — 2nd Trade Fleet Cube (C-6, C-27)', () => {
   });
 
   it('serializes and restores hasSecondTradeFleet', () => {
-    const [game] = testGame(1, {automaOption: true, coloniesExtension: true, boardName: BoardName.THARSIS});
+    const [game] = testGame(1, {automa: true, coloniesExtension: true, boardName: BoardName.THARSIS});
     const marsBot = getMarsBotFromGame(game);
     marsBot.hasSecondTradeFleet = true;
 
@@ -204,14 +204,14 @@ describe('MarsBot Colonies — 2nd Trade Fleet Cube (C-6, C-27)', () => {
   });
 
   it('does not serialize hasSecondTradeFleet when false', () => {
-    const [game] = testGame(1, {automaOption: true, coloniesExtension: true, boardName: BoardName.THARSIS});
+    const [game] = testGame(1, {automa: true, coloniesExtension: true, boardName: BoardName.THARSIS});
     const marsBot = getMarsBotFromGame(game);
     const state = marsBot.serialize();
     expect(state.hasSecondTradeFleet).to.be.undefined;
   });
 
   it('serializes trade fleet cube in trackCubePositions even without a corp', () => {
-    const [game] = testGame(1, {automaOption: true, coloniesExtension: true, boardName: BoardName.THARSIS});
+    const [game] = testGame(1, {automa: true, coloniesExtension: true, boardName: BoardName.THARSIS});
     const marsBot = getMarsBotFromGame(game);
     const state = marsBot.serialize();
     expect(state.trackCubePositions).to.not.be.undefined;

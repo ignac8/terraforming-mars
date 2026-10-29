@@ -10,9 +10,9 @@ import {MarsBotTurmoilHelper} from '../../../src/server/automa/turmoil/MarsBotTu
  * deliberately not in game.players, and seeds its delegate reserve.
  */
 function createTurmoilGame() {
-  const [game, humanPlayer] = testGame(1, {automaOption: true, turmoilExtension: true});
+  const [game, humanPlayer] = testGame(1, {automa: true, turmoilExtension: true});
   const turmoil = Turmoil.getTurmoil(game);
-  const marsBotPlayer = game.automaHooks!.marsBotPlayer;
+  const marsBotPlayer = game.marsBotPlayer!;
   const helper = new MarsBotTurmoilHelper(game);
   return {game, turmoil, humanPlayer, marsBotPlayer, helper};
 }

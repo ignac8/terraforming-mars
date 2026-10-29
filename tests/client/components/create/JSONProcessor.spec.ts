@@ -161,7 +161,7 @@ const TEMPLATE_EXPECTED: CreateGameModel = {
   startingPreludes: 4,
   preludeDraftVariant: false,
   ceosDraftVariant: false,
-  automaOption: true,
+  automa: true,
   automaDifficulty: 'normal',
   automaCorpOption: true,
   automaTurmoilTRReduction: 10,
@@ -243,6 +243,17 @@ const cases: Array<Case> = [
       escapeVelocityPenalty: 3,
       escapeVelocityPeriod: 2,
       escapeVelocityThreshold: 35,
+    },
+  },
+  {
+    description: 'settings from before automaOption was renamed to automa',
+    input: {
+      ...TEMPLATE_INPUT,
+      automaOption: false,
+    },
+    expected: {
+      ...TEMPLATE_EXPECTED,
+      automa: false,
     },
   },
   {

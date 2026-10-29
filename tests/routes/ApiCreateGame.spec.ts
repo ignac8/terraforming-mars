@@ -118,7 +118,7 @@ describe('ApiCreateGame', () => {
     for (const automaColonyVP of [true, false]) {
       const config = newGameConfigForTest();
       config.expansions.colonies = true;
-      await postConfig({...config, automaOption: true, automaColonyVP});
+      await postConfig({...config, automa: true, automaColonyVP});
       expect(res.statusCode).eq(statusCode.ok);
       const model = JSON.parse(res.content) as SimpleGameModel;
       const game = await scaffolding.ctx.gameLoader.getGame(model.id);
@@ -129,7 +129,7 @@ describe('ApiCreateGame', () => {
 
   it('passes the MarsBot final greenery option on to the game', async () => {
     for (const automaFinalGreeneryNoCorpEffects of [true, false]) {
-      await postConfig({...newGameConfigForTest(), automaOption: true, automaFinalGreeneryNoCorpEffects});
+      await postConfig({...newGameConfigForTest(), automa: true, automaFinalGreeneryNoCorpEffects});
       expect(res.statusCode).eq(statusCode.ok);
       const model = JSON.parse(res.content) as SimpleGameModel;
       const game = await scaffolding.ctx.gameLoader.getGame(model.id);
@@ -139,7 +139,7 @@ describe('ApiCreateGame', () => {
   });
 
   it('picks a MarsBot game board only from the selected boards MarsBot supports', async () => {
-    await postConfig({...newGameConfigForTest(), automaOption: true, boards: [BoardName.AMAZONIS_PLANITIA, BoardName.HELLAS, BoardName.ARABIA_TERRA]});
+    await postConfig({...newGameConfigForTest(), automa: true, boards: [BoardName.AMAZONIS_PLANITIA, BoardName.HELLAS, BoardName.ARABIA_TERRA]});
     expect(res.statusCode).eq(statusCode.ok);
     const model = JSON.parse(res.content) as SimpleGameModel;
     const game = await scaffolding.ctx.gameLoader.getGame(model.id);
@@ -147,10 +147,19 @@ describe('ApiCreateGame', () => {
   });
 
   it('falls back to Tharsis when no selected board supports MarsBot', async () => {
+    await postConfig({...newGameConfigForTest(), automa: true, boards: [BoardName.AMAZONIS_PLANITIA, BoardName.ARABIA_TERRA]});
+    expect(res.statusCode).eq(statusCode.ok);
+    const model = JSON.parse(res.content) as SimpleGameModel;
+    const game = await scaffolding.ctx.gameLoader.getGame(model.id);
+    expect(game!.gameOptions.boardName).eq(BoardName.THARSIS);
+  });
+
+  it('plays against MarsBot when a page from before the rename sends automaOption', async () => {
     await postConfig({...newGameConfigForTest(), automaOption: true, boards: [BoardName.AMAZONIS_PLANITIA, BoardName.ARABIA_TERRA]});
     expect(res.statusCode).eq(statusCode.ok);
     const model = JSON.parse(res.content) as SimpleGameModel;
     const game = await scaffolding.ctx.gameLoader.getGame(model.id);
+    expect(game!.marsBotPlayer).is.not.undefined;
     expect(game!.gameOptions.boardName).eq(BoardName.THARSIS);
   });
 
@@ -235,6 +244,16 @@ describe('ApiCreateGame', () => {
     const game = await scaffolding.ctx.gameLoader.getGame(model.id);
     expect(game!.milestones.map((m) => m.name)).deep.eq(customMA.milestones);
     expect(game!.awards.map((a) => a.name)).deep.eq(customMA.awards);
+  });
+
+  it('rejects custom milestones and awards MarsBot can\'t play', async () => {
+    const unplayable = {
+      milestones: ['Terraformer', 'Gardener', 'Builder', 'Mayor', 'Networker'],
+      awards: ['Banker', 'Scientist', 'Thermalist', 'Miner', 'Entrepreneur'],
+    };
+    await postConfig({...newGameConfigForTest(), automa: true, randomMA: RandomMAOptionType.MANUAL, customMA: unplayable});
+    expect(res.statusCode).eq(statusCode.badRequest);
+    expect(res.content).contains('MarsBot can\'t play these milestones and awards: Networker, Entrepreneur');
   });
 
   it('rejects custom milestones and awards unless they are manual', async () => {

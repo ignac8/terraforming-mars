@@ -64,12 +64,12 @@ describe('ServerModel', () => {
 
   it('Should show a finished game\'s player ids to everyone, except those of a solo or MarsBot game to anyone but its player', () => {
     const cases = [
-      {name: '2 players', players: 2, automaOption: false, spectatorSeesId: true},
-      {name: 'solo', players: 1, automaOption: false, spectatorSeesId: false},
-      {name: 'MarsBot', players: 1, automaOption: true, spectatorSeesId: false},
+      {name: '2 players', players: 2, automa: false, spectatorSeesId: true},
+      {name: 'solo', players: 1, automa: false, spectatorSeesId: false},
+      {name: 'MarsBot', players: 1, automa: true, spectatorSeesId: false},
     ];
-    for (const {name, players, automaOption, spectatorSeesId} of cases) {
-      [game, player] = testGame(players, {automaOption});
+    for (const {name, players, automa, spectatorSeesId} of cases) {
+      [game, player] = testGame(players, {automa});
       game.phase = Phase.END;
 
       expect(Server.getPlayerModel(player).players.map((p) => p.id), name).includes(player.id);

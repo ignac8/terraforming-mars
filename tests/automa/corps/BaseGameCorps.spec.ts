@@ -22,7 +22,7 @@ import {MAX_TEMPERATURE} from '../../../src/common/constants';
 
 function createAutomaGame(boardName: BoardName = BoardName.THARSIS): {game: IGame, human: TestPlayer, marsBot: MarsBot} {
   const [game, human] = testGame(1, {
-    automaOption: true,
+    automa: true,
     automaDifficulty: 'normal',
     boardName,
   });

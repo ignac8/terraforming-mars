@@ -9,7 +9,7 @@ import {IProjectCard} from '../../src/server/cards/IProjectCard';
 
 function createAutomaGameWithDraft(): {game: IGame, human: TestPlayer, marsBot: MarsBot} {
   const [game, human] = testGame(1, {
-    automaOption: true,
+    automa: true,
     automaDifficulty: 'normal',
     boardName: BoardName.THARSIS,
     draftVariant: true,
@@ -19,7 +19,7 @@ function createAutomaGameWithDraft(): {game: IGame, human: TestPlayer, marsBot: 
 
 function createAutomaGameNoDraft(): {game: IGame, human: TestPlayer, marsBot: MarsBot} {
   const [game, human] = testGame(1, {
-    automaOption: true,
+    automa: true,
     automaDifficulty: 'normal',
     boardName: BoardName.THARSIS,
     draftVariant: false,

@@ -113,7 +113,7 @@ manifests/registry/resolver, and the client UI (needs `GameModel.marsBot`).
 2. Copy the file from the automa branch, polish to upstream style
    (`type` not `interface`, `undefined` not `null`, relative imports, no dead code -
    trim methods whose consumers aren't upstream yet).
-3. Standalone spec: no `MarsBot`, no `automaOption` - construct directly or use a
+3. Standalone spec: no `MarsBot`, no `automa` option - construct directly or use a
    regular `testGame`.
 4. Verify: eslint on the files, `npm run build:server`, `npm run build:test`, run the spec.
 5. PR body: human tone, reference #8001, note independence/stacking.

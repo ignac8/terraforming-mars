@@ -15,7 +15,7 @@ function getMarsBot(game: ReturnType<typeof testGame>[0]): MarsBot {
 
 describe('PoseidonSetup (C-33)', () => {
   it('maybePlaceRandomColony places on one of the available tiles', () => {
-    const [game] = testGame(1, {automaOption: true, coloniesExtension: true, boardName: BoardName.THARSIS});
+    const [game] = testGame(1, {automa: true, coloniesExtension: true, boardName: BoardName.THARSIS});
     const marsBot = getMarsBot(game);
     const luna = new Luna();
     const ceres = new Ceres();
@@ -30,7 +30,7 @@ describe('PoseidonSetup (C-33)', () => {
   });
 
   it('gains 2 resources to shipping board (C-33)', () => {
-    const [game] = testGame(1, {automaOption: true, coloniesExtension: true, boardName: BoardName.THARSIS});
+    const [game] = testGame(1, {automa: true, coloniesExtension: true, boardName: BoardName.THARSIS});
     const marsBot = getMarsBot(game);
     const luna = new Luna();
     game.colonies = [luna];
@@ -45,7 +45,7 @@ describe('PoseidonSetup (C-33)', () => {
   });
 
   it('colony placement advances least-advanced track (C-33 ongoing effect)', () => {
-    const [game] = testGame(1, {automaOption: true, coloniesExtension: true, boardName: BoardName.THARSIS});
+    const [game] = testGame(1, {automa: true, coloniesExtension: true, boardName: BoardName.THARSIS});
     const marsBot = getMarsBot(game);
     const luna = new Luna();
     game.colonies = [luna];
@@ -65,7 +65,7 @@ describe('PoseidonSetup (C-33)', () => {
   });
 
   it('the player building a colony advances MarsBot\'s least-advanced track too', () => {
-    const [game, human] = testGame(1, {automaOption: true, coloniesExtension: true, boardName: BoardName.THARSIS});
+    const [game, human] = testGame(1, {automa: true, coloniesExtension: true, boardName: BoardName.THARSIS});
     const marsBot = getMarsBot(game);
     const luna = new Luna();
     game.colonies = [luna];
@@ -79,7 +79,7 @@ describe('PoseidonSetup (C-33)', () => {
   });
 
   it('fires once when MarsBot builds a colony', () => {
-    const [game] = testGame(1, {automaOption: true, coloniesExtension: true, boardName: BoardName.THARSIS});
+    const [game] = testGame(1, {automa: true, coloniesExtension: true, boardName: BoardName.THARSIS});
     const marsBot = getMarsBot(game);
     game.colonies = [new Luna()];
     let fired = 0;

@@ -24,7 +24,7 @@ import {runAllActions} from '../TestingUtils';
 import {TestPlayer} from '../TestPlayer';
 
 function createAutomaGame(options: Partial<GameOptions> = {}): {game: IGame, human: TestPlayer, marsBot: MarsBot} {
-  const [game, human] = testGame(1, {automaOption: true, boardName: BoardName.THARSIS, ...options});
+  const [game, human] = testGame(1, {automa: true, boardName: BoardName.THARSIS, ...options});
   return {game, human, marsBot: game.automaHooks!.marsBot};
 }
 

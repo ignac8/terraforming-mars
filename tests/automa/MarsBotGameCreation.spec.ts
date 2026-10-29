@@ -10,7 +10,7 @@ describe('MarsBotGameCreation', () => {
   describe('Server-side expansion gating', () => {
     it('automa game forces Venus off', () => {
       const [game] = testGame(1, {
-        automaOption: true,
+        automa: true,
         venusNextExtension: true,
         boardName: BoardName.THARSIS,
       });
@@ -20,7 +20,7 @@ describe('MarsBotGameCreation', () => {
 
     it('automa game supports Colonies (C-1)', () => {
       const [game] = testGame(1, {
-        automaOption: true,
+        automa: true,
         coloniesExtension: true,
         boardName: BoardName.THARSIS,
       });
@@ -32,7 +32,7 @@ describe('MarsBotGameCreation', () => {
     it('starts Titan, Enceladus and Miranda active on their second step (C-1)', () => {
       const customColoniesList = [ColonyName.TITAN, ColonyName.ENCELADUS, ColonyName.MIRANDA, ColonyName.LUNA, ColonyName.CERES];
       const [game] = testGame(1, {
-        automaOption: true,
+        automa: true,
         coloniesExtension: true,
         customColoniesList,
         boardName: BoardName.THARSIS,
@@ -54,7 +54,7 @@ describe('MarsBotGameCreation', () => {
 
     it('automa game supports Turmoil', () => {
       const [game] = testGame(1, {
-        automaOption: true,
+        automa: true,
         turmoilExtension: true,
         boardName: BoardName.THARSIS,
       });
@@ -64,7 +64,7 @@ describe('MarsBotGameCreation', () => {
 
     it('automa game forces Ares off', () => {
       const [game] = testGame(1, {
-        automaOption: true,
+        automa: true,
         aresExtension: true,
         boardName: BoardName.THARSIS,
       });
@@ -79,7 +79,7 @@ describe('MarsBotGameCreation', () => {
         ...game.players.flatMap((player) => player.dealtCorporationCards),
       ].map((card) => card.name);
       const [automaGame] = testGame(1, {
-        automaOption: true,
+        automa: true,
         promoCardsOption: true,
         boardName: BoardName.THARSIS,
         skipInitialCardSelection: false,
@@ -93,7 +93,7 @@ describe('MarsBotGameCreation', () => {
     // Both would ask MarsBot to choose, and nobody answers for it.
     it('automa game forces the alternate Venus board off', () => {
       const [game] = testGame(1, {
-        automaOption: true,
+        automa: true,
         venusNextExtension: true,
         altVenusBoard: true,
         boardName: BoardName.THARSIS,
@@ -103,7 +103,7 @@ describe('MarsBotGameCreation', () => {
 
     it('automa game uses the standard political agendas', () => {
       const [game] = testGame(1, {
-        automaOption: true,
+        automa: true,
         turmoilExtension: true,
         politicalAgendasExtension: 'Chairman',
         boardName: BoardName.THARSIS,
@@ -113,7 +113,7 @@ describe('MarsBotGameCreation', () => {
 
     it('automa game forces Moon off', () => {
       const [game] = testGame(1, {
-        automaOption: true,
+        automa: true,
         moonExpansion: true,
         boardName: BoardName.THARSIS,
       });
@@ -122,7 +122,7 @@ describe('MarsBotGameCreation', () => {
 
     it('automa game forces Pathfinders off', () => {
       const [game] = testGame(1, {
-        automaOption: true,
+        automa: true,
         pathfindersExpansion: true,
         boardName: BoardName.THARSIS,
       });
@@ -131,7 +131,7 @@ describe('MarsBotGameCreation', () => {
 
     it('automa game forces CEOs off', () => {
       const [game] = testGame(1, {
-        automaOption: true,
+        automa: true,
         ceoExtension: true,
         boardName: BoardName.THARSIS,
       });
@@ -140,7 +140,7 @@ describe('MarsBotGameCreation', () => {
 
     it('automa game forces Star Wars off', () => {
       const [game] = testGame(1, {
-        automaOption: true,
+        automa: true,
         starWarsExpansion: true,
         boardName: BoardName.THARSIS,
       });
@@ -149,7 +149,7 @@ describe('MarsBotGameCreation', () => {
 
     it('automa game forces Underworld off', () => {
       const [game] = testGame(1, {
-        automaOption: true,
+        automa: true,
         underworldExpansion: true,
         boardName: BoardName.THARSIS,
       });
@@ -158,7 +158,7 @@ describe('MarsBotGameCreation', () => {
 
     it('automa game allows Prelude', () => {
       const [game] = testGame(1, {
-        automaOption: true,
+        automa: true,
         preludeExtension: true,
         boardName: BoardName.THARSIS,
       });
@@ -167,7 +167,7 @@ describe('MarsBotGameCreation', () => {
 
     it('automa game allows Prelude 2', () => {
       const [game] = testGame(1, {
-        automaOption: true,
+        automa: true,
         preludeExtension: true,
         prelude2Expansion: true,
         boardName: BoardName.THARSIS,
@@ -177,7 +177,7 @@ describe('MarsBotGameCreation', () => {
 
     it('automa game allows Promo cards', () => {
       const [game] = testGame(1, {
-        automaOption: true,
+        automa: true,
         promoCardsOption: true,
         boardName: BoardName.THARSIS,
       });
@@ -186,14 +186,14 @@ describe('MarsBotGameCreation', () => {
 
     it('automa game keeps every map that has a MarsBot board', () => {
       for (const boardName of MARSBOT_BOARD_NAMES) {
-        const [game] = testGame(1, {automaOption: true, boardName});
+        const [game] = testGame(1, {automa: true, boardName});
         expect(game.gameOptions.boardName).to.eq(boardName);
       }
     });
 
     it('automa game falls back to Tharsis on a map without a MarsBot board', () => {
       const [game] = testGame(1, {
-        automaOption: true,
+        automa: true,
         boardName: BoardName.ARABIA_TERRA,
       });
       expect(game.gameOptions.boardName).to.eq(BoardName.THARSIS);

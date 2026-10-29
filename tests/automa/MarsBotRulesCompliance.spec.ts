@@ -32,7 +32,7 @@ import {Ceres} from '../../src/server/colonies/Ceres';
 import {trackCubeKey} from '../../src/server/automa/MarsBotCorpTypes';
 
 function createAutomaGame(difficulty: 'easy' | 'normal' | 'hard' | 'brutal' = 'normal'): {game: IGame, human: TestPlayer, marsBot: MarsBot} {
-  const [game, human] = testGame(1, {automaOption: true, automaDifficulty: difficulty, boardName: BoardName.THARSIS});
+  const [game, human] = testGame(1, {automa: true, automaDifficulty: difficulty, boardName: BoardName.THARSIS});
   return {game, human, marsBot: game.automaHooks!.marsBot};
 }
 
@@ -374,7 +374,7 @@ describe('MarsBot Rules Compliance', () => {
     });
 
     it('takes no more than MarsBot has when the helper itself cost M€ (colony cube, C-X3)', () => {
-      const [game, human] = testGame(1, {automaOption: true, coloniesExtension: true, boardName: BoardName.THARSIS});
+      const [game, human] = testGame(1, {automa: true, coloniesExtension: true, boardName: BoardName.THARSIS});
       const marsBot = game.automaHooks!.marsBot;
       const ceres = new Ceres();
       game.colonies = [ceres];
@@ -560,7 +560,7 @@ describe('MarsBot Rules Compliance', () => {
     });
 
     it('Forecaster in a full Corporate Competition costs nothing', () => {
-      const [game, human] = testGame(1, {automaOption: true, boardName: BoardName.TERRA_CIMMERIA_NOVA});
+      const [game, human] = testGame(1, {automa: true, boardName: BoardName.TERRA_CIMMERIA_NOVA});
       const marsBot = game.automaHooks!.marsBot;
       game.fundAward(human, game.awards.find((a) => a.name === 'Forecaster')!);
       stackDeck(game, new Mine(), new Algae());
@@ -574,7 +574,7 @@ describe('MarsBot Rules Compliance', () => {
 
     // B12: "If MarsBot has at least 5 MC" has no exception for Forecaster
     it('Forecaster in a full Corporate Competition still needs 5 M€', () => {
-      const [game, human] = testGame(1, {automaOption: true, boardName: BoardName.TERRA_CIMMERIA_NOVA});
+      const [game, human] = testGame(1, {automa: true, boardName: BoardName.TERRA_CIMMERIA_NOVA});
       const marsBot = game.automaHooks!.marsBot;
       game.fundAward(human, game.awards.find((a) => a.name === 'Forecaster')!);
       stackDeck(game, new Mine(), new Algae());
@@ -687,12 +687,12 @@ describe('MarsBot Rules Compliance', () => {
         }
       };
 
-      const [vastitas, vastitasHuman] = testGame(1, {automaOption: true, boardName: BoardName.VASTITAS_BOREALIS_NOVA});
+      const [vastitas, vastitasHuman] = testGame(1, {automa: true, boardName: BoardName.VASTITAS_BOREALIS_NOVA});
       fillAwayFromReservedOceans(vastitas, vastitasHuman);
       expect(helper(vastitas.automaHooks!.marsBot, 'Highlander')).is.false;
 
       const [modular, modularHuman] = testGame(1, {
-        automaOption: true, boardName: BoardName.VASTITAS_BOREALIS_NOVA, randomMA: RandomMAOptionType.UNLIMITED, modularMA: true,
+        automa: true, boardName: BoardName.VASTITAS_BOREALIS_NOVA, randomMA: RandomMAOptionType.UNLIMITED, modularMA: true,
       });
       fillAwayFromReservedOceans(modular, modularHuman);
       expect(helper(modular.automaHooks!.marsBot, 'Highlander')).is.true;

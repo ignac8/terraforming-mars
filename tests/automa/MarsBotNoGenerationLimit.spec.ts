@@ -8,7 +8,7 @@ import {MARSBOT_MAX_GENERATION} from '../../src/common/automa/AutomaTypes';
 import {MAX_OXYGEN_LEVEL, MAX_TEMPERATURE} from '../../src/common/constants';
 
 function createAutomaGame(automaNoGenerationLimit: boolean): {game: IGame, marsBot: MarsBot} {
-  const [game] = testGame(1, {automaOption: true, automaNoGenerationLimit, boardName: BoardName.THARSIS});
+  const [game] = testGame(1, {automa: true, automaNoGenerationLimit, boardName: BoardName.THARSIS});
   return {game, marsBot: game.automaHooks!.marsBot};
 }
 
