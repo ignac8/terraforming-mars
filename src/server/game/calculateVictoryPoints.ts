@@ -123,7 +123,7 @@ function giveAwards(player: IPlayer, builder: VictoryPointsBreakdownBuilder) {
     const award = fundedAward.award;
     const scorer = new AwardScorer(player.game, award);
     const players: Array<IPlayer> = player.game.players.slice();
-    if (player.game.marsBotPlayer !== undefined) {
+    if (player.game.automaHooks !== undefined && player.game.marsBotPlayer !== undefined) {
       players.push(player.game.marsBotPlayer);
     }
     const [first, second] = rankedTiers(players, (p) => scorer.get(p));

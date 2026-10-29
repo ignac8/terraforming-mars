@@ -15,6 +15,7 @@ import {Research} from '../../src/server/cards/base/Research';
 import {Greenhouses} from '../../src/server/cards/base/Greenhouses';
 import {Tag} from '../../src/common/cards/Tag';
 import {loadSandboxGame} from '../../src/server/replay/sandbox';
+import {Thermalist} from '../../src/server/awards/Thermalist';
 
 function createAutomaGame(): {game: IGame, marsBot: MarsBot} {
   const [game] = testGame(1, {
@@ -112,6 +113,20 @@ describe('MarsBotReload', () => {
     expect(restored.isSoloMode()).is.false;
     expect(restored.gameOptions.automa).is.true;
     expect(restored.gameOptions).not.to.have.property('automaOption');
+  });
+
+  it('awards no second place in a two player save with the automa option on', () => {
+    // Only a hand-edited settings file creates such a game: it gets a MarsBot player but no MarsBot.
+    const [game, player, player2] = testGame(2, {automa: true});
+    player.heat = 10;
+    player2.heat = 5;
+    game.fundedAwards.push({award: new Thermalist(), player});
+
+    const loaded = Game.deserialize(game.serialize());
+
+    expect(loaded.automaHooks).is.undefined;
+    expect(loaded.getPlayerById(player.id).getVictoryPoints().awards).eq(5);
+    expect(loaded.getPlayerById(player2.id).getVictoryPoints().awards).eq(0);
   });
 
   it('records the bot as a global-parameter contributor when it raises parameters', () => {
