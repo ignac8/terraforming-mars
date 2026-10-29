@@ -72,7 +72,7 @@ const SPECIAL_HEX_ICONS = 2.5;
 /**
  * Handles MarsBot tile placement with automa-specific rules and tiebreakers.
  *
- * Greenery: Adjacent to as many MarsBot cities as possible, minimize adjacency to human cities.
+ * Greenery: Adjacent to as many MarsBot cities as possible, less the human's adjacent cities.
  * City: Adjacent to as much existing greenery as possible. Standard city rules.
  * Ocean: Any ocean-reserved space.
  *
