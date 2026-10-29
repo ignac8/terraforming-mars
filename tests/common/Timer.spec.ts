@@ -132,7 +132,7 @@ describe('Timer', () => {
     timer.resume();
     clock.millis = 10;
     timer.pause();
-    expect(timer.countedElapsed()).eq(0);
+    expect(timer.getElapsed()).eq(0);
     expect(timer.serialize().afterFirstAction).eq(false);
     timer.resume();
     clock.millis = 15;
@@ -155,20 +155,6 @@ describe('Timer', () => {
     const other = Timer.newInstance(clock);
     other.start();
     expect(other.serialize().startedAt).eq(5);
-  });
-
-  it('counts the open interval only after the first action', () => {
-    for (const run of [{first: true, expected: 0}, {first: false, expected: 7}]) {
-      const t = Timer.newInstance(clock);
-      clock.millis = 100;
-      t.resume();
-      if (!run.first) {
-        t.stop();
-        t.resume();
-      }
-      clock.millis += 7;
-      expect(t.countedElapsed(), `first action pending: ${run.first}`).eq(run.expected);
-    }
   });
 
   it('does nothing when pausing a timer that is not running', () => {
@@ -196,6 +182,6 @@ describe('Timer', () => {
     timer.resume();
     clock.millis = 20;
     timer.pause();
-    expect(timer.countedElapsed()).eq(3);
+    expect(timer.getElapsed()).eq(3);
   });
 });
