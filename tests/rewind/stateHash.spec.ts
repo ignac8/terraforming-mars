@@ -31,6 +31,16 @@ describe('stateHash', () => {
     expect(sameState(a, b)).is.true;
   });
 
+  it('matches a save from before automaOption was renamed to automa', () => {
+    const [game] = testGame(1, {automa: true});
+    const a = game.serialize();
+    const b = structuredClone(a);
+    const {automa, ...gameOptions} = b.gameOptions;
+    b.gameOptions = {...gameOptions, automaOption: automa} as unknown as typeof b.gameOptions;
+    expect(stateHash(b)).eq(stateHash(a));
+    expect(sameState(a, b)).is.true;
+  });
+
   it('does not depend on key order, and notices a missing log line', () => {
     const [game] = testGame(1);
     const a = game.serialize();

@@ -56,6 +56,11 @@ export class JSONProcessor {
     initializeArrayFieldWithBackup(json_constants.OLD_CUSTOM_CORPORATIONS, json_constants.CUSTOM_CORPORATIONS);
     initializeArrayFieldWithBackup(json_constants.OLD_CUSTOM_COLONIES, json_constants.CUSTOM_COLONIES);
     initializeArrayFieldWithBackup(json_constants.OLD_BANNED_CARDS, json_constants.BANNED_CARDS);
+    // Settings saved before automaOption was renamed to automa.
+    if (json.automaOption !== undefined) {
+      json.automa ??= json.automaOption;
+      delete json.automaOption;
+    }
     const ev = json.escapeVelocity as JSONObject;
     if (ev !== undefined && typeof ev === 'object') {
       const options = sanitizeEscapeVelocityOptions(ev);

@@ -99,7 +99,7 @@ describe('ApiGame', () => {
           'soloTR': false,
           'twoCorpsVariant': false,
           'undoOption': false,
-          'automaOption': false,
+          'automa': false,
           'automaDifficulty': 'normal',
           'automaCorpOption': false,
           'automaTurmoilTRReduction': 10,
@@ -126,12 +126,12 @@ describe('ApiGame', () => {
 
   it('leaves out the player id of a finished solo or MarsBot game, which could still rewind it', async () => {
     const cases = [
-      {name: '2 players', players: 2, automaOption: false, showsIds: true},
-      {name: 'solo', players: 1, automaOption: false, showsIds: false},
-      {name: 'MarsBot', players: 1, automaOption: true, showsIds: false},
+      {name: '2 players', players: 2, automa: false, showsIds: true},
+      {name: 'solo', players: 1, automa: false, showsIds: false},
+      {name: 'MarsBot', players: 1, automa: true, showsIds: false},
     ];
-    for (const {name, players, automaOption, showsIds} of cases) {
-      const [game, player] = testGame(players, {automaOption});
+    for (const {name, players, automa, showsIds} of cases) {
+      const [game, player] = testGame(players, {automa});
       game.phase = Phase.END;
       scaffolding = new RouteTestScaffolding();
       res = new MockResponse();

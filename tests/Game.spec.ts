@@ -998,8 +998,7 @@ describe('Game', () => {
     assertIsJSON(serialized);
     const serializedKeys = Object.keys(serialized);
 
-    const unserializedFieldsInGame: Array<keyof Game | '_marsBotPlayer' | 'onSandboxSave' | 'lastWrite' | 'lastPatch'> = [
-      '_marsBotPlayer',
+    const unserializedFieldsInGame: Array<keyof Game | 'onSandboxSave' | 'lastWrite' | 'lastPatch'> = [
       'createdTime',
       'discardedColonies',
       'inDoubleDown',
@@ -1017,6 +1016,8 @@ describe('Game', () => {
       'ownSaveId',
       'lastWrite',
       'lastPatch',
+      'marsBotPlayer',
+      'allPlayers',
       'playersInGenerationOrder',
       'monsInsuranceOwner',
       'resettable',

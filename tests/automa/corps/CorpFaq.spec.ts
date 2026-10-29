@@ -16,7 +16,7 @@ import {cast} from '../../../src/common/utils/utils';
 
 // Rulebook B, p.3, corporation FAQ.
 function createAutomaGame(corpName: CardName): {game: IGame, human: TestPlayer, marsBot: MarsBot} {
-  const [game, human] = testGame(1, {automaOption: true, venusNextExtension: true, boardName: BoardName.THARSIS});
+  const [game, human] = testGame(1, {automa: true, venusNextExtension: true, boardName: BoardName.THARSIS});
   const marsBot = game.automaHooks!.marsBot;
   marsBot.setCorpAndSetup(getMarsBotCorp(corpName)!);
   return {game, human, marsBot};

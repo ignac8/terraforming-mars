@@ -71,7 +71,7 @@ export abstract class Party {
       playersToCheck.push('NEUTRAL');
 
       // MarsBot is not a game player, but its delegates can still lead the party.
-      const marsBotPlayer = game.automaHooks?.marsBotPlayer;
+      const marsBotPlayer = game.marsBotPlayer;
       if (marsBotPlayer !== undefined && this.delegates.has(marsBotPlayer)) {
         playersToCheck.push(marsBotPlayer);
       }

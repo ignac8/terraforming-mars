@@ -22,7 +22,7 @@ import {runAllActions} from '../TestingUtils';
 import {cast} from '../../src/common/utils/utils';
 
 function createAutomaGame(venusNextExtension: boolean = false): {game: Game, human: TestPlayer, marsBot: MarsBot} {
-  const [game, human] = testGame(1, {automaOption: true, venusNextExtension, boardName: BoardName.THARSIS});
+  const [game, human] = testGame(1, {automa: true, venusNextExtension, boardName: BoardName.THARSIS});
   return {game: game as Game, human, marsBot: game.automaHooks!.marsBot};
 }
 
@@ -241,7 +241,7 @@ describe('MarsBot track advances and the player\'s Saturn Systems', () => {
   });
 
   it('Traveller on Vastitas Borealis advances the Earth/Jovian row, a Jovian bump', () => {
-    const [game, human] = testGame(1, {automaOption: true, boardName: BoardName.VASTITAS_BOREALIS_NOVA});
+    const [game, human] = testGame(1, {automa: true, boardName: BoardName.VASTITAS_BOREALIS_NOVA});
     const marsBot = game.automaHooks!.marsBot;
     human.playedCards.push(new SaturnSystems());
 

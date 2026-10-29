@@ -26,7 +26,7 @@ function createTestCorp(overrides: Partial<IMarsBotCorp> & {name: CardName}): IM
 
 function createAutomaGame(difficulty: 'easy' | 'normal' | 'hard' | 'brutal' = 'normal'): {game: IGame, human: TestPlayer, marsBot: MarsBot} {
   const [game, human] = testGame(1, {
-    automaOption: true,
+    automa: true,
     automaDifficulty: difficulty,
     boardName: BoardName.THARSIS,
   });

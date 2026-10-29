@@ -149,7 +149,7 @@ export function getCandidates(gameOptions: GameOptions): [Array<MilestoneName>, 
       return false;
     }
     // Against MarsBot, deal only what the automa rules support
-    if (gameOptions.automaOption && !supportedByAutoma(name, gameOptions)) {
+    if (gameOptions.automa && !supportedByAutoma(name, gameOptions)) {
       return false;
     }
 

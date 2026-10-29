@@ -42,7 +42,7 @@ import {Traveller} from '../../src/server/awards/modular/Traveller';
 const MODULAR: Partial<GameOptions> = {randomMA: RandomMAOptionType.UNLIMITED, modularMA: true};
 
 function createGame(options: Partial<GameOptions>) {
-  const [game, human] = testGame(1, {automaOption: true, ...options});
+  const [game, human] = testGame(1, {automa: true, ...options});
   return {game, human, marsBot: game.automaHooks!.marsBot};
 }
 
@@ -333,7 +333,7 @@ describe('MarsBot map milestones and awards', () => {
   // Our reading: random milestones and awards deal only those the automa rules support
   describe('random milestones and awards', () => {
     it('leaves out the ones the automa rules do not cover', () => {
-      const [game] = testGame(1, {automaOption: true, randomMA: RandomMAOptionType.UNLIMITED, includeFanMA: true, venusNextExtension: true});
+      const [game] = testGame(1, {automa: true, randomMA: RandomMAOptionType.UNLIMITED, includeFanMA: true, venusNextExtension: true});
       const [milestones, awards] = getCandidates(game.gameOptions);
 
       expect(milestones).to.include.members(['Terraformer', 'Polar Explorer', 'Hoverlord']);
@@ -391,7 +391,7 @@ describe('MarsBot map milestones and awards', () => {
     it('still deals 5 of each, all supported', () => {
       for (const modularMA of [false, true]) {
         for (let i = 0; i < 10; i++) {
-          const [game] = testGame(1, {automaOption: true, randomMA: RandomMAOptionType.UNLIMITED, includeFanMA: true, modularMA});
+          const [game] = testGame(1, {automa: true, randomMA: RandomMAOptionType.UNLIMITED, includeFanMA: true, modularMA});
           expect(game.milestones, `modular ${modularMA}`).has.length(5);
           expect(game.awards, `modular ${modularMA}`).has.length(5);
           for (const milestone of game.milestones) {

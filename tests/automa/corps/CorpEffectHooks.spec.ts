@@ -30,7 +30,7 @@ import {
 
 function createAutomaGame(): {game: IGame, human: TestPlayer, marsBot: MarsBot} {
   const [game, human] = testGame(1, {
-    automaOption: true,
+    automa: true,
     automaDifficulty: 'normal',
     boardName: BoardName.THARSIS,
   });
@@ -133,7 +133,7 @@ describe('Corp Effect Hooks', () => {
 
   describe('C28 Aphrodite onVenusRaised', () => {
     it('gains 2 M€ for every step Venus is raised', () => {
-      const [game, human] = testGame(1, {automaOption: true, venusNextExtension: true, boardName: BoardName.THARSIS});
+      const [game, human] = testGame(1, {automa: true, venusNextExtension: true, boardName: BoardName.THARSIS});
       const marsBot = game.automaHooks!.marsBot;
       marsBot.setCorpAndSetup(getMarsBotCorp(CardName.APHRODITE)!);
       const mc = marsBot.turnResolver.megacredits;
@@ -146,7 +146,7 @@ describe('Corp Effect Hooks', () => {
     });
 
     it('gains nothing once Venus is maxed', () => {
-      const [game, human] = testGame(1, {automaOption: true, venusNextExtension: true, boardName: BoardName.THARSIS});
+      const [game, human] = testGame(1, {automa: true, venusNextExtension: true, boardName: BoardName.THARSIS});
       const marsBot = game.automaHooks!.marsBot;
       marsBot.setCorpAndSetup(getMarsBotCorp(CardName.APHRODITE)!);
       setVenusScaleLevel(game, MAX_VENUS_SCALE);
@@ -469,7 +469,7 @@ describe('Corp Effect Hooks', () => {
   // (BGG threads 3431297 and 3432237, TDaver)
   describe('C36 Pristar on a 2-step raise', () => {
     function pristarGame(venus: boolean = false) {
-      const [game] = testGame(1, {automaOption: true, venusNextExtension: venus, boardName: BoardName.THARSIS});
+      const [game] = testGame(1, {automa: true, venusNextExtension: venus, boardName: BoardName.THARSIS});
       const marsBot = game.automaHooks!.marsBot;
       marsBot.setCorpAndSetup(getMarsBotCorp(CardName.PRISTAR)!);
       marsBot.corpSpecificState.set('whiteCubeOnCard', 1);

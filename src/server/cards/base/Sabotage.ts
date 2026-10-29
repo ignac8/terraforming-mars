@@ -48,7 +48,7 @@ export class Sabotage extends Card implements IProjectCard {
     } else {
       player.opponents.forEach((target) => {
         // MarsBot pays every resource out of its M€ supply, so default to taking 7 M€ from it.
-        const eligibleForDefault = target !== player.game.automaHooks?.marsBotPlayer;
+        const eligibleForDefault = target !== player.game.marsBotPlayer;
         if (target.titanium > 0 && !target.alloysAreProtected()) {
           const amountRemoved = Math.min(3, target.titanium);
           const optionTitle = this.title(amountRemoved, 'titanium', target);

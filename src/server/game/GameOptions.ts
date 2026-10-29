@@ -56,6 +56,8 @@ export type GameOptions = {
   modularMA: boolean;
   /** Solo victory by getting TR 63 by game end */
   soloTR: boolean;
+  /** A 1 player game played against MarsBot */
+  automa: boolean;
   customCorporationsList: ReadonlyArray<CardName>;
   bannedCards: ReadonlyArray<CardName>;
   includedCards: ReadonlyArray<CardName>;
@@ -81,7 +83,6 @@ export type GameOptions = {
   keepReplacedCards: boolean;
 
   // Automa (MarsBot solo variant)
-  automaOption: boolean;
   automaDifficulty: 'easy' | 'normal' | 'hard' | 'brutal';
   automaCorpOption: boolean;
   /**
@@ -179,11 +180,11 @@ export const DEFAULT_GAME_OPTIONS: GameOptions = {
   turmoilExtension: false,
   underworldExpansion: false,
   deltaProjectExpansion: false,
+  automa: false,
   undoOption: false,
   venusNextExtension: false,
   twoCorpsVariant: false,
   keepReplacedCards: false,
-  automaOption: false,
   automaDifficulty: 'normal',
   automaCorpOption: false,
   automaTurmoilTRReduction: 10,

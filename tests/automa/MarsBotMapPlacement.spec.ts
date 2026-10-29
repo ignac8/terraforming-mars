@@ -36,7 +36,7 @@ type Setup = {
 const COSTLY_BONUSES = [SpaceBonus.OCEAN, SpaceBonus.TEMPERATURE_4MC, SpaceBonus.COLONY, SpaceBonus.DELEGATE];
 
 function setup(boardName: BoardName, options: Partial<GameOptions> = {}): Setup {
-  const [game] = testGame(1, {automaOption: true, automaDifficulty: 'normal', boardName, ...options});
+  const [game] = testGame(1, {automa: true, automaDifficulty: 'normal', boardName, ...options});
   const marsBot = (game.automaHooks as AutomaGameHooks).marsBot;
   return {game, marsBot, placer: marsBot.turnResolver.tilePlacer};
 }

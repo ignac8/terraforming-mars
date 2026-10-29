@@ -28,7 +28,7 @@ import {
 
 function createAutomaGame(): {game: IGame, human: TestPlayer, marsBot: MarsBot} {
   const [game, human] = testGame(1, {
-    automaOption: true,
+    automa: true,
     automaDifficulty: 'normal',
     boardName: BoardName.THARSIS,
   });
@@ -148,7 +148,7 @@ describe('Corp-Specific Bonus Cards (B22-B32)', () => {
 
   describe('B26 Venusian Lobby', () => {
     it('raises Venus, advances the Venus track and raises the furthest parameter', () => {
-      const [game] = testGame(1, {automaOption: true, venusNextExtension: true, boardName: BoardName.THARSIS});
+      const [game] = testGame(1, {automa: true, venusNextExtension: true, boardName: BoardName.THARSIS});
       const marsBot = game.automaHooks!.marsBot;
       marsBot['bonusResolver'].resolve(createCorpBonusCard(BonusCardId.B26_VENUSIAN_LOBBY));
       expect(game.getVenusScaleLevel()).to.eq(2);
@@ -256,7 +256,7 @@ describe('Corp-Specific Bonus Cards (B22-B32)', () => {
 
   describe('B29 Gray Eminence', () => {
     function turmoilGame() {
-      const [game] = testGame(1, {automaOption: true, turmoilExtension: true, boardName: BoardName.THARSIS});
+      const [game] = testGame(1, {automa: true, turmoilExtension: true, boardName: BoardName.THARSIS});
       const marsBot = game.automaHooks!.marsBot;
       return {game, marsBot, turmoil: game.turmoil!};
     }
@@ -435,7 +435,7 @@ describe('Corp-Specific Bonus Cards (B22-B32)', () => {
     });
 
     it('B26 Venusian Lobby takes no Failed Action', () => {
-      const [game] = testGame(1, {automaOption: true, venusNextExtension: true, boardName: BoardName.THARSIS});
+      const [game] = testGame(1, {automa: true, venusNextExtension: true, boardName: BoardName.THARSIS});
       const marsBot = game.automaHooks!.marsBot;
       maxTracks(marsBot);
       marsBot['bonusResolver'].resolve(createCorpBonusCard(BonusCardId.B26_VENUSIAN_LOBBY));

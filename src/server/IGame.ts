@@ -104,7 +104,17 @@ export interface IGame extends Logger {
   persistTableState(): Promise<boolean>;
   generation: number;
   readonly players: ReadonlyArray<IPlayer>;
-  /** All players including MarsBot (automa). Use this for targeting cards. */
+  /**
+   * MarsBot's player in an automa game, otherwise undefined.
+   *
+   * It is not in `players` because it never takes a turn.
+   */
+  readonly marsBotPlayer: IPlayer | undefined;
+  /**
+   * `players` and MarsBot's player.
+   *
+   * For anything MarsBot can own, like tiles, delegates and milestones.
+   */
   readonly allPlayers: ReadonlyArray<IPlayer>;
   readonly playersInGenerationOrder: ReadonlyArray<IPlayer>;
 

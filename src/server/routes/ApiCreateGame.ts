@@ -135,8 +135,10 @@ export class ApiCreateGame extends Handler {
         }
       }
 
+      // A page loaded before the automaOption to automa rename still sends automaOption.
+      const automa = gameReq.automa ?? gameReq.automaOption ?? false;
       let boards = gameReq.boards;
-      if (gameReq.automaOption === true) {
+      if (automa) {
         boards = boards.filter((name) => MARSBOT_BOARD_NAMES.includes(name));
         if (boards.length === 0) {
           boards = [BoardName.THARSIS];
@@ -149,6 +151,7 @@ export class ApiCreateGame extends Handler {
         aresExtension: gameReq.expansions.ares,
         aresHazards: true, // Not a runtime option.
         aresExtremeVariant: gameReq.aresExtremeVariant,
+        automa: automa,
         bannedCards: gameReq.bannedCards,
         boardName: boardName,
         ceoExtension: gameReq.expansions.ceo,
@@ -199,7 +202,6 @@ export class ApiCreateGame extends Handler {
         deltaProjectExpansion: gameReq.expansions.deltaProject,
         undoOption: gameReq.undoOption,
         venusNextExtension: gameReq.expansions.venus,
-        automaOption: gameReq.automaOption ?? false,
         automaDifficulty: gameReq.automaDifficulty ?? 'normal',
         automaCorpOption: gameReq.automaCorpOption ?? false,
         automaTurmoilTRReduction: gameReq.automaTurmoilTRReduction ?? 10,
@@ -214,7 +216,7 @@ export class ApiCreateGame extends Handler {
       } catch (e) {
         throw RouteError.badRequest(e instanceof Error ? e.message : String(e));
       }
-      if (gameOptions.automaOption && gameOptions.customMA !== undefined) {
+      if (gameOptions.automa && gameOptions.customMA !== undefined) {
         // Game setup would drop these silently and leave fewer than 5.
         const unsupported = [
           ...gameOptions.customMA.milestones.filter((name) => !AutomaGameSetup.supportsMilestone(name, gameOptions)),

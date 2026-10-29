@@ -529,7 +529,7 @@ All rules from Rulebook A (base game) and Rulebook B (corporations) are implemen
 | Award scoring | `src/server/awards/AwardScorer.ts` | Includes MarsBot track values |
 | VP calculation | `src/server/game/calculateVictoryPoints.ts` | Includes MarsBot in award comparison |
 | Tile types | `src/common/TileType.ts` | `NEURAL_INSTANCE = 44` |
-| Game options | `src/server/game/GameOptions.ts` | `automaOption`, `automaDifficulty` |
+| Game options | `src/server/game/GameOptions.ts` | `automa`, `automaDifficulty` |
 | **Corp registry** | `src/server/automa/corps/MarsBotCorpRegistry.ts` | `registerMarsBotCorp()`, `getMarsBotCorp()`, `getAllMarsBotCorps()` |
 | **Corp resolver** | `src/server/automa/corps/MarsBotCorpResolver.ts` | `selectCorp()`, `setupCorp()`, `onTrackAdvanced()`, `resolvePerGenEffect()` |
 | **Draft resolver** | `src/server/automa/corps/MarsBotDraftResolver.ts` | `pickCardForMarsBot()` with 4 priority types |

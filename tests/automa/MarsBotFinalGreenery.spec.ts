@@ -20,7 +20,7 @@ import {Space} from '../../src/server/boards/Space';
 // nothing, and nothing overflows on the Shipping Board.
 describe('MarsBot final greenery', () => {
   function setup(boardName: BoardName, options: Partial<GameOptions> = {}): {game: IGame, marsBot: MarsBot} {
-    const [game] = testGame(1, {automaOption: true, automaDifficulty: 'normal', boardName, ...options});
+    const [game] = testGame(1, {automa: true, automaDifficulty: 'normal', boardName, ...options});
     return {game, marsBot: game.automaHooks!.marsBot};
   }
 

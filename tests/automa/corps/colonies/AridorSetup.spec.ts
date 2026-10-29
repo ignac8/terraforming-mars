@@ -18,7 +18,7 @@ function getMarsBot(game: ReturnType<typeof testGame>[0]): MarsBot {
 
 describe('AridorSetup', () => {
   it('adds one colony tile to the game at setup without building a colony', () => {
-    const [game] = testGame(1, {automaOption: true, coloniesExtension: true, boardName: BoardName.THARSIS});
+    const [game] = testGame(1, {automa: true, coloniesExtension: true, boardName: BoardName.THARSIS});
     const marsBot = getMarsBot(game);
     const inPlay = game.colonies.map((c) => c.name);
     const outOfPlay = game.discardedColonies.length;
@@ -34,7 +34,7 @@ describe('AridorSetup', () => {
   });
 
   it('starts the added tile active, as C-1 starts every colony tile in a MarsBot game', () => {
-    const [game] = testGame(1, {automaOption: true, coloniesExtension: true, boardName: BoardName.THARSIS});
+    const [game] = testGame(1, {automa: true, coloniesExtension: true, boardName: BoardName.THARSIS});
     const marsBot = getMarsBot(game);
     const titan = new Titan();
     game.discardedColonies = [titan];
@@ -46,7 +46,7 @@ describe('AridorSetup', () => {
   });
 
   it('adds nothing when every colony tile is already in play', () => {
-    const [game] = testGame(1, {automaOption: true, coloniesExtension: true, boardName: BoardName.THARSIS});
+    const [game] = testGame(1, {automa: true, coloniesExtension: true, boardName: BoardName.THARSIS});
     const marsBot = getMarsBot(game);
     game.discardedColonies.length = 0;
     const inPlay = game.colonies.length;
@@ -58,7 +58,7 @@ describe('AridorSetup', () => {
   });
 
   it('maybePlaceRandomColony returns true when eligible colony exists', () => {
-    const [game] = testGame(1, {automaOption: true, coloniesExtension: true, boardName: BoardName.THARSIS});
+    const [game] = testGame(1, {automa: true, coloniesExtension: true, boardName: BoardName.THARSIS});
     const marsBot = getMarsBot(game);
     const luna = new Luna();
     game.colonies = [luna];
@@ -69,7 +69,7 @@ describe('AridorSetup', () => {
   });
 
   it('maybePlaceRandomColony returns false when no eligible colonies', () => {
-    const [game] = testGame(1, {automaOption: true, coloniesExtension: true, boardName: BoardName.THARSIS});
+    const [game] = testGame(1, {automa: true, coloniesExtension: true, boardName: BoardName.THARSIS});
     const marsBot = getMarsBot(game);
     game.colonies = []; // No colonies in game
 
@@ -78,7 +78,7 @@ describe('AridorSetup', () => {
   });
 
   it('gains 2 resources to shipping board after colony placement', () => {
-    const [game] = testGame(1, {automaOption: true, coloniesExtension: true, boardName: BoardName.THARSIS});
+    const [game] = testGame(1, {automa: true, coloniesExtension: true, boardName: BoardName.THARSIS});
     const marsBot = getMarsBot(game);
     const luna = new Luna();
     game.colonies = [luna];
@@ -102,7 +102,7 @@ describe('AridorSetup', () => {
     ];
 
     function setUp(boardName: BoardName): MarsBot {
-      const [game] = testGame(1, {automaOption: true, coloniesExtension: true, boardName});
+      const [game] = testGame(1, {automa: true, coloniesExtension: true, boardName});
       const marsBot = getMarsBot(game);
       marsBot.setCorpAndSetup(getMarsBotCorp(CardName.ARIDOR)!);
       return marsBot;

@@ -35,7 +35,7 @@ import {MAX_TEMPERATURE} from '../../../src/common/constants';
 
 function createAutomaGame(automaDifficulty: DifficultyLevel = 'normal'): {game: IGame, human: TestPlayer, marsBot: MarsBot} {
   const [game, human] = testGame(1, {
-    automaOption: true,
+    automa: true,
     automaDifficulty,
     boardName: BoardName.THARSIS,
   });
@@ -132,7 +132,7 @@ describe('Expansion MarsBot Corporations', () => {
 
   describe('C18 Arcadian Communities', () => {
     it('resolves Settlers at setup and puts one Settlers in the first action deck', () => {
-      const [game, human] = testGame(1, {automaOption: true, automaCorpOption: true, boardName: BoardName.THARSIS});
+      const [game, human] = testGame(1, {automa: true, automaCorpOption: true, boardName: BoardName.THARSIS});
       const marsBot = game.automaHooks!.marsBot;
       const corp = getMarsBotCorp(CardName.ARCADIAN_COMMUNITIES)!;
       clearMarsBotCorpRegistry();
@@ -151,7 +151,7 @@ describe('Expansion MarsBot Corporations', () => {
     });
 
     it('holds the before-action-phase box until the player has played their preludes', () => {
-      const [game, human] = testGame(1, {automaOption: true, automaCorpOption: true, preludeExtension: true, boardName: BoardName.THARSIS});
+      const [game, human] = testGame(1, {automa: true, automaCorpOption: true, preludeExtension: true, boardName: BoardName.THARSIS});
       const marsBot = game.automaHooks!.marsBot;
       const corp = getMarsBotCorp(CardName.ARCADIAN_COMMUNITIES)!;
       clearMarsBotCorpRegistry();
@@ -177,7 +177,7 @@ describe('Expansion MarsBot Corporations', () => {
     });
 
     it('resolves the before-action-phase box before the actions Head Start grants', () => {
-      const [game, human] = testGame(1, {automaOption: true, automaCorpOption: true, preludeExtension: true, boardName: BoardName.THARSIS});
+      const [game, human] = testGame(1, {automa: true, automaCorpOption: true, preludeExtension: true, boardName: BoardName.THARSIS});
       const marsBot = game.automaHooks!.marsBot;
       const corp = getMarsBotCorp(CardName.ARCADIAN_COMMUNITIES)!;
       clearMarsBotCorpRegistry();
@@ -245,7 +245,7 @@ describe('Expansion MarsBot Corporations', () => {
 
   describe('C29 Manutech', () => {
     function createVenusGame(): MarsBot {
-      const [game] = testGame(1, {automaOption: true, venusNextExtension: true, boardName: BoardName.THARSIS});
+      const [game] = testGame(1, {automa: true, venusNextExtension: true, boardName: BoardName.THARSIS});
       return game.automaHooks!.marsBot;
     }
 
@@ -759,7 +759,7 @@ describe('Expansion MarsBot Corporations', () => {
   describe('C34 Stormcraft', () => {
     function createVenusGame(draftVariant: boolean): {game: IGame, human: TestPlayer, marsBot: MarsBot} {
       const [game, human] = testGame(1, {
-        automaOption: true,
+        automa: true,
         automaDifficulty: 'normal',
         venusNextExtension: true,
         draftVariant,
@@ -832,7 +832,7 @@ describe('Expansion MarsBot Corporations', () => {
   describe('C27 Morningstar', () => {
     function createVenusAutomaGame(): {game: IGame, marsBot: MarsBot} {
       const [game] = testGame(1, {
-        automaOption: true,
+        automa: true,
         automaDifficulty: 'normal',
         venusNextExtension: true,
         boardName: BoardName.THARSIS,

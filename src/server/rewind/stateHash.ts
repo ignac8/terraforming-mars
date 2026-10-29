@@ -1,5 +1,6 @@
 import {createHash} from 'crypto';
 import {SerializedGame} from '../SerializedGame';
+import {GameOptions} from '../game/GameOptions';
 
 type Json = string | number | boolean | null | undefined | ReadonlyArray<Json> | {readonly [key: string]: Json};
 
@@ -35,7 +36,10 @@ function comparable(d: SerializedGame): string {
     ...rest
   } = d;
   const players = d.players.map(({timer: _timer, ...player}) => player);
-  return canonical({...rest, players, gameLog: gameLog.length} as unknown as Json);
+  // Hashes recorded before automaOption was renamed to automa hold the old name, so the comparison keeps it.
+  const {automa, ...options} = d.gameOptions as Partial<GameOptions> & {automaOption?: boolean};
+  const gameOptions = {...options, automaOption: automa ?? options.automaOption};
+  return canonical({...rest, gameOptions, players, gameLog: gameLog.length} as unknown as Json);
 }
 
 /** sha256 (hex) of the game's state, leaving out what legitimately differs between a live game and a replay of it. */

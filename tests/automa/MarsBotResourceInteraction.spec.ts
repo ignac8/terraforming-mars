@@ -29,7 +29,7 @@ import {addGreenery, runAllActions} from '../TestingUtils';
 import {cast} from '../../src/common/utils/utils';
 
 function createAutomaGame(): {game: IGame, human: TestPlayer, marsBot: MarsBot} {
-  const [game, human] = testGame(1, {automaOption: true, automaDifficulty: 'normal', boardName: BoardName.THARSIS});
+  const [game, human] = testGame(1, {automa: true, automaDifficulty: 'normal', boardName: BoardName.THARSIS});
   return {game, human, marsBot: game.automaHooks!.marsBot};
 }
 
@@ -314,7 +314,7 @@ describe('MarsBot Resource Interaction (rules page 4-5)', () => {
     for (const {name, action} of cards) {
       it(name, () => {
         const [game, human] = testGame(1, {
-          automaOption: true, automaDifficulty: 'normal', boardName: BoardName.THARSIS,
+          automa: true, automaDifficulty: 'normal', boardName: BoardName.THARSIS,
           venusNextExtension: true, coloniesExtension: true, turmoilExtension: true, promoCardsOption: true, prelude2Expansion: true,
         });
         const marsBot = game.automaHooks!.marsBot;

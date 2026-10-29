@@ -55,7 +55,7 @@ export class HiredRaiders extends Card implements IProjectCard {
           return undefined;
         });
         // MarsBot pays steel out of its M€ supply, so default to taking 3 M€ from it.
-        option.eligibleForDefault = target !== player.game.automaHooks?.marsBotPlayer;
+        option.eligibleForDefault = target !== player.game.marsBotPlayer;
         availableActions.options.push(option);
       }
 

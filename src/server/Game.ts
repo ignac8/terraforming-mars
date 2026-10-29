@@ -43,6 +43,7 @@ import {SerializedGame} from './SerializedGame';
 import {SpaceBonus} from '../common/boards/SpaceBonus';
 import {TileType} from '../common/TileType';
 import {Turmoil} from './turmoil/Turmoil';
+import {AutomaGameSetup} from './automa/AutomaGameSetup';
 import {RandomMAOptionType} from '../common/ma/RandomMAOptionType';
 import {AresHandler} from './ares/AresHandler';
 import {AresData} from '../common/ares/AresData';
@@ -92,7 +93,6 @@ import {IStandardProjectCard} from './cards/IStandardProjectCard';
 import {BoardName} from '../common/boards/BoardName';
 import {SpaceType} from '../common/boards/SpaceType';
 import {AutomaGameHooks} from './automa/AutomaGameHooks';
-import {AutomaGameSetup} from './automa/AutomaGameSetup';
 import {ICard} from './cards/ICard';
 import {generateGameName} from './GameName';
 import {byKey} from '@/common/utils/Ordering';
@@ -118,14 +118,8 @@ export class Game implements IGame, Logger {
   public readonly name: string;
   public readonly gameOptions: Readonly<GameOptions>;
   public readonly players: ReadonlyArray<IPlayer>;
-  private _marsBotPlayer: IPlayer | undefined;
-  public get allPlayers(): ReadonlyArray<IPlayer> {
-    const marsBotPlayer = this.automaHooks?.marsBotPlayer ?? this._marsBotPlayer;
-    if (marsBotPlayer !== undefined) {
-      return [...this.players, marsBotPlayer];
-    }
-    return this.players;
-  }
+  public readonly marsBotPlayer: IPlayer | undefined;
+  public readonly allPlayers: ReadonlyArray<IPlayer>;
   // The API makes this readonly.
   public playersInGenerationOrder: ReadonlyArray<IPlayer> = [];
 
@@ -249,6 +243,7 @@ export class Game implements IGame, Logger {
     id: GameId,
     name: string,
     players: Array<IPlayer>,
+    marsBotPlayer: IPlayer | undefined,
     first: IPlayer,
     activePlayer: PlayerId,
     spectatorId: SpectatorId,
@@ -259,13 +254,14 @@ export class Game implements IGame, Logger {
     corporationDeck: CorporationDeck,
     preludeDeck: PreludeDeck,
     ceoDeck: CeoDeck,
-    tags: ReadonlyArray<Tag>,
-    marsBotPlayer?: IPlayer) {
+    tags: ReadonlyArray<Tag>) {
     this.id = id;
     this.name = name;
     this.gameOptions = {...gameOptions};
     this.players = players;
-    this._marsBotPlayer = marsBotPlayer;
+    // Set before the active player is looked up, since MarsBot can be the active player.
+    this.marsBotPlayer = marsBotPlayer;
+    this.allPlayers = marsBotPlayer === undefined ? players : [...players, marsBotPlayer];
     const playerIds = players.map(toID);
     const allPlayerIds = this.allPlayers.map(toID);
     if (playerIds.includes(first.id) === false) {
@@ -300,6 +296,7 @@ export class Game implements IGame, Logger {
         this.monsInsuranceOwner = player;
       }
     });
+    this.marsBotPlayer?.setup(this);
 
     this.tags = tags;
     this.globalParameterTracks = getGlobalParameterTracks(gameOptions.boardName);
@@ -342,7 +339,7 @@ export class Game implements IGame, Logger {
       };
     }
     const gameOptions = {...DEFAULT_GAME_OPTIONS, ...partialOptions};
-    if (gameOptions.automaOption) {
+    if (gameOptions.automa) {
       AutomaGameSetup.sanitizeGameOptions(gameOptions);
     }
     if (gameOptions.clonedGamedId !== undefined) {
@@ -363,14 +360,14 @@ export class Game implements IGame, Logger {
     projectDeck.shuffle();
 
     let corporationCards = gameCards.getCorporationCards();
-    if (gameOptions.automaOption) {
+    if (gameOptions.automa) {
       corporationCards = AutomaGameSetup.filterCorporationCards(corporationCards);
     }
     const corporationDeck = new CorporationDeck(corporationCards, [], rng);
     corporationDeck.shuffle();
 
     let preludeCards = gameCards.getPreludeCards();
-    if (gameOptions.automaOption) {
+    if (gameOptions.automa) {
       preludeCards = AutomaGameSetup.filterPreludeCards(preludeCards, gameOptions);
     }
     const preludeDeck = new PreludeDeck(preludeCards, [], rng);
@@ -390,7 +387,7 @@ export class Game implements IGame, Logger {
       }
     }
 
-    if (players.length === 1 && !gameOptions.automaOption) {
+    if (players.length === 1 && !gameOptions.automa) {
       gameOptions.draftVariant = false;
       gameOptions.initialDraftVariant = false;
       gameOptions.preludeDraftVariant = false;
@@ -402,7 +399,8 @@ export class Game implements IGame, Logger {
     }
 
     const name = generateGameName(UnseededRandom.INSTANCE);
-    const game = new Game(id, name, players, firstPlayer, activePlayer, spectatorId, gameOptions, rng, board, projectDeck, corporationDeck, preludeDeck, ceoDeck, Array.from(tags));
+    const marsBotPlayer = gameOptions.automa ? AutomaGameSetup.createMarsBotPlayer(id) : undefined;
+    const game = new Game(id, name, players, marsBotPlayer, firstPlayer, activePlayer, spectatorId, gameOptions, rng, board, projectDeck, corporationDeck, preludeDeck, ceoDeck, Array.from(tags));
     // This evaluation of created time doesn't match what's stored in the database, but that's fine.
     game.createdTime = new Date();
     // Initialize Ares data
@@ -413,7 +411,7 @@ export class Game implements IGame, Logger {
     const {milestones, awards} = chooseMilestonesAndAwards(gameOptions);
     game.milestones = milestones.map(milestoneManifest.createOrThrow);
     game.awards = awards.map(awardManifest.createOrThrow);
-    if (gameOptions.automaOption) {
+    if (gameOptions.automa) {
       game.milestones = AutomaGameSetup.filterMilestones(game.milestones, gameOptions);
       game.awards = AutomaGameSetup.filterAwards(game.awards, gameOptions);
     }
@@ -422,7 +420,7 @@ export class Game implements IGame, Logger {
     if (gameOptions.coloniesExtension) {
       const colonyDealer = new ColonyDealer(rng, gameOptions);
       // Automa games are set up as 2-player (C-1): draw 5 colonies instead of 4
-      colonyDealer.drawColonies(gameOptions.automaOption ? 2 : players.length);
+      colonyDealer.drawColonies(gameOptions.automa ? 2 : players.length);
       game.colonies = colonyDealer.colonies;
       game.discardedColonies = colonyDealer.discardedColonies;
     }
@@ -437,10 +435,13 @@ export class Game implements IGame, Logger {
       game.underworldData = UnderworldExpansion.initialize(rng, gameOptions.boardName === BoardName.AMAZONIS_PLANITIA);
     }
 
-    if (players.length === 1 && gameOptions.automaOption) {
-      game.automaHooks = AutomaGameSetup.setup(game, players[0], gameOptions, game.rng);
-    } else if (players.length === 1) {
-      GameSetup.setupNeutralPlayer(game);
+    if (players.length === 1) {
+      if (marsBotPlayer !== undefined) {
+        game.automaHooks = AutomaGameSetup.setup(game, marsBotPlayer, players[0], gameOptions, game.rng, false);
+      } else {
+        //  Setup solo player's starting tiles
+        GameSetup.setupNeutralPlayer(game);
+      }
     }
 
     // Setup Ares hazards
@@ -708,10 +709,7 @@ export class Game implements IGame, Logger {
   }
 
   public isSoloMode() :boolean {
-    if (this.automaHooks !== undefined) {
-      return false;
-    }
-    return this.players.length === 1;
+    return this.players.length === 1 && !this.gameOptions.automa;
   }
 
   // Function to retrieve a player by it's id
@@ -929,7 +927,7 @@ export class Game implements IGame, Logger {
       }
     }
     // Skip solo-mode colony penalty for automa games (automa uses 2-player setup, C-1)
-    if (this.players.length === 1 && this.gameOptions.coloniesExtension && !this.gameOptions.automaOption) {
+    if (this.players.length === 1 && this.gameOptions.coloniesExtension && !this.gameOptions.automa) {
       this.players[0].production.add(Resource.MEGACREDITS, -2);
       this.defer(new RemoveColonyFromGame(this.players[0]));
     }
@@ -1943,24 +1941,24 @@ export class Game implements IGame, Logger {
   public static deserialize(d: SerializedGame, options: DeserializeOptions = {}): Game {
     const gameOptions = d.gameOptions;
     gameOptions.boardName = normalizeBoardName(gameOptions.boardName);
+    // Saves from before the automaOption option was renamed to automa.
+    const renamed: Partial<GameOptions> & {automaOption?: boolean} = gameOptions;
+    if (renamed.automaOption !== undefined) {
+      renamed.automa ??= renamed.automaOption;
+      delete renamed.automaOption;
+    }
     if (gameOptions.escapeVelocity !== undefined) {
       gameOptions.escapeVelocity = sanitizeEscapeVelocityOptions(gameOptions.escapeVelocity);
     }
     const players = d.players.map((element) => Player.deserialize(element));
+    // MarsBot isn't serialized with the players, so it is recreated from the game id.
+    const marsBotPlayer = gameOptions.automa ? AutomaGameSetup.createMarsBotPlayer(d.id) : undefined;
     const first = players.find((player) => player.id === d.first);
     if (first === undefined) {
       throw new Error(`Player ${d.first} not found when rebuilding First Player`);
     }
 
-    // Create MarsBot player before the board and Turmoil are read back, since both resolve
-    // owners by player id and MarsBot is not one of d.players.
-    let marsBotPlayer: IPlayer | undefined;
-    if (d.automaState !== undefined && gameOptions.automaOption) {
-      marsBotPlayer = AutomaGameSetup.createMarsBotPlayer(d.id);
-    }
-
-    const playersWithMarsBot = marsBotPlayer !== undefined ? [...players, marsBotPlayer] : players;
-    const board = GameSetup.deserializeBoard(playersWithMarsBot, gameOptions, d);
+    const board = GameSetup.deserializeBoard(marsBotPlayer === undefined ? players : [...players, marsBotPlayer], gameOptions, d);
 
     const rng = new SeededRandom(d.seed, d.currentSeed);
 
@@ -1970,7 +1968,7 @@ export class Game implements IGame, Logger {
 
     const ceoDeck = CeoDeck.deserialize(d.ceoDeck, rng);
 
-    const game = new Game(d.id, d.name, players, first, d.activePlayer, d.spectatorId, gameOptions, rng, board, projectDeck, corporationDeck, preludeDeck, ceoDeck, d.tags, marsBotPlayer);
+    const game = new Game(d.id, d.name, players, marsBotPlayer, first, d.activePlayer, d.spectatorId, gameOptions, rng, board, projectDeck, corporationDeck, preludeDeck, ceoDeck, d.tags);
     game.isSandbox = options.sandbox === true;
     game.onSandboxSave = options.onSave;
     game.resettable = true;
@@ -2014,7 +2012,7 @@ export class Game implements IGame, Logger {
 
     // Reload turmoil elements if needed
     if (d.turmoil && gameOptions.turmoilExtension) {
-      game.turmoil = Turmoil.deserialize(d.turmoil, playersWithMarsBot);
+      game.turmoil = Turmoil.deserialize(d.turmoil, game.allPlayers);
     }
 
     // Reload moon elements if needed
@@ -2055,8 +2053,8 @@ export class Game implements IGame, Logger {
     game.venusScaleLevel = d.venusScaleLevel;
 
     // Restore automa with pre-created player, then set real activePlayer
-    if (d.automaState !== undefined && gameOptions.automaOption && marsBotPlayer !== undefined) {
-      game.automaHooks = AutomaGameSetup.setup(game, players[0], gameOptions, rng, marsBotPlayer);
+    if (d.automaState !== undefined && marsBotPlayer !== undefined) {
+      game.automaHooks = AutomaGameSetup.setup(game, marsBotPlayer, players[0], gameOptions, rng, true);
       game.automaHooks.restoreState(d.automaState);
     }
 

@@ -48,7 +48,7 @@ describe('Rewinding a MarsBot game', () => {
     clearReplayCache();
     db = new SnapshotDatabase();
     setTestDatabase(db);
-    [game, player] = testGame(1, {undoOption: true, automaOption: true, automaDifficulty: 'easy', boardName: BoardName.THARSIS, draftVariant: true});
+    [game, player] = testGame(1, {undoOption: true, automa: true, automaDifficulty: 'easy', boardName: BoardName.THARSIS, draftVariant: true});
     await GameLoader.getInstance().add(game);
     player.heat = 40;
     player.takeAction();

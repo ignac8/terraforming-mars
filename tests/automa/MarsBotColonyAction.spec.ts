@@ -16,12 +16,12 @@ const COLONY_SPACE = 5;
 
 describe('MarsBot colony track action (Utopia Planitia)', () => {
   it('sits on space 5 of the Space track', () => {
-    const [game] = testGame(1, {automaOption: true, boardName: BoardName.UTOPIA_PLANITIA});
+    const [game] = testGame(1, {automa: true, boardName: BoardName.UTOPIA_PLANITIA});
     expect(getMarsBot(game).marsBotBoard.tracks[SPACE_TRACK].definition.layout[COLONY_SPACE]).eq('colony');
   });
 
   it('builds a colony and gains 2 resources into its storage area', () => {
-    const [game] = testGame(1, {automaOption: true, coloniesExtension: true, boardName: BoardName.UTOPIA_PLANITIA});
+    const [game] = testGame(1, {automa: true, coloniesExtension: true, boardName: BoardName.UTOPIA_PLANITIA});
     const marsBot = getMarsBot(game);
     const luna = new Luna();
     game.colonies = [luna];
@@ -34,7 +34,7 @@ describe('MarsBot colony track action (Utopia Planitia)', () => {
   });
 
   it('is a Failed Action when no colony tile can take it', () => {
-    const [game] = testGame(1, {automaOption: true, coloniesExtension: true, boardName: BoardName.UTOPIA_PLANITIA});
+    const [game] = testGame(1, {automa: true, coloniesExtension: true, boardName: BoardName.UTOPIA_PLANITIA});
     const marsBot = getMarsBot(game);
     game.colonies = [];
     marsBot.marsBotBoard.tracks[SPACE_TRACK].position = COLONY_SPACE - 1;
@@ -46,7 +46,7 @@ describe('MarsBot colony track action (Utopia Planitia)', () => {
   });
 
   it('does nothing without Colonies', () => {
-    const [game] = testGame(1, {automaOption: true, coloniesExtension: false, boardName: BoardName.UTOPIA_PLANITIA});
+    const [game] = testGame(1, {automa: true, coloniesExtension: false, boardName: BoardName.UTOPIA_PLANITIA});
     const marsBot = getMarsBot(game);
     marsBot.marsBotBoard.tracks[SPACE_TRACK].position = COLONY_SPACE - 1;
     const mc = marsBot.turnResolver.megacredits;

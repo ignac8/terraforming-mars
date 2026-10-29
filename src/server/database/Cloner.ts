@@ -1,4 +1,3 @@
-import {AutomaGameSetup} from '../automa/AutomaGameSetup';
 import {Game} from '../Game';
 import {IGame} from '../IGame';
 import {GameId, isPlayerId} from '../../common/Types';
@@ -8,6 +7,7 @@ import {PlayerId} from '../../common/Types';
 import {SerializedGame} from '../SerializedGame';
 import {SerializedPlayer} from '../SerializedPlayer';
 import {toID} from '../../common/utils/utils';
+import {AutomaGameSetup} from '../automa/AutomaGameSetup';
 
 export class Cloner {
   public static clone(

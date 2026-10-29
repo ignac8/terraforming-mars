@@ -29,7 +29,7 @@ function turmoilHelper(game: IGame): MarsBotTurmoilHelper {
 /** Create a Turmoil-enabled automa game. Returns {game, humanPlayer, marsBot}. */
 function createTurmoilGame(): {game: IGame, humanPlayer: TestPlayer, marsBot: MarsBot} {
   const [game, humanPlayer] = testGame(1, {
-    automaOption: true,
+    automa: true,
     turmoilExtension: true,
     boardName: BoardName.THARSIS,
   });
@@ -62,7 +62,7 @@ describe('MarsBot Turmoil — Setup', () => {
   });
 
   it('T-2: Without Turmoil, MarsBot starting TR is 20', () => {
-    const [game] = testGame(1, {automaOption: true, boardName: BoardName.THARSIS});
+    const [game] = testGame(1, {automa: true, boardName: BoardName.THARSIS});
     expect(game.automaHooks!.marsBot.player.terraformRating).to.equal(MARSBOT_STARTING_TR);
   });
 
@@ -305,7 +305,7 @@ describe('MarsBot Turmoil — End-of-game VP (T-13)', () => {
   });
 
   it('turmoilVP is 0 without Turmoil extension', () => {
-    const [game] = testGame(1, {automaOption: true, boardName: BoardName.THARSIS});
+    const [game] = testGame(1, {automa: true, boardName: BoardName.THARSIS});
     const marsBot = game.automaHooks!.marsBot;
     const vp = marsBot.getVictoryPoints();
     expect(vp.turmoilVP).to.equal(0);
@@ -703,7 +703,7 @@ describe('MarsBot Turmoil — Difficulty options (T-14 T-15)', () => {
 
   it('T-14: by default MarsBot starts at 10 TR (reduced by 10) with no seeded delegates', () => {
     const [game] = testGame(1, {
-      automaOption: true,
+      automa: true,
       turmoilExtension: true,
       boardName: BoardName.THARSIS,
     });
@@ -714,7 +714,7 @@ describe('MarsBot Turmoil — Difficulty options (T-14 T-15)', () => {
 
   it('T-14: automaTurmoilTRReduction=7 → MarsBot starts at 13 TR and still seeds no delegates', () => {
     const [game] = testGame(1, {
-      automaOption: true,
+      automa: true,
       turmoilExtension: true,
       boardName: BoardName.THARSIS,
       automaTurmoilTRReduction: 7,
@@ -725,7 +725,7 @@ describe('MarsBot Turmoil — Difficulty options (T-14 T-15)', () => {
 
   it('T-15: automaTurmoilSetupDelegates=1 → 1 MarsBot delegate seeded, TR reduction unchanged', () => {
     const [game] = testGame(1, {
-      automaOption: true,
+      automa: true,
       turmoilExtension: true,
       boardName: BoardName.THARSIS,
       automaTurmoilSetupDelegates: 1,
@@ -738,7 +738,7 @@ describe('MarsBot Turmoil — Difficulty options (T-14 T-15)', () => {
 
   it('T-15: automaTurmoilSetupDelegates=2 → 2 MarsBot delegates seeded', () => {
     const [game] = testGame(1, {
-      automaOption: true,
+      automa: true,
       turmoilExtension: true,
       boardName: BoardName.THARSIS,
       automaTurmoilSetupDelegates: 2,
@@ -750,7 +750,7 @@ describe('MarsBot Turmoil — Difficulty options (T-14 T-15)', () => {
 
   it('T-14 + T-15 combine: reduction 7 and 2 seeded delegates', () => {
     const [game] = testGame(1, {
-      automaOption: true,
+      automa: true,
       turmoilExtension: true,
       boardName: BoardName.THARSIS,
       automaTurmoilTRReduction: 7,
@@ -762,7 +762,7 @@ describe('MarsBot Turmoil — Difficulty options (T-14 T-15)', () => {
 
   it('Turmoil difficulty options have no effect without turmoilExtension', () => {
     const [game] = testGame(1, {
-      automaOption: true,
+      automa: true,
       turmoilExtension: false,
       boardName: BoardName.THARSIS,
       automaTurmoilTRReduction: 7,
@@ -802,7 +802,7 @@ describe('MarsBot C37 Septem Tribus — Turmoil interaction (Rules-covered: C37)
   });
 
   it('C37: sets up without Turmoil', () => {
-    const [game] = testGame(1, {automaOption: true, boardName: BoardName.THARSIS});
+    const [game] = testGame(1, {automa: true, boardName: BoardName.THARSIS});
     const marsBot = game.automaHooks!.marsBot;
 
     marsBot.setCorpAndSetup(getMarsBotCorp(CardName.SEPTUM_TRIBUS)!);

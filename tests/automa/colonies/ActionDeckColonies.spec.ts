@@ -16,7 +16,7 @@ function hasBonusCard(deck: Array<any>, id: BonusCardId): boolean {
 
 describe('ActionDeckColonies (C-10, C-11)', () => {
   it('C-10: Shipping Lines (B19) injected into action deck from gen 2+', () => {
-    const [game] = testGame(1, {automaOption: true, coloniesExtension: true, boardName: BoardName.THARSIS});
+    const [game] = testGame(1, {automa: true, coloniesExtension: true, boardName: BoardName.THARSIS});
     const marsBot = getMarsBot(game);
 
     // Simulate gen 2
@@ -27,7 +27,7 @@ describe('ActionDeckColonies (C-10, C-11)', () => {
   });
 
   it('C-10: Shipping Lines NOT added in gen 1', () => {
-    const [game] = testGame(1, {automaOption: true, coloniesExtension: true, boardName: BoardName.THARSIS});
+    const [game] = testGame(1, {automa: true, coloniesExtension: true, boardName: BoardName.THARSIS});
     const marsBot = getMarsBot(game);
 
     // Gen 1 (initial deck, no shipping lines)
@@ -38,7 +38,7 @@ describe('ActionDeckColonies (C-10, C-11)', () => {
   });
 
   it('C-11: Extended Shipping Lines (B20) added if hasSecondTradeFleet', () => {
-    const [game] = testGame(1, {automaOption: true, coloniesExtension: true, boardName: BoardName.THARSIS});
+    const [game] = testGame(1, {automa: true, coloniesExtension: true, boardName: BoardName.THARSIS});
     const marsBot = getMarsBot(game);
 
     game.generation = 2;
@@ -50,7 +50,7 @@ describe('ActionDeckColonies (C-10, C-11)', () => {
   });
 
   it('C-11: Extended Shipping Lines NOT added if hasSecondTradeFleet is false', () => {
-    const [game] = testGame(1, {automaOption: true, coloniesExtension: true, boardName: BoardName.THARSIS});
+    const [game] = testGame(1, {automa: true, coloniesExtension: true, boardName: BoardName.THARSIS});
     const marsBot = getMarsBot(game);
 
     game.generation = 2;
@@ -61,7 +61,7 @@ describe('ActionDeckColonies (C-10, C-11)', () => {
   });
 
   it('C-10: Shipping Lines NOT added without coloniesExtension', () => {
-    const [game] = testGame(1, {automaOption: true, coloniesExtension: false, boardName: BoardName.THARSIS});
+    const [game] = testGame(1, {automa: true, coloniesExtension: false, boardName: BoardName.THARSIS});
     const marsBot = getMarsBot(game);
 
     game.generation = 2;
@@ -71,7 +71,7 @@ describe('ActionDeckColonies (C-10, C-11)', () => {
   });
 
   it('C-10: Shipping Lines injected via buildResearchActionDeckFromDraft', () => {
-    const [game] = testGame(1, {automaOption: true, coloniesExtension: true, boardName: BoardName.THARSIS});
+    const [game] = testGame(1, {automa: true, coloniesExtension: true, boardName: BoardName.THARSIS});
     const marsBot = getMarsBot(game);
 
     game.generation = 2;

@@ -1,8 +1,9 @@
-import {IGame} from '../IGame';
-import {IPlayer} from '../IPlayer';
-import {Player} from '../Player';
+import {GameId, PlayerId} from '@/common/Types';
+import {DELEGATES_PER_PLAYER} from '@/common/constants';
+import {IGame} from '@/server/IGame';
+import {IPlayer} from '@/server/IPlayer';
+import {Player} from '@/server/Player';
 import {GameOptions} from '../game/GameOptions';
-import {GameId, isPlayerId, safeCast} from '../../common/Types';
 import {Random} from '../../common/utils/Random';
 import {MarsBot} from './MarsBot';
 import {MARSBOT_BOARDS} from './boards/MarsBotBoards';
@@ -24,13 +25,78 @@ import {milestoneManifest} from '../milestones/Milestones';
 import {awardManifest} from '../awards/Awards';
 import {MAManifest} from '../ma/MAManifest';
 import {trackCubeKey} from './MarsBotCorpTypes';
-import {DELEGATES_PER_PLAYER} from '../../common/constants';
 
 /**
  * Handles automa-specific game setup and provides hooks into the game lifecycle.
  * This is the ONLY automa class that Game.ts needs to know about.
  */
 export class AutomaGameSetup {
+  /**
+   * Creates MarsBot's player.
+   *
+   * Its id comes from the game id, so loading a saved game recreates the same player.
+   */
+  public static createMarsBotPlayer(gameId: GameId): IPlayer {
+    const playerId: PlayerId = `p-${gameId}-marsbot`;
+    return new Player('MarsBot', 'bronze', false, 0, playerId);
+  }
+
+  /**
+   * Sets MarsBot up and returns the AutomaGameHooks instance for Game.ts to use.
+   *
+   * `restoring` is true when a saved game is loaded: then the saved state replaces what a new
+   * game would set up, like the delegates and the action deck.
+   */
+  public static setup(game: IGame, marsBotPlayer: IPlayer, humanPlayer: IPlayer, gameOptions: GameOptions, rng: Random, restoring: boolean): AutomaGameHooks {
+    const boardData = AutomaGameSetup.getBoardData(AutomaGameSetup.marsBotBoardName(gameOptions), gameOptions.venusNextExtension);
+    // T-2/T-14: Turmoil reduces MarsBot's starting TR by 10 (rulebook default) or by 7 (harder variant).
+    const turmoilTRReduction = gameOptions.automaTurmoilTRReduction ?? 10;
+    const startingTR = gameOptions.turmoilExtension ? MARSBOT_STARTING_TR - turmoilTRReduction : MARSBOT_STARTING_TR;
+    marsBotPlayer.setTerraformRating(startingTR);
+
+    // Override stock/production to intercept resource removal and production decrease
+    const marsBotStock = new MarsBotStock(marsBotPlayer);
+    const marsBotProduction = new MarsBotProduction(marsBotPlayer);
+    (marsBotPlayer as any).stock = marsBotStock;
+    (marsBotPlayer as any).production = marsBotProduction;
+
+    const marsBot = new MarsBot(game, marsBotPlayer, humanPlayer, boardData, gameOptions.automaDifficulty, rng, restoring);
+
+    // Wire MarsBot reference into overridden stock/production
+    marsBotStock.setMarsBot(marsBot);
+    marsBotProduction.setMarsBot(marsBot);
+
+    // Override tag counting to use track positions instead of played cards
+    marsBotPlayer.tags = new MarsBotTags(marsBotPlayer, marsBot.marsBotBoard);
+
+    // Add MarsBot to human's opponents so cards that target opponents can see MarsBot
+    (humanPlayer.opponents as Array<IPlayer>).push(marsBotPlayer);
+
+    // Wire MarsBot manager ref into turn resolver (for corp cube triggers)
+    marsBot.turnResolver.marsBotManager = marsBot;
+
+    // Only for new games, not deserialization
+    if (!restoring) {
+      // T-1: Add MarsBot's 7 delegates to the reserve (Turmoil setup)
+      if (gameOptions.turmoilExtension && game.turmoil !== undefined) {
+        game.turmoil.delegateReserve.add(marsBotPlayer, DELEGATES_PER_PLAYER);
+        game.log('MarsBot: 7 delegates placed in reserve (Turmoil)');
+        // T-15: Extra delegates seeded at setup for increased difficulty
+        const setupDelegates = gameOptions.automaTurmoilSetupDelegates ?? 0;
+        for (let i = 0; i < setupDelegates; i++) {
+          AutomaGameSetup.placeExtraSetupDelegate(game, marsBotPlayer, rng);
+        }
+      }
+      marsBot.buildInitialActionDeck();
+      AutomaGameSetup.activateColonyTiles(game);
+      AutomaGameSetup.placeColonyCubes(game, marsBot);
+      AutomaGameSetup.place2ndTradeFleetCube(game, marsBot);
+      game.log('MarsBot is ready with ${0} difficulty', (b) => b.rawString(gameOptions.automaDifficulty));
+    }
+
+    return new AutomaGameHooks(game, marsBot);
+  }
+
   /** Force-disable unsupported expansions for automa games. Mutates gameOptions in place. */
   public static sanitizeGameOptions(gameOptions: GameOptions): void {
     // coloniesExtension is supported — do not force-disable
@@ -103,12 +169,6 @@ export class AutomaGameSetup {
     return cards.filter((c) => c.name !== CardName.MONS_INSURANCE);
   }
 
-  /** Create the MarsBot player instance for the game engine. */
-  public static createMarsBotPlayer(gameId: GameId): IPlayer {
-    const playerId = safeCast('p-' + gameId + '-marsbot', isPlayerId);
-    return new Player('MarsBot', 'bronze', false, 0, playerId);
-  }
-
   /** The map whose MarsBot board this game uses. The Milestones & Awards expansion always uses Tharsis's (rulebook C, p.13). */
   public static marsBotBoardName(gameOptions: GameOptions): BoardName {
     return gameOptions.modularMA ? BoardName.THARSIS : gameOptions.boardName;
@@ -121,61 +181,6 @@ export class AutomaGameSetup {
       throw new Error(`No MarsBot board for ${boardName}`);
     }
     return venusEnabled ? boards.withVenus : boards.base;
-  }
-
-  /** Set up MarsBot and return the AutomaGameHooks instance for Game.ts to use. */
-  public static setup(game: IGame, humanPlayer: IPlayer, gameOptions: GameOptions, rng: Random, existingPlayer?: IPlayer): AutomaGameHooks {
-    const boardData = AutomaGameSetup.getBoardData(AutomaGameSetup.marsBotBoardName(gameOptions), gameOptions.venusNextExtension);
-    const marsBotPlayer = existingPlayer ?? AutomaGameSetup.createMarsBotPlayer(game.id);
-
-    // Set MarsBot player's game reference
-    marsBotPlayer.setup(game);
-    // T-2/T-14: Turmoil reduces MarsBot's starting TR by 10 (rulebook default) or by 7 (harder variant).
-    const turmoilTRReduction = gameOptions.automaTurmoilTRReduction ?? 10;
-    const startingTR = gameOptions.turmoilExtension ? MARSBOT_STARTING_TR - turmoilTRReduction : MARSBOT_STARTING_TR;
-    marsBotPlayer.setTerraformRating(startingTR);
-
-    // Override stock/production to intercept resource removal and production decrease
-    const marsBotStock = new MarsBotStock(marsBotPlayer);
-    const marsBotProduction = new MarsBotProduction(marsBotPlayer);
-    (marsBotPlayer as any).stock = marsBotStock;
-    (marsBotPlayer as any).production = marsBotProduction;
-
-    const marsBot = new MarsBot(game, marsBotPlayer, humanPlayer, boardData, gameOptions.automaDifficulty, rng, existingPlayer !== undefined);
-
-    // Wire MarsBot reference into overridden stock/production
-    marsBotStock.setMarsBot(marsBot);
-    marsBotProduction.setMarsBot(marsBot);
-
-    // Override tag counting to use track positions instead of played cards
-    marsBotPlayer.tags = new MarsBotTags(marsBotPlayer, marsBot.marsBotBoard);
-
-    // Add MarsBot to human's opponents so cards that target opponents can see MarsBot
-    (humanPlayer.opponents as Array<IPlayer>).push(marsBotPlayer);
-
-    // Wire MarsBot manager ref into turn resolver (for corp cube triggers)
-    marsBot.turnResolver.marsBotManager = marsBot;
-
-    // Only for new games, not deserialization
-    if (existingPlayer === undefined) {
-      // T-1: Add MarsBot's 7 delegates to the reserve (Turmoil setup)
-      if (gameOptions.turmoilExtension && game.turmoil !== undefined) {
-        game.turmoil.delegateReserve.add(marsBotPlayer, DELEGATES_PER_PLAYER);
-        game.log('MarsBot: 7 delegates placed in reserve (Turmoil)');
-        // T-15: Extra delegates seeded at setup for increased difficulty
-        const setupDelegates = gameOptions.automaTurmoilSetupDelegates ?? 0;
-        for (let i = 0; i < setupDelegates; i++) {
-          AutomaGameSetup.placeExtraSetupDelegate(game, marsBotPlayer, rng);
-        }
-      }
-      marsBot.buildInitialActionDeck();
-      AutomaGameSetup.activateColonyTiles(game);
-      AutomaGameSetup.placeColonyCubes(game, marsBot);
-      AutomaGameSetup.place2ndTradeFleetCube(game, marsBot);
-      game.log('MarsBot is ready with ${0} difficulty', (b) => b.rawString(gameOptions.automaDifficulty));
-    }
-
-    return new AutomaGameHooks(game, marsBot);
   }
 
   /**
