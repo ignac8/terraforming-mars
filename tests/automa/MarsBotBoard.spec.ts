@@ -149,13 +149,23 @@ describe('MarsBotBoard', () => {
       track.advance(); // pos 2 (ocean)
       track.regress(); // back to pos 1, pos 2 is regressed
 
-      // Advancing onto pos 2 ignores its action, so there is nothing ahead to peek at.
       expect(track.peek()).to.be.undefined;
+    });
 
-      track.advance(); // re-advance to pos 2, clears the marker
-      track.regress();
+    it('regress returns whether the track moved', () => {
+      const track = new MarsBotTrack(THARSIS_MARSBOT_BOARD[0]);
+      expect(track.regress()).to.be.false;
+
       track.advance();
-      expect(track.peek()).to.be.undefined;
+      expect(track.regress()).to.be.true;
+    });
+  });
+
+  describe('Tharsis layout', () => {
+    it('gains floaters on the cloud spaces of the Event and Energy tracks', () => {
+      for (const [track, position, action] of [[2, 6, 'floater2'], [4, 2, 'floater'], [4, 4, 'floater2']] as const) {
+        expect(THARSIS_MARSBOT_BOARD[track].layout[position], `track ${track} space ${position}`).to.eq(action);
+      }
     });
   });
 
