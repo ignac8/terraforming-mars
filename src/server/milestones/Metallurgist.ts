@@ -1,7 +1,7 @@
 import {BaseMilestone} from './IMilestone';
 import {IPlayer} from '../IPlayer';
 import {Tag} from '../../common/cards/Tag';
-import {IMarsBot} from '../automa/MarsBotCorpTypes';
+import {IMarsBot} from '../automa/IMarsBot';
 
 export class Metallurgist extends BaseMilestone {
   constructor() {

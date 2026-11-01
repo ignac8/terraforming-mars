@@ -1,6 +1,6 @@
 import {IPlayer} from '../../IPlayer';
 import {IAward} from '../IAward';
-import {IMarsBot} from '../../automa/MarsBotCorpTypes';
+import {IMarsBot} from '../../automa/IMarsBot';
 import {marsBotAllTrackPositions} from '../../automa/MarsBotMilestoneAwardEval';
 export class Mogul implements IAward {
   public readonly name = 'Mogul';

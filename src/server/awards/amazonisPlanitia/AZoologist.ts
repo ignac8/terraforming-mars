@@ -2,7 +2,7 @@ import {IPlayer} from '../../IPlayer';
 import {CardResource} from '../../../common/CardResource';
 import {IAward} from '../IAward';
 import {Tag} from '../../../common/cards/Tag';
-import {IMarsBot} from '../../automa/MarsBotCorpTypes';
+import {IMarsBot} from '../../automa/IMarsBot';
 
 export class AZoologist implements IAward {
   public readonly name = 'A. Zoologist';

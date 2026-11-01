@@ -3,7 +3,7 @@ import {Promoter} from '../../../src/server/awards/arabiaTerra/Promoter';
 import {TestPlayer} from '../../TestPlayer';
 import {fakeCard} from '../../TestingUtils';
 import {CardType} from '../../../src/common/cards/CardType';
-import {IMarsBot} from '../../../src/server/automa/MarsBotCorpTypes';
+import {IMarsBot} from '../../../src/server/automa/IMarsBot';
 import {MarsBotBoard} from '../../../src/server/automa/MarsBotBoard';
 import {THARSIS_MARSBOT_BOARD} from '../../../src/server/automa/boards/TharsisMarsBot';
 

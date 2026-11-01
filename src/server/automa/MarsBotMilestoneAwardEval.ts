@@ -4,7 +4,7 @@ import {marsBotMapSet} from '../../common/automa/MarsBotMADescriptions';
 import {IMilestone} from '../milestones/IMilestone';
 import {IPlayer} from '../IPlayer';
 import {IAward} from '../awards/IAward';
-import {IMarsBot} from './MarsBotCorpTypes';
+import {IMarsBot} from './IMarsBot';
 
 /**
  * MarsBot claims milestones and scores awards through the ordinary IMilestone and IAward

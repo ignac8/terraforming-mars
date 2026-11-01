@@ -1,6 +1,6 @@
 import {TagBasedMilestone} from './TagBasedMilestone';
 import {Tag} from '../../common/cards/Tag';
-import {IMarsBot} from '../automa/MarsBotCorpTypes';
+import {IMarsBot} from '../automa/IMarsBot';
 
 export class Architect extends TagBasedMilestone {
   constructor() {

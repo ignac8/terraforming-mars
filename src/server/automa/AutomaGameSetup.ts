@@ -24,7 +24,7 @@ import {AwardName} from '../../common/ma/AwardName';
 import {milestoneManifest} from '../milestones/Milestones';
 import {awardManifest} from '../awards/Awards';
 import {MAManifest} from '../ma/MAManifest';
-import {trackCubeKey} from './MarsBotCorpTypes';
+import {trackCubeKey} from './corpTrackCubes';
 
 /**
  * Handles automa-specific game setup and provides hooks into the game lifecycle.

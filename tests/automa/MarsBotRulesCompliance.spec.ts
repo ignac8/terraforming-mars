@@ -29,7 +29,7 @@ import {MicroMills} from '../../src/server/cards/base/MicroMills';
 import {Mine} from '../../src/server/cards/base/Mine';
 import {Tardigrades} from '../../src/server/cards/base/Tardigrades';
 import {Ceres} from '../../src/server/colonies/Ceres';
-import {trackCubeKey} from '../../src/server/automa/MarsBotCorpTypes';
+import {trackCubeKey} from '../../src/server/automa/corpTrackCubes';
 
 function createAutomaGame(difficulty: 'easy' | 'normal' | 'hard' | 'brutal' = 'normal'): {game: IGame, human: TestPlayer, marsBot: MarsBot} {
   const [game, human] = testGame(1, {automa: true, automaDifficulty: difficulty, boardName: BoardName.THARSIS});

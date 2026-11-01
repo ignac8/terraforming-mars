@@ -3,7 +3,7 @@ import {Excentric} from '../../src/server/awards/Excentric';
 import {TestPlayer} from '../TestPlayer';
 import {fakeCard} from '../TestingUtils';
 import {CardResource} from '../../src/common/CardResource';
-import {IMarsBot} from '../../src/server/automa/MarsBotCorpTypes';
+import {IMarsBot} from '../../src/server/automa/IMarsBot';
 
 describe('Excentric', () => {
   const award = new Excentric();

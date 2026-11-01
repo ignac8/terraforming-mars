@@ -3,7 +3,7 @@ import {testGame} from '../TestGame';
 import {Coastguard, Irrigator} from '../../src/server/milestones/Irrigator';
 import {addCity, addGreenery, maxOutOceans} from '../TestingUtils';
 import {TestPlayer} from '../TestPlayer';
-import {IMarsBot} from '../../src/server/automa/MarsBotCorpTypes';
+import {IMarsBot} from '../../src/server/automa/IMarsBot';
 
 describe('Irrigator', () => {
   let milestone: Irrigator;

@@ -1,7 +1,7 @@
 import {IAward} from '../IAward';
 import {IPlayer} from '../../IPlayer';
 import {Tag} from '../../../common/cards/Tag';
-import {IMarsBot} from '../../automa/MarsBotCorpTypes';
+import {IMarsBot} from '../../automa/IMarsBot';
 
 export class Botanist implements IAward {
   public readonly name = 'Botanist';

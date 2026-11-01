@@ -1,5 +1,5 @@
 import {CardName} from '../../../common/cards/CardName';
-import {IMarsBotCorp} from '../MarsBotCorpTypes';
+import {IMarsBotCorp} from '../IMarsBotCorp';
 
 export type AutomaCorpManifest = Partial<Record<CardName, IMarsBotCorp>>;
 

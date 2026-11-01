@@ -3,7 +3,7 @@ import {IPlayer} from '../IPlayer';
 import {Board} from '../boards/Board';
 import {MilestoneName} from '../../common/ma/MilestoneName';
 import {BoardName} from '../../common/boards/BoardName';
-import {IMarsBot} from '../automa/MarsBotCorpTypes';
+import {IMarsBot} from '../automa/IMarsBot';
 import {marsBotUsesMapSet} from '../automa/MarsBotMilestoneAwardEval';
 
 export class Irrigator extends BaseMilestone {

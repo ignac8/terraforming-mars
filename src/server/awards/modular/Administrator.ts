@@ -1,6 +1,6 @@
 import {IPlayer} from '../../IPlayer';
 import {IAward} from '../IAward';
-import {IMarsBot} from '../../automa/MarsBotCorpTypes';
+import {IMarsBot} from '../../automa/IMarsBot';
 import {CardType} from '../../../common/cards/CardType';
 
 export class Administrator implements IAward {

@@ -2,7 +2,7 @@ import {expect} from 'chai';
 import {Visionary} from '../../src/server/awards/Visionary';
 import {testGame} from '../TestGame';
 import {fakeCard} from '../TestingUtils';
-import {IMarsBot} from '../../src/server/automa/MarsBotCorpTypes';
+import {IMarsBot} from '../../src/server/automa/IMarsBot';
 import {MarsBotBoard} from '../../src/server/automa/MarsBotBoard';
 import {THARSIS_MARSBOT_BOARD} from '../../src/server/automa/boards/TharsisMarsBot';
 import {VENUS_MARSBOT_TRACK} from '../../src/server/automa/boards/VenusMarsBot';

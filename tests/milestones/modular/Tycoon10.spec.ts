@@ -3,7 +3,7 @@ import {Tycoon10} from '../../../src/server/milestones/modular/Tycoon10';
 import {TestPlayer} from '../../TestPlayer';
 import {fakeCard} from '../../TestingUtils';
 import {CardType} from '../../../src/common/cards/CardType';
-import {IMarsBot} from '../../../src/server/automa/MarsBotCorpTypes';
+import {IMarsBot} from '../../../src/server/automa/IMarsBot';
 import {IProjectCard} from '../../../src/server/cards/IProjectCard';
 
 describe('Tycoon10', () => {

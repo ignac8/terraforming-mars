@@ -3,7 +3,7 @@ import {Magnate} from '../../src/server/awards/Magnate';
 import {testGame} from '../TestGame';
 import {fakeCard} from '../TestingUtils';
 import {CardType} from '../../src/common/cards/CardType';
-import {IMarsBot} from '../../src/server/automa/MarsBotCorpTypes';
+import {IMarsBot} from '../../src/server/automa/IMarsBot';
 
 describe('Magnate', () => {
   const award = new Magnate();

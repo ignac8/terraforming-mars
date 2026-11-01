@@ -1,7 +1,7 @@
 import {IPlayer} from '../../IPlayer';
 import {IAward} from '../IAward';
 import {ALL_RESOURCES} from '../../../common/Resource';
-import {IMarsBot} from '../../automa/MarsBotCorpTypes';
+import {IMarsBot} from '../../automa/IMarsBot';
 import {marsBotAllTrackPositions} from '../../automa/MarsBotMilestoneAwardEval';
 
 

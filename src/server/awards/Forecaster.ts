@@ -2,7 +2,7 @@ import {IAward} from './IAward';
 import {IPlayer} from '../IPlayer';
 import {CardType} from '../../common/cards/CardType';
 import {CardName} from '../../common/cards/CardName';
-import {IMarsBot} from '../automa/MarsBotCorpTypes';
+import {IMarsBot} from '../automa/IMarsBot';
 
 export class Forecaster implements IAward {
   public readonly name = 'Forecaster';

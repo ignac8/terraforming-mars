@@ -9,7 +9,7 @@ import {Algae} from '../../src/server/cards/base/Algae';
 import {TestPlayer} from '../TestPlayer';
 import {fakeCard} from '../TestingUtils';
 import {CardType} from '../../src/common/cards/CardType';
-import {IMarsBot} from '../../src/server/automa/MarsBotCorpTypes';
+import {IMarsBot} from '../../src/server/automa/IMarsBot';
 
 describe('Tactician', () => {
   let milestone: Tactician;

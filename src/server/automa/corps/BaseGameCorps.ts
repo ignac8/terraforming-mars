@@ -1,7 +1,9 @@
 /**
  * Shared helper functions for MarsBot corporation definitions.
  */
-import {ACTION_DECK_BONUS_CARD_REMOVED, IMarsBot, IMarsBotCorp, MarsBotTrackCube} from '../MarsBotCorpTypes';
+import {IMarsBot} from '../IMarsBot';
+import {IMarsBotCorp} from '../IMarsBotCorp';
+import {ACTION_DECK_BONUS_CARD_REMOVED, MarsBotTrackCube} from '../MarsBotCorpTypes';
 import {BonusCardId, CubeType} from '../../../common/automa/AutomaTypes';
 
 /** M€ a silver resource cube is worth, which the bot gains on reaching a `credit` cube (Cheung Shing, Morningstar). */

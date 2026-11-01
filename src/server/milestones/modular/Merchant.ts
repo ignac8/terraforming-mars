@@ -1,7 +1,7 @@
 import {IMilestone} from '../IMilestone';
 import {IPlayer} from '../../IPlayer';
 import {Units} from '../../../common/Units';
-import {IMarsBot} from '../../automa/MarsBotCorpTypes';
+import {IMarsBot} from '../../automa/IMarsBot';
 import {marsBotMarsTrackPositions} from '../../automa/MarsBotMilestoneAwardEval';
 
 const TWO_OF_EACH: Units = Units.every(2);

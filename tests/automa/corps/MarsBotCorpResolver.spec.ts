@@ -4,7 +4,8 @@ import {TestPlayer} from '../../TestPlayer';
 import {IGame} from '../../../src/server/IGame';
 import {MarsBot} from '../../../src/server/automa/MarsBot';
 import {MarsBotCorpResolver} from '../../../src/server/automa/corps/MarsBotCorpResolver';
-import {IMarsBotCorp, MarsBotTrackCube} from '../../../src/server/automa/MarsBotCorpTypes';
+import {IMarsBotCorp} from '../../../src/server/automa/IMarsBotCorp';
+import {MarsBotTrackCube} from '../../../src/server/automa/MarsBotCorpTypes';
 import {
   registerMarsBotCorp,
   clearMarsBotCorpRegistry, restoreMarsBotCorpRegistry,

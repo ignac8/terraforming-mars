@@ -1,6 +1,6 @@
 import {IAward} from './IAward';
 import {IPlayer} from '../IPlayer';
-import {IMarsBot} from '../automa/MarsBotCorpTypes';
+import {IMarsBot} from '../automa/IMarsBot';
 
 export class Benefactor implements IAward {
   public readonly name = 'Benefactor';

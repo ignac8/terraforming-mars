@@ -4,7 +4,7 @@ import {Ants} from '../../../src/server/cards/base/Ants';
 import {Farmer} from '../../../src/server/milestones/modular/Farmer';
 import {TestPlayer} from '../../TestPlayer';
 import {testGame} from '../../TestGame';
-import {IMarsBot} from '../../../src/server/automa/MarsBotCorpTypes';
+import {IMarsBot} from '../../../src/server/automa/IMarsBot';
 import {MarsBotBoard} from '../../../src/server/automa/MarsBotBoard';
 import {THARSIS_MARSBOT_BOARD} from '../../../src/server/automa/boards/TharsisMarsBot';
 

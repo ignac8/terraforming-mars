@@ -3,7 +3,7 @@ import {testGame} from '../../TestGame';
 import {Incorporator} from '../../../src/server/awards/modular/Incorporator';
 import {fakeCard} from '../../TestingUtils';
 import {CardType} from '../../../src/common/cards/CardType';
-import {IMarsBot} from '../../../src/server/automa/MarsBotCorpTypes';
+import {IMarsBot} from '../../../src/server/automa/IMarsBot';
 
 describe('Incorporator', () => {
   const getScoreRuns = [

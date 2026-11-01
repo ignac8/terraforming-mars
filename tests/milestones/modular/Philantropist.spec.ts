@@ -9,7 +9,7 @@ import {GanymedeColony} from '../../../src/server/cards/base/GanymedeColony';
 import {LargeConvoy} from '../../../src/server/cards/base/LargeConvoy';
 import {EnergyTapping} from '../../../src/server/cards/base/EnergyTapping';
 import {SpaceStation} from '../../../src/server/cards/base/SpaceStation';
-import {IMarsBot} from '../../../src/server/automa/MarsBotCorpTypes';
+import {IMarsBot} from '../../../src/server/automa/IMarsBot';
 
 
 describe('Philantropist', () => {

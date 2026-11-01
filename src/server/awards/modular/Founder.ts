@@ -3,7 +3,7 @@ import {IPlayer} from '../../IPlayer';
 import {Board, isSpecialTileSpace} from '../../boards/Board';
 import {Space} from '../../boards/Space';
 import {TileType} from '../../../common/TileType';
-import {IMarsBot} from '../../automa/MarsBotCorpTypes';
+import {IMarsBot} from '../../automa/IMarsBot';
 
 export class Founder implements IAward {
   public readonly name = 'Founder';

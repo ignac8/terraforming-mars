@@ -6,7 +6,7 @@ import {TestPlayer} from '../../TestPlayer';
 import {CardType} from '../../../src/common/cards/CardType';
 import {Administrator} from '../../../src/server/awards/modular/Administrator';
 import {Chimera} from '../../../src/server/cards/pathfinders/Chimera';
-import {IMarsBot} from '../../../src/server/automa/MarsBotCorpTypes';
+import {IMarsBot} from '../../../src/server/automa/IMarsBot';
 
 describe('Administrator', () => {
   let award: Administrator;

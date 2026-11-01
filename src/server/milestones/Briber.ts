@@ -1,6 +1,6 @@
 import {IMilestone} from './IMilestone';
 import {IPlayer} from '../IPlayer';
-import {IMarsBot} from '../automa/MarsBotCorpTypes';
+import {IMarsBot} from '../automa/IMarsBot';
 
 export class Briber implements IMilestone {
   public readonly name = 'Briber';

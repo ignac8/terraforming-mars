@@ -1,7 +1,7 @@
 import {Tag} from '../../common/cards/Tag';
 import {IPlayer} from '../IPlayer';
 import {BaseMilestone} from './IMilestone';
-import {IMarsBot} from '../automa/MarsBotCorpTypes';
+import {IMarsBot} from '../automa/IMarsBot';
 
 export class VSpacefarer extends BaseMilestone {
   constructor() {

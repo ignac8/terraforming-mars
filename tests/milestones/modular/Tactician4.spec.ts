@@ -2,7 +2,7 @@ import {expect} from 'chai';
 import {Tactician4} from '../../../src/server/milestones/modular/Tactician4';
 import {TestPlayer} from '../../TestPlayer';
 import {fakeCard} from '../../TestingUtils';
-import {IMarsBot} from '../../../src/server/automa/MarsBotCorpTypes';
+import {IMarsBot} from '../../../src/server/automa/IMarsBot';
 
 describe('Tactician4', () => {
   const milestone = new Tactician4();

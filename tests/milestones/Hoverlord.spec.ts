@@ -3,7 +3,7 @@ import {Hoverlord} from '../../src/server/milestones/Hoverlord';
 import {TestPlayer} from '../TestPlayer';
 import {fakeCard} from '../TestingUtils';
 import {CardResource} from '../../src/common/CardResource';
-import {IMarsBot} from '../../src/server/automa/MarsBotCorpTypes';
+import {IMarsBot} from '../../src/server/automa/IMarsBot';
 
 describe('Hoverlord', () => {
   const milestone = new Hoverlord();

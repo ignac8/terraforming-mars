@@ -1,6 +1,6 @@
 import {IAward} from './IAward';
 import {IPlayer} from '../IPlayer';
-import {IMarsBot} from '../automa/MarsBotCorpTypes';
+import {IMarsBot} from '../automa/IMarsBot';
 
 export class Excentric implements IAward {
   public readonly name = 'Excentric';

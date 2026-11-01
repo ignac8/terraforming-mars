@@ -2,7 +2,7 @@ import {expect} from 'chai';
 import {testGame} from '../../TestGame';
 import {AutomaGameHooks} from '../../../src/server/automa/AutomaGameHooks';
 import {MarsBot} from '../../../src/server/automa/MarsBot';
-import {trackCubeKey} from '../../../src/server/automa/MarsBotCorpTypes';
+import {trackCubeKey} from '../../../src/server/automa/corpTrackCubes';
 import {Tag} from '../../../src/common/cards/Tag';
 import {BoardName} from '../../../src/common/boards/BoardName';
 import {CardName} from '../../../src/common/cards/CardName';

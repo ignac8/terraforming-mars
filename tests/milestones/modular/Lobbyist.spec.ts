@@ -6,7 +6,7 @@ import {PartyName} from '../../../src/common/turmoil/PartyName';
 import {IGame} from '../../../src/server/IGame';
 import {TestPlayer} from '../../TestPlayer';
 import {IParty} from '../../../src/server/turmoil/parties/IParty';
-import {IMarsBot} from '../../../src/server/automa/MarsBotCorpTypes';
+import {IMarsBot} from '../../../src/server/automa/IMarsBot';
 
 describe('Lobbyist', () => {
   let milestone: Lobbyist;
