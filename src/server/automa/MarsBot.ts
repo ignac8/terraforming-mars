@@ -10,7 +10,7 @@ import {DifficultyLevel, BonusCardId, TrackDefinition, getAutomaMaxGeneration} f
 import {Tag} from '../../common/cards/Tag';
 import {currentMcPerVP} from './MarsBotScoring';
 import {MarsBotBoard} from './MarsBotBoard';
-import {marsBotCardTags} from './MarsBotTags';
+import {cardTagsIncludingEvent} from './MarsBotTags';
 import {MarsBotModel} from '../../common/models/MarsBotModel';
 import {MarsBotBonusCard, MarsBotBonusDeckCard, bonusCardDisplayName, createCorpBonusCard} from './MarsBotBonusCard';
 import {MarsBotBonusDeck} from './MarsBotBonusDeck';
@@ -479,7 +479,7 @@ export class MarsBot implements IMarsBot {
   }
 
   public addProjectCardsToBonusDeck(tag: Tag, count: number): void {
-    const cards = this.game.projectDeck.drawByConditionOrThrow(this.game, count, (card) => marsBotCardTags(card).includes(tag));
+    const cards = this.game.projectDeck.drawByConditionOrThrow(this.game, count, (card) => cardTagsIncludingEvent(card).includes(tag));
     for (const card of cards) {
       this.shuffleIntoBonusDeck(card);
       this.game.log('MarsBot adds ${0} to its bonus deck', (b) => b.card(card));
@@ -663,7 +663,7 @@ export class MarsBot implements IMarsBot {
   public maybeDiscardProjectCardWithFewestTags(): void {
     let fewest: IProjectCard | undefined;
     for (const card of this.actionDeck) {
-      if (this.isProjectCard(card) && (fewest === undefined || marsBotCardTags(card).length < marsBotCardTags(fewest).length)) {
+      if (this.isProjectCard(card) && (fewest === undefined || cardTagsIncludingEvent(card).length < cardTagsIncludingEvent(fewest).length)) {
         fewest = card;
       }
     }

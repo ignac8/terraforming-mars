@@ -20,7 +20,7 @@ import {BoardName} from '../../common/boards/BoardName';
 import {marsBotUsesMapSet} from './MarsBotMilestoneAwardEval';
 import {CardName} from '../../common/cards/CardName';
 import {Tag} from '../../common/cards/Tag';
-import {marsBotCardTags} from './MarsBotTags';
+import {cardTagsIncludingEvent} from './MarsBotTags';
 import {MarsBotTurmoilHelper} from './turmoil/MarsBotTurmoilHelper';
 import {selectRandomColony, placeColonyForMarsBot} from './colonies/MarsBotColonyPlacer';
 import {pickByFlippedCard} from './MarsBotCardFlip';
@@ -689,7 +689,7 @@ export class MarsBotBonusResolver {
     case 'Promoter': return advanceTrackOf(Tag.EVENT);
     case 'Blacksmith': return advanceTrackOfEither([Tag.BUILDING, Tag.SPACE], 'more');
     // Milestones and awards (B14)
-    case 'Administrator': return revealAndResolveCard((c) => marsBotCardTags(c).length === 0, 5);
+    case 'Administrator': return revealAndResolveCard((c) => cardTagsIncludingEvent(c).length === 0, 5);
     case 'Biologist': return advanceTrackOf(Tag.MICROBE);
     case 'Collector': return advance(marsBotBoard.getLeastAdvancedTrackIndex());
     case 'Constructor': return placeCity();
@@ -1062,8 +1062,8 @@ export class MarsBotBonusResolver {
       return false;
     }
     // Science cards first, then the most expensive, then the most tags, then at random
-    const science = (card: IProjectCard) => marsBotCardTags(card).includes(Tag.SCIENCE) ? 1 : 0;
-    const tagCount = (card: IProjectCard) => marsBotCardTags(card).length;
+    const science = (card: IProjectCard) => cardTagsIncludingEvent(card).includes(Tag.SCIENCE) ? 1 : 0;
+    const tagCount = (card: IProjectCard) => cardTagsIncludingEvent(card).length;
     inplaceShuffle(drawn, this.game.rng);
     drawn.sort((a, b) => science(b) - science(a) || b.cost - a.cost || tagCount(b) - tagCount(a));
     const discarded = drawn.splice(2);
