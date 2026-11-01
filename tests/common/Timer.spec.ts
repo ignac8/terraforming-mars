@@ -165,6 +165,7 @@ describe('Timer', () => {
     expect(timer.serialize().lastStoppedAt).eq(5);
 
     const other = Timer.newInstance(clock);
+    other.enable();
     other.start();
     expect(other.serialize().startedAt).eq(5);
   });

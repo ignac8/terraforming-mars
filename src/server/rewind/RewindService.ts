@@ -309,13 +309,15 @@ function promote(sandbox: Game, swap: Swap): void {
     // 'keep' is for the players whose move is undone, and counts the interval in progress too: under escape
     // velocity it is time spent. Everyone else's clock goes back. Every clock stays when the movers are not known.
     // Every save lists the players in the same order.
-    const kept = options.clocks === 'keep' && (movers.length === 0 || movers.includes(p.id)) ?
-      {sumElapsed: was.timer.getElapsed(), enabled: was.timer.serialize().enabled} :
-      target.players[i].timer;
+    const sumElapsed = options.clocks === 'keep' && (movers.length === 0 || movers.includes(p.id)) ?
+      was.timer.getElapsed() :
+      target.players[i].timer.sumElapsed;
+    // Whether the clock may run depends on the restored moment, and the sandbox player read old saves'
+    // afterFirstAction already.
     // Nobody's clock runs until the hand-over settles who is asked.
     p.timer = Timer.deserialize({
-      sumElapsed: kept.sumElapsed,
-      enabled: kept.enabled,
+      sumElapsed,
+      enabled: p.timer.serialize().enabled,
       running: false,
       startedAt: 0,
       lastStoppedAt: 0,

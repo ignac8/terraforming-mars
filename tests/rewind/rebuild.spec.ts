@@ -133,6 +133,7 @@ describe('rebuild', () => {
       expect(replayToSave(saves).outcome).eq('replayed');
 
       const next = Timer.newInstance(clock);
+      next.enable();
       next.start();
       expect(next.serialize().startedAt).eq(1000);
     } finally {

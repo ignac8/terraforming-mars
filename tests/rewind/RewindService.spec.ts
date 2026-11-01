@@ -533,6 +533,9 @@ describe('RewindService whole table', () => {
     db = new SnapshotDatabase();
     setTestDatabase(db);
     [game, player, player2] = testGame(2, {judgeLink: true, ...options});
+    // testGame skips the corporation pick, which is what enables the clocks.
+    player.timer.enable();
+    player2.timer.enable();
     await GameLoader.getInstance().add(game);
     // Set outside any input, so the first generation's saves don't replay: rebuilds start at the
     // second generation's research save.
@@ -711,6 +714,26 @@ describe('RewindService whole table', () => {
     players.forEach((p, i) => {
       expect(restored.getPlayerById(p.id).timer.serialize().sumElapsed).eq(600_000 + i);
     });
+  });
+
+  it('keeps the clocks enabled when rewinding to a save written before timers had enabled', async () => {
+    for (const clocks of ['keep', 'back'] as const) {
+      await playTable();
+      // Saves from before the enabled flag only have afterFirstAction, and the players have corporations.
+      for (const row of rows()) {
+        for (const p of row.players) {
+          const {enabled: _enabled, ...legacy} = p.timer;
+          p.timer = {...legacy, afterFirstAction: true} as typeof p.timer;
+          p.playedCards.push({name: CardName.BEGINNER_CORPORATION});
+        }
+      }
+
+      const restored = await rewindTable(game, target, {cards: 'same', clocks}, judge);
+
+      for (const p of restored.players) {
+        expect(p.timer.serialize().enabled, clocks).is.true;
+      }
+    }
   });
 
   it('reads the mover of the first move after a rewind from the row after the rewind\'s row', async () => {
