@@ -27,7 +27,7 @@ import {pickByFlippedCard} from './MarsBotCardFlip';
 import {selectTradeColony, tradeWithColony} from './colonies/MarsBotTrader';
 import {inplaceShuffle} from '../utils/shuffle';
 import type {MarsBot} from './MarsBot';
-import {ACTION_DECK_BONUS_CARD_REMOVED} from './MarsBotCorpTypes';
+import {ACTION_DECK_BONUS_CARD_REMOVED} from './IMarsBotCorp';
 import {inplaceRemove} from '../../common/utils/utils';
 
 /**
