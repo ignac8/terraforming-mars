@@ -636,6 +636,7 @@ export class Game implements IGame, Logger {
       prompt: {type: waitingFor.type, title: typeof title === 'string' ? title : title.message},
       response: structuredClone(input),
       stateHash: stateHash(this.serialize()),
+      at: Date.now(),
     };
     (this.inputsSinceSave ??= []).push(recorded);
     return recorded;

@@ -1,6 +1,7 @@
 import {expect} from 'chai';
 import {LogMessage} from '../../src/common/logs/LogMessage';
 import {LogMessageType} from '../../src/common/logs/LogMessageType';
+import {CardName} from '../../src/common/cards/CardName';
 import {Color} from '../../src/common/Color';
 import {PlayerId} from '../../src/common/Types';
 import {ReplayMove} from '../../src/common/replay/ReplayModel';
@@ -68,6 +69,76 @@ describe('buildMoveList', () => {
     expect(moves.map((m) => m.silent)).deep.eq([undefined, true, undefined, undefined]);
     expect(moves[1].messages).is.empty;
     expect(moves[1].movers).deep.eq(['blue']);
+  });
+
+  describe('picks and answer times', () => {
+    const a = 'p-a' as PlayerId;
+    const b = 'p-b' as PlayerId;
+    const colors = new Map<PlayerId, Color>([[a, 'red'], [b, 'blue']]);
+    const timed = Array.from({length: 6}, (_, i) => {
+      const line = new LogMessage(LogMessageType.DEFAULT, `line ${i}`, []);
+      line.timestamp = 1000 + i;
+      return line;
+    });
+    // Save k records the answers that were applied to the state of save k - 1.
+    const entries: Array<SaveEntry> = [
+      {saveId: 0, logLength: 0},
+      {saveId: 1, logLength: 2, answeredBy: [a], picks: [{playerId: a, cards: [CardName.FISH]}], at: 5000},
+      {saveId: 2, logLength: 2, answeredBy: [b, a], picks: [{playerId: b, cards: [CardName.CAPITAL, CardName.HACKERS]}, {playerId: b, cards: []}, {playerId: a, cards: [CardName.TREES], auto: true}], at: 5600},
+      {saveId: 3, logLength: 4},
+    ];
+
+    it('gives a move the picks and the time of the answers the next save recorded, as colours', () => {
+      const moves = buildMoveList(entries, [], timed, false, {colors});
+
+      expect(moves.map((m) => m.saveId)).deep.eq([0, 1, 2, 3]);
+      expect(moves[0].picks).deep.eq([{color: 'red', cards: [CardName.FISH]}]);
+      expect(moves[1].picks).deep.eq([
+        {color: 'blue', cards: [CardName.CAPITAL, CardName.HACKERS]},
+        {color: 'blue', cards: []},
+        {color: 'red', cards: [CardName.TREES], auto: true},
+      ]);
+      expect(moves.map((m) => m.at)).deep.eq([5000, 5600, 1002, 1004]);
+      // No answer was recorded after the last two moves, so they take the time of their first line, and have no picks.
+      expect(moves[2].picks).is.undefined;
+      expect(moves[3].picks).is.undefined;
+    });
+
+    it('takes the time of the move\'s first line when the answer recorded none, and has none for a move without lines', () => {
+      const old = entries.map(({at: _at, ...entry}) => entry);
+      const moves = buildMoveList(old, [], timed, false, {colors});
+
+      // Save 1 logged nothing, so its move has no first line to take the time from.
+      expect(moves.map((m) => [m.saveId, m.messages.length, m.at])).deep.eq([[0, 2, 1000], [1, 0, undefined], [2, 2, 1002], [3, 2, 1004]]);
+    });
+
+    it('does not copy the picks of the saves into the moves', () => {
+      const moves = buildMoveList(entries, [], timed, false, {colors});
+      moves[0].picks![0].cards.push(CardName.CAPITAL);
+      expect(entries[1].picks![0].cards).deep.eq([CardName.FISH]);
+    });
+
+    it('leaves out the picks of a player whose colour is not known', () => {
+      const moves = buildMoveList(entries, [], timed, false, {colors: new Map([[b, 'blue']])});
+      expect(moves[0].picks).is.undefined;
+      expect(moves[1].picks).deep.eq([{color: 'blue', cards: [CardName.CAPITAL, CardName.HACKERS]}, {color: 'blue', cards: []}]);
+    });
+
+    it('takes the picks and the time of the newest move from the live answers', () => {
+      const live = {colors, newest: [b], newestPicks: [{playerId: b, cards: [CardName.FISH]}], newestAt: 9000};
+      const moves = buildMoveList(entries, [], timed, false, live);
+
+      expect(moves[3].picks).deep.eq([{color: 'blue', cards: [CardName.FISH]}]);
+      expect(moves[3].at).eq(9000);
+      // Without a live answer the newest move has none of its own.
+      const quiet = buildMoveList(entries, [], timed, false, {colors});
+      expect(quiet[3].picks).is.undefined;
+      expect(quiet[3].at).eq(1004);
+    });
+
+    it('gives none without movers', () => {
+      expect(buildMoveList(entries, [], timed).some((m) => m.picks !== undefined)).is.false;
+    });
   });
 
   it('puts every visible line in exactly one move, in order', () => {

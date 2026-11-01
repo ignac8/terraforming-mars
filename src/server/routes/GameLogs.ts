@@ -51,7 +51,13 @@ export class GameLogs {
     return newLines;
   }
 
+  /**
+   * The lines `playerId` may see. Once the game has ended everyone sees what a judge sees (see `getLogsForJudge`).
+   */
   public getLogsForGameView(playerId: ParticipantId, game: IGame, generation: number | undefined): Array<LogMessage> {
+    if (game.phase === Phase.END) {
+      return this.getLogsForJudge(game, generation);
+    }
     const messagesForPlayer = (message: LogMessage) => {
       try {
         if (message === undefined || message === null) {

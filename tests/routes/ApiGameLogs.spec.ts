@@ -202,6 +202,72 @@ describe('ApiGameLogs', () => {
     expect(game.gameLog.map((m) => m.playerId)).deep.eq([undefined, yellowPlayer.id, orangePlayer.id]);
   });
 
+  describe('private lines', () => {
+    let yellowPlayer: TestPlayer;
+    let orangePlayer: TestPlayer;
+    let game: IGame;
+
+    beforeEach(async () => {
+      yellowPlayer = TestPlayer.YELLOW.newPlayer();
+      orangePlayer = TestPlayer.ORANGE.newPlayer();
+      game = Game.newInstance('game-id', [yellowPlayer, orangePlayer], yellowPlayer, 'spectatorid', {judgeLink: true});
+      await scaffolding.ctx.gameLoader.add(game);
+      game.gameLog.length = 0;
+      game.log('Generation ${0}', (b) => b.forNewGeneration().number(1));
+      game.log('All players see this.');
+      game.log('Yellow only.', (_b) => {}, {reservedFor: yellowPlayer});
+      game.log('Orange only.', (_b) => {}, {reservedFor: orangePlayer});
+    });
+
+    async function read(id: string, query: string = '') {
+      res = new MockResponse();
+      scaffolding.url = '/api/game/logs?id=' + id + query;
+      await scaffolding.get(ApiGameLogs.INSTANCE, res);
+      expect(res.statusCode, id).eq(statusCode.ok);
+      return JSON.parse(res.content) as Array<{message: string, owner?: string, playerId?: string}>;
+    }
+
+    const texts = (messages: Array<{message: string}>) => messages.map((m) => m.message).filter((m) => !m.startsWith('Generation'));
+
+    it('keeps them from the other viewers of a running game', async () => {
+      expect(texts(await read(yellowPlayer.id))).deep.eq(['All players see this.', 'Yellow only.']);
+      expect(texts(await read(orangePlayer.id))).deep.eq(['All players see this.', 'Orange only.']);
+      expect(texts(await read(game.spectatorId))).deep.eq(['All players see this.']);
+      expect(texts(await read(game.judgeId!))).deep.eq(['All players see this.', 'Yellow only.', 'Orange only.']);
+    });
+
+    it('shows them to every viewer once the game has ended, each marked with its owner', async () => {
+      game.phase = Phase.END;
+
+      for (const id of [yellowPlayer.id, orangePlayer.id, game.spectatorId, game.judgeId!]) {
+        const messages = await read(id);
+        expect(texts(messages), id).deep.eq(['All players see this.', 'Yellow only.', 'Orange only.']);
+        expect(messages.map((m) => m.owner), id).deep.eq([undefined, undefined, yellowPlayer.color, orangePlayer.color]);
+        expect(messages.some((m) => m.playerId !== undefined), id).is.false;
+      }
+      // The stored log keeps its player ids.
+      expect(game.gameLog.map((m) => m.playerId)).deep.eq([undefined, undefined, yellowPlayer.id, orangePlayer.id]);
+    });
+
+    it('shows them for the generation that was asked for, once the game has ended', async () => {
+      game.phase = Phase.END;
+      for (const id of [yellowPlayer.id, game.spectatorId]) {
+        expect(texts(await read(id, '&generation=1')), id).deep.eq(['All players see this.', 'Yellow only.', 'Orange only.']);
+        expect(await read(id, '&generation=2'), id).is.empty;
+      }
+    });
+
+    it('does not show them to a viewer of a game that a rewind opened again', async () => {
+      game.phase = Phase.END;
+      expect(texts(await read(game.spectatorId))).includes('Orange only.');
+
+      game.phase = Phase.ACTION;
+
+      expect(texts(await read(game.spectatorId))).deep.eq(['All players see this.']);
+      expect(texts(await read(yellowPlayer.id))).deep.eq(['All players see this.', 'Yellow only.']);
+    });
+  });
+
   it('judge logs refuse a wrong password once the judge password is claimed', async () => {
     const yellowPlayer = TestPlayer.YELLOW.newPlayer();
     const orangePlayer = TestPlayer.ORANGE.newPlayer();

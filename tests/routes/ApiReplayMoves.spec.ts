@@ -88,7 +88,7 @@ describe('ApiReplayMoves', () => {
       expect(JSON.parse(res.content).status).eq('available');
     });
 
-    it('shows a judge every private log line with its owner, and a spectator only the public ones', async () => {
+    it('shows a judge and, once the game has ended, a spectator every private log line with its owner', async () => {
       const log = [
         new LogMessage(LogMessageType.DEFAULT, 'public one', []),
         new LogMessage(LogMessageType.DEFAULT, 'private to player', [], player.id),
@@ -113,7 +113,9 @@ describe('ApiReplayMoves', () => {
       expect(judgeMessages.map((m: any) => m.owner)).deep.eq([undefined, player.color, undefined]);
       expect(res.content).not.contains(player.id);
       const spectatorMessages = JSON.parse(spectatorRes.content).moves.flatMap((m: any) => m.messages);
-      expect(spectatorMessages.map((m: any) => m.message)).deep.eq(['public one', 'public two']);
+      expect(spectatorMessages.map((m: any) => m.message)).deep.eq(['public one', 'private to player', 'public two']);
+      expect(spectatorMessages.map((m: any) => m.owner)).deep.eq([undefined, player.color, undefined]);
+      expect(spectatorRes.content).not.contains(player.id);
     });
 
     it('refuses a judge with a wrong password', async () => {

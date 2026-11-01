@@ -93,19 +93,15 @@ describe('ReplayService', () => {
     expect(list[1].messages.map((m) => m.message)).deep.eq(['line 2', 'line 3', 'line 4']);
   });
 
-  it('hides other players\' private log lines', async () => {
+  it('shows every viewer of a finished game every private line, each marked with its owner', async () => {
     // Line 0 is public, 1 is private to player, 2 is private to player2, 3 is public.
     storeLengths([0, 4, 4, 4], new Map([[1, player.id], [2, player2.id]]));
-    const forPlayer = await moves(player.id);
-    expect(forPlayer[0].messages.map((m) => m.message)).deep.eq(['line 0', 'line 1', 'line 3']);
-    clearReplayCache();
-    const forPlayer2 = await moves(player2.id);
-    expect(forPlayer2[0].messages.map((m) => m.message)).deep.eq(['line 0', 'line 2', 'line 3']);
-  });
-
-  it('shows a spectator only public lines', async () => {
-    storeLengths([0, 4, 4, 4], new Map([[1, player.id], [2, player2.id]]));
-    expect((await moves('s-spectator'))[0].messages.map((m) => m.message)).deep.eq(['line 0', 'line 3']);
+    for (const viewer of [player.id, player2.id, 's-spectator']) {
+      const messages = (await moves(viewer))[0].messages;
+      expect(messages.map((m) => m.message), viewer).deep.eq(['line 0', 'line 1', 'line 2', 'line 3']);
+      expect(messages.map((m) => m.owner), viewer).deep.eq([undefined, player.color, player2.color, undefined]);
+      expect(messages.some((m) => m.playerId !== undefined), viewer).is.false;
+    }
   });
 
   describe('for a judge', () => {
@@ -122,27 +118,35 @@ describe('ReplayService', () => {
       expect(messages.map((m) => m.owner)).deep.eq([undefined, player.color, player2.color, undefined]);
     });
 
-    it('never shows a player id', async () => {
-      const list = await moves(game.judgeId);
-      const json = JSON.stringify(list);
-      expect(json).not.contains(player.id);
-      expect(json).not.contains(player2.id);
-      expect(list[0].messages.some((m) => m.playerId !== undefined)).is.false;
+    it('never shows a player id, to anyone', async () => {
+      for (const viewer of [game.judgeId, player.id, player2.id, game.spectatorId]) {
+        const list = await moves(viewer);
+        const json = JSON.stringify(list);
+        expect(json, viewer).not.contains(player.id);
+        expect(json, viewer).not.contains(player2.id);
+        expect(list[0].messages.some((m) => m.playerId !== undefined), viewer).is.false;
+      }
     });
 
-    it('does not change what players and spectators see', async () => {
-      await moves(game.judgeId);
-      expect((await moves(player.id))[0].messages.map((m) => m.message)).deep.eq(['line 0', 'line 1', 'line 3']);
-      expect((await moves(player2.id))[0].messages.map((m) => m.message)).deep.eq(['line 0', 'line 2', 'line 3']);
-      expect((await moves(game.spectatorId))[0].messages.map((m) => m.message)).deep.eq(['line 0', 'line 3']);
-      expect(JSON.stringify(await moves(player.id))).contains(player.id);
+    it('gives players and spectators of a finished game what it gives the judge', async () => {
+      const forJudge = JSON.stringify(await moves(game.judgeId));
+      for (const viewer of [player.id, player2.id, game.spectatorId]) {
+        expect(JSON.stringify(await moves(viewer)), viewer).eq(forJudge);
+      }
     });
   });
 
-  it('does not share cached messages between viewers', async () => {
+  it('marks copies of the lines for a viewer and leaves the stored lines as they were', async () => {
     storeLengths([0, 4, 4, 4], new Map([[1, player.id]]));
-    expect((await moves(player.id))[0].messages).has.length(4);
-    expect((await moves(player2.id))[0].messages).has.length(3);
+    const stored = db.games.get(game.id)!.at(-1)!.gameLog;
+
+    const first = (await moves(player2.id))[0].messages[1];
+    expect(first.owner).eq(player.color);
+    expect(first.playerId).is.undefined;
+
+    expect(stored[1].playerId).eq(player.id);
+    expect(stored[1].owner).is.undefined;
+    expect((await moves(player.id))[0].messages[1]).not.eq(first);
   });
 
   it('waits for the END save and does not cache the list built before it', async () => {
@@ -286,17 +290,17 @@ describe('ReplayService', () => {
     expect(reads.sort()).deep.eq([0, 1, 2, 3]);
   });
 
-  it('gives each concurrent viewer only their own private lines', async () => {
+  it('gives each concurrent viewer of a finished game every line', async () => {
     storeLengths([0, 4, 4, 4], new Map([[1, player.id], [2, player2.id]]));
-    const [forPlayer, forPlayer2, forSpectator] = await Promise.all([
+    const results = await Promise.all([
       getReplayMoves(game, player.id),
       getReplayMoves(game, player2.id),
       getReplayMoves(game, 's-spectator' as PlayerId),
     ]);
     const lines = (r: ReplayMovesModel) => (r as {moves: Array<ReplayMove>}).moves[0].messages.map((m) => m.message);
-    expect(lines(forPlayer)).deep.eq(['line 0', 'line 1', 'line 3']);
-    expect(lines(forPlayer2)).deep.eq(['line 0', 'line 2', 'line 3']);
-    expect(lines(forSpectator)).deep.eq(['line 0', 'line 3']);
+    for (const result of results) {
+      expect(lines(result)).deep.eq(['line 0', 'line 1', 'line 2', 'line 3']);
+    }
   });
 
   it('does not hand one viewer the message array of another', async () => {
@@ -488,6 +492,38 @@ describe('ReplayService', () => {
       const lines = r.moves.flatMap((m) => m.messages.map((l) => l.message));
       expect(lines).includes('private to one');
       expect(lines).not.includes('private to two');
+    });
+
+    it('shows the judge every private line of a running game, each marked with its owner, and a player only their own', async () => {
+      const [g, p, p2] = testGame(2, {undoOption: true, judgeLink: true, judgeUndo: true});
+      act(p);
+      g.log('private to one', undefined, {reservedFor: p});
+      g.log('private to two', undefined, {reservedFor: p2});
+      act(p);
+      const lines = async (viewer: string) => (await getReplayMoves(g, viewer as PlayerId) as {moves: Array<ReplayMove>}).moves.flatMap((m) => m.messages);
+
+      const forJudge = (await lines(g.judgeId!)).filter((m) => m.message.startsWith('private to'));
+      expect(forJudge.map((m) => [m.message, m.owner, m.playerId])).deep.eq([['private to one', p.color, undefined], ['private to two', p2.color, undefined]]);
+      expect((await lines(p.id)).filter((m) => m.message.startsWith('private to')).map((m) => m.message)).deep.eq(['private to one']);
+      expect((await lines(p2.id)).filter((m) => m.message.startsWith('private to')).map((m) => m.message)).deep.eq(['private to two']);
+      expect((await lines(p.id)).every((m) => m.owner === undefined)).is.true;
+    });
+
+    it('shows a player only their own private lines while the game runs and every line once it has ended', async () => {
+      const [g, p, p2] = testGame(2, {undoOption: true});
+      act(p);
+      g.log('private to two', undefined, {reservedFor: p2});
+      act(p);
+      const texts = async (viewer: string) => (await getReplayMoves(g, viewer as PlayerId) as {moves: Array<ReplayMove>}).moves.flatMap((m) => m.messages.map((l) => l.message));
+      expect(await texts(p.id)).not.includes('private to two');
+
+      const rows = sdb.games.get(g.id)!;
+      rows[rows.length - 1] = {...rows[rows.length - 1]!, phase: Phase.END};
+      g.phase = Phase.END;
+
+      for (const viewer of [p.id, p2.id, g.spectatorId]) {
+        expect(await texts(viewer), viewer).includes('private to two');
+      }
     });
 
     it('keeps the history from everyone else', async () => {

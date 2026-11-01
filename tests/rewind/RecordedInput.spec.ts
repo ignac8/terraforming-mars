@@ -72,6 +72,34 @@ describe('RecordedInput', () => {
     expect(rows[index]!.inputs![0].stateHash).eq(stateHash(rows[index - 1]!));
   });
 
+  it('records when the answer was given, and keeps it in the save and after a reload', () => {
+    const started = Date.now();
+    convertPlants();
+    const finished = Date.now();
+
+    // Taking the next action saved the game with the answer.
+    const rows = db.games.get(game.id)!;
+    const saved = rows[rows.length - 1]!;
+    expect(saved.inputs).has.length(1);
+    expect(saved.inputs![0].at).within(started, finished);
+
+    // A reload saves the same row again, with the same inputs.
+    Game.deserialize(JSON.parse(JSON.stringify(saved)));
+    expect(rows[rows.length - 1]!.inputs![0].at).eq(saved.inputs![0].at);
+  });
+
+  it('leaves the state hash alone: the time of an answer is not part of the state', () => {
+    player.takeAction();
+    game.recordInput(player, player.getWaitingFor()!, {type: 'or', index: 0, response: {type: 'option'}});
+    const state = game.serialize();
+    const later = structuredClone(state);
+    later.inputs![0].at = state.inputs![0].at! + 60_000;
+    delete state.inputs![0].at;
+
+    expect(stateHash(later)).eq(stateHash(state));
+    expect(stateHash(state)).eq(stateHash({...state, inputs: undefined}));
+  });
+
   it('round-trips the inputs since the last save, and a save that has none', () => {
     player.takeAction();
     const waitingFor = player.getWaitingFor()!;
