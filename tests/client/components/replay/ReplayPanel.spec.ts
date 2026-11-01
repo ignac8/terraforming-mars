@@ -10,6 +10,9 @@ import {ReplayMove} from '@/common/replay/ReplayModel';
 import {LogMessage} from '@/common/logs/LogMessage';
 import {LogMessageDataType} from '@/common/logs/LogMessageDataType';
 import {LogMessageType} from '@/common/logs/LogMessageType';
+import {CardName} from '@/common/cards/CardName';
+import {setTranslationsForTest} from '@/client/directives/i18n';
+import {PreferencesManager} from '@/client/utils/PreferencesManager';
 
 function message(text: string, timestamp: number): LogMessage {
   return {
@@ -106,11 +109,235 @@ describe('ReplayPanel', () => {
     expect(wrapper.emitted('select')).is.undefined;
   });
 
-  it('jumps to the start and to the end', async () => {
+  it('jumps to the start and to the end once the player confirms', async () => {
     const wrapper = mountPanel({index: 1});
     await wrapper.find('.replay-start').trigger('click');
+    await wrapper.find('.replay-confirm-yes').trigger('click');
     await wrapper.find('.replay-end').trigger('click');
+    await wrapper.find('.replay-confirm-yes').trigger('click');
     expect(wrapper.emitted('select')).to.deep.equal([[0], [2]]);
+  });
+
+  describe('jumping to an end', () => {
+    it('asks first, and says what each end shows', async () => {
+      const wrapper = mountPanel({index: 1});
+      expect(wrapper.find('.replay-confirm').exists()).is.false;
+      await wrapper.find('.replay-start').trigger('click');
+      expect(wrapper.find('.replay-confirm-text').text()).equals('Jump to the start?');
+      await wrapper.find('.replay-end').trigger('click');
+      expect(wrapper.find('.replay-confirm-text').text()).equals('Jump to the end? This shows how the game ends.');
+      expect(wrapper.emitted('select')).is.undefined;
+    });
+
+    it('goes nowhere when the player cancels', async () => {
+      const wrapper = mountPanel({index: 1});
+      await wrapper.find('.replay-end').trigger('click');
+      await wrapper.find('.replay-confirm-cancel').trigger('click');
+      expect(wrapper.find('.replay-confirm').exists()).is.false;
+      expect(wrapper.emitted('select')).is.undefined;
+    });
+
+    it('stops asking once another move is selected', async () => {
+      const wrapper = mountPanel({index: 1});
+      await wrapper.find('.replay-end').trigger('click');
+      await wrapper.setProps({index: 0});
+      expect(wrapper.find('.replay-confirm').exists()).is.false;
+    });
+
+    it('does not ask on the live page, where the end is not a spoiler', async () => {
+      const wrapper = mountPanel({live: true, index: 1});
+      await wrapper.find('.replay-collapse').trigger('click');
+      await wrapper.find('.replay-start').trigger('click');
+      expect(wrapper.find('.replay-confirm').exists()).is.false;
+      expect(wrapper.emitted('select')).to.deep.equal([[0]]);
+    });
+  });
+
+  describe('transport icons', () => {
+    it('draws each button as an icon, with no glyph in the text', () => {
+      const wrapper = mountPanel({index: 1});
+      for (const selector of ['.replay-start', '.replay-back', '.replay-forward', '.replay-end']) {
+        const button = wrapper.find(selector);
+        expect(button.find('svg path').exists(), selector).is.true;
+        expect(button.text(), selector).equals('');
+      }
+    });
+
+    it('labels play and pause in words, and draws the two differently', async () => {
+      const wrapper = mountPanel();
+      expect(wrapper.find('.replay-play').text()).equals('Play replay');
+      const playIcon = wrapper.find('.replay-play svg path').attributes('d');
+      await wrapper.setProps({playing: true});
+      expect(wrapper.find('.replay-play').text()).equals('Pause');
+      expect(wrapper.find('.replay-play svg path').attributes('d')).not.equals(playIcon);
+      expect(wrapper.find('.replay-play').attributes('aria-label')).equals('Pause');
+    });
+
+    it('draws every transport button differently', () => {
+      const wrapper = mountPanel({index: 1});
+      const paths = ['.replay-start', '.replay-back', '.replay-forward', '.replay-end'].map((selector) => wrapper.find(selector + ' svg path').attributes('d'));
+      expect(new Set(paths).size).equals(4);
+    });
+  });
+
+  describe('hotkeys', () => {
+    function press(key: string, init: ConstructorParameters<typeof KeyboardEvent>[1] = {}, target: EventTarget = window): KeyboardEvent {
+      const event = new KeyboardEvent('keydown', {key, bubbles: true, cancelable: true, ...init});
+      target.dispatchEvent(event);
+      return event;
+    }
+
+    it('steps with the arrow keys and plays and pauses with the space bar', () => {
+      const stopped = mountPanel({index: 1});
+      press('ArrowRight');
+      press('ArrowLeft');
+      press(' ');
+      expect(stopped.emitted('select')).to.deep.equal([[2], [0]]);
+      expect(stopped.emitted('play')).has.length(1);
+      expect(stopped.emitted('pause')).is.undefined;
+      stopped.unmount();
+
+      const playing = mountPanel({index: 1, playing: true});
+      press(' ');
+      expect(playing.emitted('pause')).has.length(1);
+    });
+
+    it('keeps the page from scrolling, and a focused button from being pressed too', () => {
+      mountPanel({index: 1});
+      expect(press('ArrowRight').defaultPrevented).is.true;
+      expect(press(' ').defaultPrevented).is.true;
+      const up = new KeyboardEvent('keyup', {key: ' ', cancelable: true});
+      window.dispatchEvent(up);
+      expect(up.defaultPrevented).is.true;
+      const another = new KeyboardEvent('keyup', {key: ' ', cancelable: true});
+      window.dispatchEvent(another);
+      expect(another.defaultPrevented).is.false;
+    });
+
+    it('ignores other keys and keys pressed with a modifier', () => {
+      const wrapper = mountPanel({index: 1});
+      expect(press('a').defaultPrevented).is.false;
+      press('ArrowRight', {ctrlKey: true});
+      press('ArrowRight', {metaKey: true});
+      press('ArrowRight', {altKey: true});
+      press(' ', {shiftKey: true});
+      expect(wrapper.emitted('select')).is.undefined;
+      expect(wrapper.emitted('play')).is.undefined;
+    });
+
+    it('leaves the keys to a field that takes them', () => {
+      const wrapper = mountPanel({index: 1});
+      const editable = document.createElement('div');
+      editable.setAttribute('contenteditable', 'true');
+      const fields = [document.createElement('input'), document.createElement('select'), document.createElement('textarea'), editable];
+      for (const field of fields) {
+        document.body.appendChild(field);
+        press('ArrowRight', {}, field);
+        press(' ', {}, field);
+        field.remove();
+      }
+      expect(wrapper.emitted('select')).is.undefined;
+      expect(wrapper.emitted('play')).is.undefined;
+    });
+
+    it('takes the keys from a button, which is where the focus is after a click on the panel', () => {
+      const wrapper = mountPanel({index: 1});
+      const button = document.createElement('button');
+      document.body.appendChild(button);
+      press('ArrowRight', {}, button);
+      button.remove();
+      expect(wrapper.emitted('select')).to.deep.equal([[2]]);
+    });
+
+    it('stops listening when the panel goes away', () => {
+      const wrapper = mountPanel({index: 1});
+      wrapper.unmount();
+      expect(press('ArrowRight').defaultPrevented).is.false;
+      expect(wrapper.emitted('select')).is.undefined;
+    });
+
+    it('is off on the live game page, where the keys belong to the page', () => {
+      const wrapper = mountPanel({live: true, index: 1});
+      expect(press('ArrowRight').defaultPrevented).is.false;
+      press(' ');
+      expect(wrapper.emitted('select')).is.undefined;
+    });
+  });
+
+  describe('autoplay settings', () => {
+    it('offers slow speeds down to a tenth, and fast ones up to four times', () => {
+      const speeds = mountPanel().findAll('.replay-speed option').map((option) => option.attributes('value'));
+      expect(speeds).deep.eq(['0.1', '0.25', '0.5', '1', '2', '4']);
+    });
+
+    it('chooses between a fixed wait and real time', async () => {
+      const fixed = mountPanel();
+      expect(fixed.find('.replay-pace-fixed').attributes('aria-pressed')).equals('true');
+      expect(fixed.find('.replay-pace-real').attributes('aria-pressed')).equals('false');
+      await fixed.find('.replay-pace-real').trigger('click');
+      expect(fixed.emitted('update:realTime')).to.deep.equal([[true]]);
+
+      const real = mountPanel({realTime: true});
+      expect(real.find('.replay-pace-fixed').attributes('aria-pressed')).equals('false');
+      expect(real.find('.replay-pace-real').attributes('aria-pressed')).equals('true');
+      await real.find('.replay-pace-fixed').trigger('click');
+      expect(real.emitted('update:realTime')).to.deep.equal([[false]]);
+    });
+
+    it('has no autoplay settings on the live game page', () => {
+      expect(mountPanel({live: true}).find('.replay-pace').exists()).is.false;
+    });
+  });
+
+  describe('the log switch', () => {
+    it('sits in the header and passes the choice on', async () => {
+      for (const showLog of [false, true]) {
+        const wrapper = mountPanel({showLog});
+        const input = wrapper.find('.replay-header .replay-show-log input');
+        expect((input.element as HTMLInputElement).checked).equals(showLog);
+        await input.setValue(!showLog);
+        expect(wrapper.emitted('update:showLog'), String(showLog)).to.deep.equal([[!showLog]]);
+      }
+    });
+
+    it('is not there while the live game shows, which has its own log', () => {
+      expect(mountPanel({live: true, index: undefined}).find('.replay-show-log').exists()).is.false;
+      expect(mountPanel({live: true, index: 1}).find('.replay-show-log').exists()).is.true;
+    });
+  });
+
+  describe('picks', () => {
+    afterEach(() => {
+      setTranslationsForTest(undefined);
+      PreferencesManager.INSTANCE.set('lang', 'en');
+    });
+
+    const picked: Array<ReplayMove> = [
+      {saveId: 1, messages: [message('alpha', 1)], picks: [{color: 'red', cards: [CardName.BIRDS, CardName.FISH]}]},
+      {saveId: 2, messages: [], silent: true, movers: ['blue'], picks: [
+        {color: 'blue', cards: [CardName.ANTS]},
+        {color: 'red', cards: [CardName.KELP_FARMING], auto: true},
+      ]},
+      {saveId: 3, messages: []},
+    ];
+
+    it('lists the cards under the row, with the colour of who chose them', () => {
+      const rows = mountPanel({moves: picked}).findAll('.replay-move');
+      const picks = (row: number) => rows[row].findAll('.replay-move-pick').map((pick) => [pick.find('.replay-move-mover').classes().pop(), pick.text()]);
+      expect(picks(0)).deep.eq([['player_bg_color_red', 'kept: Birds, Fish']]);
+      expect(picks(1)).deep.eq([
+        ['player_bg_color_blue', 'drafted: Ants'],
+        ['player_bg_color_red', 'last card passed: Kelp Farming'],
+      ]);
+      expect(picks(2)).deep.eq([]);
+    });
+
+    it('names the cards and what was done with them in the language of the player', () => {
+      PreferencesManager.INSTANCE.set('lang', 'pl');
+      setTranslationsForTest({'Birds': 'Ptaki', 'Fish': 'Ryby', 'kept': 'zatrzymane'});
+      const text = mountPanel({moves: picked}).findAll('.replay-move')[0].find('.replay-move-pick').text();
+      expect(text).equals('zatrzymane: Ptaki, Ryby');
+    });
   });
 
   it('play button plays, and pauses while playing', async () => {

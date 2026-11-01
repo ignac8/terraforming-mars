@@ -1,6 +1,6 @@
-import {flushPromises, mount, shallowMount} from '@vue/test-utils';
+import {config, flushPromises, mount, shallowMount} from '@vue/test-utils';
 import {expect} from 'chai';
-import {afterEach, beforeEach, vi} from 'vitest';
+import {afterAll, afterEach, beforeAll, beforeEach, vi} from 'vitest';
 import {globalConfig} from '../getLocalVue';
 import ReplayScreen from '@/client/components/replay/ReplayScreen.vue';
 import ReplayPanel from '@/client/components/replay/ReplayPanel.vue';
@@ -21,6 +21,8 @@ import {translateMessage} from '@/client/directives/i18n';
 import {LogMessageDataType} from '@/common/logs/LogMessageDataType';
 import {PreferencesManager} from '@/client/utils/PreferencesManager';
 import {LogMessage} from '@/common/logs/LogMessage';
+import {FakeLocalStorage} from '../FakeLocalStorage';
+import {REAL_TIME_MAX_MS, REAL_TIME_MIN_MS} from '@/client/utils/replayAutoplay';
 
 const id = 's-spectator-id' as SpectatorId;
 const playerId = 'p-blue-id' as PlayerId;
@@ -35,6 +37,14 @@ function playedView(overrides: Parameters<typeof fakePlayerViewModel>[0] = {}): 
 }
 
 describe('ReplayScreen', () => {
+  // The hands and the pending choice sit in the slot of the home screen, which a stub leaves empty.
+  beforeAll(() => {
+    config.global.renderStubDefaultSlot = true;
+  });
+  afterAll(() => {
+    config.global.renderStubDefaultSlot = false;
+  });
+
   let originalFetch: any;
   let calls: Array<string>;
   let movesAnswer: ReplayMovesModel;
@@ -313,6 +323,292 @@ describe('ReplayScreen', () => {
       expect(panel().props('index')).to.equal(2);
       expect(panel().props('playing')).is.false;
     });
+  });
+
+  describe('autoplay in real time', () => {
+    let storage: FakeLocalStorage;
+
+    beforeEach(() => {
+      storage = new FakeLocalStorage();
+      FakeLocalStorage.register(storage);
+    });
+
+    afterEach(() => {
+      FakeLocalStorage.deregister(storage);
+    });
+
+    /** Moves answered at the given times. */
+    function answeredAt(...times: Array<number | undefined>): ReplayMovesModel {
+      return {status: 'available', ...finishedGame, moves: times.map((at, i) => ({saveId: 10 + i, messages: [], ...(at === undefined ? {} : {at})}))};
+    }
+
+    async function mountPlayable(moves: ReplayMovesModel, options: {speed?: number, realTime?: boolean} = {}) {
+      movesAnswer = moves;
+      const wrapper = mountScreen();
+      await flushPromises();
+      vi.useFakeTimers({toFake: ['setTimeout', 'clearTimeout']});
+      const panel = () => wrapper.findComponent(ReplayPanel);
+      if (options.speed !== undefined) {
+        panel().vm.$emit('update:speed', options.speed);
+      }
+      if (options.realTime !== false) {
+        panel().vm.$emit('update:realTime', true);
+      }
+      await vi.advanceTimersByTimeAsync(0);
+      return {wrapper, panel};
+    }
+
+    it('stays on a move as long as the player took to answer it', async () => {
+      const {panel} = await mountPlayable(answeredAt(1000, 3500, 4000, 10_000));
+      panel().vm.$emit('play');
+      await vi.advanceTimersByTimeAsync(0);
+      // The first move has no answer before it, so it waits the fixed time.
+      await vi.advanceTimersByTimeAsync(999);
+      expect(panel().props('index')).to.equal(0);
+      await vi.advanceTimersByTimeAsync(1);
+      expect(panel().props('index')).to.equal(1);
+      await vi.advanceTimersByTimeAsync(2499);
+      expect(panel().props('index')).to.equal(1);
+      await vi.advanceTimersByTimeAsync(1);
+      expect(panel().props('index')).to.equal(2);
+      await vi.advanceTimersByTimeAsync(499);
+      expect(panel().props('index')).to.equal(2);
+      await vi.advanceTimersByTimeAsync(1);
+      expect(panel().props('index')).to.equal(3);
+      expect(panel().props('playing')).is.false;
+    });
+
+    it('keeps the wait between the shortest and the longest', async () => {
+      const {panel} = await mountPlayable(answeredAt(0, 10, 1_000_000, 1_000_050));
+      panel().vm.$emit('play');
+      await vi.advanceTimersByTimeAsync(1000);
+      expect(panel().props('index')).to.equal(1);
+      await vi.advanceTimersByTimeAsync(REAL_TIME_MIN_MS - 1);
+      expect(panel().props('index')).to.equal(1);
+      await vi.advanceTimersByTimeAsync(1);
+      expect(panel().props('index')).to.equal(2);
+      await vi.advanceTimersByTimeAsync(REAL_TIME_MAX_MS - 1);
+      expect(panel().props('index')).to.equal(2);
+      await vi.advanceTimersByTimeAsync(1);
+      expect(panel().props('index')).to.equal(3);
+    });
+
+    it('divides the wait by the speed', async () => {
+      const {panel} = await mountPlayable(answeredAt(0, 4000, 12_000), {speed: 4});
+      panel().vm.$emit('play');
+      await vi.advanceTimersByTimeAsync(250);
+      expect(panel().props('index')).to.equal(1);
+      await vi.advanceTimersByTimeAsync(999);
+      expect(panel().props('index')).to.equal(1);
+      await vi.advanceTimersByTimeAsync(1);
+      expect(panel().props('index')).to.equal(2);
+    });
+
+    it('reads the first log line of a move that has no answer time', async () => {
+      movesAnswer = {status: 'available', ...finishedGame, moves: [
+        {saveId: 10, messages: [{message: 'a', data: [], timestamp: 5000}]},
+        {saveId: 11, messages: [{message: 'b', data: [], timestamp: 7000}]},
+        {saveId: 12, messages: []},
+      ]};
+      const wrapper = mountScreen();
+      await flushPromises();
+      vi.useFakeTimers({toFake: ['setTimeout', 'clearTimeout']});
+      const panel = () => wrapper.findComponent(ReplayPanel);
+      panel().vm.$emit('update:realTime', true);
+      panel().vm.$emit('play');
+      await vi.advanceTimersByTimeAsync(1000);
+      expect(panel().props('index')).to.equal(1);
+      await vi.advanceTimersByTimeAsync(1999);
+      expect(panel().props('index')).to.equal(1);
+      await vi.advanceTimersByTimeAsync(1);
+      expect(panel().props('index')).to.equal(2);
+    });
+
+    it('waits the fixed time where no time is known', async () => {
+      const {panel} = await mountPlayable(answeredAt(1000, undefined, 9000));
+      panel().vm.$emit('play');
+      await vi.advanceTimersByTimeAsync(1000);
+      expect(panel().props('index')).to.equal(1);
+      await vi.advanceTimersByTimeAsync(999);
+      expect(panel().props('index')).to.equal(1);
+      await vi.advanceTimersByTimeAsync(1);
+      expect(panel().props('index')).to.equal(2);
+    });
+
+    it('waits the same time for every move in fixed mode, whatever the answer times', async () => {
+      const {panel} = await mountPlayable(answeredAt(0, 10_000, 10_100), {realTime: false});
+      panel().vm.$emit('play');
+      await vi.advanceTimersByTimeAsync(1000);
+      expect(panel().props('index')).to.equal(1);
+      await vi.advanceTimersByTimeAsync(1000);
+      expect(panel().props('index')).to.equal(2);
+    });
+
+    it('starts the wait over when the mode is switched during it', async () => {
+      const {panel} = await mountPlayable(answeredAt(1000, 3500, 4000), {realTime: false});
+      panel().vm.$emit('play');
+      await vi.advanceTimersByTimeAsync(1000);
+      expect(panel().props('index')).to.equal(1);
+      await vi.advanceTimersByTimeAsync(500);
+      panel().vm.$emit('update:realTime', true);
+      await vi.advanceTimersByTimeAsync(2499);
+      expect(panel().props('index')).to.equal(1);
+      await vi.advanceTimersByTimeAsync(1);
+      expect(panel().props('index')).to.equal(2);
+    });
+
+    it('remembers the mode for the next time', async () => {
+      const first = mountScreen();
+      await flushPromises();
+      expect(first.findComponent(ReplayPanel).props('realTime')).is.false;
+      first.findComponent(ReplayPanel).vm.$emit('update:realTime', true);
+      await flushPromises();
+      expect(first.findComponent(ReplayPanel).props('realTime')).is.true;
+      first.unmount();
+
+      const second = mountScreen();
+      await flushPromises();
+      expect(second.findComponent(ReplayPanel).props('realTime')).is.true;
+      second.findComponent(ReplayPanel).vm.$emit('update:realTime', false);
+      second.unmount();
+
+      const third = mountScreen();
+      await flushPromises();
+      expect(third.findComponent(ReplayPanel).props('realTime')).is.false;
+    });
+  });
+
+  describe('the log', () => {
+    let storage: FakeLocalStorage;
+
+    beforeEach(() => {
+      storage = new FakeLocalStorage();
+      FakeLocalStorage.register(storage);
+    });
+
+    afterEach(() => {
+      FakeLocalStorage.deregister(storage);
+    });
+
+    const said = (text: string): Array<LogMessage> => [{message: text, data: [], timestamp: 0}];
+    const texts = (log: Array<LogMessage> | undefined) => log?.map((message) => message.message);
+
+    async function mountLogged(moves: ReplayMovesModel) {
+      movesAnswer = moves;
+      const wrapper = mountScreen();
+      await flushPromises();
+      const panel = () => wrapper.findComponent(ReplayPanel);
+      const home = () => wrapper.findComponent(SpectatorHome);
+      return {wrapper, panel, home};
+    }
+
+    const three = (finished: boolean): ReplayMovesModel => ({
+      status: 'available', ...finishedGame, finished,
+      moves: [{saveId: 10, messages: said('a')}, {saveId: 11, messages: said('b')}, {saveId: 12, messages: said('c')}],
+    });
+
+    it('is off until it is asked for', async () => {
+      const {home, panel} = await mountLogged(three(true));
+      expect(home().props('replayLog')).is.undefined;
+      expect(panel().props('showLog')).is.false;
+    });
+
+    it('holds the lines of the moves before the one on the board, which are what led to it', async () => {
+      const {home, panel} = await mountLogged(three(false));
+      panel().vm.$emit('update:showLog', true);
+      await flushPromises();
+      expect(texts(home().props('replayLog'))).deep.eq([]);
+
+      panel().vm.$emit('select', 1);
+      await flushPromises();
+      expect(texts(home().props('replayLog'))).deep.eq(['a']);
+
+      panel().vm.$emit('select', 2);
+      await flushPromises();
+      expect(texts(home().props('replayLog'))).deep.eq(['a', 'b']);
+    });
+
+    it('adds the lines of the last position of a finished game, which nothing follows', async () => {
+      const {home, panel} = await mountLogged(three(true));
+      panel().vm.$emit('update:showLog', true);
+      panel().vm.$emit('select', 1);
+      await flushPromises();
+      expect(texts(home().props('replayLog'))).deep.eq(['a']);
+
+      panel().vm.$emit('select', 2);
+      await flushPromises();
+      expect(texts(home().props('replayLog'))).deep.eq(['a', 'b', 'c']);
+    });
+
+    it('goes with the board while the view of the next move is on its way', async () => {
+      const {home, panel} = await mountLogged(three(false));
+      panel().vm.$emit('update:showLog', true);
+      let release!: () => void;
+      holdView = (saveId) => saveId === 11 ? new Promise<void>((resolve) => release = resolve) : undefined;
+      panel().vm.$emit('select', 1);
+      await flushPromises();
+      expect(panel().props('index')).to.equal(1);
+      expect(texts(home().props('replayLog'))).deep.eq([]);
+
+      holdView = undefined;
+      release();
+      await flushPromises();
+      expect(texts(home().props('replayLog'))).deep.eq(['a']);
+    });
+
+    it('is given to the home of a player as well', async () => {
+      const {wrapper, panel} = await mountLogged(three(false));
+      panel().vm.$emit('update:showLog', true);
+      panel().vm.$emit('update:viewAs', 'blue');
+      panel().vm.$emit('select', 1);
+      await flushPromises();
+      expect(texts(wrapper.findComponent(PlayerHome).props('replayLog'))).deep.eq(['a']);
+    });
+
+    it('marks the lines of the moves that rewinds undid', async () => {
+      const {home, panel} = await mountLogged({status: 'available', ...finishedGame, finished: false, moves: [
+        {saveId: 10, messages: said('a')},
+        {saveId: 11, messages: said('b'), undone: true},
+        {saveId: 12, messages: said('c')},
+        {saveId: 13, messages: said('d')},
+      ]});
+      panel().vm.$emit('update:showLog', true);
+      panel().vm.$emit('select', 3);
+      await flushPromises();
+      const log = home().props('replayLog') as Array<LogMessage>;
+      expect(texts(log)).deep.eq(['a', 'b', 'c']);
+      expect(log.map((message) => message.undone)).deep.eq([undefined, true, undefined]);
+    });
+
+    it('is remembered for the next time', async () => {
+      const first = await mountLogged(three(true));
+      first.panel().vm.$emit('update:showLog', true);
+      await flushPromises();
+      expect(first.panel().props('showLog')).is.true;
+      first.wrapper.unmount();
+
+      const second = await mountLogged(three(true));
+      expect(second.panel().props('showLog')).is.true;
+      expect(texts(second.home().props('replayLog'))).deep.eq([]);
+      second.panel().vm.$emit('update:showLog', false);
+      await flushPromises();
+      expect(second.home().props('replayLog')).is.undefined;
+      second.wrapper.unmount();
+
+      const third = await mountLogged(three(true));
+      expect(third.panel().props('showLog')).is.false;
+    });
+  });
+
+  it('puts the hands inside the home screen, where its top bar stays with them as the page scrolls', async () => {
+    const wrapper = mountScreen();
+    await flushPromises();
+    expect(wrapper.findComponent(SpectatorHome).findComponent(ReplayHands).exists()).is.true;
+
+    pastChoice = {title: 'Select card(s) to buy', cards: [{name: CardName.COMET}, {name: CardName.ANTS}]};
+    wrapper.findComponent(ReplayPanel).vm.$emit('update:viewAs', 'blue');
+    await flushPromises();
+    expect(wrapper.findComponent(PlayerHome).findComponent(JudgePendingChoice).exists()).is.true;
   });
 
   it('puts the panel back on the move that is shown when a view fails to load', async () => {
