@@ -313,21 +313,23 @@ describe('ReplayPanel', () => {
     });
 
     const picked: Array<ReplayMove> = [
-      {saveId: 1, messages: [message('alpha', 1)], picks: [{color: 'red', cards: [CardName.BIRDS, CardName.FISH]}]},
+      {saveId: 1, messages: [message('alpha', 1)], picks: [{color: 'red', cards: [CardName.BIRDS, CardName.FISH]}, {color: 'blue', cards: []}]},
       {saveId: 2, messages: [], silent: true, movers: ['blue'], picks: [
         {color: 'blue', cards: [CardName.ANTS]},
         {color: 'red', cards: [CardName.KELP_FARMING], auto: true},
+        {color: 'green', cards: [CardName.TARDIGRADES], auto: true},
       ]},
       {saveId: 3, messages: []},
     ];
 
-    it('lists the cards under the row, with the colour of who chose them', () => {
+    it('lists the cards under the row, with the colour of who chose them, and leaves out answers that chose none', () => {
       const rows = mountPanel({moves: picked}).findAll('.replay-move');
       const picks = (row: number) => rows[row].findAll('.replay-move-pick').map((pick) => [pick.find('.replay-move-mover').classes().pop(), pick.text()]);
       expect(picks(0)).deep.eq([['player_bg_color_red', 'kept: Birds, Fish']]);
       expect(picks(1)).deep.eq([
         ['player_bg_color_blue', 'drafted: Ants'],
         ['player_bg_color_red', 'last card passed: Kelp Farming'],
+        ['player_bg_color_green', 'last card passed: Tardigrades'],
       ]);
       expect(picks(2)).deep.eq([]);
     });

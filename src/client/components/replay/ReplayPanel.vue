@@ -89,7 +89,7 @@
             <span v-for="color in move.movers ?? []" :key="color" :class="['replay-move-mover', 'player_bg_color_' + color]"></span>
             <span v-i18n>Draft pick</span>
           </li>
-          <li v-for="(pick, k) in move.picks ?? []" :key="'pick' + k" class="replay-move-pick">
+          <li v-for="(pick, k) in shownPicks(move)" :key="'pick' + k" class="replay-move-pick">
             <span :class="['replay-move-mover', 'player_bg_color_' + pick.color]"></span>
             <span><span v-i18n>{{ pickLabel(move, pick) }}</span>: {{ cardNames(pick) }}</span>
           </li>
@@ -344,6 +344,10 @@ export default defineComponent({
       const to = this.confirming;
       this.confirming = undefined;
       this.select(to === 'start' ? 0 : this.last);
+    },
+    /** An answer that chose no cards, such as buying none in research, has nothing to list. */
+    shownPicks(move: ReplayMove): Array<ReplayPick> {
+      return (move.picks ?? []).filter((pick) => pick.cards.length > 0);
     },
     pickLabel(move: ReplayMove, pick: ReplayPick): string {
       if (pick.auto) {
