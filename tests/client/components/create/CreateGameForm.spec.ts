@@ -174,6 +174,7 @@ describe('CreateGameForm', () => {
   });
 
   it('restores player passwords from a saved non-tournament config', async () => {
+    PreferencesManager.INSTANCE.set('remember_create_game_settings', true);
     createGameSettingsStorage.save(createNewGameConfig({
       expansions: {...DEFAULT_EXPANSIONS, tournament: false},
       playerPasswords: true,
@@ -189,6 +190,7 @@ describe('CreateGameForm', () => {
   });
 
   it('defaults player passwords off when restoring a saved non-tournament config without the key', async () => {
+    PreferencesManager.INSTANCE.set('remember_create_game_settings', true);
     createGameSettingsStorage.save(createNewGameConfig({
       expansions: {...DEFAULT_EXPANSIONS, tournament: false},
     }));
@@ -298,6 +300,7 @@ describe('CreateGameForm', () => {
   });
 
   it('applies tournament locks when restoring saved tournament settings', async () => {
+    PreferencesManager.INSTANCE.set('remember_create_game_settings', true);
     createGameSettingsStorage.save(createNewGameConfig({
       players: [
         {name: 'Alice', color: 'red', beginner: false, handicap: 3, first: false},
@@ -323,6 +326,7 @@ describe('CreateGameForm', () => {
   });
 
   it('applies tournament locks when restoring the legacy flat tournament key', async () => {
+    PreferencesManager.INSTANCE.set('remember_create_game_settings', true);
     createGameSettingsStorage.save({
       players: [
         {name: 'Alice', color: 'red', beginner: false, handicap: 3, first: true},

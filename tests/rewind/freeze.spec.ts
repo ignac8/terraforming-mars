@@ -64,6 +64,8 @@ describe('freeze', () => {
     game = created;
     await GameLoader.getInstance().add(game);
     for (const player of [player1, player2]) {
+      // testGame skips the corporation pick, which is what enables the clocks.
+      player.timer.enable();
       player.heat = 40;
       player.megaCredits = 100;
     }
