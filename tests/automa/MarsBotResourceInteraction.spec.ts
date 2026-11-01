@@ -206,7 +206,7 @@ describe('MarsBot Resource Interaction (rules page 4-5)', () => {
       const {human, marsBot} = createAutomaGame();
       marsBot.marsBotBoard.tracks[0].advance();
       marsBot.marsBotBoard.tracks[0].advance();
-      const targets = human.game.allPlayers.filter((p) => p.canHaveProductionReduced(Resource.STEEL, 1, human));
+      const targets = human.game.playersAndAutoma.filter((p) => p.canHaveProductionReduced(Resource.STEEL, 1, human));
       expect(targets).to.include(marsBot.player);
     });
 

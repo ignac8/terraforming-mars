@@ -153,7 +153,7 @@ export class RemoveResourcesFromCard extends DeferredAction<Response> {
 
   public static getAvailableTargetCards(player: IPlayer, resourceType: CardResource | undefined, source: Source = 'all', min: number = 1): Array<ICard> {
     const resourceCards: Array<ICard> = [];
-    for (const p of player.game.allPlayers) {
+    for (const p of player.game.playersAndAutoma) {
       if (p === player) {
         if (source !== 'opponents') {
           for (const card of p.getCardsWithResources(resourceType)) {
