@@ -5,7 +5,7 @@
     <div v-if="game.phase === 'end'">
       <div class="player_home_block">
         <DynamicTitle title="This game is over!" :color="spectator.color" />
-        <a :href="'the-end?id='+ spectator.id" v-i18n>Go to game results</a>
+        <a :href="resultsUrl" v-i18n>Go to game results</a>
       </div>
     </div>
 
@@ -82,6 +82,7 @@ import PurgeWarning from '@/client/components/common/PurgeWarning.vue';
 import KeyboardShortcuts from '@/client/components/KeyboardShortcuts.vue';
 import {range} from '@/common/utils/utils';
 import {HomeMixin} from '@/client/mixins/HomeMixin';
+import {gameResultsUrl} from '@/client/utils/gameResultsUrl';
 
 export default defineComponent({
   name: 'SpectatorHome',
@@ -100,6 +101,9 @@ export default defineComponent({
   computed: {
     game(): GameModel {
       return this.spectator.game;
+    },
+    resultsUrl(): string {
+      return gameResultsUrl(this.spectator.id, this.game);
     },
     /** The top bar follows whoever is taking their turn. */
     activePlayer(): PublicPlayerModel | undefined {

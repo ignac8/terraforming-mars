@@ -5,7 +5,7 @@
     <div v-if="game.phase === 'end'">
       <div class="player_home_block">
         <DynamicTitle title="This game is over!" :color="thisPlayer.color" />
-        <a :href="'the-end?id='+ playerView.id" v-i18n>Go to game results</a>
+        <a :href="resultsUrl" v-i18n>Go to game results</a>
       </div>
     </div>
 
@@ -180,6 +180,7 @@ import {sortActiveCards} from '@/client/utils/ActiveCardsSortingOrder';
 import {CardModel} from '@/common/models/CardModel';
 import {getCardOrThrow} from '../cards/ClientCardManifest';
 import {HomeMixin} from '@/client/mixins/HomeMixin';
+import {gameResultsUrl} from '@/client/utils/gameResultsUrl';
 
 type PlayerHomeModel = {
   showHand: boolean;
@@ -253,6 +254,9 @@ export default defineComponent({
     },
     game(): GameModel {
       return this.playerView.game;
+    },
+    resultsUrl(): string {
+      return gameResultsUrl(this.playerView.id, this.game);
     },
     CardType(): typeof CardType {
       return CardType;

@@ -8,9 +8,10 @@ import SortableCards from '@/client/components/SortableCards.vue';
 import WaitingFor from '@/client/components/WaitingFor.vue';
 import PlayerSetupView from '@/client/components/PlayerSetupView.vue';
 import LogPanel from '@/client/components/logpanel/LogPanel.vue';
-import {fakePlayerViewModel, fakePublicPlayerModel, fakeViewModel} from './testHelpers';
+import {fakeGameModel, fakePlayerViewModel, fakePublicPlayerModel, fakeViewModel} from './testHelpers';
 import {FakeLocalStorage} from './FakeLocalStorage';
 import {CardName} from '@/common/cards/CardName';
+import {Phase} from '@/common/Phase';
 import raw_settings from '@/genfiles/settings.json';
 
 describe('PlayerHome', () => {
@@ -115,6 +116,26 @@ describe('PlayerHome', () => {
     it('tells the setup view not to render WaitingFor when replaying', () => {
       const wrapper = mountHome(fakePlayerViewModel(), true);
       expect(wrapper.findComponent(PlayerSetupView).props('replay')).is.true;
+    });
+  });
+
+  describe('game results link', () => {
+    function resultsHref(id: string): string | undefined {
+      const playerView = fakePlayerViewModel({id: id as any, game: fakeGameModel({phase: Phase.END, spectatorId: 's-spectator-id'})});
+      const wrapper = shallowMount(PlayerHome, {
+        ...globalConfig,
+        parentComponent: {methods: {getVisibilityState: () => true, setVisibilityState: () => {}}} as any,
+        props: {playerView, settings: raw_settings},
+      });
+      return wrapper.findAll('a').find((a) => a.text() === 'Go to game results')?.attributes('href');
+    }
+
+    it('is the results page of the player', () => {
+      expect(resultsHref('p-blue-id')).eq('the-end?id=p-blue-id');
+    });
+
+    it('is the results page of the spectator when the judge looks as a player', () => {
+      expect(resultsHref('j-judge-id')).eq('the-end?id=s-spectator-id');
     });
   });
 });

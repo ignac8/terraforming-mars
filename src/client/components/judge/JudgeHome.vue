@@ -6,6 +6,7 @@
       <div class="player_home_block">
         <DynamicTitle title="This game is over!" :color="judge.color" />
         <a :href="replayUrl" class="judge-replay-link" v-i18n>Replay</a>
+        <div><a :href="resultsUrl" class="judge-results-link" v-i18n>Go to game results</a></div>
       </div>
     </div>
 
@@ -90,6 +91,7 @@ import {paths} from '@/common/app/paths';
 import {passwordParam} from '@/client/utils/playerPassword';
 import {range} from '@/common/utils/utils';
 import {HomeMixin} from '@/client/mixins/HomeMixin';
+import {gameResultsUrl} from '@/client/utils/gameResultsUrl';
 
 type Panel = {privates: JudgePlayerModel, player: PublicPlayerModel};
 
@@ -117,6 +119,9 @@ export default defineComponent({
     },
     replayUrl(): string {
       return `${paths.REPLAY}?id=${this.judge.id}${passwordParam(this.judge)}`;
+    },
+    resultsUrl(): string {
+      return gameResultsUrl(this.judge.id, this.game);
     },
     // Each private block is paired with its public player by color.
     panels(): Array<Panel> {

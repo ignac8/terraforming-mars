@@ -145,3 +145,18 @@ describe('JudgeHome replay link', () => {
     expect(wrapper.find('a.judge-replay-link').exists()).is.false;
   });
 });
+
+describe('JudgeHome results link', () => {
+  it('leads a finished game to the results page of its spectator, which a judge has none of', () => {
+    const judge = judgeModel([privates('red', CardName.ANTS)]);
+    judge.game = fakeGameModel({phase: Phase.END, spectatorId: 's-spectator-id'});
+
+    expect(mountJudge(judge).find('a.judge-results-link').attributes('href')).eq('the-end?id=s-spectator-id');
+  });
+
+  it('is not shown while the game runs', () => {
+    const wrapper = mountJudge(judgeModel([privates('red', CardName.ANTS)]));
+
+    expect(wrapper.find('a.judge-results-link').exists()).is.false;
+  });
+});
