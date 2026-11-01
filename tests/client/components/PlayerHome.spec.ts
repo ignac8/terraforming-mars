@@ -12,6 +12,8 @@ import {fakeGameModel, fakePlayerViewModel, fakePublicPlayerModel, fakeViewModel
 import {FakeLocalStorage} from './FakeLocalStorage';
 import {CardName} from '@/common/cards/CardName';
 import {Phase} from '@/common/Phase';
+import {LogMessage} from '@/common/logs/LogMessage';
+import {LogMessageType} from '@/common/logs/LogMessageType';
 import raw_settings from '@/genfiles/settings.json';
 
 describe('PlayerHome', () => {
@@ -68,9 +70,10 @@ describe('PlayerHome', () => {
   });
 
   describe('replay', () => {
-    function mountHome(playerView: ReturnType<typeof fakePlayerViewModel>, replay?: boolean, extra: Record<string, unknown> = {}) {
+    function mountHome(playerView: ReturnType<typeof fakePlayerViewModel>, replay?: boolean, extra: Record<string, unknown> = {}, slots?: Record<string, string>) {
       return shallowMount(PlayerHome, {
         ...globalConfig,
+        slots,
         parentComponent: {
           methods: {
             getVisibilityState: () => true,
@@ -106,6 +109,20 @@ describe('PlayerHome', () => {
       const panel = mountHome(playedView(), true, {log, showUndone: true}).findComponent(LogPanel);
       expect(panel.props('viewModel')).to.deep.equal(log);
       expect(panel.props('showUndone')).is.true;
+    });
+
+    it('shows the log of the replay it is given, made of those lines', () => {
+      const replayLog = [new LogMessage(LogMessageType.DEFAULT, 'Played', [])];
+      const playerView = playedView();
+      const panel = mountHome(playerView, true, {replayLog}).findComponent(LogPanel);
+      expect(panel.props('replayLog')).to.deep.equal(replayLog);
+      expect(panel.props('viewModel')).to.deep.equal(playerView);
+    });
+
+    it('holds what the page adds in its own element, so that the top bar stays with it', () => {
+      const wrapper = mountHome(playedView(), true, {}, {default: '<div class="added">more</div>'});
+      expect(wrapper.find('#player-home > .added').exists()).is.true;
+      expect(mountHome(playedView(), true).find('#player-home > .added').exists()).is.false;
     });
 
     it('logs as its own player outside a replay', () => {

@@ -42,8 +42,8 @@
       <PlayersOverview class="player_home_block player_home_block--players nofloat" :playerView="playerView" id="shortkey-playersoverview" />
 
       <a class="hotkey-target"></a>
-      <div v-if="!replay || log !== undefined" class="player_home_block nofloat">
-        <LogPanel :viewModel="log ?? playerView" :step="game.step" :showUndone="showUndone" @spaceClicked="onSpaceClicked" />
+      <div v-if="!replay || log !== undefined || replayLog !== undefined" class="player_home_block nofloat">
+        <LogPanel :viewModel="log ?? playerView" :step="game.step" :showUndone="showUndone" :replayLog="replayLog" @spaceClicked="onSpaceClicked" />
       </div>
 
       <a class="hotkey-target"></a>
@@ -147,6 +147,8 @@
       <a :href="'/spectator?id=' +game.spectatorId" target="_blank" rel="noopener noreferrer" v-i18n>Spectator link</a>
     </div>
     <PurgeWarning v-if="!replay" :expectedPurgeTimeMs="game.expectedPurgeTimeMs" />
+    <!-- Whatever the page adds below the game, inside the home so that the top bar stays with it as it scrolls. -->
+    <slot></slot>
     <KeyboardShortcuts v-show="keyboardShortcutOpened" @close="keyboardShortcutOpened = false" />
   </div>
 </template>
@@ -173,6 +175,7 @@ import UndergroundTokens from '@/client/components/underworld/UndergroundTokens.
 import KeyboardShortcuts from '@/client/components/KeyboardShortcuts.vue';
 import {getPreferences, Preferences, PreferencesManager} from '@/client/utils/PreferencesManager';
 import {GameModel} from '@/common/models/GameModel';
+import {LogMessage} from '@/common/logs/LogMessage';
 import {PlayerViewModel, PublicPlayerModel, ViewModel} from '@/common/models/PlayerModel';
 import {CardType} from '@/common/cards/CardType';
 import {getCardsByType, isCardActivated} from '@/client/utils/CardUtils';
@@ -246,6 +249,11 @@ export default defineComponent({
     showUndone: {
       type: Boolean,
       default: false,
+    },
+    /** A replay's log up to the move shown. Given, the replay shows a log, made of these lines. */
+    replayLog: {
+      type: Array as () => Array<LogMessage>,
+      default: undefined,
     },
   },
   computed: {

@@ -27,8 +27,8 @@
       :discardPileSize="game.discardPileSize"
       :otherDeckSizes="game.otherDeckSizes" />
 
-    <div v-if="!replay" class="player_home_block nofloat">
-      <LogPanel :viewModel="spectator" :step="game.step" @spaceClicked="onSpaceClicked" />
+    <div v-if="!replay || replayLog !== undefined" class="player_home_block nofloat">
+      <LogPanel :viewModel="spectator" :step="game.step" :replayLog="replayLog" @spaceClicked="onSpaceClicked" />
     </div>
 
     <PlayersOverview class="player_home_block player_home_block--players nofloat" :playerView="spectator" id="shortkey-playersoverview" />
@@ -60,6 +60,8 @@
       <a :href="'/spectator?id=' +game.spectatorId" target="_blank" rel="noopener noreferrer" v-i18n>Spectator link</a>
     </div>
     <PurgeWarning v-if="!replay" :expectedPurgeTimeMs="game.expectedPurgeTimeMs" />
+    <!-- Whatever the page adds below the game, inside the home so that the top bar stays with it as it scrolls. -->
+    <slot></slot>
     <KeyboardShortcuts v-show="keyboardShortcutOpened" @close="keyboardShortcutOpened = false" />
   </div>
 </template>
@@ -68,6 +70,7 @@
 import {defineComponent} from 'vue';
 
 import {GameModel} from '@/common/models/GameModel';
+import {LogMessage} from '@/common/logs/LogMessage';
 import {SpectatorModel} from '@/common/models/SpectatorModel';
 import {PublicPlayerModel} from '@/common/models/PlayerModel';
 import TopBar from '@/client/components/TopBar.vue';
@@ -96,6 +99,11 @@ export default defineComponent({
     replay: {
       type: Boolean,
       default: false,
+    },
+    /** A replay's log up to the move shown. Given, the replay shows a log, made of these lines. */
+    replayLog: {
+      type: Array as () => Array<LogMessage>,
+      default: undefined,
     },
   },
   computed: {

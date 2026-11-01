@@ -154,6 +154,100 @@ describe('LogPanel', () => {
     expect(lines[2].find('.' + playerColorClass('red', 'bg')).exists()).is.false;
   });
 
+  describe('given the log of a replay', () => {
+    const line = (text: string, undone?: boolean) => {
+      const message = new LogMessage(LogMessageType.DEFAULT, text, []);
+      message.undone = undone;
+      return message;
+    };
+    const generation = (n: number) => new LogMessage(LogMessageType.NEW_GENERATION, 'Generation ${0}', [{type: LogMessageDataType.RAW_STRING, value: String(n)}]);
+    const log = [generation(1), line('one'), generation(2), line('two'), line('twice'), generation(3), line('three')];
+    const viewIn = (generationNumber: number) => {
+      const base = fakeViewModel();
+      return {...base, game: {...base.game, generation: generationNumber}};
+    };
+    // Lines that are not part of the generation announcement carry a clock mark in front.
+    const texts = (wrapper: ReturnType<typeof mount>) => wrapper.findAll('li').map((li) => li.text().replace('\u{1F551}', ''));
+
+    function mountReplay(replayLog: Array<LogMessage>, generationNumber: number) {
+      return mount(LogPanel, {...globalConfig, props: {viewModel: viewIn(generationNumber), replayLog}});
+    }
+
+    it('shows the newest generation of the board from those lines, and asks the server for none', async () => {
+      const wrapper = mountReplay(log, 2);
+      await flushLogs(wrapper);
+
+      expect(fetchCalls).is.empty;
+      expect(texts(wrapper)).deep.eq(['Generation 2', 'two', 'twice']);
+    });
+
+    it('shows another generation on request', async () => {
+      const wrapper = mountReplay(log, 3);
+      await flushLogs(wrapper);
+
+      (wrapper.vm as any).selectGeneration(1);
+      await flushLogs(wrapper);
+
+      expect(fetchCalls).is.empty;
+      expect(texts(wrapper)).deep.eq(['Generation 1', 'one']);
+    });
+
+    it('keeps the lines of the generation chosen as the replay goes on, and follows the board when it is on the newest', async () => {
+      const wrapper = mountReplay(log.slice(0, 5), 2);
+      await flushLogs(wrapper);
+
+      await wrapper.setProps({viewModel: viewIn(3), replayLog: log});
+      await flushLogs(wrapper);
+      expect(texts(wrapper)).deep.eq(['Generation 3', 'three']);
+
+      (wrapper.vm as any).selectGeneration(2);
+      await wrapper.setProps({viewModel: viewIn(3), replayLog: [...log, line('four')]});
+      await flushLogs(wrapper);
+      expect(texts(wrapper)).deep.eq(['Generation 2', 'two', 'twice']);
+    });
+
+    it('goes to the newest generation when the replay goes back past the one chosen', async () => {
+      const wrapper = mountReplay(log, 3);
+      await flushLogs(wrapper);
+      (wrapper.vm as any).selectGeneration(2);
+      await flushLogs(wrapper);
+
+      await wrapper.setProps({viewModel: viewIn(1), replayLog: log.slice(0, 2)});
+      await flushLogs(wrapper);
+
+      expect((wrapper.vm as any).selectedGeneration).eq(1);
+      expect(texts(wrapper)).deep.eq(['Generation 1', 'one']);
+    });
+
+    // The save at the end of a generation shows the next one, because loading it runs production, but the log
+    // announces that generation only after production.
+    it('stops at the generation the lines have got to when the board is ahead of them', async () => {
+      const wrapper = mountReplay(log.slice(0, 5), 3);
+      await flushLogs(wrapper);
+
+      expect(wrapper.findAll('.log-gen-indicator').map((n) => n.text())).deep.eq(['1', '2']);
+      expect(texts(wrapper)).deep.eq(['Generation 2', 'two', 'twice']);
+    });
+
+    it('shows no lines before the first is logged', async () => {
+      const wrapper = mountReplay([], 1);
+      await flushLogs(wrapper);
+
+      expect(texts(wrapper)).deep.eq([]);
+      expect(wrapper.findAll('.log-gen-indicator').map((n) => n.text())).deep.eq(['1']);
+    });
+
+    it('dims the lines that rewinds hid and keeps the owners of private lines', async () => {
+      const owned = line('private');
+      owned.owner = 'red';
+      const wrapper = mountReplay([generation(1), line('kept'), line('hidden', true), owned], 1);
+      await flushLogs(wrapper);
+
+      expect(wrapper.findAll('li').map((l) => l.classes('log-undone'))).deep.eq([false, false, true, false]);
+      expect(wrapper.findAll('li')[3].find('.' + playerColorClass('red', 'bg')).exists()).is.true;
+    });
+  });
+
   it('shows the scroll button only when away from the bottom', async () => {
     const panel = installScrollablePanel();
     const wrapper = shallowMount(LogPanel, {

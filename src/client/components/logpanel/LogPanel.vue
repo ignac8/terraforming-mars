@@ -1,7 +1,7 @@
 <template>
   <div class="log-container">
     <LogGenerationList
-      :max="viewModel.game.generation"
+      :max="generation"
       :selected="selectedGeneration"
       :lastSoloGeneration="lastSoloGeneration"
       @selected="selectGeneration">
@@ -46,6 +46,7 @@ import LogMessageComponent from '@/client/components/logpanel/LogMessageComponen
 import LogMessageInspector from '@/client/components/logpanel/LogMessageInspector.vue';
 import LogGenerationList from '@/client/components/logpanel/LogGenerationList.vue';
 import {fetchLogs} from '@/client/utils/fetchLogs';
+import {latestLoggedGeneration, logOfGeneration} from '@/client/utils/generationLog';
 
 const BOTTOM_SCROLL_THRESHOLD = 24; // Roughly one line of log text.
 
@@ -79,6 +80,14 @@ export default defineComponent({
       type: Boolean,
       default: false,
     },
+    /**
+     * A replay's log up to the move shown. Given, the panel keeps to these lines, and fetches none, because the
+     * game's own log goes on past this move.
+     */
+    replayLog: {
+      type: Array as () => Array<LogMessage>,
+      default: undefined,
+    },
   },
   data(): LogPanelModel {
     return {
@@ -104,6 +113,14 @@ export default defineComponent({
     showUndone(): void {
       this.getLogsForGeneration(this.selectedGeneration);
     },
+    replayLog(): void {
+      // An earlier generation stays as it is, unless the replay went back past it.
+      if (this.following || this.selectedGeneration > this.generation) {
+        this.showLatestLogs();
+      } else {
+        this.getLogsForGeneration(this.selectedGeneration);
+      }
+    },
   },
   methods: {
     messageClicked(message: LogMessage) {
@@ -123,6 +140,13 @@ export default defineComponent({
     },
     getLogsForGeneration(generation: number, scrollPosition?: 'bottom'): void {
       const messages = this.messages;
+      if (this.replayLog !== undefined) {
+        messages.splice(0, messages.length, ...logOfGeneration(this.replayLog, generation));
+        if (scrollPosition === 'bottom') {
+          this.$nextTick(this.scrollToEnd);
+        }
+        return;
+      }
       fetchLogs(this.viewModel, generation, this.showUndone)
         .then((data) => {
           if (!data) {
@@ -161,8 +185,13 @@ export default defineComponent({
     typedRefs(): Refs {
       return this.$refs as unknown as Refs;
     },
+    /**
+     * The newest generation to show. A replayed board can be a generation ahead of its log: loading the save at the
+     * end of a generation runs production, and the log announces the next generation only after it.
+     */
     generation(): number {
-      return this.viewModel.game.generation;
+      const shown = this.viewModel.game.generation;
+      return this.replayLog === undefined ? shown : Math.min(shown, latestLoggedGeneration(this.replayLog));
     },
     lastSoloGeneration(): number | undefined {
       return this.viewModel.players.length === 1 ? this.viewModel.game.lastSoloGeneration : undefined;

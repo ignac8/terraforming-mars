@@ -25,18 +25,22 @@
     <template v-if="isLive">
       <div v-if="index !== undefined && replayView === undefined" class="replay-message" v-i18n>Loading replay...</div>
       <template v-else-if="index !== undefined && replayView !== undefined">
-        <SpectatorHome v-if="spectatorView !== undefined" key="past-all" :spectator="spectatorView" :replay="true" />
-        <PlayerHome v-else-if="playerView !== undefined" key="past" :playerView="playerView" :replay="true" />
-        <ReplayHands v-if="spectatorView !== undefined" :participantId="participantId" :privates="replayView.privates" :players="spectatorView.players" />
-        <div v-else-if="viewedChoice !== undefined" class="replay-hands">
-          <JudgePendingChoice :choice="viewedChoice.choice" :shown="viewedChoice.shown" headingClass="replay-hands-section" />
-        </div>
+        <!-- The hands go inside the home, where the top bar stays with them as the page scrolls. -->
+        <SpectatorHome v-if="spectatorView !== undefined" key="past-all" :spectator="spectatorView" :replay="true" :replayLog="replayLog">
+          <ReplayHands :participantId="participantId" :privates="replayView.privates" :players="spectatorView.players" />
+        </SpectatorHome>
+        <PlayerHome v-else-if="playerView !== undefined" key="past" :playerView="playerView" :replay="true" :replayLog="replayLog">
+          <div v-if="viewedChoice !== undefined" class="replay-hands">
+            <JudgePendingChoice :choice="viewedChoice.choice" :shown="viewedChoice.shown" headingClass="replay-hands-section" />
+          </div>
+        </PlayerHome>
       </template>
       <template v-else-if="liveJudgeAs !== undefined">
-        <PlayerHome key="live-judge-as" :playerView="liveJudgeAs" :replay="true" :log="liveJudge" :showUndone="showUndone" />
-        <div v-if="viewedChoice !== undefined" class="replay-hands">
-          <JudgePendingChoice :choice="viewedChoice.choice" :shown="viewedChoice.shown" headingClass="replay-hands-section" />
-        </div>
+        <PlayerHome key="live-judge-as" :playerView="liveJudgeAs" :replay="true" :log="liveJudge" :showUndone="showUndone">
+          <div v-if="viewedChoice !== undefined" class="replay-hands">
+            <JudgePendingChoice :choice="viewedChoice.choice" :shown="viewedChoice.shown" headingClass="replay-hands-section" />
+          </div>
+        </PlayerHome>
         <!-- JudgeHome polls the judge page, and it is not there. -->
         <WaitingFor v-show="false" v-if="liveJudge.game.phase !== 'end'" :playerView="liveJudge" :waitingfor="undefined" />
       </template>
@@ -66,12 +70,14 @@
       <span v-else v-i18n>Loading replay...</span>
     </div>
     <template v-else>
-      <SpectatorHome v-if="spectatorView !== undefined" :spectator="spectatorView" :replay="true" />
-      <PlayerHome v-else-if="playerView !== undefined" :playerView="playerView" :replay="true" />
-      <ReplayHands v-if="spectatorView !== undefined" :participantId="participantId" :privates="replayView.privates" :players="spectatorView.players" />
-      <div v-else-if="viewedChoice !== undefined" class="replay-hands">
-        <JudgePendingChoice :choice="viewedChoice.choice" :shown="viewedChoice.shown" headingClass="replay-hands-section" />
-      </div>
+      <SpectatorHome v-if="spectatorView !== undefined" :spectator="spectatorView" :replay="true" :replayLog="replayLog">
+        <ReplayHands :participantId="participantId" :privates="replayView.privates" :players="spectatorView.players" />
+      </SpectatorHome>
+      <PlayerHome v-else-if="playerView !== undefined" :playerView="playerView" :replay="true" :replayLog="replayLog">
+        <div v-if="viewedChoice !== undefined" class="replay-hands">
+          <JudgePendingChoice :choice="viewedChoice.choice" :shown="viewedChoice.shown" headingClass="replay-hands-section" />
+        </div>
+      </PlayerHome>
     </template>
     <!-- The panel, which shows the refusal otherwise, is gone while the moves load again, and stays gone if that fails. -->
     <div v-if="refusal !== undefined && panelView === undefined" class="replay-message">
@@ -98,6 +104,8 @@
       :clocks="clockRows"
       :canShowUndone="canShowUndone"
       :showUndone="showUndone"
+      :realTime="realTime"
+      :showLog="showLog"
       :loading="status !== 'available'"
       @select="select"
       @update:viewAs="changeViewAs"
@@ -106,6 +114,8 @@
       @update:speed="changeSpeed"
       @update:collapsed="changeCollapsed"
       @update:showUndone="changeShowUndone"
+      @update:realTime="changeRealTime"
+      @update:showLog="changeShowLog"
       @back="backToLive"
       @rewind="rewind"
       @freeze="freeze"
@@ -130,12 +140,15 @@ import ReplayPanel from '@/client/components/replay/ReplayPanel.vue';
 import RewindVoteBanner from '@/client/components/replay/RewindVoteBanner.vue';
 import {vueRoot} from '@/client/components/vueRoot';
 import {setTranslationContext} from '@/client/directives/i18n';
+import {autoplayDelay} from '@/client/utils/replayAutoplay';
+import {isLogShown, isRealTime, setLogShown, setRealTime} from '@/client/utils/replayPreferences';
 import {fetchReplayMoves, fetchReplayView, judgeCredentials, postJudgeFreeze, postJudgeRewind, postRewind, postVote, ReplayResponseError, translateRefusal} from '@/client/utils/fetchReplay';
 import {passwordParam} from '@/client/utils/playerPassword';
 import {shownCardNames} from '@/client/utils/unseenPendingCards';
 import {paths} from '@/common/app/paths';
 import {CardName} from '@/common/cards/CardName';
 import {Color} from '@/common/Color';
+import {LogMessage} from '@/common/logs/LogMessage';
 import {JudgeModel} from '@/common/models/JudgeModel';
 import {PendingChoiceModel, pendingChoiceOf} from '@/common/models/PendingChoiceModel';
 import {PlayerViewModel, PublicPlayerModel, ViewModel} from '@/common/models/PlayerModel';
@@ -197,6 +210,10 @@ type DataModel = {
   refusalSettled: boolean;
   playing: boolean;
   speed: number;
+  /** Autoplay waits as long as the players took, instead of the same time for every move. Remembered. */
+  realTime: boolean;
+  /** The log shows up to the move on the board. Remembered. */
+  showLog: boolean;
   /** Numbers view requests so that a slow answer never replaces a newer one. */
   latestRequest: number;
   timer: ReturnType<typeof setTimeout> | undefined;
@@ -254,6 +271,8 @@ export default defineComponent({
       refusalSettled: false,
       playing: false,
       speed: 1,
+      realTime: isRealTime(),
+      showLog: isLogShown(),
       latestRequest: 0,
       timer: undefined,
       advancing: false,
@@ -368,6 +387,19 @@ export default defineComponent({
         return undefined;
       }
       return {choice, shown: shownCardNames(view, view.thisPlayer.tableau)};
+    },
+    /**
+     * The log up to the move on the board, when it is asked for. A move's lines are what happened on the way out of it,
+     * so the board at a move shows the lines of the moves before it. The last position of a finished game shows its own
+     * too, since nothing follows them.
+     */
+    replayLog(): Array<LogMessage> | undefined {
+      const shown = this.moves.findIndex((move) => move.saveId === this.replayView?.saveId);
+      if (!this.showLog || shown < 0) {
+        return undefined;
+      }
+      const end = this.finished && shown === this.moves.length - 1 ? shown + 1 : shown;
+      return this.moves.slice(0, end).flatMap((move) => move.undone === true ? move.messages.map((message) => ({...message, undone: true})) : move.messages);
     },
     /** What the panel names players and generations from. It is hidden until there is something to show. */
     panelView(): ViewModel | undefined {
@@ -661,13 +693,26 @@ export default defineComponent({
     },
     changeSpeed(speed: number): void {
       this.speed = speed;
+      this.rescheduleTick();
+    },
+    changeRealTime(realTime: boolean): void {
+      this.realTime = realTime;
+      setRealTime(realTime);
+      this.rescheduleTick();
+    },
+    changeShowLog(showLog: boolean): void {
+      this.showLog = showLog;
+      setLogShown(showLog);
+    },
+    /** A wait that is under way starts over with the wait the new speed or mode gives. */
+    rescheduleTick(): void {
       if (this.playing && this.timer !== undefined) {
         this.scheduleTick();
       }
     },
     scheduleTick(): void {
       this.cancelTick();
-      this.timer = setTimeout(() => this.tick(), 1000 / this.speed);
+      this.timer = setTimeout(() => this.tick(), autoplayDelay(this.moves, this.index ?? 0, this.speed, this.realTime));
     },
     cancelTick(): void {
       clearTimeout(this.timer);

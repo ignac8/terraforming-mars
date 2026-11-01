@@ -71,10 +71,47 @@
       cursor: default;
     }
   }
+
+  // The transport buttons carry a drawn icon each, and play and pause is the one with a label, larger and in the accent colour.
+  .replay-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 28px;
+    padding: 0;
+  }
+
+  .replay-icon svg {
+    width: 16px;
+    height: 16px;
+    fill: currentColor;
+  }
+
+  .replay-play {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    min-width: 112px;
+    height: 32px;
+    padding: 0 14px;
+    border-color: @text_action;
+    background: @bg_action;
+    color: @text_action;
+    font-weight: bold;
+  }
+
+  .replay-play svg {
+    width: 18px;
+    height: 18px;
+    fill: currentColor;
+  }
 }
 
 .replay-header,
 .replay-controls,
+.replay-autoplay,
 .replay-view-as,
 .replay-live-row {
   display: flex;
@@ -86,6 +123,44 @@
 
 .replay-title {
   font-weight: bold;
+}
+
+.replay-pace {
+  display: inline-flex;
+
+  button {
+    border-radius: 0;
+  }
+
+  button:first-child {
+    border-radius: 4px 0 0 4px;
+  }
+
+  button:last-child {
+    margin-left: -1px;
+    border-radius: 0 4px 4px 0;
+  }
+
+  .replay-pace-active {
+    background: @bg_action;
+    color: @text_action;
+  }
+}
+
+.replay-confirm {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+  margin-bottom: 4px;
+  padding: 4px 6px;
+  border-left: 3px solid @bg_action;
+  border-radius: 3px;
+  background: fade(@bg_action, 15%);
+}
+
+.replay-confirm-text {
+  flex: 1 0 100%;
 }
 
 // Sized by its text rather than by 0, so a header that is too narrow wraps its other items onto a second row instead of
@@ -310,7 +385,8 @@
   font-size: 11px;
 }
 
-.replay-show-undone {
+.replay-show-undone,
+.replay-show-log {
   display: flex;
   align-items: center;
   gap: 4px;
@@ -344,9 +420,19 @@
 }
 
 .replay-move-mover {
+  flex: none;
   width: 10px;
   height: 10px;
   border-radius: 2px;
+}
+
+// The cards chosen by the answers that left a move: the chooser's colour, what they did and the names.
+.replay-move-pick {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  opacity: 0.9;
 }
 
 @media only screen and (max-width: 767px) {

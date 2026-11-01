@@ -11,6 +11,10 @@
         <input type="checkbox" :checked="showUndone" @change="onShowUndone">
         <span v-i18n>Show undone moves</span>
       </label>
+      <label v-if="index !== undefined" class="replay-show-log">
+        <input type="checkbox" :checked="showLog" @change="onShowLog">
+        <span v-i18n>Log</span>
+      </label>
       <button v-if="frozen !== undefined" class="replay-freeze" type="button" :disabled="rewinding" @click="$emit('freeze')" v-i18n>{{ frozen ? 'Unfreeze' : 'Freeze' }}</button>
       <button class="replay-collapse" type="button" @click="toggle" v-i18n>{{ collapsed ? 'Show' : 'Hide' }}</button>
     </div>
@@ -20,14 +24,42 @@
     </div>
 
     <div v-if="!(live && collapsed)" class="replay-controls">
-      <button class="replay-start" type="button" :title="$t('Go to start')" :aria-label="$t('Go to start')" :disabled="atStart" @click="select(0)">&#x23EE;</button>
-      <button class="replay-back" type="button" :title="$t('Step back')" :aria-label="$t('Step back')" :disabled="atStart" @click="stepBack">&#x25C0;</button>
-      <button v-if="!live" class="replay-play" type="button" :title="playLabel" :aria-label="playLabel" @click="playing ? $emit('pause') : $emit('play')">{{ playing ? '\u23F8' : '\u25B6' }}</button>
-      <button class="replay-forward" type="button" :title="$t('Step forward')" :aria-label="$t('Step forward')" :disabled="atEnd" @click="stepForward">&#x25B6;&#x25B6;</button>
-      <button class="replay-end" type="button" :title="$t('Go to end')" :aria-label="$t('Go to end')" :disabled="atEnd" @click="select(last)">&#x23ED;</button>
-      <select v-if="!live" class="replay-speed" :title="$t('Speed')" :aria-label="$t('Speed')" :value="speed" @change="onSpeed">
+      <button class="replay-start replay-icon" type="button" :title="$t('Go to start')" :aria-label="$t('Go to start')" :disabled="atStart" @click="jump('start')">
+        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M3 5h2v14H3zM13 6v12L6 12zM21 6v12l-7-6z" /></svg>
+      </button>
+      <button class="replay-back replay-icon" type="button" :title="$t('Step back')" :aria-label="$t('Step back')" :disabled="atStart" @click="stepBack">
+        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M5 5h2v14H5zM19 6v12l-10-6z" /></svg>
+      </button>
+      <button v-if="!live" class="replay-play" type="button" :title="playLabel" :aria-label="playLabel" @click="togglePlay">
+        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+          <path v-if="playing" d="M6 5h4v14H6zM14 5h4v14h-4z" />
+          <path v-else d="M8 5v14l11-7z" />
+        </svg>
+        <span class="replay-play-label" v-i18n>{{ playing ? 'Pause' : 'Play replay' }}</span>
+      </button>
+      <button class="replay-forward replay-icon" type="button" :title="$t('Step forward')" :aria-label="$t('Step forward')" :disabled="atEnd" @click="stepForward">
+        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M5 6v12l10-6zM17 5h2v14h-2z" /></svg>
+      </button>
+      <button class="replay-end replay-icon" type="button" :title="$t('Go to end')" :aria-label="$t('Go to end')" :disabled="atEnd" @click="jump('end')">
+        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M3 6v12l7-6zM11 6v12l7-6zM19 5h2v14h-2z" /></svg>
+      </button>
+    </div>
+
+    <!-- Jumping to either end can show how the game goes, so it asks first. -->
+    <div v-if="confirming !== undefined" class="replay-confirm">
+      <span class="replay-confirm-text" v-i18n>{{ confirming === 'end' ? 'Jump to the end? This shows how the game ends.' : 'Jump to the start?' }}</span>
+      <button class="replay-confirm-yes" type="button" @click="confirmJump" v-i18n>Yes</button>
+      <button class="replay-confirm-cancel" type="button" @click="confirming = undefined" v-i18n>Cancel</button>
+    </div>
+
+    <div v-if="!live" class="replay-autoplay">
+      <select class="replay-speed" :title="$t('Speed')" :aria-label="$t('Speed')" :value="speed" @change="onSpeed">
         <option v-for="option in speeds" :key="option" :value="option">{{ option }}&times;</option>
       </select>
+      <span class="replay-pace" role="group" :aria-label="$t('Autoplay timing')">
+        <button class="replay-pace-fixed" type="button" :class="{'replay-pace-active': !realTime}" :aria-pressed="!realTime" :title="$t('Every move waits the same time')" @click="$emit('update:realTime', false)" v-i18n>Fixed</button>
+        <button class="replay-pace-real" type="button" :class="{'replay-pace-active': realTime}" :aria-pressed="realTime" :title="$t('Every move waits as long as the player took')" @click="$emit('update:realTime', true)" v-i18n>Real time</button>
+      </span>
     </div>
 
     <div v-if="(!live || viewAsInLive) && !ownViewOnly" class="replay-view-as">
@@ -56,6 +88,10 @@
           <li v-if="move.silent" class="replay-move-silent">
             <span v-for="color in move.movers ?? []" :key="color" :class="['replay-move-mover', 'player_bg_color_' + color]"></span>
             <span v-i18n>Draft pick</span>
+          </li>
+          <li v-for="(pick, k) in move.picks ?? []" :key="'pick' + k" class="replay-move-pick">
+            <span :class="['replay-move-mover', 'player_bg_color_' + pick.color]"></span>
+            <span><span v-i18n>{{ pickLabel(move, pick) }}</span>: {{ cardNames(pick) }}</span>
           </li>
         </ul>
       </li>
@@ -86,10 +122,16 @@ import LogMessageComponent from '@/client/components/logpanel/LogMessageComponen
 import RewindControls from '@/client/components/replay/RewindControls.vue';
 import {PublicPlayerModel, ViewModel} from '@/common/models/PlayerModel';
 import {Color, PLAYER_COLORS} from '@/common/Color';
-import {ReplayMove, ReplayViewAs, RewindCards, RewindClockRow, RewindClocks} from '@/common/replay/ReplayModel';
+import {ReplayMove, ReplayPick, ReplayViewAs, RewindCards, RewindClockRow, RewindClocks} from '@/common/replay/ReplayModel';
 import {RequestBlock} from '@/common/rewind/RewindVoteModel';
 
-const SPEEDS = [0.5, 1, 2, 4];
+const SPEEDS = [0.1, 0.25, 0.5, 1, 2, 4];
+
+/** Keys typed into a field are the field's. */
+function isTyping(target: EventTarget | null): boolean {
+  return target instanceof HTMLElement &&
+    (target.isContentEditable || target.closest('input, select, textarea, [contenteditable]:not([contenteditable="false"])') !== null);
+}
 
 // A small panel floating over the replayed game: transport controls, the list of moves and who to view as.
 // On the live game page it previews past moves instead: no autoplay, no choice of view (except for the judge), and it starts
@@ -193,6 +235,16 @@ export default defineComponent({
       type: Boolean,
       default: false,
     },
+    /** Autoplay waits as long as the players took, instead of the same time for every move. */
+    realTime: {
+      type: Boolean,
+      default: false,
+    },
+    /** The page shows the log up to the selected move. */
+    showLog: {
+      type: Boolean,
+      default: false,
+    },
   },
   emits: {
     'select': (_index: number) => true,
@@ -206,9 +258,17 @@ export default defineComponent({
     'request': (_cards: RewindCards) => true,
     'freeze': () => true,
     'update:showUndone': (_showUndone: boolean) => true,
+    'update:realTime': (_realTime: boolean) => true,
+    'update:showLog': (_showLog: boolean) => true,
   },
   data() {
-    return {collapsed: this.live};
+    return {
+      collapsed: this.live,
+      /** The end the player asked to jump to, who has yet to say they want to see where it leads. */
+      confirming: undefined as 'start' | 'end' | undefined,
+      /** The space bar went down on a key press that was handled, so its release must not press a focused button too. */
+      spaceHandled: false,
+    };
   },
   computed: {
     last(): number {
@@ -272,6 +332,64 @@ export default defineComponent({
       }
       this.$emit('select', index);
     },
+    /** A replay asks before it jumps to an end, because either shows how the game goes. The live page has nothing to spoil. */
+    jump(to: 'start' | 'end'): void {
+      if (this.live) {
+        this.select(to === 'start' ? 0 : this.last);
+      } else {
+        this.confirming = to;
+      }
+    },
+    confirmJump(): void {
+      const to = this.confirming;
+      this.confirming = undefined;
+      this.select(to === 'start' ? 0 : this.last);
+    },
+    pickLabel(move: ReplayMove, pick: ReplayPick): string {
+      if (pick.auto) {
+        return 'last card passed';
+      }
+      return move.silent ? 'drafted' : 'kept';
+    },
+    cardNames(pick: ReplayPick): string {
+      return pick.cards.map((name) => this.$t(name.split(':')[0])).join(', ');
+    },
+    togglePlay(): void {
+      if (this.playing) {
+        this.$emit('pause');
+      } else {
+        this.$emit('play');
+      }
+    },
+    onShowLog(event: Event): void {
+      this.$emit('update:showLog', (event.target as HTMLInputElement).checked);
+    },
+    /** Arrow keys step through the moves and the space bar plays and pauses, as long as the player is not typing. */
+    onKeydown(event: KeyboardEvent): void {
+      if (event.defaultPrevented || event.ctrlKey || event.metaKey || event.altKey || event.shiftKey || isTyping(event.target)) {
+        return;
+      }
+      if (event.key === 'ArrowLeft') {
+        this.stepBack();
+      } else if (event.key === 'ArrowRight') {
+        this.stepForward();
+      } else if (event.key === ' ') {
+        if (!event.repeat) {
+          this.togglePlay();
+        }
+        this.spaceHandled = true;
+      } else {
+        return;
+      }
+      // The page behind would scroll, and a focused button would be pressed.
+      event.preventDefault();
+    },
+    onKeyup(event: KeyboardEvent): void {
+      if (event.key === ' ' && this.spaceHandled) {
+        this.spaceHandled = false;
+        event.preventDefault();
+      }
+    },
     onShowUndone(event: Event): void {
       this.$emit('update:showUndone', (event.target as HTMLInputElement).checked);
     },
@@ -290,6 +408,7 @@ export default defineComponent({
   },
   watch: {
     index() {
+      this.confirming = undefined;
       this.$nextTick(() => this.scrollToCurrent());
     },
     viewAs() {
@@ -301,6 +420,14 @@ export default defineComponent({
   },
   mounted() {
     this.scrollToCurrent();
+    if (!this.live) {
+      window.addEventListener('keydown', this.onKeydown);
+      window.addEventListener('keyup', this.onKeyup);
+    }
+  },
+  unmounted() {
+    window.removeEventListener('keydown', this.onKeydown);
+    window.removeEventListener('keyup', this.onKeyup);
   },
 });
 </script>
