@@ -5,6 +5,7 @@ import {IMarsBot} from '../../automa/IMarsBot';
 
 
 export class Sponsor extends BaseMilestone {
+  public readonly automaDescription = '3 cards costing 20+ MC in played pile (events included)';
   constructor() {
     super(
       'Sponsor',

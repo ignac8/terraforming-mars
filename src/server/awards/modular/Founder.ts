@@ -8,6 +8,7 @@ import {IMarsBot} from '../../automa/IMarsBot';
 export class Founder implements IAward {
   public readonly name = 'Founder';
   public readonly description = 'Have the most tiles adjacent to special tiles.';
+  public readonly automaDescription = 'Tiles next to special tiles (Neural Instance counts for MarsBot)';
 
   public getScore(player: IPlayer): number {
     // The Neural Instance tile is MarsBot's. It is not a special tile for anyone else.

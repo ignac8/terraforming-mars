@@ -5,6 +5,7 @@ import {Tag} from '../../../common/cards/Tag';
 import {IMarsBot} from '../../automa/IMarsBot';
 
 export class Landshaper extends BaseMilestone {
+  public readonly automaDescription = '1+ city, 1+ greenery, Building track ≥ 5';
   constructor() {
     super(
       'Landshaper',

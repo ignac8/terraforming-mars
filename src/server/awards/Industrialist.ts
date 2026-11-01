@@ -6,6 +6,7 @@ import {IMarsBot} from '../automa/IMarsBot';
 export class Industrialist implements IAward {
   public readonly name = 'Industrialist';
   public readonly description = 'Have most steel and energy';
+  public readonly automaDescription = 'Energy track + 5';
   public getScore(player: IPlayer): number {
     if (player.game.isDoneWithFinalProduction()) {
       return player.steel + player.energy;

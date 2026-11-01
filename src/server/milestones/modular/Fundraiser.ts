@@ -6,6 +6,10 @@ import {BoardName} from '../../../common/boards/BoardName';
 import {marsBotUsesMapSet} from '../../automa/MarsBotMilestoneAwardEval';
 
 export class Fundraiser extends BaseMilestone {
+  public readonly automaDescription = 'Event track ≥ 8';
+  public readonly automaMapDescriptions = {
+    [BoardName.TERRA_CIMMERIA_NOVA]: 'Event track ≥ 10',
+  };
   constructor() {
     super(
       'Fundraiser',

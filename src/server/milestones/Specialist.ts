@@ -4,6 +4,7 @@ import {IMarsBot} from '../automa/IMarsBot';
 import {marsBotAllTrackPositions} from '../automa/MarsBotMilestoneAwardEval';
 
 export class Specialist extends BaseMilestone {
+  public readonly automaDescription = 'Any track ≥ 10';
   constructor() {
     super(
       'Specialist',

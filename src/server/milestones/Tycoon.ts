@@ -4,6 +4,7 @@ import {CardType} from '../../common/cards/CardType';
 import {IMarsBot} from '../automa/IMarsBot';
 
 export class Tycoon extends BaseMilestone {
+  public readonly automaDescription = '15 green/blue cards in played pile';
   constructor() {
     super(
       'Tycoon',

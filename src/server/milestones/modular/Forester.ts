@@ -5,6 +5,7 @@ import {Tag} from '../../../common/cards/Tag';
 import {IMarsBot} from '../../automa/IMarsBot';
 
 export class Forester extends BaseMilestone {
+  public readonly automaDescription: string = 'Bio track ≥ 6';
   constructor(name: MilestoneName = 'Forester', threshold: number = 4) {
     super(name, `Have ${threshold} plant production`, threshold);
   }
@@ -21,6 +22,7 @@ export class Forester extends BaseMilestone {
 
 // Forester variant from Terra Cimmeria Nova.
 export class CForester extends Forester {
+  public override readonly automaDescription = 'Bio track ≥ 10';
   constructor() {
     super('C. Forester', 3);
   }

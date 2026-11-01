@@ -4,6 +4,7 @@ import {Tag} from '../../../common/cards/Tag';
 import {IMarsBot} from '../../automa/IMarsBot';
 
 export class Trader extends BaseMilestone {
+  public readonly automaDescription = 'Bio, Earth and Venus tracks ≥ 2';
   constructor() {
     super(
       'Trader',

@@ -4,6 +4,7 @@ import {CardType} from '../../../common/cards/CardType';
 import {IMarsBot} from '../../automa/IMarsBot';
 
 export class Legend4 extends BaseMilestone {
+  public readonly automaDescription = '4 red cards in played pile';
   constructor() {
     super(
       'Legend4',

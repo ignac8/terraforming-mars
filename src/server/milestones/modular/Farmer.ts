@@ -7,6 +7,10 @@ import {BoardName} from '../../../common/boards/BoardName';
 import {marsBotUsesMapSet} from '../../automa/MarsBotMilestoneAwardEval';
 
 export class Farmer extends BaseMilestone {
+  public readonly automaDescription = 'Bio track ≥ 7';
+  public readonly automaMapDescriptions = {
+    [BoardName.VASTITAS_BOREALIS_NOVA]: 'Science/Microbe track or Bio track ≥ 6',
+  };
   constructor() {
     super(
       'Farmer',

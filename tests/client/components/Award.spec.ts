@@ -4,6 +4,7 @@ import {expect} from 'chai';
 import Award from '@/client/components/Award.vue';
 import {FundedAwardModel} from '@/common/models/FundedAwardModel';
 import {getAward} from '@/client/MilestoneAwardManifest';
+import {BoardName} from '@/common/boards/BoardName';
 
 function createAward(
   {funded, scores = []}:
@@ -100,6 +101,25 @@ describe('Award', () => {
     });
 
     expect(wrapper.find(`.board-cube--${award.color}`).exists()).to.be.true;
+  });
+
+  describe('MarsBot hint', () => {
+    const award: FundedAwardModel = {...createAward({funded: false}), name: 'Traveller'};
+    const traveller = getAward('Traveller');
+
+    function hint(automaMapSet?: BoardName): string {
+      const wrapper = mount(Award, {...globalConfig, props: {award, showDescription: true, isAutoma: true, automaMapSet}});
+      return wrapper.find('.ma-automa-hint').text();
+    }
+
+    it('uses the map wording when the game plays the map\'s set', () => {
+      expect(hint(BoardName.VASTITAS_BOREALIS_NOVA)).to.include(traveller.automaMapDescriptions![BoardName.VASTITAS_BOREALIS_NOVA]!);
+    });
+
+    it('uses the generic wording for any other game', () => {
+      expect(hint(BoardName.ELYSIUM)).to.include(traveller.automaDescription!);
+      expect(hint(undefined)).to.include(traveller.automaDescription!);
+    });
   });
 
   it('creates correct css class from award name', () => {

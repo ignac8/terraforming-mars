@@ -4,6 +4,7 @@ import {Tag} from '../../common/cards/Tag';
 import {IMarsBot} from '../automa/IMarsBot';
 
 export class Smith extends BaseMilestone {
+  public readonly automaDescription = 'Building + Space tracks ≥ 7';
   constructor() {
     super(
       'Smith',

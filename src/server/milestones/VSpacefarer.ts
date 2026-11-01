@@ -4,6 +4,7 @@ import {BaseMilestone} from './IMilestone';
 import {IMarsBot} from '../automa/IMarsBot';
 
 export class VSpacefarer extends BaseMilestone {
+  public readonly automaDescription = 'Space track ≥ 5';
   constructor() {
     super(
       'V. Spacefarer',

@@ -4,6 +4,7 @@ import {Tag} from '../../common/cards/Tag';
 import {IMarsBot} from '../automa/IMarsBot';
 
 export class Ecologist extends BaseMilestone {
+  public readonly automaDescription = 'Bio track ≥ 4';
   constructor() {
     super(
       'Ecologist',

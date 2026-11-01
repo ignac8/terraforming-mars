@@ -4,6 +4,7 @@ import {Turmoil} from '../../turmoil/Turmoil';
 import {IMarsBot} from '../../automa/IMarsBot';
 
 export class Lobbyist extends BaseMilestone {
+  public readonly automaDescription = 'Chairman and 2+ Party Leaders';
   constructor() {
     super(
       'Lobbyist',

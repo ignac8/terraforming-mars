@@ -4,6 +4,7 @@ import {IMarsBot} from '../automa/IMarsBot';
 import {marsBotAllTrackPositions} from '../automa/MarsBotMilestoneAwardEval';
 
 export class Diversifier extends BaseMilestone {
+  public readonly automaDescription = 'Space 3+ on every track (7 of 8 with Venus)';
   constructor() {
     super(
       'Diversifier',

@@ -6,6 +6,10 @@ import {BoardName} from '../../../common/boards/BoardName';
 import {marsBotUsesMapSet} from '../../automa/MarsBotMilestoneAwardEval';
 
 export class Planetologist extends BaseMilestone {
+  public readonly automaDescription = 'Two of Energy, Earth and Venus tracks ≥ 3';
+  public readonly automaMapDescriptions = {
+    [BoardName.TERRA_CIMMERIA_NOVA]: 'Earth/Jovian + Venus tracks ≥ 5',
+  };
   constructor() {
     super(
       'Planetologist',

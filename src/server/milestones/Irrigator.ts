@@ -24,6 +24,10 @@ export class Irrigator extends BaseMilestone {
 
 // Variant from Terra Cimmeria Nova.
 export class Coastguard extends Irrigator {
+  public readonly automaDescription = '4+ tiles adjacent to ocean';
+  public readonly automaMapDescriptions = {
+    [BoardName.TERRA_CIMMERIA_NOVA]: '3+ tiles adjacent to ocean',
+  };
   constructor() {
     super('Coastguard', 3);
   }

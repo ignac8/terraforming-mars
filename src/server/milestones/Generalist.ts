@@ -4,6 +4,7 @@ import {IMarsBot} from '../automa/IMarsBot';
 import {marsBotMarsTrackPositions} from '../automa/MarsBotMilestoneAwardEval';
 
 export class Generalist extends BaseMilestone {
+  public readonly automaDescription = 'All tracks ≥ 2 (except Venus)';
   constructor() {
     super(
       'Generalist',
