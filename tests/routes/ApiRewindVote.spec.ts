@@ -54,7 +54,7 @@ describe('ApiRewindVote', () => {
   it('rewinds the table when the other player agrees, keeping the requester\'s clock, unfrozen, naming the requester', async () => {
     // Standing clocks, so the time kept is exact.
     [t.p1, t.p2].forEach((p, i) => {
-      p.timer = Timer.deserialize({sumElapsed: 600_000 + i, startedAt: 0, running: false, afterFirstAction: true, lastStoppedAt: 0});
+      p.timer = Timer.deserialize({sumElapsed: 600_000 + i, startedAt: 0, running: false, enabled: true, lastStoppedAt: 0});
     });
     for (const [i, p] of t.rows()[target].players.entries()) {
       p.timer.sumElapsed = 300_000 + i;

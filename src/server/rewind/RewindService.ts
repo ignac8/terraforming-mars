@@ -310,12 +310,12 @@ function promote(sandbox: Game, swap: Swap): void {
     // velocity it is time spent. Everyone else's clock goes back. Every clock stays when the movers are not known.
     // Every save lists the players in the same order.
     const kept = options.clocks === 'keep' && (movers.length === 0 || movers.includes(p.id)) ?
-      {sumElapsed: was.timer.getElapsed(), afterFirstAction: was.timer.serialize().afterFirstAction} :
+      {sumElapsed: was.timer.getElapsed(), enabled: was.timer.serialize().enabled} :
       target.players[i].timer;
     // Nobody's clock runs until the hand-over settles who is asked.
     p.timer = Timer.deserialize({
       sumElapsed: kept.sumElapsed,
-      afterFirstAction: kept.afterFirstAction,
+      enabled: kept.enabled,
       running: false,
       startedAt: 0,
       lastStoppedAt: 0,

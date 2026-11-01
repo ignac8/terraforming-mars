@@ -167,14 +167,14 @@ describe('buildReplayView', () => {
         sumElapsed: 5_000,
         startedAt: Date.now() - 3_600_000,
         running: true,
-        afterFirstAction: true,
+        enabled: true,
         lastStoppedAt: 0,
       });
       player2.timer = Timer.deserialize({
         sumElapsed: 7_000,
         startedAt: 0,
         running: false,
-        afterFirstAction: true,
+        enabled: true,
         lastStoppedAt: 0,
       });
       return loadSandboxGame(game.serialize());

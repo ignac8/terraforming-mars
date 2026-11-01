@@ -164,7 +164,7 @@ describe('ApiJudgeRewind', () => {
         const rows = db.games.get(game.id) as Array<SerializedGame>;
         const players = [player, player2];
         players.forEach((p, i) => {
-          p.timer = Timer.deserialize({sumElapsed: 600_000 + i, startedAt: 0, running: false, afterFirstAction: true, lastStoppedAt: 0});
+          p.timer = Timer.deserialize({sumElapsed: 600_000 + i, startedAt: 0, running: false, enabled: true, lastStoppedAt: 0});
         });
         // Timers are not part of the moment's state, so the replay still matches the changed row.
         rows[target].players.forEach((p, i) => {

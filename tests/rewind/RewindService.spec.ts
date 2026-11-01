@@ -190,7 +190,7 @@ describe('RewindService', () => {
   });
 
   it('keeps the time already spent and the seats claimed since', async () => {
-    player.timer = Timer.deserialize({sumElapsed: 600_000, startedAt: 0, running: false, afterFirstAction: true, lastStoppedAt: 0});
+    player.timer = Timer.deserialize({sumElapsed: 600_000, startedAt: 0, running: false, enabled: true, lastStoppedAt: 0});
     player.password = 'seat';
     game.judgePassword = 'judge';
 
@@ -650,7 +650,7 @@ describe('RewindService whole table', () => {
       await playTable();
       const players = [player, player2];
       players.forEach((p, i) => {
-        p.timer = Timer.deserialize({sumElapsed: 600_000 + i, startedAt: Date.now() - 5000, running: run.running, afterFirstAction: true, lastStoppedAt: 0});
+        p.timer = Timer.deserialize({sumElapsed: 600_000 + i, startedAt: Date.now() - 5000, running: run.running, enabled: true, lastStoppedAt: 0});
       });
       // Timers are not part of the moment's state, so the replay still matches the changed row.
       for (const [i, p] of rows()[target].players.entries()) {
@@ -680,7 +680,7 @@ describe('RewindService whole table', () => {
     // Both players bought their cards in the research step after secondResearch.
     const players = [player, player2];
     players.forEach((p, i) => {
-      p.timer = Timer.deserialize({sumElapsed: 600_000 + i, startedAt: 0, running: false, afterFirstAction: true, lastStoppedAt: 0});
+      p.timer = Timer.deserialize({sumElapsed: 600_000 + i, startedAt: 0, running: false, enabled: true, lastStoppedAt: 0});
     });
     for (const [i, p] of rows()[secondResearch].players.entries()) {
       p.timer.sumElapsed = 300_000 + i;
@@ -700,7 +700,7 @@ describe('RewindService whole table', () => {
     delete rows()[target + 1].inputs;
     const players = [player, player2];
     players.forEach((p, i) => {
-      p.timer = Timer.deserialize({sumElapsed: 600_000 + i, startedAt: 0, running: false, afterFirstAction: true, lastStoppedAt: 0});
+      p.timer = Timer.deserialize({sumElapsed: 600_000 + i, startedAt: 0, running: false, enabled: true, lastStoppedAt: 0});
     });
     for (const [i, p] of rows()[target].players.entries()) {
       p.timer.sumElapsed = 300_000 + i;
@@ -812,7 +812,7 @@ describe('RewindService whole table', () => {
       // Standing clocks. Stopping one that never started would add the time since 1970.
       const players = [player, player2];
       players.forEach((p, i) => {
-        p.timer = Timer.deserialize({sumElapsed: 600_000 + i, startedAt: 0, running: false, afterFirstAction: true, lastStoppedAt: 0});
+        p.timer = Timer.deserialize({sumElapsed: 600_000 + i, startedAt: 0, running: false, enabled: true, lastStoppedAt: 0});
       });
 
       const restored = await rewindTable(game, target, {cards: 'same', clocks: 'keep', freeze: run.option}, judge);
