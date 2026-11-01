@@ -10,4 +10,6 @@ export type RecordedInput = {
   response: InputResponse;
   /** stateHash of the game just before the answer was applied. */
   stateHash: string;
+  /** When the answer was given, in epoch milliseconds. Undefined in saves written before it was recorded. */
+  at?: number;
 };
