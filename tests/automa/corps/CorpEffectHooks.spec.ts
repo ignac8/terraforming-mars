@@ -239,7 +239,7 @@ describe('Corp Effect Hooks', () => {
         const placer = marsBot.turnResolver.tilePlacer;
         let greenery: Space | undefined;
         const find = placer.findGreenerySpace.bind(placer);
-        placer.findGreenerySpace = (where) => greenery = find(where);
+        placer.findGreenerySpace = (filter) => greenery = find(filter);
 
         resolveIntervention(marsBot);
 

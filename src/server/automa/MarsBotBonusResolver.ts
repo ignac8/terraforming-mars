@@ -453,12 +453,12 @@ export class MarsBotBonusResolver {
   }
 
   /**
-   * Places a MarsBot greenery on a space that passes `where` and raises oxygen.
+   * Places a MarsBot greenery on a space that passes `filter` and raises oxygen.
    *
    * Returns false, with no Failed Action, when no such space is left.
    */
-  private maybePlaceGreenery(where?: (space: Space) => boolean): boolean {
-    const space = this.tilePlacer.findGreenerySpace(where);
+  private maybePlaceGreenery(filter?: (space: Space) => boolean): boolean {
+    const space = this.tilePlacer.findGreenerySpace(filter);
     if (space === undefined) {
       return false;
     }
@@ -617,8 +617,8 @@ export class MarsBotBonusResolver {
       }
       return true;
     };
-    const placeCity = (where?: (space: Space) => boolean) => {
-      const space = this.tilePlacer.findCitySpace(where);
+    const placeCity = (filter?: (space: Space) => boolean) => {
+      const space = this.tilePlacer.findCitySpace(filter);
       if (space) {
         this.game.addCity(this.marsBot, space);
         this.turnResolver.gainMc(this.tilePlacer.getTotalPlacementMC(space));

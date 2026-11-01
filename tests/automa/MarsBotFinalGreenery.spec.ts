@@ -144,7 +144,7 @@ describe('MarsBot final greenery', () => {
       let placed: Space | undefined;
       const placer = marsBot.turnResolver.tilePlacer;
       const find = placer.findGreenerySpace.bind(placer);
-      placer.findGreenerySpace = (where) => placed = find(where);
+      placer.findGreenerySpace = (filter) => placed = find(filter);
       return {game, marsBot, mc, placementMc: () => placer.getTotalPlacementMC(placed!)};
     }
 
