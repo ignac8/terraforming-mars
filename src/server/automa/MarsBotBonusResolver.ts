@@ -792,6 +792,11 @@ export class MarsBotBonusResolver {
       this.game.log(`MarsBot ${cardName}: no tradeable colony, no effect (C-17)`);
       return;
     }
+    // It must lose 1 MC to trade. With none, the card does nothing (Nick, BGG 3599965).
+    if (marsBot.turnResolver.megacredits < 1) {
+      this.game.log(`MarsBot ${cardName}: no MC to pay for the trade, no effect (C-17)`);
+      return;
+    }
 
     tradeWithColony(marsBot, colony);
     this.game.log(`MarsBot resolves ${cardName} (C-17)`);

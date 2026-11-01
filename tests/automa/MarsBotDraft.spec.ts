@@ -6,6 +6,9 @@ import {MarsBot} from '../../src/server/automa/MarsBot';
 import {BoardName} from '../../src/common/boards/BoardName';
 import {SelectCard} from '../../src/server/inputs/SelectCard';
 import {IProjectCard} from '../../src/server/cards/IProjectCard';
+import {getMarsBotCorp} from '../../src/server/automa/corps/MarsBotCorpRegistry';
+import {CardName} from '../../src/common/cards/CardName';
+import {formatMessage} from '../TestingUtils';
 
 function createAutomaGameWithDraft(): {game: IGame, human: TestPlayer, marsBot: MarsBot} {
   const [game, human] = testGame(1, {
@@ -131,6 +134,36 @@ describe('MarsBot Draft Variant', () => {
 
       // MarsBot discarded 1 card
       expect(game.projectDeck.discardPile.length).to.eq(discardBefore + 1);
+    });
+
+    // With a draft priority the player sees every card MarsBot keeps and the one it discards (rulebook B p.2, Nick BGG 3542834).
+    it('logs MarsBot\'s picks and discard when it has a draft priority', () => {
+      const {game, human, marsBot} = createAutomaGameWithDraft();
+      marsBot.setCorpAndSetup(getMarsBotCorp(CardName.SATURN_SYSTEMS)!);
+      game.gameLog.length = 0;
+      game.gotoResearchPhase();
+
+      for (let round = 0; round < 4; round++) {
+        const selectCard = human.getWaitingFor() as SelectCard<IProjectCard>;
+        selectCard.cb([selectCard.cards[0]]);
+      }
+
+      const messages = game.gameLog.map(formatMessage);
+      expect(messages.filter((m) => m.startsWith('MarsBot drafts '))).has.length(4);
+      const discarded = game.projectDeck.discardPile[game.projectDeck.discardPile.length - 1];
+      expect(messages).to.include(`MarsBot discards ${discarded.name} after the draft`);
+    });
+
+    it('does not log MarsBot\'s picks without a draft priority', () => {
+      const {game, human} = createAutomaGameWithDraft();
+      game.gotoResearchPhase();
+
+      for (let round = 0; round < 4; round++) {
+        const selectCard = human.getWaitingFor() as SelectCard<IProjectCard>;
+        selectCard.cb([selectCard.cards[0]]);
+      }
+
+      expect(game.gameLog.map(formatMessage).filter((m) => m.startsWith('MarsBot drafts '))).is.empty;
     });
 
     it('swapped piles mean human sees different cards each round', () => {

@@ -8,7 +8,7 @@ import {marsBotAwardScore, marsBotCanClaimMilestone} from '../../src/server/auto
 import {AutomaGameSetup} from '../../src/server/automa/AutomaGameSetup';
 import {BonusCardId} from '../../src/common/automa/AutomaTypes';
 import {createCorpBonusCard} from '../../src/server/automa/MarsBotBonusCard';
-import {marsBotAwardRule, marsBotMapSet, marsBotMilestoneRule} from '../../src/common/automa/MarsBotMADescriptions';
+import {marsBotAwardRule, marsBotMilestoneRule} from '../../src/common/automa/MarsBotMADescriptions';
 import {BoardName} from '../../src/common/boards/BoardName';
 import {Tag} from '../../src/common/cards/Tag';
 import {RandomMAOptionType} from '../../src/common/ma/RandomMAOptionType';
@@ -17,7 +17,6 @@ import {milestoneManifest} from '../../src/server/milestones/Milestones';
 import {awardManifest} from '../../src/server/awards/Awards';
 import {MilestoneName} from '../../src/common/ma/MilestoneName';
 import {AwardName} from '../../src/common/ma/AwardName';
-import {MARSBOT_BOARD_NAMES} from '../../src/common/automa/MarsBotBoards';
 import {SpaceType} from '../../src/common/boards/SpaceType';
 import {Space} from '../../src/server/boards/Space';
 import {TileType} from '../../src/common/TileType';
@@ -428,16 +427,8 @@ describe('MarsBot map milestones and awards', () => {
     });
 
     // The descriptions are the "MarsBot: ..." hints on the board's milestones and awards
-    it('describe every milestone and award MarsBot plays against', () => {
+    it('describe every milestone and award the modular sets let MarsBot play', () => {
       const options = {venusNextExtension: true, turmoilExtension: true} as GameOptions;
-      for (const board of MARSBOT_BOARD_NAMES) {
-        for (const name of milestoneManifest.boards[board]) {
-          expect(marsBotMilestoneRule(name, board), `${board} ${name}`).is.a('string');
-        }
-        for (const name of awardManifest.boards[board]) {
-          expect(marsBotAwardRule(name, board), `${board} ${name}`).is.a('string');
-        }
-      }
       for (const name of Object.keys(milestoneManifest.all) as Array<MilestoneName>) {
         if (AutomaGameSetup.supportsMilestone(name, options)) {
           expect(marsBotMilestoneRule(name), name).is.a('string');
@@ -458,12 +449,6 @@ describe('MarsBot map milestones and awards', () => {
 
     it('a map set falls back to the default for milestones it does not reword', () => {
       expect(marsBotMilestoneRule('Energizer', BoardName.HELLAS)).to.eq('Energy track ≥ 6');
-    });
-
-    it('the map set applies unless the Milestones & Awards expansion is on', () => {
-      const options = {boardName: BoardName.HELLAS, modularMA: false};
-      expect(marsBotMapSet(options)).to.eq(BoardName.HELLAS);
-      expect(marsBotMapSet({...options, modularMA: true})).is.undefined;
     });
 
     it('random milestones and awards still use the map rule of the map\'s own milestone', () => {

@@ -267,6 +267,7 @@ export class AutomaGameHooks {
           finalMarsBotCards = result.kept;
           for (const discarded of result.discarded) {
             this.game.projectDeck.discardPile.push(discarded);
+            this.game.log('MarsBot discards ${0} after the draft', (b) => b.card(discarded));
           }
         }
         this.marsBot.buildResearchActionDeckFromDraft(finalMarsBotCards, skipDiscard || draftPriority !== undefined);
@@ -288,6 +289,8 @@ export class AutomaGameHooks {
         let picked: IProjectCard;
         if (draftPriority !== undefined) {
           picked = this.draftResolver().pickCard(marsBotPile, draftPriority);
+          // The player sees what a draft priority keeps (rulebook B p.2).
+          this.game.log('MarsBot drafts ${0}', (b) => b.card(picked));
         } else {
           picked = marsBotPile[this.game.rng.nextInt(marsBotPile.length)];
         }

@@ -14,6 +14,9 @@ import {CardName} from '../../src/common/cards/CardName';
 import {Phase} from '../../src/common/Phase';
 import {Timer} from '../../src/common/Timer';
 import {PlayerViewModel} from '../../src/common/models/PlayerModel';
+import {finishGeneration} from '../TestingUtils';
+import {cast} from '../../src/common/utils/utils';
+import {SelectCard} from '../../src/server/inputs/SelectCard';
 
 describe('buildReplayView', () => {
   let game: IGame;
@@ -88,6 +91,28 @@ describe('buildReplayView', () => {
     expect((one.view as PlayerViewModel).waitingFor).is.undefined;
   });
 
+  it('shows the drafted cards and the hand still to pick from, between the picks of a draft', () => {
+    [game, player, player2] = testGame(2, {draftVariant: true});
+    game.generation = 1;
+    finishGeneration(game);
+    const handOf = (p: TestPlayer) => cast(p.getWaitingFor(), SelectCard).cards.map((c) => c.name);
+    const names = (cards: ReadonlyArray<{name: CardName}> | undefined) => cards?.map((c) => c.name);
+    const privatesAt = (p: TestPlayer) => buildReplayView(loadSandboxGame(game.serialize()), game.spectatorId, 3, 'all').privates.find((x) => x.color === p.color)!;
+    const hand = handOf(player);
+    const hand2 = handOf(player2);
+
+    player.process({type: 'card', cards: [hand[0]]});
+    // Before the other player picks, the pick is drafted and the other player chooses from the whole hand.
+    expect(names(privatesAt(player).draftedCards)).deep.eq([hand[0]]);
+    expect(names(privatesAt(player2).pendingChoice?.cards)).deep.eq(hand2);
+
+    player2.process({type: 'card', cards: [hand2[0]]});
+    // The next round: each holds one drafted card and chooses from the hand the other passed on.
+    expect(names(privatesAt(player2).draftedCards)).deep.eq([hand2[0]]);
+    expect(names(privatesAt(player).pendingChoice?.cards)).deep.eq(hand2.slice(1));
+    expect(names(privatesAt(player2).pendingChoice?.cards)).deep.eq(hand.slice(1));
+  });
+
   it('never hands out a player id, not even after the game ended', () => {
     const ended = loadSandboxGame({...save, phase: Phase.END});
     const ids = [player.id, player2.id];
@@ -142,14 +167,14 @@ describe('buildReplayView', () => {
         sumElapsed: 5_000,
         startedAt: Date.now() - 3_600_000,
         running: true,
-        afterFirstAction: true,
+        enabled: true,
         lastStoppedAt: 0,
       });
       player2.timer = Timer.deserialize({
         sumElapsed: 7_000,
         startedAt: 0,
         running: false,
-        afterFirstAction: true,
+        enabled: true,
         lastStoppedAt: 0,
       });
       return loadSandboxGame(game.serialize());

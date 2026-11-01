@@ -45,6 +45,37 @@ Thread links: `https://boardgamegeek.com/thread/<id>`. "Q&A n" is question n of 
 | Random milestones and awards | Only those the automa rules cover are dealt: the sets of the six MarsBot maps, the Milestones & Awards expansion (listed by name, so new upstream ones stay out) and Venus Next. Every such award but Politician has a Corporate Competition helper; Politician "has no corresponding competition effect" (rulebook C, p.16), so Corporate Competition skips it like any award without one. "Some won't make sense at times, so just swap them out" (Nick) | Q&A 5, 3599464, 3649540 |
 | Wild tags | Count as tags wherever MarsBot counts them (Spire's effect, the most-tags draft, Interface Hyperlink, Sagitta), but never match a named draft-priority tag. "A wild tag is still a tag for things that count just 'tags'" (Nick) | Q&A 19, 3429859 |
 | "Reveal until" helpers | No cap: reveal on, reshuffling the discards, and give up only once every card in the deck has been seen. "That's what I do as a player, so yes, do that for the bot too" (Nick) | Q&A 20 |
+| Venus track and "least-advanced" | Counts as a normal track and sits at the bottom for ties; only Visionary leaves it out (rulebook C). "I've always played w Venus at the bottom" (Dávid) | 3376248 |
+| Neural Instance and your cards | Not a special tile for your cards, so Red Ships pays nothing for it. It is special only where that helps MarsBot (Founder). "It was originally designed as not a special tile" (Dávid) | 3415037, 3356189 |
+| Neural Instance is MarsBot's tile | Counts for Landlord and the closest-award check, as a tile it owns for greenery placement, and its VP counts an ocean next to it, which belongs to nobody. "It owns it, yes, so it counts" (Nick) | 3344180, 3371131, 3350125 |
+| Your cards counting MarsBot's tags or events | Its track positions stand in for played cards: Toll Station reads its tag tracks, Media Archives its event track. "You use the track position of the bot on the respective track for those" (Nick; rulebook A p.5 says the same) | 2883930 |
+| Your cards counting cities on Mars | Count MarsBot's city tiles, not its city track; cards counting city tags read the track. "That card definitely counts actual city tiles. Look at the shape of the icon" (Dávid) | 3388199 |
+| Reds ruling bonuses | The 2-player rules: your TR is compared with MarsBot's for lowest and highest, and MarsBot itself gains or loses nothing (rulebook C). "You're using the 2p setup rules basically" (Nick) | 3594202 |
+| Bonus deck reshuffle | Only when a draw finds the bonus deck empty, so the last card drawn is part of it. "You reshuffle it whenever you need to draw a card from it and its empty" (Nick) | 3387297 |
+| Shipping Lines (B19, B20) with no M€ | MarsBot can't lose the 1 M€, so the card does nothing and takes no Failed Action. "The bonus card just does nothing" (Nick, a best guess) | 3599965 |
+| Draft with a draft priority | The log shows each card MarsBot keeps and the one it discards, as you would see its pile at the table (rulebook B p.2). "You have almost perfect knowledge, but not perfect control" (Nick) | 3542834 |
+| Invasive Species (B02) and protected resources | Cards whose resources can't be removed, such as Pets, are skipped. "Animals protected by card effects are safe from the Invasive Species" (Nick) | 3684496 |
+| Corporate Competition (B14) and a replacement that destroys itself | Destroyed during the action; only Corporate Competition is discarded. "If it says to destroy it, destroy it. That happens 'in-action'" (Nick) | 3350125 |
+| Final greenery on a bad space | Used when it is the only legal space, even if it scores more for you. "If a bad scoring spot is the only option, it would do it anyway" (Nick) | 3404826 |
+| Greenery at maximum oxygen | Not a Failed Action while a greenery space exists, since the tile still scores. "An action failure has to be an action that MarsBot gained no benefit from" (Nick) | 3350125 |
+| City placement | Places the tile and takes the placement M€; no track moves unless the corporation says so (Tharsis Republic). "Unless a corporation ability says to do that of course" (Nick) | 3333348 |
+| Ocean adjacency | 2 M€ per adjacent ocean tile. "2MC per adjacent ocean tile, just like a player" (Nick) | 3361315 |
+| Generation limit | Round and generation are the same: MarsBot wins as generation 20 (18 with Prelude) begins, and a game that finishes terraforming in generation 19 completes that generation (Nick) | 3428220, 3379088 |
+| Card over rulebook | A clear card wins over the rulebook, as Expedited Construction does. "It has been tested a lot more than the rulebook" (Dávid) | 3350125 |
+| Starting M€ | None, unless MarsBot's corporation gives some. "It doesn't start with any M€" (Nick) | 3640302, 3340794 |
+| Choosing corporation and preludes | Everything is chosen at once; the corporations are revealed and set up before any prelude is played, over rulebook B p.1's order (Nick) | 3622481 |
+| Hard mode first-turn milestone | "2 or more" counts unclaimed milestones only. "Yes, it means unclaimed" (Nick) | 3365910 |
+| Award price after MarsBot funds one | 8, 14, 20 M€ whoever funded the earlier awards. "Regardless of who funded the previous award" (Nick) | 3532698 |
+| Venus 16% TR bonus | MarsBot gains 1 TR. "TR is as written: 1TR" (Nick) | 3358342 |
+| Amazonis Planitia | Not offered with MarsBot: it has no MarsBot board. "Won't be automa compatible" (Nick) | 3148562 |
+| MarsBot corporations | Only those marked with an expansion need it, and you don't need the matching human corporation (Dávid) | 3161277 |
+| Ants against MarsBot | You may take microbes from MarsBot. "I'd say you can remove them for that effect" (Nick) | 3595110 |
+| Mining Guild's M€ on the card | Not scored at game end. "MarsBot has not 'gained' them yet" (Nick) | 3553988 |
+| Splice | You pick 2 M€ or a microbe for your microbe tag and MarsBot gains 2 M€ either way; MarsBot's own microbe tag gives it 4 M€ (Dávid) | 3148562 |
+| Teractor | Any advance of the Earth track pays: an Earth tag, a tag sharing the row, or an effect that advances it. "Any other effect advancing the Earth track" (Dávid) | 3621937 |
+| MarsBot's colony trade | Resets the colony's white cube as your trade does. "It should do the same as a player if not mentioned in the rules" (Nick) | 3401086, 3410612 |
+| Failed Action M€ with Colonies | Goes to MarsBot's general supply, never a shipping board area. "Failed action MC always goes to the bot's general MC supply" (Nick) | 3555685 |
+| A choice that falls to MarsBot | You make it, e.g. Icy Impactors' first-player choice. "If an effect or action asks for another player to decide something, then *you* get to make the choice" (Nick) | 3340756 |
 
 ## No designer ruling: our reading
 
@@ -66,7 +97,6 @@ Thread links: `https://boardgamegeek.com/thread/<id>`. "Q&A n" is question n of 
 | Sagitta's tagless card | Pays double the Failed Action: 10 M€ on Normal, 6 on Easy | User decision; the card reads "10MC (instead of 5MC)" |
 | Mining Guild after the game ends | The card stops: M€ goes straight to MarsBot, with no building-track advance | User decision; matches the Philares ruling (3513998) |
 | Manutech on Venus #12 | The extra advance off the end of the Venus track is a Failed Action | User decision; any advance on a maxed track is one |
-| Venus track and "least-advanced" | Counts as a normal track and sits at the bottom for ties; only Visionary leaves it out | Kept; Dávid plays it that way (3376248) and rulebook C excludes it only for Visionary |
 | Polyphemos | Discards a project card with the fewest tags, never a bonus card | Kept; discarding the bonus card would turn the corp into a drawback |
 | Aphrodite | 2 M€ per Venus step, so 4 M€ for a 2-step raise | Kept; the steps resolve one at a time (3431297) |
 | Diversification (B28) | Loses up to 4 M€: all it has when it has less | Kept, user decision |

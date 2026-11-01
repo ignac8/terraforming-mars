@@ -187,7 +187,7 @@ describe('RewindService', () => {
   });
 
   it('keeps the time already spent', async () => {
-    player.timer = Timer.deserialize({sumElapsed: 600_000, startedAt: 0, running: false, afterFirstAction: true, lastStoppedAt: 0});
+    player.timer = Timer.deserialize({sumElapsed: 600_000, startedAt: 0, running: false, enabled: true, lastStoppedAt: 0});
 
     const restored = await rewindGame(game, player, convert, 'same');
 
@@ -517,12 +517,15 @@ describe('RewindService whole table', () => {
 
   // A two-player game, played to the research phase of the generation after next. With the draft
   // variant it plays the second generation's draft too, and stops when the third generation's draft
-  // starts: a pick logs nothing, so no drafting save but the newest is a move in the history.
+  // starts: a pick logs nothing, so its moves are silent ones.
   async function playTable(options: {draftVariant?: boolean} = {}) {
     clearReplayCache();
     db = new SnapshotDatabase();
     setTestDatabase(db);
     [game, player, player2] = testGame(2, {undoOption: true, ...options});
+    // testGame skips the corporation pick, which is what enables the clocks.
+    player.timer.enable();
+    player2.timer.enable();
     await GameLoader.getInstance().add(game);
     // Set outside any input, so the first generation's saves don't replay: rebuilds start at the
     // second generation's research save.
@@ -639,7 +642,7 @@ describe('RewindService whole table', () => {
       await playTable();
       const players = [player, player2];
       players.forEach((p, i) => {
-        p.timer = Timer.deserialize({sumElapsed: 600_000 + i, startedAt: Date.now() - 5000, running: run.running, afterFirstAction: true, lastStoppedAt: 0});
+        p.timer = Timer.deserialize({sumElapsed: 600_000 + i, startedAt: Date.now() - 5000, running: run.running, enabled: true, lastStoppedAt: 0});
       });
       // Timers are not part of the moment's state, so the replay still matches the changed row.
       for (const [i, p] of rows()[target].players.entries()) {
@@ -656,7 +659,7 @@ describe('RewindService whole table', () => {
           expect(sumElapsed, label).eq(saved.players.find((s) => s.id === p.id)!.timer.sumElapsed);
         } else if (run.running) {
           // The interval in progress counts too.
-          expect(sumElapsed, label).gte(605_000 + i).lte(p.timer.countedElapsed());
+          expect(sumElapsed, label).gte(605_000 + i).lte(p.timer.getElapsed());
         } else {
           expect(sumElapsed, label).eq(600_000 + i);
         }
@@ -669,7 +672,7 @@ describe('RewindService whole table', () => {
     // Both players bought their cards in the research step after secondResearch.
     const players = [player, player2];
     players.forEach((p, i) => {
-      p.timer = Timer.deserialize({sumElapsed: 600_000 + i, startedAt: 0, running: false, afterFirstAction: true, lastStoppedAt: 0});
+      p.timer = Timer.deserialize({sumElapsed: 600_000 + i, startedAt: 0, running: false, enabled: true, lastStoppedAt: 0});
     });
     for (const [i, p] of rows()[secondResearch].players.entries()) {
       p.timer.sumElapsed = 300_000 + i;
@@ -689,7 +692,7 @@ describe('RewindService whole table', () => {
     delete rows()[target + 1].inputs;
     const players = [player, player2];
     players.forEach((p, i) => {
-      p.timer = Timer.deserialize({sumElapsed: 600_000 + i, startedAt: 0, running: false, afterFirstAction: true, lastStoppedAt: 0});
+      p.timer = Timer.deserialize({sumElapsed: 600_000 + i, startedAt: 0, running: false, enabled: true, lastStoppedAt: 0});
     });
     for (const [i, p] of rows()[target].players.entries()) {
       p.timer.sumElapsed = 300_000 + i;
@@ -700,6 +703,26 @@ describe('RewindService whole table', () => {
     players.forEach((p, i) => {
       expect(restored.getPlayerById(p.id).timer.serialize().sumElapsed).eq(600_000 + i);
     });
+  });
+
+  it('keeps the clocks enabled when rewinding to a save written before timers had enabled', async () => {
+    for (const clocks of ['keep', 'back'] as const) {
+      await playTable();
+      // Saves from before the enabled flag only have afterFirstAction, and the players have corporations.
+      for (const row of rows()) {
+        for (const p of row.players) {
+          const {enabled: _enabled, ...legacy} = p.timer;
+          p.timer = {...legacy, afterFirstAction: true} as typeof p.timer;
+          p.playedCards.push({name: CardName.BEGINNER_CORPORATION});
+        }
+      }
+
+      const restored = await rewindTable(game, target, {cards: 'same', clocks}, vote());
+
+      for (const p of restored.players) {
+        expect(p.timer.serialize().enabled, clocks).is.true;
+      }
+    }
   });
 
   it('reads the mover of the first move after a rewind from the row after the rewind\'s row', async () => {
@@ -800,7 +823,7 @@ describe('RewindService whole table', () => {
     // Standing clocks. Stopping one that never started would add the time since 1970.
     const players = [player, player2];
     players.forEach((p, i) => {
-      p.timer = Timer.deserialize({sumElapsed: 600_000 + i, startedAt: 0, running: false, afterFirstAction: true, lastStoppedAt: 0});
+      p.timer = Timer.deserialize({sumElapsed: 600_000 + i, startedAt: 0, running: false, enabled: true, lastStoppedAt: 0});
     });
 
     const restored = await rewindTable(game, target, {cards: 'same', clocks: 'keep'}, vote());
@@ -861,6 +884,39 @@ describe('RewindService whole table', () => {
       for (const p of [player, player2]) {
         const offered = cast(restored.getPlayerById(p.id).getWaitingFor(), SelectCard).cards.map((card) => card.name);
         expect(offered, cards).deep.eq(before[draft].players.find((s) => s.id === p.id)!.draftHand);
+      }
+    }
+  });
+
+  it('lists a draft pick as a move, and asks both players again from its hands', async () => {
+    for (const cards of ['same', 'shuffle'] as const) {
+      await playTable({draftVariant: true});
+      // The third generation's first round, and one pick of the second. A rewind to the second generation's
+      // draft would replay from the first generation's saves, which this table does not make by input.
+      for (const p of [player, player2, player]) {
+        p.process({type: 'card', cards: [cast(p.getWaitingFor(), SelectCard).cards[0].name]});
+      }
+      const before = structuredClone(rows());
+      // Both players hold one drafted card of the third generation.
+      const pick = before.findIndex((save) => save.phase === Phase.DRAFTING && save.generation === 3 && save.players.every((p) => p.draftedCards.length === 1));
+      expect(pick, cards).is.greaterThan(draft);
+      expect((await movesOf(game, player.id)).find((move) => move.saveId === pick)?.silent, cards).is.true;
+
+      const warn = console.warn;
+      const warnings: Array<unknown> = [];
+      console.warn = (...args) => warnings.push(args);
+      let restored: IGame;
+      try {
+        restored = await rewindTable(game, pick, {cards, clocks: 'keep'}, vote());
+      } finally {
+        console.warn = warn;
+      }
+
+      // A warning would mean the replay did not match the recording.
+      expect(warnings, cards).deep.eq([]);
+      for (const p of [player, player2]) {
+        const offered = cast(restored.getPlayerById(p.id).getWaitingFor(), SelectCard).cards.map((card) => card.name);
+        expect(offered, cards).deep.eq(before[pick].players.find((s) => s.id === p.id)!.draftHand);
       }
     }
   });

@@ -51,6 +51,25 @@ describe('buildMoveList', () => {
     expect(buildMoveList(saves, [], log).some((m) => m.movers !== undefined)).is.false;
   });
 
+  it('lists a save that logged nothing when the next save recorded an answer, marked silent', () => {
+    const colors = new Map<PlayerId, Color>([['p-a' as PlayerId, 'red'], ['p-b' as PlayerId, 'blue']]);
+    // Save 1 logs nothing and save 2 records p-b's answer to it, like a draft pick. Save 2 logs nothing either,
+    // but nobody answered before save 3, like the save after an action.
+    const quiet: Array<SaveEntry> = [
+      {saveId: 0, logLength: 0},
+      {saveId: 1, logLength: 2, answeredBy: ['p-a' as PlayerId]},
+      {saveId: 2, logLength: 2, answeredBy: ['p-b' as PlayerId]},
+      {saveId: 3, logLength: 2},
+      {saveId: 4, logLength: 4, answeredBy: ['p-a' as PlayerId]},
+    ];
+    const moves = buildMoveList(quiet, [], log, false, {colors});
+
+    expect(moves.map((m) => m.saveId)).deep.eq([0, 1, 3, 4]);
+    expect(moves.map((m) => m.silent)).deep.eq([undefined, true, undefined, undefined]);
+    expect(moves[1].messages).is.empty;
+    expect(moves[1].movers).deep.eq(['blue']);
+  });
+
   it('puts every visible line in exactly one move, in order', () => {
     for (const run of runs) {
       const moves = buildMoveList(saves, run.rewinds, log);
