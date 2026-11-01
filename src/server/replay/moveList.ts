@@ -1,15 +1,29 @@
 import {Color} from '../../common/Color';
 import {LogMessage} from '../../common/logs/LogMessage';
-import {ReplayMove} from '../../common/replay/ReplayModel';
+import {ReplayMove, ReplayPick} from '../../common/replay/ReplayModel';
 import {PlayerId} from '../../common/Types';
 import {RecordedInput} from '../rewind/RecordedInput';
 import {abandonedBy, activeRewinds, hiddenBy, RewindRecord} from '../rewind/RewindRecord';
+import {DraftHands, PlayerPick} from './picks';
 
-/** `answeredBy`: who gave the answers the save recorded, which were applied to the state of the save before it. */
-export type SaveEntry = {saveId: number; logLength: number; answeredBy?: ReadonlyArray<PlayerId>};
+/**
+ * `answeredBy`, `picks` and `at` tell about the answers the save recorded, which were applied to the state of the save
+ * before it: who gave them, the cards they chose, and when the first was given (epoch milliseconds).
+ * `draft`: the hands of the save, when it is in the middle of a draft round.
+ */
+export type SaveEntry = {
+  saveId: number; logLength: number; answeredBy?: ReadonlyArray<PlayerId>;
+  picks?: ReadonlyArray<PlayerPick>; at?: number; draft?: DraftHands;
+};
 
-/** What tells who made each move: the players' colours, and, for the newest save, the live game's answers since. */
-export type Movers = {colors: ReadonlyMap<PlayerId, Color>; newest?: ReadonlyArray<PlayerId>};
+/**
+ * What tells who made each move: the players' colours, and, for the newest save, the live game's answers since:
+ * who gave them, the cards they chose, and when the first was given.
+ */
+export type Movers = {
+  colors: ReadonlyMap<PlayerId, Color>; newest?: ReadonlyArray<PlayerId>;
+  newestPicks?: ReadonlyArray<PlayerPick>; newestAt?: number;
+};
 
 /** The distinct players who gave the recorded answers, in the order of their first answer. Empty when none were recorded. */
 export function answerersOf(inputs: ReadonlyArray<RecordedInput> | undefined): Array<PlayerId> {
@@ -21,6 +35,14 @@ export function answerersOf(inputs: ReadonlyArray<RecordedInput> | undefined): A
 function markerStart(record: RewindRecord, rewinds: ReadonlyArray<RewindRecord>): number {
   const earlier = rewinds.find((r) => r.saveId === record.restoredSaveId);
   return earlier === undefined ? record.logEnd : markerStart(earlier, rewinds);
+}
+
+// The picks of players whose colour is known.
+function picksWithColors(picks: ReadonlyArray<PlayerPick> | undefined, colors: ReadonlyMap<PlayerId, Color> | undefined): Array<ReplayPick> {
+  return (picks ?? []).flatMap(({playerId, cards, auto}) => {
+    const color = colors?.get(playerId);
+    return color === undefined ? [] : [{color, cards: [...cards], ...(auto ? {auto} : {})}];
+  });
 }
 
 /**
@@ -46,6 +68,7 @@ function markerStart(record: RewindRecord, rewinds: ReadonlyArray<RewindRecord>)
  *
  * With `movers`, each move names its players: those who gave the answers recorded in the next save by id,
  * which were applied to the state of this save. The newest save has no next one, so the live game's answers stand.
+ * The same answers give the move its `picks`, and its `at`, which is the first line's time when they did not record one.
  */
 export function buildMoveList(saves: ReadonlyArray<SaveEntry>, rewinds: ReadonlyArray<RewindRecord>, log: ReadonlyArray<LogMessage>, showUndone: boolean = false, movers?: Movers): Array<ReplayMove> {
   const active = activeRewinds(rewinds);
@@ -64,7 +87,12 @@ export function buildMoveList(saves: ReadonlyArray<SaveEntry>, rewinds: Readonly
     const silent = messages.length === 0 && next !== undefined && (answered ?? []).length > 0;
     if (messages.length > 0 || next === undefined || silent) {
       const colors = (answered ?? []).flatMap((id) => movers?.colors.get(id) ?? []);
-      moves.push({saveId, messages, ...(undone ? {undone} : {}), ...(silent ? {silent} : {}), ...(colors.length === 0 ? {} : {movers: colors})});
+      const picks = picksWithColors(next === undefined ? movers?.newestPicks : next.picks, movers?.colors);
+      const at = (next === undefined ? movers?.newestAt : next.at) ?? messages.find((m) => typeof m?.timestamp === 'number')?.timestamp;
+      moves.push({
+        saveId, messages, ...(undone ? {undone} : {}), ...(silent ? {silent} : {}), ...(colors.length === 0 ? {} : {movers: colors}),
+        ...(picks.length === 0 ? {} : {picks}), ...(at === undefined ? {} : {at}),
+      });
     }
   });
   return moves;

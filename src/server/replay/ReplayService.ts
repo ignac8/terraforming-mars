@@ -10,13 +10,15 @@ import {LogMessage} from '../../common/logs/LogMessage';
 import {playerColors, withOwner} from '../routes/GameLogs';
 import {isAbandonedSave, RewindRecord} from '../rewind/RewindRecord';
 import {canBrowseHistory, canRewind, canVoteRewind, checkMayShowUndone} from '../rewind/access';
+import {RecordedInput} from '../rewind/RecordedInput';
 import {answerersOf, buildMoveList, SaveEntry} from './moveList';
+import {autoPicksOf, draftHandsOf, picksOf} from './picks';
 
 const MAX_CACHED_GAMES = 50;
 
 // A finished game does not change, so what its move list is built from is kept: the saves, the
-// rewinds and the one log that every save is a prefix of. The list holds every message, so it
-// is the same for all viewers; each request filters the private lines for its own viewer.
+// rewinds and the one log that every save is a prefix of. The list holds every message and every
+// pick, so it is the same for all viewers; each request filters them for its own viewer.
 // A running game keeps only its saves. Rows are append-only between rollbacks, which undo and
 // load_game are and forgetReplay covers, so the next request extends them. Its rewinds and log
 // are the live game's. Oldest entries go first.
@@ -139,15 +141,23 @@ export async function isFinished(game: IGame): Promise<boolean> {
   return true;
 }
 
-// Who gave the answers since the save `newestId`, the newest one, from the live game. A game loaded from that
-// save has not saved since, so what it holds are the answers that led to the save, not the ones after it. Phases
-// that ask again without saving, like a draft, leave it so.
-function answersSince(game: IGame, newestId: number): Array<PlayerId> {
-  return game.lastSaveId > newestId ? answerersOf(game.inputsSinceSave) : [];
+// The answers since the save `newestId`, the newest one, from the live game. A game loaded from that
+// save has not saved since, so what it holds are the answers that led to the save, not the ones after it.
+// Phases that ask again without saving leave it so.
+function answersSince(game: IGame, newestId: number): ReadonlyArray<RecordedInput> {
+  return game.lastSaveId > newestId ? game.inputsSinceSave ?? [] : [];
 }
 
-function entryOf(saveId: number, save: SerializedGame): SaveEntry {
-  return {saveId, logLength: save.gameLog.length, answeredBy: answerersOf(save.inputs)};
+// `previous` is the entry of the save before it, which the answers recorded in the save were applied to.
+function entryOf(saveId: number, save: SerializedGame, previous: SaveEntry | undefined): SaveEntry {
+  const picks = picksOf(save.inputs);
+  picks.push(...autoPicksOf(previous?.draft, picks, save));
+  const at = save.inputs?.[0]?.at;
+  const draft = draftHandsOf(save);
+  return {
+    saveId, logLength: save.gameLog.length, answeredBy: answerersOf(save.inputs),
+    ...(picks.length === 0 ? {} : {picks}), ...(at === undefined ? {} : {at}), ...(draft === undefined ? {} : {draft}),
+  };
 }
 
 // Reads the saves one at a time and keeps only what the list needs, so at most one save is in
@@ -172,7 +182,7 @@ async function readGame(game: IGame): Promise<{result: Built, finished: boolean}
   try {
     for (const saveId of saveIds) {
       const save = saveId === newestId ? newest : await getSave(game, saveId);
-      saves.push(entryOf(saveId, save));
+      saves.push(entryOf(saveId, save, saves[saves.length - 1]));
     }
   } catch (e) {
     // Compression can strike while the saves are read. Only the first and last remain then.
@@ -211,7 +221,7 @@ async function extendRunningSaves(game: IGame, known: ReadonlyArray<SaveEntry>):
   const from = known.length > 0 ? known[known.length - 1].saveId : 0;
   const saves = known.slice(0, -1);
   for (const saveId of (await getSortedSaveIds(game)).filter((id) => id >= from)) {
-    saves.push(entryOf(saveId, await getSave(game, saveId)));
+    saves.push(entryOf(saveId, await getSave(game, saveId), saves[saves.length - 1]));
   }
   return saves;
 }
@@ -245,16 +255,21 @@ function readRunningSaves(game: IGame): Promise<Array<SaveEntry>> {
   return pending;
 }
 
-// Once a game has ended everyone sees every private line, in the form of `withOwner`. Before that a player sees the
-// lines meant for them, and anyone else only the public lines.
+// Once a game has ended everyone sees every private line, in the form of `withOwner`, and every pick. Before that a
+// player sees the lines meant for them and their own picks, and anyone else only the public lines.
 function movesFor(game: IGame, viewerId: ParticipantId, moves: Array<ReplayMove>, finished: boolean): Array<ReplayMove> {
   const colors = finished ? playerColors(game) : undefined;
-  return moves.map((move) => ({
-    ...move,
-    messages: colors !== undefined ?
-      move.messages.map((m) => withOwner(m, colors)) :
-      move.messages.filter((m) => m.playerId === undefined || m.playerId === viewerId),
-  }));
+  const own = game.players.find((p) => p.id === viewerId)?.color;
+  return moves.map(({picks, ...move}) => {
+    const shown = (picks ?? []).filter((pick) => finished || pick.color === own);
+    return {
+      ...move,
+      messages: colors !== undefined ?
+        move.messages.map((m) => withOwner(m, colors)) :
+        move.messages.filter((m) => m.playerId === undefined || m.playerId === viewerId),
+      ...(shown.length === 0 ? {} : {picks: shown}),
+    };
+  });
 }
 
 type AllMoves = {status: 'available', moves: Array<ReplayMove>, finished: boolean} | {status: 'not-finished'} | {status: 'expired'};
@@ -266,7 +281,8 @@ async function allMoves(game: IGame, undone: boolean = false): Promise<AllMoves>
   if (game.phase !== Phase.END) {
     const saves = await readRunningSaves(game);
     // The newest save's move is the one the game is at, which its inputs since that save tell.
-    const movers = {colors, newest: answersSince(game, saves[saves.length - 1]?.saveId ?? -1)};
+    const newest = answersSince(game, saves[saves.length - 1]?.saveId ?? -1);
+    const movers = {colors, newest: answerersOf(newest), newestPicks: picksOf(newest), newestAt: newest[0]?.at};
     return {status: 'available', moves: buildMoveList(saves, game.rewinds, game.gameLog, undone, movers), finished: false};
   }
   const cached = cache.get(game.id);
@@ -287,7 +303,7 @@ async function allMoves(game: IGame, undone: boolean = false): Promise<AllMoves>
  */
 export async function moversOf(game: IGame, saveId: number): Promise<Array<PlayerId>> {
   const next = (await getSortedSaveIds(game)).find((id) => id > saveId);
-  return next === undefined ? answersSince(game, saveId) : answerersOf((await getSave(game, next)).inputs);
+  return next === undefined ? answerersOf(answersSince(game, saveId)) : answerersOf((await getSave(game, next)).inputs);
 }
 
 /**

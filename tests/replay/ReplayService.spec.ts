@@ -12,6 +12,7 @@ import {LogMessage} from '../../src/common/logs/LogMessage';
 import {LogMessageType} from '../../src/common/logs/LogMessageType';
 import {Phase} from '../../src/common/Phase';
 import {PlayerId} from '../../src/common/Types';
+import {BoardName} from '../../src/common/boards/BoardName';
 import {ReplayMove, ReplayMovesModel} from '../../src/common/replay/ReplayModel';
 import {InMemoryDatabase} from '../testing/InMemoryDatabase';
 import {SnapshotDatabase} from '../testing/SnapshotDatabase';
@@ -91,6 +92,20 @@ describe('ReplayService', () => {
     expect(list.map((m) => m.saveId)).deep.eq([0, 1, 3, 4]);
     expect(list.map((m) => m.messages.length)).deep.eq([2, 3, 4, 0]);
     expect(list[1].messages.map((m) => m.message)).deep.eq(['line 2', 'line 3', 'line 4']);
+  });
+
+  it('lists the moves of a finished game against MarsBot, with a line reserved for it marked with its color', async () => {
+    [game, player] = testGame(1, {automa: true, boardName: BoardName.THARSIS});
+    base = game.serialize();
+    const log = logOf(5);
+    log[2].playerId = game.marsBotPlayer!.id;
+    storeSaves([0, 2, 5].map((length, idx) => [idx, row(log, length)]));
+
+    const list = await moves(player.id);
+
+    expect(list.map((m) => m.saveId)).deep.eq([0, 1, 2]);
+    expect(list[1].messages.map((m) => m.owner)).deep.eq([game.marsBotPlayer!.color, undefined, undefined]);
+    expect(JSON.stringify(list)).not.contains(game.marsBotPlayer!.id);
   });
 
   it('shows every viewer of a finished game every private line, each marked with its owner', async () => {
@@ -408,6 +423,15 @@ describe('ReplayService', () => {
 
     it('lists the moves for its player with Player undo', async () => {
       const [solo, soloPlayer] = testGame(1, {undoOption: true});
+      act(soloPlayer);
+      act(soloPlayer);
+      const r = await getReplayMoves(solo, soloPlayer.id);
+      expect(r).to.include({status: 'available', finished: false, canRewind: true, defaultViewAs: soloPlayer.color});
+      expect((r as {moves: Array<ReplayMove>}).moves).is.not.empty;
+    });
+
+    it('lists the moves of a game against MarsBot for its player', async () => {
+      const [solo, soloPlayer] = testGame(1, {undoOption: true, automa: true, boardName: BoardName.THARSIS});
       act(soloPlayer);
       act(soloPlayer);
       const r = await getReplayMoves(solo, soloPlayer.id);
