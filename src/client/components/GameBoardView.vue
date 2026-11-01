@@ -59,7 +59,7 @@ import MarsBotPanel from '@/client/components/automa/MarsBotPanel.vue';
 import {TileView} from './board/TileView';
 import {scrollToSpace} from '@/client/utils/boardScroll';
 import {BoardName} from '@/common/boards/BoardName';
-import {marsBotMapSet} from '@/common/automa/MarsBotMADescriptions';
+import {marsBotMapSet} from '@/common/automa/marsBotMapSet';
 
 export default defineComponent({
   name: 'GameBoardView',

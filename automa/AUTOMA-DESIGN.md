@@ -158,7 +158,7 @@ Steps 1-2 are the Tharsis order. Each map's player aid has its own (`MAP_TIEBREA
 
 When comparing awards for resources (Thermalist, Miner), MarsBot considers your current resources + your production. For Thermalist that is heat + energy resources + heat production, not energy production (Dávid Turczi, BGG thread 3350125). Corporate Competition compares the same way.
 
-Other maps have their own milestone and award rules for MarsBot (rulebook C pp.9-12). They apply whenever that map's own milestone or award is in play, random M&A included; the rest use the expansion's generic rules (`marsBotMapSet` in `src/common/automa/MarsBotMADescriptions.ts`).
+Other maps have their own milestone and award rules for MarsBot (rulebook C pp.9-12). They apply whenever that map's own milestone or award is in play, random M&A included; the rest use the expansion's generic rules (`marsBotMapSet` in `src/common/automa/marsBotMapSet.ts`).
 
 ### 2.9 Production Phase
 

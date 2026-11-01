@@ -9,7 +9,7 @@ import {MarsBot} from './MarsBot';
 import {MARSBOT_BOARDS} from './boards/MarsBotBoards';
 import {TrackDefinition, MARSBOT_STARTING_TR} from '../../common/automa/AutomaTypes';
 import {MARSBOT_BOARD_NAMES} from '../../common/automa/MarsBotBoards';
-import {marsBotMapSet} from '../../common/automa/MarsBotMADescriptions';
+import {marsBotMapSet} from '../../common/automa/marsBotMapSet';
 import {BoardName} from '../../common/boards/BoardName';
 import {AutomaGameHooks} from './AutomaGameHooks';
 import {MarsBotTags} from './MarsBotTags';

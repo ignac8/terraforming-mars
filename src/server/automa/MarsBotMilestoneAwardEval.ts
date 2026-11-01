@@ -1,6 +1,6 @@
 import {Tag} from '../../common/cards/Tag';
 import {BoardName} from '../../common/boards/BoardName';
-import {marsBotMapSet} from '../../common/automa/MarsBotMADescriptions';
+import {marsBotMapSet} from '../../common/automa/marsBotMapSet';
 import {IMilestone} from '../milestones/IMilestone';
 import {IPlayer} from '../IPlayer';
 import {IAward} from '../awards/IAward';
