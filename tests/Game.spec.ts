@@ -696,6 +696,8 @@ describe('Game', () => {
     // Players with corporations, so a reload goes to the action phase.
     player.playedCards.push(new BeginnerCorporation());
     player2.playedCards.push(new BeginnerCorporation());
+    player.timer.enable();
+    player2.timer.enable();
     game.phase = Phase.ACTION;
     player.takeAction();
     expect(game.activePlayer.timer.serialize().running).is.true;

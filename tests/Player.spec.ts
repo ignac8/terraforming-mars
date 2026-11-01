@@ -91,6 +91,7 @@ describe('Player', () => {
       const [game, player] = testGame(1);
       player.clearWaitingFor();
       player.timer = Timer.newInstance();
+      player.timer.enable();
       game.frozen = frozen;
 
       player.setWaitingFor(new SelectOption('Input'));
