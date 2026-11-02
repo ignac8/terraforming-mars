@@ -5,20 +5,29 @@ import {Board, isSpecialTileSpace} from '../boards/Board';
 import {SpaceType} from '../../common/boards/SpaceType';
 import {SpaceBonus} from '../../common/boards/SpaceBonus';
 import {BoardName} from '../../common/boards/BoardName';
+import {MilestoneName} from '../../common/ma/MilestoneName';
+import {AwardName} from '../../common/ma/AwardName';
 import {HELLAS_BONUS_OCEAN_COST, TERRA_CIMMERIA_COLONY_COST, VASTITAS_BOREALIS_NOVA_BONUS_TEMPERATURE_COST} from '../../common/constants';
 import {eligibleColoniesForMarsBot, placeColonyForMarsBot, selectRandomColony} from './colonies/MarsBotColonyPlacer';
 import {Comparator, comparing, compound, reversed} from '../../common/utils/Ordering';
 
-/** What one tiebreaker compares. The higher score wins. */
+/**
+ * What one tiebreaker compares.
+ *
+ * The higher score wins.
+ */
 type Score = (space: Space) => number;
 type Scored = {space: Space, scores: ReadonlyArray<number>};
 type TiebreakerName = 'oceans' | 'icons' | 'polarRegion' | 'southernRegion' | 'specialTiles' | 'edgeElseOceans';
 
-/**
- * The tiebreakers each map's player aid lists, in order. The flipped project card always comes last.
- * Rulebook C, p.10. Maps that aren't listed (Tharsis) use `DEFAULT_TIEBREAKERS`.
- */
+/** The tiebreakers of Tharsis, and of any map `MAP_TIEBREAKERS` doesn't list. */
 const DEFAULT_TIEBREAKERS: ReadonlyArray<TiebreakerName> = ['oceans', 'icons'];
+
+/**
+ * The tiebreakers each map's player aid lists, in order.
+ *
+ * The flipped project card always comes last (rulebook C, p.10).
+ */
 const MAP_TIEBREAKERS: Partial<Record<BoardName, ReadonlyArray<TiebreakerName>>> = {
   [BoardName.HELLAS]: ['oceans', 'polarRegion', 'icons'],
   [BoardName.ELYSIUM]: ['oceans', 'icons', 'southernRegion'],
@@ -28,8 +37,9 @@ const MAP_TIEBREAKERS: Partial<Record<BoardName, ReadonlyArray<TiebreakerName>>>
 };
 
 /**
- * Spaces that count as one more reward icon when tiebreaking. The icons are still worth 1 M€ each
- * only when they are printed on the space.
+ * Spaces that count as one more reward icon when tiebreaking.
+ *
+ * The icons are still worth 1 M€ each only when they are printed on the space.
  */
 type ExtraIcon = 'edge' | 'volcanic' | 'specialTile';
 const EXTRA_ICON_SPACES: Record<ExtraIcon, (board: Board, space: Space) => boolean> = {
@@ -45,13 +55,14 @@ const MAP_EXTRA_ICON: Partial<Record<BoardName, ExtraIcon>> = {
 };
 
 /**
- * What a milestone or award of the Milestones & Awards expansion adds while it is in play
- * (rulebook C, pp.13-15). Where the map above already adds the same, it counts once.
+ * What a milestone or award of the Milestones & Awards expansion adds while it is in play.
+ *
+ * Where the map above already adds the same, it counts once (rulebook C, pp.13-15).
  */
-const MILESTONE_EXTRA_ICON: Record<string, ExtraIcon> = {
+const MILESTONE_EXTRA_ICON: Partial<Record<MilestoneName, ExtraIcon>> = {
   'Geologist': 'volcanic',
 };
-const AWARD_EXTRA_ICON: Record<string, ExtraIcon> = {
+const AWARD_EXTRA_ICON: Partial<Record<AwardName, ExtraIcon>> = {
   'Founder': 'specialTile',
   'Suburbian': 'edge',
 };
@@ -91,8 +102,10 @@ export class MarsBotTilePlacer {
   ) {}
 
   /**
-   * The map whose player aid MarsBot reads its tiebreakers from. The Milestones & Awards expansion
-   * plays against the Tharsis board and reference card whatever the map (rulebook C, p.13).
+   * The map whose player aid MarsBot reads its tiebreakers from.
+   *
+   * The Milestones & Awards expansion plays against the Tharsis board and reference card whatever
+   * the map (rulebook C, p.13).
    */
   private mapName(): BoardName {
     const options = this.game.gameOptions;
@@ -107,21 +120,25 @@ export class MarsBotTilePlacer {
       extra.add(fromMap);
     }
     for (const milestone of this.game.milestones) {
-      if (milestone.name in MILESTONE_EXTRA_ICON) {
-        extra.add(MILESTONE_EXTRA_ICON[milestone.name]);
+      const icon = MILESTONE_EXTRA_ICON[milestone.name];
+      if (icon !== undefined) {
+        extra.add(icon);
       }
     }
     for (const award of this.game.awards) {
-      if (award.name in AWARD_EXTRA_ICON) {
-        extra.add(AWARD_EXTRA_ICON[award.name]);
+      const icon = AWARD_EXTRA_ICON[award.name];
+      if (icon !== undefined) {
+        extra.add(icon);
       }
     }
     return extra;
   }
 
   /**
-   * The map's tiebreakers. With the Highlander award in play, "adjacent to ocean" comes after the
-   * reward icons (rulebook C, p.15).
+   * The map's tiebreakers, in order.
+   *
+   * With the Highlander award in play, "adjacent to ocean" comes after the reward icons (rulebook C,
+   * p.15).
    */
   private tiebreakerNames(): ReadonlyArray<TiebreakerName> {
     const names = MAP_TIEBREAKERS[this.mapName()] ?? DEFAULT_TIEBREAKERS;
@@ -332,12 +349,12 @@ export class MarsBotTilePlacer {
     return this.game.board.getAdjacentSpaces(space).filter(Board.isOceanSpace).length;
   }
 
-  /** The reward icons MarsBot tiebreaks on: what the space gives it, plus whatever the map adds. */
+  /** The reward icons MarsBot tiebreaks on: those on the space plus the extra ones the map, milestones and awards add. */
   private tiebreakIcons(space: Space, extraIcons: ReadonlySet<ExtraIcon>): number {
-    const bonus = this.specialBonus(space);
-    let icons = this.placementIcons(space);
-    if (bonus !== undefined) {
-      icons = this.canGetSpecialBonus(bonus) ? SPECIAL_HEX_ICONS : 0;
+    const special = this.specialBonus(space);
+    let icons = space.bonus.filter((bonus) => this.countsAsIcon(bonus)).length;
+    if (special !== undefined) {
+      icons = this.canGetSpecialBonus(special) ? SPECIAL_HEX_ICONS : 0;
     }
     for (const extra of extraIcons) {
       if (EXTRA_ICON_SPACES[extra](this.game.board, space)) {
@@ -348,16 +365,20 @@ export class MarsBotTilePlacer {
   }
 
   /**
+   * Whether `bonus` counts as a reward icon when tiebreaking.
+   *
+   * Without Turmoil the delegate hex is considered empty (rulebook C, p.11).
+   */
+  private countsAsIcon(bonus: SpaceBonus): boolean {
+    return bonus !== SpaceBonus.DELEGATE || this.game.turmoil !== undefined;
+  }
+
+  /**
    * The icons on `space` that give MarsBot 1 M€ each. The hexes that cost M€ give nothing here, and
    * the Turmoil delegate gives nothing without Turmoil.
    */
   private placementIcons(space: Space): number {
-    return space.bonus.filter((bonus) => {
-      if (bonus === SpaceBonus.DELEGATE) {
-        return this.game.turmoil !== undefined;
-      }
-      return !SPECIAL_HEX_COSTS.has(bonus);
-    }).length;
+    return space.bonus.filter((bonus) => this.countsAsIcon(bonus) && !SPECIAL_HEX_COSTS.has(bonus)).length;
   }
 
   private specialBonus(space: Space): SpaceBonus | undefined {

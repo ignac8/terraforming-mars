@@ -10,6 +10,15 @@ import {SpaceBonus} from '../../src/common/boards/SpaceBonus';
 import {SpaceName} from '../../src/common/boards/SpaceName';
 import {cast, toID} from '@/common/utils/utils';
 import {fakeCard} from '../TestingUtils';
+import {BoardName} from '@/common/boards/BoardName';
+import {SpaceId} from '@/common/Types';
+import {GameOptions} from '@/server/game/GameOptions';
+import {IAward} from '@/server/awards/IAward';
+import {IMilestone} from '@/server/milestones/IMilestone';
+import {Founder} from '@/server/awards/modular/Founder';
+import {Highlander} from '@/server/awards/modular/Highlander';
+import {Suburbian} from '@/server/awards/modular/Suburbian';
+import {Geologist} from '@/server/milestones/modular/Geologist';
 
 describe('MarsBotTilePlacer', () => {
   let game: IGame;
@@ -238,5 +247,193 @@ describe('MarsBotTilePlacer', () => {
 
     // 2 M€ for the two steel icons, 2 M€ for the one adjacent ocean.
     expect(tilePlacer.getTotalPlacementMC(neighbour)).to.eq(4);
+  });
+
+  type Run = {
+    rule: string,
+    options?: Partial<GameOptions>,
+    milestones?: Array<IMilestone>,
+    awards?: Array<IAward>,
+    oceans?: ReadonlyArray<SpaceId>,
+    specialTile?: SpaceId,
+    winner: SpaceId,
+    loser: SpaceId,
+  };
+
+  /**
+   * Plays out a run on a fresh game and expects MarsBot's city to go on its `winner` rather than
+   * its `loser`, with no flipped card needed to decide.
+   */
+  function expectWinner(run: Run): void {
+    [game, human, marsBot] = testGame(2, run.options);
+    tilePlacer = new MarsBotTilePlacer(game, marsBot, human);
+    // Keep the game's own milestones and awards out of the comparison.
+    game.milestones = run.milestones ?? [];
+    game.awards = run.awards ?? [];
+    for (const id of run.oceans ?? []) {
+      game.simpleAddTile(human, game.board.getSpaceOrThrow(id), {tileType: TileType.OCEAN});
+    }
+    if (run.specialTile !== undefined) {
+      game.simpleAddTile(human, game.board.getSpaceOrThrow(run.specialTile), {tileType: TileType.NATURAL_PRESERVE});
+    }
+    game.projectDeck.discardPile.length = 0;
+
+    const space = tilePlacer.findCitySpace((s) => s.id === run.winner || s.id === run.loser);
+
+    expect(space?.id, run.rule).eq(run.winner);
+    expect(game.projectDeck.discardPile, run.rule).is.empty;
+  }
+
+  it('breaks ties by the order of each map\'s tiebreakers', () => {
+    const runs: Array<Run> = [
+      {
+        // 63 is polar and has no icons, 24 is not polar and has two.
+        rule: 'Hellas: the polar region comes before reward icons',
+        options: {boardName: BoardName.HELLAS},
+        winner: '63',
+        loser: '24',
+      },
+      {
+        // 54 is on the second row from the bottom, 49 on the third. Both have one icon.
+        rule: 'Hellas: the polar region starts on the second row from the bottom',
+        options: {boardName: BoardName.HELLAS},
+        winner: '54',
+        loser: '49',
+      },
+      {
+        // 39 is on the fourth row from the bottom, which is southern, and 22 is not. Both have one icon.
+        rule: 'Elysium: the southern region breaks a tie on reward icons',
+        options: {boardName: BoardName.ELYSIUM},
+        winner: '39',
+        loser: '22',
+      },
+      {
+        // The tile is on 17. 10 is next to it and has no icons, 12 is not and has two.
+        rule: 'Terra Cimmeria: a space next to a special tile comes before reward icons',
+        options: {boardName: BoardName.TERRA_CIMMERIA_NOVA},
+        specialTile: '17',
+        winner: '10',
+        loser: '12',
+      },
+      {
+        // 28 is on the edge, 16 is not. Both have one icon.
+        rule: 'Utopia Planitia: an edge space counts as one more reward icon',
+        options: {boardName: BoardName.UTOPIA_PLANITIA},
+        winner: '28',
+        loser: '16',
+      },
+      {
+        // 12 is next to the volcano on 13, 18 is not near one. Both are inland and have one icon.
+        rule: 'Vastitas Borealis: a volcanic space and the spaces next to it count as one more reward icon',
+        options: {boardName: BoardName.VASTITAS_BOREALIS_NOVA},
+        winner: '12',
+        loser: '18',
+      },
+      {
+        // The ocean is on 16. 32 has two icons and no ocean next to it, 24 has one icon and is next to the ocean.
+        rule: 'Vastitas Borealis: reward icons come before ocean adjacency',
+        options: {boardName: BoardName.VASTITAS_BOREALIS_NOVA},
+        oceans: ['16'],
+        winner: '32',
+        loser: '24',
+      },
+      {
+        // The ocean is on 16. 03 is on the edge with no ocean next to it, 24 is inland and next to the ocean. Both have one icon.
+        rule: 'Vastitas Borealis: an edge space comes before ocean adjacency',
+        options: {boardName: BoardName.VASTITAS_BOREALIS_NOVA},
+        oceans: ['16'],
+        winner: '03',
+        loser: '24',
+      },
+      {
+        // The ocean is on 16. 24 is next to it, 18 is not. Both are inland and have one icon.
+        rule: 'Vastitas Borealis: ocean adjacency decides when neither space is on the edge',
+        options: {boardName: BoardName.VASTITAS_BOREALIS_NOVA},
+        oceans: ['16'],
+        winner: '24',
+        loser: '18',
+      },
+      {
+        // 03 has one icon. 28 has only the delegate icon. Both are on the edge.
+        rule: 'Vastitas Borealis: without Turmoil the delegate hex counts no reward icon',
+        options: {boardName: BoardName.VASTITAS_BOREALIS_NOVA},
+        winner: '03',
+        loser: '28',
+      },
+      {
+        // 28 has the delegate icon, 60 has no icons. Both are on the edge.
+        rule: 'Vastitas Borealis: with Turmoil the delegate hex counts a reward icon',
+        options: {boardName: BoardName.VASTITAS_BOREALIS_NOVA, turmoilExtension: true},
+        winner: '28',
+        loser: '60',
+      },
+      {
+        // The ocean is on 16. 24 has one icon and is next to it, 32 has two icons and is not.
+        rule: 'Milestones & Awards: any map plays by the Tharsis tiebreakers',
+        options: {boardName: BoardName.VASTITAS_BOREALIS_NOVA, modularMA: true},
+        oceans: ['16'],
+        winner: '24',
+        loser: '32',
+      },
+    ];
+
+    for (const run of runs) {
+      expectWinner(run);
+    }
+  });
+
+  it('does not tell two edge spaces apart by their oceans on Vastitas Borealis', () => {
+    [game, human, marsBot] = testGame(2, {boardName: BoardName.VASTITAS_BOREALIS_NOVA});
+    tilePlacer = new MarsBotTilePlacer(game, marsBot, human);
+    game.milestones = [];
+    game.awards = [];
+    // 08 is next to the ocean and 37 is not. Both are on the edge and cover two reward icons.
+    game.simpleAddTile(human, game.board.getSpaceOrThrow('15'), {tileType: TileType.OCEAN});
+    game.projectDeck.discardPile.length = 0;
+
+    tilePlacer.findCitySpace((s) => s.id === '08' || s.id === '37');
+
+    expect(game.projectDeck.discardPile).has.length(1);
+  });
+
+  it('counts what the milestones and awards in play add as one more reward icon', () => {
+    const runs: Array<Run> = [
+      // 09 is a volcanic space, 23 is not near one. Both have one icon.
+      {rule: 'Geologist: volcanic spaces and the spaces next to them', milestones: [new Geologist()], winner: '09', loser: '23'},
+      // The tile is on 17. 24 is next to it, 23 is not. Both have one icon.
+      {rule: 'Founder: spaces next to a special tile', awards: [new Founder()], specialTile: '17', winner: '24', loser: '23'},
+      // 20 is on the edge, 23 is not. Both have one icon.
+      {rule: 'Suburbian: edge spaces', awards: [new Suburbian()], winner: '20', loser: '23'},
+    ];
+
+    for (const run of runs) {
+      expectWinner(run);
+    }
+  });
+
+  it('puts ocean adjacency after the reward icons with the Highlander award in play', () => {
+    const runs: Array<Run> = [
+      {
+        // The ocean is on 04. 25 has two icons and no ocean next to it, 09 has one icon and is next to the ocean.
+        rule: 'Tharsis: reward icons come before ocean adjacency',
+        awards: [new Highlander()],
+        oceans: ['04'],
+        winner: '25',
+        loser: '09',
+      },
+      {
+        // The ocean is on 24. 16 is next to it, 39 is not but is southern. Both have one icon.
+        rule: 'Elysium: ocean adjacency still comes before the southern region',
+        options: {boardName: BoardName.ELYSIUM},
+        awards: [new Highlander()],
+        oceans: ['24'],
+        winner: '16',
+        loser: '39',
+      },
+    ];
+
+    for (const run of runs) {
+      expectWinner(run);
+    }
   });
 });
