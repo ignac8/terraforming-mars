@@ -38,11 +38,6 @@ export class AutomaGameHooks {
     public readonly marsBot: MarsBot,
   ) {}
 
-  /** Check if a player is the MarsBot player. */
-  public isAutomaPlayer(player: IPlayer): boolean {
-    return player === this.marsBot.player;
-  }
-
   // ---- Solo mode overrides ----
 
   /** Automa games are NOT solo mode (they behave as 2-player). */

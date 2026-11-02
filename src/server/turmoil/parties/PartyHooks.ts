@@ -36,7 +36,7 @@ export class PartyHooks {
       return false;
     }
     // T-5: MarsBot ignores the ruling party's policy.
-    if (player.game.automaHooks?.isAutomaPlayer(player)) {
+    if (player.isMarsBot) {
       return false;
     }
     const turmoil = player.game.turmoil;
