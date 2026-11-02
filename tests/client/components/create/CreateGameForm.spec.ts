@@ -136,22 +136,23 @@ describe('CreateGameForm', () => {
     expectTournamentLocks(vm);
   });
 
-  it('leaves Player undo to the creator in tournament mode', async () => {
+  it('ticks Player undo by default and leaves it to the creator in tournament mode', async () => {
     const wrapper = shallowMount(CreateGameForm, {...globalConfig});
     await wrapper.vm.$nextTick();
     const vm = wrapper.vm as any;
     expect(vm.expansions.tournament).eq(true);
     expect(wrapper.find('#undo-checkbox').attributes('disabled')).is.undefined;
-
-    await wrapper.find('#undo-checkbox').setValue(true);
     expect(vm.undoOption).eq(true);
+
+    await wrapper.find('#undo-checkbox').setValue(false);
+    expect(vm.undoOption).eq(false);
 
     vm.expansions.tournament = false;
     await wrapper.vm.$nextTick();
     vm.expansions.tournament = true;
     await wrapper.vm.$nextTick();
 
-    expect(vm.undoOption).eq(true);
+    expect(vm.undoOption).eq(false);
   });
 
   it('does not keep tournament player passwords when tournament is switched off', async () => {
@@ -237,6 +238,9 @@ describe('CreateGameForm', () => {
     await wrapper.vm.$nextTick();
 
     expect(vm.expansions.tournament).eq(true);
+    expect(vm.newGameConfig).deep.include({undoOption: true, playerPasswords: true});
+
+    await wrapper.find('#undo-checkbox').setValue(false);
     expect(vm.newGameConfig).deep.include({undoOption: false, playerPasswords: true});
 
     await wrapper.find('#undo-checkbox').setValue(true);
