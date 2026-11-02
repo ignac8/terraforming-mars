@@ -1,14 +1,13 @@
 import {expect} from 'chai';
-import {Hoverlord} from '../../src/server/milestones/Hoverlord';
+import {Hoverlord} from '@/server/milestones/Hoverlord';
+import {CardResource} from '@/common/CardResource';
 import {TestPlayer} from '../TestPlayer';
 import {fakeCard} from '../TestingUtils';
-import {CardResource} from '../../src/common/CardResource';
-import {IMarsBot} from '../../src/server/automa/IMarsBot';
+import {fakeMarsBot} from '../automa/FakeMarsBot';
 
 describe('Hoverlord', () => {
-  const milestone = new Hoverlord();
-
   it('Can claim with 7 floaters on cards', () => {
+    const milestone = new Hoverlord();
     const player = TestPlayer.BLUE.newPlayer();
     const card = fakeCard({resourceType: CardResource.FLOATER});
     card.resourceCount = 6;
@@ -20,7 +19,13 @@ describe('Hoverlord', () => {
   });
 
   it('MarsBot counts the floaters on its Venus board', () => {
-    expect(milestone.marsBotCanClaim({floaters: 6} as unknown as IMarsBot)).is.false;
-    expect(milestone.marsBotCanClaim({floaters: 7} as unknown as IMarsBot)).is.true;
+    for (const run of [
+      {floaters: 6, expected: false},
+      {floaters: 7, expected: true},
+    ]) {
+      const bot = {...fakeMarsBot(), floaters: run.floaters};
+
+      expect(new Hoverlord().marsBotCanClaim(bot), JSON.stringify(run)).eq(run.expected);
+    }
   });
 });
