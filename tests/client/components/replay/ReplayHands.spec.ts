@@ -4,7 +4,7 @@ import {globalConfig} from '../getLocalVue';
 import ReplayHands from '@/client/components/replay/ReplayHands.vue';
 import Card from '@/client/components/card/Card.vue';
 import {fakePublicPlayerModel} from '../testHelpers';
-import {FakeLocalStorage} from '../FakeLocalStorage';
+import {useFakeLocalStorage} from '../FakeLocalStorage';
 import {ReplayPrivates} from '@/common/replay/ReplayModel';
 import {CardName} from '@/common/cards/CardName';
 import {ParticipantId} from '@/common/Types';
@@ -112,16 +112,7 @@ describe('ReplayHands', () => {
   });
 
   describe('hiding', () => {
-    let localStorage: FakeLocalStorage;
-
-    beforeEach(() => {
-      localStorage = new FakeLocalStorage();
-      FakeLocalStorage.register(localStorage);
-    });
-
-    afterEach(() => {
-      FakeLocalStorage.deregister(localStorage);
-    });
+    useFakeLocalStorage();
 
     function mountHands(participantId: ParticipantId = 'p-viewer') {
       return mount(ReplayHands, {

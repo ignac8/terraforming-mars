@@ -1,21 +1,18 @@
 import {expect} from 'chai';
-import {FakeLocalStorage} from './components/FakeLocalStorage';
+import {useFakeLocalStorage} from './components/FakeLocalStorage';
 import {PreferencesManager} from '../../src/client/utils/PreferencesManager';
 import {localColors, localPlayerView, resetLocalColorsForTest, serverColor} from '../../src/client/utils/localColors';
 import {PlayerViewModel} from '../../src/common/models/PlayerModel';
 import {LogMessageDataType} from '../../src/common/logs/LogMessageDataType';
 
 describe('localColors', () => {
-  let localStorage: FakeLocalStorage;
+  useFakeLocalStorage();
 
   beforeEach(() => {
-    localStorage = new FakeLocalStorage();
-    FakeLocalStorage.register(localStorage);
     PreferencesManager.resetForTest();
     PreferencesManager.INSTANCE.set('my_color', 'green');
   });
   afterEach(() => {
-    FakeLocalStorage.deregister(localStorage);
     PreferencesManager.resetForTest();
     resetLocalColorsForTest();
   });

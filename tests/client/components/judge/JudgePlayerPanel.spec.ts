@@ -3,7 +3,7 @@ import {expect} from 'chai';
 import {globalConfig} from '../getLocalVue';
 import {fakePublicPlayerModel} from '../testHelpers';
 import {asComplete} from '../utils/models';
-import {FakeLocalStorage} from '../FakeLocalStorage';
+import {useFakeLocalStorage} from '../FakeLocalStorage';
 import JudgePlayerPanel from '@/client/components/judge/JudgePlayerPanel.vue';
 import {CardName} from '@/common/cards/CardName';
 import {Color} from '@/common/Color';
@@ -171,16 +171,7 @@ describe('JudgePlayerPanel', () => {
   });
 
   describe('hiding', () => {
-    let localStorage: FakeLocalStorage;
-
-    beforeEach(() => {
-      localStorage = new FakeLocalStorage();
-      FakeLocalStorage.register(localStorage);
-    });
-
-    afterEach(() => {
-      FakeLocalStorage.deregister(localStorage);
-    });
+    useFakeLocalStorage();
 
     const waitingFor = asComplete<SelectCardModel>({type: 'card', title: 'Select a card to keep', cards: [{name: CardName.BIRDS}]});
 
