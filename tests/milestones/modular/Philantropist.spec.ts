@@ -61,7 +61,7 @@ describe('Philantropist', () => {
   });
 
   it('MarsBot counts its own played pile', () => {
-    const pile = [new DustSeals(), new AntiGravityTechnology(), new Ants(), new GanymedeColony()];
+    const pile = [new DustSeals(), new AntiGravityTechnology(), new Ants(), new GanymedeColony(), new LargeConvoy(), new EnergyTapping()];
     const bot = {playedProjectCards: pile} as unknown as IMarsBot;
     expect(milestone.marsBotCanClaim(bot)).is.false;
 

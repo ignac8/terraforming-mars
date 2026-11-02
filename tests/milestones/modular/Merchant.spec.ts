@@ -12,7 +12,7 @@ import {NirgalEnterprises} from '../../../src/server/cards/prelude2/NirgalEnterp
 import {StagedProtests} from '../../../src/server/cards/underworld/StagedProtests';
 import {IMarsBot} from '../../../src/server/automa/IMarsBot';
 import {MarsBotBoard} from '../../../src/server/automa/MarsBotBoard';
-import {THARSIS_MARSBOT_BOARD} from '../../../src/server/automa/boards/TharsisMarsBot';
+import {THARSIS_MARSBOT_BOARD_WITH_VENUS} from '../../../src/server/automa/boards/TharsisMarsBot';
 
 describe('Merchant', () => {
   let milestone: Merchant;
@@ -141,8 +141,8 @@ describe('Merchant', () => {
     });
   });
 
-  it('MarsBot claims it with every Mars track at space 2', () => {
-    const board = new MarsBotBoard(THARSIS_MARSBOT_BOARD);
+  it('MarsBot claims it with every Mars track at space 2, Venus aside', () => {
+    const board = new MarsBotBoard(THARSIS_MARSBOT_BOARD_WITH_VENUS);
     const bot = {marsBotBoard: board} as unknown as IMarsBot;
     for (let index = 0; index < 6; index++) {
       board.tracks[index].advance();

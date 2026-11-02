@@ -10,6 +10,8 @@ import {MoonExpansion} from '../../../src/server/moon/MoonExpansion';
 import {IMarsBot} from '../../../src/server/automa/IMarsBot';
 import {MarsBotBoard} from '../../../src/server/automa/MarsBotBoard';
 import {THARSIS_MARSBOT_BOARD} from '../../../src/server/automa/boards/TharsisMarsBot';
+import {Tag} from '../../../src/common/cards/Tag';
+import {fakeMarsBot, setTrack} from '../../automa/FakeMarsBot';
 
 describe('Landshaper', () => {
   let milestone: Landshaper;
@@ -92,5 +94,21 @@ describe('Landshaper', () => {
 
     board.tracks[0].advance();
     expect(milestone.marsBotCanClaim(bot)).is.true;
+  });
+
+  it('MarsBot cannot claim it without a city', () => {
+    const bot = fakeMarsBot(undefined, {game, player});
+    game.simpleAddTile(player, spaces[0], {tileType: TileType.GREENERY});
+    setTrack(bot, Tag.BUILDING, 5);
+
+    expect(milestone.marsBotCanClaim(bot)).is.false;
+  });
+
+  it('MarsBot cannot claim it without a greenery', () => {
+    const bot = fakeMarsBot(undefined, {game, player});
+    game.simpleAddTile(player, spaces[0], {tileType: TileType.CITY});
+    setTrack(bot, Tag.BUILDING, 5);
+
+    expect(milestone.marsBotCanClaim(bot)).is.false;
   });
 });

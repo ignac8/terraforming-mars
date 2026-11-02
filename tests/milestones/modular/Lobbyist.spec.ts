@@ -72,6 +72,20 @@ describe('Lobbyist', () => {
     expect(milestone.marsBotCanClaim(bot)).is.true;
   });
 
+  it('MarsBot cannot claim it as Chairman leading one party', () => {
+    const bot = {game, player} as unknown as IMarsBot;
+    turmoil.sendDelegateToParty(player, PartyName.REDS, game);
+    turmoil.chairman = player;
+
+    expect(milestone.marsBotCanClaim(bot)).is.false;
+  });
+
+  it('MarsBot cannot claim it without Turmoil', () => {
+    const [game, player] = testGame(1, {turmoilExtension: false});
+
+    expect(milestone.marsBotCanClaim({game, player} as unknown as IMarsBot)).is.false;
+  });
+
   it('Gives 0 score without Turmoil', () => {
     const [/* game */, player] = testGame(1, {turmoilExtension: false});
     expect(milestone.getScore(player)).to.eq(0);
