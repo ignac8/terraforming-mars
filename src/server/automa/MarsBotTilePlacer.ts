@@ -8,7 +8,7 @@ import {BoardName} from '../../common/boards/BoardName';
 import {MilestoneName} from '../../common/ma/MilestoneName';
 import {AwardName} from '../../common/ma/AwardName';
 import {HELLAS_BONUS_OCEAN_COST, TERRA_CIMMERIA_COLONY_COST, VASTITAS_BOREALIS_NOVA_BONUS_TEMPERATURE_COST} from '../../common/constants';
-import {eligibleColoniesForMarsBot, placeColonyForMarsBot, selectRandomColony} from './colonies/MarsBotColonyPlacer';
+import {IMarsBot} from './IMarsBot';
 import {Comparator, comparing, compound, reversed} from '../../common/utils/Ordering';
 
 /**
@@ -101,6 +101,8 @@ export class MarsBotTilePlacer {
     private readonly game: IGame,
     private readonly marsBot: IPlayer,
     private readonly humanPlayer: IPlayer,
+    /** The bot that pays for the special hexes and gets their effects. Without one they are empty hexes. */
+    private readonly bot?: IMarsBot,
   ) {}
 
   /**
@@ -399,8 +401,9 @@ export class MarsBotTilePlacer {
     if (game.isDoneWithFinalProduction()) {
       return false;
     }
+    const bot = this.bot;
     // The M€ supply only: megaCredits also counts the Luna storage area
-    if ((game.automaHooks?.marsBot.megacredits ?? 0) < this.specialHexCost(bonus)) {
+    if (bot === undefined || bot.megacredits < this.specialHexCost(bonus)) {
       return false;
     }
     switch (bonus) {
@@ -408,10 +411,8 @@ export class MarsBotTilePlacer {
       return game.canAddOcean() && game.board.getAvailableSpacesForOcean(this.marsBot).length > 0;
     case SpaceBonus.TEMPERATURE_4MC:
       return game.getTemperature() < game.max.temperature;
-    case SpaceBonus.COLONY: {
-      const marsBot = game.automaHooks?.marsBot;
-      return marsBot !== undefined && eligibleColoniesForMarsBot(game, marsBot).length > 0;
-    }
+    case SpaceBonus.COLONY:
+      return bot.canPlaceColony();
     default:
       return false;
     }
@@ -424,8 +425,8 @@ export class MarsBotTilePlacer {
    */
   public resolveSpecialHex(space: Space): void {
     const bonus = this.specialBonus(space);
-    const marsBot = this.game.automaHooks?.marsBot;
-    if (bonus === undefined || marsBot === undefined || !this.canGetSpecialBonus(bonus)) {
+    const bot = this.bot;
+    if (bonus === undefined || bot === undefined || !this.canGetSpecialBonus(bonus)) {
       return;
     }
     const game = this.game;
@@ -433,28 +434,23 @@ export class MarsBotTilePlacer {
     switch (bonus) {
     case SpaceBonus.OCEAN: {
       const oceans = game.board.getOceanSpaces().length;
-      marsBot.turnResolver.placeOcean();
+      bot.placeOcean();
       resolved = game.board.getOceanSpaces().length > oceans;
       break;
     }
     case SpaceBonus.TEMPERATURE_4MC: {
       const temperature = game.getTemperature();
-      marsBot.turnResolver.raiseTemperature(1);
+      bot.raiseTemperature(1);
       resolved = game.getTemperature() > temperature;
       break;
     }
-    case SpaceBonus.COLONY: {
+    case SpaceBonus.COLONY:
       // The way Expedited Construction picks and builds one.
-      const colony = selectRandomColony(game, marsBot);
-      if (colony !== undefined) {
-        placeColonyForMarsBot(colony, marsBot);
-        resolved = true;
-      }
+      resolved = bot.maybePlaceRandomColony();
       break;
     }
-    }
     if (resolved) {
-      marsBot.turnResolver.megacredits -= this.specialHexCost(bonus);
+      bot.megacredits -= this.specialHexCost(bonus);
     }
   }
 
