@@ -123,6 +123,7 @@ export class Player implements IPlayer {
 
   // This generation / this round
   public actionsTakenThisRound: number = 0;
+  public headStartActionsRemaining: number = 0;
   public actionsThisGeneration: Set<CardName> = new Set();
   public lastCardPlayed: CardName | undefined;
   public pendingInitialActions: Array<ICorporationCard> = [];
@@ -1464,12 +1465,7 @@ export class Player implements IPlayer {
   }
 
   private headStartIsInEffect() {
-    if (this.game.phase === Phase.PRELUDES && this.playedCards.has(CardName.HEAD_START)) {
-      if (this.actionsTakenThisRound < 2) {
-        return true;
-      }
-    }
-    return false;
+    return this.headStartActionsRemaining > 0;
   }
 
   /**
@@ -1542,7 +1538,8 @@ export class Player implements IPlayer {
         this.pendingInitialActions = this.pendingInitialActions.filter((card) => card !== vitor);
       }
 
-      if (this.pendingInitialActions.length > 0) {
+      // Head Start's actions come before the first action phase turn, which is where the corporation's first action belongs.
+      if (this.pendingInitialActions.length > 0 && !headStartIsInEffect) {
         const orOptions = new OrOptions();
 
         this.pendingInitialActions.forEach((corp) => {
@@ -1558,9 +1555,7 @@ export class Player implements IPlayer {
           orOptions.options.push(option);
         });
 
-        if (!headStartIsInEffect) {
-          orOptions.options.push(this.passOption());
-        }
+        orOptions.options.push(this.passOption());
 
         this.setWaitingFor(orOptions, () => game.drainQueue(() => {
           if (this.pendingInitialActions.length === 0) {
@@ -1573,7 +1568,18 @@ export class Player implements IPlayer {
       }
 
       this.setWaitingFor(this.getActions(), () => game.drainQueue(() => {
-        this.incrementActionsTaken();
+        if (!headStartIsInEffect) {
+          this.incrementActionsTaken();
+          this.takeAction();
+          return;
+        }
+        this.headStartActionsRemaining--;
+        this.actionsTakenThisGame++;
+        // Head Start was the last prelude: hand the turn on rather than falling into the action phase.
+        if (game.phase === Phase.PRELUDES && !this.headStartIsInEffect() && this.preludeCardsInHand.length === 0) {
+          game.playerIsFinishedTakingActions();
+          return;
+        }
         this.takeAction();
       }));
     });
@@ -1585,8 +1591,10 @@ export class Player implements IPlayer {
   }
 
   public /* for testing */ getActions() {
+    const headStart = this.headStartIsInEffect();
+    const firstAction = headStart ? this.headStartActionsRemaining >= 2 : this.actionsTakenThisRound === 0;
     const action = new OrOptions()
-      .setTitle(this.actionsTakenThisRound === 0 ? 'Take your first action' : 'Take your next action')
+      .setTitle(firstAction ? 'Take your first action' : 'Take your next action')
       .setButtonLabel('Take action');
 
     // Tournament games list milestones further down, just above passing.
@@ -1665,7 +1673,8 @@ export class Player implements IPlayer {
     }
 
     // End turn
-    if (this.game.players.length > 1 &&
+    if (!headStart &&
+      this.game.players.length > 1 &&
       this.actionsTakenThisRound > 0 &&
       !this.game.gameOptions.fastModeOption &&
       this.allOtherPlayersHavePassed() === false) {
@@ -1695,8 +1704,15 @@ export class Player implements IPlayer {
       }
     }
 
-    // Pass
-    action.options.push(this.passOption());
+    // Pass. Passing during Head Start would end the player's generation, so they may only skip its actions.
+    if (headStart) {
+      action.options.push(new SelectOption('Skip this action').andThen(() => {
+        this.game.log('${0} skipped a Head Start action', (b) => b.player(this));
+        return undefined;
+      }));
+    } else {
+      action.options.push(this.passOption());
+    }
 
     // Sell patents
     const sellPatents = new SellPatentsStandardProject();
@@ -1841,6 +1857,7 @@ export class Player implements IPlayer {
       // This generation / this round
       actionsTakenThisRound: this.actionsTakenThisRound,
       availableActionsThisRound: this.availableActionsThisRound,
+      headStartActionsRemaining: this.headStartActionsRemaining,
       actionsThisGeneration: Array.from(this.actionsThisGeneration),
       pendingInitialActions: this.pendingInitialActions.map(toName),
       // Cards
@@ -1913,6 +1930,7 @@ export class Player implements IPlayer {
     player.actionsThisGeneration = new Set(d.actionsThisGeneration);
     player.actionsTakenThisRound = d.actionsTakenThisRound;
     player.availableActionsThisRound = d.availableActionsThisRound ?? 2;
+    player.headStartActionsRemaining = d.headStartActionsRemaining ?? 0;
     player.canUseHeatAsMegaCredits = d.canUseHeatAsMegaCredits;
     player.canUsePlantsAsMegacredits = d.canUsePlantsAsMegaCredits;
     player.canUseTitaniumAsMegacredits = d.canUseTitaniumAsMegacredits;
