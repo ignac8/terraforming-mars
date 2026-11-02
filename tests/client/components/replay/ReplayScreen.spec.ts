@@ -21,7 +21,7 @@ import {translateMessage} from '@/client/directives/i18n';
 import {LogMessageDataType} from '@/common/logs/LogMessageDataType';
 import {PreferencesManager} from '@/client/utils/PreferencesManager';
 import {LogMessage} from '@/common/logs/LogMessage';
-import {FakeLocalStorage} from '../FakeLocalStorage';
+import {useFakeLocalStorage} from '../FakeLocalStorage';
 import {REAL_TIME_MAX_MS, REAL_TIME_MIN_MS} from '@/client/utils/replayAutoplay';
 
 const id = 's-spectator-id' as SpectatorId;
@@ -326,16 +326,7 @@ describe('ReplayScreen', () => {
   });
 
   describe('autoplay in real time', () => {
-    let storage: FakeLocalStorage;
-
-    beforeEach(() => {
-      storage = new FakeLocalStorage();
-      FakeLocalStorage.register(storage);
-    });
-
-    afterEach(() => {
-      FakeLocalStorage.deregister(storage);
-    });
+    useFakeLocalStorage();
 
     /** Moves answered at the given times. */
     function answeredAt(...times: Array<number | undefined>): ReplayMovesModel {
@@ -479,16 +470,7 @@ describe('ReplayScreen', () => {
   });
 
   describe('the log', () => {
-    let storage: FakeLocalStorage;
-
-    beforeEach(() => {
-      storage = new FakeLocalStorage();
-      FakeLocalStorage.register(storage);
-    });
-
-    afterEach(() => {
-      FakeLocalStorage.deregister(storage);
-    });
+    useFakeLocalStorage();
 
     const said = (text: string): Array<LogMessage> => [{message: text, data: [], timestamp: 0}];
     const texts = (log: Array<LogMessage> | undefined) => log?.map((message) => message.message);
