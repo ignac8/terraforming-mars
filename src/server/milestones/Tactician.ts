@@ -4,7 +4,7 @@ import {CardType} from '../../common/cards/CardType';
 import {IMarsBot} from '../automa/IMarsBot';
 
 export class Tactician extends BaseMilestone {
-  public readonly automaDescription = '35+ MC';
+  public readonly automaDescription = '35+ M€';
   constructor() {
     super(
       'Tactician',

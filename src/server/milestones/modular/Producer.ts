@@ -6,7 +6,7 @@ import {IMarsBot} from '../../automa/IMarsBot';
 import {marsBotMarsTrackPositions} from '../../automa/MarsBotMilestoneAwardEval';
 
 export class Producer extends BaseMilestone {
-  public readonly automaDescription = 'Any 3 tracks (except Venus) ≥ 16';
+  public readonly automaDescription = '3+ tracks (except Venus) ≥ 16';
   constructor() {
     super(
       'Producer',
