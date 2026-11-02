@@ -21,7 +21,7 @@ describe('SpectatorHome', () => {
           setVisibilityState: () => {},
           updateSpectator: () => {},
         },
-      } as any,
+      },
       props: {
         spectator: {
           game: fakeGameModel(),
