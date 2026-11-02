@@ -1,5 +1,5 @@
 import * as responses from '../server/responses';
-import prometheus from 'prom-client';
+import prometheus from '@prometheus-io/client';
 import {IPlayer} from '../IPlayer';
 import {Server} from '../models/ServerModel';
 import {Handler} from './Handler';
@@ -13,11 +13,11 @@ import {runId} from '../utils/server-ids';
 import {AppError} from '../server/AppError';
 import {InputError} from '../inputs/InputError';
 import {isIProjectCard} from '../cards/IProjectCard';
-import {INVALID_RUN_ID, RESPONDING_TOO_QUICKLY, STALE_VIEW} from '../../common/app/AppErrorId';
+import {INVALID_REQUEST_ID, INVALID_RUN_ID, RESPONDING_TOO_QUICKLY} from '../../common/app/AppErrorId';
 import {RouteError} from './RouteError';
 import {readBody} from './readBody';
-import {responseMatchesInput} from '../inputs/responseMatchesInput';
 import {stringToNumber} from '../database/utils';
+import {isTableLocked, withTableLock} from '../rewind/tableLock';
 
 export const playerInputMetrics = {
   responseInterval: new prometheus.Histogram({
@@ -55,6 +55,7 @@ export class PlayerInput extends Handler {
     return this.processInput(req, res, ctx, player);
   }
 
+  // No prompt offers the one-step undo any more, so this and performUndo never run. They stay so upstream merges apply cleanly.
   private isWaitingForUndo(player: IPlayer, entity: InputResponse): boolean {
     const waitingFor = player.getWaitingFor();
     if (entity.type === 'or' && waitingFor instanceof OrOptions) {
@@ -95,13 +96,17 @@ export class PlayerInput extends Handler {
       }
       const entity = JSON.parse(body);
       validateRunId(entity);
-      validateMatchesWaitingFor(player, entity);
+      validateNotRewound(player);
+      validateNotHeld(player);
+      validateRequestId(player, entity);
 
       // Placed here because it fits in a temporally cohesive sense.
       this.resetTableauCardState(player);
 
       if (this.isWaitingForUndo(player, entity)) {
-        await this.performUndo(req, res, ctx, player);
+        // The undo deletes saves and replaces the cached game, so no rewind may run meanwhile.
+        // The table is free: validateNotHeld checked it with no await since.
+        await withTableLock(player.game.id, () => this.performUndo(req, res, ctx, player));
       } else {
         player.process(entity);
         responses.writeJson(res, ctx, Server.getPlayerModel(player));
@@ -157,17 +162,30 @@ function validateRunId(entity: any) {
   delete entity.runId;
 }
 
-/**
- * Rejects a response built for a prompt the player is no longer being shown.
- *
- * That happens when the page missed the outcome of its previous submission
- * and still shows the earlier prompt. Without this check the mismatch surfaces
- * as an opaque "Not a valid ...Response" error, and the page stays stale.
- */
-function validateMatchesWaitingFor(player: IPlayer, entity: InputResponse) {
-  const waitingFor = player.getWaitingFor();
-  if (waitingFor === undefined || !responseMatchesInput(waitingFor, entity)) {
-    throw new AppError(STALE_VIEW, 'This page was out of date. Click OK to refresh it, then choose your action again.');
+// The game was taken before the body arrived. A rewind may have replaced it in the meantime.
+function validateNotRewound(player: IPlayer) {
+  if (player.game.retired) {
+    throw new AppError(INVALID_REQUEST_ID, 'This game was rewound. Click OK to refresh this page.');
   }
+}
+
+// While the game is frozen or a rewind or freeze runs, no answer is applied.
+function validateNotHeld(player: IPlayer) {
+  if (player.game.frozen) {
+    throw new AppError(INVALID_REQUEST_ID, 'The judge froze the game. Click OK to refresh this page.');
+  }
+  if (isTableLocked(player.game.id)) {
+    throw new AppError(INVALID_REQUEST_ID, 'The table is being rewound. Click OK to refresh this page.');
+  }
+}
+
+// Rejects a response sent for an input the player has since moved past, e.g. from a page
+// that never got the reply to its previous response.
+function validateRequestId(player: IPlayer, entity: any) {
+  if (entity.requestId !== undefined && entity.requestId !== player.requestId) {
+    throw new AppError(INVALID_REQUEST_ID, 'This page is out of date. Click OK to refresh it.');
+  }
+  // Clearing this out to be compatible with the input response processors.
+  delete entity.requestId;
 }
 

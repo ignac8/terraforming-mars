@@ -1,12 +1,12 @@
 import {IAward} from './IAward';
 import {IPlayer} from '../IPlayer';
-import {Tag} from '../../common/cards/Tag';
-import {IMarsBot} from '../automa/MarsBotCorpTypes';
-import {marsBotTrackPosition} from '../automa/MarsBotMilestoneAwardEval';
+import {Tag} from '@/common/cards/Tag';
+import {IMarsBot} from '@/server/automa/IMarsBot';
 
 export class Miner implements IAward {
   public readonly name = 'Miner';
   public readonly description = 'Have the most steel and titanium';
+  public readonly automaDescription = 'Space track + 5';
   public getScore(player: IPlayer): number {
     if (player.game.isDoneWithFinalProduction()) {
       return player.steel + player.titanium;
@@ -15,8 +15,7 @@ export class Miner implements IAward {
     }
   }
 
-  /** The automa rules score MarsBot's Miner as its second track plus 5. */
   public marsBotScore(bot: IMarsBot): number {
-    return marsBotTrackPosition(bot, Tag.SPACE) + 5;
+    return bot.marsBotBoard.trackPosition(Tag.SPACE) + 5;
   }
 }

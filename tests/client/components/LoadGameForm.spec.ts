@@ -31,7 +31,7 @@ describe('LoadGameForm', () => {
           getVisibilityState: () => false,
           setVisibilityState: () => {},
         },
-      } as any,
+      },
     });
   }
 

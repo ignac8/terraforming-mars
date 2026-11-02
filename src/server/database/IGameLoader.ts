@@ -34,6 +34,10 @@ export interface IGameLoader {
    * @param {GameId} gameId the game to be removed from the cache. Only call this for completed games.
    */
   mark(gameId: GameId): void;
+  /** Takes back `mark`, for a finished game that a rewind reopened. */
+  unmark(gameId: GameId): void;
+  /** Whether `game` is the object served for its id. It only reads the cache, so it never loads a game. */
+  isServed(game: IGame): Promise<boolean>;
 
   /**
    * Saves a game (but takes into account that the game might have already been purged.)

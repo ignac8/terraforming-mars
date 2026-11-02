@@ -1,7 +1,7 @@
 <template>
   <div class="log-container">
     <LogGenerationList
-      :max="viewModel.game.generation"
+      :max="generation"
       :selected="selectedGeneration"
       :lastSoloGeneration="lastSoloGeneration"
       @selected="selectGeneration">
@@ -13,7 +13,7 @@
     </LogGenerationList>
     <div class="panel log-panel">
       <div id="logpanel-scrollable" class="panel-body" @scroll="updateScrollState">
-        <LogMessageComponent v-for="(message, index) in messages" :key="index" :message="message" :viewModel="viewModel" @click="messageClicked(message)" @spaceClicked="$emit('spaceClicked', $event)"/>
+        <LogMessageComponent v-for="(message, index) in messages" :key="index" :class="{'log-undone': message.undone}" :message="message" :viewModel="viewModel" @click="messageClicked(message)" @spaceClicked="$emit('spaceClicked', $event)" />
       </div>
       <button
         v-show="showScrollToBottomButton"
@@ -25,12 +25,12 @@
         @click="showLatestLogs"
       >
         <svg class="log-latest-button-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true" focusable="false">
-          <path d="M12 5v14M19 12l-7 7-7-7"/>
+          <path d="M12 5v14M19 12l-7 7-7-7" />
         </svg>
       </button>
-      <div class='debugid'>(debugid {{step}})</div>
+      <div class="debugid">(debugid {{ step }})</div>
     </div>
-    <LogMessageInspector ref="messageInspector" :viewModel="viewModel"/>
+    <LogMessageInspector ref="messageInspector" :viewModel="viewModel" />
   </div>
 </template>
 
@@ -46,6 +46,7 @@ import LogMessageComponent from '@/client/components/logpanel/LogMessageComponen
 import LogMessageInspector from '@/client/components/logpanel/LogMessageInspector.vue';
 import LogGenerationList from '@/client/components/logpanel/LogGenerationList.vue';
 import {fetchLogs} from '@/client/utils/fetchLogs';
+import {latestLoggedGeneration, logOfGeneration} from '@/client/utils/generationLog';
 
 const BOTTOM_SCROLL_THRESHOLD = 24; // Roughly one line of log text.
 
@@ -74,6 +75,14 @@ export default defineComponent({
       required: false,
       default: 0,
     },
+    /**
+     * A replay's log up to the move shown. Given, the panel keeps to these lines, and fetches none, because the
+     * game's own log goes on past this move.
+     */
+    replayLog: {
+      type: Array as () => Array<LogMessage>,
+      default: undefined,
+    },
   },
   data(): LogPanelModel {
     return {
@@ -96,6 +105,14 @@ export default defineComponent({
         this.showLatestLogs();
       }
     },
+    replayLog(): void {
+      // An earlier generation stays as it is, unless the replay went back past it.
+      if (this.following || this.selectedGeneration > this.generation) {
+        this.showLatestLogs();
+      } else {
+        this.getLogsForGeneration(this.selectedGeneration);
+      }
+    },
   },
   methods: {
     messageClicked(message: LogMessage) {
@@ -115,6 +132,13 @@ export default defineComponent({
     },
     getLogsForGeneration(generation: number, scrollPosition?: 'bottom'): void {
       const messages = this.messages;
+      if (this.replayLog !== undefined) {
+        messages.splice(0, messages.length, ...logOfGeneration(this.replayLog, generation));
+        if (scrollPosition === 'bottom') {
+          this.$nextTick(this.scrollToEnd);
+        }
+        return;
+      }
       fetchLogs(this.viewModel.id, generation)
         .then((data) => {
           if (!data) {
@@ -153,8 +177,13 @@ export default defineComponent({
     typedRefs(): Refs {
       return this.$refs as unknown as Refs;
     },
+    /**
+     * The newest generation to show. A replayed board can be a generation ahead of its log: loading the save at the
+     * end of a generation runs production, and the log announces the next generation only after it.
+     */
     generation(): number {
-      return this.viewModel.game.generation;
+      const shown = this.viewModel.game.generation;
+      return this.replayLog === undefined ? shown : Math.min(shown, latestLoggedGeneration(this.replayLog));
     },
     lastSoloGeneration(): number | undefined {
       if (this.viewModel.players.length !== 1 || this.viewModel.game.gameOptions.automaNoGenerationLimit) {

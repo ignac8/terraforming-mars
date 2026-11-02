@@ -6,6 +6,7 @@ import {SerializedGame} from '../SerializedGame';
 import {Dirent, existsSync, mkdirSync, readdirSync, readFileSync, unlinkSync, writeFileSync} from 'fs';
 import {Session, SessionId} from '../auth/Session';
 import {toID} from '../../common/utils/utils';
+import {TableStatePatch, withTableState} from '../rewind/tableState';
 
 const path = require('path');
 const defaultDbFolder = path.resolve(process.cwd(), './db/files');
@@ -44,7 +45,7 @@ export class LocalFilesystem implements IDatabase {
     return path.resolve(this.historyFolder, `${gameId}-${saveIdString}.json`);
   }
 
-  private completedFilename(gameId: GameId) {
+  protected completedFilename(gameId: GameId) {
     return path.resolve(this.completedFolder, `${gameId}.json`);
   }
 
@@ -88,6 +89,10 @@ export class LocalFilesystem implements IDatabase {
   }
 
   getSaveIds(gameId: GameId): Promise<Array<number>> {
+    return Promise.resolve(this.saveIdsOf(gameId));
+  }
+
+  private saveIdsOf(gameId: GameId): Array<number> {
     const results: Array<number> = [];
     const entries = readdirSync(this.historyFolder, {withFileTypes: true});
     for (const dirent of entries) {
@@ -99,7 +104,23 @@ export class LocalFilesystem implements IDatabase {
         }
       }
     }
-    return Promise.resolve(results);
+    return results;
+  }
+
+  updateNewestSave(gameId: GameId, saveId: number, patch: TableStatePatch): Promise<boolean> {
+    // The newest save is both the game file and its history file. Patched synchronously, so no save comes between.
+    try {
+      if (Math.max(...this.saveIdsOf(gameId)) !== saveId) {
+        return Promise.resolve(false);
+      }
+      const saved: SerializedGame = JSON.parse(readFileSync(this.historyFilename(gameId, saveId)).toString());
+      const text = JSON.stringify(withTableState(saved, patch), null, 2);
+      writeFileSync(this.filename(gameId), text);
+      writeFileSync(this.historyFilename(gameId, saveId), text);
+      return Promise.resolve(true);
+    } catch (e) {
+      return Promise.reject(e);
+    }
   }
 
   getGameVersion(gameId: GameId, saveId: number): Promise<SerializedGame> {
@@ -147,6 +168,14 @@ export class LocalFilesystem implements IDatabase {
 
   markFinished(_gameId: GameId): Promise<void> {
     // Not implemented here.
+    return Promise.resolve();
+  }
+
+  reopenFinishedGame(gameId: GameId): Promise<void> {
+    const filename = this.completedFilename(gameId);
+    if (existsSync(filename)) {
+      unlinkSync(filename);
+    }
     return Promise.resolve();
   }
 

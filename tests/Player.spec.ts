@@ -6,6 +6,7 @@ import {IoMiningIndustries} from '../src/server/cards/base/IoMiningIndustries';
 import {PowerSupplyConsortium} from '../src/server/cards/base/PowerSupplyConsortium';
 import {SaturnSystems} from '../src/server/cards/corporation/SaturnSystems';
 import {SelectOption} from '../src/server/inputs/SelectOption';
+import {UndoActionOption} from '../src/server/inputs/UndoActionOption';
 import {Resource} from '../src/common/Resource';
 import {SerializedPlayer} from '../src/server/SerializedPlayer';
 import {SerializedTimer} from '../src/common/SerializedTimer';
@@ -39,6 +40,8 @@ import {EnergyTapping} from '../src/server/cards/base/EnergyTapping';
 import {cast} from '@/common/utils/utils';
 import {Timer} from '../src/common/Timer';
 import {FakeClock} from './common/FakeClock';
+import {InMemoryDatabase} from './testing/InMemoryDatabase';
+import {restoreTestDatabase, setTestDatabase} from './testing/setup';
 
 function playerWithRunningTimer(): [Player, FakeClock] {
   const player = new Player('blue', 'blue', false, 0, 'p-blue');
@@ -47,15 +50,10 @@ function playerWithRunningTimer(): [Player, FakeClock] {
   const clock = new FakeClock();
   (Timer as any).lastStoppedAt = 0;
   player.timer = Timer.newInstance(clock);
+  player.timer.enable();
 
-  const firstInput = new SelectOption('First input');
-  player.setWaitingFor(firstInput);
+  player.setWaitingFor(new SelectOption('First input'));
   clock.millis = 1_000;
-  player.process({type: 'option'});
-
-  const secondInput = new SelectOption('Second input');
-  player.setWaitingFor(secondInput);
-  clock.millis = 2_000;
   player.process({type: 'option'});
 
   expect(player.timer.getElapsed()).eq(1_000);
@@ -86,6 +84,33 @@ describe('Player', () => {
     clock.millis = 5000;
     player.setWaitingFor(new SelectOption('Input'));
     expect(player.inputRequestedAt).eq(5000);
+  });
+
+  it('starts no clock while the game is frozen', () => {
+    for (const frozen of [false, true]) {
+      const [game, player] = testGame(1);
+      player.clearWaitingFor();
+      player.timer = Timer.newInstance();
+      player.timer.enable();
+      game.frozen = frozen;
+
+      player.setWaitingFor(new SelectOption('Input'));
+
+      expect(player.timer.serialize().running, String(frozen)).eq(!frozen);
+    }
+  });
+
+  it('keeps the request id when a response is rejected', () => {
+    const [/* game */, player] = testGame(1);
+    player.clearWaitingFor();
+    player.setWaitingFor(new SelectOption('Input'));
+    const requestId = player.requestId;
+
+    expect(() => player.process({type: 'amount', amount: 1})).to.throw(/Not a valid SelectOptionResponse/);
+    expect(player.requestId).eq(requestId);
+
+    player.process({type: 'option'});
+    expect(player.requestId).is.undefined;
   });
 
   it('does not stop the timer when processing optional input', () => {
@@ -230,6 +255,19 @@ describe('Player', () => {
     const json = player.serialize();
     expect(json.pickedCorporationCard).eq('Saturn Systems');
   });
+  it('enables the timer when loading an older saved player who has a corporation', () => {
+    const player = new Player('blue', 'blue', false, 0, 'p-blue');
+    player.pickedCorporationCard = new SaturnSystems();
+    const json = player.serialize();
+    json.timer = {...json.timer, enabled: undefined, afterFirstAction: false} as any;
+    expect(Player.deserialize(json).timer.serialize().enabled).is.true;
+
+    player.pickedCorporationCard = undefined;
+    const json2 = player.serialize();
+    json2.timer = {...json2.timer, enabled: undefined, afterFirstAction: false} as any;
+    expect(Player.deserialize(json2).timer.serialize().enabled).is.false;
+  });
+
   it('serialization test', () => {
     const json: SerializedPlayer = {
       id: 'p-blue',
@@ -294,7 +332,7 @@ describe('Player', () => {
         sumElapsed: 0,
         startedAt: 0,
         running: false,
-        afterFirstAction: false,
+        enabled: false,
         lastStoppedAt: 0,
       } as SerializedTimer,
       totalDelegatesPlaced: 0,
@@ -362,21 +400,18 @@ describe('Player', () => {
 
     player.addResourceTo(card);
     expect(card.resourceCount).eq(1);
-    expect(log).is.empty;
-
-    player.addResourceTo(card, 1);
-    expect(card.resourceCount).eq(2);
-    expect(log).is.empty;
+    expect(log).has.length(1);
 
     player.addResourceTo(card, 3);
-    expect(card.resourceCount).eq(5);
-    expect(log).is.empty;
-
-    player.addResourceTo(card, {qty: 3, log: true});
-    expect(log).has.length(1);
-    const logEntry = log[0];
+    expect(card.resourceCount).eq(4);
+    expect(log).has.length(2);
+    const logEntry = log[1];
     expect(logEntry.data[1].value).eq('3');
     expect(logEntry.data[3].value).eq('Pets');
+
+    player.addResourceTo(card, {qty: 2, log: false});
+    expect(card.resourceCount).eq(6);
+    expect(log).has.length(2);
   });
 
   it('addResourceTo with Mons Insurance hook does not remove when no credits', () => {
@@ -434,7 +469,9 @@ describe('Player', () => {
     expect(card.resourceCount).eq(5);
     expect(log).has.length(1);
     expect(log[0].data[1].value).eq('1');
-    expect(log[0].data[3].value).eq('Pets');
+    expect(log[0].data[2].value).eq('Animal');
+    expect(log[0].data[4].value).eq('Pets');
+    expect(formatMessage(log[0])).eq(`blue removed 1:cr:animal: from blue's Pets`);
 
     log.length = 0;
     player.removeResourceFrom(card, 1);
@@ -453,6 +490,28 @@ describe('Player', () => {
     expect(card.resourceCount).eq(0);
     expect(log).has.length(1);
     expect(log[0].data[1].value).eq('4');
+  });
+
+  it('increaseTerraformRating logs a TR icon', () => {
+    const [game, player] = testGame(1);
+    game.gameLog.length = 0;
+
+    player.increaseTerraformRating(2, {log: true});
+    player.increaseTerraformRating(1, {log: true, from: {card: CardName.ASTEROID_MINING_CONSORTIUM}});
+
+    expect(game.gameLog.map(formatMessage)).deep.eq([
+      `${player.color} gained 2:i:tr:`,
+      `${player.color} gained 1:i:tr: from Asteroid Mining Consortium`,
+    ]);
+  });
+
+  it('decreaseTerraformRating logs a TR icon', () => {
+    const [game, player] = testGame(1);
+    game.gameLog.length = 0;
+
+    player.decreaseTerraformRating(3, {log: true});
+
+    expect(game.gameLog.map(formatMessage)).deep.eq([`${player.color} lost 3:i:tr:`]);
   });
 
   it('Turmoil player action', () => {
@@ -570,6 +629,7 @@ describe('Player', () => {
 
     expect(player.megaCredits).eq(15);
     expect(player.preludeCardsInHand).deep.eq([alliedBanks]);
+    expect(game.gameLog.map(formatMessage)).includes(`Loan fizzled. ${player.color} gains 15:r:mc:`);
   });
 
   it('autopass is disabled', () => {
@@ -712,5 +772,33 @@ describe('Player', () => {
 
     expect(player.cardsInHand).to.have.members([cards[0], cards[2]]);
     expect(player.megaCredits).eq(14);
+  });
+
+  it('never offers the one-step undo', () => {
+    for (const count of [1, 2]) {
+      const [/* game */, player] = testGame(count, {undoOption: true});
+      player.actionsTakenThisRound = 1;
+
+      const actions = cast(player.getActions(), OrOptions);
+
+      expect(actions.options.some((option) => option instanceof UndoActionOption), `${count} players`).is.false;
+    }
+  });
+
+  describe('saves', () => {
+    it('saves before every action, also without undo', () => {
+      const db = new InMemoryDatabase();
+      setTestDatabase(db);
+      try {
+        const [game, player] = testGame(2, {undoOption: false});
+        player.actionsTakenThisRound = 1; // second action of the turn
+        const before = db.games.get(game.id)?.length ?? 0;
+        player.takeAction();
+        runAllActions(game);
+        expect(db.games.get(game.id)?.length ?? 0).eq(before + 1);
+      } finally {
+        restoreTestDatabase();
+      }
+    });
   });
 });

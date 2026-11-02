@@ -7,7 +7,7 @@ import {Thermalist} from '../src/server/awards/Thermalist';
 import {Birds} from '../src/server/cards/base/Birds';
 import {WaterImportFromEuropa} from '../src/server/cards/base/WaterImportFromEuropa';
 import {Phase} from '../src/common/Phase';
-import {addCity, addGreenery, addOcean, forceGenerationEnd, maxOutOceans, runAllActions, setOxygenLevel, setTemperature, setVenusScaleLevel, testGame} from './TestingUtils';
+import {addCity, addGreenery, addOcean, doWait, fakeCard, forceGenerationEnd, formatMessage, maxOutOceans, runAllActions, setOxygenLevel, setTemperature, setVenusScaleLevel, testGame} from './TestingUtils';
 import {cast, toName} from '../src/common/utils/utils';
 import {TestPlayer} from './TestPlayer';
 import {SaturnSystems} from '../src/server/cards/corporation/SaturnSystems';
@@ -28,13 +28,17 @@ import {IColony} from '../src/server/colonies/IColony';
 import {IAward} from '../src/server/awards/IAward';
 import {SerializedGame} from '../src/server/SerializedGame';
 import {SelectInitialCards} from '../src/server/inputs/SelectInitialCards';
+import {SelectCard} from '../src/server/inputs/SelectCard';
 import {SelectSpace} from '../src/server/inputs/SelectSpace';
 import {GlobalParameter} from '../src/common/GlobalParameter';
 import {assertPlaceOcean} from './assertions';
+import {assertBuildColony} from './colonies/coloniesAssertions';
 import {TiredEarth} from '../src/server/cards/pathfinders/TiredEarth';
 import {Tag} from '../src/common/cards/Tag';
 import {restoreTestDatabase, setTestDatabase} from './testing/setup';
 import {InMemoryDatabase} from './testing/InMemoryDatabase';
+import {SnapshotDatabase} from './testing/SnapshotDatabase';
+import {BeginnerCorporation} from '../src/server/cards/corporation/BeginnerCorporation';
 import {Spacefarer} from '../src/server/milestones/terraCimmeria/Spacefarer';
 import {Suburbian} from '../src/server/awards/modular/Suburbian';
 import {SpaceName} from '../src/common/boards/SpaceName';
@@ -287,6 +291,21 @@ describe('Game', () => {
     expect(game.phase).to.eq(Phase.END);
 
     expect(game.isSoloModeWin()).is.not.true;
+  });
+
+  it('Amazonis Planitia solo games take one more generation', () => {
+    const [game] = testGame(1, {boardName: BoardName.AMAZONIS_PLANITIA});
+    expect(game.lastSoloGeneration()).eq(15);
+  });
+
+  it('Amazonis Planitia solo games with prelude take one more generation', () => {
+    const [game] = testGame(1, {boardName: BoardName.AMAZONIS_PLANITIA, preludeExtension: true});
+    expect(game.lastSoloGeneration()).eq(13);
+  });
+
+  it('Amazonis Planitia solo games in TR63 mode do not take one more generation', () => {
+    const [game] = testGame(1, {boardName: BoardName.AMAZONIS_PLANITIA, soloTR: true});
+    expect(game.lastSoloGeneration()).eq(14);
   });
 
   it('Should not finish solo game before last generation if Mars is already terraformed', () => {
@@ -572,6 +591,151 @@ describe('Game', () => {
     }
   });
 
+  it('patches after a save still on its way', async () => {
+    const db = new InMemoryDatabase();
+    setTestDatabase(db);
+    try {
+      const [game] = testGame(2);
+      // As PostgreSQL does: the save id is taken at once, and the row lands later.
+      let release = () => {};
+      db.saveGame = (g) => {
+        const saveId = g.lastSaveId;
+        g.lastSaveId = saveId + 1;
+        const saved = structuredClone(g.serialize());
+        return new Promise((resolve) => release = () => {
+          db.games.get(g.id)![saveId] = saved;
+          resolve();
+        });
+      };
+      game.save();
+      game.frozen = true;
+      const patched = game.persistTableState();
+      await new Promise((resolve) => setTimeout(resolve, 0));
+      release();
+      await patched;
+
+      expect((await db.getGame(game.id)).frozen).is.true;
+    } finally {
+      restoreTestDatabase();
+    }
+  });
+
+  it('leaves the row of a game that replaced this one alone', async () => {
+    for (const retired of [false, true]) {
+      const db = new SnapshotDatabase();
+      setTestDatabase(db);
+      try {
+        const [game] = testGame(2);
+        await game.save();
+        if (retired) {
+          // A rewind's row may not have landed yet.
+          game.retired = true;
+        } else {
+          const replacement = Game.deserialize(await db.getGame(game.id));
+          replacement.lastSaveId = game.lastSaveId;
+          await replacement.save();
+        }
+        const newest = structuredClone(await db.getGame(game.id));
+        game.frozen = true;
+
+        await game.persistTableState();
+
+        expect(await db.getGame(game.id), String(retired)).deep.eq(newest);
+      } finally {
+        restoreTestDatabase();
+      }
+    }
+  });
+
+  it('round-trips the table state and never brings it into a sandbox', () => {
+    const [game, player] = testGame(2);
+    game.frozen = true;
+    game.rewindVote = {id: 1, requester: player.id, saveId: 0, moveNumber: 1, generation: game.generation, cards: 'same', yes: [player.id], status: 'open', expiresAt: 1};
+    game.rewindRequestLimits = {generation: game.generation, players: [player.id]};
+    const d = game.serialize();
+
+    const loaded = Game.deserialize(d);
+    expect(loaded.frozen).is.true;
+    expect(loaded.rewindVote).deep.eq(game.rewindVote);
+    expect(loaded.rewindRequestLimits).deep.eq(game.rewindRequestLimits);
+    expect(loaded.ownSaveId).eq(d.lastSaveId);
+    const sandbox = Game.deserialize(d, {sandbox: true});
+    expect(sandbox.frozen).is.false;
+    expect(sandbox.rewindVote).is.undefined;
+    expect(sandbox.rewindRequestLimits).is.undefined;
+    expect(sandbox.ownSaveId).is.undefined;
+
+    game.frozen = false;
+    game.rewindVote = undefined;
+    game.rewindRequestLimits = {generation: game.generation - 1, players: [player.id]};
+    expect(game.serialize()).not.to.have.any.keys('frozen', 'rewindVote', 'rewindRequestLimits');
+  });
+
+  it('saves a copy of the table state', async () => {
+    const db = new InMemoryDatabase();
+    setTestDatabase(db);
+    try {
+      const [game, player, player2] = testGame(2);
+      game.rewindVote = {id: 1, requester: player.id, saveId: 0, moveNumber: 1, generation: game.generation, cards: 'same', yes: [player.id], status: 'open', expiresAt: 1};
+      game.rewindRequestLimits = {generation: game.generation, players: [player.id]};
+      await game.save();
+
+      game.rewindVote.yes.push(player2.id);
+      game.rewindRequestLimits.players.push(player2.id);
+
+      const saved = await db.getGame(game.id);
+      expect(saved.rewindVote?.yes).deep.eq([player.id]);
+      expect(saved.rewindRequestLimits?.players).deep.eq([player.id]);
+    } finally {
+      restoreTestDatabase();
+    }
+  });
+
+  it('reloads a frozen game with every clock stopped', () => {
+    const [game, player, player2] = testGame(2);
+    // Players with corporations, so a reload goes to the action phase.
+    player.playedCards.push(new BeginnerCorporation());
+    player2.playedCards.push(new BeginnerCorporation());
+    player.timer.enable();
+    player2.timer.enable();
+    game.phase = Phase.ACTION;
+    player.takeAction();
+    expect(game.activePlayer.timer.serialize().running).is.true;
+    // As a freeze leaves the game.
+    game.frozen = true;
+    game.players.forEach((p) => p.timer.pause());
+
+    const loaded = Game.deserialize(game.serialize());
+
+    expect(loaded.phase).eq(Phase.ACTION);
+    expect(loaded.activePlayer.getWaitingFor()).is.not.undefined;
+    expect(loaded.players.map((p) => p.timer.serialize().running)).deep.eq([false, false]);
+  });
+
+  it('tracks the save rows written at the end of the game', async () => {
+    const db = new SnapshotDatabase();
+    setTestDatabase(db);
+    try {
+      const [game, player, player2] = testGame(2);
+      setTemperature(game, constants.MAX_TEMPERATURE);
+      setOxygenLevel(game, constants.MAX_OXYGEN_LEVEL);
+      maxOutOceans(player);
+      player.plants = 0;
+      player2.plants = 0;
+      game.playerHasPassed(player);
+      game.playerHasPassed(player2);
+      player.popWaitingFor();
+      player2.popWaitingFor();
+      game.playerIsFinishedTakingActions();
+      await game.finishing;
+
+      expect(game.phase).eq(Phase.END);
+      expect(game.ownSaveId).eq(Math.max(...await db.getSaveIds(game.id)));
+    } finally {
+      restoreTestDatabase();
+    }
+  });
+
   it('Should return players in turn order', () => {
     const player1 = new Player('p1', 'blue', false, 0, 'p1-id');
     const player2 = new Player('p2', 'green', false, 0, 'p2-id');
@@ -610,6 +774,19 @@ describe('Game', () => {
 
     const space: Space = game.board.getSpaceOrThrow(spaceId);
     expect(space.player).is.undefined;
+  });
+
+  it('logs the ocean adjacency bonus with a megacredits icon', () => {
+    const [game, player] = testGame(1);
+    const oceanSpace = addOcean(player);
+    const landSpace = game.board.getAdjacentSpaces(oceanSpace).find((space) => space.spaceType === SpaceType.LAND && space.tile === undefined)!;
+    player.megaCredits = 0;
+    game.gameLog.length = 0;
+
+    addGreenery(player, landSpace.id);
+
+    expect(player.megaCredits).eq(2);
+    expect(game.gameLog.map(formatMessage)).includes(`${player.color} gained 2:r:mc: from 1 ocean(s)`);
   });
 
   it('Check Ecologist Milestone', () => {
@@ -824,25 +1001,42 @@ describe('Game', () => {
     assertIsJSON(serialized);
     const serializedKeys = Object.keys(serialized);
 
-    const unserializedFieldsInGame: Array<keyof Game | '_marsBotPlayer'> = [
-      '_marsBotPlayer',
+    const unserializedFieldsInGame: Array<keyof Game | 'onSandboxSave' | 'lastWrite' | 'lastPatch'> = [
       'createdTime',
       'discardedColonies',
       'inDoubleDown',
+      'inputsSinceSave', // Serialized as `inputs`.
       'inputsThisRound',
       'inTurmoil',
+      'isSandbox',
+      'onSandboxSave',
+      'retired',
+      'finishing',
+      'frozen', // Serialized only when true.
+      'rewindVote', // Serialized only when set.
+      'rewindRequestLimits', // Serialized only for the current generation.
+      'onRewindVoteMove', // A callback.
+      'ownSaveId',
+      'lastWrite',
+      'lastPatch',
+      'marsBotPlayer',
+      'playersPlusMarsBot',
       'playersInGenerationOrder',
       'monsInsuranceOwner',
       'resettable',
+      'rewinds', // Serialized only once a rewind has happened.
       'rng',
       'underworldDraftEnabled',
       'doubleDownPrelude',
       'max',
+      'globalParameterTracks',
+      'standardProjects',
     ];
     const serializedValuesNotInGame: Array<keyof SerializedGame> = [
       'seed',
       'currentSeed',
-      'createdTimeMs'];
+      'createdTimeMs',
+      'inputs'];
 
     const gameKeys = Object.keys(game);
 
@@ -1228,11 +1422,11 @@ describe('Game', () => {
   player.tagsForTest = {earth: 1};
 
   game.worldGovernmentTerraforming();
-  const [input, cb] = player2.popWaitingFor2();
-  const orOptions = cast(input, OrOptions);
-  const oceanAction = cast(orOptions.options.filter((o) => o.title.toString() === 'Add an ocean')[0], SelectSpace);
-  assertPlaceOcean(player2, oceanAction);
-  cb?.(); // Will gain 2 plants and lose 1 plant.
+  // The callback will gain 2 plants and lose 1 plant.
+  doWait(player2, OrOptions, (orOptions) => {
+    const oceanAction = cast(orOptions.options.filter((o) => o.title.toString() === 'Add an ocean')[0], SelectSpace);
+    assertPlaceOcean(player2, oceanAction);
+  });
 
   expect(player.plants).to.eq(1);
   });
@@ -1267,6 +1461,145 @@ describe('Game', () => {
 
     expect(game2.gameOptions.pathfindersExpansion).is.true;
     expect(game2.gameOptions.expansions.pathfinders).is.true;
+  });
+
+  it('queues the 0C ocean after card effects and the TR increase', () => {
+    const [game, player] = testGame(1);
+    game.phase = Phase.ACTION;
+    setTemperature(game, -2);
+    const tr = player.terraformRating;
+    let queuedWhenCardFires = -1;
+    player.playedCards.push(fakeCard({
+      onGlobalParameterIncrease: () => {
+        queuedWhenCardFires = game.deferredActions.length;
+      },
+    }));
+
+    game.increaseTemperature(player, 1);
+
+    expect(queuedWhenCardFires).eq(0);
+    expect(player.terraformRating).eq(tr + 1);
+    expect(game.deferredActions.length).eq(1);
+  });
+
+  it('Amazonis Planitia grants plant production at -12C', () => {
+    const [game, player] = testGame(1, {boardName: BoardName.AMAZONIS_PLANITIA});
+    game.phase = Phase.ACTION;
+    setTemperature(game, -14);
+
+    const before = player.production.plants;
+    game.increaseTemperature(player, 1);
+    expect(game.getTemperature()).eq(-12);
+    expect(player.production.plants).eq(before + 1);
+  });
+
+  it('standard maps grant no production at -12C', () => {
+    const [game, player] = testGame(1);
+    game.phase = Phase.ACTION;
+    setTemperature(game, -14);
+
+    const before = player.production.plants;
+    game.increaseTemperature(player, 1);
+    expect(player.production.plants).eq(before);
+  });
+
+  it('Amazonis Planitia draws a card at 7% oxygen', () => {
+    const [game, player] = testGame(1, {boardName: BoardName.AMAZONIS_PLANITIA});
+    game.phase = Phase.ACTION;
+    setOxygenLevel(game, 6);
+
+    const before = player.cardsInHand.length;
+    game.increaseOxygenLevel(player, 1);
+    expect(game.getOxygenLevel()).eq(7);
+    expect(player.cardsInHand.length).eq(before + 1);
+  });
+
+  it('Amazonis Planitia raises temperature at 11% oxygen, not 8%', () => {
+    const [game, player] = testGame(1, {boardName: BoardName.AMAZONIS_PLANITIA});
+    game.phase = Phase.ACTION;
+    setTemperature(game, -10);
+
+    // Crossing 8% does not raise temperature on this map.
+    setOxygenLevel(game, 7);
+    game.increaseOxygenLevel(player, 1);
+    expect(game.getOxygenLevel()).eq(8);
+    expect(game.getTemperature()).eq(-10);
+
+    // Crossing 11% raises temperature one step.
+    setOxygenLevel(game, 10);
+    game.increaseOxygenLevel(player, 1);
+    expect(game.getOxygenLevel()).eq(11);
+    expect(game.getTemperature()).eq(-8);
+
+    // Going on to 12% does not raise it again.
+    game.increaseOxygenLevel(player, 1);
+    expect(game.getOxygenLevel()).eq(12);
+    expect(game.getTemperature()).eq(-8);
+  });
+
+  it('standard maps still raise temperature at 8% oxygen', () => {
+    const [game, player] = testGame(1);
+    game.phase = Phase.ACTION;
+    setTemperature(game, -10);
+    setOxygenLevel(game, 7);
+
+    game.increaseOxygenLevel(player, 1);
+    expect(game.getOxygenLevel()).eq(8);
+    expect(game.getTemperature()).eq(-8);
+  });
+
+  it('player-benefit bonuses are skipped in the solar phase, but cascades still apply', () => {
+    const [game, player] = testGame(1, {boardName: BoardName.AMAZONIS_PLANITIA});
+    game.phase = Phase.SOLAR;
+
+    // The 7% oxygen card draw is a player benefit and is skipped during World Government terraforming.
+    setOxygenLevel(game, 6);
+    const cardsBefore = player.cardsInHand.length;
+    game.increaseOxygenLevel(player, 1);
+    expect(player.cardsInHand.length).eq(cardsBefore);
+
+    // The 11% oxygen -> temperature cascade is a global effect and applies regardless.
+    setTemperature(game, -10);
+    setOxygenLevel(game, 10);
+    game.increaseOxygenLevel(player, 1);
+    expect(game.getTemperature()).eq(-8);
+  });
+
+  for (const run of [
+    {colonies: true, phase: Phase.ACTION, expected: true},
+    {colonies: false, phase: Phase.ACTION, expected: false},
+    {colonies: true, phase: Phase.SOLAR, expected: false},
+  ] as const) {
+    it('Amazonis Planitia at 16% Venus ' + JSON.stringify(run), () => {
+      // 2 players to remove an early-game solo action in the deferred actions queue.
+      const [game, player] = testGame(2, {boardName: BoardName.AMAZONIS_PLANITIA, venusNextExtension: true, coloniesExtension: run.colonies});
+      game.phase = run.phase;
+      setVenusScaleLevel(game, 14);
+
+      game.increaseVenusScaleLevel(player, 1);
+      runAllActions(game);
+
+      if (run.expected) {
+        assertBuildColony(player, player.popWaitingFor());
+      } else {
+        cast(player.popWaitingFor(), undefined);
+      }
+    });
+  }
+
+  it('timer is disabled until the player picks their corporation', () => {
+    const [/* game */, player, player2] = testGame(2, {skipInitialCardSelection: false});
+    const selectInitialCards = cast(player.getWaitingFor(), SelectInitialCards);
+    expect(player.timer.serialize().enabled).is.false;
+    expect(player.timer.serialize().running).is.false;
+
+    player.process({type: 'initialCards', responses: [
+      {type: 'card', cards: [cast(selectInitialCards.options[0], SelectCard).cards[0].name]},
+      {type: 'card', cards: []},
+    ]});
+    expect(player.timer.serialize().enabled).is.true;
+    expect(player.timer.getElapsed()).eq(0);
+    expect(player2.timer.serialize().enabled).is.false;
   });
 });
 

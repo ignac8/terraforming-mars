@@ -20,14 +20,14 @@ import {BoardName} from '../../common/boards/BoardName';
 import {marsBotUsesMapSet} from './MarsBotMilestoneAwardEval';
 import {CardName} from '../../common/cards/CardName';
 import {Tag} from '../../common/cards/Tag';
-import {marsBotCardTags} from './MarsBotTags';
+import {cardTagsIncludingEvent} from './MarsBotTags';
 import {MarsBotTurmoilHelper} from './turmoil/MarsBotTurmoilHelper';
 import {selectRandomColony, placeColonyForMarsBot} from './colonies/MarsBotColonyPlacer';
 import {pickByFlippedCard} from './MarsBotCardFlip';
 import {selectTradeColony, tradeWithColony} from './colonies/MarsBotTrader';
 import {inplaceShuffle} from '../utils/shuffle';
 import type {MarsBot} from './MarsBot';
-import {ACTION_DECK_BONUS_CARD_REMOVED} from './MarsBotCorpTypes';
+import {ACTION_DECK_BONUS_CARD_REMOVED} from './IMarsBotCorp';
 import {inplaceRemove} from '../../common/utils/utils';
 
 /**
@@ -453,12 +453,12 @@ export class MarsBotBonusResolver {
   }
 
   /**
-   * Places a MarsBot greenery on a space that passes `where` and raises oxygen.
+   * Places a MarsBot greenery on a space that passes `filter` and raises oxygen.
    *
    * Returns false, with no Failed Action, when no such space is left.
    */
-  private maybePlaceGreenery(where?: (space: Space) => boolean): boolean {
-    const space = this.tilePlacer.findGreenerySpace(where);
+  private maybePlaceGreenery(filter?: (space: Space) => boolean): boolean {
+    const space = this.tilePlacer.findGreenerySpace(filter);
     if (space === undefined) {
       return false;
     }
@@ -617,8 +617,8 @@ export class MarsBotBonusResolver {
       }
       return true;
     };
-    const placeCity = (where?: (space: Space) => boolean) => {
-      const space = this.tilePlacer.findCitySpace(where);
+    const placeCity = (filter?: (space: Space) => boolean) => {
+      const space = this.tilePlacer.findCitySpace(filter);
       if (space) {
         this.game.addCity(this.marsBot, space);
         this.turnResolver.gainMc(this.tilePlacer.getTotalPlacementMC(space));
@@ -689,7 +689,7 @@ export class MarsBotBonusResolver {
     case 'Promoter': return advanceTrackOf(Tag.EVENT);
     case 'Blacksmith': return advanceTrackOfEither([Tag.BUILDING, Tag.SPACE], 'more');
     // Milestones and awards (B14)
-    case 'Administrator': return revealAndResolveCard((c) => marsBotCardTags(c).length === 0, 5);
+    case 'Administrator': return revealAndResolveCard((c) => cardTagsIncludingEvent(c).length === 0, 5);
     case 'Biologist': return advanceTrackOf(Tag.MICROBE);
     case 'Collector': return advance(marsBotBoard.getLeastAdvancedTrackIndex());
     case 'Constructor': return placeCity();
@@ -790,6 +790,11 @@ export class MarsBotBonusResolver {
     if (colony === undefined) {
       // A bonus card that can't resolve is not a Failed Action (rulebook A, p.5)
       this.game.log(`MarsBot ${cardName}: no tradeable colony, no effect (C-17)`);
+      return;
+    }
+    // It must lose 1 MC to trade. With none, the card does nothing (Nick, BGG 3599965).
+    if (marsBot.turnResolver.megacredits < 1) {
+      this.game.log(`MarsBot ${cardName}: no MC to pay for the trade, no effect (C-17)`);
       return;
     }
 
@@ -1010,7 +1015,7 @@ export class MarsBotBonusResolver {
 
     // T-8: If ≥1 delegate still in reserve AND MarsBot has ≥5 MC:
     //       flip a project deck card — if its cost is divisible by 3, spend 5 MC and place another delegate
-    if (turmoil.hasDelegatesInReserve(this.marsBot) && this.turnResolver.megacredits >= 5) {
+    if (turmoil.delegateReserve.has(this.marsBot) && this.turnResolver.megacredits >= 5) {
       const flipped = this.game.projectDeck.draw(this.game);
       if (flipped !== undefined) {
         this.game.log('MarsBot flips ${0} (cost ${1}) for Party Politics T-8 check', (b) => b.card(flipped).number(flipped.cost));
@@ -1034,7 +1039,7 @@ export class MarsBotBonusResolver {
     // Up to 2 delegates, each to the party with the fewest MarsBot delegates, then the fewest
     // player delegates, then a random one. 2 M€ for each delegate it can't place.
     for (let i = 0; i < 2; i++) {
-      if (!turmoil.hasDelegatesInReserve(this.marsBot)) {
+      if (!turmoil.delegateReserve.has(this.marsBot)) {
         this.turnResolver.gainMc(2);
         this.game.log('MarsBot resolves Gray Eminence: no delegate in reserve, +2 M€');
         continue;
@@ -1057,8 +1062,8 @@ export class MarsBotBonusResolver {
       return false;
     }
     // Science cards first, then the most expensive, then the most tags, then at random
-    const science = (card: IProjectCard) => marsBotCardTags(card).includes(Tag.SCIENCE) ? 1 : 0;
-    const tagCount = (card: IProjectCard) => marsBotCardTags(card).length;
+    const science = (card: IProjectCard) => cardTagsIncludingEvent(card).includes(Tag.SCIENCE) ? 1 : 0;
+    const tagCount = (card: IProjectCard) => cardTagsIncludingEvent(card).length;
     inplaceShuffle(drawn, this.game.rng);
     drawn.sort((a, b) => science(b) - science(a) || b.cost - a.cost || tagCount(b) - tagCount(a));
     const discarded = drawn.splice(2);

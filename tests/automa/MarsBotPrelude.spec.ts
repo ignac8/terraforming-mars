@@ -11,7 +11,7 @@ import {MARSBOT_MAX_GENERATION, MARSBOT_MAX_GENERATION_PRELUDE} from '../../src/
 
 function createAutomaGame(opts: {prelude?: boolean, prelude2?: boolean, difficulty?: 'easy' | 'normal' | 'hard' | 'brutal'} = {}): {game: IGame, human: TestPlayer, marsBot: MarsBot} {
   const [game, human] = testGame(1, {
-    automaOption: true,
+    automa: true,
     automaDifficulty: opts.difficulty ?? 'normal',
     boardName: BoardName.THARSIS,
     preludeExtension: opts.prelude ?? false,

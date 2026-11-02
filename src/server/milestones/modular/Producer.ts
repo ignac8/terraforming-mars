@@ -2,10 +2,11 @@ import {BaseMilestone} from '../IMilestone';
 import {IPlayer} from '../../IPlayer';
 import {sum} from '../../../common/utils/utils';
 import {Units} from '../../../common/Units';
-import {IMarsBot} from '../../automa/MarsBotCorpTypes';
+import {IMarsBot} from '../../automa/IMarsBot';
 import {marsBotMarsTrackPositions} from '../../automa/MarsBotMilestoneAwardEval';
 
 export class Producer extends BaseMilestone {
+  public readonly automaDescription = '3+ tracks (except Venus) ≥ 16';
   constructor() {
     super(
       'Producer',

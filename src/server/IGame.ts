@@ -17,6 +17,7 @@ import {Priority} from './deferredActions/Priority';
 import {DeferredActionsQueue} from './deferredActions/DeferredActionsQueue';
 import {SerializedGame} from './SerializedGame';
 import {SpaceBonus} from '../common/boards/SpaceBonus';
+import {GlobalParameterMaximums} from '../common/boards/GlobalParameterMaximums';
 import {TileType} from '../common/TileType';
 import {ICard} from './cards/ICard';
 import {Turmoil} from './turmoil/Turmoil';
@@ -33,19 +34,18 @@ import {Logger} from './logs/Logger';
 import {GlobalParameter} from '../common/GlobalParameter';
 import {UnderworldData} from './underworld/UnderworldData';
 import {OrOptions} from './inputs/OrOptions';
+import {PlayerInput} from './PlayerInput';
+import {InputResponse} from '../common/inputs/InputResponse';
+import {RecordedInput} from './rewind/RecordedInput';
+import {RewindRequestLimits, SerializedRewindVote} from './rewind/tableState';
 import {IStandardProjectCard} from './cards/IStandardProjectCard';
+import {GlobalParameterTracks} from '@/server/boards/GlobalParameterTracks';
+import {RewindRecord} from './rewind/RewindRecord';
+import {Resource} from '@/common/Resource';
 
 export interface Score {
   corporation: String;
   playerScore: number;
-}
-
-/** The maximum values of the global parameters. */
-export interface GlobalParameterMaximums {
-  readonly temperature: number;
-  readonly oxygen: number;
-  readonly oceans: number;
-  readonly venus: number;
 }
 
 export interface IGame extends Logger {
@@ -62,13 +62,60 @@ export interface IGame extends Logger {
   createdTime: Date;
   gameAge: number; // Each log event increases it
   gameLog: Array<LogMessage>;
+  /** Rewinds of this game, each hiding the line of play it abandoned. */
+  rewinds: Array<RewindRecord>;
   undoCount: number; // Each undo increases it
+  /**
+   * The inputs processed since the last save. Undefined when the game was loaded from a save
+   * written before inputs were recorded, so saving it again keeps that save without inputs.
+   */
+  inputsSinceSave: Array<RecordedInput> | undefined;
+  /** Remembers `input`, the answer `player` gave to `waitingFor`, with the state it is about to be applied to. Sandbox games record nothing. */
+  recordInput(player: IPlayer, waitingFor: PlayerInput, input: InputResponse): RecordedInput | undefined;
+  /** Takes back a record from `recordInput`, for an answer the game then rejected. */
+  forgetInput(recorded: RecordedInput | undefined): void;
   inputsThisRound: number;
   resettable: boolean;
+  /** True for a read-only view of a past save: it never writes to the database or the game cache. */
+  readonly isSandbox: boolean;
+  /** True for a game object that a rewind replaced. It takes no input and never writes a save. */
+  retired: boolean;
+  /** Settles once the game's last saves and its finished mark are written. Unset until the game ends in this process. */
+  readonly finishing: Promise<void> | undefined;
+  /** Set while the game is frozen: no input is accepted and no clock runs. */
+  frozen: boolean;
+  /** The open or rewinding vote, as plain data. */
+  rewindVote: SerializedRewindVote | undefined;
+  rewindRequestLimits: RewindRequestLimits | undefined;
+  /** Called after every accepted input while the game has a vote. Whoever gives the game a vote sets it. */
+  onRewindVoteMove?: () => void;
+  /** The save row this object last wrote or was loaded from. Patches go to this row only. Undefined for a sandbox and before the first save. */
+  ownSaveId: number | undefined;
+  /**
+   * Writes the table state (TableStatePatch) into this game's own save row, after every write of this game already started.
+   * A sandbox or retired game writes nothing, and a row that is no longer the newest is left alone; both resolve to false.
+   * Resolves to whether a row was patched. Rejects only when the database call throws. The next patch or save carries the whole state again.
+   *
+   * Call it only on the object GameLoader currently serves. A player undo (`restoreGameAt`) or a LoadGame
+   * rollback replaces the object without retiring it, and once the new object writes the old object's row id
+   * again, the newest-row check no longer keeps the old object's patch off it. Callers check that the object
+   * is still the live game first.
+   */
+  persistTableState(): Promise<boolean>;
   generation: number;
   readonly players: ReadonlyArray<IPlayer>;
-  /** All players including MarsBot (automa). Use this for targeting cards. */
-  readonly allPlayers: ReadonlyArray<IPlayer>;
+  /**
+   * MarsBot's player in an automa game, otherwise undefined.
+   *
+   * It is not in `players` because its turns don't go through the players' turn order.
+   */
+  readonly marsBotPlayer: IPlayer | undefined;
+  /**
+   * `players` and MarsBot's player.
+   *
+   * For anything MarsBot can own, like tiles, delegates and milestones.
+   */
+  readonly playersPlusMarsBot: ReadonlyArray<IPlayer>;
   readonly playersInGenerationOrder: ReadonlyArray<IPlayer>;
 
   /**
@@ -142,12 +189,19 @@ export interface IGame extends Logger {
 
   /** The set of tags available in this game. */
   readonly tags: ReadonlyArray<Tag>;
+
+  /** The bonuses on this board's global-parameter tracks. */
+  readonly globalParameterTracks: GlobalParameterTracks;
+
   /** Initiates the first research phase, which is when a player chooses their starting hand, corps and preludes. */
   gotoInitialResearchPhase(): void;
   gotoResearchPhase(): void;
-  save(): void;
+  /** Writes the game as its next save. The promise settles when the write does. */
+  save(): Promise<void>;
   serialize(): SerializedGame;
   isSoloMode() :boolean;
+  /** Writes the scores of the game, as it ends. The promise, if any, settles when the write does. */
+  saveGameResults(): void | Promise<void>;
   // Retrieve a player by its id
   getPlayerById(id: PlayerId): IPlayer;
   defer<T>(action: DeferredAction<T>, priority?: Priority): AndThen<T>;
@@ -237,9 +291,21 @@ export interface IGame extends Logger {
 
   /**
    * Gives all the bonuses from a space on the map.
+   *
+   * `onStandardResource` is called with the resource chosen for a STANDARD_RESOURCE bonus.
    */
-  grantSpaceBonuses(player: IPlayer, space: Space): void;
-  grantSpaceBonus(player: IPlayer, spaceBonus: SpaceBonus, count?: number): void;
+  grantSpaceBonuses(player: IPlayer, space: Space, onStandardResource?: (resource: Resource) => void): void;
+  /**
+   * Gives all the bonuses from a space as placement bonuses, so cards can react to a
+   * chosen standard resource (see ICard.onStandardResourcePlacementBonus).
+   */
+  grantSpaceBonusesAsPlacement(player: IPlayer, space: Space): void;
+  /**
+   * Gives one bonus from rewards on a space.
+   *
+   * `onStandardResource` is called with the resource chosen for a STANDARD_RESOURCE bonus.
+   */
+  grantSpaceBonus(player: IPlayer, spaceBonus: SpaceBonus, count?: number, onStandardResource?: (resource: Resource) => void): void;
   addGreenery(player: IPlayer, space: Space, shouldRaiseOxygen?: boolean): void;
   addCity(player: IPlayer, space: Space, cardName?: CardName | undefined): void;
   canAddOcean(): boolean;
@@ -255,10 +321,7 @@ export interface IGame extends Logger {
    * Returns the Player holding this card, or returns undefined.
    */
   getCardPlayerOrUndefined(name: CardName): IPlayer | undefined;
-  /**
-   * Returns the list of standard project cards used in this game, sorted by cost.
-   */
-  getStandardProjects(): Array<IStandardProjectCard>;
+  standardProjects: ReadonlyArray<IStandardProjectCard>;
 
   log(message: string, f?: (builder: LogMessageBuilder) => void, options?: {reservedFor?: IPlayer}): void;
   discardForCost(cardCount: 1 | 2, toPlace: TileType): number;

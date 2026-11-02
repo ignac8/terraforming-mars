@@ -12,11 +12,11 @@ export class MarsBotTurmoilHelper {
   private readonly humanPlayer: IPlayer;
 
   constructor(private readonly game: IGame) {
-    if (game.automaHooks === undefined) {
+    if (game.marsBotPlayer === undefined) {
       throw new Error('MarsBotTurmoilHelper needs an automa game');
     }
     this.turmoil = Turmoil.getTurmoil(game);
-    this.marsBotPlayer = game.automaHooks.marsBotPlayer;
+    this.marsBotPlayer = game.marsBotPlayer;
     this.humanPlayer = game.players[0];
   }
 
@@ -35,7 +35,7 @@ export class MarsBotTurmoilHelper {
    *  Tier 6: Next party clockwise from the Dominance marker, circling around. Always yields one.
    */
   public selectParty(): PartyName | undefined {
-    if (!this.turmoil.hasDelegatesInReserve(this.marsBotPlayer)) {
+    if (!this.turmoil.delegateReserve.has(this.marsBotPlayer)) {
       return undefined;
     }
 

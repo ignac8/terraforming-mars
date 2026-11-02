@@ -7,7 +7,7 @@ import {AICentral} from '../../../src/server/cards/base/AICentral';
 import {AsteroidMining} from '../../../src/server/cards/base/AsteroidMining';
 import {BigAsteroid} from '../../../src/server/cards/base/BigAsteroid';
 import {GanymedeColony} from '../../../src/server/cards/base/GanymedeColony';
-import {IMarsBot} from '../../../src/server/automa/MarsBotCorpTypes';
+import {IMarsBot} from '../../../src/server/automa/IMarsBot';
 
 describe('Sponsor', () => {
   let milestone: Sponsor;

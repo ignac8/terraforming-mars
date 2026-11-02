@@ -156,7 +156,7 @@
   "You haven't selected any project cards": "Вие не сте избрали никакви карти на проекти",
   "Continue without buying any project cards?": "Продължавате ли без да закупувате никакви проектни карти?",
   "Send players their links below. As game administrator pick your link to use.": "Изпратете на играчите техните връзки по-долу. Като администратор на играта изберете своя линк, за да го използвате.",
-  "Allow undo": "Позволете отмяна",
+  "Player undo": "Позволете отмяна",
   "Drafted Cards": "Избрани карти",
   "City: 1 VP per adjacent greenery": "Град: 1 ТП за всеки съседен зеленинен плочка",
   "Ocean: grants 2M€ when players put tiles next to it": "Океан: предоставя 2M€, когато играчите поставят плочки до него",
@@ -356,7 +356,7 @@
   "Build": "Строеж",
   "Sell": "Продай",
   "Undo": "Отмени",
-  "undo": "отмени",
+  "player undo": "отмени",
   "Hide": "Скрий",
   "Show": "Покажи",
 

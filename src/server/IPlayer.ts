@@ -69,6 +69,8 @@ export interface IPlayer {
   handicap: number;
 
   readonly game: IGame;
+  /** True for MarsBot's player in a game against the Automa. */
+  readonly isMarsBot: boolean;
   tags: Tags;
   colonies: Colonies;
   readonly production: Production;
@@ -204,6 +206,14 @@ export interface IPlayer {
    */
   inputRequestedAt?: number;
 
+  /**
+   * The id of the current input request.
+   *
+   * The client sends it back with its response. Not serialized: reloading the game asks for
+   * input again, which sets a new one.
+   */
+  requestId?: string;
+
   setup(game: IGame): void;
 
   getTitaniumValue(): number;
@@ -296,7 +306,7 @@ export interface IPlayer {
   /**
    * Add resources to this player's played card
    */
-  addResourceTo(card: ICard, options?: number | {qty?: number, log: boolean, logZero?: boolean, from?: From}): void;
+  addResourceTo(card: ICard, options?: number | {qty?: number, log?: boolean, logZero?: boolean, from?: From}): void;
 
   /**
    * Returns the set of cards in play that have actual resources on them.
@@ -333,7 +343,7 @@ export interface IPlayer {
   /** Return then amount of spendable units of a given card resource */
   getSpendable(resource: SpendableCardResource): number;
   checkPaymentAndPlayCard(selectedCard: IProjectCard, payment: Payment, cardAction?: CardAction): void;
-  pay(payment: Payment): void;
+  pay(payment: Payment, options?: {log?: boolean}): void;
   availableHeat(): number;
   spendHeat(amount: number, cb?: () => (undefined | PlayerInput)) : PlayerInput | undefined;
 
@@ -362,7 +372,7 @@ export interface IPlayer {
   affordOptionsForCard(card: IProjectCard): CanAffordOptions;
   canAfford(options: number | CanAffordOptions): boolean;
   getStandardProjectOption(): SelectStandardProjectToPlay;
-  takeAction(saveBeforeTakingAction?: boolean): void;
+  takeAction(): void;
   /** Return possible mid-game actions like play a card and fund an award, but not play prelude card. */
   getActions(): OrOptions;
   process(input: InputResponse): void;

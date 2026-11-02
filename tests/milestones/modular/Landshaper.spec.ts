@@ -7,7 +7,7 @@ import {Space} from '../../../src/server/boards/Space';
 import {TileType} from '../../../src/common/TileType';
 import {BoardName} from '../../../src/common/boards/BoardName';
 import {MoonExpansion} from '../../../src/server/moon/MoonExpansion';
-import {IMarsBot} from '../../../src/server/automa/MarsBotCorpTypes';
+import {IMarsBot} from '../../../src/server/automa/IMarsBot';
 import {MarsBotBoard} from '../../../src/server/automa/MarsBotBoard';
 import {THARSIS_MARSBOT_BOARD} from '../../../src/server/automa/boards/TharsisMarsBot';
 

@@ -22,7 +22,7 @@ function getMarsBot(game: ReturnType<typeof testGame>[0]): MarsBot {
 describe('MarsBotColonyPlacer (C-15b, C-16a, C-19, C-24a)', () => {
   describe('eligibleColoniesForMarsBot', () => {
     it('excludes inactive colonies', () => {
-      const [game] = testGame(1, {automaOption: true, coloniesExtension: true, boardName: BoardName.THARSIS});
+      const [game] = testGame(1, {automa: true, coloniesExtension: true, boardName: BoardName.THARSIS});
       const marsBot = getMarsBot(game);
       const luna = new Luna();
       luna.isActive = false;
@@ -32,7 +32,7 @@ describe('MarsBotColonyPlacer (C-15b, C-16a, C-19, C-24a)', () => {
     });
 
     it('excludes full colonies', () => {
-      const [game] = testGame(1, {automaOption: true, coloniesExtension: true, boardName: BoardName.THARSIS});
+      const [game] = testGame(1, {automa: true, coloniesExtension: true, boardName: BoardName.THARSIS});
       const marsBot = getMarsBot(game);
       const luna = new Luna();
       luna.colonies = ['p1', 'p2', 'p3']; // MAX_COLONIES_PER_TILE = 3
@@ -42,7 +42,7 @@ describe('MarsBotColonyPlacer (C-15b, C-16a, C-19, C-24a)', () => {
     });
 
     it('excludes colonies where MarsBot already has one', () => {
-      const [game] = testGame(1, {automaOption: true, coloniesExtension: true, boardName: BoardName.THARSIS});
+      const [game] = testGame(1, {automa: true, coloniesExtension: true, boardName: BoardName.THARSIS});
       const marsBot = getMarsBot(game);
       const luna = new Luna();
       luna.colonies = [marsBot.player.id];
@@ -52,7 +52,7 @@ describe('MarsBotColonyPlacer (C-15b, C-16a, C-19, C-24a)', () => {
     });
 
     it('includes active, non-full colonies without MarsBot', () => {
-      const [game] = testGame(1, {automaOption: true, coloniesExtension: true, boardName: BoardName.THARSIS});
+      const [game] = testGame(1, {automa: true, coloniesExtension: true, boardName: BoardName.THARSIS});
       const marsBot = getMarsBot(game);
       const luna = new Luna();
       game.colonies = [luna];
@@ -63,7 +63,7 @@ describe('MarsBotColonyPlacer (C-15b, C-16a, C-19, C-24a)', () => {
 
   describe('selectRandomColony (C-15b method)', () => {
     it('uses card cost to index into eligible colonies', () => {
-      const [game] = testGame(1, {automaOption: true, coloniesExtension: true, boardName: BoardName.THARSIS});
+      const [game] = testGame(1, {automa: true, coloniesExtension: true, boardName: BoardName.THARSIS});
       const marsBot = getMarsBot(game);
       const luna = new Luna();
       const ceres = new Ceres();
@@ -82,7 +82,7 @@ describe('MarsBotColonyPlacer (C-15b, C-16a, C-19, C-24a)', () => {
     });
 
     it('discards the flipped card', () => {
-      const [game] = testGame(1, {automaOption: true, coloniesExtension: true, boardName: BoardName.THARSIS});
+      const [game] = testGame(1, {automa: true, coloniesExtension: true, boardName: BoardName.THARSIS});
       const marsBot = getMarsBot(game);
       game.colonies = [new Luna()];
       const discardBefore = game.projectDeck.discardPile.length;
@@ -91,7 +91,7 @@ describe('MarsBotColonyPlacer (C-15b, C-16a, C-19, C-24a)', () => {
     });
 
     it('returns undefined if no eligible colonies', () => {
-      const [game] = testGame(1, {automaOption: true, coloniesExtension: true, boardName: BoardName.THARSIS});
+      const [game] = testGame(1, {automa: true, coloniesExtension: true, boardName: BoardName.THARSIS});
       const marsBot = getMarsBot(game);
       game.colonies = []; // No colonies in game
       const colony = selectRandomColony(game, marsBot);
@@ -100,7 +100,7 @@ describe('MarsBotColonyPlacer (C-15b, C-16a, C-19, C-24a)', () => {
 
     it('handles 0-cost card without returning undefined (negative modulo fix)', () => {
       // JS: (0 - 1) % N = -1, so ((0-1) % N + N) % N = N-1 (last tile)
-      const [game] = testGame(1, {automaOption: true, coloniesExtension: true, boardName: BoardName.THARSIS});
+      const [game] = testGame(1, {automa: true, coloniesExtension: true, boardName: BoardName.THARSIS});
       const marsBot = getMarsBot(game);
       const luna = new Luna();
       const ceres = new Ceres();
@@ -116,7 +116,7 @@ describe('MarsBotColonyPlacer (C-15b, C-16a, C-19, C-24a)', () => {
 
   describe('placeColonyForMarsBot (C-19)', () => {
     it('adds MarsBot to colony.colonies array', () => {
-      const [game] = testGame(1, {automaOption: true, coloniesExtension: true, boardName: BoardName.THARSIS});
+      const [game] = testGame(1, {automa: true, coloniesExtension: true, boardName: BoardName.THARSIS});
       const marsBot = getMarsBot(game);
       const luna = new Luna();
       game.colonies = [luna];
@@ -125,7 +125,7 @@ describe('MarsBotColonyPlacer (C-15b, C-16a, C-19, C-24a)', () => {
     });
 
     it('adds 2 resources to shipping board instead of printed reward (C-19)', () => {
-      const [game] = testGame(1, {automaOption: true, coloniesExtension: true, boardName: BoardName.THARSIS});
+      const [game] = testGame(1, {automa: true, coloniesExtension: true, boardName: BoardName.THARSIS});
       const marsBot = getMarsBot(game);
       const luna = new Luna();
       game.colonies = [luna];
@@ -134,7 +134,7 @@ describe('MarsBotColonyPlacer (C-15b, C-16a, C-19, C-24a)', () => {
     });
 
     it('updates trackPosition if colonies.length exceeds it', () => {
-      const [game] = testGame(1, {automaOption: true, coloniesExtension: true, boardName: BoardName.THARSIS});
+      const [game] = testGame(1, {automa: true, coloniesExtension: true, boardName: BoardName.THARSIS});
       const marsBot = getMarsBot(game);
       const luna = new Luna();
       luna.trackPosition = 1;
@@ -147,7 +147,7 @@ describe('MarsBotColonyPlacer (C-15b, C-16a, C-19, C-24a)', () => {
 
   describe('Europa special case (C-24a)', () => {
     it('places ocean tile instead of 2 resources', () => {
-      const [game] = testGame(1, {automaOption: true, coloniesExtension: true, boardName: BoardName.THARSIS});
+      const [game] = testGame(1, {automa: true, coloniesExtension: true, boardName: BoardName.THARSIS});
       const marsBot = getMarsBot(game);
       const europa = new Europa();
       game.colonies = [europa];
@@ -158,7 +158,7 @@ describe('MarsBotColonyPlacer (C-15b, C-16a, C-19, C-24a)', () => {
     });
 
     it('adds MarsBot to Europa colonies', () => {
-      const [game] = testGame(1, {automaOption: true, coloniesExtension: true, boardName: BoardName.THARSIS});
+      const [game] = testGame(1, {automa: true, coloniesExtension: true, boardName: BoardName.THARSIS});
       const marsBot = getMarsBot(game);
       const europa = new Europa();
       game.colonies = [europa];
@@ -167,7 +167,7 @@ describe('MarsBotColonyPlacer (C-15b, C-16a, C-19, C-24a)', () => {
     });
 
     it('places the colony and takes a failed action if ocean maxed', () => {
-      const [game] = testGame(1, {automaOption: true, coloniesExtension: true, boardName: BoardName.THARSIS});
+      const [game] = testGame(1, {automa: true, coloniesExtension: true, boardName: BoardName.THARSIS});
       const marsBot = getMarsBot(game);
       const europa = new Europa();
       game.colonies = [europa];
@@ -185,7 +185,7 @@ describe('MarsBotColonyPlacer (C-15b, C-16a, C-19, C-24a)', () => {
 
   describe('Titan special case (C-23)', () => {
     it('without Venus Next: adds 2 to Titan storage', () => {
-      const [game] = testGame(1, {automaOption: true, coloniesExtension: true, boardName: BoardName.THARSIS});
+      const [game] = testGame(1, {automa: true, coloniesExtension: true, boardName: BoardName.THARSIS});
       const marsBot = getMarsBot(game);
       const titan = new Titan();
       game.colonies = [titan];
@@ -195,7 +195,7 @@ describe('MarsBotColonyPlacer (C-15b, C-16a, C-19, C-24a)', () => {
 
     it('with Venus Next: adds 2 floaters to floaters', () => {
       const [game] = testGame(1, {
-        automaOption: true,
+        automa: true,
         coloniesExtension: true,
         venusNextExtension: true,
         boardName: BoardName.THARSIS,
@@ -209,7 +209,7 @@ describe('MarsBotColonyPlacer (C-15b, C-16a, C-19, C-24a)', () => {
     });
 
     it('Titan storage overflow does NOT advance any track (C-23)', () => {
-      const [game] = testGame(1, {automaOption: true, coloniesExtension: true, boardName: BoardName.THARSIS});
+      const [game] = testGame(1, {automa: true, coloniesExtension: true, boardName: BoardName.THARSIS});
       const marsBot = getMarsBot(game);
       const titan = new Titan();
       game.colonies = [titan, new Luna()];

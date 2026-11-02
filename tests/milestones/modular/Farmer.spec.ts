@@ -4,9 +4,9 @@ import {Ants} from '../../../src/server/cards/base/Ants';
 import {Farmer} from '../../../src/server/milestones/modular/Farmer';
 import {TestPlayer} from '../../TestPlayer';
 import {testGame} from '../../TestGame';
-import {IMarsBot} from '../../../src/server/automa/MarsBotCorpTypes';
-import {MarsBotBoard} from '../../../src/server/automa/MarsBotBoard';
-import {THARSIS_MARSBOT_BOARD} from '../../../src/server/automa/boards/TharsisMarsBot';
+import {BoardName} from '../../../src/common/boards/BoardName';
+import {Tag} from '../../../src/common/cards/Tag';
+import {fakeMarsBot, setTrack} from '../../automa/FakeMarsBot';
 
 describe('Farmer', () => {
   let milestone: Farmer;
@@ -14,7 +14,7 @@ describe('Farmer', () => {
 
   beforeEach(() => {
     milestone = new Farmer();
-    player = TestPlayer.BLUE.newPlayer();
+    [/* game */, player] = testGame(1);
   });
 
   it('Can claim with 5 animals or microbes', () => {
@@ -32,15 +32,20 @@ describe('Farmer', () => {
     expect(milestone.canClaim(player)).is.true;
   });
 
-  it('MarsBot claims it at space 7 of its bio track', () => {
-    const board = new MarsBotBoard(THARSIS_MARSBOT_BOARD);
-    const bot = {game: testGame(1)[0], marsBotBoard: board} as unknown as IMarsBot;
-    for (let i = 0; i < 6; i++) {
-      board.tracks[6].advance();
-    }
-    expect(milestone.marsBotCanClaim(bot)).is.false;
+  it('MarsBot follows the Vastitas Borealis rule, except with the Milestones & Awards expansion', () => {
+    for (const run of [
+      {modularMA: false, tag: Tag.SCIENCE, position: 5, expected: false},
+      {modularMA: false, tag: Tag.SCIENCE, position: 6, expected: true},
+      {modularMA: false, tag: Tag.PLANT, position: 6, expected: true},
+      {modularMA: true, tag: Tag.SCIENCE, position: 6, expected: false},
+      {modularMA: true, tag: Tag.PLANT, position: 6, expected: false},
+      {modularMA: true, tag: Tag.PLANT, position: 7, expected: true},
+    ]) {
+      const [game] = testGame(1, {boardName: BoardName.VASTITAS_BOREALIS_NOVA, modularMA: run.modularMA});
+      const bot = {...fakeMarsBot(), game};
+      setTrack(bot, run.tag, run.position);
 
-    board.tracks[6].advance();
-    expect(milestone.marsBotCanClaim(bot)).is.true;
+      expect(milestone.marsBotCanClaim(bot), JSON.stringify(run)).eq(run.expected);
+    }
   });
 });

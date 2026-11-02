@@ -1,7 +1,7 @@
 <template>
   <div class="ma-block">
     <div class="ma-player" v-if="award.playerName">
-      <i :title="award.playerName" class="board-cube" :class="`board-cube--${award.color}`" ></i>
+      <i :title="award.playerName" class="board-cube" :class="`board-cube--${award.color}`"></i>
     </div>
 
     <div class="ma-name ma-name--awards award-block" :class="nameCss">
@@ -21,7 +21,7 @@
             v-text="score.score"
             data-test="player-score"
           ></p>
-      </template>
+        </template>
       </div>
     </div>
 
@@ -38,7 +38,6 @@ import {FundedAwardModel, AwardScore} from '@/common/models/FundedAwardModel';
 import {getAward} from '@/client/MilestoneAwardManifest';
 import {playerSymbol} from '@/client/utils/playerSymbol';
 import {Color} from '@/common/Color';
-import {marsBotAwardRule} from '@/common/automa/MarsBotMADescriptions';
 import {BoardName} from '@/common/boards/BoardName';
 import {fitTextWhenReady} from '@/client/utils/textFit';
 import {comparing, reversed} from '@/common/utils/Ordering';
@@ -103,7 +102,9 @@ export default defineComponent({
       return getAward(this.award.name).description;
     },
     automaRule(): string | undefined {
-      return marsBotAwardRule(this.award.name, this.automaMapSet);
+      const award = getAward(this.award.name);
+      const mapRule = this.automaMapSet === undefined ? undefined : award.automaMapDescriptions?.[this.automaMapSet];
+      return mapRule ?? award.automaDescription;
     },
   },
 });

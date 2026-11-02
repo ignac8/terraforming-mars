@@ -147,6 +147,14 @@
   color:black
 }
 
+// Looks like a selected button, but can't be clicked. Only appears from JSON import.
+.create-game-page-column label.create-game-manual-ma,
+.create-game-page-column label.create-game-manual-ma:hover {
+  background-color: rgb(199, 199, 199);
+  color: black;
+  cursor: default;
+}
+
 .create-game-page-column .create-game-board-hexagon {
   font-size: 30px;
   vertical-align: top;
@@ -212,7 +220,7 @@
 
 .create-game-page-color-row {
   display: flex;
-  flex-flow: row nowrap;
+  flex-flow: row wrap;
   margin-top: 10px;
 }
 
@@ -465,6 +473,24 @@
   font-size: 1.5em;
   line-height: 1;
   vertical-align: middle;
+}
+
+// The error/warning icon replaces the bullet.
+.create-game-validation-problems {
+  list-style: none;
+  padding-left: 0;
+
+  > li {
+    margin-bottom: 0.5em;
+  }
+
+  ul {
+    list-style: disc;
+  }
+}
+
+.create-game-validation-icon {
+  margin-right: 0.4em;
 }
 
 // Size the popup to its content rather than PopupPanel's fixed 90vw x 90vh.

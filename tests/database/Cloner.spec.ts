@@ -2,8 +2,9 @@ import {expect} from 'chai';
 import {Cloner} from '../../src/server/database/Cloner';
 import {Game} from '../../src/server/Game';
 import {Player} from '../../src/server/Player';
-import {GameId, PlayerId} from '../../src/common/Types';
+import {Turmoil} from '../../src/server/turmoil/Turmoil';
 import {DELEGATES_PER_PLAYER} from '../../src/common/constants';
+import {GameId, PlayerId} from '../../src/common/Types';
 import {PartyName} from '../../src/common/turmoil/PartyName';
 
 describe('Cloner', () => {
@@ -71,6 +72,22 @@ describe('Cloner', () => {
     // This test will pass now that space players have been separately verified.
     expect(game.board).to.deep.eq(newGame.board);
   });
+
+  it('automa game keeps MarsBot\'s delegates', () => {
+    const player = new Player('old-player1', 'yellow', false, 0, 'p-old-player1-id');
+    const game = Game.newInstance(
+      'g-old-game-id', [player], player, 'spectatorid', {
+        automa: true,
+        turmoilExtension: true,
+      });
+
+    const newPlayer = new Player('new-player1', 'red', false, 0, 'p-new-player1-id');
+    const newGame = Cloner.clone('g-new-id', [newPlayer], 0, game.serialize());
+
+    const marsBot = newGame.marsBotPlayer!;
+    expect(marsBot.id).eq('p-g-new-id-marsbot');
+    expect(Turmoil.getTurmoil(newGame).delegateReserve.get(marsBot)).eq(DELEGATES_PER_PLAYER);
+  });
 });
 
 describe('Cloner, automa games', () => {
@@ -79,7 +96,7 @@ describe('Cloner, automa games', () => {
   function soloAutomaGame(gameId: GameId, playerId: PlayerId) {
     const player = new Player('old-player1', 'yellow', false, 0, playerId);
     return Game.newInstance(gameId, [player], player, 'spectatorid', {
-      automaOption: true,
+      automa: true,
       turmoilExtension: true,
       coloniesExtension: true,
       preludeExtension: true,
@@ -141,6 +158,21 @@ describe('Cloner, automa games', () => {
     // them has to be remapped, in the log as well.
     const oldPlayerIds = ['p-old-player1-id', 'p-g-old-game-id-marsbot'];
     expect(pathsHolding({...state, gameLog}, oldPlayerIds), 'player ids').deep.eq([]);
+  });
+
+  it('does not carry the table state into a clone', () => {
+    const player = new Player('old-player1', 'yellow', false, 0, 'p-old-player1-id');
+    const game = Game.newInstance('g-old-game-id', [player], player, 'spectatorid');
+    game.frozen = true;
+    game.rewindVote = {id: 1, requester: player.id, saveId: 0, moveNumber: 1, generation: game.generation, cards: 'same', yes: [player.id], status: 'open', expiresAt: 1};
+    game.rewindRequestLimits = {generation: game.generation, players: [player.id]};
+
+    const newPlayer = new Player('new-player1', 'red', false, 0, 'p-new-player1-id');
+    const clone = Cloner.clone('g-new-id', [newPlayer], 0, game.serialize());
+
+    expect(clone.frozen).is.false;
+    expect(clone.rewindVote).is.undefined;
+    expect(clone.rewindRequestLimits).is.undefined;
   });
 });
 

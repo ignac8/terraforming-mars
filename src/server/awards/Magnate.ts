@@ -2,11 +2,12 @@
 import {IAward} from './IAward';
 import {IPlayer} from '../IPlayer';
 import {CardType} from '../../common/cards/CardType';
-import {IMarsBot} from '../automa/MarsBotCorpTypes';
+import {IMarsBot} from '../automa/IMarsBot';
 
 export class Magnate implements IAward {
   public readonly name = 'Magnate';
   public readonly description = 'Have the most automated (green) project cards in play';
+  public readonly automaDescription = 'Green cards in played pile';
   public getScore(player: IPlayer): number {
     return player.playedCards
       .filter((card) => card.type === CardType.AUTOMATED).length;

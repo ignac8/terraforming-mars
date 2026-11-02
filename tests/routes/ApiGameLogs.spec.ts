@@ -1,6 +1,7 @@
 import {expect} from 'chai';
 import {ApiGameLogs} from '../../src/server/routes/ApiGameLogs';
 import {Game} from '../../src/server/Game';
+import {IGame} from '../../src/server/IGame';
 import {TestPlayer} from '../TestPlayer';
 import {MockResponse} from './HttpMocks';
 import {RouteTestScaffolding} from './RouteTestScaffolding';
@@ -8,6 +9,9 @@ import {use} from 'chai';
 import chaiAsPromised from 'chai-as-promised';
 import {testGame} from '@tests/TestGame';
 import {statusCode} from '@/common/http/statusCode';
+import {Phase} from '@/common/Phase';
+import {GameLogs} from '@/server/routes/GameLogs';
+import {BoardName} from '@/common/boards/BoardName';
 use(chaiAsPromised);
 
 describe('ApiGameLogs', () => {
@@ -94,6 +98,21 @@ describe('ApiGameLogs', () => {
     expect(messages[messages.length - 1].data[0].value).eq('1');
   });
 
+  it('pulls a generation from a log with holes', async () => {
+    const [game, player] = testGame(1);
+    await scaffolding.ctx.gameLoader.add(game);
+    game.gameLog.length = 0;
+    game.log('Generation ${0}', (b) => b.forNewGeneration().number(1));
+    game.gameLog.length = 2;
+    game.log('After the hole');
+
+    scaffolding.url = '/api/game/logs?id=' + player.id + '&generation=1';
+    await scaffolding.get(ApiGameLogs.INSTANCE, res);
+
+    expect(res.statusCode).eq(statusCode.ok);
+    expect(JSON.parse(res.content).map((m: {message: string}) => m.message)).deep.eq(['Generation ${0}', 'After the hole']);
+  });
+
   it('pulls logs for missing generation', async () => {
     const [game, player] = testGame(1);
     scaffolding.url = '/api/game/logs?id=' + player.id + '&generation=2';
@@ -101,6 +120,36 @@ describe('ApiGameLogs', () => {
     await scaffolding.get(ApiGameLogs.INSTANCE, res);
     const messages = JSON.parse(res.content);
     expect(messages).is.empty;
+  });
+
+  for (const query of ['', '&generation=1']) {
+    for (const viewer of ['player', 'spectator'] as const) {
+      it(`hides the abandoned lines of a rewind from the ${viewer}${query}`, async () => {
+        const [game, player] = testGame(1);
+        await scaffolding.ctx.gameLoader.add(game);
+        game.gameLog.length = 0;
+        for (let i = 0; i < 5; i++) {
+          game.log(`Log ${i}`);
+        }
+        game.rewinds = [{saveId: 3, restoredSaveId: 1, logStart: 1, logEnd: 3}];
+
+        scaffolding.url = '/api/game/logs?id=' + (viewer === 'spectator' ? game.spectatorId : player.id) + query;
+        await scaffolding.get(ApiGameLogs.INSTANCE, res);
+        expect(JSON.parse(res.content).map((m: {message: string}) => m.message)).deep.eq(['Log 0', 'Log 3', 'Log 4']);
+      });
+    }
+  }
+
+  it('hides the abandoned lines of a rewind from the end of game log', () => {
+    const [game] = testGame(1);
+    game.gameLog.length = 0;
+    for (let i = 0; i < 5; i++) {
+      game.log(`Log ${i}`);
+    }
+    game.rewinds = [{saveId: 3, restoredSaveId: 1, logStart: 1, logEnd: 3}];
+    game.phase = Phase.END;
+
+    expect(new GameLogs().getLogsForGameEnd(game)).deep.eq(['Log 0', 'Log 3', 'Log 4']);
   });
 
   [{idx: 0, color: 'Yellow'}, {idx: 1, color: 'Orange'}, {idx: 2, color: 'Blue'}].forEach((entry) => {
@@ -129,6 +178,125 @@ describe('ApiGameLogs', () => {
       expect(messages).has.length(2);
       expect(messages[0].message).eq('All players see this.');
       expect(messages[1].message).eq(`${entry.color} player sees this.`);
+    });
+  });
+
+  describe('private lines', () => {
+    let yellowPlayer: TestPlayer;
+    let orangePlayer: TestPlayer;
+    let game: IGame;
+
+    beforeEach(async () => {
+      yellowPlayer = TestPlayer.YELLOW.newPlayer();
+      orangePlayer = TestPlayer.ORANGE.newPlayer();
+      game = Game.newInstance('game-id', [yellowPlayer, orangePlayer], yellowPlayer, 'spectatorid');
+      await scaffolding.ctx.gameLoader.add(game);
+      game.gameLog.length = 0;
+      game.log('Generation ${0}', (b) => b.forNewGeneration().number(1));
+      game.log('All players see this.');
+      game.log('Yellow only.', (_b) => {}, {reservedFor: yellowPlayer});
+      game.log('Orange only.', (_b) => {}, {reservedFor: orangePlayer});
+    });
+
+    async function read(id: string, query: string = '') {
+      res = new MockResponse();
+      scaffolding.url = '/api/game/logs?id=' + id + query;
+      await scaffolding.get(ApiGameLogs.INSTANCE, res);
+      expect(res.statusCode, id).eq(statusCode.ok);
+      return JSON.parse(res.content) as Array<{message: string, owner?: string, playerId?: string}>;
+    }
+
+    const texts = (messages: Array<{message: string}>) => messages.map((m) => m.message).filter((m) => !m.startsWith('Generation'));
+
+    it('keeps them from the other viewers of a running game', async () => {
+      expect(texts(await read(yellowPlayer.id))).deep.eq(['All players see this.', 'Yellow only.']);
+      expect(texts(await read(orangePlayer.id))).deep.eq(['All players see this.', 'Orange only.']);
+      expect(texts(await read(game.spectatorId))).deep.eq(['All players see this.']);
+    });
+
+    it('shows them to every viewer once the game has ended, each marked with its owner', async () => {
+      game.phase = Phase.END;
+
+      for (const id of [yellowPlayer.id, orangePlayer.id, game.spectatorId]) {
+        const messages = await read(id);
+        expect(texts(messages), id).deep.eq(['All players see this.', 'Yellow only.', 'Orange only.']);
+        expect(messages.map((m) => m.owner), id).deep.eq([undefined, undefined, yellowPlayer.color, orangePlayer.color]);
+        expect(messages.some((m) => m.playerId !== undefined), id).is.false;
+      }
+      // The stored log keeps its player ids.
+      expect(game.gameLog.map((m) => m.playerId)).deep.eq([undefined, undefined, yellowPlayer.id, orangePlayer.id]);
+    });
+
+    it('shows them for the generation that was asked for, once the game has ended', async () => {
+      game.phase = Phase.END;
+      for (const id of [yellowPlayer.id, game.spectatorId]) {
+        expect(texts(await read(id, '&generation=1')), id).deep.eq(['All players see this.', 'Yellow only.', 'Orange only.']);
+        expect(await read(id, '&generation=2'), id).is.empty;
+      }
+    });
+
+    it('does not show them to a viewer of a game that a rewind opened again', async () => {
+      game.phase = Phase.END;
+      expect(texts(await read(game.spectatorId))).includes('Orange only.');
+
+      game.phase = Phase.ACTION;
+
+      expect(texts(await read(game.spectatorId))).deep.eq(['All players see this.']);
+      expect(texts(await read(yellowPlayer.id))).deep.eq(['All players see this.', 'Yellow only.']);
+    });
+  });
+
+  it('marks a line reserved for MarsBot with its color once the game has ended', async () => {
+    const [game, player] = testGame(1, {automa: true, boardName: BoardName.THARSIS});
+    await scaffolding.ctx.gameLoader.add(game);
+    game.gameLog.length = 0;
+    game.log('MarsBot only.', (_b) => {}, {reservedFor: game.marsBotPlayer});
+    game.phase = Phase.END;
+
+    scaffolding.url = '/api/game/logs?id=' + player.id;
+    await scaffolding.get(ApiGameLogs.INSTANCE, res);
+
+    const messages = JSON.parse(res.content);
+    expect(messages.map((m: any) => m.message)).deep.eq(['MarsBot only.']);
+    expect(messages[0].owner).eq(game.marsBotPlayer!.color);
+    expect(messages[0].playerId).is.undefined;
+  });
+
+  describe('the lines a rewind hid', () => {
+    // A rewind of a game that was in generation 2 hid lines 2 and 3, which started generation 3.
+    async function rewound() {
+      const [game, first] = testGame(2, {undoOption: true});
+      await scaffolding.ctx.gameLoader.add(game);
+      game.gameLog.length = 0;
+      game.log('Generation ${0}', (b) => b.forNewGeneration().number(2));
+      game.log('Line 1');
+      game.log('Generation ${0}', (b) => b.forNewGeneration().number(3));
+      game.log('Line 3');
+      game.log('Rewound');
+      game.log('Line 5');
+      game.rewinds = [{saveId: 3, restoredSaveId: 1, logStart: 2, logEnd: 4}];
+      return {game, first};
+    }
+
+    async function read(query: string) {
+      res = new MockResponse();
+      scaffolding.url = '/api/game/logs?' + query;
+      await scaffolding.get(ApiGameLogs.INSTANCE, res);
+    }
+
+    const texts = (): Array<string> => JSON.parse(res.content).map((m: {message: string}) => m.message);
+
+    it('hides them from a player and a spectator, also in the generation they would have started', async () => {
+      const {game, first} = await rewound();
+      for (const viewer of [first.id, game.spectatorId]) {
+        for (const generation of ['', '&generation=2']) {
+          await read(`id=${viewer}${generation}`);
+          expect(res.statusCode, viewer + generation).eq(statusCode.ok);
+          expect(texts(), viewer + generation).deep.eq(['Generation ${0}', 'Line 1', 'Rewound', 'Line 5']);
+        }
+        await read(`id=${viewer}&generation=3`);
+        expect(texts(), viewer).is.empty;
+      }
     });
   });
 });

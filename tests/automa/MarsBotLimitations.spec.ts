@@ -14,7 +14,7 @@ import {NuclearZone} from '../../src/server/cards/base/NuclearZone';
 import {IProjectCard} from '../../src/server/cards/IProjectCard';
 
 function createAutomaGame(difficulty: 'easy' | 'normal' | 'hard' | 'brutal' = 'normal'): {game: IGame, human: TestPlayer, marsBot: MarsBot} {
-  const [game, human] = testGame(1, {automaOption: true, automaDifficulty: difficulty, boardName: BoardName.THARSIS});
+  const [game, human] = testGame(1, {automa: true, automaDifficulty: difficulty, boardName: BoardName.THARSIS});
   return {game, human, marsBot: game.automaHooks!.marsBot};
 }
 
@@ -186,7 +186,7 @@ describe('MarsBot Limitations Fixed', () => {
     it('serialize includes bonus deck state', () => {
       const {marsBot} = createAutomaGame();
       const state = marsBot.serialize();
-      expect(state.bonusDeckDrawPile.length).to.be.lte(8);
+      expect(state.bonusDeck.drawPile.length).to.be.lte(8);
     });
 
     it('serialize includes regressed positions', () => {

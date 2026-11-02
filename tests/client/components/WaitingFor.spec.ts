@@ -3,16 +3,18 @@ import {defineComponent} from 'vue';
 import {globalConfig} from './getLocalVue';
 import {expect} from 'chai';
 import {afterEach, vi} from 'vitest';
+import {SoundManager} from '@/client/utils/SoundManager';
 import WaitingFor from '@/client/components/WaitingFor.vue';
 import {RecursivePartial} from '@/common/utils/utils';
 import {PlayerViewModel, PublicPlayerModel} from '@/common/models/PlayerModel';
+import {WaitingForModel} from '@/common/models/WaitingForModel';
 import {Phase} from '@/common/Phase';
-import {STALE_VIEW} from '@/common/app/AppErrorId';
+import {INVALID_REQUEST_ID} from '@/common/app/AppErrorId';
 
 describe('WaitingFor', () => {
   const thisPlayer: Partial<PublicPlayerModel> = {
     color: 'red',
-  } as any;
+  };
 
   const playerView: RecursivePartial<PlayerViewModel> = {
     id: 'p-player-id',
@@ -64,81 +66,6 @@ describe('WaitingFor', () => {
       },
     });
     expect(wrapper.text()).to.include('Not your turn');
-  });
-
-  type Alert = {title: string, message: string};
-
-  // Mounts WaitingFor with the root hooks `fetchPlayerInput` reaches for, and a
-  // fetch stub. Alerts are dismissed immediately, as if the player clicked OK.
-  function mountForSubmit(fetchResult: () => Promise<unknown>) {
-    const wrapper = shallowMount(WaitingFor, {
-      ...globalConfig,
-      global: {
-        ...globalConfig.global,
-        stubs: {
-          'PlayerInputFactory': true,
-        },
-      },
-      props: {
-        playerView: playerView as PlayerViewModel,
-        players: [thisPlayer as PublicPlayerModel],
-        waitingfor: {
-          type: 'option',
-          title: 'test',
-          buttonLabel: 'save',
-        },
-      },
-    });
-    const alerts: Array<Alert> = [];
-    let refreshes = 0;
-    const root = wrapper.vm.$root as any;
-    root.isServerSideRequestInProgress = false;
-    root.showAlert = (title: string, message: string, cb: () => void = () => {}) => {
-      alerts.push({title, message});
-      cb();
-    };
-    root.updatePlayer = () => refreshes++;
-    const originalFetch = global.fetch;
-    global.fetch = fetchResult as unknown as typeof global.fetch;
-    const submit = async () => {
-      try {
-        (wrapper.vm as any).onsave({type: 'option'});
-        await flushPromises();
-      } finally {
-        global.fetch = originalFetch;
-      }
-      return {alerts, refreshes};
-    };
-    return submit;
-  }
-
-  it('refreshes the player view when the server reports a stale view', async () => {
-    const submit = mountForSubmit(() => Promise.resolve({
-      ok: false,
-      status: 400,
-      json: () => Promise.resolve({id: STALE_VIEW, message: 'stale'}),
-    }));
-    const {alerts, refreshes} = await submit();
-    expect(alerts).deep.eq([{title: 'Error with input', message: 'stale'}]);
-    expect(refreshes).eq(1);
-  });
-
-  it('refreshes the player view when the submission never gets an answer', async () => {
-    const submit = mountForSubmit(() => Promise.reject(new Error('connection reset')));
-    const {alerts, refreshes} = await submit();
-    expect(alerts).has.length(1);
-    expect(refreshes).eq(1);
-  });
-
-  it('keeps the current view on an ordinary input error', async () => {
-    const submit = mountForSubmit(() => Promise.resolve({
-      ok: false,
-      status: 400,
-      json: () => Promise.resolve({id: undefined, message: 'Not enough cards selected'}),
-    }));
-    const {alerts, refreshes} = await submit();
-    expect(alerts).deep.eq([{title: 'Error with input', message: 'Not enough cards selected'}]);
-    expect(refreshes).eq(0);
   });
 
   const draftingView = (): PlayerViewModel => ({
@@ -262,7 +189,7 @@ describe('WaitingFor', () => {
       },
       props: {
         playerView,
-        waitingfor: {type: 'option', title: 'test', buttonLabel: 'save'} as any,
+        waitingfor: {type: 'option', title: 'test', buttonLabel: 'save'},
       },
     });
   }
@@ -290,5 +217,201 @@ describe('WaitingFor', () => {
 
     expect(urls).has.length(1);
     expect(urls[0]).includes('api/waitingfor');
+  });
+
+  // Submits a response from a page showing an input with request id `request-1`, and the server
+  // answers with `answer`. Alerts are dismissed at once, as if the player clicked OK.
+  async function submit(answer: Partial<Response>) {
+    const fetchStub = vi.fn(async (_url: string, _options: {body: string}) => answer as Response);
+    vi.stubGlobal('fetch', fetchStub);
+    const wrapper = shallowMount(WaitingFor, {
+      ...globalConfig,
+      global: {...globalConfig.global, stubs: {'PlayerInputFactory': true}},
+      props: {
+        playerView: playerView as PlayerViewModel,
+        waitingfor: {type: 'option', title: 'test', buttonLabel: 'save'},
+        requestId: 'request-1',
+      },
+    });
+    const root = wrapper.vm.$root as any;
+    root.showAlert = (_title: string, _message: string, cb: () => void = () => {}) => cb();
+    (wrapper.vm as any).onsave({type: 'option'});
+    await flushPromises();
+    return fetchStub;
+  }
+
+  function inputError(id: string | undefined): Partial<Response> {
+    return {ok: false, status: 400, json: async () => ({id, message: 'error'})};
+  }
+
+  it('sends the request id with the response', async () => {
+    const fetchStub = await submit(inputError(undefined));
+
+    expect(JSON.parse(fetchStub.mock.calls[0][1].body)).deep.eq({type: 'option', requestId: 'request-1'});
+  });
+
+  it('reloads the page when the response was for an earlier input', async () => {
+    vi.useFakeTimers({toFake: ['setTimeout']});
+    await submit(inputError(INVALID_REQUEST_ID));
+
+    expect(vi.getTimerCount()).eq(1);
+  });
+
+  it('keeps the page on an ordinary input error', async () => {
+    vi.useFakeTimers({toFake: ['setTimeout']});
+    await submit(inputError(undefined));
+
+    expect(vi.getTimerCount()).eq(0);
+  });
+
+  // Answers every poll the same way and counts them.
+  function stubPolls(pollStatus: number, pollResponse?: WaitingForModel) {
+    const polls = {count: 0};
+    vi.stubGlobal('XMLHttpRequest', class {
+      status = pollStatus;
+      response = pollResponse;
+      onload = () => {};
+      open() {}
+      send() {
+        polls.count++;
+        this.onload();
+      }
+    });
+    return polls;
+  }
+
+  // `rootMethods` stand in for the App methods WaitingFor calls through vueRoot.
+  function mountSpectator(rootMethods: Record<string, unknown>) {
+    const spectator = {id: 's-spectator-id', players: [], game: {phase: Phase.ACTION, gameAge: 1, undoCount: 0}};
+    return mount(WaitingFor, {
+      ...globalConfig,
+      global: {...globalConfig.global, stubs: {'PlayerInputFactory': true}, mocks: rootMethods},
+      props: {playerView: spectator as unknown as PlayerViewModel},
+    });
+  }
+
+  it('keeps polling after a failed refresh', async () => {
+    vi.useFakeTimers();
+    const polls = stubPolls(200, {result: 'REFRESH', waitingFor: []});
+    // The spectator fetch fails, so the view never changes.
+    mountSpectator({updateSpectator: async () => false});
+
+    await vi.advanceTimersByTimeAsync(2500);
+
+    expect(polls.count).eq(2);
+  });
+
+  it('retries failed polls quietly before alerting', async () => {
+    vi.useFakeTimers();
+    const polls = stubPolls(502);
+    const showAlert = vi.fn();
+    mountSpectator({showAlert});
+
+    await vi.advanceTimersByTimeAsync(5500);
+    expect(polls.count).eq(5);
+    expect(showAlert.mock.calls).is.empty;
+
+    await vi.advanceTimersByTimeAsync(30000);
+    expect(showAlert.mock.calls).has.length(1);
+  });
+
+  describe('at a required prompt', () => {
+    const requiredPrompt = {type: 'option', title: 'test', buttonLabel: 'save'} as any;
+
+    function viewWith(): PlayerViewModel {
+      return {
+        id: 'p-player-id',
+        thisPlayer: {color: 'red'},
+        players: [{color: 'red'}, {color: 'blue'}],
+        game: {phase: Phase.ACTION, gameAge: 1, undoCount: 0},
+      } as unknown as PlayerViewModel;
+    }
+
+    // `rootMethods` stand in for the App methods WaitingFor calls through vueRoot.
+    function mountAt(view: PlayerViewModel, waitingfor: unknown, rootMethods: Record<string, unknown> = {}) {
+      return mount(WaitingFor, {
+        ...globalConfig,
+        global: {...globalConfig.global, stubs: {'PlayerInputFactory': PlayerInputFactoryStub}, mocks: rootMethods},
+        props: {playerView: view, waitingfor: waitingfor as any},
+      });
+    }
+
+    // Counts the turn cues. Each one plays the sound and shows a notification.
+    function stubTurnCue() {
+      vi.spyOn(SoundManager, 'playActivePlayerSound').mockImplementation(() => {});
+      let notifications = 0;
+      vi.stubGlobal('Notification', class {
+        static permission = 'granted';
+        constructor() {
+          notifications++;
+        }
+      });
+      return {cues: () => notifications};
+    }
+
+    // Holds each poll on the wire until the test answers it, so the page can change while a poll is in flight.
+    function holdPolls() {
+      const inFlight: Array<(answer: WaitingForModel) => void> = [];
+      vi.stubGlobal('XMLHttpRequest', class {
+        status = 200;
+        response: WaitingForModel | undefined = undefined;
+        onload = () => {};
+        open() {}
+        send() {
+          inFlight.push((answer) => {
+            this.response = answer;
+            this.onload();
+          });
+        }
+      });
+      return inFlight;
+    }
+
+    it('plays the turn cue when a refresh brings back a turn', async () => {
+      vi.useFakeTimers();
+      stubPolls(200, {result: 'REFRESH', waitingFor: []});
+      const turn = stubTurnCue();
+      const resumed = {...viewWith(), waitingFor: requiredPrompt};
+      let swapped = false;
+      // The page has no prompt, so it polls.
+      const wrapper = mountAt(viewWith(), undefined, {
+        updatePlayer: async () => {
+          if (swapped) {
+            return false;
+          }
+          swapped = true;
+          // What App does with a fetched view.
+          (wrapper.vm.$root as any).playerView = resumed;
+          await wrapper.setProps({playerView: resumed, waitingfor: requiredPrompt});
+          return true;
+        },
+      });
+
+      await vi.advanceTimersByTimeAsync(5000);
+
+      expect(turn.cues()).eq(1);
+    });
+
+    it('plays no turn cue when a refresh finds the player already at a prompt', async () => {
+      vi.useFakeTimers();
+      const inFlight = holdPolls();
+      const turn = stubTurnCue();
+      const view = viewWith();
+      const updatePlayer = vi.fn(async () => {
+        // What App does with a fetched view.
+        (wrapper.vm.$root as any).playerView = {...view, waitingFor: requiredPrompt};
+        return true;
+      });
+      const wrapper = mountAt(view, {...requiredPrompt, optional: true}, {updatePlayer});
+
+      // A poll for the optional prompt is on the wire when the player's own answer comes back with a prompt they must answer.
+      await vi.advanceTimersByTimeAsync(1000);
+      expect(inFlight).has.length(1);
+      await wrapper.setProps({playerView: {...view}, waitingfor: requiredPrompt});
+      inFlight[0]({result: 'REFRESH', waitingFor: []});
+      await flushPromises();
+
+      expect(turn.cues()).eq(0);
+    });
   });
 });

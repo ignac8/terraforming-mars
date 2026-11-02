@@ -33,15 +33,17 @@ class RedsBonus01 implements IBonus {
     if (game.isSoloMode()) {
       const player = game.players[0];
       if (player.terraformRating <= 20) {
-        player.increaseTerraformRating();
+        player.increaseTerraformRating(1, {log: true, from: {partyName: PartyName.REDS}});
       }
       return;
     }
-    const min = Math.min(...game.players.map((p) => p.terraformRating));
+    // MarsBot's TR counts towards the lowest. MarsBot itself never gains the TR, so when it alone
+    // has the lowest, nobody does (automa rulebook C).
+    const min = Math.min(...game.playersPlusMarsBot.map((p) => p.terraformRating));
 
     game.players.forEach((player) => {
       if (player.terraformRating === min) {
-        player.increaseTerraformRating();
+        player.increaseTerraformRating(1, {log: true, from: {partyName: PartyName.REDS}});
       }
     });
   }
@@ -59,15 +61,17 @@ class RedsBonus02 implements IBonus {
     if (game.isSoloMode()) {
       const player = game.players[0];
       if (player.terraformRating > 20) {
-        player.decreaseTerraformRating();
+        player.decreaseTerraformRating(1, {log: true});
       }
       return;
     }
-    const max = Math.max(...game.players.map((p) => p.terraformRating));
+    // MarsBot's TR counts towards the highest. MarsBot itself never loses the TR, so when it alone
+    // has the highest, nobody does (automa rulebook C).
+    const max = Math.max(...game.playersPlusMarsBot.map((p) => p.terraformRating));
 
     game.players.forEach((player) => {
       if (player.terraformRating === max) {
-        player.decreaseTerraformRating();
+        player.decreaseTerraformRating(1, {log: true});
       }
     });
   }

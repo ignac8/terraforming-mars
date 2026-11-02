@@ -29,7 +29,7 @@ import {addGreenery, runAllActions} from '../TestingUtils';
 import {cast} from '../../src/common/utils/utils';
 
 function createAutomaGame(): {game: IGame, human: TestPlayer, marsBot: MarsBot} {
-  const [game, human] = testGame(1, {automaOption: true, automaDifficulty: 'normal', boardName: BoardName.THARSIS});
+  const [game, human] = testGame(1, {automa: true, automaDifficulty: 'normal', boardName: BoardName.THARSIS});
   return {game, human, marsBot: game.automaHooks!.marsBot};
 }
 
@@ -206,7 +206,7 @@ describe('MarsBot Resource Interaction (rules page 4-5)', () => {
       const {human, marsBot} = createAutomaGame();
       marsBot.marsBotBoard.tracks[0].advance();
       marsBot.marsBotBoard.tracks[0].advance();
-      const targets = human.game.allPlayers.filter((p) => p.canHaveProductionReduced(Resource.STEEL, 1, human));
+      const targets = human.game.playersPlusMarsBot.filter((p) => p.canHaveProductionReduced(Resource.STEEL, 1, human));
       expect(targets).to.include(marsBot.player);
     });
 
@@ -314,7 +314,7 @@ describe('MarsBot Resource Interaction (rules page 4-5)', () => {
     for (const {name, action} of cards) {
       it(name, () => {
         const [game, human] = testGame(1, {
-          automaOption: true, automaDifficulty: 'normal', boardName: BoardName.THARSIS,
+          automa: true, automaDifficulty: 'normal', boardName: BoardName.THARSIS,
           venusNextExtension: true, coloniesExtension: true, turmoilExtension: true, promoCardsOption: true, prelude2Expansion: true,
         });
         const marsBot = game.automaHooks!.marsBot;

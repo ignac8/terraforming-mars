@@ -10,7 +10,7 @@ import {DifficultyLevel, BonusCardId, TrackDefinition, getAutomaMaxGeneration} f
 import {Tag} from '../../common/cards/Tag';
 import {currentMcPerVP} from './MarsBotScoring';
 import {MarsBotBoard} from './MarsBotBoard';
-import {marsBotCardTags} from './MarsBotTags';
+import {cardTagsIncludingEvent} from './MarsBotTags';
 import {MarsBotModel} from '../../common/models/MarsBotModel';
 import {MarsBotBonusCard, MarsBotBonusDeckCard, bonusCardDisplayName, createCorpBonusCard} from './MarsBotBonusCard';
 import {MarsBotBonusDeck} from './MarsBotBonusDeck';
@@ -21,9 +21,12 @@ import {MarsBotScoring, MarsBotVPBreakdown} from './MarsBotScoring';
 import {Space} from '../boards/Space';
 import {Random} from '../../common/utils/Random';
 import {inplaceShuffle} from '../utils/shuffle';
-import {IMarsBot, IMarsBotCorp, MarsBotTrackCube, trackCubeKey} from './MarsBotCorpTypes';
+import {IMarsBot} from './IMarsBot';
+import {IMarsBotCorp} from './IMarsBotCorp';
+import {trackCubeKey} from './corpTrackCubes';
+import {MarsBotTrackCube} from './MarsBotCorpTypes';
 import {MarsBotShippingBoard} from './colonies/MarsBotShippingBoard';
-import {selectRandomColony, placeColonyForMarsBot} from './colonies/MarsBotColonyPlacer';
+import {eligibleColoniesForMarsBot, selectRandomColony, placeColonyForMarsBot} from './colonies/MarsBotColonyPlacer';
 import {MarsBotCorpResolver} from './corps/MarsBotCorpResolver';
 import {getMarsBotCorp} from './corps/MarsBotCorpRegistry';
 import {SerializedAutomaState} from '../SerializedGame';
@@ -39,6 +42,12 @@ const SET_ASIDE_BONUS_CARDS: ReadonlySet<BonusCardId> = new Set([
   BonusCardId.B20_EXTENDED_SHIPPING_LINES,
   BonusCardId.B21_PARTY_POLITICS,
 ]);
+
+/** The name of a card in an older save's bonus deck, which stores bonus cards by id. */
+function bonusDeckCardName(idOrName: string): CardName {
+  const isId = Object.values(BonusCardId).includes(idOrName as BonusCardId);
+  return isId ? createCorpBonusCard(idOrName as BonusCardId).name : idOrName as CardName;
+}
 
 /**
  * MarsBot: the automa manager. Owns the board, decks, and coordinates turns.
@@ -143,10 +152,14 @@ export class MarsBot implements IMarsBot {
     boardData: ReadonlyArray<TrackDefinition>,
     public readonly difficulty: DifficultyLevel,
     private readonly random: Random,
+    /** True when a save is loaded: restoreState fills the bonus deck, so it starts empty. */
+    restoring: boolean = false,
   ) {
     this.marsBotBoard = new MarsBotBoard(boardData);
     const opts = game.gameOptions;
-    if (opts.coloniesExtension && opts.venusNextExtension) {
+    if (restoring) {
+      this.bonusDeck = new MarsBotBonusDeck([], [], random);
+    } else if (opts.coloniesExtension && opts.venusNextExtension) {
       this.bonusDeck = MarsBotBonusDeck.createWithVenusAndColonies(random);
     } else if (opts.coloniesExtension) {
       this.bonusDeck = MarsBotBonusDeck.createWithColonies(random);
@@ -162,7 +175,7 @@ export class MarsBot implements IMarsBot {
         this.tradeFleetCubeKey = trackCubeKey(energyTrackIdx, 9);
       }
     }
-    this.tilePlacer = new MarsBotTilePlacer(game, player, humanPlayer);
+    this.tilePlacer = new MarsBotTilePlacer(game, player, humanPlayer, this);
     this.turnResolver = new MarsBotTurnResolver(
       game, player, humanPlayer, this.marsBotBoard, difficulty, 0, this.tilePlacer,
     );
@@ -469,7 +482,7 @@ export class MarsBot implements IMarsBot {
   }
 
   public addProjectCardsToBonusDeck(tag: Tag, count: number): void {
-    const cards = this.game.projectDeck.drawByConditionOrThrow(this.game, count, (card) => marsBotCardTags(card).includes(tag));
+    const cards = this.game.projectDeck.drawByConditionOrThrow(this.game, count, (card) => cardTagsIncludingEvent(card).includes(tag));
     for (const card of cards) {
       this.shuffleIntoBonusDeck(card);
       this.game.log('MarsBot adds ${0} to its bonus deck', (b) => b.card(card));
@@ -650,10 +663,14 @@ export class MarsBot implements IMarsBot {
     return true;
   }
 
+  public canPlaceColony(): boolean {
+    return eligibleColoniesForMarsBot(this.game, this).length > 0;
+  }
+
   public maybeDiscardProjectCardWithFewestTags(): void {
     let fewest: IProjectCard | undefined;
     for (const card of this.actionDeck) {
-      if (this.isProjectCard(card) && (fewest === undefined || marsBotCardTags(card).length < marsBotCardTags(fewest).length)) {
+      if (this.isProjectCard(card) && (fewest === undefined || cardTagsIncludingEvent(card).length < cardTagsIncludingEvent(fewest).length)) {
         fewest = card;
       }
     }
@@ -792,8 +809,7 @@ export class MarsBot implements IMarsBot {
       goesFirst: this.goesFirst,
       difficulty: this.difficulty,
       actionDeckCardNames: this.actionDeck.map((c) => this.isProjectCard(c) ? c.name : (c as MarsBotBonusCard).id),
-      bonusDeckDrawPile: this.bonusDeck.drawPile.map((c) => c.id ?? c.name),
-      bonusDeckDiscardPile: this.bonusDeck.discardPile.map((c) => c.id ?? c.name),
+      bonusDeck: this.bonusDeck.serialize(),
       neuralInstanceSpaceId: this.neuralInstanceSpace?.id,
       playedProjectCardNames: this.playedProjectCards.map((c) => c.name),
       firstTurnCheckedGeneration: this.firstTurnCheckedGeneration,
@@ -936,16 +952,16 @@ export class MarsBot implements IMarsBot {
       this.actionDeck = this.deserializeDeckCards(state.actionDeckCardNames);
     }
 
-    // Restore bonus deck (bonus cards + project cards a corporation put there)
-    if (state.bonusDeckDrawPile !== undefined) {
-      this.bonusDeck.drawPile = this.deserializeDeckCards(state.bonusDeckDrawPile);
-    }
-    if (state.bonusDeckDiscardPile !== undefined) {
-      this.bonusDeck.discardPile = this.deserializeDeckCards(state.bonusDeckDiscardPile);
-    }
+    // Restore bonus deck (bonus cards + project cards a corporation put there). The bonus resolver
+    // holds this.bonusDeck, so the restored piles replace its own.
+    const bonusDeck = MarsBotBonusDeck.deserialize(state.bonusDeck ?? {
+      // Older saves hold the piles under their own keys, bonus cards by id
+      drawPile: (state.bonusDeckDrawPile ?? []).map(bonusDeckCardName),
+      discardPile: (state.bonusDeckDiscardPile ?? []).map(bonusDeckCardName),
+    }, this.random);
     // Older saves discarded these to the bonus deck after they resolved
-    this.bonusDeck.drawPile = this.bonusDeck.drawPile.filter((c) => !this.returnsToActionDeck(c));
-    this.bonusDeck.discardPile = this.bonusDeck.discardPile.filter((c) => !this.returnsToActionDeck(c));
+    this.bonusDeck.drawPile = bonusDeck.drawPile.filter((c) => !this.returnsToActionDeck(c));
+    this.bonusDeck.discardPile = bonusDeck.discardPile.filter((c) => !this.returnsToActionDeck(c));
 
     // Restore played project cards
     if (state.playedProjectCardNames !== undefined) {
@@ -973,7 +989,7 @@ export class MarsBot implements IMarsBot {
 
   // ---- Utilities ----
 
-  /** Rebuilds serialized deck cards: bonus cards are stored by id, project cards by name. */
+  /** Rebuilds the saved action deck: bonus cards are stored by id, project cards by name. */
   private deserializeDeckCards(names: ReadonlyArray<string>): Array<IProjectCard | MarsBotBonusCard> {
     const cards: Array<IProjectCard | MarsBotBonusCard> = [];
     for (const name of names) {

@@ -2,12 +2,15 @@ import {shallowMount} from '@vue/test-utils';
 import {expect} from 'chai';
 import {globalConfig} from '../getLocalVue';
 import LogMessageComponent from '@/client/components/logpanel/LogMessageComponent.vue';
-import {fakeViewModel} from '../testHelpers';
+import {fakePublicPlayerModel, fakeViewModel} from '../testHelpers';
 import {LogMessage} from '@/common/logs/LogMessage';
 import {LogMessageType} from '@/common/logs/LogMessageType';
 import {LogMessageDataType} from '@/common/logs/LogMessageDataType';
 import {CardName} from '@/common/cards/CardName';
 import {PreferencesManager} from '@/client/utils/PreferencesManager';
+import {Resource} from '@/common/Resource';
+import {CardResource} from '@/common/CardResource';
+import {playerColorClass} from '@/common/utils/utils';
 
 describe('LogMessageComponent', () => {
   it('mounts without errors', () => {
@@ -19,6 +22,74 @@ describe('LogMessageComponent', () => {
       },
     });
     expect(wrapper.exists()).to.be.true;
+  });
+
+  it('calls the parent click listener once per click', async () => {
+    let clicks = 0;
+    const wrapper = shallowMount(LogMessageComponent, {
+      ...globalConfig,
+      props: {
+        message: new LogMessage(LogMessageType.DEFAULT, 'Test message', []),
+        viewModel: fakeViewModel(),
+      },
+      attrs: {onClick: () => clicks++},
+    });
+
+    await wrapper.find('li').trigger('click');
+
+    expect(clicks).to.eq(1);
+  });
+
+  it('marks a line that has an owner with the owner color', () => {
+    const message = new LogMessage(LogMessageType.DEFAULT, 'Test message', []);
+    message.owner = 'red';
+    const wrapper = shallowMount(LogMessageComponent, {
+      ...globalConfig,
+      props: {message, viewModel: fakeViewModel()},
+    });
+
+    expect(wrapper.find('li > .' + playerColorClass('red', 'bg')).exists()).is.true;
+  });
+
+  it('names the owner on the owner marker', () => {
+    const message = new LogMessage(LogMessageType.DEFAULT, 'Test message', []);
+    message.owner = 'red';
+    const players = [
+      fakePublicPlayerModel({color: 'blue', name: 'Bob'}),
+      fakePublicPlayerModel({color: 'red', name: 'Alice'}),
+    ];
+    const wrapper = shallowMount(LogMessageComponent, {
+      ...globalConfig,
+      props: {message, viewModel: fakeViewModel({players})},
+    });
+
+    expect(wrapper.find('.log-owner').attributes('title')).to.equal('Alice');
+  });
+
+  it('shows the chat icon on an owned line and the clock on a system line', () => {
+    const owned = new LogMessage(LogMessageType.DEFAULT, 'Test message', []);
+    owned.owner = 'red';
+    const system = new LogMessage(LogMessageType.DEFAULT, 'Test message', []);
+    const iconOf = (message: LogMessage) => shallowMount(LogMessageComponent, {
+      ...globalConfig,
+      props: {message, viewModel: fakeViewModel()},
+    }).findAll('li > span[title]').at(-1)!.text();
+
+    expect(iconOf(owned)).to.equal('\u{1f4ac}');
+    expect(iconOf(system)).to.equal('\u{1f551}');
+  });
+
+  it('renders no owner marker on a line without an owner', () => {
+    const wrapper = shallowMount(LogMessageComponent, {
+      ...globalConfig,
+      props: {
+        message: new LogMessage(LogMessageType.DEFAULT, 'Test message', []),
+        viewModel: fakeViewModel(),
+      },
+    });
+
+    expect(wrapper.find('.log-owner').exists()).is.false;
+    expect(wrapper.find('[class*="player_bg_color_"]').exists()).is.false;
   });
 
   it('renders CARD type as a single card span', () => {
@@ -130,5 +201,51 @@ describe('LogMessageComponent', () => {
     } finally {
       PreferencesManager.resetForTest();
     }
+  });
+
+  it('renders icons in plain text and STRING data', () => {
+    const message = new LogMessage(LogMessageType.DEFAULT, 'spent :r:energy: for ${0}', [
+      {type: LogMessageDataType.STRING, value: ':p:mc:'},
+    ]);
+    const wrapper = shallowMount(LogMessageComponent, {
+      ...globalConfig,
+      props: {message, viewModel: fakeViewModel()},
+    });
+
+    const html = wrapper.html();
+    expect(html).includes('<span class="markdown-resource resource_icon--energy"></span>');
+    expect(html).includes(
+      '<span class="markdown-production"><span class="markdown-resource resource_icon--megacredits"></span></span>');
+  });
+
+  it('renders RESOURCE, PRODUCTION, and CARD_RESOURCE data as icons', () => {
+    const message = new LogMessage(LogMessageType.DEFAULT, '${0} ${1} ${2}', [
+      {type: LogMessageDataType.RESOURCE, value: Resource.STEEL},
+      {type: LogMessageDataType.PRODUCTION, value: Resource.HEAT},
+      {type: LogMessageDataType.CARD_RESOURCE, value: CardResource.SYNDICATE_FLEET},
+    ]);
+    const wrapper = shallowMount(LogMessageComponent, {
+      ...globalConfig,
+      props: {message, viewModel: fakeViewModel()},
+    });
+
+    const html = wrapper.html();
+    expect(html).includes('<span class="markdown-resource resource_icon--steel"></span>');
+    expect(html).includes(
+      '<span class="markdown-production"><span class="markdown-resource resource_icon--heat"></span></span>');
+    expect(html).includes('<span class="markdown-resource card-resource-syndicate-fleet"></span>');
+  });
+
+  it('renders MARKDOWN data as icons only', () => {
+    const message = new LogMessage(LogMessageType.DEFAULT, '[ ${0} ]', [
+      {type: LogMessageDataType.MARKDOWN, value: '-3:r:mc: *x*'},
+    ]);
+    const wrapper = shallowMount(LogMessageComponent, {
+      ...globalConfig,
+      props: {message, viewModel: fakeViewModel()},
+    });
+
+    const html = wrapper.html();
+    expect(html).includes('-3<span class="markdown-resource resource_icon--megacredits"></span> *x*');
   });
 });

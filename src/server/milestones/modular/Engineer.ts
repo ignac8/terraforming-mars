@@ -1,10 +1,14 @@
 import {BaseMilestone} from '../IMilestone';
 import {IPlayer} from '../../IPlayer';
 import {Tag} from '../../../common/cards/Tag';
-import {IMarsBot} from '../../automa/MarsBotCorpTypes';
-import {marsBotTrackPosition} from '../../automa/MarsBotMilestoneAwardEval';
+import {IMarsBot} from '../../automa/IMarsBot';
+import {BoardName} from '../../../common/boards/BoardName';
 
 export class Engineer extends BaseMilestone {
+  public readonly automaDescription = 'Energy + Earth tracks ≥ 10';
+  public readonly automaMapDescriptions = {
+    [BoardName.VASTITAS_BOREALIS_NOVA]: 'Earth/Jovian + Energy/City tracks ≥ 10',
+  };
   constructor() {
     super(
       'Engineer',
@@ -16,8 +20,8 @@ export class Engineer extends BaseMilestone {
     return player.production.energy + player.production.heat;
   }
 
-  /** MarsBot needs its power and earth tracks to add up to 10. Vastitas Borealis words it the same way. */
+  /** Rulebook C p.10 and p.13. */
   public marsBotCanClaim(bot: IMarsBot): boolean {
-    return marsBotTrackPosition(bot, Tag.POWER) + marsBotTrackPosition(bot, Tag.EARTH) >= 10;
+    return bot.marsBotBoard.trackPosition(Tag.POWER) + bot.marsBotBoard.trackPosition(Tag.EARTH) >= 10;
   }
 }

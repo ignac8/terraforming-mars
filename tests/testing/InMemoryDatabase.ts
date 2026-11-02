@@ -5,10 +5,13 @@ import {GameIdLedger, IDatabase} from '../../src/server/database/IDatabase';
 import {GameId, ParticipantId} from '../../src/common/Types';
 import {Session, SessionId} from '../../src/server/auth/Session';
 import {Clock} from '../../src/common/Timer';
+import {TableStatePatch, withTableState} from '../../src/server/rewind/tableState';
 
 export class InMemoryDatabase implements IDatabase {
   public games: Map<GameId, Array<SerializedGame | undefined>> = new Map();
   protected completedGames: Map<GameId, Date> = new Map();
+  protected finishedGames: Set<GameId> = new Set();
+  protected gameResults: Set<GameId> = new Set();
   protected sessions: Map<SessionId, Session> = new Map();
   private clock: Clock;
 
@@ -76,8 +79,20 @@ export class InMemoryDatabase implements IDatabase {
     game.lastSaveId++;
     return Promise.resolve();
   }
-  saveGameResults(_gameId: GameId, _players: number, _generations: number, _gameOptions: GameOptions, _scores: Score[]): void {
-    throw new Error('Method not implemented.');
+  updateNewestSave(gameId: GameId, saveId: number, patch: TableStatePatch): Promise<boolean> {
+    const row = this.games.get(gameId);
+    const save = row?.[saveId];
+    if (row === undefined || save === undefined || saveId !== row.length - 1) {
+      return Promise.resolve(false);
+    }
+    row[saveId] = withTableState(save, structuredClone(patch));
+    return Promise.resolve(true);
+  }
+  saveGameResults(gameId: GameId, _players: number, _generations: number, _gameOptions: GameOptions, _scores: Score[]): void {
+    this.gameResults.add(gameId);
+  }
+  hasGameResults(gameId: GameId): Promise<boolean> {
+    return Promise.resolve(this.gameResults.has(gameId));
   }
   loadCloneableGame(gameId: GameId): Promise<SerializedGame> {
     return this.getGameVersion(gameId, 0);
@@ -89,15 +104,22 @@ export class InMemoryDatabase implements IDatabase {
       throw new Error('Game not found ' + gameId);
     }
     row.splice(row.length - rollbackCount, rollbackCount);
+    this.completedGames.delete(gameId);
 
     return Promise.resolve();
   }
   markFinished(gameId: GameId): Promise<void> {
+    this.finishedGames.add(gameId);
     this.completedGames.set(gameId, new Date(this.clock.now()));
     return Promise.resolve();
   }
+  reopenFinishedGame(gameId: GameId): Promise<void> {
+    this.completedGames.delete(gameId);
+    this.gameResults.delete(gameId);
+    return Promise.resolve();
+  }
   purgeUnfinishedGames(): Promise<Array<GameId>> {
-    const keys = [...this.games.keys()];
+    const keys = [...this.games.keys()].filter((key) => !this.finishedGames.has(key));
     for (const key of keys) {
       this.games.delete(key);
     }

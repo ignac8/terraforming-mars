@@ -1,11 +1,15 @@
 import {BaseMilestone} from '../IMilestone';
 import {IPlayer} from '../../IPlayer';
 import {Tag} from '../../../common/cards/Tag';
-import {IMarsBot} from '../../automa/MarsBotCorpTypes';
+import {IMarsBot} from '../../automa/IMarsBot';
 import {BoardName} from '../../../common/boards/BoardName';
-import {marsBotTrackPosition, marsBotUsesMapSet} from '../../automa/MarsBotMilestoneAwardEval';
+import {marsBotUsesMapSet} from '../../automa/MarsBotMilestoneAwardEval';
 
 export class Fundraiser extends BaseMilestone {
+  public readonly automaDescription = 'Event track ≥ 8';
+  public readonly automaMapDescriptions = {
+    [BoardName.TERRA_CIMMERIA_NOVA]: 'Event track ≥ 10',
+  };
   constructor() {
     super(
       'Fundraiser',
@@ -22,6 +26,6 @@ export class Fundraiser extends BaseMilestone {
    */
   public marsBotCanClaim(bot: IMarsBot): boolean {
     const threshold = marsBotUsesMapSet(bot, BoardName.TERRA_CIMMERIA_NOVA) ? 10 : 8;
-    return marsBotTrackPosition(bot, Tag.EVENT) >= threshold;
+    return bot.marsBotBoard.trackPosition(Tag.EVENT) >= threshold;
   }
 }

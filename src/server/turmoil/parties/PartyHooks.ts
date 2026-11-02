@@ -13,7 +13,7 @@ export class PartyHooks {
   static applyMarsFirstRulingPolicy(player: IPlayer, spaceType: SpaceType) {
     if (this.shouldApplyPolicy(player, PartyName.MARS, 'mp01') &&
         spaceType !== SpaceType.COLONY) {
-      player.stock.add(Resource.STEEL, 1);
+      player.stock.add(Resource.STEEL, 1, {log: true, from: {partyName: PartyName.MARS}});
     }
   }
 
@@ -36,7 +36,7 @@ export class PartyHooks {
       return false;
     }
     // T-5: MarsBot ignores the ruling party's policy.
-    if (player.game.automaHooks?.isAutomaPlayer(player)) {
+    if (player.isMarsBot) {
       return false;
     }
     const turmoil = player.game.turmoil;

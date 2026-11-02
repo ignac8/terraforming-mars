@@ -26,4 +26,27 @@ describe('GameHome', () => {
     });
     expect(wrapper.exists()).to.be.true;
   });
+
+  it('shows a player without a link when the game leaves out their id', () => {
+    const wrapper = shallowMount(GameHome, {
+      ...globalConfig,
+      props: {
+        game: asComplete<SimpleGameModel>({
+          activePlayer: 'blue',
+          id: 'game-id-123',
+          phase: Phase.END,
+          players: [{color: 'blue', name: 'Blue'}],
+          spectatorId: 'spectator-id-123',
+          gameOptions: fakeGameOptionsModel(),
+          lastSoloGeneration: 14,
+          expectedPurgeTimeMs: 0,
+        }),
+      },
+    });
+
+    const name = wrapper.findAll('.player-name')[0];
+    expect(name.text()).eq('Blue');
+    expect(name.find('a').exists()).is.false;
+    expect(wrapper.findAll('a').map((a) => a.attributes('href'))).deep.eq(['spectator?id=spectator-id-123']);
+  });
 });

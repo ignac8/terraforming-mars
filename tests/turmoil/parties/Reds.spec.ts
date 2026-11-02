@@ -1,7 +1,7 @@
 import {expect} from 'chai';
 import {TestPlayer} from '../../TestPlayer';
 import {IGame} from '../../../src/server/IGame';
-import {runAllActions, setRulingParty, addGreenery} from '../../TestingUtils';
+import {runAllActions, setRulingParty, addGreenery, formatMessage} from '../../TestingUtils';
 import {REDS_BONUS_1, REDS_BONUS_2, REDS_POLICY_3} from '../../../src/server/turmoil/parties/Reds';
 import {MoonExpansion} from '../../../src/server/moon/MoonExpansion';
 import {OrOptions} from '../../../src/server/inputs/OrOptions';
@@ -63,6 +63,86 @@ describe('Reds', () => {
 
     REDS_BONUS_1.grant(game);
     expect(player.terraformRating).to.eq(21);
+  });
+
+  // MarsBot games use the 2-player rules (Nick, BGG 3594202): MarsBot's TR is compared,
+  // but MarsBot itself ignores the ruling bonus (automa rulebook C).
+  it('Ruling bonus 1: MarsBot\'s TR counts', () => {
+    const [game, human] = testGame(1, {automa: true, turmoilExtension: true});
+    const marsBot = game.marsBotPlayer!;
+
+    human.setTerraformRating(30);
+    marsBot.setTerraformRating(25);
+    REDS_BONUS_1.grant(game);
+    expect(human.terraformRating).to.eq(30);
+    expect(marsBot.terraformRating).to.eq(25);
+
+    human.setTerraformRating(25);
+    REDS_BONUS_1.grant(game);
+    expect(human.terraformRating).to.eq(26);
+    expect(marsBot.terraformRating).to.eq(25);
+  });
+
+  it('Ruling bonus 2: MarsBot\'s TR counts', () => {
+    const [game, human] = testGame(1, {automa: true, turmoilExtension: true});
+    const marsBot = game.marsBotPlayer!;
+
+    human.setTerraformRating(20);
+    marsBot.setTerraformRating(25);
+    REDS_BONUS_2.grant(game);
+    expect(human.terraformRating).to.eq(20);
+    expect(marsBot.terraformRating).to.eq(25);
+
+    human.setTerraformRating(25);
+    REDS_BONUS_2.grant(game);
+    expect(human.terraformRating).to.eq(24);
+    expect(marsBot.terraformRating).to.eq(25);
+  });
+
+  it('Ruling bonus 1 logs the TR gained', () => {
+    player.increaseTerraformRating();
+
+    game.gameLog.length = 0;
+    REDS_BONUS_1.grant(game);
+
+    expect(game.gameLog.map(formatMessage).filter((message) => message.includes(':i:tr:'))).deep.eq([
+      'red gained 1:i:tr: from Reds',
+    ]);
+  });
+
+  it('Ruling bonus 2 logs the TR lost', () => {
+    player.increaseTerraformRating();
+
+    game.gameLog.length = 0;
+    REDS_BONUS_2.grant(game);
+
+    expect(game.gameLog.map(formatMessage).filter((message) => message.includes(':i:tr:'))).deep.eq([
+      'blue lost 1:i:tr:',
+    ]);
+  });
+
+  it('Ruling bonus 1 logs the TR gained: Solo', () => {
+    const [game, player] = testGame(1, {turmoilExtension: true});
+    player.setTerraformRating(20);
+
+    game.gameLog.length = 0;
+    REDS_BONUS_1.grant(game);
+
+    expect(game.gameLog.map(formatMessage).filter((message) => message.includes(':i:tr:'))).deep.eq([
+      'blue gained 1:i:tr: from Reds',
+    ]);
+  });
+
+  it('Ruling bonus 2 logs the TR lost: Solo', () => {
+    const [game, player] = testGame(1, {turmoilExtension: true});
+    player.setTerraformRating(21);
+
+    game.gameLog.length = 0;
+    REDS_BONUS_2.grant(game);
+
+    expect(game.gameLog.map(formatMessage).filter((message) => message.includes(':i:tr:'))).deep.eq([
+      'blue lost 1:i:tr:',
+    ]);
   });
 
   it('Ruling bonus 2: Solo', () => {

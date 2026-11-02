@@ -38,8 +38,6 @@ export function fakeTimerModel(): TimerModel {
     sumElapsed: 0,
     startedAt: 0,
     running: false,
-    afterFirstAction: false,
-    lastStoppedAt: 0,
   };
 }
 
@@ -120,6 +118,7 @@ export function fakeGameModel(overrides?: RecursivePartial<GameModel>): GameMode
     isTerraformed: false,
     turmoil: undefined,
     undoCount: 0,
+    rewindCount: 0,
     venusScaleLevel: 0,
     ...overrides,
   } as GameModel;
@@ -143,7 +142,7 @@ export function fakePublicPlayerModel(overrides?: RecursivePartial<PublicPlayerM
     handicap: undefined,
     heat: 0,
     heatProduction: 0,
-    id: 'p-blue-id' as any,
+    id: 'p-blue-id',
     influence: 0,
     isActive: false,
     megacredits: 0,
@@ -202,7 +201,7 @@ export function fakePlayerViewModel(overrides?: RecursivePartial<PlayerViewModel
     dealtProjectCards: [],
     dealtCeoCards: [],
     draftedCards: [],
-    id: 'p-blue-id' as any,
+    id: 'p-blue-id',
     color: thisPlayer.color,
     ceoCardsInHand: [],
     pickedCorporationCard: [],

@@ -1,4 +1,5 @@
 import {expect} from 'chai';
+import {Context} from 'mocha';
 import {EventEmitter} from 'events';
 import pg from 'pg';
 import {PostgreSQL} from '../../src/server/database/PostgreSQL';
@@ -11,12 +12,15 @@ type Statement = {connection: string, sql: string};
 // statement sent through pool.query(), which can land on any connection.
 class FakePool {
   public statements: Array<Statement> = [];
+  // The parameters of each statement sent through pool.query().
+  public poolParams: Array<Array<unknown> | undefined> = [];
   public released: Array<{connection: string, err: Error | boolean | undefined}> = [];
   // Statements that start with any of these fail.
   public failing: Array<string> = [];
   public failConnect = false;
-  // Statements that start with a key fail with a deadlock error, as many times as its value.
-  public deadlocks = new Map<string, number>();
+  // Statements that start with any of these finish on a later tick, and are added to finished then.
+  public slow: Array<string> = [];
+  public finished: Array<string> = [];
   private connections = 0;
 
   // Statements that start with any of these kill the socket: like pg, the client emits 'error'.
@@ -36,19 +40,22 @@ class FakePool {
         });
       });
     }
-    for (const [prefix, remaining] of this.deadlocks) {
-      if (remaining > 0 && text.startsWith(prefix)) {
-        this.deadlocks.set(prefix, remaining - 1);
-        return Promise.reject(Object.assign(new Error('deadlock detected'), {code: '40P01'}));
-      }
-    }
     if (this.failing.some((prefix) => text.startsWith(prefix))) {
       return Promise.reject(new Error('failed: ' + text));
+    }
+    if (this.slow.some((prefix) => text.startsWith(prefix))) {
+      return new Promise((resolve) => {
+        setImmediate(() => {
+          this.finished.push(text);
+          resolve({rows: []});
+        });
+      });
     }
     return Promise.resolve({rows: [{inserted: true}]});
   }
 
-  public query(sql: string) {
+  public query(sql: string, params?: Array<unknown>) {
+    this.poolParams.push(params);
     return this.run('pool', sql);
   }
 
@@ -69,10 +76,25 @@ class FakePool {
 }
 
 class TestPostgreSQL extends PostgreSQL {
+  // trim() runs outside the transaction, so it's off unless a test turns it on.
+  constructor(public readonly pool: FakePool, trimCount = 0) {
+    super();
+    this.trimCount = trimCount;
+  }
+
+  protected override get client(): pg.Pool {
+    return this.pool as unknown as pg.Pool;
+  }
+}
+
+// Keeps the trimCount PostgreSQL picks by default.
+class DefaultPostgreSQL extends PostgreSQL {
   constructor(public readonly pool: FakePool) {
     super();
-    // trim() runs outside the transaction and isn't under test here.
-    this.trimCount = 0;
+  }
+
+  public get defaultTrimCount() {
+    return this.trimCount;
   }
 
   protected override get client(): pg.Pool {
@@ -117,6 +139,28 @@ describe('PostgreSQL', () => {
     expect(connectionsOf('COMMIT')).has.members(['conn1', 'conn2']);
     expect(pool.statements.filter((s) => s.connection === 'pool')).is.empty;
     expect(pool.released.map((r) => r.connection)).has.members(['conn1', 'conn2']);
+  });
+
+  it('gives overlapping saves of one game consecutive save ids', async () => {
+    await Promise.all([db.saveGame(game), db.saveGame(game)]);
+
+    expect(game.lastSaveId).eq(2);
+  });
+
+  it('writes overlapping saves of one game one after the other', async () => {
+    await Promise.all([db.saveGame(game), db.saveGame(game)]);
+
+    expect(pool.statements).deep.eq([
+      {connection: 'conn1', sql: 'BEGIN'},
+      {connection: 'conn1', sql: 'INSERT INTO games'},
+      {connection: 'conn1', sql: 'INSERT INTO game'},
+      {connection: 'conn1', sql: 'INSERT INTO participants'},
+      {connection: 'conn1', sql: 'COMMIT'},
+      {connection: 'conn2', sql: 'BEGIN'},
+      {connection: 'conn2', sql: 'INSERT INTO games'},
+      {connection: 'conn2', sql: 'INSERT INTO game'},
+      {connection: 'conn2', sql: 'COMMIT'},
+    ]);
   });
 
   it('rolls back on the same connection when an insert fails', async () => {
@@ -165,6 +209,21 @@ describe('PostgreSQL', () => {
     expect(game.lastSaveId).eq(0);
   });
 
+  it('patches on one connection, and handles it dying mid-patch', async () => {
+    pool.dropSocket = ['SELECT MAX', 'ROLLBACK'];
+
+    // Without an 'error' listener, EventEmitter.emit('error') throws.
+    const patching = db.updateNewestSave(game.id, 0, {frozen: true, rewindVote: undefined, rewindRequestLimits: undefined, undoCount: 0, timers: []});
+    let error: unknown;
+    await patching.catch((e) => error = e);
+
+    expect(String(error)).contains('socket closed');
+    expect(pool.statements.map((s) => s.connection + ' ' + s.sql)).deep.eq(['conn1 BEGIN', 'conn1 SELECT MAX(save_id) AS', 'conn1 ROLLBACK']);
+    expect(pool.released).has.length(1);
+    expect(pool.released[0].err).is.not.undefined;
+    expect(pool.clients[0].listenerCount('error')).eq(0);
+  });
+
   it('does not leave error listeners behind on the client', async () => {
     await db.saveGame(game);
 
@@ -180,70 +239,90 @@ describe('PostgreSQL', () => {
     expect(pool.released).is.empty;
     expect(game.lastSaveId).eq(0);
   });
-  async function markFinishedError(): Promise<unknown> {
+
+  // GameLoader.completeGame calls markFinished right after the last save. While that save's trim
+  // was still deleting rows, the two deadlocked.
+  it('finishes trimming before the save resolves', async () => {
+    db = new TestPostgreSQL(pool, 1);
+    pool.slow = ['DELETE FROM games'];
+
+    await db.saveGame(game);
+
+    expect(pool.statements.at(-1)).deep.eq({connection: 'pool', sql: 'DELETE FROM games'});
+    expect(pool.finished).has.length(1);
+  });
+
+  it('still saves when trimming fails', async () => {
+    db = new TestPostgreSQL(pool, 1);
+    pool.failing = ['DELETE FROM games'];
+
+    await db.saveGame(game);
+
+    expect(pool.statements.at(-1)).deep.eq({connection: 'pool', sql: 'DELETE FROM games'});
+    expect(pool.statements.map((s) => s.sql)).includes('COMMIT');
+    expect(game.lastSaveId).eq(1);
+  });
+
+  it('takes a rolled back game off the compression queue', async () => {
+    await db.deleteGameNbrSaves(game.id, 2);
+
+    expect(pool.statements).deep.eq([
+      {connection: 'pool', sql: 'DELETE FROM completed_game'},
+      {connection: 'pool', sql: 'DELETE FROM games'},
+    ]);
+    expect(pool.poolParams[0]).deep.eq([game.id]);
+  });
+
+  it('still deletes the saves when leaving the compression queue fails', async () => {
+    const warnings: Array<Array<unknown>> = [];
+    const originalWarn = console.warn;
+    console.warn = (...args: Array<unknown>) => {
+      warnings.push(args);
+    };
     try {
-      await db.markFinished(game.id);
-    } catch (err) {
-      return err;
+      pool.failing = ['DELETE FROM completed_game'];
+
+      await db.deleteGameNbrSaves(game.id, 2);
+
+      expect(pool.statements.map((s) => s.sql)).deep.eq(['DELETE FROM completed_game', 'DELETE FROM games']);
+      expect(warnings).has.length(1);
+      expect(String(warnings[0][0])).contains(game.id);
+    } finally {
+      console.warn = originalWarn;
     }
-    return undefined;
-  }
-
-  it('marks a game finished in one transaction', async () => {
-    await db.markFinished(game.id);
-
-    expect(pool.statements.map((s) => s.connection + ' ' + s.sql)).deep.eq([
-      'conn1 BEGIN',
-      'conn1 UPDATE games SET',
-      'conn1 UPDATE game SET',
-      'conn1 INSERT INTO completed_game(game_id)',
-      'conn1 COMMIT',
-    ]);
-    expect(pool.released).deep.eq([{connection: 'conn1', err: undefined}]);
   });
 
-  it('retries marking a game finished after a deadlock', async () => {
-    pool.deadlocks.set('UPDATE games SET', 1);
+  describe('defaults', () => {
+    const savedCompress = process.env.COMPRESS_COMPLETED_GAMES_DAYS;
+    afterEach(() => {
+      if (savedCompress === undefined) {
+        delete process.env.COMPRESS_COMPLETED_GAMES_DAYS;
+      } else {
+        process.env.COMPRESS_COMPLETED_GAMES_DAYS = savedCompress;
+      }
+    });
 
-    await db.markFinished(game.id);
+    it('keeps every save unless POSTGRES_TRIM_COUNT is set', function(this: Context) {
+      // The default is read when the module loads, so this only holds when the variable is unset.
+      if (process.env.POSTGRES_TRIM_COUNT !== undefined) {
+        this.skip();
+      }
+      expect(new DefaultPostgreSQL(pool).defaultTrimCount).eq(0);
+    });
 
-    expect(pool.statements.map((s) => s.connection + ' ' + s.sql)).deep.eq([
-      'conn1 BEGIN',
-      'conn1 UPDATE games SET',
-      'conn1 ROLLBACK',
-      'conn2 BEGIN',
-      'conn2 UPDATE games SET',
-      'conn2 UPDATE game SET',
-      'conn2 INSERT INTO completed_game(game_id)',
-      'conn2 COMMIT',
-    ]);
-    expect(pool.released.map((r) => r.connection)).deep.eq(['conn1', 'conn2']);
-  });
+    it('looks for completed games to compress even when COMPRESS_COMPLETED_GAMES_DAYS is unset', async () => {
+      delete process.env.COMPRESS_COMPLETED_GAMES_DAYS;
 
-  it('stops retrying after repeated deadlocks', async () => {
-    pool.deadlocks.set('UPDATE games SET', 5);
+      await db.compressCompletedGames();
 
-    const err = await markFinishedError();
+      expect(pool.statements[0]).deep.eq({connection: 'pool', sql: 'SELECT DISTINCT game_id'});
+    });
 
-    expect((err as {code?: string}).code).eq('40P01');
-    expect(pool.statements.filter((s) => s.sql === 'BEGIN')).has.length(3);
-    expect(pool.statements.filter((s) => s.sql === 'COMMIT')).is.empty;
-    expect(pool.released).has.length(3);
-  });
+    it('compresses games completed over 14 days ago when the days are negative', async () => {
+      await db.compressCompletedGames('-5');
 
-  it('does not retry other errors when marking a game finished', async () => {
-    pool.failing = ['INSERT INTO completed_game'];
-
-    const err = await markFinishedError();
-
-    expect(err).is.instanceOf(Error);
-    expect(pool.statements.map((s) => s.sql)).deep.eq([
-      'BEGIN',
-      'UPDATE games SET',
-      'UPDATE game SET',
-      'INSERT INTO completed_game(game_id)',
-      'ROLLBACK',
-    ]);
-    expect(pool.released).deep.eq([{connection: 'conn1', err: undefined}]);
+      const cutoff = pool.poolParams[0]![0] as number;
+      expect(cutoff).closeTo(Date.now() / 1000 - 14 * 86400, 5);
+    });
   });
 });

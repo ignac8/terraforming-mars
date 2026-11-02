@@ -1,10 +1,10 @@
 import {Tag} from '../../common/cards/Tag';
 import {IPlayer} from '../IPlayer';
 import {BaseMilestone} from './IMilestone';
-import {IMarsBot} from '../automa/MarsBotCorpTypes';
-import {marsBotTrackPosition} from '../automa/MarsBotMilestoneAwardEval';
+import {IMarsBot} from '../automa/IMarsBot';
 
 export class VSpacefarer extends BaseMilestone {
+  public readonly automaDescription = 'Space track ≥ 5';
   constructor() {
     super(
       'V. Spacefarer',
@@ -16,8 +16,8 @@ export class VSpacefarer extends BaseMilestone {
     return player.tags.count(Tag.SPACE, 'milestone');
   }
 
-  /** The automa rules put MarsBot's threshold at space 5 of its space track. */
+  /** Rulebook C p.10. */
   public marsBotCanClaim(bot: IMarsBot): boolean {
-    return marsBotTrackPosition(bot, Tag.SPACE) >= 5;
+    return bot.marsBotBoard.trackPosition(Tag.SPACE) >= 5;
   }
 }

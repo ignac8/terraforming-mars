@@ -3,7 +3,7 @@ import {Legend} from '../../src/server/milestones/Legend';
 import {TestPlayer} from '../TestPlayer';
 import {fakeCard} from '../TestingUtils';
 import {CardType} from '../../src/common/cards/CardType';
-import {IMarsBot} from '../../src/server/automa/MarsBotCorpTypes';
+import {IMarsBot} from '../../src/server/automa/IMarsBot';
 import {IProjectCard} from '../../src/server/cards/IProjectCard';
 
 describe('Legend', () => {

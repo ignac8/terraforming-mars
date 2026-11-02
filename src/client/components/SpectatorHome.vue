@@ -1,36 +1,37 @@
 <template>
   <div id="spectator-home" :class="(game.turmoil ? 'with-turmoil': '')">
+    <TopBar v-if="activePlayer !== undefined" :playerView="spectator" :player="activePlayer" />
 
     <div v-if="game.phase === 'end'">
       <div class="player_home_block">
-        <DynamicTitle title="This game is over!" :color="spectator.color"/>
+        <DynamicTitle title="This game is over!" :color="spectator.color" />
         <a :href="'the-end?id='+ spectator.id" v-i18n>Go to game results</a>
       </div>
     </div>
 
-    <Sidebar v-trim-whitespace
+    <Sidebar
       :actingPlayer="false"
       :playerColor="spectator.color"
       :generation="game.generation"
       :coloniesCount="game.colonies.length"
-      :temperature = "game.temperature"
-      :oxygen = "game.oxygenLevel"
-      :oceans = "game.oceans"
-      :venus = "game.venusScaleLevel"
-      :turmoil = "game.turmoil"
+      :temperature="game.temperature"
+      :oxygen="game.oxygenLevel"
+      :oceans="game.oceans"
+      :venus="game.venusScaleLevel"
+      :turmoil="game.turmoil"
       :moonData="game.moon"
-      :gameOptions = "game.gameOptions"
-      :playerNumber = "spectator.players.length"
-      :lastSoloGeneration = "game.lastSoloGeneration"
-      :deckSize = "game.deckSize"
-      :discardPileSize = "game.discardPileSize"
-      :otherDeckSizes = "game.otherDeckSizes"/>
+      :gameOptions="game.gameOptions"
+      :playerNumber="spectator.players.length"
+      :lastSoloGeneration="game.lastSoloGeneration"
+      :deckSize="game.deckSize"
+      :discardPileSize="game.discardPileSize"
+      :otherDeckSizes="game.otherDeckSizes" />
 
-    <div class="player_home_block nofloat">
-<LogPanel :viewModel="spectator" :step="game.step" @spaceClicked="onSpaceClicked"/>
+    <div v-if="!replay || replayLog !== undefined" class="player_home_block nofloat">
+      <LogPanel :viewModel="spectator" :step="game.step" :replayLog="replayLog" @spaceClicked="onSpaceClicked" />
     </div>
 
-    <PlayersOverview class="player_home_block player_home_block--players nofloat" :playerView="spectator" v-trim-whitespace id="shortkey-playersoverview"/>
+    <PlayersOverview class="player_home_block player_home_block--players nofloat" :playerView="spectator" id="shortkey-playersoverview" />
 
     <GameBoardView
       ref="gameBoardView"
@@ -42,24 +43,26 @@
 
     <div v-if="game.colonies.length > 0" class="player_home_block" ref="colonies" id="shortkey-colonies">
       <a name="colonies" class="player_home_anchor"></a>
-      <DynamicTitle title="Colonies" :color="spectator.color"/>
+      <DynamicTitle title="Colonies" :color="spectator.color" />
       <div class="colonies-fleets-cont">
         <div class="colonies-player-fleets" v-for="player in spectator.players" :key="player.color">
-            <div :class="'colonies-fleet colonies-fleet-'+ player.color" v-for="idx in range(Math.max(0, player.fleetSize - player.tradesThisGeneration))" :key="idx"></div>
+          <div :class="'colonies-fleet colonies-fleet-'+ player.color" v-for="idx in range(Math.max(0, player.fleetSize - player.tradesThisGeneration))" :key="idx"></div>
         </div>
       </div>
       <div class="player_home_colony_cont">
         <div class="player_home_colony" v-for="colony in spectator.game.colonies" :key="colony.name">
-            <Colony :colony="colony" :active="colony.isActive"/>
+          <Colony :colony="colony" :active="colony.isActive" />
         </div>
       </div>
     </div>
-    <WaitingFor v-show="false" v-if="game.phase !== 'end'" :playerView="spectator" :waitingfor="undefined"/>
+    <WaitingFor v-show="false" v-if="!replay && game.phase !== 'end'" :playerView="spectator" :waitingfor="undefined" />
     <div>
       <a :href="'/spectator?id=' +game.spectatorId" target="_blank" rel="noopener noreferrer" v-i18n>Spectator link</a>
     </div>
-    <PurgeWarning :expectedPurgeTimeMs="game.expectedPurgeTimeMs"/>
-    <KeyboardShortcuts v-show="keyboardShortcutOpened" @close="keyboardShortcutOpened = false"/>
+    <PurgeWarning v-if="!replay" :expectedPurgeTimeMs="game.expectedPurgeTimeMs" />
+    <!-- Whatever the page adds below the game, inside the home so that the top bar stays with it as it scrolls. -->
+    <slot></slot>
+    <KeyboardShortcuts v-show="keyboardShortcutOpened" @close="keyboardShortcutOpened = false" />
   </div>
 </template>
 
@@ -67,7 +70,10 @@
 import {defineComponent} from 'vue';
 
 import {GameModel} from '@/common/models/GameModel';
+import {LogMessage} from '@/common/logs/LogMessage';
 import {SpectatorModel} from '@/common/models/SpectatorModel';
+import {PublicPlayerModel} from '@/common/models/PlayerModel';
+import TopBar from '@/client/components/TopBar.vue';
 import Colony from '@/client/components/colonies/Colony.vue';
 import DynamicTitle from '@/client/components/common/DynamicTitle.vue';
 import GameBoardView from '@/client/components/GameBoardView.vue';
@@ -88,10 +94,24 @@ export default defineComponent({
       type: Object as () => SpectatorModel,
       required: true,
     },
+    /** True while replaying a finished game: no polling, so the replayed model is never replaced by the live one. */
+    replay: {
+      type: Boolean,
+      default: false,
+    },
+    /** A replay's log up to the move shown. Given, the replay shows a log, made of these lines. */
+    replayLog: {
+      type: Array as () => Array<LogMessage>,
+      default: undefined,
+    },
   },
   computed: {
     game(): GameModel {
       return this.spectator.game;
+    },
+    /** The top bar follows whoever is taking their turn. */
+    activePlayer(): PublicPlayerModel | undefined {
+      return this.spectator.players.find((p) => p.isActive);
     },
   },
   components: {
@@ -103,6 +123,7 @@ export default defineComponent({
     PlayersOverview,
     PurgeWarning,
     Sidebar,
+    TopBar,
     WaitingFor,
   },
   methods: {

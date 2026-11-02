@@ -30,7 +30,7 @@ import {SpaceId} from '../../src/common/Types';
 import {SpaceType} from '../../src/common/boards/SpaceType';
 
 function createAutomaGame(difficulty: 'easy' | 'normal' | 'hard' | 'brutal' = 'normal'): {game: IGame, human: TestPlayer, marsBot: MarsBot} {
-  const [game, human] = testGame(1, {automaOption: true, automaDifficulty: difficulty, boardName: BoardName.THARSIS});
+  const [game, human] = testGame(1, {automa: true, automaDifficulty: difficulty, boardName: BoardName.THARSIS});
   return {game, human, marsBot: game.automaHooks!.marsBot};
 }
 
@@ -222,7 +222,7 @@ describe('MarsBot Deep Rules Tests', () => {
     });
 
     it('with Venus Next gains 2 M€ and 1 floater instead of 5 M€', () => {
-      const [game] = testGame(1, {automaOption: true, venusNextExtension: true, boardName: BoardName.THARSIS});
+      const [game] = testGame(1, {automa: true, venusNextExtension: true, boardName: BoardName.THARSIS});
       const marsBot = game.automaHooks!.marsBot;
 
       marsBot['bonusResolver'].resolve(invasiveSpecies());
@@ -233,7 +233,7 @@ describe('MarsBot Deep Rules Tests', () => {
 
     it('with Colonies and no Venus Next puts the floater in Titan storage', () => {
       const [game] = testGame(1, {
-        automaOption: true, coloniesExtension: true, boardName: BoardName.THARSIS,
+        automa: true, coloniesExtension: true, boardName: BoardName.THARSIS,
         customColoniesList: [ColonyName.TITAN, ColonyName.CERES, ColonyName.LUNA, ColonyName.IO, ColonyName.GANYMEDE],
       });
       const marsBot = game.automaHooks!.marsBot;
@@ -247,7 +247,7 @@ describe('MarsBot Deep Rules Tests', () => {
     // Nick, BGG 3341542: without Venus Next and Titan the floater is ignored; the card's 2 M€ stays
     it('with Colonies, no Venus Next and no Titan gains 2 M€ and ignores the floater', () => {
       const [game] = testGame(1, {
-        automaOption: true, coloniesExtension: true, boardName: BoardName.THARSIS,
+        automa: true, coloniesExtension: true, boardName: BoardName.THARSIS,
         customColoniesList: [ColonyName.CALLISTO, ColonyName.CERES, ColonyName.LUNA, ColonyName.IO, ColonyName.GANYMEDE],
       });
       const marsBot = game.automaHooks!.marsBot;
@@ -261,7 +261,7 @@ describe('MarsBot Deep Rules Tests', () => {
 
   describe('B16 Government Intervention', () => {
     it('gives MarsBot neither TR nor M€, even from a temperature bonus', () => {
-      const [game] = testGame(1, {automaOption: true, venusNextExtension: true, boardName: BoardName.THARSIS});
+      const [game] = testGame(1, {automa: true, venusNextExtension: true, boardName: BoardName.THARSIS});
       const marsBot = game.automaHooks!.marsBot;
       game.generation = 2;
       setOxygenLevel(game, 14);
@@ -278,7 +278,7 @@ describe('MarsBot Deep Rules Tests', () => {
     });
 
     it('raises Venus instead when every Martian parameter is complete on an even generation', () => {
-      const [game] = testGame(1, {automaOption: true, venusNextExtension: true, boardName: BoardName.THARSIS});
+      const [game] = testGame(1, {automa: true, venusNextExtension: true, boardName: BoardName.THARSIS});
       const marsBot = game.automaHooks!.marsBot;
       game.generation = 2;
       setOxygenLevel(game, 14);
@@ -292,7 +292,7 @@ describe('MarsBot Deep Rules Tests', () => {
     });
 
     it('advances the parameter with the most steps remaining, not the lowest fraction done', () => {
-      const [game] = testGame(1, {automaOption: true, venusNextExtension: true, boardName: BoardName.THARSIS});
+      const [game] = testGame(1, {automa: true, venusNextExtension: true, boardName: BoardName.THARSIS});
       const marsBot = game.automaHooks!.marsBot;
       game.generation = 2;
       // Oxygen 7 is 50% done with 7 steps left, temperature -10 is 52% done with 9 steps left
@@ -729,7 +729,7 @@ describe('MarsBot Deep Rules Tests', () => {
     });
 
     it('measures Terraformer against 26 with Turmoil', () => {
-      const [game, human] = testGame(1, {automaOption: true, boardName: BoardName.THARSIS, turmoilExtension: true});
+      const [game, human] = testGame(1, {automa: true, boardName: BoardName.THARSIS, turmoilExtension: true});
       human.setTerraformRating(25);
 
       const terraformer = game.milestones.find((m) => m.name === 'Terraformer')!;
@@ -929,7 +929,7 @@ describe('MarsBot Deep Rules Tests', () => {
   // temperature track (BGG 3358342 TDaver, 3424237 and 3733436 njshaw2)
   describe('Venus 8% card bonus', () => {
     function venusGame() {
-      const [game] = testGame(1, {automaOption: true, venusNextExtension: true, boardName: BoardName.THARSIS});
+      const [game] = testGame(1, {automa: true, venusNextExtension: true, boardName: BoardName.THARSIS});
       const marsBot = game.automaHooks!.marsBot;
       setVenusScaleLevel(game, 6);
       return {game, marsBot, hand: marsBot.player.cardsInHand.length, deck: game.projectDeck.drawPile.length};

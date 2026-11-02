@@ -62,6 +62,21 @@ describe('ServerModel', () => {
     expect(response.players[1].victoryPointsBreakdown.total).eq(0);
   });
 
+  it('Should show a finished game\'s player ids to everyone, except those of a solo or MarsBot game to anyone but its player', () => {
+    const cases = [
+      {name: '2 players', players: 2, automa: false, spectatorSeesId: true},
+      {name: 'solo', players: 1, automa: false, spectatorSeesId: false},
+      {name: 'MarsBot', players: 1, automa: true, spectatorSeesId: false},
+    ];
+    for (const {name, players, automa, spectatorSeesId} of cases) {
+      [game, player] = testGame(players, {automa});
+      game.phase = Phase.END;
+
+      expect(Server.getPlayerModel(player).players.map((p) => p.id), name).includes(player.id);
+      expect(Server.getSpectatorModel(game).players.map((p) => p.id).includes(player.id), name).eq(spectatorSeesId);
+    }
+  });
+
   it('Should include globalParameterSteps at game end', () => {
     createTestGame(false);
     // Simulate players contributing to global parameters

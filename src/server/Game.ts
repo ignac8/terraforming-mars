@@ -2,6 +2,7 @@ import * as constants from '../common/constants';
 import {venusLevelAfterSteps, venusStepsBetween} from './venusNext/venusScale';
 import {BeginnerCorporation} from './cards/corporation/BeginnerCorporation';
 import {Board} from './boards/Board';
+import {getGlobalParameterTracks, GlobalParameterTracks, grantGlobalParameterTrackBonuses} from '@/server/boards/GlobalParameterTracks';
 import {CardName} from '../common/cards/CardName';
 import {ClaimedMilestone, serializeClaimedMilestones, deserializeClaimedMilestones} from './milestones/ClaimedMilestone';
 import {ColonyDealer} from './colonies/ColonyDealer';
@@ -25,6 +26,9 @@ import {IPlayer} from './IPlayer';
 import {Player} from './Player';
 import {PlayerId, GameId, SpectatorId, SpaceId} from '../common/Types';
 import {PlayerInput} from './PlayerInput';
+import {InputResponse} from '../common/inputs/InputResponse';
+import {RecordedInput} from './rewind/RecordedInput';
+import {stateHash} from './rewind/stateHash';
 import {CardResource} from '../common/CardResource';
 import {Resource} from '../common/Resource';
 import {AndThen, DeferredAction, SimpleDeferredAction} from './deferredActions/DeferredAction';
@@ -39,6 +43,7 @@ import {SerializedGame} from './SerializedGame';
 import {SpaceBonus} from '../common/boards/SpaceBonus';
 import {TileType} from '../common/TileType';
 import {Turmoil} from './turmoil/Turmoil';
+import {AutomaGameSetup} from './automa/AutomaGameSetup';
 import {RandomMAOptionType} from '../common/ma/RandomMAOptionType';
 import {AresHandler} from './ares/AresHandler';
 import {AresData} from '../common/ares/AresData';
@@ -65,7 +70,10 @@ import {CorporationDeck, PreludeDeck, ProjectDeck, CeoDeck} from './cards/Deck';
 import {Logger} from './logs/Logger';
 import {addDays, stringToNumber} from './database/utils';
 import {Tag} from '../common/cards/Tag';
-import {GlobalParameterMaximums, IGame, Score} from './IGame';
+import {IGame, Score} from './IGame';
+import {RewindRecord} from './rewind/RewindRecord';
+import {RewindRequestLimits, SerializedRewindVote, TableStatePatch} from './rewind/tableState';
+import {GlobalParameterMaximums} from '../common/boards/GlobalParameterMaximums';
 import {MarsBoard} from './boards/MarsBoard';
 import {UnderworldData} from './underworld/UnderworldData';
 import {UnderworldExpansion} from './underworld/UnderworldExpansion';
@@ -85,7 +93,6 @@ import {IStandardProjectCard} from './cards/IStandardProjectCard';
 import {BoardName} from '../common/boards/BoardName';
 import {SpaceType} from '../common/boards/SpaceType';
 import {AutomaGameHooks} from './automa/AutomaGameHooks';
-import {AutomaGameSetup} from './automa/AutomaGameSetup';
 import {ICard} from './cards/ICard';
 import {generateGameName} from './GameName';
 import {byKey} from '@/common/utils/Ordering';
@@ -99,19 +106,20 @@ export function setGameLog(f: () => Array<LogMessage>) {
   createGameLog = f;
 }
 
+export type DeserializeOptions = {
+  /** When true the game never writes to the database or the game cache. Used to show past moments of a game. */
+  sandbox?: boolean;
+  /** Sandbox only: called at every save the sandbox makes, with the state as a save would store it. */
+  onSave?: (game: Game, saved: SerializedGame) => void;
+};
+
 export class Game implements IGame, Logger {
   public readonly id: GameId;
   public readonly name: string;
   public readonly gameOptions: Readonly<GameOptions>;
   public readonly players: ReadonlyArray<IPlayer>;
-  private _marsBotPlayer: IPlayer | undefined;
-  public get allPlayers(): ReadonlyArray<IPlayer> {
-    const marsBotPlayer = this.automaHooks?.marsBotPlayer ?? this._marsBotPlayer;
-    if (marsBotPlayer !== undefined) {
-      return [...this.players, marsBotPlayer];
-    }
-    return this.players;
-  }
+  public readonly marsBotPlayer: IPlayer | undefined;
+  public readonly playersPlusMarsBot: ReadonlyArray<IPlayer>;
   // The API makes this readonly.
   public playersInGenerationOrder: ReadonlyArray<IPlayer> = [];
 
@@ -124,9 +132,34 @@ export class Game implements IGame, Logger {
   public createdTime: Date = new Date(0);
   public gameAge: number = 0; // Each log event increases it
   public gameLog: Array<LogMessage> = createGameLog();
+  public rewinds: Array<RewindRecord> = [];
   public undoCount: number = 0; // Each undo increases it
+  /**
+   * The inputs processed since the last save. Undefined when the game was loaded from a save
+   * written before inputs were recorded, so saving it again keeps that save without inputs.
+   */
+  public inputsSinceSave: Array<RecordedInput> | undefined = [];
   public inputsThisRound = 0;
   public resettable: boolean = false;
+  /** A sandbox game is a read-only view of a past save. It never writes a save. */
+  public isSandbox: boolean = false;
+  private onSandboxSave: DeserializeOptions['onSave'] = undefined;
+  /** Set on a game object that a rewind replaced. Like a sandbox, it never writes a save. Not serialized. */
+  public retired: boolean = false;
+  /** Settles once the game's last saves and its finished mark are written. Unset until the game ends in this process. */
+  public finishing: Promise<void> | undefined = undefined;
+  /** Set while the game is frozen: no input is accepted and no clock runs. */
+  public frozen: boolean = false;
+  /** The open or rewinding vote, as plain data. */
+  public rewindVote: SerializedRewindVote | undefined = undefined;
+  public rewindRequestLimits: RewindRequestLimits | undefined = undefined;
+  public onRewindVoteMove: (() => void) | undefined = undefined;
+  /** The save row this object last wrote or was loaded from. Patches go to this row only. Undefined for a sandbox and before the first save. */
+  public ownSaveId: number | undefined = undefined;
+  /** Settles once every save row this object started writing is written, or has failed. */
+  private lastWrite: Promise<void> = Promise.resolve();
+  /** Settles once the last persistTableState has. */
+  private lastPatch: Promise<void> = Promise.resolve();
   public globalsPerGeneration: Array<Partial<Record<GlobalParameter, number>>> = [];
 
   public generation: number = 1;
@@ -201,6 +234,8 @@ export class Game implements IGame, Logger {
   public readonly tags: ReadonlyArray<Tag>;
 
   public underworldDraftEnabled = true;
+  public readonly globalParameterTracks: GlobalParameterTracks;
+  public readonly standardProjects: ReadonlyArray<IStandardProjectCard>;
 
   public automaHooks: AutomaGameHooks | undefined;
 
@@ -208,6 +243,7 @@ export class Game implements IGame, Logger {
     id: GameId,
     name: string,
     players: Array<IPlayer>,
+    marsBotPlayer: IPlayer | undefined,
     first: IPlayer,
     activePlayer: PlayerId,
     spectatorId: SpectatorId,
@@ -218,20 +254,21 @@ export class Game implements IGame, Logger {
     corporationDeck: CorporationDeck,
     preludeDeck: PreludeDeck,
     ceoDeck: CeoDeck,
-    tags: ReadonlyArray<Tag>,
-    marsBotPlayer?: IPlayer) {
+    tags: ReadonlyArray<Tag>) {
     this.id = id;
     this.name = name;
     this.gameOptions = {...gameOptions};
     this.players = players;
-    this._marsBotPlayer = marsBotPlayer;
+    // Set before the active player is looked up, since MarsBot can be the active player.
+    this.marsBotPlayer = marsBotPlayer;
+    this.playersPlusMarsBot = marsBotPlayer === undefined ? players : [...players, marsBotPlayer];
     const playerIds = players.map(toID);
-    const allPlayerIds = this.allPlayers.map(toID);
+    const playersPlusMarsBotIds = this.playersPlusMarsBot.map(toID);
     if (playerIds.includes(first.id) === false) {
       throw new Error('Cannot find first player ' + first.id + ' in [' + playerIds + ']');
     }
-    if (allPlayerIds.includes(activePlayer) === false) {
-      throw new Error('Cannot find active player ' + activePlayer + ' in [' + allPlayerIds + ']');
+    if (playersPlusMarsBotIds.includes(activePlayer) === false) {
+      throw new Error('Cannot find active player ' + activePlayer + ' in [' + playersPlusMarsBotIds + ']');
     }
     if (new Set(playerIds).size !== players.length) {
       throw new Error('Duplicate player found: [' + playerIds + ']');
@@ -259,8 +296,11 @@ export class Game implements IGame, Logger {
         this.monsInsuranceOwner = player;
       }
     });
+    this.marsBotPlayer?.setup(this);
 
     this.tags = tags;
+    this.globalParameterTracks = getGlobalParameterTracks(gameOptions.boardName);
+    this.standardProjects = this.computeStandardProjects();
   }
 
   private setFirstPlayer(first: IPlayer) {
@@ -299,7 +339,7 @@ export class Game implements IGame, Logger {
       };
     }
     const gameOptions = {...DEFAULT_GAME_OPTIONS, ...partialOptions};
-    if (gameOptions.automaOption) {
+    if (gameOptions.automa) {
       AutomaGameSetup.sanitizeGameOptions(gameOptions);
     }
     if (gameOptions.clonedGamedId !== undefined) {
@@ -320,14 +360,14 @@ export class Game implements IGame, Logger {
     projectDeck.shuffle();
 
     let corporationCards = gameCards.getCorporationCards();
-    if (gameOptions.automaOption) {
+    if (gameOptions.automa) {
       corporationCards = AutomaGameSetup.filterCorporationCards(corporationCards);
     }
     const corporationDeck = new CorporationDeck(corporationCards, [], rng);
     corporationDeck.shuffle();
 
     let preludeCards = gameCards.getPreludeCards();
-    if (gameOptions.automaOption) {
+    if (gameOptions.automa) {
       preludeCards = AutomaGameSetup.filterPreludeCards(preludeCards, gameOptions);
     }
     const preludeDeck = new PreludeDeck(preludeCards, [], rng);
@@ -347,16 +387,20 @@ export class Game implements IGame, Logger {
       }
     }
 
-    if (players.length === 1 && !gameOptions.automaOption) {
+    if (players.length === 1 && !gameOptions.automa) {
       gameOptions.draftVariant = false;
       gameOptions.initialDraftVariant = false;
       gameOptions.preludeDraftVariant = false;
       gameOptions.randomMA = RandomMAOptionType.NONE;
+      gameOptions.customMA = undefined;
+
+      // Single player game player starts with 14TR
       players[0].setTerraformRating(14);
     }
 
     const name = generateGameName(UnseededRandom.INSTANCE);
-    const game = new Game(id, name, players, firstPlayer, activePlayer, spectatorId, gameOptions, rng, board, projectDeck, corporationDeck, preludeDeck, ceoDeck, Array.from(tags));
+    const marsBotPlayer = gameOptions.automa ? AutomaGameSetup.createMarsBotPlayer(id) : undefined;
+    const game = new Game(id, name, players, marsBotPlayer, firstPlayer, activePlayer, spectatorId, gameOptions, rng, board, projectDeck, corporationDeck, preludeDeck, ceoDeck, Array.from(tags));
     // This evaluation of created time doesn't match what's stored in the database, but that's fine.
     game.createdTime = new Date();
     // Initialize Ares data
@@ -367,7 +411,7 @@ export class Game implements IGame, Logger {
     const {milestones, awards} = chooseMilestonesAndAwards(gameOptions);
     game.milestones = milestones.map(milestoneManifest.createOrThrow);
     game.awards = awards.map(awardManifest.createOrThrow);
-    if (gameOptions.automaOption) {
+    if (gameOptions.automa) {
       game.milestones = AutomaGameSetup.filterMilestones(game.milestones, gameOptions);
       game.awards = AutomaGameSetup.filterAwards(game.awards, gameOptions);
     }
@@ -376,7 +420,7 @@ export class Game implements IGame, Logger {
     if (gameOptions.coloniesExtension) {
       const colonyDealer = new ColonyDealer(rng, gameOptions);
       // Automa games are set up as 2-player (C-1): draw 5 colonies instead of 4
-      colonyDealer.drawColonies(gameOptions.automaOption ? 2 : players.length);
+      colonyDealer.drawColonies(gameOptions.automa ? 2 : players.length);
       game.colonies = colonyDealer.colonies;
       game.discardedColonies = colonyDealer.discardedColonies;
     }
@@ -388,13 +432,16 @@ export class Game implements IGame, Logger {
 
     // Must configure this before solo placement.
     if (gameOptions.underworldExpansion) {
-      game.underworldData = UnderworldExpansion.initialize(rng);
+      game.underworldData = UnderworldExpansion.initialize(rng, gameOptions.boardName === BoardName.AMAZONIS_PLANITIA);
     }
 
-    if (players.length === 1 && gameOptions.automaOption) {
-      game.automaHooks = AutomaGameSetup.setup(game, players[0], gameOptions, game.rng);
-    } else if (players.length === 1) {
-      GameSetup.setupNeutralPlayer(game);
+    if (players.length === 1) {
+      if (marsBotPlayer !== undefined) {
+        game.automaHooks = AutomaGameSetup.setup(game, marsBotPlayer, players[0], gameOptions, game.rng, false);
+      } else {
+        //  Setup solo player's starting tiles
+        GameSetup.setupNeutralPlayer(game);
+      }
     }
 
     // Setup Ares hazards
@@ -496,8 +543,86 @@ export class Game implements IGame, Logger {
     }
   }
 
-  public save(): void {
-    GameLoader.getInstance().saveGame(this);
+  /** Writes the game as its next save. The promise settles when the write does. */
+  public save(): Promise<void> {
+    if (this.retired) {
+      return Promise.resolve();
+    }
+    if (this.isSandbox) {
+      if (this.onSandboxSave !== undefined) {
+        // As the database does: the state is stored under the current id, and the game moves on to the next.
+        const saved = this.serialize();
+        this.lastSaveId++;
+        this.inputsSinceSave = [];
+        this.onSandboxSave(this, saved);
+      }
+      return Promise.resolve();
+    }
+    // A sandbox that became the live game no longer reports its saves.
+    this.onSandboxSave = undefined;
+    const written = this.trackWrite(() => GameLoader.getInstance().saveGame(this));
+    // The database serialized the game, inputs included, when saveGame was called.
+    this.inputsSinceSave = [];
+    return written;
+  }
+
+  /** Starts `start`, a write of this game's next save row, and remembers the row and the write. */
+  private trackWrite(start: () => Promise<void>): Promise<void> {
+    // Every backend takes the save id before its first await.
+    const saveId = this.lastSaveId;
+    const written = start();
+    this.ownSaveId = saveId;
+    this.lastWrite = Promise.all([this.lastWrite, written.catch(() => {})]).then(() => {});
+    return written;
+  }
+
+  public persistTableState(): Promise<boolean> {
+    const patched = Promise.all([this.lastWrite, this.lastPatch]).then(async () => {
+      if (this.isSandbox || this.retired || this.ownSaveId === undefined) {
+        return false;
+      }
+      // The state of this moment, so the last patch wins.
+      const patch: TableStatePatch = {
+        frozen: this.frozen,
+        rewindVote: this.rewindVote,
+        rewindRequestLimits: this.currentRequestLimits(),
+        undoCount: this.undoCount,
+        timers: this.players.map((p) => ({player: p.id, timer: p.timer.serialize()})),
+      };
+      return await Database.getInstance().updateNewestSave(this.id, this.ownSaveId, patch);
+    });
+    this.lastPatch = patched.then(() => {}, () => {});
+    return patched;
+  }
+
+  /** The request limits, when they are this generation's. Older ones bar no one. */
+  private currentRequestLimits(): RewindRequestLimits | undefined {
+    return this.rewindRequestLimits?.generation === this.generation ? this.rewindRequestLimits : undefined;
+  }
+
+  /** Remembers `input`, the answer `player` gave to `waitingFor`, with the state it is about to be applied to. */
+  public recordInput(player: IPlayer, waitingFor: PlayerInput, input: InputResponse): RecordedInput | undefined {
+    if (this.isSandbox) {
+      return undefined;
+    }
+    const title = waitingFor.title;
+    const recorded: RecordedInput = {
+      playerId: player.id,
+      prompt: {type: waitingFor.type, title: typeof title === 'string' ? title : title.message},
+      response: structuredClone(input),
+      stateHash: stateHash(this.serialize()),
+      at: Date.now(),
+    };
+    (this.inputsSinceSave ??= []).push(recorded);
+    return recorded;
+  }
+
+  /** Takes back a record from `recordInput`, for an answer the game then rejected. */
+  public forgetInput(recorded: RecordedInput | undefined): void {
+    const index = recorded === undefined ? -1 : this.inputsSinceSave?.lastIndexOf(recorded) ?? -1;
+    if (index !== -1) {
+      this.inputsSinceSave?.splice(index, 1);
+    }
   }
 
   public serialize(): SerializedGame {
@@ -558,6 +683,23 @@ export class Game implements IGame, Logger {
     if (this.clonedGamedId !== undefined) {
       result.clonedGamedId = this.clonedGamedId;
     }
+    if (this.inputsSinceSave !== undefined) {
+      result.inputs = [...this.inputsSinceSave];
+    }
+    if (this.rewinds.length > 0) {
+      result.rewinds = this.rewinds;
+    }
+    if (this.frozen) {
+      result.frozen = true;
+    }
+    // Copies, so a save held in memory doesn't change with the live vote.
+    if (this.rewindVote !== undefined) {
+      result.rewindVote = structuredClone(this.rewindVote);
+    }
+    const rewindRequestLimits = this.currentRequestLimits();
+    if (rewindRequestLimits !== undefined) {
+      result.rewindRequestLimits = structuredClone(rewindRequestLimits);
+    }
     if (this.turmoil !== undefined) {
       result.turmoil = this.turmoil.serialize();
     }
@@ -568,15 +710,12 @@ export class Game implements IGame, Logger {
   }
 
   public isSoloMode() :boolean {
-    if (this.automaHooks !== undefined) {
-      return false;
-    }
-    return this.players.length === 1;
+    return this.players.length === 1 && !this.gameOptions.automa;
   }
 
   // Function to retrieve a player by it's id
   public getPlayerById(id: PlayerId): IPlayer {
-    const player = this.allPlayers.find((p) => p.id === id);
+    const player = this.playersPlusMarsBot.find((p) => p.id === id);
     if (player === undefined) {
       throw new Error(`player ${id} does not exist on game ${this.id}`);
     }
@@ -595,11 +734,7 @@ export class Game implements IGame, Logger {
    * Run every deferred action, including any added while running them, and then call `cb`.
    */
   public drainQueue(cb: () => void): void {
-    if (this.deferredActions.length === 0) {
-      cb();
-      return;
-    }
-    this.deferredActions.runAll(() => this.drainQueue(cb));
+    this.deferredActions.runAll(cb);
   }
 
   public milestoneClaimed(milestone: IMilestone): boolean {
@@ -646,12 +781,13 @@ export class Game implements IGame, Logger {
 
     // Only add 2 more generations when using the track completion option
     // and not the solo TR option.
-    //
-    // isSoloModeWin backs this up.
     if (options.moonExpansion) {
       if (!options.soloTR && options.requiresMoonTrackCompletion) {
         lastGeneration += 2;
       }
+    }
+    if (!options.soloTR && options.boardName === BoardName.AMAZONIS_PLANITIA) {
+      lastGeneration += 1;
     }
     return lastGeneration;
   }
@@ -727,6 +863,7 @@ export class Game implements IGame, Logger {
 
   private playerHasPickedCorporationCard(player: IPlayer, corporationCard: ICorporationCard): void {
     player.pickedCorporationCard = corporationCard;
+    player.timer.enable();
     const players = this.playersInGenerationOrder;
     if (players.every((p) => p.pickedCorporationCard !== undefined)) {
       for (const p of players) {
@@ -792,7 +929,7 @@ export class Game implements IGame, Logger {
       }
     }
     // Skip solo-mode colony penalty for automa games (automa uses 2-player setup, C-1)
-    if (this.players.length === 1 && this.gameOptions.coloniesExtension && !this.gameOptions.automaOption) {
+    if (this.players.length === 1 && this.gameOptions.coloniesExtension && !this.gameOptions.automa) {
       this.players[0].production.add(Resource.MEGACREDITS, -2);
       this.defer(new RemoveColonyFromGame(this.players[0]));
     }
@@ -945,7 +1082,7 @@ export class Game implements IGame, Logger {
     // Automa instant win: MarsBot wins when max generation is reached, game ends immediately.
     if (this.automaHooks !== undefined && this.automaHooks.marsBot.isInstantWin()) {
       this.log('MarsBot wins! (Generation limit reached)');
-      this.gotoEndGame();
+      this.finishing = this.gotoEndGame();
       return;
     }
 
@@ -1187,6 +1324,26 @@ export class Game implements IGame, Logger {
       this.log('This game id was ${0}', (b) => b.rawString(id));
     }
 
+    if (this.isSandbox || this.retired) {
+      this.phase = Phase.END;
+      return;
+    }
+
+    this.saveGameResults();
+    this.phase = Phase.END;
+    const gameLoader = GameLoader.getInstance();
+    const saved = this.trackWrite(() => gameLoader.saveGame(this));
+    // The database serialized the game, inputs included, when saveGame was called.
+    this.inputsSinceSave = [];
+    await saved;
+    // A game a rewind replaced doesn't finish: completeGame would save under the id the rewind took.
+    if (this.retired) {
+      return;
+    }
+    await this.trackWrite(() => gameLoader.completeGame(this));
+  }
+
+  public saveGameResults(): void | Promise<void> {
     const scores: Array<Score> = [];
     this.players.forEach((player) => {
       const corporation = player.playedCards.filter(isICorporationCard).map(toName).join('|');
@@ -1194,11 +1351,7 @@ export class Game implements IGame, Logger {
       scores.push({corporation: corporation, playerScore: vpb.total});
     });
 
-    Database.getInstance().saveGameResults(this.id, this.players.length, this.generation, this.gameOptions, scores);
-    this.phase = Phase.END;
-    const gameLoader = GameLoader.getInstance();
-    await gameLoader.saveGame(this);
-    gameLoader.completeGame(this);
+    return Database.getInstance().saveGameResults(this.id, this.players.length, this.generation, this.gameOptions, scores);
   }
 
   // Part of final greenery placement.
@@ -1247,7 +1400,7 @@ export class Game implements IGame, Logger {
     }
     this.updatePlayerVPForTheGeneration();
     this.updateGlobalsForTheGeneration();
-    this.gotoEndGame();
+    this.finishing = this.gotoEndGame();
   }
 
   public startActionsForPlayer(player: IPlayer) {
@@ -1274,22 +1427,17 @@ export class Game implements IGame, Logger {
 
     // Literal typing makes |increments| a const
     const steps = Math.min(increments, this.max.oxygen - this.oxygenLevel);
+    const newOxygenLevel = this.oxygenLevel + steps;
 
     if (this.phase !== Phase.SOLAR) {
       TurmoilHandler.onGlobalParameterIncrease(player, GlobalParameter.OXYGEN, steps);
       player.onGlobalParameterIncrease(GlobalParameter.OXYGEN, steps);
       player.increaseTerraformRating(steps);
     }
-    if (this.oxygenLevel < constants.OXYGEN_LEVEL_FOR_TEMPERATURE_BONUS &&
-      this.oxygenLevel + steps >= constants.OXYGEN_LEVEL_FOR_TEMPERATURE_BONUS) {
-      if (this.temperature >= this.max.temperature) {
-        this.automaHooks?.handleUnresolvableTerraformingBonus(player);
-      } else {
-        this.increaseTemperature(player, 1);
-      }
-    }
 
-    this.oxygenLevel += steps;
+    grantGlobalParameterTrackBonuses(player, 'oxygen', this.oxygenLevel, newOxygenLevel);
+
+    this.oxygenLevel = newOxygenLevel;
 
     AresHandler.ifAres(this, (aresData) => {
       AresHandler.onOxygenChange(this, aresData);
@@ -1315,17 +1463,9 @@ export class Game implements IGame, Logger {
     const steps = Math.min(increments, venusStepsBetween(this.venusScaleLevel, this.max.venus));
     const newValue = venusLevelAfterSteps(this.venusScaleLevel, steps);
 
+    grantGlobalParameterTrackBonuses(player, 'venus', this.venusScaleLevel, newValue);
+
     if (this.phase !== Phase.SOLAR) {
-      if (this.venusScaleLevel < constants.VENUS_LEVEL_FOR_CARD_BONUS &&
-        newValue >= constants.VENUS_LEVEL_FOR_CARD_BONUS) {
-        if (!this.automaHooks?.handleVenusCardBonus(player)) {
-          player.drawCard();
-        }
-      }
-      if (this.venusScaleLevel < constants.VENUS_LEVEL_FOR_TR_BONUS &&
-        newValue >= constants.VENUS_LEVEL_FOR_TR_BONUS) {
-        player.increaseTerraformRating();
-      }
       if (this.gameOptions.altVenusBoard) {
         const minimalBaseline = Math.max(this.venusScaleLevel, constants.ALT_VENUS_MINIMUM_BONUS);
         const maximumBaseline = Math.min(newValue, this.max.venus);
@@ -1377,22 +1517,9 @@ export class Game implements IGame, Logger {
 
     // Literal typing makes |increments| a const
     const steps = Math.min(increments, (this.max.temperature - this.temperature) / 2);
+    const newTemperature = this.temperature + steps * 2;
 
     if (this.phase !== Phase.SOLAR) {
-      // BONUS FOR HEAT PRODUCTION AT -20 and -24
-      if (this.temperature < constants.TEMPERATURE_BONUS_FOR_HEAT_1 &&
-        this.temperature + steps * 2 >= constants.TEMPERATURE_BONUS_FOR_HEAT_1) {
-        if (!this.automaHooks?.handleTemperatureHeatBonus(player)) {
-          player.production.add(Resource.HEAT, 1, {log: true});
-        }
-      }
-      if (this.temperature < constants.TEMPERATURE_BONUS_FOR_HEAT_2 &&
-        this.temperature + steps * 2 >= constants.TEMPERATURE_BONUS_FOR_HEAT_2) {
-        if (!this.automaHooks?.handleTemperatureHeatBonus(player)) {
-          player.production.add(Resource.HEAT, 1, {log: true});
-        }
-      }
-
       for (const card of player.playedCards) {
         card.onGlobalParameterIncrease?.(player, GlobalParameter.TEMPERATURE, steps);
       }
@@ -1401,14 +1528,9 @@ export class Game implements IGame, Logger {
       player.increaseTerraformRating(steps);
     }
 
-    // BONUS FOR OCEAN TILE AT 0
-    if (this.temperature < constants.TEMPERATURE_FOR_OCEAN_BONUS && this.temperature + steps * 2 >= constants.TEMPERATURE_FOR_OCEAN_BONUS) {
-      if (!this.automaHooks?.handleTemperatureOceanBonus(player)) {
-        this.defer(new PlaceOceanTile(player, {title: 'Select space for ocean from temperature increase'}));
-      }
-    }
+    grantGlobalParameterTrackBonuses(player, 'temperature', this.temperature, newTemperature);
 
-    this.temperature += steps * 2;
+    this.temperature = newTemperature;
 
     AresHandler.ifAres(this, (aresData) => {
       AresHandler.onTemperatureChange(this, aresData);
@@ -1519,14 +1641,14 @@ export class Game implements IGame, Logger {
 
   public grantPlacementBonuses(player: IPlayer, space: Space, coveringExistingTile: boolean = false) {
     if (!coveringExistingTile) {
-      this.grantSpaceBonuses(player, space);
+      this.grantSpaceBonusesAsPlacement(player, space);
     }
 
     const adjacentOceanCount = this.board.getAdjacentSpaces(space).filter(Board.isOceanSpace).length;
     const oceanAdjacencyBonus = adjacentOceanCount * player.oceanBonus;
     if (oceanAdjacencyBonus > 0) {
       player.stock.add(Resource.MEGACREDITS, oceanAdjacencyBonus);
-      this.log('${0} gained ${1} M€ from ${2} ocean(s)', (b) => b.player(player).number(oceanAdjacencyBonus).number(adjacentOceanCount));
+      this.log('${0} gained ${1}:r:mc: from ${2} ocean(s)', (b) => b.player(player).number(oceanAdjacencyBonus).number(adjacentOceanCount));
     }
   }
 
@@ -1564,14 +1686,20 @@ export class Game implements IGame, Logger {
     LogHelper.logTilePlacement(player, space, tile.tileType);
   }
 
-  public grantSpaceBonuses(player: IPlayer, space: Space) {
+  public grantSpaceBonuses(player: IPlayer, space: Space, onStandardResource?: (resource: Resource) => void) {
     const bonuses = MultiSet.from(space.bonus);
     bonuses.forEachMultiplicity((count: number, bonus: SpaceBonus) => {
-      this.grantSpaceBonus(player, bonus, count);
+      this.grantSpaceBonus(player, bonus, count, onStandardResource);
     });
   }
 
-  public grantSpaceBonus(player: IPlayer, spaceBonus: SpaceBonus, count: number = 1) {
+  public grantSpaceBonusesAsPlacement(player: IPlayer, space: Space) {
+    this.grantSpaceBonuses(player, space, (resource) => {
+      this.triggerForAllCards((p, c) => c.onStandardResourcePlacementBonus?.(p, player, space, resource));
+    });
+  }
+
+  public grantSpaceBonus(player: IPlayer, spaceBonus: SpaceBonus, count: number = 1, onStandardResource?: (resource: Resource) => void) {
     switch (spaceBonus) {
     case SpaceBonus.DRAW_CARD:
       player.drawCard(count);
@@ -1630,7 +1758,7 @@ export class Game implements IGame, Logger {
       break;
     case SpaceBonus.DELEGATE:
       if (this.turmoil) {
-        this.defer(new SendDelegateToArea(player));
+        this.defer(new SendDelegateToArea(player, undefined, {count}));
       }
       break;
     case SpaceBonus.COLONY:
@@ -1645,6 +1773,7 @@ export class Game implements IGame, Logger {
       player.defer(new SelectResource('Select a standard resource to gain')
         .andThen((resource) => {
           player.stock.add(resource, 1, {log: true});
+          onStandardResource?.(resource);
           return undefined;
         }));
       break;
@@ -1741,7 +1870,7 @@ export class Game implements IGame, Logger {
     }
   }
 
-  public getStandardProjects(): Array<IStandardProjectCard> {
+  private computeStandardProjects(): Array<IStandardProjectCard> {
     const gameOptions = this.gameOptions;
     return new GameCards(gameOptions)
       .getStandardProjects()
@@ -1811,27 +1940,27 @@ export class Game implements IGame, Logger {
     return addDays(this.createdTime, days).getTime();
   }
 
-  public static deserialize(d: SerializedGame): Game {
+  public static deserialize(d: SerializedGame, options: DeserializeOptions = {}): Game {
     const gameOptions = d.gameOptions;
     gameOptions.boardName = normalizeBoardName(gameOptions.boardName);
+    // Saves from before the automaOption option was renamed to automa.
+    const renamed: Partial<GameOptions> & {automaOption?: boolean} = gameOptions;
+    if (renamed.automaOption !== undefined) {
+      renamed.automa ??= renamed.automaOption;
+      delete renamed.automaOption;
+    }
     if (gameOptions.escapeVelocity !== undefined) {
       gameOptions.escapeVelocity = sanitizeEscapeVelocityOptions(gameOptions.escapeVelocity);
     }
     const players = d.players.map((element) => Player.deserialize(element));
+    // MarsBot isn't serialized with the players, so it is recreated from the game id.
+    const marsBotPlayer = gameOptions.automa ? AutomaGameSetup.createMarsBotPlayer(d.id) : undefined;
     const first = players.find((player) => player.id === d.first);
     if (first === undefined) {
       throw new Error(`Player ${d.first} not found when rebuilding First Player`);
     }
 
-    // Create MarsBot player before the board and Turmoil are read back, since both resolve
-    // owners by player id and MarsBot is not one of d.players.
-    let marsBotPlayer: IPlayer | undefined;
-    if (d.automaState !== undefined && gameOptions.automaOption) {
-      marsBotPlayer = AutomaGameSetup.createMarsBotPlayer(d.id);
-    }
-
-    const playersWithMarsBot = marsBotPlayer !== undefined ? [...players, marsBotPlayer] : players;
-    const board = GameSetup.deserializeBoard(playersWithMarsBot, gameOptions, d);
+    const board = GameSetup.deserializeBoard(marsBotPlayer === undefined ? players : [...players, marsBotPlayer], gameOptions, d);
 
     const rng = new SeededRandom(d.seed, d.currentSeed);
 
@@ -1841,7 +1970,9 @@ export class Game implements IGame, Logger {
 
     const ceoDeck = CeoDeck.deserialize(d.ceoDeck, rng);
 
-    const game = new Game(d.id, d.name, players, first, d.activePlayer, d.spectatorId, gameOptions, rng, board, projectDeck, corporationDeck, preludeDeck, ceoDeck, d.tags, marsBotPlayer);
+    const game = new Game(d.id, d.name, players, marsBotPlayer, first, d.activePlayer, d.spectatorId, gameOptions, rng, board, projectDeck, corporationDeck, preludeDeck, ceoDeck, d.tags);
+    game.isSandbox = options.sandbox === true;
+    game.onSandboxSave = options.onSave;
     game.resettable = true;
     game.spectatorId = d.spectatorId;
     game.createdTime = new Date(d.createdTimeMs);
@@ -1856,7 +1987,7 @@ export class Game implements IGame, Logger {
     });
 
     game.milestones = milestones;
-    game.claimedMilestones = deserializeClaimedMilestones(d.claimedMilestones, game.allPlayers, milestones);
+    game.claimedMilestones = deserializeClaimedMilestones(d.claimedMilestones, game.playersPlusMarsBot, milestones);
 
     const awards: Array<IAward> = [];
     d.awards.forEach((awardName) => {
@@ -1868,7 +1999,7 @@ export class Game implements IGame, Logger {
     });
 
     game.awards = awards;
-    game.fundedAwards = deserializeFundedAwards(d.fundedAwards, game.allPlayers, awards);
+    game.fundedAwards = deserializeFundedAwards(d.fundedAwards, game.playersPlusMarsBot, awards);
 
     if (gameOptions.aresExtension) {
       game.aresData = d.aresData;
@@ -1883,7 +2014,7 @@ export class Game implements IGame, Logger {
 
     // Reload turmoil elements if needed
     if (d.turmoil && gameOptions.turmoilExtension) {
-      game.turmoil = Turmoil.deserialize(d.turmoil, playersWithMarsBot);
+      game.turmoil = Turmoil.deserialize(d.turmoil, game.playersPlusMarsBot);
     }
 
     // Reload moon elements if needed
@@ -1906,16 +2037,26 @@ export class Game implements IGame, Logger {
     game.clonedGamedId = d.clonedGamedId;
     game.gameAge = d.gameAge;
     game.gameLog = d.gameLog;
+    game.rewinds = d.rewinds ?? [];
+    // A sandbox views a past save: it is never frozen, holds no vote and bars no one.
+    if (!game.isSandbox) {
+      game.frozen = d.frozen ?? false;
+      game.rewindVote = d.rewindVote;
+      game.rewindRequestLimits = d.rewindRequestLimits;
+      // Save k stores lastSaveId k.
+      game.ownSaveId = d.lastSaveId;
+    }
     game.generation = d.generation;
     game.phase = d.phase;
     game.oxygenLevel = d.oxygenLevel;
     game.undoCount = d.undoCount ?? 0;
+    game.inputsSinceSave = d.inputs;
     game.temperature = d.temperature;
     game.venusScaleLevel = d.venusScaleLevel;
 
     // Restore automa with pre-created player, then set real activePlayer
-    if (d.automaState !== undefined && gameOptions.automaOption && marsBotPlayer !== undefined) {
-      game.automaHooks = AutomaGameSetup.setup(game, players[0], gameOptions, rng, marsBotPlayer);
+    if (d.automaState !== undefined && marsBotPlayer !== undefined) {
+      game.automaHooks = AutomaGameSetup.setup(game, marsBotPlayer, players[0], gameOptions, rng, true);
       game.automaHooks.restoreState(d.automaState);
     }
 
@@ -1940,8 +2081,6 @@ export class Game implements IGame, Logger {
       if (game.phase === Phase.INITIALDRAFTING) {
         switch (game.initialDraftIteration) {
         case 1:
-          newInitialDraft(game).restoreDraft();
-          break;
         case 2:
           newInitialDraft(game).restoreDraft();
           break;
@@ -1966,10 +2105,10 @@ export class Game implements IGame, Logger {
       // There's nowhere that we need to go for end game.
     } else {
       // We should be in ACTION phase, let's prompt the active player for actions
-      game.activePlayer.takeAction(/* saveBeforeTakingAction */ false);
+      game.activePlayer.takeAction();
     }
 
-    if (game.phase === Phase.END) {
+    if (game.phase === Phase.END && !game.isSandbox) {
       GameLoader.getInstance().mark(game.id);
     }
     return game;

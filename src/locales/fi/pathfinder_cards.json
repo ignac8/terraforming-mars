@@ -240,8 +240,8 @@
 
   "Think Tank": "Ajatushautomo",
   "(Action: Spend 2 M€ to place 1 data on any card.)": "(TOIMINTO: Käytä 2 M€ asettaaksesi 1 datan mille kortille tahansa.)",
-  "+/-1 global parameter": "+/-1 globaali parametri",
-  "(Effect: When playing a card, you can remove data from this card to change the card's global requirement by 1 step for every 1 data removed.)": "(VAIKUTUS: Kun pelaat kortin, voit poistaa dataa tältä kortilta muuttaaksesi kortin globaaleja vaatimuksia 1 askel jokaista poistettua dataa kohti.)",
+  "+/-1 global parameter": "+/-1 yhteinen muuttuja",
+  "(Effect: When playing a card, you can remove data from this card to change the card's global requirement by 1 step for every 1 data removed.)": "(VAIKUTUS: Kun pelaat kortin, voit poistaa dataa tältä kortilta muuttaaksesi kortin yleisiä vaatimuksia 1 askel jokaista poistettua dataa kohti.)",
 
   "Venera Base": "Tukikohta Venera",
   "(Action: Add 1 floater to ANY Venus card)": "(TOIMINTO: Lisää 1 kelluke MILLE TAHANSA Venus-kortille)",
@@ -250,5 +250,5 @@
 
   "Wetlands": "Kosteikko",
   "(Requires 2 ocean tiles. Lose 4 plants. Place this tile on an UNRESERVED SPACE ADJACENT TO AT LEAST 2 OCEANS. Raise oxygen 1 step. Gain 1 TR.)": "(Vaatii 2 valtamerilaattaa. Menetä 4 kasvia. Aseta tämä laatta EI-VARATULLE PAIKALLE VÄHINTÄÄN 2 VALTAMEREN VIEREEN. Nosta happea 1 askel. Nosta MKL:ääsi 1 askel.)",
-  "(Effect: Wetlands counts as a greenery tile and an ocean tile, except it can't be covered and is not one of the 9 oceans required to end the game.)": "(VAIKUTUS: Kosteikko lasketaan sekä viheralueeksi että valtamereksi, paitsi sitä ei voi peittää eikä se ole yksi 9 pelin päättämiseen vaadittavasta valtamerestä.)"
+  "(Effect: Wetlands counts as a greenery tile and an ocean tile, except it can't be covered and is not one of the oceans required to end the game.)": "(VAIKUTUS: Kosteikko lasketaan sekä viheralueeksi että valtamereksi, paitsi sitä ei voi peittää eikä se ole yksi 9 pelin päättämiseen vaadittavasta valtamerestä.)"
 }

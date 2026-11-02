@@ -1,10 +1,10 @@
 import {Tag} from '../../common/cards/Tag';
 import {BoardName} from '../../common/boards/BoardName';
-import {marsBotMapSet} from '../../common/automa/MarsBotMADescriptions';
+import {marsBotMapSet} from '../../common/automa/marsBotMapSet';
 import {IMilestone} from '../milestones/IMilestone';
 import {IPlayer} from '../IPlayer';
 import {IAward} from '../awards/IAward';
-import {IMarsBot} from './MarsBotCorpTypes';
+import {IMarsBot} from './IMarsBot';
 
 /**
  * MarsBot claims milestones and scores awards through the ordinary IMilestone and IAward
@@ -32,12 +32,6 @@ export function marsBotAwardScore(award: IAward, bot: IMarsBot): number {
   return award.marsBotScore?.(bot) ?? award.getScore(bot.player);
 }
 
-/** The position of the track `tag` advances, or 0 when no track carries the tag. */
-export function marsBotTrackPosition(bot: IMarsBot, tag: Tag): number {
-  const index = bot.marsBotBoard.tagToTrack[tag];
-  return index === undefined ? 0 : bot.marsBotBoard.tracks[index].position;
-}
-
 /** Every track position, the Venus track included when in play. */
 export function marsBotAllTrackPositions(bot: IMarsBot): Array<number> {
   return bot.marsBotBoard.tracks.map((track) => track.position);
@@ -51,9 +45,11 @@ export function marsBotMarsTrackPositions(bot: IMarsBot): Array<number> {
 }
 
 /**
- * Whether the game plays `boardName`'s own milestone and award set. Then the rulebook's map
- * rules apply. With random or modular milestones and awards MarsBot follows the modular
- * rules, which are written against the Tharsis board whatever map the game is played on.
+ * Whether MarsBot follows `boardName`'s own milestone and award rules.
+ *
+ * That holds on `boardName` unless the game plays the Milestones & Awards expansion, whose rules
+ * are written against the Tharsis board whatever map the game is played on. Random milestones
+ * and awards keep the map's rules.
  */
 export function marsBotUsesMapSet(bot: IMarsBot, boardName: BoardName): boolean {
   return marsBotMapSet(bot.game.gameOptions) === boardName;

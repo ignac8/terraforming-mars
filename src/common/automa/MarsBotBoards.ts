@@ -1,5 +1,4 @@
 import {BoardName} from '../boards/BoardName';
-import {RandomBoardOption} from '../boards/RandomBoardOption';
 
 /** Maps that ship with a MarsBot board. Terra Cimmeria and Vastitas Borealis are the official Nova maps. */
 export const MARSBOT_BOARD_NAMES: ReadonlyArray<BoardName> = [
@@ -11,7 +10,7 @@ export const MARSBOT_BOARD_NAMES: ReadonlyArray<BoardName> = [
   BoardName.TERRA_CIMMERIA_NOVA,
 ];
 
-/** Whether a create-game board choice can be played against MarsBot. The official random pool only holds MarsBot maps. */
-export function isMarsBotBoardChoice(board: BoardName | RandomBoardOption): boolean {
-  return board === RandomBoardOption.OFFICIAL || MARSBOT_BOARD_NAMES.includes(board as BoardName);
+/** Whether a board can be played against MarsBot. */
+export function isMarsBotBoardChoice(board: BoardName): boolean {
+  return MARSBOT_BOARD_NAMES.includes(board);
 }

@@ -10,6 +10,9 @@ import {restoreTestDatabase, restoreTestGameLoader, setTestDatabase, setTestGame
 import {sleep} from '../TestingUtils';
 import {InMemoryDatabase} from '../testing/InMemoryDatabase';
 import {FakeClock} from '../common/FakeClock';
+import {Phase} from '../../src/common/Phase';
+import {clearReplayCache, isFinished} from '../../src/server/replay/ReplayService';
+import {withTableLock} from '../../src/server/rewind/tableLock';
 
 class TestDatabase extends InMemoryDatabase {
   public failure: 'getGameIds' | 'getParticipants' | undefined = undefined;
@@ -265,6 +268,22 @@ describe('GameLoader', () => {
     expect(await instance.isCached('gameid')).is.false;
   });
 
+  it('sweep leaves a game whose table is locked, until the lock is released', async () => {
+    await instance.getGame('gameid');
+    instance.mark('gameid');
+    clock.millis = 200;
+    let release = () => {};
+    const held = withTableLock('gameid', () => new Promise<void>((resolve) => release = resolve));
+
+    instance.sweep();
+    expect(await instance.isCached('gameid')).is.true;
+
+    release();
+    await held;
+    instance.sweep();
+    expect(await instance.isCached('gameid')).is.false;
+  });
+
   // Idle eviction only targets solo games; the shared `gameid` is multiplayer.
   function addSoloGame(id: GameId): void {
     const soloPlayer = new Player('solo', 'blue', false, 0, ('p-' + id) as PlayerId);
@@ -452,6 +471,29 @@ describe('GameLoader', () => {
     // incremented at the end of save(). It loads #2, and increments.
     expect(newGame.lastSaveId).eq(3);
     expect(await database.getSaveIds(game.id)).deep.eq([0, 1, 2]);
+  });
+
+  it('restoreGameAt forgets what the replay knew about the game', async () => {
+    game.phase = Phase.END;
+    game.save();
+    game.save();
+    game.save();
+    expect(await isFinished(game)).is.true;
+    let reads = 0;
+    const getGameVersion = database.getGameVersion.bind(database);
+    database.getGameVersion = (gameId, saveId) => {
+      reads++;
+      return getGameVersion(gameId, saveId);
+    };
+    expect(await isFinished(game)).is.true;
+    expect(reads).eq(0);
+
+    await instance.restoreGameAt(game.id, 2);
+
+    // The memo is gone, so the saves are read again.
+    await isFinished(game);
+    expect(reads).eq(1);
+    clearReplayCache();
   });
 
   it('saveGame', async () => {

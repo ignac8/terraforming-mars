@@ -9,6 +9,16 @@ import {Database} from '../../src/server/database/Database';
 import {IDatabase} from '../../src/server/database/IDatabase';
 import {restoreTestDatabase, setTestDatabase} from '../testing/setup';
 import {GameId} from '../../src/common/Types';
+import {Phase} from '../../src/common/Phase';
+import {InMemoryDatabase} from '../testing/InMemoryDatabase';
+import {IGame} from '../../src/server/IGame';
+import {LogMessage} from '../../src/common/logs/LogMessage';
+import {LogMessageType} from '../../src/common/logs/LogMessageType';
+import {clearReplayCache, getReplayMoves} from '../../src/server/replay/ReplayService';
+import {rewindGame} from '../../src/server/rewind/RewindService';
+import {isTableLocked, withTableLock} from '../../src/server/rewind/tableLock';
+import {RouteError} from '../../src/server/routes/RouteError';
+import {cast} from '../../src/common/utils/utils';
 
 describe('LoadGame', () => {
   let scaffolding: RouteTestScaffolding;
@@ -82,6 +92,81 @@ describe('LoadGame', () => {
     expect(model.id).eq(game.id);
   });
 
+  it('forgets the replay of a game it rolls back', async () => {
+    const db = new InMemoryDatabase();
+    setTestDatabase(db);
+    clearReplayCache();
+    const [game, player] = testGame(2);
+    await scaffolding.ctx.gameLoader.add(game);
+    const save = game.serialize();
+    db.games.set(game.id, [save, save, save, {...save, phase: Phase.END}]);
+    game.phase = Phase.END;
+    expect((await getReplayMoves(game, player.id)).status).eq('available');
+
+    await put({gameId: game.id, rollbackCount: 1});
+
+    expect(res.statusCode).eq(statusCode.ok);
+    expect(await getReplayMoves(game, player.id)).deep.eq({status: 'not-finished'});
+    clearReplayCache();
+  });
+
+  it('forgets the replay before it reloads the game', async () => {
+    const db = new InMemoryDatabase();
+    setTestDatabase(db);
+    clearReplayCache();
+    const [game, player] = testGame(2);
+    await scaffolding.ctx.gameLoader.add(game);
+    const save = game.serialize();
+    db.games.set(game.id, [save, save, save, {...save, phase: Phase.END}]);
+    game.phase = Phase.END;
+    expect((await getReplayMoves(game, player.id)).status).eq('available');
+    const loader = scaffolding.ctx.gameLoader;
+    const getGame = loader.getGame.bind(loader);
+    let duringReload: unknown;
+    loader.getGame = async (gameId, bypassCache) => {
+      // The old game object is still the one in memory while the reload is under way.
+      duringReload = await getReplayMoves(game, player.id);
+      return getGame(gameId, bypassCache);
+    };
+
+    await put({gameId: game.id, rollbackCount: 1});
+
+    expect(duringReload).deep.eq({status: 'not-finished'});
+    clearReplayCache();
+  });
+
+  it('shows the new list, not the abandoned one, when a rolled back game finishes again', async () => {
+    const db = new InMemoryDatabase();
+    setTestDatabase(db);
+    clearReplayCache();
+    const [game, player] = testGame(2);
+    await scaffolding.ctx.gameLoader.add(game);
+    const save = game.serialize();
+    const log = (n: number) => Array.from({length: n}, (_, i) => new LogMessage(LogMessageType.DEFAULT, `line ${i}`, []));
+    db.games.set(game.id, [
+      {...save, gameLog: log(0)},
+      {...save, gameLog: log(2)},
+      {...save, gameLog: log(5)},
+      {...save, gameLog: log(5), phase: Phase.END},
+    ]);
+    game.phase = Phase.END;
+    const moveIds = async (g: IGame) => ((await getReplayMoves(g, player.id)) as {moves: Array<{saveId: number}>}).moves.map((m) => m.saveId);
+    expect(await moveIds(game)).deep.eq([0, 1, 3]);
+
+    await put({gameId: game.id, rollbackCount: 2});
+
+    const reopened = (await scaffolding.ctx.gameLoader.getGame(game.id))!;
+    reopened.phase = Phase.ACTION;
+    expect(await getReplayMoves(reopened, player.id)).deep.eq({status: 'not-finished'});
+
+    // The game is played differently this time and finishes with different saves.
+    const rows = db.games.get(game.id)!;
+    rows.push({...save, gameLog: log(3)}, {...save, gameLog: log(7)}, {...save, gameLog: log(7), phase: Phase.END});
+    reopened.phase = Phase.END;
+    expect(await moveIds(reopened)).deep.eq([0, 1, 2, 4]);
+    clearReplayCache();
+  });
+
   describe('rollback', () => {
     let events: Array<string>;
     let finishDelete: () => void;
@@ -133,7 +218,9 @@ describe('LoadGame', () => {
       const loader = scaffolding.ctx.gameLoader;
       const getGame = loader.getGame.bind(loader);
       loader.getGame = (gameId, bypassCache) => {
-        events.push('load');
+        if (bypassCache) {
+          events.push('load');
+        }
         return getGame(gameId, bypassCache);
       };
 
@@ -146,6 +233,59 @@ describe('LoadGame', () => {
 
       expect(events).deep.eq([`delete ${game.id} 2`, 'delete done', 'load']);
       expect(res.statusCode).eq(statusCode.ok);
+    });
+
+    it('holds the table while it rolls back', async () => {
+      const [game, player] = testGame(1, {undoOption: true});
+      // A game with no log lines gets them read back from the database, which this one has no copy of.
+      game.log('Hello');
+      await scaffolding.ctx.gameLoader.add(game);
+
+      const response = put({gameId: game.id, rollbackCount: 2});
+      await new Promise((resolve) => setTimeout(resolve, 0));
+      try {
+        expect(events).deep.eq([`delete ${game.id} 2`]);
+        expect(isTableLocked(game.id)).is.true;
+        let refused: unknown;
+        await rewindGame(game, player, 0, 'same').catch((e) => refused = e);
+        expect(cast(refused, RouteError).detail).eq('A rewind is already running.');
+      } finally {
+        finishDelete();
+        await response;
+      }
+
+      expect(res.statusCode).eq(statusCode.ok);
+      expect(isTableLocked(game.id)).is.false;
+    });
+
+    it('is refused while the table is held', async () => {
+      const [game] = testGame(2);
+      await scaffolding.ctx.gameLoader.add(game);
+      let release = () => {};
+      const held = withTableLock(game.id, () => new Promise<void>((resolve) => release = resolve));
+      try {
+        await put({gameId: game.id, rollbackCount: 2});
+      } finally {
+        release();
+        await held;
+      }
+
+      expect(res.statusCode).eq(statusCode.badRequest);
+      expect(res.content).eq('Bad request: The table is being rewound. Click OK to refresh this page.');
+      expect(events).is.empty;
+    });
+
+    it('is refused while the game is frozen, and deletes nothing', async () => {
+      const [game] = testGame(2);
+      await scaffolding.ctx.gameLoader.add(game);
+      game.frozen = true;
+
+      await put({gameId: game.id, rollbackCount: 2});
+
+      expect(res.statusCode).eq(statusCode.badRequest);
+      expect(res.content).eq('Bad request: The game is frozen.');
+      expect(events).is.empty;
+      expect(isTableLocked(game.id)).is.false;
     });
 
     it('reports a failed delete', async () => {

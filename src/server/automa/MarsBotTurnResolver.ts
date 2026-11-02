@@ -13,7 +13,7 @@ import {
   DifficultyLevel,
 } from '../../common/automa/AutomaTypes';
 import {MarsBotBoard} from './MarsBotBoard';
-import {marsBotCardTags} from './MarsBotTags';
+import {cardTagsIncludingEvent} from './MarsBotTags';
 import {MarsBotTilePlacer} from './MarsBotTilePlacer';
 import {IMilestone} from '../milestones/IMilestone';
 import {IAward} from '../awards/IAward';
@@ -58,7 +58,7 @@ export class MarsBotTurnResolver {
     // discard pile, so it can't be drawn again
     this.marsBotManager?.playedProjectCards.push(original);
 
-    const allTags = marsBotCardTags(original);
+    const allTags = cardTagsIncludingEvent(original);
     const tags = firstTagOnly ? allTags.slice(0, 1) : allTags;
     // Effects below see only the resolved tags. Object.create keeps the prototype (methods like
     // getVictoryPoints).

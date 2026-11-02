@@ -52,7 +52,7 @@ describe('MarsBotShippingBoard (C-18)', () => {
     let marsBot: MarsBot;
 
     beforeEach(() => {
-      const [game] = testGame(1, {automaOption: true, coloniesExtension: true, boardName: BoardName.THARSIS});
+      const [game] = testGame(1, {automa: true, coloniesExtension: true, boardName: BoardName.THARSIS});
       marsBot = getMarsBot(game);
     });
 
@@ -86,7 +86,7 @@ describe('MarsBotShippingBoard (C-18)', () => {
     let marsBot: MarsBot;
 
     beforeEach(() => {
-      const [game] = testGame(1, {automaOption: true, coloniesExtension: true, boardName: BoardName.THARSIS});
+      const [game] = testGame(1, {automa: true, coloniesExtension: true, boardName: BoardName.THARSIS});
       marsBot = getMarsBot(game);
     });
 
@@ -139,7 +139,7 @@ describe('MarsBotShippingBoard (C-18)', () => {
 
   describe('serialization', () => {
     it('round-trips shipping board storage', () => {
-      const [game] = testGame(1, {automaOption: true, coloniesExtension: true, boardName: BoardName.THARSIS});
+      const [game] = testGame(1, {automa: true, coloniesExtension: true, boardName: BoardName.THARSIS});
       const marsBot = getMarsBot(game);
       marsBot.shippingBoard.add(ColonyName.CERES, 3, marsBot);
       marsBot.shippingBoard.add(ColonyName.LUNA, 2, marsBot);
@@ -156,7 +156,7 @@ describe('MarsBotShippingBoard (C-18)', () => {
     });
 
     it('does not serialize shippingBoard when empty', () => {
-      const [game] = testGame(1, {automaOption: true, coloniesExtension: true, boardName: BoardName.THARSIS});
+      const [game] = testGame(1, {automa: true, coloniesExtension: true, boardName: BoardName.THARSIS});
       const marsBot = getMarsBot(game);
       const state = marsBot.serialize();
       expect(state.shippingBoard).to.be.undefined;

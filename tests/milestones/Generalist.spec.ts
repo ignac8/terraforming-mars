@@ -2,7 +2,7 @@ import {expect} from 'chai';
 import {Generalist} from '../../src/server/milestones/Generalist';
 import {ALL_RESOURCES} from '../../src/common/Resource';
 import {testGame} from '../TestingUtils';
-import {IMarsBot} from '../../src/server/automa/MarsBotCorpTypes';
+import {IMarsBot} from '../../src/server/automa/IMarsBot';
 import {MarsBotBoard} from '../../src/server/automa/MarsBotBoard';
 import {THARSIS_MARSBOT_BOARD} from '../../src/server/automa/boards/TharsisMarsBot';
 import {VENUS_MARSBOT_TRACK} from '../../src/server/automa/boards/VenusMarsBot';

@@ -238,7 +238,7 @@ describe('MarsBotScoring', () => {
   // and its floaters on the Venus board, score half a VP each, rounded down
   describe('Leftover resources VP (automaColonyVP)', () => {
     function leftoverGame(options: {automaColonyVP?: boolean, coloniesExtension?: boolean, venusNextExtension?: boolean} = {}) {
-      const [game] = testGame(1, {automaOption: true, coloniesExtension: true, ...options});
+      const [game] = testGame(1, {automa: true, coloniesExtension: true, ...options});
       return {game, bot: game.automaHooks!.marsBot};
     }
 

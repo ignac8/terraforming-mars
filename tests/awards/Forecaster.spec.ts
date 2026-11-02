@@ -2,7 +2,7 @@ import {expect} from 'chai';
 import {Forecaster} from '../../src/server/awards/Forecaster';
 import {TestPlayer} from '../TestPlayer';
 import {fakeCard} from '../TestingUtils';
-import {IMarsBot} from '../../src/server/automa/MarsBotCorpTypes';
+import {IMarsBot} from '../../src/server/automa/IMarsBot';
 
 describe('Forecaster', () => {
   const award = new Forecaster();

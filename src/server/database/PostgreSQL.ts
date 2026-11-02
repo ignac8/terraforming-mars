@@ -1,11 +1,11 @@
-import prometheus from 'prom-client';
+import prometheus from '@prometheus-io/client';
 import pg from 'pg';
 import {IDatabase} from './IDatabase';
 import {IGame, Score} from '../IGame';
 import {GameOptions} from '../game/GameOptions';
 import {GameId, ParticipantId, isGameId, safeCast} from '../../common/Types';
 import {SerializedGame} from '../SerializedGame';
-import {daysAgoToSeconds, stringToBoolean, stringToNumber} from './utils';
+import {DEFAULT_COMPRESS_COMPLETED_GAMES_DAYS, compressCutoffSeconds, daysAgoToSeconds, stringToBoolean, stringToNumber} from './utils';
 import {GameIdLedger} from './IDatabase';
 import {Session, SessionId} from '../auth/Session';
 import {toID} from '../../common/utils/utils';
@@ -15,19 +15,14 @@ import {Clock} from '@/common/Timer';
 import {parseInterned} from './parseInterned';
 import {LogMessage} from '@/common/logs/LogMessage';
 import {compressToBrotli, decompressFromBrotli} from './compression';
+import {TableStatePatch, withTableState} from '../rewind/tableState';
 
 type StoredSerializedGame = Omit<SerializedGame, 'gameOptions' | 'gameLog'> & {logLength: number};
 
 export const POSTGRESQL_TABLES = ['game', 'games', 'game_results', 'participants', 'completed_game', 'session'] as const;
 
-const POSTGRES_TRIM_COUNT = stringToNumber(process.env.POSTGRES_TRIM_COUNT, 10);
+const POSTGRES_TRIM_COUNT = stringToNumber(process.env.POSTGRES_TRIM_COUNT, 0);
 const DB_COMPRESS_ON_WRITE = stringToBoolean(process.env.DB_COMPRESS_ON_WRITE, false);
-const MARK_FINISHED_ATTEMPTS = 3;
-
-// SQLSTATE 40P01: Postgres broke a lock cycle by cancelling this statement.
-function isDeadlock(err: unknown): boolean {
-  return err instanceof Error && (err as Error & {code?: string}).code === '40P01';
-}
 
 // How often the (expensive) table/database size stats are actually recomputed. Scrapes that land
 // between refreshes just get the cached values.
@@ -67,6 +62,8 @@ const metrics = {
 export class PostgreSQL implements IDatabase {
   protected trimCount = POSTGRES_TRIM_COUNT;
   protected compressOnWrite = DB_COMPRESS_ON_WRITE;
+  // The last save of each game that hasn't finished writing.
+  private savesInProgress = new Map<GameId, Promise<void>>();
 
   protected statistics = {
     saveCount: 0,
@@ -208,8 +205,10 @@ export class PostgreSQL implements IDatabase {
 
     const gameLog: Array<LogMessage> = parseInterned(log);
     // If this is part of an undo operation, delete the end
-    // of the array so the log matches the length.
-    gameLog.length = logLength;
+    // of the array so the log matches the length. Never lengthen it: that fills the log with holes.
+    if (gameLog.length > logLength) {
+      gameLog.length = logLength;
+    }
     const gameOptions: GameOptions = parseInterned(options);
     return {...remainder, gameOptions, gameLog};
   }
@@ -279,19 +278,24 @@ export class PostgreSQL implements IDatabase {
     return this.compose(this.resolveGameText(row), row.log, row.options);
   }
 
-  // Not part of IDatabase: void/callback-based, so MetricsDelegate can't observe its completion or
-  // errors the way it can for Promise-returning methods. Instrumented directly here instead.
-  saveGameResults(gameId: GameId, players: number, generations: number, gameOptions: GameOptions, scores: Array<Score>): void {
+  // MetricsDelegate passes saveGameResults through unwrapped, because the other backends write the row
+  // synchronously and the interface lets them return nothing. Instrumented directly here instead,
+  // and the promise settles when the INSERT does.
+  saveGameResults(gameId: GameId, players: number, generations: number, gameOptions: GameOptions, scores: Array<Score>): Promise<void> {
     const operation = 'saveGameResults';
     const startMs = Date.now();
     databaseMetrics.operationCount.inc({operation});
-    this.client.query('INSERT INTO game_results (game_id, seed_game_id, players, generations, game_options, scores) VALUES($1, $2, $3, $4, $5, $6)', [gameId, gameOptions.clonedGamedId, players, generations, gameOptions, JSON.stringify(scores)], (err) => {
-      databaseMetrics.operationLatency.observe({operation}, Date.now() - startMs);
-      if (err) {
-        databaseMetrics.operationErrors.inc({operation});
-        console.error('PostgreSQL:saveGameResults', err);
-        throw err;
-      }
+    return new Promise((resolve, reject) => {
+      this.client.query('INSERT INTO game_results (game_id, seed_game_id, players, generations, game_options, scores) VALUES($1, $2, $3, $4, $5, $6)', [gameId, gameOptions.clonedGamedId, players, generations, gameOptions, JSON.stringify(scores)], (err) => {
+        databaseMetrics.operationLatency.observe({operation}, Date.now() - startMs);
+        if (err) {
+          databaseMetrics.operationErrors.inc({operation});
+          console.error('PostgreSQL:saveGameResults', err);
+          reject(err);
+        } else {
+          resolve();
+        }
+      });
     });
   }
 
@@ -311,46 +315,16 @@ export class PostgreSQL implements IDatabase {
     }
   }
 
-  // The final save can start trim() (not awaited) on the same rows, and the two can deadlock.
-  // Postgres then cancels one of them, so retry instead of leaving the game half finished.
   async markFinished(gameId: GameId): Promise<void> {
-    for (let attempt = 1; ; attempt++) {
-      try {
-        await this.markFinishedOnce(gameId);
-        return;
-      } catch (err) {
-        if (!isDeadlock(err) || attempt >= MARK_FINISHED_ATTEMPTS) {
-          throw err;
-        }
-        console.warn(`PostgreSQL:markFinished deadlock on ${gameId}, retrying`);
-      }
-    }
+    const promise1 = this.client.query('UPDATE games SET status = \'finished\' WHERE game_id = $1', [gameId]);
+    const promise2 = this.client.query('UPDATE game SET status = \'finished\' WHERE game_id = $1', [gameId]);
+    const promise3 = this.client.query('INSERT INTO completed_game(game_id) VALUES ($1)', [gameId]);
+    await Promise.all([promise1, promise2, promise3]);
   }
 
-  // One transaction, so the three tables agree on whether the game is finished.
-  private async markFinishedOnce(gameId: GameId): Promise<void> {
-    let releaseError: Error | undefined;
-    const onError = (err: Error) => console.error('PostgreSQL:markFinished connection', err);
-    const client = await this.client.connect();
-    client.on('error', onError);
-    try {
-      await client.query('BEGIN');
-      await client.query('UPDATE games SET status = \'finished\' WHERE game_id = $1', [gameId]);
-      await client.query('UPDATE game SET status = \'finished\' WHERE game_id = $1', [gameId]);
-      await client.query('INSERT INTO completed_game(game_id) VALUES ($1)', [gameId]);
-      await client.query('COMMIT');
-    } catch (err) {
-      try {
-        await client.query('ROLLBACK');
-      } catch (rollbackErr) {
-        // The connection is in an unknown state. Release it with an error so the pool discards it.
-        releaseError = rollbackErr instanceof Error ? rollbackErr : new Error(String(rollbackErr));
-      }
-      throw err;
-    } finally {
-      client.removeListener('error', onError);
-      client.release(releaseError);
-    }
+  async reopenFinishedGame(gameId: GameId): Promise<void> {
+    await this.client.query('DELETE FROM completed_game WHERE game_id = $1', [gameId]);
+    await this.client.query('DELETE FROM game_results WHERE game_id = $1', [gameId]);
   }
 
   // Purge unfinished games older than MAX_GAME_DAYS days. If this environment variable is absent, it uses the default of 10 days.
@@ -378,11 +352,8 @@ export class PostgreSQL implements IDatabase {
   }
 
 
-  async compressCompletedGames(compressCompletedGamesDays: string | undefined = process.env.COMPRESS_COMPLETED_GAMES_DAYS): Promise<void> {
-    if (compressCompletedGamesDays === undefined) {
-      return;
-    }
-    const dateToSeconds = daysAgoToSeconds(compressCompletedGamesDays, 0);
+  async compressCompletedGames(compressCompletedGamesDays: string = process.env.COMPRESS_COMPLETED_GAMES_DAYS ?? DEFAULT_COMPRESS_COMPLETED_GAMES_DAYS): Promise<void> {
+    const dateToSeconds = compressCutoffSeconds(compressCompletedGamesDays);
     const selectResult = await this.client.query('SELECT DISTINCT game_id FROM completed_game WHERE completed_time < to_timestamp($1)', [dateToSeconds]);
     const gameIds = selectResult.rows.slice(0, 1000).map((row) => row.game_id);
     console.log(`${gameIds.length} completed games to be compressed.`);
@@ -418,20 +389,38 @@ export class PostgreSQL implements IDatabase {
     const gameCompressed = this.compressOnWrite ? compressToBrotli(gameJSON) : null;
 
     this.statistics.saveCount++;
-    // A transaction must stay on one connection. pool.query() checks out a connection per statement,
-    // so BEGIN, the inserts and COMMIT could each land on a different one.
+    // Take the save id together with the snapshot above, so a save that starts before this one
+    // finishes gets the next id.
+    const thisSaveId = game.lastSaveId;
+    game.lastSaveId = thisSaveId + 1;
+
+    // Every save rewrites the game's single log row, so one game's saves write in the order they
+    // were taken. Otherwise an older save can write last and leave the log shorter than the newest
+    // save says it is.
+    const previous = this.savesInProgress.get(game.id) ?? Promise.resolve();
+    const write = () => this.write(game, thisSaveId, gameJSON, gameCompressed, log, options);
+    const thisSave = previous.then(write, write);
+    this.savesInProgress.set(game.id, thisSave);
+    try {
+      await thisSave;
+    } finally {
+      if (this.savesInProgress.get(game.id) === thisSave) {
+        this.savesInProgress.delete(game.id);
+      }
+    }
+  }
+
+  private async write(game: IGame, thisSaveId: number, gameJSON: string, gameCompressed: Buffer | null, log: string, options: string): Promise<void> {
+    // BEGIN through COMMIT all run on this one client.
     let client: pg.PoolClient | undefined;
     let releaseError: Error | undefined;
-    // pool.connect() drops the pool's own 'error' listener until release. A dead socket fails the
-    // pending query, which the catch below handles, and also emits 'error', which must not go unheard.
-    const onError = (err: Error) => console.error('PostgreSQL:saveGame connection', err);
+    // While the client is checked out the pool doesn't listen for its 'error' events, so this does.
+    const onError = () => databaseMetrics.operationErrors.inc({operation: 'saveGame:connection'});
     try {
       client = await this.client.connect();
       client.on('error', onError);
       await client.query('BEGIN');
 
-      // Holding onto a value avoids certain race conditions where saveGame is called twice in a row.
-      const thisSaveId = game.lastSaveId;
       // xmax = 0 is described at https://stackoverflow.com/questions/39058213/postgresql-upsert-differentiate-inserted-and-updated-rows-using-system-columns-x
       //
       // When compressOnWrite is true, the game state is written to game_compressed; when it's
@@ -441,7 +430,7 @@ export class PostgreSQL implements IDatabase {
         VALUES ($1, $2, $3, $4, $5)
         ON CONFLICT (game_id, save_id) DO UPDATE SET game = $3, game_compressed = $4
         RETURNING (xmax = 0) AS inserted`,
-        [game.id, game.lastSaveId, this.compressOnWrite ? null : gameJSON, this.compressOnWrite ? gameCompressed : null, game.players.length]);
+        [game.id, thisSaveId, this.compressOnWrite ? null : gameJSON, this.compressOnWrite ? gameCompressed : null, game.players.length]);
 
       await client.query(
         `INSERT INTO game (game_id, log, options)
@@ -472,13 +461,15 @@ export class PostgreSQL implements IDatabase {
         if (game.spectatorId) {
           participantIds.push(game.spectatorId);
         }
-        await this.insertParticipants(client, {gameId: game.id, participantIds: participantIds});
+        await this._storeParticipants(client, {gameId: game.id, participantIds: participantIds});
       }
 
       await client.query('COMMIT');
-      // Only advance once the save is durable, so a failed save never leaves a gap in save ids.
-      game.lastSaveId = thisSaveId + 1;
     } catch (err) {
+      // Hand the id back unless a later save already took the next one.
+      if (game.lastSaveId === thisSaveId + 1) {
+        game.lastSaveId = thisSaveId;
+      }
       if (client !== undefined) {
         try {
           await client.query('ROLLBACK');
@@ -497,11 +488,55 @@ export class PostgreSQL implements IDatabase {
       client?.removeListener('error', onError);
       client?.release(releaseError);
     }
-    this.trim(game);
+    // Awaited, so the markFinished that follows the last save never runs alongside this delete.
+    await this.trim(game).catch(() => databaseMetrics.operationErrors.inc({operation: 'trim'}));
   }
 
-  // Not part of IDatabase, invisible to MetricsDelegate, and invoked fire-and-forget (not awaited) by
-  // saveGame above. Instrumented directly here instead.
+  // Rewrites the stored row only: never the shared log or the options, and never a row that is gone.
+  async updateNewestSave(gameId: GameId, saveId: number, patch: TableStatePatch): Promise<boolean> {
+    let releaseError: Error | undefined;
+    // While the client is checked out the pool doesn't listen for its 'error' events, so this does.
+    const onError = () => databaseMetrics.operationErrors.inc({operation: 'updateNewestSave:connection'});
+    const client = await this.client.connect();
+    client.on('error', onError);
+    try {
+      await client.query('BEGIN');
+      const newest = await client.query('SELECT MAX(save_id) AS save_id FROM games WHERE game_id = $1', [gameId]);
+      if (newest.rows[0].save_id !== saveId) {
+        await client.query('ROLLBACK');
+        return false;
+      }
+      const res = await client.query('SELECT game, game_compressed FROM games WHERE game_id = $1 AND save_id = $2 FOR UPDATE', [gameId, saveId]);
+      if (res.rows.length === 0) {
+        await client.query('ROLLBACK');
+        return false;
+      }
+      const row = res.rows[0];
+      const stored: StoredSerializedGame = JSON.parse(this.resolveGameText(row));
+      const text = JSON.stringify(withTableState(stored, patch));
+      // Into the column the row used, so a row never carries both.
+      if (row.game_compressed !== null) {
+        await client.query('UPDATE games SET game_compressed = $3 WHERE game_id = $1 AND save_id = $2', [gameId, saveId, compressToBrotli(text)]);
+      } else {
+        await client.query('UPDATE games SET game = $3 WHERE game_id = $1 AND save_id = $2', [gameId, saveId, text]);
+      }
+      await client.query('COMMIT');
+      return true;
+    } catch (err) {
+      try {
+        await client.query('ROLLBACK');
+      } catch (rollbackErr) {
+        // The connection is in an unknown state. Release it with an error so the pool discards it.
+        releaseError = rollbackErr instanceof Error ? rollbackErr : new Error(String(rollbackErr));
+      }
+      throw err;
+    } finally {
+      client.removeListener('error', onError);
+      client.release(releaseError);
+    }
+  }
+
+  // Not part of IDatabase, so invisible to MetricsDelegate.
   private async trim(game: IGame) {
     if (this.trimCount <= 0) {
       return;
@@ -519,14 +554,21 @@ export class PostgreSQL implements IDatabase {
       // Should this be an error?
       return;
     }
+    // A game that runs again is no longer waiting to have its saves compressed. This goes first and
+    // may fail without failing the rollback, so the delete of the saves alone decides the outcome.
+    try {
+      await this.client.query('DELETE FROM completed_game WHERE game_id = $1', [gameId]);
+    } catch (err) {
+      console.warn(`PostgreSQL: unable to take ${gameId} off the compression queue`, err);
+    }
     await this.client.query('DELETE FROM games WHERE ctid IN (SELECT ctid FROM games WHERE game_id = $1 ORDER BY save_id DESC LIMIT $2)', [gameId, rollbackCount]);
   }
 
   public storeParticipants(entry: GameIdLedger): Promise<void> {
-    return this.insertParticipants(this.client, entry);
+    return this._storeParticipants(this.client, entry);
   }
 
-  private async insertParticipants(client: pg.ClientBase | pg.Pool, entry: GameIdLedger): Promise<void> {
+  private async _storeParticipants(client: pg.ClientBase | pg.Pool, entry: GameIdLedger): Promise<void> {
     await client.query('INSERT INTO participants (game_id, participants) VALUES($1, $2) ON CONFLICT (game_id) DO NOTHING', [entry.gameId, entry.participantIds]);
   }
 

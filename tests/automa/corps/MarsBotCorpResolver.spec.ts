@@ -4,7 +4,8 @@ import {TestPlayer} from '../../TestPlayer';
 import {IGame} from '../../../src/server/IGame';
 import {MarsBot} from '../../../src/server/automa/MarsBot';
 import {MarsBotCorpResolver} from '../../../src/server/automa/corps/MarsBotCorpResolver';
-import {IMarsBotCorp, MarsBotTrackCube} from '../../../src/server/automa/MarsBotCorpTypes';
+import {IMarsBotCorp} from '../../../src/server/automa/IMarsBotCorp';
+import {MarsBotTrackCube} from '../../../src/server/automa/MarsBotCorpTypes';
 import {
   registerMarsBotCorp,
   clearMarsBotCorpRegistry, restoreMarsBotCorpRegistry,
@@ -26,7 +27,7 @@ function createTestCorp(overrides: Partial<IMarsBotCorp> & {name: CardName}): IM
 
 function createAutomaGame(difficulty: 'easy' | 'normal' | 'hard' | 'brutal' = 'normal'): {game: IGame, human: TestPlayer, marsBot: MarsBot} {
   const [game, human] = testGame(1, {
-    automaOption: true,
+    automa: true,
     automaDifficulty: difficulty,
     boardName: BoardName.THARSIS,
   });

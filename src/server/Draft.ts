@@ -76,6 +76,9 @@ export abstract class Draft {
    *
    * Games are stored after every selection, whereas historically it was
    * stored after round. So restoring the draft is a bit tricky.
+   *
+   * Like every other phase, a restored draft that waits for players saves the game again under the id it
+   * was loaded from, so the next selection is saved in a row of its own. A sandbox never saves here.
    */
   public restoreDraft() {
     const players = this.game.players;
@@ -83,6 +86,7 @@ export abstract class Draft {
     // When restoring drafting, it might be that nothing was dealt yet.
     if (!players.some((p) => p.needsToDraft !== undefined)) {
       this.startDraft(false);
+      this.saveRestored();
       return;
     }
 
@@ -96,8 +100,17 @@ export abstract class Draft {
       }
     }
 
-    if (!anybodyStillNeedsToDraft) {
+    if (anybodyStillNeedsToDraft) {
+      this.saveRestored();
+    } else {
+      // Ending the round saves.
       this.endRound();
+    }
+  }
+
+  private saveRestored(): void {
+    if (!this.game.isSandbox) {
+      this.game.save();
     }
   }
 

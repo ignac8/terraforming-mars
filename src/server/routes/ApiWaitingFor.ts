@@ -24,7 +24,8 @@ export class ApiWaitingFor extends Handler {
     return player.game.phase === Phase.END;
   }
 
-  private playersWithRequiredInputs(game: IGame) {
+  /** Whose prompts are waiting to be answered, whether or not the game lets them be. */
+  private playersWithPendingInputs(game: IGame) {
     return game.playersInGenerationOrder
       .filter((player) => {
         const waitingFor = player.getWaitingFor();
@@ -33,11 +34,19 @@ export class ApiWaitingFor extends Handler {
       .map((player) => player.color);
   }
 
+  /** Whom the players and spectators are waiting for. Nobody, while a judge has the game frozen. */
+  private playersWithRequiredInputs(game: IGame) {
+    return game.frozen ? [] : this.playersWithPendingInputs(game);
+  }
+
   private getPlayerWaitingForModel(player: IPlayer, game: IGame, gameAge: number, undoCount: number): WaitingForModel {
     const inputs = this.playersWithRequiredInputs(game);
-    if (this.playerHasRequiredInput(player)) {
+    // A changed undo count can leave the player at the same prompt, e.g. a rewind to it, so it goes first.
+    if (game.undoCount !== undoCount) {
+      return {result: 'REFRESH', waitingFor: inputs};
+    } else if (this.playerHasRequiredInput(player) && !game.frozen) {
       return {result: 'GO', waitingFor: inputs};
-    } else if (game.gameAge > gameAge || game.undoCount > undoCount) {
+    } else if (game.gameAge > gameAge) {
       return {result: 'REFRESH', waitingFor: inputs};
     }
     return {result: 'WAIT', waitingFor: inputs};
@@ -46,7 +55,8 @@ export class ApiWaitingFor extends Handler {
   private getSpectatorWaitingForModel(game: IGame, gameAge: number, undoCount: number): WaitingForModel {
     const inputs = this.playersWithRequiredInputs(game);
 
-    if (game.gameAge > gameAge || game.undoCount > undoCount) {
+    // A page can hold a higher count than the server, e.g. a patch that a restart lost.
+    if (game.gameAge > gameAge || game.undoCount !== undoCount) {
       return {result: 'REFRESH', waitingFor: inputs};
     }
     return {result: 'WAIT', waitingFor: inputs};

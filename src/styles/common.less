@@ -157,6 +157,11 @@ each(@players, {
   background-color: @player_bronze;
 }
 
+// light text is unreadable on the clear background
+.player_bg_color_clear {
+  color: @grey_900;
+}
+
 // backgrounds with opacity
 each(@players, {
   @c: ~"player_@{value}";
@@ -166,6 +171,10 @@ each(@players, {
 })
 .player_translucent_bg_color_bronze {
   background: rgba(@player_bronze, 0.7);
+}
+
+.player_translucent_bg_color_clear {
+  background: rgba(@player_clear, 0.6);
 }
 
 .alert-dialog {
@@ -197,6 +206,7 @@ each(@players, {
 @import "./player_home.less";
 @import "./players_overview.less";
 @import "./preferences.less";
+@import "./replay.less";
 @import "./popup.less";
 @import "./card_help.less";
 @import "./waiting_for.less";

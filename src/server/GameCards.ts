@@ -24,6 +24,7 @@ import {ICeoCard} from './cards/ceos/ICeoCard';
 import {PRELUDE2_CARD_MANIFEST} from './cards/prelude2/Prelude2CardManifest';
 import {STAR_WARS_CARD_MANIFEST} from './cards/starwars/StarwarsCardManifest';
 import {UNDERWORLD_CARD_MANIFEST} from './cards/underworld/UnderworldCardManifest';
+import {OFFICIAL_MODULES} from '../common/cards/GameModule';
 
 /**
  * Returns the cards available to a game based on its `GameOptions`.
@@ -35,8 +36,7 @@ import {UNDERWORLD_CARD_MANIFEST} from './cards/underworld/UnderworldCardManifes
  * Therefore, this is only used when constructing a brand new instance.
  *
  * ... and one other place. When trying to determine the available standard
- * projects for a game. This is just done on the fly all the time, rather
- * that store them. (We should fix that.)
+ * projects for a game.
  */
 export class GameCards {
   private readonly gameOptions: GameOptions;
@@ -144,34 +144,32 @@ export class GameCards {
    * Excludes cards that are incompatible with the game options, banned, or replaced by another module.
    */
   private getCards<T extends ICard>(cardManifestName: keyof ModuleManifest) : Array<T> {
-    let cards: Array<T> = [];
+    const cards: Array<T> = [];
     for (const moduleManifest of this.moduleManifests) {
       // a bit of a hack, but since this is a private API, this is reasonable.
       const cardManifest: CardManifest<T> = moduleManifest[cardManifestName] as CardManifest<T>;
       cards.push(...this.instantiate(cardManifest));
     }
 
-    cards = this.filterBannedCards(cards);
-    cards = this.filterReplacedCards(cards);
-    return cards;
-  }
+    const replacingManifests = this.gameOptions.keepReplacedCards ?
+      this.moduleManifests.filter((manifest) => !OFFICIAL_MODULES.includes(manifest.module)) :
+      this.moduleManifests;
 
-  /* Remove cards excluded by choice in game options */
-  private filterBannedCards<T extends ICard>(cards: Array<T>): Array<T> {
-    return cards.filter((card) => {
-      return this.gameOptions.bannedCards.includes(card.name) !== true;
-    });
-  }
+    const filtered = cards.filter((card) => {
+      // Remove banned cards
+      if (this.gameOptions.bannedCards.includes(card.name)) {
+        return false;
+      }
 
-  /* Remove cards that are replaced by new versions in other manifests */
-  private filterReplacedCards<T extends ICard>(cards: Array<T>): Array<T> {
-    return cards.filter((card) => {
-      for (const manifest of this.moduleManifests) {
+      // Remove cards that are replaced by new versions in other manifests
+      for (const manifest of replacingManifests) {
         if (manifest.cardsToRemove.has(card.name)) {
           return false;
         }
       }
+
       return true;
     });
+    return filtered;
   }
 }

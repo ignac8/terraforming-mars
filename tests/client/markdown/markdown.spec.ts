@@ -1,12 +1,13 @@
 import {expect} from 'chai';
-import {renderMarkdown} from '@/client/markdown/markdown';
+import {renderIcons, renderMarkdown} from '@/client/markdown/markdown';
 import {PreferencesManager} from '@/client/utils/PreferencesManager';
+import {setTranslationsForTest} from '@/client/directives/i18n';
 
 describe('markdown', () => {
   afterEach(() => {
     localStorage.removeItem('lang');
     PreferencesManager.resetForTest();
-    delete (window as any)._translations;
+    setTranslationsForTest(undefined);
   });
 
   it('renders icon shortcodes', () => {
@@ -17,6 +18,22 @@ describe('markdown', () => {
   it('allows uppercase names', () => {
     expect(renderMarkdown(':expansion:deltaProject:')).eq(
       '<p><span class="expansion-icon expansion-icon-deltaProject"></span></p>\n');
+  });
+
+  it('renders standard resources', () => {
+    expect(renderMarkdown(':r:steel:')).eq(
+      '<p><span class="markdown-resource resource_icon--steel"></span></p>\n');
+  });
+
+  it('renders card resources', () => {
+    expect(renderMarkdown(':cr:syndicate-fleet:')).eq(
+      '<p><span class="markdown-resource card-resource-syndicate-fleet"></span></p>\n');
+  });
+
+  it('renders production', () => {
+    expect(renderMarkdown(':p:plants: :p:heat:')).eq(
+      '<p><span class="markdown-production"><span class="markdown-resource resource_icon--plants"></span></span> ' +
+      '<span class="markdown-production"><span class="markdown-resource resource_icon--heat"></span></span></p>\n');
   });
 
   it('leaves unknown kinds as text', () => {
@@ -32,15 +49,51 @@ describe('markdown', () => {
       '<p><a href="https://example.com" target="_blank">a</a></p>\n');
   });
 
+  it('inline keeps surrounding whitespace and has no block wrapping', () => {
+    expect(renderMarkdown(' spent :r:energy: and :cr:ware: <b>:unknown:x:</b> ', {inline: true})).eq(
+      ' spent <span class="markdown-resource resource_icon--energy"></span> and ' +
+      '<span class="markdown-resource card-resource-ware"></span> &lt;b&gt;:unknown:x:&lt;/b&gt; ');
+  });
+
+  it('inline renders production', () => {
+    expect(renderMarkdown('Gain 1:p:steel:', {inline: true})).eq(
+      'Gain 1<span class="markdown-production"><span class="markdown-resource resource_icon--steel"></span></span>');
+  });
+
+  it('translate: false skips translation', () => {
+    PreferencesManager.INSTANCE.set('lang', 'de');
+    setTranslationsForTest({'Goal': 'Ziel'});
+
+    expect(renderMarkdown('Goal', {inline: true, translate: false})).eq('Goal');
+    expect(renderMarkdown('Goal', {inline: true})).eq('Ziel');
+  });
+
+  it('renderIcons renders icons, escapes HTML, and ignores other markdown', () => {
+    expect(renderIcons(' spent 3:p:heat: *and* <b>:unknown:x:</b> 10:30: ')).eq(
+      ' spent 3<span class="markdown-production"><span class="markdown-resource resource_icon--heat"></span></span> ' +
+      '*and* &lt;b&gt;:unknown:x:&lt;/b&gt; 10:30: ');
+  });
+
   it('translates each block, icons included', () => {
     PreferencesManager.INSTANCE.set('lang', 'de');
-    (window as any)._translations = {
+    setTranslationsForTest({
       'Goal': 'Ziel',
       'Standard Mode (:tag:mars:): you win.': ':tag:mars: Standardmodus: du gewinnst.',
-    };
+    });
 
     expect(renderMarkdown('### Goal\n\n- Standard Mode (:tag:mars:): you win.\n')).eq(
       '<h3>Ziel</h3>\n' +
       '<ul>\n<li><span class="markdown-tag tag-mars"></span> Standardmodus: du gewinnst.</li>\n</ul>\n');
+  });
+
+  it('renders mc as megacredits', () => {
+    expect(renderMarkdown(':r:mc: :p:mc:')).eq(
+      '<p><span class="markdown-resource resource_icon--megacredits"></span> ' +
+      '<span class="markdown-production"><span class="markdown-resource resource_icon--megacredits"></span></span></p>\n');
+  });
+
+  it('renders the old :icon: kind in saved logs', () => {
+    expect(renderMarkdown('gained 1:icon:tr:', {inline: true})).eq(
+      'gained 1<span class="markdown-icon markdown-icon-tr"></span>');
   });
 });

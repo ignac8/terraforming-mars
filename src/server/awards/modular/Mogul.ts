@@ -1,10 +1,11 @@
 import {IPlayer} from '../../IPlayer';
 import {IAward} from '../IAward';
-import {IMarsBot} from '../../automa/MarsBotCorpTypes';
+import {IMarsBot} from '../../automa/IMarsBot';
 import {marsBotAllTrackPositions} from '../../automa/MarsBotMilestoneAwardEval';
 export class Mogul implements IAward {
   public readonly name = 'Mogul';
   public readonly description = 'Have the highest production (excluding M€) combined';
+  public readonly automaDescription = 'Highest track × 2';
 
   public getScore(player: IPlayer): number {
     return player.production.steel + player.production.titanium + player.production.plants + player.production.energy + player.production.heat;

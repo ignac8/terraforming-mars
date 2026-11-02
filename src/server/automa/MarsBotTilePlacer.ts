@@ -5,53 +5,65 @@ import {Board, isSpecialTileSpace} from '../boards/Board';
 import {SpaceType} from '../../common/boards/SpaceType';
 import {SpaceBonus} from '../../common/boards/SpaceBonus';
 import {BoardName} from '../../common/boards/BoardName';
+import {MilestoneName} from '../../common/ma/MilestoneName';
+import {AwardName} from '../../common/ma/AwardName';
 import {HELLAS_BONUS_OCEAN_COST, TERRA_CIMMERIA_COLONY_COST, VASTITAS_BOREALIS_NOVA_BONUS_TEMPERATURE_COST} from '../../common/constants';
-import {eligibleColoniesForMarsBot, placeColonyForMarsBot, selectRandomColony} from './colonies/MarsBotColonyPlacer';
-
-/** Narrows the spaces still tied after the ones before it. Never returns an empty list. */
-type Tiebreaker = (tied: ReadonlyArray<Space>) => ReadonlyArray<Space>;
-type TiebreakerName = 'oceans' | 'icons' | 'polarRegion' | 'southernRegion' | 'specialTiles' | 'edgeElseOceans';
+import {IMarsBot} from './IMarsBot';
+import {Comparator, comparing, compound, reversed} from '../../common/utils/Ordering';
 
 /**
- * The tiebreakers each map's player aid lists, in order. The flipped project card always comes last.
- * Rulebook C, p.10. Maps that aren't listed (Tharsis) use `DEFAULT_TIEBREAKERS`.
+ * Scores a space for one tiebreaker.
+ *
+ * The higher score wins.
  */
+type Scorer = (space: Space) => number;
+type TiebreakerName = 'oceans' | 'icons' | 'polarRegion' | 'southernRegion' | 'specialTiles' | 'edge';
+
+/** The tiebreakers of Tharsis, and of any map `MAP_TIEBREAKERS` doesn't list. */
 const DEFAULT_TIEBREAKERS: ReadonlyArray<TiebreakerName> = ['oceans', 'icons'];
+
+/**
+ * The tiebreakers each map's player aid lists, in order.
+ *
+ * The flipped project card always comes last (rulebook C, p.10).
+ */
 const MAP_TIEBREAKERS: Partial<Record<BoardName, ReadonlyArray<TiebreakerName>>> = {
   [BoardName.HELLAS]: ['oceans', 'polarRegion', 'icons'],
   [BoardName.ELYSIUM]: ['oceans', 'icons', 'southernRegion'],
   [BoardName.TERRA_CIMMERIA_NOVA]: ['oceans', 'specialTiles', 'icons'],
   [BoardName.UTOPIA_PLANITIA]: ['oceans', 'icons'],
-  [BoardName.VASTITAS_BOREALIS_NOVA]: ['icons', 'edgeElseOceans'],
+  // The aid reads "edge spaces, if possible, otherwise adjacent to as many oceans as possible".
+  // The oceans are the next tiebreaker, so they also decide between edge spaces.
+  [BoardName.VASTITAS_BOREALIS_NOVA]: ['icons', 'edge', 'oceans'],
 };
 
 /**
- * Spaces that count as one more reward icon when tiebreaking. The icons are still worth 1 M€ each
- * only when they are printed on the space.
+ * True for the spaces that count as one more reward icon when tiebreaking.
+ *
+ * These icons never give M€, only the ones printed on the space do.
  */
-type ExtraIcon = 'edge' | 'volcanic' | 'specialTile';
-const EXTRA_ICON_SPACES: Record<ExtraIcon, (board: Board, space: Space) => boolean> = {
-  edge: (_board, space) => space.edge,
-  volcanic: (board, space) => space.volcanic === true || board.getAdjacentSpaces(space).some((s) => s.volcanic === true),
-  specialTile: (board, space) => board.getAdjacentSpaces(space).some(isSpecialTileSpace),
-};
+type ExtraIcon = (board: Board, space: Space) => boolean;
 
-/** What each map's player aid adds. */
+const onEdge: ExtraIcon = (_board, space) => space.edge;
+const onOrNextToVolcanic: ExtraIcon = (board, space) =>
+  space.volcanic === true || board.getAdjacentSpaces(space).some((s) => s.volcanic === true);
+const nextToSpecialTile: ExtraIcon = (board, space) => board.getAdjacentSpaces(space).some(isSpecialTileSpace);
+
+/** The extra icon each map's player aid adds. */
 const MAP_EXTRA_ICON: Partial<Record<BoardName, ExtraIcon>> = {
-  [BoardName.UTOPIA_PLANITIA]: 'edge',
-  [BoardName.VASTITAS_BOREALIS_NOVA]: 'volcanic',
+  [BoardName.UTOPIA_PLANITIA]: onEdge,
+  [BoardName.VASTITAS_BOREALIS_NOVA]: onOrNextToVolcanic,
 };
 
 /**
- * What a milestone or award of the Milestones & Awards expansion adds while it is in play
- * (rulebook C, pp.13-15). Where the map above already adds the same, it counts once.
+ * The extra icon a milestone or award of the Milestones & Awards expansion adds while it is in play.
+ *
+ * Where the map already adds the same one, it counts once (rulebook C, pp.13-15).
  */
-const MILESTONE_EXTRA_ICON: Record<string, ExtraIcon> = {
-  'Geologist': 'volcanic',
-};
-const AWARD_EXTRA_ICON: Record<string, ExtraIcon> = {
-  'Founder': 'specialTile',
-  'Suburbian': 'edge',
+const MA_EXTRA_ICON: Partial<Record<MilestoneName | AwardName, ExtraIcon>> = {
+  'Geologist': onOrNextToVolcanic,
+  'Founder': nextToSpecialTile,
+  'Suburbian': onEdge,
 };
 
 /**
@@ -70,7 +82,7 @@ const SPECIAL_HEX_ICONS = 2.5;
 /**
  * Handles MarsBot tile placement with automa-specific rules and tiebreakers.
  *
- * Greenery: Adjacent to as many MarsBot cities as possible, minimize adjacency to human cities.
+ * Greenery: Adjacent to as many MarsBot cities as possible, less the human's adjacent cities.
  * City: Adjacent to as much existing greenery as possible. Standard city rules.
  * Ocean: Any ocean-reserved space.
  *
@@ -86,50 +98,43 @@ export class MarsBotTilePlacer {
     private readonly game: IGame,
     private readonly marsBot: IPlayer,
     private readonly humanPlayer: IPlayer,
+    /** The bot that pays for the special hexes and gets their effects. Without one they are empty hexes. */
+    private readonly bot?: IMarsBot,
   ) {}
 
   /**
-   * The map whose player aid MarsBot reads its tiebreakers from. The Milestones & Awards expansion
-   * plays against the Tharsis board and reference card whatever the map (rulebook C, p.13).
+   * The map whose player aid MarsBot reads its tiebreakers from.
+   *
+   * The Milestones & Awards expansion plays against the Tharsis board and reference card whatever
+   * the map (rulebook C, p.13).
    */
   private mapName(): BoardName {
     const options = this.game.gameOptions;
     return options.modularMA ? BoardName.THARSIS : options.boardName;
   }
 
-  /** The spaces that count as one more reward icon: the map's and those of the milestones and awards in play. */
+  /** The extra icons in play: the map's and those of the milestones and awards. */
   private extraIcons(): ReadonlySet<ExtraIcon> {
-    const extra = new Set<ExtraIcon>();
-    const fromMap = MAP_EXTRA_ICON[this.mapName()];
-    if (fromMap !== undefined) {
-      extra.add(fromMap);
-    }
-    for (const milestone of this.game.milestones) {
-      if (milestone.name in MILESTONE_EXTRA_ICON) {
-        extra.add(MILESTONE_EXTRA_ICON[milestone.name]);
-      }
-    }
-    for (const award of this.game.awards) {
-      if (award.name in AWARD_EXTRA_ICON) {
-        extra.add(AWARD_EXTRA_ICON[award.name]);
-      }
-    }
-    return extra;
+    const names = [...this.game.milestones, ...this.game.awards].map((ma) => ma.name);
+    const icons = [MAP_EXTRA_ICON[this.mapName()], ...names.map((name) => MA_EXTRA_ICON[name])];
+    return new Set(icons.filter((icon) => icon !== undefined));
   }
 
   /**
-   * The map's tiebreakers. With the Highlander award in play, "adjacent to ocean" comes after the
-   * reward icons (rulebook C, p.15).
+   * The map's tiebreakers, in order.
+   *
+   * With the Highlander award in play, "adjacent to ocean" comes after the reward icons (rulebook C,
+   * p.15).
    */
   private tiebreakerNames(): ReadonlyArray<TiebreakerName> {
     const names = MAP_TIEBREAKERS[this.mapName()] ?? DEFAULT_TIEBREAKERS;
     if (!this.game.awards.some((award) => award.name === 'Highlander')) {
       return names;
     }
-    const reordered: Array<TiebreakerName> = names.filter((name) => name !== 'oceans');
-    if (reordered.length === names.length) {
+    if (names.indexOf('oceans') > names.indexOf('icons')) {
       return names;
     }
+    const reordered: Array<TiebreakerName> = names.filter((name) => name !== 'oceans');
     reordered.splice(reordered.indexOf('icons') + 1, 0, 'oceans');
     return reordered;
   }
@@ -137,11 +142,11 @@ export class MarsBotTilePlacer {
   /**
    * Find the best space for MarsBot to place a greenery. Returns undefined if none available.
    *
-   * `where` limits the choice to the legal greenery spaces it accepts.
+   * @param filter limits the choice to the legal greenery spaces it accepts.
    */
-  public findGreenerySpace(where: (space: Space) => boolean = () => true): Space | undefined {
+  public findGreenerySpace(filter: (space: Space) => boolean = () => true): Space | undefined {
     const board = this.game.board;
-    const spaces = board.getAvailableSpacesForGreenery(this.marsBot).filter(where);
+    const spaces = board.getAvailableSpacesForGreenery(this.marsBot).filter(filter);
     if (spaces.length === 0) {
       return undefined;
     }
@@ -150,8 +155,10 @@ export class MarsBotTilePlacer {
       const cities = board.getAdjacentSpaces(space).filter(Board.isCitySpace);
       const marsBotCities = cities.filter(Board.ownedBy(this.marsBot));
       const humanCities = cities.filter(Board.ownedBy(this.humanPlayer));
-      // The greatest net gain of points: MarsBot's adjacent cities minus the player's (njshaw2,
-      // BGG 3350125 and 3411375)
+      // MarsBot's adjacent cities minus the human's. The greenery gives 1 VP to the owner of each
+      // adjacent city, so the highest score is the space with the best net VP for MarsBot.
+      // https://boardgamegeek.com/thread/3350125/article/44711805#44711805 (njshaw2)
+      // https://boardgamegeek.com/thread/3411375/article/45234897#45234897 (njshaw2, ties are random)
       return marsBotCities.length - humanCities.length;
     });
   }
@@ -159,11 +166,11 @@ export class MarsBotTilePlacer {
   /**
    * Find the best space for MarsBot to place a city. Returns undefined if none available.
    *
-   * `where` limits the choice to the legal city spaces it accepts.
+   * @param filter limits the choice to the legal city spaces it accepts.
    */
-  public findCitySpace(where: (space: Space) => boolean = () => true): Space | undefined {
+  public findCitySpace(filter: (space: Space) => boolean = () => true): Space | undefined {
     const board = this.game.board;
-    const spaces = board.getAvailableSpacesForCity(this.marsBot).filter(where);
+    const spaces = board.getAvailableSpacesForCity(this.marsBot).filter(filter);
     if (spaces.length === 0) {
       return undefined;
     }
@@ -179,7 +186,8 @@ export class MarsBotTilePlacer {
    * This is what the Expedited Construction bonus card (B05) asks for.
    *
    * Among those spaces the usual city rule picks, so 2 greeneries beat 3 oceans. The card's
-   * wording wins over the rulebook's "most tiles of these types" (TDaver, BGG 3350125).
+   * wording wins over the rulebook's "most tiles of these types". The card's author (TDaver):
+   * https://boardgamegeek.com/thread/3350125/article/44720677#44720677
    */
   public findExpeditedConstructionCitySpace(): Space | undefined {
     const board = this.game.board;
@@ -194,9 +202,8 @@ export class MarsBotTilePlacer {
    */
   public findCitySpaceNextToHumanGreenery(): Space | undefined {
     const board = this.game.board;
-    const eligible = board.getAvailableSpacesForCity(this.marsBot).filter((space) =>
+    return this.findCitySpace((space) =>
       board.getAdjacentSpaces(space).some((s) => Board.isGreenerySpace(s) && Board.spaceOwnedBy(s, this.humanPlayer)));
-    return this.selectBestSpace(eligible, (space) => board.getAdjacentSpaces(space).filter(Board.isGreenerySpace).length);
   }
 
   /**
@@ -213,10 +220,10 @@ export class MarsBotTilePlacer {
   /**
    * Find the best space for MarsBot to place an ocean. Returns undefined if none available.
    *
-   * `where` limits the choice to the ocean spaces it accepts.
+   * @param filter limits the choice to the ocean spaces it accepts.
    */
-  public findOceanSpace(where: (space: Space) => boolean = () => true): Space | undefined {
-    const spaces = this.game.board.getAvailableSpacesForOcean(this.marsBot).filter(where);
+  public findOceanSpace(filter: (space: Space) => boolean = () => true): Space | undefined {
+    const spaces = this.game.board.getAvailableSpacesForOcean(this.marsBot).filter(filter);
     if (spaces.length === 0) {
       return undefined;
     }
@@ -263,15 +270,15 @@ export class MarsBotTilePlacer {
 
   /**
    * Select the best space from candidates using:
-   * 1. primaryScore function (type-specific)
+   * 1. primaryScorer (type-specific)
    * 2. The map's tiebreakers, in order (see `MAP_TIEBREAKERS`)
-   * 3. beforeRandomScore, when a card adds its own tiebreaker ahead of the random one
+   * 3. beforeRandomScorer, when a card adds its own tiebreaker ahead of the random one
    * 4. Random (using project deck card cost)
    */
   private selectBestSpace(
     spaces: ReadonlyArray<Space>,
-    primaryScore: (space: Space) => number,
-    beforeRandomScore: (space: Space) => number = () => 0,
+    primaryScorer: Scorer,
+    beforeRandomScorer: Scorer = () => 0,
   ): Space | undefined {
     if (spaces.length === 0) {
       return undefined;
@@ -281,41 +288,43 @@ export class MarsBotTilePlacer {
     }
 
     const extraIcons = this.extraIcons();
-    const tiebreakers = [
-      mostOf(primaryScore),
+    const scorers: ReadonlyArray<Scorer> = [
+      primaryScorer,
       ...this.tiebreakerNames().map((name) => this.tiebreaker(name, extraIcons)),
-      mostOf(beforeRandomScore),
+      beforeRandomScorer,
     ];
 
-    let tied = spaces;
-    for (const tiebreaker of tiebreakers) {
-      tied = tiebreaker(tied);
-      if (tied.length === 1) {
-        return tied[0];
-      }
+    // Highest first, each scorer breaking the ties of the ones before it
+    const ranking: Comparator<Space> = reversed(compound(...scorers.map((scorer) => comparing(scorer))));
+    const sorted = [...spaces].sort(ranking);
+
+    // Find all tied for best. The sort is stable, so they stay in board order for the random tiebreak.
+    const tied = sorted.filter((space) => ranking(space, sorted[0]) === 0);
+
+    if (tied.length === 1) {
+      return tied[0];
     }
 
     return this.randomTiebreak(tied);
   }
 
-  private tiebreaker(name: TiebreakerName, extraIcons: ReadonlySet<ExtraIcon>): Tiebreaker {
+  /** Scores spaces for one of the map's tiebreakers. */
+  private tiebreaker(name: TiebreakerName, extraIcons: ReadonlySet<ExtraIcon>): Scorer {
     const board = this.game.board;
     switch (name) {
     case 'oceans':
-      return mostOf((space) => this.adjacentOceans(space));
+      return (space) => this.adjacentOceans(space);
     case 'icons':
-      return mostOf((space) => this.tiebreakIcons(space, extraIcons));
+      return (space) => this.iconCount(space, extraIcons);
     case 'polarRegion':
+      // The two rows at the bottom of the map.
       return preferring((space) => space.y >= board.bottomRow - 1);
     case 'southernRegion':
-      return preferring((space) => space.y >= board.bottomRow - 3);
+      return preferring((space) => space.y > board.equatorRow);
     case 'specialTiles':
       return preferring((space) => board.getAdjacentSpaces(space).some(isSpecialTileSpace));
-    case 'edgeElseOceans':
-      return (tied) => {
-        const edges = tied.filter((space) => space.edge);
-        return edges.length > 0 ? edges : mostOf((space) => this.adjacentOceans(space))(tied);
-      };
+    case 'edge':
+      return preferring((space) => space.edge);
     }
   }
 
@@ -323,31 +332,35 @@ export class MarsBotTilePlacer {
     return this.game.board.getAdjacentSpaces(space).filter(Board.isOceanSpace).length;
   }
 
-  /** The reward icons MarsBot tiebreaks on: what the space gives it, plus whatever the map adds. */
-  private tiebreakIcons(space: Space, extraIcons: ReadonlySet<ExtraIcon>): number {
-    const bonus = this.specialBonus(space);
-    let icons = this.placementIcons(space);
-    if (bonus !== undefined) {
-      icons = this.canGetSpecialBonus(bonus) ? SPECIAL_HEX_ICONS : 0;
+  /**
+   * How many reward icons `space` counts as when tiebreaking: the ones that give M€, plus one for
+   * each extra icon the space matches. A hex that costs M€ counts as `SPECIAL_HEX_ICONS` when
+   * MarsBot can get its bonus, and as empty otherwise.
+   */
+  private iconCount(space: Space, extraIcons: ReadonlySet<ExtraIcon>): number {
+    const special = this.specialBonus(space);
+    let count = this.paidIconCount(space);
+    if (special !== undefined) {
+      count = this.canGetSpecialBonus(special) ? SPECIAL_HEX_ICONS : 0;
     }
-    for (const extra of extraIcons) {
-      if (EXTRA_ICON_SPACES[extra](this.game.board, space)) {
-        icons++;
+    for (const extraIcon of extraIcons) {
+      if (extraIcon(this.game.board, space)) {
+        count++;
       }
     }
-    return icons;
+    return count;
   }
 
   /**
-   * The icons on `space` that give MarsBot 1 M€ each. The hexes that cost M€ give nothing here, and
-   * the Turmoil delegate gives nothing without Turmoil.
+   * How many icons on `space` give MarsBot 1 M€ each. Not the hexes that cost M€, and not the
+   * Turmoil delegate without Turmoil, which counts as empty (rulebook C, p.11).
    */
-  private placementIcons(space: Space): number {
+  private paidIconCount(space: Space): number {
     return space.bonus.filter((bonus) => {
-      if (bonus === SpaceBonus.DELEGATE) {
-        return this.game.turmoil !== undefined;
+      if (SPECIAL_HEX_COSTS.has(bonus)) {
+        return false;
       }
-      return !SPECIAL_HEX_COSTS.has(bonus);
+      return bonus !== SpaceBonus.DELEGATE || this.game.turmoil !== undefined;
     }).length;
   }
 
@@ -368,8 +381,9 @@ export class MarsBotTilePlacer {
     if (game.isDoneWithFinalProduction()) {
       return false;
     }
+    const bot = this.bot;
     // The M€ supply only: megaCredits also counts the Luna storage area
-    if ((game.automaHooks?.marsBot.megacredits ?? 0) < this.specialHexCost(bonus)) {
+    if (bot === undefined || bot.megacredits < this.specialHexCost(bonus)) {
       return false;
     }
     switch (bonus) {
@@ -377,10 +391,8 @@ export class MarsBotTilePlacer {
       return game.canAddOcean() && game.board.getAvailableSpacesForOcean(this.marsBot).length > 0;
     case SpaceBonus.TEMPERATURE_4MC:
       return game.getTemperature() < game.max.temperature;
-    case SpaceBonus.COLONY: {
-      const marsBot = game.automaHooks?.marsBot;
-      return marsBot !== undefined && eligibleColoniesForMarsBot(game, marsBot).length > 0;
-    }
+    case SpaceBonus.COLONY:
+      return bot.canPlaceColony();
     default:
       return false;
     }
@@ -393,8 +405,8 @@ export class MarsBotTilePlacer {
    */
   public resolveSpecialHex(space: Space): void {
     const bonus = this.specialBonus(space);
-    const marsBot = this.game.automaHooks?.marsBot;
-    if (bonus === undefined || marsBot === undefined || !this.canGetSpecialBonus(bonus)) {
+    const bot = this.bot;
+    if (bonus === undefined || bot === undefined || !this.canGetSpecialBonus(bonus)) {
       return;
     }
     const game = this.game;
@@ -402,45 +414,41 @@ export class MarsBotTilePlacer {
     switch (bonus) {
     case SpaceBonus.OCEAN: {
       const oceans = game.board.getOceanSpaces().length;
-      marsBot.turnResolver.placeOcean();
+      bot.placeOcean();
       resolved = game.board.getOceanSpaces().length > oceans;
       break;
     }
     case SpaceBonus.TEMPERATURE_4MC: {
       const temperature = game.getTemperature();
-      marsBot.turnResolver.raiseTemperature(1);
+      bot.raiseTemperature(1);
       resolved = game.getTemperature() > temperature;
       break;
     }
-    case SpaceBonus.COLONY: {
+    case SpaceBonus.COLONY:
       // The way Expedited Construction picks and builds one.
-      const colony = selectRandomColony(game, marsBot);
-      if (colony !== undefined) {
-        placeColonyForMarsBot(colony, marsBot);
-        resolved = true;
-      }
+      resolved = bot.maybePlaceRandomColony();
       break;
     }
-    }
     if (resolved) {
-      marsBot.turnResolver.megacredits -= this.specialHexCost(bonus);
+      bot.megacredits -= this.specialHexCost(bonus);
     }
   }
 
   /**
-   * Break a tie by flipping a project card and counting through spaces: cost 1 is the first space,
-   * and a cost of 0 counts back to the last.
+   * Break a tie by flipping a project card and counting its cost through the tied spaces. Counting
+   * starts at 1 on the first space and goes back to the first after passing the last. A cost of 0
+   * picks the last space.
    */
   private randomTiebreak(spaces: ReadonlyArray<Space>): Space {
     const card = this.game.projectDeck.drawOrThrow(this.game);
     this.game.projectDeck.discard(card);
-    const n = spaces.length;
-    return spaces[((card.cost - 1) % n + n) % n];
+    const index = card.cost === 0 ? spaces.length - 1 : (card.cost - 1) % spaces.length;
+    return spaces[index];
   }
 
   /** Calculate MC MarsBot gains from placement bonuses (1 MC per icon covered). */
   public getPlacementBonusMC(space: Space): number {
-    return this.placementIcons(space);
+    return this.paidIconCount(space);
   }
 
   /** Calculate MC MarsBot gains from ocean adjacency (2 MC per adjacent ocean, 3 for Lakefront). */
@@ -456,19 +464,7 @@ export class MarsBotTilePlacer {
   }
 }
 
-/** Keeps the spaces with the highest score. */
-function mostOf(score: (space: Space) => number): Tiebreaker {
-  return (tied) => {
-    const scores = tied.map(score);
-    const best = Math.max(...scores);
-    return tied.filter((_, i) => scores[i] === best);
-  };
-}
-
-/** Keeps the spaces that satisfy `wanted`, when any do. */
-function preferring(wanted: (space: Space) => boolean): Tiebreaker {
-  return (tied) => {
-    const preferred = tied.filter(wanted);
-    return preferred.length > 0 ? preferred : tied;
-  };
+/** Puts the spaces that satisfy `wanted` ahead of the rest. */
+function preferring(wanted: (space: Space) => boolean): Scorer {
+  return (space) => wanted(space) ? 1 : 0;
 }

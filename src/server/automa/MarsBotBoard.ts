@@ -36,7 +36,11 @@ export class MarsBotTrack {
     return action !== undefined ? {type: 'action', action} : {type: 'none'};
   }
 
-  /** Regress the track by 1 (from human decreasing MarsBot production). Returns true if the track actually moved. */
+  /**
+   * Regress the track by 1 (from human decreasing MarsBot production).
+   *
+   * Returns true if the track moved, false if it was already at the start.
+   */
   public regress(): boolean {
     if (this.position > 0) {
       this.regressedPositions.add(this.position);
@@ -46,7 +50,12 @@ export class MarsBotTrack {
     return false;
   }
 
-  /** Get the action at the next position without advancing. Returns undefined if at max, no action, or the action is skipped after a regression. */
+  /**
+   * Get the action at the next position without advancing.
+   *
+   * Returns undefined at max, when the space has no action, or when the space was regressed from and
+   * advancing onto it skips its action.
+   */
   public peek(): TrackAction | undefined {
     if (!this.canAdvance() || this.regressedPositions.has(this.position + 1)) {
       return undefined;
@@ -67,6 +76,12 @@ export class MarsBotBoard {
         this.tagToTrack[tag] = i;
       }
     }
+  }
+
+  /** The space reached on the track that carries `tag`, or 0 when no track carries it. */
+  public trackPosition(tag: Tag): number {
+    const index = this.tagToTrack[tag];
+    return index === undefined ? 0 : this.tracks[index].position;
   }
 
   /** Index of the least-advanced track (first index if tied). */

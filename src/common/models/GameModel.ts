@@ -60,6 +60,10 @@ export type GameModel = {
   isTerraformed: boolean;
   turmoil: TurmoilModel | undefined;
   undoCount: number;
+  /** How often the table was rewound. Unlike `undoCount`, a freeze or an unfreeze leaves it alone. */
+  rewindCount: number;
   venusScaleLevel: number;
   marsBot: MarsBotModel | undefined;
+  /** Set while the game is frozen. */
+  frozen?: boolean;
 }

@@ -1,4 +1,5 @@
 import {SerializedTimer} from './SerializedTimer';
+import {TimerModel} from './models/TimerModel';
 
 /**
  * A clock that keeps real time. Can be overridden to provide fake times for testing.
@@ -41,9 +42,9 @@ export class Timer {
   private running: boolean = false;
 
   /**
-   * If false, this is the first action of the game. The first action of the game is not timed.
+   * When false, this timer ignores `start`.
    */
-  private afterFirstAction: boolean = false;
+  private enabled: boolean = false;
 
   private constructor(private clock: Clock) { }
 
@@ -56,8 +57,26 @@ export class Timer {
       sumElapsed: this.sumElapsed,
       startedAt: this.startedAt,
       running: this.running,
-      afterFirstAction: this.afterFirstAction,
+      enabled: this.enabled,
       lastStoppedAt: Timer.lastStoppedAt,
+    };
+  }
+
+  /** Runs `f` and then puts the shared last stop time back, for work that isn't play at a table, such as a replay. */
+  public static keepingLastStop<T>(f: () => T): T {
+    const lastStoppedAt = Timer.lastStoppedAt;
+    try {
+      return f();
+    } finally {
+      Timer.lastStoppedAt = lastStoppedAt;
+    }
+  }
+
+  public toModel(): TimerModel {
+    return {
+      sumElapsed: this.sumElapsed,
+      startedAt: this.startedAt,
+      running: this.running,
     };
   }
 
@@ -66,7 +85,7 @@ export class Timer {
     timer.sumElapsed = d.sumElapsed;
     timer.startedAt = d.startedAt;
     timer.running = d.running;
-    timer.afterFirstAction = d.afterFirstAction;
+    timer.enabled = d.enabled ?? d.afterFirstAction ?? false;
 
     // Never move the shared timer backwards.
     Timer.lastStoppedAt = Math.max(Timer.lastStoppedAt, d.lastStoppedAt);
@@ -74,32 +93,66 @@ export class Timer {
   }
 
   /**
-   * Starts this timer.
+   * Enables this timer. Until then, calls to `start` are ignored.
+   */
+  public enable(): void {
+    this.enabled = true;
+  }
+
+  /**
+   * Starts this timer, if it is enabled.
    *
-   * This is always called when the game is waiting for a player to supply input.
+   * Called when the game starts waiting for a player's required input.
    */
   public start() : void {
+    if (!this.enabled) {
+      return;
+    }
     this.running = true;
-    // Timer is starting when previous timer was stopped. Normally it does not make any difference,
-    // but this way undoing actions does not undo the timers.
+    // Timer is starting when previous timer was stopped. This way undoing actions does not undo the timers.
     this.startedAt = Timer.lastStoppedAt === 0 ? this.clock.now() : Timer.lastStoppedAt;
   }
 
   /**
    * Stops this timer.
    *
-   * Records the interval from the last call to `start` to now, and records it.
+   * Adds the interval from `startedAt` to now, if this timer is running.
    *
-   * This is always called immediately after player performs a new input action.
+   * Called when a player's required input is answered or cleared.
    */
   public stop() : void {
-    this.running = false;
     Timer.lastStoppedAt = this.clock.now();
-    if (!this.afterFirstAction) { // Skipping timer for first move in game
-      this.afterFirstAction = true;
+    if (!this.running) {
       return;
     }
+    this.running = false;
     this.sumElapsed += Timer.lastStoppedAt - this.startedAt;
+  }
+
+  /**
+   * Closes the interval in progress and stops.
+   * Never moves the shared last stop time. Does nothing on a timer that isn't running.
+   */
+  public pause(): void {
+    if (!this.running) {
+      return;
+    }
+    this.sumElapsed = this.getElapsed();
+    this.running = false;
+  }
+
+  /**
+   * Starts a new interval now. Unlike `start`, never begins at the shared last stop time.
+   *
+   * On a running timer it drops the open interval uncounted, so callers that mean to count it pause first.
+   * Like `start`, does nothing on a timer that isn't enabled.
+   */
+  public resume(): void {
+    if (!this.enabled) {
+      return;
+    }
+    this.running = true;
+    this.startedAt = this.clock.now();
   }
 
   /**
@@ -127,11 +180,11 @@ export class Timer {
   }
 
   /**
-   * Converts a serialized version of this timer to [hhh:]mm:ss format based on current time.
+   * Converts a model of this timer to [hhh:]mm:ss format based on current time.
    *
    * Used to display the timer.
    */
-  public static toString(d: SerializedTimer, clock: Clock = REAL_CLOCK) : string {
+  public static toString(d: TimerModel, clock: Clock = REAL_CLOCK) : string {
     const elapsedMs = d.sumElapsed + (d.running ? clock.now() - d.startedAt : 0);
     const hours = Math.floor(elapsedMs / 3_600_000);
     const asString = new Date(elapsedMs).toISOString();

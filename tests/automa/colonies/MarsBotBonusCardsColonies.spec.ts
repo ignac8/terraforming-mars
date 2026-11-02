@@ -26,7 +26,7 @@ describe('MarsBotBonusCardsColonies (C-15, C-16, C-17)', () => {
     }
 
     it('C-15a: places city if adjacent to ≥2 greenery/ocean tiles and destroys card', () => {
-      const [game] = testGame(1, {automaOption: true, coloniesExtension: true, boardName: BoardName.THARSIS});
+      const [game] = testGame(1, {automa: true, coloniesExtension: true, boardName: BoardName.THARSIS});
       const marsBot = getMarsBot(game);
       game.colonies = [new Luna()];
       // Place some ocean tiles so the condition can be met
@@ -49,7 +49,7 @@ describe('MarsBotBonusCardsColonies (C-15, C-16, C-17)', () => {
     });
 
     it('C-15b: places colony if MarsBot has ≤1 colonies and no city space', () => {
-      const [game] = testGame(1, {automaOption: true, coloniesExtension: true, boardName: BoardName.THARSIS});
+      const [game] = testGame(1, {automa: true, coloniesExtension: true, boardName: BoardName.THARSIS});
       const marsBot = getMarsBot(game);
       const luna = new Luna();
       game.colonies = [luna];
@@ -62,7 +62,7 @@ describe('MarsBotBonusCardsColonies (C-15, C-16, C-17)', () => {
     });
 
     it('C-15b: gains 2 resources if colony placed', () => {
-      const [game] = testGame(1, {automaOption: true, coloniesExtension: true, boardName: BoardName.THARSIS});
+      const [game] = testGame(1, {automa: true, coloniesExtension: true, boardName: BoardName.THARSIS});
       const marsBot = getMarsBot(game);
       const luna = new Luna();
       game.colonies = [luna];
@@ -77,7 +77,7 @@ describe('MarsBotBonusCardsColonies (C-15, C-16, C-17)', () => {
     });
 
     it('C-15c: no effect if MarsBot already has 2+ colonies', () => {
-      const [game] = testGame(1, {automaOption: true, coloniesExtension: true, boardName: BoardName.THARSIS});
+      const [game] = testGame(1, {automa: true, coloniesExtension: true, boardName: BoardName.THARSIS});
       const marsBot = getMarsBot(game);
       const luna = new Luna();
       luna.colonies = [marsBot.player.id];
@@ -99,7 +99,7 @@ describe('MarsBotBonusCardsColonies (C-15, C-16, C-17)', () => {
     }
 
     it('C-16a/b: places colony and gains 2 resources', () => {
-      const [game] = testGame(1, {automaOption: true, coloniesExtension: true, boardName: BoardName.THARSIS});
+      const [game] = testGame(1, {automa: true, coloniesExtension: true, boardName: BoardName.THARSIS});
       const marsBot = getMarsBot(game);
       const luna = new Luna();
       game.colonies = [luna];
@@ -116,7 +116,7 @@ describe('MarsBotBonusCardsColonies (C-15, C-16, C-17)', () => {
     });
 
     it('C-16c/d: draws and discards a bonus card (not resolves)', () => {
-      const [game] = testGame(1, {automaOption: true, coloniesExtension: true, boardName: BoardName.THARSIS});
+      const [game] = testGame(1, {automa: true, coloniesExtension: true, boardName: BoardName.THARSIS});
       const marsBot = getMarsBot(game);
       game.colonies = [new Luna()];
 
@@ -133,7 +133,7 @@ describe('MarsBotBonusCardsColonies (C-15, C-16, C-17)', () => {
     });
 
     it('C-16c: B18 is excluded from the reshuffle for the draw', () => {
-      const [game] = testGame(1, {automaOption: true, coloniesExtension: true, boardName: BoardName.THARSIS});
+      const [game] = testGame(1, {automa: true, coloniesExtension: true, boardName: BoardName.THARSIS});
       const marsBot = getMarsBot(game);
       game.colonies = [new Luna()];
 
@@ -153,24 +153,39 @@ describe('MarsBotBonusCardsColonies (C-15, C-16, C-17)', () => {
     }
 
     it('C-17: selects best colony and trades', () => {
-      const [game] = testGame(1, {automaOption: true, coloniesExtension: true, boardName: BoardName.THARSIS});
+      const [game] = testGame(1, {automa: true, coloniesExtension: true, boardName: BoardName.THARSIS});
       const marsBot = getMarsBot(game);
       const luna = new Luna();
       luna.trackPosition = 4;
       game.colonies = [luna];
-      const mcBefore = marsBot.turnResolver.megacredits;
+      marsBot.turnResolver.megacredits = 3;
       const card = b19Card();
       marsBot.bonusDeck.drawPile.push(card);
       marsBot['bonusResolver'].resolve(card);
       // Should have spent 1 MC and gained 2 resources to Luna
-      expect(marsBot.turnResolver.megacredits).to.eq(Math.max(0, mcBefore - 1));
+      expect(marsBot.turnResolver.megacredits).to.eq(2);
       expect(marsBot.shippingBoard.get(ColonyName.LUNA)).to.eq(2);
       expect(luna.visitor).to.eq(marsBot.player.id);
     });
 
+    // Nick: with no M€ to pay, the card does nothing (BGG 3599965); rulebook A p.5: no Failed Action.
+    it('C-17: no effect and no Failed Action with 0 M€', () => {
+      const [game] = testGame(1, {automa: true, coloniesExtension: true, boardName: BoardName.THARSIS});
+      const marsBot = getMarsBot(game);
+      const luna = new Luna();
+      game.colonies = [luna];
+      marsBot.turnResolver.megacredits = 0;
+      const card = b19Card();
+      marsBot.bonusDeck.drawPile.push(card);
+      marsBot['bonusResolver'].resolve(card);
+      expect(marsBot.turnResolver.megacredits).to.eq(0);
+      expect(marsBot.shippingBoard.get(ColonyName.LUNA)).to.eq(0);
+      expect(luna.visitor).is.undefined;
+    });
+
     // A bonus card that can't resolve is not a Failed Action (rulebook A, p.5)
     it('C-17: no effect and no Failed Action if no tradeable colony', () => {
-      const [game] = testGame(1, {automaOption: true, coloniesExtension: true, boardName: BoardName.THARSIS});
+      const [game] = testGame(1, {automa: true, coloniesExtension: true, boardName: BoardName.THARSIS});
       const marsBot = getMarsBot(game);
       game.colonies = []; // No colonies
       marsBot.turnResolver.megacredits = 3;
@@ -181,11 +196,12 @@ describe('MarsBotBonusCardsColonies (C-15, C-16, C-17)', () => {
     });
 
     it('C-24b: Europa trade raises TR instead of resources', () => {
-      const [game] = testGame(1, {automaOption: true, coloniesExtension: true, boardName: BoardName.THARSIS});
+      const [game] = testGame(1, {automa: true, coloniesExtension: true, boardName: BoardName.THARSIS});
       const marsBot = getMarsBot(game);
       const europa = new Europa();
       europa.trackPosition = 5;
       game.colonies = [europa];
+      marsBot.turnResolver.megacredits = 3;
       const trBefore = marsBot.player.terraformRating;
       const card = b19Card();
       marsBot.bonusDeck.drawPile.push(card);
@@ -201,21 +217,21 @@ describe('MarsBotBonusCardsColonies (C-15, C-16, C-17)', () => {
     }
 
     it('C-17: same trade logic as B19', () => {
-      const [game] = testGame(1, {automaOption: true, coloniesExtension: true, boardName: BoardName.THARSIS});
+      const [game] = testGame(1, {automa: true, coloniesExtension: true, boardName: BoardName.THARSIS});
       const marsBot = getMarsBot(game);
       const luna = new Luna();
       luna.trackPosition = 3;
       game.colonies = [luna];
-      const mcBefore = marsBot.turnResolver.megacredits;
+      marsBot.turnResolver.megacredits = 3;
       const card = b20Card();
       marsBot.bonusDeck.drawPile.push(card);
       marsBot['bonusResolver'].resolve(card);
-      expect(marsBot.turnResolver.megacredits).to.eq(Math.max(0, mcBefore - 1));
+      expect(marsBot.turnResolver.megacredits).to.eq(2);
       expect(marsBot.shippingBoard.get(ColonyName.LUNA)).to.eq(2);
     });
 
     it('C-17: no effect and no Failed Action if all colonies visited', () => {
-      const [game] = testGame(1, {automaOption: true, coloniesExtension: true, boardName: BoardName.THARSIS});
+      const [game] = testGame(1, {automa: true, coloniesExtension: true, boardName: BoardName.THARSIS});
       const marsBot = getMarsBot(game);
       const luna = new Luna();
       luna.visitor = 'psome-player'; // Already traded

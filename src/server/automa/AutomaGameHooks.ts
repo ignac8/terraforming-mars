@@ -38,11 +38,6 @@ export class AutomaGameHooks {
     public readonly marsBot: MarsBot,
   ) {}
 
-  /** Check if a player is the MarsBot player. */
-  public isAutomaPlayer(player: IPlayer): boolean {
-    return player === this.marsBot.player;
-  }
-
   // ---- Solo mode overrides ----
 
   /** Automa games are NOT solo mode (they behave as 2-player). */
@@ -267,6 +262,7 @@ export class AutomaGameHooks {
           finalMarsBotCards = result.kept;
           for (const discarded of result.discarded) {
             this.game.projectDeck.discardPile.push(discarded);
+            this.game.log('MarsBot discards ${0} after the draft', (b) => b.card(discarded));
           }
         }
         this.marsBot.buildResearchActionDeckFromDraft(finalMarsBotCards, skipDiscard || draftPriority !== undefined);
@@ -288,6 +284,8 @@ export class AutomaGameHooks {
         let picked: IProjectCard;
         if (draftPriority !== undefined) {
           picked = this.draftResolver().pickCard(marsBotPile, draftPriority);
+          // The player sees what a draft priority keeps (rulebook B p.2).
+          this.game.log('MarsBot drafts ${0}', (b) => b.card(picked));
         } else {
           picked = marsBotPile[this.game.rng.nextInt(marsBotPile.length)];
         }

@@ -1,4 +1,4 @@
-import {IMarsBotCorp} from '../MarsBotCorpTypes';
+import {IMarsBotCorp} from '../IMarsBotCorp';
 import {Tag} from '../../../common/cards/Tag';
 import {CardName} from '../../../common/cards/CardName';
 import {AutomaManifest} from './AutomaManifest';

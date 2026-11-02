@@ -1,10 +1,10 @@
 import {BaseMilestone} from './IMilestone';
 import {IPlayer} from '../IPlayer';
 import {Tag} from '../../common/cards/Tag';
-import {IMarsBot} from '../automa/MarsBotCorpTypes';
-import {marsBotTrackPosition} from '../automa/MarsBotMilestoneAwardEval';
+import {IMarsBot} from '../automa/IMarsBot';
 
 export class Tradesman extends BaseMilestone {
+  public readonly automaDescription = 'Energy, Earth and Venus tracks ≥ 2';
   constructor() {
     super(
       'Tradesman',
@@ -23,6 +23,6 @@ export class Tradesman extends BaseMilestone {
 
   /** Utopia Planitia calls it Trader: MarsBot needs space 2 on its power, earth and Venus tracks. */
   public marsBotCanClaim(bot: IMarsBot): boolean {
-    return [Tag.POWER, Tag.EARTH, Tag.VENUS].every((tag) => marsBotTrackPosition(bot, tag) >= 2);
+    return [Tag.POWER, Tag.EARTH, Tag.VENUS].every((tag) => bot.marsBotBoard.trackPosition(tag) >= 2);
   }
 }

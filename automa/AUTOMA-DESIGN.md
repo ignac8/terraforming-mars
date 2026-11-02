@@ -158,7 +158,7 @@ Steps 1-2 are the Tharsis order. Each map's player aid has its own (`MAP_TIEBREA
 
 When comparing awards for resources (Thermalist, Miner), MarsBot considers your current resources + your production. For Thermalist that is heat + energy resources + heat production, not energy production (Dávid Turczi, BGG thread 3350125). Corporate Competition compares the same way.
 
-Other maps have their own milestone and award rules for MarsBot (rulebook C pp.9-12). They apply whenever that map's own milestone or award is in play, random M&A included; the rest use the expansion's generic rules (`marsBotMapSet` in `src/common/automa/MarsBotMADescriptions.ts`).
+Other maps have their own milestone and award rules for MarsBot (rulebook C pp.9-12). They apply whenever that map's own milestone or award is in play, random M&A included; the rest use the expansion's generic rules (`marsBotMapSet` in `src/common/automa/marsBotMapSet.ts`).
 
 ### 2.9 Production Phase
 
@@ -529,7 +529,7 @@ All rules from Rulebook A (base game) and Rulebook B (corporations) are implemen
 | Award scoring | `src/server/awards/AwardScorer.ts` | Includes MarsBot track values |
 | VP calculation | `src/server/game/calculateVictoryPoints.ts` | Includes MarsBot in award comparison |
 | Tile types | `src/common/TileType.ts` | `NEURAL_INSTANCE = 44` |
-| Game options | `src/server/game/GameOptions.ts` | `automaOption`, `automaDifficulty` |
+| Game options | `src/server/game/GameOptions.ts` | `automa`, `automaDifficulty` |
 | **Corp registry** | `src/server/automa/corps/MarsBotCorpRegistry.ts` | `registerMarsBotCorp()`, `getMarsBotCorp()`, `getAllMarsBotCorps()` |
 | **Corp resolver** | `src/server/automa/corps/MarsBotCorpResolver.ts` | `selectCorp()`, `setupCorp()`, `onTrackAdvanced()`, `resolvePerGenEffect()` |
 | **Draft resolver** | `src/server/automa/corps/MarsBotDraftResolver.ts` | `pickCardForMarsBot()` with 4 priority types |

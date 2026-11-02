@@ -1,10 +1,10 @@
 import {BaseMilestone} from './IMilestone';
 import {IPlayer} from '../IPlayer';
 import {Tag} from '../../common/cards/Tag';
-import {IMarsBot} from '../automa/MarsBotCorpTypes';
-import {marsBotTrackPosition} from '../automa/MarsBotMilestoneAwardEval';
+import {IMarsBot} from '../automa/IMarsBot';
 
 export class Ecologist extends BaseMilestone {
+  public readonly automaDescription = 'Bio track ≥ 4';
   constructor() {
     super(
       'Ecologist',
@@ -20,6 +20,6 @@ export class Ecologist extends BaseMilestone {
    * bio tag it carries.
    */
   public marsBotCanClaim(bot: IMarsBot): boolean {
-    return marsBotTrackPosition(bot, Tag.PLANT) >= 4;
+    return bot.marsBotBoard.trackPosition(Tag.PLANT) >= 4;
   }
 }

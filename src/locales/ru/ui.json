@@ -165,7 +165,7 @@
     "You haven't selected any project cards": "Вы не выбрали ни одной карты проектов",
     "Continue without buying any project cards?": "Продолжить без покупки карт проектов?",
     "Send players their links below. As game administrator pick your link to use.": "Отправьте каждому из игроков соответствующую ссылку ниже.",
-    "Allow undo": "Разрешить отмену хода",
+    "Player undo": "Разрешить отмену хода",
     "Drafted Cards": "Отложенные на драфте карты",
 
     "City: 1 VP per adjacent greenery": "Город: 1 ПО владельцу за каждое смежное озеленение",
@@ -370,7 +370,7 @@
     "Build": "Построить",
     "Sell": "Продать",
     "Undo": "Отменить",
-    "undo": "отменить",
+    "player undo": "отменить",
     "Hide": "Скрыть",
     "Show": "Показать",
 

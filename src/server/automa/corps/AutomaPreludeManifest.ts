@@ -1,10 +1,10 @@
-import {IMarsBotCorp} from '../MarsBotCorpTypes';
+import {IMarsBotCorp} from '../IMarsBotCorp';
 import {Tag} from '../../../common/cards/Tag';
 import {CardName} from '../../../common/cards/CardName';
 import {BonusCardId} from '../../../common/automa/AutomaTypes';
 import {AutomaManifest} from './AutomaManifest';
 import {whiteTrackCubes, bonusCardBeforeActionPhase, whiteLeastBlackSpaceHandler, SILVER_CUBE_MC} from './BaseGameCorps';
-import {marsBotCardTags, printedVictoryPoints} from '../MarsBotTags';
+import {cardTagsIncludingEvent, printedVictoryPoints} from '../MarsBotTags';
 
 // ==== PRELUDE (C13-C17) ====
 
@@ -334,7 +334,7 @@ const SAGITTA: IMarsBotCorp = {
   effect: {
     // Tagless card: double the Failed Action (10 MC instead of 5, 6 instead of 3 on Easy). 1-tag card: +1 MC.
     onProjectCardResolved(bot, card) {
-      const tagCount = marsBotCardTags(card).length;
+      const tagCount = cardTagsIncludingEvent(card).length;
       if (tagCount === 0) {
         const extra = bot.failedActionMc;
         bot.gainMc(extra);
@@ -355,7 +355,7 @@ const SPIRE: IMarsBotCorp = {
   draftPriority: {type: 'mostTags'},
   effect: {
     onProjectCardResolved(bot, card) {
-      const tagCount = marsBotCardTags(card).length;
+      const tagCount = cardTagsIncludingEvent(card).length;
       if (tagCount >= 2) {
         bot.setCorpState('scienceResources', bot.getCorpState('scienceResources') + 1);
         bot.game.log(`MarsBot (Spire): card with ${tagCount} tags, +1 science resource`);

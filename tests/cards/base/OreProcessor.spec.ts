@@ -3,6 +3,7 @@ import {OreProcessor} from '../../../src/server/cards/base/OreProcessor';
 import {IGame} from '../../../src/server/IGame';
 import {TestPlayer} from '../../TestPlayer';
 import {testGame} from '../../TestGame';
+import {formatMessage} from '../../TestingUtils';
 
 describe('OreProcessor', () => {
   let card: OreProcessor;
@@ -33,7 +34,6 @@ describe('OreProcessor', () => {
     player.energy = 4;
     card.action(player);
 
-    const spent = game.gameLog.find((m) => m.message === '${0} lost ${1} ${2}');
-    expect(spent?.data.slice(1).map((d) => d.value)).deep.eq(['4', 'energy']);
+    expect(game.gameLog.map(formatMessage).filter((m) => m.includes(' lost '))).deep.eq(['blue lost 4:r:energy:']);
   });
 });

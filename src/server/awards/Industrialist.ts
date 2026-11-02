@@ -1,12 +1,12 @@
 import {IAward} from './IAward';
 import {IPlayer} from '../IPlayer';
 import {Tag} from '../../common/cards/Tag';
-import {IMarsBot} from '../automa/MarsBotCorpTypes';
-import {marsBotTrackPosition} from '../automa/MarsBotMilestoneAwardEval';
+import {IMarsBot} from '../automa/IMarsBot';
 
 export class Industrialist implements IAward {
   public readonly name = 'Industrialist';
   public readonly description = 'Have most steel and energy';
+  public readonly automaDescription = 'Energy track + 5';
   public getScore(player: IPlayer): number {
     if (player.game.isDoneWithFinalProduction()) {
       return player.steel + player.energy;
@@ -17,6 +17,6 @@ export class Industrialist implements IAward {
 
   /** The automa rules score MarsBot's Industrialist as its power track plus 5. */
   public marsBotScore(bot: IMarsBot): number {
-    return marsBotTrackPosition(bot, Tag.POWER) + 5;
+    return bot.marsBotBoard.trackPosition(Tag.POWER) + 5;
   }
 }

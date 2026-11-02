@@ -1,10 +1,10 @@
 <template>
   <div class="ma-block">
     <div class="ma-player" v-if="milestone.playerName">
-      <i :title="milestone.playerName" class="board-cube" :class="`board-cube--${milestone.color}`" ></i>
+      <i :title="milestone.playerName" class="board-cube" :class="`board-cube--${milestone.color}`"></i>
     </div>
     <div class="ma-name--milestones" :class="nameCss">
-      <span ref="name" v-i18n>{{name}}</span>
+      <span ref="name" v-i18n>{{ name }}</span>
       <div v-if="showScores" class="ma-scores player_home_block--milestones-and-awards-scores">
         <template v-for="score in sortedScores" :key="score.color">
           <p
@@ -18,8 +18,8 @@
             :class="getClass(score)"
             data-test="player-score"
           >{{ score.color === 'bronze' ? '' : score.score }}{{ score.claimable ? '✓' : '✗' }}</p>
-      </template>
-    </div>
+        </template>
+      </div>
     </div>
 
     <div v-if="showDescription" class="ma-description">
@@ -36,7 +36,6 @@ import {ClaimedMilestoneModel, MilestoneScore} from '@/common/models/ClaimedMile
 import {getMilestone} from '@/client/MilestoneAwardManifest';
 import {playerSymbol} from '@/client/utils/playerSymbol';
 import {Color} from '@/common/Color';
-import {marsBotMilestoneRule} from '@/common/automa/MarsBotMADescriptions';
 import {BoardName} from '@/common/boards/BoardName';
 import {fitTextWhenReady} from '@/client/utils/textFit';
 import {comparing, reversed} from '@/common/utils/Ordering';
@@ -114,7 +113,9 @@ export default defineComponent({
       return getMilestone(this.milestone.name).description;
     },
     automaRule(): string | undefined {
-      return marsBotMilestoneRule(this.milestone.name, this.automaMapSet);
+      const milestone = getMilestone(this.milestone.name);
+      const mapRule = this.automaMapSet === undefined ? undefined : milestone.automaMapDescriptions?.[this.automaMapSet];
+      return mapRule ?? milestone.automaDescription;
     },
   },
 });

@@ -2,14 +2,12 @@ import {expect} from 'chai';
 import {testGame} from '../TestGame';
 import {Tag} from '../../src/common/cards/Tag';
 import {BoardName} from '../../src/common/boards/BoardName';
-import {RandomBoardOption} from '../../src/common/boards/RandomBoardOption';
 import {MARSBOT_BOARD_NAMES, isMarsBotBoardChoice} from '../../src/common/automa/MarsBotBoards';
 import {MARSBOT_BOARDS} from '../../src/server/automa/boards/MarsBotBoards';
 import {VENUS_MARSBOT_TRACK} from '../../src/server/automa/boards/VenusMarsBot';
 import {AutomaGameHooks} from '../../src/server/automa/AutomaGameHooks';
 import {MarsBot} from '../../src/server/automa/MarsBot';
 import {ColonyName} from '../../src/common/colonies/ColonyName';
-import {ApiCreateGame} from '../../src/server/routes/ApiCreateGame';
 
 const MARS_TAGS = [Tag.BUILDING, Tag.SPACE, Tag.EVENT, Tag.SCIENCE, Tag.POWER, Tag.JOVIAN, Tag.EARTH, Tag.CITY, Tag.PLANT, Tag.ANIMAL, Tag.MICROBE];
 
@@ -68,7 +66,7 @@ describe('MarsBot boards', () => {
       });
 
       it('sets up a game', () => {
-        const [game] = testGame(1, {automaOption: true, boardName, venusNextExtension: true, coloniesExtension: true});
+        const [game] = testGame(1, {automa: true, boardName, venusNextExtension: true, coloniesExtension: true});
         const marsBot = getMarsBot(game);
         expect(marsBot.marsBotBoard.tracks).has.length(8);
       });
@@ -98,7 +96,7 @@ describe('MarsBot boards', () => {
   });
 
   it('uses the Tharsis board with the Milestones & Awards expansion, whatever the map', () => {
-    const [game] = testGame(1, {automaOption: true, boardName: BoardName.HELLAS, modularMA: true});
+    const [game] = testGame(1, {automa: true, boardName: BoardName.HELLAS, modularMA: true});
     const marsBot = getMarsBot(game);
     expect(game.gameOptions.boardName).eq(BoardName.HELLAS);
     // Jovian sits on the Energy track on Tharsis, on the Science track on Hellas
@@ -106,7 +104,7 @@ describe('MarsBot boards', () => {
   });
 
   it('Enceladus microbes advance the Science track on Vastitas Borealis', () => {
-    const [game] = testGame(1, {automaOption: true, coloniesExtension: true, boardName: BoardName.VASTITAS_BOREALIS_NOVA});
+    const [game] = testGame(1, {automa: true, coloniesExtension: true, boardName: BoardName.VASTITAS_BOREALIS_NOVA});
     const marsBot = getMarsBot(game);
     const science = marsBot.marsBotBoard.tracks[3];
     const bio = marsBot.marsBotBoard.tracks[6];
@@ -119,17 +117,13 @@ describe('MarsBot boards', () => {
     expect(bio.position).eq(bioBefore);
   });
 
-  it('accepts MarsBot maps and the official random pool in the create form', () => {
+  it('accepts only MarsBot maps in the create form', () => {
     for (const boardName of MARSBOT_BOARD_NAMES) {
       expect(isMarsBotBoardChoice(boardName)).is.true;
     }
-    expect(isMarsBotBoardChoice(RandomBoardOption.OFFICIAL)).is.true;
-    expect(isMarsBotBoardChoice(RandomBoardOption.ALL)).is.false;
     expect(isMarsBotBoardChoice(BoardName.ARABIA_TERRA)).is.false;
     expect(isMarsBotBoardChoice(BoardName.VASTITAS_BOREALIS)).is.false;
-  });
-
-  it('the official random pool is exactly the MarsBot maps', () => {
-    expect([...ApiCreateGame.boardOptions(RandomBoardOption.OFFICIAL)].sort()).deep.eq([...MARSBOT_BOARD_NAMES].sort());
+    // MarsBot is built for normal-size boards only
+    expect(isMarsBotBoardChoice(BoardName.AMAZONIS_PLANITIA)).is.false;
   });
 });

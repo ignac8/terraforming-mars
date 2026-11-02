@@ -1,4 +1,5 @@
-import {IMarsBotCorp, corpTrackCubes, trackCubeKey} from '../MarsBotCorpTypes';
+import {IMarsBotCorp} from '../IMarsBotCorp';
+import {corpTrackCubes, trackCubeKey} from '../corpTrackCubes';
 import {CardName} from '../../../common/cards/CardName';
 import {CardType} from '../../../common/cards/CardType';
 import {IProjectCard} from '../../cards/IProjectCard';

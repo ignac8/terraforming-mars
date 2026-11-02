@@ -20,7 +20,7 @@ import {Space} from '../../src/server/boards/Space';
 // nothing, and nothing overflows on the Shipping Board.
 describe('MarsBot final greenery', () => {
   function setup(boardName: BoardName, options: Partial<GameOptions> = {}): {game: IGame, marsBot: MarsBot} {
-    const [game] = testGame(1, {automaOption: true, automaDifficulty: 'normal', boardName, ...options});
+    const [game] = testGame(1, {automa: true, automaDifficulty: 'normal', boardName, ...options});
     return {game, marsBot: game.automaHooks!.marsBot};
   }
 
@@ -120,7 +120,7 @@ describe('MarsBot final greenery', () => {
     const southPole = game.board.spaces.find((sp) => sp.bonus.includes(SpaceBonus.OCEAN))!;
     marsBot.turnResolver.megacredits = 10;
     const placer = marsBot.turnResolver.tilePlacer;
-    const icons = (): number => placer['tiebreakIcons'](southPole, new Set());
+    const icons = (): number => placer['iconCount'](southPole, new Set());
     game.phase = Phase.ACTION;
     expect(icons()).to.eq(2.5);
 
@@ -144,7 +144,7 @@ describe('MarsBot final greenery', () => {
       let placed: Space | undefined;
       const placer = marsBot.turnResolver.tilePlacer;
       const find = placer.findGreenerySpace.bind(placer);
-      placer.findGreenerySpace = (where) => placed = find(where);
+      placer.findGreenerySpace = (filter) => placed = find(filter);
       return {game, marsBot, mc, placementMc: () => placer.getTotalPlacementMC(placed!)};
     }
 

@@ -7,10 +7,11 @@ import {IGame, Score} from '../IGame';
 import {GameOptions} from '../game/GameOptions';
 import {GameId, ParticipantId} from '../../common/Types';
 import {SerializedGame} from '../SerializedGame';
-import {daysAgoToSeconds} from './utils';
+import {DEFAULT_COMPRESS_COMPLETED_GAMES_DAYS, compressCutoffSeconds, daysAgoToSeconds} from './utils';
 import {MultiMap} from 'mnemonist';
 import {Session, SessionId} from '../auth/Session';
 import {toID} from '../../common/utils/utils';
+import {TableStatePatch, withTableState} from '../rewind/tableState';
 
 export const IN_MEMORY_SQLITE_PATH = ':memory:';
 
@@ -138,12 +139,17 @@ export class SQLite implements IDatabase {
     await Promise.all([promise1, promise2]);
   }
 
+  async reopenFinishedGame(gameId: GameId): Promise<void> {
+    await this.asyncRun('DELETE FROM completed_game WHERE game_id = ?', [gameId]);
+    await this.asyncRun('DELETE FROM game_results WHERE game_id = ?', [gameId]);
+  }
+
 
   async purgeUnfinishedGames(maxGameDays: string | undefined = process.env.MAX_GAME_DAYS): Promise<Array<GameId>> {
     // Purge unfinished games older than MAX_GAME_DAYS days. If this .env variable is not present, unfinished games will not be purged.
     if (maxGameDays !== undefined) {
       const dateToSeconds = daysAgoToSeconds(maxGameDays, 0);
-      const selectResult = await this.asyncAll('SELECT DISTINCT game_id game_id FROM games WHERE created_time < ? and status = \'running\'', [dateToSeconds]);
+      const selectResult = await this.asyncAll('SELECT DISTINCT game_id game_id FROM games WHERE created_time < ? and status = \'running\' AND game_id NOT IN (SELECT game_id FROM games WHERE status = \'finished\')', [dateToSeconds]);
       let gameIds = selectResult.map((row) => row.game_id);
       if (gameIds.length > 1000) {
         console.log('Truncated purge to 1000 games.');
@@ -166,11 +172,8 @@ export class SQLite implements IDatabase {
     }
   }
 
-  async compressCompletedGames(compressCompletedGamesDays: string | undefined = process.env.COMPRESS_COMPLETED_GAMES_DAYS): Promise<void> {
-    if (compressCompletedGamesDays === undefined) {
-      return;
-    }
-    const dateToSeconds = daysAgoToSeconds(compressCompletedGamesDays, 0);
+  async compressCompletedGames(compressCompletedGamesDays: string = process.env.COMPRESS_COMPLETED_GAMES_DAYS ?? DEFAULT_COMPRESS_COMPLETED_GAMES_DAYS): Promise<void> {
+    const dateToSeconds = compressCutoffSeconds(compressCompletedGamesDays);
     const selectResult = await this.asyncAll('SELECT DISTINCT game_id FROM completed_game WHERE completed_time < ?', [dateToSeconds]);
     const gameIds = selectResult.map((row) => row.game_id);
     console.log(`${gameIds.length} completed games to be compressed.`);
@@ -194,17 +197,21 @@ export class SQLite implements IDatabase {
 
   async saveGame(game: IGame): Promise<void> {
     const gameJSON = JSON.stringify(game.serialize());
+    // Take the save id together with the snapshot above, so a save that starts before this one
+    // finishes gets the next id.
+    const thisSaveId = game.lastSaveId;
+    game.lastSaveId = thisSaveId + 1;
 
     // This app has a bad habit of re-saving the same state. It hasn't been fully cleaned, but OK.
     // If this is the first time we're saving the game, then store the participants. No need
     // to store them again.
-    const isFirstSave = game.lastSaveId === 0 &&
+    const isFirstSave = thisSaveId === 0 &&
       await this.asyncGet('SELECT 1 FROM games WHERE game_id = ? AND save_id = 0', [game.id]) === undefined;
 
     // Insert
     await this.runQuietly(
       'INSERT INTO games (game_id, save_id, game, players) VALUES (?, ?, ?, ?) ON CONFLICT (game_id, save_id) DO UPDATE SET game = ?',
-      [game.id, game.lastSaveId, gameJSON, game.players.length, gameJSON]);
+      [game.id, thisSaveId, gameJSON, game.players.length, gameJSON]);
 
     if (isFirstSave) {
       const participantIds: Array<ParticipantId> = game.players.map(toID);
@@ -217,9 +224,25 @@ export class SQLite implements IDatabase {
         console.error(e);
       }
     }
+  }
 
-    // This must occur after the save.
-    game.lastSaveId++;
+  updateNewestSave(gameId: GameId, saveId: number, patch: TableStatePatch): Promise<boolean> {
+    // One transaction with no await inside, so no other statement runs between the check and the update.
+    const update = this.db.transaction((): boolean => {
+      const newest = this.db.prepare('SELECT MAX(save_id) AS save_id FROM games WHERE game_id = ?').get(gameId) as {save_id: number | null};
+      if (newest.save_id !== saveId) {
+        return false;
+      }
+      const row = this.db.prepare('SELECT game FROM games WHERE game_id = ? AND save_id = ?').get(gameId, saveId) as {game: string};
+      const game = withTableState(JSON.parse(row.game) as SerializedGame, patch);
+      this.db.prepare('UPDATE games SET game = ? WHERE game_id = ? AND save_id = ?').run(JSON.stringify(game), gameId, saveId);
+      return true;
+    });
+    try {
+      return Promise.resolve(update());
+    } catch (err) {
+      return Promise.reject(err);
+    }
   }
 
   deleteGameNbrSaves(gameId: GameId, rollbackCount: number): Promise<void> {
@@ -228,7 +251,10 @@ export class SQLite implements IDatabase {
       // Should this be an error?
       return Promise.resolve();
     }
-    return this.runQuietly('DELETE FROM games WHERE rowid IN (SELECT rowid FROM games WHERE game_id = ? ORDER BY save_id DESC LIMIT ?)', [gameId, rollbackCount]);
+    // A game that runs again is no longer waiting to have its saves compressed. runQuietly logs and
+    // swallows a failure, so this never fails the rollback.
+    return this.runQuietly('DELETE FROM completed_game WHERE game_id = ?', [gameId])
+      .then(() => this.runQuietly('DELETE FROM games WHERE rowid IN (SELECT rowid FROM games WHERE game_id = ? ORDER BY save_id DESC LIMIT ?)', [gameId, rollbackCount]));
   }
 
   public stats(): Promise<{[key: string]: string | number}> {

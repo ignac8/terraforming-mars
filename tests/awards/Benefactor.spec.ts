@@ -1,7 +1,7 @@
 import {expect} from 'chai';
 import {Benefactor} from '../../src/server/awards/Benefactor';
 import {testGame} from '../TestGame';
-import {IMarsBot} from '../../src/server/automa/MarsBotCorpTypes';
+import {IMarsBot} from '../../src/server/automa/IMarsBot';
 
 describe('Benefactor', () => {
   const award = new Benefactor();

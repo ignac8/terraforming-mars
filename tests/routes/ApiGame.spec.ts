@@ -5,6 +5,8 @@ import {MockResponse} from './HttpMocks';
 import {TestPlayer} from '../TestPlayer';
 import {RouteTestScaffolding} from './RouteTestScaffolding';
 import {statusCode} from '../../src/common/http/statusCode';
+import {Phase} from '../../src/common/Phase';
+import {testGame} from '../TestGame';
 
 describe('ApiGame', () => {
   let scaffolding: RouteTestScaffolding;
@@ -97,7 +99,7 @@ describe('ApiGame', () => {
           'soloTR': false,
           'twoCorpsVariant': false,
           'undoOption': false,
-          'automaOption': false,
+          'automa': false,
           'automaDifficulty': 'normal',
           'automaCorpOption': false,
           'automaTurmoilTRReduction': 10,
@@ -120,5 +122,27 @@ describe('ApiGame', () => {
         },
       },
     );
+  });
+
+  it('leaves out the player id of a finished solo or MarsBot game, which could still rewind it', async () => {
+    const cases = [
+      {name: '2 players', players: 2, automa: false, showsIds: true},
+      {name: 'solo', players: 1, automa: false, showsIds: false},
+      {name: 'MarsBot', players: 1, automa: true, showsIds: false},
+    ];
+    for (const {name, players, automa, showsIds} of cases) {
+      const [game, player] = testGame(players, {automa});
+      game.phase = Phase.END;
+      scaffolding = new RouteTestScaffolding();
+      res = new MockResponse();
+      await scaffolding.ctx.gameLoader.add(game);
+      scaffolding.url = '/api/game?id=' + game.id;
+
+      await scaffolding.get(ApiGame.INSTANCE, res);
+
+      const ids = JSON.parse(res.content).players.map((p: {id?: string}) => p.id);
+      expect(ids.includes(player.id), name).eq(showsIds);
+      expect(ids.includes(undefined), name).eq(!showsIds);
+    }
   });
 });

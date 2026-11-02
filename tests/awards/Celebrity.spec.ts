@@ -3,7 +3,7 @@ import {Celebrity} from '../../src/server/awards/Celebrity';
 import {testGame} from '../TestGame';
 import {fakeCard} from '../TestingUtils';
 import {CardType} from '../../src/common/cards/CardType';
-import {IMarsBot} from '../../src/server/automa/MarsBotCorpTypes';
+import {IMarsBot} from '../../src/server/automa/IMarsBot';
 
 describe('Celebrity', () => {
   const award = new Celebrity();

@@ -1,6 +1,7 @@
 import {expect} from 'chai';
 import {Resource} from '../../src/common/Resource';
-import {trackCubeKey, MarsBotTrackCube} from '../../src/server/automa/MarsBotCorpTypes';
+import {trackCubeKey} from '../../src/server/automa/corpTrackCubes';
+import {MarsBotTrackCube} from '../../src/server/automa/MarsBotCorpTypes';
 import {MarsBot} from '../../src/server/automa/MarsBot';
 import {THARSIS_MARSBOT_BOARD} from '../../src/server/automa/boards/TharsisMarsBot';
 import {SeededRandom} from '../../src/common/utils/Random';

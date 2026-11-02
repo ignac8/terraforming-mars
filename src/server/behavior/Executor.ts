@@ -201,7 +201,7 @@ export class Executor implements BehaviorExecutor {
     if (behavior.decreaseAnyProduction !== undefined) {
       if (!game.isSoloMode()) {
         const dap = behavior.decreaseAnyProduction;
-        const targets = game.allPlayers.filter((p) => p.canHaveProductionReduced(dap.type, dap.count, player));
+        const targets = game.playersPlusMarsBot.filter((p) => p.canHaveProductionReduced(dap.type, dap.count, player));
 
         if (targets.length === 0) {
           return false;
@@ -256,7 +256,7 @@ export class Executor implements BehaviorExecutor {
       const turmoil = Turmoil.getTurmoil(game);
       if (behavior.turmoil.sendDelegates) {
         const count = ctx.count(behavior.turmoil.sendDelegates.count);
-        if (turmoil.getAvailableDelegateCount(player) < count) {
+        if (turmoil.delegateReserve.get(player) < count) {
           return false;
         }
       }
@@ -370,16 +370,11 @@ export class Executor implements BehaviorExecutor {
         // Exit early as the rest of handled by the deferred action.
         return;
       }
-      // player.pay triggers Sol Bank. It doesn't log, so log what was spent the way the stock does.
+      // player.pay triggers Sol Bank.
       player.pay(Payment.of({
         steel: spend.steel ?? 0,
         titanium: spend.titanium ?? 0,
-      }));
-      for (const [amount, resource] of [[spend.steel, 'steel'], [spend.titanium, 'titanium']] as const) {
-        if (amount) {
-          player.game.log('${0} lost ${1} ${2}', (b) => b.player(player).number(amount).string(resource));
-        }
-      }
+      }), {log: true});
       if (spend.plants) {
         player.stock.deduct(Resource.PLANTS, spend.plants, {log: true});
       }
@@ -772,17 +767,25 @@ export class Executor implements BehaviorExecutor {
       }
     }
 
-    // TODO(kberg): Use undefined instead of 0.
+    // Counts the steps from `rate` plus one for `tile`, or undefined when there are none.
+    const steps = (rate: number | undefined, tile: unknown): number | undefined => {
+      let total = rate ?? 0;
+      if (tile !== undefined) {
+        total++;
+      }
+      return total === 0 ? undefined : total;
+    };
+
     const trSource: TRSource = {
       tr: tr,
       temperature: behavior.global?.temperature,
-      oxygen: (behavior.global?.oxygen ?? 0) + (behavior.greenery !== undefined ? 1 : 0),
+      oxygen: steps(behavior.global?.oxygen, behavior.greenery),
       venus: behavior.global?.venus,
       oceans: behavior.ocean !== undefined ? (behavior.ocean.count ?? 1) : undefined,
 
-      moonHabitat: (behavior.moon?.habitatRate ?? 0) + (behavior.moon?.habitatTile !== undefined ? 1 : 0),
-      moonMining: (behavior.moon?.miningRate ?? 0) + (behavior.moon?.mineTile !== undefined ? 1 : 0),
-      moonLogistic: (behavior.moon?.logisticRate ?? 0) + (behavior.moon?.roadTile !== undefined ? 1 : 0),
+      moonHabitat: steps(behavior.moon?.habitatRate, behavior.moon?.habitatTile),
+      moonMining: steps(behavior.moon?.miningRate, behavior.moon?.mineTile),
+      moonLogistic: steps(behavior.moon?.logisticRate, behavior.moon?.roadTile),
     };
     return trSource;
   }

@@ -25,7 +25,7 @@ import {cast} from '../../src/common/utils/utils';
 describe('MarsBot colony storage as stock resources (C-25)', () => {
   function createAutomaGame(): {game: IGame, human: TestPlayer, marsBot: MarsBot} {
     const [game, human] = testGame(1, {
-      automaOption: true, automaDifficulty: 'normal', boardName: BoardName.THARSIS, coloniesExtension: true,
+      automa: true, automaDifficulty: 'normal', boardName: BoardName.THARSIS, coloniesExtension: true,
     });
     return {game, human, marsBot: game.automaHooks!.marsBot};
   }

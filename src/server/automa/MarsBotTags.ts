@@ -9,7 +9,7 @@ import {CardType} from '../../common/cards/CardType';
  * The tags MarsBot reads on a card. An event shows the Event tag in its corner, but the
  * codebase leaves it out of card.tags, so it is added here.
  */
-export function marsBotCardTags(card: IProjectCard): Array<Tag> {
+export function cardTagsIncludingEvent(card: IProjectCard): Array<Tag> {
   const tags: Array<Tag> = [...card.tags];
   if (card.type === CardType.EVENT && !tags.includes(Tag.EVENT)) {
     tags.push(Tag.EVENT);
@@ -40,11 +40,7 @@ export class MarsBotTags extends Tags {
   }
 
   protected override rawCount(tag: Tag, _includeEventsTags: boolean): number {
-    const trackIndex = this.marsBotBoard.tagToTrack[tag];
-    if (trackIndex !== undefined) {
-      return this.marsBotBoard.tracks[trackIndex].position;
-    }
-    return 0;
+    return this.marsBotBoard.trackPosition(tag);
   }
 
   // countAllTags skips Event and calls getPlayedEventsCount separately,

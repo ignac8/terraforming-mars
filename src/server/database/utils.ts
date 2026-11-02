@@ -14,6 +14,11 @@ export function dateToSeconds(date: Date) {
   return Math.round(date.getTime() / 1000);
 }
 
+/**
+ * How long, after a game ends, to keep every save. Replay needs them all. Afterwards only the first and last remain.
+ */
+export const DEFAULT_COMPRESS_COMPLETED_GAMES_DAYS = '14';
+
 export function stringToNumber(s: string | undefined, defaultValue: number): number {
   if (s === undefined) {
     return defaultValue;
@@ -40,4 +45,13 @@ export function daysAgoToSeconds(dayString: string | undefined, defaultValue: nu
   const days = stringToNumber(dayString, defaultValue);
   const date = addDays(new Date(), -days);
   return dateToSeconds(date);
+}
+
+/**
+ * The time before which completed games get compressed. A negative number of days would put the
+ * cutoff in the future and compress every completed game, so it counts as invalid.
+ */
+export function compressCutoffSeconds(dayString: string | undefined): number {
+  const defaultDays = Number(DEFAULT_COMPRESS_COMPLETED_GAMES_DAYS);
+  return daysAgoToSeconds(stringToNumber(dayString, defaultDays) < 0 ? undefined : dayString, defaultDays);
 }

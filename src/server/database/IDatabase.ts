@@ -3,6 +3,7 @@ import {GameOptions} from '../game/GameOptions';
 import {GameId, ParticipantId} from '../../common/Types';
 import {SerializedGame} from '../SerializedGame';
 import {Session, SessionId} from '../auth/Session';
+import {TableStatePatch} from '../rewind/tableState';
 
 export type GameIdLedger = {gameId: GameId, participantIds: Array<ParticipantId>}
 
@@ -75,6 +76,13 @@ export interface IDatabase {
     saveGame(game: IGame): Promise<void>;
 
     /**
+     * Sets the TableStatePatch fields of save `saveId`, in place, when that save is the game's newest. `false` or
+     * `undefined` removes the key. Adds no row, changes no other field, never touches the shared log. Resolves false
+     * and changes nothing when `saveId` is missing or not the newest.
+     */
+    updateNewestSave(gameId: GameId, saveId: number, patch: TableStatePatch): Promise<boolean>;
+
+    /**
      * Stores the results of a game in perpetuity in a separate table from normal
      * games. Called at a game's conclusion along with {@link markFinished}.
      *
@@ -83,13 +91,19 @@ export interface IDatabase {
      * @param generations the generation number at the end of the game
      * @param gameOptions the options used for this game.
      * @param scores an array of scores correlated to the player's corporation.
+     * @returns a promise that settles when the row is written, from a backend that writes it
+     * asynchronously. Ending a game does not wait for it. A caller that must know the row is back,
+     * like a rewind that writes it back after a failure, does.
      */
-    saveGameResults(gameId: GameId, players: number, generations: number, gameOptions: GameOptions, scores: Array<Score>): void;
+    saveGameResults(gameId: GameId, players: number, generations: number, gameOptions: GameOptions, scores: Array<Score>): void | Promise<void>;
 
     /**
      * Deletes the last `rollbackCount` saves of the specified game.
      *
      * Used as part of undo, reset, and via API to roll back a broken game.
+     *
+     * A game that was finished is no longer queued for compression afterwards. It is queued
+     * again if it finishes again.
      */
     deleteGameNbrSaves(gameId: GameId, rollbackCount: number): Promise<void>;
 
@@ -103,6 +117,12 @@ export interface IDatabase {
      *   (Purges all saves between `(0, last save]`.)
      */
     markFinished(gameId: GameId): Promise<void>;
+
+    /**
+     * A finished game plays on after a rewind. Removes its results and takes it off the compression
+     * queue. Its status stays 'finished', so the purge of unfinished games never deletes it.
+     */
+    reopenFinishedGame(gameId: GameId): Promise<void>;
 
     /**
      * A maintenance task that purges abandoned solo games older

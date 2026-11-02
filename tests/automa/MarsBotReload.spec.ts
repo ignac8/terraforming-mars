@@ -14,10 +14,12 @@ import {Asteroid} from '../../src/server/cards/base/Asteroid';
 import {Research} from '../../src/server/cards/base/Research';
 import {Greenhouses} from '../../src/server/cards/base/Greenhouses';
 import {Tag} from '../../src/common/cards/Tag';
+import {loadSandboxGame} from '../../src/server/replay/sandbox';
+import {Thermalist} from '../../src/server/awards/Thermalist';
 
 function createAutomaGame(): {game: IGame, marsBot: MarsBot} {
   const [game] = testGame(1, {
-    automaOption: true,
+    automa: true,
     automaDifficulty: 'easy',
     boardName: BoardName.THARSIS,
   });
@@ -98,6 +100,35 @@ describe('MarsBotReload', () => {
     expect(restored.automaHooks!.marsBot.player.terraformRating).to.eq(marsBot.player.terraformRating);
   });
 
+  it('plays against MarsBot in saves from before automaOption was renamed to automa', () => {
+    const {game} = createAutomaGame();
+    const serialized = game.serialize();
+    const {automa, ...gameOptions} = serialized.gameOptions;
+    serialized.gameOptions = {...gameOptions, automaOption: automa} as unknown as SerializedGame['gameOptions'];
+
+    const restored = Game.deserialize(serialized);
+
+    expect(restored.marsBotPlayer).is.not.undefined;
+    expect(restored.automaHooks).is.not.undefined;
+    expect(restored.isSoloMode()).is.false;
+    expect(restored.gameOptions.automa).is.true;
+    expect(restored.gameOptions).not.to.have.property('automaOption');
+  });
+
+  it('awards no second place in a two player save with the automa option on', () => {
+    // Only a hand-edited settings file creates such a game: it gets a MarsBot player but no MarsBot.
+    const [game, player, player2] = testGame(2, {automa: true});
+    player.heat = 10;
+    player2.heat = 5;
+    game.fundedAwards.push({award: new Thermalist(), player});
+
+    const loaded = Game.deserialize(game.serialize());
+
+    expect(loaded.automaHooks).is.undefined;
+    expect(loaded.getPlayerById(player.id).getVictoryPoints().awards).eq(5);
+    expect(loaded.getPlayerById(player2.id).getVictoryPoints().awards).eq(0);
+  });
+
   it('records the bot as a global-parameter contributor when it raises parameters', () => {
     const {game, marsBot} = createAutomaGame();
     game.phase = Phase.ACTION;
@@ -133,7 +164,7 @@ describe('MarsBotReload', () => {
 
   it('saves MarsBot\'s corporation before the player\'s first action', () => {
     const [game, human] = testGame(1, {
-      automaOption: true,
+      automa: true,
       automaCorpOption: true,
       automaDifficulty: 'easy',
       boardName: BoardName.THARSIS,
@@ -142,6 +173,7 @@ describe('MarsBotReload', () => {
     const saves: Array<SerializedGame> = [];
     game.save = () => {
       saves.push(game.serialize());
+      return Promise.resolve();
     };
 
     human.process({type: 'initialCards', responses: [
@@ -227,4 +259,21 @@ describe('MarsBotReload', () => {
     const restored = Game.deserialize(game.serialize());
     expect(restored.automaHooks!.marsBot.playedProjectCards[0].tags).deep.eq(tags);
   });
+
+  // A replay or a rewind loads the save and expects the same random draws from there on.
+  for (const [label, expansions] of [
+    ['base', {}],
+    ['Venus', {venusNextExtension: true}],
+    ['Colonies', {coloniesExtension: true}],
+    ['Venus and Colonies', {venusNextExtension: true, coloniesExtension: true}],
+  ] as const) {
+    it(`leaves the random generator where the save left it (${label})`, () => {
+      const [game] = testGame(1, {automa: true, automaDifficulty: 'easy', boardName: BoardName.THARSIS, ...expansions});
+      // Nothing is re-entered on load.
+      game.phase = Phase.END;
+
+      expect(loadSandboxGame(game.serialize()).rng.current).eq(game.rng.current);
+      expect(Game.deserialize(game.serialize()).rng.current).eq(game.rng.current);
+    });
+  }
 });

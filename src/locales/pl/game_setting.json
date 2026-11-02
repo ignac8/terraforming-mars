@@ -20,6 +20,7 @@
   "Off": "Wyłączone",
   "Milestones and Awards:": "Tytuły i Nagrody: ",
   "Full randomized": "Całkowicie losowe",
+  "Manually chosen": "Wybrane ręcznie",
   "Randomized with limited synergy": "Losowe z ograniczeniem synergii",
   "Draft:": "",
   "Research phase": "Faza badań",
@@ -30,5 +31,6 @@
   "fast mode": "Tryb szybki",
   "Banned cards:": "Zablokowane karty: ",
   "Game Setup Details": "Szczegóły ustawień gry",
-  "Board-defined": "Domyślne dla planszy"
+  "Board-defined": "Domyślne dla planszy",
+  "Remember": "Zapamiętaj"
 }

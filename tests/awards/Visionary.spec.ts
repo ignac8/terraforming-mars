@@ -1,47 +1,36 @@
 import {expect} from 'chai';
-import {Visionary} from '../../src/server/awards/Visionary';
+import {Tag} from '@/common/cards/Tag';
+import {THARSIS_MARSBOT_BOARD} from '@/server/automa/boards/TharsisMarsBot';
+import {VENUS_MARSBOT_TRACK} from '@/server/automa/boards/VenusMarsBot';
+import {Visionary} from '@/server/awards/Visionary';
 import {testGame} from '../TestGame';
 import {fakeCard} from '../TestingUtils';
-import {IMarsBot} from '../../src/server/automa/MarsBotCorpTypes';
-import {MarsBotBoard} from '../../src/server/automa/MarsBotBoard';
-import {THARSIS_MARSBOT_BOARD} from '../../src/server/automa/boards/TharsisMarsBot';
-import {VENUS_MARSBOT_TRACK} from '../../src/server/automa/boards/VenusMarsBot';
+import {fakeMarsBot, setAllTracks, setTrack} from '../automa/FakeMarsBot';
 
 describe('Visionary', () => {
-  const award = new Visionary();
-
   it('scores a player by cards in hand', () => {
     const [, player] = testGame(2);
     player.cardsInHand.push(fakeCard(), fakeCard());
 
-    expect(award.getScore(player)).to.eq(2);
+    expect(new Visionary().getScore(player)).to.eq(2);
   });
 
-  it('scores MarsBot by its least advanced track doubled', () => {
-    const board = new MarsBotBoard(THARSIS_MARSBOT_BOARD);
-    const game = {gameOptions: {venusNextExtension: false}};
-    const bot = {marsBotBoard: board, game} as unknown as IMarsBot;
-    for (let index = 0; index < 7; index++) {
-      for (let step = 0; step <= index; step++) {
-        board.tracks[index].advance();
+  it('MarsBot scores its least advanced track doubled, the second least with Venus', () => {
+    for (const run of [
+      {venus: false, expected: 2},
+      {venus: true, expected: 4},
+    ]) {
+      const tracks = run.venus ? [...THARSIS_MARSBOT_BOARD, VENUS_MARSBOT_TRACK] : THARSIS_MARSBOT_BOARD;
+      const [game] = testGame(1, {venusNextExtension: run.venus});
+      const bot = {...fakeMarsBot(tracks), game};
+      setAllTracks(bot, 6);
+      setTrack(bot, Tag.BUILDING, 1);
+      setTrack(bot, Tag.SPACE, 4);
+      if (run.venus) {
+        setTrack(bot, Tag.VENUS, 2);
       }
+
+      expect(new Visionary().marsBotScore(bot), JSON.stringify(run)).eq(run.expected);
     }
-
-    // Tracks run 1 to 7, so the lowest is 1
-    expect(award.marsBotScore(bot)).to.eq(2);
-  });
-
-  it('with Venus, the second least advanced track counts', () => {
-    const board = new MarsBotBoard([...THARSIS_MARSBOT_BOARD, VENUS_MARSBOT_TRACK]);
-    const game = {gameOptions: {venusNextExtension: true}};
-    const bot = {marsBotBoard: board, game} as unknown as IMarsBot;
-    for (let index = 0; index < 7; index++) {
-      for (let step = 0; step <= index; step++) {
-        board.tracks[index].advance();
-      }
-    }
-
-    // Venus sits lowest at 0, the Mars tracks run 1 to 7, so the second lowest is 1
-    expect(award.marsBotScore(bot)).to.eq(2);
   });
 });

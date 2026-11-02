@@ -2,7 +2,7 @@ import {expect} from 'chai';
 import {testGame} from '../../TestGame';
 import {TestPlayer} from '../../TestPlayer';
 import {MarsMaths} from '../../../src/server/cards/pathfinders/MarsMaths';
-import {finishGeneration, runAllActions} from '../../TestingUtils';
+import {doWait, finishGeneration, runAllActions} from '../../TestingUtils';
 import {SelectCard} from '../../../src/server/inputs/SelectCard';
 import {OrOptions} from '../../../src/server/inputs/OrOptions';
 import {SelectStandardProjectToPlay} from '../../../src/server/inputs/SelectStandardProjectToPlay';
@@ -20,13 +20,12 @@ import {assertSelectStandardProject} from '../../assertions';
 // `actionsTakenThisRound` (and the turn, if the round is over) exactly like the server does.
 function takeStandardProjectAction(player: TestPlayer, standardProject: CardName) {
   player.takeAction();
-  const [waitingFor, cb] = player.popWaitingFor2();
-  const orOptions = cast(waitingFor, OrOptions);
-  const standardProjectOption = cast(
-    orOptions.options.find((option) => option instanceof SelectStandardProjectToPlay),
-    SelectStandardProjectToPlay);
-  assertSelectStandardProject(standardProjectOption, player, standardProject);
-  cb?.();
+  doWait(player, OrOptions, (orOptions) => {
+    const standardProjectOption = cast(
+      orOptions.options.find((option) => option instanceof SelectStandardProjectToPlay),
+      SelectStandardProjectToPlay);
+    assertSelectStandardProject(standardProjectOption, player, standardProject);
+  });
 }
 
 describe('MarsMaths', () => {
@@ -180,7 +179,7 @@ describe('MarsMaths', () => {
     expect(game.activePlayer.id).eq(player2.id);
   });
 
-  it('Undo after Mars Maths action, still that player\'s turn', () => {
+  it('Restoring a save after a Mars Maths action, still that player\'s turn', () => {
     const [game, player /* , player2 */] = testGame(2);
     player.playedCards.push(card);
     player.megaCredits = 100;
@@ -201,7 +200,7 @@ describe('MarsMaths', () => {
 
     const serialized = game.serialize();
 
-    // Third action: another power plant standard project, to be undone below.
+    // Third action: another power plant standard project, after the snapshot.
     takeStandardProjectAction(player, CardName.POWER_PLANT_STANDARD_PROJECT);
 
     expect(player.production.energy).eq(3);
@@ -209,9 +208,8 @@ describe('MarsMaths', () => {
     expect(player.actionsTakenThisRound).eq(3);
     expect(game.activePlayer.id).eq(player.id);
 
-    // Clicks "Undo last action": the server discards the in-memory game and reloads
-    // the last saved snapshot, re-prompting the active player for their next action
-    // (this is exactly what `Game.deserialize` does when the phase is ACTION).
+    // Restores the snapshot taken after the second action, re-prompting the active
+    // player for their next action (what `Game.deserialize` does when the phase is ACTION).
     const restoredGame = Game.deserialize(serialized);
     const restoredPlayer = restoredGame.getPlayerById(player.id);
 

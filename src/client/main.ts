@@ -1,12 +1,10 @@
 import {createApp, defineAsyncComponent} from 'vue';
 
-import {trimEmptyTextNodes} from '@/client/directives/TrimWhitespace';
 import App from '@/client/components/App.vue';
 import {getPreferences} from '@/client/utils/PreferencesManager';
 
 import i18nPlugin from '@/client/plugins/i18n.plugin';
 import {startOauth} from '@/client/oauth';
-import {installChunkReloadHandler} from '@/client/utils/chunkReload';
 const PlayerInputFactory = defineAsyncComponent(() => import(/* webpackChunkName: "player-input" */ '@/client/components/PlayerInputFactory.vue'));
 
 declare global {
@@ -16,8 +14,6 @@ declare global {
 }
 
 async function bootstrap() {
-  installChunkReloadHandler();
-
   const lang = getPreferences().lang;
 
   if (lang !== 'en') {
@@ -33,11 +29,6 @@ async function bootstrap() {
   app.use(i18nPlugin);
 
   app.component('PlayerInputFactory', PlayerInputFactory);
-
-  app.directive('trim-whitespace', {
-    mounted: trimEmptyTextNodes,
-    updated: trimEmptyTextNodes,
-  });
 
   if (window.isSecureContext && 'serviceWorker' in navigator) {
     window.addEventListener('load', function() {

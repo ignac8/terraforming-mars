@@ -1,5 +1,5 @@
 import {CardName} from '../../../common/cards/CardName';
-import {IMarsBotCorp} from '../MarsBotCorpTypes';
+import {IMarsBotCorp} from '../IMarsBotCorp';
 import {ALL_AUTOMA_MANIFESTS} from './AllAutomaManifests';
 
 const INITIAL_CORPS: Partial<Record<CardName, IMarsBotCorp>> = {};

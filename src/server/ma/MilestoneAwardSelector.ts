@@ -11,6 +11,7 @@ import {synergies} from './MilestoneAwardSynergies';
 import {isCompatible, MAManifest} from './MAManifest';
 import {intersection} from '../../common/utils/utils';
 import {AutomaGameSetup} from '../automa/AutomaGameSetup';
+import {validateCustomMA} from '../../common/ma/CustomMA';
 
 type DrawnMilestonesAndAwards = {
   milestones: Array<MilestoneName>,
@@ -108,6 +109,16 @@ export function chooseMilestonesAndAwards(gameOptions: GameOptions): DrawnMilest
   case RandomMAOptionType.UNLIMITED:
     drawnMilestonesAndAwards = getRandomMilestonesAndAwards(gameOptions, requiredQty, UNLIMITED_SYNERGY);
     break;
+  case RandomMAOptionType.MANUAL:
+    if (gameOptions.customMA === undefined) {
+      throw new Error('Manual milestones and awards require customMA');
+    }
+    validateCustomMA(gameOptions.customMA, gameOptions.randomMA, gameOptions.venusNextExtension);
+    drawnMilestonesAndAwards = {
+      milestones: [...gameOptions.customMA.milestones],
+      awards: [...gameOptions.customMA.awards],
+    };
+    break;
   default:
     throw new Error('Unknown milestone/award type: ' + gameOptions.randomMA);
   }
@@ -138,7 +149,7 @@ export function getCandidates(gameOptions: GameOptions): [Array<MilestoneName>, 
       return false;
     }
     // Against MarsBot, deal only what the automa rules support
-    if (gameOptions.automaOption && !supportedByAutoma(name, gameOptions)) {
+    if (gameOptions.automa && !supportedByAutoma(name, gameOptions)) {
       return false;
     }
 

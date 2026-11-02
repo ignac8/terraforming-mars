@@ -9,7 +9,7 @@ import {TileType} from '../../src/common/TileType';
 
 function createAutomaGame(difficulty: 'easy' | 'normal' | 'hard' | 'brutal' = 'normal'): {game: IGame, human: TestPlayer, marsBot: MarsBot} {
   const [game, human] = testGame(1, {
-    automaOption: true,
+    automa: true,
     automaDifficulty: difficulty,
     boardName: BoardName.THARSIS,
   });
@@ -22,7 +22,7 @@ function createAutomaGame(difficulty: 'easy' | 'normal' | 'hard' | 'brutal' = 'n
 
 describe('MarsBot', () => {
   describe('Setup', () => {
-    it('creates MarsBot when automaOption is enabled', () => {
+    it('creates MarsBot when automa is enabled', () => {
       const {marsBot} = createAutomaGame();
       expect(marsBot).to.not.be.undefined;
       expect(marsBot.player.name).to.eq('MarsBot');

@@ -17,7 +17,7 @@ class TestInMemoryDatabase extends InMemoryDatabase implements ITestDatabase {
   }
 
   status(gameId: GameId): Promise<Status> {
-    if (this.completedGames.has(gameId)) {
+    if (this.finishedGames.has(gameId)) {
       return Promise.resolve('finished');
     } else if (this.games.has(gameId)) {
       return Promise.resolve('running');

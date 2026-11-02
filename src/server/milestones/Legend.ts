@@ -1,9 +1,10 @@
 import {BaseMilestone} from './IMilestone';
 import {IPlayer} from '../IPlayer';
 import {CardType} from '../../common/cards/CardType';
-import {IMarsBot} from '../automa/MarsBotCorpTypes';
+import {IMarsBot} from '../automa/IMarsBot';
 
 export class Legend extends BaseMilestone {
+  public readonly automaDescription = '5+ red cards in played pile';
   constructor() {
     super(
       'Legend',

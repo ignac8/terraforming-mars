@@ -1,7 +1,7 @@
 import {expect} from 'chai';
 import {Briber} from '../../src/server/milestones/Briber';
 import {testGame} from '../TestGame';
-import {IMarsBot} from '../../src/server/automa/MarsBotCorpTypes';
+import {IMarsBot} from '../../src/server/automa/IMarsBot';
 
 describe('Briber', () => {
   const milestone = new Briber();

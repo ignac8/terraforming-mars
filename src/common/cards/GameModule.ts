@@ -22,6 +22,18 @@ export const GAME_MODULES = [
 ] as const;
 export type GameModule = typeof GAME_MODULES[number];
 
+/** Modules published by FryxGames. The rest are fan expansions. */
+export const OFFICIAL_MODULES: ReadonlyArray<GameModule> = [
+  'base',
+  'corpera',
+  'promo',
+  'venus',
+  'colonies',
+  'prelude',
+  'prelude2',
+  'turmoil',
+];
+
 export type Expansion = Exclude<GameModule, 'base'>;
 
 export const MODULE_NAMES = {

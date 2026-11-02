@@ -1,7 +1,7 @@
 import {IMilestone} from '../IMilestone';
 import {IPlayer} from '../../IPlayer';
 import {Units} from '../../../common/Units';
-import {IMarsBot} from '../../automa/MarsBotCorpTypes';
+import {IMarsBot} from '../../automa/IMarsBot';
 import {marsBotMarsTrackPositions} from '../../automa/MarsBotMilestoneAwardEval';
 
 const TWO_OF_EACH: Units = Units.every(2);
@@ -9,6 +9,7 @@ const TWO_OF_EACH: Units = Units.every(2);
 export class Merchant implements IMilestone {
   public readonly name = 'Merchant';
   public readonly description = '2 of each standard resource (after paying the claim cost)';
+  public readonly automaDescription = 'All tracks ≥ 2 (except Venus)';
 
   public getScore(player: IPlayer): number {
     if (this.canClaim(player)) {

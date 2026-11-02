@@ -249,7 +249,7 @@ export abstract class Colony implements IColony {
 
     case ColonyBenefit.GAIN_CARD_DISCOUNT:
       player.colonies.cardDiscount += 1;
-      game.log('Cards played by ${0} cost 1 M€ less this generation', (b) => b.player(player));
+      game.log('Cards played by ${0} cost 1:r:mc: less this generation', (b) => b.player(player));
       return undefined;
 
     case ColonyBenefit.GAIN_PRODUCTION:
@@ -287,7 +287,7 @@ export abstract class Colony implements IColony {
 
     case ColonyBenefit.PLACE_DELEGATES:
       if (game.turmoil) {
-        const availablePlayerDelegates = game.turmoil.getAvailableDelegateCount(player);
+        const availablePlayerDelegates = game.turmoil.delegateReserve.get(player);
         const qty = Math.min(quantity, availablePlayerDelegates);
         for (let i = 0; i < qty; i++) {
           game.defer(new SendDelegateToArea(player));
@@ -316,7 +316,7 @@ export abstract class Colony implements IColony {
       return new ErodeSpacesDeferred(player, quantity);
 
     case ColonyBenefit.GAIN_MC_PER_HAZARD_TILE:
-      player.stock.megacredits += game.board.getHazards().length;
+      player.stock.add(Resource.MEGACREDITS, game.board.getHazards().length, {log: true});
       return undefined;
 
     case ColonyBenefit.GAIN_TR:

@@ -7,6 +7,9 @@ import {ITestDatabase, Status} from '../database/ITestDatabase';
 import {IGame} from '../../src/server/IGame';
 import {LocalFilesystem} from '../../src/server/database/LocalFilesystem';
 import {GameId} from '../../src/common/Types';
+import {expect} from 'chai';
+import {Game} from '../../src/server/Game';
+import {TestPlayer} from '../TestPlayer';
 
 /*
  * This test can be run with `npm run test:integration` as long as the test is set up
@@ -50,6 +53,10 @@ class TestLocalFilesystem extends LocalFilesystem implements ITestDatabase {
   async setCompletedTime(_gameId: GameId, _timestampSeconds: number): Promise<void> {
     throw new Error('Not yet implemented');
   }
+
+  hasGameResults(gameId: GameId): Promise<boolean> {
+    return Promise.resolve(fs.existsSync(this.completedFilename(gameId)));
+  }
 }
 
 describeDatabaseSuite({
@@ -64,5 +71,20 @@ describeDatabaseSuite({
     'history_path': 'def',
     'path': 'abc',
     'type': 'Local Filesystem',
+  },
+  otherTests: (dbFactory) => {
+    it('reopenFinishedGame removes the stored results', async () => {
+      const db = dbFactory();
+      await db.initialize();
+      const player = TestPlayer.BLACK.newPlayer();
+      const game = Game.newInstance('game-reopened', [player], player, 'spectatorid');
+      db.saveGameResults(game.id, 1, 5, game.gameOptions, []);
+      expect(await db.hasGameResults(game.id)).is.true;
+
+      await db.reopenFinishedGame(game.id);
+      expect(await db.hasGameResults(game.id)).is.false;
+      // Reopening a game without stored results does nothing.
+      await db.reopenFinishedGame(game.id);
+    });
   },
 });

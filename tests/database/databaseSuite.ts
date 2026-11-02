@@ -12,6 +12,9 @@ import {statusCode} from '../../src/common/http/statusCode';
 import {cast} from '@/common/utils/utils';
 import {SelectInitialCards} from '../../src/server/inputs/SelectInitialCards';
 import {DiscordUser} from '../../src/server/server/auth/discord';
+import {IGame} from '../../src/server/IGame';
+import {TableStatePatch} from '../../src/server/rewind/tableState';
+import {SerializedGame} from '../../src/server/SerializedGame';
 
 // Removes any fields that have undefined values, and filters undefined from arrays.
 function stripUndefined(obj: unknown): unknown {
@@ -49,6 +52,18 @@ export type DatabaseTestDescriptor<T extends ITestDatabase> = {
   }>,
   otherTests?(dbFactory: () => T): void,
 };
+
+// A patch that changes every table state field of `game`'s save.
+export function tableStatePatch(game: IGame): TableStatePatch {
+  const player = game.players[0];
+  return {
+    frozen: true,
+    rewindVote: {id: 7, requester: player.id, saveId: 1, moveNumber: 1, generation: 1, cards: 'shuffle', yes: [player.id], status: 'open', expiresAt: 1234},
+    rewindRequestLimits: {generation: 1, players: [player.id]},
+    undoCount: game.undoCount + 1,
+    timers: [{player: player.id, timer: {...player.timer.serialize(), sumElapsed: 4321}}],
+  };
+}
 
 export function describeDatabaseSuite<T extends ITestDatabase>(dtor: DatabaseTestDescriptor<T>) {
   describe(dtor.name, () => {
@@ -195,6 +210,53 @@ export function describeDatabaseSuite<T extends ITestDatabase>(dtor: DatabaseTes
           expect(await db.completedTime('game2-id')).is.undefined;
         });
       }
+
+      it('a rolled back finished game is no longer waiting for compression', async () => {
+        const player = TestPlayer.BLACK.newPlayer();
+        const game = Game.newInstance('game-id-rolled-back', [player], player, 'spectatorid');
+        await db.lastSaveGamePromise;
+        await db.saveGame(game);
+        await db.saveGame(game);
+        await db.saveGame(game);
+        await db.markFinished(game.id);
+        await db.setCompletedTime(game.id, 100);
+        expect(await db.completedTime(game.id)).is.not.undefined;
+
+        await db.deleteGameNbrSaves(game.id, 1);
+
+        expect(await db.completedTime(game.id)).is.undefined;
+        await db.compressCompletedGames('2');
+        expect(await db.getSaveIds(game.id)).has.members([0, 1, 2]);
+      });
+
+      it('a reopened game keeps its saves and its finished status, and can finish again', async () => {
+        const player = TestPlayer.BLACK.newPlayer();
+        const game = Game.newInstance('game-id-reopened', [player], player, 'spectatorid');
+        await db.lastSaveGamePromise;
+        await db.saveGame(game);
+        await db.saveGame(game);
+        await db.saveGame(game);
+        db.saveGameResults(game.id, 1, 5, game.gameOptions, []);
+        await db.markFinished(game.id);
+        await db.setCompletedTime(game.id, 100);
+        // saveGameResults does not report when it is done.
+        for (let i = 0; i < 100 && !(await db.hasGameResults(game.id)); i++) {
+          await new Promise((resolve) => setTimeout(resolve, 10));
+        }
+        expect(await db.hasGameResults(game.id)).is.true;
+
+        await db.reopenFinishedGame(game.id);
+        expect(await db.status(game.id)).eq('finished');
+        await db.saveGame(game);
+
+        expect(await db.completedTime(game.id)).is.undefined;
+        expect(await db.hasGameResults(game.id)).is.false;
+        await db.purgeUnfinishedGames('-1');
+        await db.compressCompletedGames('0');
+        expect(await db.getSaveIds(game.id)).has.members([0, 1, 2, 3, 4]);
+        await db.markFinished(game.id);
+        expect(await db.completedTime(game.id)).is.not.undefined;
+      });
     }
 
     it('gets player count', async () => {
@@ -322,6 +384,83 @@ export function describeDatabaseSuite<T extends ITestDatabase>(dtor: DatabaseTes
       await db.saveGame(game);
       expect(await db.getSaveIds(game.id)).has.members([0, 1]);
       expect((await db.getGameVersion(game.id, 1)).players[0].megaCredits).eq(200);
+    });
+
+    it('two saveGame calls in a row write two rows', async () => {
+      const player = TestPlayer.BLACK.newPlayer();
+      const game = Game.newInstance('game-id', [player], player, 'spectatorid');
+      await db.lastSaveGamePromise;
+      expect(game.lastSaveId).eq(1);
+
+      // The second call starts before the first one finishes.
+      player.megaCredits = 100;
+      const first = db.saveGame(game);
+      player.megaCredits = 200;
+      const second = db.saveGame(game);
+      await Promise.all([first, second]);
+
+      expect(await db.getSaveIds(game.id)).has.members([0, 1, 2]);
+      expect((await db.getGameVersion(game.id, 1)).players[0].megaCredits).eq(100);
+      expect((await db.getGameVersion(game.id, 2)).players[0].megaCredits).eq(200);
+    });
+
+    it('patches the newest save\'s table state in place', async () => {
+      const player = TestPlayer.BLACK.newPlayer();
+      const game = Game.newInstance('game-id-patched', [player], player, 'spectatorid');
+      await db.lastSaveGamePromise;
+      await db.saveGame(game);
+      await db.saveGame(game);
+      const version = async (saveId: number) => structuredClone(stripUndefined(await db.getGameVersion(game.id, saveId))) as SerializedGame;
+      const before = await Promise.all([0, 1, 2].map(version));
+      const logLength = (await db.getGame(game.id)).gameLog.length;
+      const patch = tableStatePatch(game);
+
+      expect(await db.updateNewestSave(game.id, 2, patch)).is.true;
+
+      expect(await db.getSaveIds(game.id)).has.members([0, 1, 2]);
+      const after = await version(2);
+      expect(after.frozen).is.true;
+      expect(after.rewindVote).deep.eq(patch.rewindVote);
+      expect(after.rewindRequestLimits).deep.eq(patch.rewindRequestLimits);
+      expect(after.undoCount).eq(patch.undoCount);
+      expect(after.players[0].timer).deep.eq(patch.timers[0].timer);
+      for (const key of Object.keys(before[2]) as Array<keyof SerializedGame>) {
+        if (key !== 'undoCount' && key !== 'players') {
+          expect(after[key], key).deep.eq(before[2][key]);
+        }
+      }
+      expect({...after.players[0], timer: undefined}).deep.eq({...before[2].players[0], timer: undefined});
+      for (const saveId of [0, 1]) {
+        expect(await version(saveId)).deep.eq(before[saveId]);
+      }
+      const newest = await db.getGame(game.id);
+      expect(newest.frozen).is.true;
+      expect(newest.gameLog).has.length(logLength);
+
+      expect(await db.updateNewestSave(game.id, 2, {...patch, frozen: false, rewindVote: undefined, rewindRequestLimits: undefined})).is.true;
+
+      const cleared = await db.getGameVersion(game.id, 2);
+      expect(cleared).not.to.have.any.keys('frozen', 'rewindVote', 'rewindRequestLimits');
+      expect(cleared.undoCount).eq(patch.undoCount);
+    });
+
+    it('patches nothing unless the save is the newest', async () => {
+      const player = TestPlayer.BLACK.newPlayer();
+      const game = Game.newInstance('game-id-unpatched', [player], player, 'spectatorid');
+      await db.lastSaveGamePromise;
+      await db.saveGame(game);
+      await db.saveGame(game);
+      const rows = async () => JSON.stringify(await Promise.all((await db.getSaveIds(game.id)).sort().map((saveId) => db.getGameVersion(game.id, saveId))));
+      const before = await rows();
+
+      for (const saveId of [1, 7]) {
+        expect(await db.updateNewestSave(game.id, saveId, tableStatePatch(game))).is.false;
+        expect(await rows()).eq(before);
+      }
+
+      await db.deleteGameNbrSaves(game.id, 1);
+      expect(await db.updateNewestSave(game.id, 2, tableStatePatch(game))).is.false;
+      expect(await db.getSaveIds(game.id)).has.members([0, 1]);
     });
 
     it('participantIds', async () => {

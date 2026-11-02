@@ -3,7 +3,7 @@ import {IPlayer} from '../IPlayer';
 import {Board} from '../boards/Board';
 import {MilestoneName} from '../../common/ma/MilestoneName';
 import {BoardName} from '../../common/boards/BoardName';
-import {IMarsBot} from '../automa/MarsBotCorpTypes';
+import {IMarsBot} from '../automa/IMarsBot';
 import {marsBotUsesMapSet} from '../automa/MarsBotMilestoneAwardEval';
 
 export class Irrigator extends BaseMilestone {
@@ -24,6 +24,10 @@ export class Irrigator extends BaseMilestone {
 
 // Variant from Terra Cimmeria Nova.
 export class Coastguard extends Irrigator {
+  public readonly automaDescription = '4+ tiles adjacent to ocean';
+  public readonly automaMapDescriptions = {
+    [BoardName.TERRA_CIMMERIA_NOVA]: '3+ tiles adjacent to ocean',
+  };
   constructor() {
     super('Coastguard', 3);
   }

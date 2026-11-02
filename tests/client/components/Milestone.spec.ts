@@ -4,6 +4,7 @@ import {expect} from 'chai';
 import Milestone from '@/client/components/Milestone.vue';
 import {ClaimedMilestoneModel} from '@/common/models/ClaimedMilestoneModel';
 import {getMilestone} from '@/client/MilestoneAwardManifest';
+import {BoardName} from '@/common/boards/BoardName';
 
 function createMilestone(
   {claimed, scores = []}:
@@ -91,6 +92,25 @@ describe('Milestone', () => {
     const wrapper = mount(Milestone, {...globalConfig, props: {milestone}});
 
     expect(wrapper.find(`.board-cube--${milestone.color}`).exists()).to.be.true;
+  });
+
+  describe('MarsBot hint', () => {
+    const milestone: ClaimedMilestoneModel = {...createMilestone({claimed: false}), name: 'Rim Settler'};
+    const rimSettler = getMilestone('Rim Settler');
+
+    function hint(automaMapSet?: BoardName): string {
+      const wrapper = mount(Milestone, {...globalConfig, props: {milestone, showDescription: true, isAutoma: true, automaMapSet}});
+      return wrapper.find('.ma-automa-hint').text();
+    }
+
+    it('uses the map wording when the game plays the map\'s set', () => {
+      expect(hint(BoardName.HELLAS)).to.include(rimSettler.automaMapDescriptions![BoardName.HELLAS]!);
+    });
+
+    it('uses the generic wording for any other game', () => {
+      expect(hint(BoardName.ELYSIUM)).to.include(rimSettler.automaDescription!);
+      expect(hint(undefined)).to.include(rimSettler.automaDescription!);
+    });
   });
 
   it('creates correct css class from milestone name', () => {

@@ -152,7 +152,7 @@ export abstract class Board {
 
   private computeAdditionalCosts(player: IPlayer, space: Space, multiplier: number | undefined, subjectToHazardAdjacency: boolean): SpaceCosts {
     const costs: SpaceCosts = this.spaceCosts(space);
-    if (player.game.automaHooks?.isAutomaPlayer(player)) {
+    if (player.isMarsBot) {
       // MarsBot never collects placement bonuses, so it never pays what they cost either.
       costs.megacredits = 0;
       costs.tr = {};
@@ -205,6 +205,8 @@ export abstract class Board {
   }
 
   public getAvailableSpacesOnLand(player: IPlayer, canAffordOptions?: CanAffordOptions, subjectToHazardAdjacency: boolean = true): ReadonlyArray<Space> {
+    // MarsBot never collects placement bonuses.
+    const availableDelegates = player.isMarsBot ? undefined : player.game.turmoil?.delegateReserve.get(player);
     // Does this also apply to cove spaces?
     const landSpaces = this.getSpaces(SpaceType.LAND).filter((space) => {
       // A space is available if it doesn't have a player marker on it, or it belongs to |player|
@@ -227,6 +229,11 @@ export abstract class Board {
       }
 
       if (space.id === player.game.nomadSpace) {
+        return false;
+      }
+
+      // A delegate bonus can't be skipped, so the player needs a delegate for each one.
+      if (availableDelegates !== undefined && space.bonus.filter((bonus) => bonus === SpaceBonus.DELEGATE).length > availableDelegates) {
         return false;
       }
 

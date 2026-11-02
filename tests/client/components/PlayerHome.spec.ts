@@ -1,25 +1,22 @@
 import {shallowMount} from '@vue/test-utils';
 import {expect} from 'chai';
 import {globalConfig} from './getLocalVue';
+import PurgeWarning from '@/client/components/common/PurgeWarning.vue';
 import PlayerHome from '@/client/components/PlayerHome.vue';
 import CardSortButtons from '@/client/components/CardSortButtons.vue';
 import SortableCards from '@/client/components/SortableCards.vue';
+import WaitingFor from '@/client/components/WaitingFor.vue';
+import PlayerSetupView from '@/client/components/PlayerSetupView.vue';
+import LogPanel from '@/client/components/logpanel/LogPanel.vue';
 import {fakePlayerViewModel, fakePublicPlayerModel} from './testHelpers';
-import {FakeLocalStorage} from './FakeLocalStorage';
+import {useFakeLocalStorage} from './FakeLocalStorage';
 import {CardName} from '@/common/cards/CardName';
+import {LogMessage} from '@/common/logs/LogMessage';
+import {LogMessageType} from '@/common/logs/LogMessageType';
 import raw_settings from '@/genfiles/settings.json';
 
 describe('PlayerHome', () => {
-  let localStorage: FakeLocalStorage;
-
-  beforeEach(() => {
-    localStorage = new FakeLocalStorage();
-    FakeLocalStorage.register(localStorage);
-  });
-
-  afterEach(() => {
-    FakeLocalStorage.deregister(localStorage);
-  });
+  useFakeLocalStorage();
 
   it('mounts without errors', () => {
     const wrapper = shallowMount(PlayerHome, {
@@ -29,7 +26,7 @@ describe('PlayerHome', () => {
           getVisibilityState: () => true,
           setVisibilityState: () => {},
         },
-      } as any,
+      },
       props: {
         playerView: fakePlayerViewModel(),
         settings: raw_settings,
@@ -49,7 +46,7 @@ describe('PlayerHome', () => {
           getVisibilityState: () => true,
           setVisibilityState: () => {},
         },
-      } as any,
+      },
       props: {
         playerView,
         settings: raw_settings,
@@ -60,5 +57,67 @@ describe('PlayerHome', () => {
     await wrapper.vm.$nextTick();
 
     expect(wrapper.findComponent(SortableCards).props('sortOrder')).to.deep.eq({key: 'vp', reversed: false});
+  });
+
+  describe('replay', () => {
+    function mountHome(playerView: ReturnType<typeof fakePlayerViewModel>, replay?: boolean, extra: Record<string, unknown> = {}, slots?: Record<string, string>) {
+      return shallowMount(PlayerHome, {
+        ...globalConfig,
+        slots,
+        parentComponent: {
+          methods: {
+            getVisibilityState: () => true,
+            setVisibilityState: () => {},
+          },
+        } as any,
+        props: {playerView, replay, settings: raw_settings, ...extra},
+      });
+    }
+
+    function playedView() {
+      const thisPlayer = fakePublicPlayerModel({tableau: [{name: CardName.ECOLINE}]});
+      return fakePlayerViewModel({thisPlayer, players: [thisPlayer]});
+    }
+
+    it('renders WaitingFor by default', () => {
+      expect(mountHome(playedView()).findComponent(WaitingFor).exists()).is.true;
+    });
+
+    it('renders no WaitingFor when replaying', () => {
+      expect(mountHome(playedView(), true).findComponent(WaitingFor).exists()).is.false;
+    });
+
+    it('shows the purge warning only outside a replay', () => {
+      expect(mountHome(playedView()).findComponent(PurgeWarning).exists()).is.true;
+      expect(mountHome(playedView(), true).findComponent(PurgeWarning).exists()).is.false;
+    });
+
+    it('shows no log when replaying, unless it is given the log of the replay', () => {
+      expect(mountHome(playedView(), true).findComponent(LogPanel).exists()).is.false;
+    });
+
+    it('shows the log of the replay it is given, made of those lines', () => {
+      const replayLog = [new LogMessage(LogMessageType.DEFAULT, 'Played', [])];
+      const playerView = playedView();
+      const panel = mountHome(playerView, true, {replayLog}).findComponent(LogPanel);
+      expect(panel.props('replayLog')).to.deep.equal(replayLog);
+      expect(panel.props('viewModel')).to.deep.equal(playerView);
+    });
+
+    it('holds what the page adds in its own element, so that the top bar stays with it', () => {
+      const wrapper = mountHome(playedView(), true, {}, {default: '<div class="added">more</div>'});
+      expect(wrapper.find('#player-home > .added').exists()).is.true;
+      expect(mountHome(playedView(), true).find('#player-home > .added').exists()).is.false;
+    });
+
+    it('logs as its own player outside a replay', () => {
+      const playerView = playedView();
+      expect(mountHome(playerView).findComponent(LogPanel).props('viewModel')).to.deep.equal(playerView);
+    });
+
+    it('tells the setup view not to render WaitingFor when replaying', () => {
+      const wrapper = mountHome(fakePlayerViewModel(), true);
+      expect(wrapper.findComponent(PlayerSetupView).props('replay')).is.true;
+    });
   });
 });
