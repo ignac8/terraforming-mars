@@ -72,7 +72,7 @@ up. It conflicts with upstream main now and needs main merged in first. Fork #25
 
 Fork #14 (Head Start) merged into automa on 2026-11-02 after automa was merged into it (the two `Player.ts`
 conflicts: `drainQueue` around its action callback, and the undo action option automa had already removed).
-It waits to be offered upstream, see "Non-automa fixes to offer upstream".
+Opened upstream as [#8666](https://github.com/terraforming-mars/terraforming-mars/pull/8666) the same day, after kberg on #14: "if you don't hear many complaints, perhaps it's worth restoring". Branch `head-start`. Divergence: upstream still has the undo action, so #8666 keeps `!headStart` on it (its test fails without it); automa has no undo action, and automa's `takeAction` also lets MarsBot's corporation start the action phase during Head Start.
 
 Checked 2026-11-02: every open upstream and fork PR's changes are on automa, apart from the import paths and
 divergences listed in the rows above.
@@ -147,7 +147,7 @@ These ride along with whichever automa PR needs them:
 
 Each can go up as its own PR, independent of the MarsBot chain:
 
-- Head Start (X43) re-enabled (2026-10-16). Upstream keeps it commented out of
+- Head Start (X43) re-enabled (2026-10-16), upstream as #8666 (2026-11-02). Upstream keeps it commented out of
   `PromoCardManifest.ts` since #5852 (kberg: "I'm not about to fix Head Start"). The fork gives it
   its own serialized counter, `Player.headStartActionsRemaining`, so prelude plays no longer eat
   its 2 actions. During them Pass becomes "Skip this action", End Turn is hidden, and
