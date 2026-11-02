@@ -51,7 +51,9 @@ rebuilt off upstream main before it goes up, and its fork PR is closed with "Mov
 
 | Fork PR | Branch (on) | Waits on | Before it goes up |
 |---------|-------------|----------|-------------------|
-| [#48](https://github.com/ignac8/terraforming-mars/pull/48) | `marsbot-turmoil` (on `marsbot-setup`) | #8625 (`game.marsBotPlayer`) | 4 commits behind `marsbot-setup` since the #8625 review; rebuild off upstream main |
+| [#48](https://github.com/ignac8/terraforming-mars/pull/48) | `marsbot-turmoil` (on `marsbot-setup`) | #8625 (`game.marsBotPlayer`) | Up to date with `marsbot-setup` (merged 2026-11-02); rebuild off upstream main |
+| [#61](https://github.com/ignac8/terraforming-mars/pull/61) | `marsbot-media-archives` (on `marsbot-setup`) | #8625 (`game.marsBotPlayer`, `playersPlusMarsBot`) | Up to date with `marsbot-setup` (merged 2026-11-02). Automa asks `p.isMarsBot`, which comes upstream with fork #65 |
+| [#62](https://github.com/ignac8/terraforming-mars/pull/62) | `marsbot-red-ships` (on `marsbot-setup`) | #8625 (`game.marsBotPlayer`) | Up to date with `marsbot-setup` (merged 2026-11-02) |
 | [#49](https://github.com/ignac8/terraforming-mars/pull/49) | `marsbot-ma-hellas` (on `marsbot-ma-core-v1`) | Merged-core rebuild, #8646 (`playedProjectCards`, Magnate only) | Drop its own `playedProjectCards` (#8646). #8645 merged without the map-set check, so `marsBotUsesMapSet` and `marsBotMapSet.ts` come along unless Vastitas Borealis lands first; the Rim Settler test board puts Power and Jovian on one track. Its map helpers serve #50-#57 |
 | [#50](https://github.com/ignac8/terraforming-mars/pull/50) | `marsbot-ma-elysium` (on hellas) | Rebuild, #8646 (`playedProjectCards`) | |
 | [#51](https://github.com/ignac8/terraforming-mars/pull/51) | `marsbot-ma-venus` (on elysium) | Moved upstream as #8662 (fork PR closed 2026-11-02, branch kept for the stack) | |
@@ -64,8 +66,16 @@ rebuilt off upstream main before it goes up, and its fork PR is closed with "Mov
 | [#64](https://github.com/ignac8/terraforming-mars/pull/64) | `marsbot-tile-extra-icons` (on `marsbot-tile-tiebreaker-order`, #8665) | #8665 | The extra icons as named space checks (`onEdge`, `onOrNextToVolcanic`, `nextToSpecialTile`), map and M&A tables, from kberg's "kinda messy" on #8664. Opened 2026-11-02 |
 | [#65](https://github.com/ignac8/terraforming-mars/pull/65) | `marsbot-tile-special-hexes` (on #64, with `marsbot-setup` merged in) | #8625 and #64 | The three hexes that cost M€, `IPlayer.isMarsBot` (kberg's idea on #8664) in `Board` and `TerraCimmeriaNovaBoard` (early return), `canPlaceColony` on `IMarsBot` (overlaps #8646). The placer keeps the player and an optional bot, answered on #8664. Opened 2026-11-02 |
 
-Fork #25 (HE3 log) and #29 (ocean count text) wait on no PR: they change translation keys and stay on the fork
-until we send them up. Both conflict with upstream main now and need main merged in first.
+Fork #29 (ocean count text) waits on no PR: it changes translation keys and stays on the fork until we send it
+up. It conflicts with upstream main now and needs main merged in first. Fork #25 (HE3 log) was closed on
+2026-11-02: upstream made the same fix in 693109c97, and automa has it.
+
+Fork #14 (Head Start) merged into automa on 2026-11-02 after automa was merged into it (the two `Player.ts`
+conflicts: `drainQueue` around its action callback, and the undo action option automa had already removed).
+It waits to be offered upstream, see "Non-automa fixes to offer upstream".
+
+Checked 2026-11-02: every open upstream and fork PR's changes are on automa, apart from the import paths and
+divergences listed in the rows above.
 
 ## Closed
 
