@@ -57,7 +57,7 @@ export class TerraCimmeriaNovaBoard extends MarsBoard {
     return super.getAvailableSpacesOnLand(player, canAffordOptions).filter((space) => {
       if (space.bonus.includes(SpaceBonus.COLONY)) {
         // MarsBot can always place here, it just gets nothing when no colony is left.
-        if (!player.game.automaHooks?.isAutomaPlayer(player) && player.colonies.getPlayableColonies().length === 0) {
+        if (player !== player.game.marsBotPlayer && player.colonies.getPlayableColonies().length === 0) {
           return false;
         }
       }
