@@ -5,20 +5,11 @@ import TopBar from '@/client/components/TopBar.vue';
 import {fakePlayerViewModel, fakePublicPlayerModel} from './testHelpers';
 import PlayerInfo from '@/client/components/overview/PlayerInfo.vue';
 import TerraformedBanner from '@/client/components/TerraformedBanner.vue';
-import {FakeLocalStorage} from './FakeLocalStorage';
+import {useFakeLocalStorage} from './FakeLocalStorage';
 import {PreferencesManager} from '@/client/utils/PreferencesManager';
 
 describe('TopBar', () => {
-  let localStorage: FakeLocalStorage;
-
-  beforeEach(() => {
-    localStorage = new FakeLocalStorage();
-    FakeLocalStorage.register(localStorage);
-  });
-
-  afterEach(() => {
-    FakeLocalStorage.deregister(localStorage);
-  });
+  useFakeLocalStorage();
 
   it('mounts without errors', () => {
     const wrapper = shallowMount(TopBar, {
@@ -28,7 +19,7 @@ describe('TopBar', () => {
           getVisibilityState: () => true,
           setVisibilityState: () => {},
         },
-      } as any,
+      },
       props: {
         playerView: fakePlayerViewModel(),
       },
