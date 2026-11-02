@@ -1020,7 +1020,7 @@ describe('Game', () => {
       'lastWrite',
       'lastPatch',
       'marsBotPlayer',
-      'playersAndAutoma',
+      'playersPlusMarsBot',
       'playersInGenerationOrder',
       'monsInsuranceOwner',
       'resettable',

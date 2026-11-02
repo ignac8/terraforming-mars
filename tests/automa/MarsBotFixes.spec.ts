@@ -640,15 +640,15 @@ describe('MarsBot Fixes', () => {
     });
   });
 
-  describe('playersAndAutoma includes MarsBot', () => {
-    it('game.playersAndAutoma includes MarsBot player', () => {
+  describe('playersPlusMarsBot includes MarsBot', () => {
+    it('game.playersPlusMarsBot includes MarsBot player', () => {
       const {game, marsBot} = createAutomaGame();
-      expect(game.playersAndAutoma).to.include(marsBot.player);
+      expect(game.playersPlusMarsBot).to.include(marsBot.player);
     });
 
-    it('game.playersAndAutoma has 2 players in automa game', () => {
+    it('game.playersPlusMarsBot has 2 players in automa game', () => {
       const {game} = createAutomaGame();
-      expect(game.playersAndAutoma.length).to.eq(2);
+      expect(game.playersPlusMarsBot.length).to.eq(2);
     });
   });
 });

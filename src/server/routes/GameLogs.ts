@@ -24,7 +24,7 @@ export function withOwner(message: LogMessage, colors: ReadonlyMap<PlayerId, Col
 
 /** MarsBot's player is in it too, since a line can be reserved for it. */
 export function playerColors(game: IGame): ReadonlyMap<PlayerId, Color> {
-  return new Map(game.playersAndAutoma.map((player) => [player.id, player.color]));
+  return new Map(game.playersPlusMarsBot.map((player) => [player.id, player.color]));
 }
 
 export class GameLogs {

@@ -119,7 +119,7 @@ export class Game implements IGame, Logger {
   public readonly gameOptions: Readonly<GameOptions>;
   public readonly players: ReadonlyArray<IPlayer>;
   public readonly marsBotPlayer: IPlayer | undefined;
-  public readonly playersAndAutoma: ReadonlyArray<IPlayer>;
+  public readonly playersPlusMarsBot: ReadonlyArray<IPlayer>;
   // The API makes this readonly.
   public playersInGenerationOrder: ReadonlyArray<IPlayer> = [];
 
@@ -261,14 +261,14 @@ export class Game implements IGame, Logger {
     this.players = players;
     // Set before the active player is looked up, since MarsBot can be the active player.
     this.marsBotPlayer = marsBotPlayer;
-    this.playersAndAutoma = marsBotPlayer === undefined ? players : [...players, marsBotPlayer];
+    this.playersPlusMarsBot = marsBotPlayer === undefined ? players : [...players, marsBotPlayer];
     const playerIds = players.map(toID);
-    const playersAndAutomaIds = this.playersAndAutoma.map(toID);
+    const playersPlusMarsBotIds = this.playersPlusMarsBot.map(toID);
     if (playerIds.includes(first.id) === false) {
       throw new Error('Cannot find first player ' + first.id + ' in [' + playerIds + ']');
     }
-    if (playersAndAutomaIds.includes(activePlayer) === false) {
-      throw new Error('Cannot find active player ' + activePlayer + ' in [' + playersAndAutomaIds + ']');
+    if (playersPlusMarsBotIds.includes(activePlayer) === false) {
+      throw new Error('Cannot find active player ' + activePlayer + ' in [' + playersPlusMarsBotIds + ']');
     }
     if (new Set(playerIds).size !== players.length) {
       throw new Error('Duplicate player found: [' + playerIds + ']');
@@ -715,7 +715,7 @@ export class Game implements IGame, Logger {
 
   // Function to retrieve a player by it's id
   public getPlayerById(id: PlayerId): IPlayer {
-    const player = this.playersAndAutoma.find((p) => p.id === id);
+    const player = this.playersPlusMarsBot.find((p) => p.id === id);
     if (player === undefined) {
       throw new Error(`player ${id} does not exist on game ${this.id}`);
     }
@@ -1987,7 +1987,7 @@ export class Game implements IGame, Logger {
     });
 
     game.milestones = milestones;
-    game.claimedMilestones = deserializeClaimedMilestones(d.claimedMilestones, game.playersAndAutoma, milestones);
+    game.claimedMilestones = deserializeClaimedMilestones(d.claimedMilestones, game.playersPlusMarsBot, milestones);
 
     const awards: Array<IAward> = [];
     d.awards.forEach((awardName) => {
@@ -1999,7 +1999,7 @@ export class Game implements IGame, Logger {
     });
 
     game.awards = awards;
-    game.fundedAwards = deserializeFundedAwards(d.fundedAwards, game.playersAndAutoma, awards);
+    game.fundedAwards = deserializeFundedAwards(d.fundedAwards, game.playersPlusMarsBot, awards);
 
     if (gameOptions.aresExtension) {
       game.aresData = d.aresData;
@@ -2014,7 +2014,7 @@ export class Game implements IGame, Logger {
 
     // Reload turmoil elements if needed
     if (d.turmoil && gameOptions.turmoilExtension) {
-      game.turmoil = Turmoil.deserialize(d.turmoil, game.playersAndAutoma);
+      game.turmoil = Turmoil.deserialize(d.turmoil, game.playersPlusMarsBot);
     }
 
     // Reload moon elements if needed

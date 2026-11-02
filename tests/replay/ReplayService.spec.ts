@@ -240,7 +240,7 @@ describe('ReplayService', () => {
     const copy = db.games.get(game.id)!;
     function other(i: number): IGame {
       db.games.set(`g-${i}`, copy);
-      return {id: `g-${i}`, phase: Phase.END, players: [], playersAndAutoma: [], gameOptions: {undoOption: false}} as unknown as IGame;
+      return {id: `g-${i}`, phase: Phase.END, players: [], playersPlusMarsBot: [], gameOptions: {undoOption: false}} as unknown as IGame;
     }
     const first = other(0);
     await getReplayMoves(first, player.id);
