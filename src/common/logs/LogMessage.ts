@@ -2,9 +2,12 @@ import {LogMessageType} from './LogMessageType';
 import {LogMessageData} from './LogMessageData';
 import {Message} from './Message';
 import {PlayerId} from '../Types';
+import {Color} from '../Color';
 
 export class LogMessage implements Message {
   public playerId?: PlayerId;
+  // Set by the log routes in place of playerId on a private line of a finished game, so everyone sees whose it was.
+  public owner?: Color;
   public timestamp = Date.now();
   public type?: LogMessageType;
   constructor(

@@ -7,6 +7,7 @@ import {Phase} from '../../common/Phase';
 import {GameId, ParticipantId, PlayerId} from '../../common/Types';
 import {ReplayMove, ReplayMovesModel} from '../../common/replay/ReplayModel';
 import {LogMessage} from '../../common/logs/LogMessage';
+import {playerColors, withOwner} from '../routes/GameLogs';
 import {isAbandonedSave, RewindRecord} from '../rewind/RewindRecord';
 import {canBrowseHistory, canRewind, canVoteRewind, checkMayShowUndone} from '../rewind/access';
 import {answerersOf, buildMoveList, SaveEntry} from './moveList';
@@ -244,10 +245,15 @@ function readRunningSaves(game: IGame): Promise<Array<SaveEntry>> {
   return pending;
 }
 
-function movesFor(viewerId: ParticipantId, moves: Array<ReplayMove>): Array<ReplayMove> {
+// Once a game has ended everyone sees every private line, in the form of `withOwner`. Before that a player sees the
+// lines meant for them, and anyone else only the public lines.
+function movesFor(game: IGame, viewerId: ParticipantId, moves: Array<ReplayMove>, finished: boolean): Array<ReplayMove> {
+  const colors = finished ? playerColors(game) : undefined;
   return moves.map((move) => ({
     ...move,
-    messages: move.messages.filter((m) => m.playerId === undefined || m.playerId === viewerId),
+    messages: colors !== undefined ?
+      move.messages.map((m) => withOwner(m, colors)) :
+      move.messages.filter((m) => m.playerId === undefined || m.playerId === viewerId),
   }));
 }
 
@@ -314,7 +320,7 @@ export async function getReplayMoves(game: IGame, viewerId: ParticipantId, optio
   const own = game.players.find((p) => p.id === viewerId);
   return {
     status: 'available',
-    moves: movesFor(viewerId, all.moves),
+    moves: movesFor(game, viewerId, all.moves, all.finished),
     finished: all.finished,
     canRewind: canRewind(game, viewerId),
     canVoteRewind: canVoteRewind(game, viewerId),

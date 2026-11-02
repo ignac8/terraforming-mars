@@ -73,7 +73,7 @@ describe('ApiReplayMoves', () => {
     expect(JSON.parse(res.content).status).eq('available');
   });
 
-  it('shows a player of a finished game only their own private log lines, and a spectator only the public ones', async () => {
+  it('shows a player and a spectator of a finished game every private log line with its owner', async () => {
     const log = [
       new LogMessage(LogMessageType.DEFAULT, 'public one', []),
       new LogMessage(LogMessageType.DEFAULT, 'private to player', [], player.id),
@@ -95,8 +95,12 @@ describe('ApiReplayMoves', () => {
 
     const playerMessages = JSON.parse(res.content).moves.flatMap((m: any) => m.messages);
     expect(playerMessages.map((m: any) => m.message)).deep.eq(['public one', 'private to player', 'public two']);
+    expect(playerMessages.map((m: any) => m.owner)).deep.eq([undefined, player.color, undefined]);
+    expect(res.content).not.contains(player.id);
     const spectatorMessages = JSON.parse(spectatorRes.content).moves.flatMap((m: any) => m.messages);
-    expect(spectatorMessages.map((m: any) => m.message)).deep.eq(['public one', 'public two']);
+    expect(spectatorMessages.map((m: any) => m.message)).deep.eq(['public one', 'private to player', 'public two']);
+    expect(spectatorMessages.map((m: any) => m.owner)).deep.eq([undefined, player.color, undefined]);
+    expect(spectatorRes.content).not.contains(player.id);
   });
 
   it('rejects a game id', async () => {
