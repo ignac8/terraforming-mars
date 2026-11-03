@@ -10,13 +10,14 @@ import {UnderworldPlayerData} from '../common/underworld/UnderworldPlayerData';
 import {DeltaProjectPlayerModel} from '../common/models/DeltaProjectPlayerModel';
 
 interface DeprecatedFields {
+  // Saves from before Head Start kept its count on the card carry it on the player.
+  headStartActionsRemaining?: number;
 }
 
 export interface SerializedPlayer extends DeprecatedFields{
   actionsTakenThisGame: number;
   actionsTakenThisRound: number;
   availableActionsThisRound?: number;
-  headStartActionsRemaining?: number;
   actionsThisGeneration: Array<CardName>;
   alliedParty: AlliedParty | undefined;
   autoPass: boolean;

@@ -186,6 +186,8 @@ describe('Expansion MarsBot Corporations', () => {
       const headStart = new HeadStart();
       const biofuels = new Biofuels();
       human.preludeCardsInHand = [headStart, biofuels];
+      // Head Start's actions are dropped when there is nothing to do with them
+      human.heat = 8;
       const settlers = () => marsBot.actionDeck.filter((c) => 'id' in c && c.id === BonusCardId.B22_SETTLERS);
 
       game.automaHooks!.handlePostCorporationSetup();
