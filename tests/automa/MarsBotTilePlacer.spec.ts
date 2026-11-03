@@ -411,6 +411,33 @@ describe('MarsBotTilePlacer', () => {
       loser: '09',
     },
     {
+      // The ocean is on 24. 13 has two icons and no ocean next to it, 16 has one icon and is next to the ocean.
+      rule: 'Highlander on Elysium: reward icons come before ocean adjacency',
+      options: {boardName: BoardName.ELYSIUM},
+      awards: [new Highlander()],
+      oceans: ['24'],
+      expected: '13',
+      loser: '16',
+    },
+    {
+      // The ocean is on 24. 16 is next to it, 39 is not but is southern. Both have one icon.
+      rule: 'Highlander on Elysium: ocean adjacency stays before the southern region',
+      options: {boardName: BoardName.ELYSIUM},
+      awards: [new Highlander()],
+      oceans: ['24'],
+      expected: '16',
+      loser: '39',
+    },
+    {
+      // The ocean is on 16. 03 is on the edge with no ocean next to it, 24 is inland and next to the ocean. Both have one icon.
+      rule: 'Highlander on Vastitas Borealis: ocean adjacency stays after the edge',
+      options: {boardName: BoardName.VASTITAS_BOREALIS_NOVA},
+      awards: [new Highlander()],
+      oceans: ['16'],
+      expected: '03',
+      loser: '24',
+    },
+    {
       // 61 is the South Pole. 55 is polar too and has two icons.
       rule: 'South Pole: with 6 M€ and an ocean to place it beats a space with two icons',
       options: {boardName: BoardName.HELLAS},
