@@ -1,30 +1,27 @@
 import {expect} from 'chai';
-import {Blacksmith} from '../../src/server/awards/Blacksmith';
+import {Tag} from '@/common/cards/Tag';
+import {Blacksmith} from '@/server/awards/Blacksmith';
+import {fakeMarsBot, setTrack} from '../automa/FakeMarsBot';
 import {testGame} from '../TestGame';
-import {IMarsBot} from '../../src/server/automa/IMarsBot';
-import {MarsBotBoard} from '../../src/server/automa/MarsBotBoard';
-import {THARSIS_MARSBOT_BOARD} from '../../src/server/automa/boards/TharsisMarsBot';
 
 describe('Blacksmith', () => {
-  const award = new Blacksmith();
-
   it('scores a player by steel and titanium production', () => {
     const [, player] = testGame(2);
     player.production.override({steel: 3, titanium: 2});
 
-    expect(award.getScore(player)).to.eq(5);
+    expect(new Blacksmith().getScore(player)).to.eq(5);
   });
 
-  it('scores MarsBot by the higher of its building and space tracks', () => {
-    const board = new MarsBotBoard(THARSIS_MARSBOT_BOARD);
-    const bot = {marsBotBoard: board} as unknown as IMarsBot;
-    for (let i = 0; i < 3; i++) {
-      board.tracks[0].advance();
-    }
-    for (let i = 0; i < 5; i++) {
-      board.tracks[1].advance();
-    }
+  it('MarsBot scores the higher of its Building and Space tracks', () => {
+    for (const run of [
+      {building: 3, space: 5, expected: 5},
+      {building: 6, space: 2, expected: 6},
+    ]) {
+      const bot = fakeMarsBot();
+      setTrack(bot, Tag.BUILDING, run.building);
+      setTrack(bot, Tag.SPACE, run.space);
 
-    expect(award.marsBotScore(bot)).to.eq(5);
+      expect(new Blacksmith().marsBotScore(bot), JSON.stringify(run)).eq(run.expected);
+    }
   });
 });

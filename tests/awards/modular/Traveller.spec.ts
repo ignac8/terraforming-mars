@@ -6,9 +6,7 @@ import {Tag} from '../../../src/common/cards/Tag';
 import {TestPlayer} from '../../TestPlayer';
 import {CardType} from '../../../src/common/cards/CardType';
 import {Chimera} from '../../../src/server/cards/pathfinders/Chimera';
-import {IMarsBot} from '../../../src/server/automa/IMarsBot';
-import {MarsBotBoard} from '../../../src/server/automa/MarsBotBoard';
-import {THARSIS_MARSBOT_BOARD} from '../../../src/server/automa/boards/TharsisMarsBot';
+import {fakeMarsBot, setTrack} from '../../automa/FakeMarsBot';
 
 describe('Traveller', () => {
   let award: Traveller;
@@ -70,16 +68,16 @@ describe('Traveller', () => {
     expect(award.getScore(player)).eq(3);
   });
 
-  it('MarsBot scores the higher of its Jovian and earth tracks, plus 5', () => {
-    const board = new MarsBotBoard(THARSIS_MARSBOT_BOARD);
-    const bot = {marsBotBoard: board} as unknown as IMarsBot;
-    for (let i = 0; i < 3; i++) {
-      board.tracks[4].advance();
-    }
-    for (let i = 0; i < 6; i++) {
-      board.tracks[5].advance();
-    }
+  it('MarsBot scores the higher of its Jovian and Earth tracks plus 5', () => {
+    for (const run of [
+      {jovian: 3, earth: 6, expected: 11},
+      {jovian: 7, earth: 2, expected: 12},
+    ]) {
+      const bot = fakeMarsBot();
+      setTrack(bot, Tag.JOVIAN, run.jovian);
+      setTrack(bot, Tag.EARTH, run.earth);
 
-    expect(award.marsBotScore(bot)).to.eq(11);
+      expect(award.marsBotScore(bot), JSON.stringify(run)).eq(run.expected);
+    }
   });
 });

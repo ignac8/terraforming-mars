@@ -3,7 +3,7 @@ import {testGame} from '../../TestGame';
 import {Engineer} from '../../../src/server/milestones/modular/Engineer';
 import {TestPlayer} from '../../TestPlayer';
 import {Resource} from '../../../src/common/Resource';
-import {Tag} from '../../../src/common/cards/Tag';
+import {Tag} from '@/common/cards/Tag';
 import {fakeMarsBot, setTrack} from '../../automa/FakeMarsBot';
 
 describe('Engineer', () => {

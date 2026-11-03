@@ -1,31 +1,28 @@
 import {expect} from 'chai';
-import {VSpacefarer} from '../../src/server/milestones/VSpacefarer';
+import {Tag} from '@/common/cards/Tag';
+import {VSpacefarer} from '@/server/milestones/VSpacefarer';
+import {fakeMarsBot, setTrack} from '../automa/FakeMarsBot';
 import {TestPlayer} from '../TestPlayer';
-import {IMarsBot} from '../../src/server/automa/IMarsBot';
-import {MarsBotBoard} from '../../src/server/automa/MarsBotBoard';
-import {THARSIS_MARSBOT_BOARD} from '../../src/server/automa/boards/TharsisMarsBot';
 
 describe('VSpacefarer', () => {
-  const milestone = new VSpacefarer();
-
   it('Can claim with 4 space tags', () => {
     const player = TestPlayer.BLUE.newPlayer();
     player.tagsForTest = {space: 3};
-    expect(milestone.canClaim(player)).is.false;
+    expect(new VSpacefarer().canClaim(player)).is.false;
 
     player.tagsForTest = {space: 4};
-    expect(milestone.canClaim(player)).is.true;
+    expect(new VSpacefarer().canClaim(player)).is.true;
   });
 
-  it('MarsBot claims it at space 5 of its space track', () => {
-    const board = new MarsBotBoard(THARSIS_MARSBOT_BOARD);
-    const bot = {marsBotBoard: board} as unknown as IMarsBot;
-    for (let i = 0; i < 4; i++) {
-      board.tracks[1].advance();
-    }
-    expect(milestone.marsBotCanClaim(bot)).is.false;
+  it('MarsBot needs space 5 of its Space track', () => {
+    for (const run of [
+      {position: 4, expected: false},
+      {position: 5, expected: true},
+    ]) {
+      const bot = fakeMarsBot();
+      setTrack(bot, Tag.SPACE, run.position);
 
-    board.tracks[1].advance();
-    expect(milestone.marsBotCanClaim(bot)).is.true;
+      expect(new VSpacefarer().marsBotCanClaim(bot), JSON.stringify(run)).eq(run.expected);
+    }
   });
 });

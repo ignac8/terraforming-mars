@@ -1,30 +1,24 @@
 import {expect} from 'chai';
-import {Promoter} from '../../../src/server/awards/arabiaTerra/Promoter';
+import {Tag} from '@/common/cards/Tag';
+import {Promoter} from '@/server/awards/arabiaTerra/Promoter';
+import {fakeMarsBot, setTrack} from '../../automa/FakeMarsBot';
 import {TestPlayer} from '../../TestPlayer';
 import {fakeCard} from '../../TestingUtils';
-import {CardType} from '../../../src/common/cards/CardType';
-import {IMarsBot} from '../../../src/server/automa/IMarsBot';
-import {MarsBotBoard} from '../../../src/server/automa/MarsBotBoard';
-import {THARSIS_MARSBOT_BOARD} from '../../../src/server/automa/boards/TharsisMarsBot';
+import {CardType} from '@/common/cards/CardType';
 
 describe('Promoter', () => {
-  const award = new Promoter();
-
   it('scores a player by played events', () => {
     const player = TestPlayer.BLUE.newPlayer();
     player.playedCards.push(fakeCard({type: CardType.EVENT}));
     player.playedCards.push(fakeCard());
 
-    expect(award.getScore(player)).to.eq(1);
+    expect(new Promoter().getScore(player)).to.eq(1);
   });
 
-  it('scores MarsBot by its event track', () => {
-    const board = new MarsBotBoard(THARSIS_MARSBOT_BOARD);
-    const bot = {marsBotBoard: board} as unknown as IMarsBot;
-    for (let i = 0; i < 4; i++) {
-      board.tracks[2].advance();
-    }
+  it('MarsBot scores its Event track', () => {
+    const bot = fakeMarsBot();
+    setTrack(bot, Tag.EVENT, 4);
 
-    expect(award.marsBotScore(bot)).to.eq(4);
+    expect(new Promoter().marsBotScore(bot)).eq(4);
   });
 });

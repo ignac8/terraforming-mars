@@ -4,9 +4,9 @@ import {Ants} from '../../../src/server/cards/base/Ants';
 import {Farmer} from '../../../src/server/milestones/modular/Farmer';
 import {TestPlayer} from '../../TestPlayer';
 import {testGame} from '../../TestGame';
-import {BoardName} from '../../../src/common/boards/BoardName';
-import {Tag} from '../../../src/common/cards/Tag';
 import {fakeMarsBot, setTrack} from '../../automa/FakeMarsBot';
+import {BoardName} from '@/common/boards/BoardName';
+import {Tag} from '@/common/cards/Tag';
 
 describe('Farmer', () => {
   let milestone: Farmer;
