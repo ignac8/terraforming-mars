@@ -1019,6 +1019,8 @@ describe('Game', () => {
       'ownSaveId',
       'lastWrite',
       'lastPatch',
+      'marsBotPlayer',
+      'playersPlusMarsBot',
       'playersInGenerationOrder',
       'monsInsuranceOwner',
       'resettable',

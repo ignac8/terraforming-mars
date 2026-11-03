@@ -299,7 +299,7 @@ describe('TournamentMode', () => {
     // deliberately left to the game creator. A new key in neither list
     // fails here, so an upstream option cannot slip past the preset.
     const forced = [
-      'altVenusBoard', 'aresExtension', 'aresExtremeVariant', 'bannedCards',
+      'altVenusBoard', 'aresExtension', 'aresExtremeVariant', 'automa', 'bannedCards',
       'ceoExtension', 'ceosDraftVariant', 'coloniesExtension', 'communityCardsOption',
       'corporateEra', 'customCeos', 'customColoniesList', 'customCorporationsList',
       'customMA', 'customPreludes', 'deltaProjectExpansion', 'draftVariant', 'expansions',

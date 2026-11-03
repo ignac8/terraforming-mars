@@ -70,6 +70,8 @@ export type GameOptions = {
   modularMA: boolean;
   /** Solo victory by getting TR 63 by game end */
   soloTR: boolean;
+  /** A 1 player game played against MarsBot */
+  automa: boolean;
   customCorporationsList: ReadonlyArray<CardName>;
   bannedCards: ReadonlyArray<CardName>;
   includedCards: ReadonlyArray<CardName>;
@@ -150,6 +152,7 @@ export function applyTournamentPreset(options: GameOptions): void {
   options.customMA = undefined;
   options.includeFanMA = false;
   options.modularMA = false;
+  options.automa = false;
   options.shuffleMapOption = false;
   // Escape velocity is left alone: tournament games may use the clock.
   options.altVenusBoard = false;
@@ -245,6 +248,7 @@ export const DEFAULT_GAME_OPTIONS: GameOptions = {
   tournamentExpansion: false,
   judgeLink: false,
   judgeUndo: false,
+  automa: false,
   undoOption: false,
   venusNextExtension: false,
   twoCorpsVariant: false,
