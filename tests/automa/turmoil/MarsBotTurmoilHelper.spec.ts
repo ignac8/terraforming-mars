@@ -18,11 +18,11 @@ function createTurmoilGame() {
 }
 
 describe('MarsBotTurmoilHelper', () => {
-  describe('selectParty (T-7)', () => {
-    it('T-7.1: picks party where +1 makes MarsBot leader AND party dominant', () => {
+  describe('selectParty (Party Politics, rulebook C p.6)', () => {
+    it('priority 1: picks a party where one more delegate makes MarsBot leader and the party dominant', () => {
       const {game, turmoil, marsBotPlayer, helper} = createTurmoilGame();
 
-      // Scientists: give MarsBot 1 delegate. Others have 1 NEUTRAL each (to block T-7.2 for them).
+      // Scientists: give MarsBot 1 delegate. Others have 1 NEUTRAL each (to block priority 2 for them).
       for (const name of [PartyName.MARS, PartyName.UNITY, PartyName.REDS, PartyName.GREENS]) {
         turmoil.sendDelegateToParty('NEUTRAL', name, game);
       }
@@ -33,10 +33,10 @@ describe('MarsBotTurmoilHelper', () => {
       expect(helper.selectParty()).to.equal(PartyName.SCIENTISTS);
     });
 
-    it('T-7.2: picks party where +1 makes MarsBot party leader', () => {
+    it('priority 2: picks a party where one more delegate makes MarsBot leader', () => {
       const {game, turmoil, marsBotPlayer, helper} = createTurmoilGame();
 
-      // Kelvinists stays dominant, so T-7.1 cannot fire for Scientists
+      // Kelvinists stays dominant, so priority 1 cannot fire for Scientists
       for (let i = 0; i < 5; i++) {
         turmoil.sendDelegateToParty('NEUTRAL', PartyName.KELVINISTS, game);
       }
@@ -48,10 +48,10 @@ describe('MarsBotTurmoilHelper', () => {
       expect(helper.selectParty()).to.equal(PartyName.SCIENTISTS);
     });
 
-    it('T-7.3: picks party where MarsBot is already leader and +1 makes dominant', () => {
+    it('priority 3: picks a party MarsBot leads where one more delegate makes it dominant', () => {
       const {game, turmoil, marsBotPlayer, helper} = createTurmoilGame();
 
-      // 1 NEUTRAL in each non-Unity party so T-7.2 cannot fire (MarsBot+1 only ties NEUTRAL)
+      // 1 NEUTRAL in each non-Unity party so priority 2 cannot fire (MarsBot+1 only ties NEUTRAL)
       for (const name of [PartyName.MARS, PartyName.SCIENTISTS, PartyName.KELVINISTS, PartyName.REDS, PartyName.GREENS]) {
         turmoil.sendDelegateToParty('NEUTRAL', name, game);
       }
@@ -65,7 +65,7 @@ describe('MarsBotTurmoilHelper', () => {
       expect(helper.selectParty()).to.equal(PartyName.UNITY);
     });
 
-    it('T-7.3 needs a transition, so it skips a party that is already dominant', () => {
+    it('priority 3: skips a party that is already dominant', () => {
       const {game, turmoil, marsBotPlayer, helper} = createTurmoilGame();
 
       // A NEUTRAL delegate everywhere blocks tiers 1 and 2. MarsBot leads Unity, and Unity
@@ -83,10 +83,10 @@ describe('MarsBotTurmoilHelper', () => {
       expect(helper.selectParty()).to.not.equal(PartyName.UNITY);
     });
 
-    it('T-7.4: picks party where human has fewest delegates', () => {
+    it('priority 4: picks the party where the human has the fewest delegates', () => {
       const {game, turmoil, humanPlayer, helper} = createTurmoilGame();
 
-      // 1 NEUTRAL everywhere blocks T-7.1 and T-7.2
+      // 1 NEUTRAL everywhere blocks priorities 1 and 2
       for (const name of Object.values(PartyName)) {
         turmoil.sendDelegateToParty('NEUTRAL', name, game);
       }
@@ -98,10 +98,10 @@ describe('MarsBotTurmoilHelper', () => {
       expect(helper.selectParty()).to.equal(PartyName.GREENS);
     });
 
-    it('T-7.5: tiebreaker picks party where MarsBot has fewest delegates', () => {
+    it('priority 5: picks the party where MarsBot has the fewest delegates', () => {
       const {game, turmoil, marsBotPlayer, helper} = createTurmoilGame();
 
-      // The human holds none anywhere, so T-7.4 ties every party and T-7.5 decides
+      // The human holds none anywhere, so priority 4 ties every party and priority 5 decides
       turmoil.sendDelegateToParty(marsBotPlayer, PartyName.REDS, game);
 
       const selected = helper.selectParty();
@@ -109,7 +109,7 @@ describe('MarsBotTurmoilHelper', () => {
       expect(turmoil.getPartyByName(selected!).delegates.get(marsBotPlayer)).to.eq(0);
     });
 
-    it('T-7.6: falls back to the party nearest clockwise from the dominance marker', () => {
+    it('priority 6: picks the next party clockwise from the dominance marker', () => {
       const {game, turmoil, helper} = createTurmoilGame();
 
       // A NEUTRAL delegate everywhere blocks tiers 1 to 3, and neither player holds any

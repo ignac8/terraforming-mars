@@ -20,7 +20,7 @@ describe('MediaArchives', () => {
     expect(player.megaCredits).to.eq(3);
   });
 
-  // MarsBot has no played events: its event track counts instead (automa rulebook A p.4).
+  // MarsBot has no played events: its event track counts instead (automa rulebook A p.5).
   it('counts MarsBot\'s event track', () => {
     const card = new MediaArchives();
     const [game, player] = testGame(1, {automa: true});

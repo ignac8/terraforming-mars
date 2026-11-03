@@ -5,7 +5,7 @@ import {IPlayer} from '../../IPlayer';
 import {IGame} from '../../IGame';
 import {pickByFlippedCard} from '../MarsBotCardFlip';
 
-/** Picks the party for MarsBot's delegates and places them (T-7). */
+/** Picks the party for MarsBot's delegates and places them (Party Politics, rulebook C p.6). */
 export class MarsBotTurmoilHelper {
   private readonly turmoil: Turmoil;
   private readonly marsBotPlayer: IPlayer;
@@ -21,7 +21,7 @@ export class MarsBotTurmoilHelper {
   }
 
   /**
-   * Chooses the party for MarsBot's next delegate, or undefined when its reserve is empty (T-7).
+   * Chooses the party for MarsBot's next delegate, or undefined when its reserve is empty.
    *
    * Each tier narrows the candidates. A tier that matches nothing leaves the candidates alone
    * and the next tier runs against the same set.
@@ -81,7 +81,7 @@ export class MarsBotTurmoilHelper {
   }
 
   /**
-   * Sends one delegate from MarsBot's reserve to the party it picks (T-7).
+   * Sends one delegate from MarsBot's reserve to the party it picks.
    * Returns the party it went to, or undefined when the reserve is empty.
    */
   public maybePlaceDelegate(): PartyName | undefined {
