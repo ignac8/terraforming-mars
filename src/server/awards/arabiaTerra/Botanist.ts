@@ -11,8 +11,8 @@ export class Botanist implements IAward {
     return player.production.plants;
   }
 
-  /** The automa rules score MarsBot's Botanist as its bio track minus 2. */
+  /** The automa rules score MarsBot's Botanist as its bio track minus 2, which can be below 0. */
   public marsBotScore(bot: IMarsBot): number {
-    return Math.max(0, bot.marsBotBoard.trackPosition(Tag.PLANT) - 2);
+    return bot.marsBotBoard.trackPosition(Tag.PLANT) - 2;
   }
 }

@@ -25,11 +25,11 @@ describe('Botanist', () => {
     expect(award.marsBotScore(bot)).to.eq(3);
   });
 
-  it('MarsBot never scores below zero', () => {
+  it('MarsBot scores below zero on a bio track under space 2', () => {
     const board = new MarsBotBoard(THARSIS_MARSBOT_BOARD);
     const bot = {marsBotBoard: board} as unknown as IMarsBot;
     board.tracks[6].advance();
 
-    expect(award.marsBotScore(bot)).to.eq(0);
+    expect(award.marsBotScore(bot)).to.eq(-1);
   });
 });
