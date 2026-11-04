@@ -47,15 +47,10 @@ function playerWithRunningTimer(): [Player, FakeClock] {
   const clock = new FakeClock();
   (Timer as any).lastStoppedAt = 0;
   player.timer = Timer.newInstance(clock);
+  player.timer.enable();
 
-  const firstInput = new SelectOption('First input');
-  player.setWaitingFor(firstInput);
+  player.setWaitingFor(new SelectOption('First input'));
   clock.millis = 1_000;
-  player.process({type: 'option'});
-
-  const secondInput = new SelectOption('Second input');
-  player.setWaitingFor(secondInput);
-  clock.millis = 2_000;
   player.process({type: 'option'});
 
   expect(player.timer.getElapsed()).eq(1_000);
@@ -86,6 +81,19 @@ describe('Player', () => {
     clock.millis = 5000;
     player.setWaitingFor(new SelectOption('Input'));
     expect(player.inputRequestedAt).eq(5000);
+  });
+
+  it('keeps the request id when a response is rejected', () => {
+    const [/* game */, player] = testGame(1);
+    player.clearWaitingFor();
+    player.setWaitingFor(new SelectOption('Input'));
+    const requestId = player.requestId;
+
+    expect(() => player.process({type: 'amount', amount: 1})).to.throw(/Not a valid SelectOptionResponse/);
+    expect(player.requestId).eq(requestId);
+
+    player.process({type: 'option'});
+    expect(player.requestId).is.undefined;
   });
 
   it('does not stop the timer when processing optional input', () => {
@@ -230,6 +238,19 @@ describe('Player', () => {
     const json = player.serialize();
     expect(json.pickedCorporationCard).eq('Saturn Systems');
   });
+  it('enables the timer when loading an older saved player who has a corporation', () => {
+    const player = new Player('blue', 'blue', false, 0, 'p-blue');
+    player.pickedCorporationCard = new SaturnSystems();
+    const json = player.serialize();
+    json.timer = {...json.timer, enabled: undefined, afterFirstAction: false} as any;
+    expect(Player.deserialize(json).timer.serialize().enabled).is.true;
+
+    player.pickedCorporationCard = undefined;
+    const json2 = player.serialize();
+    json2.timer = {...json2.timer, enabled: undefined, afterFirstAction: false} as any;
+    expect(Player.deserialize(json2).timer.serialize().enabled).is.false;
+  });
+
   it('serialization test', () => {
     const json: SerializedPlayer = {
       id: 'p-blue',
@@ -294,7 +315,7 @@ describe('Player', () => {
         sumElapsed: 0,
         startedAt: 0,
         running: false,
-        afterFirstAction: false,
+        enabled: false,
         lastStoppedAt: 0,
       } as SerializedTimer,
       totalDelegatesPlaced: 0,
@@ -434,7 +455,8 @@ describe('Player', () => {
     expect(card.resourceCount).eq(5);
     expect(log).has.length(1);
     expect(log[0].data[1].value).eq('1');
-    expect(log[0].data[3].value).eq('Pets');
+    expect(log[0].data[2].value).eq('Animal');
+    expect(log[0].data[4].value).eq('Pets');
 
     log.length = 0;
     player.removeResourceFrom(card, 1);

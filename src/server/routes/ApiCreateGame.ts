@@ -2,8 +2,6 @@ import * as responses from '../server/responses';
 import {Handler} from './Handler';
 import {Context} from './IHandler';
 import {Database} from '../database/Database';
-import {BoardName} from '../../common/boards/BoardName';
-import {RandomBoardOption} from '../../common/boards/RandomBoardOption';
 import {Cloner} from '../database/Cloner';
 import {Game} from '../Game';
 import {GameOptions} from '../game/GameOptions';
@@ -20,6 +18,7 @@ import {durationToMilliseconds} from '../utils/durations';
 import {readBody} from './readBody';
 import {RouteError} from './RouteError';
 import {CEO_CARDS_DEALT_PER_PLAYER} from '../../common/constants';
+import {validateCustomMA} from '../../common/ma/CustomMA';
 import {hasNegativeEscapeVelocityOption, sanitizeEscapeVelocityOptions} from '../../common/game/escapeVelocity';
 
 function parseQuotaConfig(struct: any): QuotaConfig {
@@ -72,25 +71,6 @@ export class ApiCreateGame extends Handler {
     this.quotaHandlers = quotaConfigs.map((config) => new QuotaHandler(config));
   }
 
-  public static boardOptions(board: RandomBoardOption | BoardName): Array<BoardName> {
-    const allBoards = Object.values(BoardName);
-
-    if (board === RandomBoardOption.ALL) {
-      return allBoards;
-    }
-    if (board === RandomBoardOption.OFFICIAL) {
-      return allBoards.filter((name) => {
-        return name === BoardName.THARSIS ||
-          name === BoardName.HELLAS ||
-          name === BoardName.ELYSIUM ||
-          name === BoardName.UTOPIA_PLANITIA ||
-          name === BoardName.VASTITAS_BOREALIS_NOVA ||
-          name === BoardName.TERRA_CIMMERIA_NOVA;
-      });
-    }
-    return [board];
-  }
-
   /**
    * Validates that each custom list can deal every player their starting cards.
    *
@@ -117,7 +97,7 @@ export class ApiCreateGame extends Handler {
   // TODO(kberg): much of this code can be moved outside of handler, and that
   // would be better.
   public override async post(req: Request, res: Response, ctx: Context): Promise<void> {
-    const withinQuota = this.quotaHandlers.map((handler) => handler.measure(ctx)).every((ok) => ok);
+    const withinQuota = this.quotaHandlers.every((handler) => handler.isWithinQuota(ctx));
     if (!withinQuota) {
       responses.quotaExceeded(req, res);
       return;
@@ -129,6 +109,9 @@ export class ApiCreateGame extends Handler {
       this.validateCustomLists(gameReq);
       if (gameReq.escapeVelocity !== undefined && hasNegativeEscapeVelocityOption(gameReq.escapeVelocity)) {
         throw RouteError.badRequest('Escape Velocity values cannot be negative.');
+      }
+      if (gameReq.boards.length === 0) {
+        throw RouteError.badRequest('Must select at least one board');
       }
       const gameId = safeCast(generateRandomId('g'), isGameId);
       const spectatorId = safeCast(generateRandomId('s'), isSpectatorId);
@@ -149,16 +132,16 @@ export class ApiCreateGame extends Handler {
         }
       }
 
-      const boards = ApiCreateGame.boardOptions(gameReq.board);
-      gameReq.board = boards[Math.floor(Math.random() * boards.length)];
+      const boardName = gameReq.boards[Math.floor(Math.random() * gameReq.boards.length)];
 
       const gameOptions: GameOptions = {
         altVenusBoard: gameReq.altVenusBoard,
         aresExtension: gameReq.expansions.ares,
         aresHazards: true, // Not a runtime option.
         aresExtremeVariant: gameReq.aresExtremeVariant,
+        automa: false, // No create-game UI yet.
         bannedCards: gameReq.bannedCards,
-        boardName: gameReq.board,
+        boardName: boardName,
         ceoExtension: gameReq.expansions.ceo,
         clonedGamedId: gameReq.clonedGamedId,
         coloniesExtension: gameReq.expansions.colonies,
@@ -169,6 +152,7 @@ export class ApiCreateGame extends Handler {
         customCeos: gameReq.customCeos,
         customColoniesList: gameReq.customColoniesList,
         customCorporationsList: gameReq.customCorporationsList,
+        customMA: gameReq.customMA,
         customPreludes: gameReq.customPreludes,
         draftVariant: gameReq.draftVariant,
         escapeVelocity: gameReq.escapeVelocity === undefined ? undefined : sanitizeEscapeVelocityOptions(gameReq.escapeVelocity),
@@ -207,6 +191,12 @@ export class ApiCreateGame extends Handler {
         venusNextExtension: gameReq.expansions.venus,
       };
 
+      try {
+        validateCustomMA(gameOptions.customMA, gameOptions.randomMA, gameOptions.venusNextExtension);
+      } catch (e) {
+        throw RouteError.badRequest(e instanceof Error ? e.message : String(e));
+      }
+
       let game: IGame;
       if (gameOptions.clonedGamedId !== undefined && !gameOptions.clonedGamedId.startsWith('#')) {
         const serialized = await Database.getInstance().getGameVersion(gameOptions.clonedGamedId, 0);
@@ -216,6 +206,8 @@ export class ApiCreateGame extends Handler {
         game = Game.newInstance(gameId, players, players[firstPlayerIdx], spectatorId, gameOptions, seed);
       }
       ctx.gameLoader.add(game);
+      // Only games that are actually created count against the quota.
+      this.quotaHandlers.forEach((handler) => handler.record(ctx));
       responses.writeJson(res, ctx, Server.getSimpleGameModel(game));
     } catch (error) {
       if (error instanceof RouteError) {

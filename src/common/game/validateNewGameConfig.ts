@@ -8,7 +8,7 @@ import {Expansion} from '../cards/GameModule';
 import {Message} from '../logs/Message';
 import {LogMessageDataType} from '../logs/LogMessageDataType';
 import {BoardName} from '../boards/BoardName';
-import {RandomBoardOption} from '../boards/RandomBoardOption';
+import {validateCustomMA} from '../ma/CustomMA';
 
 const REVISED_COUNT_ALGORITHM = false;
 
@@ -29,6 +29,8 @@ export type ValidationErrors = {
   prelude2WithoutPrelude: boolean;
   deltaProjectWithoutPrelude: boolean;
   notEnoughCorporations: number;
+  /** Why customMA is invalid, or empty when it's valid. */
+  invalidCustomMA: string;
 };
 
 function mustSelectAtLeast(message: string, required: number): Message {
@@ -99,6 +101,13 @@ export const validationDetails: Record<keyof ValidationErrors, {blocking: boolea
     blocking: true,
     message: (errors) => mustSelectAtLeast('Must select at least ${0} corporations', errors.notEnoughCorporations),
   },
+  invalidCustomMA: {
+    blocking: true,
+    message: (errors) => ({
+      message: 'Manual milestones and awards are invalid: ${0}',
+      data: [{type: LogMessageDataType.RAW_STRING, value: errors.invalidCustomMA}],
+    }),
+  },
 };
 
 export type Helpers = {
@@ -124,6 +133,7 @@ export function validateNewGameConfig(config: NewGameConfig, helpers: Helpers): 
     prelude2WithoutPrelude: false,
     deltaProjectWithoutPrelude: false,
     notEnoughCorporations: 0,
+    invalidCustomMA: '',
   };
 
   if (config.escapeVelocity && hasNegativeEscapeVelocityOption(config.escapeVelocity)) {
@@ -156,9 +166,8 @@ export function validateNewGameConfig(config: NewGameConfig, helpers: Helpers): 
     errors.infiniteEnergyBug = true;
   }
 
-  // RandomBoardOption.OFFICIAL never picks Amazonis Planitia.
   if (config.expansions.venus && config.altVenusBoard &&
-    (config.board === BoardName.AMAZONIS_PLANITIA || config.board === RandomBoardOption.ALL)) {
+    config.boards.includes(BoardName.AMAZONIS_PLANITIA)) {
     errors.altVenusBoardOnAmazonis = true;
   }
 
@@ -219,6 +228,12 @@ export function validateNewGameConfig(config: NewGameConfig, helpers: Helpers): 
       errors.notEnoughCeos = required;
     }
     errors.ceosMissingExpansions = config.customCeos.filter(isMissingExpansion);
+  }
+
+  try {
+    validateCustomMA(config.customMA, config.randomMA, config.expansions.venus);
+  } catch (e) {
+    errors.invalidCustomMA = e instanceof Error ? e.message : String(e);
   }
   return errors;
 }
