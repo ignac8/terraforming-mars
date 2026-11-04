@@ -3,6 +3,7 @@ import {Birds} from '../../src/server/cards/base/Birds';
 import {CometAiming} from '../../src/server/cards/promo/CometAiming';
 import {Dirigibles} from '../../src/server/cards/venusNext/Dirigibles';
 import {Tradesman} from '../../src/server/milestones/Tradesman';
+import {testGame} from '../TestGame';
 import {TestPlayer} from '../TestPlayer';
 import {Tag} from '../../src/common/cards/Tag';
 import {THARSIS_MARSBOT_BOARD} from '@/server/automa/boards/TharsisMarsBot';
@@ -15,7 +16,7 @@ describe('Tradesman', () => {
 
   beforeEach(() => {
     milestone = new Tradesman();
-    player = TestPlayer.BLUE.newPlayer();
+    [/* game */, player] = testGame(1);
   });
 
   it('Can claim with 3 types of non-standard resources', () => {
