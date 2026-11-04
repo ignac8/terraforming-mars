@@ -1,10 +1,10 @@
 import {BaseMilestone} from '../IMilestone';
 import {IPlayer} from '../../IPlayer';
 import {CardResource} from '../../../common/CardResource';
-import {Tag} from '../../../common/cards/Tag';
-import {IMarsBot} from '../../automa/IMarsBot';
+import {Tag} from '@/common/cards/Tag';
+import {IMarsBot} from '@/server/automa/IMarsBot';
 import {BoardName} from '../../../common/boards/BoardName';
-import {marsBotUsesMapSet} from '../../automa/MarsBotMilestoneAwardEval';
+import {marsBotUsesMapSet} from '@/server/automa/MarsBotMilestoneAwardEval';
 
 export class Farmer extends BaseMilestone {
   public readonly automaDescription = 'Bio track ≥ 7';

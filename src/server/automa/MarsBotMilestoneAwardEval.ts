@@ -1,10 +1,10 @@
-import {Tag} from '../../common/cards/Tag';
-import {BoardName} from '../../common/boards/BoardName';
-import {marsBotMapSet} from '../../common/automa/marsBotMapSet';
-import {IMilestone} from '../milestones/IMilestone';
-import {IPlayer} from '../IPlayer';
-import {IAward} from '../awards/IAward';
-import {IMarsBot} from './IMarsBot';
+import {IMilestone} from '@/server/milestones/IMilestone';
+import {IPlayer} from '@/server/IPlayer';
+import {IAward} from '@/server/awards/IAward';
+import {BoardName} from '@/common/boards/BoardName';
+import {Tag} from '@/common/cards/Tag';
+import {marsBotMapSet} from '@/common/automa/marsBotMapSet';
+import {IMarsBot} from '@/server/automa/IMarsBot';
 
 /**
  * MarsBot claims milestones and scores awards through the ordinary IMilestone and IAward

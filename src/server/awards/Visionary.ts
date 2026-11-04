@@ -1,8 +1,8 @@
 import {IAward} from './IAward';
 import {IPlayer} from '../IPlayer';
-import {numeric} from '../../common/utils/Ordering';
-import {IMarsBot} from '../automa/IMarsBot';
-import {marsBotAllTrackPositions} from '../automa/MarsBotMilestoneAwardEval';
+import {numeric} from '@/common/utils/Ordering';
+import {IMarsBot} from '@/server/automa/IMarsBot';
+import {marsBotAllTrackPositions} from '@/server/automa/MarsBotMilestoneAwardEval';
 
 export class Visionary implements IAward {
   public readonly name = 'Visionary';
