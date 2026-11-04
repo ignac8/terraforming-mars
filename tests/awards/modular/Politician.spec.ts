@@ -28,6 +28,6 @@ describe('Politician', () => {
   });
 
   it('MarsBot always scores 5', () => {
-    expect(new Politician().marsBotScore()).to.eq(5);
+    expect(new Politician().marsBotScore()).eq(5);
   });
 });

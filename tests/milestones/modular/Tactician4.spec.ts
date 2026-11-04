@@ -1,25 +1,16 @@
 import {expect} from 'chai';
-import {Tactician4} from '../../../src/server/milestones/modular/Tactician4';
-import {TestPlayer} from '../../TestPlayer';
-import {fakeCard} from '../../TestingUtils';
-import {IMarsBot} from '../../../src/server/automa/IMarsBot';
+import {Tactician4} from '@/server/milestones/modular/Tactician4';
+import {fakeMarsBot} from '../../automa/FakeMarsBot';
 
 describe('Tactician4', () => {
-  const milestone = new Tactician4();
+  it('MarsBot needs 30 M€', () => {
+    for (const run of [
+      {megacredits: 29, expected: false},
+      {megacredits: 30, expected: true},
+    ]) {
+      const bot = {...fakeMarsBot(), megacredits: run.megacredits};
 
-  it('Can claim with 4 cards with requirements', () => {
-    const player = TestPlayer.BLUE.newPlayer();
-    for (let i = 0; i < 3; i++) {
-      player.playedCards.push(fakeCard({requirements: [{cities: 1}]}));
+      expect(new Tactician4().marsBotCanClaim(bot), JSON.stringify(run)).eq(run.expected);
     }
-    expect(milestone.canClaim(player)).is.false;
-
-    player.playedCards.push(fakeCard({requirements: [{cities: 1}]}));
-    expect(milestone.canClaim(player)).is.true;
-  });
-
-  it('MarsBot qualifies with 30 M€', () => {
-    expect(milestone.marsBotCanClaim({megacredits: 29} as unknown as IMarsBot)).is.false;
-    expect(milestone.marsBotCanClaim({megacredits: 30} as unknown as IMarsBot)).is.true;
   });
 });

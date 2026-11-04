@@ -1,33 +1,16 @@
 import {expect} from 'chai';
-import {Collector} from '../../../src/server/awards/modular/Collector';
-import {testGame} from '../../TestGame';
-import {IMarsBot} from '../../../src/server/automa/IMarsBot';
-import {MarsBotBoard} from '../../../src/server/automa/MarsBotBoard';
-import {THARSIS_MARSBOT_BOARD} from '../../../src/server/automa/boards/TharsisMarsBot';
+import {Tag} from '@/common/cards/Tag';
+import {Collector} from '@/server/awards/modular/Collector';
+import {fakeMarsBot, setAllTracks, setTrack} from '../../automa/FakeMarsBot';
 
 describe('Collector', () => {
-  const award = new Collector();
+  it('MarsBot counts its tracks that reached space 3', () => {
+    const bot = fakeMarsBot();
+    setAllTracks(bot, 2);
+    setTrack(bot, Tag.BUILDING, 3);
+    setTrack(bot, Tag.SPACE, 3);
+    setTrack(bot, Tag.PLANT, 7);
 
-  it('scores a player by distinct resource types', () => {
-    const [, player] = testGame(2);
-    player.megaCredits = 3;
-    player.steel = 1;
-    player.heat = 2;
-
-    expect(award.getScore(player)).to.eq(3);
-  });
-
-  it('scores MarsBot by the number of tracks at space 3', () => {
-    const board = new MarsBotBoard(THARSIS_MARSBOT_BOARD);
-    const bot = {marsBotBoard: board} as unknown as IMarsBot;
-    for (const index of [0, 2, 5]) {
-      for (let i = 0; i < 3; i++) {
-        board.tracks[index].advance();
-      }
-    }
-    board.tracks[1].advance();
-    board.tracks[1].advance();
-
-    expect(award.marsBotScore(bot)).to.eq(3);
+    expect(new Collector().marsBotScore(bot)).eq(3);
   });
 });

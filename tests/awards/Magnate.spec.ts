@@ -1,26 +1,24 @@
 import {expect} from 'chai';
-import {Magnate} from '../../src/server/awards/Magnate';
-import {testGame} from '../TestGame';
+import {CardType} from '@/common/cards/CardType';
+import {Magnate} from '@/server/awards/Magnate';
 import {fakeCard} from '../TestingUtils';
-import {CardType} from '../../src/common/cards/CardType';
-import {IMarsBot} from '../../src/server/automa/IMarsBot';
+import {fakeMarsBot} from '../automa/FakeMarsBot';
+import {testGame} from '../TestGame';
 
 describe('Magnate', () => {
-  const award = new Magnate();
-
   it('scores a player by automated cards', () => {
     const [, player] = testGame(2);
     player.playedCards.push(fakeCard({type: CardType.AUTOMATED}));
     player.playedCards.push(fakeCard({type: CardType.ACTIVE}));
     player.playedCards.push(fakeCard({type: CardType.EVENT}));
 
-    expect(award.getScore(player)).to.eq(1);
+    expect(new Magnate().getScore(player)).to.eq(1);
   });
 
-  it('scores MarsBot by the automated cards in its own played pile', () => {
-    const pile = [fakeCard({type: CardType.AUTOMATED}), fakeCard({type: CardType.AUTOMATED}), fakeCard({type: CardType.EVENT})];
-    const bot = {playedProjectCards: pile} as unknown as IMarsBot;
+  it('MarsBot counts the green cards in its played pile', () => {
+    const types = [CardType.EVENT, CardType.AUTOMATED, CardType.ACTIVE, CardType.AUTOMATED];
+    const bot = {...fakeMarsBot(), playedProjectCards: types.map((type) => fakeCard({type}))};
 
-    expect(award.marsBotScore(bot)).to.eq(2);
+    expect(new Magnate().marsBotScore(bot)).eq(2);
   });
 });

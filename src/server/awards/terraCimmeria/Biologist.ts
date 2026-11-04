@@ -1,7 +1,7 @@
 import {Tag} from '../../../common/cards/Tag';
 import {IPlayer} from '../../IPlayer';
 import {IAward} from '../IAward';
-import {IMarsBot} from '../../automa/IMarsBot';
+import {IMarsBot} from '@/server/automa/IMarsBot';
 
 export class Biologist implements IAward {
   public readonly name = 'Biologist';
@@ -12,7 +12,7 @@ export class Biologist implements IAward {
     return player.tags.multipleCount([Tag.MICROBE, Tag.PLANT, Tag.ANIMAL], 'award');
   }
 
-  /** The automa rules score MarsBot's Biologist as its bio track plus 5. */
+  /** Scores MarsBot's Bio track space plus 5 (rulebook C p.14). */
   public marsBotScore(bot: IMarsBot): number {
     return bot.marsBotBoard.trackPosition(Tag.PLANT) + 5;
   }

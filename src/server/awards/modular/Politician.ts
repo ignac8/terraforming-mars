@@ -14,7 +14,7 @@ export class Politician implements IAward {
     return partyLeaderCount + turmoil.getInfluence(player);
   }
 
-  /** The automa rules score MarsBot's Politician as a flat 5. */
+  /** Scores MarsBot a flat 5 (rulebook C p.15). */
   public marsBotScore(): number {
     return 5;
   }

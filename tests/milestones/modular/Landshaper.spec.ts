@@ -7,10 +7,8 @@ import {Space} from '../../../src/server/boards/Space';
 import {TileType} from '../../../src/common/TileType';
 import {BoardName} from '../../../src/common/boards/BoardName';
 import {MoonExpansion} from '../../../src/server/moon/MoonExpansion';
-import {IMarsBot} from '../../../src/server/automa/IMarsBot';
-import {MarsBotBoard} from '../../../src/server/automa/MarsBotBoard';
-import {THARSIS_MARSBOT_BOARD} from '../../../src/server/automa/boards/TharsisMarsBot';
-import {Tag} from '../../../src/common/cards/Tag';
+import {Tag} from '@/common/cards/Tag';
+import {addCity, addGreenery} from '../../TestingUtils';
 import {fakeMarsBot, setTrack} from '../../automa/FakeMarsBot';
 
 describe('Landshaper', () => {
@@ -82,33 +80,24 @@ describe('Landshaper', () => {
     expect(milestone.canClaim(player)).to.be.true;
   });
 
-  it('MarsBot claims it with a city, a greenery and building track at space 5', () => {
-    const board = new MarsBotBoard(THARSIS_MARSBOT_BOARD);
-    const bot = {game, player, marsBotBoard: board} as unknown as IMarsBot;
-    game.simpleAddTile(player, spaces[0], {tileType: TileType.CITY});
-    game.simpleAddTile(player, spaces[1], {tileType: TileType.GREENERY});
-    for (let i = 0; i < 4; i++) {
-      board.tracks[0].advance();
+  it('MarsBot needs a city, a greenery and space 5 of its Building track', () => {
+    for (const run of [
+      {city: false, greenery: true, building: 5, expected: false},
+      {city: true, greenery: false, building: 5, expected: false},
+      {city: true, greenery: true, building: 4, expected: false},
+      {city: true, greenery: true, building: 5, expected: true},
+    ]) {
+      const [game, player] = testGame(1);
+      const bot = {...fakeMarsBot(), game, player};
+      if (run.city) {
+        addCity(player);
+      }
+      if (run.greenery) {
+        addGreenery(player);
+      }
+      setTrack(bot, Tag.BUILDING, run.building);
+
+      expect(milestone.marsBotCanClaim(bot), JSON.stringify(run)).eq(run.expected);
     }
-    expect(milestone.marsBotCanClaim(bot)).is.false;
-
-    board.tracks[0].advance();
-    expect(milestone.marsBotCanClaim(bot)).is.true;
-  });
-
-  it('MarsBot cannot claim it without a city', () => {
-    const bot = fakeMarsBot(undefined, {game, player});
-    game.simpleAddTile(player, spaces[0], {tileType: TileType.GREENERY});
-    setTrack(bot, Tag.BUILDING, 5);
-
-    expect(milestone.marsBotCanClaim(bot)).is.false;
-  });
-
-  it('MarsBot cannot claim it without a greenery', () => {
-    const bot = fakeMarsBot(undefined, {game, player});
-    game.simpleAddTile(player, spaces[0], {tileType: TileType.CITY});
-    setTrack(bot, Tag.BUILDING, 5);
-
-    expect(milestone.marsBotCanClaim(bot)).is.false;
   });
 });

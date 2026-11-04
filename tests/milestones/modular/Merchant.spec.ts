@@ -10,9 +10,10 @@ import {Units} from '../../../src/common/Units';
 import {ALL_RESOURCES} from '../../../src/common/Resource';
 import {NirgalEnterprises} from '../../../src/server/cards/prelude2/NirgalEnterprises';
 import {StagedProtests} from '../../../src/server/cards/underworld/StagedProtests';
-import {IMarsBot} from '../../../src/server/automa/IMarsBot';
-import {MarsBotBoard} from '../../../src/server/automa/MarsBotBoard';
-import {THARSIS_MARSBOT_BOARD_WITH_VENUS} from '../../../src/server/automa/boards/TharsisMarsBot';
+import {Tag} from '@/common/cards/Tag';
+import {THARSIS_MARSBOT_BOARD} from '@/server/automa/boards/TharsisMarsBot';
+import {VENUS_MARSBOT_TRACK} from '@/server/automa/boards/VenusMarsBot';
+import {fakeMarsBot, setAllTracks, setTrack} from '../../automa/FakeMarsBot';
 
 describe('Merchant', () => {
   let milestone: Merchant;
@@ -141,17 +142,17 @@ describe('Merchant', () => {
     });
   });
 
-  it('MarsBot claims it with every Mars track at space 2, Venus aside', () => {
-    const board = new MarsBotBoard(THARSIS_MARSBOT_BOARD_WITH_VENUS);
-    const bot = {marsBotBoard: board} as unknown as IMarsBot;
-    for (let index = 0; index < 6; index++) {
-      board.tracks[index].advance();
-      board.tracks[index].advance();
-    }
-    board.tracks[6].advance();
-    expect(milestone.marsBotCanClaim(bot)).is.false;
+  it('MarsBot needs space 2 on every track except Venus', () => {
+    for (const run of [
+      {plant: 1, expected: false},
+      {plant: 2, expected: true},
+    ]) {
+      const bot = fakeMarsBot([...THARSIS_MARSBOT_BOARD, VENUS_MARSBOT_TRACK]);
+      setAllTracks(bot, 2);
+      setTrack(bot, Tag.VENUS, 0);
+      setTrack(bot, Tag.PLANT, run.plant);
 
-    board.tracks[6].advance();
-    expect(milestone.marsBotCanClaim(bot)).is.true;
+      expect(milestone.marsBotCanClaim(bot), JSON.stringify(run)).eq(run.expected);
+    }
   });
 });

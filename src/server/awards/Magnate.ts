@@ -2,7 +2,7 @@
 import {IAward} from './IAward';
 import {IPlayer} from '../IPlayer';
 import {CardType} from '../../common/cards/CardType';
-import {IMarsBot} from '../automa/IMarsBot';
+import {IMarsBot} from '@/server/automa/IMarsBot';
 
 export class Magnate implements IAward {
   public readonly name = 'Magnate';
@@ -14,8 +14,10 @@ export class Magnate implements IAward {
   }
 
   /**
-   * MarsBot counts the green cards in its own played pile. Rulebook C's "blue and green" is a
-   * typo; designer ruling, BGG thread 3534424 (TDaver).
+   * Counts the green cards in MarsBot's own played pile (rulebook C p.9).
+   *
+   * The expansion list's "blue and green" (rulebook C p.15) is a typo, per the designer in BGG
+   * thread 3534424.
    */
   public marsBotScore(bot: IMarsBot): number {
     return bot.playedProjectCards.filter((card) => card.type === CardType.AUTOMATED).length;

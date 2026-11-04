@@ -1,24 +1,29 @@
 import {expect} from 'chai';
-import {Excentric} from '../../src/server/awards/Excentric';
+import {Excentric} from '@/server/awards/Excentric';
+import {fakeMarsBot} from '../automa/FakeMarsBot';
+import {CardResource} from '@/common/CardResource';
 import {TestPlayer} from '../TestPlayer';
 import {fakeCard} from '../TestingUtils';
-import {CardResource} from '../../src/common/CardResource';
-import {IMarsBot} from '../../src/server/automa/IMarsBot';
 
 describe('Excentric', () => {
-  const award = new Excentric();
-
   it('scores a player by resources on cards', () => {
     const player = TestPlayer.BLUE.newPlayer();
     const card = fakeCard({resourceType: CardResource.MICROBE});
     card.resourceCount = 4;
     player.playedCards.push(card);
 
-    expect(award.getScore(player)).to.eq(4);
+    expect(new Excentric().getScore(player)).to.eq(4);
   });
 
-  it('scores MarsBot by every 5 of its M€', () => {
-    expect(award.marsBotScore({megacredits: 24} as unknown as IMarsBot)).to.eq(4);
-    expect(award.marsBotScore({megacredits: 25} as unknown as IMarsBot)).to.eq(5);
+  it('MarsBot counts every 5 M€ as one resource', () => {
+    for (const run of [
+      {megacredits: 4, expected: 0},
+      {megacredits: 5, expected: 1},
+      {megacredits: 14, expected: 2},
+    ]) {
+      const bot = {...fakeMarsBot(), megacredits: run.megacredits};
+
+      expect(new Excentric().marsBotScore(bot), JSON.stringify(run)).eq(run.expected);
+    }
   });
 });

@@ -2,9 +2,8 @@ import {expect} from 'chai';
 import {testGame} from '../../TestGame';
 import {Manufacturer} from '../../../src/server/awards/modular/Manufacturer';
 import {TestPlayer} from '../../TestPlayer';
-import {IMarsBot} from '../../../src/server/automa/IMarsBot';
-import {MarsBotBoard} from '../../../src/server/automa/MarsBotBoard';
-import {THARSIS_MARSBOT_BOARD} from '../../../src/server/automa/boards/TharsisMarsBot';
+import {Tag} from '@/common/cards/Tag';
+import {fakeMarsBot, setTrack} from '../../automa/FakeMarsBot';
 
 describe('Manufacturer', () => {
   let award: Manufacturer;
@@ -28,16 +27,11 @@ describe('Manufacturer', () => {
     expect(award.getScore(player)).to.eq(7);
   });
 
-  it('MarsBot scores its building and power tracks together', () => {
-    const award = new Manufacturer();
-    const board = new MarsBotBoard(THARSIS_MARSBOT_BOARD);
-    const bot = {marsBotBoard: board} as unknown as IMarsBot;
-    for (let i = 0; i < 3; i++) {
-      board.tracks[0].advance();
-    }
-    board.tracks[4].advance();
-    board.tracks[4].advance();
+  it('MarsBot scores its Building and Energy tracks combined', () => {
+    const bot = fakeMarsBot();
+    setTrack(bot, Tag.BUILDING, 3);
+    setTrack(bot, Tag.POWER, 2);
 
-    expect(award.marsBotScore(bot)).to.eq(5);
+    expect(new Manufacturer().marsBotScore(bot)).eq(5);
   });
 });

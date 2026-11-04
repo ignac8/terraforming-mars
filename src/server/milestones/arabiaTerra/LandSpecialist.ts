@@ -1,7 +1,7 @@
 import {BaseMilestone} from '../IMilestone';
 import {IPlayer} from '../../IPlayer';
 import {isSpecialTileSpace, Board} from '../../boards/Board';
-import {IMarsBot} from '../../automa/IMarsBot';
+import {IMarsBot} from '@/server/automa/IMarsBot';
 
 export class LandSpecialist extends BaseMilestone {
   public readonly automaDescription = '3+ bonus cards destroyed';
@@ -25,7 +25,7 @@ export class LandSpecialist extends BaseMilestone {
     return marsCount + moonCount;
   }
 
-  /** Utopia Planitia calls it Specialist. MarsBot places no special tiles, so it counts the bonus cards it destroyed. */
+  /** MarsBot needs 3 destroyed bonus cards (rulebook C p.10, which calls it Specialist). */
   public marsBotCanClaim(bot: IMarsBot): boolean {
     return bot.destroyedBonusCards >= 3;
   }

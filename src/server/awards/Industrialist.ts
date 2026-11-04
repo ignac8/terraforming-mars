@@ -1,7 +1,7 @@
 import {IAward} from './IAward';
 import {IPlayer} from '../IPlayer';
-import {Tag} from '../../common/cards/Tag';
-import {IMarsBot} from '../automa/IMarsBot';
+import {Tag} from '@/common/cards/Tag';
+import {IMarsBot} from '@/server/automa/IMarsBot';
 
 export class Industrialist implements IAward {
   public readonly name = 'Industrialist';
@@ -15,7 +15,7 @@ export class Industrialist implements IAward {
     }
   }
 
-  /** The automa rules score MarsBot's Industrialist as its power track plus 5. */
+  /** Scores MarsBot's Energy track space plus 5 (rulebook C p.9). */
   public marsBotScore(bot: IMarsBot): number {
     return bot.marsBotBoard.trackPosition(Tag.POWER) + 5;
   }

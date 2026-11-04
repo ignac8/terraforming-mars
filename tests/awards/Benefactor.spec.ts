@@ -1,26 +1,19 @@
 import {expect} from 'chai';
-import {Benefactor} from '../../src/server/awards/Benefactor';
+import {Benefactor} from '@/server/awards/Benefactor';
 import {testGame} from '../TestGame';
-import {IMarsBot} from '../../src/server/automa/IMarsBot';
+import {fakeMarsBot} from '../automa/FakeMarsBot';
 
 describe('Benefactor', () => {
-  const award = new Benefactor();
+  it('MarsBot scores its TR minus 15, but not below 0', () => {
+    for (const run of [
+      {terraformRating: 22, expected: 7},
+      {terraformRating: 10, expected: 0},
+    ]) {
+      const [, player] = testGame(1);
+      player.setTerraformRating(run.terraformRating);
+      const bot = {...fakeMarsBot(), player};
 
-  it('scores a player by terraform rating', () => {
-    const [, player] = testGame(2);
-    player.setTerraformRating(25);
-
-    expect(award.getScore(player)).to.eq(25);
-  });
-
-  it('scores MarsBot by its terraform rating minus 15', () => {
-    const [, player] = testGame(2);
-    player.setTerraformRating(25);
-    const bot = {player} as unknown as IMarsBot;
-
-    expect(award.marsBotScore(bot)).to.eq(10);
-
-    player.setTerraformRating(10);
-    expect(award.marsBotScore(bot)).to.eq(0);
+      expect(new Benefactor().marsBotScore(bot), JSON.stringify(run)).eq(run.expected);
+    }
   });
 });

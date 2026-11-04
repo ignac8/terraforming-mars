@@ -6,10 +6,9 @@ import {AntiGravityTechnology} from '../../src/server/cards/base/AntiGravityTech
 import {testGame} from '../TestGame';
 import {fakeCard} from '../TestingUtils';
 import {Tag} from '../../src/common/cards/Tag';
-import {IMarsBot} from '../../src/server/automa/IMarsBot';
-import {MarsBotBoard} from '../../src/server/automa/MarsBotBoard';
-import {THARSIS_MARSBOT_BOARD} from '../../src/server/automa/boards/TharsisMarsBot';
-import {VENUS_MARSBOT_TRACK} from '../../src/server/automa/boards/VenusMarsBot';
+import {THARSIS_MARSBOT_BOARD} from '@/server/automa/boards/TharsisMarsBot';
+import {VENUS_MARSBOT_TRACK} from '@/server/automa/boards/VenusMarsBot';
+import {fakeMarsBot, setAllTracks, setTrack} from '../automa/FakeMarsBot';
 
 describe('Diversifier', () => {
   let milestone: Diversifier;
@@ -18,6 +17,27 @@ describe('Diversifier', () => {
   beforeEach(() => {
     milestone = new Diversifier();
     [/* game */, player] = testGame(2);
+  });
+
+  it('MarsBot needs space 3 on all 7 tracks without Venus', () => {
+    for (const run of [
+      {plant: 2, expected: false},
+      {plant: 3, expected: true},
+    ]) {
+      const bot = fakeMarsBot();
+      setAllTracks(bot, 3);
+      setTrack(bot, Tag.PLANT, run.plant);
+
+      expect(milestone.marsBotCanClaim(bot), JSON.stringify(run)).eq(run.expected);
+    }
+  });
+
+  it('MarsBot counts the Venus track as one of the 7', () => {
+    const bot = fakeMarsBot([...THARSIS_MARSBOT_BOARD, VENUS_MARSBOT_TRACK]);
+    setAllTracks(bot, 3);
+    setTrack(bot, Tag.PLANT, 0);
+
+    expect(milestone.marsBotCanClaim(bot)).is.true;
   });
 
   it('Counts wild tags tags as unique tags', () => {
@@ -49,35 +69,17 @@ describe('Diversifier', () => {
     expect(milestone.canClaim(player)).is.true;
   });
 
-  it('MarsBot claims it with every Mars track at space 3', () => {
-    const board = new MarsBotBoard(THARSIS_MARSBOT_BOARD);
-    const bot = {marsBotBoard: board} as unknown as IMarsBot;
-    for (let index = 0; index < 6; index++) {
-      for (let i = 0; i < 3; i++) {
-        board.tracks[index].advance();
-      }
-    }
-    board.tracks[6].advance();
-    board.tracks[6].advance();
-    expect(milestone.marsBotCanClaim(bot)).is.false;
+  it('MarsBot needs space 3 on 7 tracks, so Venus can stand in for one other track', () => {
+    for (const run of [
+      {plant: 2, expected: false},
+      {plant: 3, expected: true},
+    ]) {
+      const bot = fakeMarsBot([...THARSIS_MARSBOT_BOARD, VENUS_MARSBOT_TRACK]);
+      setAllTracks(bot, 3);
+      setTrack(bot, Tag.VENUS, 2);
+      setTrack(bot, Tag.PLANT, run.plant);
 
-    board.tracks[6].advance();
-    expect(milestone.marsBotCanClaim(bot)).is.true;
-  });
-
-  it('the Venus track can stand in for a Mars track', () => {
-    const board = new MarsBotBoard([...THARSIS_MARSBOT_BOARD, VENUS_MARSBOT_TRACK]);
-    const bot = {marsBotBoard: board} as unknown as IMarsBot;
-    for (let index = 0; index < 6; index++) {
-      for (let i = 0; i < 3; i++) {
-        board.tracks[index].advance();
-      }
+      expect(milestone.marsBotCanClaim(bot), JSON.stringify(run)).eq(run.expected);
     }
-    expect(milestone.marsBotCanClaim(bot)).is.false;
-
-    for (let i = 0; i < 3; i++) {
-      board.tracks[7].advance();
-    }
-    expect(milestone.marsBotCanClaim(bot)).is.true;
   });
 });

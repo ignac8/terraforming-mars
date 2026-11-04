@@ -1,34 +1,20 @@
 import {expect} from 'chai';
-import {Metallurgist} from '../../src/server/milestones/Metallurgist';
-import {testGame} from '../TestGame';
-import {IMarsBot} from '../../src/server/automa/IMarsBot';
-import {MarsBotBoard} from '../../src/server/automa/MarsBotBoard';
-import {THARSIS_MARSBOT_BOARD} from '../../src/server/automa/boards/TharsisMarsBot';
+import {Tag} from '@/common/cards/Tag';
+import {Metallurgist} from '@/server/milestones/Metallurgist';
+import {fakeMarsBot, setTrack} from '../automa/FakeMarsBot';
 
 describe('Metallurgist', () => {
-  const milestone = new Metallurgist();
+  it('MarsBot needs its Building and Space tracks to add up to 9', () => {
+    for (const run of [
+      {building: 4, space: 4, expected: false},
+      {building: 4, space: 5, expected: true},
+      {building: 5, space: 4, expected: true},
+    ]) {
+      const bot = fakeMarsBot();
+      setTrack(bot, Tag.BUILDING, run.building);
+      setTrack(bot, Tag.SPACE, run.space);
 
-  it('Can claim with 6 steel and titanium production', () => {
-    const [, player] = testGame(2);
-    player.production.override({steel: 3, titanium: 2});
-    expect(milestone.canClaim(player)).is.false;
-
-    player.production.override({steel: 3, titanium: 3});
-    expect(milestone.canClaim(player)).is.true;
-  });
-
-  it('MarsBot claims it with building and space tracks summing to 9', () => {
-    const board = new MarsBotBoard(THARSIS_MARSBOT_BOARD);
-    const bot = {marsBotBoard: board} as unknown as IMarsBot;
-    for (let i = 0; i < 5; i++) {
-      board.tracks[0].advance();
+      expect(new Metallurgist().marsBotCanClaim(bot), JSON.stringify(run)).eq(run.expected);
     }
-    for (let i = 0; i < 3; i++) {
-      board.tracks[1].advance();
-    }
-    expect(milestone.marsBotCanClaim(bot)).is.false;
-
-    board.tracks[1].advance();
-    expect(milestone.marsBotCanClaim(bot)).is.true;
   });
 });

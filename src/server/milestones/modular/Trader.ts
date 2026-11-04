@@ -1,7 +1,7 @@
 import {BaseMilestone} from '../IMilestone';
 import {IPlayer} from '../../IPlayer';
-import {Tag} from '../../../common/cards/Tag';
-import {IMarsBot} from '../../automa/IMarsBot';
+import {Tag} from '@/common/cards/Tag';
+import {IMarsBot} from '@/server/automa/IMarsBot';
 
 export class Trader extends BaseMilestone {
   public readonly automaDescription = 'Bio, Earth and Venus tracks ≥ 2';
@@ -17,7 +17,7 @@ export class Trader extends BaseMilestone {
     return nonStandardResources.size;
   }
 
-  /** MarsBot trades by reaching space 2 on its bio, earth and Venus tracks. */
+  /** MarsBot needs space 2 on its Bio, Earth and Venus tracks (rulebook C p.14). */
   public marsBotCanClaim(bot: IMarsBot): boolean {
     return [Tag.PLANT, Tag.EARTH, Tag.VENUS].every((tag) => bot.marsBotBoard.trackPosition(tag) >= 2);
   }

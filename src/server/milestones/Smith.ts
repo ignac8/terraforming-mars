@@ -1,7 +1,7 @@
 import {BaseMilestone} from './IMilestone';
 import {IPlayer} from '../IPlayer';
 import {Tag} from '../../common/cards/Tag';
-import {IMarsBot} from '../automa/IMarsBot';
+import {IMarsBot} from '@/server/automa/IMarsBot';
 
 export class Smith extends BaseMilestone {
   public readonly automaDescription = 'Building + Space tracks ≥ 7';
@@ -16,7 +16,10 @@ export class Smith extends BaseMilestone {
     return player.production.steel + player.production.titanium;
   }
 
-  /** Utopia Planitia calls it Metallurgist: MarsBot needs 7 across its building and space tracks. */
+  /**
+   * MarsBot needs its Building and Space tracks to add up to 7 (rulebook C p.10, which calls it
+   * Metallurgist).
+   */
   public marsBotCanClaim(bot: IMarsBot): boolean {
     return bot.marsBotBoard.trackPosition(Tag.BUILDING) + bot.marsBotBoard.trackPosition(Tag.SPACE) >= 7;
   }

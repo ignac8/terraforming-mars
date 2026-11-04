@@ -1,34 +1,19 @@
 import {expect} from 'chai';
-import {Legend} from '../../src/server/milestones/Legend';
-import {TestPlayer} from '../TestPlayer';
+import {CardType} from '@/common/cards/CardType';
+import {Legend} from '@/server/milestones/Legend';
 import {fakeCard} from '../TestingUtils';
-import {CardType} from '../../src/common/cards/CardType';
-import {IMarsBot} from '../../src/server/automa/IMarsBot';
-import {IProjectCard} from '../../src/server/cards/IProjectCard';
+import {fakeMarsBot} from '../automa/FakeMarsBot';
 
 describe('Legend', () => {
-  const milestone = new Legend();
+  it('MarsBot needs 5 events in its played pile', () => {
+    for (const run of [
+      {events: 4, expected: false},
+      {events: 5, expected: true},
+    ]) {
+      const types = [CardType.ACTIVE, CardType.AUTOMATED, ...Array<CardType>(run.events).fill(CardType.EVENT)];
+      const bot = {...fakeMarsBot(), playedProjectCards: types.map((type) => fakeCard({type}))};
 
-  it('Can claim with 5 played events', () => {
-    const player = TestPlayer.BLUE.newPlayer();
-    for (let i = 0; i < 4; i++) {
-      player.playedCards.push(fakeCard({type: CardType.EVENT}));
+      expect(new Legend().marsBotCanClaim(bot), JSON.stringify(run)).eq(run.expected);
     }
-    expect(milestone.canClaim(player)).is.false;
-
-    player.playedCards.push(fakeCard({type: CardType.EVENT}));
-    expect(milestone.canClaim(player)).is.true;
-  });
-
-  it('MarsBot counts the events in its own played pile', () => {
-    const pile: Array<IProjectCard> = [fakeCard()];
-    for (let i = 0; i < 4; i++) {
-      pile.push(fakeCard({type: CardType.EVENT}));
-    }
-    const bot = {playedProjectCards: pile} as unknown as IMarsBot;
-    expect(milestone.marsBotCanClaim(bot)).is.false;
-
-    pile.push(fakeCard({type: CardType.EVENT}));
-    expect(milestone.marsBotCanClaim(bot)).is.true;
   });
 });

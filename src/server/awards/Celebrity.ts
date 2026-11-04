@@ -1,7 +1,7 @@
 import {IAward} from './IAward';
 import {IPlayer} from '../IPlayer';
 import {CardType} from '../../common/cards/CardType';
-import {IMarsBot} from '../automa/IMarsBot';
+import {IMarsBot} from '@/server/automa/IMarsBot';
 
 export class Celebrity implements IAward {
   public readonly name = 'Celebrity';
@@ -13,7 +13,11 @@ export class Celebrity implements IAward {
     }).length;
   }
 
-  /** MarsBot counts its own played pile, events included. */
+  /**
+   * Counts the cards costing 20 M€ or more in MarsBot's played pile (rulebook C p.9 and p.14).
+   *
+   * Unlike a player's events, MarsBot's events count.
+   */
   public marsBotScore(bot: IMarsBot): number {
     return bot.playedProjectCards.filter((card) => card.cost >= 20).length;
   }

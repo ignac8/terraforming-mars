@@ -5,9 +5,7 @@ import {testGame} from '../../TestGame';
 import {fakeCard} from '../../TestingUtils';
 import {Tag} from '../../../src/common/cards/Tag';
 import {Chimera} from '../../../src/server/cards/pathfinders/Chimera';
-import {IMarsBot} from '../../../src/server/automa/IMarsBot';
-import {MarsBotBoard} from '../../../src/server/automa/MarsBotBoard';
-import {THARSIS_MARSBOT_BOARD} from '../../../src/server/automa/boards/TharsisMarsBot';
+import {fakeMarsBot, setTrack} from '../../automa/FakeMarsBot';
 
 describe('Biologist', () => {
   let award: Biologist;
@@ -47,13 +45,10 @@ describe('Biologist', () => {
     expect(award.getScore(player)).eq(4);
   });
 
-  it('MarsBot scores its bio track plus 5', () => {
-    const board = new MarsBotBoard(THARSIS_MARSBOT_BOARD);
-    const bot = {marsBotBoard: board} as unknown as IMarsBot;
-    for (let i = 0; i < 4; i++) {
-      board.tracks[6].advance();
-    }
+  it('MarsBot scores its Bio track plus 5', () => {
+    const bot = fakeMarsBot();
+    setTrack(bot, Tag.PLANT, 3);
 
-    expect(award.marsBotScore(bot)).to.eq(9);
+    expect(award.marsBotScore(bot)).eq(8);
   });
 });

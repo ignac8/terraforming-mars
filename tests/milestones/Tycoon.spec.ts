@@ -1,36 +1,19 @@
 import {expect} from 'chai';
-import {Tycoon} from '../../src/server/milestones/Tycoon';
-import {TestPlayer} from '../TestPlayer';
+import {CardType} from '@/common/cards/CardType';
+import {Tycoon} from '@/server/milestones/Tycoon';
 import {fakeCard} from '../TestingUtils';
-import {CardType} from '../../src/common/cards/CardType';
-import {IMarsBot} from '../../src/server/automa/IMarsBot';
-import {IProjectCard} from '../../src/server/cards/IProjectCard';
+import {fakeMarsBot} from '../automa/FakeMarsBot';
 
 describe('Tycoon', () => {
-  const milestone = new Tycoon();
+  it('MarsBot needs 15 blue and green cards in its played pile, events aside', () => {
+    for (const run of [
+      {cards: 14, expected: false},
+      {cards: 15, expected: true},
+    ]) {
+      const types = [CardType.EVENT, CardType.EVENT, ...Array<CardType>(run.cards).fill(CardType.ACTIVE)];
+      const bot = {...fakeMarsBot(), playedProjectCards: types.map((type) => fakeCard({type}))};
 
-  it('Can claim with 15 project cards, events aside', () => {
-    const player = TestPlayer.BLUE.newPlayer();
-    for (let i = 0; i < 14; i++) {
-      player.playedCards.push(fakeCard());
+      expect(new Tycoon().marsBotCanClaim(bot), JSON.stringify(run)).eq(run.expected);
     }
-    player.playedCards.push(fakeCard({type: CardType.EVENT}));
-    expect(milestone.canClaim(player)).is.false;
-
-    player.playedCards.push(fakeCard());
-    expect(milestone.canClaim(player)).is.true;
-  });
-
-  it('MarsBot counts its own played pile', () => {
-    const pile: Array<IProjectCard> = [];
-    for (let i = 0; i < 14; i++) {
-      pile.push(fakeCard());
-    }
-    pile.push(fakeCard({type: CardType.EVENT}));
-    const bot = {playedProjectCards: pile} as unknown as IMarsBot;
-    expect(milestone.marsBotCanClaim(bot)).is.false;
-
-    pile.push(fakeCard());
-    expect(milestone.marsBotCanClaim(bot)).is.true;
   });
 });

@@ -7,7 +7,9 @@ import {AICentral} from '../../../src/server/cards/base/AICentral';
 import {AsteroidMining} from '../../../src/server/cards/base/AsteroidMining';
 import {BigAsteroid} from '../../../src/server/cards/base/BigAsteroid';
 import {GanymedeColony} from '../../../src/server/cards/base/GanymedeColony';
-import {IMarsBot} from '../../../src/server/automa/IMarsBot';
+import {CardType} from '@/common/cards/CardType';
+import {fakeCard} from '../../TestingUtils';
+import {fakeMarsBot} from '../../automa/FakeMarsBot';
 
 describe('Sponsor', () => {
   let milestone: Sponsor;
@@ -47,13 +49,18 @@ describe('Sponsor', () => {
     expect(milestone.canClaim(player)).is.true;
   });
 
-  it('MarsBot counts its own played pile, events included', () => {
-    const pile = [new AICentral(), new AsteroidMining()];
-    const bot = {playedProjectCards: pile} as unknown as IMarsBot;
-    expect(milestone.marsBotCanClaim(bot)).is.false;
+  it('MarsBot counts the cards costing 20 M€ or more in its played pile, events included', () => {
+    const cheap = fakeCard({cost: 19, type: CardType.ACTIVE});
+    const event = fakeCard({cost: 20, type: CardType.EVENT});
+    const automated = fakeCard({cost: 30, type: CardType.AUTOMATED});
 
-    // An expensive event counts for MarsBot where it would not for a player
-    pile.push(new BigAsteroid());
-    expect(milestone.marsBotCanClaim(bot)).is.true;
+    for (const run of [
+      {playedProjectCards: [cheap, event, automated], expected: false},
+      {playedProjectCards: [cheap, event, automated, fakeCard({cost: 20, type: CardType.ACTIVE})], expected: true},
+    ]) {
+      const bot = {...fakeMarsBot(), playedProjectCards: run.playedProjectCards};
+
+      expect(milestone.marsBotCanClaim(bot), `${run.playedProjectCards.length} cards`).eq(run.expected);
+    }
   });
 });

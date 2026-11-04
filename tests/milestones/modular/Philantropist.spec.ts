@@ -9,7 +9,7 @@ import {GanymedeColony} from '../../../src/server/cards/base/GanymedeColony';
 import {LargeConvoy} from '../../../src/server/cards/base/LargeConvoy';
 import {EnergyTapping} from '../../../src/server/cards/base/EnergyTapping';
 import {SpaceStation} from '../../../src/server/cards/base/SpaceStation';
-import {IMarsBot} from '../../../src/server/automa/IMarsBot';
+import {fakeMarsBot} from '../../automa/FakeMarsBot';
 
 
 describe('Philantropist', () => {
@@ -60,12 +60,19 @@ describe('Philantropist', () => {
     expect(milestone.canClaim(player)).is.true;
   });
 
-  it('MarsBot counts its own played pile', () => {
-    const pile = [new DustSeals(), new AntiGravityTechnology(), new Ants(), new GanymedeColony(), new LargeConvoy(), new EnergyTapping()];
-    const bot = {playedProjectCards: pile} as unknown as IMarsBot;
-    expect(milestone.marsBotCanClaim(bot)).is.false;
+  it('MarsBot counts the cards with VP in its played pile', () => {
+    // Large Convoy is an event and Energy Tapping loses a VP, so neither counts.
+    const cards = [
+      new DustSeals(), new AntiGravityTechnology(), new Ants(), new GanymedeColony(), new LargeConvoy(), new EnergyTapping(),
+    ];
 
-    pile.push(new SpaceStation());
-    expect(milestone.marsBotCanClaim(bot)).is.true;
+    for (const run of [
+      {playedProjectCards: cards, expected: false},
+      {playedProjectCards: [...cards, new SpaceStation()], expected: true},
+    ]) {
+      const bot = {...fakeMarsBot(), playedProjectCards: run.playedProjectCards};
+
+      expect(milestone.marsBotCanClaim(bot), `${run.playedProjectCards.length} cards`).eq(run.expected);
+    }
   });
 });

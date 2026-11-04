@@ -1,7 +1,7 @@
 import {IPlayer} from '../../IPlayer';
 import {IAward} from '../IAward';
-import {IMarsBot} from '../../automa/IMarsBot';
-import {CardType} from '../../../common/cards/CardType';
+import {CardType} from '@/common/cards/CardType';
+import {IMarsBot} from '@/server/automa/IMarsBot';
 
 export class Administrator implements IAward {
   public readonly name = 'Administrator';
@@ -12,7 +12,11 @@ export class Administrator implements IAward {
     return player.tags.numberOfCardsWithNoTags();
   }
 
-  /** MarsBot counts the tagless cards in its own played pile, plus 2. */
+  /**
+   * Counts the cards without tags in MarsBot's own played pile, plus 2 (rulebook C p.14).
+   *
+   * Events don't count, the same as for the human player.
+   */
   public marsBotScore(bot: IMarsBot): number {
     return bot.playedProjectCards.filter((card) => card.type !== CardType.EVENT && card.tags.length === 0).length + 2;
   }

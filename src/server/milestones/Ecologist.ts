@@ -1,7 +1,7 @@
 import {BaseMilestone} from './IMilestone';
 import {IPlayer} from '../IPlayer';
 import {Tag} from '../../common/cards/Tag';
-import {IMarsBot} from '../automa/IMarsBot';
+import {IMarsBot} from '@/server/automa/IMarsBot';
 
 export class Ecologist extends BaseMilestone {
   public readonly automaDescription = 'Bio track ≥ 4';
@@ -16,8 +16,9 @@ export class Ecologist extends BaseMilestone {
   }
 
   /**
-   * MarsBot needs space 4 on its bio track. The class would count that track once per
-   * bio tag it carries.
+   * MarsBot needs space 4 of its Bio track (rulebook C p.9 and p.13).
+   *
+   * Counting bio tags would count that one track once for each of its three tags.
    */
   public marsBotCanClaim(bot: IMarsBot): boolean {
     return bot.marsBotBoard.trackPosition(Tag.PLANT) >= 4;

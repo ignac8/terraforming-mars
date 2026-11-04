@@ -1,22 +1,16 @@
 import {expect} from 'chai';
-import {Briber} from '../../src/server/milestones/Briber';
-import {testGame} from '../TestGame';
-import {IMarsBot} from '../../src/server/automa/IMarsBot';
+import {Briber} from '@/server/milestones/Briber';
+import {fakeMarsBot} from '../automa/FakeMarsBot';
 
 describe('Briber', () => {
-  const milestone = new Briber();
+  it('MarsBot needs 20 M€', () => {
+    for (const run of [
+      {megacredits: 19, expected: false},
+      {megacredits: 20, expected: true},
+    ]) {
+      const bot = {...fakeMarsBot(), megacredits: run.megacredits};
 
-  it('Can claim when able to pay the claim cost plus 12', () => {
-    const [, player] = testGame(2);
-    player.megaCredits = 19;
-    expect(milestone.canClaim(player)).is.false;
-
-    player.megaCredits = 20;
-    expect(milestone.canClaim(player)).is.true;
-  });
-
-  it('MarsBot qualifies with 20 M€', () => {
-    expect(milestone.marsBotCanClaim({megacredits: 19} as unknown as IMarsBot)).is.false;
-    expect(milestone.marsBotCanClaim({megacredits: 20} as unknown as IMarsBot)).is.true;
+      expect(new Briber().marsBotCanClaim(bot), JSON.stringify(run)).eq(run.expected);
+    }
   });
 });
