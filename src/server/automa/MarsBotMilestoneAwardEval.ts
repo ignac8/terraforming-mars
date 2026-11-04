@@ -6,6 +6,29 @@ import {Tag} from '@/common/cards/Tag';
 import {marsBotMapSet} from '@/common/automa/marsBotMapSet';
 import {IMarsBot} from '@/server/automa/IMarsBot';
 
+/** Every track position, the Venus track included when in play. */
+export function marsBotAllTrackPositions(bot: IMarsBot): Array<number> {
+  return bot.marsBotBoard.tracks.map((track) => track.position);
+}
+
+/** The Mars track positions, leaving a Venus track out. */
+export function marsBotMarsTrackPositions(bot: IMarsBot): Array<number> {
+  return bot.marsBotBoard.tracks
+    .filter((track) => !track.definition.tags.includes(Tag.VENUS))
+    .map((track) => track.position);
+}
+
+/**
+ * Whether MarsBot follows `boardName`'s own milestone and award rules.
+ *
+ * That holds on `boardName` unless the game plays the Milestones & Awards expansion, whose rules
+ * are written against the Tharsis board whatever map the game is played on. Random milestones
+ * and awards keep the map's rules.
+ */
+export function marsBotUsesMapSet(bot: IMarsBot, boardName: BoardName): boolean {
+  return marsBotMapSet(bot.game.gameOptions) === boardName;
+}
+
 /**
  * MarsBot claims milestones and scores awards through the ordinary IMilestone and IAward
  * code, called with its player. That works because the bot's player answers tag counts and
@@ -30,27 +53,4 @@ export function milestoneRemaining(milestone: IMilestone, player: IPlayer): numb
 
 export function marsBotAwardScore(award: IAward, bot: IMarsBot): number {
   return award.marsBotScore?.(bot) ?? award.getScore(bot.player);
-}
-
-/** Every track position, the Venus track included when in play. */
-export function marsBotAllTrackPositions(bot: IMarsBot): Array<number> {
-  return bot.marsBotBoard.tracks.map((track) => track.position);
-}
-
-/** The Mars track positions, leaving a Venus track out. */
-export function marsBotMarsTrackPositions(bot: IMarsBot): Array<number> {
-  return bot.marsBotBoard.tracks
-    .filter((track) => !track.definition.tags.includes(Tag.VENUS))
-    .map((track) => track.position);
-}
-
-/**
- * Whether MarsBot follows `boardName`'s own milestone and award rules.
- *
- * That holds on `boardName` unless the game plays the Milestones & Awards expansion, whose rules
- * are written against the Tharsis board whatever map the game is played on. Random milestones
- * and awards keep the map's rules.
- */
-export function marsBotUsesMapSet(bot: IMarsBot, boardName: BoardName): boolean {
-  return marsBotMapSet(bot.game.gameOptions) === boardName;
 }
