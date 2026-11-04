@@ -448,11 +448,10 @@ export class MarsBotTilePlacer {
     return this.paidIconCount(space);
   }
 
-  /** Calculate MC MarsBot gains from ocean adjacency (2 MC per adjacent ocean, 3 for Lakefront). */
+  /** Calculate MC MarsBot gains from ocean adjacency: its player's `oceanBonus` per adjacent ocean. */
   public getOceanAdjacencyMC(space: Space): number {
     const oceans = this.game.board.getAdjacentSpaces(space).filter(Board.isOceanSpace).length;
-    const perOcean = this.game.automaHooks?.marsBot.corp?.oceanAdjacencyMc ?? 2;
-    return oceans * perOcean;
+    return oceans * this.marsBot.oceanBonus;
   }
 
   /** Total placement MC for MarsBot: 1 MC per bonus icon + M€ per adjacent ocean. */

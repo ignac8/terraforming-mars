@@ -1,7 +1,7 @@
 import {IMarsBotCorp} from '../IMarsBotCorp';
 import {Tag} from '../../../common/cards/Tag';
 import {CardName} from '../../../common/cards/CardName';
-import {BonusCardId} from '../../../common/automa/AutomaTypes';
+import {BonusCardId, LAKEFRONT_OCEAN_BONUS} from '../../../common/automa/AutomaTypes';
 import {TileType} from '../../../common/TileType';
 import {AutomaManifest} from './AutomaManifest';
 import {bonusCardBeforeActionPhase} from './BaseGameCorps';
@@ -14,8 +14,8 @@ const LAKEFRONT_RESORTS: IMarsBotCorp = {
   name: CardName.LAKEFRONT_RESORTS,
   description: 'Setup: 1 white cube on card. Oceans alternate between removing the cube (advance building track) and placing it back. Ocean adjacency pays 3 MC.',
   tags: [],
-  oceanAdjacencyMc: 3,
   setup(bot) {
+    bot.player.oceanBonus = LAKEFRONT_OCEAN_BONUS;
     bot.setCorpState('whiteCubeOnCard', 1);
     bot.game.log('MarsBot (Lakefront): 1 white cube on card');
   },

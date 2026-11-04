@@ -6,7 +6,7 @@ import {GlobalParameter} from '../../common/GlobalParameter';
 import * as constants from '../../common/constants';
 import {CardName} from '../../common/cards/CardName';
 import {newCard} from '../createCard';
-import {DifficultyLevel, BonusCardId, TrackDefinition, getAutomaMaxGeneration} from '../../common/automa/AutomaTypes';
+import {DifficultyLevel, BonusCardId, LAKEFRONT_OCEAN_BONUS, TrackDefinition, getAutomaMaxGeneration} from '../../common/automa/AutomaTypes';
 import {Tag} from '../../common/cards/Tag';
 import {currentMcPerVP} from './MarsBotScoring';
 import {MarsBotBoard} from './MarsBotBoard';
@@ -900,6 +900,10 @@ export class MarsBot implements IMarsBot {
       if (corp !== undefined) {
         this.corp = corp;
       }
+    }
+    // The bot player is rebuilt from scratch on load, so what a corporation's setup put on it comes back here
+    if (this.corp?.name === CardName.LAKEFRONT_RESORTS) {
+      this.player.oceanBonus = LAKEFRONT_OCEAN_BONUS;
     }
     if (state.trackCubePositions !== undefined) {
       this.trackCubePositions.clear();
