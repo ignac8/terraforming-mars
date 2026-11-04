@@ -8,7 +8,7 @@ import {BoardName} from '../../common/boards/BoardName';
 import {MilestoneName} from '../../common/ma/MilestoneName';
 import {AwardName} from '../../common/ma/AwardName';
 import {HELLAS_BONUS_OCEAN_COST, TERRA_CIMMERIA_COLONY_COST, VASTITAS_BOREALIS_NOVA_BONUS_TEMPERATURE_COST} from '../../common/constants';
-import {IMarsBot} from './MarsBotCorpTypes';
+import {IMarsBot} from './IMarsBot';
 import {Comparator, comparing, compound, reversed} from '../../common/utils/Ordering';
 
 /**
