@@ -27,6 +27,12 @@ describe('Lobbyist', () => {
     reds = turmoil.getPartyByName(PartyName.REDS)!;
   });
 
+  it('MarsBot cannot claim it without Turmoil', () => {
+    const [game, player] = testGame(1, {turmoilExtension: false});
+
+    expect(milestone.marsBotCanClaim({...fakeMarsBot(), game, player})).is.false;
+  });
+
   it('Gives 0 score if player has no delegates', () => {
     expect(milestone.getScore(player)).to.eq(0);
   });
