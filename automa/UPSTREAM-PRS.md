@@ -55,7 +55,7 @@ rebuilt off upstream main before it goes up, and its fork PR is closed with "Mov
 
 | Fork PR | Branch (on) | Waits on | Before it goes up |
 |---------|-------------|----------|-------------------|
-| [#49](https://github.com/ignac8/terraforming-mars/pull/49) | `marsbot-ma-hellas` (on `marsbot-ma-core-v1`) | Merged-core rebuild (#8646 merged 2026-11-04: `playedProjectCards`, Magnate only) | Drop its own `playedProjectCards` (#8646). #8645 merged without the map-set check, so `marsBotUsesMapSet` and `marsBotMapSet.ts` come along unless Vastitas Borealis lands first; the Rim Settler test board puts Power and Jovian on one track. Its map helpers serve #50-#57 |
+| [#49](https://github.com/ignac8/terraforming-mars/pull/49) | `marsbot-ma-hellas` (on `marsbot-ma-core-v1`) | Merged-core rebuild, started 2026-11-04 (#8646 merged 2026-11-04: `playedProjectCards`, Magnate only) | Drop its own `playedProjectCards` (#8646). #8645 merged without the map-set check, so `marsBotUsesMapSet` and `marsBotMapSet.ts` come along unless Vastitas Borealis lands first; the Rim Settler test board puts Power and Jovian on one track. Its map helpers serve #50-#57 |
 | [#50](https://github.com/ignac8/terraforming-mars/pull/50) | `marsbot-ma-elysium` (on hellas) | Rebuild (#8646 merged 2026-11-04: `playedProjectCards`) | |
 | [#51](https://github.com/ignac8/terraforming-mars/pull/51) | `marsbot-ma-venus` (on elysium) | Moved upstream as #8662 (fork PR closed 2026-11-02, branch kept for the stack) | |
 | [#52](https://github.com/ignac8/terraforming-mars/pull/52) | `marsbot-ma-modular-milestones` (on venus) | Rebuild (#8646 merged 2026-11-04: `playedProjectCards`) | |
