@@ -3,7 +3,9 @@ import {testGame} from '../TestGame';
 import {Coastguard, Irrigator} from '../../src/server/milestones/Irrigator';
 import {addCity, addGreenery, maxOutOceans} from '../TestingUtils';
 import {TestPlayer} from '../TestPlayer';
-import {IMarsBot} from '../../src/server/automa/IMarsBot';
+import {BoardName} from '@/common/boards/BoardName';
+import {Board} from '@/server/boards/Board';
+import {fakeMarsBot} from '../automa/FakeMarsBot';
 
 describe('Irrigator', () => {
   let milestone: Irrigator;
@@ -26,16 +28,23 @@ describe('Irrigator', () => {
     expect(milestone.canClaim(player)).is.true;
   });
 
-  it('Coastguard: MarsBot needs 4 tiles adjacent to oceans where a player needs 3', () => {
-    const coastguard = new Coastguard();
-    const bot = {game: player.game, player} as unknown as IMarsBot;
-    addCity(player, '09');
-    addGreenery(player, '20');
-    addCity(player, '11');
-    expect(coastguard.canClaim(player)).is.true;
-    expect(coastguard.marsBotCanClaim(bot)).is.false;
+  it('Coastguard: MarsBot needs 3 tiles next to oceans on Terra Cimmeria and 4 with the expansion', () => {
+    for (const run of [
+      {modularMA: false, tiles: 2, expected: false},
+      {modularMA: false, tiles: 3, expected: true},
+      {modularMA: true, tiles: 3, expected: false},
+      {modularMA: true, tiles: 4, expected: true},
+    ]) {
+      const [game, player] = testGame(1, {boardName: BoardName.TERRA_CIMMERIA_NOVA, modularMA: run.modularMA});
+      const bot = {...fakeMarsBot(), game, player};
+      maxOutOceans(player);
+      const coastalSpaces = game.board.getAvailableSpacesOnLand(player)
+        .filter((space) => game.board.getAdjacentSpaces(space).some(Board.isOceanSpace));
+      for (const space of coastalSpaces.slice(0, run.tiles)) {
+        addGreenery(player, space.id);
+      }
 
-    addGreenery(player, '24');
-    expect(coastguard.marsBotCanClaim(bot)).is.true;
+      expect(new Coastguard().marsBotCanClaim(bot), JSON.stringify(run)).eq(run.expected);
+    }
   });
 });

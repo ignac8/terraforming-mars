@@ -1,9 +1,9 @@
 import {BaseMilestone} from '../IMilestone';
 import {IPlayer} from '../../IPlayer';
-import {Tag} from '../../../common/cards/Tag';
-import {IMarsBot} from '../../automa/IMarsBot';
 import {BoardName} from '../../../common/boards/BoardName';
-import {marsBotUsesMapSet} from '../../automa/MarsBotMilestoneAwardEval';
+import {Tag} from '@/common/cards/Tag';
+import {IMarsBot} from '@/server/automa/IMarsBot';
+import {marsBotUsesMapSet} from '@/server/automa/MarsBotMilestoneAwardEval';
 
 export class Fundraiser extends BaseMilestone {
   public readonly automaDescription = 'Event track ≥ 8';
@@ -21,8 +21,10 @@ export class Fundraiser extends BaseMilestone {
   }
 
   /**
-   * MarsBot's M€ track is its Event track. Terra Cimmeria, where this milestone is called
-   * Financier, asks for space 10. The Milestones & Awards expansion asks for space 8.
+   * MarsBot needs space 10 of its Event track on Terra Cimmeria, which calls this milestone
+   * Financier (rulebook C p.9).
+   *
+   * The Milestones & Awards expansion asks for space 8 (rulebook C p.13).
    */
   public marsBotCanClaim(bot: IMarsBot): boolean {
     const threshold = marsBotUsesMapSet(bot, BoardName.TERRA_CIMMERIA_NOVA) ? 10 : 8;

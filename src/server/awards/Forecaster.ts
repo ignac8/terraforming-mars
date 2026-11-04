@@ -2,7 +2,7 @@ import {IAward} from './IAward';
 import {IPlayer} from '../IPlayer';
 import {CardType} from '../../common/cards/CardType';
 import {CardName} from '../../common/cards/CardName';
-import {IMarsBot} from '../automa/IMarsBot';
+import {IMarsBot} from '@/server/automa/IMarsBot';
 
 export class Forecaster implements IAward {
   public readonly name = 'Forecaster';
@@ -18,7 +18,7 @@ export class Forecaster implements IAward {
     return validCards.filter((card) => card.type !== CardType.EVENT).length;
   }
 
-  /** The automa rules count every 7 of MarsBot's M€ as one card with a requirement. */
+  /** Counts every 7 of MarsBot's M€ as one card with a requirement (rulebook C p.9 and p.14). */
   public marsBotScore(bot: IMarsBot): number {
     return Math.floor(bot.megacredits / 7);
   }

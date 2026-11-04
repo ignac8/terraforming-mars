@@ -1,14 +1,14 @@
 import {expect} from 'chai';
 import {Planetologist} from '../../../src/server/milestones/modular/Planetologist';
 import {TestPlayer} from '../../TestPlayer';
-import {IMarsBot} from '../../../src/server/automa/IMarsBot';
-import {MarsBotBoard} from '../../../src/server/automa/MarsBotBoard';
-import {THARSIS_MARSBOT_BOARD} from '../../../src/server/automa/boards/TharsisMarsBot';
-import {VENUS_MARSBOT_TRACK} from '../../../src/server/automa/boards/VenusMarsBot';
 import {Chimera} from '../../../src/server/cards/pathfinders/Chimera';
 import {fakeCard} from '../../TestingUtils';
 import {Tag} from '../../../src/common/cards/Tag';
 import {testGame} from '../../TestGame';
+import {BoardName} from '@/common/boards/BoardName';
+import {THARSIS_MARSBOT_BOARD} from '@/server/automa/boards/TharsisMarsBot';
+import {VENUS_MARSBOT_TRACK} from '@/server/automa/boards/VenusMarsBot';
+import {fakeMarsBot, setTrack} from '../../automa/FakeMarsBot';
 
 describe('Planetologist', () => {
   const canClaimRuns = [
@@ -31,24 +31,6 @@ describe('Planetologist', () => {
     });
   }
 
-  it('MarsBot claims it with two of power, earth and Venus tracks at space 3', () => {
-    const milestone = new Planetologist();
-    const board = new MarsBotBoard([...THARSIS_MARSBOT_BOARD, VENUS_MARSBOT_TRACK]);
-    const bot = {game: testGame(1)[0], marsBotBoard: board} as unknown as IMarsBot;
-    for (let i = 0; i < 3; i++) {
-      board.tracks[4].advance();
-    }
-    for (let i = 0; i < 2; i++) {
-      board.tracks[5].advance();
-    }
-    expect(milestone.marsBotCanClaim(bot)).is.false;
-
-    for (let i = 0; i < 3; i++) {
-      board.tracks[7].advance();
-    }
-    expect(milestone.marsBotCanClaim(bot)).is.true;
-  });
-
   it('Compatible with Chimera', () => {
     const milestone = new Planetologist();
     const [/* game */, player] = testGame(2);
@@ -59,5 +41,22 @@ describe('Planetologist', () => {
     player.playedCards.push(fakeCard({tags: [Tag.JOVIAN]}));
     expect(milestone.getScore(player)).eq(6);
     expect(milestone.canClaim(player)).is.true;
+  });
+
+  it('MarsBot follows the Terra Cimmeria rule, except with the Milestones & Awards expansion', () => {
+    for (const run of [
+      {modularMA: false, power: 3, earth: 3, venus: 1, expected: false},
+      {modularMA: false, power: 0, earth: 4, venus: 1, expected: true},
+      {modularMA: true, power: 0, earth: 4, venus: 1, expected: false},
+      {modularMA: true, power: 3, earth: 0, venus: 3, expected: true},
+    ]) {
+      const [game] = testGame(1, {boardName: BoardName.TERRA_CIMMERIA_NOVA, modularMA: run.modularMA});
+      const bot = {...fakeMarsBot([...THARSIS_MARSBOT_BOARD, VENUS_MARSBOT_TRACK]), game};
+      setTrack(bot, Tag.POWER, run.power);
+      setTrack(bot, Tag.EARTH, run.earth);
+      setTrack(bot, Tag.VENUS, run.venus);
+
+      expect(new Planetologist().marsBotCanClaim(bot), JSON.stringify(run)).eq(run.expected);
+    }
   });
 });

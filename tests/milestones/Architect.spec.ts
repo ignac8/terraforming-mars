@@ -1,14 +1,12 @@
 import {expect} from 'chai';
-import {Architect} from '../../src/server/milestones/Architect';
+import {Tag} from '@/common/cards/Tag';
+import {Architect} from '@/server/milestones/Architect';
+import {fakeMarsBot, setTrack} from '../automa/FakeMarsBot';
 import {TestPlayer} from '../TestPlayer';
-import {IMarsBot} from '../../src/server/automa/IMarsBot';
-import {MarsBotBoard} from '../../src/server/automa/MarsBotBoard';
-import {THARSIS_MARSBOT_BOARD} from '../../src/server/automa/boards/TharsisMarsBot';
 
 describe('Architect', () => {
-  const milestone = new Architect();
-
   it('Can claim with 3 city tags', () => {
+    const milestone = new Architect();
     const player = TestPlayer.BLUE.newPlayer();
     player.tagsForTest = {city: 2};
     expect(milestone.canClaim(player)).is.false;
@@ -17,15 +15,15 @@ describe('Architect', () => {
     expect(milestone.canClaim(player)).is.true;
   });
 
-  it('MarsBot claims it at space 6 of its city-tag track', () => {
-    const board = new MarsBotBoard(THARSIS_MARSBOT_BOARD);
-    const bot = {marsBotBoard: board} as unknown as IMarsBot;
-    for (let i = 0; i < 5; i++) {
-      board.tracks[5].advance();
-    }
-    expect(milestone.marsBotCanClaim(bot)).is.false;
+  it('MarsBot needs space 6 of its City track', () => {
+    for (const run of [
+      {city: 5, expected: false},
+      {city: 6, expected: true},
+    ]) {
+      const bot = fakeMarsBot();
+      setTrack(bot, Tag.CITY, run.city);
 
-    board.tracks[5].advance();
-    expect(milestone.marsBotCanClaim(bot)).is.true;
+      expect(new Architect().marsBotCanClaim(bot), JSON.stringify(run)).eq(run.expected);
+    }
   });
 });

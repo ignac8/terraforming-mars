@@ -1,8 +1,8 @@
 import {IPlayer} from '../../IPlayer';
 import {CardResource} from '../../../common/CardResource';
 import {IAward} from '../IAward';
-import {Tag} from '../../../common/cards/Tag';
-import {IMarsBot} from '../../automa/IMarsBot';
+import {Tag} from '@/common/cards/Tag';
+import {IMarsBot} from '@/server/automa/IMarsBot';
 
 export class AZoologist implements IAward {
   public readonly name = 'A. Zoologist';
@@ -20,8 +20,8 @@ export class AZoologist implements IAward {
     return score;
   }
 
-  /** The automa rules score MarsBot's Zoologist as its bio track plus 5. */
+  /** Scores MarsBot's Bio track space plus 5 (rulebook C p.9, which calls it Zoologist). */
   public marsBotScore(bot: IMarsBot): number {
-    return bot.marsBotBoard.trackPosition(Tag.ANIMAL) + 5;
+    return bot.marsBotBoard.trackPosition(Tag.PLANT) + 5;
   }
 }

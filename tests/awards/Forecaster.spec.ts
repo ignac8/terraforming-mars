@@ -1,22 +1,27 @@
 import {expect} from 'chai';
-import {Forecaster} from '../../src/server/awards/Forecaster';
+import {Forecaster} from '@/server/awards/Forecaster';
+import {fakeMarsBot} from '../automa/FakeMarsBot';
 import {TestPlayer} from '../TestPlayer';
 import {fakeCard} from '../TestingUtils';
-import {IMarsBot} from '../../src/server/automa/IMarsBot';
 
 describe('Forecaster', () => {
-  const award = new Forecaster();
-
   it('scores a player by cards with requirements', () => {
     const player = TestPlayer.BLUE.newPlayer();
     player.playedCards.push(fakeCard({requirements: [{cities: 1}]}));
     player.playedCards.push(fakeCard());
 
-    expect(award.getScore(player)).to.eq(1);
+    expect(new Forecaster().getScore(player)).to.eq(1);
   });
 
-  it('scores MarsBot by every 7 of its M€', () => {
-    expect(award.marsBotScore({megacredits: 13} as unknown as IMarsBot)).to.eq(1);
-    expect(award.marsBotScore({megacredits: 14} as unknown as IMarsBot)).to.eq(2);
+  it('MarsBot counts every 7 M€ as one card with a requirement', () => {
+    for (const run of [
+      {megacredits: 6, expected: 0},
+      {megacredits: 7, expected: 1},
+      {megacredits: 20, expected: 2},
+    ]) {
+      const bot = {...fakeMarsBot(), megacredits: run.megacredits};
+
+      expect(new Forecaster().marsBotScore(bot), JSON.stringify(run)).eq(run.expected);
+    }
   });
 });

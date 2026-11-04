@@ -1,15 +1,12 @@
 import {expect} from 'chai';
-import {AZoologist} from '../../../src/server/awards/amazonisPlanitia/AZoologist';
+import {Tag} from '@/common/cards/Tag';
+import {AZoologist} from '@/server/awards/amazonisPlanitia/AZoologist';
+import {fakeMarsBot, setTrack} from '../../automa/FakeMarsBot';
+import {CardResource} from '@/common/CardResource';
 import {TestPlayer} from '../../TestPlayer';
 import {fakeCard} from '../../TestingUtils';
-import {CardResource} from '../../../src/common/CardResource';
-import {IMarsBot} from '../../../src/server/automa/IMarsBot';
-import {MarsBotBoard} from '../../../src/server/automa/MarsBotBoard';
-import {THARSIS_MARSBOT_BOARD} from '../../../src/server/automa/boards/TharsisMarsBot';
 
 describe('AZoologist', () => {
-  const award = new AZoologist();
-
   it('scores a player by animal and microbe resources', () => {
     const player = TestPlayer.BLUE.newPlayer();
     const animals = fakeCard({resourceType: CardResource.ANIMAL});
@@ -18,16 +15,13 @@ describe('AZoologist', () => {
     floaters.resourceCount = 2;
     player.playedCards.push(animals, floaters);
 
-    expect(award.getScore(player)).to.eq(3);
+    expect(new AZoologist().getScore(player)).to.eq(3);
   });
 
-  it('scores MarsBot by its bio track plus 5', () => {
-    const board = new MarsBotBoard(THARSIS_MARSBOT_BOARD);
-    const bot = {marsBotBoard: board} as unknown as IMarsBot;
-    for (let i = 0; i < 4; i++) {
-      board.tracks[6].advance();
-    }
+  it('MarsBot scores its Bio track plus 5', () => {
+    const bot = fakeMarsBot();
+    setTrack(bot, Tag.PLANT, 3);
 
-    expect(award.marsBotScore(bot)).to.eq(9);
+    expect(new AZoologist().marsBotScore(bot)).eq(8);
   });
 });

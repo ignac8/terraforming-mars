@@ -2,9 +2,8 @@ import {expect} from 'chai';
 import {testGame} from '../../TestGame';
 import {Mogul} from '../../../src/server/awards/modular/Mogul';
 import {TestPlayer} from '../../TestPlayer';
-import {IMarsBot} from '../../../src/server/automa/IMarsBot';
-import {MarsBotBoard} from '../../../src/server/automa/MarsBotBoard';
-import {THARSIS_MARSBOT_BOARD} from '../../../src/server/automa/boards/TharsisMarsBot';
+import {Tag} from '@/common/cards/Tag';
+import {fakeMarsBot, setAllTracks, setTrack} from '../../automa/FakeMarsBot';
 
 describe('Mogul', () => {
   let award: Mogul;
@@ -28,15 +27,11 @@ describe('Mogul', () => {
     expect(award.getScore(player)).to.eq(7);
   });
 
-  it('MarsBot scores its most advanced track doubled', () => {
-    const award = new Mogul();
-    const board = new MarsBotBoard(THARSIS_MARSBOT_BOARD);
-    const bot = {marsBotBoard: board} as unknown as IMarsBot;
-    for (let i = 0; i < 6; i++) {
-      board.tracks[3].advance();
-    }
-    board.tracks[0].advance();
+  it('MarsBot doubles its most advanced track', () => {
+    const bot = fakeMarsBot();
+    setAllTracks(bot, 2);
+    setTrack(bot, Tag.SCIENCE, 4);
 
-    expect(award.marsBotScore(bot)).to.eq(12);
+    expect(new Mogul().marsBotScore(bot)).to.eq(8);
   });
 });
