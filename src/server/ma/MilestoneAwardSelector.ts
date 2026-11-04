@@ -4,7 +4,7 @@ import {GameOptions} from '../game/GameOptions';
 import {milestoneManifest} from '../milestones/Milestones';
 import {RandomMAOptionType} from '../../common/ma/RandomMAOptionType';
 import {inplaceShuffle} from '../utils/shuffle';
-import {UnseededRandom} from '../../common/utils/Random';
+import {Random, UnseededRandom} from '../../common/utils/Random';
 import {MilestoneName, milestoneNames} from '../../common/ma/MilestoneName';
 import {AwardName, awardNames} from '../../common/ma/AwardName';
 import {synergies} from './MilestoneAwardSynergies';
@@ -134,9 +134,9 @@ export const BOARDS_WITHOUT_VOLCANIC_SPACES: ReadonlyArray<BoardName> = [
 ];
 
 /**
- * Return the list of possible milestones and awards for a given game. Only meant to work with random selection.
+ * Return the list of possible milestones and awards for a given game: the pool random selection draws from.
  *
- * Isn't meant to work with RandomMAOptionType.NONE
+ * Ignores `randomMA`, so with RandomMAOptionType.NONE it is the pool a random game with the same options would use.
  *
  * exported for tests
  */
@@ -190,6 +190,40 @@ export function getCandidates(gameOptions: GameOptions): [Array<MilestoneName>, 
   const candidateAwards = awardNames.filter((name) => include(name, awardManifest, AutomaGameSetup.supportsAward));
 
   return [candidateMilestones, candidateAwards];
+}
+
+/**
+ * Swaps each milestone and award MarsBot can't play in this game for a random one it can, so a
+ * map's set keeps its size.
+ *
+ * A replacement comes from the pool random milestones and awards would draw from in this game
+ * (`getCandidates`) and isn't already in the set; it takes the place of the one it replaces. The
+ * draw uses `rng`, the game's seeded random, and only when something is replaced. Follows Nick
+ * Shaw's advice for milestones and awards that don't fit against MarsBot: "just swap them out for
+ * different ones" (BGG thread 3781613, article 48285468).
+ */
+export function replaceUnsupportedAgainstMarsBot(
+  drawn: DrawnMilestonesAndAwards, gameOptions: GameOptions, rng: Random): DrawnMilestonesAndAwards {
+  const [candidateMilestones, candidateAwards] = getCandidates(gameOptions);
+  return {
+    milestones: replaceUnsupported(drawn.milestones, candidateMilestones, (name) => AutomaGameSetup.supportsMilestone(name, gameOptions), rng),
+    awards: replaceUnsupported(drawn.awards, candidateAwards, (name) => AutomaGameSetup.supportsAward(name, gameOptions), rng),
+  };
+}
+
+function replaceUnsupported<T extends string>(
+  names: ReadonlyArray<T>, candidates: ReadonlyArray<T>, supported: (name: T) => boolean, rng: Random): Array<T> {
+  const pool = candidates.filter((name) => !names.includes(name));
+  return names.map((name) => {
+    if (supported(name)) {
+      return name;
+    }
+    const replacement = pool.splice(rng.nextInt(pool.length), 1)[0];
+    if (replacement === undefined) {
+      throw new Error(`Nothing left to replace ${name} against MarsBot`);
+    }
+    return replacement;
+  });
 }
 
 // Selects |numberMARequested| milestones and |numberMARequested| awards from all available awards and milestones (optionally including

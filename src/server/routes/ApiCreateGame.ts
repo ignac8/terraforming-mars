@@ -219,7 +219,7 @@ export class ApiCreateGame extends Handler {
         throw RouteError.badRequest(e instanceof Error ? e.message : String(e));
       }
       if (gameOptions.automa && gameOptions.customMA !== undefined) {
-        // Game setup would drop these silently and leave fewer than 5.
+        // Game setup would silently swap these for random ones, overriding the player's picks.
         const unsupported = [
           ...gameOptions.customMA.milestones.filter((name) => !AutomaGameSetup.supportsMilestone(name, gameOptions)),
           ...gameOptions.customMA.awards.filter((name) => !AutomaGameSetup.supportsAward(name, gameOptions)),

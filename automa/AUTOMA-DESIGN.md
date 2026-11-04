@@ -160,6 +160,8 @@ When comparing awards for resources (Thermalist, Miner), MarsBot considers your 
 
 Other maps have their own milestone and award rules for MarsBot (rulebook C pp.9-12). They apply whenever that map's own milestone or award is in play, random M&A included; the rest use the expansion's generic rules (`marsBotMapSet` in `src/common/automa/marsBotMapSet.ts`).
 
+MarsBot plays only the milestones and awards the automa rules cover in this game (`AutomaGameSetup.supportsMilestone` / `supportsAward`). Without Venus Next that leaves out Trader, Tradesman and Planetologist (and Venuphile), and without Turmoil Lobbyist. Random sets never deal them. A map's own set swaps each one for a random milestone or award from the pool a random game would draw from, in the same place, drawn with the game's seeded random (`replaceUnsupportedAgainstMarsBot` in `src/server/ma/MilestoneAwardSelector.ts`), so it keeps 5 (6 with Venus Next). Today that hits Utopia Planitia's Trader (Tradesman) and Terra Cimmeria's Planetologist without Venus Next. Saved games keep the milestones and awards they were created with. Hand-picked sets with one MarsBot can't play are refused at game creation.
+
 ### 2.9 Production Phase
 
 Human produces as normal. MarsBot skips production entirely.

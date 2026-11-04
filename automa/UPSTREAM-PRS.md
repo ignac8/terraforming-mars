@@ -143,6 +143,8 @@ These ride along with whichever automa PR needs them:
   the ones `AutomaGameSetup.supportsMilestone` / `supportsAward` accept: the six MarsBot maps'
   sets, Venus Next's, and the Milestones & Awards expansion's listed by name (not by the
   manifest's `random` flag, so new upstream ones are not dealt against MarsBot).
+  `replaceUnsupportedAgainstMarsBot`, called from `Game.newInstance`, swaps the ones a map's own
+  set holds for random ones from the same pool, drawn with the game's seeded random.
 - `game/calculateVictoryPoints.ts`: Turmoil Points come first in `detailsCards`, matching
   MarsBot's end-game column (fork display choice, not needed upstream).
 

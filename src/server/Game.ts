@@ -55,7 +55,7 @@ import {MoonData} from './moon/MoonData';
 import {MoonExpansion} from './moon/MoonExpansion';
 import {TurmoilHandler} from './turmoil/TurmoilHandler';
 import {SeededRandom, UnseededRandom} from '../common/utils/Random';
-import {chooseMilestonesAndAwards} from './ma/MilestoneAwardSelector';
+import {chooseMilestonesAndAwards, replaceUnsupportedAgainstMarsBot} from './ma/MilestoneAwardSelector';
 import {BoardType} from './boards/BoardType';
 import {MultiSet} from 'mnemonist';
 import {GrantVenusAltTrackBonusDeferred} from './venusNext/GrantVenusAltTrackBonusDeferred';
@@ -408,13 +408,10 @@ export class Game implements IGame, Logger {
       game.aresData = AresSetup.initialData(gameOptions.aresHazards, players);
     }
 
-    const {milestones, awards} = chooseMilestonesAndAwards(gameOptions);
+    const drawn = chooseMilestonesAndAwards(gameOptions);
+    const {milestones, awards} = gameOptions.automa ? replaceUnsupportedAgainstMarsBot(drawn, gameOptions, rng) : drawn;
     game.milestones = milestones.map(milestoneManifest.createOrThrow);
     game.awards = awards.map(awardManifest.createOrThrow);
-    if (gameOptions.automa) {
-      game.milestones = AutomaGameSetup.filterMilestones(game.milestones, gameOptions);
-      game.awards = AutomaGameSetup.filterAwards(game.awards, gameOptions);
-    }
 
     // Add colonies stuff
     if (gameOptions.coloniesExtension) {

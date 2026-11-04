@@ -17,8 +17,6 @@ import {MarsBotStock, MarsBotProduction} from './MarsBotStock';
 import {CardName} from '../../common/cards/CardName';
 import {Tag} from '../../common/cards/Tag';
 import {ICard} from '../cards/ICard';
-import {IMilestone} from '../milestones/IMilestone';
-import {IAward} from '../awards/IAward';
 import {MilestoneName} from '../../common/ma/MilestoneName';
 import {AwardName} from '../../common/ma/AwardName';
 import {milestoneManifest} from '../milestones/Milestones';
@@ -121,7 +119,22 @@ export class AutomaGameSetup {
    * Whether MarsBot can play against a milestone in this game.
    *
    * The automa rules cover the milestones of the maps with a MarsBot board, of the Milestones &
-   * Awards expansion and of Venus Next. A few of those still need an expansion that isn't in play.
+   * Awards expansion and of Venus Next. A few of those still need an expansion that isn't in play:
+   *
+   * - Trader and Tradesman: MarsBot needs space 2 on its Venus track (rulebook C p.14 and, for
+   *   Utopia Planitia, p.10), which never moves without Venus Next, while you can still meet them.
+   *   The designers haven't ruled on this; Nick Shaw's advice for milestones and awards that don't
+   *   fit is "just swap them out for different ones" (BGG thread 3781613, article 48285468).
+   * - Planetologist: without Venus Next MarsBot can still claim it on its other tracks, while you
+   *   practically can't without Venus tags. Our call (2026-11-04). Fryxen's "can be used normally"
+   *   (BGG thread 3242831, article 43755615) rules on games between players, not against MarsBot.
+   * - Lobbyist needs Turmoil.
+   *
+   * The Milestones & Awards expansion's Terraformer is "NOT SUPPORTED AGAINST THE AUTOMA" (rulebook
+   * C p.14), so MODULAR_MILESTONES leaves it out. Tharsis's own Terraformer is supported.
+   *
+   * A map's set gets a random replacement for each milestone this leaves out
+   * (`replaceUnsupportedAgainstMarsBot`).
    */
   public static supportsMilestone(name: MilestoneName, gameOptions: GameOptions): boolean {
     const unsupported: Array<MilestoneName> = [];
@@ -138,22 +151,15 @@ export class AutomaGameSetup {
    * Whether MarsBot can play against an award in this game: the awards the automa rules cover, and
    * Venuphile only with Venus Next. Each has a Corporate Competition helper except Politician,
    * which Corporate Competition skips.
+   *
+   * A map's set gets a random replacement for each award this leaves out
+   * (`replaceUnsupportedAgainstMarsBot`).
    */
   public static supportsAward(name: AwardName, gameOptions: GameOptions): boolean {
     if (name === 'Venuphile' && !gameOptions.venusNextExtension) {
       return false;
     }
     return coveredByAutomaRules(name, awardManifest, MODULAR_AWARDS);
-  }
-
-  /** Filter milestones unsupported against MarsBot. */
-  public static filterMilestones(milestones: Array<IMilestone>, gameOptions: GameOptions): Array<IMilestone> {
-    return milestones.filter((m) => AutomaGameSetup.supportsMilestone(m.name, gameOptions));
-  }
-
-  /** Filter awards unsupported against MarsBot. */
-  public static filterAwards(awards: Array<IAward>, gameOptions: GameOptions): Array<IAward> {
-    return awards.filter((a) => AutomaGameSetup.supportsAward(a.name, gameOptions));
   }
 
   /** Filter out cards not supported against MarsBot (e.g., Recession). */
@@ -279,8 +285,8 @@ export class AutomaGameSetup {
 
 /**
  * The Milestones & Awards expansion's milestones that rulebook C (p.13-14) gives MarsBot a rule
- * for. Terraformer is "not supported against the automa". Listed by name, so a milestone upstream
- * adds to the random pool is not dealt against MarsBot.
+ * for. Its Terraformer (Terraformer29) is "NOT SUPPORTED AGAINST THE AUTOMA" (C p.14). Listed by
+ * name, so a milestone upstream adds to the random pool is not dealt against MarsBot.
  */
 const MODULAR_MILESTONES: ReadonlyArray<MilestoneName> = [
   'Briber', 'Builder7', 'Coastguard', 'Diversifier', 'Ecologist', 'Energizer', 'Engineer', 'Farmer',

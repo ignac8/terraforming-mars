@@ -1,5 +1,6 @@
 import {expect} from 'chai';
 import {testGame} from '../TestGame';
+import {TestPlayer} from '../TestPlayer';
 import {Game} from '../../src/server/Game';
 import {IGame} from '../../src/server/IGame';
 import {GameOptions} from '../../src/server/game/GameOptions';
@@ -238,10 +239,16 @@ describe('MarsBot map milestones and awards', () => {
       expect(claims(new Tradesman(), marsBot)).is.true;
     });
 
-    it('Trader (Tradesman) is left out without Venus Next', () => {
+    it('Trader (Tradesman) is swapped for a milestone MarsBot can play without Venus Next', () => {
       const {game} = createGame({boardName: BoardName.UTOPIA_PLANITIA});
+      const names = game.milestones.map((milestone) => milestone.name);
 
-      expect(game.milestones.map((milestone) => milestone.name)).does.not.include('Tradesman');
+      expect(names).has.length(5);
+      expect(names).does.not.include('Tradesman');
+      expect([names[0], names[1], names[3], names[4]]).to.deep.eq(['Land Specialist', 'Pioneer', 'Smith', 'Researcher']);
+      for (const name of names) {
+        expect(AutomaGameSetup.supportsMilestone(name, game.gameOptions), name).is.true;
+      }
     });
 
     it('Metallurgist (Smith) needs the Building and Space tracks to add up to 7', () => {
@@ -321,10 +328,59 @@ describe('MarsBot map milestones and awards', () => {
 
   describe('modular milestone filtering', () => {
     it('keeps Merchant without Venus Next, it needs no Venus track', () => {
-      const names = (venus: boolean) => AutomaGameSetup.filterMilestones(
-        [new Merchant(), new Planetologist(), new Tradesman()], {venusNextExtension: venus} as GameOptions).map((m) => m.name);
+      const names = (venus: boolean) => [new Merchant(), new Planetologist(), new Tradesman()]
+        .map((m) => m.name)
+        .filter((name) => AutomaGameSetup.supportsMilestone(name, {venusNextExtension: venus} as GameOptions));
       expect(names(false)).to.deep.eq(['Merchant']);
       expect(names(true)).to.deep.eq(['Merchant', 'Planetologist', 'Tradesman']);
+    });
+  });
+
+  describe('map sets MarsBot can\'t play in full', () => {
+    const milestoneNames = (game: IGame) => game.milestones.map((milestone) => milestone.name);
+
+    function newUtopiaGame(seed: number): IGame {
+      const player = TestPlayer.BLUE.newPlayer();
+      return Game.newInstance('game-id', [player], player, 'spectator-id', {automa: true, boardName: BoardName.UTOPIA_PLANITIA}, seed);
+    }
+
+    it('Terra Cimmeria swaps Planetologist without Venus Next', () => {
+      const {game} = createGame({boardName: BoardName.TERRA_CIMMERIA_NOVA});
+      const names = milestoneNames(game);
+
+      expect(names).has.length(5);
+      expect(names).does.not.include('Planetologist');
+      expect(names.slice(1)).to.deep.eq(['Architect', 'Coastguard', 'C. Forester', 'Fundraiser']);
+      expect(AutomaGameSetup.supportsMilestone(names[0], game.gameOptions), names[0]).is.true;
+    });
+
+    it('swaps nothing with Venus Next', () => {
+      for (const boardName of [BoardName.UTOPIA_PLANITIA, BoardName.TERRA_CIMMERIA_NOVA]) {
+        const {game} = createGame({boardName, venusNextExtension: true});
+
+        expect(milestoneNames(game)).to.deep.eq([...milestoneManifest.boards[boardName], 'Hoverlord']);
+        expect(game.awards.map((award) => award.name)).to.deep.eq([...awardManifest.boards[boardName], 'Venuphile']);
+      }
+    });
+
+    it('draws the same replacement from the same seed', () => {
+      const replacements = new Set<MilestoneName>();
+      for (const seed of [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]) {
+        expect(milestoneNames(newUtopiaGame(seed)), `seed ${seed}`).to.deep.eq(milestoneNames(newUtopiaGame(seed)));
+        replacements.add(milestoneNames(newUtopiaGame(seed))[2]);
+      }
+      expect(replacements.size).is.greaterThan(1);
+    });
+
+    it('loads a save with 4 milestones unchanged', () => {
+      const serialized = createGame({boardName: BoardName.UTOPIA_PLANITIA}).game.serialize();
+      // A game created before the swap kept only the milestones MarsBot could play
+      serialized.milestones = ['Land Specialist', 'Pioneer', 'Smith', 'Researcher'];
+
+      const loaded = Game.deserialize(serialized);
+
+      expect(milestoneNames(loaded)).to.deep.eq(['Land Specialist', 'Pioneer', 'Smith', 'Researcher']);
+      expect(loaded.serialize().milestones).to.deep.eq(['Land Specialist', 'Pioneer', 'Smith', 'Researcher']);
     });
   });
 
