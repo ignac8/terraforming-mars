@@ -417,7 +417,7 @@ export class MarsBotBonusResolver {
       });
     }
     if (!advanced && venus < constants.MAX_VENUS_SCALE) {
-      // FAQ (rulebook B, p.3): Aphrodite's 2 M€ per Venus step still applies, and raising
+      // FAQ (rulebook B, p.4): Aphrodite's 2 M€ per Venus step still applies, and raising
       // Venus pays MarsBot no other M€, so the 8% bonus pays nothing.
       const bot = this.marsBotManager;
       this.withoutTRGain(() => {
@@ -487,7 +487,7 @@ export class MarsBotBonusResolver {
   /**
    * Execute an action and reverse any TR or M€ gained (for Government Intervention).
    *
-   * M€ that Lakefront Resorts' advance brings in stays (rulebook B, p.3).
+   * M€ that Lakefront Resorts' advance brings in stays (rulebook B, p.4).
    */
   private withoutTRorMcGain(action: () => void): void {
     const bot = this.marsBotManager;

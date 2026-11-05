@@ -193,7 +193,7 @@ export class MarsBotTurnResolver {
   /**
    * Tells the player's cards about an advance that names `tag`, as if a card with that tag was played.
    *
-   * A microbe advance resolves Pharmacy Union or Splice (FAQ, rulebook B p.3), and a Jovian one
+   * A microbe advance resolves Pharmacy Union or Splice (FAQ, rulebook B p.4), and a Jovian one
    * Saturn Systems (TDaver, BGG 3356105). The other tags on a shared track don't count.
    */
   public notifyTagAdvance(tag: Tag): void {

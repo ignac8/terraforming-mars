@@ -382,7 +382,7 @@ describe('MarsBot colony storage as stock resources (C-25)', () => {
   });
 
   describe('Ecoline and Ecotec plants', () => {
-    // FAQ (rulebook B, p.3): the player may target the corporation card; TDaver, BGG 3341536
+    // FAQ (rulebook B, p.4): the player may target the corporation card; TDaver, BGG 3341536
     it('lets the player steal plants from the corp card', () => {
       const {game, human, marsBot} = createAutomaGame();
       marsBot.turnResolver.megacredits = 10;

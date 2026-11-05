@@ -216,7 +216,7 @@ describe('Corp Effect Hooks', () => {
       expect(tilePlacer.getOceanAdjacencyMC(land)).to.eq(3);
     });
 
-    // FAQ (rulebook B, p.3): Lakefront overrides Government Intervention's "no M€", but not its "no TR"
+    // FAQ (rulebook B, p.4): Lakefront overrides Government Intervention's "no M€", but not its "no TR"
     describe('during Government Intervention', () => {
       // Government Intervention places an ocean, whose Lakefront cube advances the building track
       function interventionWithBuildingAt(position: number) {
