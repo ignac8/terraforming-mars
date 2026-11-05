@@ -184,7 +184,8 @@ now push the Science track.
 
 Tharsis order, made explicit: oceans as printed, then the space with the most bonus icons, then a card flip.
 Volcanoes and delegate hexes do nothing special. Every placement variant tested moved MarsBot's tile VP by
-about 1 of 24, so the simplest rule wins.
+about 1 of 24, so the simplest rule wins. No code: `MarsBotTilePlacer` already falls back to the Tharsis
+order for a map it does not list.
 
 ### 4.6 Venus
 
@@ -209,12 +210,13 @@ Lobbyists ("1–2 steps from a bonus or completion") reads these bonus steps fro
 
 ### 4.7 Colonies
 
-No change. The second fleet cube stays on Energy 10; the board reaches it at Tharsis' rate.
+No change. The second fleet cube stays on Energy track space 9 (rule C-6); this board moves the Energy
+track at Tharsis' rate.
 
 ### 4.8 Turmoil
 
 - Delegate hexes: MarsBot gains 1 M€ per delegate icon, as it does for any bonus. Rulebook C prints the
-  same rule for the Vastitas Borealis delegate hexes.
+  same rule for the Vastitas Borealis delegate hexes. `MarsBotTilePlacer` already pays it.
 - MarsBot's starting TR with Turmoil: 20 − 11 on this map instead of 20 − 10. The human loses about 1 TR a
   generation to Turmoil and MarsBot none, and the game is a generation longer. This is an inference, not a
   designer statement.
@@ -222,8 +224,8 @@ No change. The second fleet cube stays on Energy 10; the board reaches it at Tha
 ### 4.9 New bonus card: Corporate Competition (Amazonis)
 
 In code this is not a new card: every map's Corporate Competition runs through B08, which picks a push by
-award name in `MarsBotBonusResolver.tryHelperAction` (B09–B13 are enum values only). Add the missing
-pushes there:
+award name in `MarsBotBonusResolver.tryHelperAction` (B09–B13 are enum values only). Collector,
+Constructor, Manufacturer and Venuphile are already there; only Innovator and Physicist are new:
 
 | Award | Push |
 |---|---|
