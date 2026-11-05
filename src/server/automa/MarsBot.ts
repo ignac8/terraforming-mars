@@ -12,7 +12,7 @@ import {currentMcPerVP} from './MarsBotScoring';
 import {MarsBotBoard} from './MarsBotBoard';
 import {cardTagsIncludingEvent} from './MarsBotTags';
 import {MarsBotModel} from '../../common/models/MarsBotModel';
-import {MarsBotBonusCard, MarsBotBonusDeckCard, bonusCardDisplayName, createCorpBonusCard} from './MarsBotBonusCard';
+import {MarsBotBonusCard, MarsBotBonusDeckCard, bonusCardDisplayName, createBonusCard} from './MarsBotBonusCard';
 import {MarsBotBonusDeck} from './MarsBotBonusDeck';
 import {MarsBotBonusResolver} from './MarsBotBonusResolver';
 import {MarsBotTilePlacer} from './MarsBotTilePlacer';
@@ -46,7 +46,7 @@ const SET_ASIDE_BONUS_CARDS: ReadonlySet<BonusCardId> = new Set([
 /** The name of a card in an older save's bonus deck, which stores bonus cards by id. */
 function bonusDeckCardName(idOrName: string): CardName {
   const isId = Object.values(BonusCardId).includes(idOrName as BonusCardId);
-  return isId ? createCorpBonusCard(idOrName as BonusCardId).name : idOrName as CardName;
+  return isId ? createBonusCard(idOrName as BonusCardId).name : idOrName as CardName;
 }
 
 /**
@@ -159,14 +159,8 @@ export class MarsBot implements IMarsBot {
     const opts = game.gameOptions;
     if (restoring) {
       this.bonusDeck = new MarsBotBonusDeck([], [], random);
-    } else if (opts.coloniesExtension && opts.venusNextExtension) {
-      this.bonusDeck = MarsBotBonusDeck.createWithVenusAndColonies(random);
-    } else if (opts.coloniesExtension) {
-      this.bonusDeck = MarsBotBonusDeck.createWithColonies(random);
-    } else if (opts.venusNextExtension) {
-      this.bonusDeck = MarsBotBonusDeck.createWithVenus(random);
     } else {
-      this.bonusDeck = MarsBotBonusDeck.createBase(random);
+      this.bonusDeck = MarsBotBonusDeck.create(random, {venus: opts.venusNextExtension, colonies: opts.coloniesExtension});
     }
     // C-6: the 2nd Trade Fleet starts on space 9 of the Energy track, on every map
     if (opts.coloniesExtension) {
@@ -211,7 +205,7 @@ export class MarsBot implements IMarsBot {
   /** Add Government Intervention (B16) to action deck if Venus is enabled. */
   private addGovernmentIntervention(deck: Array<IProjectCard | MarsBotBonusCard>): void {
     if (this.game.gameOptions.venusNextExtension) {
-      deck.push(createCorpBonusCard(BonusCardId.B16_GOVERNMENT_INTERVENTION));
+      deck.push(createBonusCard(BonusCardId.B16_GOVERNMENT_INTERVENTION));
     }
   }
 
@@ -225,7 +219,7 @@ export class MarsBot implements IMarsBot {
     if (this.corp?.name === CardName.SEPTUM_TRIBUS) {
       return;
     }
-    deck.push(createCorpBonusCard(BonusCardId.B21_PARTY_POLITICS));
+    deck.push(createBonusCard(BonusCardId.B21_PARTY_POLITICS));
   }
 
   /**
@@ -239,9 +233,9 @@ export class MarsBot implements IMarsBot {
     if (this.game.generation <= 1) {
       return;
     }
-    deck.push(createCorpBonusCard(BonusCardId.B19_SHIPPING_LINES));
+    deck.push(createBonusCard(BonusCardId.B19_SHIPPING_LINES));
     if (this.hasSecondTradeFleet) {
-      deck.push(createCorpBonusCard(BonusCardId.B20_EXTENDED_SHIPPING_LINES));
+      deck.push(createBonusCard(BonusCardId.B20_EXTENDED_SHIPPING_LINES));
     }
   }
 
@@ -542,7 +536,7 @@ export class MarsBot implements IMarsBot {
       return;
     }
     // Take the card out of the bonus deck when it is there, otherwise create it
-    const card = this.bonusDeck.findAndRemove(bonusCardId) ?? createCorpBonusCard(bonusCardId);
+    const card = this.bonusDeck.findAndRemove(bonusCardId) ?? createBonusCard(bonusCardId);
     this.shuffleIntoActionDeck(card);
   }
 
@@ -576,7 +570,7 @@ export class MarsBot implements IMarsBot {
   }
 
   public resolveBonusCard(bonusCardId: BonusCardId): void {
-    const card = createCorpBonusCard(bonusCardId);
+    const card = createBonusCard(bonusCardId);
     this.game.log('MarsBot resolves bonus card: ${0}', (b) => b.rawString(bonusCardDisplayName(card)));
     this.bonusResolver.resolveEffect(card);
   }
@@ -593,7 +587,7 @@ export class MarsBot implements IMarsBot {
   }
 
   public addBonusCardToBonusDeck(bonusCardId: BonusCardId): void {
-    this.shuffleIntoBonusDeck(createCorpBonusCard(bonusCardId));
+    this.shuffleIntoBonusDeck(createBonusCard(bonusCardId));
   }
 
   /** Puts a card into the bonus deck's draw pile at a random position. */
@@ -604,7 +598,7 @@ export class MarsBot implements IMarsBot {
 
   public addBonusCardToBottomOfBonusDeck(bonusCardId: BonusCardId): void {
     // The deck draws from the end of the draw pile
-    this.bonusDeck.drawPile.unshift(createCorpBonusCard(bonusCardId));
+    this.bonusDeck.drawPile.unshift(createBonusCard(bonusCardId));
   }
 
   public getCorpState(key: string): number {
@@ -998,7 +992,7 @@ export class MarsBot implements IMarsBot {
     const cards: Array<IProjectCard | MarsBotBonusCard> = [];
     for (const name of names) {
       if (Object.values(BonusCardId).includes(name as BonusCardId)) {
-        cards.push(createCorpBonusCard(name as BonusCardId));
+        cards.push(createBonusCard(name as BonusCardId));
       } else {
         const card = newCard(name as CardName);
         if (card !== undefined) {

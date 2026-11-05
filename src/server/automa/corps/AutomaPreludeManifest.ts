@@ -8,7 +8,7 @@ import {cardTagsIncludingEvent, printedVictoryPoints} from '../MarsBotTags';
 
 // ==== PRELUDE (C13-C17) ====
 
-// C13 Cheung Shing MARS — silver resource cubes on building track from position 4
+// C13 Cheung Shing MARS: silver resource cubes on building track from position 4
 const CHEUNG_SHING_MARS: IMarsBotCorp = {
   name: CardName.CHEUNG_SHING_MARS,
   description: 'Tag: Building. Draft: Building. Silver resource cubes on building track from position 4; each earns 5 MC.',
@@ -26,7 +26,7 @@ const CHEUNG_SHING_MARS: IMarsBotCorp = {
   },
 };
 
-// C14 Point Luna — white+black cubes on Earth track (track 6)
+// C14 Point Luna: white+black cubes on Earth track (track 6)
 const POINT_LUNA: IMarsBotCorp = {
   name: CardName.POINT_LUNA,
   description: 'Tag: Space. Draft: Earth. White and black cubes on Earth track. White: advance least-advanced track. Black: advance space track.',
@@ -81,13 +81,13 @@ const VALLEY_TRUST: IMarsBotCorp = {
     onTrackCubeTrigger(bot, _trackIndex, _position, cubeType) {
       if (cubeType === 'white') {
         bot.maybeDrawAndResolveProjectCard();
-        bot.game.log('MarsBot (Valley Trust): white cube — drew and resolved 1 card');
+        bot.game.log('MarsBot (Valley Trust): white cube: drew and resolved 1 card');
       }
     },
   },
 };
 
-// C17 Vitor — separates B04, adds it to action deck each gen
+// C17 Vitor: separates B04, adds it to action deck each gen
 const VITOR: IMarsBotCorp = {
   name: CardName.VITOR,
   description: 'Setup: separate Overachievement from bonus deck. Cards with non-negative VP earn 3 MC. Each generation: add Overachievement to action deck, until it is removed.',
@@ -131,7 +131,7 @@ const ACADIAN_COMMUNITY: IMarsBotCorp = {
   ...bonusCardBeforeActionPhase(BonusCardId.B22_SETTLERS, 'Acadian Community'),
 };
 
-// C19 Astrodrill Enterprise — white+black cubes on space track
+// C19 Astrodrill Enterprise: white+black cubes on space track
 const ASTRODRILL_ENTERPRISE: IMarsBotCorp = {
   name: CardName.ASTRODRILL,
   description: 'Draft: Space. White and black cubes on space track. White: advance least-advanced track. Black: advance space track.',
@@ -173,7 +173,7 @@ const FACTORUM: IMarsBotCorp = {
   ...bonusCardBeforeActionPhase(BonusCardId.B24_SUPPLY_AND_DEMAND, 'Factorum'),
 };
 
-// C29 Manutech — black reminder cubes at #5/#12 on each track
+// C29 Manutech: black reminder cubes at #5/#12 on each track
 const MANUTECH: IMarsBotCorp = {
   name: CardName.MANUTECH,
   description: 'Tag: Building. When any track (including Venus) reaches #5 or #12, after resolving that space, advance it one more space and resolve that one too.',
@@ -241,10 +241,10 @@ const KUIPER_COOPERATIVE: IMarsBotCorp = {
     onTrackCubeTrigger(bot, _trackIndex, _position, cubeType) {
       if (cubeType === 'white') {
         bot.raiseTemperature(1);
-        bot.game.log('MarsBot (Kuiper): white cube — temperature +1');
+        bot.game.log('MarsBot (Kuiper): white cube: temperature +1');
       } else if (cubeType === 'black') {
         bot.placeOcean();
-        bot.game.log('MarsBot (Kuiper): black cube — place ocean');
+        bot.game.log('MarsBot (Kuiper): black cube: place ocean');
       }
     },
   },
@@ -314,7 +314,7 @@ const PALADIN_SHIPPING: IMarsBotCorp = {
         bot.setCorpState('whiteCubesOnCard', white - 1);
         bot.setCorpState('blackCubesOnCard', black - 1);
         bot.raiseTemperature(1);
-        bot.game.log('MarsBot (Paladin): paired cubes — temperature +1');
+        bot.game.log('MarsBot (Paladin): paired cubes: temperature +1');
       } else {
         bot.game.log(`MarsBot (Paladin): ${cubeType} cube collected (W:${bot.getCorpState('whiteCubesOnCard')}, B:${bot.getCorpState('blackCubesOnCard')})`);
       }

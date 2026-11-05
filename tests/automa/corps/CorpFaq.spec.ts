@@ -8,7 +8,7 @@ import {BoardName} from '../../../src/common/boards/BoardName';
 import {CardName} from '../../../src/common/cards/CardName';
 import {Resource} from '../../../src/common/Resource';
 import {BonusCardId} from '../../../src/common/automa/AutomaTypes';
-import {createCorpBonusCard} from '../../../src/server/automa/MarsBotBonusCard';
+import {createBonusCard} from '../../../src/server/automa/MarsBotBonusCard';
 import {getMarsBotCorp} from '../../../src/server/automa/corps/MarsBotCorpRegistry';
 import {runAllActions, setVenusScaleLevel} from '../../TestingUtils';
 import {OrOptions} from '../../../src/server/inputs/OrOptions';
@@ -30,7 +30,7 @@ function chooseSource(game: IGame, human: TestPlayer, index: number): void {
 }
 
 function rapidSprouting(marsBot: MarsBot): void {
-  marsBot['bonusResolver'].resolve(createCorpBonusCard(BonusCardId.B23_RAPID_SPROUTING));
+  marsBot['bonusResolver'].resolve(createBonusCard(BonusCardId.B23_RAPID_SPROUTING));
 }
 
 describe('MarsBot corporation FAQ', () => {
@@ -158,7 +158,7 @@ describe('MarsBot corporation FAQ', () => {
       const tr = marsBot.player.terraformRating;
       const mc = marsBot.turnResolver.megacredits;
 
-      marsBot['bonusResolver'].resolve(createCorpBonusCard(BonusCardId.B16_GOVERNMENT_INTERVENTION));
+      marsBot['bonusResolver'].resolve(createBonusCard(BonusCardId.B16_GOVERNMENT_INTERVENTION));
 
       expect(game.getVenusScaleLevel()).eq(2);
       expect(marsBot.player.terraformRating).eq(tr);
@@ -171,7 +171,7 @@ describe('MarsBot corporation FAQ', () => {
       setVenusScaleLevel(game, 6);
       const mc = marsBot.turnResolver.megacredits;
 
-      marsBot['bonusResolver'].resolve(createCorpBonusCard(BonusCardId.B16_GOVERNMENT_INTERVENTION));
+      marsBot['bonusResolver'].resolve(createBonusCard(BonusCardId.B16_GOVERNMENT_INTERVENTION));
 
       expect(game.getVenusScaleLevel()).eq(8);
       expect(marsBot.turnResolver.megacredits).eq(mc + 2);

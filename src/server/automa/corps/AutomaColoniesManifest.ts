@@ -34,7 +34,7 @@ const ARIDOR: IMarsBotCorp = {
   effect: {
     onTrackCubeTrigger(bot, _trackIndex, _position, _cubeType) {
       bot.advanceTrack(2); // Event track = index 2
-      bot.game.log('MarsBot (Aridor): cube reached — advance event track');
+      bot.game.log('MarsBot (Aridor): cube reached: advance event track');
     },
   },
 };

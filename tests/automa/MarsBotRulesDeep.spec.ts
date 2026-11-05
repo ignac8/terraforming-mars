@@ -10,7 +10,7 @@ import {MarsBotBonusResolver} from '../../src/server/automa/MarsBotBonusResolver
 import {MarsBotTilePlacer} from '../../src/server/automa/MarsBotTilePlacer';
 import {THARSIS_MARSBOT_BOARD} from '../../src/server/automa/boards/TharsisMarsBot';
 import {TrackAction, TrackDefinition, BonusCardId} from '../../src/common/automa/AutomaTypes';
-import {createBaseBonusCards, createCorpBonusCard} from '../../src/server/automa/MarsBotBonusCard';
+import {createBaseBonusCards, createBonusCard} from '../../src/server/automa/MarsBotBonusCard';
 import {SeededRandom} from '../../src/common/utils/Random';
 import {BoardName} from '../../src/common/boards/BoardName';
 import {Tag} from '../../src/common/cards/Tag';
@@ -152,7 +152,7 @@ describe('MarsBot Deep Rules Tests', () => {
       const cards = createBaseBonusCards();
       const b02 = cards.find((c) => c.id === BonusCardId.B02_INVASIVE_SPECIES)!;
       const tilePlacer = new MarsBotTilePlacer(game, marsBot.player, human);
-      const bonusDeck = MarsBotBonusDeck.createBase(new SeededRandom(99));
+      const bonusDeck = MarsBotBonusDeck.create(new SeededRandom(99));
       const bonusResolver = new MarsBotBonusResolver(game, marsBot.player, human, marsBot.turnResolver, bonusDeck, tilePlacer);
 
       bonusResolver.resolve(b02);
@@ -270,7 +270,7 @@ describe('MarsBot Deep Rules Tests', () => {
       const tr = marsBot.player.terraformRating;
       const mc = marsBot.turnResolver.megacredits;
 
-      marsBot['bonusResolver'].resolve(createCorpBonusCard(BonusCardId.B16_GOVERNMENT_INTERVENTION));
+      marsBot['bonusResolver'].resolve(createBonusCard(BonusCardId.B16_GOVERNMENT_INTERVENTION));
 
       expect(game.getTemperature()).to.eq(-24);
       expect(marsBot.player.terraformRating).to.eq(tr);
@@ -286,7 +286,7 @@ describe('MarsBot Deep Rules Tests', () => {
       setTemperature(game, 8);
       const venus = game.getVenusScaleLevel();
 
-      marsBot['bonusResolver'].resolve(createCorpBonusCard(BonusCardId.B16_GOVERNMENT_INTERVENTION));
+      marsBot['bonusResolver'].resolve(createBonusCard(BonusCardId.B16_GOVERNMENT_INTERVENTION));
 
       expect(game.getVenusScaleLevel()).to.eq(venus + 2);
     });
@@ -300,7 +300,7 @@ describe('MarsBot Deep Rules Tests', () => {
       maxOutOceans(game.players[0]);
       setTemperature(game, -10);
 
-      marsBot['bonusResolver'].resolve(createCorpBonusCard(BonusCardId.B16_GOVERNMENT_INTERVENTION));
+      marsBot['bonusResolver'].resolve(createBonusCard(BonusCardId.B16_GOVERNMENT_INTERVENTION));
 
       expect(game.getTemperature()).to.eq(-8);
       expect(game.getOxygenLevel()).to.eq(7);
@@ -383,7 +383,7 @@ describe('MarsBot Deep Rules Tests', () => {
       const cards = createBaseBonusCards();
       const b06 = cards.find((c) => c.id === BonusCardId.B06_LOBBYISTS)!;
       const tilePlacer = new MarsBotTilePlacer(game, marsBot.player, human);
-      const bonusDeck = MarsBotBonusDeck.createBase(new SeededRandom(99));
+      const bonusDeck = MarsBotBonusDeck.create(new SeededRandom(99));
       const bonusResolver = new MarsBotBonusResolver(game, marsBot.player, human, marsBot.turnResolver, bonusDeck, tilePlacer);
 
       const destroyed = bonusResolver.resolve(b06);
@@ -398,7 +398,7 @@ describe('MarsBot Deep Rules Tests', () => {
       const cards = createBaseBonusCards();
       const b06 = cards.find((c) => c.id === BonusCardId.B06_LOBBYISTS)!;
       const tilePlacer = new MarsBotTilePlacer(game, marsBot.player, human);
-      const bonusDeck = MarsBotBonusDeck.createBase(new SeededRandom(99));
+      const bonusDeck = MarsBotBonusDeck.create(new SeededRandom(99));
       const bonusResolver = new MarsBotBonusResolver(game, marsBot.player, human, marsBot.turnResolver, bonusDeck, tilePlacer);
 
       const tempBefore = game.getTemperature();
@@ -950,7 +950,7 @@ describe('MarsBot Deep Rules Tests', () => {
       const {game, marsBot, hand} = venusGame();
       game.generation = 3;
 
-      marsBot['bonusResolver'].resolve(createCorpBonusCard(BonusCardId.B16_GOVERNMENT_INTERVENTION));
+      marsBot['bonusResolver'].resolve(createBonusCard(BonusCardId.B16_GOVERNMENT_INTERVENTION));
 
       expect(game.getVenusScaleLevel()).to.eq(8);
       expect(marsBot.turnResolver.megacredits).to.eq(0);

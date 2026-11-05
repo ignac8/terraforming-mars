@@ -4,7 +4,7 @@ import {testGame} from '../../TestGame';
 import {IGame} from '../../../src/server/IGame';
 import {TestPlayer} from '../../TestPlayer';
 import {MarsBot} from '../../../src/server/automa/MarsBot';
-import {MarsBotBonusCard, createCorpBonusCard} from '../../../src/server/automa/MarsBotBonusCard';
+import {MarsBotBonusCard, createBonusCard} from '../../../src/server/automa/MarsBotBonusCard';
 import {BonusCardId} from '../../../src/common/automa/AutomaTypes';
 import {Tag} from '../../../src/common/cards/Tag';
 import {BoardName} from '../../../src/common/boards/BoardName';
@@ -49,7 +49,7 @@ describe('Corp-Specific Bonus Cards (B22-B32)', () => {
   describe('B22 Settlers', () => {
     it('puts a player marker on a free land space instead of a tile', () => {
       const {game, human, marsBot} = createAutomaGame();
-      marsBot['bonusResolver'].resolve(createCorpBonusCard(BonusCardId.B22_SETTLERS));
+      marsBot['bonusResolver'].resolve(createBonusCard(BonusCardId.B22_SETTLERS));
 
       expect(marsBot.markerSpaceIds).has.length(1);
       const space = game.board.getSpaceOrThrow(marsBot.markerSpaceIds[0]);
@@ -62,7 +62,7 @@ describe('Corp-Specific Bonus Cards (B22-B32)', () => {
 
     it('prefers the space next to the most ocean-reserved spaces before the random tiebreak', () => {
       const {marsBot} = createAutomaGame();
-      marsBot['bonusResolver'].resolve(createCorpBonusCard(BonusCardId.B22_SETTLERS));
+      marsBot['bonusResolver'].resolve(createBonusCard(BonusCardId.B22_SETTLERS));
 
       // Of the empty Tharsis spaces with two bonus icons, only these two touch three ocean-reserved spaces.
       expect(marsBot.markerSpaceIds[0]).to.be.oneOf(['35', '36']);
@@ -70,9 +70,9 @@ describe('Corp-Specific Bonus Cards (B22-B32)', () => {
 
     it('never picks a space that already has a marker', () => {
       const {marsBot} = createAutomaGame();
-      marsBot['bonusResolver'].resolve(createCorpBonusCard(BonusCardId.B22_SETTLERS));
-      marsBot['bonusResolver'].resolve(createCorpBonusCard(BonusCardId.B22_SETTLERS));
-      marsBot['bonusResolver'].resolve(createCorpBonusCard(BonusCardId.B22_SETTLERS));
+      marsBot['bonusResolver'].resolve(createBonusCard(BonusCardId.B22_SETTLERS));
+      marsBot['bonusResolver'].resolve(createBonusCard(BonusCardId.B22_SETTLERS));
+      marsBot['bonusResolver'].resolve(createBonusCard(BonusCardId.B22_SETTLERS));
 
       expect(marsBot.markerSpaceIds.slice(0, 2)).to.have.members(['35', '36']);
       expect(new Set(marsBot.markerSpaceIds).size).to.eq(3);
@@ -84,11 +84,11 @@ describe('Corp-Specific Bonus Cards (B22-B32)', () => {
       const {game, marsBot} = createAutomaGame();
       const greeneries = () => game.board.getGreeneries(marsBot.player).length;
 
-      marsBot['bonusResolver'].resolve(createCorpBonusCard(BonusCardId.B23_RAPID_SPROUTING));
+      marsBot['bonusResolver'].resolve(createBonusCard(BonusCardId.B23_RAPID_SPROUTING));
       expect(greeneries()).to.eq(0);
       expect(marsBot.getCorpState('plantResources')).to.eq(1);
 
-      marsBot['bonusResolver'].resolve(createCorpBonusCard(BonusCardId.B23_RAPID_SPROUTING));
+      marsBot['bonusResolver'].resolve(createBonusCard(BonusCardId.B23_RAPID_SPROUTING));
       expect(greeneries()).to.eq(1);
       expect(game.getOxygenLevel()).to.eq(1);
       expect(marsBot.getCorpState('plantResources')).to.eq(0);
@@ -101,7 +101,7 @@ describe('Corp-Specific Bonus Cards (B22-B32)', () => {
       marsBot.setCorpState('plantResources', 1);
       marsBot['bonusResolver']['tilePlacer'].findGreenerySpace = () => undefined;
 
-      marsBot['bonusResolver'].resolve(createCorpBonusCard(BonusCardId.B23_RAPID_SPROUTING));
+      marsBot['bonusResolver'].resolve(createBonusCard(BonusCardId.B23_RAPID_SPROUTING));
 
       expect(game.board.getGreeneries(marsBot.player)).is.empty;
       expect(marsBot.getCorpState('plantResources')).to.eq(0);
@@ -113,7 +113,7 @@ describe('Corp-Specific Bonus Cards (B22-B32)', () => {
     it('takes up to 3 M€ from the corporation card', () => {
       const {marsBot} = createAutomaGame();
       marsBot.setCorpState('mcOnCard', 5);
-      marsBot['bonusResolver'].resolve(createCorpBonusCard(BonusCardId.B24_SUPPLY_AND_DEMAND));
+      marsBot['bonusResolver'].resolve(createBonusCard(BonusCardId.B24_SUPPLY_AND_DEMAND));
       expect(marsBot.turnResolver.megacredits).to.eq(3);
       expect(marsBot.getCorpState('mcOnCard')).to.eq(2);
       expect(marsBot.marsBotBoard.tracks[4].position).to.eq(0);
@@ -121,7 +121,7 @@ describe('Corp-Specific Bonus Cards (B22-B32)', () => {
 
     it('with no M€ on the card advances the energy track', () => {
       const {marsBot} = createAutomaGame();
-      marsBot['bonusResolver'].resolve(createCorpBonusCard(BonusCardId.B24_SUPPLY_AND_DEMAND));
+      marsBot['bonusResolver'].resolve(createBonusCard(BonusCardId.B24_SUPPLY_AND_DEMAND));
       expect(marsBot.marsBotBoard.tracks[4].position).to.be.greaterThan(0);
       expect(marsBot.marsBotBoard.tracks[0].position).to.eq(0);
     });
@@ -131,14 +131,14 @@ describe('Corp-Specific Bonus Cards (B22-B32)', () => {
     it('raises the temperature 2 steps when it is 1 or 2 steps from a bonus', () => {
       const {game, marsBot} = createAutomaGame();
       setTemperature(game, -26);
-      marsBot['bonusResolver'].resolve(createCorpBonusCard(BonusCardId.B25_DO_IT_RIGHT));
+      marsBot['bonusResolver'].resolve(createBonusCard(BonusCardId.B25_DO_IT_RIGHT));
       expect(game.getTemperature()).to.eq(-22);
     });
 
     it('does nothing when no branch applies', () => {
       const {game, marsBot} = createAutomaGame();
       const tr = marsBot.player.terraformRating;
-      marsBot['bonusResolver'].resolve(createCorpBonusCard(BonusCardId.B25_DO_IT_RIGHT));
+      marsBot['bonusResolver'].resolve(createBonusCard(BonusCardId.B25_DO_IT_RIGHT));
       expect(game.getTemperature()).to.eq(-30);
       expect(game.getOxygenLevel()).to.eq(0);
       expect(marsBot.player.terraformRating).to.eq(tr);
@@ -150,7 +150,7 @@ describe('Corp-Specific Bonus Cards (B22-B32)', () => {
     it('raises Venus, advances the Venus track and raises the furthest parameter', () => {
       const [game] = testGame(1, {automa: true, venusNextExtension: true, boardName: BoardName.THARSIS});
       const marsBot = game.automaHooks!.marsBot;
-      marsBot['bonusResolver'].resolve(createCorpBonusCard(BonusCardId.B26_VENUSIAN_LOBBY));
+      marsBot['bonusResolver'].resolve(createBonusCard(BonusCardId.B26_VENUSIAN_LOBBY));
       expect(game.getVenusScaleLevel()).to.eq(2);
       expect(marsBot.marsBotBoard.tracks[7].position).to.eq(1);
       // Everything is at its start, and temperature has the most steps left (19, against 14 and 9)
@@ -175,7 +175,7 @@ describe('Corp-Specific Bonus Cards (B22-B32)', () => {
       const greenery = quietSpace(game, marsBot);
       game.simpleAddTile(human, greenery, {tileType: TileType.GREENERY});
       marsBot.megacredits = 20;
-      const card = createCorpBonusCard(BonusCardId.B27_BUILD_BUILD_BUILD);
+      const card = createBonusCard(BonusCardId.B27_BUILD_BUILD_BUILD);
 
       marsBot['bonusResolver'].resolve(card);
 
@@ -195,7 +195,7 @@ describe('Corp-Specific Bonus Cards (B22-B32)', () => {
       marsBot.playedProjectCards.push(nuclearZone);
       marsBot.megacredits = 10;
 
-      marsBot['bonusResolver'].resolve(createCorpBonusCard(BonusCardId.B27_BUILD_BUILD_BUILD));
+      marsBot['bonusResolver'].resolve(createBonusCard(BonusCardId.B27_BUILD_BUILD_BUILD));
 
       const space = game.board.getSpaceByTileCard(CardName.NUCLEAR_ZONE)!;
       expect(space.tile?.tileType).to.eq(TileType.NUCLEAR_ZONE);
@@ -211,7 +211,7 @@ describe('Corp-Specific Bonus Cards (B22-B32)', () => {
       game.simpleAddTile(human, quietSpace(game, marsBot), {tileType: TileType.CITY});
       marsBot.playedProjectCards.push(new Capital());
 
-      marsBot['bonusResolver'].resolve(createCorpBonusCard(BonusCardId.B27_BUILD_BUILD_BUILD));
+      marsBot['bonusResolver'].resolve(createBonusCard(BonusCardId.B27_BUILD_BUILD_BUILD));
 
       expect(game.board.getSpaceByTileCard(CardName.CAPITAL)).is.undefined;
       expect(marsBot.megacredits).to.eq(3);
@@ -219,7 +219,7 @@ describe('Corp-Specific Bonus Cards (B22-B32)', () => {
 
     it('c. with nothing to build, gains 3 M€ and shuffles the card back into the bonus deck', () => {
       const {game, marsBot} = createAutomaGame();
-      const card = createCorpBonusCard(BonusCardId.B27_BUILD_BUILD_BUILD);
+      const card = createBonusCard(BonusCardId.B27_BUILD_BUILD_BUILD);
 
       marsBot['bonusResolver'].resolve(card);
 
@@ -235,15 +235,15 @@ describe('Corp-Specific Bonus Cards (B22-B32)', () => {
       const {marsBot} = createAutomaGame();
       marsBot.turnResolver.advanceTrack = () => true;
       marsBot.turnResolver.megacredits = 6;
-      marsBot['bonusResolver'].resolve(createCorpBonusCard(BonusCardId.B28_DIVERSIFICATION));
+      marsBot['bonusResolver'].resolve(createBonusCard(BonusCardId.B28_DIVERSIFICATION));
       expect(marsBot.turnResolver.megacredits).to.eq(2);
-      marsBot['bonusResolver'].resolve(createCorpBonusCard(BonusCardId.B28_DIVERSIFICATION));
+      marsBot['bonusResolver'].resolve(createBonusCard(BonusCardId.B28_DIVERSIFICATION));
       expect(marsBot.turnResolver.megacredits).to.eq(0);
     });
 
     it('advances least-advanced track', () => {
       const {marsBot} = createAutomaGame();
-      const card = createCorpBonusCard(BonusCardId.B28_DIVERSIFICATION);
+      const card = createBonusCard(BonusCardId.B28_DIVERSIFICATION);
       // Advance track 1 to create a non-uniform state
       marsBot.marsBotBoard.tracks[0].position = 5;
       // Least advanced should be one of the others (all at 0)
@@ -267,7 +267,7 @@ describe('Corp-Specific Bonus Cards (B22-B32)', () => {
       const {marsBot, turmoil} = turmoilGame();
       const before = botDelegates(turmoil, marsBot);
       expect(Math.max(...before)).to.eq(0);
-      marsBot['bonusResolver'].resolve(createCorpBonusCard(BonusCardId.B29_GRAY_EMINENCE));
+      marsBot['bonusResolver'].resolve(createBonusCard(BonusCardId.B29_GRAY_EMINENCE));
       const after = botDelegates(turmoil, marsBot);
       expect(after.reduce((a, b) => a + b, 0)).to.eq(2);
       expect(Math.max(...after)).to.eq(1);
@@ -278,7 +278,7 @@ describe('Corp-Specific Bonus Cards (B22-B32)', () => {
       game.projectDeck.drawPile.push(new Mine(), new Capital()); // Capital (26) first, then Mine (4)
       const discarded = game.projectDeck.discardPile.length;
 
-      marsBot['bonusResolver'].resolve(createCorpBonusCard(BonusCardId.B29_GRAY_EMINENCE));
+      marsBot['bonusResolver'].resolve(createBonusCard(BonusCardId.B29_GRAY_EMINENCE));
 
       // 26 counts to the 2nd of 6 tied parties; 4 counts to the 4th of the 5 left
       expect(botDelegates(turmoil, marsBot)).deep.eq([0, 1, 0, 0, 1, 0]);
@@ -288,7 +288,7 @@ describe('Corp-Specific Bonus Cards (B22-B32)', () => {
     it('gains 2 M€ for each delegate it cannot place', () => {
       const {marsBot, turmoil} = turmoilGame();
       turmoil.delegateReserve.remove(marsBot.player, turmoil.delegateReserve.get(marsBot.player) - 1);
-      marsBot['bonusResolver'].resolve(createCorpBonusCard(BonusCardId.B29_GRAY_EMINENCE));
+      marsBot['bonusResolver'].resolve(createBonusCard(BonusCardId.B29_GRAY_EMINENCE));
       expect(botDelegates(turmoil, marsBot).reduce((a, b) => a + b, 0)).to.eq(1);
       expect(marsBot.turnResolver.megacredits).to.eq(2);
     });
@@ -314,7 +314,7 @@ describe('Corp-Specific Bonus Cards (B22-B32)', () => {
       const giantIceAsteroid = new GiantIceAsteroid();
       const {game, marsBot, played} = hyperlinkGame(4, [tardigrades, asteroid, giantIceAsteroid, searchForLife]);
 
-      const destroyed = marsBot['bonusResolver'].resolve(createCorpBonusCard(BonusCardId.B30_INTERFACE_HYPERLINK));
+      const destroyed = marsBot['bonusResolver'].resolve(createBonusCard(BonusCardId.B30_INTERFACE_HYPERLINK));
 
       expect(played).deep.eq([searchForLife, giantIceAsteroid]);
       expect(game.projectDeck.discardPile).to.include.members([tardigrades, asteroid]);
@@ -328,7 +328,7 @@ describe('Corp-Specific Bonus Cards (B22-B32)', () => {
       const searchForLife = new SearchForLife();
       const {marsBot, played} = hyperlinkGame(3, [mine, powerPlant, searchForLife]);
 
-      marsBot['bonusResolver'].resolve(createCorpBonusCard(BonusCardId.B30_INTERFACE_HYPERLINK));
+      marsBot['bonusResolver'].resolve(createBonusCard(BonusCardId.B30_INTERFACE_HYPERLINK));
 
       expect(played).deep.eq([searchForLife, powerPlant]);
     });
@@ -340,7 +340,7 @@ describe('Corp-Specific Bonus Cards (B22-B32)', () => {
       const searchForLife = new SearchForLife();
       const {marsBot, played} = hyperlinkGame(3, [building, twoWild, searchForLife]);
 
-      marsBot['bonusResolver'].resolve(createCorpBonusCard(BonusCardId.B30_INTERFACE_HYPERLINK));
+      marsBot['bonusResolver'].resolve(createBonusCard(BonusCardId.B30_INTERFACE_HYPERLINK));
 
       expect(played).deep.eq([searchForLife, twoWild]);
     });
@@ -350,7 +350,7 @@ describe('Corp-Specific Bonus Cards (B22-B32)', () => {
       const searchForLife = new SearchForLife();
       const {marsBot, played} = hyperlinkGame(0, [mine, searchForLife]);
 
-      const destroyed = marsBot['bonusResolver'].resolve(createCorpBonusCard(BonusCardId.B30_INTERFACE_HYPERLINK));
+      const destroyed = marsBot['bonusResolver'].resolve(createBonusCard(BonusCardId.B30_INTERFACE_HYPERLINK));
 
       expect(played).deep.eq([searchForLife, mine]);
       expect(destroyed).is.true;
@@ -362,7 +362,7 @@ describe('Corp-Specific Bonus Cards (B22-B32)', () => {
     it('raises TR 1 step', () => {
       const {marsBot} = createAutomaGame();
       const tr = marsBot.player.terraformRating;
-      marsBot['bonusResolver'].resolve(createCorpBonusCard(BonusCardId.B31_GOVERNMENT_SUBSIDY));
+      marsBot['bonusResolver'].resolve(createBonusCard(BonusCardId.B31_GOVERNMENT_SUBSIDY));
       expect(marsBot.player.terraformRating).to.eq(tr + 1);
       expect(marsBot.turnResolver.megacredits).to.eq(0);
     });
@@ -380,7 +380,7 @@ describe('Corp-Specific Bonus Cards (B22-B32)', () => {
       game.generation = 2;
       setTracks(marsBot, [5, 3, 1, 4, 4, 6, 2]);
 
-      marsBot['bonusResolver'].resolve(createCorpBonusCard(BonusCardId.B32_INVESTORS));
+      marsBot['bonusResolver'].resolve(createBonusCard(BonusCardId.B32_INVESTORS));
 
       expect(marsBot.marsBotBoard.tracks.map((t) => t.position)).deep.eq([5, 3, 2, 4, 4, 5, 2]);
       expect(marsBot.turnResolver.megacredits).to.eq(0);
@@ -391,7 +391,7 @@ describe('Corp-Specific Bonus Cards (B22-B32)', () => {
       game.generation = 2;
       setTracks(marsBot, [5, 3, 1, 4, 4, 6, 2]);
 
-      marsBot['bonusResolver'].resolve(createCorpBonusCard(BonusCardId.B32_INVESTORS));
+      marsBot['bonusResolver'].resolve(createBonusCard(BonusCardId.B32_INVESTORS));
 
       expect(marsBot.marsBotBoard.tracks[5].regressedPositions.has(6)).is.true;
     });
@@ -401,7 +401,7 @@ describe('Corp-Specific Bonus Cards (B22-B32)', () => {
       game.generation = 4;
       setTracks(marsBot, [4, 1, 1, 4, 2, 2, 3]);
 
-      marsBot['bonusResolver'].resolve(createCorpBonusCard(BonusCardId.B32_INVESTORS));
+      marsBot['bonusResolver'].resolve(createBonusCard(BonusCardId.B32_INVESTORS));
 
       expect(marsBot.marsBotBoard.tracks.map((t) => t.position)).deep.eq([3, 2, 1, 4, 2, 2, 3]);
     });
@@ -411,7 +411,7 @@ describe('Corp-Specific Bonus Cards (B22-B32)', () => {
       game.generation = 3;
       setTracks(marsBot, [5, 3, 2, 4, 4, 6, 3]);
 
-      marsBot['bonusResolver'].resolve(createCorpBonusCard(BonusCardId.B32_INVESTORS));
+      marsBot['bonusResolver'].resolve(createBonusCard(BonusCardId.B32_INVESTORS));
 
       expect(marsBot.marsBotBoard.tracks.map((t) => t.position)).deep.eq([5, 3, 2, 4, 4, 6, 3]);
       expect(marsBot.turnResolver.megacredits).to.eq(2);
@@ -430,7 +430,7 @@ describe('Corp-Specific Bonus Cards (B22-B32)', () => {
     it('B24 Supply & Demand takes no Failed Action', () => {
       const {marsBot} = createAutomaGame();
       maxTracks(marsBot);
-      marsBot['bonusResolver'].resolve(createCorpBonusCard(BonusCardId.B24_SUPPLY_AND_DEMAND));
+      marsBot['bonusResolver'].resolve(createBonusCard(BonusCardId.B24_SUPPLY_AND_DEMAND));
       expect(marsBot.turnResolver.megacredits).to.eq(0);
     });
 
@@ -438,7 +438,7 @@ describe('Corp-Specific Bonus Cards (B22-B32)', () => {
       const [game] = testGame(1, {automa: true, venusNextExtension: true, boardName: BoardName.THARSIS});
       const marsBot = game.automaHooks!.marsBot;
       maxTracks(marsBot);
-      marsBot['bonusResolver'].resolve(createCorpBonusCard(BonusCardId.B26_VENUSIAN_LOBBY));
+      marsBot['bonusResolver'].resolve(createBonusCard(BonusCardId.B26_VENUSIAN_LOBBY));
       expect(game.getVenusScaleLevel()).to.eq(2);
       expect(marsBot.turnResolver.megacredits).to.eq(0);
     });
@@ -447,7 +447,7 @@ describe('Corp-Specific Bonus Cards (B22-B32)', () => {
       const {marsBot} = createAutomaGame();
       maxTracks(marsBot);
       marsBot.turnResolver.megacredits = 4;
-      marsBot['bonusResolver'].resolve(createCorpBonusCard(BonusCardId.B28_DIVERSIFICATION));
+      marsBot['bonusResolver'].resolve(createBonusCard(BonusCardId.B28_DIVERSIFICATION));
       expect(marsBot.turnResolver.megacredits).to.eq(0);
     });
 
@@ -455,7 +455,7 @@ describe('Corp-Specific Bonus Cards (B22-B32)', () => {
       const {game, marsBot} = createAutomaGame();
       game.generation = 2;
       maxTracks(marsBot);
-      marsBot['bonusResolver'].resolve(createCorpBonusCard(BonusCardId.B32_INVESTORS));
+      marsBot['bonusResolver'].resolve(createBonusCard(BonusCardId.B32_INVESTORS));
       expect(marsBot.turnResolver.megacredits).to.eq(0);
       expect(marsBot.marsBotBoard.tracks[0].position).to.eq(17);
     });
@@ -468,9 +468,9 @@ describe('Corp-Specific Bonus Cards (B22-B32)', () => {
     });
   });
 
-  describe('createCorpBonusCard', () => {
+  describe('createBonusCard', () => {
     it('creates a card with correct ID and name', () => {
-      const card = createCorpBonusCard(BonusCardId.B23_RAPID_SPROUTING);
+      const card = createBonusCard(BonusCardId.B23_RAPID_SPROUTING);
       expect(card.id).to.eq(BonusCardId.B23_RAPID_SPROUTING);
       expect(card.name).to.eq(CardName.AUTOMA_RAPID_SPROUTING);
     });

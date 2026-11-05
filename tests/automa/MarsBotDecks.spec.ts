@@ -3,7 +3,7 @@ import {testGame} from '../TestGame';
 import {Game} from '../../src/server/Game';
 import {IGame} from '../../src/server/IGame';
 import {MarsBot} from '../../src/server/automa/MarsBot';
-import {MarsBotBonusCard, createCorpBonusCard} from '../../src/server/automa/MarsBotBonusCard';
+import {MarsBotBonusCard, createBonusCard} from '../../src/server/automa/MarsBotBonusCard';
 import {BonusCardId} from '../../src/common/automa/AutomaTypes';
 import {BoardName} from '../../src/common/boards/BoardName';
 import {CardName} from '../../src/common/cards/CardName';
@@ -46,7 +46,7 @@ describe('MarsBot decks', () => {
   it('keeps Government Intervention out of the bonus deck after it resolves', () => {
     const {marsBot} = createAutomaGame({venusNextExtension: true});
 
-    marsBot['bonusResolver'].resolve(createCorpBonusCard(BonusCardId.B16_GOVERNMENT_INTERVENTION));
+    marsBot['bonusResolver'].resolve(createBonusCard(BonusCardId.B16_GOVERNMENT_INTERVENTION));
 
     expect(bonusDeckIds(marsBot)).does.not.include(BonusCardId.B16_GOVERNMENT_INTERVENTION);
   });
@@ -54,7 +54,7 @@ describe('MarsBot decks', () => {
   it('keeps Party Politics out of the bonus deck after it resolves', () => {
     const {marsBot} = createAutomaGame({turmoilExtension: true});
 
-    marsBot['bonusResolver'].resolve(createCorpBonusCard(BonusCardId.B21_PARTY_POLITICS));
+    marsBot['bonusResolver'].resolve(createBonusCard(BonusCardId.B21_PARTY_POLITICS));
 
     expect(bonusDeckIds(marsBot)).does.not.include(BonusCardId.B21_PARTY_POLITICS);
   });
@@ -62,8 +62,8 @@ describe('MarsBot decks', () => {
   it('keeps Shipping Lines out of the bonus deck after they resolve', () => {
     const {marsBot} = createAutomaGame({coloniesExtension: true});
 
-    marsBot['bonusResolver'].resolve(createCorpBonusCard(BonusCardId.B19_SHIPPING_LINES));
-    marsBot['bonusResolver'].resolve(createCorpBonusCard(BonusCardId.B20_EXTENDED_SHIPPING_LINES));
+    marsBot['bonusResolver'].resolve(createBonusCard(BonusCardId.B19_SHIPPING_LINES));
+    marsBot['bonusResolver'].resolve(createBonusCard(BonusCardId.B20_EXTENDED_SHIPPING_LINES));
 
     expect(bonusDeckIds(marsBot)).does.not.include(BonusCardId.B19_SHIPPING_LINES);
     expect(bonusDeckIds(marsBot)).does.not.include(BonusCardId.B20_EXTENDED_SHIPPING_LINES);
@@ -73,7 +73,7 @@ describe('MarsBot decks', () => {
     const {marsBot} = createAutomaGame();
     marsBot.setCorpAndSetup(getMarsBotCorp(CardName.ECOLINE)!);
 
-    marsBot['bonusResolver'].resolve(createCorpBonusCard(BonusCardId.B23_RAPID_SPROUTING));
+    marsBot['bonusResolver'].resolve(createBonusCard(BonusCardId.B23_RAPID_SPROUTING));
 
     expect(bonusDeckIds(marsBot)).does.not.include(BonusCardId.B23_RAPID_SPROUTING);
   });
@@ -82,7 +82,7 @@ describe('MarsBot decks', () => {
     const {marsBot} = createAutomaGame();
     marsBot.setCorpAndSetup(getMarsBotCorp(CardName.VITOR)!);
 
-    marsBot['bonusResolver'].resolve(createCorpBonusCard(BonusCardId.B04_OVERACHIEVEMENT));
+    marsBot['bonusResolver'].resolve(createBonusCard(BonusCardId.B04_OVERACHIEVEMENT));
 
     expect(marsBot.turnResolver.megacredits).eq(5);
     expect(bonusDeckIds(marsBot)).does.not.include(BonusCardId.B04_OVERACHIEVEMENT);
@@ -94,7 +94,7 @@ describe('MarsBot decks', () => {
     marsBot.setCorpAndSetup(corp);
     marsBot.turnResolver.marsBotMeetsMilestone = () => true;
 
-    const destroyed = marsBot['bonusResolver'].resolve(createCorpBonusCard(BonusCardId.B04_OVERACHIEVEMENT));
+    const destroyed = marsBot['bonusResolver'].resolve(createBonusCard(BonusCardId.B04_OVERACHIEVEMENT));
     expect(destroyed).is.true;
     expect(game.claimedMilestones).has.length(1);
 
@@ -110,7 +110,7 @@ describe('MarsBot decks', () => {
   it('still discards Overachievement to the bonus deck without Vitor', () => {
     const {marsBot} = createAutomaGame();
 
-    marsBot['bonusResolver'].resolve(createCorpBonusCard(BonusCardId.B04_OVERACHIEVEMENT));
+    marsBot['bonusResolver'].resolve(createBonusCard(BonusCardId.B04_OVERACHIEVEMENT));
 
     expect(marsBot.bonusDeck.discardPile.map((c) => c.id)).includes(BonusCardId.B04_OVERACHIEVEMENT);
   });
@@ -128,7 +128,7 @@ describe('MarsBot decks', () => {
 
   it('drops generation cards from the bonus deck of an older save', () => {
     const {game, marsBot} = createAutomaGame({venusNextExtension: true});
-    marsBot.bonusDeck.discardPile.push(createCorpBonusCard(BonusCardId.B16_GOVERNMENT_INTERVENTION));
+    marsBot.bonusDeck.discardPile.push(createBonusCard(BonusCardId.B16_GOVERNMENT_INTERVENTION));
 
     const restored = Game.deserialize(game.serialize()).automaHooks!.marsBot;
 

@@ -97,7 +97,7 @@ export class MarsBotCorpResolver {
       if (colony !== undefined) {
         placeColonyForMarsBot(colony, marsBot);
       } else {
-        marsBot.game.log('MarsBot colony cube: no eligible colony tile — Failed Action (C-X3)');
+        marsBot.game.log('MarsBot colony cube: no eligible colony tile: Failed Action (C-X3)');
         marsBot.turnResolver.failedAction();
       }
     }
@@ -107,7 +107,7 @@ export class MarsBotCorpResolver {
         marsBot.tradeFleetCubeKey === trackCubeKey(trackIndex, position) &&
         !marsBot.hasSecondTradeFleet) {
       marsBot.hasSecondTradeFleet = true;
-      marsBot.game.log('MarsBot unlocks 2nd Trade Fleet — Extended Shipping Lines available next generation (C-27)');
+      marsBot.game.log('MarsBot unlocks 2nd Trade Fleet: Extended Shipping Lines available next generation (C-27)');
     }
 
     return replacedIcon;

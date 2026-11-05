@@ -8,7 +8,7 @@ import {MarsBot} from '../../../src/server/automa/MarsBot';
 import {BoardName} from '../../../src/common/boards/BoardName';
 import {BonusCardId, MARSBOT_STARTING_TR} from '../../../src/common/automa/AutomaTypes';
 import {DELEGATES_PER_PLAYER} from '../../../src/common/constants';
-import {MarsBotBonusCard, createCorpBonusCard} from '../../../src/server/automa/MarsBotBonusCard';
+import {MarsBotBonusCard, createBonusCard} from '../../../src/server/automa/MarsBotBonusCard';
 import {Turmoil} from '../../../src/server/turmoil/Turmoil';
 import {PartyName} from '../../../src/common/turmoil/PartyName';
 import {Phase} from '../../../src/common/Phase';
@@ -224,7 +224,7 @@ describe('MarsBot Turmoil — Party Politics resolver (T-8)', () => {
 
     const reserveBefore = turmoil.delegateReserve.get(marsBotPlayer);
     // Trigger the Party Politics bonus card directly
-    const card = createCorpBonusCard(BonusCardId.B21_PARTY_POLITICS);
+    const card = createBonusCard(BonusCardId.B21_PARTY_POLITICS);
     // Access private bonusResolver via type cast for testing
     (marsBot as any).bonusResolver.resolve(card);
 
@@ -259,7 +259,7 @@ describe('MarsBot Turmoil — Party Politics resolver (T-8)', () => {
       // Put this card on top so it gets flipped for T-8 (draw() uses pop(), so push = top)
       game.projectDeck.drawPile.push(targetCard);
       const reserveBefore = turmoil.delegateReserve.get(marsBotPlayer);
-      const card = createCorpBonusCard(BonusCardId.B21_PARTY_POLITICS);
+      const card = createBonusCard(BonusCardId.B21_PARTY_POLITICS);
       (marsBot as any).bonusResolver.resolve(card);
       const reserveAfter = turmoil.delegateReserve.get(marsBotPlayer);
       // Should have placed 2 delegates

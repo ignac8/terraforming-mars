@@ -8,7 +8,7 @@ import {testGame} from '../../TestGame';
 import {IGame} from '../../../src/server/IGame';
 import {TestPlayer} from '../../TestPlayer';
 import {MarsBot} from '../../../src/server/automa/MarsBot';
-import {createCorpBonusCard} from '../../../src/server/automa/MarsBotBonusCard';
+import {createBonusCard} from '../../../src/server/automa/MarsBotBonusCard';
 import {Tag} from '../../../src/common/cards/Tag';
 import {GlobalParameter} from '../../../src/common/GlobalParameter';
 import {TileType} from '../../../src/common/TileType';
@@ -230,7 +230,7 @@ describe('Corp Effect Hooks', () => {
       }
 
       function resolveIntervention(marsBot: MarsBot) {
-        marsBot['bonusResolver'].resolve(createCorpBonusCard(BonusCardId.B16_GOVERNMENT_INTERVENTION));
+        marsBot['bonusResolver'].resolve(createBonusCard(BonusCardId.B16_GOVERNMENT_INTERVENTION));
       }
 
       it('keeps the M€ from its building-track advance', () => {

@@ -8,7 +8,7 @@ import {MarsBot} from '../../src/server/automa/MarsBot';
 import {marsBotAwardScore, marsBotCanClaimMilestone} from '../../src/server/automa/MarsBotMilestoneAwardEval';
 import {AutomaGameSetup} from '../../src/server/automa/AutomaGameSetup';
 import {BonusCardId} from '../../src/common/automa/AutomaTypes';
-import {createCorpBonusCard} from '../../src/server/automa/MarsBotBonusCard';
+import {createBonusCard} from '../../src/server/automa/MarsBotBonusCard';
 import {BoardName} from '../../src/common/boards/BoardName';
 import {Tag} from '../../src/common/cards/Tag';
 import {RandomMAOptionType} from '../../src/common/ma/RandomMAOptionType';
@@ -51,7 +51,7 @@ function setTrack(marsBot: MarsBot, tag: Tag, position: number): void {
 
 /** Resolves a bonus card the way a turn does, from the action deck. */
 function resolveFromDeck(marsBot: MarsBot, id: BonusCardId): void {
-  marsBot['bonusResolver'].resolve(createCorpBonusCard(id));
+  marsBot['bonusResolver'].resolve(createBonusCard(id));
 }
 
 function claims(milestone: IMilestone, marsBot: MarsBot): boolean {

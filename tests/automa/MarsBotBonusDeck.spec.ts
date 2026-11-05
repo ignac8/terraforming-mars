@@ -1,7 +1,7 @@
 import {expect} from 'chai';
 import {MarsBotBonusDeck} from '../../src/server/automa/MarsBotBonusDeck';
 import {SeededRandom} from '../../src/common/utils/Random';
-import {createCorpBonusCard} from '../../src/server/automa/MarsBotBonusCard';
+import {createBonusCard} from '../../src/server/automa/MarsBotBonusCard';
 import {BonusCardId} from '../../src/common/automa/AutomaTypes';
 import {Asteroid} from '../../src/server/cards/base/Asteroid';
 import {Tardigrades} from '../../src/server/cards/base/Tardigrades';
@@ -11,7 +11,7 @@ describe('MarsBotBonusDeck', () => {
   let deck: MarsBotBonusDeck;
 
   beforeEach(() => {
-    deck = MarsBotBonusDeck.createBase(new SeededRandom(42));
+    deck = MarsBotBonusDeck.create(new SeededRandom(42));
   });
 
   it('starts with the 8 base cards in the draw pile', () => {
@@ -27,8 +27,8 @@ describe('MarsBotBonusDeck', () => {
   });
 
   it('serialization round trip with expansion and corporation bonus cards, and project cards', () => {
-    const expansionDeck = MarsBotBonusDeck.createWithVenusAndColonies(new SeededRandom(42));
-    expansionDeck.drawPile.unshift(createCorpBonusCard(BonusCardId.B30_INTERFACE_HYPERLINK));
+    const expansionDeck = MarsBotBonusDeck.create(new SeededRandom(42), {venus: true, colonies: true});
+    expansionDeck.drawPile.unshift(createBonusCard(BonusCardId.B30_INTERFACE_HYPERLINK));
     expansionDeck.drawPile.push(new Asteroid());
     expansionDeck.discard(expansionDeck.draw(logger)!, expansionDeck.draw(logger)!, new Tardigrades());
 

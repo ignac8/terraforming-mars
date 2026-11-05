@@ -19,7 +19,7 @@ import {BonusCardId, DifficultyLevel, FAILED_ACTION_MC} from '../../../src/commo
 import {MicroMills} from '../../../src/server/cards/base/MicroMills';
 import {IceCapMelting} from '../../../src/server/cards/base/IceCapMelting';
 import {Research} from '../../../src/server/cards/base/Research';
-import {createCorpBonusCard} from '../../../src/server/automa/MarsBotBonusCard';
+import {createBonusCard} from '../../../src/server/automa/MarsBotBonusCard';
 import {EcoLine} from '../../../src/server/cards/corporation/EcoLine';
 import {Space} from '../../../src/server/boards/Space';
 import {SpaceType} from '../../../src/common/boards/SpaceType';
@@ -483,7 +483,7 @@ describe('Expansion MarsBot Corporations', () => {
       corp.effect!.onTrackCubeTrigger!(marsBot, 1, 3, 'white');
       expect(marsBot.corpSpecificState.get('whiteCubesOnCard')).to.eq(1);
 
-      // Collect 1 black cube — should pair and raise temp
+      // Collect 1 black cube: should pair and raise temp
       corp.effect!.onTrackCubeTrigger!(marsBot, 2, 3, 'black');
       expect(marsBot.corpSpecificState.get('whiteCubesOnCard')).to.eq(0);
       expect(marsBot.corpSpecificState.get('blackCubesOnCard')).to.eq(0);
@@ -936,7 +936,7 @@ describe('Expansion MarsBot Corporations', () => {
       const {game, marsBot} = createAutomaGame();
       const corp = getMarsBotCorp(CardName.POLYPHEMOS)!;
       const iceCapMelting = new IceCapMelting(); // Its Event tag only
-      const bonus = createCorpBonusCard(BonusCardId.B03_RESEARCH_AND_DEVELOPMENT);
+      const bonus = createBonusCard(BonusCardId.B03_RESEARCH_AND_DEVELOPMENT);
       marsBot.actionDeck = [bonus, new Research(), iceCapMelting];
 
       corp.beforeActionPhase!(marsBot);
@@ -948,7 +948,7 @@ describe('Expansion MarsBot Corporations', () => {
     it('discards nothing when the action deck holds no project card', () => {
       const {marsBot} = createAutomaGame();
       const corp = getMarsBotCorp(CardName.POLYPHEMOS)!;
-      marsBot.actionDeck = [createCorpBonusCard(BonusCardId.B03_RESEARCH_AND_DEVELOPMENT)];
+      marsBot.actionDeck = [createBonusCard(BonusCardId.B03_RESEARCH_AND_DEVELOPMENT)];
 
       corp.beforeActionPhase!(marsBot);
 

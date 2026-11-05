@@ -8,7 +8,7 @@ import {MarsBotTurnResolver} from '../../src/server/automa/MarsBotTurnResolver';
 import {MarsBotBonusDeck} from '../../src/server/automa/MarsBotBonusDeck';
 import {MarsBotBonusResolver} from '../../src/server/automa/MarsBotBonusResolver';
 import {MarsBotTilePlacer} from '../../src/server/automa/MarsBotTilePlacer';
-import {createBaseBonusCards, createCorpBonusCard} from '../../src/server/automa/MarsBotBonusCard';
+import {createBaseBonusCards, createBonusCard} from '../../src/server/automa/MarsBotBonusCard';
 import {THARSIS_MARSBOT_BOARD} from '../../src/server/automa/boards/TharsisMarsBot';
 import {TrackAction, TrackDefinition, BonusCardId} from '../../src/common/automa/AutomaTypes';
 import {SeededRandom} from '../../src/common/utils/Random';
@@ -252,7 +252,7 @@ describe('MarsBot Rules Compliance', () => {
       const cards = createBaseBonusCards();
       const b01 = cards.find((c) => c.id === BonusCardId.B01_METEOR_SHOWER)!;
       const tilePlacer = new MarsBotTilePlacer(game, marsBot.player, human);
-      const bonusDeck = MarsBotBonusDeck.createBase(new SeededRandom(99));
+      const bonusDeck = MarsBotBonusDeck.create(new SeededRandom(99));
       const resolver = new MarsBotTurnResolver(game, marsBot.player, human, marsBot.marsBotBoard, 'normal');
       const bonusResolver = new MarsBotBonusResolver(game, marsBot.player, human, resolver, bonusDeck, tilePlacer);
 
@@ -269,7 +269,7 @@ describe('MarsBot Rules Compliance', () => {
       const cards = createBaseBonusCards();
       const b01 = cards.find((c) => c.id === BonusCardId.B01_METEOR_SHOWER)!;
       const tilePlacer = new MarsBotTilePlacer(game, marsBot.player, human);
-      const bonusDeck = MarsBotBonusDeck.createBase(new SeededRandom(99));
+      const bonusDeck = MarsBotBonusDeck.create(new SeededRandom(99));
       const resolver = new MarsBotTurnResolver(game, marsBot.player, human, marsBot.marsBotBoard, 'normal');
       const bonusResolver = new MarsBotBonusResolver(game, marsBot.player, human, resolver, bonusDeck, tilePlacer);
 
@@ -290,7 +290,7 @@ describe('MarsBot Rules Compliance', () => {
       const cards = createBaseBonusCards();
       const b04 = cards.find((c) => c.id === BonusCardId.B04_OVERACHIEVEMENT)!;
       const tilePlacer = new MarsBotTilePlacer(game, marsBot.player, human);
-      const bonusDeck = MarsBotBonusDeck.createBase(new SeededRandom(99));
+      const bonusDeck = MarsBotBonusDeck.create(new SeededRandom(99));
       const bonusResolver = new MarsBotBonusResolver(game, marsBot.player, human, marsBot.turnResolver, bonusDeck, tilePlacer);
 
       const awardsBefore = game.fundedAwards.length;
@@ -339,7 +339,7 @@ describe('MarsBot Rules Compliance', () => {
       const cards = createBaseBonusCards();
       const b08 = cards.find((c) => c.id === BonusCardId.B08_CORPORATE_COMPETITION)!;
       const tilePlacer = new MarsBotTilePlacer(game, marsBot.player, human);
-      const bonusDeck = MarsBotBonusDeck.createBase(new SeededRandom(99));
+      const bonusDeck = MarsBotBonusDeck.create(new SeededRandom(99));
       const bonusResolver = new MarsBotBonusResolver(game, marsBot.player, human, marsBot.turnResolver, bonusDeck, tilePlacer);
 
       // With <5 MC, should draw another bonus card instead
@@ -362,7 +362,7 @@ describe('MarsBot Rules Compliance', () => {
       const cards = createBaseBonusCards();
       const b08 = cards.find((c) => c.id === BonusCardId.B08_CORPORATE_COMPETITION)!;
       const tilePlacer = new MarsBotTilePlacer(game, marsBot.player, human);
-      const bonusDeck = MarsBotBonusDeck.createBase(new SeededRandom(99));
+      const bonusDeck = MarsBotBonusDeck.create(new SeededRandom(99));
       const bonusResolver = new MarsBotBonusResolver(game, marsBot.player, human, marsBot.turnResolver, bonusDeck, tilePlacer);
 
       const mcBefore = marsBot.turnResolver.megacredits;
@@ -453,7 +453,7 @@ describe('MarsBot Rules Compliance', () => {
       const {marsBot, b08} = setup({Scientist: 0});
       const tracks = marsBot.marsBotBoard.tracks;
       tracks[3].position = tracks[3].definition.layout.length - 1;
-      marsBot.bonusDeck.drawPile.push(createCorpBonusCard(BonusCardId.B31_GOVERNMENT_SUBSIDY));
+      marsBot.bonusDeck.drawPile.push(createBonusCard(BonusCardId.B31_GOVERNMENT_SUBSIDY));
       const tr = marsBot.player.terraformRating;
       marsBot['bonusResolver'].resolve(b08);
       expect(marsBot.player.terraformRating).to.eq(tr + 1);
@@ -578,7 +578,7 @@ describe('MarsBot Rules Compliance', () => {
       const marsBot = game.automaHooks!.marsBot;
       game.fundAward(human, game.awards.find((a) => a.name === 'Forecaster')!);
       stackDeck(game, new Mine(), new Algae());
-      marsBot.bonusDeck.drawPile.push(createCorpBonusCard(BonusCardId.B31_GOVERNMENT_SUBSIDY));
+      marsBot.bonusDeck.drawPile.push(createBonusCard(BonusCardId.B31_GOVERNMENT_SUBSIDY));
       marsBot.turnResolver.megacredits = 4;
       const tr = marsBot.player.terraformRating;
 

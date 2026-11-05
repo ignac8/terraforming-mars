@@ -53,7 +53,7 @@ const PRISTAR: IMarsBotCorp = {
         bot.setCorpState('whiteCubeOnCard', 0);
         bot.raiseTR(1);
         bot.gainMc(6);
-        bot.game.log('MarsBot (Pristar): parameter raise intercepted — removed cube, +1 TR, +6 M€, SKIP raise');
+        bot.game.log('MarsBot (Pristar): parameter raise intercepted: removed cube, +1 TR, +6 M€, SKIP raise');
         return true; // SKIP the parameter raise
       }
       return false;

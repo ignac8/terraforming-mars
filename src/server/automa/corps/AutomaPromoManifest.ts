@@ -104,7 +104,7 @@ const RECYCLONE: IMarsBotCorp = {
     onTrackCubeTrigger(bot, trackIndex, _position, cubeType) {
       if (cubeType === 'white' && trackIndex === 0) {
         bot.advanceTrack(6); // Plant track = index 6
-        bot.game.log('MarsBot (Recyclone): white cube on building track — advance plant track');
+        bot.game.log('MarsBot (Recyclone): white cube on building track: advance plant track');
       }
     },
   },
