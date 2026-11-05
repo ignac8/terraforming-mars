@@ -956,7 +956,7 @@
     "Place any final greenery from plants": "마지막으로 원하는만큼 ‘식물 자원으로 녹화 사업’ 행동 수행",
     "Don't place a greenery": "녹지 타일을 배치할 수 없습니다.",
 
-    "Wetlands: counts as an ocean and a greenery. Does not count toward 9 oceans.": "습지: 해양 타일이면서 동시에 녹지 타일. 단, 게임 종료 조건으로는 포함하지 않음",
+    "Wetlands: counts as an ocean and a greenery. Does not count toward ${0} oceans.": "습지: 해양 타일이면서 동시에 녹지 타일. 단, 게임 종료 조건으로는 포함하지 않음",
     "Red City: 1 VP per empty adjacent area. No greeneries may be placed next to it.": "붉은 도시: 인접한 빈 구역마다 승점 1점. 이 타일의 인접한 곳에 녹지 타일을 놓을 수 없음",
     "Moon Mine: 1 VP per adjacent road": "월면 광산: 인접한 도로마다 승점 1점.",
     "Moon Habitat: 1 VP per adjacent road": "월면 기지: 인접한 도로마다 승점 1점.",

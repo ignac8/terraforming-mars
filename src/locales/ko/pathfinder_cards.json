@@ -249,5 +249,5 @@
 
   "Wetlands": "습지",
   "(Requires 2 ocean tiles. Lose 4 plants. Place this tile on an UNRESERVED SPACE ADJACENT TO AT LEAST 2 OCEANS. Raise oxygen 1 step. Gain 1 TR.)": "(조건: 해양 타일 2장 이상.) (식물 자원 4개 제거. 습지 특수 타일을 해양 타일이 놓이는 곳 이외의 구역에 배치. 이때, 이미 배치된 2개 이상의 해양 타일과 맞닿게 놓아야 함. 자신의 플레이어 마커를 습지 특수 타일에 배치. 산소 농도 1% 상승. 테라포밍 등급 1 TR 상승.)",
-  "(Effect: Wetlands counts as a greenery tile and an ocean tile, except it can't be covered and is not one of the 9 oceans required to end the game.)": "(지속 효과: 습지는 녹지 타일이자 동시에 해양 타일인 것으로 간주. 게임 종료 조건인 9개의 해양 타일 수에는 포함하지 않음.)"
+  "(Effect: Wetlands counts as a greenery tile and an ocean tile, except it can't be covered and is not one of the oceans required to end the game.)": "(지속 효과: 습지는 녹지 타일이자 동시에 해양 타일인 것으로 간주. 게임 종료 조건인 9개의 해양 타일 수에는 포함하지 않음.)"
 }
