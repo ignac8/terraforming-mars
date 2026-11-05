@@ -80,22 +80,22 @@ Opened upstream as [#8666](https://github.com/terraforming-mars/terraforming-mar
 Checked 2026-11-02: every open upstream and fork PR's changes are on automa, apart from the import paths and
 divergences listed in the rows above.
 
-## Drafted, not opened yet (2026-11-05)
+## Opened 2026-11-05: boards, bonus cards, corporations
 
 Six fresh branches off upstream main, each independent of the others and of every open PR (merge-tree
-pairwise and chained onto all open PRs: clean). Pushed to the fork, bodies drafted, nothing opened upstream.
+pairwise and chained onto all open PRs: clean). Opened upstream the same day as #8683 to #8688.
 The four corporation PRs carry `AutomaManifest.ts`, `BaseGameCorps.ts` and automa's `fakeMarsBot(tracks,
 overrides)` byte-identical, so any of them can go first. Their specs are new (fake bot, no `MarsBot`) and
 are on automa too (`59a6328b1`), next to automa's real-MarsBot corp specs.
 
-| Branch | Contents | Divergence from automa branch |
+| PR and branch | Contents | Divergence from automa branch |
 |--------|----------|-------------------------------|
-| `marsbot-map-boards` | Hellas, Elysium, Utopia Planitia, Vastitas Borealis and Terra Cimmeria MarsBot boards with Venus variants, `THARSIS_MARSBOT_BOARD_WITH_VENUS`, `MARSBOT_BOARDS`, the `colony` track action (C p.8). Spec `tests/automa/boards/MarsBotBoards.spec.ts` (6 tests) | `isMarsBotBoardChoice` left out (only the fork's create form uses it) |
-| `marsbot-expansion-bonus-cards` | `AUTOMA_*` names for B15 to B32, `createBonusCard`, expansion cards in `marsBotBonusCardsFromJSON`, `MarsBotBonusDeck.create(random, {venus, colonies})` (C p.2, p.4). Extends `MarsBotBonusDeck.spec.ts` | No `MarsBotBonusDeckCard` (project cards in the bonus deck), `findAndRemove`, `removeById`, `bonusCardDisplayName`. Merging it into automa conflicts in those three files: keep automa's side, its spec already holds the PR's tests |
-| `marsbot-corps-base` | The 12 base game corporations (`AutomaBaseManifest.ts`), `AutomaManifest.ts`, `BaseGameCorps.ts`. Spec `AutomaBaseManifest.spec.ts` (16 tests) | None |
-| `marsbot-corps-prelude` | The 16 Prelude and Prelude 2 corporations, `printedVictoryPoints` in `MarsBotTags.ts`. Spec `AutomaPreludeManifest.spec.ts` (13 tests) | None |
-| `marsbot-corps-venus-promo` | The 5 Venus Next and 4 promo corporations. Specs `AutomaVenusManifest.spec.ts`, `AutomaPromoManifest.spec.ts` (13 tests) | None |
-| `marsbot-corps-turmoil` | The 5 Turmoil corporations, `LAKEFRONT_OCEAN_BONUS` (read by #8676's placer). Spec `AutomaTurmoilManifest.spec.ts` (13 tests) | None |
+| [#8683](https://github.com/terraforming-mars/terraforming-mars/pull/8683) `marsbot-map-boards` | Hellas, Elysium, Utopia Planitia, Vastitas Borealis and Terra Cimmeria MarsBot boards with Venus variants, `THARSIS_MARSBOT_BOARD_WITH_VENUS`, `MARSBOT_BOARDS`, the `colony` track action (C p.8). Spec `tests/automa/boards/MarsBotBoards.spec.ts` (6 tests) | `isMarsBotBoardChoice` left out (only the fork's create form uses it) |
+| [#8684](https://github.com/terraforming-mars/terraforming-mars/pull/8684) `marsbot-expansion-bonus-cards` | `AUTOMA_*` names for B15 to B32, `createBonusCard`, expansion cards in `marsBotBonusCardsFromJSON`, `MarsBotBonusDeck.create(random, {venus, colonies})` (C p.2, p.4). Extends `MarsBotBonusDeck.spec.ts` | No `MarsBotBonusDeckCard` (project cards in the bonus deck), `findAndRemove`, `removeById`, `bonusCardDisplayName`. Merging it into automa conflicts in those three files: keep automa's side, its spec already holds the PR's tests |
+| [#8685](https://github.com/terraforming-mars/terraforming-mars/pull/8685) `marsbot-corps-base` | The 12 base game corporations (`AutomaBaseManifest.ts`), `AutomaManifest.ts`, `BaseGameCorps.ts`. Spec `AutomaBaseManifest.spec.ts` (16 tests) | None |
+| [#8686](https://github.com/terraforming-mars/terraforming-mars/pull/8686) `marsbot-corps-prelude` | The 16 Prelude and Prelude 2 corporations, `printedVictoryPoints` in `MarsBotTags.ts`. Spec `AutomaPreludeManifest.spec.ts` (13 tests) | None |
+| [#8687](https://github.com/terraforming-mars/terraforming-mars/pull/8687) `marsbot-corps-venus-promo` | The 5 Venus Next and 4 promo corporations. Specs `AutomaVenusManifest.spec.ts`, `AutomaPromoManifest.spec.ts` (13 tests) | None |
+| [#8688](https://github.com/terraforming-mars/terraforming-mars/pull/8688) `marsbot-corps-turmoil` | The 5 Turmoil corporations, `LAKEFRONT_OCEAN_BONUS` (read by #8676's placer). Spec `AutomaTurmoilManifest.spec.ts` (13 tests) | None |
 
 Polish made for these on automa first: one bonus deck builder and `createCorpBonusCard` renamed to
 `createBonusCard` (`3e576de4e`), colons instead of em dashes in the corporation logs (same commit), the
@@ -196,7 +196,7 @@ All remaining modules import `MarsBot` directly: `MarsBotStock`, `MarsBotScoring
 colonies modules (`ColonyPlacer`, `Trader`, `ShippingBoard`, only as a type), the corp
 registry/resolver and the Colonies corporations, and the client UI (needs `GameModel.marsBot`).
 The other corporation manifests, the map boards and the expansion bonus cards only need
-`IMarsBot`, so they are drafted above.
+`IMarsBot`, so they went up as #8683 to #8688.
 
 ## Remaining phases (~25 PRs)
 
