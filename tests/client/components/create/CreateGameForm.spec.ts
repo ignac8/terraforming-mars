@@ -155,6 +155,19 @@ describe('CreateGameForm', () => {
     expect(vm.undoOption).eq(false);
   });
 
+  // The class is what keeps the note from widening the column (see create_game_form.less).
+  it('shows the Player undo note as a note inside the options column while Player undo is ticked', async () => {
+    const wrapper = shallowMount(CreateGameForm, {...globalConfig});
+    await wrapper.vm.$nextTick();
+    const column = wrapper.find('#undo-checkbox').element.closest('.create-game-page-column');
+
+    expect(column?.querySelectorAll('.create-game-option-note')).has.length(1);
+
+    await wrapper.find('#undo-checkbox').setValue(false);
+
+    expect(wrapper.find('.create-game-option-note').exists()).eq(false);
+  });
+
   it('does not keep tournament player passwords when tournament is switched off', async () => {
     const wrapper = shallowMount(CreateGameForm, {...globalConfig});
     await wrapper.vm.$nextTick();
