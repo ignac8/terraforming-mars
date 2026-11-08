@@ -209,8 +209,8 @@ export default defineComponent({
       const cardCost = corporation.cardCost === undefined ? constants.CARD_COST : corporation.cardCost;
       starting -= this.selectedCards.length * cardCost;
 
-      if (corpName === CardName.SAGITTA_FRONTIER_SERVICES || corpName === CardName.SAGITTA_FRONTIER_SERVICES_TOURNAMENT) {
-        // Effect for playing itself.
+      if (corpName === CardName.SAGITTA_FRONTIER_SERVICES) {
+        // Effect for playing itself. The tournament card has none, its 35 M€ already include it.
         starting += 4;
       }
 

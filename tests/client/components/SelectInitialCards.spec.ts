@@ -132,6 +132,21 @@ describe('SelectInitialCards', () => {
     expect(confirmationDialog.$data.shown).is.true;
   });
 
+  it('counts the 4 M€ Sagitta gets for playing itself, but not on the tournament card', async () => {
+    for (const run of [
+      {corp: CardName.SAGITTA_FRONTIER_SERVICES, expected: 31 + 4 - 3},
+      {corp: CardName.SAGITTA_FRONTIER_SERVICES_TOURNAMENT, expected: 35 - 3},
+    ]) {
+      const component = createComponent([run.corp], [CardName.ANTS]);
+      const selectCards = component.findAllComponents({name: 'select-card'});
+      selectCards[0].vm.$emit('cardschanged', [run.corp]);
+      selectCards[1].vm.$emit('cardschanged', [CardName.ANTS]);
+      await component.vm.$nextTick();
+
+      expect(component.vm.getStartingMegacredits(), run.corp).eq(run.expected);
+    }
+  });
+
   it('Cannot select two ceos', async () => {
     const component = createComponent([CardName.ECOLINE], [CardName.ANTS], undefined, [CardName.FLOYD, CardName.HAL9000, CardName.ENDER]);
     expect(component).not.is.undefined;
