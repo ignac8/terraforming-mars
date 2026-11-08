@@ -1,6 +1,7 @@
 import {Color} from '@/common/Color';
 import {LogMessageDataType} from '@/common/logs/LogMessageDataType';
 import {PlayerViewModel} from '@/common/models/PlayerModel';
+import {COLOR_KEYS} from '@/common/models/colorKeys';
 import {getPreferences} from '@/client/utils/PreferencesManager';
 
 /**
@@ -9,14 +10,6 @@ import {getPreferences} from '@/client/utils/PreferencesManager';
  * sees the swap. Models are swapped when they arrive from the server, and colors
  * sent back to the server are swapped back with `serverColor`.
  */
-
-// Keys in the server models that hold a player color, or an array of them.
-const COLOR_KEYS: ReadonlySet<string> = new Set([
-  'color', 'coOwner', 'excavator', 'chairman', 'partyLeader', 'visitor', 'activePlayer',
-  'lobby', 'passedPlayers', 'colonies', 'players', 'waitingFor',
-  // Replays and rewind votes.
-  'movers', 'viewerColor', 'defaultViewAs', 'viewAs', 'requester',
-]);
 
 type Swap = ReadonlyMap<string, Color>;
 

@@ -122,7 +122,7 @@ import {defineComponent} from 'vue';
 
 import {getPreferences, PreferencesManager, Preference} from '@/client/utils/PreferencesManager';
 import BugReportDialog from '@/client/components/BugReportDialog.vue';
-import {Color, PLAYER_COLORS} from '@/common/Color';
+import {PLAYER_COLORS, PLAYER_COLOR_LABELS, PlayerColor} from '@/common/Color';
 
 
 type Refs = {
@@ -190,12 +190,8 @@ export default defineComponent({
       // Colors are swapped as the game arrives from the server, so load it again.
       window.location.reload();
     },
-    colorName(color: Color): string {
-      // "Clear" is already the label of a button that clears a selection.
-      if (color === 'clear') {
-        return 'Transparent';
-      }
-      return color.charAt(0).toUpperCase() + color.slice(1);
+    colorName(color: PlayerColor): string {
+      return PLAYER_COLOR_LABELS[color];
     },
     okClicked(): void {
       this.$emit('okButtonClicked');
