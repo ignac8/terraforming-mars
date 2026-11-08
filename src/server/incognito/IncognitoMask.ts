@@ -2,6 +2,7 @@ import {createHash} from 'crypto';
 import {Color, PLAYER_COLORS, PLAYER_COLOR_LABELS, PlayerColor} from '@/common/Color';
 import {LogMessageDataType} from '@/common/logs/LogMessageDataType';
 import {COLOR_KEYS} from '@/common/models/colorKeys';
+import {AWARD_DETAIL_MESSAGE} from '@/common/game/VictoryPointsBreakdown';
 import {Phase} from '@/common/Phase';
 import {ParticipantId} from '@/common/Types';
 import {SeededRandom} from '@/common/utils/Random';
@@ -77,8 +78,8 @@ export function incognitoMask(game: IGame, viewerId: ParticipantId): IncognitoMa
  * Returns a copy of `value` in which every opponent's color and name is replaced by its fake.
  *
  * Colors are rewritten under the keys in `COLOR_KEYS` and in the value of a PLAYER log datum. Names are
- * rewritten in `name` next to a player's color, in `playerName`, in `messageArgs`, and in "name: " runs
- * of a STRING or RAW_STRING log datum. Each original value is replaced once, so a fake is never rewritten.
+ * rewritten in `name` next to a player's color, in `playerName`, in the funder of an award's VP detail, and in
+ * "name: " runs of a STRING or RAW_STRING log datum. Each original value is replaced once, so a fake is never rewritten.
  */
 export function maskModel<T>(value: T, mask: IncognitoMask | undefined): T {
   return mask === undefined ? value : walk(value, mask, undefined) as T;
@@ -109,6 +110,26 @@ export function unmaskColor<T extends string>(color: T, mask: IncognitoMask | un
   return color;
 }
 
+/** The refusal of a player choice that is not among the options. */
+export const PLAYER_NOT_AVAILABLE = 'Player not available';
+
+/**
+ * Returns the real color of the color that a viewer chose from a list of players.
+ *
+ * Throws an `InputError` with `PLAYER_NOT_AVAILABLE` where `unmaskColor` throws one, so a color that was never shown
+ * is refused like any other that is not among the options.
+ */
+export function unmaskChoice<T extends string>(color: T, mask: IncognitoMask | undefined): T {
+  try {
+    return unmaskColor(color, mask);
+  } catch (e) {
+    if (e instanceof InputError) {
+      throw new InputError(PLAYER_NOT_AVAILABLE);
+    }
+    throw e;
+  }
+}
+
 function maskColor(color: string, mask: IncognitoMask): string {
   return mask.colors.get(color as Color) ?? color;
 }
@@ -121,7 +142,7 @@ function walk(value: unknown, mask: IncognitoMask, key: string | undefined): unk
     if (COLOR_KEYS.has(key)) {
       return maskColor(value, mask);
     }
-    if (key === 'playerName' || key === 'messageArgs') {
+    if (key === 'playerName') {
       return mask.names.get(value) ?? value;
     }
     return value;
@@ -150,6 +171,10 @@ function walk(value: unknown, mask: IncognitoMask, key: string | undefined): unk
     } else {
       out[k] = walk(v, mask, k);
     }
+  }
+  // Of the VP details, only an award's names a player: the one who funded it.
+  if (record.message === AWARD_DETAIL_MESSAGE && Array.isArray(out.messageArgs) && typeof out.messageArgs[2] === 'string') {
+    out.messageArgs[2] = mask.names.get(out.messageArgs[2]) ?? out.messageArgs[2];
   }
   // In log data, `value` is a color only for a PLAYER datum, and a string with names only for a STRING one.
   if (typeof record.value === 'string') {

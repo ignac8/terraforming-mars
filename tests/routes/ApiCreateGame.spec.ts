@@ -432,6 +432,13 @@ describe('ApiCreateGame', () => {
     expect(res.content).contains('Player names must be different in an incognito game');
   });
 
+  it('reads no player name without incognito', async () => {
+    const players = [TWO_PLAYERS[0], {...TWO_PLAYERS[1], name: undefined}];
+    await postConfig({...newGameConfigForTest(), players});
+
+    expect(res.statusCode, res.content).eq(statusCode.ok);
+  });
+
   it('allows players to share a name without incognito', async () => {
     const players = [TWO_PLAYERS[0], {...TWO_PLAYERS[1], name: 'a'}];
     const game = await createGame({...newGameConfigForTest(), players});

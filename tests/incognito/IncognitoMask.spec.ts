@@ -1,5 +1,5 @@
 import {expect} from 'chai';
-import {incognitoMask, maskModel, maskText, unmaskColor} from '@/server/incognito/IncognitoMask';
+import {IncognitoMask, incognitoMask, maskModel, maskText, unmaskColor} from '@/server/incognito/IncognitoMask';
 import {testGame} from '../TestGame';
 import {TestPlayer} from '../TestPlayer';
 import {Game} from '@/server/Game';
@@ -7,7 +7,7 @@ import {Phase} from '@/common/Phase';
 import {Color, PLAYER_COLORS, PLAYER_COLOR_LABELS, PlayerColor} from '@/common/Color';
 import {LogMessageDataType} from '@/common/logs/LogMessageDataType';
 import {InputError} from '@/server/inputs/InputError';
-import {IncognitoMask} from '@/server/incognito/IncognitoMask';
+import {AWARD_DETAIL_MESSAGE} from '@/common/game/VictoryPointsBreakdown';
 
 function label(color: Color | undefined): string {
   return PLAYER_COLOR_LABELS[color as PlayerColor];
@@ -142,11 +142,11 @@ describe('IncognitoMask', () => {
     const fakeAlice = label(mask?.colors.get(alice.color));
     const fakeBob = label(mask?.colors.get(bob.color));
 
-    const args = maskModel({messageArgs: ['1st', 'Miner', 'Alice']}, mask);
+    const args = maskModel({message: AWARD_DETAIL_MESSAGE, messageArgs: ['1st', 'Miner', 'Alice']}, mask);
     const text = maskModel({type: LogMessageDataType.STRING, value: 'Alice: 3 / Bob: 1'}, mask);
     const raw = maskModel({type: LogMessageDataType.RAW_STRING, value: 'Alice: 3 / Bob: 1'}, mask);
 
-    expect(args).deep.eq({messageArgs: ['1st', 'Miner', fakeAlice]});
+    expect(args).deep.eq({message: AWARD_DETAIL_MESSAGE, messageArgs: ['1st', 'Miner', fakeAlice]});
     expect(text.value).eq(`${fakeAlice}: 3 / ${fakeBob}: 1`);
     expect(raw.value).eq(`${fakeAlice}: 3 / ${fakeBob}: 1`);
   });
@@ -183,7 +183,10 @@ describe('IncognitoMask', () => {
 
     const masked = maskModel({
       players: [{color: first.color, name: 'Alice'}, {color: second.color, name: fakeOfFirst}],
-      messageArgs: ['Alice', fakeOfFirst],
+      awards: [
+        {message: AWARD_DETAIL_MESSAGE, messageArgs: ['1st', 'Miner', 'Alice']},
+        {message: AWARD_DETAIL_MESSAGE, messageArgs: ['2nd', 'Miner', fakeOfFirst]},
+      ],
       log: {type: LogMessageDataType.STRING, value: `Alice: 1 / ${fakeOfFirst}: 2`},
     }, mask);
 
@@ -192,11 +195,27 @@ describe('IncognitoMask', () => {
       {color: fakeFirst, name: label(fakeFirst)},
       {color: fakeSecond, name: label(fakeSecond)},
     ]);
-    expect(masked.messageArgs).deep.eq([label(fakeFirst), label(fakeSecond)]);
+    expect(masked.awards.map((award) => award.messageArgs[2])).deep.eq([label(fakeFirst), label(fakeSecond)]);
     expect(masked.log.value).eq(`${label(fakeFirst)}: 1 / ${label(fakeSecond)}: 2`);
     expect(maskText(`Alice and ${fakeOfFirst}`, mask)).eq(`${label(fakeFirst)} and ${label(fakeSecond)}`);
     expect(unmaskColor(fakeFirst as Color, mask)).eq(first.color);
     expect(unmaskColor(fakeSecond as Color, mask)).eq(second.color);
+  });
+
+  it('maskModel rewrites only the funder of an award detail, so an opponent named like a milestone or award stays out', () => {
+    const [game, player, mayor] = testGame(3, {incognito: true});
+    mayor.name = 'Mayor';
+    const mask = incognitoMask(game, player.id);
+
+    const masked = maskModel({
+      detailsMilestones: [{message: 'Claimed ${0} milestone', messageArgs: ['Mayor'], victoryPoint: 5}],
+      detailsAwards: [{message: AWARD_DETAIL_MESSAGE, messageArgs: ['1st', 'Mayor', 'Mayor'], victoryPoint: 5}],
+    }, mask);
+
+    expect(masked).deep.eq({
+      detailsMilestones: [{message: 'Claimed ${0} milestone', messageArgs: ['Mayor'], victoryPoint: 5}],
+      detailsAwards: [{message: AWARD_DETAIL_MESSAGE, messageArgs: ['1st', 'Mayor', label(mask?.colors.get(mayor.color))], victoryPoint: 5}],
+    });
   });
 
   it('maskModel labels a playerName by its color, so a shared name keeps the own seat real', () => {

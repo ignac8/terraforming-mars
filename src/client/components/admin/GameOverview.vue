@@ -5,7 +5,7 @@
     <td><span :class="statusClass"></span></td>
     <td><a :href="'game?id='+id" class="game-id">{{ id }}</a></td>
     <template v-if="game !== undefined">
-      <td v-for="player in game.players" :key="player.color">
+      <td v-for="player in game.players" :key="player.id">
         <span class="player-name" :class="'player_bg_color_'+ player.color">
           <a calassc target="blank" :href="'player?id=' + player.id">{{ player.name }}</a>
         </span>

@@ -121,6 +121,18 @@ describe('fetchReplay', () => {
       expect(replay.saveId).eq(3);
     });
 
+    it('keeps the real names of the judge\'s replay view, where a player may be called Red', async () => {
+      (global as any).fetch = async () => ({
+        ok: true,
+        status: 200,
+        json: () => Promise.resolve({saveId: 3, viewAs: 'all', view: incognitoView(), privates: []}),
+      });
+
+      const replay = await fetchReplayView('j-judge-id', 3, 'all');
+
+      expect(replay.view.players.map((p) => p.name)).deep.eq(['Alice', 'Red']);
+    });
+
     it('translates the fake names of the view that a rewind answers', async () => {
       (global as any).fetch = async () => ({ok: true, status: 200, json: () => Promise.resolve(incognitoView())});
 

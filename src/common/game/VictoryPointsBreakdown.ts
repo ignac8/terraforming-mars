@@ -2,6 +2,9 @@ import {Tag} from '../cards/Tag';
 
 export type MADetail = {message: string, messageArgs?: Array<string>, victoryPoint: number};
 
+/** The message of an award's `MADetail`. Its arguments are the place, the award's name and the name of who funded it. */
+export const AWARD_DETAIL_MESSAGE = '${0} place for ${1} award (funded by ${2})';
+
 export type VictoryPointsBreakdown = {
   terraformRating: number;
   milestones: number;

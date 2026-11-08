@@ -8,6 +8,7 @@ import {VictoryPointsBreakdownBuilder} from './VictoryPointsBreakdownBuilder';
 import {FundedAward} from '../awards/FundedAward';
 import {AwardScorer} from '../awards/AwardScorer';
 import {CardName} from '../../common/cards/CardName';
+import {AWARD_DETAIL_MESSAGE} from '../../common/game/VictoryPointsBreakdown';
 
 export function calculateVictoryPoints(player: IPlayer) {
   const builder = new VictoryPointsBreakdownBuilder();
@@ -106,7 +107,7 @@ function maybeSetVP(thisPlayer: IPlayer, awardWinner: IPlayer, fundedAward: Fund
     builder.setVictoryPoints(
       'awards',
       vps,
-      '${0} place for ${1} award (funded by ${2})',
+      AWARD_DETAIL_MESSAGE,
       [place, fundedAward.award.name, fundedAward.player.name],
     );
   }

@@ -77,7 +77,8 @@ export async function fetchReplayView(id: ParticipantId, saveId: number, viewAs:
   viewAbortController = new AbortController();
   const url = `${paths.API_REPLAY_VIEW}?id=${id}&save=${saveId}&as=${serverColor(viewAs)}${judgeCredentials(id, passwordFragment)}${undoneParam(undone)}`;
   const replay = await readJson<ReplayViewModel>(await fetch(url, {signal: viewAbortController.signal}));
-  return {...replay, view: translateFakeNames(replay.view)};
+  // The judge is shown every real name, and a player may have one that is a color's label.
+  return isJudgeId(id) ? replay : {...replay, view: translateFakeNames(replay.view)};
 }
 
 /**
