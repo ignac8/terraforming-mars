@@ -4,7 +4,8 @@ import {afterEach, vi} from 'vitest';
 import {defineAsyncComponent} from 'vue';
 import {globalConfig} from '@tests/client/components/getLocalVue';
 import App from '@/client/components/App.vue';
-import {translateMessage} from '@/client/directives/i18n';
+import {setTranslationsForTest, translateMessage} from '@/client/directives/i18n';
+import {PreferencesManager} from '@/client/utils/PreferencesManager';
 import {LogMessageDataType} from '@/common/logs/LogMessageDataType';
 import {fakeGameModel, fakeGameOptionsModel, fakePlayerViewModel, fakePublicPlayerModel} from '@tests/client/components/testHelpers';
 
@@ -13,6 +14,8 @@ vi.mock('@/client/components/replay/ReplayScreen.vue', () => ({default: {templat
 
 describe('App', () => {
   afterEach(() => {
+    PreferencesManager.INSTANCE.set('lang', 'en');
+    setTranslationsForTest(undefined);
     vi.restoreAllMocks();
     vi.unstubAllGlobals();
     window.sessionStorage.clear();
@@ -123,6 +126,53 @@ describe('App', () => {
 
     const message = {message: 'Hello ${0}', data: [{type: LogMessageDataType.PLAYER, value: 'red'}]};
     expect(translateMessage(message as any)).eq('Hello Alice');
+  });
+
+  // Mounts the page of `path` for an incognito game, served a model where the opponent shows as the fake name "Red".
+  async function mountIncognitoPage(path: string, model: object) {
+    PreferencesManager.INSTANCE.set('lang', 'pl');
+    setTranslationsForTest({Red: 'Czerwony'});
+    window.history.replaceState({}, '', path);
+    vi.stubGlobal('fetch', vi.fn(async () => ({ok: true, status: 200, json: async () => model}) as Response));
+    const wrapper = shallowMount(App, {
+      ...globalConfig,
+      global: {...globalConfig.global, stubs: {
+        PlayerHome: {template: '<div class="stub-player"></div>'},
+        SpectatorHome: {template: '<div class="stub-spectator"></div>'},
+      }},
+    });
+    await flushPromises();
+    return wrapper;
+  }
+
+  const incognitoGame = {phase: 'action', gameAge: 1, undoCount: 0, gameOptions: {incognito: true}};
+  const incognitoPlayers = [{color: 'green', name: 'Alice'}, {color: 'blue', name: 'Red'}];
+
+  it('translates the fake names on a player page, and in the messages that name them', async () => {
+    const wrapper = await mountIncognitoPage('/player?id=p1&password=0123456789ab', {
+      id: 'p1',
+      color: 'green',
+      password: '0123456789ab',
+      thisPlayer: incognitoPlayers[0],
+      players: incognitoPlayers,
+      game: incognitoGame,
+    });
+
+    expect(wrapper.vm.playerView?.players.map((p: {name: string}) => p.name)).deep.eq(['Alice', 'Czerwony']);
+    const message = {message: 'Hello ${0}', data: [{type: LogMessageDataType.PLAYER, value: 'blue'}]};
+    expect(translateMessage(message as any)).eq('Hello Czerwony');
+  });
+
+  it('translates the fake names on a spectator page', async () => {
+    const wrapper = await mountIncognitoPage('/spectator?id=s1', {
+      id: 's1',
+      color: 'neutral',
+      thisPlayer: undefined,
+      players: incognitoPlayers,
+      game: incognitoGame,
+    });
+
+    expect(wrapper.vm.spectator?.players.map((p: {name: string}) => p.name)).deep.eq(['Alice', 'Czerwony']);
   });
 
   it('replaces a stale judge password in the address bar', async () => {

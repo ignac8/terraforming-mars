@@ -10,6 +10,8 @@ import {PlayerViewModel, PublicPlayerModel} from '@/common/models/PlayerModel';
 import {WaitingForModel} from '@/common/models/WaitingForModel';
 import {Phase} from '@/common/Phase';
 import {INVALID_REQUEST_ID} from '@/common/app/AppErrorId';
+import {PreferencesManager} from '@/client/utils/PreferencesManager';
+import {setTranslationsForTest} from '@/client/directives/i18n';
 
 describe('WaitingFor', () => {
   const thisPlayer: Partial<PublicPlayerModel> = {
@@ -90,13 +92,21 @@ describe('WaitingFor', () => {
     });
   }
 
-  function stubServer(players: Array<unknown>) {
-    const fetchStub = vi.fn(async () => ({ok: true, json: async () => ({players})}) as Response);
+  // The answer to a poll: the players, and the game that tells whether their names are fake.
+  function playersResponse(players: Array<unknown>, incognito: boolean) {
+    const game = {phase: Phase.DRAFTING, gameOptions: {incognito}};
+    return {ok: true, json: async () => ({players, game})} as unknown as Response;
+  }
+
+  function stubServer(players: Array<unknown>, incognito: boolean = false) {
+    const fetchStub = vi.fn(async () => playersResponse(players, incognito));
     vi.stubGlobal('fetch', fetchStub);
     return fetchStub;
   }
 
   afterEach(() => {
+    PreferencesManager.INSTANCE.set('lang', 'en');
+    setTranslationsForTest(undefined);
     window.history.replaceState({}, '', '/');
     vi.useRealTimers();
     vi.unstubAllGlobals();
@@ -116,11 +126,24 @@ describe('WaitingFor', () => {
     expect(wrapper.find('.stub-pif').exists()).to.be.true;
   });
 
+  it('translates the fake names of other players while drafting', async () => {
+    vi.useFakeTimers();
+    PreferencesManager.INSTANCE.set('lang', 'pl');
+    setTranslationsForTest({Blue: 'Niebieski'});
+    stubServer([{color: 'red', name: 'Alice'}, {color: 'blue', name: 'Blue'}], true);
+    const playerView = draftingView();
+    mountDrafting(playerView);
+
+    await vi.advanceTimersByTimeAsync(3500);
+
+    expect(playerView.players.map((p) => p.name)).deep.eq(['Alice', 'Niebieski']);
+  });
+
   it('waits for a slow poll before polling again', async () => {
     vi.useFakeTimers();
     let respond = () => {};
     const fetchStub = vi.fn(() => new Promise<Response>((resolve) => {
-      respond = () => resolve({ok: true, json: async () => ({players: []})} as unknown as Response);
+      respond = () => resolve(playersResponse([], false));
     }));
     vi.stubGlobal('fetch', fetchStub);
     mountDrafting(draftingView());
@@ -264,6 +287,26 @@ describe('WaitingFor', () => {
     await submit(inputError(undefined));
 
     expect(vi.getTimerCount()).eq(0);
+  });
+
+  it('translates the fake names of the view that the server answers a response with', async () => {
+    PreferencesManager.INSTANCE.set('lang', 'pl');
+    setTranslationsForTest({Blue: 'Niebieski'});
+    const players = [{color: 'red', name: 'Alice'}, {color: 'blue', name: 'Blue'}];
+    const view = {
+      id: 'p-player-id', color: 'red', thisPlayer: players[0], players,
+      game: {phase: Phase.ACTION, gameAge: 2, undoCount: 0, gameOptions: {incognito: true}},
+    };
+    vi.stubGlobal('fetch', vi.fn(async () => ({ok: true, json: async () => view}) as Response));
+    const wrapper = shallowMount(WaitingFor, {
+      ...globalConfig,
+      global: {...globalConfig.global, stubs: {'PlayerInputFactory': true}},
+      props: {playerView: playerView as PlayerViewModel, waitingfor: {type: 'option', title: 'test', buttonLabel: 'save'}},
+    });
+    (wrapper.vm as any).onsave({type: 'option'});
+    await flushPromises();
+
+    expect((wrapper.vm.$root as any).playerView.players.map((p: PublicPlayerModel) => p.name)).deep.eq(['Alice', 'Niebieski']);
   });
 
   // Answers every poll the same way and counts them.

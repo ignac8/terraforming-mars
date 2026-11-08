@@ -230,6 +230,71 @@ describe('CreateGameForm', () => {
     }
   });
 
+  it('ticks and locks player passwords for a multiplayer incognito game', async () => {
+    const wrapper = shallowMount(CreateGameForm, {...globalConfig});
+    await wrapper.vm.$nextTick();
+    const vm = wrapper.vm as any;
+    vm.expansions.tournament = false;
+    await wrapper.vm.$nextTick();
+    vm.undoOption = false;
+    vm.playerPasswords = false;
+    vm.playersCount = 2;
+    await wrapper.vm.$nextTick();
+
+    expect(vm.newGameConfig).deep.include({incognito: false, playerPasswords: false});
+    expect(wrapper.find('#playerPasswords-checkbox').attributes('disabled')).is.undefined;
+
+    await wrapper.find('#incognito-checkbox').setValue(true);
+
+    expect(vm.newGameConfig).deep.include({incognito: true, playerPasswords: true});
+    const box = wrapper.find('#playerPasswords-checkbox');
+    expect((box.element as HTMLInputElement).checked).eq(true);
+    expect(box.attributes('disabled')).is.not.undefined;
+    expect(wrapper.find('label[for="playerPasswords-checkbox"]').attributes('title')).includes('Incognito');
+    // What the player chose stays what they chose.
+    expect(vm.playerPasswords).eq(false);
+
+    await wrapper.find('#incognito-checkbox').setValue(false);
+
+    expect(vm.newGameConfig).deep.include({incognito: false, playerPasswords: false});
+    expect(wrapper.find('#playerPasswords-checkbox').attributes('disabled')).is.undefined;
+  });
+
+  it('offers incognito to a multiplayer game only, and never sends it for a solo game', async () => {
+    const wrapper = shallowMount(CreateGameForm, {...globalConfig});
+    await wrapper.vm.$nextTick();
+    const vm = wrapper.vm as any;
+    vm.expansions.tournament = false;
+    vm.undoOption = false;
+    vm.playersCount = 2;
+    await wrapper.vm.$nextTick();
+    await wrapper.find('#incognito-checkbox').setValue(true);
+
+    vm.playersCount = 1;
+    await wrapper.vm.$nextTick();
+
+    expect(wrapper.find('#incognito-checkbox').exists()).eq(false);
+    expect(vm.incognito).eq(true);
+    expect(vm.newGameConfig).deep.include({incognito: false, playerPasswords: false});
+  });
+
+  it('restores incognito from a saved config', async () => {
+    PreferencesManager.INSTANCE.set('remember_create_game_settings', true);
+    createGameSettingsStorage.save(createNewGameConfig({
+      expansions: {...DEFAULT_EXPANSIONS, tournament: false},
+      undoOption: false,
+      incognito: true,
+    }));
+
+    const wrapper = shallowMount(CreateGameForm, {...globalConfig});
+    await wrapper.vm.$nextTick();
+    await wrapper.vm.$nextTick();
+
+    const vm = wrapper.vm as any;
+    expect(vm.incognito).eq(true);
+    expect(vm.newGameConfig).deep.include({incognito: true, playerPasswords: true});
+  });
+
   it('sends the tournament preset with passwords on and the Player undo that was ticked', async () => {
     const wrapper = shallowMount(CreateGameForm, {...globalConfig});
     await wrapper.vm.$nextTick();

@@ -2,7 +2,25 @@ import {expect} from 'chai';
 import {afterEach, beforeEach} from 'vitest';
 import {fetchReplayMoves, fetchReplayView, postJudgeFreeze, postJudgeRewind, postRewind, ReplayResponseError, translateRefusal} from '@/client/utils/fetchReplay';
 import {PreferencesManager} from '@/client/utils/PreferencesManager';
-import {fakePlayerViewModel} from '../components/testHelpers';
+import {setTranslationsForTest} from '@/client/directives/i18n';
+import {fakeGameModel, fakeGameOptionsModel, fakePlayerViewModel, fakePublicPlayerModel} from '../components/testHelpers';
+
+// A body that reads as a player's view and as a replay step, for the tests that only look at the address.
+function anyBody() {
+  return {...fakePlayerViewModel(), view: fakePlayerViewModel()};
+}
+
+// The view of the viewer, in a game where the opponent shows as the fake name "Red".
+function incognitoView() {
+  const viewer = fakePublicPlayerModel({color: 'green', name: 'Alice'});
+  const opponent = fakePublicPlayerModel({color: 'blue', name: 'Red'});
+  return fakePlayerViewModel({
+    color: 'green',
+    thisPlayer: viewer,
+    players: [viewer, opponent],
+    game: fakeGameModel({gameOptions: fakeGameOptionsModel({incognito: true})}),
+  });
+}
 
 describe('fetchReplay', () => {
   let originalFetch: any;
@@ -13,7 +31,7 @@ describe('fetchReplay', () => {
     urls = [];
     (global as any).fetch = async (url: string) => {
       urls.push(url);
-      return {ok: true, status: 200, json: () => Promise.resolve({})};
+      return {ok: true, status: 200, json: () => Promise.resolve(anyBody())};
     };
   });
 
@@ -84,6 +102,34 @@ describe('fetchReplay', () => {
     ]);
   });
 
+  describe('incognito games', () => {
+    beforeEach(() => {
+      PreferencesManager.INSTANCE.set('lang', 'pl');
+      setTranslationsForTest({Red: 'Czerwony'});
+    });
+
+    it('translates the fake names of a replay view', async () => {
+      (global as any).fetch = async () => ({
+        ok: true,
+        status: 200,
+        json: () => Promise.resolve({saveId: 3, viewAs: 'green', view: incognitoView(), privates: []}),
+      });
+
+      const replay = await fetchReplayView('p-player-id', 3, 'green');
+
+      expect(replay.view.players.map((p) => p.name)).deep.eq(['Alice', 'Czerwony']);
+      expect(replay.saveId).eq(3);
+    });
+
+    it('translates the fake names of the view that a rewind answers', async () => {
+      (global as any).fetch = async () => ({ok: true, status: 200, json: () => Promise.resolve(incognitoView())});
+
+      const view = await postRewind('p-player-id', 3, 'same');
+
+      expect(view.players.map((p) => p.name)).deep.eq(['Alice', 'Czerwony']);
+    });
+  });
+
   describe('postRewind', () => {
     const playerId = 'p-player-id';
 
@@ -139,7 +185,7 @@ describe('fetchReplay', () => {
       window.history.replaceState({}, '', `/judge?id=${judgeId}&serverId=a%26b`);
       (global as any).fetch = async (url: string) => {
         urls.push(url);
-        return {ok: true, status: 200, json: () => Promise.resolve({})};
+        return {ok: true, status: 200, json: () => Promise.resolve(anyBody())};
       };
 
       await postJudgeRewind(judgeId, 3, 'same', 'back');

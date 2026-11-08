@@ -101,6 +101,8 @@
   "The judge can freeze the game and rewind the whole table to any earlier move.": "Sędzia może zamrozić grę i cofnąć cały stół do dowolnego wcześniejszego ruchu.",
   "judge undo": "cofanie przez sędziego",
   "Player undo needs player passwords, so a stranger cannot rewind a finished game.": "Cofanie ruchów gracza wymaga haseł graczy, żeby obca osoba nie mogła cofnąć zakończonej gry.",
+  "Incognito (hide opponents' names and colors until the game ends)": "Incognito (ukryj imiona i kolory przeciwników do końca gry)",
+  "Incognito needs player passwords, so an open player link cannot show who sits in that seat.": "Tryb incognito wymaga haseł graczy, żeby otwarty link gracza nie ujawniał, kto zajmuje to miejsce.",
   "Rewind to any earlier move. With more than one player, every other player must agree.": "Cofnij się do dowolnego wcześniejszego ruchu. Przy więcej niż jednym graczu wszyscy pozostali gracze muszą się zgodzić.",
   "7 Heat Into temperature": "7 jednostek ciepła aby podnieść temperaturę",
   "NEXT CARD:": "następna karta:",
