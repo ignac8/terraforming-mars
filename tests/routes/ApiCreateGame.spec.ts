@@ -10,6 +10,10 @@ import {SimpleGameModel} from '../../src/common/models/SimpleGameModel';
 import {FakeClock} from '../common/FakeClock';
 import {CardName} from '../../src/common/cards/CardName';
 import {isJudgeId} from '../../src/common/Types';
+import {IGame} from '../../src/server/IGame';
+import {InMemoryDatabase} from '../testing/InMemoryDatabase';
+import {restoreTestDatabase, setTestDatabase} from '../testing/setup';
+import {testGame} from '../TestGame';
 
 const TWO_PLAYERS = [
   {name: 'a', color: 'red', beginner: false, handicap: 0, first: true},
@@ -96,6 +100,10 @@ describe('ApiCreateGame', () => {
     res = new MockResponse();
     scaffolding = new RouteTestScaffolding(req);
     apiCreateGame = new ApiCreateGame([{limit: 99999, perMs: 1}]);
+  });
+
+  afterEach(() => {
+    restoreTestDatabase();
   });
 
   it('no get', async () => {
@@ -305,6 +313,40 @@ describe('ApiCreateGame', () => {
     }
 
     expect(orders.size).is.greaterThan(1);
+  });
+
+  // Stores a copy of `source` as the game to clone, since cloning rewrites the stored game.
+  function storeCloneSource(source: IGame) {
+    const database = new InMemoryDatabase();
+    database.games.set(source.id, [source.serialize()]);
+    setTestDatabase(database);
+  }
+
+  it('incognito clone of an incognito game shuffles seats and ignores the form\'s first player', async () => {
+    const orders = new Set<string>();
+    for (let i = 0; i < 20; i++) {
+      const [source] = testGame(4, {incognito: true});
+      storeCloneSource(source);
+      const game = await createGame({...newGameConfigForTest(), players: FOUR_PLAYERS, incognito: false, clonedGamedId: source.id});
+
+      expect(game.gameOptions.incognito).is.true;
+      expect(game.first).eq(game.players[0]);
+      orders.add(game.players.map((p) => p.name).join());
+    }
+
+    expect(orders.size).is.greaterThan(1);
+  });
+
+  it('clone of a normal game ignores the request\'s incognito flag', async () => {
+    for (let i = 0; i < 10; i++) {
+      const [source] = testGame(4);
+      storeCloneSource(source);
+      const game = await createGame({...newGameConfigForTest(), players: FOUR_PLAYERS, incognito: true, clonedGamedId: source.id});
+
+      expect(game.gameOptions.incognito).is.false;
+      expect(game.players.map((p) => p.name)).deep.eq(['a', 'b', 'c', 'd']);
+      expect(game.first.name).eq('c');
+    }
   });
 
   it('keeps the seats and the first player in order without incognito', async () => {

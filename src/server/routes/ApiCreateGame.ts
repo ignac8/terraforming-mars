@@ -121,7 +121,10 @@ export class ApiCreateGame extends Handler {
       }
       const gameId = safeCast(generateRandomId('g'), isGameId);
       const spectatorId = safeCast(generateRandomId('s'), isSpectatorId);
-      const incognito = gameReq.incognito === true && gameReq.players.length > 1;
+      const clonedGameId = gameReq.clonedGamedId !== undefined && !gameReq.clonedGamedId.startsWith('#') ? gameReq.clonedGamedId : undefined;
+      const source = clonedGameId === undefined ? undefined : await Database.getInstance().getGameVersion(clonedGameId, 0);
+      // A clone keeps the source's options, so the source decides whether the clone is incognito.
+      const incognito = (source === undefined ? gameReq.incognito : source.gameOptions.incognito) === true && gameReq.players.length > 1;
       // TR boost is per player, so applyTournamentPreset cannot reach it.
       const seated = gameReq.players.map((p) => {
         return new Player(
@@ -136,10 +139,12 @@ export class ApiCreateGame extends Handler {
       // An incognito game ignores the form's first player, since a "1st" marker on a chosen seat would tell
       // the creator who sits there.
       let firstPlayerIdx = 0;
-      for (let i = 0; !incognito && i < gameReq.players.length; i++) {
-        if (gameReq.players[i].first === true) {
-          firstPlayerIdx = i;
-          break;
+      if (!incognito) {
+        for (let i = 0; i < gameReq.players.length; i++) {
+          if (gameReq.players[i].first === true) {
+            firstPlayerIdx = i;
+            break;
+          }
         }
       }
 
@@ -224,9 +229,8 @@ export class ApiCreateGame extends Handler {
       }
 
       let game: IGame;
-      if (gameOptions.clonedGamedId !== undefined && !gameOptions.clonedGamedId.startsWith('#')) {
-        const serialized = await Database.getInstance().getGameVersion(gameOptions.clonedGamedId, 0);
-        game = Cloner.clone(gameId, players, firstPlayerIdx, serialized);
+      if (source !== undefined) {
+        game = Cloner.clone(gameId, players, firstPlayerIdx, source);
       } else {
         const seed = Math.random();
         game = Game.newInstance(gameId, players, players[firstPlayerIdx], spectatorId, gameOptions, seed);

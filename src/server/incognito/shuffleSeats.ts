@@ -1,4 +1,4 @@
-import {Random} from '../../common/utils/Random';
+import {Random} from '@/common/utils/Random';
 
 /**
  * Returns a new array with `seats` in a uniformly random order (Fisher-Yates), leaving `seats` unchanged.
