@@ -25,6 +25,7 @@ export type GameOptionsModel = {
   removeNegativeGlobalEvents: boolean,
   showOtherPlayersVP: boolean,
   playerPasswords: boolean,
+  incognito: boolean,
   showTimers: boolean,
   shuffleMapOption: boolean,
   solarPhaseOption: boolean,

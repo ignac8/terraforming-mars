@@ -1985,6 +1985,8 @@ export class Game implements IGame, Logger {
     gameOptions.boardName = normalizeBoardName(gameOptions.boardName);
     // Saves from before Judge undo have no such field.
     gameOptions.judgeUndo = gameOptions.judgeUndo ?? false;
+    // Saves from before incognito games have no such field.
+    gameOptions.incognito = gameOptions.incognito ?? false;
     if (gameOptions.escapeVelocity !== undefined) {
       gameOptions.escapeVelocity = sanitizeEscapeVelocityOptions(gameOptions.escapeVelocity);
     }

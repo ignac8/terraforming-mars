@@ -20,6 +20,8 @@ import {RouteError} from './RouteError';
 import {CEO_CARDS_DEALT_PER_PLAYER} from '../../common/constants';
 import {validateCustomMA} from '../../common/ma/CustomMA';
 import {hasNegativeEscapeVelocityOption, sanitizeEscapeVelocityOptions} from '../../common/game/escapeVelocity';
+import {UnseededRandom} from '../../common/utils/Random';
+import {shuffleSeats} from '../incognito/shuffleSeats';
 
 function parseQuotaConfig(struct: any): QuotaConfig {
   let {limit} = struct;
@@ -119,8 +121,9 @@ export class ApiCreateGame extends Handler {
       }
       const gameId = safeCast(generateRandomId('g'), isGameId);
       const spectatorId = safeCast(generateRandomId('s'), isSpectatorId);
+      const incognito = gameReq.incognito === true && gameReq.players.length > 1;
       // TR boost is per player, so applyTournamentPreset cannot reach it.
-      const players = gameReq.players.map((p) => {
+      const seated = gameReq.players.map((p) => {
         return new Player(
           p.name,
           p.color,
@@ -129,8 +132,11 @@ export class ApiCreateGame extends Handler {
           safeCast(generateRandomId('p'), isPlayerId),
         );
       });
+      const players = incognito ? shuffleSeats(seated, UnseededRandom.INSTANCE) : seated;
+      // An incognito game ignores the form's first player, since a "1st" marker on a chosen seat would tell
+      // the creator who sits there.
       let firstPlayerIdx = 0;
-      for (let i = 0; i < gameReq.players.length; i++) {
+      for (let i = 0; !incognito && i < gameReq.players.length; i++) {
         if (gameReq.players[i].first === true) {
           firstPlayerIdx = i;
           break;
@@ -184,7 +190,9 @@ export class ApiCreateGame extends Handler {
         requiresVenusTrackCompletion: gameReq.requiresVenusTrackCompletion,
         showOtherPlayersVP: gameReq.showOtherPlayersVP,
         // A finished game can be rewound, so a table with Player undo needs seats that only their players can use.
-        playerPasswords: (gameReq.playerPasswords ?? false) || (gameReq.undoOption === true && players.length > 1),
+        // An incognito table needs them too: an open seat link would show its player's real name.
+        playerPasswords: (gameReq.playerPasswords ?? false) || incognito || (gameReq.undoOption === true && players.length > 1),
+        incognito,
         showTimers: gameReq.showTimers,
         shuffleMapOption: gameReq.shuffleMapOption,
         solarPhaseOption: gameReq.solarPhaseOption,

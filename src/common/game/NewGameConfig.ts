@@ -46,6 +46,7 @@ export type NewGameConfig = {
   fastModeOption: boolean;
   showOtherPlayersVP: boolean;
   playerPasswords: boolean;
+  incognito?: boolean;
   /** Tournament games only: ask for a judge link. */
   judgeLink?: boolean;
 

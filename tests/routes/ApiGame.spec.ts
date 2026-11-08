@@ -93,6 +93,7 @@ describe('ApiGame', () => {
           'requiresVenusTrackCompletion': false,
           'showOtherPlayersVP': false,
           'playerPasswords': false,
+          'incognito': false,
           'showTimers': true,
           'shuffleMapOption': false,
           'solarPhaseOption': false,

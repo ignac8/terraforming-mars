@@ -250,6 +250,70 @@ describe('ApiCreateGame', () => {
     }
   });
 
+  const FOUR_PLAYERS = [
+    {name: 'a', color: 'red', beginner: false, handicap: 0, first: false},
+    {name: 'b', color: 'blue', beginner: false, handicap: 0, first: false},
+    {name: 'c', color: 'yellow', beginner: false, handicap: 0, first: true},
+    {name: 'd', color: 'green', beginner: false, handicap: 0, first: false},
+  ];
+
+  async function createGame(config: object) {
+    req = new MockRequest();
+    res = new MockResponse();
+    scaffolding = new RouteTestScaffolding(req);
+    await postConfig(config);
+
+    expect(res.statusCode).eq(statusCode.ok);
+    const model = JSON.parse(res.content) as SimpleGameModel;
+    return (await scaffolding.ctx.gameLoader.getGame(model.id))!;
+  }
+
+  it('incognito forces player passwords', async () => {
+    const game = await createGame({...newGameConfigForTest(), players: TWO_PLAYERS, incognito: true, playerPasswords: false});
+
+    expect(game.gameOptions.incognito).is.true;
+    expect(game.gameOptions.playerPasswords).is.true;
+  });
+
+  it('incognito is off for solo', async () => {
+    const game = await createGame({...newGameConfigForTest(), incognito: true});
+
+    expect(game.gameOptions.incognito).is.false;
+  });
+
+  it('incognito is off unless asked for', async () => {
+    const game = await createGame({...newGameConfigForTest(), players: TWO_PLAYERS});
+
+    expect(game.gameOptions.incognito).is.false;
+    expect(game.gameOptions.playerPasswords).is.false;
+  });
+
+  it('incognito ignores the form\'s first player', async () => {
+    for (let i = 0; i < 20; i++) {
+      const game = await createGame({...newGameConfigForTest(), players: FOUR_PLAYERS, incognito: true});
+
+      expect(game.first).eq(game.playersInGenerationOrder[0]);
+      expect(game.first).eq(game.players[0]);
+    }
+  });
+
+  it('incognito shuffles seats', async () => {
+    const orders = new Set<string>();
+    for (let i = 0; i < 20; i++) {
+      const game = await createGame({...newGameConfigForTest(), players: FOUR_PLAYERS, incognito: true});
+      orders.add(game.players.map((p) => p.name).join());
+    }
+
+    expect(orders.size).is.greaterThan(1);
+  });
+
+  it('keeps the seats and the first player in order without incognito', async () => {
+    const game = await createGame({...newGameConfigForTest(), players: FOUR_PLAYERS});
+
+    expect(game.players.map((p) => p.name)).deep.eq(['a', 'b', 'c', 'd']);
+    expect(game.first.name).eq('c');
+  });
+
   it('treats a truthy non-boolean tournament flag as a tournament game', async () => {
     const config = {
       ...newGameConfigForTest(),

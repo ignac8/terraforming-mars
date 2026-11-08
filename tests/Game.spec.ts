@@ -1085,6 +1085,16 @@ describe('Game', () => {
     expect(Game.deserialize(old).gameOptions.judgeUndo).is.false;
   });
 
+  it('loads an old save without incognito with the option off and keeps it when on', () => {
+    const [first, second] = [TestPlayer.BLUE.newPlayer(), TestPlayer.RED.newPlayer()];
+    const on = Game.newInstance('gameid', [first, second], first, 'spectatorid', {incognito: true});
+    expect(Game.deserialize(on.serialize()).gameOptions.incognito).is.true;
+
+    const old = Game.newInstance('gameid', [first, second], first, 'spectatorid').serialize();
+    delete (old.gameOptions as Partial<typeof old.gameOptions>).incognito;
+    expect(Game.deserialize(old).gameOptions.incognito).is.false;
+  });
+
   it('deserializing a game without moon data still loads', () => {
     const player = TestPlayer.BLUE.newPlayer();
     const game = Game.newInstance('gameid', [player], player, 'spectatorid', {moonExpansion: false});

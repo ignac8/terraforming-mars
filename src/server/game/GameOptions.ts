@@ -27,6 +27,12 @@ export type GameOptions = {
    * the seat can be claimed again.
    */
   playerPasswords: boolean;
+  /**
+   * When set, players do not learn who sits where until the game ends.
+   *
+   * Only games of two or more players are incognito, and they always use `playerPasswords`.
+   */
+  incognito: boolean;
 
   // Extensions -- Deprecated, except when importing JSON
   corporateEra: boolean;
@@ -234,6 +240,7 @@ export const DEFAULT_GAME_OPTIONS: GameOptions = {
   requiresVenusTrackCompletion: false,
   showOtherPlayersVP: false,
   playerPasswords: false,
+  incognito: false,
   showTimers: true,
   shuffleMapOption: false,
   solarPhaseOption: false,
