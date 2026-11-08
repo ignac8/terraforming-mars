@@ -124,9 +124,19 @@ export abstract class Handler implements IHandler {
    * Checks a claimed seat's password, in running and finished games alike, and never claims an unclaimed seat.
    * Unlike `checkPlayerPassword` it has no solo and no finished-game exemption. It is for history reads, which
    * must not write to a running game, and for every vote route.
+   *
+   * An unclaimed seat is let through, except in a running incognito game, where it is refused as a wrong password
+   * is: its reads would show the link's holder the real name and color of whoever sits there.
    */
   protected checkClaimedSeat(player: IPlayer, ctx: Context): void {
-    if (player.game.gameOptions.playerPasswords === false || this.isServerIdValid(ctx) || player.password === undefined) {
+    const game = player.game;
+    if (game.gameOptions.playerPasswords === false || this.isServerIdValid(ctx)) {
+      return;
+    }
+    if (player.password === undefined) {
+      if (game.gameOptions.incognito && game.phase !== Phase.END) {
+        throw RouteError.unauthorized();
+      }
       return;
     }
     this.requirePassword(player.password, ctx);

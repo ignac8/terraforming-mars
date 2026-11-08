@@ -22,6 +22,7 @@ import {validateCustomMA} from '../../common/ma/CustomMA';
 import {hasNegativeEscapeVelocityOption, sanitizeEscapeVelocityOptions} from '../../common/game/escapeVelocity';
 import {UnseededRandom} from '../../common/utils/Random';
 import {shuffleSeats} from '../incognito/shuffleSeats';
+import {Phase} from '../../common/Phase';
 
 function parseQuotaConfig(struct: any): QuotaConfig {
   let {limit} = struct;
@@ -123,6 +124,15 @@ export class ApiCreateGame extends Handler {
       const spectatorId = safeCast(generateRandomId('s'), isSpectatorId);
       const clonedGameId = gameReq.clonedGamedId !== undefined && !gameReq.clonedGamedId.startsWith('#') ? gameReq.clonedGamedId : undefined;
       const source = clonedGameId === undefined ? undefined : await Database.getInstance().getGameVersion(clonedGameId, 0);
+      if (clonedGameId !== undefined && source?.gameOptions.incognito === true) {
+        // The first save logs each seat's real color, which a clone would show its own seats. Once the game is over,
+        // its players know who was who.
+        const live = await ctx.gameLoader.getGame(clonedGameId);
+        const phase = live === undefined ? source.phase : live.phase;
+        if (phase !== Phase.END) {
+          throw RouteError.badRequest('An incognito game can be cloned only after it ends');
+        }
+      }
       // A clone keeps the source's options, so the source decides whether the clone is incognito.
       const incognito = (source === undefined ? gameReq.incognito : source.gameOptions.incognito) === true && gameReq.players.length > 1;
       // A name shared by two players would also hide a viewer's own name, since hidden names are matched as text.

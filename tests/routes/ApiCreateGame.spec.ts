@@ -14,6 +14,7 @@ import {IGame} from '../../src/server/IGame';
 import {InMemoryDatabase} from '../testing/InMemoryDatabase';
 import {restoreTestDatabase, setTestDatabase} from '../testing/setup';
 import {testGame} from '../TestGame';
+import {Phase} from '../../src/common/Phase';
 
 const TWO_PLAYERS = [
   {name: 'a', color: 'red', beginner: false, handicap: 0, first: true},
@@ -265,10 +266,14 @@ describe('ApiCreateGame', () => {
     {name: 'd', color: 'green', beginner: false, handicap: 0, first: false},
   ];
 
-  async function createGame(config: object) {
+  // `live` is a game for the loader to serve, such as the live game of a clone source.
+  async function createGame(config: object, live?: IGame) {
     req = new MockRequest();
     res = new MockResponse();
     scaffolding = new RouteTestScaffolding(req);
+    if (live !== undefined) {
+      await scaffolding.ctx.gameLoader.add(live);
+    }
     await postConfig(config);
 
     expect(res.statusCode).eq(statusCode.ok);
@@ -327,7 +332,8 @@ describe('ApiCreateGame', () => {
     for (let i = 0; i < 20; i++) {
       const [source] = testGame(4, {incognito: true});
       storeCloneSource(source);
-      const game = await createGame({...newGameConfigForTest(), players: FOUR_PLAYERS, incognito: false, clonedGamedId: source.id});
+      source.phase = Phase.END;
+      const game = await createGame({...newGameConfigForTest(), players: FOUR_PLAYERS, incognito: false, clonedGamedId: source.id}, source);
 
       expect(game.gameOptions.incognito).is.true;
       expect(game.first).eq(game.players[0]);
@@ -335,6 +341,26 @@ describe('ApiCreateGame', () => {
     }
 
     expect(orders.size).is.greaterThan(1);
+  });
+
+  it('refuses to clone an incognito game that is still running', async () => {
+    const [source] = testGame(2, {incognito: true});
+    storeCloneSource(source);
+    source.phase = Phase.ACTION;
+    await scaffolding.ctx.gameLoader.add(source);
+    await postConfig({...newGameConfigForTest(), players: TWO_PLAYERS, clonedGamedId: source.id});
+
+    expect(res.statusCode).eq(statusCode.badRequest);
+    expect(res.content).contains('An incognito game can be cloned only after it ends');
+  });
+
+  it('refuses to clone an incognito game that the loader does not serve, by its first save', async () => {
+    const [source] = testGame(2, {incognito: true});
+    storeCloneSource(source);
+    await postConfig({...newGameConfigForTest(), players: TWO_PLAYERS, clonedGamedId: source.id});
+
+    expect(res.statusCode).eq(statusCode.badRequest);
+    expect(res.content).contains('An incognito game can be cloned only after it ends');
   });
 
   it('clone of a normal game ignores the request\'s incognito flag', async () => {
@@ -397,6 +423,8 @@ describe('ApiCreateGame', () => {
   it('rejects a clone of an incognito game whose players share a name', async () => {
     const [source] = testGame(2, {incognito: true});
     storeCloneSource(source);
+    source.phase = Phase.END;
+    await scaffolding.ctx.gameLoader.add(source);
     const players = [TWO_PLAYERS[0], {...TWO_PLAYERS[1], name: 'a'}];
     await postConfig({...newGameConfigForTest(), players, incognito: false, clonedGamedId: source.id});
 

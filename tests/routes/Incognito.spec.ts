@@ -549,6 +549,48 @@ describe('Incognito routes', () => {
     ]);
   });
 
+  it('refuses an unclaimed seat\'s replay and vote reads while the game runs as it refuses a wrong password, and leaves the seat unclaimed', async () => {
+    await start({playerPasswords: true});
+    alice.password = SEAT_PASSWORD;
+    const reads = async (player: IPlayer, extra: string) => [
+      await call(ApiReplayMoves.INSTANCE, 'get', `/api/replay/moves?id=${player.id}${extra}`),
+      ...await Promise.all([player.color, carol.color, 'all'].map((as) => call(ApiReplayView.INSTANCE, 'get', `/api/replay/view?id=${player.id}&save=0&as=${as}${extra}`))),
+      await call(ApiRewindVote.INSTANCE, 'get', `/api/rewind/vote?id=${player.id}${extra}`),
+      await call(ApiRewindVote.INSTANCE, 'post', `/api/rewind/vote?id=${player.id}${extra}`, {action: 'no', voteId: 1}),
+    ];
+    const wrongPassword = await reads(alice, '&password=wrongpassword');
+    const {unauthorized, badRequest} = statusCode;
+    expect(wrongPassword.map((res) => res.statusCode)).deep.eq([unauthorized, unauthorized, badRequest, badRequest, unauthorized, unauthorized]);
+
+    const unclaimed = await reads(bob, '');
+
+    expect(unclaimed.map((res) => [res.statusCode, res.content])).deep.eq(wrongPassword.map((res) => [res.statusCode, res.content]));
+    expect(bob.password).is.undefined;
+
+    bob.password = SEAT_PASSWORD;
+    const claimed = [
+      await call(ApiReplayMoves.INSTANCE, 'get', `/api/replay/moves?id=${bob.id}&password=${SEAT_PASSWORD}`),
+      await call(ApiReplayView.INSTANCE, 'get', `/api/replay/view?id=${bob.id}&save=0&as=${bob.color}&password=${SEAT_PASSWORD}`),
+      await call(ApiRewindVote.INSTANCE, 'get', `/api/rewind/vote?id=${bob.id}&password=${SEAT_PASSWORD}`),
+    ];
+    for (const res of claimed) {
+      expect(res.statusCode, res.content).eq(statusCode.ok);
+      expect(res.content).not.includes(ALICE).and.not.includes(CAROL);
+    }
+  });
+
+  it('no player id but the viewer\'s own reaches a player or the spectator with Ares on', async () => {
+    await start({aresExtension: true});
+
+    const player = await call(ApiPlayer.INSTANCE, 'get', `/api/player?id=${alice.id}`);
+    const spectator = await call(ApiSpectator.INSTANCE, 'get', `/api/spectator?id=${game.spectatorId}`);
+
+    expect(player.statusCode, player.content).eq(statusCode.ok);
+    expect(spectator.statusCode, spectator.content).eq(statusCode.ok);
+    expect(player.content).not.includes(bob.id).and.not.includes(carol.id);
+    expect(spectator.content).not.includes(alice.id).and.not.includes(bob.id).and.not.includes(carol.id);
+  });
+
   it('delta project error does not name the color', () => {
     bob.deltaProjectData = undefined;
 

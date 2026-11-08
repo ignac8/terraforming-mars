@@ -141,6 +141,9 @@ function walk(value: unknown, mask: IncognitoMask, key: string | undefined): unk
     if (k === 'name' && fakeColor !== undefined && !('playerName' in record) && typeof v === 'string' && mask.names.has(v)) {
       // A milestone or award has a `name` and a `color` too, and tells itself apart by its `playerName`.
       out[k] = PLAYER_COLOR_LABELS[fakeColor as PlayerColor];
+    } else if (k === 'milestoneResults' && key === 'aresData') {
+      // It lists the seats by player id, in seat order, and the client does not read it.
+      out[k] = [];
     } else if (k === 'playerName' && hasColor && typeof v === 'string') {
       // The color says whose name it is, which two players with the same name could not.
       out[k] = fakeColor === undefined ? v : PLAYER_COLOR_LABELS[fakeColor as PlayerColor];
