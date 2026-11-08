@@ -82,6 +82,14 @@
   flex-grow: 1;
 }
 
+// A note under an option. The column is as wide as its widest button, so the note must not
+// add to that: width 0 takes it out of the column's size, min-width then fills the column
+// and the text wraps inside it.
+.create-game-page-column .create-game-option-note {
+  width: 0;
+  min-width: 100%;
+}
+
 .create-game-page-column input[type="checkbox"] {
   opacity: 0;
   position: fixed;
