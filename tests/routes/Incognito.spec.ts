@@ -25,7 +25,7 @@ import {buildReplayView} from '@/server/replay/replayView';
 import {clearReplayCache, getReplayMoves, isFinished, loadReplayState} from '@/server/replay/ReplayService';
 import {voteClock, voteService} from '@/server/rewind/vote/effects';
 import {SerializedGame} from '@/server/SerializedGame';
-import {PLAYER_COLOR_LABELS, PlayerColor} from '@/common/Color';
+import {Color, PLAYER_COLORS, PLAYER_COLOR_LABELS, PlayerColor} from '@/common/Color';
 import {statusCode} from '@/common/http/statusCode';
 import {Clock} from '@/common/Timer';
 import {ParticipantId, PlayerId} from '@/common/Types';
@@ -46,6 +46,7 @@ const ALICE = 'Zzalice';
 const BOB = 'Zzbob';
 const CAROL = 'Zzcarol';
 const JUDGE_PASSWORD = 'secret';
+const SEAT_PASSWORD = '0123456789ab';
 
 type Viewer = 'player' | 'spectator';
 
@@ -106,6 +107,20 @@ describe('Incognito routes', () => {
   function fakeOf(viewer: IPlayer | 'spectator', seat: IPlayer): PlayerColor {
     const id = viewer === 'spectator' ? game.spectatorId : viewer.id;
     return incognitoMask(game, id)!.colors.get(seat.color) as PlayerColor;
+  }
+
+  /**
+   * The colors that `alice` could send in place of a seat's: those never shown to her, the real colors of the opponents that
+   * are no fake of hers and a color that nobody plays, and the fakes she was shown.
+   */
+  function probes(): {hidden: Array<Color>, unplayed: Array<Color>, fakes: Array<Color>} {
+    const mask = incognitoMask(game, alice.id)!;
+    const shown = (color: Color) => mask.reverse.has(color);
+    return {
+      hidden: [bob.color, carol.color].filter((color) => !shown(color)),
+      unplayed: PLAYER_COLORS.filter((color) => !game.players.some((p) => p.color === color) && !shown(color)),
+      fakes: [...mask.reverse.keys()],
+    };
   }
 
   /** Starts a game of three players with tiles, a milestone, an award, a colony, a delegate, log lines and an open rewind vote. */
@@ -359,8 +374,8 @@ describe('Incognito routes', () => {
   });
 
   describe('replay view', () => {
-    function view(id: ParticipantId, as: string, save = 0): Promise<MockResponse> {
-      return call(ApiReplayView.INSTANCE, 'get', `/api/replay/view?id=${id}&save=${save}&as=${as}`);
+    function view(id: ParticipantId, as: string, save = 0, extra = ''): Promise<MockResponse> {
+      return call(ApiReplayView.INSTANCE, 'get', `/api/replay/view?id=${id}&save=${save}&as=${as}${extra}`);
     }
 
     it('of an old save follows the live game', async () => {
@@ -379,14 +394,29 @@ describe('Incognito routes', () => {
       expect(JSON.parse(ended.content).view.players.map((p: {color: string}) => p.color)).has.members([alice.color, bob.color, carol.color]);
     });
 
-    it('refuses a view as an opponent by either color, and as everyone, while the game runs', async () => {
-      for (const as of [fakeOf(alice, bob), bob.color, carol.color, 'all']) {
-        const res = await view(alice.id, as);
+    for (const withPassword of [true, false]) {
+      it(`refuses every color but the viewer's own the same way while the game runs, ${withPassword ? 'with' : 'without'} the seat password`, async () => {
+        await start({playerPasswords: true});
+        alice.password = SEAT_PASSWORD;
+        const extra = withPassword ? `&password=${SEAT_PASSWORD}` : '';
+        const {hidden, unplayed, fakes} = probes();
+        expect(hidden, 'a color that was never shown').is.not.empty;
+        expect(unplayed).is.not.empty;
 
-        expect(res.statusCode, `as ${as}: ${res.content}`).eq(statusCode.badRequest);
-        expect(res.content).not.includes(BOB);
-      }
-    });
+        const answers = new Map<string, MockResponse>();
+        for (const as of [...hidden, ...fakes, ...unplayed, 'all']) {
+          answers.set(as, await view(alice.id, as, 0, extra));
+        }
+
+        expect(answers.size).gt(3);
+        for (const [as, res] of answers) {
+          expect(res.statusCode, `as ${as}`).eq(statusCode.badRequest);
+          expect(res.content, `as ${as}`).eq('Bad request: only your own view while the game runs');
+        }
+        const own = await view(alice.id, alice.color, 0, extra);
+        expect(own.statusCode).eq(withPassword ? statusCode.ok : statusCode.unauthorized);
+      });
+    }
   });
 
   describe('input', () => {
@@ -433,6 +463,35 @@ describe('Incognito routes', () => {
 
       expect(game.inputsSinceSave?.at(-1)?.response).deep.eq({type: 'player', player: fake});
       expect(unmaskColor(fake, incognitoMask(rebuilt, alice.id))).eq(bob.color);
+    });
+
+    it('SelectPlayer refuses a color that was never shown like any other that is not an option', async () => {
+      const {hidden, unplayed} = probes();
+      expect(hidden, 'a color that was never shown').is.not.empty;
+      const options = [bob];
+      const refused = [...hidden, fakeOf(alice, carol), ...unplayed];
+
+      for (const color of refused) {
+        alice.setWaitingFor(new SelectPlayer(options, 'Pick a player').andThen(() => undefined));
+        const res = await answer({type: 'player', player: color});
+
+        expect(res.statusCode, `as ${color}`).eq(statusCode.badRequest);
+        expect(res.content, `as ${color}`).eq('{"message":"Player not available"}');
+      }
+    });
+
+    it('SelectDelegate refuses a color that was never shown like any other that is not an option', async () => {
+      const {hidden, unplayed} = probes();
+      expect(hidden, 'a color that was never shown').is.not.empty;
+      const refused = [...hidden, fakeOf(alice, carol), ...unplayed];
+
+      for (const color of refused) {
+        alice.setWaitingFor(new SelectDelegate([bob, 'NEUTRAL'], 'Pick a delegate').andThen(() => undefined));
+        const res = await answer({type: 'delegate', player: color});
+
+        expect(res.statusCode, `as ${color}`).eq(statusCode.badRequest);
+        expect(res.content, `as ${color}`).eq('{"message":"Player not available"}');
+      }
     });
 
     it('SelectDelegate answered with a fake color hits the real player, and NEUTRAL stays', async () => {

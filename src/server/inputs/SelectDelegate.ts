@@ -4,8 +4,11 @@ import {IPlayer} from '../IPlayer';
 import {NeutralPlayer} from '../turmoil/Turmoil';
 import {InputResponse, isSelectDelegateResponse} from '../../common/inputs/InputResponse';
 import {SelectDelegateModel} from '../../common/models/PlayerInputModel';
+import {ColorWithNeutral} from '../../common/Color';
 import {InputError} from './InputError';
 import {incognitoMask, unmaskColor} from '../incognito/IncognitoMask';
+
+const NOT_AVAILABLE = 'Player not available';
 
 export class SelectDelegate extends BasePlayerInput<IPlayer | NeutralPlayer> {
   constructor(
@@ -28,7 +31,13 @@ export class SelectDelegate extends BasePlayerInput<IPlayer | NeutralPlayer> {
       throw new InputError('Not a valid SelectDelegateResponse');
     }
     // In an incognito game the answer holds the color that the player was shown.
-    const color = unmaskColor(input.player, incognitoMask(viewer.game, viewer.id));
+    let color: ColorWithNeutral;
+    try {
+      color = unmaskColor(input.player, incognitoMask(viewer.game, viewer.id));
+    } catch {
+      // A color that was never shown is refused like any other that is not among the players.
+      throw new InputError(NOT_AVAILABLE);
+    }
     for (const player of this.players) {
       if (player === 'NEUTRAL') {
         if (color !== 'NEUTRAL') {
@@ -41,6 +50,6 @@ export class SelectDelegate extends BasePlayerInput<IPlayer | NeutralPlayer> {
       }
       return this.cb(player);
     }
-    throw new InputError('Player not available');
+    throw new InputError(NOT_AVAILABLE);
   }
 }
