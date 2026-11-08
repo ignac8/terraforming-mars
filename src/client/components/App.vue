@@ -103,6 +103,7 @@ import {setDocumentTitle} from '../utils/documentTitle';
 import {reloadForChunkError} from '@/client/utils/chunkReload';
 import BannerStack from '@/client/components/replay/BannerStack.vue';
 import {localPlayerView} from '@/client/utils/localColors';
+import {translateFakeNames} from '@/client/utils/incognitoNames';
 
 type Screen = 'admin' |
             'create-game-form' |
@@ -264,10 +265,10 @@ export default defineComponent({
         })
         .then((model: ViewModel) => {
           if (path === paths.PLAYER) {
-            app.playerView = localPlayerView(model as PlayerViewModel);
+            app.playerView = translateFakeNames(localPlayerView(model as PlayerViewModel));
             setTranslationContext(app.playerView);
           } else if (path === paths.SPECTATOR) {
-            app.spectator = model as SpectatorModel;
+            app.spectator = translateFakeNames(model as SpectatorModel);
           } else {
             app.judge = model as JudgeModel;
             setTranslationContext(app.judge);

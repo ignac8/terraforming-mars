@@ -120,6 +120,7 @@ const TEMPLATE_EXPECTED: CreateGameModel = {
   showOtherPlayersVP: false,
   playerPasswords: false,
   judgeLink: false,
+  incognito: false,
   showColoniesList: false,
   showCorporationList: false,
   showPreludesList: false,
@@ -205,6 +206,11 @@ const cases: Array<Case> = [
     description: 'ignores the Judge undo of settings saved while it was a separate option',
     input: {...TEMPLATE_INPUT, judgeLink: true, judgeUndo: true},
     expected: {...TEMPLATE_EXPECTED, judgeLink: true},
+  },
+  {
+    description: 'incognito loads without a warning',
+    input: {...TEMPLATE_INPUT, incognito: true},
+    expected: {...TEMPLATE_EXPECTED, incognito: true},
   },
   {
     description: 'new escape velocity values',

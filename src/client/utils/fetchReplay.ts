@@ -5,6 +5,7 @@ import {RewindVotePoll} from '@/common/rewind/RewindVoteModel';
 import {isJudgeId, isPlayerId, JudgeId, ParticipantId, PlayerId} from '@/common/Types';
 import {translateText} from '@/client/directives/i18n';
 import {localColors, serverColor} from '@/client/utils/localColors';
+import {translateFakeNames} from '@/client/utils/incognitoNames';
 import {passwordParam, passwordQuery} from '@/client/utils/playerPassword';
 
 // Replaying steps through views quickly, so a new view request cancels the one still in flight.
@@ -75,7 +76,8 @@ export async function fetchReplayView(id: ParticipantId, saveId: number, viewAs:
   viewAbortController?.abort();
   viewAbortController = new AbortController();
   const url = `${paths.API_REPLAY_VIEW}?id=${id}&save=${saveId}&as=${serverColor(viewAs)}${judgeCredentials(id, passwordFragment)}${undoneParam(undone)}`;
-  return readJson(await fetch(url, {signal: viewAbortController.signal}));
+  const replay = await readJson<ReplayViewModel>(await fetch(url, {signal: viewAbortController.signal}));
+  return {...replay, view: translateFakeNames(replay.view)};
 }
 
 /**
@@ -89,7 +91,7 @@ export async function postRewind(id: PlayerId, saveId: number, cards: RewindCard
     headers: {'Content-Type': 'application/json'},
     body: JSON.stringify({saveId, cards}),
   });
-  return readJson(resp);
+  return translateFakeNames(await readJson<PlayerViewModel>(resp));
 }
 
 async function postJudge(path: string, id: JudgeId, body: object, passwordFragment: string | undefined): Promise<void> {

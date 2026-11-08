@@ -27,6 +27,7 @@ export function defaultCreateGameModel(): CreateGameModel {
     showOtherPlayersVP: false,
     playerPasswords: false,
     judgeLink: false,
+    incognito: false,
     // beginnerOption: false,
     showCeosList: false,
     showColoniesList: false,

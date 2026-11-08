@@ -424,9 +424,14 @@
               <span v-i18n>Fast mode</span>&nbsp;<a :href="wikiUrls.fastMode" class="tooltip" v-i18n data-tooltip="Link opens in a new tab/window" target="_blank">&#9432;</a>
             </label>
 
-            <input type="checkbox" name="playerPasswords" v-model="playerPasswordsChecked" id="playerPasswords-checkbox" :disabled="expansions.tournament || undoNeedsPasswords">
-            <label for="playerPasswords-checkbox" :title="undoNeedsPasswords ? $t('Player undo needs player passwords, so a stranger cannot rewind a finished game.') : 'The first person to open a player link claims that seat. From then on only they can use it.'">
+            <input type="checkbox" name="playerPasswords" v-model="playerPasswordsChecked" id="playerPasswords-checkbox" :disabled="expansions.tournament || undoNeedsPasswords || incognitoNeedsPasswords">
+            <label for="playerPasswords-checkbox" :title="undoNeedsPasswords ? $t('Player undo needs player passwords, so a stranger cannot rewind a finished game.') : incognitoNeedsPasswords ? $t('Incognito needs player passwords, so an open player link cannot show who sits in that seat.') : 'The first person to open a player link claims that seat. From then on only they can use it.'">
               <span v-i18n>Player passwords</span>
+            </label>
+
+            <input type="checkbox" name="incognito" v-model="incognito" id="incognito-checkbox">
+            <label for="incognito-checkbox">
+              <span v-i18n>Incognito (hide opponents' names and colors until the game ends)</span>
             </label>
 
             <template v-if="expansions.tournament">
@@ -740,10 +745,14 @@ export default defineComponent({
     undoNeedsPasswords(): boolean {
       return this.undoOption && this.playersCount > 1;
     },
-    /** The box shows the lock without overwriting the choice, which comes back when Player undo goes. */
+    /** Incognito hides who sits in a seat, so the seats of a multiplayer game need passwords to stay hidden. */
+    incognitoNeedsPasswords(): boolean {
+      return this.incognito && this.playersCount > 1;
+    },
+    /** The box shows the lock without overwriting the choice, which comes back when Player undo and incognito go. */
     playerPasswordsChecked: {
       get(): boolean {
-        return this.playerPasswords || this.undoNeedsPasswords;
+        return this.playerPasswords || this.undoNeedsPasswords || this.incognitoNeedsPasswords;
       },
       set(value: boolean) {
         this.playerPasswords = value;
@@ -773,6 +782,7 @@ export default defineComponent({
         showOtherPlayersVP: this.showOtherPlayersVP,
         playerPasswords: this.playerPasswordsChecked,
         judgeLink: this.expansions.tournament && this.judgeLink && this.playersCount > 1,
+        incognito: this.incognito && this.playersCount > 1,
         customCorporationsList: this.customCorporations,
         customColoniesList: this.customColonies,
         customCeos: this.customCeos,

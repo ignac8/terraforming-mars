@@ -49,6 +49,7 @@ import {gameDocumentTitle} from '../utils/documentTitle';
 import {setFaviconStatus, setFaviconTurnFrame} from '@/client/utils/favicon';
 import {watchesForRefresh} from '@/client/utils/watchesForRefresh';
 import {localColors, localPlayerView} from '@/client/utils/localColors';
+import {translateFakeNames} from '@/client/utils/incognitoNames';
 
 let ui_update_timeout_id: number | undefined;
 let otherPlayersTimer: number | undefined;
@@ -189,7 +190,7 @@ export default defineComponent({
       fetch(url, options)
         .then(async (response) => {
           if (response.ok) {
-            this.updatePlayerView(localPlayerView(await response.json()));
+            this.updatePlayerView(translateFakeNames(localPlayerView(await response.json())));
             return;
           }
 
@@ -321,7 +322,7 @@ export default defineComponent({
         try {
           const response = await fetch(paths.API_PLAYER + window.location.search);
           if (response.ok) {
-            const latest = localColors<PlayerViewModel>(await response.json());
+            const latest = translateFakeNames(localColors<PlayerViewModel>(await response.json()));
             playerView.players = latest.players;
           } else {
             console.warn('Unable to update other players', response.status, response.statusText);
