@@ -38,18 +38,6 @@ export class ApiReplayView extends Handler {
     if (game === undefined || (judge && game.judgeId !== id)) {
       throw RouteError.notFound('game not found');
     }
-    // The live game decides, not the sandbox: its names show once the live game ends, whatever the phase of the save.
-    const mask = incognitoMask(game, id);
-    // The page asks for the colors it was shown.
-    let viewAs: ReplayViewAs;
-    try {
-      viewAs = unmaskColor(requestedAs, mask);
-    } catch (e) {
-      if (e instanceof InputError) {
-        throw RouteError.badRequest('invalid as');
-      }
-      throw e;
-    }
     // Only the judge of a Judge undo game and the player of a solo game see a save that a rewind undid, and only when asked. A
     // claimed judge seat is checked first, as below, so a refusal does not tell a stranger anything.
     const undone = ctx.urlParams.stringOrUndefined('undone') === '1';
@@ -67,7 +55,9 @@ export class ApiReplayView extends Handler {
       if (!canBrowseHistory(game, id)) {
         throw RouteError.badRequest('game not finished');
       }
-      if (!judgeCanRewind(game, id) && viewAs !== game.getPlayerById(id as PlayerId).color) {
+      // The color is compared as sent: a viewer's own seat is never masked, and any other color gets this one answer,
+      // so the refusal tells nothing of the colors that are hidden.
+      if (!judgeCanRewind(game, id) && requestedAs !== game.getPlayerById(id as PlayerId).color) {
         throw RouteError.badRequest('only your own view while the game runs');
       }
     }
@@ -86,6 +76,18 @@ export class ApiReplayView extends Handler {
       }
     }
 
+    // The live game decides, not the sandbox: its names show once the live game ends, whatever the phase of the save.
+    const mask = incognitoMask(game, id);
+    // The page asks for the colors it was shown. While the game runs only the viewer's own color gets here, which is real.
+    let viewAs: ReplayViewAs;
+    try {
+      viewAs = unmaskColor(requestedAs, mask);
+    } catch (e) {
+      if (e instanceof InputError) {
+        throw RouteError.badRequest('invalid as');
+      }
+      throw e;
+    }
     const sandbox = await loadReplayState(game, saveId, {undone});
     // The judge sees every player's VP live, and once the game is over so does everyone.
     responses.writeJson(res, ctx, maskModel(buildReplayView(sandbox, id, saveId, viewAs, judge || !running), mask));
