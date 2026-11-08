@@ -1,6 +1,6 @@
 # Incognito games
 
-Status: draft, 2026-11-08. Branch: tournament only.
+Status: draft for Marcin's review, 2026-11-08. Branch: tournament only.
 
 ## Why
 
@@ -27,6 +27,22 @@ the game ends.
 6. **Tournament instance only.** This is a create-game checkbox, off by default. It is available for
    any game with 2+ players on the tournament branch, not only games using the tournament
    expansion. It is not ported to automa or main.
+7. **Nobody learns the seat order before the end, the creator included.** An incognito game
+   shuffles the seats on the server when it is created. The response to the creator shows the same
+   alphabetical list without colors that the shared page shows. This lets the organizer play in their
+   own incognito games without an advantage. Only the judge sees the real seat order.
+
+## Calls made while writing this (not asked; check these)
+
+- **Incognito forces player passwords on.** Without passwords, any player could open an opponent's
+  link from the shared page and see that opponent's real name as `thisPlayer`. Since seat order is
+  visible in the game, that would expose the whole table. The server forces the option, and the form
+  shows the passwords checkbox as on and locked, the way the undo option already does
+  (`undoNeedsPasswords`).
+- **Fake colors are a uniform shuffle.** An opponent's fake color may equal some player's real color.
+  That gives nothing away, because nobody sees real colors before the end. With 6 players it can't be
+  avoided anyway, since only 4 colors are free for 5 opponents.
+- **Handicaps stay visible** (a non-goal). Tournament games turn them off, and they affect scoring.
 
 ## What each viewer sees while the game runs
 
@@ -46,8 +62,8 @@ the game ends.
   real player behind Red.
 
 Seat order stays visible inside the game. Turn order is part of play and players need to know who
-acts after them. It reveals identity only when combined with a public seat list, and decision 5
-removes that list.
+acts after them. It reveals identity only when combined with a known seat list, and decisions 5
+and 7 make sure nobody has one.
 
 ## Scope of the server-side rewrite
 
@@ -82,6 +98,8 @@ that carries player data:
   - the VP-breakdown "funded by" detail (`calculateVictoryPoints.ts:104-111`)
   - the "land claimed by <name>" errors (`Game.ts:1599`, `MoonExpansion.ts:97`)
 
+  - the raw color in the error message at `DeltaProjectExpansion.ts:46` (also in scope)
+
   Either rewrite them so they carry the player as a PLAYER datum, or replace the names in the
   outgoing text. The builder chooses.
 
@@ -94,7 +112,10 @@ that carries player data:
 **The shared game page.** For incognito games before END, `api/game?id=g` (no auth) returns
 players sorted by name with no colors, and without `activePlayer`. It keeps the player ids, because
 GameHome builds the links from them. GameHome hides the color square and the 1st/2nd/3rd ordinal.
-`api/creategame`'s response to the organizer may keep real data.
+`api/creategame`'s response gets the same treatment, because the client renders GameHome directly
+from it (`CreateGameForm.vue:1214-1222`, also stored via `history.replaceState`). Seats are
+shuffled at creation (decision 7). The first player is then whoever ends up in seat 0, or a random
+pick as today. Either way the creator never sees it.
 
 **Unchanged:**
 
@@ -111,6 +132,9 @@ GameHome builds the links from them. GameHome hides the color square and the 1st
   game id and the viewer's participant id. Then nothing new is persisted, and old saves and clones
   keep working. Add the option to `GameOptions` with a deserialize default of `false`, following the
   `judgeUndo` line.
+- **Where hiding stops.** `ApiReplayView` decides "finished" with `isFinished(game)`, not
+  `phase === END`. Use one check everywhere, so that no route reveals real data while another still
+  hides it.
 - **Option plumbing** follows `judgeLink`:
   - `CreateGameForm.vue` checkbox (shown when players > 1, outside the tournament-expansion block),
     `CreateGameModel`, `defaultCreateGameModel` and `JSONProcessor`
@@ -131,13 +155,15 @@ GameHome builds the links from them. GameHome hides the color square and the 1st
   - a seat that is not yet claimed can be taken by whoever opens it first
   - it shows the judge id
 - Hiding the viewer's own identity from themselves.
+- Hiding handicaps.
 - Turning incognito on for a game that is already running.
 - Automa and main ports, and upstreaming.
 
 ## Anti-goals (failure even if it "works")
 
-- A real opponent name or real opponent color anywhere in a p or s response before END. That includes
-  log data, prompt text, error bodies and replay views.
+- A real opponent name anywhere in a p or s response before END, or a color field that shows an
+  opponent in anything other than their mapped fake color. That includes log data, prompt text,
+  error bodies and replay views.
 - A fake color that changes between polls or after a restart. Players would lose track of who's who.
 - A player choice that reaches the wrong real player.
 - Any change to games with incognito off. That includes response shape and performance.
@@ -147,14 +173,18 @@ GameHome builds the links from them. GameHome hides the color square and the 1st
 - A leak test. Build a multiplayer incognito game with unique player names (e.g. `Zzalice`) and with
   features that put colors and names in many places: tiles, milestones, awards, colonies, a pending
   SelectPlayer, and log lines. Fetch every participant-scoped route as a player and as the spectator,
-  and assert that no opponent real name appears anywhere in the body and no opponent real color
-  appears under any color key. Repeat at END and assert the real data is back.
+  and assert two things. No opponent real name appears anywhere in the body. Every color field equals
+  the viewer's mapping of the real value, so the test compares against the unmasked model and does
+  not just look for real color strings. Repeat at END and assert the real data is back.
 - An inbound test. As a player, answer a SelectPlayer prompt with a fake color, and assert that the
   intended real player was hit.
 - A stability test. The mapping is identical across two fetches and after a serialize and
   deserialize round trip.
 - A GameHome client test: alphabetical order, no color square or ordinal for incognito games, and
   unchanged otherwise.
+- A create test. An incognito game forces passwords on, its creategame response lists players
+  alphabetically without colors, and its seat order is shuffled. Use a seeded random to make that
+  deterministic.
 
 ## Left to the builder
 
