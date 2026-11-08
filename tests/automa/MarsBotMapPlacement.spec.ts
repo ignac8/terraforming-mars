@@ -323,7 +323,8 @@ describe('MarsBot tile placement with the Milestones & Awards expansion', () => 
   it('Geologist does not count twice on a map that already does', () => {
     const s = setup(BoardName.VASTITAS_BOREALIS_NOVA);
     s.game.milestones = [new Geologist()];
-    expect(s.placer['extraIcons']().size).eq(1);
+    const volcanic = s.game.board.spaces.find((sp) => sp.volcanic === true)!;
+    expect(s.placer['extraIconCount'](volcanic)).eq(1);
   });
 
   it('Founder counts the spaces next to a special tile as one more reward icon', () => {

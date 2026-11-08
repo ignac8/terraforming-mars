@@ -120,7 +120,7 @@ describe('MarsBot final greenery', () => {
     const southPole = game.board.spaces.find((sp) => sp.bonus.includes(SpaceBonus.OCEAN))!;
     marsBot.turnResolver.megacredits = 10;
     const placer = marsBot.turnResolver.tilePlacer;
-    const icons = (): number => placer['iconCount'](southPole, new Set());
+    const icons = (): number => placer['iconCount'](southPole);
     game.phase = Phase.ACTION;
     expect(icons()).to.eq(2.5);
 
