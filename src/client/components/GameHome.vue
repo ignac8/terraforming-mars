@@ -4,29 +4,37 @@
     <h4><span v-i18n>Instructions: To start the game, separately copy and share the links with all players, and then click on your name.</span><br><span v-i18n>Save this page in case you or one of your opponents loses a link.</span></h4>
     <h4 v-if="game !== undefined && game.gameOptions.playerPasswords"><span v-i18n>The first person to open a player link receives a password. From then on, only the player with that password can use that player page.</span></h4>
     <ul>
-      <li v-for="(player, index) in (game === undefined ? [] : game.players)" :key="player.color">
-        <span class="turn-order" v-i18n>{{ getTurnOrder(index) }}</span>
-        <span :class="'color-square ' + getPlayerCubeColorClass(player.color)">{{ playerSymbol(player.color) }}</span>
+      <li v-for="(player, index) in (game === undefined ? [] : game.players)" :key="player.id">
+        <template v-if="!hideSeats">
+          <span class="turn-order" v-i18n>{{ getTurnOrder(index) }}</span>
+          <span :class="'color-square ' + getPlayerCubeColorClass(player.color)">{{ playerSymbol(player.color) }}</span>
+        </template>
         <span class="player-name"><a :href="getHref(player.id)">{{ player.name }}</a></span>
         <AppButton title="copy" size="tiny" @click="copyUrl(player.id)" />
         <span v-if="isPlayerUrlCopied(player.id)" class="copied-notice"><span v-i18n>Copied!</span></span>
       </li>
       <li v-if="game !== undefined">
         <p></p>
-        <span class="turn-order"></span>
-        <span class="color-square"></span>
+        <template v-if="!hideSeats">
+          <span class="turn-order"></span>
+          <span class="color-square"></span>
+        </template>
         <span class="player-name"><a :href="getHref(game.spectatorId)" v-i18n>Spectator</a></span>
         <AppButton title="copy" size="tiny" @click="copyUrl(game.spectatorId)" />
       </li>
       <li v-if="game !== undefined && game.judgeId !== undefined">
-        <span class="turn-order"></span>
-        <span class="color-square"></span>
+        <template v-if="!hideSeats">
+          <span class="turn-order"></span>
+          <span class="color-square"></span>
+        </template>
         <span class="player-name"><a :href="getHref(game.judgeId)" v-i18n>Judge</a></span>
         <AppButton title="copy" size="tiny" @click="copyUrl(game.judgeId)" />
       </li>
       <li v-if="game !== undefined && game.judgeId !== undefined" class="judge-hint">
-        <span class="turn-order"></span>
-        <span class="color-square"></span>
+        <template v-if="!hideSeats">
+          <span class="turn-order"></span>
+          <span class="color-square"></span>
+        </template>
         <span v-i18n>Send the judge link only to the judge, and send players their own links instead of this page. Whoever opens the judge link first receives its password.</span>
       </li>
     </ul>
@@ -54,6 +62,7 @@ import {playerColorClass} from '@/common/utils/utils';
 import GameSetupDetail from '@/client/components/GameSetupDetail.vue';
 import {ParticipantId} from '@/common/Types';
 import {Color} from '@/common/Color';
+import {Phase} from '@/common/Phase';
 import {playerSymbol} from '@/client/utils/playerSymbol';
 import {setDocumentTitle} from '../utils/documentTitle';
 
@@ -99,6 +108,10 @@ export default defineComponent({
   computed: {
     gameId(): string {
       return this.game !== undefined ? this.game.id.toString() : 'n/a';
+    },
+    /** True while an incognito game runs, so the page shows no seat order and no colors. */
+    hideSeats(): boolean {
+      return this.game.gameOptions.incognito && this.game.phase !== Phase.END;
     },
   },
   methods: {

@@ -14,6 +14,8 @@ import {toName, cast} from '../../src/common/utils/utils';
 import {cardsFromJSON} from '../../src/server/createCard';
 import {SelectCard} from '../../src/server/inputs/SelectCard';
 import {SelectOption} from '../../src/server/inputs/SelectOption';
+import {Game} from '../../src/server/Game';
+import {GameOptions} from '../../src/server/game/GameOptions';
 
 describe('ServerModel', () => {
   let player: TestPlayer;
@@ -148,6 +150,66 @@ describe('ServerModel', () => {
     expect(Server.getSimpleGameModel(game).judgeId).eq('jtest');
     expect(JSON.stringify(Server.getGameModel(game))).does.not.contain('jtest');
     expect(JSON.stringify(Server.getSpectatorModel(game))).does.not.contain('jtest');
+  });
+
+  function newNamedGame(options: Partial<GameOptions>, ...names: Array<string>): IGame {
+    const colors = [TestPlayer.RED, TestPlayer.BLUE, TestPlayer.GREEN];
+    const players = names.map((name, idx) => colors[idx].newPlayer({name}));
+    return Game.newInstance('game-id', players, players[0], 'spectator-id', options);
+  }
+
+  it('incognito simple model is alphabetical and colorless', () => {
+    game = newNamedGame({incognito: true}, 'Zed', 'Amy', 'Kim');
+
+    const model = Server.getSimpleGameModel(game);
+
+    expect(model.players.map((p) => p.name)).deep.eq(['Amy', 'Kim', 'Zed']);
+    expect(model.players.map((p) => p.color)).deep.eq(['neutral', 'neutral', 'neutral']);
+    expect(model.activePlayer).eq('neutral');
+    expect(model.players.map((p) => p.id)).deep.eq(['p-Amy-id', 'p-Kim-id', 'p-Zed-id']);
+  });
+
+  it('incognito simple model orders players with the same name by id, not by seat', () => {
+    const amy1 = () => TestPlayer.RED.newPlayer({name: 'Amy', idSuffix: '1'});
+    const amy2 = () => TestPlayer.BLUE.newPlayer({name: 'Amy', idSuffix: '2'});
+    const seated = (players: Array<TestPlayer>) => Game.newInstance('game-id', players, players[0], 'spectator-id', {incognito: true});
+
+    const first = Server.getSimpleGameModel(seated([amy1(), amy2()]));
+    const second = Server.getSimpleGameModel(seated([amy2(), amy1()]));
+
+    expect(first.players.map((p) => p.id)).deep.eq(['p-Amy-id1', 'p-Amy-id2']);
+    expect(second.players.map((p) => p.id)).deep.eq(['p-Amy-id1', 'p-Amy-id2']);
+  });
+
+  it('simple model lists players by seat with their colors when incognito is off', () => {
+    game = newNamedGame({incognito: false}, 'Zed', 'Amy', 'Kim');
+
+    const model = Server.getSimpleGameModel(game);
+
+    expect(model.players.map((p) => p.name)).deep.eq(['Zed', 'Amy', 'Kim']);
+    expect(model.players.map((p) => p.color)).deep.eq(['red', 'blue', 'green']);
+    expect(model.activePlayer).eq('red');
+  });
+
+  it('incognito simple model is real once the game has ended', () => {
+    game = newNamedGame({incognito: true}, 'Zed', 'Amy', 'Kim');
+    game.phase = Phase.END;
+
+    const model = Server.getSimpleGameModel(game);
+
+    expect(model.players.map((p) => p.name)).deep.eq(['Zed', 'Amy', 'Kim']);
+    expect(model.players.map((p) => p.color)).deep.eq(['red', 'blue', 'green']);
+    expect(model.activePlayer).eq('red');
+  });
+
+  it('incognito simple model is real when asked for real data', () => {
+    game = newNamedGame({incognito: true}, 'Zed', 'Amy', 'Kim');
+
+    const model = Server.getSimpleGameModel(game, {real: true});
+
+    expect(model.players.map((p) => p.name)).deep.eq(['Zed', 'Amy', 'Kim']);
+    expect(model.players.map((p) => p.color)).deep.eq(['red', 'blue', 'green']);
+    expect(model.activePlayer).eq('red');
   });
 
   it('reports the sizes of the decks in the game', () => {

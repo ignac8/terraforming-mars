@@ -41,4 +41,44 @@ describe('GameHome', () => {
     const wrapper = mountGameHome();
     expect(wrapper.find('a[href^="judge"]').exists()).is.false;
   });
+
+  const AMY_AND_KIM = [
+    {color: 'red', id: 'p-amy', name: 'Amy'},
+    {color: 'blue', id: 'p-kim', name: 'Kim'},
+  ] as const;
+
+  it('shows the turn order and colors of the players', () => {
+    const wrapper = mountGameHome({players: [...AMY_AND_KIM]});
+
+    expect(wrapper.findAll('.turn-order').slice(0, 2).map((e) => e.text())).deep.eq(['1st', '2nd']);
+    expect(wrapper.find('.color-square.player_bg_color_red').exists()).is.true;
+    expect(wrapper.find('.color-square.player_bg_color_blue').exists()).is.true;
+  });
+
+  it('hides the turn order and colors of the players in a running incognito game', () => {
+    const wrapper = mountGameHome({
+      players: [
+        {color: 'neutral', id: 'p-amy', name: 'Amy'},
+        {color: 'neutral', id: 'p-kim', name: 'Kim'},
+      ],
+      gameOptions: fakeGameOptionsModel({incognito: true}),
+    });
+
+    expect(wrapper.find('.turn-order').exists()).is.false;
+    expect(wrapper.find('.color-square').exists()).is.false;
+    expect(wrapper.html()).does.not.contain('player_bg_color');
+    expect(wrapper.find('a[href="player?id=p-amy"]').text()).eq('Amy');
+    expect(wrapper.find('a[href="player?id=p-kim"]').text()).eq('Kim');
+  });
+
+  it('shows the turn order and colors of the players when an incognito game has ended', () => {
+    const wrapper = mountGameHome({
+      players: [...AMY_AND_KIM],
+      phase: Phase.END,
+      gameOptions: fakeGameOptionsModel({incognito: true}),
+    });
+
+    expect(wrapper.findAll('.turn-order').slice(0, 2).map((e) => e.text())).deep.eq(['1st', '2nd']);
+    expect(wrapper.find('.color-square.player_bg_color_red').exists()).is.true;
+  });
 });
