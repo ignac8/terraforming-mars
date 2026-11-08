@@ -264,7 +264,7 @@
             <label for="undo-checkbox">
               <span v-i18n>Player undo</span>&nbsp;<a :href="wikiUrls.allowUndo" class="tooltip" v-i18n data-tooltip="Link opens in a new tab/window" target="_blank">&#9432;</a>
             </label>
-            <div v-if="undoOption">
+            <div class="create-game-option-note" v-if="undoOption">
               <span v-i18n>Rewind to any earlier move. With more than one player, every other player must agree, and only while the game runs.</span>
             </div>
 
