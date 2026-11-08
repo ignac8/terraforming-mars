@@ -270,7 +270,7 @@ export default defineComponent({
           } else if (path === paths.SPECTATOR) {
             app.spectator = translateFakeNames(model as SpectatorModel);
           } else {
-            app.judge = model as JudgeModel;
+            app.judge = translateFakeNames(model as JudgeModel);
             setTranslationContext(app.judge);
           }
           // The password has to survive into the address bar: it is how this

@@ -24,7 +24,8 @@ export class ApiGameLogs extends Handler {
       if (undone) {
         checkMayShowUndone(judgeGame, ctx.urlParams.judgeId('id'));
       }
-      responses.writeJson(res, ctx, this.gameLogs.getLogsForJudge(judgeGame, generation, undone));
+      const logs = this.gameLogs.getLogsForJudge(judgeGame, generation, undone);
+      responses.writeJson(res, ctx, maskModel(logs, incognitoMask(judgeGame, ctx.urlParams.judgeId('id'))));
       return;
     }
     const id = ctx.urlParams.participantId('id');

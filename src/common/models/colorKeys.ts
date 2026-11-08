@@ -4,4 +4,6 @@ export const COLOR_KEYS: ReadonlySet<string> = new Set([
   'lobby', 'passedPlayers', 'colonies', 'players', 'waitingFor',
   // Replays and rewind votes.
   'movers', 'viewerColor', 'defaultViewAs', 'viewAs', 'requester',
+  // The owner of a private log line, which the judge's copy and a finished game's carry in place of a player id.
+  'owner',
 ]);

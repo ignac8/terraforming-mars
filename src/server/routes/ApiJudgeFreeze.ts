@@ -1,5 +1,6 @@
 import * as responses from '../server/responses';
 import {Server} from '../models/ServerModel';
+import {incognitoMask, maskModel} from '../incognito/IncognitoMask';
 import {judgeCanRewind} from '../rewind/access';
 import {freezeGame, unfreezeGame} from '../rewind/freeze';
 import {Handler} from './Handler';
@@ -48,6 +49,6 @@ export class ApiJudgeFreeze extends Handler {
     if (!saved) {
       throw RouteError.badRequest(frozen ? FREEZE_NOT_SAVED : UNFREEZE_NOT_SAVED);
     }
-    responses.writeJson(res, ctx, Server.getJudgeModel(game));
+    responses.writeJson(res, ctx, maskModel(Server.getJudgeModel(game), incognitoMask(game, ctx.urlParams.judgeId('id'))));
   }
 }

@@ -1,6 +1,7 @@
 import {PLAYER_COLOR_LABELS} from '@/common/Color';
 import {Phase} from '@/common/Phase';
 import {ViewModel} from '@/common/models/PlayerModel';
+import {isJudgeId} from '@/common/Types';
 import {translateText} from '@/client/directives/i18n';
 
 const FAKE_NAMES: ReadonlySet<string> = new Set(Object.values(PLAYER_COLOR_LABELS));
@@ -10,12 +11,14 @@ const FAKE_NAMES: ReadonlySet<string> = new Set(Object.values(PLAYER_COLOR_LABEL
  *
  * Until the game ends, the server names each opponent after a color, in English. Returns a translated copy, or
  * `model` itself when the game is not incognito or is over, when every name is real.
+ *
+ * A judge has no seat, so every name in what a judge sees is a fake, also that of the seat it views as.
  */
 export function translateFakeNames<T extends ViewModel>(model: T): T {
   if (!model.game.gameOptions.incognito || model.game.phase === Phase.END) {
     return model;
   }
-  return walk(model, model.thisPlayer?.name) as T;
+  return walk(model, isJudgeId(model.id) ? undefined : model.thisPlayer?.name) as T;
 }
 
 // The viewer's own name is real, and may be a color label.

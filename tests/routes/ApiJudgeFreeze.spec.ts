@@ -6,6 +6,8 @@ import {IGame} from '../../src/server/IGame';
 import {OrOptions} from '../../src/server/inputs/OrOptions';
 import {isTableLocked, withTableLock} from '../../src/server/rewind/tableLock';
 import {INVALID_REQUEST_ID} from '../../src/common/app/AppErrorId';
+import {incognitoMask} from '../../src/server/incognito/IncognitoMask';
+import {PLAYER_COLOR_LABELS, PlayerColor} from '../../src/common/Color';
 import {JudgeModel} from '../../src/common/models/JudgeModel';
 import {Phase} from '../../src/common/Phase';
 import {statusCode} from '../../src/common/http/statusCode';
@@ -93,6 +95,29 @@ describe('ApiJudgeFreeze', () => {
 
     await pass();
     expect(res.statusCode).eq(statusCode.ok);
+  });
+
+  it('answers the judge model of an incognito game under the judge\'s fake names and colors', async () => {
+    await start({incognito: true});
+    // The judge id seeds the judge's mapping. This one shows both seats as another color than their own.
+    game.judgeId = 'j-judge-id-4';
+    game.players[0].name = 'Zzalice';
+    game.players[1].name = 'Zzbob';
+    const mask = incognitoMask(game, game.judgeId)!;
+    for (const seat of game.players) {
+      expect(mask.colors.get(seat.color), seat.color).is.not.eq(seat.color);
+    }
+
+    await freeze(true);
+
+    expect(res.statusCode, res.content).eq(statusCode.ok);
+    expect(res.content).does.not.include('Zzalice').and.not.include('Zzbob');
+    const model: JudgeModel = JSON.parse(res.content);
+    const seats = game.playersInGenerationOrder;
+    expect(model.players.map((p) => p.color)).deep.eq(seats.map((seat) => mask.colors.get(seat.color)));
+    expect(model.players.map((p) => p.name)).deep.eq(seats.map((seat) => PLAYER_COLOR_LABELS[mask.colors.get(seat.color) as PlayerColor]));
+    expect(model.privates.map((p) => p.color)).deep.eq(model.players.map((p) => p.color));
+    expect(model.game.frozen).is.true;
   });
 
   it('lets the serverId link freeze without claiming the judge seat', async () => {

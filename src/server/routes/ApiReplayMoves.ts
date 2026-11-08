@@ -34,7 +34,8 @@ export class ApiReplayMoves extends Handler {
       if (judgeGame.judgePassword !== undefined) {
         this.checkJudgePassword(judgeGame, ctx);
       }
-      responses.writeJson(res, ctx, await getReplayMoves(judgeGame, judgeId, {undone}));
+      const moves = await getReplayMoves(judgeGame, judgeId, {undone});
+      responses.writeJson(res, ctx, maskModel(moves, incognitoMask(judgeGame, judgeId)));
       return;
     }
     const id = ctx.urlParams.participantId('id');

@@ -5,7 +5,7 @@ import {Request} from '../Request';
 import {Response} from '../Response';
 import {RouteError} from './RouteError';
 import {isFinished, loadReplayState} from '../replay/ReplayService';
-import {buildReplayView} from '../replay/replayView';
+import {buildReplayView, UNKNOWN_COLOR} from '../replay/replayView';
 import {canBrowseHistory, canVoteRewind, checkMayShowUndone, judgeCanRewind} from '../rewind/access';
 import {InputError} from '../inputs/InputError';
 import {incognitoMask, maskModel, unmaskColor} from '../incognito/IncognitoMask';
@@ -78,13 +78,14 @@ export class ApiReplayView extends Handler {
 
     // The live game decides, not the sandbox: its names show once the live game ends, whatever the phase of the save.
     const mask = incognitoMask(game, id);
-    // The page asks for the colors it was shown. While the game runs only the viewer's own color gets here, which is real.
+    // The page asks for the colors it was shown. While the game runs a player's own color is real, and the judge's are fakes.
     let viewAs: ReplayViewAs;
     try {
       viewAs = unmaskColor(requestedAs, mask);
     } catch (e) {
       if (e instanceof InputError) {
-        throw RouteError.badRequest('invalid as');
+        // The real color of a seat that was never shown is refused as a color that nobody plays is.
+        throw RouteError.badRequest(UNKNOWN_COLOR);
       }
       throw e;
     }

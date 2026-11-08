@@ -3,11 +3,25 @@ import {afterEach, beforeEach} from 'vitest';
 import {fetchReplayMoves, fetchReplayView, postJudgeFreeze, postJudgeRewind, postRewind, ReplayResponseError, translateRefusal} from '@/client/utils/fetchReplay';
 import {PreferencesManager} from '@/client/utils/PreferencesManager';
 import {setTranslationsForTest} from '@/client/directives/i18n';
-import {fakeGameModel, fakeGameOptionsModel, fakePlayerViewModel, fakePublicPlayerModel} from '../components/testHelpers';
+import {Phase} from '@/common/Phase';
+import {PublicPlayerModel} from '@/common/models/PlayerModel';
+import {PlayerId} from '@/common/Types';
+import {fakeGameModel, fakeGameOptionsModel, fakePlayerViewModel, fakePublicPlayerModel, fakeSpectatorModel} from '../components/testHelpers';
 
 // A body that reads as a player's view and as a replay step, for the tests that only look at the address.
 function anyBody() {
   return {...fakePlayerViewModel(), view: fakePlayerViewModel()};
+}
+
+// A view of every seat, as the server answers a spectator or a judge, in an incognito game.
+function fakeSpectatorModelOf(id: string, players: Array<PublicPlayerModel>) {
+  return {
+    ...fakeSpectatorModel(),
+    id,
+    thisPlayer: undefined,
+    players,
+    game: fakeGameModel({gameOptions: fakeGameOptionsModel({incognito: true})}),
+  };
 }
 
 // The view of the viewer, in a game where the opponent shows as the fake name "Red".
@@ -105,7 +119,7 @@ describe('fetchReplay', () => {
   describe('incognito games', () => {
     beforeEach(() => {
       PreferencesManager.INSTANCE.set('lang', 'pl');
-      setTranslationsForTest({Red: 'Czerwony'});
+      setTranslationsForTest({Red: 'Czerwony', Blue: 'Niebieski'});
     });
 
     it('translates the fake names of a replay view', async () => {
@@ -121,16 +135,65 @@ describe('fetchReplay', () => {
       expect(replay.saveId).eq(3);
     });
 
-    it('keeps the real names of the judge\'s replay view, where a player may be called Red', async () => {
+    it('translates the fake names of the judge\'s replay view, where every seat is hidden', async () => {
+      const seats = [fakePublicPlayerModel({color: 'green', name: 'Blue'}), fakePublicPlayerModel({color: 'blue', name: 'Red'})];
       (global as any).fetch = async () => ({
         ok: true,
         status: 200,
-        json: () => Promise.resolve({saveId: 3, viewAs: 'all', view: incognitoView(), privates: []}),
+        json: () => Promise.resolve({
+          saveId: 3,
+          viewAs: 'all',
+          view: fakeSpectatorModelOf('j-judge-id', seats),
+          privates: [],
+        }),
       });
 
       const replay = await fetchReplayView('j-judge-id', 3, 'all');
 
-      expect(replay.view.players.map((p) => p.name)).deep.eq(['Alice', 'Red']);
+      expect(replay.view.players.map((p) => p.name)).deep.eq(['Niebieski', 'Czerwony']);
+    });
+
+    it('translates the name of the seat that the judge views as', async () => {
+      const seats = [fakePublicPlayerModel({color: 'green', name: 'Blue'}), fakePublicPlayerModel({color: 'blue', name: 'Red'})];
+      (global as any).fetch = async () => ({
+        ok: true,
+        status: 200,
+        json: () => Promise.resolve({
+          saveId: 3,
+          viewAs: 'blue',
+          view: fakePlayerViewModel({
+            id: 'j-judge-id' as unknown as PlayerId,
+            color: 'blue',
+            thisPlayer: seats[1],
+            players: seats,
+            game: fakeGameModel({gameOptions: fakeGameOptionsModel({incognito: true})}),
+          }),
+          privates: [],
+        }),
+      });
+
+      const replay = await fetchReplayView('j-judge-id', 3, 'blue');
+
+      expect(replay.view.thisPlayer?.name).eq('Czerwony');
+      expect(replay.view.players.map((p) => p.name)).deep.eq(['Niebieski', 'Czerwony']);
+    });
+
+    it('keeps the real names of the judge\'s replay view once the game ended', async () => {
+      const seats = [fakePublicPlayerModel({color: 'green', name: 'Red'}), fakePublicPlayerModel({color: 'blue', name: 'Alice'})];
+      (global as any).fetch = async () => ({
+        ok: true,
+        status: 200,
+        json: () => Promise.resolve({
+          saveId: 3,
+          viewAs: 'all',
+          view: {...fakeSpectatorModelOf('j-judge-id', seats), game: fakeGameModel({gameOptions: fakeGameOptionsModel({incognito: true}), phase: Phase.END})},
+          privates: [],
+        }),
+      });
+
+      const replay = await fetchReplayView('j-judge-id', 3, 'all');
+
+      expect(replay.view.players.map((p) => p.name)).deep.eq(['Red', 'Alice']);
     });
 
     it('translates the fake names of the view that a rewind answers', async () => {

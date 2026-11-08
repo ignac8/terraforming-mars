@@ -3,7 +3,9 @@ import {translateFakeNames} from '@/client/utils/incognitoNames';
 import {setTranslationsForTest} from '@/client/directives/i18n';
 import {PreferencesManager} from '@/client/utils/PreferencesManager';
 import {Phase} from '@/common/Phase';
+import {JudgeModel} from '@/common/models/JudgeModel';
 import {PlayerViewModel} from '@/common/models/PlayerModel';
+import {PlayerId} from '@/common/Types';
 import {fakeGameModel, fakeGameOptionsModel, fakePlayerViewModel, fakePublicPlayerModel, fakeSpectatorModel} from '../components/testHelpers';
 
 describe('incognitoNames', () => {
@@ -68,6 +70,57 @@ describe('incognitoNames', () => {
     const result = translateFakeNames(spectator);
 
     expect(result.players.map((p) => p.name)).deep.eq(['Czerwony', 'Niebieski']);
+  });
+
+  it('translates every seat of a judge model, which has no seat of its own', () => {
+    const judge = {
+      ...fakeSpectatorModel(),
+      id: 'j-judge-id',
+      thisPlayer: undefined,
+      signature: 'sig',
+      password: undefined,
+      privates: [{color: 'blue'}, {color: 'red'}],
+      players: [fakePublicPlayerModel({color: 'blue', name: 'Red'}), fakePublicPlayerModel({color: 'red', name: 'Blue'})],
+      game: fakeGameModel({
+        gameOptions: fakeGameOptionsModel({incognito: true}),
+        milestones: [{name: 'Terraformer', playerName: 'Red', color: 'blue', scores: []}],
+      }),
+    } as unknown as JudgeModel;
+
+    const result = translateFakeNames(judge);
+
+    expect(result.players.map((p) => p.name)).deep.eq(['Czerwony', 'Niebieski']);
+    expect(result.game.milestones[0].playerName).eq('Czerwony');
+    expect(result.privates).deep.eq(judge.privates);
+    expect(judge.players[0].name).eq('Red');
+  });
+
+  it('translates the name of the seat that a judge views as, which no viewer owns', () => {
+    const viewed = fakePublicPlayerModel({color: 'blue', name: 'Red'});
+    const view = fakePlayerViewModel({
+      id: 'j-judge-id' as unknown as PlayerId,
+      color: 'blue',
+      thisPlayer: viewed,
+      players: [viewed, fakePublicPlayerModel({color: 'red', name: 'Blue'})],
+      game: fakeGameModel({gameOptions: fakeGameOptionsModel({incognito: true})}),
+    });
+
+    const result = translateFakeNames(view);
+
+    expect(result.thisPlayer.name).eq('Czerwony');
+    expect(result.players.map((p) => p.name)).deep.eq(['Czerwony', 'Niebieski']);
+  });
+
+  it('keeps the names of a judge model after the game ended', () => {
+    const judge = {
+      ...fakeSpectatorModel(),
+      id: 'j-judge-id',
+      thisPlayer: undefined,
+      players: [fakePublicPlayerModel({color: 'blue', name: 'Red'})],
+      game: fakeGameModel({gameOptions: fakeGameOptionsModel({incognito: true}), phase: Phase.END}),
+    } as unknown as JudgeModel;
+
+    expect(translateFakeNames(judge).players[0].name).eq('Red');
   });
 
   it('keeps the name of a viewer who really is called like a color', () => {

@@ -131,7 +131,7 @@ describe('App', () => {
   // Mounts the page of `path` for an incognito game, served a model where the opponent shows as the fake name "Red".
   async function mountIncognitoPage(path: string, model: object) {
     PreferencesManager.INSTANCE.set('lang', 'pl');
-    setTranslationsForTest({Red: 'Czerwony'});
+    setTranslationsForTest({Red: 'Czerwony', Blue: 'Niebieski'});
     window.history.replaceState({}, '', path);
     vi.stubGlobal('fetch', vi.fn(async () => ({ok: true, status: 200, json: async () => model}) as Response));
     const wrapper = shallowMount(App, {
@@ -139,6 +139,7 @@ describe('App', () => {
       global: {...globalConfig.global, stubs: {
         PlayerHome: {template: '<div class="stub-player"></div>'},
         SpectatorHome: {template: '<div class="stub-spectator"></div>'},
+        JudgeHome: {template: '<div class="stub-judge"></div>'},
       }},
     });
     await flushPromises();
@@ -173,6 +174,23 @@ describe('App', () => {
     });
 
     expect(wrapper.vm.spectator?.players.map((p: {name: string}) => p.name)).deep.eq(['Alice', 'Czerwony']);
+  });
+
+  it('translates the fake names on a judge page, and in the messages that name them', async () => {
+    const wrapper = await mountIncognitoPage('/judge?id=j1', {
+      id: 'j1',
+      color: 'neutral',
+      password: undefined,
+      signature: 'sig',
+      thisPlayer: undefined,
+      players: [{color: 'green', name: 'Blue'}, {color: 'blue', name: 'Red'}],
+      privates: [{color: 'green'}, {color: 'blue'}],
+      game: incognitoGame,
+    });
+
+    expect(wrapper.vm.judge?.players.map((p: {name: string}) => p.name)).deep.eq(['Niebieski', 'Czerwony']);
+    const message = {message: 'Hello ${0}', data: [{type: LogMessageDataType.PLAYER, value: 'blue'}]};
+    expect(translateMessage(message as any)).eq('Hello Czerwony');
   });
 
   it('replaces a stale judge password in the address bar', async () => {

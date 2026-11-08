@@ -78,7 +78,8 @@ export class ApiWaitingFor extends Handler {
     if (isJudgeId(ctx.urlParams.get('id'))) {
       const game = await this.loadJudgeGame(ctx);
       const signature = ctx.urlParams.get('signature');
-      responses.writeJson(res, ctx, this.getJudgeWaitingForModel(game, signature));
+      const judgeId = ctx.urlParams.judgeId('id');
+      responses.writeJson(res, ctx, maskModel(this.getJudgeWaitingForModel(game, signature), incognitoMask(game, judgeId)));
       return;
     }
 

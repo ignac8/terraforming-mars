@@ -7,6 +7,9 @@ import {PendingChoiceModel, pendingChoiceOf} from '../../common/models/PendingCh
 import {PlayerViewModel, PublicPlayerModel, ViewModel} from '../../common/models/PlayerModel';
 import {ReplayViewAs, ReplayViewModel} from '../../common/replay/ReplayModel';
 
+/** The refusal of a view as a color that no seat has. */
+export const UNKNOWN_COLOR = 'unknown color';
+
 /**
  * Builds what a viewer sees of a sandbox game: every player's hand (`'all'`) or one player's view.
  *
@@ -36,7 +39,7 @@ export function buildReplayView(
 
   const player = sandbox.players.find((p) => p.color === viewAs);
   if (player === undefined) {
-    throw RouteError.badRequest('unknown color');
+    throw RouteError.badRequest(UNKNOWN_COLOR);
   }
   const view: PlayerViewModel = Server.getPlayerModel(player);
   if (allVictoryPoints) {

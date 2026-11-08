@@ -23,8 +23,8 @@ English fake labels and hides the seat markers on GameHome.
   expansion is on.
 - Hiding is active when `gameOptions.incognito && game.phase !== Phase.END`. The phase is that of the
   live game, never of a replay sandbox.
-- Hiding applies to p and s ids only. The judge (j id) and serverId and admin routes always get real
-  data.
+- Hiding applies to p, s and j ids. The judge is hidden like the spectator (organizer, 2026-11-08).
+  The serverId and admin routes always get real data.
 - Fake colors are drawn from all 10 `PLAYER_COLORS`. A player's own seat stays real. The spectator
   mapping covers every seat.
 - Fake name: the color's English label. `clear` is `"Transparent"`, and every other color is the
@@ -140,8 +140,8 @@ English fake labels and hides the seat markers on GameHome.
   export function unmaskColor<T extends string>(color: T, mask: IncognitoMask | undefined): T;
   ```
   `incognitoMask` returns `undefined` when the option is off, when `phase === END`, or when the
-  viewer is a judge or unknown. A `mask` of `undefined` makes the other three functions return their
-  input unchanged.
+  viewer is unknown. The spectator and the judge get a mask over every seat. A `mask` of `undefined`
+  makes the other three functions return their input unchanged.
 
 - [ ] **Step 1: Write failing tests** (a 3-player game from `testGame(3, {incognito: true})`. Extend
   `testGame`'s options if it does not pass `incognito` through.)
@@ -153,7 +153,7 @@ English fake labels and hides the seat markers on GameHome.
     same call on `Game.deserialize(game.serialize())`.
   - `"different viewers get independent mappings"`: assert the mask is seeded per viewer. Use a seed
     where the two masks differ for the same opponent.
-  - `"undefined when off, at END, or for the judge id"`.
+  - `"undefined when off, at END, or for an id of no seat"`, and `"judge mask covers every seat"`.
   - `"maskModel rewrites color keys, PLAYER log data, player names and playerName"`: on a hand-built
     object:
     ```ts
@@ -239,8 +239,8 @@ English fake labels and hides the seat markers on GameHome.
   - Review Focus 3, `"replay view of an old save follows the live game"`:
     - While running, `api/replay/view` as player 0 at save 0 hides opponents.
     - After END (with `isFinished` true), it shows real names.
-  - `"judge and incognito-off games unchanged"`: the judge body and an incognito-off game's body
-    deep-equal the unmasked models.
+  - `"incognito-off games unchanged"`: an incognito-off game's body deep-equals the unmasked model,
+    for the judge as for everyone else.
   - `"land-claim error is masked"`: player 0 tries a space land-claimed by player 1, and the error
     body contains no `Zzbob`.
 
@@ -349,5 +349,5 @@ English fake labels and hides the seat markers on GameHome.
   - each viewer sees different fake colors
   - Polish UI shows "Czerwony"-style names
   - GameHome is alphabetical and has no colors
-  - after forcing END through the judge or admin, real names appear
+  - after forcing END through the admin, real names appear
 - [ ] Whole-branch review against the spec's anti-goals.

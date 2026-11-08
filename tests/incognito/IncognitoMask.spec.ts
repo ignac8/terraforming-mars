@@ -69,20 +69,74 @@ describe('IncognitoMask', () => {
     expect(first?.colors).not.deep.eq(second?.colors);
   });
 
-  it('undefined when off, at END, or for the judge id', () => {
+  it('undefined when off, at END, or for an id of no seat', () => {
     const [off, offPlayer] = testGame(3);
     expect(incognitoMask(off, offPlayer.id)).is.undefined;
 
-    const [ended, endedPlayer] = testGame(3, {incognito: true});
+    const [ended, endedPlayer] = testGame(3, {incognito: true, judgeLink: true});
     ended.phase = Phase.END;
     expect(incognitoMask(ended, endedPlayer.id)).is.undefined;
     expect(incognitoMask(ended, ended.spectatorId)).is.undefined;
+    expect(incognitoMask(ended, ended.judgeId!)).is.undefined;
 
-    const [judged, judgedPlayer] = testGame(3, {incognito: true});
-    judged.judgeId = 'jjudge';
-    expect(incognitoMask(judged, judged.judgeId)).is.undefined;
+    const [judged, judgedPlayer] = testGame(3, {incognito: true, judgeLink: true});
+    expect(incognitoMask(judged, 'jnobody')).is.undefined;
     expect(incognitoMask(judged, 'pnobody')).is.undefined;
     expect(incognitoMask(judged, judgedPlayer.id)).is.not.undefined;
+
+    const [unjudged] = testGame(3, {incognito: true});
+    expect(unjudged.judgeId).is.undefined;
+    expect(incognitoMask(unjudged, 'jnobody')).is.undefined;
+  });
+
+  it('judge mask covers every seat, like the spectator\'s', () => {
+    const [game, player, player2, player3] = testGame(3, {incognito: true, judgeLink: true});
+
+    const mask = incognitoMask(game, game.judgeId!);
+
+    expect(mask?.colors.size).eq(3);
+    expect(new Set(mask?.colors.values()).size).eq(3);
+    for (const fake of mask?.colors.values() ?? []) {
+      expect(PLAYER_COLORS).includes(fake);
+    }
+    expect([...(mask?.names.keys() ?? [])]).has.members([player.name, player2.name, player3.name]);
+    for (const seat of [player, player2, player3]) {
+      const fake = mask?.colors.get(seat.color) as Color;
+      expect(mask?.reverse.get(fake)).eq(seat.color);
+      expect(mask?.names.get(seat.name)).eq(label(fake));
+    }
+  });
+
+  it('judge mask is its own mapping, drawn from the judge id', () => {
+    const [game] = testGame(3, {incognito: true, judgeLink: true});
+    // The mapping is seeded by the viewer's id, so only the id decides which of the 10 colors a seat gets.
+    const maskOf = (judgeId: `j${string}`) => {
+      game.judgeId = judgeId;
+      return incognitoMask(game, judgeId)?.colors;
+    };
+
+    const first = maskOf('jfirst');
+    const second = maskOf('jsecond');
+
+    expect(first?.size).eq(3);
+    expect(first).not.deep.eq(second);
+    expect(maskOf('jfirst')).deep.eq(first);
+    expect(first).not.deep.eq(incognitoMask(game, game.spectatorId)?.colors);
+  });
+
+  it('judge mask is stable across calls and a serialize round trip, and nothing is stored for it', () => {
+    const [game] = testGame(3, {incognito: true, judgeLink: true});
+    const judgeId = game.judgeId!;
+
+    const mask = incognitoMask(game, judgeId);
+
+    expect(mask).is.not.undefined;
+    expect(incognitoMask(game, judgeId)).deep.eq(mask);
+    const serialized = game.serialize();
+    expect(JSON.stringify(serialized)).does.not.include('"reverse"');
+    const restored = Game.deserialize(serialized);
+    expect(restored.judgeId).eq(judgeId);
+    expect(incognitoMask(restored, judgeId)).deep.eq(mask);
   });
 
   it('maskModel rewrites color keys, PLAYER log data, player names and playerName', () => {

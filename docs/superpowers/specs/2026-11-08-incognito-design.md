@@ -15,11 +15,13 @@ the game ends.
 
 ## Decisions (Marcin, 2026-11-08)
 
-1. **The server does the hiding.** Until the game ends, a player or spectator never receives an
+1. **The server does the hiding.** Until the game ends, a player, spectator or judge never receives an
    opponent's real name or real color from the server. Opening dev tools must not reveal them.
 2. **Hidden before and during the game, revealed at the end.** Once `phase === END`, every response
    carries real names and colors, as it does today.
-3. **The judge sees real data.** So does anything gated by serverId (admin).
+3. **The judge is hidden like the spectator in incognito games until the end** (organizer, 2026-11-08). Admin
+   (serverId) keeps real data. The judge still sees every hand and every private log line. Only names and colors
+   are masked, and the judge's mapping covers every seat.
 4. **The spectator is hidden like a player.** It gets its own mapping, which covers every seat.
 5. **The shared game page (`game?id=g…`, the "general link") keeps working.** In incognito games it
    lists players alphabetically by name, with no colors and no turn order or first-player mark.
@@ -30,7 +32,7 @@ the game ends.
 7. **Nobody learns the seat order before the end, the creator included.** An incognito game
    shuffles the seats on the server when it is created. The response to the creator shows the same
    alphabetical list without colors that the shared page shows. This lets the organizer play in their
-   own incognito games without an advantage. Only the judge sees the real seat order.
+   own incognito games without an advantage. Nobody but the admin routes sees the real seat order.
 
 ## Calls made while writing this (not asked; check these)
 
@@ -54,6 +56,9 @@ the game ends.
   The mapping never changes during a game: "Red" is the same opponent every generation and after
   a server restart.
 - **Spectator:** one mapping over all seats, also drawn from all 10 colors.
+- **Judge:** the same kind of mapping, seeded by the judge id, so it differs from the spectator's. The judge's private
+  log lines name their owner by the fake color. On the replay page the judge asks for a seat by the fake color
+  (`as=<fake>`). A real color that is none of the judge's fakes is refused as a color that nobody plays is.
 - **Names in the viewer's language.** The fake name is shown translated: a Polish player sees
   "Czerwony". The keys already exist in `src/locales/pl/ui.json`.
 - **Everything that refers to a player** uses the fake identity consistently: the board tiles, the log,
@@ -69,13 +74,15 @@ and 7 make sure nobody has one.
 
 The inventory was made on origin/tournament 3754e48ad. Everything below is in scope.
 
-**Outbound, participant-scoped (p or s id), phase !== END, incognito on.** Rewrite every response
+**Outbound, participant-scoped (p, s or j id), phase !== END, incognito on.** Rewrite every response
 that carries player data:
 
 - `api/player`, `player/input`, `api/rewind`, `api/spectator` and `api/waitingfor`
 - `api/game/logs`
 - `api/replay/moves` and `api/replay/view`
 - `api/rewind/vote`, plus any other route returning PlayerViewModel or SpectatorModel
+- the judge routes: `api/judge`, `api/judge/freeze` and `api/judge/rewind`, and the judge branches of
+  `api/waitingfor`, `api/game/logs`, `api/replay/moves` and `api/replay/view`
 
 `reset` is solo-only, so it is out.
 
@@ -84,7 +91,8 @@ that carries player data:
 - **Every color field.** `src/client/utils/localColors.ts` `COLOR_KEYS` already names the full set
   (color, coOwner, excavator, chairman, partyLeader, visitor, activePlayer, lobby,
   passedPlayers, colonies, players, waitingFor, movers, viewerColor, defaultViewAs, viewAs,
-  requester), plus log data of type PLAYER. `neutral`, `bronze` and `NEUTRAL` pass through.
+  requester, and the `owner` of a judge's private log line), plus log data of type PLAYER. `neutral`,
+  `bronze` and `NEUTRAL` pass through.
 - **Player-name fields:**
   - `PublicPlayerModel.name`
   - `ClaimedMilestoneModel.playerName`
@@ -107,7 +115,7 @@ that carries player data:
 
 - `SelectPlayer` and `SelectDelegate` responses, including when nested inside `or`, `and` and
   `initialCards` wrappers, on `player/input`.
-- The `as=<color>` parameter of `api/replay/view`.
+- The `as=<color>` parameter of `api/replay/view`, for a player's own color and for the judge's fakes.
 
 **The shared game page.** For incognito games before END, `api/game?id=g` (no auth) returns
 players sorted by name with no colors, and without `activePlayer`. It keeps the player ids, because
@@ -120,10 +128,9 @@ recognize them by the in-game "1st" marker.
 
 **Unchanged:**
 
-- `api/judge*`
-- the judge branches of the shared routes
-- the admin routes (`api/games`, `load_game` and others)
+- the admin routes (`api/games`, `load_game` and others), which keep real data
 - `end_game_log` (END only)
+- what the judge can do: freeze, rewind, and see every hand, draft, pending choice and private log line
 
 ## Behaviour details
 
@@ -158,13 +165,13 @@ recognize them by the in-game "1st" marker.
 - Hiding the viewer's own identity from themselves.
 - Hiding handicaps.
 - Real data on the admin games overview (`GamesOverview.vue` reads `api/game`). Admins get the same
-  hidden list as the shared page. The judge link and the database still show everything.
+  hidden list as the shared page. The database and the admin `load_game` route still show everything.
 - Turning incognito on for a game that is already running.
 - Automa and main ports, and upstreaming.
 
 ## Anti-goals (failure even if it "works")
 
-- A real opponent name anywhere in a p or s response before END, or a color field that shows an
+- A real opponent name anywhere in a p, s or j response before END, or a color field that shows an
   opponent in anything other than their mapped fake color. That includes log data, prompt text,
   error bodies and replay views.
 - A fake color that changes between polls or after a restart. Players would lose track of who's who.
@@ -175,10 +182,11 @@ recognize them by the in-game "1st" marker.
 
 - A leak test. Build a multiplayer incognito game with unique player names (e.g. `Zzalice`) and with
   features that put colors and names in many places: tiles, milestones, awards, colonies, a pending
-  SelectPlayer, and log lines. Fetch every participant-scoped route as a player and as the spectator,
+  SelectPlayer, and log lines. Fetch every participant-scoped route as a player, as the spectator and as the judge,
   and assert two things. No opponent real name appears anywhere in the body. Every color field equals
   the viewer's mapping of the real value, so the test compares against the unmasked model and does
-  not just look for real color strings. Repeat at END and assert the real data is back.
+  not just look for real color strings. Repeat at END and assert the real data is back. The judge is a
+  third viewer in that test, with its own checks for `owner` and for `as=` on the replay view.
 - An inbound test. As a player, answer a SelectPlayer prompt with a fake color, and assert that the
   intended real player was hit.
 - A stability test. The mapping is identical across two fetches and after a serialize and

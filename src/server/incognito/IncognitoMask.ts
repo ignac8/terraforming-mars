@@ -17,7 +17,7 @@ import {shuffleSeats} from '@/server/incognito/shuffleSeats';
  * It is the same for a viewer on every call, and different between viewers.
  */
 export type IncognitoMask = {
-  /** Real color to fake color. Opponents only, or every seat for a spectator. */
+  /** Real color to fake color. Opponents only, or every seat for a spectator or the judge. */
   readonly colors: ReadonlyMap<Color, Color>;
   /** Fake color to real color. */
   readonly reverse: ReadonlyMap<Color, Color>;
@@ -42,7 +42,7 @@ function seededRandom(game: IGame, viewerId: ParticipantId): SeededRandom {
  * Builds the mask for a viewer of a live incognito game.
  *
  * Returns `undefined` when nothing is hidden from the viewer: the option is off, the game is over, or the
- * viewer is a judge or unknown. A player's own seat is not masked, and a spectator's mask covers every seat.
+ * viewer is unknown. A player's own seat is not masked, and the mask of a spectator or the judge covers every seat.
  */
 export function incognitoMask(game: IGame, viewerId: ParticipantId): IncognitoMask | undefined {
   if (!game.gameOptions.incognito || game.phase === Phase.END) {
@@ -50,7 +50,7 @@ export function incognitoMask(game: IGame, viewerId: ParticipantId): IncognitoMa
   }
   let seats = game.players;
   let fakes: ReadonlyArray<PlayerColor> = PLAYER_COLORS;
-  if (viewerId !== game.spectatorId) {
+  if (viewerId !== game.spectatorId && viewerId !== game.judgeId) {
     const viewer = game.players.find((player) => player.id === viewerId);
     if (viewer === undefined) {
       return undefined;

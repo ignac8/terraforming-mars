@@ -7,11 +7,14 @@ import {GameLoader} from '../../src/server/database/GameLoader';
 import {OrOptions} from '../../src/server/inputs/OrOptions';
 import {clearReplayCache, getReplayMoves} from '../../src/server/replay/ReplayService';
 import {isTableLocked, withTableLock} from '../../src/server/rewind/tableLock';
+import {incognitoMask} from '../../src/server/incognito/IncognitoMask';
+import {PLAYER_COLOR_LABELS, PlayerColor} from '../../src/common/Color';
 import {JudgeModel} from '../../src/common/models/JudgeModel';
 import {Phase} from '../../src/common/Phase';
 import {Timer} from '../../src/common/Timer';
 import * as constants from '../../src/common/constants';
 import {statusCode} from '../../src/common/http/statusCode';
+import {JudgeId} from '../../src/common/Types';
 import {cast} from '../../src/common/utils/utils';
 import {restoreTestDatabase, setTestDatabase} from '../testing/setup';
 import {SnapshotDatabase} from '../testing/SnapshotDatabase';
@@ -36,12 +39,13 @@ describe('ApiJudgeRewind', () => {
     p.process({type: 'or', index: action.options.findIndex((option) => option.title === title), response: {type: 'option'}});
   }
 
-  // A two-player game played into the second generation's action phase.
-  async function start(options: Parameters<typeof testGame>[1] = {}) {
+  // A two-player game played into the second generation's action phase. The judge id is random unless `judgeId` is given.
+  async function start(options: Parameters<typeof testGame>[1] = {}, judgeId?: JudgeId) {
     clearReplayCache();
     db = new SnapshotDatabase();
     setTestDatabase(db);
     [game, player, player2] = testGame(2, {judgeLink: true, judgeUndo: true, ...options});
+    game.judgeId = judgeId ?? game.judgeId;
     game.judgePassword = PASSWORD;
     await GameLoader.getInstance().add(game);
     game.phase = Phase.ACTION;
@@ -130,6 +134,29 @@ describe('ApiJudgeRewind', () => {
     const model: JudgeModel = JSON.parse(res.content);
     expect(model.id).eq(game.judgeId);
     expect(model.game.frozen).is.true;
+  });
+
+  it('answers the judge model of an incognito game under the judge\'s fake names and colors', async () => {
+    // The judge id seeds the judge's mapping. This one shows both seats as another color than their own.
+    await start({incognito: true}, 'j-judge-id-4');
+
+    await post(valid());
+
+    expect(res.statusCode, res.content).eq(statusCode.ok);
+    const restored = (await GameLoader.getInstance().getGame(game.id))!;
+    const mask = incognitoMask(restored, restored.judgeId!)!;
+    for (const seat of restored.players) {
+      expect(mask.colors.get(seat.color), seat.color).is.not.eq(seat.color);
+    }
+    // The names are quoted: the player ids are made of them.
+    for (const seat of restored.players) {
+      expect(res.content).does.not.include(`"${seat.name}"`);
+    }
+    const model: JudgeModel = JSON.parse(res.content);
+    const seats = restored.playersInGenerationOrder;
+    expect(model.players.map((p) => p.color)).deep.eq(seats.map((seat) => mask.colors.get(seat.color)));
+    expect(model.players.map((p) => p.name)).deep.eq(seats.map((seat) => PLAYER_COLOR_LABELS[mask.colors.get(seat.color) as PlayerColor]));
+    expect(model.privates.map((p) => p.color)).deep.eq(model.players.map((p) => p.color));
   });
 
   it('rewinds the judge to an undone move and leaves the game frozen', async () => {

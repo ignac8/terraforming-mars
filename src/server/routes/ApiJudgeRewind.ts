@@ -1,5 +1,6 @@
 import * as responses from '../server/responses';
 import {Server} from '../models/ServerModel';
+import {incognitoMask, maskModel} from '../incognito/IncognitoMask';
 import {judgeCanRewind} from '../rewind/access';
 import {rewindTable} from '../rewind/RewindService';
 import {voteService} from '../rewind/vote/effects';
@@ -52,6 +53,6 @@ export class ApiJudgeRewind extends Handler {
     const restored = await ifServedGame(game, ctx, () => rewindTable(game, saveId, {cards, clocks, freeze: true}, {kind: 'judge'}));
     // The restored game holds no vote, so the one the old game had ends here.
     voteService.endForJudge(game, 'judge-rewound');
-    responses.writeJson(res, ctx, Server.getJudgeModel(restored));
+    responses.writeJson(res, ctx, maskModel(Server.getJudgeModel(restored), incognitoMask(restored, ctx.urlParams.judgeId('id'))));
   }
 }
