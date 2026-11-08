@@ -1,7 +1,5 @@
 # Incognito Games Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
-
 **Goal:** A create-game option that hides opponents' real names, colors and seat order from
 players and spectators until the game ends.
 
@@ -36,7 +34,7 @@ English fake labels and hides the seat markers on GameHome.
 - Checkbox label: "Incognito (hide opponents' names and colors until the game ends)", with a Polish
   translation in `src/locales/pl/`.
 - Commits: one terse line, no trailers, no body (fork convention).
-- Run Node 24. Every command below runs from a script under `$CLAUDE_JOB_DIR/tmp` that starts with
+- Run Node 24. Every command below runs from a script that starts with
   `NODE24=$(ls -d ~/.nvm/versions/node/v24.* | sort -V | tail -1); export PATH=$NODE24/bin:$PATH`.
 
 ## Review Focus
@@ -352,4 +350,4 @@ English fake labels and hides the seat markers on GameHome.
   - Polish UI shows "Czerwony"-style names
   - GameHome is alphabetical and has no colors
   - after forcing END through the judge or admin, real names appear
-- [ ] Whole-branch review (Opus) against the spec's anti-goals.
+- [ ] Whole-branch review against the spec's anti-goals.
