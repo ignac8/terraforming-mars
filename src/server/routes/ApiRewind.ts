@@ -9,6 +9,7 @@ import {Request} from '../Request';
 import {Response} from '../Response';
 import {IPlayer} from '../IPlayer';
 import {RewindCards} from '../../common/replay/ReplayModel';
+import {incognitoMask, maskModel} from '../incognito/IncognitoMask';
 
 type RewindRequest = {saveId: number, cards: RewindCards};
 
@@ -49,6 +50,6 @@ export class ApiRewind extends Handler {
     this.checkPlayerPassword(player, ctx);
     const {saveId, cards} = parse(await readBody(req));
     const restored = await rewindGame(game, player, saveId, cards);
-    responses.writeJson(res, ctx, Server.getPlayerModel(restored.getPlayerById(playerId)));
+    responses.writeJson(res, ctx, maskModel(Server.getPlayerModel(restored.getPlayerById(playerId)), incognitoMask(restored, playerId)));
   }
 }

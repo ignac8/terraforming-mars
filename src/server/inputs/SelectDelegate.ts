@@ -5,6 +5,7 @@ import {NeutralPlayer} from '../turmoil/Turmoil';
 import {InputResponse, isSelectDelegateResponse} from '../../common/inputs/InputResponse';
 import {SelectDelegateModel} from '../../common/models/PlayerInputModel';
 import {InputError} from './InputError';
+import {incognitoMask, unmaskColor} from '../incognito/IncognitoMask';
 
 export class SelectDelegate extends BasePlayerInput<IPlayer | NeutralPlayer> {
   constructor(
@@ -22,17 +23,19 @@ export class SelectDelegate extends BasePlayerInput<IPlayer | NeutralPlayer> {
     };
   }
 
-  public process(input: InputResponse) {
+  public process(input: InputResponse, viewer: IPlayer) {
     if (!isSelectDelegateResponse(input)) {
       throw new InputError('Not a valid SelectDelegateResponse');
     }
+    // In an incognito game the answer holds the color that the player was shown.
+    const color = unmaskColor(input.player, incognitoMask(viewer.game, viewer.id));
     for (const player of this.players) {
       if (player === 'NEUTRAL') {
-        if (input.player !== 'NEUTRAL') {
+        if (color !== 'NEUTRAL') {
           continue;
         }
       } else {
-        if (input.player !== player.color) {
+        if (color !== player.color) {
           continue;
         }
       }

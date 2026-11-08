@@ -18,6 +18,7 @@ import {RouteError} from './RouteError';
 import {readBody} from './readBody';
 import {stringToNumber} from '../database/utils';
 import {isTableLocked, withTableLock} from '../rewind/tableLock';
+import {IncognitoMask, incognitoMask, maskModel, maskText} from '../incognito/IncognitoMask';
 
 export const playerInputMetrics = {
   responseInterval: new prometheus.Histogram({
@@ -84,7 +85,12 @@ export class PlayerInput extends Handler {
     } catch (err) {
       console.error(err);
     }
-    responses.writeJson(res, ctx, Server.getPlayerModel(player));
+    this.writeModel(res, ctx, player);
+  }
+
+  // Answers with the player's model as of now, so a move that ends the game shows the names.
+  private writeModel(res: Response, ctx: Context, player: IPlayer): void {
+    responses.writeJson(res, ctx, maskModel(Server.getPlayerModel(player), incognitoMask(player.game, player.id)));
   }
 
   private async processInput(req: Request, res: Response, ctx: Context, player: IPlayer): Promise<void> {
@@ -110,13 +116,13 @@ export class PlayerInput extends Handler {
         await withTableLock(player.game.id, () => this.performUndo(req, res, ctx, player));
       } else {
         player.process(entity);
-        responses.writeJson(res, ctx, Server.getPlayerModel(player));
+        this.writeModel(res, ctx, player);
       }
     } catch (e) {
       if (!(e instanceof AppError || e instanceof InputError)) {
         console.warn('Error processing input from player', e);
       }
-      responses.badInputRequest(req, res, e);
+      responses.badInputRequest(req, res, maskError(e, incognitoMask(player.game, player.id)));
     }
   }
 
@@ -153,6 +159,20 @@ export class PlayerInput extends Handler {
     return responseInterval < this.minResponseIntervalMs;
   }
 }
+
+// Replaces the opponents' names in the message of `e`, which a land claim error holds.
+function maskError(e: unknown, mask: IncognitoMask | undefined): unknown {
+  if (mask === undefined) {
+    return e;
+  }
+  const message = e instanceof Error ? e.message : String(e);
+  const masked = maskText(message, mask);
+  if (masked === message) {
+    return e;
+  }
+  return e instanceof AppError ? new AppError(e.id, masked) : new Error(masked);
+}
+
 function validateRunId(entity: any) {
   if (entity.runId !== undefined && runId !== undefined) {
     if (entity.runId !== runId) {

@@ -10,6 +10,7 @@ import {IPlayer} from '../IPlayer';
 import {Phase} from '../../common/Phase';
 import {RewindCards} from '../../common/replay/ReplayModel';
 import {RewindVotePoll} from '../../common/rewind/RewindVoteModel';
+import {incognitoMask, maskModel} from '../incognito/IncognitoMask';
 
 const NEEDS_PASSWORDS = 'A finished game can only be rewound at a table with player passwords.';
 
@@ -49,7 +50,7 @@ export class ApiRewindVote extends Handler {
 
   public override async get(_req: Request, res: Response, ctx: Context): Promise<void> {
     const player = await this.seat(ctx);
-    responses.writeJson(res, ctx, voteService.poll(player.game, player));
+    responses.writeJson(res, ctx, maskModel(voteService.poll(player.game, player), incognitoMask(player.game, player.id)));
   }
 
   public override async post(req: Request, res: Response, ctx: Context): Promise<void> {
@@ -72,7 +73,12 @@ export class ApiRewindVote extends Handler {
       poll = await voteService.cancel(player.game, player, vote.voteId);
       break;
     }
-    responses.writeJson(res, ctx, poll);
+    // A vote that reopens a finished game answers with the restored game's poll, and the game of the request is retired.
+    let live = player.game;
+    if (live.gameOptions.incognito) {
+      live = await ctx.gameLoader.getGame(live.id) ?? live;
+    }
+    responses.writeJson(res, ctx, maskModel(poll, incognitoMask(live, player.id)));
   }
 
   // The player in the `id` parameter, once the seat password is checked.

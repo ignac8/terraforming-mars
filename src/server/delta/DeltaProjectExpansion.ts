@@ -43,7 +43,7 @@ export class DeltaProjectExpansion {
 
   private static getProgress(player: IPlayer): DeltaProjectPlayerModel {
     if (player.deltaProjectData === undefined) {
-      throw new Error('No Delta Project progress for player ' + player.color);
+      throw new Error('No Delta Project progress for a player');
     }
     return player.deltaProjectData;
   }

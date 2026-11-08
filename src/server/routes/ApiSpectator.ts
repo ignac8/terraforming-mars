@@ -5,6 +5,7 @@ import {Context} from './IHandler';
 import {Request} from '../Request';
 import {Response} from '../Response';
 import {RouteError} from './RouteError';
+import {incognitoMask, maskModel} from '../incognito/IncognitoMask';
 
 export class ApiSpectator extends Handler {
   public static readonly INSTANCE = new ApiSpectator();
@@ -19,6 +20,6 @@ export class ApiSpectator extends Handler {
     if (game === undefined) {
       throw RouteError.notFound();
     }
-    responses.writeJson(res, ctx, Server.getSpectatorModel(game));
+    responses.writeJson(res, ctx, maskModel(Server.getSpectatorModel(game), incognitoMask(game, id)));
   }
 }
