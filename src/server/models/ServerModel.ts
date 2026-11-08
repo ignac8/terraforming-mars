@@ -31,17 +31,29 @@ import {toName} from '../../common/utils/utils';
 import {MAX_AWARDS, MAX_MILESTONES} from '../../common/constants';
 
 export class Server {
-  public static getSimpleGameModel(game: IGame): SimpleGameModel {
+  /**
+   * Returns the light view of a game: who sits at it, and how to reach it.
+   *
+   * While an incognito game runs, the players come out alphabetical, with the neutral color. Ids are kept.
+   * Pass `real` for the organizer's routes, which need the true seat order and colors.
+   */
+  public static getSimpleGameModel(game: IGame, options?: {real?: boolean}): SimpleGameModel {
+    const hidden = game.gameOptions.incognito && game.phase !== Phase.END && options?.real !== true;
+    const players = game.playersInGenerationOrder.map((player) => ({
+      color: hidden ? 'neutral' as const : player.color,
+      id: player.id,
+      name: player.name,
+    }));
+    if (hidden) {
+      // Equal names fall back to the random ids. Otherwise seat order would decide.
+      players.sort((a, b) => a.name.localeCompare(b.name) || a.id.localeCompare(b.id));
+    }
     return {
-      activePlayer: game.activePlayer.color,
+      activePlayer: hidden ? 'neutral' : game.activePlayer.color,
       id: game.id,
       name: game.name,
       phase: game.phase,
-      players: game.playersInGenerationOrder.map((player) => ({
-        color: player.color,
-        id: player.id,
-        name: player.name,
-      })),
+      players,
       spectatorId: game.spectatorId,
       judgeId: game.judgeId,
       gameOptions: this.getGameOptionsAsModel(game.gameOptions),

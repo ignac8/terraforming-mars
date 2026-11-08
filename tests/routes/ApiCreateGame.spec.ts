@@ -349,6 +349,38 @@ describe('ApiCreateGame', () => {
     }
   });
 
+  it('creator response is the masked model', async () => {
+    let seatOrderDiffered = false;
+    for (let i = 0; i < 20; i++) {
+      req = new MockRequest();
+      res = new MockResponse();
+      scaffolding = new RouteTestScaffolding(req);
+      await postConfig({...newGameConfigForTest(), players: FOUR_PLAYERS, incognito: true});
+      const model = JSON.parse(res.content) as SimpleGameModel;
+      const game = (await scaffolding.ctx.gameLoader.getGame(model.id))!;
+
+      expect(model.players.map((p) => p.name)).deep.eq(['a', 'b', 'c', 'd']);
+      expect(model.players.map((p) => p.color)).deep.eq(['neutral', 'neutral', 'neutral', 'neutral']);
+      expect(model.activePlayer).eq('neutral');
+      expect(model.players.map((p) => p.id)).members(game.players.map((p) => p.id));
+      seatOrderDiffered ||= game.players.map((p) => p.name).join() !== 'a,b,c,d';
+    }
+
+    expect(seatOrderDiffered).is.true;
+  });
+
+  it('creator response lists the seats with their colors without incognito', async () => {
+    req = new MockRequest();
+    res = new MockResponse();
+    scaffolding = new RouteTestScaffolding(req);
+    await postConfig({...newGameConfigForTest(), players: FOUR_PLAYERS});
+    const model = JSON.parse(res.content) as SimpleGameModel;
+
+    expect(model.players.map((p) => p.name)).deep.eq(['c', 'd', 'a', 'b']);
+    expect(model.players.map((p) => p.color)).deep.eq(['yellow', 'green', 'red', 'blue']);
+    expect(model.activePlayer).eq('yellow');
+  });
+
   it('keeps the seats and the first player in order without incognito', async () => {
     const game = await createGame({...newGameConfigForTest(), players: FOUR_PLAYERS});
 

@@ -64,7 +64,7 @@ export class LoadGame extends Handler {
         console.warn(`unable to find ${gameId} in database`);
         throw RouteError.notFound('game_id not found');
       }
-      responses.writeJson(res, ctx, Server.getSimpleGameModel(game));
+      responses.writeJson(res, ctx, Server.getSimpleGameModel(game, {real: true}));
     });
   }
 }
