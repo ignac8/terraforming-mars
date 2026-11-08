@@ -7,6 +7,7 @@ import {Response} from '../Response';
 import {RouteError} from './RouteError';
 import {checkMayShowUndone} from '../rewind/access';
 import {isJudgeId, isPlayerId} from '../../common/Types';
+import {incognitoMask, maskModel} from '../incognito/IncognitoMask';
 
 export class ApiGameLogs extends Handler {
   public static readonly INSTANCE = new ApiGameLogs();
@@ -40,7 +41,7 @@ export class ApiGameLogs extends Handler {
       this.checkPlayerPassword(game.getPlayerById(id), ctx);
     }
     const logs = this.gameLogs.getLogsForGameView(id, game, generation);
-    responses.writeJson(res, ctx, logs);
+    responses.writeJson(res, ctx, maskModel(logs, incognitoMask(game, id)));
   }
 }
 

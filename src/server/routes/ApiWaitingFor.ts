@@ -10,6 +10,7 @@ import {Request} from '../Request';
 import {Response} from '../Response';
 import {RouteError} from './RouteError';
 import {Server} from '../models/ServerModel';
+import {incognitoMask, maskModel} from '../incognito/IncognitoMask';
 
 export class ApiWaitingFor extends Handler {
   public static readonly INSTANCE = new ApiWaitingFor();
@@ -91,7 +92,7 @@ export class ApiWaitingFor extends Handler {
     }
 
     if (isSpectatorId(id)) {
-      responses.writeJson(res, ctx, this.getSpectatorWaitingForModel(game, gameAge, undoCount));
+      responses.writeJson(res, ctx, maskModel(this.getSpectatorWaitingForModel(game, gameAge, undoCount), incognitoMask(game, id)));
       return;
     }
 
@@ -109,6 +110,6 @@ export class ApiWaitingFor extends Handler {
     }
     this.checkPlayerPassword(player, ctx);
     ctx.ipTracker.addParticipant(id, ctx.ip);
-    responses.writeJson(res, ctx, this.getPlayerWaitingForModel(player, game, gameAge, undoCount));
+    responses.writeJson(res, ctx, maskModel(this.getPlayerWaitingForModel(player, game, gameAge, undoCount), incognitoMask(game, id)));
   }
 }

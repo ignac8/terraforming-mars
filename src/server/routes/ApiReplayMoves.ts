@@ -7,6 +7,7 @@ import {RouteError} from './RouteError';
 import {getReplayMoves, isFinished} from '../replay/ReplayService';
 import {checkMayShowUndone} from '../rewind/access';
 import {isJudgeId, isPlayerId} from '../../common/Types';
+import {incognitoMask, maskModel} from '../incognito/IncognitoMask';
 
 export class ApiReplayMoves extends Handler {
   public static readonly INSTANCE = new ApiReplayMoves();
@@ -55,6 +56,7 @@ export class ApiReplayMoves extends Handler {
         this.checkClaimedSeat(game.getPlayerById(id), ctx);
       }
     }
-    responses.writeJson(res, ctx, await getReplayMoves(game, id, {undone}));
+    const moves = await getReplayMoves(game, id, {undone});
+    responses.writeJson(res, ctx, maskModel(moves, incognitoMask(game, id)));
   }
 }

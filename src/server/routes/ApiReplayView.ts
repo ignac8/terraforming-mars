@@ -7,6 +7,8 @@ import {RouteError} from './RouteError';
 import {isFinished, loadReplayState} from '../replay/ReplayService';
 import {buildReplayView} from '../replay/replayView';
 import {canBrowseHistory, canVoteRewind, checkMayShowUndone, judgeCanRewind} from '../rewind/access';
+import {InputError} from '../inputs/InputError';
+import {incognitoMask, maskModel, unmaskColor} from '../incognito/IncognitoMask';
 import {PLAYER_COLORS} from '../../common/Color';
 import {ReplayViewAs} from '../../common/replay/ReplayModel';
 import {isJudgeId, isPlayerId, PlayerId} from '../../common/Types';
@@ -27,14 +29,26 @@ export class ApiReplayView extends Handler {
     if (!Number.isSafeInteger(saveId)) {
       throw RouteError.badRequest('invalid save');
     }
-    const viewAs = ctx.urlParams.get('as');
-    if (!isReplayViewAs(viewAs)) {
+    const requestedAs = ctx.urlParams.get('as');
+    if (!isReplayViewAs(requestedAs)) {
       throw RouteError.badRequest('invalid as');
     }
 
     const game = await ctx.gameLoader.getGame(id);
     if (game === undefined || (judge && game.judgeId !== id)) {
       throw RouteError.notFound('game not found');
+    }
+    // The live game decides, not the sandbox: its names show once the live game ends, whatever the phase of the save.
+    const mask = incognitoMask(game, id);
+    // The page asks for the colors it was shown.
+    let viewAs: ReplayViewAs;
+    try {
+      viewAs = unmaskColor(requestedAs, mask);
+    } catch (e) {
+      if (e instanceof InputError) {
+        throw RouteError.badRequest('invalid as');
+      }
+      throw e;
     }
     // Only the judge of a Judge undo game and the player of a solo game see a save that a rewind undid, and only when asked. A
     // claimed judge seat is checked first, as below, so a refusal does not tell a stranger anything.
@@ -74,7 +88,7 @@ export class ApiReplayView extends Handler {
 
     const sandbox = await loadReplayState(game, saveId, {undone});
     // The judge sees every player's VP live, and once the game is over so does everyone.
-    responses.writeJson(res, ctx, buildReplayView(sandbox, id, saveId, viewAs, judge || !running));
+    responses.writeJson(res, ctx, maskModel(buildReplayView(sandbox, id, saveId, viewAs, judge || !running), mask));
   }
 }
 

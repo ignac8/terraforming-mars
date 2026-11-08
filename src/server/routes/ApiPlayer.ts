@@ -7,6 +7,7 @@ import {Response} from '../Response';
 import {RouteError} from './RouteError';
 import {IPlayer} from '../IPlayer';
 import {Phase} from '../../common/Phase';
+import {incognitoMask, maskModel} from '../incognito/IncognitoMask';
 
 export class ApiPlayer extends Handler {
   public static readonly INSTANCE = new ApiPlayer();
@@ -43,6 +44,6 @@ export class ApiPlayer extends Handler {
     if (game.phase === Phase.END && player.password !== undefined && !this.carriesPassword(player.password, ctx)) {
       model.password = undefined;
     }
-    responses.writeJson(res, ctx, model);
+    responses.writeJson(res, ctx, maskModel(model, incognitoMask(game, playerId)));
   }
 }
