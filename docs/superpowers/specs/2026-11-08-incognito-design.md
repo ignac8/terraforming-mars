@@ -114,8 +114,9 @@ players sorted by name with no colors, and without `activePlayer`. It keeps the 
 GameHome builds the links from them. GameHome hides the color square and the 1st/2nd/3rd ordinal.
 `api/creategame`'s response gets the same treatment, because the client renders GameHome directly
 from it (`CreateGameForm.vue:1214-1222`, also stored via `history.replaceState`). Seats are
-shuffled at creation (decision 7). The first player is then whoever ends up in seat 0, or a random
-pick as today. Either way the creator never sees it.
+shuffled at creation (decision 7). The first player is whoever ends up in seat 0. The form's
+first-player choice is ignored in incognito games, because a creator who picked the first player would
+recognize them by the in-game "1st" marker.
 
 **Unchanged:**
 
@@ -156,6 +157,8 @@ pick as today. Either way the creator never sees it.
   - it shows the judge id
 - Hiding the viewer's own identity from themselves.
 - Hiding handicaps.
+- Real data on the admin games overview (`GamesOverview.vue` reads `api/game`). Admins get the same
+  hidden list as the shared page. The judge link and the database still show everything.
 - Turning incognito on for a game that is already running.
 - Automa and main ports, and upstreaming.
 

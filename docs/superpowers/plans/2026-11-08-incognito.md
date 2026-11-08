@@ -82,9 +82,12 @@ English fake labels and hides the seat markers on GameHome.
     - Load the game from the GameLoader.
     - Expect `gameOptions.incognito === true` and `gameOptions.playerPasswords === true`.
   - "incognito is off for solo": 1 player with `incognito: true`, expect `gameOptions.incognito === false`.
-  - "incognito keeps the chosen first player":
-    - Mark player index 2 `first: true`.
-    - Expect `game.first.name` equals that player's name, whatever the shuffle.
+  - "incognito ignores the form's first player": mark player index 2 `first: true`, and expect
+    `game.first` to be `game.playersInGenerationOrder[0]`, the shuffled seat 0, not necessarily the
+    marked player.
+  - "incognito shuffles seats": create the same 4-player incognito game 20 times, and expect at least
+    2 distinct seat orders by name. The handler uses `UnseededRandom`, so no seed injection is
+    needed.
   - `Game.spec.ts`: a serialized game with `incognito` deleted from `gameOptions` deserializes to
     `false`.
 
@@ -102,8 +105,9 @@ English fake labels and hides the seat markers on GameHome.
   - Put `incognito` in `gameOptions`.
   - OR it into `playerPasswords`, alongside the undo clause.
   - When `incognito`, replace `players` with `shuffleSeats(players, UnseededRandom.INSTANCE)` before
-    building the game. Then re-derive `firstPlayerIdx` as the shuffled index of the player that was
-    marked first. Both the `Cloner.clone` path and the `Game.newInstance` path must get the shuffled
+    building the game. Set `firstPlayerIdx = 0`, because the form's `first` flag is ignored. If the
+    creator picked who goes first, the in-game "1st" marker would tell them that person's fake
+    color. Both the `Cloner.clone` path and the `Game.newInstance` path must get the shuffled
     order.
 
 - [ ] **Step 4: Run the same command and expect PASS**
@@ -299,9 +303,14 @@ English fake labels and hides the seat markers on GameHome.
 - Modify: `CreateGameModel.ts:58`, `defaultCreateGameModel.ts:29` (`incognito: false`), and
   `JSONProcessor.ts`. Add the key so that loading saved settings does not warn.
 - Create: `src/client/utils/incognitoNames.ts`. It exports
-  `translateFakeNames<T>(value: T): T`. That walks the model and replaces a player `name` (an object
-  with a `color` key) or a `playerName` whose value is one of `PLAYER_COLOR_LABELS`'s values with
-  `translateText(value)`.
+  `translateFakeNames<T extends ViewModel>(model: T): T`. It does nothing unless
+  `model.game.gameOptions.incognito && model.game.phase !== 'end'`. Otherwise it walks the model and
+  rewrites a player `name` (an object with a `color` key) or a `playerName` with `translateText(value)`
+  when all of these hold:
+  - the value is one of `PLAYER_COLOR_LABELS`'s values
+  - the value is not `model.thisPlayer?.name`
+
+  This way, a real player named "Red" is never translated in their own view or after the end.
 - Modify: the model ingestion points. Call it next to `localPlayerView` and `localColors`:
   - `App.vue:267` and the spectator branch (`:331-353`)
   - `WaitingFor.vue:192,270,324`
@@ -318,9 +327,10 @@ English fake labels and hides the seat markers on GameHome.
   - Form: checking incognito with 2 players sends `incognito: true` and `playerPasswords: true`, and
     the passwords box is disabled. With 1 player, the box is hidden and `incognito: false` is sent.
   - JSONProcessor: a template with `incognito` loads without an "Unknown property" warning.
-  - `incognitoNames`: with `setTranslationsForTest({Red: 'Czerwony'})`, `{players: [{color: 'blue',
-    name: 'Red'}], milestones: [{playerName: 'Red'}], cards: [{name: 'Red'}]}` translates the first two
-    and leaves the card name alone.
+  - `incognitoNames`: with `setTranslationsForTest({Red: 'Czerwony'})` and an incognito game in
+    phase `'action'`, an opponent `{color: 'blue', name: 'Red'}` and a milestone `playerName: 'Red'`
+    are translated, and a card `{name: 'Red'}` is left alone. With `thisPlayer.name === 'Red'`, the
+    viewer's own entry stays "Red". At phase `'end'`, or with the option off, nothing changes.
 
 - [ ] **Step 2: Run the tests and confirm they fail.** Run `npx vitest run tests/client/components/create tests/client/utils/incognitoNames.spec.ts`.
 
