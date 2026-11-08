@@ -500,6 +500,34 @@ describe('Incognito routes', () => {
       }
     });
 
+    // The save is read before the color is checked, so a save that cannot be read answers every color alike.
+    const unreadable: Array<[string, number, () => void, string]> = [
+      ['a save that does not exist', 99, () => {}, `&password=${JUDGE_PASSWORD}`],
+      ['a save that a rewind abandoned', 1, () => {
+        game.rewinds.push({saveId: 2, restoredSaveId: 0, logStart: 0, logEnd: 0});
+      }, `&password=${JUDGE_PASSWORD}`],
+      ['a save that does not exist, on an unclaimed judge seat', 99, () => {
+        game.judgePassword = undefined;
+      }, ''],
+    ];
+    for (const [where, save, prepare, extra] of unreadable) {
+      it(`answers a real color that is no fake of the judge and a color that nobody plays alike for ${where}`, async () => {
+        const {hidden, unplayed, fakes} = probes('judge');
+        prepare();
+
+        const answers = new Map<string, MockResponse>();
+        for (const as of [...hidden, ...unplayed, ...fakes, 'all']) {
+          answers.set(as, await judgeQuery(as, save, extra));
+        }
+
+        const first = answers.get(hidden[0])!;
+        expect(first.statusCode, first.content).eq(statusCode.notFound);
+        for (const [as, res] of answers) {
+          expect([res.statusCode, res.content], `as ${as}`).deep.eq([first.statusCode, first.content]);
+        }
+      });
+    }
+
     it('answers a wrong judge password the same way for every color', async () => {
       const {hidden, unplayed, fakes} = probes('judge');
 

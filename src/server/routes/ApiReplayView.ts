@@ -76,6 +76,9 @@ export class ApiReplayView extends Handler {
       }
     }
 
+    // The save is read before the color is looked at: a save that cannot be read is refused alike for every color, so the
+    // refusal of a color cannot tell which of the real ones are seated.
+    const sandbox = await loadReplayState(game, saveId, {undone});
     // The live game decides, not the sandbox: its names show once the live game ends, whatever the phase of the save.
     const mask = incognitoMask(game, id);
     // The page asks for the colors it was shown. While the game runs a player's own color is real, and the judge's are fakes.
@@ -89,7 +92,6 @@ export class ApiReplayView extends Handler {
       }
       throw e;
     }
-    const sandbox = await loadReplayState(game, saveId, {undone});
     // The judge sees every player's VP live, and once the game is over so does everyone.
     responses.writeJson(res, ctx, maskModel(buildReplayView(sandbox, id, saveId, viewAs, judge || !running), mask));
   }
