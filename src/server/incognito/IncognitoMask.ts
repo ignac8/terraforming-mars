@@ -6,6 +6,7 @@ import {Phase} from '@/common/Phase';
 import {ParticipantId} from '@/common/Types';
 import {SeededRandom} from '@/common/utils/Random';
 import {IGame} from '@/server/IGame';
+import {InputError} from '@/server/inputs/InputError';
 import {shuffleSeats} from '@/server/incognito/shuffleSeats';
 
 /**
@@ -88,9 +89,24 @@ export function maskText(text: string, mask: IncognitoMask | undefined): string 
   return mask === undefined ? text : replaceNames(text, mask, AFTER_NAME);
 }
 
-/** Returns the real color of a fake color from a viewer's request. Any other color is returned as it is. */
+/**
+ * Returns the real color of a fake color in a viewer's request.
+ *
+ * Throws an `InputError` for the real color of an opponent, unless it is also another opponent's fake:
+ * answering it would tell the viewer which seat it is. Any other color is returned as it is.
+ */
 export function unmaskColor<T extends string>(color: T, mask: IncognitoMask | undefined): T {
-  return (mask?.reverse.get(color as Color) ?? color) as T;
+  if (mask === undefined) {
+    return color;
+  }
+  const real = mask.reverse.get(color as Color);
+  if (real !== undefined) {
+    return real as T;
+  }
+  if (mask.colors.has(color as Color)) {
+    throw new InputError('Unknown player');
+  }
+  return color;
 }
 
 function maskColor(color: string, mask: IncognitoMask): string {
@@ -118,12 +134,19 @@ function walk(value: unknown, mask: IncognitoMask, key: string | undefined): unk
   }
 
   const record = value as Record<string, unknown>;
-  // A milestone or award has a `name` and a `color` too, and tells itself apart by its `playerName`.
-  const fakeColor = typeof record.color === 'string' && !('playerName' in record) ? mask.colors.get(record.color as Color) : undefined;
+  const hasColor = typeof record.color === 'string';
+  const fakeColor = hasColor ? mask.colors.get(record.color as Color) : undefined;
   const out: Record<string, unknown> = {};
   for (const [k, v] of Object.entries(record)) {
-    const isPlayerName = k === 'name' && fakeColor !== undefined && typeof v === 'string' && mask.names.has(v);
-    out[k] = isPlayerName ? PLAYER_COLOR_LABELS[fakeColor as PlayerColor] : walk(v, mask, k);
+    if (k === 'name' && fakeColor !== undefined && !('playerName' in record) && typeof v === 'string' && mask.names.has(v)) {
+      // A milestone or award has a `name` and a `color` too, and tells itself apart by its `playerName`.
+      out[k] = PLAYER_COLOR_LABELS[fakeColor as PlayerColor];
+    } else if (k === 'playerName' && hasColor && typeof v === 'string') {
+      // The color says whose name it is, which two players with the same name could not.
+      out[k] = fakeColor === undefined ? v : PLAYER_COLOR_LABELS[fakeColor as PlayerColor];
+    } else {
+      out[k] = walk(v, mask, k);
+    }
   }
   // In log data, `value` is a color only for a PLAYER datum, and a string with names only for a STRING one.
   if (typeof record.value === 'string') {

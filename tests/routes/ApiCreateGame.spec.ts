@@ -381,6 +381,36 @@ describe('ApiCreateGame', () => {
     expect(model.activePlayer).eq('yellow');
   });
 
+  it('rejects an incognito game whose players share a name', async () => {
+    for (const [label, second] of [['same', 'a'], ['other case', 'A'], ['padded', ' a ']]) {
+      req = new MockRequest();
+      res = new MockResponse();
+      scaffolding = new RouteTestScaffolding(req);
+      const players = [TWO_PLAYERS[0], {...TWO_PLAYERS[1], name: second}];
+      await postConfig({...newGameConfigForTest(), players, incognito: true});
+
+      expect(res.statusCode, label).eq(statusCode.badRequest);
+      expect(res.content, label).contains('Player names must be different in an incognito game');
+    }
+  });
+
+  it('rejects a clone of an incognito game whose players share a name', async () => {
+    const [source] = testGame(2, {incognito: true});
+    storeCloneSource(source);
+    const players = [TWO_PLAYERS[0], {...TWO_PLAYERS[1], name: 'a'}];
+    await postConfig({...newGameConfigForTest(), players, incognito: false, clonedGamedId: source.id});
+
+    expect(res.statusCode).eq(statusCode.badRequest);
+    expect(res.content).contains('Player names must be different in an incognito game');
+  });
+
+  it('allows players to share a name without incognito', async () => {
+    const players = [TWO_PLAYERS[0], {...TWO_PLAYERS[1], name: 'a'}];
+    const game = await createGame({...newGameConfigForTest(), players});
+
+    expect(game.players.map((p) => p.name)).deep.eq(['a', 'a']);
+  });
+
   it('keeps the seats and the first player in order without incognito', async () => {
     const game = await createGame({...newGameConfigForTest(), players: FOUR_PLAYERS});
 

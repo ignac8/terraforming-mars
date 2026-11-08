@@ -6,6 +6,8 @@ import {Game} from '@/server/Game';
 import {Phase} from '@/common/Phase';
 import {Color, PLAYER_COLORS, PLAYER_COLOR_LABELS, PlayerColor} from '@/common/Color';
 import {LogMessageDataType} from '@/common/logs/LogMessageDataType';
+import {InputError} from '@/server/inputs/InputError';
+import {IncognitoMask} from '@/server/incognito/IncognitoMask';
 
 function label(color: Color | undefined): string {
   return PLAYER_COLOR_LABELS[color as PlayerColor];
@@ -197,6 +199,40 @@ describe('IncognitoMask', () => {
     expect(unmaskColor(fakeSecond as Color, mask)).eq(second.color);
   });
 
+  it('maskModel labels a playerName by its color, so a shared name keeps the own seat real', () => {
+    const [game, player, other] = testGame(3, {incognito: true});
+    player.name = 'Alice';
+    other.name = 'Alice';
+    const mask = incognitoMask(game, player.id);
+    const fake = mask?.colors.get(other.color);
+
+    const masked = maskModel({
+      milestones: [
+        {name: 'Mayor', playerName: 'Alice', color: player.color},
+        {name: 'Banker', playerName: 'Alice', color: other.color},
+      ],
+    }, mask);
+
+    expect(fake).is.not.undefined;
+    expect(masked).deep.eq({
+      milestones: [
+        {name: 'Mayor', playerName: 'Alice', color: player.color},
+        {name: 'Banker', playerName: label(fake), color: fake},
+      ],
+    });
+  });
+
+  it('maskModel keeps a playerName next to neutral, and maps one without a color by name', () => {
+    const [game, player, alice] = testGame(3, {incognito: true});
+    alice.name = 'Alice';
+    const mask = incognitoMask(game, player.id);
+    const fake = label(mask?.colors.get(alice.color));
+
+    const masked = maskModel({neutral: {playerName: 'Alice', color: 'neutral'}, bare: {playerName: 'Alice'}}, mask);
+
+    expect(masked).deep.eq({neutral: {playerName: 'Alice', color: 'neutral'}, bare: {playerName: fake}});
+  });
+
   it('maskModel returns the input itself without a mask', () => {
     const model = {color: 'red', name: 'Alice'};
 
@@ -237,6 +273,32 @@ describe('IncognitoMask', () => {
     expect(unmaskColor(fake, mask)).eq(other.color);
     expect(unmaskColor(player.color, mask)).eq(player.color);
     expect(unmaskColor('neutral', mask)).eq('neutral');
+    expect(unmaskColor('NEUTRAL', mask)).eq('NEUTRAL');
     expect(unmaskColor(fake, undefined)).eq(fake);
+  });
+
+  it('unmaskColor rejects the real color of an opponent that nobody is shown as', () => {
+    const mask: IncognitoMask = {
+      colors: new Map<Color, Color>([['red', 'green'], ['yellow', 'purple']]),
+      reverse: new Map<Color, Color>([['green', 'red'], ['purple', 'yellow']]),
+      names: new Map(),
+    };
+
+    expect(() => unmaskColor('red', mask)).to.throw(InputError, 'Unknown player');
+    expect(() => unmaskColor('yellow', mask)).to.throw(InputError, 'Unknown player');
+    expect(unmaskColor('green', mask)).eq('red');
+    expect(unmaskColor('blue', mask)).eq('blue');
+    expect(unmaskColor('red', undefined)).eq('red');
+  });
+
+  it('unmaskColor maps a real color that is also a fake through the fake', () => {
+    const mask: IncognitoMask = {
+      colors: new Map<Color, Color>([['red', 'green'], ['yellow', 'red']]),
+      reverse: new Map<Color, Color>([['green', 'red'], ['red', 'yellow']]),
+      names: new Map(),
+    };
+
+    expect(unmaskColor('red', mask)).eq('yellow');
+    expect(() => unmaskColor('yellow', mask)).to.throw(InputError, 'Unknown player');
   });
 });

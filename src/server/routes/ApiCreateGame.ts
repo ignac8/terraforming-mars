@@ -125,6 +125,11 @@ export class ApiCreateGame extends Handler {
       const source = clonedGameId === undefined ? undefined : await Database.getInstance().getGameVersion(clonedGameId, 0);
       // A clone keeps the source's options, so the source decides whether the clone is incognito.
       const incognito = (source === undefined ? gameReq.incognito : source.gameOptions.incognito) === true && gameReq.players.length > 1;
+      // A name shared by two players would also hide a viewer's own name, since hidden names are matched as text.
+      const names = gameReq.players.map((p) => p.name.trim().toLowerCase());
+      if (incognito && new Set(names).size !== names.length) {
+        throw RouteError.badRequest('Player names must be different in an incognito game');
+      }
       // TR boost is per player, so applyTournamentPreset cannot reach it.
       const seated = gameReq.players.map((p) => {
         return new Player(
