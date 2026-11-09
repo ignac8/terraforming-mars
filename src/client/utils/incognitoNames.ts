@@ -1,10 +1,10 @@
-import {PLAYER_COLOR_LABELS} from '@/common/Color';
+import {PLAYER_COLORS, PLAYER_COLOR_LABELS, PlayerColor} from '@/common/Color';
 import {Phase} from '@/common/Phase';
 import {ViewModel} from '@/common/models/PlayerModel';
 import {isJudgeId} from '@/common/Types';
-import {translateText} from '@/client/directives/i18n';
+import {translateColorLabel} from '@/client/utils/colorLabel';
 
-const FAKE_NAMES: ReadonlySet<string> = new Set(Object.values(PLAYER_COLOR_LABELS));
+const FAKE_NAMES: ReadonlyMap<string, PlayerColor> = new Map(PLAYER_COLORS.map((color) => [PLAYER_COLOR_LABELS[color], color]));
 
 /**
  * Translates the fake opponent names of an incognito game into the language of the viewer.
@@ -34,7 +34,8 @@ function walk(value: unknown, ownName: string | undefined): unknown {
   const out: Record<string, unknown> = {};
   for (const [key, v] of Object.entries(value)) {
     const holdsPlayerName = key === 'playerName' || (key === 'name' && isPlayer);
-    out[key] = holdsPlayerName && typeof v === 'string' && FAKE_NAMES.has(v) && v !== ownName ? translateText(v) : walk(v, ownName);
+    const color = holdsPlayerName && typeof v === 'string' && v !== ownName ? FAKE_NAMES.get(v) : undefined;
+    out[key] = color !== undefined ? translateColorLabel(color) : walk(v, ownName);
   }
   return out;
 }

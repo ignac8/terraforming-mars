@@ -5,9 +5,7 @@ export type Color = typeof ALL_COLORS[number];
 export type ColorWithNeutral = Color | 'NEUTRAL';
 
 /**
- * English display name of each player color, as shown to players.
- *
- * "Clear" is already the label of a button that clears a selection, so that color is "Transparent".
+ * English display name of each player color, as shown to players. `translateColorLabel` translates them.
  */
 export const PLAYER_COLOR_LABELS: Readonly<Record<PlayerColor, string>> = {
   red: 'Red',
@@ -19,5 +17,5 @@ export const PLAYER_COLOR_LABELS: Readonly<Record<PlayerColor, string>> = {
   orange: 'Orange',
   pink: 'Pink',
   turquoise: 'Turquoise',
-  clear: 'Transparent',
+  clear: 'Clear',
 };

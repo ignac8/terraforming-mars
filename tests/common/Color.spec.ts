@@ -6,7 +6,7 @@ describe('Color', () => {
     expect(Object.keys(PLAYER_COLOR_LABELS).sort()).deep.eq([...PLAYER_COLORS].sort());
   });
 
-  it('labels clear as Transparent and the rest by their capitalized id', () => {
+  it('labels each color by its capitalized id', () => {
     expect(PLAYER_COLOR_LABELS).deep.eq({
       red: 'Red',
       green: 'Green',
@@ -17,7 +17,7 @@ describe('Color', () => {
       orange: 'Orange',
       pink: 'Pink',
       turquoise: 'Turquoise',
-      clear: 'Transparent',
+      clear: 'Clear',
     });
   });
 });

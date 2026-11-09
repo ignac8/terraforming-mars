@@ -78,7 +78,7 @@
         <span class="tooltip tooltip-left" :data-tooltip="$t('Show yourself in this color. Whoever has it shows in yours. Only you see this.')">&#9432;</span>
         <select class="form-select form-inline" v-model="prefs.my_color" @change="myColorChanged" data-test="my_color">
           <option value="" v-i18n>Off</option>
-          <option v-for="color in PLAYER_COLORS" :key="color" :value="color">{{ $t(colorName(color)) }}</option>
+          <option v-for="color in PLAYER_COLORS" :key="color" :value="color">{{ colorName(color) }}</option>
         </select>
       </label>
     </div>
@@ -122,7 +122,8 @@ import {defineComponent} from 'vue';
 
 import {getPreferences, PreferencesManager, Preference} from '@/client/utils/PreferencesManager';
 import BugReportDialog from '@/client/components/BugReportDialog.vue';
-import {PLAYER_COLORS, PLAYER_COLOR_LABELS, PlayerColor} from '@/common/Color';
+import {PLAYER_COLORS, PlayerColor} from '@/common/Color';
+import {translateColorLabel} from '@/client/utils/colorLabel';
 
 
 type Refs = {
@@ -191,7 +192,7 @@ export default defineComponent({
       window.location.reload();
     },
     colorName(color: PlayerColor): string {
-      return PLAYER_COLOR_LABELS[color];
+      return translateColorLabel(color);
     },
     okClicked(): void {
       this.$emit('okButtonClicked');

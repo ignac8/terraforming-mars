@@ -50,6 +50,14 @@ describe('incognitoNames', () => {
     expect(view.players[1].name).eq('Red');
   });
 
+  it('translates the fake name Clear as the color, not as the Clear button', () => {
+    setTranslationsForTest({Transparent: 'Przezroczysty', Clear: 'Wyczyść'});
+    const view = incognitoView();
+    view.players[1].name = 'Clear';
+
+    expect(translateFakeNames(view).players[1].name).eq('Przezroczysty');
+  });
+
   it('leaves a card that shares the label alone', () => {
     const view = incognitoView();
     view.players[1].tableau = [{name: 'Red'} as any];
