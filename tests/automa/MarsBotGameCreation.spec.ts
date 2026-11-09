@@ -184,12 +184,12 @@ describe('MarsBotGameCreation', () => {
       expect(game.gameOptions.promoCardsOption).to.be.true;
     });
 
-    it('automa game keeps every map that has a MarsBot board', () => {
-      for (const boardName of MARSBOT_BOARD_NAMES) {
+    for (const boardName of MARSBOT_BOARD_NAMES) {
+      it('automa game keeps every map that has a MarsBot board: ' + boardName, () => {
         const [game] = testGame(1, {automa: true, boardName});
         expect(game.gameOptions.boardName).to.eq(boardName);
-      }
-    });
+      });
+    }
 
     it('automa game falls back to Tharsis on a map without a MarsBot board', () => {
       const [game] = testGame(1, {

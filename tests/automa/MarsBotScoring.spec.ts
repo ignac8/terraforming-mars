@@ -242,15 +242,20 @@ describe('MarsBotScoring', () => {
       return {game, bot: game.automaHooks!.marsBot};
     }
 
-    it('scores 1 VP for every 2 resources left on the shipping board, rounded down', () => {
-      const expected = [[0, 0], [1, 0], [2, 1], [3, 1], [7, 3]];
-      for (const [cubes, vp] of expected) {
+    for (const run of [
+      {cubes: 0, vp: 0},
+      {cubes: 1, vp: 0},
+      {cubes: 2, vp: 1},
+      {cubes: 3, vp: 1},
+      {cubes: 7, vp: 3},
+    ] as const) {
+      it('scores 1 VP for every 2 resources left on the shipping board, rounded down: ' + JSON.stringify(run), () => {
         const {bot} = leftoverGame({automaColonyVP: true});
-        bot.shippingBoard.storage.set(ColonyName.CERES, Math.min(cubes, 4));
-        bot.shippingBoard.storage.set(ColonyName.LUNA, Math.max(0, cubes - 4));
-        expect(bot.getVictoryPoints().leftoverResourcesVP, `${cubes} resources`).to.eq(vp);
-      }
-    });
+        bot.shippingBoard.storage.set(ColonyName.CERES, Math.min(run.cubes, 4));
+        bot.shippingBoard.storage.set(ColonyName.LUNA, Math.max(0, run.cubes - 4));
+        expect(bot.getVictoryPoints().leftoverResourcesVP, `${run.cubes} resources`).to.eq(run.vp);
+      });
+    }
 
     it('counts the floaters on the Venus board too', () => {
       const {bot} = leftoverGame({automaColonyVP: true, venusNextExtension: true});

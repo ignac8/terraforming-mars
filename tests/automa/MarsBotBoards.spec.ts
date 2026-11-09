@@ -21,11 +21,11 @@ function tracksOf(boardName: BoardName) {
 }
 
 describe('MarsBot boards', () => {
-  it('has a board for every supported map', () => {
-    for (const boardName of MARSBOT_BOARD_NAMES) {
+  for (const boardName of MARSBOT_BOARD_NAMES) {
+    it('has a board for every supported map: ' + boardName, () => {
       expect(MARSBOT_BOARDS[boardName], boardName).is.not.undefined;
-    }
-  });
+    });
+  }
 
   for (const boardName of MARSBOT_BOARD_NAMES) {
     describe(boardName, () => {
@@ -39,12 +39,12 @@ describe('MarsBot boards', () => {
         }
       });
 
-      it('puts every Mars tag on exactly one track', () => {
-        const tracks = tracksOf(boardName);
-        for (const tag of MARS_TAGS) {
+      for (const tag of MARS_TAGS) {
+        it('puts every Mars tag on exactly one track: ' + tag, () => {
+          const tracks = tracksOf(boardName);
           expect(tracks.filter((t) => t.tags.includes(tag)), tag).has.length(1);
-        }
-      });
+        });
+      }
 
       it('keeps the Building, Space, Event, Science, Energy, Earth, Bio slot order', () => {
         const tracks = tracksOf(boardName);
@@ -74,27 +74,31 @@ describe('MarsBot boards', () => {
     });
   }
 
-  it('pairs tags per rulebook C, page 8', () => {
-    const trackOf = (boardName: BoardName, tag: Tag) => tracksOf(boardName).findIndex((t) => t.tags.includes(tag));
+  for (const run of [
     // Tharsis and Utopia Planitia: Jovian with Energy, City with Earth, Microbe with Plant
-    for (const boardName of [BoardName.THARSIS, BoardName.UTOPIA_PLANITIA]) {
-      expect(trackOf(boardName, Tag.JOVIAN)).eq(4);
-      expect(trackOf(boardName, Tag.CITY)).eq(5);
-      expect(trackOf(boardName, Tag.MICROBE)).eq(6);
-    }
+    {boardName: BoardName.THARSIS, tag: Tag.JOVIAN, track: 4},
+    {boardName: BoardName.THARSIS, tag: Tag.CITY, track: 5},
+    {boardName: BoardName.THARSIS, tag: Tag.MICROBE, track: 6},
+    {boardName: BoardName.UTOPIA_PLANITIA, tag: Tag.JOVIAN, track: 4},
+    {boardName: BoardName.UTOPIA_PLANITIA, tag: Tag.CITY, track: 5},
+    {boardName: BoardName.UTOPIA_PLANITIA, tag: Tag.MICROBE, track: 6},
     // Hellas and Elysium: Jovian with Science
-    for (const boardName of [BoardName.HELLAS, BoardName.ELYSIUM]) {
-      expect(trackOf(boardName, Tag.JOVIAN)).eq(3);
-      expect(trackOf(boardName, Tag.CITY)).eq(5);
-    }
+    {boardName: BoardName.HELLAS, tag: Tag.JOVIAN, track: 3},
+    {boardName: BoardName.HELLAS, tag: Tag.CITY, track: 5},
+    {boardName: BoardName.ELYSIUM, tag: Tag.JOVIAN, track: 3},
+    {boardName: BoardName.ELYSIUM, tag: Tag.CITY, track: 5},
     // Terra Cimmeria: Jovian with Earth, City with Science
-    expect(trackOf(BoardName.TERRA_CIMMERIA_NOVA, Tag.JOVIAN)).eq(5);
-    expect(trackOf(BoardName.TERRA_CIMMERIA_NOVA, Tag.CITY)).eq(3);
+    {boardName: BoardName.TERRA_CIMMERIA_NOVA, tag: Tag.JOVIAN, track: 5},
+    {boardName: BoardName.TERRA_CIMMERIA_NOVA, tag: Tag.CITY, track: 3},
     // Vastitas Borealis: Microbe with Science, City with Energy, Jovian with Earth
-    expect(trackOf(BoardName.VASTITAS_BOREALIS_NOVA, Tag.MICROBE)).eq(3);
-    expect(trackOf(BoardName.VASTITAS_BOREALIS_NOVA, Tag.CITY)).eq(4);
-    expect(trackOf(BoardName.VASTITAS_BOREALIS_NOVA, Tag.JOVIAN)).eq(5);
-  });
+    {boardName: BoardName.VASTITAS_BOREALIS_NOVA, tag: Tag.MICROBE, track: 3},
+    {boardName: BoardName.VASTITAS_BOREALIS_NOVA, tag: Tag.CITY, track: 4},
+    {boardName: BoardName.VASTITAS_BOREALIS_NOVA, tag: Tag.JOVIAN, track: 5},
+  ] as const) {
+    it('pairs tags per rulebook C, page 8: ' + JSON.stringify(run), () => {
+      expect(tracksOf(run.boardName).findIndex((t) => t.tags.includes(run.tag))).eq(run.track);
+    });
+  }
 
   it('uses the Tharsis board with the Milestones & Awards expansion, whatever the map', () => {
     const [game] = testGame(1, {automa: true, boardName: BoardName.HELLAS, modularMA: true});
@@ -118,10 +122,13 @@ describe('MarsBot boards', () => {
     expect(bio.position).eq(bioBefore);
   });
 
-  it('accepts only MarsBot maps in the create form', () => {
-    for (const boardName of MARSBOT_BOARD_NAMES) {
+  for (const boardName of MARSBOT_BOARD_NAMES) {
+    it('accepts a MarsBot map in the create form: ' + boardName, () => {
       expect(isMarsBotBoardChoice(boardName)).is.true;
-    }
+    });
+  }
+
+  it('rejects the other maps in the create form', () => {
     expect(isMarsBotBoardChoice(BoardName.ARABIA_TERRA)).is.false;
     expect(isMarsBotBoardChoice(BoardName.VASTITAS_BOREALIS)).is.false;
     // MarsBot is built for normal-size boards only

@@ -251,14 +251,18 @@ describe('Expansion MarsBot Corporations', () => {
       return game.automaHooks!.marsBot;
     }
 
-    it('has black cubes at #5 and #12 on all 8 tracks, Venus included', () => {
+    it('has 16 black cubes, 2 on each of the 8 tracks, Venus included', () => {
       const corp = getMarsBotCorp(CardName.MANUTECH)!;
       expect(corp.trackCubes!.length).to.eq(16); // 8 tracks × 2 positions
-      for (let t = 0; t < 8; t++) {
+    });
+
+    for (let t = 0; t < 8; t++) {
+      it('has black cubes at #5 and #12 on every track, Venus included: ' + JSON.stringify({trackIndex: t}), () => {
+        const corp = getMarsBotCorp(CardName.MANUTECH)!;
         expect(corp.trackCubes).to.deep.include({trackIndex: t, position: 5, cubeType: 'black'});
         expect(corp.trackCubes).to.deep.include({trackIndex: t, position: 12, cubeType: 'black'});
-      }
-    });
+      });
+    }
 
     it('places no cubes on the Venus track without Venus Next', () => {
       const {marsBot} = createAutomaGame();
@@ -425,8 +429,8 @@ describe('Expansion MarsBot Corporations', () => {
       expect(marsBot.getVictoryPoints().awards).to.eq(5);
     });
 
-    it('claims a milestone before the action phase in generations 2-5 and 10+', () => {
-      for (const generation of [2, 5, 10, 14]) {
+    for (const generation of [2, 5, 10, 14]) {
+      it('claims a milestone before the action phase in generations 2-5 and 10+: ' + JSON.stringify({generation}), () => {
         const {game, marsBot} = createAutomaGame();
         marsBot.corp = getMarsBotCorp(CardName.NIRGAL_ENTERPRISES)!;
         marsBot.marsBotBoard.tracks[0].position = 8; // 8 building tags: Builder
@@ -437,11 +441,11 @@ describe('Expansion MarsBot Corporations', () => {
         expect(game.claimedMilestones.map((m) => [m.player, m.milestone.name]), `generation ${generation}`)
           .to.deep.eq([[marsBot.player, 'Builder']]);
         expect(game.fundedAwards, `generation ${generation}`).is.empty;
-      }
-    });
+      });
+    }
 
-    it('funds an award before the action phase in generations 6-9', () => {
-      for (const generation of [6, 9]) {
+    for (const generation of [6, 9]) {
+      it('funds an award before the action phase in generations 6-9: ' + JSON.stringify({generation}), () => {
         const {game, marsBot} = createAutomaGame();
         marsBot.corp = getMarsBotCorp(CardName.NIRGAL_ENTERPRISES)!;
         marsBot.marsBotBoard.tracks[0].position = 8;
@@ -451,8 +455,8 @@ describe('Expansion MarsBot Corporations', () => {
 
         expect(game.fundedAwards.map((a) => a.player), `generation ${generation}`).to.deep.eq([marsBot.player]);
         expect(game.claimedMilestones, `generation ${generation}`).is.empty;
-      }
-    });
+      });
+    }
 
     it('takes no Failed Action when it cannot claim or fund', () => {
       const {game, human, marsBot} = createAutomaGame();
@@ -691,13 +695,16 @@ describe('Expansion MarsBot Corporations', () => {
   });
 
   describe('C23 Recyclone', () => {
-    it('has 6 white cubes on building track', () => {
+    it('has 6 cubes on building track', () => {
       const corp = getMarsBotCorp(CardName.RECYCLON)!;
       expect(corp.trackCubes!.length).to.eq(6);
-      for (const cube of corp.trackCubes!) {
-        expect(cube).to.deep.include({trackIndex: 0, cubeType: 'white'});
-      }
     });
+
+    for (const cube of getMarsBotCorp(CardName.RECYCLON)!.trackCubes!) {
+      it('has white cubes on building track: ' + JSON.stringify(cube), () => {
+        expect(cube).to.deep.include({trackIndex: 0, cubeType: 'white'});
+      });
+    }
 
     it('white cube on building track advances plant track', () => {
       const {marsBot} = createAutomaGame();
@@ -842,12 +849,17 @@ describe('Expansion MarsBot Corporations', () => {
       return {game, marsBot: game.automaHooks!.marsBot};
     }
 
-    it('places credit cubes on the Venus track', () => {
+    for (const position of [5, 6, 7, 8, 9, 11, 12]) {
+      it('places credit cubes on the Venus track: ' + JSON.stringify({position}), () => {
+        const {marsBot} = createVenusAutomaGame();
+        marsBot.setCorpAndSetup(getMarsBotCorp(CardName.MORNING_STAR_INC)!);
+        expect(marsBot.hasCubeAt(7, position)?.cubeType, `Venus ${position}`).to.eq('credit');
+      });
+    }
+
+    it('places no credit cube on Venus #10', () => {
       const {marsBot} = createVenusAutomaGame();
       marsBot.setCorpAndSetup(getMarsBotCorp(CardName.MORNING_STAR_INC)!);
-      for (const position of [5, 6, 7, 8, 9, 11, 12]) {
-        expect(marsBot.hasCubeAt(7, position)?.cubeType, `Venus ${position}`).to.eq('credit');
-      }
       expect(marsBot.hasCubeAt(7, 10)).to.be.undefined;
     });
 

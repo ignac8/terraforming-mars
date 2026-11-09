@@ -17,6 +17,7 @@ import {GlobalParameter} from '../../src/common/GlobalParameter';
 import {Mayor} from '../../src/server/milestones/Mayor';
 import {Gardener} from '../../src/server/milestones/Gardener';
 import {Landlord} from '../../src/server/awards/Landlord';
+import {awardManifest} from '../../src/server/awards/Awards';
 import {RemoveResourcesFromCard} from '../../src/server/deferredActions/RemoveResourcesFromCard';
 import {CardResource} from '../../src/common/CardResource';
 import {OrOptions} from '../../src/server/inputs/OrOptions';
@@ -447,16 +448,17 @@ describe('MarsBotSessionFixes', () => {
     }
   });
 
-  it('award values reduced by 5 in easy mode', () => {
-    const {marsBot} = createAutomaGame('easy');
-    const normalMarsBot = createAutomaGame('normal').marsBot;
-    for (const award of marsBot.game.awards) {
+  for (const awardName of awardManifest.boards[BoardName.THARSIS]) {
+    it('award values reduced by 5 in easy mode: ' + awardName, () => {
+      const {marsBot} = createAutomaGame('easy');
+      const normalMarsBot = createAutomaGame('normal').marsBot;
+      const award = marsBot.game.awards.find((a) => a.name === awardName)!;
       const easyVal = marsBot.turnResolver.getMarsBotAwardValue(award);
       const normalVal = normalMarsBot.turnResolver.getMarsBotAwardValue(
         normalMarsBot.game.awards.find((a) => a.name === award.name)!);
       expect(easyVal).to.eq(normalVal - 5, `${award.name} easy offset wrong`);
-    }
-  });
+    });
+  }
 
   it('tile ownership preserved through serialization roundtrip', () => {
     const {game, marsBot} = createAutomaGame();

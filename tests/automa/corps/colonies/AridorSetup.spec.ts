@@ -109,22 +109,27 @@ describe('AridorSetup', () => {
     }
 
     for (const [boardName, jovian, city] of boards) {
+      const expected: Array<[number, number, CubeType]> = [
+        [0, 3, 'white'], [1, 3, 'white'], [3, 3, 'white'], [4, 3, 'white'], [jovian, 6, 'white'],
+        [5, 3, 'black'], [city, 6, 'black'], [6, 3, 'black'], [6, 6, 'black'],
+      ];
+
       it(`sit on the Jovian and city tracks of ${boardName}`, () => {
         const marsBot = setUp(boardName);
-        const cube = (trackIndex: number, position: number) => marsBot.hasCubeAt(trackIndex, position)?.cubeType;
 
         expect(marsBot.marsBotBoard.definitions[jovian].tags).includes(Tag.JOVIAN);
         expect(marsBot.marsBotBoard.definitions[city].tags).includes(Tag.CITY);
-        const expected: Array<[number, number, CubeType]> = [
-          [0, 3, 'white'], [1, 3, 'white'], [3, 3, 'white'], [4, 3, 'white'], [jovian, 6, 'white'],
-          [5, 3, 'black'], [city, 6, 'black'], [6, 3, 'black'], [6, 6, 'black'],
-        ];
-        for (const [trackIndex, position, cubeType] of expected) {
-          expect(cube(trackIndex, position), `track ${trackIndex} #${position}`).to.eq(cubeType);
-        }
         // Nine cubes on nine different spaces
         expect(new Set(expected.map(([t, p]) => `${t}:${p}`)).size).to.eq(9);
       });
+
+      for (const [trackIndex, position, cubeType] of expected) {
+        it('puts a cube on a Jovian or city track space: ' + JSON.stringify({boardName, trackIndex, position, cubeType}), () => {
+          const marsBot = setUp(boardName);
+
+          expect(marsBot.hasCubeAt(trackIndex, position)?.cubeType, `track ${trackIndex} #${position}`).to.eq(cubeType);
+        });
+      }
 
       it(`advance the event track from the Jovian cube on ${boardName}`, () => {
         const marsBot = setUp(boardName);
