@@ -78,7 +78,7 @@
         <span class="tooltip tooltip-left" :data-tooltip="$t('Show yourself in this color. Whoever has it shows in yours. Only you see this.')">&#9432;</span>
         <select class="form-select form-inline" v-model="prefs.my_color" @change="myColorChanged" data-test="my_color">
           <option value="" v-i18n>Off</option>
-          <option v-for="color in PLAYER_COLORS" :key="color" :value="color">{{ $t(colorName(color)) }}</option>
+          <option v-for="color in PLAYER_COLORS" :key="color" :value="color">{{ colorName(color) }}</option>
         </select>
       </label>
     </div>
@@ -123,6 +123,7 @@ import {defineComponent} from 'vue';
 import {getPreferences, PreferencesManager, Preference} from '@/client/utils/PreferencesManager';
 import BugReportDialog from '@/client/components/BugReportDialog.vue';
 import {Color, PLAYER_COLORS} from '@/common/Color';
+import {translateText} from '@/client/directives/i18n';
 
 
 type Refs = {
@@ -191,11 +192,12 @@ export default defineComponent({
       window.location.reload();
     },
     colorName(color: Color): string {
-      // "Clear" is already the label of a button that clears a selection.
-      if (color === 'clear') {
-        return 'Transparent';
-      }
-      return color.charAt(0).toUpperCase() + color.slice(1);
+      const label = color.charAt(0).toUpperCase() + color.slice(1);
+      // "Clear" is also the label of a button that clears a selection, so the clear color is translated from
+      // "Transparent", which keeps the two translations apart.
+      const key = color === 'clear' ? 'Transparent' : label;
+      const translated = translateText(key);
+      return translated === key ? label : translated;
     },
     okClicked(): void {
       this.$emit('okButtonClicked');
