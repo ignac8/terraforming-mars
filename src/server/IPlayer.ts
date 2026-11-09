@@ -69,6 +69,8 @@ export interface IPlayer {
   handicap: number;
 
   readonly game: IGame;
+  /** True for MarsBot's player in a game against the Automa. */
+  readonly isMarsBot: boolean;
   tags: Tags;
   colonies: Colonies;
   readonly production: Production;
