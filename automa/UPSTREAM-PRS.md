@@ -186,17 +186,20 @@ registry/resolver and the Colonies corporations, and the client UI (needs `GameM
 The other corporation manifests, the map boards and the expansion bonus cards only need
 `IMarsBot`, so they went up as #8683 to #8688.
 
-## Remaining phases (~25 PRs)
+## Remaining phases (as of 2026-11-09)
 
-1. **Phase 2 - MarsBot skeleton** (3-4 PRs). Gated on kberg's IPlayer-subtype answer
-   and on #8203/#8206 merging. First slice should be corp-free (base difficulty plays
-   without a corporation).
+1. **Phase 2 - MarsBot skeleton** (3-4 PRs). Its gates are met: the IPlayer-style `IMarsBot`
+   shape came out of the #8207 review, and #8203/#8206 merged. First slice should be corp-free
+   (base difficulty plays without a corporation).
 2. **Phase 3 - capabilities**: Stock, Scoring, BonusResolver (split 2-3 ways by bonus
    group), TurnResolver (split track-advancement vs card resolution).
-3. **Phase 4 - game integration**: AutomaGameSetup, AutomaGameHooks (split 2-3 ways),
-   Game/GameOptions/routes/ServerModel wiring, then client UI.
-4. **Phase 5 - expansions**: corp manifests + registry + resolver, colonies, turmoil
-   integration. The ~15 small upstream-card touches ride along with whichever hook PR
+3. **Phase 4 - game integration**: the automa option, MarsBot's player and `AutomaGameSetup`
+   are in (#8625). Still to go: AutomaGameHooks (split 2-3 ways), routes/ServerModel wiring,
+   then client UI.
+4. **Phase 5 - expansions**: Turmoil delegate placement (#8671), the other boards (#8683) and
+   the Venus and Colonies bonus decks (#8684) are in; the corporation manifests are open
+   (#8685 to #8688). Still to go: the registry and resolver, colonies and the Colonies
+   corporations. The ~15 small upstream-card touches ride along with whichever hook PR
    needs them.
 
 ## Process per PR
