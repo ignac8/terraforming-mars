@@ -337,16 +337,13 @@ describe('Base Game MarsBot Corporations', () => {
   });
 
   describe('C07 Phobolog', () => {
-    it('has 4 cubes on space track', () => {
+    it('has 4 white cubes on space track', () => {
       const corp = getMarsBotCorp(CardName.PHOBOLOG)!;
       expect(corp.trackCubes).to.have.length(4);
-    });
-
-    for (const cube of getMarsBotCorp(CardName.PHOBOLOG)!.trackCubes!) {
-      it('has white cubes on space track: ' + JSON.stringify(cube), () => {
+      for (const cube of corp.trackCubes!) {
         expect(cube).to.deep.include({trackIndex: 1, cubeType: 'white'});
-      });
-    }
+      }
+    });
 
     it('has Space starting tag', () => {
       const corp = getMarsBotCorp(CardName.PHOBOLOG)!;

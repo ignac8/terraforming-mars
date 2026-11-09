@@ -695,16 +695,13 @@ describe('Expansion MarsBot Corporations', () => {
   });
 
   describe('C23 Recyclone', () => {
-    it('has 6 cubes on building track', () => {
+    it('has 6 white cubes on building track', () => {
       const corp = getMarsBotCorp(CardName.RECYCLON)!;
       expect(corp.trackCubes!.length).to.eq(6);
-    });
-
-    for (const cube of getMarsBotCorp(CardName.RECYCLON)!.trackCubes!) {
-      it('has white cubes on building track: ' + JSON.stringify(cube), () => {
+      for (const cube of corp.trackCubes!) {
         expect(cube).to.deep.include({trackIndex: 0, cubeType: 'white'});
-      });
-    }
+      }
+    });
 
     it('white cube on building track advances plant track', () => {
       const {marsBot} = createAutomaGame();
