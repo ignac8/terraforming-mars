@@ -241,5 +241,5 @@
 
     "Wetlands": "",
     "(Requires 2 ocean tiles. Lose 4 plants. Place this tile on an UNRESERVED SPACE ADJACENT TO AT LEAST 2 OCEANS. Raise oxygen 1 step. Gain 1 TR.)": "(Vereist 2 oceaantegels. Verbruikt 4 planten. Verhoog de zuurstof met 1%. Verhoog je TN met 1. Plaats deze tegel naast 2 oceaantegels.)",
-    "(Effect: Wetlands counts as a greenery tile and an ocean tile, except it can't be covered and is not one of the 9 oceans required to end the game.)": "(EFFECT: Het telt als een groentegel en een oceaantegel. Andere tegels kunnen het niet bedekken en het telt niet mee voor de 9 te plaatsen oceanen.)"
+    "(Effect: Wetlands counts as a greenery tile and an ocean tile, except it can't be covered and is not one of the oceans required to end the game.)": "(EFFECT: Het telt als een groentegel en een oceaantegel. Andere tegels kunnen het niet bedekken en het telt niet mee voor de 9 te plaatsen oceanen.)"
 }

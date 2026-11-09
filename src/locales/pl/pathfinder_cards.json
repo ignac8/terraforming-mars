@@ -241,5 +241,5 @@
 
   "Wetlands": "Mokradła",
   "Requires 2 ocean tiles. Lose 4 plants. Place this tile on an UNRESERVED SPACE ADJACENT TO AT LEAST 2 OCEANS. Raise oxygen 1 step. Gain 1 TR.": "Na planszy muszą znajdować się co najmniej 2 obszary oceanów. Wydaj 4 jednostki roślinności. Umieść ten obszar specjalny na niezarezerwowanym polu sąsiadującym z co najmniej 2 obszarami oceanów. Podnieś poziom tlenu o 1 poziom. Podnieś swój WT o 1 poziom.",
-  "Effect: Wetlands counts as a greenery tile and an ocean tile, except it can't be covered and is not one of the 9 oceans required to end the game.": "Obszar mokradeł liczy się jako obszar zieleni i oceanu jednocześnie, jednak nie liczy się do limitu 9 oceanów i nie może zostać przykryty."
+  "Effect: Wetlands counts as a greenery tile and an ocean tile, except it can't be covered and is not one of the oceans required to end the game.": "Obszar mokradeł liczy się jako obszar zieleni i oceanu jednocześnie, jednak nie liczy się do wymaganej liczby oceanów i nie może zostać przykryty."
 }

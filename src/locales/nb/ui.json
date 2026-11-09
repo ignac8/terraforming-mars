@@ -822,7 +822,7 @@
 
 	"Place any final greenery from plants": "Plasser eventuelle siste skogområder fra planter",
 
-	"Wetlands: counts as an ocean and a greenery. Does not count toward 9 oceans.": "Våtmark: Telles som et hav og et skogområde. Teller ikke mot 9 hav.",
+	"Wetlands: counts as an ocean and a greenery. Does not count toward ${0} oceans.": "Våtmark: Telles som et hav og et skogområde. Teller ikke mot ${0} hav.",
 	"Red City: 1 VP per empty adjacent area. No greeneries may be placed next to it.": "Rød by: 1 SP per tilstøtende område som er tomt. Ingen skogområder kan plasseres ved siden av den.",
 	"Martian Nature Wonders": "Naturlige underverker på Mars",
 	"Crashlanding": "Kræsjlanding",

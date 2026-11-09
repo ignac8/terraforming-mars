@@ -247,5 +247,5 @@
 
   "Wetlands": "湿原",
   "(Requires 2 ocean tiles. Lose 4 plants. Place this tile on an UNRESERVED SPACE ADJACENT TO AT LEAST 2 OCEANS. Raise oxygen 1 step. Gain 1 TR.)": "(条件：海洋2枚以上. 4植物を支払う. 特殊タイルを海洋2枚以上に隣接して配置. 酸素濃度+1段階. TR+1段階.)",
-  "(Effect: Wetlands counts as a greenery tile and an ocean tile, except it can't be covered and is not one of the 9 oceans required to end the game.)": "(効果：このタイルは海洋・緑地・特殊タイルとして数える(海洋の終了条件には数えない).)"
+  "(Effect: Wetlands counts as a greenery tile and an ocean tile, except it can't be covered and is not one of the oceans required to end the game.)": "(効果：このタイルは海洋・緑地・特殊タイルとして数える(海洋の終了条件には数えない).)"
 }

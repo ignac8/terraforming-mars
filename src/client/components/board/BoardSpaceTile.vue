@@ -1,5 +1,5 @@
 <template>
-  <div :class="klass" :title="$t(description)" data-test="tile">
+  <div :class="klass" :title="tooltip" data-test="tile">
     <AdjacencyBonus v-if="aresExtension && tileType !== undefined" :tileType="tileType" />
   </div>
 </template>
@@ -12,6 +12,9 @@ import {TileType, tileTypeToString} from '@/common/TileType';
 import {SpaceHighlight, SpaceModel} from '@/common/models/SpaceModel';
 import {TileView} from '@/client/components/board/TileView';
 import AdjacencyBonus from '@/client/components/AdjacencyBonus.vue';
+import {BoardName} from '@/common/boards/BoardName';
+import {getGlobalParameterMaximums} from '@/common/boards/GlobalParameterMaximums';
+import {translateTextWithParams} from '@/client/directives/i18n';
 
 const tileTypeToCssClass: Record<TileType, string> = {
   [TileType.OCEAN]: 'ocean',
@@ -95,7 +98,7 @@ const descriptions: Record<TileType, string> = {
   [TileType.LUNA_TRAIN_STATION]: 'Luna Train Station: 2 VP per adjacent road',
   [TileType.LUNAR_MINE_URBANIZATION]: 'Luna Mine Urbanization: counts as both a colony and a mine tile.',
 
-  [TileType.WETLANDS]: 'Wetlands: counts as an ocean and a greenery. Does not count toward 9 oceans.',
+  [TileType.WETLANDS]: 'Wetlands: counts as an ocean and a greenery. Does not count toward ${0} oceans.',
   [TileType.RED_CITY]: 'Red City: 1 VP per empty adjacent area. No greeneries may be placed next to it.',
   [TileType.NEW_HOLLAND]: 'New Holland: counts as an ocean and a city',
   [TileType.NEURAL_INSTANCE]: 'Neural Instance: MarsBot gains VP for adjacent non-human spaces',
@@ -114,6 +117,10 @@ export default defineComponent({
     tileView: {
       type: String as () => TileView,
       default: 'show',
+    },
+    boardName: {
+      type: String as () => BoardName,
+      default: BoardName.THARSIS,
     },
   },
   components: {
@@ -137,6 +144,10 @@ export default defineComponent({
         return 'City in space.';
       }
       return descriptions[this.tileType];
+    },
+    tooltip(): string {
+      const oceans = getGlobalParameterMaximums(this.boardName).oceans;
+      return translateTextWithParams(this.description, [String(oceans)]);
     },
     klass(): string {
       let css = 'board-space';

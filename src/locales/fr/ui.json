@@ -1035,7 +1035,7 @@
   "Build colony": "Construire une colonie",
   "Place any final greenery from plants": "Placez vos dernières Forêts en convertissant vos plantes",
   "Don't place a greenery": "Ne pas placer de Forêt",
-  "Wetlands: counts as an ocean and a greenery. Does not count toward 9 oceans.": "",
+  "Wetlands: counts as an ocean and a greenery. Does not count toward ${0} oceans.": "",
   "Red City: 1 VP per empty adjacent area. No greeneries may be placed next to it.": "",
   "Martian Nature Wonders": "",
   "Crashlanding": "",
