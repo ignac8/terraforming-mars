@@ -9,7 +9,7 @@ import {fakeCard} from '../TestingUtils';
 
 describe('Planner', () => {
   it('MarsBot needs space 4 on every track except Venus', () => {
-    const bot = fakeMarsBot([...THARSIS_MARSBOT_BOARD, VENUS_MARSBOT_TRACK]);
+    const bot = fakeMarsBot({tracks: [...THARSIS_MARSBOT_BOARD, VENUS_MARSBOT_TRACK]});
     setAllTracks(bot, 4);
     setTrack(bot, Tag.VENUS, 0);
 

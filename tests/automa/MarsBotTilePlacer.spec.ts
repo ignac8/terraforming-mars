@@ -272,7 +272,7 @@ describe('MarsBotTilePlacer', () => {
     [game, human, marsBot] = testGame(2, options);
     // The board only offers the special hexes to a player who can pay for them.
     marsBot.megaCredits = 20;
-    const fake = fakeMarsBot(undefined, {
+    const fake = fakeMarsBot({
       megacredits: bot.megacredits ?? 0,
       placeOcean: () => {
         calls.push('ocean');

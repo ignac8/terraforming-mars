@@ -30,7 +30,7 @@ describe('Lobbyist', () => {
   it('MarsBot cannot claim it without Turmoil', () => {
     const [game, player] = testGame(1, {turmoilExtension: false});
 
-    expect(milestone.marsBotCanClaim({...fakeMarsBot(), game, player})).is.false;
+    expect(milestone.marsBotCanClaim(fakeMarsBot({game, player}))).is.false;
   });
 
   it('Gives 0 score if player has no delegates', () => {
@@ -79,7 +79,7 @@ describe('Lobbyist', () => {
     {chairman: true, leaders: 2, expected: true},
   ] as const) {
     it(`MarsBot needs the Chairman and 2 Party Leaders, ${JSON.stringify(run)}`, () => {
-      const bot = {...fakeMarsBot(), game, player};
+      const bot = fakeMarsBot({game, player});
 
       turmoil.chairman = run.chairman ? player : 'NEUTRAL';
       turmoil.parties.forEach((party, index) => party.partyLeader = index < run.leaders ? player : undefined);
