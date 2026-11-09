@@ -37,17 +37,13 @@ const TAG_TRACKS: Partial<Record<BoardName, Partial<Record<Tag, number>>>> = {
 };
 
 describe('MarsBotBoards', () => {
-  it('has a board for every MarsBot map, with a Venus variant', () => {
+  it('has a board for every MarsBot map', () => {
     expect(Object.keys(MARSBOT_BOARDS)).to.have.members(MARSBOT_BOARD_NAMES);
-    for (const boardName of MARSBOT_BOARD_NAMES) {
-      const {base, withVenus} = MARSBOT_BOARDS[boardName]!;
-      expect(withVenus, boardName).deep.eq([...base, VENUS_MARSBOT_TRACK]);
-    }
   });
 
   it('lays out seven tracks from an empty start to a TR finish', () => {
     for (const boardName of MARSBOT_BOARD_NAMES) {
-      const {base} = MARSBOT_BOARDS[boardName]!;
+      const base = MARSBOT_BOARDS[boardName]!;
       expect(base, boardName).has.length(7);
       for (const {layout} of base) {
         expect(layout, boardName).has.length(MARSBOT_MAX_TRACK_POSITION + 1);
@@ -59,7 +55,7 @@ describe('MarsBotBoards', () => {
 
   it('puts every Mars tag on one track, in the same track order on every map', () => {
     for (const boardName of MARSBOT_BOARD_NAMES) {
-      const {base} = MARSBOT_BOARDS[boardName]!;
+      const base = MARSBOT_BOARDS[boardName]!;
       for (const tag of MARS_TAGS) {
         expect(base.filter((track) => track.tags.includes(tag)), `${boardName} ${tag}`).has.length(1);
       }
@@ -69,14 +65,14 @@ describe('MarsBotBoards', () => {
 
   it('pairs tags on each map as rulebook C, p.8 says', () => {
     for (const boardName of MARSBOT_BOARD_NAMES) {
-      const board = new MarsBotBoard(MARSBOT_BOARDS[boardName]!.base);
+      const board = new MarsBotBoard(MARSBOT_BOARDS[boardName]!);
       expect(board.tagToTrack, boardName).deep.eq(TAG_TRACKS[boardName]);
     }
   });
 
   it('advances only tracks that exist', () => {
     for (const boardName of MARSBOT_BOARD_NAMES) {
-      const board = new MarsBotBoard(MARSBOT_BOARDS[boardName]!.withVenus);
+      const board = new MarsBotBoard([...MARSBOT_BOARDS[boardName]!, VENUS_MARSBOT_TRACK]);
       for (const {layout} of board.definitions) {
         for (const action of layout) {
           if (action?.startsWith('tag_')) {
@@ -89,7 +85,7 @@ describe('MarsBotBoards', () => {
 
   it('places colonies only on the Utopia Planitia board (rulebook C, p.8)', () => {
     for (const boardName of MARSBOT_BOARD_NAMES) {
-      const actions = MARSBOT_BOARDS[boardName]!.base.flatMap((track) => track.layout);
+      const actions = MARSBOT_BOARDS[boardName]!.flatMap((track) => track.layout);
       expect(actions.includes('colony'), boardName).eq(boardName === BoardName.UTOPIA_PLANITIA);
     }
   });

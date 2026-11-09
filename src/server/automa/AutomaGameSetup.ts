@@ -7,6 +7,7 @@ import {GameOptions} from '../game/GameOptions';
 import {Random} from '../../common/utils/Random';
 import {MarsBot} from './MarsBot';
 import {MARSBOT_BOARDS} from './boards/MarsBotBoards';
+import {VENUS_MARSBOT_TRACK} from './boards/VenusMarsBot';
 import {TrackDefinition, MARSBOT_STARTING_TR} from '../../common/automa/AutomaTypes';
 import {MARSBOT_BOARD_NAMES} from '../../common/automa/MarsBotBoards';
 import {marsBotMapSet} from '../../common/automa/marsBotMapSet';
@@ -180,13 +181,13 @@ export class AutomaGameSetup {
     return gameOptions.modularMA ? BoardName.THARSIS : gameOptions.boardName;
   }
 
-  /** Get the MarsBot board data for the selected map. */
+  /** Get the MarsBot board data for the selected map, with the Venus track last when Venus is in play. */
   public static getBoardData(boardName: BoardName, venusEnabled: boolean): ReadonlyArray<TrackDefinition> {
-    const boards = MARSBOT_BOARDS[boardName];
-    if (boards === undefined) {
+    const board = MARSBOT_BOARDS[boardName];
+    if (board === undefined) {
       throw new Error(`No MarsBot board for ${boardName}`);
     }
-    return venusEnabled ? boards.withVenus : boards.base;
+    return venusEnabled ? [...board, VENUS_MARSBOT_TRACK] : board;
   }
 
   /**

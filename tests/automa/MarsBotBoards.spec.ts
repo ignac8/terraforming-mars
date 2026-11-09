@@ -7,6 +7,7 @@ import {MARSBOT_BOARDS} from '../../src/server/automa/boards/MarsBotBoards';
 import {VENUS_MARSBOT_TRACK} from '../../src/server/automa/boards/VenusMarsBot';
 import {AutomaGameHooks} from '../../src/server/automa/AutomaGameHooks';
 import {MarsBot} from '../../src/server/automa/MarsBot';
+import {AutomaGameSetup} from '../../src/server/automa/AutomaGameSetup';
 import {ColonyName} from '../../src/common/colonies/ColonyName';
 
 const MARS_TAGS = [Tag.BUILDING, Tag.SPACE, Tag.EVENT, Tag.SCIENCE, Tag.POWER, Tag.JOVIAN, Tag.EARTH, Tag.CITY, Tag.PLANT, Tag.ANIMAL, Tag.MICROBE];
@@ -16,7 +17,7 @@ function getMarsBot(game: ReturnType<typeof testGame>[0]): MarsBot {
 }
 
 function tracksOf(boardName: BoardName) {
-  return MARSBOT_BOARDS[boardName]!.base;
+  return MARSBOT_BOARDS[boardName]!;
 }
 
 describe('MarsBot boards', () => {
@@ -62,7 +63,7 @@ describe('MarsBot boards', () => {
       });
 
       it('adds the Venus track with Venus Next', () => {
-        expect(MARSBOT_BOARDS[boardName]!.withVenus).deep.eq([...tracksOf(boardName), VENUS_MARSBOT_TRACK]);
+        expect(AutomaGameSetup.getBoardData(boardName, true)).deep.eq([...tracksOf(boardName), VENUS_MARSBOT_TRACK]);
       });
 
       it('sets up a game', () => {
