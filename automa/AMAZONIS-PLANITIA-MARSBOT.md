@@ -153,7 +153,7 @@ Manufacturer, Physicist. Rules in **bold** are new.
 |---|---|---|
 | Terran | Earth track at 5+ | existing (rulebook C) |
 | Landshaper | 1 city, 1 greenery, Building track at 5+ | existing (rulebook C) |
-| **Merchant3** | **all 7 Mars tracks at space 3 or higher** (Venus track not counted) | the designers' Merchant is "every Mars track at 2" (`marsBotMarsTrackPositions`) |
+| **Merchant3** | **all 7 Mars tracks at space 3 or higher** (Venus track not counted) | the designers' Merchant is "every Mars track at 2" (`Merchant.marsBotCanClaim` leaves the Venus track out) |
 | Sponsor | 3 played cards costing 20+ | existing (rulebook C) |
 | Lobbyist | Chairman plus 2 party leaders | existing (rulebook C); "all 7 delegates" is near impossible for MarsBot |
 | Collector | number of tracks at 3+ | existing (rulebook C) |

@@ -17,7 +17,7 @@ import {CardType} from '../../common/cards/CardType';
 import {Space} from '../boards/Space';
 import {SpaceType} from '../../common/boards/SpaceType';
 import {BoardName} from '../../common/boards/BoardName';
-import {marsBotUsesMapSet} from './MarsBotMilestoneAwardEval';
+import {marsBotUsesBoardGoals} from './MarsBotMilestoneAwardEval';
 import {CardName} from '../../common/cards/CardName';
 import {Tag} from '../../common/cards/Tag';
 import {cardTagsIncludingEvent} from './MarsBotTags';
@@ -643,7 +643,7 @@ export class MarsBotBonusResolver {
     // Vastitas Borealis' Highlander also keeps away from the spaces reserved for an ocean (rulebook C, p.12).
     // The modular Highlander only looks at placed oceans (p.16).
     const vastitasRules = this.marsBotManager !== undefined &&
-      marsBotUsesMapSet(this.marsBotManager, BoardName.VASTITAS_BOREALIS_NOVA);
+      marsBotUsesBoardGoals(this.marsBotManager, BoardName.VASTITAS_BOREALIS_NOVA);
     const nextToReservedOcean = (space: Space) =>
       board.getAdjacentSpaces(space).some((s) => s.spaceType === SpaceType.OCEAN);
     const nextToSpecialTile = (space: Space) => board.getAdjacentSpaces(space).some(isSpecialTileSpace);
