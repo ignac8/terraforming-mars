@@ -8,7 +8,7 @@ import {BoardName} from '@/common/boards/BoardName';
 import {DEFAULT_EXPANSIONS} from '@/common/cards/GameModule';
 import {JSONObject} from '@/common/Types';
 import {defineComponent} from 'vue';
-import {NewGameConfig} from '@/common/game/NewGameConfig';
+import {NewGameConfig, NewPlayerModel} from '@/common/game/NewGameConfig';
 import {CardName} from '@/common/cards/CardName';
 import {CreateGameModel} from '@/client/components/create/CreateGameModel';
 import {ValidationErrors} from '@/common/game/validateNewGameConfig';
@@ -469,6 +469,20 @@ describe('CreateGameForm', () => {
     await wrapper.vm.$nextTick();
 
     expectTournamentLocks(vm);
+  });
+
+  it('sends the selected player as first player', async () => {
+    const wrapper = shallowMount(CreateGameForm, {
+      ...globalConfig,
+    });
+
+    wrapper.vm.playersCount = 3;
+    wrapper.vm.randomFirstPlayer = false;
+    wrapper.vm.firstIndex = 2;
+
+    const config = await wrapper.vm.serializeSettings();
+
+    expect(config?.players.map((player: NewPlayerModel) => player.first)).deep.eq([false, true, false]);
   });
 
   it('restores the last saved game settings on load', async () => {
