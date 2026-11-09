@@ -1,7 +1,8 @@
 # Upstream PR tracker
 
 State of the one-file-at-a-time PR series against `terraforming-mars/terraforming-mars`,
-agreed after #8001 was deemed too big to review. Last updated: 2026-11-05.
+agreed after #8001 was deemed too big to review. Last updated: 2026-11-09 (see "Review round 2026-11-09";
+the tables above it still list #8671, #8676 and #8677 as open).
 
 ## Merged
 
@@ -102,6 +103,34 @@ Polish made for these on automa first: one bonus deck builder and `createCorpBon
 corporation FAQ cited as rulebook B p.4, not p.3 (`83990805a`). Not in any of them: the registry
 (`MarsBotCorpRegistry`, `AllAutomaManifests`), which comes with the resolver, and the Colonies corporations,
 which need `MarsBotColonyPlacer`.
+
+## Review round 2026-11-09
+
+Merged that morning (kberg): #8676 as `4564690ad`, #8671 as `c02c4648f` (he rebased it), #8677 as `2b409d0fc`.
+All three came into automa through the upstream merge `43f2ddb0f` with no content change. kberg then reviewed
+#8683, #8684, #8689, #8691, #8692 and #8693. Each open branch got `upstream/main` merged in and one review commit;
+automa got the same changes first (`316770020`, `9e86ad7ce`, `65c96f207`, `df9acecf0`, `5dead056d`):
+
+- **Track helpers** (#8689, #8691, #8692): `marsBotMarsTrackPositions` is gone and callers read
+  `bot.marsBotBoard.tracks` inline (the Venus filter written out in Generalist, Merchant, Producer), so #8689 and
+  #8690 no longer touch the eval file. `marsBotAllTrackPositions` is removed from main by #8700.
+- **Rename** (#8692): `marsBotUsesMapSet` is `marsBotUsesBoardGoals`, also in main's Farmer and RimSettler.
+- **Founder** (#8692): one filter in `getScore`, the Neural Instance special only for `game.marsBotPlayer`;
+  `marsBotScore` dropped (`marsBotAwardScore` falls back to `getScore(bot.player)`).
+- **Boards** (#8683): the six `*_WITH_VENUS` copies are gone, `MARSBOT_BOARDS` maps a board to one list and
+  automa's `AutomaGameSetup.getBoardData` appends `VENUS_MARSBOT_TRACK`. `TharsisMarsBot.ts` dropped out of the PR.
+- **Tests** (all open MarsBot PRs): loops over case tables moved outside `it()`, one `it` per case (41 loops;
+  cumulative sequences and setup loops left as they were). The loops already on main get a separate PR later.
+- **#8684 pushed back**: `marsBotBonusCardsFromJSON` keeps warn-and-skip (automa restores project cards there,
+  and a throw inside `Game.deserialize` makes the game unloadable).
+- **[#8700](https://github.com/terraforming-mars/terraforming-mars/pull/8700)** `marsbot-fake-options` (opened
+  2026-11-09): `fakeMarsBot(options?)` with `tracks` plus any `IMarsBot` field, from kberg's sketch on #8677;
+  main's call sites converted; `marsBotAllTrackPositions` deleted with Visionary and Diversifier inlined.
+  `FakeMarsBot.ts`, `Visionary.ts` and `Diversifier.ts` are byte-identical to automa.
+
+Divergence until #8700 merges: the open branches still call `fakeMarsBot(tracks)` / `{...fakeMarsBot(), x}`, and
+the four corporation branches still carry the old `fakeMarsBot(tracks, overrides)`; each converts after #8700 lands.
+Automa already has the options form at all 65 call sites. #8692's eval file still has `marsBotAllTrackPositions`.
 
 ## Closed
 
