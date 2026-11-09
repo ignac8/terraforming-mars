@@ -3,6 +3,7 @@ import {MarsBotBonusDeck} from '../../src/server/automa/MarsBotBonusDeck';
 import {SeededRandom} from '../../src/common/utils/Random';
 import {createBaseBonusCards, createBonusCard} from '../../src/server/automa/MarsBotBonusCard';
 import {BonusCardId} from '../../src/common/automa/AutomaTypes';
+import {CardName} from '../../src/common/cards/CardName';
 import {Asteroid} from '../../src/server/cards/base/Asteroid';
 import {Tardigrades} from '../../src/server/cards/base/Tardigrades';
 
@@ -76,6 +77,13 @@ describe('MarsBotBonusDeck', () => {
     expect(restored.drawPile).to.deep.eq(expansionDeck.drawPile);
     expect(restored.discardPile).to.deep.eq(expansionDeck.discardPile);
     expect([...restored.drawPile, ...restored.discardPile].map((card) => card.id)).to.have.members(ids);
+  });
+
+  it('throws on a saved card name it cannot restore', () => {
+    const serialized = deck.serialize();
+    serialized.drawPile.push('Not a card' as CardName);
+
+    expect(() => MarsBotBonusDeck.deserialize(serialized, new SeededRandom(42))).to.throw(/Not a card/);
   });
 
   it('serialization round trip with project cards', () => {
