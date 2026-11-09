@@ -12,8 +12,8 @@ import {IMarsBot} from '@/server/automa/IMarsBot';
  * are written against the Tharsis board whatever map the game is played on. Random milestones
  * and awards keep the map's rules.
  */
-export function marsBotUsesBoardGoals(bot: IMarsBot, boardName: BoardName): boolean {
-  return marsBotMapSet(bot.game.gameOptions) === boardName;
+export function marsBotUsesBoardGoals(marsBot: IMarsBot, boardName: BoardName): boolean {
+  return marsBotMapSet(marsBot.game.gameOptions) === boardName;
 }
 
 /**
@@ -22,8 +22,8 @@ export function marsBotUsesBoardGoals(bot: IMarsBot, boardName: BoardName): bool
  * production from its board tracks. The few milestones and awards where the automa rules
  * say something else override marsBotCanClaim or marsBotScore on their own class.
  */
-export function marsBotCanClaimMilestone(milestone: IMilestone, bot: IMarsBot): boolean {
-  return milestone.marsBotCanClaim?.(bot) ?? milestone.canClaim(bot.player);
+export function marsBotCanClaimMilestone(milestone: IMilestone, marsBot: IMarsBot): boolean {
+  return milestone.marsBotCanClaim?.(marsBot) ?? milestone.canClaim(marsBot.player);
 }
 
 /**
@@ -38,6 +38,6 @@ export function milestoneRemaining(milestone: IMilestone, player: IPlayer): numb
   return milestone.canClaim(player) ? 0 : Infinity;
 }
 
-export function marsBotAwardScore(award: IAward, bot: IMarsBot): number {
-  return award.marsBotScore?.(bot) ?? award.getScore(bot.player);
+export function marsBotAwardScore(award: IAward, marsBot: IMarsBot): number {
+  return award.marsBotScore?.(marsBot) ?? award.getScore(marsBot.player);
 }

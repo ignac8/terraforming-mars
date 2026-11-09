@@ -16,9 +16,9 @@ describe('Promoter', () => {
   });
 
   it('MarsBot scores its Event track', () => {
-    const bot = fakeMarsBot();
-    setTrack(bot, Tag.EVENT, 4);
+    const marsBot = fakeMarsBot();
+    setTrack(marsBot, Tag.EVENT, 4);
 
-    expect(new Promoter().marsBotScore(bot)).eq(4);
+    expect(new Promoter().marsBotScore(marsBot)).eq(4);
   });
 });

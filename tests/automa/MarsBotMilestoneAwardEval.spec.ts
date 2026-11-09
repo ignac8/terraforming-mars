@@ -23,8 +23,8 @@ function createBot() {
   const [game, player] = testGame(2);
   const board = new MarsBotBoard(THARSIS_MARSBOT_BOARD);
   player.tags = new MarsBotTags(player, board);
-  const bot = {game, player, marsBotBoard: board} as unknown as IMarsBot;
-  return {board, bot};
+  const marsBot = {game, player, marsBotBoard: board} as unknown as IMarsBot;
+  return {board, marsBot};
 }
 
 function advance(board: MarsBotBoard, index: number, steps: number): void {
@@ -35,40 +35,40 @@ function advance(board: MarsBotBoard, index: number, steps: number): void {
 
 describe('MarsBotMilestoneAwardEval', () => {
   it('a milestone without an override runs the class against the bot player', () => {
-    const {board, bot} = createBot();
+    const {board, marsBot} = createBot();
     advance(board, 0, 8);
 
-    expect(marsBotCanClaimMilestone(new Builder(), bot)).is.true;
+    expect(marsBotCanClaimMilestone(new Builder(), marsBot)).is.true;
   });
 
   it('the class sees the tracks, not played cards', () => {
-    const {board, bot} = createBot();
+    const {board, marsBot} = createBot();
     advance(board, 0, 7);
 
-    expect(marsBotCanClaimMilestone(new Builder(), bot)).is.false;
+    expect(marsBotCanClaimMilestone(new Builder(), marsBot)).is.false;
   });
 
   it('an award without an override runs the class against the bot player', () => {
-    const {board, bot} = createBot();
+    const {board, marsBot} = createBot();
     advance(board, 3, 4);
 
-    expect(marsBotAwardScore(new Scientist(), bot)).to.eq(4);
+    expect(marsBotAwardScore(new Scientist(), marsBot)).to.eq(4);
   });
 
   it('an award with an override uses it instead of the class', () => {
-    const {board, bot} = createBot();
+    const {board, marsBot} = createBot();
     advance(board, 0, 3);
     advance(board, 2, 2);
 
     // Banker reads M€ production for a player, and the bot's first and third tracks here.
-    expect(marsBotAwardScore(new Banker(), bot)).to.eq(5);
+    expect(marsBotAwardScore(new Banker(), marsBot)).to.eq(5);
   });
 
   it('Magnate counts only green cards in the played pile (BGG 3534424)', () => {
     const playedProjectCards: Array<IProjectCard> = [new Asteroid(), new Algae(), new Tardigrades(), new Mine()];
-    const bot = {...createBot().bot, playedProjectCards} as unknown as IMarsBot;
+    const marsBot = {...createBot().marsBot, playedProjectCards} as unknown as IMarsBot;
 
     // Asteroid is an event, Tardigrades an active (blue) card; Algae and Mine are green
-    expect(marsBotAwardScore(new Magnate(), bot)).to.eq(2);
+    expect(marsBotAwardScore(new Magnate(), marsBot)).to.eq(2);
   });
 });

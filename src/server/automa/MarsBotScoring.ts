@@ -34,7 +34,7 @@ export interface MarsBotVPBreakdown {
 export class MarsBotScoring {
   constructor(
     private readonly game: IGame,
-    private readonly marsBot: IPlayer,
+    private readonly botPlayer: IPlayer,
     private readonly humanPlayer: IPlayer,
     private readonly turnResolver: MarsBotTurnResolver,
     private readonly difficulty: DifficultyLevel,
@@ -58,11 +58,11 @@ export class MarsBotScoring {
 
   /** Calculate MarsBot's complete VP breakdown. */
   public calculate(): MarsBotVPBreakdown {
-    const tr = this.marsBot.terraformRating;
+    const tr = this.botPlayer.terraformRating;
     const milestoneResult = this.calculateMilestoneVP();
     const awardResult = this.calculateAwardVP();
     const greenery = this.countGreeneryVP();
-    const cities = this.game.board.getCities(this.marsBot);
+    const cities = this.game.board.getCities(this.botPlayer);
     const cityAdjacentGreenery = this.countCityAdjacentGreeneryVP(cities);
     const neuralInstance = this.calculateNeuralInstanceVP();
     const mcToVP = this.calculateMCtoVP();
@@ -94,7 +94,7 @@ export class MarsBotScoring {
     const details: Array<MADetail> = [];
     let total = 0;
     for (const cm of this.game.claimedMilestones) {
-      if (cm.player === this.marsBot) {
+      if (cm.player === this.botPlayer) {
         total += 5;
         details.push({message: 'Claimed ${0} milestone', messageArgs: [cm.milestone.name], victoryPoint: 5});
       }
@@ -119,7 +119,7 @@ export class MarsBotScoring {
   }
 
   private countGreeneryVP(): number {
-    return this.game.board.getGreeneries(this.marsBot).length;
+    return this.game.board.getGreeneries(this.botPlayer).length;
   }
 
   private countCityAdjacentGreeneryVP(cities: ReadonlyArray<Space>): number {
@@ -176,11 +176,11 @@ export class MarsBotScoring {
    * The rulebook doesn't score them; it is the designer's intent (TDaver, BGG 3408751, 3373832).
    */
   private calculateLeftoverResourcesVP(): number {
-    const bot = this.turnResolver.marsBotManager;
-    if (!this.game.gameOptions.automaColonyVP || !this.game.gameOptions.coloniesExtension || bot === undefined) {
+    const marsBot = this.turnResolver.marsBotManager;
+    if (!this.game.gameOptions.automaColonyVP || !this.game.gameOptions.coloniesExtension || marsBot === undefined) {
       return 0;
     }
-    return Math.floor((sum(Array.from(bot.shippingBoard.storage.values())) + bot.floaters) / 2);
+    return Math.floor((sum(Array.from(marsBot.shippingBoard.storage.values())) + marsBot.floaters) / 2);
   }
 
   /** T-13: 1 VP for each Party Leader or Chairman position MarsBot holds. */
@@ -188,7 +188,7 @@ export class MarsBotScoring {
     if (!this.game.gameOptions.turmoilExtension || this.game.turmoil === undefined) {
       return 0;
     }
-    return Turmoil.getTurmoil(this.game).getVictoryPoints(this.marsBot);
+    return Turmoil.getTurmoil(this.game).getVictoryPoints(this.botPlayer);
   }
 }
 

@@ -578,18 +578,18 @@ describe('MarsBot Turmoil — Automatic skips (T-5 T-9 T-11a)', () => {
 
   it('T-5: MarsBot raises TR under Reds without paying and without being asked to pay', () => {
     const {game, marsBot} = createTurmoilGame();
-    const bot = marsBot.player;
+    const botPlayer = marsBot.player;
     setRulingParty(game, PartyName.REDS);
     game.phase = Phase.ACTION;
     marsBot.turnResolver.megacredits = 10;
-    const trBefore = bot.terraformRating;
+    const trBefore = botPlayer.terraformRating;
 
-    bot.increaseTerraformRating(1);
+    botPlayer.increaseTerraformRating(1);
     runAllActions(game);
 
-    expect(bot.terraformRating).to.equal(trBefore + 1);
+    expect(botPlayer.terraformRating).to.equal(trBefore + 1);
     expect(marsBot.turnResolver.megacredits).to.equal(10);
-    expect(bot.getWaitingFor()).is.undefined;
+    expect(botPlayer.getWaitingFor()).is.undefined;
   });
 });
 

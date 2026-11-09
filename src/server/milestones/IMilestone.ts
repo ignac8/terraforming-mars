@@ -17,7 +17,7 @@ export interface IMilestone {
    *
    * Only for milestones where the automa rules differ from `canClaim` for MarsBot's player.
    */
-  marsBotCanClaim?(bot: IMarsBot): boolean;
+  marsBotCanClaim?(marsBot: IMarsBot): boolean;
   /** How far the player is from claiming this: 0 when they qualify. Left out when it can't be counted. */
   remaining?(player: IPlayer): number;
 }

@@ -54,13 +54,13 @@ describe('MarsBot Deep Rules Tests', () => {
   describe('Expansion icons ignored when expansion not in use (page 8)', () => {
     it('venus action is ignored (no Failed Action) when Venus not enabled', () => {
       const [game, human] = testGame(1); // No Venus expansion
-      const bot = TestPlayer.RED.newPlayer({name: 'bot'});
-      (bot as any).game = game;
+      const botPlayer = TestPlayer.RED.newPlayer({name: 'bot'});
+      (botPlayer as any).game = game;
 
       const layout = emptyLayout();
       layout[1] = 'venus';
       const marsBotBoard = new MarsBotBoard(makeBoard(layout));
-      const resolver = new MarsBotTurnResolver(game, bot, human, marsBotBoard, 'normal');
+      const resolver = new MarsBotTurnResolver(game, botPlayer, human, marsBotBoard, 'normal');
 
       resolver.resolveProjectCard(mockCard([Tag.BUILDING]));
       // Venus should be ignored, NOT a failed action
@@ -70,13 +70,13 @@ describe('MarsBot Deep Rules Tests', () => {
 
     it('venus2 action is ignored when Venus not enabled', () => {
       const [game, human] = testGame(1);
-      const bot = TestPlayer.RED.newPlayer({name: 'bot'});
-      (bot as any).game = game;
+      const botPlayer = TestPlayer.RED.newPlayer({name: 'bot'});
+      (botPlayer as any).game = game;
 
       const layout = emptyLayout();
       layout[1] = 'venus2';
       const marsBotBoard = new MarsBotBoard(makeBoard(layout));
-      const resolver = new MarsBotTurnResolver(game, bot, human, marsBotBoard, 'normal');
+      const resolver = new MarsBotTurnResolver(game, botPlayer, human, marsBotBoard, 'normal');
 
       resolver.resolveProjectCard(mockCard([Tag.BUILDING]));
       expect(resolver.megacredits).to.eq(0);
@@ -117,13 +117,13 @@ describe('MarsBot Deep Rules Tests', () => {
   describe('Multiple tags where one track is maxed (page 5)', () => {
     it('maxed track gets Failed Action, other track still advances', () => {
       const [game, human] = testGame(1);
-      const bot = TestPlayer.RED.newPlayer({name: 'bot'});
-      (bot as any).game = game;
+      const botPlayer = TestPlayer.RED.newPlayer({name: 'bot'});
+      (botPlayer as any).game = game;
 
       const allEmpty = emptyLayout();
       const boardData = THARSIS_MARSBOT_BOARD.map((def) => ({...def, layout: allEmpty}));
       const marsBotBoard = new MarsBotBoard(boardData);
-      const resolver = new MarsBotTurnResolver(game, bot, human, marsBotBoard, 'normal');
+      const resolver = new MarsBotTurnResolver(game, botPlayer, human, marsBotBoard, 'normal');
 
       // Max out Track 1 (Building)
       for (let i = 0; i < 18; i++) {
@@ -312,14 +312,14 @@ describe('MarsBot Deep Rules Tests', () => {
   describe('MarsBot does not pay for milestones or awards (page 8)', () => {
     it('milestone claim does not deduct MC from megacredits', () => {
       const [game, human] = testGame(1);
-      const bot = TestPlayer.RED.newPlayer({name: 'bot'});
-      (bot as any).game = game;
-      bot.setTerraformRating(35); // Meets Terraformer
+      const botPlayer = TestPlayer.RED.newPlayer({name: 'bot'});
+      (botPlayer as any).game = game;
+      botPlayer.setTerraformRating(35); // Meets Terraformer
 
       const layout = emptyLayout();
       layout[1] = 'milestone';
       const marsBotBoard = new MarsBotBoard(makeBoard(layout));
-      const resolver = new MarsBotTurnResolver(game, bot, human, marsBotBoard, 'normal');
+      const resolver = new MarsBotTurnResolver(game, botPlayer, human, marsBotBoard, 'normal');
       resolver.megacredits = 10;
 
       resolver.resolveProjectCard(mockCard([Tag.BUILDING]));
@@ -330,18 +330,18 @@ describe('MarsBot Deep Rules Tests', () => {
 
     it('award funding does not deduct MC from megacredits', () => {
       const [game, human] = testGame(1);
-      const bot = TestPlayer.RED.newPlayer({name: 'bot'});
-      (bot as any).game = game;
+      const botPlayer = TestPlayer.RED.newPlayer({name: 'bot'});
+      (botPlayer as any).game = game;
 
       // Give bot some tiles so it's ahead on Landlord
-      const spaces = game.board.getAvailableSpacesOnLand(bot);
-      game.simpleAddTile(bot, spaces[5], {tileType: TileType.GREENERY});
-      game.simpleAddTile(bot, spaces[10], {tileType: TileType.CITY});
+      const spaces = game.board.getAvailableSpacesOnLand(botPlayer);
+      game.simpleAddTile(botPlayer, spaces[5], {tileType: TileType.GREENERY});
+      game.simpleAddTile(botPlayer, spaces[10], {tileType: TileType.CITY});
 
       const layout = emptyLayout();
       layout[1] = 'award';
       const marsBotBoard = new MarsBotBoard(makeBoard(layout));
-      const resolver = new MarsBotTurnResolver(game, bot, human, marsBotBoard, 'normal');
+      const resolver = new MarsBotTurnResolver(game, botPlayer, human, marsBotBoard, 'normal');
       resolver.megacredits = 10;
 
       resolver.resolveProjectCard(mockCard([Tag.BUILDING]));
@@ -561,13 +561,13 @@ describe('MarsBot Deep Rules Tests', () => {
   describe('Event cards inject Event tag (page 5)', () => {
     it('event card with Building tag advances both Building and Event tracks', () => {
       const [game, human] = testGame(1);
-      const bot = TestPlayer.RED.newPlayer({name: 'bot'});
-      (bot as any).game = game;
+      const botPlayer = TestPlayer.RED.newPlayer({name: 'bot'});
+      (botPlayer as any).game = game;
 
       const allEmpty = emptyLayout();
       const boardData = THARSIS_MARSBOT_BOARD.map((def) => ({...def, layout: allEmpty}));
       const marsBotBoard = new MarsBotBoard(boardData);
-      const resolver = new MarsBotTurnResolver(game, bot, human, marsBotBoard, 'normal');
+      const resolver = new MarsBotTurnResolver(game, botPlayer, human, marsBotBoard, 'normal');
 
       resolver.resolveProjectCard(mockCard([Tag.BUILDING], 'event'));
 
@@ -577,13 +577,13 @@ describe('MarsBot Deep Rules Tests', () => {
 
     it('event card with NO explicit tags still advances Event track', () => {
       const [game, human] = testGame(1);
-      const bot = TestPlayer.RED.newPlayer({name: 'bot'});
-      (bot as any).game = game;
+      const botPlayer = TestPlayer.RED.newPlayer({name: 'bot'});
+      (botPlayer as any).game = game;
 
       const allEmpty = emptyLayout();
       const boardData = THARSIS_MARSBOT_BOARD.map((def) => ({...def, layout: allEmpty}));
       const marsBotBoard = new MarsBotBoard(boardData);
-      const resolver = new MarsBotTurnResolver(game, bot, human, marsBotBoard, 'normal');
+      const resolver = new MarsBotTurnResolver(game, botPlayer, human, marsBotBoard, 'normal');
 
       // Event card with zero explicit tags — should NOT be a failed action
       resolver.resolveProjectCard(mockCard([], 'event'));

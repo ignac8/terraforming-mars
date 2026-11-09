@@ -529,8 +529,8 @@ export class AutomaGameHooks {
     if (source === 'self') {
       return false;
     }
-    const marsBot = this.marsBot.player;
-    if (marsBot === player) {
+    const botPlayer = this.marsBot.player;
+    if (botPlayer === player) {
       return false;
     }
     const storage = this.storageHolding(resourceType);

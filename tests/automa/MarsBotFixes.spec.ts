@@ -52,23 +52,23 @@ describe('MarsBot Fixes', () => {
   describe('MarsBot does not receive placement bonuses from game engine', () => {
     it('MarsBot Player does not gain resources from tile placement', () => {
       const {game, marsBot} = createAutomaGame();
-      const bot = marsBot.player;
+      const botPlayer = marsBot.player;
 
       // Find a space with bonus icons
       const spaceWithBonus = game.board.spaces.find((s) =>
         s.bonus.length > 0 && s.tile === undefined && s.spaceType === SpaceType.LAND,
       );
       if (spaceWithBonus) {
-        const plantsBefore = bot.plants;
-        const steelBefore = bot.steel;
-        const titaniumBefore = bot.titanium;
+        const plantsBefore = botPlayer.plants;
+        const steelBefore = botPlayer.steel;
+        const titaniumBefore = botPlayer.titanium;
 
-        game.addCity(bot, spaceWithBonus);
+        game.addCity(botPlayer, spaceWithBonus);
 
         // MarsBot should NOT have gained any resources
-        expect(bot.plants).to.eq(plantsBefore);
-        expect(bot.steel).to.eq(steelBefore);
-        expect(bot.titanium).to.eq(titaniumBefore);
+        expect(botPlayer.plants).to.eq(plantsBefore);
+        expect(botPlayer.steel).to.eq(steelBefore);
+        expect(botPlayer.titanium).to.eq(titaniumBefore);
         // MC might change from ocean adjacency in normal flow, but should NOT from tile bonuses
         // (ocean adjacency is also blocked for MarsBot now)
       }
@@ -89,19 +89,19 @@ describe('MarsBot Fixes', () => {
   describe('Temperature heat bonuses give MarsBot 2 MC instead of production', () => {
     it('MarsBot gets 2 MC at -24C temperature bonus', () => {
       const {game, marsBot} = createAutomaGame();
-      const bot = marsBot.player;
+      const botPlayer = marsBot.player;
 
       // Set temperature to -26 (one step below -24 bonus)
       (game as any).temperature = -26;
 
       const mcBefore = marsBot.turnResolver.megacredits;
-      const heatProdBefore = bot.production.get(Resource.HEAT);
+      const heatProdBefore = botPlayer.production.get(Resource.HEAT);
 
-      game.increaseTemperature(bot, 1);
+      game.increaseTemperature(botPlayer, 1);
 
       // MarsBot should get 2 MC, NOT heat production
       expect(marsBot.turnResolver.megacredits).to.eq(mcBefore + 2);
-      expect(bot.production.get(Resource.HEAT)).to.eq(heatProdBefore);
+      expect(botPlayer.production.get(Resource.HEAT)).to.eq(heatProdBefore);
     });
 
     it('human player still gets heat production at -24C', () => {
@@ -146,35 +146,35 @@ describe('MarsBot Fixes', () => {
   describe('Temperature ocean bonus at 0C', () => {
     it('MarsBot places the bonus ocean itself instead of being asked for a space', () => {
       const {game, marsBot} = createAutomaGame();
-      const bot = marsBot.player;
+      const botPlayer = marsBot.player;
       (game as any).temperature = -2;
       const oceansBefore = game.board.getOceanSpaces().length;
 
-      game.increaseTemperature(bot, 1);
+      game.increaseTemperature(botPlayer, 1);
       runAllActions(game);
 
       expect(game.getTemperature()).to.eq(0);
       expect(game.board.getOceanSpaces()).to.have.length(oceansBefore + 1);
-      expect(bot.getWaitingFor()).is.undefined;
+      expect(botPlayer.getWaitingFor()).is.undefined;
     });
 
     it('MarsBot takes a Failed Action when all oceans are already placed', () => {
       const {game, marsBot} = createAutomaGame();
-      const bot = marsBot.player;
+      const botPlayer = marsBot.player;
       (game as any).temperature = -2;
-      for (const space of game.board.getAvailableSpacesForOcean(bot)) {
+      for (const space of game.board.getAvailableSpacesForOcean(botPlayer)) {
         if (game.canAddOcean()) {
-          game.addOcean(bot, space);
+          game.addOcean(botPlayer, space);
         }
       }
       const mcBefore = marsBot.turnResolver.megacredits;
 
-      game.increaseTemperature(bot, 1);
+      game.increaseTemperature(botPlayer, 1);
       runAllActions(game);
 
       expect(game.getTemperature()).to.eq(0);
       expect(marsBot.turnResolver.megacredits).to.eq(mcBefore + FAILED_ACTION_MC);
-      expect(bot.getWaitingFor()).is.undefined;
+      expect(botPlayer.getWaitingFor()).is.undefined;
     });
 
     it('human player is still asked where to place the ocean', () => {
@@ -191,12 +191,12 @@ describe('MarsBot Fixes', () => {
   describe('Oxygen temperature bonus at 8% with temperature maxed', () => {
     it('MarsBot takes a Failed Action', () => {
       const {game, marsBot} = createAutomaGame();
-      const bot = marsBot.player;
+      const botPlayer = marsBot.player;
       (game as any).oxygenLevel = 7;
       (game as any).temperature = MAX_TEMPERATURE;
       const mcBefore = marsBot.turnResolver.megacredits;
 
-      game.increaseOxygenLevel(bot, 1);
+      game.increaseOxygenLevel(botPlayer, 1);
 
       expect(game.getOxygenLevel()).to.eq(8);
       expect(marsBot.turnResolver.megacredits).to.eq(mcBefore + FAILED_ACTION_MC);
@@ -204,12 +204,12 @@ describe('MarsBot Fixes', () => {
 
     it('MarsBot raises the temperature when it is not maxed', () => {
       const {game, marsBot} = createAutomaGame();
-      const bot = marsBot.player;
+      const botPlayer = marsBot.player;
       (game as any).oxygenLevel = 7;
       (game as any).temperature = 0;
       const mcBefore = marsBot.turnResolver.megacredits;
 
-      game.increaseOxygenLevel(bot, 1);
+      game.increaseOxygenLevel(botPlayer, 1);
 
       expect(game.getTemperature()).to.eq(2);
       expect(marsBot.turnResolver.megacredits).to.eq(mcBefore);
@@ -351,12 +351,12 @@ describe('MarsBot Fixes', () => {
   describe('Easy mode', () => {
     it('advance action is ignored in easy mode', () => {
       const [game, human] = testGame(1);
-      const marsBot = TestPlayer.RED.newPlayer({name: 'marsbot'});
-      (marsBot as any).game = game;
+      const botPlayer = TestPlayer.RED.newPlayer({name: 'marsbot'});
+      (botPlayer as any).game = game;
 
       const boardData = makeBoardWithTrack1Action(1, 'advance');
       const marsBotBoard = new MarsBotBoard(boardData);
-      const resolver = new MarsBotTurnResolver(game, marsBot, human, marsBotBoard, 'easy');
+      const resolver = new MarsBotTurnResolver(game, botPlayer, human, marsBotBoard, 'easy');
 
       const mockCard = {cost: 5, tags: [Tag.BUILDING], type: 'automated' as any, name: 'T' as any, metadata: {} as any} as any;
       resolver.resolveProjectCard(mockCard);
@@ -459,12 +459,12 @@ describe('MarsBot Fixes', () => {
   describe('Track chain actions', () => {
     it('tag_N action advances another track', () => {
       const [game, human] = testGame(1);
-      const marsBot = TestPlayer.RED.newPlayer({name: 'marsbot'});
-      (marsBot as any).game = game;
+      const botPlayer = TestPlayer.RED.newPlayer({name: 'marsbot'});
+      (botPlayer as any).game = game;
 
       const boardData = makeBoardWithTrack1Action(1, 'tag_1');
       const marsBotBoard = new MarsBotBoard(boardData);
-      const resolver = new MarsBotTurnResolver(game, marsBot, human, marsBotBoard, 'normal');
+      const resolver = new MarsBotTurnResolver(game, botPlayer, human, marsBotBoard, 'normal');
 
       const mockCard = {cost: 5, tags: [Tag.BUILDING], type: 'automated' as any, name: 'T' as any, metadata: {} as any} as any;
       resolver.resolveProjectCard(mockCard);
@@ -475,12 +475,12 @@ describe('MarsBot Fixes', () => {
 
     it('advance action moves same track forward again', () => {
       const [game, human] = testGame(1);
-      const marsBot = TestPlayer.RED.newPlayer({name: 'marsbot'});
-      (marsBot as any).game = game;
+      const botPlayer = TestPlayer.RED.newPlayer({name: 'marsbot'});
+      (botPlayer as any).game = game;
 
       const boardData = makeBoardWithTrack1Action(1, 'advance');
       const marsBotBoard = new MarsBotBoard(boardData);
-      const resolver = new MarsBotTurnResolver(game, marsBot, human, marsBotBoard, 'normal');
+      const resolver = new MarsBotTurnResolver(game, botPlayer, human, marsBotBoard, 'normal');
 
       const mockCard = {cost: 5, tags: [Tag.BUILDING], type: 'automated' as any, name: 'T' as any, metadata: {} as any} as any;
       resolver.resolveProjectCard(mockCard);
@@ -490,18 +490,18 @@ describe('MarsBot Fixes', () => {
 
     it('TR action increases terraform rating', () => {
       const [game, human] = testGame(1);
-      const marsBot = TestPlayer.RED.newPlayer({name: 'marsbot'});
-      (marsBot as any).game = game;
+      const botPlayer = TestPlayer.RED.newPlayer({name: 'marsbot'});
+      (botPlayer as any).game = game;
 
       const boardData = makeBoardWithTrack1Action(1, 'tr3');
       const marsBotBoard = new MarsBotBoard(boardData);
-      const resolver = new MarsBotTurnResolver(game, marsBot, human, marsBotBoard, 'normal');
+      const resolver = new MarsBotTurnResolver(game, botPlayer, human, marsBotBoard, 'normal');
 
-      const startTR = marsBot.terraformRating;
+      const startTR = botPlayer.terraformRating;
       const mockCard = {cost: 5, tags: [Tag.BUILDING], type: 'automated' as any, name: 'T' as any, metadata: {} as any} as any;
       resolver.resolveProjectCard(mockCard);
 
-      expect(marsBot.terraformRating).to.eq(startTR + 3);
+      expect(botPlayer.terraformRating).to.eq(startTR + 3);
     });
   });
 
@@ -525,19 +525,19 @@ describe('MarsBot Fixes', () => {
   describe('Regressed positions skip actions', () => {
     it('regressed position action is skipped on re-advance', () => {
       const [game, human] = testGame(1);
-      const marsBot = TestPlayer.RED.newPlayer({name: 'marsbot'});
-      (marsBot as any).game = game;
+      const botPlayer = TestPlayer.RED.newPlayer({name: 'marsbot'});
+      (botPlayer as any).game = game;
 
       // Track 1 pos 1 has tr3 action
       const boardData = makeBoardWithTrack1Action(1, 'tr3');
       const marsBotBoard = new MarsBotBoard(boardData);
-      const resolver = new MarsBotTurnResolver(game, marsBot, human, marsBotBoard, 'normal');
+      const resolver = new MarsBotTurnResolver(game, botPlayer, human, marsBotBoard, 'normal');
 
       // Advance to pos 1 (triggers tr3)
-      const startTR = marsBot.terraformRating;
+      const startTR = botPlayer.terraformRating;
       const mockCard = {cost: 5, tags: [Tag.BUILDING], type: 'automated' as any, name: 'T' as any, metadata: {} as any} as any;
       resolver.resolveProjectCard(mockCard);
-      expect(marsBot.terraformRating).to.eq(startTR + 3);
+      expect(botPlayer.terraformRating).to.eq(startTR + 3);
 
       // Advance to pos 2
       resolver.resolveProjectCard(mockCard);
@@ -549,11 +549,11 @@ describe('MarsBot Fixes', () => {
 
       // Re-advance to pos 2 - the action at pos 2 should be null (it's null in our layout)
       // But the IMPORTANT thing: pos 2 was regressed from, so action should be skipped
-      const trBefore = marsBot.terraformRating;
+      const trBefore = botPlayer.terraformRating;
       resolver.resolveProjectCard(mockCard);
       expect(marsBotBoard.tracks[0].position).to.eq(2);
       // No TR gain from skipped action
-      expect(marsBot.terraformRating).to.eq(trBefore);
+      expect(botPlayer.terraformRating).to.eq(trBefore);
     });
   });
 

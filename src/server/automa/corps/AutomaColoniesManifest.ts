@@ -26,15 +26,15 @@ const ARIDOR: IMarsBotCorp = {
     {trackIndex: 6, position: 3, cubeType: 'black'},
     {trackIndex: 6, position: 6, cubeType: 'black'},
   ],
-  setup(bot) {
-    if (addRandomColonyTile(bot.game) === undefined) {
-      bot.game.log('MarsBot (Aridor): no colony tile left to add');
+  setup(marsBot) {
+    if (addRandomColonyTile(marsBot.game) === undefined) {
+      marsBot.game.log('MarsBot (Aridor): no colony tile left to add');
     }
   },
   effect: {
-    onTrackCubeTrigger(bot, _trackIndex, _position, _cubeType) {
-      bot.advanceTrack(2); // Event track = index 2
-      bot.game.log('MarsBot (Aridor): cube reached: advance event track');
+    onTrackCubeTrigger(marsBot, _trackIndex, _position, _cubeType) {
+      marsBot.advanceTrack(2); // Event track = index 2
+      marsBot.game.log('MarsBot (Aridor): cube reached: advance event track');
     },
   },
 };
@@ -48,10 +48,10 @@ const ARCLIGHT: IMarsBotCorp = {
   trackCubes: whiteTrackCubes(6),
   effect: {
     // Per tag, so a card with a plant and an animal tag earns 4 M€
-    onTagResolved(bot, tag) {
+    onTagResolved(marsBot, tag) {
       if (tag === Tag.PLANT || tag === Tag.ANIMAL) {
-        bot.gainMc(2);
-        bot.game.log('MarsBot (Arclight): Plant/Animal tag, +2 M€');
+        marsBot.gainMc(2);
+        marsBot.game.log('MarsBot (Arclight): Plant/Animal tag, +2 M€');
       }
     },
   },
@@ -62,12 +62,12 @@ const POLYPHEMOS: IMarsBotCorp = {
   name: CardName.POLYPHEMOS,
   description: 'Tags: 3 Space, 3 Event. Setup: +25 MC. Each generation: discard the project card with fewest tags from the action deck.',
   tags: [Tag.SPACE, Tag.SPACE, Tag.SPACE, Tag.EVENT, Tag.EVENT, Tag.EVENT],
-  setup(bot) {
-    bot.gainMc(25);
-    bot.game.log('MarsBot (Polyphemos): +25 M€');
+  setup(marsBot) {
+    marsBot.gainMc(25);
+    marsBot.game.log('MarsBot (Polyphemos): +25 M€');
   },
-  beforeActionPhase(bot) {
-    bot.maybeDiscardProjectCardWithFewestTags();
+  beforeActionPhase(marsBot) {
+    marsBot.maybeDiscardProjectCardWithFewestTags();
   },
 };
 
@@ -77,20 +77,20 @@ const POSEIDON: IMarsBotCorp = {
   description: 'Setup: place 1 colony. Each colony you or MarsBot build (setup included) advances MarsBot\'s least-advanced track.',
   tags: [],
   requiredExpansions: ['colonies'],
-  setup(bot) {
+  setup(marsBot) {
     // C-33: Place 1 colony using random selection (C-15b method)
-    const placed = bot.maybePlaceRandomColony();
+    const placed = marsBot.maybePlaceRandomColony();
     if (placed) {
-      bot.game.log('MarsBot (Poseidon): placed 1 colony (C-33)');
+      marsBot.game.log('MarsBot (Poseidon): placed 1 colony (C-33)');
     } else {
-      bot.game.log('MarsBot (Poseidon): no eligible colony tile for setup (C-33)');
+      marsBot.game.log('MarsBot (Poseidon): no eligible colony tile for setup (C-33)');
     }
   },
   // C-33: each colony either player builds advances the least-advanced track
   effect: {
-    onColonyPlaced(bot) {
-      bot.advanceTrack(bot.marsBotBoard.getLeastAdvancedTrackIndex());
-      bot.game.log('MarsBot (Poseidon): colony placed → advance least-advanced track (C-33)');
+    onColonyPlaced(marsBot) {
+      marsBot.advanceTrack(marsBot.marsBotBoard.getLeastAdvancedTrackIndex());
+      marsBot.game.log('MarsBot (Poseidon): colony placed → advance least-advanced track (C-33)');
     },
   },
 };

@@ -36,14 +36,14 @@ export class MarsBotTurnResolver {
 
   constructor(
     private readonly game: IGame,
-    private readonly marsBot: IPlayer,
+    private readonly botPlayer: IPlayer,
     private readonly humanPlayer: IPlayer,
     public readonly marsBotBoard: MarsBotBoard,
     private readonly difficulty: DifficultyLevel,
     public megacredits: number = 0,
     tilePlacer?: MarsBotTilePlacer,
   ) {
-    this.tilePlacer = tilePlacer ?? new MarsBotTilePlacer(game, marsBot, humanPlayer);
+    this.tilePlacer = tilePlacer ?? new MarsBotTilePlacer(game, botPlayer, humanPlayer);
   }
 
   // ---- Project Card Resolution ----
@@ -116,7 +116,7 @@ export class MarsBotTurnResolver {
       if (onlyCards !== undefined && !onlyCards.includes(effectCard.name)) {
         continue;
       }
-      this.humanPlayer.defer(effectCard.onCardPlayedByAnyPlayer?.(this.humanPlayer, played, this.marsBot));
+      this.humanPlayer.defer(effectCard.onCardPlayedByAnyPlayer?.(this.humanPlayer, played, this.botPlayer));
     }
   }
 
@@ -210,7 +210,7 @@ export class MarsBotTurnResolver {
     const trMatch = action.match(/^tr(\d+)$/);
     if (trMatch) {
       const amount = parseInt(trMatch[1], 10);
-      this.marsBot.increaseTerraformRating(amount);
+      this.botPlayer.increaseTerraformRating(amount);
       this.game.log('MarsBot gains ${0} TR', (b) => b.number(amount));
       return;
     }
@@ -311,7 +311,7 @@ export class MarsBotTurnResolver {
       return;
     }
     const before = this.game.getTemperature();
-    this.game.increaseTemperature(this.marsBot, taken as 1 | 2);
+    this.game.increaseTemperature(this.botPlayer, taken as 1 | 2);
     const raised = (this.game.getTemperature() - before) / 2;
     if (this.marsBotManager) {
       this.marsBotManager.temperatureRaises += raised;
@@ -329,7 +329,7 @@ export class MarsBotTurnResolver {
     // Place tile and raise oxygen (unless the corp intercepts the raise)
     const raiseOxygen = this.game.getOxygenLevel() >= constants.MAX_OXYGEN_LEVEL ||
       !this.interceptsRaise(GlobalParameter.OXYGEN);
-    this.game.addGreenery(this.marsBot, space, raiseOxygen);
+    this.game.addGreenery(this.botPlayer, space, raiseOxygen);
 
     // MarsBot placement bonuses: 1 MC per icon, 2 MC per adjacent ocean
     this.gainMc(this.tilePlacer.getTotalPlacementMC(space));
@@ -350,7 +350,7 @@ export class MarsBotTurnResolver {
     if (this.interceptsRaise(GlobalParameter.OCEANS)) {
       return;
     }
-    this.game.addOcean(this.marsBot, space);
+    this.game.addOcean(this.botPlayer, space);
 
     // MarsBot placement bonuses
     this.gainMc(this.tilePlacer.getTotalPlacementMC(space));
@@ -364,7 +364,7 @@ export class MarsBotTurnResolver {
       return;
     }
 
-    this.game.addCity(this.marsBot, space);
+    this.game.addCity(this.botPlayer, space);
 
     // MarsBot placement bonuses
     this.gainMc(this.tilePlacer.getTotalPlacementMC(space));
@@ -381,7 +381,7 @@ export class MarsBotTurnResolver {
     if (taken === 0) {
       return;
     }
-    this.game.increaseVenusScaleLevel(this.marsBot, taken as 1 | 2);
+    this.game.increaseVenusScaleLevel(this.botPlayer, taken as 1 | 2);
     this.game.log('MarsBot raises Venus ${0} step(s)', (b) => b.number(taken));
   }
 
@@ -424,7 +424,7 @@ export class MarsBotTurnResolver {
       return false;
     }
 
-    this.game.claimedMilestones.push({player: this.marsBot, milestone: best});
+    this.game.claimedMilestones.push({player: this.botPlayer, milestone: best});
     this.game.log('MarsBot claims milestone ${0}', (b) => b.rawString(best.name));
 
     // Briber milestone: lose 12 MC on claim
@@ -485,7 +485,7 @@ export class MarsBotTurnResolver {
     if (this.marsBotManager !== undefined) {
       return marsBotCanClaimMilestone(milestone, this.marsBotManager);
     }
-    return milestone.canClaim(this.marsBot);
+    return milestone.canClaim(this.botPlayer);
   }
 
   /** Funds the unfunded award MarsBot leads the player by the most. False when it leads none. */
@@ -515,7 +515,7 @@ export class MarsBotTurnResolver {
       return false;
     }
 
-    this.game.fundAward(this.marsBot, bestAward);
+    this.game.fundAward(this.botPlayer, bestAward);
     this.game.log('MarsBot funds award ${0}', (b) => b.rawString(bestAward.name));
     return true;
   }
@@ -523,12 +523,12 @@ export class MarsBotTurnResolver {
   /** Get MarsBot's value for an award, with the easy difficulty handicap and its corp's bonus (Nirgal). */
   public getMarsBotAwardValue(award: IAward): number {
     const offset = this.difficulty === 'easy' ? -5 : 0;
-    const bot = this.marsBotManager;
-    if (bot !== undefined) {
-      const corpBonus = bot.corp?.effect?.awardScoreBonus?.(bot) ?? 0;
-      return marsBotAwardScore(award, bot) + offset + corpBonus;
+    const marsBot = this.marsBotManager;
+    if (marsBot !== undefined) {
+      const corpBonus = marsBot.corp?.effect?.awardScoreBonus?.(marsBot) ?? 0;
+      return marsBotAwardScore(award, marsBot) + offset + corpBonus;
     }
-    return award.getScore(this.marsBot) + offset;
+    return award.getScore(this.botPlayer) + offset;
   }
 
   /**

@@ -24,20 +24,20 @@ describe('Diversifier', () => {
       {plant: 2, expected: false},
       {plant: 3, expected: true},
     ]) {
-      const bot = fakeMarsBot();
-      setAllTracks(bot, 3);
-      setTrack(bot, Tag.PLANT, run.plant);
+      const marsBot = fakeMarsBot();
+      setAllTracks(marsBot, 3);
+      setTrack(marsBot, Tag.PLANT, run.plant);
 
-      expect(milestone.marsBotCanClaim(bot), JSON.stringify(run)).eq(run.expected);
+      expect(milestone.marsBotCanClaim(marsBot), JSON.stringify(run)).eq(run.expected);
     }
   });
 
   it('MarsBot counts the Venus track as one of the 7', () => {
-    const bot = fakeMarsBot({tracks: [...THARSIS_MARSBOT_BOARD, VENUS_MARSBOT_TRACK]});
-    setAllTracks(bot, 3);
-    setTrack(bot, Tag.PLANT, 0);
+    const marsBot = fakeMarsBot({tracks: [...THARSIS_MARSBOT_BOARD, VENUS_MARSBOT_TRACK]});
+    setAllTracks(marsBot, 3);
+    setTrack(marsBot, Tag.PLANT, 0);
 
-    expect(milestone.marsBotCanClaim(bot)).is.true;
+    expect(milestone.marsBotCanClaim(marsBot)).is.true;
   });
 
   it('Counts wild tags tags as unique tags', () => {
@@ -74,12 +74,12 @@ describe('Diversifier', () => {
     {plant: 3, expected: true},
   ] as const) {
     it('MarsBot needs space 3 on 7 tracks, so Venus can stand in for one other track: ' + JSON.stringify(run), () => {
-      const bot = fakeMarsBot({tracks: [...THARSIS_MARSBOT_BOARD, VENUS_MARSBOT_TRACK]});
-      setAllTracks(bot, 3);
-      setTrack(bot, Tag.VENUS, 2);
-      setTrack(bot, Tag.PLANT, run.plant);
+      const marsBot = fakeMarsBot({tracks: [...THARSIS_MARSBOT_BOARD, VENUS_MARSBOT_TRACK]});
+      setAllTracks(marsBot, 3);
+      setTrack(marsBot, Tag.VENUS, 2);
+      setTrack(marsBot, Tag.PLANT, run.plant);
 
-      expect(milestone.marsBotCanClaim(bot)).eq(run.expected);
+      expect(milestone.marsBotCanClaim(marsBot)).eq(run.expected);
     });
   }
 });

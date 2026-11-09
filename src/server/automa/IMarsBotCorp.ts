@@ -16,12 +16,12 @@ export type IMarsBotCorp = {
   readonly requiredExpansions?: ReadonlyArray<Expansion>;
   readonly draftPriority?: MarsBotDraftPriority;
   /** Runs once, right after the bot's corporation is chosen. */
-  setup?(bot: IMarsBot): void;
+  setup?(marsBot: IMarsBot): void;
   readonly effect?: MarsBotCorpEffect;
   /** A corp action taken at the start of every generation. */
-  roundStart?(bot: IMarsBot): void;
+  roundStart?(marsBot: IMarsBot): void;
   /** A corp action taken every generation, right before the action phase. */
-  beforeActionPhase?(bot: IMarsBot): void;
+  beforeActionPhase?(marsBot: IMarsBot): void;
   /**
    * The bonus card this corp puts in the action deck every generation.
    *

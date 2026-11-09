@@ -7,11 +7,11 @@ import {Resource} from '@/common/Resource';
 
 describe('Banker', () => {
   it('MarsBot scores its Building and Event tracks together', () => {
-    const bot = fakeMarsBot();
-    setTrack(bot, Tag.BUILDING, 3);
-    setTrack(bot, Tag.EVENT, 2);
+    const marsBot = fakeMarsBot();
+    setTrack(marsBot, Tag.BUILDING, 3);
+    setTrack(marsBot, Tag.EVENT, 2);
 
-    expect(new Banker().marsBotScore(bot)).eq(5);
+    expect(new Banker().marsBotScore(marsBot)).eq(5);
   });
 
   it('scores a player by M€ production', () => {

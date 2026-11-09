@@ -46,9 +46,9 @@ function emptyLayout(): Array<TrackAction | undefined> {
   return new Array(19).fill(undefined);
 }
 
-function makeResolver(game: IGame, marsBot: TestPlayer, human: TestPlayer, boardData: ReadonlyArray<TrackDefinition>, difficulty: 'easy' | 'normal' | 'hard' | 'brutal' = 'normal') {
+function makeResolver(game: IGame, botPlayer: TestPlayer, human: TestPlayer, boardData: ReadonlyArray<TrackDefinition>, difficulty: 'easy' | 'normal' | 'hard' | 'brutal' = 'normal') {
   const board = new MarsBotBoard(boardData);
-  return {board, resolver: new MarsBotTurnResolver(game, marsBot, human, board, difficulty)};
+  return {board, resolver: new MarsBotTurnResolver(game, botPlayer, human, board, difficulty)};
 }
 
 function mockCard(tags: Tag[], type: string = 'automated') {
@@ -61,80 +61,80 @@ describe('MarsBot Rules Compliance', () => {
   describe('Rule 2.6: Greenery track action places tile + raises oxygen + grants TR', () => {
     it('greenery action places a greenery tile', () => {
       const [game, human] = testGame(1);
-      const bot = TestPlayer.RED.newPlayer({name: 'bot'});
-      (bot as any).game = game;
+      const botPlayer = TestPlayer.RED.newPlayer({name: 'bot'});
+      (botPlayer as any).game = game;
       // Need a tile owned by bot for greenery placement rules
-      const spaces = game.board.getAvailableSpacesOnLand(bot);
-      game.simpleAddTile(bot, spaces[15], {tileType: TileType.CITY});
+      const spaces = game.board.getAvailableSpacesOnLand(botPlayer);
+      game.simpleAddTile(botPlayer, spaces[15], {tileType: TileType.CITY});
 
       const layout = emptyLayout();
       layout[1] = 'greenery';
-      const {resolver} = makeResolver(game, bot, human, makeBoard(layout));
+      const {resolver} = makeResolver(game, botPlayer, human, makeBoard(layout));
 
-      const greeneryBefore = game.board.getGreeneries(bot).length;
-      const trBefore = bot.terraformRating;
+      const greeneryBefore = game.board.getGreeneries(botPlayer).length;
+      const trBefore = botPlayer.terraformRating;
 
       resolver.resolveProjectCard(mockCard([Tag.BUILDING]));
 
-      expect(game.board.getGreeneries(bot).length).to.eq(greeneryBefore + 1);
+      expect(game.board.getGreeneries(botPlayer).length).to.eq(greeneryBefore + 1);
       // Greenery raises oxygen which raises TR
-      expect(bot.terraformRating).to.be.gt(trBefore);
+      expect(botPlayer.terraformRating).to.be.gt(trBefore);
     });
   });
 
   describe('Rule 2.6: Ocean track action places ocean + grants TR', () => {
     it('ocean action places an ocean tile and raises TR', () => {
       const [game, human] = testGame(1);
-      const bot = TestPlayer.RED.newPlayer({name: 'bot'});
-      (bot as any).game = game;
+      const botPlayer = TestPlayer.RED.newPlayer({name: 'bot'});
+      (botPlayer as any).game = game;
 
       const layout = emptyLayout();
       layout[1] = 'ocean';
-      const {resolver} = makeResolver(game, bot, human, makeBoard(layout));
+      const {resolver} = makeResolver(game, botPlayer, human, makeBoard(layout));
 
       const oceansBefore = game.board.getOceanSpaces().length;
-      const trBefore = bot.terraformRating;
+      const trBefore = botPlayer.terraformRating;
 
       resolver.resolveProjectCard(mockCard([Tag.BUILDING]));
 
       expect(game.board.getOceanSpaces().length).to.eq(oceansBefore + 1);
-      expect(bot.terraformRating).to.eq(trBefore + 1);
+      expect(botPlayer.terraformRating).to.eq(trBefore + 1);
     });
   });
 
   describe('Rule 2.6: City track action places city', () => {
     it('city action places a city tile', () => {
       const [game, human] = testGame(1);
-      const bot = TestPlayer.RED.newPlayer({name: 'bot'});
-      (bot as any).game = game;
+      const botPlayer = TestPlayer.RED.newPlayer({name: 'bot'});
+      (botPlayer as any).game = game;
 
       const layout = emptyLayout();
       layout[1] = 'city';
-      const {resolver} = makeResolver(game, bot, human, makeBoard(layout));
+      const {resolver} = makeResolver(game, botPlayer, human, makeBoard(layout));
 
-      const citiesBefore = game.board.getCities(bot).length;
+      const citiesBefore = game.board.getCities(botPlayer).length;
       resolver.resolveProjectCard(mockCard([Tag.BUILDING]));
-      expect(game.board.getCities(bot).length).to.eq(citiesBefore + 1);
+      expect(game.board.getCities(botPlayer).length).to.eq(citiesBefore + 1);
     });
   });
 
   describe('Rule 2.6: Temperature track action raises temp + grants TR', () => {
     it('temperature action raises temperature and TR', () => {
       const [game, human] = testGame(1);
-      const bot = TestPlayer.RED.newPlayer({name: 'bot'});
-      (bot as any).game = game;
+      const botPlayer = TestPlayer.RED.newPlayer({name: 'bot'});
+      (botPlayer as any).game = game;
 
       const layout = emptyLayout();
       layout[1] = 'temperature';
-      const {resolver} = makeResolver(game, bot, human, makeBoard(layout));
+      const {resolver} = makeResolver(game, botPlayer, human, makeBoard(layout));
 
       const tempBefore = game.getTemperature();
-      const trBefore = bot.terraformRating;
+      const trBefore = botPlayer.terraformRating;
 
       resolver.resolveProjectCard(mockCard([Tag.BUILDING]));
 
       expect(game.getTemperature()).to.eq(tempBefore + 2); // 1 step = 2°C
-      expect(bot.terraformRating).to.eq(trBefore + 1);
+      expect(botPlayer.terraformRating).to.eq(trBefore + 1);
     });
   });
 
@@ -143,12 +143,12 @@ describe('MarsBot Rules Compliance', () => {
   describe('Rule 2.7: Placement bonuses give MC to megacredits', () => {
     it('tile placement adds 1 MC per bonus icon to megacredits', () => {
       const [game, human] = testGame(1);
-      const bot = TestPlayer.RED.newPlayer({name: 'bot'});
-      (bot as any).game = game;
+      const botPlayer = TestPlayer.RED.newPlayer({name: 'bot'});
+      (botPlayer as any).game = game;
 
       const layout = emptyLayout();
       layout[1] = 'city';
-      const {resolver} = makeResolver(game, bot, human, makeBoard(layout));
+      const {resolver} = makeResolver(game, botPlayer, human, makeBoard(layout));
 
       // Find a space with bonus icons
       const spaceWithBonus = game.board.spaces.find((s) =>
@@ -166,16 +166,16 @@ describe('MarsBot Rules Compliance', () => {
 
     it('tile adjacent to ocean gives 2 MC per adjacent ocean', () => {
       const [game, human] = testGame(1);
-      const bot = TestPlayer.RED.newPlayer({name: 'bot'});
-      (bot as any).game = game;
+      const botPlayer = TestPlayer.RED.newPlayer({name: 'bot'});
+      (botPlayer as any).game = game;
 
       // Place an ocean tile first
-      const oceanSpaces = game.board.getAvailableSpacesForOcean(bot);
-      game.simpleAddTile(bot, oceanSpaces[0], {tileType: TileType.OCEAN});
+      const oceanSpaces = game.board.getAvailableSpacesForOcean(botPlayer);
+      game.simpleAddTile(botPlayer, oceanSpaces[0], {tileType: TileType.OCEAN});
 
       const layout = emptyLayout();
       layout[1] = 'city';
-      const {resolver} = makeResolver(game, bot, human, makeBoard(layout));
+      const {resolver} = makeResolver(game, botPlayer, human, makeBoard(layout));
 
       const mcBefore = resolver.megacredits;
       resolver.resolveProjectCard(mockCard([Tag.BUILDING]));
@@ -189,37 +189,37 @@ describe('MarsBot Rules Compliance', () => {
   describe('Rule 2.5: Failed Action scenarios', () => {
     it('greenery action with no available space = failed action', () => {
       const [game, human] = testGame(1);
-      const bot = TestPlayer.RED.newPlayer({name: 'bot'});
-      (bot as any).game = game;
+      const botPlayer = TestPlayer.RED.newPlayer({name: 'bot'});
+      (botPlayer as any).game = game;
 
       // Fill all land spaces
       for (const s of game.board.spaces) {
         if (s.tile === undefined && s.spaceType === SpaceType.LAND) {
-          game.simpleAddTile(bot, s, {tileType: TileType.GREENERY});
+          game.simpleAddTile(botPlayer, s, {tileType: TileType.GREENERY});
         }
       }
 
       const layout = emptyLayout();
       layout[1] = 'greenery';
-      const {resolver} = makeResolver(game, bot, human, makeBoard(layout));
+      const {resolver} = makeResolver(game, botPlayer, human, makeBoard(layout));
       resolver.resolveProjectCard(mockCard([Tag.BUILDING]));
       expect(resolver.megacredits).to.eq(5);
     });
 
     it('city action with no available space = failed action', () => {
       const [game, human] = testGame(1);
-      const bot = TestPlayer.RED.newPlayer({name: 'bot'});
-      (bot as any).game = game;
+      const botPlayer = TestPlayer.RED.newPlayer({name: 'bot'});
+      (botPlayer as any).game = game;
 
       // Fill all spaces with cities (impossible to place another city)
-      const availableSpaces = game.board.getAvailableSpacesOnLand(bot);
+      const availableSpaces = game.board.getAvailableSpacesOnLand(botPlayer);
       for (const s of availableSpaces) {
-        game.simpleAddTile(bot, s, {tileType: TileType.CITY});
+        game.simpleAddTile(botPlayer, s, {tileType: TileType.CITY});
       }
 
       const layout = emptyLayout();
       layout[1] = 'city';
-      const {resolver} = makeResolver(game, bot, human, makeBoard(layout));
+      const {resolver} = makeResolver(game, botPlayer, human, makeBoard(layout));
       resolver.resolveProjectCard(mockCard([Tag.BUILDING]));
       expect(resolver.megacredits).to.eq(5);
     });
@@ -230,12 +230,12 @@ describe('MarsBot Rules Compliance', () => {
   describe('Rule 2.6: Award funding tiebreakers', () => {
     it('MarsBot gets failed action when tied but not ahead on any award', () => {
       const [game, human] = testGame(1);
-      const bot = TestPlayer.RED.newPlayer({name: 'bot'});
-      (bot as any).game = game;
+      const botPlayer = TestPlayer.RED.newPlayer({name: 'bot'});
+      (botPlayer as any).game = game;
       // Both at 0 for all awards — MarsBot is not AHEAD
       const layout = emptyLayout();
       layout[1] = 'award';
-      const {resolver} = makeResolver(game, bot, human, makeBoard(layout));
+      const {resolver} = makeResolver(game, botPlayer, human, makeBoard(layout));
 
       resolver.resolveProjectCard(mockCard([Tag.BUILDING]));
       expect(resolver.megacredits).to.eq(5); // Failed action
