@@ -3,6 +3,7 @@ import {MarsBotBonusDeck} from '../../src/server/automa/MarsBotBonusDeck';
 import {SeededRandom} from '../../src/common/utils/Random';
 import {createBaseBonusCards, createBonusCard} from '../../src/server/automa/MarsBotBonusCard';
 import {BonusCardId} from '../../src/common/automa/AutomaTypes';
+import {CardName} from '../../src/common/cards/CardName';
 import {Asteroid} from '../../src/server/cards/base/Asteroid';
 import {Tardigrades} from '../../src/server/cards/base/Tardigrades';
 
@@ -17,6 +18,12 @@ describe('MarsBotBonusDeck', () => {
   it('starts with the 8 base cards in the draw pile', () => {
     expect(deck.drawPile.length).to.eq(8);
     expect(deck.discardPile.length).to.eq(0);
+  });
+
+  it('createBonusCard creates a card with correct ID and name', () => {
+    const card = createBonusCard(BonusCardId.B23_RAPID_SPROUTING);
+    expect(card.id).to.eq(BonusCardId.B23_RAPID_SPROUTING);
+    expect(card.name).to.eq(CardName.AUTOMA_RAPID_SPROUTING);
   });
 
   for (const run of [

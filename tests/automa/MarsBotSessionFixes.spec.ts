@@ -11,7 +11,6 @@ import {Phase} from '../../src/common/Phase';
 import {Resource} from '../../src/common/Resource';
 import {getMcPerVP} from '../../src/server/automa/MarsBotScoring';
 import {BonusCardId} from '../../src/common/automa/AutomaTypes';
-import {createBaseBonusCards} from '../../src/server/automa/MarsBotBonusCard';
 import {cast, inplaceRemove} from '../../src/common/utils/utils';
 import {GlobalParameter} from '../../src/common/GlobalParameter';
 import {Mayor} from '../../src/server/milestones/Mayor';
@@ -923,15 +922,6 @@ describe('MarsBotVenusNext', () => {
 
       expect(game.claimedMilestones[2].milestone.name).to.eq('Terraformer');
     });
-
-    it('B04 Overachievement', () => {
-      const {game, marsBot} = setUpTie();
-      const b04 = createBaseBonusCards().find((c) => c.id === BonusCardId.B04_OVERACHIEVEMENT)!;
-
-      marsBot['bonusResolver'].resolve(b04);
-
-      expect(game.claimedMilestones.map((c) => c.milestone.name)).deep.eq(['Terraformer']);
-    });
   });
 
   it('Hoverlord milestone tiebreaker: considered last', () => {
@@ -1015,95 +1005,6 @@ describe('MarsBotVenusNext', () => {
     game.automaHooks!.handleResearchPhase();
     // Not enough floaters, should not spend
     expect(marsBot.floaters).to.eq(4);
-  });
-
-  it('B15 Venus branch triggers at 1 step from Venus bonus at 8%', () => {
-    const {game, marsBot} = createVenusAutomaGame();
-    // Venus at 6% → 1 step from 8% bonus
-    (game as any).venusScaleLevel = 6;
-    // Need to access private method - use the bonus card directly
-    const b15 = marsBot.bonusDeck.drawPile.find((c) => c.id === BonusCardId.B15_LOBBYISTS_VENUS);
-    if (b15 === undefined) {
-      // B15 might have been drawn already, create one
-      const {bonusCard: bonusCardFn} = require('../../src/server/automa/MarsBotBonusCard');
-      const card = bonusCardFn(BonusCardId.B15_LOBBYISTS_VENUS, 'Lobbyists (Venus)');
-      // Set temp/oxygen far from bonuses so Venus branch is reached
-      (game as any).temperature = -30 + 26; // = -4, far from any bonus
-      (game as any).oxygenLevel = 5; // far from 8% bonus
-      (marsBot as any).bonusResolver.resolve(card);
-      expect(game.getVenusScaleLevel()).to.be.greaterThan(6);
-    }
-  });
-
-  it('B15 Venus branch triggers at 2 steps from Venus bonus at 16%', () => {
-    const {game, marsBot} = createVenusAutomaGame();
-    // Venus at 12% → 2 steps from 16% bonus
-    (game as any).venusScaleLevel = 12;
-    (game as any).temperature = 8; // maxed
-    (game as any).oxygenLevel = 14; // maxed
-    const {bonusCard: bonusCardFn} = require('../../src/server/automa/MarsBotBonusCard');
-    const card = bonusCardFn(BonusCardId.B15_LOBBYISTS_VENUS, 'Lobbyists (Venus)');
-    (marsBot as any).bonusResolver.resolve(card);
-    // Venus should have been raised 2 steps: 12 → 16
-    expect(game.getVenusScaleLevel()).to.eq(16);
-  });
-
-  it('B15 Venus branch does NOT destroy card', () => {
-    const {game, marsBot} = createVenusAutomaGame();
-    (game as any).venusScaleLevel = 26; // 2 steps from 30% max
-    (game as any).temperature = 8;
-    (game as any).oxygenLevel = 14;
-    const {bonusCard: bonusCardFn} = require('../../src/server/automa/MarsBotBonusCard');
-    const card = bonusCardFn(BonusCardId.B15_LOBBYISTS_VENUS, 'Lobbyists (Venus)');
-    const destroyed = (marsBot as any).bonusResolver.resolve(card);
-    expect(game.getVenusScaleLevel()).to.eq(30);
-    expect(destroyed).to.be.false;
-  });
-
-  it('B15 temp branch destroys card', () => {
-    const {game, marsBot} = createVenusAutomaGame();
-    // Temperature at -26 → 1 step from -24 (heat bonus)
-    (game as any).temperature = -26;
-    const {bonusCard: bonusCardFn} = require('../../src/server/automa/MarsBotBonusCard');
-    const card = bonusCardFn(BonusCardId.B15_LOBBYISTS_VENUS, 'Lobbyists (Venus)');
-    const destroyed = (marsBot as any).bonusResolver.resolve(card);
-    expect(game.getTemperature()).to.eq(-22); // raised 2 steps
-    expect(destroyed).to.be.true;
-  });
-
-  it('B16 even generation advances Martian parameter without TR', () => {
-    const {game, marsBot} = createVenusAutomaGame();
-    (game as any).generation = 4; // even
-    const trBefore = marsBot.player.terraformRating;
-    const {bonusCard: bonusCardFn} = require('../../src/server/automa/MarsBotBonusCard');
-    const card = bonusCardFn(BonusCardId.B16_GOVERNMENT_INTERVENTION, 'Government Intervention');
-    (marsBot as any).bonusResolver.resolve(card);
-    // TR should not have changed (reversed by withoutTRGain)
-    expect(marsBot.player.terraformRating).to.eq(trBefore);
-  });
-
-  it('B16 odd generation raises Venus without TR', () => {
-    const {game, marsBot} = createVenusAutomaGame();
-    (game as any).generation = 3; // odd
-    const venusBefore = game.getVenusScaleLevel();
-    const trBefore = marsBot.player.terraformRating;
-    const {bonusCard: bonusCardFn} = require('../../src/server/automa/MarsBotBonusCard');
-    const card = bonusCardFn(BonusCardId.B16_GOVERNMENT_INTERVENTION, 'Government Intervention');
-    (marsBot as any).bonusResolver.resolve(card);
-    expect(game.getVenusScaleLevel()).to.eq(venusBefore + 2);
-    expect(marsBot.player.terraformRating).to.eq(trBefore);
-  });
-
-  it('B16 even gen with Venus complete still advances Martian parameter', () => {
-    const {game, marsBot} = createVenusAutomaGame();
-    (game as any).generation = 3; // odd, but Venus complete → should use Martian branch
-    (game as any).venusScaleLevel = 30;
-    const venusBefore = game.getVenusScaleLevel();
-    const {bonusCard: bonusCardFn} = require('../../src/server/automa/MarsBotBonusCard');
-    const card = bonusCardFn(BonusCardId.B16_GOVERNMENT_INTERVENTION, 'Government Intervention');
-    (marsBot as any).bonusResolver.resolve(card);
-    // Venus should not change (already maxed, used Martian branch instead)
-    expect(game.getVenusScaleLevel()).to.eq(venusBefore);
   });
 
   it('Venus track cannot advance past layout length', () => {

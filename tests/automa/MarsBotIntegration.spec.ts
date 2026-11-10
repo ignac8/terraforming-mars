@@ -175,21 +175,6 @@ describe('MarsBot Integration', () => {
     });
   });
 
-  describe('Corporate Competition chain (B08 → B03)', () => {
-    it('B08 draws another bonus card when it cannot resolve', () => {
-      // This tests that the chain works: B08 can't help → draws B03 (R&D) → resolves project card
-      // We verify the chain doesn't crash
-      const {marsBot} = createAutomaGame();
-      // B08 needs funded awards and 5+ MC to try helping
-      // With no funded awards, it should draw another bonus card
-      const b08 = marsBot.bonusDeck.drawPile.find((c) => c.id === 'B08');
-      if (b08) {
-        // Calling resolve should not crash even with no funded awards
-        marsBot['bonusResolver'].resolve(b08);
-      }
-    });
-  });
-
   describe('MarsBot turn does not crash', () => {
     it('MarsBot can take a full turn with project card', () => {
       const {marsBot} = createAutomaGame();

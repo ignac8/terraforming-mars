@@ -15,6 +15,8 @@ import {Asteroid} from '../../src/server/cards/base/Asteroid';
 import {EarthOffice} from '../../src/server/cards/base/EarthOffice';
 import {SpaceStation} from '../../src/server/cards/base/SpaceStation';
 import {SearchForLife} from '../../src/server/cards/base/SearchForLife';
+import {maxTracks} from './bonusCards/BonusCardGame';
+import {createAutomaGame} from './corps/CorpGame';
 
 /** Helper: create a marsBotBoard where track 1 has a specific action at a given position, rest null. */
 function makeBoardWithTrack1Action(pos: number, action: string): ReadonlyArray<TrackDefinition> {
@@ -199,6 +201,15 @@ describe('MarsBotTurnResolver', () => {
       r.resolveProjectCard(new Algae() as IProjectCard); // 5 MC
       r.resolveProjectCard(new Algae() as IProjectCard); // 5 MC
       expect(r.megacredits).to.eq(10);
+    });
+
+    // A bonus card that can't resolve takes no Failed Action (rulebook A p.5 B.a; BGG 3599965 and
+    // 3623553, njshaw2). Project cards still do.
+    it('a project card tag still takes the Failed Action when advancing a maxed track', () => {
+      const {marsBot} = createAutomaGame();
+      maxTracks(marsBot);
+      marsBot.turnResolver.advanceTrack(0);
+      expect(marsBot.turnResolver.megacredits).to.eq(5);
     });
   });
 

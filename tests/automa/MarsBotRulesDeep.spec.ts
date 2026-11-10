@@ -5,29 +5,15 @@ import {IGame} from '../../src/server/IGame';
 import {MarsBot} from '../../src/server/automa/MarsBot';
 import {MarsBotBoard} from '../../src/server/automa/MarsBotBoard';
 import {MarsBotTurnResolver} from '../../src/server/automa/MarsBotTurnResolver';
-import {MarsBotBonusDeck} from '../../src/server/automa/MarsBotBonusDeck';
-import {MarsBotBonusResolver} from '../../src/server/automa/MarsBotBonusResolver';
 import {MarsBotTilePlacer} from '../../src/server/automa/MarsBotTilePlacer';
 import {THARSIS_MARSBOT_BOARD} from '../../src/server/automa/boards/TharsisMarsBot';
-import {TrackAction, TrackDefinition, BonusCardId} from '../../src/common/automa/AutomaTypes';
-import {createBaseBonusCards, createBonusCard} from '../../src/server/automa/MarsBotBonusCard';
-import {SeededRandom} from '../../src/common/utils/Random';
+import {TrackAction, TrackDefinition} from '../../src/common/automa/AutomaTypes';
 import {BoardName} from '../../src/common/boards/BoardName';
 import {Tag} from '../../src/common/cards/Tag';
 import {TileType} from '../../src/common/TileType';
-import {Pets} from '../../src/server/cards/base/Pets';
-import {Birds} from '../../src/server/cards/base/Birds';
-import {Ants} from '../../src/server/cards/base/Ants';
-import {Fish} from '../../src/server/cards/base/Fish';
-import {Tardigrades} from '../../src/server/cards/base/Tardigrades';
-import {Mine} from '../../src/server/cards/base/Mine';
-import {GHGProducingBacteria} from '../../src/server/cards/base/GHGProducingBacteria';
-import {ColonyName} from '../../src/common/colonies/ColonyName';
 import {fakeCard, maxOutOceans, setOxygenLevel, setTemperature, setVenusScaleLevel} from '../TestingUtils';
 import {FAILED_ACTION_MC} from '../../src/common/automa/AutomaTypes';
 import {MAX_TEMPERATURE} from '../../src/common/constants';
-import {SpaceId} from '../../src/common/Types';
-import {SpaceType} from '../../src/common/boards/SpaceType';
 
 function createAutomaGame(difficulty: 'easy' | 'normal' | 'hard' | 'brutal' = 'normal'): {game: IGame, human: TestPlayer, marsBot: MarsBot} {
   const [game, human] = testGame(1, {automa: true, automaDifficulty: difficulty, boardName: BoardName.THARSIS});
@@ -142,171 +128,6 @@ describe('MarsBot Deep Rules Tests', () => {
     });
   });
 
-  // ---- Page 6: B02 Invasive Species edge cases ----
-
-  describe('B02 Invasive Species (page 6)', () => {
-    it('MarsBot gains 5 MC even when human has no animals/microbes', () => {
-      const {game, human, marsBot} = createAutomaGame();
-      // Human has no cards with resources
-
-      const cards = createBaseBonusCards();
-      const b02 = cards.find((c) => c.id === BonusCardId.B02_INVASIVE_SPECIES)!;
-      const tilePlacer = new MarsBotTilePlacer(game, marsBot.player, human);
-      const bonusDeck = MarsBotBonusDeck.create(new SeededRandom(99));
-      const bonusResolver = new MarsBotBonusResolver(game, marsBot.player, human, marsBot.turnResolver, bonusDeck, tilePlacer);
-
-      bonusResolver.resolve(b02);
-      expect(marsBot.turnResolver.megacredits).to.eq(5);
-    });
-
-    function invasiveSpecies() {
-      return createBaseBonusCards().find((c) => c.id === BonusCardId.B02_INVASIVE_SPECIES)!;
-    }
-
-    it('skips Pets, whose animals cannot be removed', () => {
-      const {human, marsBot} = createAutomaGame();
-      const pets = new Pets();
-      pets.resourceCount = 6; // 3 VP
-      const birds = new Birds();
-      birds.resourceCount = 1; // 1 VP
-      human.playedCards.push(pets, birds);
-
-      marsBot['bonusResolver'].resolve(invasiveSpecies());
-
-      expect(pets.resourceCount).to.eq(6);
-      expect(birds.resourceCount).to.eq(0);
-    });
-
-    // BGG 3360797 (TDaver): the cube worth the most VP, cards scoring per resource first
-    it('removes the cube worth the most VP, not the card scoring the most', () => {
-      const {human, marsBot} = createAutomaGame();
-      const ants = new Ants();
-      ants.resourceCount = 4; // 2 VP, 1/2 VP per microbe
-      const birds = new Birds();
-      birds.resourceCount = 1; // 1 VP per animal
-      human.playedCards.push(ants, birds);
-
-      marsBot['bonusResolver'].resolve(invasiveSpecies());
-
-      expect(birds.resourceCount).to.eq(0);
-      expect(ants.resourceCount).to.eq(4);
-    });
-
-    it('takes a scoring cube before one on a card that scores no VP', () => {
-      const {human, marsBot} = createAutomaGame();
-      const bacteria = new GHGProducingBacteria();
-      bacteria.resourceCount = 3;
-      const tardigrades = new Tardigrades();
-      tardigrades.resourceCount = 3; // 0 VP now, 1/4 VP per microbe
-      human.playedCards.push(bacteria, tardigrades);
-
-      marsBot['bonusResolver'].resolve(invasiveSpecies());
-
-      expect(tardigrades.resourceCount).to.eq(2);
-      expect(bacteria.resourceCount).to.eq(3);
-    });
-
-    it('breaks a tie by flipping a project card', () => {
-      const {game, human, marsBot} = createAutomaGame();
-      const birds = new Birds();
-      birds.resourceCount = 1;
-      const fish = new Fish();
-      fish.resourceCount = 1;
-      human.playedCards.push(birds, fish);
-      game.projectDeck.drawPile.push(new Mine()); // Cost 4 counts to the 2nd of 2
-
-      marsBot['bonusResolver'].resolve(invasiveSpecies());
-
-      expect(birds.resourceCount).to.eq(1);
-      expect(fish.resourceCount).to.eq(0);
-    });
-
-    it('with Venus Next gains 2 M€ and 1 floater instead of 5 M€', () => {
-      const [game] = testGame(1, {automa: true, venusNextExtension: true, boardName: BoardName.THARSIS});
-      const marsBot = game.automaHooks!.marsBot;
-
-      marsBot['bonusResolver'].resolve(invasiveSpecies());
-
-      expect(marsBot.turnResolver.megacredits).to.eq(2);
-      expect(marsBot.floaters).to.eq(1);
-    });
-
-    it('with Colonies and no Venus Next puts the floater in Titan storage', () => {
-      const [game] = testGame(1, {
-        automa: true, coloniesExtension: true, boardName: BoardName.THARSIS,
-        customColoniesList: [ColonyName.TITAN, ColonyName.CERES, ColonyName.LUNA, ColonyName.IO, ColonyName.GANYMEDE],
-      });
-      const marsBot = game.automaHooks!.marsBot;
-
-      marsBot['bonusResolver'].resolve(invasiveSpecies());
-
-      expect(marsBot.turnResolver.megacredits).to.eq(2);
-      expect(marsBot.shippingBoard.storage.get(ColonyName.TITAN)).to.eq(1);
-    });
-
-    // Nick, BGG 3341542: without Venus Next and Titan the floater is ignored; the card's 2 M€ stays
-    it('with Colonies, no Venus Next and no Titan gains 2 M€ and ignores the floater', () => {
-      const [game] = testGame(1, {
-        automa: true, coloniesExtension: true, boardName: BoardName.THARSIS,
-        customColoniesList: [ColonyName.CALLISTO, ColonyName.CERES, ColonyName.LUNA, ColonyName.IO, ColonyName.GANYMEDE],
-      });
-      const marsBot = game.automaHooks!.marsBot;
-
-      marsBot['bonusResolver'].resolve(invasiveSpecies());
-
-      expect(marsBot.turnResolver.megacredits).to.eq(2);
-      expect(marsBot.shippingBoard.storage.get(ColonyName.TITAN) ?? 0).to.eq(0);
-    });
-  });
-
-  describe('B16 Government Intervention', () => {
-    it('gives MarsBot neither TR nor M€, even from a temperature bonus', () => {
-      const [game] = testGame(1, {automa: true, venusNextExtension: true, boardName: BoardName.THARSIS});
-      const marsBot = game.automaHooks!.marsBot;
-      game.generation = 2;
-      setOxygenLevel(game, 14);
-      maxOutOceans(game.players[0]);
-      setTemperature(game, -26);
-      const tr = marsBot.player.terraformRating;
-      const mc = marsBot.turnResolver.megacredits;
-
-      marsBot['bonusResolver'].resolve(createBonusCard(BonusCardId.B16_GOVERNMENT_INTERVENTION));
-
-      expect(game.getTemperature()).to.eq(-24);
-      expect(marsBot.player.terraformRating).to.eq(tr);
-      expect(marsBot.turnResolver.megacredits).to.eq(mc);
-    });
-
-    it('raises Venus instead when every Martian parameter is complete on an even generation', () => {
-      const [game] = testGame(1, {automa: true, venusNextExtension: true, boardName: BoardName.THARSIS});
-      const marsBot = game.automaHooks!.marsBot;
-      game.generation = 2;
-      setOxygenLevel(game, 14);
-      maxOutOceans(game.players[0]);
-      setTemperature(game, 8);
-      const venus = game.getVenusScaleLevel();
-
-      marsBot['bonusResolver'].resolve(createBonusCard(BonusCardId.B16_GOVERNMENT_INTERVENTION));
-
-      expect(game.getVenusScaleLevel()).to.eq(venus + 2);
-    });
-
-    it('advances the parameter with the most steps remaining, not the lowest fraction done', () => {
-      const [game] = testGame(1, {automa: true, venusNextExtension: true, boardName: BoardName.THARSIS});
-      const marsBot = game.automaHooks!.marsBot;
-      game.generation = 2;
-      // Oxygen 7 is 50% done with 7 steps left, temperature -10 is 52% done with 9 steps left
-      setOxygenLevel(game, 7);
-      maxOutOceans(game.players[0]);
-      setTemperature(game, -10);
-
-      marsBot['bonusResolver'].resolve(createBonusCard(BonusCardId.B16_GOVERNMENT_INTERVENTION));
-
-      expect(game.getTemperature()).to.eq(-8);
-      expect(game.getOxygenLevel()).to.eq(7);
-    });
-  });
-
   // ---- Page 8: MarsBot does NOT pay for milestones or awards ----
 
   describe('MarsBot does not pay for milestones or awards (page 8)', () => {
@@ -369,43 +190,6 @@ describe('MarsBot Deep Rules Tests', () => {
       const {marsBot} = createAutomaGame();
       // 8 cards - 1 drawn for action deck = 7 remaining
       expect(marsBot.bonusDeck.drawPile.length).to.eq(7);
-    });
-  });
-
-  // ---- Page 6: B06 Lobbyists detailed options ----
-
-  describe('B06 Lobbyists detailed options (page 6-7)', () => {
-    it('option (a): temp 1-2 from completion → raise 2 + destroy', () => {
-      const {game, human, marsBot} = createAutomaGame();
-      // Temperature at +4 (2 steps from max +8)
-      (game as any).temperature = 4;
-
-      const cards = createBaseBonusCards();
-      const b06 = cards.find((c) => c.id === BonusCardId.B06_LOBBYISTS)!;
-      const tilePlacer = new MarsBotTilePlacer(game, marsBot.player, human);
-      const bonusDeck = MarsBotBonusDeck.create(new SeededRandom(99));
-      const bonusResolver = new MarsBotBonusResolver(game, marsBot.player, human, marsBot.turnResolver, bonusDeck, tilePlacer);
-
-      const destroyed = bonusResolver.resolve(b06);
-      expect(game.getTemperature()).to.eq(8); // Raised 2 steps (4°C)
-      expect(destroyed).to.be.true;
-    });
-
-    it('option (d): advance furthest parameter, measured in steps remaining', () => {
-      const {game, human, marsBot} = createAutomaGame();
-      // From the start temperature has 19 steps left, oxygen 14 and oceans 9
-
-      const cards = createBaseBonusCards();
-      const b06 = cards.find((c) => c.id === BonusCardId.B06_LOBBYISTS)!;
-      const tilePlacer = new MarsBotTilePlacer(game, marsBot.player, human);
-      const bonusDeck = MarsBotBonusDeck.create(new SeededRandom(99));
-      const bonusResolver = new MarsBotBonusResolver(game, marsBot.player, human, marsBot.turnResolver, bonusDeck, tilePlacer);
-
-      const tempBefore = game.getTemperature();
-      const destroyed = bonusResolver.resolve(b06);
-      // None of a/b/c apply, so option d fires
-      expect(game.getTemperature()).to.eq(tempBefore + 2);
-      expect(destroyed).to.be.false; // Option d does NOT destroy
     });
   });
 
@@ -738,43 +522,6 @@ describe('MarsBot Deep Rules Tests', () => {
     });
   });
 
-  describe('B04 Overachievement uses the claim tiebreakers (page 7)', () => {
-    it('claims the milestone the player also meets, not the first one', () => {
-      const {game, human, marsBot} = createAutomaGame();
-      marsBot.player.setTerraformRating(35);
-      const land = game.board.getAvailableSpacesOnLand(marsBot.player);
-      for (const i of [30, 31, 32]) {
-        game.simpleAddTile(marsBot.player, land[i], {tileType: TileType.GREENERY});
-      }
-      for (const i of [40, 41, 42]) {
-        game.simpleAddTile(human, land[i], {tileType: TileType.GREENERY});
-      }
-      const b04 = createBaseBonusCards().find((c) => c.id === BonusCardId.B04_OVERACHIEVEMENT)!;
-
-      const destroyed = marsBot['bonusResolver'].resolve(b04);
-
-      expect(destroyed).is.true;
-      expect(game.claimedMilestones.map((c) => c.milestone.name)).deep.eq(['Gardener']);
-    });
-  });
-
-  describe('B06 Lobbyists ocean placement tiebreakers (page 7)', () => {
-    it('breaks the tie between ocean spaces by placement bonus icons', () => {
-      const {game, human, marsBot} = createAutomaGame();
-      (game as any).temperature = -30;
-      // Spaces 07 (no bonus) and 43 (one plant) each touch two oceans; 07 comes first on the board.
-      for (const id of ['13', '06', '34', '44']) {
-        game.simpleAddTile(human, game.board.getSpaceOrThrow(id as SpaceId), {tileType: TileType.OCEAN});
-      }
-      const b06 = createBaseBonusCards().find((c) => c.id === BonusCardId.B06_LOBBYISTS)!;
-
-      marsBot['bonusResolver'].resolve(b06);
-
-      expect(game.board.getSpaceOrThrow('43' as SpaceId).tile?.tileType).to.eq(TileType.OCEAN);
-      expect(game.board.getSpaceOrThrow('07' as SpaceId).tile).is.undefined;
-    });
-  });
-
   describe('Random placement tiebreak counts from the first space (page 9)', () => {
     function pick(cost: number, count: number): number {
       const {game, human, marsBot} = createAutomaGame();
@@ -810,15 +557,6 @@ describe('MarsBot Deep Rules Tests', () => {
       expect(marsBot.playedProjectCards).deep.eq([card]);
     });
 
-    it('records cards resolved by Research and Development', () => {
-      const {marsBot} = createAutomaGame();
-      const rnd = createBaseBonusCards().find((c) => c.id === BonusCardId.B03_RESEARCH_AND_DEVELOPMENT)!;
-
-      marsBot['bonusResolver'].resolve(rnd);
-
-      expect(marsBot.playedProjectCards).to.have.length(1);
-    });
-
     it('records cards resolved by corporation effects', () => {
       const {marsBot} = createAutomaGame();
 
@@ -827,32 +565,9 @@ describe('MarsBot Deep Rules Tests', () => {
 
       expect(marsBot.playedProjectCards).to.have.length(2);
     });
-
-    it('records the project card in a Neural Instance fallback', () => {
-      const {marsBot} = createAutomaGame();
-      marsBot['tilePlacer'].findNeuralInstanceSpace = () => undefined;
-      const b07 = createBaseBonusCards().find((c) => c.id === BonusCardId.B07_LOCAL_NEURAL_INSTANCE)!;
-
-      marsBot['bonusResolver'].resolve(b07);
-
-      expect(marsBot.playedProjectCards).to.have.length(1);
-    });
   });
 
   describe('Placement bonuses for every tile (page 9)', () => {
-    it('Neural Instance gains 1 MC per covered icon', () => {
-      const {game, marsBot} = createAutomaGame();
-      const space = game.board.spaces.find((s) => s.bonus.length >= 2 && s.spaceType === SpaceType.LAND)!;
-      marsBot['tilePlacer'].findNeuralInstanceSpace = () => space;
-      const b07 = createBaseBonusCards().find((c) => c.id === BonusCardId.B07_LOCAL_NEURAL_INSTANCE)!;
-
-      marsBot['bonusResolver'].resolve(b07);
-
-      const expected = marsBot['tilePlacer'].getTotalPlacementMC(space);
-      expect(expected).to.be.gte(2);
-      expect(marsBot.turnResolver.megacredits).to.eq(expected);
-    });
-
     it('final greenery gains the placement MC', () => {
       const {game, marsBot} = createAutomaGame();
       const spaces = game.board.getAvailableSpacesOnLand(marsBot.player);
@@ -944,17 +659,6 @@ describe('MarsBot Deep Rules Tests', () => {
       expect(marsBot.turnResolver.megacredits).to.eq(2);
       expect(marsBot.player.cardsInHand).has.length(hand);
       expect(game.projectDeck.drawPile).has.length(deck);
-    });
-
-    it('gains nothing from Government Intervention, which pays no M€ from bonuses', () => {
-      const {game, marsBot, hand} = venusGame();
-      game.generation = 3;
-
-      marsBot['bonusResolver'].resolve(createBonusCard(BonusCardId.B16_GOVERNMENT_INTERVENTION));
-
-      expect(game.getVenusScaleLevel()).to.eq(8);
-      expect(marsBot.turnResolver.megacredits).to.eq(0);
-      expect(marsBot.player.cardsInHand).has.length(hand);
     });
   });
 });

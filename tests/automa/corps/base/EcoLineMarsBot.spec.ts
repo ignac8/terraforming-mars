@@ -5,9 +5,12 @@ import {CardName} from '@/common/cards/CardName';
 import {Game} from '@/server/Game';
 import {MarsBot} from '@/server/automa/MarsBot';
 import {createBonusCard} from '@/server/automa/MarsBotBonusCard';
+import {MarsBotBonusCard} from '@/server/automa/MarsBotBonusCard';
+import {getMarsBotCorp} from '@/server/automa/corps/MarsBotCorpRegistry';
 import {ECOLINE_MARSBOT_CORP} from '@/server/automa/corps/base/EcoLineMarsBot';
 import {runAllActions} from '../../../TestingUtils';
 import {chooseSource, createCorpFaqGame, resetCorpRegistry} from '../CorpGame';
+import {createAutomaGame} from '../CorpGame';
 import {recordingMarsBot} from '../RecordingMarsBot';
 
 function rapidSprouting(marsBot: MarsBot): void {
@@ -106,5 +109,16 @@ describe('EcoLineMarsBot', () => {
 
     expect(restored.getCorpState('plantResources')).eq(1);
     expect(restored.corpSpecificState.has('plantOnCard')).is.false;
+  });
+
+  it('adds Rapid Sprouting to the action deck each generation', () => {
+    const {marsBot} = createAutomaGame();
+    const corp = getMarsBotCorp(CardName.ECOLINE)!;
+    marsBot.setCorpAndSetup(corp);
+
+    const deckBefore = marsBot.actionDeck.length;
+    corp.beforeActionPhase!(marsBot);
+    expect(marsBot.actionDeck.length).to.eq(deckBefore + 1);
+    expect(marsBot.actionDeck.map((c) => (c as MarsBotBonusCard).id)).to.include(BonusCardId.B23_RAPID_SPROUTING);
   });
 });

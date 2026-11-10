@@ -60,4 +60,20 @@ describe('TeractorMarsBot', () => {
     expect(marsBot.turnResolver.megacredits).to.eq(mc + 2);
     expect(marsBot.player.terraformRating).to.eq(tr);
   });
+
+  it('replaces the transparent cubes with 18 white cubes on track 6', () => {
+    const corp = getMarsBotCorp(CardName.TERACTOR)!;
+    expect(corp.trackCubes!.length).to.eq(18);
+    expect(corp.trackCubes!.every((c: any) => c.trackIndex === 5 && c.cubeType === 'white')).to.be.true;
+  });
+
+  it('gains 2 M€ per Earth track advance', () => {
+    const {marsBot} = createAutomaGame();
+    const corp = getMarsBotCorp(CardName.TERACTOR)!;
+    marsBot.setCorpAndSetup(corp);
+    const mcBefore = marsBot.turnResolver.megacredits;
+    // Trigger white cube on Earth track (track 6)
+    corp.effect!.onTrackCubeTrigger!(marsBot, 5, 1, 'white');
+    expect(marsBot.turnResolver.megacredits).to.eq(mcBefore + 2);
+  });
 });

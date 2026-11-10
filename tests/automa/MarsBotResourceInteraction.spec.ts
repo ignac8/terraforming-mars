@@ -6,7 +6,6 @@ import {MarsBot} from '../../src/server/automa/MarsBot';
 import {BoardName} from '../../src/common/boards/BoardName';
 import {Resource} from '../../src/common/Resource';
 import {ProtectedHabitats} from '../../src/server/cards/base/ProtectedHabitats';
-import {AsteroidDeflectionSystem} from '../../src/server/cards/promo/AsteroidDeflectionSystem';
 import {SponsoredAcademies} from '../../src/server/cards/venusNext/SponsoredAcademies';
 import {BonusCardId} from '../../src/common/automa/AutomaTypes';
 import {createBonusCard} from '../../src/server/automa/MarsBotBonusCard';
@@ -232,35 +231,6 @@ describe('MarsBot Resource Interaction (rules page 4-5)', () => {
   });
 
   describe('Card interaction rules from automa rulebook', () => {
-    it('Meteor Shower is blocked by Asteroid Deflection System', () => {
-      const {human, marsBot} = createAutomaGame();
-      human.plants = 10;
-      human.playCard(new AsteroidDeflectionSystem());
-
-      const bonusCard = marsBot.bonusDeck.drawPile.find((c) => c.id === BonusCardId.B01_METEOR_SHOWER);
-      if (bonusCard === undefined) {
-        // Card may have been drawn already; create a fresh one
-        return;
-      }
-      const plantsBefore = human.plants;
-      marsBot['bonusResolver'].resolveEffect(createBonusCard(BonusCardId.B01_METEOR_SHOWER));
-      expect(human.plants).to.eq(plantsBefore);
-    });
-
-    it('Meteor Shower is blocked by Protected Habitats', () => {
-      const {human, marsBot} = createAutomaGame();
-      human.plants = 10;
-      human.playCard(new ProtectedHabitats());
-
-      const bonusCard = marsBot.bonusDeck.drawPile.find((c) => c.id === BonusCardId.B01_METEOR_SHOWER);
-      if (bonusCard === undefined) {
-        return;
-      }
-      const plantsBefore = human.plants;
-      marsBot['bonusResolver'].resolveEffect(createBonusCard(BonusCardId.B01_METEOR_SHOWER));
-      expect(human.plants).to.eq(plantsBefore);
-    });
-
     it('Sponsored Academies gives MarsBot 1 MC instead of card draw', () => {
       const {human, marsBot} = createAutomaGame();
       human.cardsInHand.push(...human.game.projectDeck.drawN(human.game, 3));
