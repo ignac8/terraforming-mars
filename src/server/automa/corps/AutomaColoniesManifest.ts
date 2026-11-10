@@ -1,105 +1,15 @@
-import {IMarsBotCorp} from '../IMarsBotCorp';
-import {Tag} from '../../../common/cards/Tag';
 import {CardName} from '../../../common/cards/CardName';
 import {AutomaManifest} from './AutomaManifest';
-import {whiteTrackCubes} from './BaseGameCorps';
-import {addRandomColonyTile} from '../colonies/MarsBotColonyPlacer';
-
-// ==== COLONIES (C30-C33) ====
-
-// C30 Aridor
-const ARIDOR: IMarsBotCorp = {
-  name: CardName.ARIDOR,
-  description: 'Draft: tags on the least-advanced track, each counting alike. Setup: add 1 colony tile to the game. White and black cubes across multiple tracks; each cube advances event track.',
-  tags: [],
-  requiredExpansions: ['colonies'],
-  draftPriority: {type: 'leastAdvancedTrack'},
-  // The card names the Jovian and city tracks, which sit on different rows from map to map
-  trackCubes: [
-    {trackIndex: 0, position: 3, cubeType: 'white'},
-    {trackIndex: 1, position: 3, cubeType: 'white'},
-    {trackIndex: 3, position: 3, cubeType: 'white'},
-    {trackIndex: 4, position: 3, cubeType: 'white'},
-    {trackTag: Tag.JOVIAN, position: 6, cubeType: 'white'},
-    {trackIndex: 5, position: 3, cubeType: 'black'},
-    {trackTag: Tag.CITY, position: 6, cubeType: 'black'},
-    {trackIndex: 6, position: 3, cubeType: 'black'},
-    {trackIndex: 6, position: 6, cubeType: 'black'},
-  ],
-  setup(marsBot) {
-    if (addRandomColonyTile(marsBot.game) === undefined) {
-      marsBot.game.log('MarsBot (Aridor): no colony tile left to add');
-    }
-  },
-  effect: {
-    onTrackCubeTrigger(marsBot, _trackIndex, _position, _cubeType) {
-      marsBot.advanceTrack(2); // Event track = index 2
-      marsBot.game.log('MarsBot (Aridor): cube reached: advance event track');
-    },
-  },
-};
-
-// C31 Arclight
-const ARCLIGHT: IMarsBotCorp = {
-  name: CardName.ARKLIGHT,
-  description: 'Tag: Animal. Draft: Animal > Plant. White cubes on plant track. Each Plant or Animal tag resolved (starting tag included) earns 2 MC.',
-  tags: [Tag.ANIMAL],
-  draftPriority: {type: 'tags', tags: [Tag.ANIMAL, Tag.PLANT]},
-  trackCubes: whiteTrackCubes(6),
-  effect: {
-    // Per tag, so a card with a plant and an animal tag earns 4 M€
-    onTagResolved(marsBot, tag) {
-      if (tag === Tag.PLANT || tag === Tag.ANIMAL) {
-        marsBot.gainMc(2);
-        marsBot.game.log('MarsBot (Arclight): Plant/Animal tag, +2 M€');
-      }
-    },
-  },
-};
-
-// C32 Polyphemos
-const POLYPHEMOS: IMarsBotCorp = {
-  name: CardName.POLYPHEMOS,
-  description: 'Tags: 3 Space, 3 Event. Setup: +25 MC. Each generation: discard the project card with fewest tags from the action deck.',
-  tags: [Tag.SPACE, Tag.SPACE, Tag.SPACE, Tag.EVENT, Tag.EVENT, Tag.EVENT],
-  setup(marsBot) {
-    marsBot.gainMc(25);
-    marsBot.game.log('MarsBot (Polyphemos): +25 M€');
-  },
-  beforeActionPhase(marsBot) {
-    marsBot.maybeDiscardProjectCardWithFewestTags();
-  },
-};
-
-// C33 Poseidon
-const POSEIDON: IMarsBotCorp = {
-  name: CardName.POSEIDON,
-  description: 'Setup: place 1 colony. Each colony you or MarsBot build (setup included) advances MarsBot\'s least-advanced track.',
-  tags: [],
-  requiredExpansions: ['colonies'],
-  setup(marsBot) {
-    // C-33: Place 1 colony using random selection (C-15b method)
-    const placed = marsBot.maybePlaceRandomColony();
-    if (placed) {
-      marsBot.game.log('MarsBot (Poseidon): placed 1 colony (C-33)');
-    } else {
-      marsBot.game.log('MarsBot (Poseidon): no eligible colony tile for setup (C-33)');
-    }
-  },
-  // C-33: each colony either player builds advances the least-advanced track
-  effect: {
-    onColonyPlaced(marsBot) {
-      marsBot.advanceTrack(marsBot.marsBotBoard.getLeastAdvancedTrackIndex());
-      marsBot.game.log('MarsBot (Poseidon): colony placed → advance least-advanced track (C-33)');
-    },
-  },
-};
+import {ARIDOR_MARSBOT_CORP} from './colonies/AridorMarsBot';
+import {ARKLIGHT_MARSBOT_CORP} from './colonies/ArklightMarsBot';
+import {POLYPHEMOS_MARSBOT_CORP} from './colonies/PolyphemosMarsBot';
+import {POSEIDON_MARSBOT_CORP} from './colonies/PoseidonMarsBot';
 
 export const AUTOMA_COLONIES_MANIFEST: AutomaManifest = {
   corps: {
-    [CardName.ARIDOR]: ARIDOR,
-    [CardName.ARKLIGHT]: ARCLIGHT,
-    [CardName.POLYPHEMOS]: POLYPHEMOS,
-    [CardName.POSEIDON]: POSEIDON,
+    [CardName.ARIDOR]: ARIDOR_MARSBOT_CORP,
+    [CardName.ARKLIGHT]: ARKLIGHT_MARSBOT_CORP,
+    [CardName.POLYPHEMOS]: POLYPHEMOS_MARSBOT_CORP,
+    [CardName.POSEIDON]: POSEIDON_MARSBOT_CORP,
   },
 };
