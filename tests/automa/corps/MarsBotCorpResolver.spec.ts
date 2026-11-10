@@ -3,6 +3,8 @@ import {testGame} from '../../TestGame';
 import {TestPlayer} from '../../TestPlayer';
 import {IGame} from '../../../src/server/IGame';
 import {MarsBot} from '../../../src/server/automa/MarsBot';
+import {createBonusCard} from '../../../src/server/automa/MarsBotBonusCard';
+import {BonusCardId} from '../../../src/common/automa/AutomaTypes';
 import {MarsBotCorpResolver} from '../../../src/server/automa/corps/MarsBotCorpResolver';
 import {IMarsBotCorp} from '../../../src/server/automa/IMarsBotCorp';
 import {MarsBotTrackCube} from '../../../src/server/automa/MarsBotCorpTypes';
@@ -400,7 +402,7 @@ describe('MarsBotCorpResolver', () => {
       marsBot.setCorpAndSetup(getMarsBotCorp(CardName.PRISTAR)!);
       marsBot.corpSpecificState.set('whiteCubeOnCard', 1);
       (game as any).generation = 2; // even generation → furthest-parameter branch
-      (marsBot as any).bonusResolver.resolveGovernmentIntervention();
+      marsBot['bonusResolver'].resolveEffect(createBonusCard(BonusCardId.B16_GOVERNMENT_INTERVENTION));
       expect(marsBot.corpSpecificState.get('whiteCubeOnCard')).to.eq(1);
     });
 

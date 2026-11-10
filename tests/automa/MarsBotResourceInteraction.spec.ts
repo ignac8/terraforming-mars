@@ -9,6 +9,7 @@ import {ProtectedHabitats} from '../../src/server/cards/base/ProtectedHabitats';
 import {AsteroidDeflectionSystem} from '../../src/server/cards/promo/AsteroidDeflectionSystem';
 import {SponsoredAcademies} from '../../src/server/cards/venusNext/SponsoredAcademies';
 import {BonusCardId} from '../../src/common/automa/AutomaTypes';
+import {createBonusCard} from '../../src/server/automa/MarsBotBonusCard';
 import {Livestock} from '../../src/server/cards/base/Livestock';
 import {Tardigrades} from '../../src/server/cards/base/Tardigrades';
 import {Flooding} from '../../src/server/cards/base/Flooding';
@@ -242,7 +243,7 @@ describe('MarsBot Resource Interaction (rules page 4-5)', () => {
         return;
       }
       const plantsBefore = human.plants;
-      (marsBot as any).bonusResolver.resolveMeteorShower(bonusCard);
+      marsBot['bonusResolver'].resolveEffect(createBonusCard(BonusCardId.B01_METEOR_SHOWER));
       expect(human.plants).to.eq(plantsBefore);
     });
 
@@ -256,7 +257,7 @@ describe('MarsBot Resource Interaction (rules page 4-5)', () => {
         return;
       }
       const plantsBefore = human.plants;
-      (marsBot as any).bonusResolver.resolveMeteorShower(bonusCard);
+      marsBot['bonusResolver'].resolveEffect(createBonusCard(BonusCardId.B01_METEOR_SHOWER));
       expect(human.plants).to.eq(plantsBefore);
     });
 
@@ -401,7 +402,7 @@ describe('MarsBot Resource Interaction (rules page 4-5)', () => {
       human.plants = 10;
       expect(new LawSuit().canPlay(human)).is.false;
 
-      marsBot['bonusResolver']['resolveMeteorShower']();
+      marsBot['bonusResolver'].resolveEffect(createBonusCard(BonusCardId.B01_METEOR_SHOWER));
 
       expect(human.plants).eq(5);
       expect(new LawSuit().canPlay(human)).is.true;
@@ -413,7 +414,7 @@ describe('MarsBot Resource Interaction (rules page 4-5)', () => {
       human.playedCards.push(tardigrades);
       tardigrades.resourceCount = 4;
 
-      marsBot['bonusResolver']['resolveInvasiveSpecies']();
+      marsBot['bonusResolver'].resolveEffect(createBonusCard(BonusCardId.B02_INVASIVE_SPECIES));
 
       expect(tardigrades.resourceCount).eq(3);
       expect(new LawSuit().canPlay(human)).is.true;
@@ -424,7 +425,7 @@ describe('MarsBot Resource Interaction (rules page 4-5)', () => {
       human.plants = 10;
       human.playedCards.push(new ProtectedHabitats());
 
-      marsBot['bonusResolver']['resolveMeteorShower']();
+      marsBot['bonusResolver'].resolveEffect(createBonusCard(BonusCardId.B01_METEOR_SHOWER));
 
       expect(human.plants).eq(10);
       expect(new LawSuit().canPlay(human)).is.false;
