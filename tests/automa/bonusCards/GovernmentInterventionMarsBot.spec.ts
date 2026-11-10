@@ -6,6 +6,7 @@ import {bonusCard, createBonusCard} from '@/server/automa/MarsBotBonusCard';
 import {testGame} from '../../TestGame';
 import {maxOutOceans, setOxygenLevel, setTemperature, setVenusScaleLevel} from '../../TestingUtils';
 import {createAutomaGame} from '../corps/CorpGame';
+import {bonusDeckIds} from './BonusCardGame';
 
 function venusGame() {
   const [game] = testGame(1, {automa: true, venusNextExtension: true, boardName: BoardName.THARSIS});
@@ -102,5 +103,13 @@ describe('GovernmentInterventionMarsBot', () => {
     (marsBot as any).bonusResolver.resolve(card);
     // Venus should not change (already maxed, used Martian branch instead)
     expect(game.getVenusScaleLevel()).to.eq(venusBefore);
+  });
+
+  it('stays out of the bonus deck after it resolves', () => {
+    const {marsBot} = createAutomaGame({venusNextExtension: true});
+
+    marsBot['bonusResolver'].resolve(createBonusCard(BonusCardId.B16_GOVERNMENT_INTERVENTION));
+
+    expect(bonusDeckIds(marsBot)).does.not.include(BonusCardId.B16_GOVERNMENT_INTERVENTION);
   });
 });

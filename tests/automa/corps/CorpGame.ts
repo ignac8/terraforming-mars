@@ -38,6 +38,26 @@ export function createCorpFaqGame(corpName: CardName): AutomaGame {
   return {game, human, marsBot};
 }
 
+/**
+ * Runs the setup of the corporation `name` as it is and with its ongoing effect removed, in identical games.
+ *
+ * The difference between the two is what the effect made of the starting tags, which resolve as a revealed card
+ * (rulebook B, setup step 4).
+ */
+export function setupWithAndWithoutEffect(name: CardName) {
+  const corp = getMarsBotCorp(name)!;
+  const run = (c: typeof corp) => {
+    const {marsBot} = createAutomaGame();
+    marsBot.setCorpAndSetup(c);
+    return {
+      mc: marsBot.turnResolver.megacredits,
+      tr: marsBot.player.terraformRating,
+      events: marsBot.marsBotBoard.tracks[2].position,
+    };
+  };
+  return {withEffect: run(corp), without: run({...corp, effect: undefined})};
+}
+
 /** The MarsBot of a game made with `automa: true`. */
 export function getMarsBot(game: ReturnType<typeof testGame>[0]): MarsBot {
   return (game.automaHooks as AutomaGameHooks).marsBot;

@@ -4,7 +4,7 @@ import {getMarsBotCorp} from '@/server/automa/corps/MarsBotCorpRegistry';
 import {CREDICOR_MARSBOT_CORP} from '@/server/automa/corps/base/CrediCorMarsBot';
 import {ArtificialLake} from '@/server/cards/base/ArtificialLake';
 import {MagneticFieldGenerators} from '@/server/cards/base/MagneticFieldGenerators';
-import {createAutomaGame, fakeCard, resetCorpRegistry} from '../CorpGame';
+import {createAutomaGame, fakeCard, resetCorpRegistry, setupWithAndWithoutEffect} from '../CorpGame';
 import {recordingMarsBot} from '../RecordingMarsBot';
 
 describe('CrediCorMarsBot', () => {
@@ -46,5 +46,11 @@ describe('CrediCorMarsBot', () => {
   it('has mostExpensive draft priority', () => {
     const corp = getMarsBotCorp(CardName.CREDICOR)!;
     expect(corp.draftPriority).to.deep.eq({type: 'mostExpensive'});
+  });
+
+  // Starting tags resolve as a revealed card (rulebook B, setup step 4)
+  it('gets no card resolved at setup, as a corp without starting tags', () => {
+    const {withEffect, without} = setupWithAndWithoutEffect(CardName.CREDICOR);
+    expect(withEffect).to.deep.eq(without);
   });
 });

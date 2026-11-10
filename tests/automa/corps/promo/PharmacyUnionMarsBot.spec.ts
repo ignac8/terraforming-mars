@@ -6,7 +6,7 @@ import {PHARMACY_UNION_MARSBOT_CORP} from '@/server/automa/corps/promo/PharmacyU
 import {ArchaeBacteria} from '@/server/cards/base/ArchaeBacteria';
 import {Asteroid} from '@/server/cards/base/Asteroid';
 import {SearchForLife} from '@/server/cards/base/SearchForLife';
-import {createAutomaGame, fakeCard, resetCorpRegistry} from '../CorpGame';
+import {createAutomaGame, fakeCard, resetCorpRegistry, setupWithAndWithoutEffect} from '../CorpGame';
 import {recordingMarsBot} from '../RecordingMarsBot';
 
 describe('PharmacyUnionMarsBot', () => {
@@ -44,5 +44,11 @@ describe('PharmacyUnionMarsBot', () => {
     marsBot.turnResolver.megacredits = 10;
     corp.effect!.onHumanCardPlayed!(marsBot, fakeCard('MicrobeCard', {tags: [Tag.MICROBE], cost: 5}));
     expect(marsBot.turnResolver.megacredits).to.eq(6);
+  });
+
+  // Starting tags resolve as a revealed card (rulebook B, setup step 4)
+  it('raises its TR for its Science starting tag', () => {
+    const {withEffect, without} = setupWithAndWithoutEffect(CardName.PHARMACY_UNION);
+    expect(withEffect.tr).to.eq(without.tr + 1);
   });
 });

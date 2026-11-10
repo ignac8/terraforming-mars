@@ -5,7 +5,7 @@ import {getMarsBotCorp} from '@/server/automa/corps/MarsBotCorpRegistry';
 import {SATURN_SYSTEMS_MARSBOT_CORP} from '@/server/automa/corps/base/SaturnSystemsMarsBot';
 import {Asteroid} from '@/server/cards/base/Asteroid';
 import {AsteroidMining} from '@/server/cards/base/AsteroidMining';
-import {createAutomaGame, fakeCard, resetCorpRegistry} from '../CorpGame';
+import {createAutomaGame, fakeCard, resetCorpRegistry, setupWithAndWithoutEffect} from '../CorpGame';
 import {recordingMarsBot} from '../RecordingMarsBot';
 
 // Track index on the Tharsis board
@@ -75,5 +75,11 @@ describe('SaturnSystemsMarsBot', () => {
     const eventTrackBefore = marsBot.marsBotBoard.tracks[2].position;
     corp.effect!.onProjectCardResolved!(marsBot, fakeCard('SpaceCard', {tags: [Tag.SPACE], cost: 10}));
     expect(marsBot.marsBotBoard.tracks[2].position).to.eq(eventTrackBefore);
+  });
+
+  // Starting tags resolve as a revealed card (rulebook B, setup step 4)
+  it('advances the event track for its Jovian starting tag', () => {
+    const {withEffect, without} = setupWithAndWithoutEffect(CardName.SATURN_SYSTEMS);
+    expect(withEffect.events).to.be.greaterThan(without.events);
   });
 });

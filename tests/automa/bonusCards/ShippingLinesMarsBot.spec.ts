@@ -3,11 +3,12 @@ import {BonusCardId} from '@/common/automa/AutomaTypes';
 import {BoardName} from '@/common/boards/BoardName';
 import {CardName} from '@/common/cards/CardName';
 import {ColonyName} from '@/common/colonies/ColonyName';
-import {MarsBotBonusCard, bonusCard} from '@/server/automa/MarsBotBonusCard';
+import {MarsBotBonusCard, bonusCard, createBonusCard} from '@/server/automa/MarsBotBonusCard';
 import {Europa} from '@/server/colonies/Europa';
 import {Luna} from '@/server/colonies/Luna';
 import {testGame} from '../../TestGame';
-import {getMarsBot} from '../corps/CorpGame';
+import {getMarsBot, createAutomaGame} from '../corps/CorpGame';
+import {bonusDeckIds} from './BonusCardGame';
 
 function b19Card(): MarsBotBonusCard {
   return bonusCard(BonusCardId.B19_SHIPPING_LINES, 'Shipping Lines' as CardName);
@@ -70,5 +71,15 @@ describe('ShippingLinesMarsBot', () => {
     marsBot['bonusResolver'].resolve(card);
     expect(marsBot.player.terraformRating).to.eq(trBefore + 1);
     expect(marsBot.shippingBoard.get(ColonyName.EUROPA)).to.eq(0);
+  });
+
+  it('stays out of the bonus deck after it resolves, and so does Extended Shipping Lines', () => {
+    const {marsBot} = createAutomaGame({coloniesExtension: true});
+
+    marsBot['bonusResolver'].resolve(createBonusCard(BonusCardId.B19_SHIPPING_LINES));
+    marsBot['bonusResolver'].resolve(createBonusCard(BonusCardId.B20_EXTENDED_SHIPPING_LINES));
+
+    expect(bonusDeckIds(marsBot)).does.not.include(BonusCardId.B19_SHIPPING_LINES);
+    expect(bonusDeckIds(marsBot)).does.not.include(BonusCardId.B20_EXTENDED_SHIPPING_LINES);
   });
 });

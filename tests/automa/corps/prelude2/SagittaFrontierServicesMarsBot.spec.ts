@@ -7,7 +7,7 @@ import {ArtificialLake} from '@/server/cards/base/ArtificialLake';
 import {Asteroid} from '@/server/cards/base/Asteroid';
 import {IceCapMelting} from '@/server/cards/base/IceCapMelting';
 import {MicroMills} from '@/server/cards/base/MicroMills';
-import {createAutomaGame, fakeCard, resetCorpRegistry} from '../CorpGame';
+import {createAutomaGame, fakeCard, resetCorpRegistry, setupWithAndWithoutEffect} from '../CorpGame';
 import {recordingMarsBot} from '../RecordingMarsBot';
 
 describe('SagittaFrontierServicesMarsBot', () => {
@@ -82,5 +82,11 @@ describe('SagittaFrontierServicesMarsBot', () => {
     const mcBefore = marsBot.turnResolver.megacredits;
     corp.effect!.onProjectCardResolved!(marsBot, fakeCard('OneTag', {tags: [Tag.BUILDING], cost: 5}));
     expect(marsBot.turnResolver.megacredits).to.eq(mcBefore + 1);
+  });
+
+  // Starting tags resolve as a revealed card (rulebook B, setup step 4)
+  it('the starting tags make one card, so a corp with several tags is not paid per tag', () => {
+    const {withEffect, without} = setupWithAndWithoutEffect(CardName.SAGITTA_FRONTIER_SERVICES);
+    expect(withEffect.mc).to.eq(without.mc);
   });
 });

@@ -3,6 +3,7 @@ import {GlobalParameter} from '@/common/GlobalParameter';
 import {BonusCardId} from '@/common/automa/AutomaTypes';
 import {BoardName} from '@/common/boards/BoardName';
 import {CardName} from '@/common/cards/CardName';
+import {createBonusCard} from '@/server/automa/MarsBotBonusCard';
 import {getMarsBotCorp} from '@/server/automa/corps/MarsBotCorpRegistry';
 import {PRISTAR_MARSBOT_CORP} from '@/server/automa/corps/turmoil/PristarMarsBot';
 import {testGame} from '../../../TestGame';
@@ -109,5 +110,38 @@ describe('PristarMarsBot', () => {
     marsBot.resolveBonusCard(BonusCardId.B15_LOBBYISTS_VENUS);
     expect(game.getVenusScaleLevel()).to.eq(6);
     expect(marsBot.player.terraformRating).to.eq(tr + 2);
+  });
+
+  // Corp hook wiring
+  it('cube intercepts the bot ocean placement', () => {
+    const {game, marsBot} = createAutomaGame();
+    marsBot.setCorpAndSetup(getMarsBotCorp(CardName.PRISTAR)!);
+    marsBot.corpSpecificState.set('whiteCubeOnCard', 1);
+    const oceansBefore = game.board.getOceanSpaces().length;
+    const trBefore = marsBot.player.terraformRating;
+    const mcBefore = marsBot.turnResolver.megacredits;
+    marsBot.turnResolver.placeOcean();
+    expect(game.board.getOceanSpaces().length).to.eq(oceansBefore);
+    expect(marsBot.player.terraformRating).to.eq(trBefore + 1);
+    expect(marsBot.turnResolver.megacredits).to.eq(mcBefore + 6);
+    expect(marsBot.corpSpecificState.get('whiteCubeOnCard')).to.eq(0);
+  });
+
+  it('without a cube lets the bot ocean placement through', () => {
+    const {game, marsBot} = createAutomaGame();
+    marsBot.setCorpAndSetup(getMarsBotCorp(CardName.PRISTAR)!);
+    marsBot.corpSpecificState.set('whiteCubeOnCard', 0);
+    const oceansBefore = game.board.getOceanSpaces().length;
+    marsBot.turnResolver.placeOcean();
+    expect(game.board.getOceanSpaces().length).to.eq(oceansBefore + 1);
+  });
+
+  it('is not triggered by Government Intervention (FAQ)', () => {
+    const {game, marsBot} = createAutomaGame();
+    marsBot.setCorpAndSetup(getMarsBotCorp(CardName.PRISTAR)!);
+    marsBot.corpSpecificState.set('whiteCubeOnCard', 1);
+    (game as any).generation = 2; // even generation → furthest-parameter branch
+    marsBot['bonusResolver'].resolveEffect(createBonusCard(BonusCardId.B16_GOVERNMENT_INTERVENTION));
+    expect(marsBot.corpSpecificState.get('whiteCubeOnCard')).to.eq(1);
   });
 });

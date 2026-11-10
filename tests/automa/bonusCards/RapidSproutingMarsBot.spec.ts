@@ -1,7 +1,10 @@
 import {expect} from 'chai';
 import {BonusCardId} from '@/common/automa/AutomaTypes';
+import {CardName} from '@/common/cards/CardName';
 import {createBonusCard} from '@/server/automa/MarsBotBonusCard';
+import {getMarsBotCorp} from '@/server/automa/corps/MarsBotCorpRegistry';
 import {createAutomaGame, resetCorpRegistry} from '../corps/CorpGame';
+import {bonusDeckIds} from './BonusCardGame';
 
 describe('RapidSproutingMarsBot', () => {
   beforeEach(resetCorpRegistry);
@@ -32,5 +35,14 @@ describe('RapidSproutingMarsBot', () => {
     expect(game.board.getGreeneries(marsBot.player)).is.empty;
     expect(marsBot.getCorpState('plantResources')).to.eq(0);
     expect(marsBot.turnResolver.megacredits).to.eq(0);
+  });
+
+  it('stays out of the bonus deck after it resolves, as the generation card of a corporation', () => {
+    const {marsBot} = createAutomaGame();
+    marsBot.setCorpAndSetup(getMarsBotCorp(CardName.ECOLINE)!);
+
+    marsBot['bonusResolver'].resolve(createBonusCard(BonusCardId.B23_RAPID_SPROUTING));
+
+    expect(bonusDeckIds(marsBot)).does.not.include(BonusCardId.B23_RAPID_SPROUTING);
   });
 });

@@ -3,15 +3,13 @@ import {testGame} from '../../TestGame';
 import {TestPlayer} from '../../TestPlayer';
 import {IGame} from '../../../src/server/IGame';
 import {MarsBot} from '../../../src/server/automa/MarsBot';
-import {createBonusCard} from '../../../src/server/automa/MarsBotBonusCard';
-import {BonusCardId} from '../../../src/common/automa/AutomaTypes';
 import {MarsBotCorpResolver} from '../../../src/server/automa/corps/MarsBotCorpResolver';
 import {IMarsBotCorp} from '../../../src/server/automa/IMarsBotCorp';
 import {MarsBotTrackCube} from '../../../src/server/automa/MarsBotCorpTypes';
 import {
   registerMarsBotCorp,
   clearMarsBotCorpRegistry, restoreMarsBotCorpRegistry,
-  getAllMarsBotCorps, getMarsBotCorp,
+  getAllMarsBotCorps,
 } from '../../../src/server/automa/corps/MarsBotCorpRegistry';
 import {Tag} from '../../../src/common/cards/Tag';
 import {CardName} from '../../../src/common/cards/CardName';
@@ -361,90 +359,6 @@ describe('MarsBotCorpResolver', () => {
       // With Credicor excluded, should get Ecoline (index 0 of 11 remaining)
       const corp = MarsBotCorpResolver.selectCorp(CardName.CREDICOR, DEFAULT_GAME_OPTIONS, rng);
       expect(corp).to.not.be.undefined;
-    });
-
-    // Corp hook wiring
-    it('Mining Guild counts down through turnResolver.gainMc', () => {
-      const {marsBot} = createAutomaGame();
-      marsBot.setCorpAndSetup(getMarsBotCorp(CardName.MINING_GUILD)!);
-      marsBot.corpSpecificState.set('mcOnCard', 10);
-      const mcBefore = marsBot.turnResolver.megacredits;
-      marsBot.turnResolver.gainMc(4);
-      expect(marsBot.turnResolver.megacredits).to.eq(mcBefore + 4);
-      expect(marsBot.corpSpecificState.get('mcOnCard')).to.eq(6);
-    });
-
-    it('Pristar cube intercepts the bot ocean placement', () => {
-      const {game, marsBot} = createAutomaGame();
-      marsBot.setCorpAndSetup(getMarsBotCorp(CardName.PRISTAR)!);
-      marsBot.corpSpecificState.set('whiteCubeOnCard', 1);
-      const oceansBefore = game.board.getOceanSpaces().length;
-      const trBefore = marsBot.player.terraformRating;
-      const mcBefore = marsBot.turnResolver.megacredits;
-      marsBot.turnResolver.placeOcean();
-      expect(game.board.getOceanSpaces().length).to.eq(oceansBefore);
-      expect(marsBot.player.terraformRating).to.eq(trBefore + 1);
-      expect(marsBot.turnResolver.megacredits).to.eq(mcBefore + 6);
-      expect(marsBot.corpSpecificState.get('whiteCubeOnCard')).to.eq(0);
-    });
-
-    it('Pristar without a cube lets the raise through', () => {
-      const {game, marsBot} = createAutomaGame();
-      marsBot.setCorpAndSetup(getMarsBotCorp(CardName.PRISTAR)!);
-      marsBot.corpSpecificState.set('whiteCubeOnCard', 0);
-      const oceansBefore = game.board.getOceanSpaces().length;
-      marsBot.turnResolver.placeOcean();
-      expect(game.board.getOceanSpaces().length).to.eq(oceansBefore + 1);
-    });
-
-    it('Government Intervention does not trigger Pristar (FAQ)', () => {
-      const {game, marsBot} = createAutomaGame();
-      marsBot.setCorpAndSetup(getMarsBotCorp(CardName.PRISTAR)!);
-      marsBot.corpSpecificState.set('whiteCubeOnCard', 1);
-      (game as any).generation = 2; // even generation → furthest-parameter branch
-      marsBot['bonusResolver'].resolveEffect(createBonusCard(BonusCardId.B16_GOVERNMENT_INTERVENTION));
-      expect(marsBot.corpSpecificState.get('whiteCubeOnCard')).to.eq(1);
-    });
-
-    // Starting tags resolve as a revealed card (rulebook B, setup step 4)
-    /** Runs setup for `corp` as is and with its ongoing effect removed, in identical games. */
-    function setupWithAndWithoutEffect(name: CardName) {
-      const corp = getMarsBotCorp(name)!;
-      const run = (c: typeof corp) => {
-        const {marsBot} = createAutomaGame();
-        marsBot.setCorpAndSetup(c);
-        return {
-          mc: marsBot.turnResolver.megacredits,
-          tr: marsBot.player.terraformRating,
-          events: marsBot.marsBotBoard.tracks[2].position,
-        };
-      };
-      return {withEffect: run(corp), without: run({...corp, effect: undefined})};
-    }
-
-    it('Arclight earns 2 M€ for its Animal starting tag', () => {
-      const {withEffect, without} = setupWithAndWithoutEffect(CardName.ARKLIGHT);
-      expect(withEffect.mc).to.eq(without.mc + 2);
-    });
-
-    it('Pharmacy Union raises its TR for its Science starting tag', () => {
-      const {withEffect, without} = setupWithAndWithoutEffect(CardName.PHARMACY_UNION);
-      expect(withEffect.tr).to.eq(without.tr + 1);
-    });
-
-    it('Saturn Systems advances the event track for its Jovian starting tag', () => {
-      const {withEffect, without} = setupWithAndWithoutEffect(CardName.SATURN_SYSTEMS);
-      expect(withEffect.events).to.be.greaterThan(without.events);
-    });
-
-    it('the starting tags make one card, so a corp with several tags is not paid per tag', () => {
-      const {withEffect, without} = setupWithAndWithoutEffect(CardName.SAGITTA_FRONTIER_SERVICES);
-      expect(withEffect.mc).to.eq(without.mc);
-    });
-
-    it('a corp without starting tags gets no card resolved', () => {
-      const {withEffect, without} = setupWithAndWithoutEffect(CardName.CREDICOR);
-      expect(withEffect).to.deep.eq(without);
     });
   });
 });

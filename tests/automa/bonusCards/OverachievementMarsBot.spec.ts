@@ -1,13 +1,17 @@
 import {expect} from 'chai';
 import {TileType} from '@/common/TileType';
 import {BonusCardId} from '@/common/automa/AutomaTypes';
+import {CardName} from '@/common/cards/CardName';
 import {SeededRandom} from '@/common/utils/Random';
 import {inplaceRemove} from '@/common/utils/utils';
-import {createBaseBonusCards} from '@/server/automa/MarsBotBonusCard';
+import {Game} from '@/server/Game';
+import {createBaseBonusCards, createBonusCard} from '@/server/automa/MarsBotBonusCard';
 import {MarsBotBonusDeck} from '@/server/automa/MarsBotBonusDeck';
 import {MarsBotBonusResolver} from '@/server/automa/MarsBotBonusResolver';
 import {MarsBotTilePlacer} from '@/server/automa/MarsBotTilePlacer';
-import {createAutomaGame} from '../corps/CorpGame';
+import {getMarsBotCorp} from '@/server/automa/corps/MarsBotCorpRegistry';
+import {createAutomaGame, resetCorpRegistry} from '../corps/CorpGame';
+import {actionDeckIds, bonusDeckIds} from './BonusCardGame';
 
 // MarsBot meets Terraformer and Hoverlord; the player is 7 away from both.
 function setUpTie() {
@@ -22,6 +26,8 @@ function setUpTie() {
 }
 
 describe('OverachievementMarsBot', () => {
+  beforeEach(resetCorpRegistry);
+
   it('does NOT try awards when generation < 6', () => {
     const {game, human, marsBot} = createAutomaGame();
     (game as any).generation = 4;
@@ -86,5 +92,42 @@ describe('OverachievementMarsBot', () => {
     marsBot['bonusResolver'].resolve(b04);
 
     expect(game.claimedMilestones.map((c) => c.milestone.name)).deep.eq(['Terraformer']);
+  });
+
+  it('stays out of the bonus deck after it resolves for Vitor', () => {
+    const {marsBot} = createAutomaGame();
+    marsBot.setCorpAndSetup(getMarsBotCorp(CardName.VITOR)!);
+
+    marsBot['bonusResolver'].resolve(createBonusCard(BonusCardId.B04_OVERACHIEVEMENT));
+
+    expect(marsBot.turnResolver.megacredits).eq(5);
+    expect(bonusDeckIds(marsBot)).does.not.include(BonusCardId.B04_OVERACHIEVEMENT);
+  });
+
+  it('stays out of later generations once it removes itself for Vitor, across a reload', () => {
+    const {game, marsBot} = createAutomaGame();
+    const corp = getMarsBotCorp(CardName.VITOR)!;
+    marsBot.setCorpAndSetup(corp);
+    marsBot.turnResolver.marsBotMeetsMilestone = () => true;
+
+    const destroyed = marsBot['bonusResolver'].resolve(createBonusCard(BonusCardId.B04_OVERACHIEVEMENT));
+    expect(destroyed).is.true;
+    expect(game.claimedMilestones).has.length(1);
+
+    corp.beforeActionPhase!(marsBot);
+    expect(actionDeckIds(marsBot)).does.not.include(BonusCardId.B04_OVERACHIEVEMENT);
+
+    const restored = Game.deserialize(game.serialize()).automaHooks!.marsBot;
+    restored.corp!.beforeActionPhase!(restored);
+    expect(actionDeckIds(restored)).does.not.include(BonusCardId.B04_OVERACHIEVEMENT);
+    expect(bonusDeckIds(restored)).does.not.include(BonusCardId.B04_OVERACHIEVEMENT);
+  });
+
+  it('is still discarded to the bonus deck without Vitor', () => {
+    const {marsBot} = createAutomaGame();
+
+    marsBot['bonusResolver'].resolve(createBonusCard(BonusCardId.B04_OVERACHIEVEMENT));
+
+    expect(marsBot.bonusDeck.discardPile.map((c) => c.id)).includes(BonusCardId.B04_OVERACHIEVEMENT);
   });
 });

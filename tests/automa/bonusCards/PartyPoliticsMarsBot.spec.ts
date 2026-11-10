@@ -3,6 +3,7 @@ import {BonusCardId} from '@/common/automa/AutomaTypes';
 import {createBonusCard} from '@/server/automa/MarsBotBonusCard';
 import {Turmoil} from '@/server/turmoil/Turmoil';
 import {createAutomaGame} from '../corps/CorpGame';
+import {bonusDeckIds} from './BonusCardGame';
 
 describe('PartyPoliticsMarsBot', () => {
   it('places 1 delegate and drains the reserve', () => {
@@ -54,5 +55,13 @@ describe('PartyPoliticsMarsBot', () => {
       expect(reserveBefore - reserveAfter).to.be.at.least(2);
     }
     // If no divisible-by-3 card found, test is inconclusive (skip)
+  });
+
+  it('stays out of the bonus deck after it resolves', () => {
+    const {marsBot} = createAutomaGame({turmoilExtension: true});
+
+    marsBot['bonusResolver'].resolve(createBonusCard(BonusCardId.B21_PARTY_POLITICS));
+
+    expect(bonusDeckIds(marsBot)).does.not.include(BonusCardId.B21_PARTY_POLITICS);
   });
 });

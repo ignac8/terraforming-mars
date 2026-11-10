@@ -141,4 +141,15 @@ describe('MiningGuildMarsBot', () => {
     expect(earnedByAdvance).is.greaterThan(0);
     expect(marsBot.corpSpecificState.get('mcOnCard')).to.eq(10 - earnedByAdvance);
   });
+
+  // Corp hook wiring
+  it('counts down through turnResolver.gainMc', () => {
+    const {marsBot} = createAutomaGame();
+    marsBot.setCorpAndSetup(getMarsBotCorp(CardName.MINING_GUILD)!);
+    marsBot.corpSpecificState.set('mcOnCard', 10);
+    const mcBefore = marsBot.turnResolver.megacredits;
+    marsBot.turnResolver.gainMc(4);
+    expect(marsBot.turnResolver.megacredits).to.eq(mcBefore + 4);
+    expect(marsBot.corpSpecificState.get('mcOnCard')).to.eq(6);
+  });
 });
