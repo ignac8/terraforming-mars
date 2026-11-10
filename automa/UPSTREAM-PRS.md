@@ -202,7 +202,10 @@ The other corporation manifests, the map boards and the expansion bonus cards on
    bonus card is its own file, `bonusCards/<Card>MarsBot.ts` exporting
    `<NAME>_MARSBOT_BONUS_CARD` (`{id, resolve(resolver, card)}`), listed in
    `MarsBotBonusCardEffects.ts`; `MarsBotBonusResolver` keeps the lookup and the tools the
-   cards share, after kberg's "each card into its own file" on #8687. He was asked there
+   cards share, after kberg's "each card into its own file" on #8687. Their tests are one spec
+   per card too, `tests/automa/bonusCards/<Card>MarsBot.spec.ts` (25 specs, 113 tests; B05
+   Expedited Construction has no test). Tests that only use a bonus card as a trigger stayed
+   in the mixed specs (deck rules, Law Suit, reload, party selection, Land Specialist). He was asked there
    whether `tests/automa/boards/MarsBotBoards.spec.ts` should be one spec per board too.
 3. **Phase 4 - game integration**: the automa option, MarsBot's player and `AutomaGameSetup`
    are in (#8625). Still to go: AutomaGameHooks (split 2-3 ways), routes/ServerModel wiring,
