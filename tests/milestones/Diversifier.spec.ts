@@ -19,18 +19,18 @@ describe('Diversifier', () => {
     [/* game */, player] = testGame(2);
   });
 
-  it('MarsBot needs space 3 on all 7 tracks without Venus', () => {
-    for (const run of [
-      {plant: 2, expected: false},
-      {plant: 3, expected: true},
-    ]) {
+  for (const run of [
+    {plant: 2, expected: false},
+    {plant: 3, expected: true},
+  ] as const) {
+    it('MarsBot needs space 3 on all 7 tracks without Venus: ' + JSON.stringify(run), () => {
       const marsBot = fakeMarsBot();
       setAllTracks(marsBot, 3);
       setTrack(marsBot, Tag.PLANT, run.plant);
 
-      expect(milestone.marsBotCanClaim(marsBot), JSON.stringify(run)).eq(run.expected);
-    }
-  });
+      expect(milestone.marsBotCanClaim(marsBot)).eq(run.expected);
+    });
+  }
 
   it('MarsBot counts the Venus track as one of the 7', () => {
     const marsBot = fakeMarsBot({tracks: [...THARSIS_MARSBOT_BOARD, VENUS_MARSBOT_TRACK]});
