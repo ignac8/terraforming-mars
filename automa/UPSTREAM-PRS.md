@@ -198,7 +198,12 @@ The other corporation manifests, the map boards and the expansion bonus cards on
    shape came out of the #8207 review, and #8203/#8206 merged. First slice should be corp-free
    (base difficulty plays without a corporation).
 2. **Phase 3 - capabilities**: Stock, Scoring, BonusResolver (split 2-3 ways by bonus
-   group), TurnResolver (split track-advancement vs card resolution).
+   group), TurnResolver (split track-advancement vs card resolution). Since 2026-11-10 each
+   bonus card is its own file, `bonusCards/<Card>MarsBot.ts` exporting
+   `<NAME>_MARSBOT_BONUS_CARD` (`{id, resolve(resolver, card)}`), listed in
+   `MarsBotBonusCardEffects.ts`; `MarsBotBonusResolver` keeps the lookup and the tools the
+   cards share, after kberg's "each card into its own file" on #8687. He was asked there
+   whether `tests/automa/boards/MarsBotBoards.spec.ts` should be one spec per board too.
 3. **Phase 4 - game integration**: the automa option, MarsBot's player and `AutomaGameSetup`
    are in (#8625). Still to go: AutomaGameHooks (split 2-3 ways), routes/ServerModel wiring,
    then client UI.
