@@ -1,10 +1,17 @@
 import {expect} from 'chai';
 import {Phase} from '@/common/Phase';
 import {TileType} from '@/common/TileType';
+import {BonusCardId} from '@/common/automa/AutomaTypes';
 import {SpaceType} from '@/common/boards/SpaceType';
+import {CardName} from '@/common/cards/CardName';
+import {IGame} from '@/server/IGame';
+import {MarsBot} from '@/server/automa/MarsBot';
+import {getMarsBotCorp} from '@/server/automa/corps/MarsBotCorpRegistry';
 import {PHILARES_MARSBOT_CORP} from '@/server/automa/corps/promo/PhilaresMarsBot';
+import {Space} from '@/server/boards/Space';
 import {testGame} from '../../../TestGame';
 import {TestPlayer} from '../../../TestPlayer';
+import {AutomaGame, createAutomaGame, resetCorpRegistry} from '../CorpGame';
 import {RecordingMarsBot, recordingMarsBot} from '../RecordingMarsBot';
 
 type Sides = RecordingMarsBot & {botPlayer: TestPlayer, human: TestPlayer};
@@ -31,7 +38,26 @@ function placeTile({marsBot, botPlayer, human}: Sides, byMarsBot: boolean, tileT
   PHILARES_MARSBOT_CORP.effect!.onTilePlaced!(marsBot, byMarsBot, tileType, space);
 }
 
+/** An empty land space with no tile within two spaces of it. */
+function quietSpace(game: IGame, marsBot: MarsBot): Space {
+  const board = game.board;
+  return board.getAvailableSpacesOnLand(marsBot.player).find((space) => {
+    const adj = board.getAdjacentSpaces(space);
+    return adj.length === 6 && adj.every((s) => s.spaceType === SpaceType.LAND &&
+      board.getAdjacentSpaces(s).every((t) => t.tile === undefined));
+  })!;
+}
+
+function createPhilaresGame(): AutomaGame {
+  const {game, human, marsBot} = createAutomaGame();
+  marsBot.setCorpAndSetup(getMarsBotCorp(CardName.PHILARES)!);
+  marsBot.setCorpState('scienceResources', 0);
+  return {game, human, marsBot};
+}
+
 describe('PhilaresMarsBot', () => {
+  beforeEach(resetCorpRegistry);
+
   it('places a greenery, resolves Local Neural Instance and starts with one science resource', () => {
     const {marsBot, calls, corpState} = sides();
 
@@ -72,5 +98,78 @@ describe('PhilaresMarsBot', () => {
     placeTile(bot, true, TileType.CITY, 1);
     expect(calls).has.length(2);
     expect(corpState.get('scienceResources')).eq(4);
+  });
+
+  it('setup places a greenery, resolves Local Neural Instance and removes it', () => {
+    const {game, marsBot} = createAutomaGame();
+    marsBot.addBonusCardToActionDeck(BonusCardId.B07_LOCAL_NEURAL_INSTANCE);
+
+    marsBot.setCorpAndSetup(getMarsBotCorp(CardName.PHILARES)!);
+
+    expect(game.board.getGreeneries(marsBot.player)).has.length(1);
+    expect(marsBot.neuralInstanceSpace?.tile?.tileType).to.eq(TileType.NEURAL_INSTANCE);
+    expect(marsBot.getCorpState('scienceResources')).to.eq(1);
+    const bonusIds = [...marsBot.bonusDeck.drawPile, ...marsBot.bonusDeck.discardPile].map((c) => c.id);
+    expect(bonusIds).does.not.include(BonusCardId.B07_LOCAL_NEURAL_INSTANCE);
+    expect(bonusIds).includes(BonusCardId.B27_BUILD_BUILD_BUILD);
+    expect(marsBot.actionDeck.some((c) => 'id' in c && c.id === BonusCardId.B07_LOCAL_NEURAL_INSTANCE)).is.false;
+  });
+
+  it('setup does not count Local Neural Instance as a destroyed bonus card', () => {
+    const {marsBot} = createPhilaresGame();
+
+    expect(marsBot.destroyedBonusCards).to.eq(0);
+  });
+
+  it('gains a science resource when MarsBot places a tile next to a tile of the player', () => {
+    const {game, human, marsBot} = createPhilaresGame();
+    const space = quietSpace(game, marsBot);
+    game.simpleAddTile(human, game.board.getAdjacentSpaces(space)[0], {tileType: TileType.GREENERY});
+
+    game.addCity(marsBot.player, space);
+
+    expect(marsBot.getCorpState('scienceResources')).to.eq(1);
+  });
+
+  it('gains a science resource when the player places a tile next to a tile of MarsBot', () => {
+    const {game, human, marsBot} = createPhilaresGame();
+    const space = quietSpace(game, marsBot);
+    game.simpleAddTile(marsBot.player, game.board.getAdjacentSpaces(space)[0], {tileType: TileType.GREENERY});
+
+    game.addCity(human, space);
+
+    expect(marsBot.getCorpState('scienceResources')).to.eq(1);
+  });
+
+  it('gains one science resource for each tile of the other side that the new tile touches', () => {
+    const {game, human, marsBot} = createPhilaresGame();
+    const space = quietSpace(game, marsBot);
+    const [first, second] = game.board.getAdjacentSpaces(space);
+    game.simpleAddTile(human, first, {tileType: TileType.GREENERY});
+    game.simpleAddTile(human, second, {tileType: TileType.GREENERY});
+
+    game.addCity(marsBot.player, space);
+
+    expect(marsBot.getCorpState('scienceResources')).to.eq(2);
+  });
+
+  it('spends 4 science resources to advance the most advanced track that is not maxed', () => {
+    const {game, human, marsBot} = createPhilaresGame();
+    marsBot.setCorpState('scienceResources', 3);
+    const tracks = marsBot.marsBotBoard.tracks;
+    tracks[0].position = tracks[0].definition.layout.length - 1;
+    tracks[1].position = 10;
+    const advanced: Array<number> = [];
+    marsBot.turnResolver.advanceTrack = (i) => {
+      advanced.push(i);
+      return true;
+    };
+    const space = quietSpace(game, marsBot);
+    game.simpleAddTile(human, game.board.getAdjacentSpaces(space)[0], {tileType: TileType.GREENERY});
+
+    game.addCity(marsBot.player, space);
+
+    expect(advanced).to.deep.eq([1]);
+    expect(marsBot.getCorpState('scienceResources')).to.eq(0);
   });
 });

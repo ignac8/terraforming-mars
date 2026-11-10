@@ -1,5 +1,8 @@
 import {expect} from 'chai';
+import {CardName} from '@/common/cards/CardName';
+import {Tag} from '@/common/cards/Tag';
 import {cast} from '@/common/utils/utils';
+import {getMarsBotCorp} from '@/server/automa/corps/MarsBotCorpRegistry';
 import {SPLICE_MARSBOT_CORP} from '@/server/automa/corps/promo/SpliceMarsBot';
 import {ArchaeBacteria} from '@/server/cards/base/ArchaeBacteria';
 import {Asteroid} from '@/server/cards/base/Asteroid';
@@ -7,9 +10,12 @@ import {Decomposers} from '@/server/cards/base/Decomposers';
 import {OrOptions} from '@/server/inputs/OrOptions';
 import {testGame} from '../../../TestGame';
 import {runAllActions} from '../../../TestingUtils';
+import {createAutomaGame, fakeCard, resetCorpRegistry} from '../CorpGame';
 import {recordingMarsBot} from '../RecordingMarsBot';
 
 describe('SpliceMarsBot', () => {
+  beforeEach(resetCorpRegistry);
+
   // C24: the Setup box (rulebook B p.1). A microbe card the player plays, a Prelude's too (rulebook B p.4)
   it('gains 8 M€ at setup, 4 M€ for its own microbe cards, and 2 M€ plus 2 M€ for the player for a microbe card that holds no microbes', () => {
     const [game, human] = testGame(1);
@@ -40,5 +46,22 @@ describe('SpliceMarsBot', () => {
     expect(calls).deep.eq(['gainMc(2)']);
     expect(card.resourceCount).eq(1);
     expect(human.stock.megacredits).eq(0);
+  });
+
+  it('gains 8 M€ on setup and removes R&D', () => {
+    const {marsBot} = createAutomaGame();
+    const corp = getMarsBotCorp(CardName.SPLICE)!;
+    const mcBefore = marsBot.turnResolver.megacredits;
+    marsBot.setCorpAndSetup(corp);
+    expect(marsBot.turnResolver.megacredits).to.eq(mcBefore + 8);
+  });
+
+  it('marsbot microbe card → +4 M€', () => {
+    const {marsBot} = createAutomaGame();
+    const corp = getMarsBotCorp(CardName.SPLICE)!;
+    marsBot.setCorpAndSetup(corp);
+    const mcBefore = marsBot.turnResolver.megacredits;
+    corp.effect!.onProjectCardResolved!(marsBot, fakeCard('Microbe', {tags: [Tag.MICROBE], cost: 5}));
+    expect(marsBot.turnResolver.megacredits).to.eq(mcBefore + 4);
   });
 });

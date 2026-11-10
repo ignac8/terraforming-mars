@@ -1,11 +1,18 @@
 import {expect} from 'chai';
+import {Resource} from '@/common/Resource';
+import {CardName} from '@/common/cards/CardName';
+import {Tag} from '@/common/cards/Tag';
+import {getMarsBotCorp} from '@/server/automa/corps/MarsBotCorpRegistry';
 import {TERACTOR_MARSBOT_CORP} from '@/server/automa/corps/base/TeractorMarsBot';
+import {createAutomaGame, resetCorpRegistry} from '../CorpGame';
 import {recordingMarsBot, trackCubes} from '../RecordingMarsBot';
 
 // Track index on the Tharsis board
 const EARTH = 5;
 
 describe('TeractorMarsBot', () => {
+  beforeEach(resetCorpRegistry);
+
   // The Setup box (rulebook B p.1)
   it('gains 25 M€ at setup', () => {
     const {marsBot, calls} = recordingMarsBot();
@@ -23,5 +30,34 @@ describe('TeractorMarsBot', () => {
     expect(calls).deep.eq(['gainMc(2)']);
     expect(trackCubes(TERACTOR_MARSBOT_CORP)).deep.eq(Array.from({length: 18}, (_, i) => `earth white ${i + 1}`));
     expect(TERACTOR_MARSBOT_CORP.trackCubesTriggerEveryAdvance).is.true;
+  });
+
+  it('gains 25 M€ on setup', () => {
+    const {marsBot} = createAutomaGame();
+    const corp = getMarsBotCorp(CardName.TERACTOR)!;
+
+    const mcBefore = marsBot.turnResolver.megacredits;
+    marsBot.setCorpAndSetup(corp);
+    expect(marsBot.turnResolver.megacredits).to.eq(mcBefore + 25);
+  });
+
+  it('has earth draft priority', () => {
+    const corp = getMarsBotCorp(CardName.TERACTOR)!;
+    expect(corp.draftPriority).to.deep.eq({type: 'tags', tags: [Tag.EARTH]});
+  });
+
+  it('pays again when the Earth track re-advances after a regression, without the icon', () => {
+    const {marsBot} = createAutomaGame();
+    marsBot.setCorpAndSetup(getMarsBotCorp(CardName.TERACTOR)!);
+    marsBot.marsBotBoard.tracks[5].position = 3;
+    marsBot.advanceTrack(5); // Earth 4: 3 TR
+    marsBot.regressTrack(Resource.HEAT);
+    const mc = marsBot.turnResolver.megacredits;
+    const tr = marsBot.player.terraformRating;
+
+    marsBot.advanceTrack(5);
+
+    expect(marsBot.turnResolver.megacredits).to.eq(mc + 2);
+    expect(marsBot.player.terraformRating).to.eq(tr);
   });
 });

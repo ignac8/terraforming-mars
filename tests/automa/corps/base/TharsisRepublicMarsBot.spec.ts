@@ -1,12 +1,17 @@
 import {expect} from 'chai';
 import {TileType} from '@/common/TileType';
+import {CardName} from '@/common/cards/CardName';
+import {getMarsBotCorp} from '@/server/automa/corps/MarsBotCorpRegistry';
 import {THARSIS_REPUBLIC_MARSBOT_CORP} from '@/server/automa/corps/base/TharsisRepublicMarsBot';
+import {createAutomaGame, resetCorpRegistry} from '../CorpGame';
 import {recordingMarsBot} from '../RecordingMarsBot';
 
 // Track index on the Tharsis board
 const EVENT = 2;
 
 describe('TharsisRepublicMarsBot', () => {
+  beforeEach(resetCorpRegistry);
+
   // The Setup box (rulebook B p.1)
   it('places a city at setup', () => {
     const {marsBot, calls} = recordingMarsBot();
@@ -30,4 +35,37 @@ describe('TharsisRepublicMarsBot', () => {
       expect(calls).deep.eq(run.calls);
     });
   }
+
+  it('gains 2 M€ when any city placed', () => {
+    const {marsBot} = createAutomaGame();
+    const corp = getMarsBotCorp(CardName.THARSIS_REPUBLIC)!;
+    marsBot.setCorpAndSetup(corp);
+    const mcBefore = marsBot.turnResolver.megacredits;
+    corp.effect!.onTilePlaced!(marsBot, false, TileType.CITY, marsBot.game.board.spaces[0]);
+    expect(marsBot.turnResolver.megacredits).to.eq(mcBefore + 2);
+  });
+
+  it('advances event track when MarsBot places city, without the 2 M€', () => {
+    const {marsBot} = createAutomaGame();
+    const corp = getMarsBotCorp(CardName.THARSIS_REPUBLIC)!;
+    marsBot.setCorpAndSetup(corp);
+    marsBot.turnResolver.advanceTrack = (i) => {
+      marsBot.marsBotBoard.tracks[i].position++;
+      return true;
+    };
+    const mcBefore = marsBot.turnResolver.megacredits;
+    const eventBefore = marsBot.marsBotBoard.tracks[2].position;
+    corp.effect!.onTilePlaced!(marsBot, true, TileType.CITY, marsBot.game.board.spaces[0]);
+    expect(marsBot.marsBotBoard.tracks[2].position).to.eq(eventBefore + 1);
+    expect(marsBot.turnResolver.megacredits).to.eq(mcBefore);
+  });
+
+  it('does not trigger on greenery placement', () => {
+    const {marsBot} = createAutomaGame();
+    const corp = getMarsBotCorp(CardName.THARSIS_REPUBLIC)!;
+    marsBot.setCorpAndSetup(corp);
+    const mcBefore = marsBot.turnResolver.megacredits;
+    corp.effect!.onTilePlaced!(marsBot, false, TileType.GREENERY, marsBot.game.board.spaces[0]);
+    expect(marsBot.turnResolver.megacredits).to.eq(mcBefore);
+  });
 });

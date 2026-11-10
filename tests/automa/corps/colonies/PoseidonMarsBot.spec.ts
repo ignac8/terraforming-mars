@@ -1,19 +1,14 @@
 import {expect} from 'chai';
+import {BoardName} from '@/common/boards/BoardName';
+import {CardName} from '@/common/cards/CardName';
+import {ColonyName} from '@/common/colonies/ColonyName';
+import {AUTOMA_COLONIES_MANIFEST} from '@/server/automa/corps/AutomaColoniesManifest';
+import {Ceres} from '@/server/colonies/Ceres';
+import {Luna} from '@/server/colonies/Luna';
 import {testGame} from '../../../TestGame';
-import {AutomaGameHooks} from '../../../../src/server/automa/AutomaGameHooks';
-import {MarsBot} from '../../../../src/server/automa/MarsBot';
-import {CardName} from '../../../../src/common/cards/CardName';
-import {Luna} from '../../../../src/server/colonies/Luna';
-import {Ceres} from '../../../../src/server/colonies/Ceres';
-import {BoardName} from '../../../../src/common/boards/BoardName';
-import {ColonyName} from '../../../../src/common/colonies/ColonyName';
-import {AUTOMA_COLONIES_MANIFEST} from '../../../../src/server/automa/corps/AutomaColoniesManifest';
+import {getMarsBot} from '../CorpGame';
 
-function getMarsBot(game: ReturnType<typeof testGame>[0]): MarsBot {
-  return (game.automaHooks as AutomaGameHooks).marsBot;
-}
-
-describe('PoseidonSetup (C-33)', () => {
+describe('PoseidonMarsBot', () => {
   it('maybePlaceRandomColony places on one of the available tiles', () => {
     const [game] = testGame(1, {automa: true, coloniesExtension: true, boardName: BoardName.THARSIS});
     const marsBot = getMarsBot(game);
@@ -64,7 +59,7 @@ describe('PoseidonSetup (C-33)', () => {
     expect(newLeastAdvancedPos).to.eq(beforePos + 1);
   });
 
-  it('the player building a colony advances MarsBot\'s least-advanced track too', () => {
+  it('the player building a colony advances the least-advanced track of MarsBot too', () => {
     const [game, human] = testGame(1, {automa: true, coloniesExtension: true, boardName: BoardName.THARSIS});
     const marsBot = getMarsBot(game);
     const luna = new Luna();

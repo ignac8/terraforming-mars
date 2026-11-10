@@ -9,7 +9,7 @@ import {MarsBotTrackCube} from '../../../src/server/automa/MarsBotCorpTypes';
 import {
   registerMarsBotCorp,
   clearMarsBotCorpRegistry, restoreMarsBotCorpRegistry,
-  getAllMarsBotCorps,
+  getAllMarsBotCorps, getMarsBotCorp,
 } from '../../../src/server/automa/corps/MarsBotCorpRegistry';
 import {Tag} from '../../../src/common/cards/Tag';
 import {CardName} from '../../../src/common/cards/CardName';
@@ -303,6 +303,24 @@ describe('MarsBotCorpResolver', () => {
       expect(marsBot2.hasCubeAt(1, 7)).to.not.be.undefined;
       expect(marsBot2.triggeredCubePositions.has('1:7')).to.be.true;
     });
+
+    it('round-trips floaters', () => {
+      const {marsBot} = createAutomaGame();
+      marsBot.floaters = 7;
+      const state = marsBot.serialize();
+      const {marsBot: marsBot2} = createAutomaGame();
+      marsBot2.restoreState(state);
+      expect(marsBot2.floaters).to.eq(7);
+    });
+
+    it('round-trips corpSpecificState', () => {
+      const {marsBot} = createAutomaGame();
+      marsBot.corpSpecificState.set('test', 42);
+      const state = marsBot.serialize();
+      const {marsBot: marsBot2} = createAutomaGame();
+      marsBot2.restoreState(state);
+      expect(marsBot2.corpSpecificState.get('test')).to.eq(42);
+    });
   });
 
   describe('registry', () => {
@@ -322,6 +340,109 @@ describe('MarsBotCorpResolver', () => {
 
       expect(getAllMarsBotCorps().filter((c) => c.name === CardName.ECOLINE)).to.have.length(1);
       expect(getAllMarsBotCorps().find((c) => c.name === CardName.ECOLINE)?.description).to.eq('second');
+    });
+  });
+
+  // The describes above start from an empty registry. These tests read the real corporations.
+  describe('with every corporation registered', () => {
+    beforeEach(restoreMarsBotCorpRegistry);
+
+    it('selects a corp excluding human corp', () => {
+      const rng = {next: () => 0, nextInt: (_n: number) => 0} as any;
+      const corp = MarsBotCorpResolver.selectCorp(CardName.CREDICOR, DEFAULT_GAME_OPTIONS, rng);
+      expect(corp).to.not.be.undefined;
+      expect(corp!.name).to.not.eq(CardName.CREDICOR);
+    });
+
+    it('can select any of the 12 base corps', () => {
+      const rng = {next: () => 0, nextInt: (_n: number) => 0} as any;
+      // With Credicor excluded, should get Ecoline (index 0 of 11 remaining)
+      const corp = MarsBotCorpResolver.selectCorp(CardName.CREDICOR, DEFAULT_GAME_OPTIONS, rng);
+      expect(corp).to.not.be.undefined;
+    });
+
+    // Corp hook wiring
+    it('Mining Guild counts down through turnResolver.gainMc', () => {
+      const {marsBot} = createAutomaGame();
+      marsBot.setCorpAndSetup(getMarsBotCorp(CardName.MINING_GUILD)!);
+      marsBot.corpSpecificState.set('mcOnCard', 10);
+      const mcBefore = marsBot.turnResolver.megacredits;
+      marsBot.turnResolver.gainMc(4);
+      expect(marsBot.turnResolver.megacredits).to.eq(mcBefore + 4);
+      expect(marsBot.corpSpecificState.get('mcOnCard')).to.eq(6);
+    });
+
+    it('Pristar cube intercepts the bot ocean placement', () => {
+      const {game, marsBot} = createAutomaGame();
+      marsBot.setCorpAndSetup(getMarsBotCorp(CardName.PRISTAR)!);
+      marsBot.corpSpecificState.set('whiteCubeOnCard', 1);
+      const oceansBefore = game.board.getOceanSpaces().length;
+      const trBefore = marsBot.player.terraformRating;
+      const mcBefore = marsBot.turnResolver.megacredits;
+      marsBot.turnResolver.placeOcean();
+      expect(game.board.getOceanSpaces().length).to.eq(oceansBefore);
+      expect(marsBot.player.terraformRating).to.eq(trBefore + 1);
+      expect(marsBot.turnResolver.megacredits).to.eq(mcBefore + 6);
+      expect(marsBot.corpSpecificState.get('whiteCubeOnCard')).to.eq(0);
+    });
+
+    it('Pristar without a cube lets the raise through', () => {
+      const {game, marsBot} = createAutomaGame();
+      marsBot.setCorpAndSetup(getMarsBotCorp(CardName.PRISTAR)!);
+      marsBot.corpSpecificState.set('whiteCubeOnCard', 0);
+      const oceansBefore = game.board.getOceanSpaces().length;
+      marsBot.turnResolver.placeOcean();
+      expect(game.board.getOceanSpaces().length).to.eq(oceansBefore + 1);
+    });
+
+    it('Government Intervention does not trigger Pristar (FAQ)', () => {
+      const {game, marsBot} = createAutomaGame();
+      marsBot.setCorpAndSetup(getMarsBotCorp(CardName.PRISTAR)!);
+      marsBot.corpSpecificState.set('whiteCubeOnCard', 1);
+      (game as any).generation = 2; // even generation → furthest-parameter branch
+      (marsBot as any).bonusResolver.resolveGovernmentIntervention();
+      expect(marsBot.corpSpecificState.get('whiteCubeOnCard')).to.eq(1);
+    });
+
+    // Starting tags resolve as a revealed card (rulebook B, setup step 4)
+    /** Runs setup for `corp` as is and with its ongoing effect removed, in identical games. */
+    function setupWithAndWithoutEffect(name: CardName) {
+      const corp = getMarsBotCorp(name)!;
+      const run = (c: typeof corp) => {
+        const {marsBot} = createAutomaGame();
+        marsBot.setCorpAndSetup(c);
+        return {
+          mc: marsBot.turnResolver.megacredits,
+          tr: marsBot.player.terraformRating,
+          events: marsBot.marsBotBoard.tracks[2].position,
+        };
+      };
+      return {withEffect: run(corp), without: run({...corp, effect: undefined})};
+    }
+
+    it('Arclight earns 2 M€ for its Animal starting tag', () => {
+      const {withEffect, without} = setupWithAndWithoutEffect(CardName.ARKLIGHT);
+      expect(withEffect.mc).to.eq(without.mc + 2);
+    });
+
+    it('Pharmacy Union raises its TR for its Science starting tag', () => {
+      const {withEffect, without} = setupWithAndWithoutEffect(CardName.PHARMACY_UNION);
+      expect(withEffect.tr).to.eq(without.tr + 1);
+    });
+
+    it('Saturn Systems advances the event track for its Jovian starting tag', () => {
+      const {withEffect, without} = setupWithAndWithoutEffect(CardName.SATURN_SYSTEMS);
+      expect(withEffect.events).to.be.greaterThan(without.events);
+    });
+
+    it('the starting tags make one card, so a corp with several tags is not paid per tag', () => {
+      const {withEffect, without} = setupWithAndWithoutEffect(CardName.SAGITTA_FRONTIER_SERVICES);
+      expect(withEffect.mc).to.eq(without.mc);
+    });
+
+    it('a corp without starting tags gets no card resolved', () => {
+      const {withEffect, without} = setupWithAndWithoutEffect(CardName.CREDICOR);
+      expect(withEffect).to.deep.eq(without);
     });
   });
 });

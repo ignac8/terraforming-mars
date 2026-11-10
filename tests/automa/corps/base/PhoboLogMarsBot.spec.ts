@@ -1,11 +1,17 @@
 import {expect} from 'chai';
+import {CardName} from '@/common/cards/CardName';
+import {Tag} from '@/common/cards/Tag';
+import {getMarsBotCorp} from '@/server/automa/corps/MarsBotCorpRegistry';
 import {PHOBOLOG_MARSBOT_CORP} from '@/server/automa/corps/base/PhoboLogMarsBot';
+import {resetCorpRegistry} from '../CorpGame';
 import {recordingMarsBot, trackCubes} from '../RecordingMarsBot';
 
 // Track index on the Tharsis board
 const SPACE = 1;
 
 describe('PhoboLogMarsBot', () => {
+  beforeEach(resetCorpRegistry);
+
   // The Setup box (rulebook B p.1)
   it('adds 2 space cards to the bonus deck at setup', () => {
     const {marsBot, calls} = recordingMarsBot();
@@ -22,5 +28,18 @@ describe('PhoboLogMarsBot', () => {
 
     expect(calls).deep.eq(['maybeDrawAndResolveBonusCard()']);
     expect(trackCubes(PHOBOLOG_MARSBOT_CORP)).deep.eq([7, 10, 13, 15].map((position) => `space white ${position}`));
+  });
+
+  it('has 4 white cubes on space track', () => {
+    const corp = getMarsBotCorp(CardName.PHOBOLOG)!;
+    expect(corp.trackCubes).to.have.length(4);
+    for (const cube of corp.trackCubes!) {
+      expect(cube).to.deep.include({trackIndex: 1, cubeType: 'white'});
+    }
+  });
+
+  it('has Space starting tag', () => {
+    const corp = getMarsBotCorp(CardName.PHOBOLOG)!;
+    expect(corp.tags).to.deep.eq([Tag.SPACE]);
   });
 });
