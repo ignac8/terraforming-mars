@@ -18,7 +18,6 @@ import {durationToMilliseconds} from '../utils/durations';
 import {readBody} from './readBody';
 import {RouteError} from './RouteError';
 import {CEO_CARDS_DEALT_PER_PLAYER} from '../../common/constants';
-import {validateCustomMA} from '../../common/ma/CustomMA';
 import {hasNegativeEscapeVelocityOption, sanitizeEscapeVelocityOptions} from '../../common/game/escapeVelocity';
 import {UnseededRandom} from '../../common/utils/Random';
 import {shuffleSeats} from '../incognito/shuffleSeats';
@@ -237,12 +236,6 @@ export class ApiCreateGame extends Handler {
 
       if (gameOptions.tournamentExpansion) {
         applyTournamentPreset(gameOptions);
-      }
-
-      try {
-        validateCustomMA(gameOptions.customMA, gameOptions.randomMA, gameOptions.venusNextExtension);
-      } catch (e) {
-        throw RouteError.badRequest(e instanceof Error ? e.message : String(e));
       }
 
       let game: IGame;

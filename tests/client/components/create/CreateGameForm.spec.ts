@@ -623,6 +623,20 @@ describe('CreateGameForm', () => {
     expect(model.customMA).is.undefined;
   });
 
+  it('solo games ignore the milestone and award settings', async () => {
+    const wrapper = shallowMount(CreateGameForm, {
+      ...globalConfig,
+    });
+    const model = wrapper.vm as unknown as CreateGameModel;
+    model.playersCount = 1;
+    model.randomMA = RandomMAOptionType.MANUAL;
+    model.customMA = {milestones: ['Terraformer'], awards: []};
+    expect(wrapper.vm.hasBlockingValidationErrors).is.false;
+    const config: NewGameConfig | undefined = await wrapper.vm.serializeSettings();
+    expect(config?.randomMA).eq(RandomMAOptionType.NONE);
+    expect(config?.customMA).is.undefined;
+  });
+
   it('validates the form settings', () => {
     // Tournament rules are on by default, and they deal 5 corporations to each player.
     expect(validateTwoPlayerGame((model) => model.customCorporations = cardNames(9)).notEnoughCorporations).eq(10);
