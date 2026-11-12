@@ -1238,10 +1238,10 @@ export default defineComponent({
       }
 
       const config = this.newGameConfig;
-      const isSolo = players.length === 1;
+      const isSolo = players.length === 1 && !config.automa;
       return {
         ...config,
-        // Solo games have no milestones and awards, and the form hides their settings.
+        // Solo games without MarsBot have no milestones and awards, and the form hides their settings.
         randomMA: isSolo ? RandomMAOptionType.NONE : config.randomMA,
         customMA: isSolo ? undefined : config.customMA,
         players,

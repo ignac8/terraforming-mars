@@ -486,12 +486,31 @@ describe('CreateGameForm', () => {
     });
     const model = wrapper.vm as unknown as CreateGameModel;
     model.playersCount = 1;
+    model.automa = false;
     model.randomMA = RandomMAOptionType.MANUAL;
     model.customMA = {milestones: ['Terraformer'], awards: []};
     expect(wrapper.vm.hasBlockingValidationErrors).is.false;
     const config: NewGameConfig | undefined = await wrapper.vm.serializeSettings();
     expect(config?.randomMA).eq(RandomMAOptionType.NONE);
     expect(config?.customMA).is.undefined;
+  });
+
+  it('MarsBot games keep the milestone and award settings', async () => {
+    const wrapper = shallowMount(CreateGameForm, {
+      ...globalConfig,
+    });
+    const model = wrapper.vm as unknown as CreateGameModel;
+    const customMA = {
+      milestones: ['Terraformer', 'Gardener', 'Builder', 'Mayor', 'Planner'],
+      awards: ['Banker', 'Scientist', 'Thermalist', 'Miner', 'Landlord'],
+    } as const;
+    model.playersCount = 1;
+    model.automa = true;
+    model.randomMA = RandomMAOptionType.MANUAL;
+    model.customMA = customMA;
+    const config: NewGameConfig | undefined = await wrapper.vm.serializeSettings();
+    expect(config?.randomMA).eq(RandomMAOptionType.MANUAL);
+    expect(config?.customMA).deep.eq(customMA);
   });
 
   it('validates the form settings', () => {

@@ -230,7 +230,7 @@ export function validateNewGameConfig(config: NewGameConfig, helpers: Helpers): 
     errors.ceosMissingExpansions = config.customCeos.filter(isMissingExpansion);
   }
 
-  if (playerCount > 1) {
+  if (playerCount > 1 || config.automa === true) {
     try {
       validateCustomMA(config.customMA, config.randomMA, config.expansions.venus);
     } catch (e) {

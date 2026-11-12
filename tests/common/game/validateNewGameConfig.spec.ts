@@ -291,6 +291,10 @@ describe('validateNewGameConfig', () => {
     expect(validate({players: players(1), randomMA: RandomMAOptionType.MANUAL}).invalidCustomMA).eq('');
   });
 
+  it('validates milestones and awards in MarsBot games', () => {
+    expect(validate({players: players(1), automa: true, randomMA: RandomMAOptionType.MANUAL}).invalidCustomMA).eq('randomMA Manual requires customMA');
+  });
+
   it('messages', () => {
     const notEnoughColonies = validationDetails.notEnoughColonies.message;
     expect(typeof notEnoughColonies === 'function' && notEnoughColonies({...NO_ERRORS, notEnoughColonies: 5})).deep.eq({
