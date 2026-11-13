@@ -93,7 +93,7 @@ export const validationDetails: Record<keyof ValidationErrors, {blocking: boolea
   },
   marsBotModularMAOnAmazonis: {
     blocking: true,
-    message: 'MarsBot can\'t play Amazonis Planitia with the Milestones & Awards expansion yet',
+    message: 'MarsBot can\'t play Amazonis Planitia with Official Random α milestones and awards yet. Untick it or leave Amazonis Planitia out.',
   },
   prelude2WithoutPrelude: {
     blocking: false,
