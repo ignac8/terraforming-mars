@@ -9,6 +9,7 @@ import {AutomaGameHooks} from '../../src/server/automa/AutomaGameHooks';
 import {MarsBot} from '../../src/server/automa/MarsBot';
 import {AutomaGameSetup} from '../../src/server/automa/AutomaGameSetup';
 import {ColonyName} from '../../src/common/colonies/ColonyName';
+import {RandomMAOptionType} from '../../src/common/ma/RandomMAOptionType';
 
 const MARS_TAGS = [Tag.BUILDING, Tag.SPACE, Tag.EVENT, Tag.SCIENCE, Tag.POWER, Tag.JOVIAN, Tag.EARTH, Tag.CITY, Tag.PLANT, Tag.ANIMAL, Tag.MICROBE];
 
@@ -101,7 +102,7 @@ describe('MarsBot boards', () => {
   }
 
   it('uses the Tharsis board with the Milestones & Awards expansion, whatever the map', () => {
-    const [game] = testGame(1, {automa: true, boardName: BoardName.HELLAS, modularMA: true});
+    const [game] = testGame(1, {automa: true, boardName: BoardName.HELLAS, randomMA: RandomMAOptionType.UNLIMITED, modularMA: true});
     const marsBot = getMarsBot(game);
     expect(game.gameOptions.boardName).eq(BoardName.HELLAS);
     // Jovian sits on the Energy track on Tharsis, on the Science track on Hellas

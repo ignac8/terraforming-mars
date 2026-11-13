@@ -5,6 +5,8 @@ import {ColonyName} from '../../src/common/colonies/ColonyName';
 import {CardName} from '../../src/common/cards/CardName';
 import {IGame} from '../../src/server/IGame';
 import {MARSBOT_BOARD_NAMES} from '../../src/common/automa/MarsBotBoards';
+import {RandomMAOptionType} from '../../src/common/ma/RandomMAOptionType';
+import {Tag} from '../../src/common/cards/Tag';
 
 describe('MarsBotGameCreation', () => {
   describe('Server-side expansion gating', () => {
@@ -197,6 +199,32 @@ describe('MarsBotGameCreation', () => {
         boardName: BoardName.ARABIA_TERRA,
       });
       expect(game.gameOptions.boardName).to.eq(BoardName.THARSIS);
+    });
+
+    it('ignores a leftover modularMA when random milestones and awards are off', () => {
+      const [game] = testGame(1, {
+        automa: true,
+        boardName: BoardName.HELLAS,
+        modularMA: true,
+        randomMA: RandomMAOptionType.NONE,
+      });
+
+      const board = game.automaHooks!.marsBot.marsBotBoard;
+      expect(game.gameOptions.modularMA).to.be.false;
+      expect(board.tracks[board.tagToTrack[Tag.SCIENCE]!].definition.tags).to.include(Tag.JOVIAN);
+    });
+
+    it('keeps modularMA when random milestones and awards are on', () => {
+      const [game] = testGame(1, {
+        automa: true,
+        boardName: BoardName.HELLAS,
+        modularMA: true,
+        randomMA: RandomMAOptionType.LIMITED,
+      });
+
+      const board = game.automaHooks!.marsBot.marsBotBoard;
+      expect(game.gameOptions.modularMA).to.be.true;
+      expect(board.tracks[board.tagToTrack[Tag.SCIENCE]!].definition.tags).to.not.include(Tag.JOVIAN);
     });
   });
 });

@@ -12,6 +12,7 @@ import {TrackDefinition, MARSBOT_STARTING_TR} from '../../common/automa/AutomaTy
 import {MARSBOT_BOARD_NAMES} from '../../common/automa/MarsBotBoards';
 import {marsBotMapSet} from '../../common/automa/marsBotMapSet';
 import {BoardName} from '../../common/boards/BoardName';
+import {RandomMAOptionType} from '../../common/ma/RandomMAOptionType';
 import {AutomaGameHooks} from './AutomaGameHooks';
 import {MarsBotTags} from './MarsBotTags';
 import {MarsBotStock, MarsBotProduction} from './MarsBotStock';
@@ -111,6 +112,10 @@ export class AutomaGameSetup {
     // The alternate Venus board's bonuses and the Chairman's agenda choice would ask MarsBot to choose.
     gameOptions.altVenusBoard = false;
     gameOptions.politicalAgendasExtension = 'Standard';
+    // modularMA only applies to random milestones and awards, but the create-game form sends it regardless.
+    if (gameOptions.randomMA === RandomMAOptionType.NONE) {
+      gameOptions.modularMA = false;
+    }
     if (!MARSBOT_BOARD_NAMES.includes(gameOptions.boardName)) {
       gameOptions.boardName = BoardName.THARSIS;
     }
