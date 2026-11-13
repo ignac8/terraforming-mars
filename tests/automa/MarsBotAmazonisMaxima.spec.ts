@@ -237,7 +237,7 @@ describe('MarsBotAmazonisMaxima', () => {
 
     it('raises oxygen when it is 2 steps from the maximum', () => {
       const {game, marsBot} = amazonisGame();
-      setTemperature(game, -10);
+      setTemperature(game, -10); // 5 steps from the ocean bonus, so the temperature branch stays off
       setOxygenLevel(game, 16);
 
       marsBot.resolveBonusCard(BonusCardId.B06_LOBBYISTS);
@@ -247,13 +247,62 @@ describe('MarsBotAmazonisMaxima', () => {
 
     it('raises Venus when it is 2 steps from the maximum', () => {
       const {game, marsBot} = amazonisGame(true);
-      setTemperature(game, 14);
-      setOxygenLevel(game, 18);
+      setTemperature(game, 14); // at the maximum, so the temperature branch stays off
+      setOxygenLevel(game, 18); // at the maximum, so the oxygen branch stays off
       setVenusScaleLevel(game, 31);
 
       marsBot.resolveBonusCard(BonusCardId.B15_LOBBYISTS_VENUS);
 
       expect(game.getVenusScaleLevel()).eq(33);
+    });
+
+    it('raises the temperature when it is 1 step from the plant production bonus', () => {
+      const {game, marsBot} = amazonisGame();
+      setTemperature(game, -14);
+
+      marsBot.resolveBonusCard(BonusCardId.B06_LOBBYISTS);
+
+      expect(game.getTemperature()).eq(-10);
+    });
+
+    it('raises oxygen when it is 2 steps from the card bonus at 7%', () => {
+      const {game, marsBot} = amazonisGame();
+      setOxygenLevel(game, 5);
+
+      marsBot.resolveBonusCard(BonusCardId.B06_LOBBYISTS);
+
+      expect(game.getOxygenLevel()).eq(7);
+    });
+
+    it('does not take 8% oxygen as a bonus step', () => {
+      const {game, marsBot} = amazonisGame();
+      setOxygenLevel(game, 7);
+
+      marsBot.resolveBonusCard(BonusCardId.B06_LOBBYISTS);
+
+      expect(game.getOxygenLevel()).eq(7);
+    });
+
+    it('raises Venus when it is 1 step from the TR bonus at 22%', () => {
+      const {game, marsBot} = amazonisGame(true);
+      setTemperature(game, 14); // at the maximum, so the temperature branch stays off
+      setOxygenLevel(game, 18); // at the maximum, so the oxygen branch stays off
+      setVenusScaleLevel(game, 20);
+
+      marsBot.resolveBonusCard(BonusCardId.B15_LOBBYISTS_VENUS);
+
+      expect(game.getVenusScaleLevel()).eq(24);
+    });
+
+    it('counts Venus steps of 1% above 30%', () => {
+      const {game, marsBot} = amazonisGame(true);
+      setTemperature(game, 14); // at the maximum, so the temperature branch stays off
+      setOxygenLevel(game, 18); // at the maximum, so the oxygen branch stays off
+      setVenusScaleLevel(game, 30); // 3 steps from 33%
+
+      marsBot.resolveBonusCard(BonusCardId.B15_LOBBYISTS_VENUS);
+
+      expect(game.getVenusScaleLevel()).eq(30);
     });
   });
 });
