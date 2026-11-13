@@ -399,8 +399,9 @@ export class MarsBotTurnResolver {
     }
   }
 
-  // Utopia Planitia's colony icon: build like Outer System Foothold, ignored without Colonies.
-  private placeColony(): void {
+  // Utopia Planitia's colony icon and Amazonis Planitia's Venus colony bonus: build like Outer
+  // System Foothold, ignored without Colonies.
+  public placeColony(): void {
     if (!this.game.gameOptions.coloniesExtension || this.marsBotManager === undefined) {
       return;
     }

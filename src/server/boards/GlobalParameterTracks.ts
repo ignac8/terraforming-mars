@@ -108,12 +108,12 @@ export function grantGlobalParameterTrackBonuses(
       }
       break;
     case 'plant':
-      if (!solar) {
+      if (!solar && !player.game.automaHooks?.handleTemperaturePlantBonus(player)) {
         player.production.add('plants', 1, {log: true});
       }
       break;
     case 'colony':
-      if (!solar) {
+      if (!solar && !player.game.automaHooks?.handleVenusColonyBonus(player)) {
         player.game.defer(new BuildColony(player));
       }
       break;

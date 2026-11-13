@@ -417,20 +417,46 @@ export class AutomaGameHooks {
   }
 
   /**
-   * Handle the Venus 8% card bonus for MarsBot: 2 MC instead of a card, as for the heat production
-   * bonus on the temperature track (BGG 3358342, 3424237, 3733436). Government Intervention pays
-   * no MC from bonuses. Returns true if handled.
+   * Pays MarsBot 2 MC instead of the plant production Amazonis Planitia prints at -12C, as for the
+   * heat production bonuses on the temperature track. Returns true if handled.
+   */
+  public handleTemperaturePlantBonus(player: IPlayer): boolean {
+    if (player === this.marsBot.player) {
+      this.marsBot.gainMc(2);
+      this.game.log('MarsBot gains 2 MC (temperature plant bonus)');
+      return true;
+    }
+    return false;
+  }
+
+  /**
+   * Pays MarsBot 2 MC instead of a card for a card bonus (Venus 8%, and oxygen 7% on Amazonis
+   * Planitia), as for the heat production bonus on the temperature track (BGG 3358342, 3424237,
+   * 3733436). Government Intervention pays no MC from bonuses. Returns true if handled.
    */
   public handleVenusCardBonus(player: IPlayer): boolean {
     if (player !== this.marsBot.player) {
       return false;
     }
     if (this.marsBot.bonusMcBlocked) {
-      this.game.log('MarsBot gains no MC for the Venus card bonus (Government Intervention)');
+      this.game.log('MarsBot gains no MC for the card bonus (Government Intervention)');
       return true;
     }
     this.marsBot.gainMc(2);
-    this.game.log('MarsBot gains 2 MC (Venus card bonus)');
+    this.game.log('MarsBot gains 2 MC (card bonus)');
+    return true;
+  }
+
+  /**
+   * Builds a colony for MarsBot at the colony bonus Amazonis Planitia prints at 16% Venus, so no
+   * colony choice is left for MarsBot to answer. Returns true if handled, which includes the
+   * game without Colonies, where the bonus is ignored.
+   */
+  public handleVenusColonyBonus(player: IPlayer): boolean {
+    if (player !== this.marsBot.player) {
+      return false;
+    }
+    this.marsBot.turnResolver.placeColony();
     return true;
   }
 
