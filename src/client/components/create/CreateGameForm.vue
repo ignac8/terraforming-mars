@@ -481,6 +481,9 @@
                       <option :value="7" v-i18n>13 (harder)</option>
                     </select>
                   </label>
+                  <div class="create-game-option-note">
+                    <span v-i18n>One less on Amazonis Planitia</span>
+                  </div>
 
                   <label for="automa-turmoil-delegates">
                     <span v-i18n>MarsBot delegates seeded at setup:</span>&nbsp;
@@ -665,6 +668,7 @@ import {JSONProcessor} from './JSONProcessor';
 import {defaultCreateGameModel} from './defaultCreateGameModel';
 import {createGameSettingsStorage} from './createGameSettingsStorage';
 import {getColony} from '@/client/colonies/ClientColonyManifest';
+import {getAward, getMilestone} from '@/client/MilestoneAwardManifest';
 import {RULEBOOK_URLS, WIKI_URLS} from '@/client/utils/WikiLinks';
 import {setDocumentTitle} from '@/client/utils/documentTitle';
 import {sanitizeEscapeVelocityOptions} from '@/common/game/escapeVelocity';
@@ -948,6 +952,8 @@ export default defineComponent({
         getColonyExpansion: (name) => {
           return getColony(name)?.expansion;
         },
+        getMilestoneExpansion: (name) => getMilestone(name)?.requirements,
+        getAwardExpansion: (name) => getAward(name)?.requirements,
       });
     },
     hasValidationProblems(): boolean {

@@ -93,10 +93,14 @@ const NO_ERRORS: ValidationErrors = {
   soloWithoutCorporateEra: false,
   infiniteEnergyBug: false,
   altVenusBoardOnAmazonis: false,
+  marsBotModularMAOnAmazonis: false,
+  marsBotManualModularMAOnAmazonis: false,
   prelude2WithoutPrelude: false,
   deltaProjectWithoutPrelude: false,
   notEnoughCorporations: 0,
   invalidCustomMA: '',
+  milestonesMissingExpansions: false,
+  awardsMissingExpansions: false,
 };
 
 function helpers(
@@ -105,6 +109,8 @@ function helpers(
   return {
     getCardCompatibility: (name) => cards[name] ?? [],
     getColonyExpansion: (name) => colonies[name],
+    getMilestoneExpansion: (name) => name === 'Terraformer' ? 'moon' : undefined,
+    getAwardExpansion: (name) => name === 'Politician' ? 'turmoil' : undefined,
   };
 }
 
@@ -185,6 +191,39 @@ describe('validateNewGameConfig', () => {
     expect(validate({expansions, altVenusBoard: true, boards: [BoardName.THARSIS]}).altVenusBoardOnAmazonis).is.false;
     expect(validate({expansions, altVenusBoard: false, boards: [BoardName.AMAZONIS_PLANITIA]}).altVenusBoardOnAmazonis).is.false;
     expect(validate({altVenusBoard: true, boards: [BoardName.AMAZONIS_PLANITIA]}).altVenusBoardOnAmazonis).is.false;
+  });
+
+  it('marsbot modular milestones and awards on amazonis', () => {
+    const marsBotModularMA = {automa: true, modularMA: true, randomMA: RandomMAOptionType.LIMITED};
+    expect(validate({...marsBotModularMA, boards: [BoardName.AMAZONIS_PLANITIA]}).marsBotModularMAOnAmazonis).is.true;
+    expect(validate({...marsBotModularMA, boards: [BoardName.THARSIS, BoardName.AMAZONIS_PLANITIA]}).marsBotModularMAOnAmazonis).is.true;
+    expect(validate({...marsBotModularMA, boards: boardOptions(RandomBoardOption.ALL)}).marsBotModularMAOnAmazonis).is.true;
+    expect(validate({...marsBotModularMA, randomMA: RandomMAOptionType.UNLIMITED, boards: [BoardName.AMAZONIS_PLANITIA]}).marsBotModularMAOnAmazonis).is.true;
+
+    expect(validate({...marsBotModularMA, boards: boardOptions(RandomBoardOption.OFFICIAL)}).marsBotModularMAOnAmazonis).is.false;
+    expect(validate({...marsBotModularMA, boards: [BoardName.THARSIS]}).marsBotModularMAOnAmazonis).is.false;
+    expect(validate({...marsBotModularMA, modularMA: false, boards: [BoardName.AMAZONIS_PLANITIA]}).marsBotModularMAOnAmazonis).is.false;
+    expect(validate({...marsBotModularMA, randomMA: RandomMAOptionType.NONE, boards: [BoardName.AMAZONIS_PLANITIA]}).marsBotModularMAOnAmazonis).is.false;
+    expect(validate({...marsBotModularMA, automa: false, boards: [BoardName.AMAZONIS_PLANITIA]}).marsBotModularMAOnAmazonis).is.false;
+    expect(validate({...marsBotModularMA, automa: undefined, boards: [BoardName.AMAZONIS_PLANITIA]}).marsBotModularMAOnAmazonis).is.false;
+  });
+
+  it('marsbot modular milestones and awards on amazonis with a hand-picked list', () => {
+    const manual = {automa: true, modularMA: true, randomMA: RandomMAOptionType.MANUAL, boards: [BoardName.AMAZONIS_PLANITIA]};
+    const errors = validate(manual);
+    // The form hides the Official Random α checkbox here, so the error that says to untick it stays off
+    expect(errors.marsBotManualModularMAOnAmazonis).is.true;
+    expect(errors.marsBotModularMAOnAmazonis).is.false;
+
+    expect(validate({...manual, randomMA: RandomMAOptionType.LIMITED}).marsBotManualModularMAOnAmazonis).is.false;
+    expect(validate({...manual, modularMA: false}).marsBotManualModularMAOnAmazonis).is.false;
+    expect(validate({...manual, boards: [BoardName.THARSIS]}).marsBotManualModularMAOnAmazonis).is.false;
+    expect(validate({...manual, automa: false}).marsBotManualModularMAOnAmazonis).is.false;
+  });
+
+  it('marsbot modular milestones and awards on amazonis blocks the game', () => {
+    expect(validationDetails.marsBotModularMAOnAmazonis.blocking).is.true;
+    expect(validationDetails.marsBotManualModularMAOnAmazonis.blocking).is.true;
   });
 
   it('prelude 2 without prelude', () => {
@@ -285,6 +324,31 @@ describe('validateNewGameConfig', () => {
     expect(validate({randomMA: RandomMAOptionType.MANUAL}).invalidCustomMA).eq('randomMA Manual requires customMA');
     expect(validate({randomMA: RandomMAOptionType.LIMITED, customMA}).invalidCustomMA).eq('customMA requires randomMA to be Manual');
     expect(validate({randomMA: RandomMAOptionType.MANUAL, customMA: {...customMA, awards: ['Banker']}}).invalidCustomMA).eq('customMA must have 5 awards');
+  });
+
+  it('milestones and awards missing expansions', () => {
+    const customMA = {
+      milestones: ['Terraformer', 'Gardener', 'Builder', 'Mayor', 'Planner'],
+      awards: ['Politician', 'Scientist', 'Thermalist', 'Miner', 'Celebrity'],
+    } as const;
+    const errors = validate({randomMA: RandomMAOptionType.MANUAL, customMA});
+    expect(errors.milestonesMissingExpansions).is.true;
+    expect(errors.awardsMissingExpansions).is.true;
+
+    const expansions = {...newGameConfig().expansions, moon: true, turmoil: true};
+    const enabled = validate({randomMA: RandomMAOptionType.MANUAL, customMA, expansions});
+    expect(enabled.milestonesMissingExpansions).is.false;
+    expect(enabled.awardsMissingExpansions).is.false;
+  });
+
+  it('malformed custom milestones and awards are invalid, not a crash', () => {
+    const malformed = [null, {milestones: ['Terraformer']}, {milestones: ['Terraformer'], awards: 'Politician'}] as unknown as Array<NewGameConfig['customMA']>;
+    for (const customMA of malformed) {
+      const errors = validate({randomMA: RandomMAOptionType.MANUAL, customMA});
+      expect(errors.invalidCustomMA).not.eq('');
+      expect(errors.milestonesMissingExpansions).is.false;
+      expect(errors.awardsMissingExpansions).is.false;
+    }
   });
 
   it('ignores milestones and awards in solo games', () => {

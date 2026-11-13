@@ -107,7 +107,7 @@ describe('CreateGameForm', () => {
 
     await wrapper.find('#undo-checkbox').setValue(false);
 
-    expect(wrapper.find('.create-game-option-note').exists()).eq(false);
+    expect(column?.querySelectorAll('.create-game-option-note')).has.length(0);
   });
 
   it('offers skipping MarsBot\'s corporation at final greeneries, off by default', () => {
@@ -241,8 +241,8 @@ describe('CreateGameForm', () => {
     const isBoardDisabled = wrapper.findComponent({name: 'BoardSelector'}).props('isBoardDisabled');
 
     expect(isBoardDisabled(BoardName.HELLAS)).is.false;
+    expect(isBoardDisabled(BoardName.AMAZONIS_PLANITIA)).is.false;
     expect(isBoardDisabled(BoardName.ARABIA_TERRA)).is.true;
-    expect(isBoardDisabled(BoardName.AMAZONIS_PLANITIA)).is.true;
 
     vm.automa = false;
     await vm.$nextTick();
@@ -250,8 +250,9 @@ describe('CreateGameForm', () => {
   });
 
   for (const run of [
-    {boards: [BoardName.AMAZONIS_PLANITIA, BoardName.HELLAS, BoardName.ARABIA_TERRA], expected: [BoardName.HELLAS]},
-    {boards: [BoardName.AMAZONIS_PLANITIA, BoardName.ARABIA_TERRA], expected: [BoardName.THARSIS]},
+    {boards: [BoardName.VASTITAS_BOREALIS, BoardName.HELLAS, BoardName.ARABIA_TERRA], expected: [BoardName.HELLAS]},
+    {boards: [BoardName.AMAZONIS_PLANITIA, BoardName.ARABIA_TERRA], expected: [BoardName.AMAZONIS_PLANITIA]},
+    {boards: [BoardName.VASTITAS_BOREALIS, BoardName.ARABIA_TERRA], expected: [BoardName.THARSIS]},
   ] as const) {
     it(`enabling automa keeps only the selected MarsBot boards ${JSON.stringify(run)}`, async () => {
       const wrapper = shallowMount(CreateGameForm, {...globalConfig});
@@ -521,6 +522,16 @@ describe('CreateGameForm', () => {
   it('ignores unknown colony names when validating', () => {
     const errors = validateTwoPlayerGame((model) => model.customColonies = ['Unknown Colony' as ColonyName]);
     expect(errors.coloniesMissingExpansions).deep.eq([]);
+  });
+
+  it('validates hand-picked milestones and awards against the expansions', () => {
+    const errors = validateTwoPlayerGame((model) => {
+      model.randomMA = RandomMAOptionType.MANUAL;
+      model.expansions.turmoil = false;
+      model.customMA = {milestones: ['Terraformer'], awards: ['Banker', 'Politician']};
+    });
+    expect(errors.milestonesMissingExpansions).is.false;
+    expect(errors.awardsMissingExpansions).is.true;
   });
 
   it('disables Create game when there is a blocking error', async () => {

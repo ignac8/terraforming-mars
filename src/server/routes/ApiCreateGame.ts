@@ -20,7 +20,7 @@ import {readBody} from './readBody';
 import {RouteError} from './RouteError';
 import {CEO_CARDS_DEALT_PER_PLAYER} from '../../common/constants';
 import {hasNegativeEscapeVelocityOption, sanitizeEscapeVelocityOptions} from '../../common/game/escapeVelocity';
-import {MARSBOT_BOARD_NAMES} from '../../common/automa/MarsBotBoards';
+import {MARSBOT_BOARD_NAMES, modularMABlocksMarsBot} from '../../common/automa/MarsBotBoards';
 import {AutomaGameSetup} from '../automa/AutomaGameSetup';
 
 function parseQuotaConfig(struct: any): QuotaConfig {
@@ -140,7 +140,7 @@ export class ApiCreateGame extends Handler {
 
       let boards = gameReq.boards;
       if (gameReq.automa === true) {
-        boards = boards.filter((name) => MARSBOT_BOARD_NAMES.includes(name));
+        boards = boards.filter((name) => MARSBOT_BOARD_NAMES.includes(name) && !modularMABlocksMarsBot(name, gameReq));
         if (boards.length === 0) {
           boards = [BoardName.THARSIS];
         }

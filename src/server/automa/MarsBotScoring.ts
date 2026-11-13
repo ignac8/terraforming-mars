@@ -1,6 +1,7 @@
 import {IGame} from '../IGame';
 import {IPlayer} from '../IPlayer';
-import {DifficultyLevel, getAutomaMaxGeneration, MARSBOT_MAX_GENERATION, MARSBOT_MAX_GENERATION_PRELUDE} from '../../common/automa/AutomaTypes';
+import {DifficultyLevel, getAutomaMaxGeneration} from '../../common/automa/AutomaTypes';
+import {BoardName} from '../../common/boards/BoardName';
 import {MarsBotTurnResolver} from './MarsBotTurnResolver';
 import {IProjectCard} from '../cards/IProjectCard';
 import {Space} from '../boards/Space';
@@ -42,19 +43,6 @@ export class MarsBotScoring {
     private readonly playedProjectCards: ReadonlyArray<IProjectCard> = [],
     private readonly corpVpBonus: number = 0,
   ) {}
-
-  private getMaxGeneration(): number {
-    const opts = this.game.gameOptions;
-    return getAutomaMaxGeneration(opts.preludeExtension);
-  }
-
-  /** Check if MarsBot instantly wins because max generation reached. Never without a generation limit. */
-  public isInstantWin(): boolean {
-    if (this.game.gameOptions.automaNoGenerationLimit) {
-      return false;
-    }
-    return this.game.generation >= this.getMaxGeneration();
-  }
 
   /** Calculate MarsBot's complete VP breakdown. */
   public calculate(): MarsBotVPBreakdown {
@@ -200,11 +188,9 @@ function buildMcToVpTable(maxGen: number): ReadonlyArray<{maxGeneration: number,
   return table;
 }
 
-const MC_TO_VP_TABLE = buildMcToVpTable(MARSBOT_MAX_GENERATION);
-const MC_TO_VP_TABLE_PRELUDE = buildMcToVpTable(MARSBOT_MAX_GENERATION_PRELUDE);
-
-export function getMcPerVP(generation: number, preludeExtension: boolean): number | undefined {
-  const table = preludeExtension ? MC_TO_VP_TABLE_PRELUDE : MC_TO_VP_TABLE;
+/** M€ per VP in `generation` on `boardName`, or undefined from the generation limit on. */
+export function getMcPerVP(generation: number, preludeExtension: boolean, boardName: BoardName): number | undefined {
+  const table = buildMcToVpTable(getAutomaMaxGeneration(preludeExtension, boardName));
   const entry = table.find((e) => generation <= e.maxGeneration);
   return entry?.mcPerVP;
 }
@@ -216,12 +202,12 @@ export function getMcPerVP(generation: number, preludeExtension: boolean): numbe
  */
 export function currentMcPerVP(game: IGame): number | undefined {
   const opts = game.gameOptions;
-  const maxGeneration = getAutomaMaxGeneration(opts.preludeExtension);
+  const maxGeneration = getAutomaMaxGeneration(opts.preludeExtension, opts.boardName);
   let generation = game.generation;
   if (opts.automaNoGenerationLimit) {
     generation = Math.min(generation, maxGeneration - 1);
   } else if (generation >= maxGeneration) {
     return undefined;
   }
-  return getMcPerVP(generation, opts.preludeExtension);
+  return getMcPerVP(generation, opts.preludeExtension, opts.boardName);
 }

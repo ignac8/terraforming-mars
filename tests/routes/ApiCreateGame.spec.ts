@@ -139,15 +139,56 @@ describe('ApiCreateGame', () => {
   });
 
   it('picks a MarsBot game board only from the selected boards MarsBot supports', async () => {
-    await postConfig({...newGameConfigForTest(), automa: true, boards: [BoardName.AMAZONIS_PLANITIA, BoardName.HELLAS, BoardName.ARABIA_TERRA]});
+    await postConfig({...newGameConfigForTest(), automa: true, boards: [BoardName.VASTITAS_BOREALIS, BoardName.HELLAS, BoardName.ARABIA_TERRA]});
     expect(res.statusCode).eq(statusCode.ok);
     const model = JSON.parse(res.content) as SimpleGameModel;
     const game = await scaffolding.ctx.gameLoader.getGame(model.id);
     expect(game!.gameOptions.boardName).eq(BoardName.HELLAS);
   });
 
-  it('falls back to Tharsis when no selected board supports MarsBot', async () => {
+  it('plays Amazonis Planitia against MarsBot when it is the only supported board selected', async () => {
     await postConfig({...newGameConfigForTest(), automa: true, boards: [BoardName.AMAZONIS_PLANITIA, BoardName.ARABIA_TERRA]});
+    expect(res.statusCode).eq(statusCode.ok);
+    const model = JSON.parse(res.content) as SimpleGameModel;
+    const game = await scaffolding.ctx.gameLoader.getGame(model.id);
+    expect(game!.gameOptions.boardName).eq(BoardName.AMAZONIS_PLANITIA);
+  });
+
+  describe('with the Milestones & Awards expansion', () => {
+    const modularMAConfig = {
+      ...newGameConfigForTest(),
+      automa: true,
+      modularMA: true,
+      randomMA: RandomMAOptionType.LIMITED,
+    };
+
+    async function postedBoard(config: object): Promise<BoardName> {
+      res = new MockResponse();
+      await postConfig(config);
+      expect(res.statusCode).eq(statusCode.ok);
+      const model = JSON.parse(res.content) as SimpleGameModel;
+      const game = await scaffolding.ctx.gameLoader.getGame(model.id);
+      return game!.gameOptions.boardName;
+    }
+
+    it('never starts a MarsBot game on Amazonis Planitia', async () => {
+      for (let i = 0; i < 20; i++) {
+        expect(await postedBoard({...modularMAConfig, boards: [BoardName.AMAZONIS_PLANITIA, BoardName.HELLAS]})).eq(BoardName.HELLAS);
+      }
+    });
+
+    it('falls back to Tharsis when Amazonis Planitia is the only board selected', async () => {
+      expect(await postedBoard({...modularMAConfig, boards: [BoardName.AMAZONIS_PLANITIA]})).eq(BoardName.THARSIS);
+    });
+
+    it('keeps Amazonis Planitia among the choices when random milestones and awards are off', async () => {
+      const config = {...modularMAConfig, randomMA: RandomMAOptionType.NONE, boards: [BoardName.AMAZONIS_PLANITIA]};
+      expect(await postedBoard(config)).eq(BoardName.AMAZONIS_PLANITIA);
+    });
+  });
+
+  it('falls back to Tharsis when no selected board supports MarsBot', async () => {
+    await postConfig({...newGameConfigForTest(), automa: true, boards: [BoardName.VASTITAS_BOREALIS, BoardName.ARABIA_TERRA]});
     expect(res.statusCode).eq(statusCode.ok);
     const model = JSON.parse(res.content) as SimpleGameModel;
     const game = await scaffolding.ctx.gameLoader.getGame(model.id);

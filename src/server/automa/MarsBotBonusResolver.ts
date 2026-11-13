@@ -3,7 +3,8 @@ import {IPlayer} from '../IPlayer';
 import {CardResource} from '../../common/CardResource';
 import {GlobalParameter} from '../../common/GlobalParameter';
 import {Board, isSpecialTileSpace} from '../boards/Board';
-import * as constants from '../../common/constants';
+import {GlobalParameterTracks} from '../boards/GlobalParameterTracks';
+import {venusStepsBetween} from '../venusNext/venusScale';
 import {MarsBotBonusCard, MarsBotBonusDeckCard, bonusCardDisplayName} from './MarsBotBonusCard';
 import {MarsBotBonusDeck} from './MarsBotBonusDeck';
 import {MarsBotTilePlacer} from './MarsBotTilePlacer';
@@ -132,15 +133,42 @@ export class MarsBotBonusResolver {
     return true;
   }
 
+  /** Checks whether the `type` parameter is 1 or 2 steps from the nearer of its next bonus step and its maximum. */
+  public isNearBonusStep(type: keyof GlobalParameterTracks): boolean {
+    const steps = this.stepsToNextBonus(type);
+    return steps >= 1 && steps <= 2;
+  }
+
+  /**
+   * Counts the steps from the current level of the `type` parameter to the nearer of the next bonus step
+   * printed on the map's track and the track's maximum.
+   *
+   * A temperature step is 2 degrees, an oxygen step 1%, and a Venus step 2% up to 30%, then 1%.
+   * Returns 0 when the track is at its maximum.
+   */
+  private stepsToNextBonus(type: keyof GlobalParameterTracks): number {
+    const nextStop = (level: number) => Math.min(
+      this.game.max[type],
+      ...this.game.globalParameterTracks[type].map((threshold) => threshold.value).filter((value) => value > level));
+    switch (type) {
+    case 'temperature': {
+      const level = this.game.getTemperature();
+      return (nextStop(level) - level) / 2;
+    }
+    case 'oxygen': {
+      const level = this.game.getOxygenLevel();
+      return nextStop(level) - level;
+    }
+    case 'venus': {
+      const level = this.game.getVenusScaleLevel();
+      return venusStepsBetween(level, nextStop(level));
+    }
+    }
+  }
+
   /** Lobbyists shared branch (a): temperature 1-2 steps from bonus or completion. */
   public lobbyistsTempBranch(source: string = 'Lobbyists'): boolean {
-    const temp = this.game.getTemperature();
-    const tempBonusTargets = [constants.TEMPERATURE_BONUS_FOR_HEAT_1, constants.TEMPERATURE_BONUS_FOR_HEAT_2, constants.TEMPERATURE_FOR_OCEAN_BONUS, constants.MAX_TEMPERATURE];
-    const tempStepsToNextBonus = tempBonusTargets
-      .filter((t) => t > temp)
-      .map((t) => (t - temp) / 2)
-      .reduce((min, s) => Math.min(min, s), Infinity);
-    if (tempStepsToNextBonus >= 1 && tempStepsToNextBonus <= 2 && temp < constants.MAX_TEMPERATURE) {
+    if (this.isNearBonusStep('temperature')) {
       // Pristar's cube cancels only the first of the 2 steps
       const steps = this.interceptsRaise(GlobalParameter.TEMPERATURE) ? 1 : 2;
       this.game.increaseTemperature(this.botPlayer, steps);
@@ -152,18 +180,14 @@ export class MarsBotBonusResolver {
 
   /** Lobbyists shared branch (b): oxygen 1-2 steps from bonus or completion. */
   public lobbyistsOxygenBranch(source: string = 'Lobbyists'): boolean {
-    const oxy = this.game.getOxygenLevel();
-    const oxyStepsToMax = constants.MAX_OXYGEN_LEVEL - oxy;
-    const oxyBonusAt8 = oxy < constants.OXYGEN_LEVEL_FOR_TEMPERATURE_BONUS;
-    const oxyStepsToBonus = oxyBonusAt8 ? constants.OXYGEN_LEVEL_FOR_TEMPERATURE_BONUS - oxy : oxyStepsToMax;
-    if ((oxyStepsToMax >= 1 && oxyStepsToMax <= 2) || (oxyStepsToBonus >= 1 && oxyStepsToBonus <= 2)) {
+    if (this.isNearBonusStep('oxygen')) {
       const greenerySpace = this.tilePlacer.findGreenerySpace();
       if (greenerySpace !== undefined) {
-        const raiseOxygen = this.game.getOxygenLevel() >= constants.MAX_OXYGEN_LEVEL ||
+        const raiseOxygen = this.game.getOxygenLevel() >= this.game.max.oxygen ||
           !this.interceptsRaise(GlobalParameter.OXYGEN);
         this.game.addGreenery(this.botPlayer, greenerySpace, raiseOxygen);
         this.turnResolver.gainMc(this.tilePlacer.getPlacementBonusMC(greenerySpace) + this.tilePlacer.getOceanAdjacencyMC(greenerySpace));
-        if (this.game.getOxygenLevel() < constants.MAX_OXYGEN_LEVEL && !this.interceptsRaise(GlobalParameter.OXYGEN)) {
+        if (this.game.getOxygenLevel() < this.game.max.oxygen && !this.interceptsRaise(GlobalParameter.OXYGEN)) {
           this.game.increaseOxygenLevel(this.botPlayer, 1);
         }
         this.game.log(`MarsBot places greenery and raises oxygen twice (${source})`);
@@ -200,7 +224,7 @@ export class MarsBotBonusResolver {
     if (space === undefined) {
       return false;
     }
-    const raiseOxygen = this.game.getOxygenLevel() >= constants.MAX_OXYGEN_LEVEL ||
+    const raiseOxygen = this.game.getOxygenLevel() >= this.game.max.oxygen ||
       !this.interceptsRaise(GlobalParameter.OXYGEN);
     this.game.addGreenery(this.botPlayer, space, raiseOxygen);
     this.turnResolver.gainMc(this.tilePlacer.getTotalPlacementMC(space));
@@ -228,24 +252,7 @@ export class MarsBotBonusResolver {
    * M€ that Lakefront Resorts' advance brings in stays (rulebook B, p.4).
    */
   public withoutTRorMcGain(action: () => void): void {
-    const marsBot = this.marsBotManager;
-    const mcBefore = this.turnResolver.megacredits;
-    if (marsBot !== undefined) {
-      marsBot.mcKeptThroughIntervention = 0;
-    }
-    let kept = 0;
-    try {
-      this.withoutTRGain(action);
-    } finally {
-      kept = marsBot?.mcKeptThroughIntervention ?? 0;
-      if (marsBot !== undefined) {
-        marsBot.mcKeptThroughIntervention = undefined;
-      }
-    }
-    if (this.turnResolver.megacredits > mcBefore + kept) {
-      this.turnResolver.megacredits = mcBefore + kept;
-      this.game.log('MarsBot does not receive M€ from Government Intervention');
-    }
+    this.turnResolver.withoutMcGain(() => this.withoutTRGain(action));
   }
 
   public tryHelperAction(awardName: string): boolean {
@@ -320,7 +327,7 @@ export class MarsBotBonusResolver {
       board.getAdjacentSpaces(space).some((s) => s.spaceType === SpaceType.OCEAN);
     const nextToSpecialTile = (space: Space) => board.getAdjacentSpaces(space).some(isSpecialTileSpace);
     const onEdge = (space: Space) => space.edge;
-    const inFourBottomRows = (space: Space) => space.y >= 5 && space.y <= 8;
+    const southOfEquator = (space: Space) => space.y > board.equatorRow;
 
     switch (awardName) {
     // Tharsis (B08)
@@ -338,7 +345,7 @@ export class MarsBotBonusResolver {
     // Elysium (B10)
     case 'Celebrity': return revealAndResolveCard((c) => c.cost >= 20);
     case 'Industrialist': return advanceTrackOf(Tag.POWER);
-    case 'Desert Settler': return this.maybePlaceGreenery(inFourBottomRows);
+    case 'Desert Settler': return this.maybePlaceGreenery(southOfEquator);
     case 'Estate Dealer': return this.maybePlaceGreenery(nextToOcean);
     case 'Benefactor': { this.botPlayer.increaseTerraformRating(2); return true; }
     // Utopia Planitia (B11)
@@ -364,8 +371,10 @@ export class MarsBotBonusResolver {
     case 'Administrator': return revealAndResolveCard((c) => cardTagsIncludingEvent(c).length === 0, 5);
     case 'Biologist': return advanceTrackOf(Tag.MICROBE);
     case 'Collector': return advance(marsBotBoard.getLeastAdvancedTrackIndex());
+    case 'Innovator': return revealAndResolveCard(() => true);
     case 'Constructor': return placeCity();
     case 'Manufacturer': return advanceTrackOfEither([Tag.BUILDING, Tag.POWER], 'less');
+    case 'Physicist': return advanceTrackOfEither([Tag.SCIENCE, Tag.SPACE], 'less');
     case 'Politician': return false;
     case 'Supplier': return advanceTrackOf(Tag.POWER);
     case 'Visionary': return advance(marsBotBoard.getLeastAdvancedTrackIndex(true));
@@ -415,13 +424,13 @@ export class MarsBotBonusResolver {
    * Returns false when every parameter is already complete.
    */
   public advanceFurthestParameter(allowCorpIntercept: boolean = true): boolean {
-    const tempRemaining = (constants.MAX_TEMPERATURE - this.game.getTemperature()) / 2;
-    const oxyRemaining = constants.MAX_OXYGEN_LEVEL - this.game.getOxygenLevel();
-    const oceanRemaining = constants.MAX_OCEAN_TILES - this.game.board.getOceanSpaces().length;
+    const tempRemaining = (this.game.max.temperature - this.game.getTemperature()) / 2;
+    const oxyRemaining = this.game.max.oxygen - this.game.getOxygenLevel();
+    const oceanRemaining = this.game.max.oceans - this.game.board.getOceanSpaces().length;
 
     const params: Array<{name: string, remaining: number, action: () => boolean}> = [
       {name: 'oxygen', remaining: oxyRemaining, action: () => {
-        if (this.game.getOxygenLevel() < constants.MAX_OXYGEN_LEVEL) {
+        if (this.game.getOxygenLevel() < this.game.max.oxygen) {
           if (allowCorpIntercept && this.interceptsRaise(GlobalParameter.OXYGEN)) {
             return true;
           }
@@ -445,7 +454,7 @@ export class MarsBotBonusResolver {
         return false;
       }},
       {name: 'temperature', remaining: tempRemaining, action: () => {
-        if (this.game.getTemperature() < constants.MAX_TEMPERATURE) {
+        if (this.game.getTemperature() < this.game.max.temperature) {
           if (allowCorpIntercept && this.interceptsRaise(GlobalParameter.TEMPERATURE)) {
             return true;
           }

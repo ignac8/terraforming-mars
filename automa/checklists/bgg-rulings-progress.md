@@ -8,7 +8,7 @@ Code status:
 
 - `applied`: recorded in [designer-rulings.md](designer-rulings.md) "Applied in the code", and the code agrees.
 - `matches`: the code already does this. The rulebooks say the same, or it is not worth a row.
-- `mismatch`: the code, or one of our own readings in designer-rulings.md, does something else. Needs a decision.
+- `mismatch`: the code, or one of our own readings in designer-rulings.md, does something else. Needs a decision, unless the Mismatches section below says the difference is deliberate.
 - `n/a`: nothing for the code to do (physical components, printed wording, something the app does not offer).
 - `open`: not settled from the code yet.
 
@@ -29,7 +29,7 @@ replaced, is `n/a` when it disagrees with the code: the later source is what cou
 
 | File | Rulings | applied | matches | mismatch | n/a | open | State |
 |---|---|---|---|---|---|---|---|
-| [automa.md](../bgg-rulings/automa.md) | 184 | 113 | 51 | 0 | 20 | 0 | Checked against automa `9e2ae6dfa` and rulebooks A, B, C |
+| [automa.md](../bgg-rulings/automa.md) | 184 | 111 | 51 | 3 | 19 | 0 | Checked against automa `9e2ae6dfa` and rulebooks A, B, C |
 | [base-game.md](../bgg-rulings/base-game.md) | 664 |  |  |  |  |  | Not started |
 | [promos.md](../bgg-rulings/promos.md) | 100 |  |  |  |  |  | Not started |
 | [prelude.md](../bgg-rulings/prelude.md) | 76 |  |  |  |  |  | Not started |
@@ -57,9 +57,13 @@ Against the rulebooks: 76 agrees, 79 extends, 15 differs, 8 silent, 6 n/a.
 - **Setup** ([46755233](https://boardgamegeek.com/thread/3594202/article/46755233#46755233), Nick 2025-10-18) `inferred`: Does the Automa use the 2-player setup (starting TR 20) rather than the original solo setup, e.g. for the Turmoil Reds bonus? d8b583911: The Reds ruling bonuses compare your TR with MarsBot's; MarsBot itself still gains or loses nothing.
 - **Toll Station** ([40399513](https://boardgamegeek.com/thread/2883930/article/40399513#40399513), Nick 2022-07-07) `prototype`: How do cards that count opponents' tags or events (Toll Station, Media Archives) work against MarsBot? 8f78ee196: Media Archives adds MarsBot's event track; Toll Station already read its tag tracks.
 
-### Mismatches (0)
+### Mismatches (3)
 
-None.
+All three are one deliberate decision: this fork offers Amazonis Planitia with a MarsBot board of its own design (see [AMAZONIS-PLANITIA-MARSBOT.md](../AMAZONIS-PLANITIA-MARSBOT.md)).
+
+- **Amazonis Planitia** ([42905968-1](https://boardgamegeek.com/thread/3148562/article/42905968#42905968), Nick): "won't be automa compatible". The code offers the map.
+- **Amazonis Planitia** ([42907867](https://boardgamegeek.com/thread/3148562/article/42907867#42907867), Dávid) `intent`: MarsBot is tuned to the pace of the base map and a longer map needs more than 18 steps. The code gives the map its own board with 18-step tracks and two more generations.
+- **Amazonis Planitia** ([45483515](https://boardgamegeek.com/thread/3440836/article/45483515#45483515), Nick) `intent`: pick any bot board if someone insists. The code has a board for the map, so nobody has to borrow another one.
 
 ### Open (0)
 
@@ -90,9 +94,9 @@ In the order of automa.md.
 | Ruling | Topic | Status | Rulebook | designer-rulings.md row | Code | Note |
 |---|---|---|---|---|---|---|
 | [44651810](https://boardgamegeek.com/thread/3343494/article/44651810#44651810) Nick | Action deck | matches | agrees (B p.2) |  | `src/server/automa/corps/MarsBotDraftResolver.ts:44`<br>`src/server/automa/corps/MarsBotDraftResolver.ts:73`<br>`tests/automa/corps/MarsBotDraftResolver.spec.ts:250` | After the draft MarsBot shuffles its four cards and discards only the first one its draft priority does not protect, so the other non-matching cards stay in its action deck. No designer-rulings row records this single-discard point; the 'Draft discard when every card matches' row covers the all-match case. |
-| [42905968-1](https://boardgamegeek.com/thread/3148562/article/42905968#42905968) Nick | Amazonis Planitia | applied | silent | Amazonis Planitia | `src/common/automa/MarsBotBoards.ts:4`<br>`src/server/routes/ApiCreateGame.ts:140`<br>`src/server/automa/AutomaGameSetup.ts:115`<br>`tests/automa/MarsBotBoards.spec.ts:127` | Amazonis Planitia has no MarsBot board: the create form disables every map outside the six MarsBot maps, the create route filters them out of a MarsBot game, and sanitizeGameOptions resets any other board to Tharsis. |
-| [42907867](https://boardgamegeek.com/thread/3148562/article/42907867#42907867) Dávid `intent` | Amazonis Planitia | applied | silent | Amazonis Planitia | `src/common/automa/MarsBotBoards.ts:4`<br>`src/server/automa/boards/MarsBotBoards.ts:16`<br>`tests/automa/MarsBotBoards.spec.ts:127` | Same exclusion as the other Amazonis rulings: MarsBot only ships boards with 18-step tracks for the six standard-size maps, and Amazonis is not among them. |
-| [45483515](https://boardgamegeek.com/thread/3440836/article/45483515#45483515) Nick `intent` | Amazonis Planitia | n/a | silent |  | `src/common/automa/MarsBotBoards.ts:14` | The ruling only says to pick any bot board if someone insists on trying Amazonis anyway. This implementation deliberately does not offer Amazonis in a MarsBot game, so there is no board to pick. |
+| [42905968-1](https://boardgamegeek.com/thread/3148562/article/42905968#42905968) Nick | Amazonis Planitia | mismatch | silent | Amazonis Planitia | `src/common/automa/MarsBotBoards.ts:17`<br>`src/server/routes/ApiCreateGame.ts:143`<br>`src/server/automa/AutomaGameSetup.ts:121`<br>`tests/automa/MarsBotBoards.spec.ts:137`<br>`tests/routes/ApiCreateGame.spec.ts:149` | Deliberate: Nick says Amazonis Planitia will not be Automa compatible, and this fork offers it anyway on a MarsBot board of its own design (`automa/AMAZONIS-PLANITIA-MARSBOT.md`). The create form lists the map, the create route keeps it among MarsBot's boards, and sanitizeGameOptions leaves it. With the Milestones & Awards expansion it still falls back to Tharsis. |
+| [42907867](https://boardgamegeek.com/thread/3148562/article/42907867#42907867) Dávid `intent` | Amazonis Planitia | mismatch | silent | Amazonis Planitia | `src/server/automa/boards/AmazonisPlanitiaMarsBot.ts:47`<br>`src/server/automa/boards/MarsBotBoards.ts:19`<br>`src/common/automa/MarsBotMapRules.ts:14`<br>`tests/automa/MarsBotBoards.spec.ts:160`<br>`tests/automa/MarsBotMapRules.spec.ts:64` | Deliberate: Dávid says a longer map needs more than 18 steps and a rework. The fork gives Amazonis a board of its own design with the usual 18-step tracks and moves the game length instead: MarsBot wins two generations later and its M€ to VP table moves with it. |
+| [45483515](https://boardgamegeek.com/thread/3440836/article/45483515#45483515) Nick `intent` | Amazonis Planitia | mismatch | silent |  | `src/common/automa/MarsBotBoards.ts:17`<br>`src/server/automa/boards/AmazonisPlanitiaMarsBot.ts:47` | Deliberate: the ruling only says to pick any bot board if someone insists on trying Amazonis anyway. This fork offers Amazonis in a MarsBot game with a board made for it, so there is no other board to pick. |
 | [46758412](https://boardgamegeek.com/thread/3595110/article/46758412#46758412) Nick `hedged` | Ants | applied | extends (A p.4) | Ants against MarsBot | `src/server/cards/base/Ants.ts:24`<br>`src/server/automa/AutomaGameHooks.ts:530`<br>`src/server/automa/AutomaGameHooks.ts:546`<br>`src/server/deferredActions/RemoveResourcesFromCard.ts:74`<br>`tests/automa/MarsBotSessionFixes.spec.ts:647` | Ants removes with source 'all', and RemoveResourcesFromCard adds MarsBot's M€ supply (and the Enceladus microbe storage) as targets whenever it holds anything, so the player can take microbes from MarsBot. |
 | [46276978](https://boardgamegeek.com/thread/3535330/article/46276978#46276978) Dávid `hedged` | Arklight | applied | extends (C p.4) | Colonies board track advances | `src/server/automa/colonies/MarsBotShippingBoard.ts:93`<br>`src/server/automa/MarsBotTurnResolver.ts:76`<br>`src/server/automa/MarsBotTurnResolver.ts:182`<br>`tests/automa/MarsBotSplice.spec.ts:191` | A colony storage overflow advances the track through advanceTrackOfTag, which never calls the corp's onTagResolved. Only tags on resolved cards and the corp's starting tags reach Arklight, so no 2 M€ comes from the board advance. |
 | [46278330](https://boardgamegeek.com/thread/3535330/article/46278330#46278330) Nick `hedged` | Arklight | applied | extends (C p.4) | Colonies board track advances | `src/server/automa/colonies/MarsBotShippingBoard.ts:93`<br>`src/server/automa/MarsBotTurnResolver.ts:76`<br>`tests/automa/MarsBotSplice.spec.ts:191` | Nick agrees with Dávid's no, and the code treats a Colonies board advance as not resolving a tag for MarsBot's corp (the test checks Arklight with a Ganymede overflow). |

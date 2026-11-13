@@ -9,7 +9,7 @@ import {VENUS_MARSBOT_TRACK} from '@/server/automa/boards/VenusMarsBot';
 
 const MARS_TAGS = [Tag.BUILDING, Tag.SPACE, Tag.EVENT, Tag.SCIENCE, Tag.POWER, Tag.JOVIAN, Tag.EARTH, Tag.CITY, Tag.PLANT, Tag.ANIMAL, Tag.MICROBE];
 
-// Track index of each tag on the Tharsis board. Every other map moves a few of them (rulebook C, p.8).
+// Track index of each tag on the Tharsis board. Every other map moves a few of them.
 const THARSIS_TAG_TRACKS: Partial<Record<Tag, number>> = {
   [Tag.BUILDING]: 0,
   [Tag.SPACE]: 1,
@@ -24,6 +24,7 @@ const THARSIS_TAG_TRACKS: Partial<Record<Tag, number>> = {
   [Tag.MICROBE]: 6,
 };
 
+// The six rulebook maps follow rulebook C, p.8.
 const TAG_TRACKS: Partial<Record<BoardName, Partial<Record<Tag, number>>>> = {
   [BoardName.THARSIS]: THARSIS_TAG_TRACKS,
   [BoardName.UTOPIA_PLANITIA]: THARSIS_TAG_TRACKS,
@@ -34,6 +35,8 @@ const TAG_TRACKS: Partial<Record<BoardName, Partial<Record<Tag, number>>>> = {
   [BoardName.TERRA_CIMMERIA_NOVA]: {...THARSIS_TAG_TRACKS, [Tag.JOVIAN]: 5, [Tag.CITY]: 3},
   // Microbe pairs with Science, City with Energy, Jovian with Earth.
   [BoardName.VASTITAS_BOREALIS_NOVA]: {...THARSIS_TAG_TRACKS, [Tag.MICROBE]: 3, [Tag.CITY]: 4, [Tag.JOVIAN]: 5},
+  // Animal pairs with Science. This board is not in the rulebooks.
+  [BoardName.AMAZONIS_PLANITIA]: {...THARSIS_TAG_TRACKS, [Tag.ANIMAL]: 3},
 };
 
 describe('MarsBotBoards', () => {
@@ -64,7 +67,7 @@ describe('MarsBotBoards', () => {
   }
 
   for (const boardName of MARSBOT_BOARD_NAMES) {
-    it(`pairs tags on each map as rulebook C, p.8 says, ${boardName}`, () => {
+    it(`pairs tags on each map, ${boardName}`, () => {
       const board = new MarsBotBoard(MARSBOT_BOARDS[boardName]!);
       expect(board.tagToTrack).deep.eq(TAG_TRACKS[boardName]);
     });

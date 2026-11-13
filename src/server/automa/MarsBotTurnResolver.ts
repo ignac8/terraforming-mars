@@ -18,7 +18,6 @@ import {MarsBotTilePlacer} from './MarsBotTilePlacer';
 import {IMilestone} from '../milestones/IMilestone';
 import {IAward} from '../awards/IAward';
 import {Resource} from '../../common/Resource';
-import * as constants from '../../common/constants';
 import {MarsBotCorpResolver} from './corps/MarsBotCorpResolver';
 import {placeColonyForMarsBot, selectRandomColony} from './colonies/MarsBotColonyPlacer';
 import {marsBotCanClaimMilestone, marsBotAwardScore, milestoneRemaining} from './MarsBotMilestoneAwardEval';
@@ -302,7 +301,7 @@ export class MarsBotTurnResolver {
    * resolve one at a time, so Pristar's cube cancels only the first (BGG 3431297, 3432237).
    */
   public raiseTemperature(steps: 1 | 2): void {
-    if (this.game.getTemperature() >= constants.MAX_TEMPERATURE) {
+    if (this.game.getTemperature() >= this.game.max.temperature) {
       this.failedAction();
       return;
     }
@@ -327,7 +326,7 @@ export class MarsBotTurnResolver {
     }
 
     // Place tile and raise oxygen (unless the corp intercepts the raise)
-    const raiseOxygen = this.game.getOxygenLevel() >= constants.MAX_OXYGEN_LEVEL ||
+    const raiseOxygen = this.game.getOxygenLevel() >= this.game.max.oxygen ||
       !this.interceptsRaise(GlobalParameter.OXYGEN);
     this.game.addGreenery(this.botPlayer, space, raiseOxygen);
 
@@ -373,7 +372,7 @@ export class MarsBotTurnResolver {
 
   /** Like raiseTemperature: Pristar's cube cancels only the first step. */
   private raiseVenus(steps: 1 | 2): void {
-    if (this.game.getVenusScaleLevel() >= constants.MAX_VENUS_SCALE) {
+    if (this.game.getVenusScaleLevel() >= this.game.max.venus) {
       this.failedAction();
       return;
     }
@@ -400,8 +399,9 @@ export class MarsBotTurnResolver {
     }
   }
 
-  // Utopia Planitia's colony icon: build like Outer System Foothold, ignored without Colonies.
-  private placeColony(): void {
+  // Utopia Planitia's colony icon and Amazonis Planitia's Venus colony bonus: build like Outer
+  // System Foothold, ignored without Colonies.
+  public placeColony(): void {
     if (!this.game.gameOptions.coloniesExtension || this.marsBotManager === undefined) {
       return;
     }
@@ -571,6 +571,33 @@ export class MarsBotTurnResolver {
     }
     this.megacredits += amount;
     this.marsBotManager?.corp?.effect?.onMcGained?.(this.marsBotManager, amount);
+  }
+
+  /**
+   * Runs `action` and caps MarsBot's M€ supply at what it was before, so the action pays MarsBot no
+   * M€ (for Government Intervention). A supply the action lowers stays lowered.
+   *
+   * M€ that Lakefront Resorts' advance brings in stays (rulebook B, p.4).
+   */
+  public withoutMcGain(action: () => void): void {
+    const marsBot = this.marsBotManager;
+    const mcBefore = this.megacredits;
+    if (marsBot !== undefined) {
+      marsBot.mcKeptThroughIntervention = 0;
+    }
+    let kept = 0;
+    try {
+      action();
+    } finally {
+      kept = marsBot?.mcKeptThroughIntervention ?? 0;
+      if (marsBot !== undefined) {
+        marsBot.mcKeptThroughIntervention = undefined;
+      }
+    }
+    if (this.megacredits > mcBefore + kept) {
+      this.megacredits = mcBefore + kept;
+      this.game.log('MarsBot does not receive M€ from Government Intervention');
+    }
   }
 
   /** Pristar: true when the corp consumes its cube to skip this raise. */

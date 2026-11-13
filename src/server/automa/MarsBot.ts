@@ -3,7 +3,6 @@ import {IPlayer} from '../IPlayer';
 import {IProjectCard} from '../cards/IProjectCard';
 import {Resource} from '../../common/Resource';
 import {GlobalParameter} from '../../common/GlobalParameter';
-import * as constants from '../../common/constants';
 import {CardName} from '../../common/cards/CardName';
 import {newCard} from '../createCard';
 import {DifficultyLevel, BonusCardId, LAKEFRONT_OCEAN_BONUS, TrackDefinition, getAutomaMaxGeneration} from '../../common/automa/AutomaTypes';
@@ -128,8 +127,8 @@ export class MarsBot implements IMarsBot {
   public shippingBoard: MarsBotShippingBoard = new MarsBotShippingBoard();
 
   /**
-   * True while Government Intervention raises Venus: its global parameter bonuses pay MarsBot no
-   * MC. Only set during that synchronous raise, so never saved.
+   * True while Government Intervention raises Venus: its global parameter bonuses and the colony the
+   * raise earns pay MarsBot no MC. Only set during that synchronous raise, so never saved.
    */
   public bonusMcBlocked: boolean = false;
 
@@ -506,7 +505,7 @@ export class MarsBot implements IMarsBot {
 
   public raiseTemperature(steps: 1 | 2): void {
     // A corp effect is a reaction, not an action, so a maxed temperature is no Failed Action (Nick)
-    if (this.game.getTemperature() >= constants.MAX_TEMPERATURE) {
+    if (this.game.getTemperature() >= this.game.max.temperature) {
       return;
     }
     this.turnResolver.raiseTemperature(steps);
@@ -723,13 +722,13 @@ export class MarsBot implements IMarsBot {
     return scoring.calculate();
   }
 
-  /** Check if MarsBot instantly wins (gen 20, or gen 18 with Prelude). Never without a generation limit. */
+  /** Check if MarsBot instantly wins (gen 20, 18 with Prelude, two more on Amazonis Planitia). Never without a generation limit. */
   public isInstantWin(): boolean {
     const opts = this.game.gameOptions;
     if (opts.automaNoGenerationLimit) {
       return false;
     }
-    return this.game.generation >= getAutomaMaxGeneration(opts.preludeExtension);
+    return this.game.generation >= getAutomaMaxGeneration(opts.preludeExtension, opts.boardName);
   }
 
   // ---- Track Regression (human effects) ----

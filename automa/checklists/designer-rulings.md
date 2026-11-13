@@ -67,7 +67,7 @@ Thread links: `https://boardgamegeek.com/thread/<id>`. "Q&A n" is question n of 
 | Hard mode first-turn milestone | "2 or more" counts unclaimed milestones only. "Yes, it means unclaimed" (Nick) | 3365910 |
 | Award price after MarsBot funds one | 8, 14, 20 M€ whoever funded the earlier awards. "Regardless of who funded the previous award" (Nick) | 3532698 |
 | Venus 16% TR bonus | MarsBot gains 1 TR. "TR is as written: 1TR" (Nick) | 3358342 |
-| Amazonis Planitia | Not offered with MarsBot: it has no MarsBot board. "Won't be automa compatible" (Nick) | 3148562 |
+| Amazonis Planitia | "Won't be automa compatible" (Nick). This fork offers it with MarsBot anyway, as a deliberate deviation, on a MarsBot board of its own design that is not from the rulebooks (`automa/AMAZONIS-PLANITIA-MARSBOT.md`) | 3148562 |
 | MarsBot corporations | Only those marked with an expansion need it, and you don't need the matching human corporation (Dávid) | 3161277 |
 | Ants against MarsBot | You may take microbes from MarsBot. "I'd say you can remove them for that effect" (Nick) | 3595110 |
 | Mining Guild's M€ on the card | Not scored at game end. "MarsBot has not 'gained' them yet" (Nick) | 3553988 |

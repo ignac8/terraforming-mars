@@ -26,7 +26,7 @@ describe('MarsBot final greenery', () => {
 
   /** The state placeFinalGreeneries runs in: the last generation's production phase. */
   function endGame(game: IGame): void {
-    game.generation = getAutomaMaxGeneration(game.gameOptions.preludeExtension);
+    game.generation = getAutomaMaxGeneration(game.gameOptions.preludeExtension, game.gameOptions.boardName);
     game.phase = Phase.PRODUCTION;
     expect(game.isDoneWithFinalProduction()).is.true;
   }
