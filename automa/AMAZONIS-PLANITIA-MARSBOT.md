@@ -1,16 +1,16 @@
 # MarsBot on Amazonis Planitia (big map): design
 
-Status: design agreed 2026-11-04, not built. Fork only: this map has no MarsBot board in the rulebooks,
-so none of this goes upstream.
+Status: built as of 2026-11-13. Fork only: this map has no MarsBot board in the rulebooks, so none of this
+goes upstream.
 
 ## 1. Why
 
 Amazonis Planitia (`BoardName.AMAZONIS_PLANITIA`, `'amazonis planitia'`, the 91-hex map) is a bigger Mars:
 11 oceans, +14 °C (22 temperature steps), 18 % oxygen, Venus to 33 % with 1 % steps from 31 to 33. That is
 51 global steps instead of 42. The rulebooks give each official map its own MarsBot board ("slightly tweaked
-tracks, and different milestones & awards", rulebook C p.12), but there is none for this map. Today MarsBot
-refuses it: `isMarsBotBoardChoice` hides it in the create-game form and `AutomaGameSetup` swaps any other
-board to Tharsis.
+tracks, and different milestones & awards", rulebook C p.8), but there is none for this map. This fork adds
+one (4.1). `MARSBOT_BOARD_NAMES` lists the map, so `isMarsBotBoardChoice` lets the create-game form offer it
+with MarsBot. `AutomaGameSetup.sanitizeGameOptions` still swaps any map without a MarsBot board to Tharsis.
 
 The goal is a MarsBot game on this map that feels like the official ones: same rules, same strength, a
 board that looks like the designers made it, and a game that is longer only because Mars is bigger.
@@ -20,8 +20,8 @@ board that looks like the designers made it, and a game that is longer only beca
 Goals
 - A MarsBot board for the map that follows the designers' patterns (section 4.1).
 - Game length and MarsBot's M€ → VP table that match the bigger map.
-- A MarsBot rule for every milestone and award the map deals, including the three that have none today
-  (Merchant3, Innovator, Physicist).
+- A MarsBot rule for every milestone and award the map deals, including the three the rulebooks do not
+  cover (Merchant3, Innovator, Physicist).
 - Every map maximum read from the game, never from the standard-map constants.
 
 Non-goals
@@ -63,7 +63,7 @@ Track order and tags:
 | 5 | Earth | Earth, City | heat |
 | 6 | Plant | Plant, Microbe | plants |
 
-Layout, in the format of `src/server/automa/boards/*MarsBot.ts`:
+Layout, as in `src/server/automa/boards/AmazonisPlanitiaMarsBot.ts`:
 
 ```ts
 const TRACK_BUILDING: TrackDefinition = {
@@ -133,8 +133,8 @@ The big map runs about 1.5 generations longer. On this map only:
 - The M€ → VP table follows automatically, since `buildMcToVpTable` counts back from the limit: 1 VP per
   8 M€ until generation 14 (12 with Prelude) instead of 12 (10).
 
-Build it as one per-board number of extra generations that feeds both. This replaces an earlier "shift by
-one" decision.
+One per-board number, `extraGenerations` in `marsBotMapRules` (`src/common/automa/MarsBotMapRules.ts`), feeds
+both. It is 2 on this map and 0 on every other.
 
 ### 4.3 Cards that name a generation (this map only)
 
@@ -143,6 +143,9 @@ one" decision.
 | Terralabs (Turmoil corp): 2 cards per generation | from generation 9 | from generation 10 |
 | Overachievement (B04): fund an award | from generation 6 | from generation 7 |
 | Nirgal Enterprises: milestone / award / milestone windows | 2–5 / 6–9 / 10+ | 2–6 / 7–10 / 11+ |
+
+The one-generation delay is `generationShift` in `marsBotMapRules` (1 on this map, 0 elsewhere). It moves
+only MarsBot's own thresholds. Government Intervention and Investors keep reading the real generation.
 
 ### 4.4 Milestones and awards
 
@@ -200,13 +203,18 @@ This map's parameter tracks print bonuses the standard maps do not have (`AMAZON
 
 | Bonus | MarsBot gets |
 |---|---|
-| Colony at 16 % Venus | builds a colony exactly as for Utopia Planitia's colony icon (`placeColony`: like Outer System Foothold, ignored without Colonies). Without this the game would wait on a colony choice MarsBot never makes |
+| Colony at 16 % Venus | builds a colony exactly as for Utopia Planitia's colony icon (`placeColony`: like Outer System Foothold, ignored without Colonies). The raise only marks the colony as due; `handleVenusRaised` builds it once the raise has finished, so a corporation's reaction to the colony (Poseidon's track advance, which can land on a Venus icon) cannot raise Venus again in the middle of the first raise. A human player is still asked where to build |
 | Plant production at −12 °C | 2 M€, as for the heat-production bonuses |
 | Card at 7 % oxygen | 2 M€, through the existing card-bonus hook |
 | Temperature at 11 % oxygen, TR at 22 % Venus | the bonus itself, as on standard maps at 8 % and 16 % |
 
 Lobbyists ("1–2 steps from a bonus or completion") reads these bonus steps from
-`game.globalParameterTracks`, not the standard-map constants.
+`game.globalParameterTracks`, not the standard-map constants (`stepsToNextBonus` in
+`MarsBotBonusResolver`). Oxygen 8 % is not a bonus step here.
+
+TODO: Government Intervention raises Venus across 16 % and still builds the colony. A colony that pays M€
+(Europa's ocean) pays it, although that raise otherwise gives MarsBot no other M€. No ruling exists for this
+map, so it is left as built.
 
 ### 4.7 Colonies
 
@@ -217,32 +225,45 @@ track at Tharsis' rate.
 
 - Delegate hexes: MarsBot gains 1 M€ per delegate icon, as it does for any bonus. Rulebook C prints the
   same rule for the Vastitas Borealis delegate hexes. `MarsBotTilePlacer` already pays it.
-- MarsBot's starting TR with Turmoil: 20 − 11 on this map instead of 20 − 10. The human loses about 1 TR a
-  generation to Turmoil and MarsBot none, and the game is a generation longer. This is an inference, not a
-  designer statement.
+- MarsBot's starting TR with Turmoil: 20 − 11 on this map instead of 20 − 10, so 9. The harder variant
+  (`automaTurmoilTRReduction` 7) moves by one as well: 20 − 8, so 12 instead of 13. `turmoilTRExtra` in
+  `marsBotMapRules` holds the one. The create-game form says "One less on Amazonis Planitia" under that
+  option. The human loses about 1 TR a generation to Turmoil and MarsBot none, and the game is a generation
+  longer. This is an inference, not a designer statement.
 
 ### 4.9 New bonus card: Corporate Competition (Amazonis)
 
-In code this is not a new card: every map's Corporate Competition runs through B08, which picks a push by
-award name in `MarsBotBonusResolver.tryHelperAction` (B09–B13 are enum values only). Collector,
-Constructor, Manufacturer and Venuphile are already there; only Innovator and Physicist are new:
+In code this is not a new card: every map's Corporate Competition runs through B08
+(`bonusCards/CorporateCompetitionMarsBot.ts`), which picks a push by award name in
+`MarsBotBonusResolver.tryHelperAction` (B09–B13 are enum values only). Collector, Constructor, Manufacturer
+and Venuphile were already there; only Innovator and Physicist are new:
 
 | Award | Push |
 |---|---|
 | Collector | advance the least-advanced track |
-| Innovator | flip and resolve a project card |
+| Innovator | flip the top project card and resolve it, with no filter on the card |
 | Constructor | place a city |
-| Manufacturer | advance Building or Energy |
-| Physicist | advance Science or Space |
+| Manufacturer | advance the less advanced of Building and Energy |
+| Physicist | advance the less advanced of Science and Space |
 | Venuphile (with Venus) | advance the Venus track |
 
-The Innovator push is invented; the rest reuse existing helpers.
+When the two tracks are tied, the upper track advances. The Innovator push is invented; the rest reuse
+existing helpers.
 
 ### 4.10 Milestones & Awards expansion on this map: disabled for now
 
-With the M&A expansion on, the rulebook (C p.12) has MarsBot use the Tharsis board whatever the map, and
+With the M&A expansion on, the rulebook (C p.13) has MarsBot use the Tharsis board whatever the map, and
 the code does the same (`marsBotBoardName`, `MarsBotTilePlacer.mapName`, `marsBotMapSet`). For now MarsBot
-refuses this map when M&A is on: the create-game form and server validation both block the combination.
+does not play this map when M&A is on.
+
+The expansion counts as on when `modularMA` is set and random milestones and awards are not off (limited
+synergy, full random or hand-picked). One shared check, `modularMABlocksMarsBot` in
+`src/common/automa/MarsBotBoards.ts`, decides when the expansion blocks the map, and each place below uses it:
+- The create-game form shows a blocking error (`marsBotModularMAOnAmazonis` in `validateNewGameConfig`).
+- The server does not run that validation. `ApiCreateGame` drops the map from MarsBot's board choices, and
+  `AutomaGameSetup.sanitizeGameOptions` falls back to Tharsis when no other board is left.
+- With random milestones and awards off, `modularMA` does nothing, but the create-game form sends it anyway.
+  `sanitizeGameOptions` ignores that leftover `modularMA`, so the map stays playable.
 
 TODO: decide between
 - Tharsis tracks with this map's numbers (extra generations, Turmoil 20 − 11, 4.3, 4.6a), keyed to the map
@@ -254,31 +275,43 @@ TODO: decide between
 "Frontier Push", a pacing card for non-Venus games. The board already closes the game-length gap; both
 together would make the big map end faster than a standard one.
 
-## 5. Required fixes, whatever else changes
+## 5. Changes outside the board
 
-- About 20 `constants.MAX_*` checks in `src/server/automa` (`MarsBot.ts` 1, `MarsBotBonusResolver.ts` 16,
-  `MarsBotTurnResolver.ts` 3) use standard-map maxima. On this map MarsBot would call temperature done at
-  +8 °C and take Failed Actions. All read `game.max.*` (or the game's equivalent).
-- The Lobbyists branches in `MarsBotBonusResolver.ts` also hard-code standard bonus steps
-  (`OXYGEN_LEVEL_FOR_TEMPERATURE_BONUS`, `VENUS_LEVEL_FOR_TR_BONUS`, the heat and ocean temperature steps);
-  they read the map's tracks instead (4.6a).
-- Register the board: `MARSBOT_BOARD_NAMES` (`src/common/automa/MarsBotBoards.ts`) and `MARSBOT_BOARDS`
-  (`src/server/automa/boards/MarsBotBoards.ts`), with and without Venus. This lifts the current refusal;
-  its test needs to flip.
-- One per-board extra-generation number feeding `getAutomaMaxGeneration` and the M€ → VP table (4.2).
-- Registering the board would also make `coveredByAutomaRules` treat Merchant3, Innovator and Physicist
-  as covered on every MarsBot map. They stay **Amazonis only**: on the six official maps random M&A keeps
-  leaving them out of MarsBot games, as today, so the filter needs a map check, not just the registration.
-  The new rules in 4.4 land in the same change.
+- `src/server/automa` reads the map's maxima from `game.max.*` and uses no `constants.MAX_*`. With the
+  standard-map maxima MarsBot would call temperature done at +8 °C and take Failed Actions.
+- The Lobbyists branches in `MarsBotBonusResolver.ts` count steps with `stepsToNextBonus`, from the map's own
+  bonus tracks (4.6a) and the game's maxima. They no longer name `OXYGEN_LEVEL_FOR_TEMPERATURE_BONUS`,
+  `VENUS_LEVEL_FOR_TR_BONUS` or the heat and ocean temperature steps.
+- The board is registered in `MARSBOT_BOARD_NAMES` (`src/common/automa/MarsBotBoards.ts`) and `MARSBOT_BOARDS`
+  (`src/server/automa/boards/MarsBotBoards.ts`). `MARSBOT_BOARDS` holds one board per map, seven tracks;
+  `AutomaGameSetup.getBoardData` appends the Venus track when Venus Next is in play.
+- `getAutomaMaxGeneration` adds the map's `extraGenerations`, and the M€ → VP table is built from that limit
+  (4.2).
+- `coveredByAutomaRules` counts Merchant3, Innovator and Physicist as covered only in a game on this map
+  without the M&A expansion. On the six official maps random M&A keeps leaving them out of MarsBot games.
+  The rules for them are in 4.4.
 
-## 6. Left to the builder
+## 6. Decisions the design left open
 
-- Where the per-map numbers live (extra generations, Turmoil TR reduction, the generation thresholds in
-  4.3, Manufacturer's −3): one per-board settings object is the obvious shape, but the code decides.
-- Whether the Turmoil harder variant (`automaTurmoilTRReduction` 7) also moves by one on this map.
-- Card text and log wording for the new rules and Corporate Competition (Amazonis), following the existing
-  `automaDescription` style.
-- Test layout, following the existing per-map MarsBot tests.
+- The per-map numbers live in one object per map, returned by `marsBotMapRules`: `extraGenerations` 2,
+  `generationShift` 1 and `turmoilTRExtra` 1 on this map, all 0 elsewhere. Manufacturer's −3 sits on the
+  award itself (`Manufacturer.marsBotScore`), not in that object.
+- The Turmoil harder variant also moves by one: MarsBot starts at 9 TR with the rulebook reduction and at 12
+  with the harder one (4.8).
+- Corporate Competition's Innovator push flips the top project card and resolves it, with no filter on the
+  card. Its Physicist push advances the less advanced of the Science and Space tracks (4.9).
+- The colony from the 16 % Venus bonus is built right after the raise is complete, so a corporation reaction
+  such as Poseidon's cannot re-enter the raise (4.6a).
+- The M&A expansion counts as on when `modularMA` is set and random milestones and awards are not off (limited
+  synergy, full random or hand-picked). `modularMABlocksMarsBot` is the one check for it (4.10).
+- A leftover `modularMA` with random milestones and awards off is ignored, so the map stays playable.
+- The card text for the new rules follows the existing `automaDescription` style: Merchant3 "All tracks ≥ 3
+  (except Venus)", Innovator "Played cards minus the generation", Physicist "Science + Space tracks − 5",
+  and on Manufacturer "Building + Energy tracks − 3" through `automaMapDescriptions`. The Terralabs and
+  Nirgal Enterprises texts end with "(one generation later on Amazonis Planitia)".
+- The tests are `tests/automa/MarsBotAmazonisRules.spec.ts`, `MarsBotAmazonisBonuses.spec.ts`,
+  `MarsBotAmazonisMA.spec.ts` and `MarsBotAmazonisMaxima.spec.ts`, plus `MarsBotMapRules.spec.ts` for the
+  per-map numbers.
 
 ## 7. Evidence
 

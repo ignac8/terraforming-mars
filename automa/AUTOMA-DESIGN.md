@@ -4,7 +4,7 @@
 
 MarsBot is an automated opponent for solo play. Instead of the standard solo mode (race to complete terraforming within a generation limit), the player competes head-to-head against MarsBot for victory points. MarsBot acts as a second player using a card-driven track system instead of playing actual project cards.
 
-**Scope**: Base game on the six official maps (Tharsis, Hellas, Elysium, Utopia Planitia, Terra Cimmeria Nova, Vastitas Borealis Nova) + Prelude/Prelude2 + Venus Next + Colonies + Turmoil expansions + 46 MarsBot corporation cards (Rulebook B). Other expansions (Ares, Moon, Pathfinders, CEOs, Star Wars, Underworld, Community Cards) are server-side gated off.
+**Scope**: Base game on seven maps: the six official ones (Tharsis, Hellas, Elysium, Utopia Planitia, Terra Cimmeria Nova, Vastitas Borealis Nova) and Amazonis Planitia, whose MarsBot board is this fork's own design, not from the rulebooks (see `AMAZONIS-PLANITIA-MARSBOT.md`) + Prelude/Prelude2 + Venus Next + Colonies + Turmoil expansions + 46 MarsBot corporation cards (Rulebook B). Other expansions (Ares, Moon, Pathfinders, CEOs, Star Wars, Underworld, Community Cards) are server-side gated off.
 
 ---
 
@@ -124,7 +124,7 @@ When the cube lands on an icon, perform the action immediately:
 2. Cover the most placement bonus icons.
 3. Random: Flip a card from the project deck, use its cost to count through tied spaces (top-left, going right, then down). Place on the final space. Discard the flipped card. A cost of 1 is the first space; a cost of 0 or an exact multiple of the count is the last (Nick Shaw, BGG thread 3342916).
 
-Steps 1-2 are the Tharsis order. Each map's player aid has its own (`MAP_TIEBREAKERS` in `MarsBotTilePlacer.ts`): Hellas adds the polar region, Elysium the southern region, Terra Cimmeria spaces next to special tiles (the Neural Instance counts), Utopia counts edge spaces as +1 icon, Vastitas counts volcanic and nearby spaces as +1 icon. With the Milestones & Awards expansion MarsBot uses the Tharsis order on any map, plus the expansion's own modifiers when those are in play: Geologist (volcanic +1), Founder (next to special tiles +1), Suburbian (edge +1), Highlander (oceans after icons). Special hexes (Hellas South Pole, Vastitas North Pole, Terra Cimmeria MSL, Vastitas Viking) count as 2.5 icons when MarsBot can pay for them and pay out their bonus.
+Steps 1-2 are the Tharsis order. Each map's player aid has its own (`MAP_TIEBREAKERS` in `MarsBotTilePlacer.ts`): Hellas adds the polar region, Elysium the southern region, Terra Cimmeria spaces next to special tiles (the Neural Instance counts), Utopia counts edge spaces as +1 icon, Vastitas counts volcanic and nearby spaces as +1 icon. Amazonis Planitia has no player aid of its own and uses the Tharsis order. With the Milestones & Awards expansion MarsBot uses the Tharsis order on any map, plus the expansion's own modifiers when those are in play: Geologist (volcanic +1), Founder (next to special tiles +1), Suburbian (edge +1), Highlander (oceans after icons). Special hexes (Hellas South Pole, Vastitas North Pole, Terra Cimmeria MSL, Vastitas Viking) count as 2.5 icons when MarsBot can pay for them and pay out their bonus.
 
 **Placement Bonuses**:
 - Adjacent to ocean: MarsBot gains 2 MC per adjacent ocean.
@@ -133,6 +133,7 @@ Steps 1-2 are the Tharsis order. Each map's player aid has its own (`MAP_TIEBREA
 **Terraforming Bonuses**:
 - Temperature at -24°C or -20°C (heat bonus): MarsBot gains 2 MC instead.
 - Venus at 8% (card bonus): MarsBot gains 2 MC instead of a card (BGG 3358342, 3424237, 3733436). Not from Government Intervention.
+- Amazonis Planitia prints other bonuses on its tracks: plant production at -12°C and a card at 7% oxygen pay MarsBot 2 MC, the colony at 16% Venus is built for it, and the temperature step at 11% oxygen and the TR at 22% Venus resolve as printed. See `AMAZONIS-PLANITIA-MARSBOT.md` section 4.6a.
 - Temperature/oxygen reaching a bonus step that grants another terraforming action: resolve it immediately (Failed Action if can't).
 - All terraforming raises grant TR as normal.
 
@@ -158,9 +159,9 @@ Steps 1-2 are the Tharsis order. Each map's player aid has its own (`MAP_TIEBREA
 
 When comparing awards for resources (Thermalist, Miner), MarsBot considers your current resources + your production. For Thermalist that is heat + energy resources + heat production, not energy production (Dávid Turczi, BGG thread 3350125). Corporate Competition compares the same way.
 
-Other maps have their own milestone and award rules for MarsBot (rulebook C pp.9-12). They apply whenever that map's own milestone or award is in play, random M&A included; the rest use the expansion's generic rules (`marsBotMapSet` in `src/common/automa/marsBotMapSet.ts`).
+Other maps have their own milestone and award rules for MarsBot (rulebook C pp.9-12). They apply whenever that map's own milestone or award is in play, random M&A included; the rest use the expansion's generic rules (`marsBotMapSet` in `src/common/automa/marsBotMapSet.ts`). Amazonis Planitia's rules for Merchant3, Innovator, Physicist and Manufacturer are this fork's own and apply only in a game on that map without the Milestones & Awards expansion (`AMAZONIS-PLANITIA-MARSBOT.md` section 4.4).
 
-MarsBot plays only the milestones and awards the automa rules cover in this game (`AutomaGameSetup.supportsMilestone` / `supportsAward`). Without Venus Next that leaves out Trader, Tradesman and Planetologist (and Venuphile), and without Turmoil Lobbyist. Random sets never deal them. A map's own set swaps each one for a random milestone or award from the pool a random game would draw from, in the same place, drawn with the game's seeded random (`replaceUnsupportedAgainstMarsBot` in `src/server/ma/MilestoneAwardSelector.ts`), so it keeps 5 (6 with Venus Next). Today that hits Utopia Planitia's Trader (Tradesman) and Terra Cimmeria's Planetologist without Venus Next. Saved games keep the milestones and awards they were created with. Hand-picked sets with one MarsBot can't play are refused at game creation.
+MarsBot plays only the milestones and awards the automa rules cover in this game (`AutomaGameSetup.supportsMilestone` / `supportsAward`). Without Venus Next that leaves out Trader, Tradesman and Planetologist (and Venuphile), and without Turmoil Lobbyist. Random sets never deal them. A map's own set swaps each one for a random milestone or award from the pool a random game would draw from, in the same place, drawn with the game's seeded random (`replaceUnsupportedAgainstMarsBot` in `src/server/ma/MilestoneAwardSelector.ts`), so it keeps 5 (6 with Venus Next). Today that hits Utopia Planitia's Trader (Tradesman) and Terra Cimmeria's Planetologist without Venus Next, and Amazonis Planitia's Lobbyist without Turmoil. Saved games keep the milestones and awards they were created with. Hand-picked sets with one MarsBot can't play are refused at game creation.
 
 ### 2.9 Production Phase
 
@@ -173,15 +174,15 @@ Human produces as normal. MarsBot skips production entirely.
 | B01 | Meteor Shower | Human must lose 5 plants (or as many as possible). If lost ≥3 or effect blocked removal, destroy this card. |
 | B02 | Invasive Species | Remove the human's animal or microbe worth the most VP: cards scoring per resource first, ties by a flipped card (not Pets or Bioengineering Enclosure; nothing under Protected Habitats). MarsBot gains 2 MC and 1 floater with Venus Next or Colonies, otherwise 5 MC. |
 | B03 | Research and Development | MarsBot draws 1 project card and resolves it immediately. |
-| B04 | Overachievement | MarsBot claims a milestone if able. If fails AND gen ≥6, funds an award. If either succeeded, destroy card. Otherwise gain 5 MC. |
+| B04 | Overachievement | MarsBot claims a milestone if able. If fails AND gen ≥6 (≥7 on Amazonis Planitia), funds an award. If either succeeded, destroy card. Otherwise gain 5 MC. |
 | B05 | Expedited Construction | Place city adjacent to ≥2 greenery/ocean mix. If placed, destroy card. Normal city rules apply. |
-| B06 | Lobbyists | First applicable: (a) Temp 1-2 steps from bonus/completion → raise temp 2, destroy. (b) Oxygen 1-2 from bonus/completion → place greenery + raise oxygen twice, destroy. (c) Ocean space adjacent to 2+ oceans → place ocean, destroy. (d) Advance the parameter with the most steps remaining (a temperature step is 2°C; tie: oxygen > ocean > temp). |
+| B06 | Lobbyists | First applicable: (a) Temp 1-2 steps from bonus/completion → raise temp 2, destroy. (b) Oxygen 1-2 from bonus/completion → place greenery + raise oxygen twice, destroy. (c) Ocean space adjacent to 2+ oceans → place ocean, destroy. (d) Advance the parameter with the most steps remaining (a temperature step is 2°C; tie: oxygen > ocean > temp). "Bonus" means the bonus steps printed on the game's map, and "completion" the map's own maximum (Amazonis Planitia: 14°C, 18% oxygen, 33% Venus). |
 | B07 | Local Neural Instance | Place Neural Instance tile adjacent to no tiles, not on edge, not on/adjacent to reserved spaces. If placed, destroy card. If can't, draw and resolve a project card and discard this card as usual; it is not destroyed (designer ruling, BGG thread 3350125). |
 | B08 | Corporate Competition | If MarsBot has ≥5 MC, help position on closest funded award via helper actions: Landlord→place greenery, Banker→advance Track 1 or 3 (least advanced), Scientist→advance Track 4, Thermalist→advance Track 5, Miner→advance Track 2. Costs 5 MC if successful, discard. If no action possible, draw another bonus card and resolve, discarding both. |
 
 ### 2.11 Game End
 
-- **Round 20**: MarsBot instantly wins (human loses).
+- **Round 20**: MarsBot instantly wins (human loses). Round 22 on Amazonis Planitia.
 - **Terraforming complete**: Finish the round. Both players may place final greenery tiles in turn order.
   - MarsBot places final greenery for each track where the next space ahead has a greenery action. Advance the tracker and perform the greenery action.
   - The tracker move fires MarsBot's corp cubes on that space, but nothing chains from it. The optional `automaFinalGreeneryNoCorpEffects` game option (off by default) skips the corp cubes; the designers call it a difficulty modifier and leave it to the players.
@@ -203,11 +204,13 @@ Human produces as normal. MarsBot skips production entirely.
 | 19 | 1 VP per 1 MC |
 | 20 | MarsBot wins! |
 
+On Amazonis Planitia the table starts two generations later: 1 VP per 8 MC up to generation 14, and MarsBot wins in generation 22 (with Prelude: 12 and 20).
+
 Tie = MarsBot wins.
 
 **No generation limit option** (`automaNoGenerationLimit`, off by default): the game ignores the
 generation cap and ends only once Mars is terraformed. MarsBot never wins on the generation count,
-and its MC → VP conversion stays at 1 VP per MC from generation 19 (17 with Prelude) onward. The
+and its MC → VP conversion stays at 1 VP per MC from generation 19 (17 with Prelude) onward, 21 (19) on Amazonis Planitia. The
 client hides the "of N" generation cap for such games.
 
 ### 2.12 Difficulty Levels
@@ -263,7 +266,7 @@ src/server/automa/
 ├── MarsBotStock.ts         # Override stock/production: resource getters → mcSupply, removal → MC deduction, production → track regression
 ├── boards/
 │   ├── MarsBotBoards.ts    # Board registry keyed by map
-│   ├── <Map>MarsBot.ts     # Track tags and layouts, one file per official map
+│   ├── <Map>MarsBot.ts     # Track tags and layouts, one file per map (Amazonis Planitia's is this fork's own)
 │   └── VenusMarsBot.ts     # Venus track, added to any map with Venus Next
 └── corps/
     ├── MarsBotCorpRegistry.ts   # Map-based registry for all corps
@@ -274,6 +277,7 @@ src/server/automa/
 
 src/common/automa/
 ├── AutomaTypes.ts          # Shared types, constants, MC→VP table, getMcPerVP()
+├── MarsBotMapRules.ts      # Per-map offsets: extra generations, generation shift, Turmoil TR (Amazonis Planitia only)
 ├── MarsBotCorpTypes.ts     # Corp interface, context, effects, cube types
 └── MarsBotModel.ts         # Client model (tracks with layout, MC, VP, corp, globalParamSteps)
 
@@ -288,8 +292,8 @@ Game.ts has `automaHooks?: AutomaGameHooks` with thin `this.automaHooks?.method(
 | Hook site in Game.ts | AutomaGameHooks method | Purpose |
 |---|---|---|
 | `isSoloMode()` | returns false | Automa is NOT solo mode |
-| `lastSoloGeneration()` | returns 20 | MarsBot instant win at gen 20 |
-| `gameIsOver()` | `isGameOver()` | Gen 20 or Mars terraformed |
+| `lastSoloGeneration()` | returns 20 (18 with Prelude), plus two on Amazonis Planitia | MarsBot instant win at that generation |
+| `gameIsOver()` | `isGameOver()` | Gen 20 (18 with Prelude, plus two on Amazonis Planitia) or Mars terraformed |
 | `allMilestonesClaimed/allAwardsFunded` | (inline check) | Not disabled for automa |
 | `gotoResearchPhase()` | `handleResearchPhase()` | Build action deck, alternate first player |
 | `playerIsFinishedWithResearchPhase` | `getFirstPlayerForActionPhase()` | Start with MarsBot if goesFirst |
@@ -298,7 +302,9 @@ Game.ts has `automaHooks?: AutomaGameHooks` with thin `this.automaHooks?.method(
 | `gotoProductionPhase()` | `handleProductionPhase()` | Skip production for MarsBot |
 | `takeNextFinalGreeneryAction()` | `handleFinalGreenery()` | MarsBot final greenery |
 | `increaseTemperature()` | `handleTemperatureHeatBonus()` | 2 MC instead of heat prod |
-| `increaseVenusScaleLevel()` | `handleVenusCardBonus()` | 2 MC instead of a card |
+| `increaseVenusScaleLevel()` | `handleVenusCardBonus()` | 2 MC instead of a card (`increaseOxygenLevel()` calls it too, for the 7% oxygen card on Amazonis Planitia) |
+| `increaseTemperature()` | `handleTemperaturePlantBonus()` | 2 MC instead of plant production (Amazonis Planitia, -12°C) |
+| `increaseVenusScaleLevel()` | `handleVenusColonyBonus()` | Colony built after the raise, in `handleVenusRaised()` (Amazonis Planitia, 16% Venus) |
 | `addTile()` | `shouldGrantPlacementBonuses()` | Block normal bonuses for MarsBot |
 | `allPlayersHavePassed()` | `allPlayersHavePassed()` | Include MarsBot |
 | `getPassedPlayers()` | `getPassedPlayerColor()` | Resolve MarsBot color |
@@ -602,19 +608,19 @@ Corps may add associated bonus cards to the bonus deck or action deck:
 
 ### 8.1 Prelude / Prelude 2
 
-- Max generation reduced from 20 to 18
+- Max generation reduced from 20 to 18 (20 on Amazonis Planitia)
 - Human draws 5 prelude cards (not 4), keeps 2
 - MarsBot gets 3 extra project cards at start (shuffled into first action deck)
 - Wild tags on cards advance the least-advanced track
 - Recession prelude card is filtered out
-- MC-to-VP table shifted (conversion window starts at gen 10 instead of 12)
+- MC-to-VP table shifted (conversion window starts at gen 10 instead of 12; 12 instead of 14 on Amazonis Planitia)
 
 ### 8.2 Expansion Gating (sanitizeGameOptions)
 
 Unsupported expansions are force-disabled on the server:
 - Venus Next, Colonies, Turmoil, Ares, Moon, Pathfinders, CEOs, Star Wars, Underworld, Community Cards
-- Maps without a MarsBot board fall back to Tharsis (`MARSBOT_BOARD_NAMES` in `src/common/automa/MarsBotBoards.ts`); random boards only draw from MarsBot maps
-- With the Milestones & Awards expansion (`modularMA`) MarsBot uses the Tharsis board on any map (rulebook C, p.13)
+- Maps without a MarsBot board fall back to Tharsis (`MARSBOT_BOARD_NAMES` in `src/common/automa/MarsBotBoards.ts`); random boards only draw from MarsBot maps. Amazonis Planitia with the Milestones & Awards expansion also falls back to Tharsis for now (`modularMABlocksMarsBot`)
+- With the Milestones & Awards expansion (`modularMA`) MarsBot uses the Tharsis board on any map (rulebook C, p.13). `modularMA` only applies to random milestones and awards, so it is ignored in a MarsBot game when those are off
 - "All" button in game creation enables only compatible expansions (Corporate Era, Prelude, Prelude 2, Promos)
 
 ### 8.3 Venus Track Actions
@@ -700,7 +706,7 @@ No 2nd place VP in 2-player automa games (same as standard 2-player TM rules). O
 - [x] 7700+ tests
 - [x] Venus Next — full expansion support (board, floater track action, milestones/awards/scoring, Government Intervention card)
 - [x] Colonies — full expansion support: MarsBot Shipping Board with 11 storage areas (tags as printed on the board: Enceladus Microbe, Miranda Animal, Pluto Science), colony placement (B17 Expedited Construction Colonies, B18 Outer System Foothold, Utopia Planitia's colony track icon), trading (B19 Shipping Lines, B20 Extended Shipping Lines), 2nd Trade Fleet unlock at Energy track position 9, player-trade colony bonus hook, Europa special handling (ocean tile / TR / MC), Pluto card-resource handling, Aridor/Poseidon corp ongoing effects, Pioneer/Constructor cube colony-build trigger. Optional `automaColonyVP` game option (off by default): MarsBot scores 1/2 VP, rounded down, per resource left on its shipping board and per floater on its Venus board, which the designer says he meant to print but forgot (BGG threads 3408751, 3373832)
-- [x] Turmoil — full expansion support: 7 delegates in reserve, MarsBot starts at 10 TR (or 13 with extra-difficulty), Party Politics (B21) with 6-tier narrowing priority and divisible-by-3 second-delegate trigger, Gray Eminence (B29) using same delegate priority, Election/Revolution global events solo-resolution for automa, Chairman gives MarsBot +1 TR, no Lobby placement, 1 VP per Party Leader / Chairman owned, Septem Tribus replaces Party Politics with Gray Eminence in deck
+- [x] Turmoil — full expansion support: 7 delegates in reserve, MarsBot starts at 10 TR (or 13 with extra-difficulty; 9 or 12 on Amazonis Planitia), Party Politics (B21) with 6-tier narrowing priority and divisible-by-3 second-delegate trigger, Gray Eminence (B29) using same delegate priority, Election/Revolution global events solo-resolution for automa, Chairman gives MarsBot +1 TR, no Lobby placement, 1 VP per Party Leader / Chairman owned, Septem Tribus replaces Party Politics with Gray Eminence in deck
 - [x] Milestones & Awards expansion — all modular milestones/awards have MarsBot eval functions (Rulebook C pages 13-16)
 
 ### Not Yet Implemented (Official Expansions Only)
