@@ -1,8 +1,10 @@
 import {expect} from 'chai';
 import {BonusCardId, MARSBOT_STARTING_TR} from '@/common/automa/AutomaTypes';
 import {BoardName} from '@/common/boards/BoardName';
+import {SpaceType} from '@/common/boards/SpaceType';
 import {CardName} from '@/common/cards/CardName';
 import {Tag} from '@/common/cards/Tag';
+import {TileType} from '@/common/TileType';
 import {MarsBot} from '@/server/automa/MarsBot';
 import {createBaseBonusCards} from '@/server/automa/MarsBotBonusCard';
 import {getMarsBotCorp} from '@/server/automa/corps/MarsBotCorpRegistry';
@@ -189,6 +191,17 @@ describe('MarsBotAmazonisRules', () => {
       expect(helper(marsBot, 'Innovator')).is.true;
 
       expect(marsBot.playedProjectCards).to.include(mine);
+    });
+
+    it('Desert Settler places its greenery below the equator of the 11-row map', () => {
+      const {game, human, marsBot} = amazonisGame();
+      for (const space of game.board.getSpaces(SpaceType.LAND).filter((sp) => sp.y !== 5 && sp.y !== 9)) {
+        game.simpleAddTile(human, space, {tileType: TileType.CITY});
+      }
+
+      expect(helper(marsBot, 'Desert Settler')).is.true;
+
+      expect(game.board.getGreeneries(marsBot.player).map((sp) => sp.y)).deep.eq([9]);
     });
 
     it('a funded Physicist makes Corporate Competition push the Space track, the upper of two tied tracks', () => {

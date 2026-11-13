@@ -334,7 +334,7 @@ export class MarsBotBonusResolver {
       board.getAdjacentSpaces(space).some((s) => s.spaceType === SpaceType.OCEAN);
     const nextToSpecialTile = (space: Space) => board.getAdjacentSpaces(space).some(isSpecialTileSpace);
     const onEdge = (space: Space) => space.edge;
-    const inFourBottomRows = (space: Space) => space.y >= 5 && space.y <= 8;
+    const southOfEquator = (space: Space) => space.y > board.equatorRow;
 
     switch (awardName) {
     // Tharsis (B08)
@@ -352,7 +352,7 @@ export class MarsBotBonusResolver {
     // Elysium (B10)
     case 'Celebrity': return revealAndResolveCard((c) => c.cost >= 20);
     case 'Industrialist': return advanceTrackOf(Tag.POWER);
-    case 'Desert Settler': return this.maybePlaceGreenery(inFourBottomRows);
+    case 'Desert Settler': return this.maybePlaceGreenery(southOfEquator);
     case 'Estate Dealer': return this.maybePlaceGreenery(nextToOcean);
     case 'Benefactor': { this.botPlayer.increaseTerraformRating(2); return true; }
     // Utopia Planitia (B11)
