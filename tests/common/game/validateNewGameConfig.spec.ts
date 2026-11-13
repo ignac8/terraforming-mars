@@ -94,6 +94,7 @@ const NO_ERRORS: ValidationErrors = {
   infiniteEnergyBug: false,
   altVenusBoardOnAmazonis: false,
   marsBotModularMAOnAmazonis: false,
+  marsBotManualModularMAOnAmazonis: false,
   prelude2WithoutPrelude: false,
   deltaProjectWithoutPrelude: false,
   notEnoughCorporations: 0,
@@ -197,9 +198,7 @@ describe('validateNewGameConfig', () => {
     expect(validate({...marsBotModularMA, boards: [BoardName.AMAZONIS_PLANITIA]}).marsBotModularMAOnAmazonis).is.true;
     expect(validate({...marsBotModularMA, boards: [BoardName.THARSIS, BoardName.AMAZONIS_PLANITIA]}).marsBotModularMAOnAmazonis).is.true;
     expect(validate({...marsBotModularMA, boards: boardOptions(RandomBoardOption.ALL)}).marsBotModularMAOnAmazonis).is.true;
-    for (const randomMA of [RandomMAOptionType.UNLIMITED, RandomMAOptionType.MANUAL]) {
-      expect(validate({...marsBotModularMA, randomMA, boards: [BoardName.AMAZONIS_PLANITIA]}).marsBotModularMAOnAmazonis, randomMA).is.true;
-    }
+    expect(validate({...marsBotModularMA, randomMA: RandomMAOptionType.UNLIMITED, boards: [BoardName.AMAZONIS_PLANITIA]}).marsBotModularMAOnAmazonis).is.true;
 
     expect(validate({...marsBotModularMA, boards: boardOptions(RandomBoardOption.OFFICIAL)}).marsBotModularMAOnAmazonis).is.false;
     expect(validate({...marsBotModularMA, boards: [BoardName.THARSIS]}).marsBotModularMAOnAmazonis).is.false;
@@ -209,8 +208,22 @@ describe('validateNewGameConfig', () => {
     expect(validate({...marsBotModularMA, automa: undefined, boards: [BoardName.AMAZONIS_PLANITIA]}).marsBotModularMAOnAmazonis).is.false;
   });
 
+  it('marsbot modular milestones and awards on amazonis with a hand-picked list', () => {
+    const manual = {automa: true, modularMA: true, randomMA: RandomMAOptionType.MANUAL, boards: [BoardName.AMAZONIS_PLANITIA]};
+    const errors = validate(manual);
+    // The form hides the Official Random α checkbox here, so the error that says to untick it stays off
+    expect(errors.marsBotManualModularMAOnAmazonis).is.true;
+    expect(errors.marsBotModularMAOnAmazonis).is.false;
+
+    expect(validate({...manual, randomMA: RandomMAOptionType.LIMITED}).marsBotManualModularMAOnAmazonis).is.false;
+    expect(validate({...manual, modularMA: false}).marsBotManualModularMAOnAmazonis).is.false;
+    expect(validate({...manual, boards: [BoardName.THARSIS]}).marsBotManualModularMAOnAmazonis).is.false;
+    expect(validate({...manual, automa: false}).marsBotManualModularMAOnAmazonis).is.false;
+  });
+
   it('marsbot modular milestones and awards on amazonis blocks the game', () => {
     expect(validationDetails.marsBotModularMAOnAmazonis.blocking).is.true;
+    expect(validationDetails.marsBotManualModularMAOnAmazonis.blocking).is.true;
   });
 
   it('prelude 2 without prelude', () => {

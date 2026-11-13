@@ -20,6 +20,7 @@ const NO_ERRORS: ValidationErrors = {
   infiniteEnergyBug: false,
   altVenusBoardOnAmazonis: false,
   marsBotModularMAOnAmazonis: false,
+  marsBotManualModularMAOnAmazonis: false,
   prelude2WithoutPrelude: false,
   deltaProjectWithoutPrelude: false,
   notEnoughCorporations: 0,

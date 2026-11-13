@@ -268,6 +268,9 @@ synergy, full random or hand-picked). One shared check, `modularMABlocksMarsBot`
 `src/common/automa/MarsBotBoards.ts`, decides when the expansion blocks the map, and the first two places
 below use it:
 - The create-game form shows a blocking error (`marsBotModularMAOnAmazonis` in `validateNewGameConfig`).
+  The form hides the Official Random α checkbox for a hand-picked list (reachable only by importing
+  settings), so that case has its own blocking error, `marsBotManualModularMAOnAmazonis`: its message says to
+  leave the map out or set `modularMA` to false in the imported settings, not to untick the checkbox.
 - The server does not run that validation. `ApiCreateGame` drops the map from MarsBot's board choices and
   picks Tharsis when none is left. `AutomaGameSetup.sanitizeGameOptions` swaps a blocked map to Tharsis as a
   backstop.

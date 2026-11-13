@@ -11,6 +11,7 @@ import {BoardName} from '../boards/BoardName';
 import {validateCustomMA} from '../ma/CustomMA';
 import {MilestoneName} from '../ma/MilestoneName';
 import {AwardName} from '../ma/AwardName';
+import {RandomMAOptionType} from '../ma/RandomMAOptionType';
 import {modularMABlocksMarsBot} from '../automa/MarsBotBoards';
 
 const REVISED_COUNT_ALGORITHM = false;
@@ -30,6 +31,7 @@ export type ValidationErrors = {
   infiniteEnergyBug: boolean;
   altVenusBoardOnAmazonis: boolean;
   marsBotModularMAOnAmazonis: boolean;
+  marsBotManualModularMAOnAmazonis: boolean;
   prelude2WithoutPrelude: boolean;
   deltaProjectWithoutPrelude: boolean;
   notEnoughCorporations: number;
@@ -99,6 +101,11 @@ export const validationDetails: Record<keyof ValidationErrors, {blocking: boolea
     blocking: true,
     message: 'MarsBot can\'t play Amazonis Planitia with Official Random α milestones and awards yet. Untick it or leave Amazonis Planitia out.',
   },
+  // The form hides the Official Random α checkbox for hand-picked milestones and awards.
+  marsBotManualModularMAOnAmazonis: {
+    blocking: true,
+    message: 'MarsBot can\'t play Amazonis Planitia with Official Random α milestones and awards yet. Leave Amazonis Planitia out, or set modularMA to false in the settings you imported.',
+  },
   prelude2WithoutPrelude: {
     blocking: false,
     message: 'Prelude 2 without Prelude will only include its project cards, not its preludes.',
@@ -152,6 +159,7 @@ export function validateNewGameConfig(config: NewGameConfig, helpers: Helpers): 
     infiniteEnergyBug: false,
     altVenusBoardOnAmazonis: false,
     marsBotModularMAOnAmazonis: false,
+    marsBotManualModularMAOnAmazonis: false,
     prelude2WithoutPrelude: false,
     deltaProjectWithoutPrelude: false,
     notEnoughCorporations: 0,
@@ -196,7 +204,11 @@ export function validateNewGameConfig(config: NewGameConfig, helpers: Helpers): 
   }
 
   if (config.automa === true && config.boards.some((board) => modularMABlocksMarsBot(board, config))) {
-    errors.marsBotModularMAOnAmazonis = true;
+    if (config.randomMA === RandomMAOptionType.MANUAL) {
+      errors.marsBotManualModularMAOnAmazonis = true;
+    } else {
+      errors.marsBotModularMAOnAmazonis = true;
+    }
   }
 
   if (config.expansions.prelude2 && !config.expansions.prelude) {
