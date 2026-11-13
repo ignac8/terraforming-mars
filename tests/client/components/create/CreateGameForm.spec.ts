@@ -16,6 +16,8 @@ import {ColonyName} from '@/common/colonies/ColonyName';
 import {RandomMAOptionType} from '@/common/ma/RandomMAOptionType';
 import {PreferencesManager} from '@/client/utils/PreferencesManager';
 
+const TOURNAMENT_BOARDS = [BoardName.THARSIS, BoardName.HELLAS, BoardName.ELYSIUM];
+
 // Minimal serialized Create Game payload used by settings restore tests.
 function createNewGameConfig(overrides: JSONObject = {}):  NewGameConfig {
   // Not ideal but is fine for the tests.
@@ -117,6 +119,14 @@ describe('CreateGameForm', () => {
       '#playerPasswords-checkbox']) {
       expect(wrapper.find(id).attributes('disabled'), id).is.not.undefined;
     }
+  });
+
+  it('starts with every tournament board selected and Escape Velocity on', async () => {
+    const wrapper = shallowMount(CreateGameForm, {...globalConfig});
+    const config: NewGameConfig | undefined = await wrapper.vm.serializeSettings();
+
+    expect(config?.boards).deep.eq(TOURNAMENT_BOARDS);
+    expect(config?.escapeVelocity?.thresholdMinutes).eq(45);
   });
 
   it('applies tournament locks when tournament is switched back on', async () => {
@@ -426,7 +436,7 @@ describe('CreateGameForm', () => {
 
   for (const run of [
     {boards: [BoardName.UTOPIA_PLANITIA, BoardName.HELLAS, BoardName.ARABIA_TERRA], expected: [BoardName.HELLAS]},
-    {boards: [BoardName.UTOPIA_PLANITIA, BoardName.AMAZONIS_PLANITIA], expected: [BoardName.THARSIS]},
+    {boards: [BoardName.UTOPIA_PLANITIA, BoardName.AMAZONIS_PLANITIA], expected: TOURNAMENT_BOARDS},
   ] as const) {
     it(`switching tournament on keeps only the selected tournament boards ${JSON.stringify(run)}`, async () => {
       const wrapper = shallowMount(CreateGameForm, {...globalConfig});
@@ -549,7 +559,7 @@ describe('CreateGameForm', () => {
     wrapper.vm.resetSettings();
     await wrapper.vm.$nextTick();
 
-    expect(wrapper.vm.boards).deep.eq([BoardName.THARSIS]);
+    expect(wrapper.vm.boards).deep.eq(TOURNAMENT_BOARDS);
     expect(wrapper.vm.draftVariant).eq(true);
     expect(createGameSettingsStorage.load()).eq(undefined);
     expect(wrapper.findAllComponents({name: 'AppButton'}).map((button) => button.props('title'))).includes('Reset');
@@ -606,7 +616,19 @@ describe('CreateGameForm', () => {
     });
     await wrapper.vm.$nextTick();
 
-    expect(wrapper.vm.boards).deep.eq([BoardName.THARSIS]);
+    expect(wrapper.vm.boards).deep.eq(TOURNAMENT_BOARDS);
+  });
+
+  it('keeps Escape Velocity off when the saved settings had it off', async () => {
+    PreferencesManager.INSTANCE.set('remember_create_game_settings', true);
+    createGameSettingsStorage.save(createNewGameConfig());
+
+    const wrapper = shallowMount(CreateGameForm, {
+      ...globalConfig,
+    });
+    await wrapper.vm.$nextTick();
+
+    expect(wrapper.vm.escapeVelocityMode).eq(false);
   });
 
   it('toggling random milestones and awards leaves manual milestones and awards', () => {

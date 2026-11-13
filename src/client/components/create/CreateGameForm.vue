@@ -902,7 +902,7 @@ export default defineComponent({
       this.startingCorporations = 5;
       this.boards = this.boards.filter((boardName) => this.tournamentBoards.includes(boardName));
       if (this.boards.length === 0) {
-        this.boards = [BoardName.THARSIS];
+        this.boards = [...this.tournamentBoards];
       }
       this.fastModeOption = false;
       this.showOtherPlayersVP = false;

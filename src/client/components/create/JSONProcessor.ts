@@ -64,6 +64,9 @@ export class JSONProcessor {
       json.escapeVelocityPenalty = options.penaltyVPPerPeriod;
       json.escapeVelocityPeriod = options.penaltyPeriodMinutes;
       json.escapeVelocityThreshold = options.thresholdMinutes;
+    } else if (json.escapeVelocityMode === undefined) {
+      // Settings saved with Escape Velocity off have no key for it.
+      json.escapeVelocityMode = false;
     }
 
     function set<T>(field: string): Array<T> {
