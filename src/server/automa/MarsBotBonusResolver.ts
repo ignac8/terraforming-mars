@@ -135,12 +135,12 @@ export class MarsBotBonusResolver {
   /** Lobbyists shared branch (a): temperature 1-2 steps from bonus or completion. */
   public lobbyistsTempBranch(source: string = 'Lobbyists'): boolean {
     const temp = this.game.getTemperature();
-    const tempBonusTargets = [constants.TEMPERATURE_BONUS_FOR_HEAT_1, constants.TEMPERATURE_BONUS_FOR_HEAT_2, constants.TEMPERATURE_FOR_OCEAN_BONUS, constants.MAX_TEMPERATURE];
+    const tempBonusTargets = [constants.TEMPERATURE_BONUS_FOR_HEAT_1, constants.TEMPERATURE_BONUS_FOR_HEAT_2, constants.TEMPERATURE_FOR_OCEAN_BONUS, this.game.max.temperature];
     const tempStepsToNextBonus = tempBonusTargets
       .filter((t) => t > temp)
       .map((t) => (t - temp) / 2)
       .reduce((min, s) => Math.min(min, s), Infinity);
-    if (tempStepsToNextBonus >= 1 && tempStepsToNextBonus <= 2 && temp < constants.MAX_TEMPERATURE) {
+    if (tempStepsToNextBonus >= 1 && tempStepsToNextBonus <= 2 && temp < this.game.max.temperature) {
       // Pristar's cube cancels only the first of the 2 steps
       const steps = this.interceptsRaise(GlobalParameter.TEMPERATURE) ? 1 : 2;
       this.game.increaseTemperature(this.botPlayer, steps);
@@ -153,17 +153,17 @@ export class MarsBotBonusResolver {
   /** Lobbyists shared branch (b): oxygen 1-2 steps from bonus or completion. */
   public lobbyistsOxygenBranch(source: string = 'Lobbyists'): boolean {
     const oxy = this.game.getOxygenLevel();
-    const oxyStepsToMax = constants.MAX_OXYGEN_LEVEL - oxy;
+    const oxyStepsToMax = this.game.max.oxygen - oxy;
     const oxyBonusAt8 = oxy < constants.OXYGEN_LEVEL_FOR_TEMPERATURE_BONUS;
     const oxyStepsToBonus = oxyBonusAt8 ? constants.OXYGEN_LEVEL_FOR_TEMPERATURE_BONUS - oxy : oxyStepsToMax;
     if ((oxyStepsToMax >= 1 && oxyStepsToMax <= 2) || (oxyStepsToBonus >= 1 && oxyStepsToBonus <= 2)) {
       const greenerySpace = this.tilePlacer.findGreenerySpace();
       if (greenerySpace !== undefined) {
-        const raiseOxygen = this.game.getOxygenLevel() >= constants.MAX_OXYGEN_LEVEL ||
+        const raiseOxygen = this.game.getOxygenLevel() >= this.game.max.oxygen ||
           !this.interceptsRaise(GlobalParameter.OXYGEN);
         this.game.addGreenery(this.botPlayer, greenerySpace, raiseOxygen);
         this.turnResolver.gainMc(this.tilePlacer.getPlacementBonusMC(greenerySpace) + this.tilePlacer.getOceanAdjacencyMC(greenerySpace));
-        if (this.game.getOxygenLevel() < constants.MAX_OXYGEN_LEVEL && !this.interceptsRaise(GlobalParameter.OXYGEN)) {
+        if (this.game.getOxygenLevel() < this.game.max.oxygen && !this.interceptsRaise(GlobalParameter.OXYGEN)) {
           this.game.increaseOxygenLevel(this.botPlayer, 1);
         }
         this.game.log(`MarsBot places greenery and raises oxygen twice (${source})`);
@@ -200,7 +200,7 @@ export class MarsBotBonusResolver {
     if (space === undefined) {
       return false;
     }
-    const raiseOxygen = this.game.getOxygenLevel() >= constants.MAX_OXYGEN_LEVEL ||
+    const raiseOxygen = this.game.getOxygenLevel() >= this.game.max.oxygen ||
       !this.interceptsRaise(GlobalParameter.OXYGEN);
     this.game.addGreenery(this.botPlayer, space, raiseOxygen);
     this.turnResolver.gainMc(this.tilePlacer.getTotalPlacementMC(space));
@@ -415,13 +415,13 @@ export class MarsBotBonusResolver {
    * Returns false when every parameter is already complete.
    */
   public advanceFurthestParameter(allowCorpIntercept: boolean = true): boolean {
-    const tempRemaining = (constants.MAX_TEMPERATURE - this.game.getTemperature()) / 2;
-    const oxyRemaining = constants.MAX_OXYGEN_LEVEL - this.game.getOxygenLevel();
-    const oceanRemaining = constants.MAX_OCEAN_TILES - this.game.board.getOceanSpaces().length;
+    const tempRemaining = (this.game.max.temperature - this.game.getTemperature()) / 2;
+    const oxyRemaining = this.game.max.oxygen - this.game.getOxygenLevel();
+    const oceanRemaining = this.game.max.oceans - this.game.board.getOceanSpaces().length;
 
     const params: Array<{name: string, remaining: number, action: () => boolean}> = [
       {name: 'oxygen', remaining: oxyRemaining, action: () => {
-        if (this.game.getOxygenLevel() < constants.MAX_OXYGEN_LEVEL) {
+        if (this.game.getOxygenLevel() < this.game.max.oxygen) {
           if (allowCorpIntercept && this.interceptsRaise(GlobalParameter.OXYGEN)) {
             return true;
           }
@@ -445,7 +445,7 @@ export class MarsBotBonusResolver {
         return false;
       }},
       {name: 'temperature', remaining: tempRemaining, action: () => {
-        if (this.game.getTemperature() < constants.MAX_TEMPERATURE) {
+        if (this.game.getTemperature() < this.game.max.temperature) {
           if (allowCorpIntercept && this.interceptsRaise(GlobalParameter.TEMPERATURE)) {
             return true;
           }

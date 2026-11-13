@@ -18,7 +18,6 @@ import {MarsBotTilePlacer} from './MarsBotTilePlacer';
 import {IMilestone} from '../milestones/IMilestone';
 import {IAward} from '../awards/IAward';
 import {Resource} from '../../common/Resource';
-import * as constants from '../../common/constants';
 import {MarsBotCorpResolver} from './corps/MarsBotCorpResolver';
 import {placeColonyForMarsBot, selectRandomColony} from './colonies/MarsBotColonyPlacer';
 import {marsBotCanClaimMilestone, marsBotAwardScore, milestoneRemaining} from './MarsBotMilestoneAwardEval';
@@ -302,7 +301,7 @@ export class MarsBotTurnResolver {
    * resolve one at a time, so Pristar's cube cancels only the first (BGG 3431297, 3432237).
    */
   public raiseTemperature(steps: 1 | 2): void {
-    if (this.game.getTemperature() >= constants.MAX_TEMPERATURE) {
+    if (this.game.getTemperature() >= this.game.max.temperature) {
       this.failedAction();
       return;
     }
@@ -327,7 +326,7 @@ export class MarsBotTurnResolver {
     }
 
     // Place tile and raise oxygen (unless the corp intercepts the raise)
-    const raiseOxygen = this.game.getOxygenLevel() >= constants.MAX_OXYGEN_LEVEL ||
+    const raiseOxygen = this.game.getOxygenLevel() >= this.game.max.oxygen ||
       !this.interceptsRaise(GlobalParameter.OXYGEN);
     this.game.addGreenery(this.botPlayer, space, raiseOxygen);
 
@@ -373,7 +372,7 @@ export class MarsBotTurnResolver {
 
   /** Like raiseTemperature: Pristar's cube cancels only the first step. */
   private raiseVenus(steps: 1 | 2): void {
-    if (this.game.getVenusScaleLevel() >= constants.MAX_VENUS_SCALE) {
+    if (this.game.getVenusScaleLevel() >= this.game.max.venus) {
       this.failedAction();
       return;
     }
