@@ -203,18 +203,22 @@ This map's parameter tracks print bonuses the standard maps do not have (`AMAZON
 
 | Bonus | MarsBot gets |
 |---|---|
-| Colony at 16 % Venus | builds a colony exactly as for Utopia Planitia's colony icon (`placeColony`: like Outer System Foothold, ignored without Colonies). The raise only marks the colony as due; `handleVenusRaised` builds it once the raise has finished, so a corporation's reaction to the colony (Poseidon's track advance, which can land on a Venus icon) cannot raise Venus again in the middle of the first raise. A human player is still asked where to build |
+| Colony at 16 % Venus | builds a colony exactly as for Utopia Planitia's colony icon (`placeColony`: like Outer System Foothold, ignored without Colonies). A human player is still asked where to build |
 | Plant production at −12 °C | 2 M€, as for the heat-production bonuses |
 | Card at 7 % oxygen | 2 M€, through the existing card-bonus hook |
 | Temperature at 11 % oxygen, TR at 22 % Venus | the bonus itself, as on standard maps at 8 % and 16 % |
 
+The colony is built after the raise has finished. The raise only marks the colony as due, and
+`handleVenusRaised` builds it, so a corporation's reaction to the colony (Poseidon's track advance, which can
+land on a Venus icon) cannot raise Venus again in the middle of the first raise.
+
 Lobbyists ("1–2 steps from a bonus or completion") reads these bonus steps from
-`game.globalParameterTracks`, not the standard-map constants (`stepsToNextBonus` in
+`game.globalParameterTracks`, not the standard-map constants (`isNearBonusStep` in
 `MarsBotBonusResolver`). Oxygen 8 % is not a bonus step here.
 
-TODO: Government Intervention raises Venus across 16 % and still builds the colony. A colony that pays M€
-(Europa's ocean) pays it, although that raise otherwise gives MarsBot no other M€. No ruling exists for this
-map, so it is left as built.
+Open point: Government Intervention's Venus raise across 16 %. Today the colony is built during that raise,
+a colony that pays M€ (Europa's ocean) pays it although that raise otherwise gives MarsBot no other M€, and
+the TR from an ocean the colony places is withheld like the raise's own TR. No ruling covers this map.
 
 ### 4.7 Colonies
 
@@ -236,7 +240,7 @@ track at Tharsis' rate.
 In code this is not a new card: every map's Corporate Competition runs through B08
 (`bonusCards/CorporateCompetitionMarsBot.ts`), which picks a push by award name in
 `MarsBotBonusResolver.tryHelperAction` (B09–B13 are enum values only). Collector, Constructor, Manufacturer
-and Venuphile were already there; only Innovator and Physicist are new:
+and Venuphile use helpers the other maps share; Innovator and Physicist are this map's own:
 
 | Award | Push |
 |---|---|
@@ -258,10 +262,12 @@ does not play this map when M&A is on.
 
 The expansion counts as on when `modularMA` is set and random milestones and awards are not off (limited
 synergy, full random or hand-picked). One shared check, `modularMABlocksMarsBot` in
-`src/common/automa/MarsBotBoards.ts`, decides when the expansion blocks the map, and each place below uses it:
+`src/common/automa/MarsBotBoards.ts`, decides when the expansion blocks the map, and the first two places
+below use it:
 - The create-game form shows a blocking error (`marsBotModularMAOnAmazonis` in `validateNewGameConfig`).
-- The server does not run that validation. `ApiCreateGame` drops the map from MarsBot's board choices, and
-  `AutomaGameSetup.sanitizeGameOptions` falls back to Tharsis when no other board is left.
+- The server does not run that validation. `ApiCreateGame` drops the map from MarsBot's board choices and
+  picks Tharsis when none is left. `AutomaGameSetup.sanitizeGameOptions` swaps a blocked map to Tharsis as a
+  backstop.
 - With random milestones and awards off, `modularMA` does nothing, but the create-game form sends it anyway.
   `sanitizeGameOptions` ignores that leftover `modularMA`, so the map stays playable.
 
@@ -279,9 +285,8 @@ together would make the big map end faster than a standard one.
 
 - `src/server/automa` reads the map's maxima from `game.max.*` and uses no `constants.MAX_*`. With the
   standard-map maxima MarsBot would call temperature done at +8 °C and take Failed Actions.
-- The Lobbyists branches in `MarsBotBonusResolver.ts` count steps with `stepsToNextBonus`, from the map's own
-  bonus tracks (4.6a) and the game's maxima. They no longer name `OXYGEN_LEVEL_FOR_TEMPERATURE_BONUS`,
-  `VENUS_LEVEL_FOR_TR_BONUS` or the heat and ocean temperature steps.
+- The Lobbyists branches in `MarsBotBonusResolver.ts` ask `isNearBonusStep` whether a parameter is 1 to 2 steps
+  from a bonus step or its maximum, from the map's own bonus tracks (4.6a) and the game's maxima.
 - The board is registered in `MARSBOT_BOARD_NAMES` (`src/common/automa/MarsBotBoards.ts`) and `MARSBOT_BOARDS`
   (`src/server/automa/boards/MarsBotBoards.ts`). `MARSBOT_BOARDS` holds one board per map, seven tracks;
   `AutomaGameSetup.getBoardData` appends the Venus track when Venus Next is in play.
@@ -308,7 +313,7 @@ together would make the big map end faster than a standard one.
 - The card text for the new rules follows the existing `automaDescription` style: Merchant3 "All tracks ≥ 3
   (except Venus)", Innovator "Played cards minus the generation", Physicist "Science + Space tracks − 5",
   and on Manufacturer "Building + Energy tracks − 3" through `automaMapDescriptions`. The Terralabs and
-  Nirgal Enterprises texts end with "(one generation later on Amazonis Planitia)".
+  Nirgal Enterprises texts say that their generation thresholds are one generation later on Amazonis Planitia.
 - The tests are `tests/automa/MarsBotAmazonisRules.spec.ts`, `MarsBotAmazonisBonuses.spec.ts`,
   `MarsBotAmazonisMA.spec.ts` and `MarsBotAmazonisMaxima.spec.ts`, plus `MarsBotMapRules.spec.ts` for the
   per-map numbers.

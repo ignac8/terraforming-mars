@@ -4,7 +4,7 @@
 
 MarsBot is an automated opponent for solo play. Instead of the standard solo mode (race to complete terraforming within a generation limit), the player competes head-to-head against MarsBot for victory points. MarsBot acts as a second player using a card-driven track system instead of playing actual project cards.
 
-**Scope**: Base game on seven maps: the six official ones (Tharsis, Hellas, Elysium, Utopia Planitia, Terra Cimmeria Nova, Vastitas Borealis Nova) and Amazonis Planitia, whose MarsBot board is this fork's own design, not from the rulebooks (see `AMAZONIS-PLANITIA-MARSBOT.md`) + Prelude/Prelude2 + Venus Next + Colonies + Turmoil expansions + 46 MarsBot corporation cards (Rulebook B). Other expansions (Ares, Moon, Pathfinders, CEOs, Star Wars, Underworld, Community Cards) are server-side gated off.
+**Scope**: Base game on seven maps: the six official ones (Tharsis, Hellas, Elysium, Utopia Planitia, Terra Cimmeria Nova, Vastitas Borealis Nova) and Amazonis Planitia + Prelude/Prelude2 + Venus Next + Colonies + Turmoil expansions + 46 MarsBot corporation cards (Rulebook B). Amazonis Planitia's MarsBot board is this fork's own design, not from the rulebooks (see `AMAZONIS-PLANITIA-MARSBOT.md`). Other expansions (Ares, Moon, Pathfinders, CEOs, Star Wars, Underworld, Community Cards) are server-side gated off.
 
 ---
 
@@ -310,7 +310,7 @@ Game.ts has `automaHooks?: AutomaGameHooks` with thin `this.automaHooks?.method(
 | `getPassedPlayers()` | `getPassedPlayerColor()` | Resolve MarsBot color |
 
 | `addTile()` | `handleTilePlaced()` | Corp effect: onTilePlaced |
-| `increaseVenusScaleLevel()` | `handleVenusRaised()` | Corp effect: onVenusRaised |
+| `increaseVenusScaleLevel()` | `handleVenusRaised()` | Corp effect: onVenusRaised; also builds MarsBot's colony from the 16% Venus bonus on Amazonis Planitia |
 | `increaseTemperature/Oxygen` | `handleGlobalParameterRaised()` | Corp effect: onGlobalParameterRaised |
 | `updatePlayerVPForTheGeneration()` | `updateVPForGeneration()` | Track MarsBot VP per gen for chart |
 
