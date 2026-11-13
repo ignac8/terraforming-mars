@@ -216,9 +216,12 @@ Lobbyists ("1–2 steps from a bonus or completion") reads these bonus steps fro
 `game.globalParameterTracks`, not the standard-map constants (`isNearBonusStep` in
 `MarsBotBonusResolver`). Oxygen 8 % is not a bonus step here.
 
-Open point: Government Intervention's Venus raise across 16 %. Today the colony is built during that raise,
-a colony that pays M€ (Europa's ocean) pays it although that raise otherwise gives MarsBot no other M€, and
-the TR from an ocean the colony places is withheld like the raise's own TR. No ruling covers this map.
+Government Intervention's Venus raise across 16 % still builds the colony, or takes the Failed Action when no
+colony tile is left, and the corporation still reacts to it. The M€ gained from the colony (Europa's ocean, the
+Failed Action) is taken back, as for the card's other effects, except what Lakefront Resorts may keep.
+Aphrodite's 2 M€ per Venus step is paid before the colony is built and stays. The TR from an ocean the colony
+places is withheld like the raise's own TR. No ruling covers this map; this applies the card's rule that its
+raises give MarsBot no rewards to the colony.
 
 ### 4.7 Colonies
 

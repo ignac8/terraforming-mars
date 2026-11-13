@@ -133,7 +133,7 @@ Steps 1-2 are the Tharsis order. Each map's player aid has its own (`MAP_TIEBREA
 **Terraforming Bonuses**:
 - Temperature at -24°C or -20°C (heat bonus): MarsBot gains 2 MC instead.
 - Venus at 8% (card bonus): MarsBot gains 2 MC instead of a card (BGG 3358342, 3424237, 3733436). Not from Government Intervention.
-- Amazonis Planitia prints other bonuses on its tracks: plant production at -12°C and a card at 7% oxygen pay MarsBot 2 MC, the colony at 16% Venus is built for it, and the temperature step at 11% oxygen and the TR at 22% Venus resolve as printed. See `AMAZONIS-PLANITIA-MARSBOT.md` section 4.6a.
+- Amazonis Planitia prints other bonuses on its tracks: plant production at -12°C and a card at 7% oxygen pay MarsBot 2 MC, the colony at 16% Venus is built for it (without M€ under Government Intervention), and the temperature step at 11% oxygen and the TR at 22% Venus resolve as printed. See `AMAZONIS-PLANITIA-MARSBOT.md` section 4.6a.
 - Temperature/oxygen reaching a bonus step that grants another terraforming action: resolve it immediately (Failed Action if can't).
 - All terraforming raises grant TR as normal.
 
@@ -310,7 +310,7 @@ Game.ts has `automaHooks?: AutomaGameHooks` with thin `this.automaHooks?.method(
 | `getPassedPlayers()` | `getPassedPlayerColor()` | Resolve MarsBot color |
 
 | `addTile()` | `handleTilePlaced()` | Corp effect: onTilePlaced |
-| `increaseVenusScaleLevel()` | `handleVenusRaised()` | Corp effect: onVenusRaised; also builds MarsBot's colony from the 16% Venus bonus on Amazonis Planitia |
+| `increaseVenusScaleLevel()` | `handleVenusRaised()` | Corp effect: onVenusRaised; also builds MarsBot's colony from the 16% Venus bonus on Amazonis Planitia (M€ from it taken back under Government Intervention) |
 | `increaseTemperature/Oxygen` | `handleGlobalParameterRaised()` | Corp effect: onGlobalParameterRaised |
 | `updatePlayerVPForTheGeneration()` | `updateVPForGeneration()` | Track MarsBot VP per gen for chart |
 

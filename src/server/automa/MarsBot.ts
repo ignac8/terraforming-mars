@@ -127,8 +127,8 @@ export class MarsBot implements IMarsBot {
   public shippingBoard: MarsBotShippingBoard = new MarsBotShippingBoard();
 
   /**
-   * True while Government Intervention raises Venus: its global parameter bonuses pay MarsBot no
-   * MC. Only set during that synchronous raise, so never saved.
+   * True while Government Intervention raises Venus: its global parameter bonuses and the colony the
+   * raise earns pay MarsBot no MC. Only set during that synchronous raise, so never saved.
    */
   public bonusMcBlocked: boolean = false;
 

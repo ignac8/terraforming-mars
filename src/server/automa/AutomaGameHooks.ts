@@ -685,12 +685,20 @@ export class AutomaGameHooks {
   /**
    * Called once the Venus scale has risen by `steps`, for either player. Notifies MarsBot's corp, then
    * builds the colony MarsBot's raise earned.
+   *
+   * When Government Intervention raised Venus, the colony pays MarsBot no M€ and the corp's payment
+   * for the raise stays.
    */
   public handleVenusRaised(steps: number): void {
     this.marsBot.corp?.effect?.onVenusRaised?.(this.marsBot, steps);
     if (this.venusColonyDue) {
       this.venusColonyDue = false;
-      this.marsBot.turnResolver.placeColony();
+      const turnResolver = this.marsBot.turnResolver;
+      if (this.marsBot.bonusMcBlocked) {
+        turnResolver.withoutMcGain(() => turnResolver.placeColony());
+      } else {
+        turnResolver.placeColony();
+      }
     }
   }
 

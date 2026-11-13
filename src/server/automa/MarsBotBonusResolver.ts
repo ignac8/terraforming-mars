@@ -252,24 +252,7 @@ export class MarsBotBonusResolver {
    * M€ that Lakefront Resorts' advance brings in stays (rulebook B, p.4).
    */
   public withoutTRorMcGain(action: () => void): void {
-    const marsBot = this.marsBotManager;
-    const mcBefore = this.turnResolver.megacredits;
-    if (marsBot !== undefined) {
-      marsBot.mcKeptThroughIntervention = 0;
-    }
-    let kept = 0;
-    try {
-      this.withoutTRGain(action);
-    } finally {
-      kept = marsBot?.mcKeptThroughIntervention ?? 0;
-      if (marsBot !== undefined) {
-        marsBot.mcKeptThroughIntervention = undefined;
-      }
-    }
-    if (this.turnResolver.megacredits > mcBefore + kept) {
-      this.turnResolver.megacredits = mcBefore + kept;
-      this.game.log('MarsBot does not receive M€ from Government Intervention');
-    }
+    this.turnResolver.withoutMcGain(() => this.withoutTRGain(action));
   }
 
   public tryHelperAction(awardName: string): boolean {

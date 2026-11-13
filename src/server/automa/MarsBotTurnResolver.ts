@@ -573,6 +573,33 @@ export class MarsBotTurnResolver {
     this.marsBotManager?.corp?.effect?.onMcGained?.(this.marsBotManager, amount);
   }
 
+  /**
+   * Runs `action` and caps MarsBot's M€ supply at what it was before, so the action pays MarsBot no
+   * M€ (for Government Intervention). A supply the action lowers stays lowered.
+   *
+   * M€ that Lakefront Resorts' advance brings in stays (rulebook B, p.4).
+   */
+  public withoutMcGain(action: () => void): void {
+    const marsBot = this.marsBotManager;
+    const mcBefore = this.megacredits;
+    if (marsBot !== undefined) {
+      marsBot.mcKeptThroughIntervention = 0;
+    }
+    let kept = 0;
+    try {
+      action();
+    } finally {
+      kept = marsBot?.mcKeptThroughIntervention ?? 0;
+      if (marsBot !== undefined) {
+        marsBot.mcKeptThroughIntervention = undefined;
+      }
+    }
+    if (this.megacredits > mcBefore + kept) {
+      this.megacredits = mcBefore + kept;
+      this.game.log('MarsBot does not receive M€ from Government Intervention');
+    }
+  }
+
   /** Pristar: true when the corp consumes its cube to skip this raise. */
   private interceptsRaise(parameter: GlobalParameter): boolean {
     return this.marsBotManager?.interceptsParameterRaise(parameter) ?? false;

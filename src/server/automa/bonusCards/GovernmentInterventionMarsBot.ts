@@ -19,7 +19,8 @@ export const GOVERNMENT_INTERVENTION_MARSBOT_BONUS_CARD: MarsBotBonusCardEffect 
     }
     if (!advanced && venus < resolver.game.max.venus) {
       // FAQ (rulebook B, p.4): Aphrodite's 2 M€ per Venus step still applies, and raising
-      // Venus pays MarsBot no other M€, so the 8% bonus pays nothing.
+      // Venus pays MarsBot no other M€, so the 8% bonus pays nothing, nor does the colony Amazonis
+      // Planitia prints at 16% (`handleVenusRaised`).
       const marsBot = resolver.marsBotManager;
       resolver.withoutTRGain(() => {
         if (marsBot !== undefined) {

@@ -4,11 +4,13 @@ import {BoardName} from '@/common/boards/BoardName';
 import {CardName} from '@/common/cards/CardName';
 import {Tag} from '@/common/cards/Tag';
 import {AUTOMA_COLONIES_MANIFEST} from '@/server/automa/corps/AutomaColoniesManifest';
+import {APHRODITE_MARSBOT_CORP} from '@/server/automa/corps/venusNext/AphroditeMarsBot';
 import {Ceres} from '@/server/colonies/Ceres';
+import {Europa} from '@/server/colonies/Europa';
 import {Luna} from '@/server/colonies/Luna';
 import {BuildColony} from '@/server/deferredActions/BuildColony';
 import {testGame} from '../TestGame';
-import {maxOutOceans, setOxygenLevel, setTemperature, setVenusScaleLevel} from '../TestingUtils';
+import {formatMessage, maxOutOceans, setOxygenLevel, setTemperature, setVenusScaleLevel} from '../TestingUtils';
 
 function amazonisGame(options: {colonies: boolean}) {
   const [game, human] = testGame(1, {
@@ -131,6 +133,44 @@ describe('MarsBotAmazonisBonuses', () => {
       expect(marsBot.turnResolver.megacredits).eq(mc);
       expect(luna.colonies).is.empty;
       expect(game.deferredActions.length).eq(0);
+    });
+
+    it('takes back the M€ of the ocean a Europa colony places under Government Intervention, but not Aphrodite\'s', () => {
+      const {game, marsBot} = amazonisGame({colonies: true});
+      const europa = new Europa();
+      game.colonies = [europa];
+      marsBot.corp = APHRODITE_MARSBOT_CORP;
+      game.generation = 3;
+      setVenusScaleLevel(game, 14);
+      const tr = marsBot.player.terraformRating;
+      const mc = marsBot.turnResolver.megacredits;
+
+      marsBot.resolveBonusCard(BonusCardId.B16_GOVERNMENT_INTERVENTION);
+
+      const oceans = game.board.getOceanSpaces();
+      expect(europa.colonies).deep.eq([marsBot.player.id]);
+      expect(game.getVenusScaleLevel()).eq(16);
+      expect(oceans).has.length(1);
+      // An ocean on a hex that pays nothing would prove nothing
+      expect(marsBot.turnResolver.tilePlacer.getTotalPlacementMC(oceans[0])).greaterThan(0);
+      expect(marsBot.player.terraformRating).eq(tr);
+      expect(marsBot.turnResolver.megacredits).eq(mc + 2);
+    });
+
+    it('takes back the Failed Action M€ under Government Intervention when no colony tile is left', () => {
+      const {game, marsBot, luna} = amazonisGame({colonies: true});
+      luna.colonies.push(marsBot.player.id);
+      game.generation = 3;
+      setVenusScaleLevel(game, 14);
+      const mc = marsBot.turnResolver.megacredits;
+
+      marsBot.resolveBonusCard(BonusCardId.B16_GOVERNMENT_INTERVENTION);
+
+      const logs = game.gameLog.map(formatMessage);
+      expect(game.getVenusScaleLevel()).eq(16);
+      expect(marsBot.turnResolver.megacredits).eq(mc);
+      expect(logs).includes('MarsBot: no colony tile to build on, Failed Action');
+      expect(logs).includes('MarsBot does not receive M€ from Government Intervention');
     });
 
     it('still asks a human where to build the colony', () => {
