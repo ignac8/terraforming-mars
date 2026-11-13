@@ -19,6 +19,7 @@ const NO_ERRORS: ValidationErrors = {
   soloWithoutCorporateEra: false,
   infiniteEnergyBug: false,
   altVenusBoardOnAmazonis: false,
+  marsBotModularMAOnAmazonis: false,
   prelude2WithoutPrelude: false,
   deltaProjectWithoutPrelude: false,
   notEnoughCorporations: 0,

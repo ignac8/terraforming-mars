@@ -9,7 +9,7 @@ import {MarsBot} from './MarsBot';
 import {MARSBOT_BOARDS} from './boards/MarsBotBoards';
 import {VENUS_MARSBOT_TRACK} from './boards/VenusMarsBot';
 import {TrackDefinition, MARSBOT_STARTING_TR} from '../../common/automa/AutomaTypes';
-import {MARSBOT_BOARD_NAMES} from '../../common/automa/MarsBotBoards';
+import {MARSBOT_BOARD_NAMES, modularMABlocksMarsBot} from '../../common/automa/MarsBotBoards';
 import {marsBotMapRules} from '../../common/automa/MarsBotMapRules';
 import {marsBotMapSet} from '../../common/automa/marsBotMapSet';
 import {BoardName} from '../../common/boards/BoardName';
@@ -118,7 +118,7 @@ export class AutomaGameSetup {
     if (gameOptions.randomMA === RandomMAOptionType.NONE) {
       gameOptions.modularMA = false;
     }
-    if (!MARSBOT_BOARD_NAMES.includes(gameOptions.boardName)) {
+    if (!MARSBOT_BOARD_NAMES.includes(gameOptions.boardName) || modularMABlocksMarsBot(gameOptions.boardName, gameOptions)) {
       gameOptions.boardName = BoardName.THARSIS;
     }
   }

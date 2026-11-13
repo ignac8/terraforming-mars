@@ -214,6 +214,43 @@ describe('MarsBotGameCreation', () => {
       expect(board.tracks[board.tagToTrack[Tag.SCIENCE]!].definition.tags).to.include(Tag.JOVIAN);
     });
 
+    for (const randomMA of [RandomMAOptionType.LIMITED, RandomMAOptionType.UNLIMITED]) {
+      it('falls back to Tharsis from Amazonis Planitia with the Milestones & Awards expansion: ' + randomMA, () => {
+        const [game] = testGame(1, {
+          automa: true,
+          boardName: BoardName.AMAZONIS_PLANITIA,
+          modularMA: true,
+          randomMA,
+        });
+
+        expect(game.gameOptions.boardName).to.eq(BoardName.THARSIS);
+      });
+    }
+
+    it('stays on Amazonis Planitia when a leftover modularMA meets random milestones and awards off', () => {
+      const [game] = testGame(1, {
+        automa: true,
+        boardName: BoardName.AMAZONIS_PLANITIA,
+        modularMA: true,
+        randomMA: RandomMAOptionType.NONE,
+      });
+
+      expect(game.gameOptions.boardName).to.eq(BoardName.AMAZONIS_PLANITIA);
+    });
+
+    for (const boardName of MARSBOT_BOARD_NAMES.filter((name) => name !== BoardName.AMAZONIS_PLANITIA)) {
+      it('keeps ' + boardName + ' with the Milestones & Awards expansion', () => {
+        const [game] = testGame(1, {
+          automa: true,
+          boardName,
+          modularMA: true,
+          randomMA: RandomMAOptionType.LIMITED,
+        });
+
+        expect(game.gameOptions.boardName).to.eq(boardName);
+      });
+    }
+
     it('keeps modularMA when random milestones and awards are on', () => {
       const [game] = testGame(1, {
         automa: true,

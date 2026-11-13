@@ -9,6 +9,7 @@ import {Message} from '../logs/Message';
 import {LogMessageDataType} from '../logs/LogMessageDataType';
 import {BoardName} from '../boards/BoardName';
 import {validateCustomMA} from '../ma/CustomMA';
+import {modularMABlocksMarsBot} from '../automa/MarsBotBoards';
 
 const REVISED_COUNT_ALGORITHM = false;
 
@@ -26,6 +27,7 @@ export type ValidationErrors = {
   soloWithoutCorporateEra: boolean;
   infiniteEnergyBug: boolean;
   altVenusBoardOnAmazonis: boolean;
+  marsBotModularMAOnAmazonis: boolean;
   prelude2WithoutPrelude: boolean;
   deltaProjectWithoutPrelude: boolean;
   notEnoughCorporations: number;
@@ -89,6 +91,10 @@ export const validationDetails: Record<keyof ValidationErrors, {blocking: boolea
     blocking: false,
     message: 'The Alt. Venus Board does not extend to the end of the Venus track on Amazonis Planitia.',
   },
+  marsBotModularMAOnAmazonis: {
+    blocking: true,
+    message: 'MarsBot can\'t play Amazonis Planitia with the Milestones & Awards expansion yet',
+  },
   prelude2WithoutPrelude: {
     blocking: false,
     message: 'Prelude 2 without Prelude will only include its project cards, not its preludes.',
@@ -130,6 +136,7 @@ export function validateNewGameConfig(config: NewGameConfig, helpers: Helpers): 
     soloWithoutCorporateEra: false,
     infiniteEnergyBug: false,
     altVenusBoardOnAmazonis: false,
+    marsBotModularMAOnAmazonis: false,
     prelude2WithoutPrelude: false,
     deltaProjectWithoutPrelude: false,
     notEnoughCorporations: 0,
@@ -169,6 +176,10 @@ export function validateNewGameConfig(config: NewGameConfig, helpers: Helpers): 
   if (config.expansions.venus && config.altVenusBoard &&
     config.boards.includes(BoardName.AMAZONIS_PLANITIA)) {
     errors.altVenusBoardOnAmazonis = true;
+  }
+
+  if (config.automa === true && config.boards.some((board) => modularMABlocksMarsBot(board, config))) {
+    errors.marsBotModularMAOnAmazonis = true;
   }
 
   if (config.expansions.prelude2 && !config.expansions.prelude) {

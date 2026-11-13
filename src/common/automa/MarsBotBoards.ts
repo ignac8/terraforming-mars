@@ -1,4 +1,5 @@
 import {BoardName} from '../boards/BoardName';
+import {RandomMAOptionType} from '../ma/RandomMAOptionType';
 
 /**
  * Maps with a MarsBot board.
@@ -19,4 +20,15 @@ export const MARSBOT_BOARD_NAMES: ReadonlyArray<BoardName> = [
 /** Whether a board can be played against MarsBot. */
 export function isMarsBotBoardChoice(board: BoardName): boolean {
   return MARSBOT_BOARD_NAMES.includes(board);
+}
+
+/**
+ * Whether the Milestones & Awards expansion keeps MarsBot off `board`.
+ *
+ * The expansion counts as on when its option is set and random milestones and awards are not off,
+ * because the create-game form sends the option even when they are. With it the rulebook has MarsBot
+ * use the Tharsis board whatever the map, and how that works on Amazonis Planitia is undecided.
+ */
+export function modularMABlocksMarsBot(board: BoardName, options: {readonly modularMA: boolean, readonly randomMA: RandomMAOptionType}): boolean {
+  return board === BoardName.AMAZONIS_PLANITIA && options.modularMA && options.randomMA !== RandomMAOptionType.NONE;
 }

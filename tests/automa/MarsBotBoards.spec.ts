@@ -2,7 +2,7 @@ import {expect} from 'chai';
 import {testGame} from '../TestGame';
 import {Tag} from '../../src/common/cards/Tag';
 import {BoardName} from '../../src/common/boards/BoardName';
-import {MARSBOT_BOARD_NAMES, isMarsBotBoardChoice} from '../../src/common/automa/MarsBotBoards';
+import {MARSBOT_BOARD_NAMES, isMarsBotBoardChoice, modularMABlocksMarsBot} from '../../src/common/automa/MarsBotBoards';
 import {MARSBOT_BOARDS} from '../../src/server/automa/boards/MarsBotBoards';
 import {VENUS_MARSBOT_TRACK} from '../../src/server/automa/boards/VenusMarsBot';
 import {AutomaGameHooks} from '../../src/server/automa/AutomaGameHooks';
@@ -142,6 +142,20 @@ describe('MarsBot boards', () => {
     expect(isMarsBotBoardChoice(BoardName.ARABIA_TERRA)).is.false;
     expect(isMarsBotBoardChoice(BoardName.VASTITAS_BOREALIS)).is.false;
   });
+
+  it('keeps MarsBot off Amazonis Planitia while the Milestones & Awards expansion is in play', () => {
+    for (const randomMA of [RandomMAOptionType.LIMITED, RandomMAOptionType.UNLIMITED, RandomMAOptionType.MANUAL]) {
+      expect(modularMABlocksMarsBot(BoardName.AMAZONIS_PLANITIA, {modularMA: true, randomMA}), randomMA).is.true;
+    }
+    expect(modularMABlocksMarsBot(BoardName.AMAZONIS_PLANITIA, {modularMA: true, randomMA: RandomMAOptionType.NONE})).is.false;
+    expect(modularMABlocksMarsBot(BoardName.AMAZONIS_PLANITIA, {modularMA: false, randomMA: RandomMAOptionType.LIMITED})).is.false;
+  });
+
+  for (const boardName of MARSBOT_BOARD_NAMES.filter((name) => name !== BoardName.AMAZONIS_PLANITIA)) {
+    it('keeps MarsBot on ' + boardName + ' with the Milestones & Awards expansion', () => {
+      expect(modularMABlocksMarsBot(boardName, {modularMA: true, randomMA: RandomMAOptionType.LIMITED})).is.false;
+    });
+  }
 
   it('plays Amazonis Planitia on its own board, with Animal on the Science track', () => {
     const [game] = testGame(1, {automa: true, boardName: BoardName.AMAZONIS_PLANITIA});
