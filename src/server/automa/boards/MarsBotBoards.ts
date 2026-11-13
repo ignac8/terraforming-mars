@@ -6,6 +6,7 @@ import {ELYSIUM_MARSBOT_BOARD} from './ElysiumMarsBot';
 import {UTOPIA_PLANITIA_MARSBOT_BOARD} from './UtopiaPlanitiaMarsBot';
 import {VASTITAS_BOREALIS_MARSBOT_BOARD} from './VastitasBorealisMarsBot';
 import {TERRA_CIMMERIA_MARSBOT_BOARD} from './TerraCimmeriaMarsBot';
+import {AMAZONIS_PLANITIA_MARSBOT_BOARD} from './AmazonisPlanitiaMarsBot';
 
 /** The MarsBot board for each map, keyed by the map it ships with. */
 export const MARSBOT_BOARDS: Partial<Record<BoardName, ReadonlyArray<TrackDefinition>>> = {
@@ -15,4 +16,5 @@ export const MARSBOT_BOARDS: Partial<Record<BoardName, ReadonlyArray<TrackDefini
   [BoardName.UTOPIA_PLANITIA]: UTOPIA_PLANITIA_MARSBOT_BOARD,
   [BoardName.VASTITAS_BOREALIS_NOVA]: VASTITAS_BOREALIS_MARSBOT_BOARD,
   [BoardName.TERRA_CIMMERIA_NOVA]: TERRA_CIMMERIA_MARSBOT_BOARD,
+  [BoardName.AMAZONIS_PLANITIA]: AMAZONIS_PLANITIA_MARSBOT_BOARD,
 };

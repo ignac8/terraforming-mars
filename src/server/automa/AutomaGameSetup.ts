@@ -125,7 +125,8 @@ export class AutomaGameSetup {
    * Whether MarsBot can play against a milestone in this game.
    *
    * The automa rules cover the milestones of the maps with a MarsBot board, of the Milestones &
-   * Awards expansion and of Venus Next. A few of those still need an expansion that isn't in play:
+   * Awards expansion and of Venus Next (Amazonis Planitia's only in a game on that map). A few of those
+   * still need an expansion that isn't in play:
    *
    * - Trader and Tradesman: MarsBot needs space 2 on its Venus track (rulebook C p.14 and, for
    *   Utopia Planitia, p.10), which never moves without Venus Next, while you can still meet them.
@@ -150,7 +151,7 @@ export class AutomaGameSetup {
     if (!gameOptions.turmoilExtension) {
       unsupported.push('Lobbyist');
     }
-    return coveredByAutomaRules(name, milestoneManifest, MODULAR_MILESTONES) && !unsupported.includes(name);
+    return coveredByAutomaRules(name, milestoneManifest, MODULAR_MILESTONES, gameOptions) && !unsupported.includes(name);
   }
 
   /**
@@ -165,7 +166,7 @@ export class AutomaGameSetup {
     if (name === 'Venuphile' && !gameOptions.venusNextExtension) {
       return false;
     }
-    return coveredByAutomaRules(name, awardManifest, MODULAR_AWARDS);
+    return coveredByAutomaRules(name, awardManifest, MODULAR_AWARDS, gameOptions);
   }
 
   /** Filter out cards not supported against MarsBot (e.g., Recession). */
@@ -312,11 +313,17 @@ const MODULAR_AWARDS: ReadonlyArray<AwardName> = [
 ];
 
 /**
- * Whether the automa rulebooks give MarsBot a rule for a milestone or award: it belongs to a map
- * with a MarsBot board, to the Milestones & Awards expansion or to Venus Next.
+ * Whether MarsBot has a rule for a milestone or award: it belongs to a map with a MarsBot board, to
+ * the Milestones & Awards expansion or to Venus Next.
+ *
+ * Amazonis Planitia's milestones and awards have a rule written only for that map, so they count
+ * only in a game on it without the Milestones & Awards expansion.
  */
-function coveredByAutomaRules<T extends string>(name: T, manifest: MAManifest<T, unknown>, modular: ReadonlyArray<T>): boolean {
-  return MARSBOT_BOARD_NAMES.some((board) => manifest.boards[board].includes(name)) ||
+function coveredByAutomaRules<T extends string>(
+  name: T, manifest: MAManifest<T, unknown>, modular: ReadonlyArray<T>, gameOptions: GameOptions): boolean {
+  const mapSet = marsBotMapSet(gameOptions);
+  return MARSBOT_BOARD_NAMES.some((board) => manifest.boards[board].includes(name) &&
+      (board !== BoardName.AMAZONIS_PLANITIA || mapSet === board)) ||
     modular.includes(name) ||
     manifest.expansions.venus.includes(name);
 }

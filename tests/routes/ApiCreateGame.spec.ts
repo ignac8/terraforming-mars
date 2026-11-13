@@ -139,15 +139,23 @@ describe('ApiCreateGame', () => {
   });
 
   it('picks a MarsBot game board only from the selected boards MarsBot supports', async () => {
-    await postConfig({...newGameConfigForTest(), automa: true, boards: [BoardName.AMAZONIS_PLANITIA, BoardName.HELLAS, BoardName.ARABIA_TERRA]});
+    await postConfig({...newGameConfigForTest(), automa: true, boards: [BoardName.VASTITAS_BOREALIS, BoardName.HELLAS, BoardName.ARABIA_TERRA]});
     expect(res.statusCode).eq(statusCode.ok);
     const model = JSON.parse(res.content) as SimpleGameModel;
     const game = await scaffolding.ctx.gameLoader.getGame(model.id);
     expect(game!.gameOptions.boardName).eq(BoardName.HELLAS);
   });
 
-  it('falls back to Tharsis when no selected board supports MarsBot', async () => {
+  it('plays Amazonis Planitia against MarsBot when it is the only supported board selected', async () => {
     await postConfig({...newGameConfigForTest(), automa: true, boards: [BoardName.AMAZONIS_PLANITIA, BoardName.ARABIA_TERRA]});
+    expect(res.statusCode).eq(statusCode.ok);
+    const model = JSON.parse(res.content) as SimpleGameModel;
+    const game = await scaffolding.ctx.gameLoader.getGame(model.id);
+    expect(game!.gameOptions.boardName).eq(BoardName.AMAZONIS_PLANITIA);
+  });
+
+  it('falls back to Tharsis when no selected board supports MarsBot', async () => {
+    await postConfig({...newGameConfigForTest(), automa: true, boards: [BoardName.VASTITAS_BOREALIS, BoardName.ARABIA_TERRA]});
     expect(res.statusCode).eq(statusCode.ok);
     const model = JSON.parse(res.content) as SimpleGameModel;
     const game = await scaffolding.ctx.gameLoader.getGame(model.id);

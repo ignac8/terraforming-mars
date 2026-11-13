@@ -394,7 +394,7 @@ describe('MarsBot map milestones and awards', () => {
       expect(awards).to.include.members(['Landlord', 'Desert Settler', 'Venuphile']);
     });
 
-    for (const name of ['Minimalist', 'Tropicalist', 'Economizer', 'Capitalist']) {
+    for (const name of ['Minimalist', 'Tropicalist', 'Economizer', 'Capitalist', 'Merchant3']) {
       it('leaves out a milestone the automa rules do not cover: ' + name, () => {
         const [game] = testGame(1, {automa: true, randomMA: RandomMAOptionType.UNLIMITED, includeFanMA: true, venusNextExtension: true});
         const [milestones] = getCandidates(game.gameOptions);
@@ -489,6 +489,29 @@ describe('MarsBot map milestones and awards', () => {
     it('modular games play the Tharsis board', () => {
       expect(AutomaGameSetup.marsBotBoardName({boardName: BoardName.HELLAS, ...MODULAR} as GameOptions)).to.eq(BoardName.THARSIS);
     });
+  });
+
+  describe('Amazonis Planitia', () => {
+    it('deals the map\'s own milestones and awards without swapping any', () => {
+      const {game} = createGame({boardName: BoardName.AMAZONIS_PLANITIA, turmoilExtension: true, coloniesExtension: true});
+
+      expect(game.milestones.map((milestone) => milestone.name)).to.deep.eq(['Terran', 'Landshaper', 'Merchant3', 'Sponsor', 'Lobbyist']);
+      expect(game.awards.map((award) => award.name)).to.deep.eq(['Collector', 'Innovator', 'Constructor', 'Manufacturer', 'Physicist']);
+    });
+
+    for (const run of [
+      {boardName: BoardName.AMAZONIS_PLANITIA, modularMA: false, supported: true},
+      {boardName: BoardName.THARSIS, modularMA: false, supported: false},
+      {boardName: BoardName.AMAZONIS_PLANITIA, modularMA: true, supported: false},
+    ]) {
+      it('supports Merchant3, Innovator and Physicist only in a game on the map without the modular milestones: ' + JSON.stringify(run), () => {
+        const options = {boardName: run.boardName, modularMA: run.modularMA, venusNextExtension: true, turmoilExtension: true} as GameOptions;
+
+        expect(AutomaGameSetup.supportsMilestone('Merchant3', options)).eq(run.supported);
+        expect(AutomaGameSetup.supportsAward('Innovator', options)).eq(run.supported);
+        expect(AutomaGameSetup.supportsAward('Physicist', options)).eq(run.supported);
+      });
+    }
   });
 
   describe('Pioneer colony cubes', () => {

@@ -241,8 +241,8 @@ describe('CreateGameForm', () => {
     const isBoardDisabled = wrapper.findComponent({name: 'BoardSelector'}).props('isBoardDisabled');
 
     expect(isBoardDisabled(BoardName.HELLAS)).is.false;
+    expect(isBoardDisabled(BoardName.AMAZONIS_PLANITIA)).is.false;
     expect(isBoardDisabled(BoardName.ARABIA_TERRA)).is.true;
-    expect(isBoardDisabled(BoardName.AMAZONIS_PLANITIA)).is.true;
 
     vm.automa = false;
     await vm.$nextTick();
@@ -250,8 +250,9 @@ describe('CreateGameForm', () => {
   });
 
   for (const run of [
-    {boards: [BoardName.AMAZONIS_PLANITIA, BoardName.HELLAS, BoardName.ARABIA_TERRA], expected: [BoardName.HELLAS]},
-    {boards: [BoardName.AMAZONIS_PLANITIA, BoardName.ARABIA_TERRA], expected: [BoardName.THARSIS]},
+    {boards: [BoardName.VASTITAS_BOREALIS, BoardName.HELLAS, BoardName.ARABIA_TERRA], expected: [BoardName.HELLAS]},
+    {boards: [BoardName.AMAZONIS_PLANITIA, BoardName.ARABIA_TERRA], expected: [BoardName.AMAZONIS_PLANITIA]},
+    {boards: [BoardName.VASTITAS_BOREALIS, BoardName.ARABIA_TERRA], expected: [BoardName.THARSIS]},
   ] as const) {
     it(`enabling automa keeps only the selected MarsBot boards ${JSON.stringify(run)}`, async () => {
       const wrapper = shallowMount(CreateGameForm, {...globalConfig});

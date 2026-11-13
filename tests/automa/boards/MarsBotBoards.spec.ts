@@ -34,6 +34,8 @@ const TAG_TRACKS: Partial<Record<BoardName, Partial<Record<Tag, number>>>> = {
   [BoardName.TERRA_CIMMERIA_NOVA]: {...THARSIS_TAG_TRACKS, [Tag.JOVIAN]: 5, [Tag.CITY]: 3},
   // Microbe pairs with Science, City with Energy, Jovian with Earth.
   [BoardName.VASTITAS_BOREALIS_NOVA]: {...THARSIS_TAG_TRACKS, [Tag.MICROBE]: 3, [Tag.CITY]: 4, [Tag.JOVIAN]: 5},
+  // Animal pairs with Science. This board is not in the rulebooks.
+  [BoardName.AMAZONIS_PLANITIA]: {...THARSIS_TAG_TRACKS, [Tag.ANIMAL]: 3},
 };
 
 describe('MarsBotBoards', () => {

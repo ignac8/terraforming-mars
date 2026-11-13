@@ -95,6 +95,11 @@ describe('MarsBot boards', () => {
     {boardName: BoardName.VASTITAS_BOREALIS_NOVA, tag: Tag.MICROBE, track: 3},
     {boardName: BoardName.VASTITAS_BOREALIS_NOVA, tag: Tag.CITY, track: 4},
     {boardName: BoardName.VASTITAS_BOREALIS_NOVA, tag: Tag.JOVIAN, track: 5},
+    // Amazonis Planitia: Animal with Science, the rest as on Tharsis
+    {boardName: BoardName.AMAZONIS_PLANITIA, tag: Tag.ANIMAL, track: 3},
+    {boardName: BoardName.AMAZONIS_PLANITIA, tag: Tag.JOVIAN, track: 4},
+    {boardName: BoardName.AMAZONIS_PLANITIA, tag: Tag.CITY, track: 5},
+    {boardName: BoardName.AMAZONIS_PLANITIA, tag: Tag.MICROBE, track: 6},
   ] as const) {
     it('pairs tags per rulebook C, page 8: ' + JSON.stringify(run), () => {
       expect(tracksOf(run.boardName).findIndex((t) => t.tags.includes(run.tag))).eq(run.track);
@@ -129,10 +134,21 @@ describe('MarsBot boards', () => {
     });
   }
 
+  it('accepts Amazonis Planitia in the create form', () => {
+    expect(isMarsBotBoardChoice(BoardName.AMAZONIS_PLANITIA)).is.true;
+  });
+
   it('rejects the other maps in the create form', () => {
     expect(isMarsBotBoardChoice(BoardName.ARABIA_TERRA)).is.false;
     expect(isMarsBotBoardChoice(BoardName.VASTITAS_BOREALIS)).is.false;
-    // MarsBot is built for normal-size boards only
-    expect(isMarsBotBoardChoice(BoardName.AMAZONIS_PLANITIA)).is.false;
+  });
+
+  it('plays Amazonis Planitia on its own board, with Animal on the Science track', () => {
+    const [game] = testGame(1, {automa: true, boardName: BoardName.AMAZONIS_PLANITIA});
+    const board = getMarsBot(game).marsBotBoard;
+
+    expect(game.gameOptions.boardName).eq(BoardName.AMAZONIS_PLANITIA);
+    expect(board.tracks[3].definition.tags).deep.eq([Tag.SCIENCE, Tag.ANIMAL]);
+    expect(board.tracks[0].definition.layout[7]).eq('tag_science');
   });
 });
