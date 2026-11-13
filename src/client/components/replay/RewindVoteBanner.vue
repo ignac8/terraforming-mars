@@ -32,12 +32,13 @@
 
 <script lang="ts">
 import {defineComponent} from 'vue';
-import {translateRefusal, fetchVote, postVote, seatPasswordParam, VoteBody} from '@/client/utils/fetchReplay';
+import {translateRefusal, fetchVote, postVote, ReplayResponseError, seatPasswordParam, VoteBody} from '@/client/utils/fetchReplay';
 import {translateText, translateTextWithParams} from '@/client/directives/i18n';
 import {Log} from '@/common/logs/Log';
 import {LogMessageDataType} from '@/common/logs/LogMessageDataType';
 import {Message} from '@/common/logs/Message';
 import {paths} from '@/common/app/paths';
+import {statusCode} from '@/common/http/statusCode';
 import {Color} from '@/common/Color';
 import {PublicPlayerModel} from '@/common/models/PlayerModel';
 import {RequestBlock, RewindVoteModel, RewindVotePoll} from '@/common/rewind/RewindVoteModel';
@@ -234,12 +235,25 @@ export default defineComponent({
       try {
         await this.receive(() => fetchVote(this.participantId, this.password));
       } catch (err) {
+        if (this.refusedWithoutPassword(err)) {
+          this.stop();
+          return;
+        }
         // A restart or a failing server. The last answer stays, and the next poll tries again.
         console.warn('Unable to read the rewind vote', err);
       }
       if (!this.stopped) {
         this.pollTimer = setTimeout(() => this.poll(), this.pollMs);
       }
+    },
+    /**
+     * The seat has a password and this page sent none, as another player's board opened from the results does.
+     * Asking again gets the same answer.
+     */
+    refusedWithoutPassword(err: unknown): boolean {
+      return err instanceof ReplayResponseError &&
+        err.status === statusCode.unauthorized &&
+        seatPasswordParam(this.participantId, this.password) === '';
     },
     /** Reads the vote now, e.g. after this page asked for one, instead of at the next poll. */
     async refresh(): Promise<void> {

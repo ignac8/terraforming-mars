@@ -184,6 +184,8 @@ import {CardModel} from '@/common/models/CardModel';
 import {getCardOrThrow} from '../cards/ClientCardManifest';
 import {HomeMixin} from '@/client/mixins/HomeMixin';
 import {gameResultsUrl} from '@/client/utils/gameResultsUrl';
+import {passwordParam} from '@/client/utils/playerPassword';
+import {isPlayerId} from '@/common/Types';
 
 type PlayerHomeModel = {
   showHand: boolean;
@@ -263,8 +265,10 @@ export default defineComponent({
     game(): GameModel {
       return this.playerView.game;
     },
+    /** A player's link carries the seat password, which the results page needs to read the rewind vote. */
     resultsUrl(): string {
-      return gameResultsUrl(this.playerView.id, this.game);
+      const password = isPlayerId(this.playerView.id) ? passwordParam(this.playerView) : '';
+      return gameResultsUrl(this.playerView.id, this.game) + password;
     },
     CardType(): typeof CardType {
       return CardType;

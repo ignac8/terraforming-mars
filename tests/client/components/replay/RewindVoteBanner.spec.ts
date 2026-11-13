@@ -331,5 +331,22 @@ describe('RewindVoteBanner', () => {
       await ticks(1000);
       expect(wrapper.find('.rewind-vote-open').text()).to.contain('9');
     });
+
+    it('stops asking once the seat refuses a page that has no password', async () => {
+      answers = [refuse(401, 'Unauthorized')];
+      mountBanner();
+      await flushPromises();
+      await ticks(5000);
+      expect(requests).to.have.length(1);
+    });
+
+    it('keeps asking when the seat refuses the password of the page', async () => {
+      vi.spyOn(console, 'warn').mockImplementation(() => {});
+      answers = [refuse(401, 'Unauthorized')];
+      mountBanner({password: '&password=0123456789ab'});
+      await flushPromises();
+      await ticks(3000);
+      expect(requests).to.have.length(4);
+    });
   });
 });

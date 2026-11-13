@@ -183,6 +183,17 @@ describe('GameEnd', () => {
     expect(wrapper.find('.game_end_table').text()).contains('Blue');
   });
 
+  it('carries the seat password on the link to the viewer\'s own page, and on no other player\'s', () => {
+    const blue = fakePublicPlayerModel({color: 'blue', name: 'Blue', id: 'p-blue-id' as any});
+    const red = fakePublicPlayerModel({color: 'red', name: 'Red', id: 'p-red-id' as any});
+    const participant = fakePlayerViewModel({id: 'p-blue-id' as any, password: '0123456789ab', players: [blue, red]});
+    const wrapper = shallowMount(GameEnd, {...globalConfig, props: {participant}});
+
+    const hrefs = wrapper.findAll('a').map((a) => a.attributes('href') ?? '').filter((href) => href.startsWith('player?id='));
+    expect(hrefs.filter((href) => href.includes('p-blue-id'))).deep.eq(Array(2).fill('player?id=p-blue-id&password=0123456789ab&noredirect'));
+    expect(hrefs.filter((href) => href.includes('p-red-id'))).deep.eq(Array(2).fill('player?id=p-red-id&noredirect'));
+  });
+
   it('shows the dogs', () => {
     const wrapper = shallowMount(GameEnd, {
       ...globalConfig,

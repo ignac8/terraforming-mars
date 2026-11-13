@@ -89,7 +89,7 @@
           <tbody>
             <tr v-for="p in playersInPlace" :key="p.color" :class="getEndGamePlayerRowColorClass(p.color)">
               <td>
-                <a v-if="p.id !== undefined" :href="'player?id='+p.id+'&noredirect'">{{ p.name }}</a>
+                <a v-if="p.id !== undefined" :href="playerPageUrl(p.id)">{{ p.name }}</a>
                 <template v-else>{{ p.name }}</template>
                 <div class="column-corporation">
                   <div v-for="(corporationName, index) in getCorporationName(p)" :key="index" v-i18n>{{ corporationName }}</div>
@@ -126,7 +126,7 @@
         <div class="game-end-flexrow">
           <div v-for="p in playersInPlace" :key="p.color" class="game-end-column">
             <div class="game-end-winner-scorebreak-player-title">
-              <div :class="'game-end-player ' + getEndGamePlayerRowColorClass(p.color)"><a v-if="p.id !== undefined" :href="'player?id='+p.id+'&noredirect'">{{ p.name }}</a><template v-else>{{ p.name }}</template></div>
+              <div :class="'game-end-player ' + getEndGamePlayerRowColorClass(p.color)"><a v-if="p.id !== undefined" :href="playerPageUrl(p.id)">{{ p.name }}</a><template v-else>{{ p.name }}</template></div>
             </div>
             <div v-for="v in p.victoryPointsBreakdown.detailsCards" :key="v.cardName">
               <div class="game-end-column-row">
@@ -426,6 +426,11 @@ export default defineComponent({
     clearTimeout(this.rewindPollTimer);
   },
   methods: {
+    /** A player's final board. Only the viewer's own link carries the seat password, which their board needs to read the rewind vote. */
+    playerPageUrl(id: PlayerId): string {
+      const password = id === this.participant.id ? passwordParam(this.participant) : '';
+      return `${paths.PLAYER}?id=${id}${password}&noredirect`;
+    },
     scheduleRewindPoll(): void {
       this.rewindPollTimer = setTimeout(() => this.pollForRewind(), FINISHED_GAME_VOTE_POLL_MS);
     },

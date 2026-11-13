@@ -128,8 +128,8 @@ describe('PlayerHome', () => {
   });
 
   describe('game results link', () => {
-    function resultsHref(id: string): string | undefined {
-      const playerView = fakePlayerViewModel({id: id as any, game: fakeGameModel({phase: Phase.END, spectatorId: 's-spectator-id'})});
+    function resultsHref(id: string, password?: string): string | undefined {
+      const playerView = fakePlayerViewModel({id: id as any, password, game: fakeGameModel({phase: Phase.END, spectatorId: 's-spectator-id'})});
       const wrapper = shallowMount(PlayerHome, {
         ...globalConfig,
         parentComponent: {methods: {getVisibilityState: () => true, setVisibilityState: () => {}}} as any,
@@ -142,8 +142,16 @@ describe('PlayerHome', () => {
       expect(resultsHref('p-blue-id')).eq('the-end?id=p-blue-id');
     });
 
+    it('carries the seat password of the player', () => {
+      expect(resultsHref('p-blue-id', '0123456789ab')).eq('the-end?id=p-blue-id&password=0123456789ab');
+    });
+
     it('is the results page of the spectator when the judge looks as a player', () => {
       expect(resultsHref('j-judge-id')).eq('the-end?id=s-spectator-id');
+    });
+
+    it('leaves the judge password off the spectator results page', () => {
+      expect(resultsHref('j-judge-id', '0123456789ab')).eq('the-end?id=s-spectator-id');
     });
   });
 });
