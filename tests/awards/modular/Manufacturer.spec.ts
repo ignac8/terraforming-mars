@@ -28,7 +28,8 @@ describe('Manufacturer', () => {
   });
 
   it('MarsBot scores its Building and Energy tracks combined', () => {
-    const marsBot = fakeMarsBot();
+    const [game] = testGame(1);
+    const marsBot = fakeMarsBot({game});
     setTrack(marsBot, Tag.BUILDING, 3);
     setTrack(marsBot, Tag.POWER, 2);
 
