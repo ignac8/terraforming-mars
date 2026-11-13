@@ -7,7 +7,7 @@ import {IMarsBotCorp} from '@/server/automa/IMarsBotCorp';
 // C42 Nirgal Enterprises
 export const NIRGAL_ENTERPRISES_MARSBOT_CORP: IMarsBotCorp = {
   name: CardName.NIRGAL_ENTERPRISES,
-  description: 'Tags: Building, Power, Plant. Setup: remove Overachievement. +2 in every award. Generations 2-5 and 10+: claim milestone. Generations 6-9: fund award. (one generation later on Amazonis Planitia)',
+  description: 'Tags: Building, Power, Plant. Setup: remove Overachievement. +2 in every award. Generations 2-5 and 10+: claim milestone. Generations 6-9: fund award (each one generation later on Amazonis Planitia).',
   tags: [Tag.BUILDING, Tag.POWER, Tag.PLANT],
   setup(marsBot) {
     marsBot.removeBonusCard(BonusCardId.B04_OVERACHIEVEMENT);

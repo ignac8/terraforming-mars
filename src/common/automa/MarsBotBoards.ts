@@ -27,7 +27,8 @@ export function isMarsBotBoardChoice(board: BoardName): boolean {
  *
  * The expansion counts as on when its option is set and random milestones and awards are not off,
  * because the create-game form sends the option even when they are. With it the rulebook has MarsBot
- * use the Tharsis board whatever the map, and how that works on Amazonis Planitia is undecided.
+ * use the Tharsis board whatever the map, and no rule covers Amazonis Planitia's bigger map, so MarsBot
+ * stays off it.
  */
 export function modularMABlocksMarsBot(board: BoardName, options: {readonly modularMA: boolean, readonly randomMA: RandomMAOptionType}): boolean {
   return board === BoardName.AMAZONIS_PLANITIA && options.modularMA && options.randomMA !== RandomMAOptionType.NONE;

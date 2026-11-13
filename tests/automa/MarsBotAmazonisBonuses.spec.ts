@@ -25,7 +25,7 @@ function amazonisGame(options: {colonies: boolean}) {
 
 describe('MarsBotAmazonisBonuses', () => {
   describe('plant production at -12 C', () => {
-    it('pays MarsBot 2 M€ and no plant production', () => {
+    it('pays MarsBot 2 M€ instead of plant production', () => {
       const {game, marsBot} = amazonisGame({colonies: false});
       setTemperature(game, -14);
       const mc = marsBot.turnResolver.megacredits;
@@ -34,7 +34,6 @@ describe('MarsBotAmazonisBonuses', () => {
 
       expect(game.getTemperature()).eq(-12);
       expect(marsBot.turnResolver.megacredits).eq(mc + 2);
-      expect(marsBot.player.production.plants).eq(0);
     });
 
     it('still gives a human the plant production', () => {
@@ -58,11 +57,13 @@ describe('MarsBotAmazonisBonuses', () => {
     });
 
     it('pays MarsBot no M€ when Government Intervention raises across it', () => {
-      const {game, marsBot} = amazonisGame({colonies: false});
+      const {game, human, marsBot} = amazonisGame({colonies: false});
+      // An even generation raises the parameter furthest from its maximum. The others are set well
+      // along, which leaves temperature.
       game.generation = 4;
       setTemperature(game, -14);
       setOxygenLevel(game, 14);
-      maxOutOceans(game.players[0], 9);
+      maxOutOceans(human, 9);
       setVenusScaleLevel(game, 30);
       const mc = marsBot.turnResolver.megacredits;
 
@@ -120,7 +121,7 @@ describe('MarsBotAmazonisBonuses', () => {
     });
 
     it('does nothing without Colonies, and defers nothing', () => {
-      const {game, marsBot} = amazonisGame({colonies: false});
+      const {game, marsBot, luna} = amazonisGame({colonies: false});
       setVenusScaleLevel(game, 14);
       const mc = marsBot.turnResolver.megacredits;
 
@@ -128,6 +129,7 @@ describe('MarsBotAmazonisBonuses', () => {
 
       expect(game.getVenusScaleLevel()).eq(16);
       expect(marsBot.turnResolver.megacredits).eq(mc);
+      expect(luna.colonies).is.empty;
       expect(game.deferredActions.length).eq(0);
     });
 

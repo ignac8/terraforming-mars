@@ -6,7 +6,7 @@ import {MarsBotBonusCardEffect} from '@/server/automa/bonusCards/MarsBotBonusCar
 export const OVERACHIEVEMENT_MARSBOT_BONUS_CARD: MarsBotBonusCardEffect = {
   id: BonusCardId.B04_OVERACHIEVEMENT,
   resolve(resolver) {
-    // Claim a milestone; failing that, from generation 6 on (7 on Amazonis Planitia), fund an award
+    // Claim a milestone; failing that, fund an award once the map's generation threshold for it is reached
     const {generationShift} = marsBotMapRules(resolver.game.gameOptions.boardName);
     const done = resolver.turnResolver.maybeClaimMilestone() ||
       (resolver.game.generation >= 6 + generationShift && resolver.turnResolver.maybeFundAward());

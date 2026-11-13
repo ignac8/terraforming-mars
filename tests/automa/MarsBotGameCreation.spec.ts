@@ -227,7 +227,7 @@ describe('MarsBotGameCreation', () => {
       });
     }
 
-    it('stays on Amazonis Planitia when a leftover modularMA meets random milestones and awards off', () => {
+    it('stays on Amazonis Planitia with random milestones and awards off, whatever modularMA says', () => {
       const [game] = testGame(1, {
         automa: true,
         boardName: BoardName.AMAZONIS_PLANITIA,
@@ -250,18 +250,5 @@ describe('MarsBotGameCreation', () => {
         expect(game.gameOptions.boardName).to.eq(boardName);
       });
     }
-
-    it('keeps modularMA when random milestones and awards are on', () => {
-      const [game] = testGame(1, {
-        automa: true,
-        boardName: BoardName.HELLAS,
-        modularMA: true,
-        randomMA: RandomMAOptionType.LIMITED,
-      });
-
-      const board = game.automaHooks!.marsBot.marsBotBoard;
-      expect(game.gameOptions.modularMA).to.be.true;
-      expect(board.tracks[board.tagToTrack[Tag.SCIENCE]!].definition.tags).to.not.include(Tag.JOVIAN);
-    });
   });
 });

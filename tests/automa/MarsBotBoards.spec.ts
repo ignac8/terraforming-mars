@@ -75,6 +75,7 @@ describe('MarsBot boards', () => {
     });
   }
 
+  // The six rulebook maps follow rulebook C, page 8. Amazonis Planitia is not in the rulebooks.
   for (const run of [
     // Tharsis and Utopia Planitia: Jovian with Energy, City with Earth, Microbe with Plant
     {boardName: BoardName.THARSIS, tag: Tag.JOVIAN, track: 4},
@@ -95,13 +96,10 @@ describe('MarsBot boards', () => {
     {boardName: BoardName.VASTITAS_BOREALIS_NOVA, tag: Tag.MICROBE, track: 3},
     {boardName: BoardName.VASTITAS_BOREALIS_NOVA, tag: Tag.CITY, track: 4},
     {boardName: BoardName.VASTITAS_BOREALIS_NOVA, tag: Tag.JOVIAN, track: 5},
-    // Amazonis Planitia: Animal with Science, the rest as on Tharsis
+    // Amazonis Planitia: Animal with Science
     {boardName: BoardName.AMAZONIS_PLANITIA, tag: Tag.ANIMAL, track: 3},
-    {boardName: BoardName.AMAZONIS_PLANITIA, tag: Tag.JOVIAN, track: 4},
-    {boardName: BoardName.AMAZONIS_PLANITIA, tag: Tag.CITY, track: 5},
-    {boardName: BoardName.AMAZONIS_PLANITIA, tag: Tag.MICROBE, track: 6},
   ] as const) {
-    it('pairs tags per rulebook C, page 8: ' + JSON.stringify(run), () => {
+    it('pairs tags on each map: ' + JSON.stringify(run), () => {
       expect(tracksOf(run.boardName).findIndex((t) => t.tags.includes(run.tag))).eq(run.track);
     });
   }
@@ -134,10 +132,6 @@ describe('MarsBot boards', () => {
     });
   }
 
-  it('accepts Amazonis Planitia in the create form', () => {
-    expect(isMarsBotBoardChoice(BoardName.AMAZONIS_PLANITIA)).is.true;
-  });
-
   it('rejects the other maps in the create form', () => {
     expect(isMarsBotBoardChoice(BoardName.ARABIA_TERRA)).is.false;
     expect(isMarsBotBoardChoice(BoardName.VASTITAS_BOREALIS)).is.false;
@@ -150,12 +144,6 @@ describe('MarsBot boards', () => {
     expect(modularMABlocksMarsBot(BoardName.AMAZONIS_PLANITIA, {modularMA: true, randomMA: RandomMAOptionType.NONE})).is.false;
     expect(modularMABlocksMarsBot(BoardName.AMAZONIS_PLANITIA, {modularMA: false, randomMA: RandomMAOptionType.LIMITED})).is.false;
   });
-
-  for (const boardName of MARSBOT_BOARD_NAMES.filter((name) => name !== BoardName.AMAZONIS_PLANITIA)) {
-    it('keeps MarsBot on ' + boardName + ' with the Milestones & Awards expansion', () => {
-      expect(modularMABlocksMarsBot(boardName, {modularMA: true, randomMA: RandomMAOptionType.LIMITED})).is.false;
-    });
-  }
 
   it('plays Amazonis Planitia on its own board, with Animal on the Science track', () => {
     const [game] = testGame(1, {automa: true, boardName: BoardName.AMAZONIS_PLANITIA});

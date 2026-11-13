@@ -133,31 +133,42 @@ export class MarsBotBonusResolver {
     return true;
   }
 
+  /** Checks whether the `type` parameter is 1 or 2 steps from the nearer of its next bonus step and its maximum. */
+  public isNearBonusStep(type: keyof GlobalParameterTracks): boolean {
+    const steps = this.stepsToNextBonus(type);
+    return steps >= 1 && steps <= 2;
+  }
+
   /**
-   * Counts the steps from `level` to the nearer of the next bonus step printed on the map's `type` track and
-   * the track's maximum.
+   * Counts the steps from the current level of the `type` parameter to the nearer of the next bonus step
+   * printed on the map's track and the track's maximum.
    *
    * A temperature step is 2 degrees, an oxygen step 1%, and a Venus step 2% up to 30%, then 1%.
    * Returns 0 when the track is at its maximum.
    */
-  public stepsToNextBonus(type: keyof GlobalParameterTracks, level: number): number {
-    const next = Math.min(
+  private stepsToNextBonus(type: keyof GlobalParameterTracks): number {
+    const nextStop = (level: number) => Math.min(
       this.game.max[type],
       ...this.game.globalParameterTracks[type].map((threshold) => threshold.value).filter((value) => value > level));
     switch (type) {
-    case 'temperature':
-      return (next - level) / 2;
-    case 'oxygen':
-      return next - level;
-    case 'venus':
-      return venusStepsBetween(level, next);
+    case 'temperature': {
+      const level = this.game.getTemperature();
+      return (nextStop(level) - level) / 2;
+    }
+    case 'oxygen': {
+      const level = this.game.getOxygenLevel();
+      return nextStop(level) - level;
+    }
+    case 'venus': {
+      const level = this.game.getVenusScaleLevel();
+      return venusStepsBetween(level, nextStop(level));
+    }
     }
   }
 
   /** Lobbyists shared branch (a): temperature 1-2 steps from bonus or completion. */
   public lobbyistsTempBranch(source: string = 'Lobbyists'): boolean {
-    const stepsToBonus = this.stepsToNextBonus('temperature', this.game.getTemperature());
-    if (stepsToBonus >= 1 && stepsToBonus <= 2) {
+    if (this.isNearBonusStep('temperature')) {
       // Pristar's cube cancels only the first of the 2 steps
       const steps = this.interceptsRaise(GlobalParameter.TEMPERATURE) ? 1 : 2;
       this.game.increaseTemperature(this.botPlayer, steps);
@@ -169,8 +180,7 @@ export class MarsBotBonusResolver {
 
   /** Lobbyists shared branch (b): oxygen 1-2 steps from bonus or completion. */
   public lobbyistsOxygenBranch(source: string = 'Lobbyists'): boolean {
-    const stepsToBonus = this.stepsToNextBonus('oxygen', this.game.getOxygenLevel());
-    if (stepsToBonus >= 1 && stepsToBonus <= 2) {
+    if (this.isNearBonusStep('oxygen')) {
       const greenerySpace = this.tilePlacer.findGreenerySpace();
       if (greenerySpace !== undefined) {
         const raiseOxygen = this.game.getOxygenLevel() >= this.game.max.oxygen ||

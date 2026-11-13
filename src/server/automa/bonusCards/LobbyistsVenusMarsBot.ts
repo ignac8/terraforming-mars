@@ -13,8 +13,7 @@ export const LOBBYISTS_VENUS_MARSBOT_BONUS_CARD: MarsBotBonusCardEffect = {
     }
 
     // (c) B15: Venus 1-2 steps from bonus step or completion — do NOT destroy card
-    const stepsToBonus = resolver.stepsToNextBonus('venus', resolver.game.getVenusScaleLevel());
-    if (stepsToBonus >= 1 && stepsToBonus <= 2) {
+    if (resolver.isNearBonusStep('venus')) {
       // Pristar's cube cancels only the first of the 2 steps
       const steps = resolver.interceptsRaise(GlobalParameter.VENUS) ? 1 : 2;
       resolver.game.increaseVenusScaleLevel(resolver.botPlayer, steps);

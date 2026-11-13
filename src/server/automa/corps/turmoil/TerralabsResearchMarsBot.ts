@@ -6,7 +6,7 @@ import {IMarsBotCorp} from '@/server/automa/IMarsBotCorp';
 // C38 Terralabs
 export const TERRALABS_RESEARCH_MARSBOT_CORP: IMarsBotCorp = {
   name: CardName.TERRALABS_RESEARCH,
-  description: 'Tag: Science. Setup: TR -8. Each generation: draw 1 card to action deck (2 cards from generation 9 onward). (one generation later on Amazonis Planitia)',
+  description: 'Tag: Science. Setup: TR -8. Each generation: draw 1 card to action deck (2 cards from generation 9 onward, one generation later on Amazonis Planitia).',
   tags: [Tag.SCIENCE],
   setup(marsBot) {
     // Reduce TR by 8

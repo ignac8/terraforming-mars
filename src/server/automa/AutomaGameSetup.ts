@@ -114,7 +114,8 @@ export class AutomaGameSetup {
     // The alternate Venus board's bonuses and the Chairman's agenda choice would ask MarsBot to choose.
     gameOptions.altVenusBoard = false;
     gameOptions.politicalAgendasExtension = 'Standard';
-    // modularMA only applies to random milestones and awards, but the create-game form sends it regardless.
+    // The create-game form sends modularMA even with random milestones and awards off. Hand-picked
+    // milestones and awards keep it.
     if (gameOptions.randomMA === RandomMAOptionType.NONE) {
       gameOptions.modularMA = false;
     }
@@ -127,8 +128,8 @@ export class AutomaGameSetup {
    * Whether MarsBot can play against a milestone in this game.
    *
    * The automa rules cover the milestones of the maps with a MarsBot board, of the Milestones &
-   * Awards expansion and of Venus Next (Amazonis Planitia's only in a game on that map). A few of those
-   * still need an expansion that isn't in play:
+   * Awards expansion and of Venus Next. Merchant3 has a rule only for Amazonis Planitia, so it counts
+   * only in a game on that map. A few of the covered milestones still need an expansion that isn't in play:
    *
    * - Trader and Tradesman: MarsBot needs space 2 on its Venus track (rulebook C p.14 and, for
    *   Utopia Planitia, p.10), which never moves without Venus Next, while you can still meet them.
@@ -318,8 +319,9 @@ const MODULAR_AWARDS: ReadonlyArray<AwardName> = [
  * Whether MarsBot has a rule for a milestone or award: it belongs to a map with a MarsBot board, to
  * the Milestones & Awards expansion or to Venus Next.
  *
- * Amazonis Planitia's milestones and awards have a rule written only for that map, so they count
- * only in a game on it without the Milestones & Awards expansion.
+ * Merchant3, Innovator and Physicist have a rule written only for Amazonis Planitia, so they count
+ * only in a game on it without the Milestones & Awards expansion. The map's other milestones and awards
+ * are in the modular lists and count in every game.
  */
 function coveredByAutomaRules<T extends string>(
   name: T, manifest: MAManifest<T, unknown>, modular: ReadonlyArray<T>, gameOptions: GameOptions): boolean {
