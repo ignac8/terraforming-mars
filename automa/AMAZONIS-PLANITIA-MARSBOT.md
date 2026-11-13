@@ -1,7 +1,7 @@
 # MarsBot on Amazonis Planitia (big map): design
 
-Status: built as of 2026-11-13. Fork only: this map has no MarsBot board in the rulebooks, so none of this
-goes upstream.
+Status: built as of 2026-11-13 (fork PR #84). Fork only: this map has no MarsBot board in the rulebooks,
+so none of this goes upstream.
 
 ## 1. Why
 
