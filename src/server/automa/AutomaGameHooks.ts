@@ -45,7 +45,7 @@ export class AutomaGameHooks {
     return false;
   }
 
-  /** Automa: game goes up to generation 20 (or 18 with Prelude). */
+  /** Automa: game goes up to generation 20 (18 with Prelude), two more on Amazonis Planitia. */
   public lastSoloGeneration(): number {
     return this.getMaxGeneration();
   }
@@ -53,7 +53,7 @@ export class AutomaGameHooks {
   /** Get the max generation for this automa game. */
   public getMaxGeneration(): number {
     const opts = this.game.gameOptions;
-    return getAutomaMaxGeneration(opts.preludeExtension);
+    return getAutomaMaxGeneration(opts.preludeExtension, opts.boardName);
   }
 
   /** Automa: game ends when Mars is terraformed or, with a generation limit, at the max generation. */

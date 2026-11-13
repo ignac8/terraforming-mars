@@ -723,13 +723,13 @@ export class MarsBot implements IMarsBot {
     return scoring.calculate();
   }
 
-  /** Check if MarsBot instantly wins (gen 20, or gen 18 with Prelude). Never without a generation limit. */
+  /** Check if MarsBot instantly wins (gen 20, 18 with Prelude, two more on Amazonis Planitia). Never without a generation limit. */
   public isInstantWin(): boolean {
     const opts = this.game.gameOptions;
     if (opts.automaNoGenerationLimit) {
       return false;
     }
-    return this.game.generation >= getAutomaMaxGeneration(opts.preludeExtension);
+    return this.game.generation >= getAutomaMaxGeneration(opts.preludeExtension, opts.boardName);
   }
 
   // ---- Track Regression (human effects) ----
