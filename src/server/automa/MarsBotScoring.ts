@@ -44,19 +44,6 @@ export class MarsBotScoring {
     private readonly corpVpBonus: number = 0,
   ) {}
 
-  private getMaxGeneration(): number {
-    const opts = this.game.gameOptions;
-    return getAutomaMaxGeneration(opts.preludeExtension, opts.boardName);
-  }
-
-  /** Check if MarsBot instantly wins because max generation reached. Never without a generation limit. */
-  public isInstantWin(): boolean {
-    if (this.game.gameOptions.automaNoGenerationLimit) {
-      return false;
-    }
-    return this.game.generation >= this.getMaxGeneration();
-  }
-
   /** Calculate MarsBot's complete VP breakdown. */
   public calculate(): MarsBotVPBreakdown {
     const tr = this.botPlayer.terraformRating;

@@ -2,7 +2,7 @@ import {expect} from 'chai';
 import {getAutomaMaxGeneration} from '@/common/automa/AutomaTypes';
 import {marsBotMapRules} from '@/common/automa/MarsBotMapRules';
 import {BoardName} from '@/common/boards/BoardName';
-import {getMcPerVP, MarsBotScoring} from '@/server/automa/MarsBotScoring';
+import {getMcPerVP} from '@/server/automa/MarsBotScoring';
 import {testGame} from '../TestGame';
 
 describe('MarsBotMapRules', () => {
@@ -57,8 +57,8 @@ describe('MarsBotMapRules', () => {
 
   describe('game', () => {
     function setup(boardName: BoardName, preludeExtension: boolean) {
-      const [game, human] = testGame(1, {automa: true, boardName, preludeExtension});
-      return {game, human, marsBot: game.automaHooks!.marsBot};
+      const [game] = testGame(1, {automa: true, boardName, preludeExtension});
+      return {game, marsBot: game.automaHooks!.marsBot};
     }
 
     it('lets MarsBot win at generation 22 on Amazonis Planitia', () => {
@@ -85,17 +85,6 @@ describe('MarsBotMapRules', () => {
       game.generation = 20;
       expect(marsBot.isInstantWin()).is.true;
       expect(game.automaHooks!.isGameOver()).is.true;
-    });
-
-    it('has the scoring follow the same limit', () => {
-      const {game, human, marsBot} = setup(BoardName.AMAZONIS_PLANITIA, false);
-      const scoring = new MarsBotScoring(game, marsBot.player, human, marsBot.turnResolver, 'normal', undefined);
-
-      game.generation = 21;
-      expect(scoring.isInstantWin()).is.false;
-
-      game.generation = 22;
-      expect(scoring.isInstantWin()).is.true;
     });
 
     it('still lets MarsBot win at generation 20 on Tharsis', () => {

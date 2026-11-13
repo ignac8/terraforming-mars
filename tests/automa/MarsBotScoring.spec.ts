@@ -222,18 +222,6 @@ describe('MarsBotScoring', () => {
     });
   });
 
-  describe('Instant win', () => {
-    it('instant win at gen 20', () => {
-      (game as any).generation = 20;
-      expect(makeScoring().isInstantWin()).to.be.true;
-    });
-
-    it('no instant win at gen 19', () => {
-      (game as any).generation = 19;
-      expect(makeScoring().isInstantWin()).to.be.false;
-    });
-  });
-
   // TDaver, BGG 3408751 and 3373832: the resources MarsBot has left on the Colonies shipping board,
   // and its floaters on the Venus board, score half a VP each, rounded down
   describe('Leftover resources VP (automaColonyVP)', () => {
