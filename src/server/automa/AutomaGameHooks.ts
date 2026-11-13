@@ -33,6 +33,13 @@ import {Space} from '../boards/Space';
  * the game proceeds with normal behavior.
  */
 export class AutomaGameHooks {
+  /**
+   * True while MarsBot's Venus raise has crossed the colony bonus and the colony is not built yet.
+   *
+   * Only set inside one synchronous raise, so never saved.
+   */
+  private venusColonyDue: boolean = false;
+
   constructor(
     private readonly game: IGame,
     public readonly marsBot: MarsBot,
@@ -448,15 +455,16 @@ export class AutomaGameHooks {
   }
 
   /**
-   * Builds a colony for MarsBot at the colony bonus Amazonis Planitia prints at 16% Venus, so no
-   * colony choice is left for MarsBot to answer. Returns true if handled, which includes the
-   * game without Colonies, where the bonus is ignored.
+   * Takes MarsBot's colony for the colony bonus Amazonis Planitia prints at 16% Venus, so no colony
+   * choice is left for MarsBot to answer. The colony is built once the raise has finished
+   * (`handleVenusRaised`), because a corporation's reaction to it can raise Venus again. Returns
+   * true if handled, which includes the game without Colonies, where the bonus is ignored.
    */
   public handleVenusColonyBonus(player: IPlayer): boolean {
     if (player !== this.marsBot.player) {
       return false;
     }
-    this.marsBot.turnResolver.placeColony();
+    this.venusColonyDue = true;
     return true;
   }
 
@@ -674,13 +682,16 @@ export class AutomaGameHooks {
     this.marsBot.corp?.effect?.onColonyPlaced?.(this.marsBot);
   }
 
-  /** Called when either player raises the Venus scale by `steps`. Notifies MarsBot's corp. */
+  /**
+   * Called once the Venus scale has risen by `steps`, for either player. Notifies MarsBot's corp, then
+   * builds the colony MarsBot's raise earned.
+   */
   public handleVenusRaised(steps: number): void {
-    const corp = this.marsBot.corp;
-    if (corp?.effect?.onVenusRaised === undefined) {
-      return;
+    this.marsBot.corp?.effect?.onVenusRaised?.(this.marsBot, steps);
+    if (this.venusColonyDue) {
+      this.venusColonyDue = false;
+      this.marsBot.turnResolver.placeColony();
     }
-    corp.effect.onVenusRaised(this.marsBot, steps);
   }
 
   // ---- Card interaction hooks ----

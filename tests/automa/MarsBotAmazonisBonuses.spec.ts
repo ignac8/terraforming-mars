@@ -1,6 +1,10 @@
 import {expect} from 'chai';
 import {BonusCardId} from '@/common/automa/AutomaTypes';
 import {BoardName} from '@/common/boards/BoardName';
+import {CardName} from '@/common/cards/CardName';
+import {Tag} from '@/common/cards/Tag';
+import {AUTOMA_COLONIES_MANIFEST} from '@/server/automa/corps/AutomaColoniesManifest';
+import {Ceres} from '@/server/colonies/Ceres';
 import {Luna} from '@/server/colonies/Luna';
 import {BuildColony} from '@/server/deferredActions/BuildColony';
 import {testGame} from '../TestGame';
@@ -91,6 +95,27 @@ describe('MarsBotAmazonisBonuses', () => {
 
       expect(game.getVenusScaleLevel()).eq(18);
       expect(luna.colonies).deep.eq([marsBot.player.id]);
+      expect(game.deferredActions.length).eq(0);
+    });
+
+    it('builds the colony after the raise, so a Poseidon advance onto a Venus icon starts from the new level', () => {
+      const {game, marsBot, luna} = amazonisGame({colonies: true});
+      const ceres = new Ceres();
+      game.colonies = [luna, ceres];
+      marsBot.corp = AUTOMA_COLONIES_MANIFEST.corps[CardName.POSEIDON];
+      const board = marsBot.marsBotBoard;
+      const venusTrack = board.tracks[board.tagToTrack[Tag.VENUS]!];
+      board.tracks.forEach((track) => track.position = 10);
+      venusTrack.position = 2; // the least advanced track, one space before its Venus icon
+      setVenusScaleLevel(game, 14);
+      const tr = marsBot.player.terraformRating;
+
+      game.increaseVenusScaleLevel(marsBot.player, 1);
+
+      expect(luna.colonies.length + ceres.colonies.length).eq(1);
+      expect(venusTrack.position).eq(3);
+      expect(game.getVenusScaleLevel()).eq(18);
+      expect(marsBot.player.terraformRating).eq(tr + 2);
       expect(game.deferredActions.length).eq(0);
     });
 
