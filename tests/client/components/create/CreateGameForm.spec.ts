@@ -126,7 +126,12 @@ describe('CreateGameForm', () => {
     const config: NewGameConfig | undefined = await wrapper.vm.serializeSettings();
 
     expect(config?.boards).deep.eq(TOURNAMENT_BOARDS);
-    expect(config?.escapeVelocity?.thresholdMinutes).eq(45);
+    expect(config?.escapeVelocity).deep.eq({
+      thresholdMinutes: 45,
+      bonusSectionsPerAction: 2,
+      penaltyPeriodMinutes: 1,
+      penaltyVPPerPeriod: 1,
+    });
   });
 
   it('applies tournament locks when tournament is switched back on', async () => {
@@ -700,7 +705,7 @@ describe('CreateGameForm', () => {
     expect(config?.escapeVelocity).deep.eq({
       thresholdMinutes: 35,
       bonusSectionsPerAction: 2,
-      penaltyPeriodMinutes: 2,
+      penaltyPeriodMinutes: 1,
       penaltyVPPerPeriod: 1,
     });
   });

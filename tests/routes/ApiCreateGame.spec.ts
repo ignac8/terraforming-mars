@@ -632,7 +632,7 @@ describe('ApiCreateGame', () => {
     })).deep.eq({
       thresholdMinutes: 35,
       bonusSectionsPerAction: 2,
-      penaltyPeriodMinutes: 2,
+      penaltyPeriodMinutes: 1,
       penaltyVPPerPeriod: 1,
     });
   });
