@@ -107,7 +107,7 @@ describe('CreateGameForm', () => {
 
     await wrapper.find('#undo-checkbox').setValue(false);
 
-    expect(wrapper.find('.create-game-option-note').exists()).eq(false);
+    expect(column?.querySelectorAll('.create-game-option-note')).has.length(0);
   });
 
   it('offers skipping MarsBot\'s corporation at final greeneries, off by default', () => {

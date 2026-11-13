@@ -378,8 +378,10 @@ export class MarsBotBonusResolver {
     case 'Administrator': return revealAndResolveCard((c) => cardTagsIncludingEvent(c).length === 0, 5);
     case 'Biologist': return advanceTrackOf(Tag.MICROBE);
     case 'Collector': return advance(marsBotBoard.getLeastAdvancedTrackIndex());
+    case 'Innovator': return revealAndResolveCard(() => true);
     case 'Constructor': return placeCity();
     case 'Manufacturer': return advanceTrackOfEither([Tag.BUILDING, Tag.POWER], 'less');
+    case 'Physicist': return advanceTrackOfEither([Tag.SCIENCE, Tag.SPACE], 'less');
     case 'Politician': return false;
     case 'Supplier': return advanceTrackOf(Tag.POWER);
     case 'Visionary': return advance(marsBotBoard.getLeastAdvancedTrackIndex(true));

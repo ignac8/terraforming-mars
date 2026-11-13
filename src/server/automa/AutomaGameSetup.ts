@@ -10,6 +10,7 @@ import {MARSBOT_BOARDS} from './boards/MarsBotBoards';
 import {VENUS_MARSBOT_TRACK} from './boards/VenusMarsBot';
 import {TrackDefinition, MARSBOT_STARTING_TR} from '../../common/automa/AutomaTypes';
 import {MARSBOT_BOARD_NAMES} from '../../common/automa/MarsBotBoards';
+import {marsBotMapRules} from '../../common/automa/MarsBotMapRules';
 import {marsBotMapSet} from '../../common/automa/marsBotMapSet';
 import {BoardName} from '../../common/boards/BoardName';
 import {RandomMAOptionType} from '../../common/ma/RandomMAOptionType';
@@ -49,8 +50,9 @@ export class AutomaGameSetup {
    */
   public static setup(game: IGame, marsBotPlayer: IPlayer, humanPlayer: IPlayer, gameOptions: GameOptions, rng: Random, restoring: boolean): AutomaGameHooks {
     const boardData = AutomaGameSetup.getBoardData(AutomaGameSetup.marsBotBoardName(gameOptions), gameOptions.venusNextExtension);
-    // T-2/T-14: Turmoil reduces MarsBot's starting TR by 10 (rulebook default) or by 7 (harder variant).
-    const turmoilTRReduction = gameOptions.automaTurmoilTRReduction ?? 10;
+    // T-2/T-14: Turmoil reduces MarsBot's starting TR by 10 (rulebook default) or by 7 (harder variant), and
+    // by one more on Amazonis Planitia.
+    const turmoilTRReduction = (gameOptions.automaTurmoilTRReduction ?? 10) + marsBotMapRules(gameOptions.boardName).turmoilTRExtra;
     const startingTR = gameOptions.turmoilExtension ? MARSBOT_STARTING_TR - turmoilTRReduction : MARSBOT_STARTING_TR;
     marsBotPlayer.setTerraformRating(startingTR);
 

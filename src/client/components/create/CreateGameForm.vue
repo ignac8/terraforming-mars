@@ -481,6 +481,9 @@
                       <option :value="7" v-i18n>13 (harder)</option>
                     </select>
                   </label>
+                  <div class="create-game-option-note">
+                    <span v-i18n>One less on Amazonis Planitia</span>
+                  </div>
 
                   <label for="automa-turmoil-delegates">
                     <span v-i18n>MarsBot delegates seeded at setup:</span>&nbsp;
