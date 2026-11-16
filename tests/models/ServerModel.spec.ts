@@ -16,6 +16,8 @@ import {SelectCard} from '../../src/server/inputs/SelectCard';
 import {SelectOption} from '../../src/server/inputs/SelectOption';
 import {Game} from '../../src/server/Game';
 import {GameOptions} from '../../src/server/game/GameOptions';
+import {Timer} from '../../src/common/Timer';
+import {FakeClock} from '../common/FakeClock';
 
 describe('ServerModel', () => {
   let player: TestPlayer;
@@ -67,6 +69,23 @@ describe('ServerModel', () => {
     const response = Server.getSpectatorModel(game);
     expect(response.players[0].victoryPointsBreakdown.total).eq(0);
     expect(response.players[1].victoryPointsBreakdown.total).eq(0);
+  });
+
+  it('Should show another player\'s Escape Velocity penalty while their VP is hidden', () => {
+    [game, player, player2] = testGame(2, {
+      showOtherPlayersVP: false,
+      escapeVelocity: {thresholdMinutes: 3, bonusSectionsPerAction: 0, penaltyPeriodMinutes: 1, penaltyVPPerPeriod: 1},
+    });
+    Reflect.set(Timer, 'lastStoppedAt', 0);
+    const clock = new FakeClock();
+    player2.timer = Timer.newInstance(clock);
+    player2.timer.enable();
+    player2.timer.start();
+    clock.millis = 5 * 60 * 1000;
+
+    const other = Server.getPlayerModel(player).players[1];
+    expect(other.victoryPointsBreakdown.escapeVelocity).eq(-2);
+    expect(other.victoryPointsBreakdown.total).eq(0);
   });
 
   it('Should show a finished game\'s player ids to everyone, except those of a solo game to anyone but its player and the judge', () => {

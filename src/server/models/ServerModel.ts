@@ -28,6 +28,7 @@ import {SpaceId} from '../../common/Types';
 import {cardsToModel, coloniesToModel} from './ModelUtils';
 import {toName} from '../../common/utils/utils';
 import {MAX_AWARDS, MAX_MILESTONES} from '../../common/constants';
+import {escapeVelocityPenalty} from '../game/calculateVictoryPoints';
 
 export class Server {
   /**
@@ -353,6 +354,12 @@ export class Server {
     if (game.phase === Phase.END || game.isSoloMode() ||
         game.gameOptions.showOtherPlayersVP === true || modelIsForThisPlayer) {
       this.addVictoryPoints(model, player);
+    } else {
+      // The clock and the action count are public, so the time penalty shows even while the rest of the VP is hidden.
+      const penalty = escapeVelocityPenalty(player);
+      if (penalty > 0) {
+        model.victoryPointsBreakdown.escapeVelocity = -penalty;
+      }
     }
 
     model.deltaProject = player.deltaProjectData;

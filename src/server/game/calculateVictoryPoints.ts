@@ -85,21 +85,27 @@ export function calculateVictoryPoints(player: IPlayer) {
     builder.setVictoryPoints('victoryPoints', bribe, 'Underworld Corruption Bribe');
   }
 
-  // Escape velocity VP penalty
-  if (player.game.gameOptions.escapeVelocity !== undefined) {
-    const options = player.game.gameOptions.escapeVelocity;
-
-    const elapsedTimeMinutes = player.timer.getElapsedTimeInMinutes();
-    const bonusActionMinutes = player.actionsTakenThisGame * (options.bonusSectionsPerAction / 60);
-    const overageMin = elapsedTimeMinutes - bonusActionMinutes - options.thresholdMinutes;
-
-    if (overageMin > 0) {
-      const vpPenalty = options.penaltyVPPerPeriod * Math.floor(overageMin / options.penaltyPeriodMinutes);
-      builder.setVictoryPoints('escapeVelocity', -vpPenalty);
-    }
+  const vpPenalty = escapeVelocityPenalty(player);
+  if (vpPenalty > 0) {
+    builder.setVictoryPoints('escapeVelocity', -vpPenalty);
   }
 
   return builder.build();
+}
+
+/** Returns the VP `player` loses to Escape Velocity so far, 0 when the game doesn't use it. */
+export function escapeVelocityPenalty(player: IPlayer): number {
+  const options = player.game.gameOptions.escapeVelocity;
+  if (options === undefined) {
+    return 0;
+  }
+  const elapsedTimeMinutes = player.timer.getElapsedTimeInMinutes();
+  const bonusActionMinutes = player.actionsTakenThisGame * (options.bonusSectionsPerAction / 60);
+  const overageMin = elapsedTimeMinutes - bonusActionMinutes - options.thresholdMinutes;
+  if (overageMin <= 0) {
+    return 0;
+  }
+  return options.penaltyVPPerPeriod * Math.floor(overageMin / options.penaltyPeriodMinutes);
 }
 
 function maybeSetVP(thisPlayer: IPlayer, awardWinner: IPlayer, fundedAward: FundedAward, vps: number, place: '1st' | '2nd', builder: VictoryPointsBreakdownBuilder) {
