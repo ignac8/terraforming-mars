@@ -14,17 +14,20 @@ import {incognitoMask, maskModel} from '../incognito/IncognitoMask';
 type RewindRequest = {saveId: number, cards: RewindCards};
 
 function parse(body: string): RewindRequest {
-  let entity: any;
+  let entity: unknown;
   try {
     entity = JSON.parse(body);
   } catch {
     throw RouteError.badRequest('invalid rewind');
   }
-  const isObject = typeof entity === 'object' && entity !== null && !Array.isArray(entity);
-  if (!isObject || Object.keys(entity).length !== 2 || !Number.isInteger(entity.saveId) || entity.saveId < 0 || (entity.cards !== 'same' && entity.cards !== 'shuffle')) {
+  if (typeof entity !== 'object' || entity === null || Array.isArray(entity) || Object.keys(entity).length !== 2) {
     throw RouteError.badRequest('invalid rewind');
   }
-  return {saveId: entity.saveId, cards: entity.cards};
+  const {saveId, cards} = entity as Record<string, unknown>;
+  if (typeof saveId !== 'number' || !Number.isInteger(saveId) || saveId < 0 || (cards !== 'same' && cards !== 'shuffle')) {
+    throw RouteError.badRequest('invalid rewind');
+  }
+  return {saveId, cards};
 }
 
 /** Rewinds the solo game of the player in the `id` parameter, and answers the player's view of the rewound game. */

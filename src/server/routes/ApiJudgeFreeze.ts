@@ -12,17 +12,20 @@ import {Request} from '../Request';
 import {Response} from '../Response';
 
 function parse(body: string): boolean {
-  let entity: any;
+  let entity: unknown;
   try {
     entity = JSON.parse(body);
   } catch {
     throw RouteError.badRequest('invalid freeze');
   }
-  const isObject = typeof entity === 'object' && entity !== null && !Array.isArray(entity);
-  if (!isObject || Object.keys(entity).length !== 1 || typeof entity.frozen !== 'boolean') {
+  if (typeof entity !== 'object' || entity === null || Array.isArray(entity) || Object.keys(entity).length !== 1) {
     throw RouteError.badRequest('invalid freeze');
   }
-  return entity.frozen;
+  const {frozen} = entity as Record<string, unknown>;
+  if (typeof frozen !== 'boolean') {
+    throw RouteError.badRequest('invalid freeze');
+  }
+  return frozen;
 }
 
 const FREEZE_NOT_SAVED = 'The game is frozen, but that was not saved. A restart would undo it.';
