@@ -9,7 +9,7 @@ export class PharmacyUnionMarsBot extends MarsBotCorp {
   constructor() {
     super({
       name: CardName.PHARMACY_UNION,
-      description: 'Tag: Science. Draft: Science. Setup: remove Meteor Shower; shuffle a revealed Science card into the bonus deck. Science cards (starting tag included) give +1 TR. When human plays a Microbe card, lose 4 MC.',
+      description: 'Tag: Science. Draft: Science. Setup: remove Meteor Shower; shuffle a revealed Science card into the bonus deck. Science cards (starting tag included) give +1 TR. When human plays a Microbe card, lose 4 M€.',
       tags: [Tag.SCIENCE],
       draftPriority: {type: 'tags', tags: [Tag.SCIENCE]},
     });

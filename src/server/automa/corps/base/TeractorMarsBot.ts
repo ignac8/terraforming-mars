@@ -9,7 +9,7 @@ export class TeractorMarsBot extends MarsBotCorp {
   constructor() {
     super({
       name: CardName.TERACTOR,
-      description: 'Draft: Earth. Setup: +25 MC, white cubes on Earth track. Each Earth track advance earns 2 MC.',
+      description: 'Draft: Earth. Setup: +25 M€, white cubes on Earth track. Each Earth track advance earns 2 M€.',
       draftPriority: {type: 'tags', tags: [Tag.EARTH]},
       trackCubes: whiteTrackCubes(5),
       trackCubesTriggerEveryAdvance: true,

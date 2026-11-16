@@ -7,7 +7,7 @@ export class PolyphemosMarsBot extends MarsBotCorp {
   constructor() {
     super({
       name: CardName.POLYPHEMOS,
-      description: 'Tags: 3 Space, 3 Event. Setup: +25 MC. Each generation: discard the project card with fewest tags from the action deck.',
+      description: 'Tags: 3 Space, 3 Event. Setup: +25 M€. Each generation: discard the project card with fewest tags from the action deck.',
       tags: [Tag.SPACE, Tag.SPACE, Tag.SPACE, Tag.EVENT, Tag.EVENT, Tag.EVENT],
     });
   }

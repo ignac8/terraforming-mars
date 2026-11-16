@@ -8,7 +8,7 @@ export class LakefrontResortsMarsBot extends MarsBotCorp {
   constructor() {
     super({
       name: CardName.LAKEFRONT_RESORTS,
-      description: 'Setup: 1 white cube on card. Oceans alternate between removing the cube (advance building track) and placing it back. Ocean adjacency pays 3 MC.',
+      description: 'Setup: 1 white cube on card. Oceans alternate between removing the cube (advance building track) and placing it back. Ocean adjacency pays 3 M€.',
     });
   }
 

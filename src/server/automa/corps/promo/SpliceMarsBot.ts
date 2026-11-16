@@ -14,7 +14,7 @@ export class SpliceMarsBot extends MarsBotCorp {
   constructor() {
     super({
       name: CardName.SPLICE,
-      description: 'Tag: Plant. Draft: Microbe. Setup: +8 MC, remove R&D, add a Microbe card to bonus deck. Microbe cards earn 4 MC. When human plays a Microbe card, earn 2 MC and the human gains 2 MC or adds a microbe to that card.',
+      description: 'Tag: Plant. Draft: Microbe. Setup: +8 M€, remove R&D, add a Microbe card to bonus deck. Microbe cards earn 4 M€. When human plays a Microbe card, earn 2 M€ and the human gains 2 M€ or adds a microbe to that card.',
       tags: [Tag.PLANT],
       draftPriority: {type: 'tags', tags: [Tag.MICROBE]},
     });

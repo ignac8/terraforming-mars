@@ -8,7 +8,7 @@ export class ArklightMarsBot extends MarsBotCorp {
   constructor() {
     super({
       name: CardName.ARKLIGHT,
-      description: 'Tag: Animal. Draft: Animal > Plant. White cubes on plant track. Each Plant or Animal tag resolved (starting tag included) earns 2 MC.',
+      description: 'Tag: Animal. Draft: Animal > Plant. White cubes on plant track. Each Plant or Animal tag resolved (starting tag included) earns 2 M€.',
       tags: [Tag.ANIMAL],
       draftPriority: {type: 'tags', tags: [Tag.ANIMAL, Tag.PLANT]},
       trackCubes: whiteTrackCubes(6),

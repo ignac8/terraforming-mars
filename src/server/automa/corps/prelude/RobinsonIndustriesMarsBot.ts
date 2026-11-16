@@ -8,7 +8,7 @@ export class RobinsonIndustriesMarsBot extends MarsBotCorp {
   constructor() {
     super({
       name: CardName.ROBINSON_INDUSTRIES,
-      description: 'Setup: +10 MC. Each generation: add Diversification bonus card to action deck.',
+      description: 'Setup: +10 M€. Each generation: add Diversification bonus card to action deck.',
       actionDeckBonusCard: BonusCardId.B28_DIVERSIFICATION,
     });
   }

@@ -9,7 +9,7 @@ export class InventrixMarsBot extends MarsBotCorp {
   constructor() {
     super({
       name: CardName.INVENTRIX,
-      description: 'Setup: remove Lobbyists. Effect: card with requirements gives 2 MC. Each generation: add Do It Right to action deck.',
+      description: 'Setup: remove Lobbyists. Effect: card with requirements gives 2 M€. Each generation: add Do It Right to action deck.',
       actionDeckBonusCard: BonusCardId.B25_DO_IT_RIGHT,
     });
   }

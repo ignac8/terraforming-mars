@@ -10,7 +10,7 @@ export class VitorMarsBot extends MarsBotCorp {
   constructor() {
     super({
       name: CardName.VITOR,
-      description: 'Setup: separate Overachievement from bonus deck. Cards with non-negative VP earn 3 MC. Each generation: add Overachievement to action deck, until it is removed.',
+      description: 'Setup: separate Overachievement from bonus deck. Cards with non-negative VP earn 3 M€. Each generation: add Overachievement to action deck, until it is removed.',
       actionDeckBonusCard: BonusCardId.B04_OVERACHIEVEMENT,
     });
   }

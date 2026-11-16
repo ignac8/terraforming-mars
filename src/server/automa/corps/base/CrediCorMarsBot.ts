@@ -7,7 +7,7 @@ export class CrediCorMarsBot extends MarsBotCorp {
   constructor() {
     super({
       name: CardName.CREDICOR,
-      description: 'Draft: most expensive card. Effect: card cost 20+ gives 4 MC.',
+      description: 'Draft: most expensive card. Effect: card cost 20+ gives 4 M€.',
       draftPriority: {type: 'mostExpensive'},
     });
   }

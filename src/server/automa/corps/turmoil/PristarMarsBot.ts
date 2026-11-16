@@ -6,7 +6,7 @@ export class PristarMarsBot extends MarsBotCorp {
   constructor() {
     super({
       name: CardName.PRISTAR,
-      description: 'When a global parameter would be raised and a cube is on card: skip the raise, remove cube, +1 TR, +6 MC. Cube is restored each generation.',
+      description: 'When a global parameter would be raised and a cube is on card: skip the raise, remove cube, +1 TR, +6 M€. Cube is restored each generation.',
     });
   }
 

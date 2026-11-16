@@ -7,7 +7,7 @@ export class AphroditeMarsBot extends MarsBotCorp {
   constructor() {
     super({
       name: CardName.APHRODITE,
-      description: 'Tag: Plant. Draft: Plant > Animal > Venus. Whenever Venus is raised, earn 2 MC per step.',
+      description: 'Tag: Plant. Draft: Plant > Animal > Venus. Whenever Venus is raised, earn 2 M€ per step.',
       tags: [Tag.PLANT],
       requiredExpansions: ['venus'],
       draftPriority: {type: 'tags', tags: [Tag.PLANT, Tag.ANIMAL, Tag.VENUS]},

@@ -12,7 +12,7 @@ export class ArcadianCommunitiesMarsBot extends MarsBotCorp {
     super({
       name: CardName.ARCADIAN_COMMUNITIES,
       description: 'Tag: Building. Setup: resolve Settlers immediately. Each generation: add Settlers to action deck. ' +
-        'Spaces with its player markers are reserved for it. Each tile it places on one of them earns 3 MC.',
+        'Spaces with its player markers are reserved for it. Each tile it places on one of them earns 3 M€.',
       tags: [Tag.BUILDING],
       actionDeckBonusCard: BonusCardId.B22_SETTLERS,
     });

@@ -8,7 +8,7 @@ export class PalladinShippingMarsBot extends MarsBotCorp {
   constructor() {
     super({
       name: CardName.PALLADIN_SHIPPING,
-      description: 'Tags: Space, Event. Draft: Space > Event. Setup: +5 MC. Cubes on space and event tracks are collected; when a white and black pair is collected, temperature +1.',
+      description: 'Tags: Space, Event. Draft: Space > Event. Setup: +5 M€. Cubes on space and event tracks are collected; when a white and black pair is collected, temperature +1.',
       tags: [Tag.SPACE, Tag.EVENT],
       draftPriority: {type: 'tags', tags: [Tag.SPACE, Tag.EVENT]},
       trackCubes: [

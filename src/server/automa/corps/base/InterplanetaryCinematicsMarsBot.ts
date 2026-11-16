@@ -9,7 +9,7 @@ export class InterplanetaryCinematicsMarsBot extends MarsBotCorp {
   constructor() {
     super({
       name: CardName.INTERPLANETARY_CINEMATICS,
-      description: 'Tags: 2 Events. White cubes on building and event tracks. Each advance on those tracks, starting tags included, earns 2 MC.',
+      description: 'Tags: 2 Events. White cubes on building and event tracks. Each advance on those tracks, starting tags included, earns 2 M€.',
       tags: [Tag.EVENT, Tag.EVENT],
       trackCubes: [...whiteTrackCubes(0), ...whiteTrackCubes(2)],
       trackCubesTriggerEveryAdvance: true,

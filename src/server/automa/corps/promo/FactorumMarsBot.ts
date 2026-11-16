@@ -9,7 +9,7 @@ export class FactorumMarsBot extends MarsBotCorp {
   constructor() {
     super({
       name: CardName.FACTORUM,
-      description: 'Tag: Power. White cubes on building track: each advance stores 1 MC on card. Each generation: add Supply and Demand to action deck.',
+      description: 'Tag: Power. White cubes on building track: each advance stores 1 M€ on card. Each generation: add Supply and Demand to action deck.',
       tags: [Tag.POWER],
       actionDeckBonusCard: BonusCardId.B24_SUPPLY_AND_DEMAND,
       trackCubes: whiteTrackCubes(0),

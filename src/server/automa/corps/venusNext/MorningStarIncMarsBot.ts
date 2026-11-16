@@ -9,7 +9,7 @@ export class MorningStarIncMarsBot extends MarsBotCorp {
   constructor() {
     super({
       name: CardName.MORNING_STAR_INC,
-      description: 'Tags: 2 Venus. Setup: remove Lobbyists, add Venusian Lobby. Silver resource cubes on Venus track earn 5 MC each.',
+      description: 'Tags: 2 Venus. Setup: remove Lobbyists, add Venusian Lobby. Silver resource cubes on Venus track earn 5 M€ each.',
       tags: [Tag.VENUS, Tag.VENUS],
       requiredExpansions: ['venus'],
       // Silver resource cubes on the Venus track (index 7, present only on the Venus board) at positions 5-9 and 11-12.

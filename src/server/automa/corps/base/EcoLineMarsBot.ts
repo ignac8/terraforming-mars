@@ -8,7 +8,7 @@ export class EcoLineMarsBot extends MarsBotCorp {
   constructor() {
     super({
       name: CardName.ECOLINE,
-      description: 'Each generation: add Rapid Sprouting bonus card to action deck. Your cards may remove or steal the plant on this card instead of from MarsBot\'s MC.',
+      description: 'Each generation: add Rapid Sprouting bonus card to action deck. Your cards may remove or steal the plant on this card instead of from MarsBot\'s M€.',
       actionDeckBonusCard: BonusCardId.B23_RAPID_SPROUTING,
     });
   }

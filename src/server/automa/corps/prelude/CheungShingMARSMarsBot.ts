@@ -9,7 +9,7 @@ export class CheungShingMARSMarsBot extends MarsBotCorp {
   constructor() {
     super({
       name: CardName.CHEUNG_SHING_MARS,
-      description: 'Tag: Building. Draft: Building. Silver resource cubes on building track from position 4; each earns 5 MC.',
+      description: 'Tag: Building. Draft: Building. Silver resource cubes on building track from position 4; each earns 5 M€.',
       tags: [Tag.BUILDING],
       draftPriority: {type: 'tags', tags: [Tag.BUILDING]},
       // Silver resource cubes at positions 4-18 on building track (track 1)

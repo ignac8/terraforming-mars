@@ -9,7 +9,7 @@ export class SagittaFrontierServicesMarsBot extends MarsBotCorp {
   constructor() {
     super({
       name: CardName.SAGITTA_FRONTIER_SERVICES,
-      description: 'Tags: Power, Event. Setup: +8 MC. Tagless cards pay double the Failed Action (10 MC instead of 5). 1-tag cards earn 1 extra MC.',
+      description: 'Tags: Power, Event. Setup: +8 M€. Tagless cards pay double the Failed Action (10 M€ instead of 5). 1-tag cards earn 1 extra M€.',
       tags: [Tag.POWER, Tag.EVENT],
     });
   }

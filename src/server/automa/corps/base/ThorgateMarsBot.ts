@@ -8,7 +8,7 @@ export class ThorgateMarsBot extends MarsBotCorp {
   constructor() {
     super({
       name: CardName.THORGATE,
-      description: 'Tag: Power. Draft: Power. Setup: +10 MC, white cubes on energy track. White cube: draw a project card and resolve only its first tag, then raise temperature 1 step.',
+      description: 'Tag: Power. Draft: Power. Setup: +10 M€, white cubes on energy track. White cube: draw a project card and resolve only its first tag, then raise temperature 1 step.',
       tags: [Tag.POWER],
       draftPriority: {type: 'tags', tags: [Tag.POWER]},
       trackCubes: [

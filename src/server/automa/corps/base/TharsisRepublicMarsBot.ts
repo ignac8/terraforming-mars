@@ -8,7 +8,7 @@ export class TharsisRepublicMarsBot extends MarsBotCorp {
   constructor() {
     super({
       name: CardName.THARSIS_REPUBLIC,
-      description: 'Draft: City. Setup: place 1 city. When you place a city, MarsBot gains 2 MC. When MarsBot places a city (setup included), advance its event track.',
+      description: 'Draft: City. Setup: place 1 city. When you place a city, MarsBot gains 2 M€. When MarsBot places a city (setup included), advance its event track.',
       draftPriority: {type: 'tags', tags: [Tag.CITY]},
     });
   }

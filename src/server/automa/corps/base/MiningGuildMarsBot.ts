@@ -7,7 +7,7 @@ export class MiningGuildMarsBot extends MarsBotCorp {
   constructor() {
     super({
       name: CardName.MINING_GUILD,
-      description: 'Tags: 2 Building. Setup: 10 MC on card. Until the building track reaches #18, MC MarsBot earns comes off this card; when empty, refill 10 MC, advance building track, and take the rest of the MC off the refilled card.',
+      description: 'Tags: 2 Building. Setup: 10 M€ on card. Until the building track reaches #18, M€ MarsBot earns comes off this card; when empty, refill 10 M€, advance building track, and take the rest of the M€ off the refilled card.',
       tags: [Tag.BUILDING, Tag.BUILDING],
     });
   }
