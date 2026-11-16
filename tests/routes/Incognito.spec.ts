@@ -222,7 +222,7 @@ describe('Incognito routes', () => {
         kind: 'names',
         request: (id) => {
           playerOf(id).setWaitingFor(new SelectOption('Go').andThen(() => undefined));
-          return call(PlayerInput.INSTANCE, 'post', `/player/input?id=${id}`, {type: 'option'});
+          return call(PlayerInput.INSTANCE, 'post', `/player/input?id=${id}`, {requestId: playerOf(id).requestId, type: 'option'});
         },
         unmasked: async (id) => Server.getPlayerModel(playerOf(id)),
       },
@@ -557,8 +557,8 @@ describe('Incognito routes', () => {
   });
 
   describe('input', () => {
-    function answer(body: unknown): Promise<MockResponse> {
-      return call(PlayerInput.INSTANCE, 'post', `/player/input?id=${alice.id}`, body);
+    function answer(body: Record<string, unknown>): Promise<MockResponse> {
+      return call(PlayerInput.INSTANCE, 'post', `/player/input?id=${alice.id}`, {requestId: alice.requestId, ...body});
     }
 
     it('SelectPlayer answered with a fake color hits the real player', async () => {
@@ -880,7 +880,7 @@ describe('Incognito routes', () => {
         return undefined;
       }));
 
-      const res = await call(PlayerInput.INSTANCE, 'post', `/player/input?id=${alice.id}`, {type: 'space', spaceId: space.id});
+      const res = await call(PlayerInput.INSTANCE, 'post', `/player/input?id=${alice.id}`, {requestId: alice.requestId, type: 'space', spaceId: space.id});
 
       expect(res.statusCode).eq(statusCode.badRequest);
       expect(JSON.parse(res.content).message).eq(`This space is land claimed by ${BOB}`);
