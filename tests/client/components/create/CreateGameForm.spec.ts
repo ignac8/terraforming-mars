@@ -70,7 +70,9 @@ describe('CreateGameForm', () => {
     expect(wrapper.exists()).to.be.true;
   });
 
-  function expectTournamentLocks(vm: any) {
+  type CreateGameVm = InstanceType<typeof CreateGameForm>;
+
+  function expectTournamentLocks(vm: CreateGameVm) {
     expect(vm.fastModeOption).eq(false);
     expect(vm.showOtherPlayersVP).eq(false);
     expect(vm.playerPasswords).eq(true);
@@ -78,19 +80,18 @@ describe('CreateGameForm', () => {
       expect(player.handicap).eq(0);
     }
     for (const flag of ['showCorporationList', 'showPreludesList', 'showColoniesList',
-      'showCeosList', 'showBannedCards', 'showIncludedCards']) {
+      'showCeosList', 'showBannedCards', 'showIncludedCards'] as const) {
       expect(vm[flag], flag).eq(false);
     }
     for (const list of ['customCorporations', 'customPreludes', 'customColonies',
-      'customCeos', 'bannedCards', 'includedCards']) {
+      'customCeos', 'bannedCards', 'includedCards'] as const) {
       expect(vm[list], list).is.empty;
     }
     expect(vm.expansions.prelude).eq(false);
-    expect(vm.randomMA).eq(RandomMAOptionType.NONE);
-    expect(vm.customMA).is.undefined;
+    expect(vm.goals.type).eq('board');
   }
 
-  function seedLockedFields(vm: any) {
+  function seedLockedFields(vm: CreateGameVm) {
     vm.undoOption = true;
     vm.fastModeOption = true;
     vm.showOtherPlayersVP = true;
@@ -99,21 +100,20 @@ describe('CreateGameForm', () => {
     vm.showCorporationList = true;
     vm.showBannedCards = true;
     vm.showIncludedCards = true;
-    vm.customCorporations = ['Teractor'];
-    vm.customPreludes = ['Donation'];
-    vm.customColonies = ['Europa'];
-    vm.customCeos = ['Floyd'];
-    vm.bannedCards = ['Mine'];
-    vm.includedCards = ['Mine'];
-    vm.randomMA = RandomMAOptionType.MANUAL;
-    vm.customMA = {milestones: ['Terraformer'], awards: ['Banker']};
+    vm.customCorporations = [CardName.TERACTOR];
+    vm.customPreludes = [CardName.DONATION];
+    vm.customColonies = [ColonyName.EUROPA];
+    vm.customCeos = [CardName.FLOYD];
+    vm.bannedCards = [CardName.MINE];
+    vm.includedCards = [CardName.MINE];
+    vm.goals = {...vm.goals, type: 'manual', selected: {milestones: ['Terraformer'], awards: ['Banker']}};
   }
 
   it('applies tournament locks on first load', async () => {
     const wrapper = shallowMount(CreateGameForm, {...globalConfig});
     await wrapper.vm.$nextTick();
 
-    expectTournamentLocks(wrapper.vm as any);
+    expectTournamentLocks(wrapper.vm);
     for (const id of ['#customCorps-checkbox', '#bannedCards-checkbox',
       '#includedCards-checkbox', '#realTimeVP-checkbox', '#fastMode-checkbox',
       '#playerPasswords-checkbox']) {
@@ -134,10 +134,23 @@ describe('CreateGameForm', () => {
     });
   });
 
+  it('locks the milestones and awards button in a tournament game', async () => {
+    const wrapper = shallowMount(CreateGameForm, {...globalConfig, global: {...globalConfig.global, stubs: {GoalButton: false}}});
+    await wrapper.vm.$nextTick();
+
+    const button = wrapper.find('#maSelector-checkbox');
+    expect(button.attributes('disabled')).is.not.undefined;
+
+    wrapper.vm.expansions.tournament = false;
+    await wrapper.vm.$nextTick();
+
+    expect(button.attributes('disabled')).is.undefined;
+  });
+
   it('applies tournament locks when tournament is switched back on', async () => {
     const wrapper = shallowMount(CreateGameForm, {...globalConfig});
     await wrapper.vm.$nextTick();
-    const vm = wrapper.vm as any;
+    const vm = wrapper.vm;
 
     vm.expansions.tournament = false;
     await wrapper.vm.$nextTick();
@@ -154,7 +167,7 @@ describe('CreateGameForm', () => {
   it('ticks Player undo by default and leaves it to the creator in tournament mode', async () => {
     const wrapper = shallowMount(CreateGameForm, {...globalConfig});
     await wrapper.vm.$nextTick();
-    const vm = wrapper.vm as any;
+    const vm = wrapper.vm;
     expect(vm.expansions.tournament).eq(true);
     expect(wrapper.find('#undo-checkbox').attributes('disabled')).is.undefined;
     expect(vm.undoOption).eq(true);
@@ -186,7 +199,7 @@ describe('CreateGameForm', () => {
   it('does not keep tournament player passwords when tournament is switched off', async () => {
     const wrapper = shallowMount(CreateGameForm, {...globalConfig});
     await wrapper.vm.$nextTick();
-    const vm = wrapper.vm as any;
+    const vm = wrapper.vm;
     expect(vm.playerPasswords).eq(true);
 
     vm.expansions.tournament = false;
@@ -206,7 +219,7 @@ describe('CreateGameForm', () => {
     await wrapper.vm.$nextTick();
     await wrapper.vm.$nextTick();
 
-    const vm = wrapper.vm as any;
+    const vm = wrapper.vm;
     expect(vm.expansions.tournament).eq(false);
     expect(vm.playerPasswords).eq(true);
   });
@@ -221,7 +234,7 @@ describe('CreateGameForm', () => {
     await wrapper.vm.$nextTick();
     await wrapper.vm.$nextTick();
 
-    const vm = wrapper.vm as any;
+    const vm = wrapper.vm;
     expect(vm.expansions.tournament).eq(false);
     expect(vm.playerPasswords).eq(false);
   });
@@ -229,7 +242,7 @@ describe('CreateGameForm', () => {
   it('ticks and locks player passwords for a multiplayer game with Player undo', async () => {
     const wrapper = shallowMount(CreateGameForm, {...globalConfig});
     await wrapper.vm.$nextTick();
-    const vm = wrapper.vm as any;
+    const vm = wrapper.vm;
     vm.expansions.tournament = false;
     await wrapper.vm.$nextTick();
     vm.playerPasswords = false;
@@ -261,7 +274,7 @@ describe('CreateGameForm', () => {
   it('ticks and locks player passwords for a multiplayer incognito game', async () => {
     const wrapper = shallowMount(CreateGameForm, {...globalConfig});
     await wrapper.vm.$nextTick();
-    const vm = wrapper.vm as any;
+    const vm = wrapper.vm;
     vm.expansions.tournament = false;
     await wrapper.vm.$nextTick();
     vm.undoOption = false;
@@ -291,7 +304,7 @@ describe('CreateGameForm', () => {
   it('offers incognito to a multiplayer game only, and never sends it for a solo game', async () => {
     const wrapper = shallowMount(CreateGameForm, {...globalConfig});
     await wrapper.vm.$nextTick();
-    const vm = wrapper.vm as any;
+    const vm = wrapper.vm;
     vm.expansions.tournament = false;
     vm.undoOption = false;
     vm.playersCount = 2;
@@ -318,7 +331,7 @@ describe('CreateGameForm', () => {
     await wrapper.vm.$nextTick();
     await wrapper.vm.$nextTick();
 
-    const vm = wrapper.vm as any;
+    const vm = wrapper.vm;
     expect(vm.incognito).eq(true);
     expect(vm.newGameConfig).deep.include({incognito: true, playerPasswords: true});
   });
@@ -326,7 +339,7 @@ describe('CreateGameForm', () => {
   it('sends the tournament preset with passwords on and the Player undo that was ticked', async () => {
     const wrapper = shallowMount(CreateGameForm, {...globalConfig});
     await wrapper.vm.$nextTick();
-    const vm = wrapper.vm as any;
+    const vm = wrapper.vm;
     vm.playersCount = 2;
     await wrapper.vm.$nextTick();
 
@@ -346,7 +359,7 @@ describe('CreateGameForm', () => {
   it('sends the judge option only for tournament games', async () => {
     const wrapper = shallowMount(CreateGameForm, {...globalConfig});
     await wrapper.vm.$nextTick();
-    const vm = wrapper.vm as any;
+    const vm = wrapper.vm;
 
     expect(vm.expansions.tournament).eq(true);
     expect(vm.newGameConfig.judgeLink).eq(false);
@@ -363,7 +376,7 @@ describe('CreateGameForm', () => {
   it('does not send a judge link that was ticked at several players once only one is left', async () => {
     const wrapper = shallowMount(CreateGameForm, {...globalConfig});
     await wrapper.vm.$nextTick();
-    const vm = wrapper.vm as any;
+    const vm = wrapper.vm;
     vm.playersCount = 2;
     await wrapper.vm.$nextTick();
     await wrapper.find('#judgeLink-checkbox').setValue(true);
@@ -379,7 +392,7 @@ describe('CreateGameForm', () => {
   it('has no separate Judge undo option: a judge link brings it', async () => {
     const wrapper = shallowMount(CreateGameForm, {...globalConfig});
     await wrapper.vm.$nextTick();
-    const vm = wrapper.vm as any;
+    const vm = wrapper.vm;
     vm.playersCount = 2;
     await wrapper.vm.$nextTick();
 
@@ -411,8 +424,8 @@ describe('CreateGameForm', () => {
     await wrapper.vm.$nextTick();
     await wrapper.vm.$nextTick();
 
-    expectTournamentLocks(wrapper.vm as any);
-    expect((wrapper.vm as any).undoOption).eq(true);
+    expectTournamentLocks(wrapper.vm);
+    expect(wrapper.vm.undoOption).eq(true);
   });
 
   it('applies tournament locks when restoring the legacy flat tournament key', async () => {
@@ -432,7 +445,7 @@ describe('CreateGameForm', () => {
     await wrapper.vm.$nextTick();
     await wrapper.vm.$nextTick();
 
-    const vm = wrapper.vm as any;
+    const vm = wrapper.vm;
     // The defaults have empty names, so this proves the saved settings were applied.
     expect(vm.players[0].name).eq('Alice');
     expect(vm.expansions.tournament).eq(true);
@@ -446,7 +459,7 @@ describe('CreateGameForm', () => {
     it(`switching tournament on keeps only the selected tournament boards ${JSON.stringify(run)}`, async () => {
       const wrapper = shallowMount(CreateGameForm, {...globalConfig});
       await wrapper.vm.$nextTick();
-      const vm = wrapper.vm as any;
+      const vm = wrapper.vm;
       vm.expansions.tournament = false;
       await wrapper.vm.$nextTick();
       vm.boards = [...run.boards];
@@ -459,7 +472,7 @@ describe('CreateGameForm', () => {
   it('locks the board selector to the tournament boards while tournament is on', async () => {
     const wrapper = shallowMount(CreateGameForm, {...globalConfig});
     await wrapper.vm.$nextTick();
-    const vm = wrapper.vm as any;
+    const vm = wrapper.vm;
     const selector = () => wrapper.findComponent({name: 'BoardSelector'});
     const isBoardDisabled = selector().props('isBoardDisabled');
 
@@ -476,7 +489,7 @@ describe('CreateGameForm', () => {
   it('applies tournament locks after Reset', async () => {
     const wrapper = shallowMount(CreateGameForm, {...globalConfig});
     await wrapper.vm.$nextTick();
-    const vm = wrapper.vm as any;
+    const vm = wrapper.vm;
     seedLockedFields(vm);
 
     vm.resetSettings();
