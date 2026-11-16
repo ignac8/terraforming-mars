@@ -5,7 +5,6 @@ import {IMarsBot} from '@/server/automa/IMarsBot';
 import {MarsBotCorp} from '@/server/automa/MarsBotCorp';
 import {whiteLeastBlackSpaceHandler} from '@/server/automa/corps/BaseGameCorps';
 
-// C14 Point Luna: white+black cubes on Earth track (track 6)
 export class PointLunaMarsBot extends MarsBotCorp {
   constructor() {
     super({

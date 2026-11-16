@@ -4,8 +4,6 @@ import {Tag} from '@/common/cards/Tag';
 import {IMarsBot} from '@/server/automa/IMarsBot';
 import {MarsBotCorp} from '@/server/automa/MarsBotCorp';
 
-// ---- C10 Tharsis Republic ----
-// Draft: City. Setup: place 1 city. Effect: the player's city gives +2 MC; MarsBot's city advances event track.
 export class TharsisRepublicMarsBot extends MarsBotCorp {
   constructor() {
     super({

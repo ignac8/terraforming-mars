@@ -4,9 +4,6 @@ import {IMarsBot} from '@/server/automa/IMarsBot';
 import {MarsBotCorp} from '@/server/automa/MarsBotCorp';
 import {IProjectCard} from '@/server/cards/IProjectCard';
 
-// ---- C08 Saturn Systems ----
-// Tags: Jovian, Space x3. Draft: Jovian > Space.
-// Effect: anyone plays Jovian -> advance event track (index 2).
 export class SaturnSystemsMarsBot extends MarsBotCorp {
   constructor() {
     super({

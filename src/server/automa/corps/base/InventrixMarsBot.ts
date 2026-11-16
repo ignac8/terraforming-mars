@@ -5,9 +5,6 @@ import {MarsBotCorp} from '@/server/automa/MarsBotCorp';
 import {addBonusCardBeforeActionPhase} from '@/server/automa/corps/BaseGameCorps';
 import {IProjectCard} from '@/server/cards/IProjectCard';
 
-// ---- C05 Inventrix ----
-// Setup: remove Lobbyists (B06). Effect: card with requirements gives 2 MC.
-// Gen: before action phase, add Do It Right (B25) to action deck.
 export class InventrixMarsBot extends MarsBotCorp {
   constructor() {
     super({

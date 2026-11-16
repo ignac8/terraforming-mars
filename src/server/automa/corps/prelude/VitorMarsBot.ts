@@ -6,7 +6,6 @@ import {printedVictoryPoints} from '@/server/automa/MarsBotTags';
 import {addBonusCardBeforeActionPhase} from '@/server/automa/corps/BaseGameCorps';
 import {IProjectCard} from '@/server/cards/IProjectCard';
 
-// C17 Vitor: separates B04, adds it to action deck each gen
 export class VitorMarsBot extends MarsBotCorp {
   constructor() {
     super({

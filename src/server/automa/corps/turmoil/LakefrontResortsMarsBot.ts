@@ -4,7 +4,6 @@ import {CardName} from '@/common/cards/CardName';
 import {IMarsBot} from '@/server/automa/IMarsBot';
 import {MarsBotCorp} from '@/server/automa/MarsBotCorp';
 
-// C35 Lakefront Resorts
 export class LakefrontResortsMarsBot extends MarsBotCorp {
   constructor() {
     super({

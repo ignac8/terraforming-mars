@@ -5,9 +5,6 @@ import {IMarsBot} from '@/server/automa/IMarsBot';
 import {MarsBotCorp} from '@/server/automa/MarsBotCorp';
 import {whiteTrackCubes} from '@/server/automa/corps/BaseGameCorps';
 
-// ---- C04 Interplanetary Cinematics ----
-// Tags: Event, Event. Setup: replace transparent cubes on building/event tracks with white cubes.
-// Effect: each advance on building (track 1) or event (track 3), earn 2 MC.
 export class InterplanetaryCinematicsMarsBot extends MarsBotCorp {
   constructor() {
     super({

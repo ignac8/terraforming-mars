@@ -5,7 +5,6 @@ import {Tag} from '@/common/cards/Tag';
 import {IMarsBot} from '@/server/automa/IMarsBot';
 import {MarsBotCorp} from '@/server/automa/MarsBotCorp';
 
-// C42 Nirgal Enterprises
 export class NirgalEnterprisesMarsBot extends MarsBotCorp {
   constructor() {
     super({

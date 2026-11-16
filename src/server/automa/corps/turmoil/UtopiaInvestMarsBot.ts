@@ -5,7 +5,6 @@ import {IMarsBot} from '@/server/automa/IMarsBot';
 import {MarsBotCorp} from '@/server/automa/MarsBotCorp';
 import {addBonusCardBeforeActionPhase} from '@/server/automa/corps/BaseGameCorps';
 
-// C39 Utopia Invest
 export class UtopiaInvestMarsBot extends MarsBotCorp {
   constructor() {
     super({

@@ -5,7 +5,6 @@ import {IMarsBot} from '@/server/automa/IMarsBot';
 import {MarsBotCorp} from '@/server/automa/MarsBotCorp';
 import {Space} from '@/server/boards/Space';
 
-// C22 Philares
 export class PhilaresMarsBot extends MarsBotCorp {
   constructor() {
     super({

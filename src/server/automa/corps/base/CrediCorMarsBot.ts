@@ -3,8 +3,6 @@ import {IMarsBot} from '@/server/automa/IMarsBot';
 import {MarsBotCorp} from '@/server/automa/MarsBotCorp';
 import {IProjectCard} from '@/server/cards/IProjectCard';
 
-// ---- C01 Credicor ----
-// Draft: most expensive card. Effect: card cost 20+ gives 4 MC.
 export class CrediCorMarsBot extends MarsBotCorp {
   constructor() {
     super({

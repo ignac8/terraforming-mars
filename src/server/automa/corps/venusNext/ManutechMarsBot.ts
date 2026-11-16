@@ -3,7 +3,6 @@ import {Tag} from '@/common/cards/Tag';
 import {IMarsBot} from '@/server/automa/IMarsBot';
 import {MarsBotCorp} from '@/server/automa/MarsBotCorp';
 
-// C29 Manutech: black reminder cubes at #5/#12 on each track
 export class ManutechMarsBot extends MarsBotCorp {
   constructor() {
     super({

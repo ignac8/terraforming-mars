@@ -6,7 +6,6 @@ import {MarsBotCorp} from '@/server/automa/MarsBotCorp';
 import {isIActionCard} from '@/server/cards/ICard';
 import {IProjectCard} from '@/server/cards/IProjectCard';
 
-// C25 Viron (NamuWiki says "Byron")
 export class VironMarsBot extends MarsBotCorp {
   constructor() {
     super({

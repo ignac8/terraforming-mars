@@ -5,7 +5,6 @@ import {IMarsBot} from '@/server/automa/IMarsBot';
 import {MarsBotCorp} from '@/server/automa/MarsBotCorp';
 import {SILVER_CUBE_MC} from '@/server/automa/corps/BaseGameCorps';
 
-// C27 Morningstar Inc.
 export class MorningStarIncMarsBot extends MarsBotCorp {
   constructor() {
     super({

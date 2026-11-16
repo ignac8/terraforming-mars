@@ -4,7 +4,6 @@ import {Tag} from '@/common/cards/Tag';
 import {IMarsBot} from '@/server/automa/IMarsBot';
 import {MarsBotCorp} from '@/server/automa/MarsBotCorp';
 
-// C46 Tyco Magnetics
 export class TychoMagneticsMarsBot extends MarsBotCorp {
   constructor() {
     super({

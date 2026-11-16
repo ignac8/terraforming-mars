@@ -3,10 +3,6 @@ import {CardName} from '@/common/cards/CardName';
 import {IMarsBot} from '@/server/automa/IMarsBot';
 import {MarsBotCorp} from '@/server/automa/MarsBotCorp';
 
-// ---- C03 Helion ----
-// White cubes: instead of raising temp, draw 1 card and resolve it. A white cube on another icon
-// (the Nova boards' cities) replaces nothing, so that icon resolves too.
-// Black cubes: temperature rises by 1.
 export class HelionMarsBot extends MarsBotCorp {
   constructor() {
     super({
@@ -33,6 +29,7 @@ export class HelionMarsBot extends MarsBotCorp {
     if (cubeType === 'white') {
       marsBot.maybeDrawAndResolveProjectCard();
       marsBot.game.log('MarsBot (Helion): white cube: drew and resolved card instead of temp raise');
+      // A white cube on another icon (the Nova boards' cities) replaces nothing, so that icon resolves too.
       return marsBot.marsBotBoard.tracks[trackIndex].definition.layout[position] === 'temperature';
     }
     if (cubeType === 'black') {

@@ -5,7 +5,6 @@ import {IMarsBot} from '@/server/automa/IMarsBot';
 import {MarsBotCorp} from '@/server/automa/MarsBotCorp';
 import {whiteTrackCubes, addBonusCardBeforeActionPhase} from '@/server/automa/corps/BaseGameCorps';
 
-// C20 Factorum
 export class FactorumMarsBot extends MarsBotCorp {
   constructor() {
     super({

@@ -4,7 +4,6 @@ import {IMarsBot} from '@/server/automa/IMarsBot';
 import {MarsBotCorp} from '@/server/automa/MarsBotCorp';
 import {addRandomColonyTile} from '@/server/automa/colonies/MarsBotColonyPlacer';
 
-// C30 Aridor
 export class AridorMarsBot extends MarsBotCorp {
   constructor() {
     super({

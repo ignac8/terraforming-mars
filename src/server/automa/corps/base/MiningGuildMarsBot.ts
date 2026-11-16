@@ -3,9 +3,6 @@ import {Tag} from '@/common/cards/Tag';
 import {IMarsBot} from '@/server/automa/IMarsBot';
 import {MarsBotCorp} from '@/server/automa/MarsBotCorp';
 
-// ---- C06 Mining Guild ----
-// Tags: Building x2. Setup: 10 MC on card.
-// Effect: when earning MC, deduct from card first. When card empty, refill 10 + advance building track.
 export class MiningGuildMarsBot extends MarsBotCorp {
   constructor() {
     super({

@@ -5,7 +5,6 @@ import {IMarsBot} from '@/server/automa/IMarsBot';
 import {MarsBotCorp} from '@/server/automa/MarsBotCorp';
 import {IProjectCard} from '@/server/cards/IProjectCard';
 
-// C21 Pharmacy Union
 export class PharmacyUnionMarsBot extends MarsBotCorp {
   constructor() {
     super({

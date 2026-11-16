@@ -4,9 +4,6 @@ import {Tag} from '@/common/cards/Tag';
 import {IMarsBot} from '@/server/automa/IMarsBot';
 import {MarsBotCorp} from '@/server/automa/MarsBotCorp';
 
-// ---- C11 Thorgate ----
-// Tag: Power. Draft: Power. Setup: +10 MC, white cubes on energy track.
-// Effect: white cube draws a card and resolves only its first tag, then temperature +1.
 export class ThorgateMarsBot extends MarsBotCorp {
   constructor() {
     super({

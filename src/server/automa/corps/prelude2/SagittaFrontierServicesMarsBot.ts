@@ -5,7 +5,6 @@ import {MarsBotCorp} from '@/server/automa/MarsBotCorp';
 import {cardTagsIncludingEvent} from '@/server/automa/MarsBotTags';
 import {IProjectCard} from '@/server/cards/IProjectCard';
 
-// C44 Sagitta
 export class SagittaFrontierServicesMarsBot extends MarsBotCorp {
   constructor() {
     super({

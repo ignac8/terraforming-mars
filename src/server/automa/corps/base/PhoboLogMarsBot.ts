@@ -4,9 +4,6 @@ import {Tag} from '@/common/cards/Tag';
 import {IMarsBot} from '@/server/automa/IMarsBot';
 import {MarsBotCorp} from '@/server/automa/MarsBotCorp';
 
-// ---- C07 Phobolog ----
-// Tag: Space. Setup: draw 2 space cards to bonus deck. White cubes on space track.
-// Effect: white cube resolves 1 bonus card.
 export class PhoboLogMarsBot extends MarsBotCorp {
   constructor() {
     super({

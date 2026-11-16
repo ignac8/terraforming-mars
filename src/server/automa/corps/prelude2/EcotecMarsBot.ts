@@ -4,7 +4,6 @@ import {IMarsBot} from '@/server/automa/IMarsBot';
 import {MarsBotCorp} from '@/server/automa/MarsBotCorp';
 import {whiteTrackCubes} from '@/server/automa/corps/BaseGameCorps';
 
-// C40 Ecotec
 export class EcotecMarsBot extends MarsBotCorp {
   constructor() {
     super({

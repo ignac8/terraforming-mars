@@ -4,7 +4,6 @@ import {IMarsBot} from '@/server/automa/IMarsBot';
 import {MarsBotCorp} from '@/server/automa/MarsBotCorp';
 import {addFloaterAtRoundStart} from '@/server/automa/corps/BaseGameCorps';
 
-// C34 Stormcraft
 export class StormCraftIncorporatedMarsBot extends MarsBotCorp {
   constructor() {
     super({

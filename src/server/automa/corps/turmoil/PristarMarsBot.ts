@@ -2,7 +2,6 @@ import {CardName} from '@/common/cards/CardName';
 import {IMarsBot} from '@/server/automa/IMarsBot';
 import {MarsBotCorp} from '@/server/automa/MarsBotCorp';
 
-// C36 Pristar (NamuWiki says "Freestar")
 export class PristarMarsBot extends MarsBotCorp {
   constructor() {
     super({

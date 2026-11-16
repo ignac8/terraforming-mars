@@ -4,8 +4,6 @@ import {IMarsBot} from '@/server/automa/IMarsBot';
 import {MarsBotCorp} from '@/server/automa/MarsBotCorp';
 import {addBonusCardBeforeActionPhase} from '@/server/automa/corps/BaseGameCorps';
 
-// ---- C02 Eco Line ----
-// Gen effect: before action phase, add Rapid Sprouting (B23) to action deck.
 export class EcoLineMarsBot extends MarsBotCorp {
   constructor() {
     super({

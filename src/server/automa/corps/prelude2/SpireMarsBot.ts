@@ -5,7 +5,6 @@ import {MarsBotCorp} from '@/server/automa/MarsBotCorp';
 import {cardTagsIncludingEvent} from '@/server/automa/MarsBotTags';
 import {IProjectCard} from '@/server/cards/IProjectCard';
 
-// C45 Spire
 export class SpireMarsBot extends MarsBotCorp {
   constructor() {
     super({

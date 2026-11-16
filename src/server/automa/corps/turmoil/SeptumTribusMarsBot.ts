@@ -5,7 +5,6 @@ import {IMarsBot} from '@/server/automa/IMarsBot';
 import {MarsBotCorp} from '@/server/automa/MarsBotCorp';
 import {addBonusCardBeforeActionPhase} from '@/server/automa/corps/BaseGameCorps';
 
-// C37 Septem Tribus
 export class SeptumTribusMarsBot extends MarsBotCorp {
   constructor() {
     super({

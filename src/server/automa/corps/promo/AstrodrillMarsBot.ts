@@ -5,7 +5,6 @@ import {IMarsBot} from '@/server/automa/IMarsBot';
 import {MarsBotCorp} from '@/server/automa/MarsBotCorp';
 import {whiteLeastBlackSpaceHandler} from '@/server/automa/corps/BaseGameCorps';
 
-// C19 Astrodrill Enterprise: white+black cubes on space track
 export class AstrodrillMarsBot extends MarsBotCorp {
   constructor() {
     super({

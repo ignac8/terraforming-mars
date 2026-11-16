@@ -2,7 +2,6 @@ import {CardName} from '@/common/cards/CardName';
 import {IMarsBot} from '@/server/automa/IMarsBot';
 import {MarsBotCorp} from '@/server/automa/MarsBotCorp';
 
-// C33 Poseidon
 export class PoseidonMarsBot extends MarsBotCorp {
   constructor() {
     super({

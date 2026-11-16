@@ -5,7 +5,6 @@ import {IMarsBot} from '@/server/automa/IMarsBot';
 import {MarsBotCorp} from '@/server/automa/MarsBotCorp';
 import {SILVER_CUBE_MC} from '@/server/automa/corps/BaseGameCorps';
 
-// C13 Cheung Shing MARS: silver resource cubes on building track from position 4
 export class CheungShingMARSMarsBot extends MarsBotCorp {
   constructor() {
     super({

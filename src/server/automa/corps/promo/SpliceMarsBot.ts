@@ -10,7 +10,6 @@ import {OrOptions} from '@/server/inputs/OrOptions';
 import {SelectOption} from '@/server/inputs/SelectOption';
 import {message} from '@/server/logs/MessageBuilder';
 
-// C24 Splice
 export class SpliceMarsBot extends MarsBotCorp {
   constructor() {
     super({

@@ -5,9 +5,6 @@ import {IMarsBot} from '@/server/automa/IMarsBot';
 import {MarsBotCorp} from '@/server/automa/MarsBotCorp';
 import {whiteTrackCubes} from '@/server/automa/corps/BaseGameCorps';
 
-// ---- C09 Teractor ----
-// Draft: Earth. Setup: +25 MC, white cubes on Earth track (all positions).
-// Effect: each advance on Earth track gives +2 MC.
 export class TeractorMarsBot extends MarsBotCorp {
   constructor() {
     super({

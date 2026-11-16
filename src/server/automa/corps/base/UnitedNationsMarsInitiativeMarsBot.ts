@@ -3,9 +3,6 @@ import {CardName} from '@/common/cards/CardName';
 import {IMarsBot} from '@/server/automa/IMarsBot';
 import {MarsBotCorp} from '@/server/automa/MarsBotCorp';
 
-// ---- C12 UNMI ----
-// Setup: add Government Subsidy (B31) to bonus deck, and take the bonus card dealt at setup back
-// out of the action deck. Gen: from gen 2+, add 1 bonus card to action deck before action phase.
 export class UnitedNationsMarsInitiativeMarsBot extends MarsBotCorp {
   constructor() {
     super({

@@ -7,7 +7,6 @@ import {MarsBotCorp} from '@/server/automa/MarsBotCorp';
 import {addBonusCardBeforeActionPhase} from '@/server/automa/corps/BaseGameCorps';
 import {Space} from '@/server/boards/Space';
 
-// C18 Acadian Community
 export class ArcadianCommunitiesMarsBot extends MarsBotCorp {
   constructor() {
     super({

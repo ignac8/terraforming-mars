@@ -3,7 +3,6 @@ import {Tag} from '@/common/cards/Tag';
 import {IMarsBot} from '@/server/automa/IMarsBot';
 import {MarsBotCorp} from '@/server/automa/MarsBotCorp';
 
-// C28 Aphrodite
 export class AphroditeMarsBot extends MarsBotCorp {
   constructor() {
     super({

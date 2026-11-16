@@ -4,7 +4,6 @@ import {Tag} from '@/common/cards/Tag';
 import {IMarsBot} from '@/server/automa/IMarsBot';
 import {MarsBotCorp} from '@/server/automa/MarsBotCorp';
 
-// C38 Terralabs
 export class TerralabsResearchMarsBot extends MarsBotCorp {
   constructor() {
     super({
