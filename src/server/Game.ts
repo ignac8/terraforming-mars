@@ -35,7 +35,7 @@ import {RecordedInput} from './rewind/RecordedInput';
 import {stateHash} from './rewind/stateHash';
 import {CardResource} from '../common/CardResource';
 import {Resource} from '../common/Resource';
-import {AndThen, DeferredAction, IDeferredAction, SimpleDeferredAction} from './deferredActions/DeferredAction';
+import {AndThen, IDeferredAction, SimpleDeferredAction} from './deferredActions/DeferredAction';
 import {Priority} from './deferredActions/Priority';
 import {DeferredActionsQueue} from './deferredActions/DeferredActionsQueue';
 import {SelectPaymentDeferred} from './deferredActions/SelectPaymentDeferred';
@@ -115,7 +115,7 @@ export function setGameLog(f: () => Array<LogMessage>) {
   createGameLog = f;
 }
 
-function placesTile(action: IDeferredAction<any>): boolean {
+function placesTile(action: IDeferredAction<unknown>): boolean {
   return action instanceof PlaceOceanTile || action instanceof PlaceCityTile ||
     action instanceof PlaceGreeneryTile || action instanceof PlaceTile || action instanceof PlaceTilesInAnyOrder;
 }
@@ -758,7 +758,7 @@ export class Game implements IGame, Logger {
     return player;
   }
 
-  public defer<T>(action: DeferredAction<T>, priority?: Priority): AndThen<T> {
+  public defer<T>(action: IDeferredAction<T>, priority?: Priority): AndThen<T> {
     if (priority !== undefined) {
       action.priority = priority;
     }

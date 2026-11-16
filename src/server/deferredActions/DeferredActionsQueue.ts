@@ -5,27 +5,27 @@ import {PlayerId} from '../../common/Types';
 import {PriorityQueue} from './PriorityQueue';
 
 export class DeferredActionsQueue {
-  private queue = new PriorityQueue<IDeferredAction<any>, PlayerId>();
+  private queue = new PriorityQueue<IDeferredAction<unknown>, PlayerId>();
 
   get length(): number {
     return this.queue.length;
   }
 
-  public push(action: IDeferredAction<any>): void {
+  public push(action: IDeferredAction): void {
     this.queue.push(action, action.priority, action.player.id);
   }
 
-  public hasActionFor(player: IPlayer, predicate: (action: IDeferredAction<any>) => boolean): boolean {
+  public hasActionFor(player: IPlayer, predicate: (action: IDeferredAction<unknown>) => boolean): boolean {
     return this.queue.some((action, playerId) => playerId === player.id && predicate(action));
   }
 
   // Public for tests
-  public peek(): IDeferredAction<any> | undefined {
+  public peek(): IDeferredAction | undefined {
     return this.queue.peek();
   }
 
   // Public for tests
-  public pop(): IDeferredAction<any> | undefined {
+  public pop(): IDeferredAction | undefined {
     return this.queue.pop();
   }
 

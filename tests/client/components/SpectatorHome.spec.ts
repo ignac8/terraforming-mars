@@ -29,7 +29,6 @@ describe('SpectatorHome', () => {
           players: [player],
           id: 's-spectator-id',
           thisPlayer: player,
-          runId: 'run-id',
           color: 'neutral',
         },
       },
@@ -40,7 +39,7 @@ describe('SpectatorHome', () => {
   it('pins the active player in the top bar', () => {
     const red = fakePublicPlayerModel({color: 'red'});
     const blue = fakePublicPlayerModel({color: 'blue', isActive: true});
-    const spectator = {game: fakeGameModel(), players: [red, blue], id: 's-spectator-id', thisPlayer: undefined, runId: 'run-id', color: 'neutral'};
+    const spectator = {game: fakeGameModel(), players: [red, blue], id: 's-spectator-id', thisPlayer: undefined, color: 'neutral'};
     const wrapper = shallowMount(SpectatorHome, {
       ...globalConfig,
       parentComponent: {methods: {getVisibilityState: () => true, setVisibilityState: () => {}}} as any,
@@ -52,7 +51,7 @@ describe('SpectatorHome', () => {
 
   it('renders no WaitingFor when replaying', () => {
     const player = fakePublicPlayerModel();
-    const spectator = {game: fakeGameModel(), players: [player], id: 's-spectator-id', thisPlayer: player, runId: 'run-id', color: 'neutral'};
+    const spectator = {game: fakeGameModel(), players: [player], id: 's-spectator-id', thisPlayer: player, color: 'neutral'};
     const mountHome = (replay: boolean) => shallowMount(SpectatorHome, {
       ...globalConfig,
       parentComponent: {methods: {getVisibilityState: () => true, setVisibilityState: () => {}}} as any,
@@ -65,7 +64,7 @@ describe('SpectatorHome', () => {
   describe('game results link', () => {
     function resultsHref(id: string): string | undefined {
       const player = fakePublicPlayerModel();
-      const spectator = {game: fakeGameModel({phase: Phase.END, spectatorId: 's-spectator-id'}), players: [player], id, thisPlayer: undefined, runId: 'run-id', color: 'neutral'};
+      const spectator = {game: fakeGameModel({phase: Phase.END, spectatorId: 's-spectator-id'}), players: [player], id, thisPlayer: undefined, color: 'neutral'};
       const wrapper = shallowMount(SpectatorHome, {
         ...globalConfig,
         parentComponent: {methods: {getVisibilityState: () => true, setVisibilityState: () => {}}} as any,
@@ -85,7 +84,7 @@ describe('SpectatorHome', () => {
 
   describe('replay', () => {
     const player = fakePublicPlayerModel();
-    const spectator = {game: fakeGameModel(), players: [player], id: 's-spectator-id', thisPlayer: player, runId: 'run-id', color: 'neutral'};
+    const spectator = {game: fakeGameModel(), players: [player], id: 's-spectator-id', thisPlayer: player, color: 'neutral'};
     const mountHome = (props: Record<string, unknown>, slots?: Record<string, string>) => shallowMount(SpectatorHome, {
       ...globalConfig,
       slots,
@@ -109,7 +108,7 @@ describe('SpectatorHome', () => {
 
   it('renders no purge warning when replaying', () => {
     const player = fakePublicPlayerModel();
-    const spectator = {game: fakeGameModel(), players: [player], id: 's-spectator-id', thisPlayer: player, runId: 'run-id', color: 'neutral'};
+    const spectator = {game: fakeGameModel(), players: [player], id: 's-spectator-id', thisPlayer: player, color: 'neutral'};
     const mountHome = (replay: boolean) => shallowMount(SpectatorHome, {
       ...globalConfig,
       parentComponent: {methods: {getVisibilityState: () => true, setVisibilityState: () => {}}} as any,

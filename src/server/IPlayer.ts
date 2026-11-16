@@ -100,7 +100,6 @@ export interface IPlayer {
   // This generation / this round
   actionsTakenThisRound: number;
   /** Extra actions Head Start still owes this player. They do not count toward actionsTakenThisRound. */
-  headStartActionsRemaining: number;
   lastCardPlayed: CardName | undefined;
   pendingInitialActions: Array<ICorporationCard>;
 
@@ -392,6 +391,10 @@ export interface IPlayer {
   setAlliedParty(party: IParty): void;
 }
 
-export function isIPlayer(object: any): object is IPlayer {
-  return object !== undefined && object.hasOwnProperty('id') && isPlayerId(object.id) && isIGame(object.game);
+export function isIPlayer(object: unknown): object is IPlayer {
+  if (typeof object !== 'object' || object === null) {
+    return false;
+  }
+  const candidate = object as {id?: unknown, game?: unknown};
+  return Object.hasOwn(object, 'id') && isPlayerId(candidate.id) && isIGame(candidate.game);
 }

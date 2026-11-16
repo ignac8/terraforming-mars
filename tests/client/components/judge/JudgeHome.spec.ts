@@ -34,7 +34,6 @@ function judgeModel(privatesList: Array<JudgePlayerModel>): JudgeModel {
     id: 'j-judge-id',
     color: 'neutral',
     thisPlayer: undefined,
-    runId: 'run-id',
     password: undefined,
     signature: 'sig',
     privates: privatesList,

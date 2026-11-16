@@ -12,7 +12,7 @@ import {SpaceId} from '@/common/Types';
 import {playerColorClass} from '@/common/utils/utils';
 
 describe('LogPanel', () => {
-  let originalFetch: any;
+  let originalFetch: typeof global.fetch;
   let originalGetElementById: typeof document.getElementById;
   let fetchCalls: Array<string>;
 

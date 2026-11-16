@@ -26,7 +26,6 @@ import {CardName} from '../../common/cards/CardName';
 import {AwardScorer} from '../awards/AwardScorer';
 import {SpaceId} from '../../common/Types';
 import {cardsToModel, coloniesToModel} from './ModelUtils';
-import {runId} from '../utils/server-ids';
 import {toName} from '../../common/utils/utils';
 import {MAX_AWARDS, MAX_MILESTONES} from '../../common/constants';
 
@@ -133,7 +132,6 @@ export class Server {
       id: player.id,
       password: player.password,
       color: player.color,
-      runId: runId,
       requestId: player.requestId,
       thisPlayer: thisPlayer,
       players: players,
@@ -172,7 +170,6 @@ export class Server {
       // so the judge sees live values. Player ids stay hidden until the game ends.
       players: players.map((p) => this.getPlayer(p, true)),
       thisPlayer: undefined,
-      runId: runId,
       allVictoryPoints: true,
       signature: this.getJudgeSignature(game),
       privates: players.map((p) => ({...this.getPrivateFields(p), color: p.color})),
@@ -192,7 +189,6 @@ export class Server {
       game: this.getGameModel(game),
       players: game.playersInGenerationOrder.map((p) => this.getPlayer(p, false)),
       thisPlayer: undefined,
-      runId: runId,
     };
   }
 

@@ -1362,7 +1362,6 @@ describe('ReplayScreen', () => {
         game: fakeGameModel({gameAge: 3, gameOptions: fakeGameOptionsModel({judgeUndo: true}), ...game}),
         players,
         thisPlayer: undefined,
-        runId: 'run-id',
         id: judgeId,
         color: 'neutral',
         password,

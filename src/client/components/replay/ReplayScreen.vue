@@ -369,7 +369,6 @@ export default defineComponent({
         id: judge.id as unknown as PlayerId,
         password: undefined,
         requestId: undefined,
-        runId: judge.runId,
         autopass: false,
         allVictoryPoints: judge.allVictoryPoints,
       };
