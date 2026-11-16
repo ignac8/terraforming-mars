@@ -12,7 +12,7 @@
         </div>
         <div>
           <div class="icon-first-player" v-if="firstForGen && playerView.players.length > 1" v-i18n>1st</div>
-          <PlayerStatus :timer="player.timer" :showTimer="playerView.game.gameOptions.showTimers" :liveTimer="playerView.game.phase !== Phase.END" :firstForGen="firstForGen" :actionLabel="actionLabel" :creditMs="escapeVelocityCreditMs" />
+          <PlayerStatus :timer="player.timer" :showTimer="playerView.game.gameOptions.showTimers" :liveTimer="playerView.game.phase !== Phase.END" :firstForGen="firstForGen" :actionLabel="actionLabel" :allowanceMs="escapeVelocityAllowanceMs" />
         </div>
       </div>
       <PlayerResources :player="player" />
@@ -56,7 +56,7 @@ import {getCard} from '@/client/cards/ClientCardManifest';
 import {Phase} from '@/common/Phase';
 import {ActionLabel} from './ActionLabel';
 import {playerSymbol} from '@/client/utils/playerSymbol';
-import {escapeVelocityCreditMs} from '@/client/utils/escapeVelocityClock';
+import {escapeVelocityAllowanceMs} from '@/client/utils/escapeVelocityClock';
 
 export default defineComponent({
   name: 'PlayerInfo',
@@ -104,8 +104,8 @@ export default defineComponent({
     playerSymbol(): string {
       return playerSymbol(this.player.color, ' ');
     },
-    escapeVelocityCreditMs(): number | undefined {
-      return escapeVelocityCreditMs(this.playerView.game.gameOptions.escapeVelocity, this.player.actionsTakenThisGame);
+    escapeVelocityAllowanceMs(): number | undefined {
+      return escapeVelocityAllowanceMs(this.playerView.game.gameOptions.escapeVelocity, this.player.actionsTakenThisGame);
     },
     Phase(): typeof Phase {
       return Phase;

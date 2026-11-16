@@ -19,7 +19,7 @@ describe('PlayerStatus', () => {
     expect(wrapper.exists()).to.be.true;
   });
 
-  it('shows the counted time next to the clock when actions earn a time credit', () => {
+  it('shows the time left before the Escape Velocity penalty next to the clock', () => {
     const wrapper = shallowMount(PlayerStatus, {
       ...globalConfig,
       props: {
@@ -27,9 +27,9 @@ describe('PlayerStatus', () => {
         actionLabel: 'none',
         showTimer: true,
         liveTimer: false,
-        creditMs: 10_000,
+        allowanceMs: 10_000,
       },
     });
-    expect(wrapper.findAllComponents(PlayerTimer).map((timer) => timer.props('creditMs'))).deep.eq([0, 10_000]);
+    expect(wrapper.findAllComponents(PlayerTimer).map((timer) => timer.props('allowanceMs'))).deep.eq([undefined, 10_000]);
   });
 });

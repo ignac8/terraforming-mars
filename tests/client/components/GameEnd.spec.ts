@@ -22,7 +22,7 @@ describe('GameEnd', () => {
     expect(wrapper.exists()).to.be.true;
   });
 
-  it('shows the time that counted toward the Escape Velocity penalty under the clock', () => {
+  it('shows the time left before the Escape Velocity penalty under the clock, negative when over', () => {
     const player = fakePublicPlayerModel({
       timer: {sumElapsed: 29 * 60_000 + 7_000, startedAt: 0, running: false},
       actionsTakenThisGame: 175,
@@ -39,7 +39,7 @@ describe('GameEnd', () => {
       },
     });
     expect(wrapper.find('.game-end-timer').text()).eq('29:07');
-    expect(wrapper.find('.game-end-timer-counted').text()).contains('23:17');
+    expect(wrapper.find('.game-end-timer-remaining').text()).contains('-03:17');
   });
 
   it('links to the replay of the game', () => {

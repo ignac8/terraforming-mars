@@ -3,18 +3,23 @@ import {TimerModel} from '@/common/models/TimerModel';
 import {EscapeVelocityOptions} from '@/common/game/NewGameConfig';
 
 /**
- * Returns the milliseconds that `actions` take off a player's clock when the Escape Velocity penalty is
- * worked out, or undefined when the game takes nothing off.
+ * Returns the milliseconds a player may use before the Escape Velocity penalty starts: the threshold plus
+ * the time their `actions` have earned back. Undefined when the game has no Escape Velocity.
  */
-export function escapeVelocityCreditMs(options: EscapeVelocityOptions | undefined, actions: number): number | undefined {
-  if (options === undefined || !(options.bonusSectionsPerAction > 0)) {
+export function escapeVelocityAllowanceMs(options: EscapeVelocityOptions | undefined, actions: number): number | undefined {
+  if (options === undefined) {
     return undefined;
   }
-  return actions * options.bonusSectionsPerAction * 1000;
+  return options.thresholdMinutes * 60_000 + actions * options.bonusSectionsPerAction * 1000;
 }
 
-/** Returns `timer` as text, in the format of `Timer.toString`, with `creditMs` taken off but never below zero. */
-export function countedTimerText(timer: TimerModel, creditMs: number): string {
+/**
+ * Returns how much of `allowanceMs` is left on `timer`, in the format of `Timer.toString`.
+ * Past the allowance it is the time over, with a minus sign.
+ */
+export function remainingTimerText(timer: TimerModel, allowanceMs: number): string {
   const elapsedMs = timer.sumElapsed + (timer.running ? Date.now() - timer.startedAt : 0);
-  return Timer.toString({sumElapsed: Math.max(elapsedMs - creditMs, 0), startedAt: 0, running: false});
+  const remainingMs = allowanceMs - elapsedMs;
+  const text = Timer.toString({sumElapsed: Math.abs(remainingMs), startedAt: 0, running: false});
+  return remainingMs <= -1000 ? '-' + text : text;
 }

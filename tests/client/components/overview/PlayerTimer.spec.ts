@@ -71,22 +71,39 @@ describe('PlayerTimer', () => {
     expect(wrapper.find('.player-timer-seconds').text()).eq('05');
   });
 
-  it('takes the credit off the time, but never below zero', async () => {
+  it('shows the time left of an allowance, and the time over it with a minus sign', async () => {
     const wrapper = shallowMount(PlayerTimer, {
       ...globalConfig,
       props: {
         timer: {...fakeTimerModel(), sumElapsed: 65_000},
         live: false,
-        creditMs: 5_000,
+        allowanceMs: 120_000,
       },
     });
     await wrapper.vm.$nextTick();
-    expect(wrapper.find('.player-timer-minutes').text()).eq('01');
-    expect(wrapper.find('.player-timer-seconds').text()).eq('00');
-
-    await wrapper.setProps({creditMs: 70_000});
-
     expect(wrapper.find('.player-timer-minutes').text()).eq('00');
-    expect(wrapper.find('.player-timer-seconds').text()).eq('00');
+    expect(wrapper.find('.player-timer-seconds').text()).eq('55');
+    expect(wrapper.classes()).does.not.include('player-timer--over');
+
+    await wrapper.setProps({allowanceMs: 60_000});
+
+    expect(wrapper.find('.player-timer-minutes').text()).eq('-00');
+    expect(wrapper.find('.player-timer-seconds').text()).eq('05');
+    expect(wrapper.classes()).includes('player-timer--over');
+  });
+
+  it('counts the time left down while live', async () => {
+    vi.useFakeTimers({now: 0});
+    const wrapper = shallowMount(PlayerTimer, {
+      ...globalConfig,
+      props: {
+        timer: {...fakeTimerModel(), running: true, startedAt: 0},
+        live: true,
+        allowanceMs: 10_000,
+      },
+    });
+    await vi.advanceTimersByTimeAsync(3000);
+
+    expect(wrapper.find('.player-timer-seconds').text()).eq('07');
   });
 });

@@ -55,7 +55,7 @@ describe('PlayerInfo', () => {
     expect(test.text()).to.eq('3');
   });
 
-  it('gives the status box the time that the player\'s actions take off the Escape Velocity clock', () => {
+  it('gives the status box the time the player may use before the Escape Velocity penalty, which grows with every action', () => {
     const thisPlayer: RecursivePartial<PublicPlayerModel> = {
       color: 'blue',
       tableau: [],
@@ -94,6 +94,6 @@ describe('PlayerInfo', () => {
         actionLabel: 'none',
       },
     });
-    expect(playerInfo.findComponent(PlayerStatus).props('creditMs')).eq(350_000);
+    expect(playerInfo.findComponent(PlayerStatus).props('allowanceMs')).eq(20 * 60_000 + 350_000);
   });
 });

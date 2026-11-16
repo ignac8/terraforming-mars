@@ -1,5 +1,5 @@
 <template>
-  <div class="player-timer">
+  <div class="player-timer" :class="{'player-timer--over': timerText.startsWith('-')}">
     <template v-if="hasHours">
       <div class="player-timer-hours">{{ hours }}</div>
       <div class="timer-delimiter">:</div>
@@ -14,7 +14,7 @@
 import {defineComponent} from 'vue';
 import {Timer} from '@/common/Timer';
 import {TimerModel} from '@/common/models/TimerModel';
-import {countedTimerText} from '@/client/utils/escapeVelocityClock';
+import {remainingTimerText} from '@/client/utils/escapeVelocityClock';
 
 export default defineComponent({
   name: 'PlayerTimer',
@@ -26,10 +26,10 @@ export default defineComponent({
     live: {
       type: Boolean,
     },
-    /** Milliseconds to take off the shown time, for the time that counts toward the Escape Velocity penalty. */
-    creditMs: {
+    /** When set, shows how much of this many milliseconds is left on the timer, and not the time played. */
+    allowanceMs: {
       type: Number,
-      default: 0,
+      default: undefined,
     },
   },
   data() {
@@ -53,7 +53,7 @@ export default defineComponent({
     timer() {
       this.updateTimer();
     },
-    creditMs() {
+    allowanceMs() {
       this.updateTimer();
     },
   },
@@ -85,7 +85,7 @@ export default defineComponent({
   },
   methods: {
     updateTimer() {
-      this.timerText = this.creditMs > 0 ? countedTimerText(this.timer, this.creditMs) : Timer.toString(this.timer);
+      this.timerText = this.allowanceMs !== undefined ? remainingTimerText(this.timer, this.allowanceMs) : Timer.toString(this.timer);
     },
   },
 });

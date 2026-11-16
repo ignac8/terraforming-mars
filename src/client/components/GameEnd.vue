@@ -112,7 +112,7 @@
               </td>
               <td v-if="game.gameOptions.showTimers">
                 <div class="game-end-timer">{{ getTimer(p) }}</div>
-                <div v-if="getCountedTimer(p) !== undefined" class="game-end-timer game-end-timer-counted" :title="$t('Time counted for the Escape Velocity penalty')">&#x23F3; {{ getCountedTimer(p) }}</div>
+                <div v-if="getRemainingTimer(p) !== undefined" class="game-end-timer game-end-timer-remaining" :title="$t('Time left before the Escape Velocity penalty')">&#x23F3; {{ getRemainingTimer(p) }}</div>
               </td>
               <td><div class="game-end-timer">{{ p.actionsTakenThisGame }}</div></td>
             </tr>
@@ -256,7 +256,7 @@ import HomeLink from '@/client/components/common/HomeLink.vue';
 import VictoryPointChart, {DataSet} from '@/client/components/gameend/VictoryPointChart.vue';
 import {playerColorClass} from '@/common/utils/utils';
 import {Timer} from '@/common/Timer';
-import {countedTimerText, escapeVelocityCreditMs} from '@/client/utils/escapeVelocityClock';
+import {escapeVelocityAllowanceMs, remainingTimerText} from '@/client/utils/escapeVelocityClock';
 import {Color} from '@/common/Color';
 import {CardType} from '@/common/cards/CardType';
 import {getCard} from '@/client/cards/ClientCardManifest';
@@ -463,10 +463,10 @@ export default defineComponent({
     getTimer(p: PublicPlayerModel): string {
       return Timer.toString(p.timer);
     },
-    /** Returns the time that counted toward the Escape Velocity penalty, undefined when that is the clock itself. */
-    getCountedTimer(p: PublicPlayerModel): string | undefined {
-      const creditMs = escapeVelocityCreditMs(this.game.gameOptions.escapeVelocity, p.actionsTakenThisGame);
-      return creditMs === undefined ? undefined : countedTimerText(p.timer, creditMs);
+    /** Returns the time the player had left before the Escape Velocity penalty, negative when over, undefined in a game without it. */
+    getRemainingTimer(p: PublicPlayerModel): string | undefined {
+      const allowanceMs = escapeVelocityAllowanceMs(this.game.gameOptions.escapeVelocity, p.actionsTakenThisGame);
+      return allowanceMs === undefined ? undefined : remainingTimerText(p.timer, allowanceMs);
     },
     getCorporationName(p: PublicPlayerModel): string[] {
       const cards = p.tableau;

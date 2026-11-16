@@ -3,11 +3,11 @@
     <div class="player-status-bottom">
       <div :class="getLabelAndTimerClasses()">
         <div :class="getActionStatusClasses()"><span v-i18n>{{ actionLabel }}</span></div>
-        <div class="player-status-timer" :class="{'player-status-timer--counted': creditMs !== undefined}" v-if="showTimer">
+        <div class="player-status-timer" :class="{'player-status-timer--remaining': allowanceMs !== undefined}" v-if="showTimer">
           <PlayerTimer :timer="timer" :live="liveTimer" />
-          <div v-if="creditMs !== undefined" class="player-status-counted" :title="$t('Time counted for the Escape Velocity penalty')">
-            <span class="player-status-counted-icon">&#x23F3;</span>
-            <PlayerTimer :timer="timer" :live="liveTimer" :creditMs="creditMs" />
+          <div v-if="allowanceMs !== undefined" class="player-status-remaining" :title="$t('Time left before the Escape Velocity penalty')">
+            <span class="player-status-remaining-icon">&#x23F3;</span>
+            <PlayerTimer :timer="timer" :live="liveTimer" :allowanceMs="allowanceMs" />
           </div>
         </div>
       </div>
@@ -39,8 +39,8 @@ export default defineComponent({
     liveTimer: {
       type: Boolean,
     },
-    /** Milliseconds the player's actions take off the clock for the Escape Velocity penalty, undefined when nothing is taken off. */
-    creditMs: {
+    /** Milliseconds the player may use before the Escape Velocity penalty starts, undefined in a game without it. */
+    allowanceMs: {
       type: Number,
       default: undefined,
     },
