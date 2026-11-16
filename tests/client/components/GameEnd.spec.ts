@@ -9,6 +9,7 @@ import {BoardName} from '@/common/boards/BoardName';
 import {getGlobalParameterMaximums} from '@/common/boards/GlobalParameterMaximums';
 import {GlobalParameter} from '@/common/GlobalParameter';
 import {ViewModel} from '@/common/models/PlayerModel';
+import {SpectatorModel} from '@/common/models/SpectatorModel';
 
 describe('GameEnd', () => {
   it('mounts without errors', () => {
@@ -25,7 +26,7 @@ describe('GameEnd', () => {
     const wrapper = shallowMount(GameEnd, {
       ...globalConfig,
       props: {
-        participant: fakePlayerViewModel({id: 'p-blue-id' as any}),
+        participant: fakePlayerViewModel({id: 'p-blue-id'}),
       },
     });
     expect(wrapper.find('a.game-end-replay-link').attributes('href')).to.equal('replay?id=p-blue-id');
@@ -35,7 +36,7 @@ describe('GameEnd', () => {
     const wrapper = shallowMount(GameEnd, {
       ...globalConfig,
       props: {
-        participant: fakePlayerViewModel({id: 'p-blue-id' as any, password: '0123456789ab'}),
+        participant: fakePlayerViewModel({id: 'p-blue-id', password: '0123456789ab'}),
       },
     });
     expect(wrapper.find('a.game-end-replay-link').attributes('href')).to.equal('replay?id=p-blue-id&password=0123456789ab');
@@ -43,15 +44,15 @@ describe('GameEnd', () => {
 
   describe('the vote to rewind the game', () => {
     // A finished game's model carries the players' ids.
-    const blue = fakePublicPlayerModel({color: 'blue', id: 'p-blue-id' as any});
-    const red = fakePublicPlayerModel({color: 'red', id: 'p-red-id' as any});
+    const blue = fakePublicPlayerModel({color: 'blue', id: 'p-blue-id'});
+    const red = fakePublicPlayerModel({color: 'red', id: 'p-red-id'});
 
     function mountEnd(options: Parameters<typeof fakeGameOptionsModel>[0], players = [blue, red]) {
       return shallowMount(GameEnd, {
         ...globalConfig,
         props: {
           participant: fakePlayerViewModel({
-            id: 'p-blue-id' as any,
+            id: 'p-blue-id',
             password: '0123456789ab',
             thisPlayer: blue,
             players,
@@ -90,26 +91,23 @@ describe('GameEnd', () => {
   });
 
   describe('following a rewind of the finished game', () => {
-    const blue = fakePublicPlayerModel({color: 'blue', id: 'p-blue-id' as any});
-    const red = fakePublicPlayerModel({color: 'red', id: 'p-red-id' as any});
-    let originalFetch: any;
+    const blue = fakePublicPlayerModel({color: 'blue', id: 'p-blue-id'});
+    const red = fakePublicPlayerModel({color: 'red', id: 'p-red-id'});
     let requests: Array<string>;
     let result: string;
 
     beforeEach(() => {
       vi.useFakeTimers();
       vi.stubGlobal('location', {href: 'http://localhost/the-end', search: ''});
-      originalFetch = (global as any).fetch;
       requests = [];
       result = 'WAIT';
-      (global as any).fetch = (url: string) => {
+      vi.stubGlobal('fetch', (url: string) => {
         requests.push(url);
         return Promise.resolve({ok: true, status: 200, json: () => Promise.resolve({result, waitingFor: []})});
-      };
+      });
     });
 
     afterEach(() => {
-      (global as any).fetch = originalFetch;
       vi.unstubAllGlobals();
       vi.useRealTimers();
     });
@@ -120,7 +118,7 @@ describe('GameEnd', () => {
 
     function player(options: Parameters<typeof fakeGameOptionsModel>[0], players = [blue, red]) {
       return fakePlayerViewModel({
-        id: 'p-blue-id' as any,
+        id: 'p-blue-id',
         password: '0123456789ab',
         thisPlayer: blue,
         players,
@@ -128,8 +126,8 @@ describe('GameEnd', () => {
       });
     }
 
-    function spectator(options: Parameters<typeof fakeGameOptionsModel>[0]) {
-      return {...fakeSpectatorModel(), id: 's-id' as any, players: [blue, red], game: fakeGameModel({undoCount: 4, gameAge: 9, gameOptions: fakeGameOptionsModel(options)})};
+    function spectator(options: Parameters<typeof fakeGameOptionsModel>[0]): SpectatorModel {
+      return {...fakeSpectatorModel(), id: 's-id', players: [blue, red], game: fakeGameModel({undoCount: 4, gameAge: 9, gameOptions: fakeGameOptionsModel(options)})};
     }
 
     async function ticks(ms: number) {
@@ -184,9 +182,9 @@ describe('GameEnd', () => {
   });
 
   it('carries the seat password on the link to the viewer\'s own page, and on no other player\'s', () => {
-    const blue = fakePublicPlayerModel({color: 'blue', name: 'Blue', id: 'p-blue-id' as any});
-    const red = fakePublicPlayerModel({color: 'red', name: 'Red', id: 'p-red-id' as any});
-    const participant = fakePlayerViewModel({id: 'p-blue-id' as any, password: '0123456789ab', players: [blue, red]});
+    const blue = fakePublicPlayerModel({color: 'blue', name: 'Blue', id: 'p-blue-id'});
+    const red = fakePublicPlayerModel({color: 'red', name: 'Red', id: 'p-red-id'});
+    const participant = fakePlayerViewModel({id: 'p-blue-id', password: '0123456789ab', players: [blue, red]});
     const wrapper = shallowMount(GameEnd, {...globalConfig, props: {participant}});
 
     const hrefs = wrapper.findAll('a').map((a) => a.attributes('href') ?? '').filter((href) => href.startsWith('player?id='));
@@ -226,7 +224,7 @@ describe('GameEnd', () => {
         },
       });
 
-      const datasets = (wrapper.vm as any).globalsDataset as ReadonlyArray<{label: string, data: ReadonlyArray<number>}>;
+      const datasets = wrapper.vm.globalsDataset;
 
       expect(datasets.map((d) => d.label)).to.deep.eq(['Temperature', 'Oxygen', 'Oceans', 'Venus']);
       for (const dataset of datasets) {

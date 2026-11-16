@@ -5,6 +5,7 @@ import {IGame} from '../../src/server/IGame';
 import {SerializedGame} from '../../src/server/SerializedGame';
 import {PLAYER_COLORS} from '../../src/common/Color';
 import {Phase} from '../../src/common/Phase';
+import {ReplayViewModel} from '../../src/common/replay/ReplayModel';
 import {statusCode} from '../../src/common/http/statusCode';
 import {testGame} from '../TestGame';
 import {TestPlayer} from '../TestPlayer';
@@ -257,9 +258,9 @@ describe('ApiReplayView', () => {
     for (const as of ['all', player.color]) {
       res = new MockResponse();
       await get(`id=${game.spectatorId}&save=1&as=${as}`);
-      const view = JSON.parse(res.content).view;
+      const view: ReplayViewModel['view'] = JSON.parse(res.content).view;
       expect(view.allVictoryPoints, as).is.true;
-      expect(view.players.map((p: any) => p.victoryPointsBreakdown.total), as).deep.eq([23, 27]);
+      expect(view.players.map((p) => p.victoryPointsBreakdown.total), as).deep.eq([23, 27]);
     }
   });
 
@@ -317,18 +318,18 @@ describe('ApiReplayView', () => {
       judged.second.terraformRating = 27;
       db.games.set(judged.running.id, [judged.running.serialize(), judged.running.serialize()]);
       await get(`id=${judged.running.judgeId}&save=0&as=${judged.first.color}`);
-      const judgeView = JSON.parse(res.content).view;
+      const judgeView: ReplayViewModel['view'] = JSON.parse(res.content).view;
       expect(judgeView.allVictoryPoints).is.true;
-      expect(judgeView.players.map((p: any) => p.victoryPointsBreakdown.total)).deep.eq([20, 27]);
+      expect(judgeView.players.map((p) => p.victoryPointsBreakdown.total)).deep.eq([20, 27]);
 
       const voted = await runningGame({undoOption: true});
       voted.second.terraformRating = 27;
       db.games.set(voted.running.id, [voted.running.serialize(), voted.running.serialize()]);
       res = new MockResponse();
       await get(`id=${voted.first.id}&save=0&as=${voted.first.color}`);
-      const playerView = JSON.parse(res.content).view;
+      const playerView: ReplayViewModel['view'] = JSON.parse(res.content).view;
       expect(playerView.allVictoryPoints).is.undefined;
-      expect(playerView.players.map((p: any) => p.victoryPointsBreakdown.total)).deep.eq([20, 0]);
+      expect(playerView.players.map((p) => p.victoryPointsBreakdown.total)).deep.eq([20, 0]);
     });
 
     it('shows a vote player only their own view', async () => {

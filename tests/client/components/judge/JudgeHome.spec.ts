@@ -59,7 +59,7 @@ function mountJudge(judge: JudgeModel) {
         getVisibilityState: () => true,
         setVisibilityState: () => {},
       },
-    } as any,
+    },
   });
 }
 

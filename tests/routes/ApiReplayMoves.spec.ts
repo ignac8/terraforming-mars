@@ -6,6 +6,7 @@ import {clearReplayCache} from '../../src/server/replay/ReplayService';
 import {LogMessage} from '../../src/common/logs/LogMessage';
 import {LogMessageType} from '../../src/common/logs/LogMessageType';
 import {Phase} from '../../src/common/Phase';
+import {ReplayMove} from '../../src/common/replay/ReplayModel';
 import {statusCode} from '../../src/common/http/statusCode';
 import {testGame} from '../TestGame';
 import {TestPlayer} from '../TestPlayer';
@@ -108,13 +109,13 @@ describe('ApiReplayMoves', () => {
       scaffolding.url = '/api/replay/moves?id=' + game.spectatorId;
       await scaffolding.get(ApiReplayMoves.INSTANCE, spectatorRes);
 
-      const judgeMessages = JSON.parse(res.content).moves.flatMap((m: any) => m.messages);
-      expect(judgeMessages.map((m: any) => m.message)).deep.eq(['public one', 'private to player', 'public two']);
-      expect(judgeMessages.map((m: any) => m.owner)).deep.eq([undefined, player.color, undefined]);
+      const judgeMessages: Array<LogMessage> = JSON.parse(res.content).moves.flatMap((m: ReplayMove) => m.messages);
+      expect(judgeMessages.map((m) => m.message)).deep.eq(['public one', 'private to player', 'public two']);
+      expect(judgeMessages.map((m) => m.owner)).deep.eq([undefined, player.color, undefined]);
       expect(res.content).not.contains(player.id);
-      const spectatorMessages = JSON.parse(spectatorRes.content).moves.flatMap((m: any) => m.messages);
-      expect(spectatorMessages.map((m: any) => m.message)).deep.eq(['public one', 'private to player', 'public two']);
-      expect(spectatorMessages.map((m: any) => m.owner)).deep.eq([undefined, player.color, undefined]);
+      const spectatorMessages: Array<LogMessage> = JSON.parse(spectatorRes.content).moves.flatMap((m: ReplayMove) => m.messages);
+      expect(spectatorMessages.map((m) => m.message)).deep.eq(['public one', 'private to player', 'public two']);
+      expect(spectatorMessages.map((m) => m.owner)).deep.eq([undefined, player.color, undefined]);
       expect(spectatorRes.content).not.contains(player.id);
     });
 
@@ -324,14 +325,14 @@ describe('ApiReplayMoves', () => {
 
         await read(`id=${judged.judgeId}&password=secret&undone=1`);
         expect(res.statusCode).eq(statusCode.ok);
-        const moves = JSON.parse(res.content).moves;
-        expect(moves.map((m: any) => [m.saveId, m.undone === true])).deep.eq([[0, false], [1, false], [2, true], [3, true], [4, true], [5, false]]);
-        expect(texts(moves.filter((m: any) => m.undone))).deep.eq(UNDONE_LINES);
+        const moves: Array<ReplayMove> = JSON.parse(res.content).moves;
+        expect(moves.map((m) => [m.saveId, m.undone === true])).deep.eq([[0, false], [1, false], [2, true], [3, true], [4, true], [5, false]]);
+        expect(texts(moves.filter((m) => m.undone))).deep.eq(UNDONE_LINES);
 
         await read(`id=${judged.judgeId}&password=secret`);
-        const plain = JSON.parse(res.content).moves;
-        expect(plain.map((m: any) => m.saveId)).deep.eq([0, 1, 5]);
-        expect(plain.some((m: any) => m.undone !== undefined)).is.false;
+        const plain: Array<ReplayMove> = JSON.parse(res.content).moves;
+        expect(plain.map((m) => m.saveId)).deep.eq([0, 1, 5]);
+        expect(plain.some((m) => m.undone !== undefined)).is.false;
         expect(texts(plain)).not.includes('line 5');
       });
     }
@@ -355,7 +356,7 @@ describe('ApiReplayMoves', () => {
           expect(res.statusCode).eq(statusCode.ok);
           const answer = JSON.parse(res.content);
           expect(texts(answer.moves ?? [])).not.includes('line 5');
-          expect((answer.moves ?? []).some((m: any) => m.undone !== undefined)).is.false;
+          expect((answer.moves ?? []).some((m: ReplayMove) => m.undone !== undefined)).is.false;
         });
       }
     }
@@ -375,14 +376,14 @@ describe('ApiReplayMoves', () => {
 
           await read(`id=${player.id}&undone=1`);
           expect(res.statusCode).eq(statusCode.ok);
-          const moves = JSON.parse(res.content).moves;
-          expect(moves.map((m: any) => [m.saveId, m.undone === true])).deep.eq([[0, false], [1, false], [2, true], [3, true], [4, true], [5, false]]);
-          expect(texts(moves.filter((m: any) => m.undone))).deep.eq(UNDONE_LINES);
+          const moves: Array<ReplayMove> = JSON.parse(res.content).moves;
+          expect(moves.map((m) => [m.saveId, m.undone === true])).deep.eq([[0, false], [1, false], [2, true], [3, true], [4, true], [5, false]]);
+          expect(texts(moves.filter((m) => m.undone))).deep.eq(UNDONE_LINES);
 
           await read(`id=${player.id}`);
-          const plain = JSON.parse(res.content).moves;
-          expect(plain.map((m: any) => m.saveId)).deep.eq([0, 1, 5]);
-          expect(plain.some((m: any) => m.undone !== undefined)).is.false;
+          const plain: Array<ReplayMove> = JSON.parse(res.content).moves;
+          expect(plain.map((m) => m.saveId)).deep.eq([0, 1, 5]);
+          expect(plain.some((m) => m.undone !== undefined)).is.false;
         });
       }
 

@@ -853,7 +853,7 @@ describe('RewindService whole table', () => {
     for (const run of [{cards: 'same', at: 'action', asked: 1}, {cards: 'shuffle', at: 'action', asked: 1}, {cards: 'shuffle', at: 'research', asked: 2}] as const) {
       await playTable();
       const label = `${run.cards} ${run.at}`;
-      const lastStoppedAt = (Timer as any).lastStoppedAt;
+      const lastStoppedAt = Timer['lastStoppedAt'];
       try {
         // Loading saves only moves the shared last stop forward, so it can lie ahead of now.
         const clock = new FakeClock();
@@ -871,7 +871,7 @@ describe('RewindService whole table', () => {
           expect(p.timer.getElapsed() - p.timer.serialize().sumElapsed, label).gte(0).lt(1000);
         }
       } finally {
-        (Timer as any).lastStoppedAt = lastStoppedAt;
+        Timer['lastStoppedAt'] = lastStoppedAt;
       }
     }
   });

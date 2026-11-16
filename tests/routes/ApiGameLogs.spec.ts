@@ -11,6 +11,7 @@ import {statusCode} from '@/common/http/statusCode';
 import {Phase} from '@/common/Phase';
 import {GameLogs} from '@/server/routes/GameLogs';
 import {IGame} from '@/server/IGame';
+import {LogMessage} from '@/common/logs/LogMessage';
 use(chaiAsPromised);
 
 describe('ApiGameLogs', () => {
@@ -193,11 +194,11 @@ describe('ApiGameLogs', () => {
 
     scaffolding.url = '/api/game/logs?id=' + game.judgeId;
     await scaffolding.get(ApiGameLogs.INSTANCE, res);
-    const messages = JSON.parse(res.content);
+    const messages: Array<LogMessage> = JSON.parse(res.content);
 
-    expect(messages.map((m: any) => m.message)).deep.eq(['All players see this.', 'Yellow only.', 'Orange only.']);
-    expect(messages.map((m: any) => m.owner)).deep.eq([undefined, yellowPlayer.color, orangePlayer.color]);
-    expect(messages.filter((m: any) => m.playerId !== undefined)).is.empty;
+    expect(messages.map((m) => m.message)).deep.eq(['All players see this.', 'Yellow only.', 'Orange only.']);
+    expect(messages.map((m) => m.owner)).deep.eq([undefined, yellowPlayer.color, orangePlayer.color]);
+    expect(messages.filter((m) => m.playerId !== undefined)).is.empty;
     // The stored log keeps its player ids.
     expect(game.gameLog.map((m) => m.playerId)).deep.eq([undefined, yellowPlayer.id, orangePlayer.id]);
   });
@@ -311,9 +312,9 @@ describe('ApiGameLogs', () => {
       for (const generation of ['', '&generation=2']) {
         await read(`id=${game.judgeId}&password=secret&undone=1${generation}`);
         expect(res.statusCode).eq(statusCode.ok);
-        const messages = JSON.parse(res.content);
-        expect(messages.map((m: any) => m.message)).deep.eq(['Generation ${0}', 'Line 1', 'Generation ${0}', 'Line 3', 'Rewound', 'Line 5']);
-        expect(messages.map((m: any) => m.undone)).deep.eq([undefined, undefined, true, true, undefined, undefined]);
+        const messages: Array<LogMessage> = JSON.parse(res.content);
+        expect(messages.map((m) => m.message)).deep.eq(['Generation ${0}', 'Line 1', 'Generation ${0}', 'Line 3', 'Rewound', 'Line 5']);
+        expect(messages.map((m) => m.undone)).deep.eq([undefined, undefined, true, true, undefined, undefined]);
         // The stored log is not marked.
         expect(game.gameLog.some((m) => m.undone !== undefined)).is.false;
       }
@@ -345,7 +346,7 @@ describe('ApiGameLogs', () => {
         await read(`id=${run.viewer(game, first)}&generation=2`);
         expect(res.statusCode, run.who).eq(statusCode.ok);
         expect(texts(), run.who).deep.eq(['Generation ${0}', 'Line 1', 'Rewound', 'Line 5']);
-        expect(JSON.parse(res.content).some((m: any) => m.undone !== undefined)).is.false;
+        expect(JSON.parse(res.content).some((m: LogMessage) => m.undone !== undefined)).is.false;
       }
     });
 

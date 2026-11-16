@@ -1,7 +1,7 @@
 import {expect} from 'chai';
 import {afterEach, vi} from 'vitest';
 import {fetchLogs} from '@/client/utils/fetchLogs';
-import {ViewModel} from '@/common/models/PlayerModel';
+import {PlayerViewModel, ViewModel} from '@/common/models/PlayerModel';
 
 describe('fetchLogs', () => {
   afterEach(() => {
@@ -10,7 +10,7 @@ describe('fetchLogs', () => {
   });
 
   // Runs fetchLogs for a view at `search` and returns the URL it requested.
-  async function requestedUrl(search: string, view: Partial<ViewModel>): Promise<string> {
+  async function requestedUrl(search: string, view: Partial<PlayerViewModel>): Promise<string> {
     window.history.replaceState({}, '', '/judge' + search);
     const fetchStub = vi.fn(async () => ({ok: true, status: 200, json: async () => []}) as unknown as Response);
     vi.stubGlobal('fetch', fetchStub);
@@ -31,7 +31,7 @@ describe('fetchLogs', () => {
   });
 
   it('still sends the seat password', async () => {
-    const url = await requestedUrl('?id=j1&serverId=1', {password: 'abc'} as any);
+    const url = await requestedUrl('?id=j1&serverId=1', {password: 'abc'});
 
     expect(new URL(url, 'http://x').searchParams.get('password')).eq('abc');
   });

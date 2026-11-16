@@ -1,5 +1,5 @@
 import {expect} from 'chai';
-import {afterEach, beforeEach} from 'vitest';
+import {afterEach, beforeEach, vi} from 'vitest';
 import {fetchReplayMoves, fetchReplayView, postJudgeFreeze, postJudgeRewind, postRewind, ReplayResponseError, translateRefusal} from '@/client/utils/fetchReplay';
 import {PreferencesManager} from '@/client/utils/PreferencesManager';
 import {setTranslationsForTest} from '@/client/directives/i18n';
@@ -37,23 +37,21 @@ function incognitoView() {
 }
 
 describe('fetchReplay', () => {
-  let originalFetch: any;
   let urls: Array<string>;
 
   beforeEach(() => {
-    originalFetch = (global as any).fetch;
     urls = [];
-    (global as any).fetch = async (url: string) => {
+    vi.stubGlobal('fetch', async (url: string) => {
       urls.push(url);
       return {ok: true, status: 200, json: () => Promise.resolve(anyBody())};
-    };
+    });
   });
 
   afterEach(() => {
-    (global as any).fetch = originalFetch;
+    vi.unstubAllGlobals();
     window.history.replaceState({}, '', '/');
     PreferencesManager.INSTANCE.set('lang', 'en');
-    delete (window as any)._translations;
+    delete window._translations;
   });
 
   it('sends the judge password from the address bar, the way the judge page does', async () => {
@@ -123,11 +121,11 @@ describe('fetchReplay', () => {
     });
 
     it('translates the fake names of a replay view', async () => {
-      (global as any).fetch = async () => ({
+      vi.stubGlobal('fetch', async () => ({
         ok: true,
         status: 200,
         json: () => Promise.resolve({saveId: 3, viewAs: 'green', view: incognitoView(), privates: []}),
-      });
+      }));
 
       const replay = await fetchReplayView('p-player-id', 3, 'green');
 
@@ -137,7 +135,7 @@ describe('fetchReplay', () => {
 
     it('translates the fake names of the judge\'s replay view, where every seat is hidden', async () => {
       const seats = [fakePublicPlayerModel({color: 'green', name: 'Blue'}), fakePublicPlayerModel({color: 'blue', name: 'Red'})];
-      (global as any).fetch = async () => ({
+      vi.stubGlobal('fetch', async () => ({
         ok: true,
         status: 200,
         json: () => Promise.resolve({
@@ -146,7 +144,7 @@ describe('fetchReplay', () => {
           view: fakeSpectatorModelOf('j-judge-id', seats),
           privates: [],
         }),
-      });
+      }));
 
       const replay = await fetchReplayView('j-judge-id', 3, 'all');
 
@@ -155,7 +153,7 @@ describe('fetchReplay', () => {
 
     it('translates the name of the seat that the judge views as', async () => {
       const seats = [fakePublicPlayerModel({color: 'green', name: 'Blue'}), fakePublicPlayerModel({color: 'blue', name: 'Red'})];
-      (global as any).fetch = async () => ({
+      vi.stubGlobal('fetch', async () => ({
         ok: true,
         status: 200,
         json: () => Promise.resolve({
@@ -170,7 +168,7 @@ describe('fetchReplay', () => {
           }),
           privates: [],
         }),
-      });
+      }));
 
       const replay = await fetchReplayView('j-judge-id', 3, 'blue');
 
@@ -180,7 +178,7 @@ describe('fetchReplay', () => {
 
     it('keeps the real names of the judge\'s replay view once the game ended', async () => {
       const seats = [fakePublicPlayerModel({color: 'green', name: 'Red'}), fakePublicPlayerModel({color: 'blue', name: 'Alice'})];
-      (global as any).fetch = async () => ({
+      vi.stubGlobal('fetch', async () => ({
         ok: true,
         status: 200,
         json: () => Promise.resolve({
@@ -189,7 +187,7 @@ describe('fetchReplay', () => {
           view: {...fakeSpectatorModelOf('j-judge-id', seats), game: fakeGameModel({gameOptions: fakeGameOptionsModel({incognito: true}), phase: Phase.END})},
           privates: [],
         }),
-      });
+      }));
 
       const replay = await fetchReplayView('j-judge-id', 3, 'all');
 
@@ -197,7 +195,7 @@ describe('fetchReplay', () => {
     });
 
     it('translates the fake names of the view that a rewind answers', async () => {
-      (global as any).fetch = async () => ({ok: true, status: 200, json: () => Promise.resolve(incognitoView())});
+      vi.stubGlobal('fetch', async () => ({ok: true, status: 200, json: () => Promise.resolve(incognitoView())}));
 
       const view = await postRewind('p-player-id', 3, 'same');
 
@@ -233,15 +231,15 @@ describe('fetchReplay', () => {
 
   describe('the judge routes', () => {
     const judgeId = 'j-judge-id';
-    let posts: Array<{url: string, init: any}>;
+    let posts: Array<{url: string, init: {method: string, body: string}}>;
 
     beforeEach(() => {
       posts = [];
       // The routes answer the judge's model, which these calls leave to the next poll.
-      (global as any).fetch = async (url: string, init: any) => {
+      vi.stubGlobal('fetch', async (url: string, init: {method: string, body: string}) => {
         posts.push({url, init});
         return {ok: true, status: 200, json: () => Promise.reject(new Error('the body is not read'))};
-      };
+      });
     });
 
     it('post the rewind and the freeze with the password of the address bar', async () => {
@@ -258,10 +256,10 @@ describe('fetchReplay', () => {
 
     it('carry the serverId of the address bar, which keeps an open judge seat from being claimed', async () => {
       window.history.replaceState({}, '', `/judge?id=${judgeId}&serverId=a%26b`);
-      (global as any).fetch = async (url: string) => {
+      vi.stubGlobal('fetch', async (url: string) => {
         urls.push(url);
         return {ok: true, status: 200, json: () => Promise.resolve(anyBody())};
-      };
+      });
 
       await postJudgeRewind(judgeId, 3, 'same', 'back');
       await postJudgeFreeze(judgeId, true);
@@ -287,7 +285,7 @@ describe('fetchReplay', () => {
     });
 
     it('throw what the server refused with', async () => {
-      (global as any).fetch = async () => ({ok: false, status: 400, text: () => Promise.resolve('Bad request: The game is not frozen.')});
+      vi.stubGlobal('fetch', async () => ({ok: false, status: 400, text: () => Promise.resolve('Bad request: The game is not frozen.')}));
 
       for (const call of [() => postJudgeRewind(judgeId, 3, 'same', 'back'), () => postJudgeFreeze(judgeId, false)]) {
         const error = await call().then(() => undefined, (err) => err);
@@ -301,7 +299,7 @@ describe('fetchReplay', () => {
   describe('translateRefusal', () => {
     beforeEach(() => {
       PreferencesManager.INSTANCE.set('lang', 'pl');
-      (window as any)._translations = {'A rewind is already running.': 'Cofanie gry już trwa.'};
+      window._translations = {'A rewind is already running.': 'Cofanie gry już trwa.'};
     });
 
     it('translates the reason the server gives, without the status text before it', () => {

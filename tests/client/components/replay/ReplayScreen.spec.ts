@@ -23,6 +23,8 @@ import {translateMessage} from '@/client/directives/i18n';
 import {LogMessageDataType} from '@/common/logs/LogMessageDataType';
 import {PreferencesManager} from '@/client/utils/PreferencesManager';
 import {LogMessage} from '@/common/logs/LogMessage';
+import {Message} from '@/common/logs/Message';
+import {PlayerInputModel} from '@/common/models/PlayerInputModel';
 import {useFakeLocalStorage} from '../FakeLocalStorage';
 import {REAL_TIME_MAX_MS, REAL_TIME_MIN_MS} from '@/client/utils/replayAutoplay';
 
@@ -31,6 +33,7 @@ const playerId = 'p-blue-id' as PlayerId;
 const finishedGame = {finished: true, canRewind: false, canVoteRewind: false, defaultViewAs: 'all'} as const;
 /** The messages of a move that was made. */
 const played: Array<LogMessage> = [{message: 'Played', data: [], timestamp: 0}];
+type AvailableMoves = Extract<ReplayMovesModel, {status: 'available'}>;
 
 /** A player with something on the table, which is when the home screen shows its actions block. */
 function playedView(overrides: Parameters<typeof fakePlayerViewModel>[0] = {}): PlayerViewModel {
@@ -47,7 +50,6 @@ describe('ReplayScreen', () => {
     config.global.renderStubDefaultSlot = false;
   });
 
-  let originalFetch: any;
   let calls: Array<string>;
   let movesAnswer: ReplayMovesModel;
   /** Holds a view answer back until the returned promise resolves. */
@@ -76,7 +78,6 @@ describe('ReplayScreen', () => {
   }
 
   beforeEach(() => {
-    originalFetch = (global as any).fetch;
     calls = [];
     holdView = undefined;
     playerNames = {};
@@ -93,7 +94,7 @@ describe('ReplayScreen', () => {
       {saveId: 10, messages: []},
       {saveId: 11, messages: []},
     ]};
-    (global as any).fetch = async (url: string, init?: {body?: unknown}) => {
+    vi.stubGlobal('fetch', async (url: string, init?: {body?: unknown}) => {
       calls.push(url);
       if (url.startsWith('api/replay/moves')) {
         await holdMoves?.();
@@ -121,15 +122,15 @@ describe('ReplayScreen', () => {
       await holdView?.(saveId);
       const answer: ReplayViewModel = {saveId, viewAs, view, privates: [], pendingChoice: viewAs === 'all' ? undefined : pastChoice};
       return respond(answer);
-    };
+    });
   });
 
   afterEach(() => {
-    (global as any).fetch = originalFetch;
+    vi.unstubAllGlobals();
     vi.useRealTimers();
     vi.restoreAllMocks();
     PreferencesManager.INSTANCE.set('lang', 'en');
-    delete (window as any)._translations;
+    delete window._translations;
   });
 
   function mountScreen() {
@@ -150,7 +151,7 @@ describe('ReplayScreen', () => {
 
   it('says the game was not found, without a retry', async () => {
     vi.spyOn(console, 'error').mockImplementation(() => {});
-    (global as any).fetch = () => Promise.resolve({ok: false, status: 404, text: () => Promise.resolve('Not found: game not found')});
+    vi.stubGlobal('fetch', () => Promise.resolve({ok: false, status: 404, text: () => Promise.resolve('Not found: game not found')}));
     const wrapper = mountScreen();
     await flushPromises();
     expect(wrapper.text()).to.contain('This game was not found.');
@@ -160,7 +161,7 @@ describe('ReplayScreen', () => {
 
   it('offers a retry when the server cannot be reached', async () => {
     vi.spyOn(console, 'error').mockImplementation(() => {});
-    (global as any).fetch = () => Promise.reject(new TypeError('Failed to fetch'));
+    vi.stubGlobal('fetch', () => Promise.reject(new TypeError('Failed to fetch')));
     const wrapper = mountScreen();
     await flushPromises();
     expect(wrapper.text()).to.contain('Failed to fetch');
@@ -590,16 +591,16 @@ describe('ReplayScreen', () => {
     vi.spyOn(console, 'error').mockImplementation(() => {});
     const wrapper = mountScreen();
     await flushPromises();
-    const working = (global as any).fetch;
-    (global as any).fetch = (url: string) => url.startsWith('api/replay/view') ?
+    const working = global.fetch;
+    vi.stubGlobal('fetch', (url: string) => url.startsWith('api/replay/view') ?
       Promise.resolve({ok: false, status: 404, text: () => Promise.resolve('Save not found')}) :
-      working(url);
+      working(url));
     const panel = () => wrapper.findComponent(ReplayPanel);
     panel().vm.$emit('select', 1);
     panel().vm.$emit('update:viewAs', 'blue');
     await flushPromises();
     // The shallow panel does not render the error slot.
-    expect((wrapper.vm as any).error).to.contain('Save not found');
+    expect(wrapper.vm.error).to.contain('Save not found');
     expect(panel().props('index')).to.equal(0);
     expect(panel().props('viewAs')).to.equal('all');
   });
@@ -608,7 +609,7 @@ describe('ReplayScreen', () => {
     playerNames = {blue: 'Player view name', all: 'Spectator view name'};
     const wrapper = mountScreen();
     await flushPromises();
-    const playerLog = {message: '${0}', data: [{type: LogMessageDataType.PLAYER, value: 'blue'}]} as any;
+    const playerLog: Message = {message: '${0}', data: [{type: LogMessageDataType.PLAYER, value: 'blue'}]};
     expect(translateMessage({...playerLog})).to.equal('Spectator view name');
     wrapper.findComponent(ReplayPanel).vm.$emit('update:viewAs', 'blue');
     await flushPromises();
@@ -620,9 +621,9 @@ describe('ReplayScreen', () => {
 
   it('shows the server message when the view cannot be loaded', async () => {
     vi.spyOn(console, 'error').mockImplementation(() => {});
-    (global as any).fetch = (url: string) => url.startsWith('api/replay/moves') ?
+    vi.stubGlobal('fetch', (url: string) => url.startsWith('api/replay/moves') ?
       respond(movesAnswer) :
-      Promise.resolve({ok: false, status: 404, text: () => Promise.resolve('Save not found')});
+      Promise.resolve({ok: false, status: 404, text: () => Promise.resolve('Save not found')}));
     const wrapper = mountScreen();
     await flushPromises();
     expect(wrapper.text()).to.contain('Save not found');
@@ -636,10 +637,10 @@ describe('ReplayScreen', () => {
       global: {...globalConfig.global, stubs: {PlayerHome: true, SpectatorHome: true, ReplayHands: true}},
     });
     await flushPromises();
-    const working = (global as any).fetch;
-    (global as any).fetch = (url: string) => url.startsWith('api/replay/view') ?
+    const working = global.fetch;
+    vi.stubGlobal('fetch', (url: string) => url.startsWith('api/replay/view') ?
       Promise.resolve({ok: false, status: 404, text: () => Promise.resolve('Save not found')}) :
-      working(url);
+      working(url));
     wrapper.findComponent(ReplayPanel).vm.$emit('select', 1);
     await flushPromises();
     expect(wrapper.find('.replay-panel .replay-error--floating').text()).to.contain('Save not found');
@@ -717,13 +718,13 @@ describe('ReplayScreen', () => {
       await flushPromises();
       wrapper.findComponent(ReplayPanel).vm.$emit('select', 1);
       await flushPromises();
-      const fetchOk = (global as any).fetch;
-      (global as any).fetch = (url: string) => {
+      const fetchOk = global.fetch;
+      vi.stubGlobal('fetch', (url: string) => {
         if (url.startsWith('api/rewind')) {
           return Promise.resolve({ok: false, status: 400, text: () => Promise.resolve('That moment cannot be rewound, nothing was changed')});
         }
         return Promise.resolve({ok: false, status: 500, text: () => Promise.resolve('Server down')});
-      };
+      });
       wrapper.findComponent(RewindControls).vm.$emit('rewind', 'same');
       await flushPromises();
 
@@ -731,13 +732,13 @@ describe('ReplayScreen', () => {
       expect(wrapper.findComponent(ReplayPanel).exists()).is.false;
       expect(wrapper.find('.replay-error').text()).to.contain('Server down');
       expect(wrapper.find('.rewind-refusal').text()).to.contain('nothing was changed');
-      (global as any).fetch = fetchOk;
+      vi.stubGlobal('fetch', fetchOk);
     });
 
     it('shows a refused rewind in the language of the player', async () => {
       vi.spyOn(console, 'error').mockImplementation(() => {});
       PreferencesManager.INSTANCE.set('lang', 'pl');
-      (window as any)._translations = {'A rewind is already running.': 'Cofanie gry już trwa.'};
+      window._translations = {'A rewind is already running.': 'Cofanie gry już trwa.'};
       rewindAnswer = () => Promise.resolve({ok: false, status: 400, text: () => Promise.resolve('Bad request: A rewind is already running.')});
       const wrapper = mountRewindable();
       await flushPromises();
@@ -884,14 +885,14 @@ describe('ReplayScreen', () => {
   });
 
   describe('on the live game page', () => {
-    const liveMoves = {status: 'available', finished: false, canRewind: true, canVoteRewind: false, defaultViewAs: 'blue', moves: [
+    const liveMoves: AvailableMoves = {status: 'available', finished: false, canRewind: true, canVoteRewind: false, defaultViewAs: 'blue', moves: [
       {saveId: 10, messages: played},
       {saveId: 11, messages: played},
-    ]} as const;
-    const waitingFor = {type: 'option', title: 'Take your action', buttonLabel: 'OK'} as any;
+    ]};
+    const waitingFor: PlayerInputModel = {type: 'option', title: 'Take your action', buttonLabel: 'OK'};
 
     beforeEach(() => {
-      movesAnswer = liveMoves as any;
+      movesAnswer = liveMoves;
     });
 
     function liveView(gameAge = 3): PlayerViewModel {
@@ -973,10 +974,10 @@ describe('ReplayScreen', () => {
       const wrapper = mountLive();
       expand(wrapper);
       await flushPromises();
-      const working = (global as any).fetch;
-      (global as any).fetch = (url: string) => url.startsWith('api/replay/view') ?
+      const working = global.fetch;
+      vi.stubGlobal('fetch', (url: string) => url.startsWith('api/replay/view') ?
         Promise.resolve({ok: false, status: 400, text: () => Promise.resolve('Save not found')}) :
-        working(url);
+        working(url));
       panel(wrapper).vm.$emit('select', 1);
       await flushPromises();
       expect(wrapper.findComponent(WaitingFor).exists()).is.true;
@@ -986,7 +987,7 @@ describe('ReplayScreen', () => {
 
     it('keeps the live game and shows the reason when the moves cannot be loaded', async () => {
       vi.spyOn(console, 'error').mockImplementation(() => {});
-      (global as any).fetch = () => Promise.resolve({ok: false, status: 400, text: () => Promise.resolve('Not your game')});
+      vi.stubGlobal('fetch', () => Promise.resolve({ok: false, status: 400, text: () => Promise.resolve('Not your game')}));
       const wrapper = mountLive();
       expand(wrapper);
       await flushPromises();
@@ -1145,10 +1146,10 @@ describe('ReplayScreen', () => {
     });
 
     describe('at a table that votes on a rewind', () => {
-      const voteMoves = {
+      const voteMoves: AvailableMoves = {
         ...liveMoves, canRewind: false, canVoteRewind: true, viewerColor: 'blue',
         moves: [{saveId: 10, messages: played, movers: ['blue']}, {saveId: 11, messages: played, movers: ['blue']}],
-      } as const;
+      };
       // A running game's model leaves the players' ids out.
       const red = () => fakePublicPlayerModel({color: 'red', id: undefined, name: 'red'});
 
@@ -1172,7 +1173,7 @@ describe('ReplayScreen', () => {
       const open = (wrapper: ReturnType<typeof mountLive>) => wrapper.find('.replay-collapse').trigger('click');
 
       beforeEach(() => {
-        movesAnswer = voteMoves as any;
+        movesAnswer = voteMoves;
       });
 
       it('shows the vote banner to the players of a table with Player undo, and to no one else', async () => {
@@ -1315,7 +1316,7 @@ describe('ReplayScreen', () => {
         expect(wrapper.find('.replay-error--floating').text()).equals('A rewind vote is already open.');
 
         voteOpen = false;
-        await (wrapper.findComponent(RewindVoteBanner).vm as any).refresh();
+        await wrapper.findComponent(RewindVoteBanner).vm.refresh();
         await flushPromises();
         expect(wrapper.find('.replay-error--floating').exists()).is.false;
       });
@@ -1338,16 +1339,16 @@ describe('ReplayScreen', () => {
 
   describe('on the judge page', () => {
     const judgeId = 'j-judge-id' as JudgeId;
-    const judgeMoves = {status: 'available', finished: false, canRewind: true, canVoteRewind: false, defaultViewAs: 'all', moves: [
+    const judgeMoves: AvailableMoves = {status: 'available', finished: false, canRewind: true, canVoteRewind: false, defaultViewAs: 'all', moves: [
       {saveId: 10, messages: played},
       {saveId: 11, messages: played},
-    ]} as const;
+    ]};
     const hour = 3_600_000;
     const withClock = (color: 'blue' | 'red', name: string, sumElapsed: number) =>
       fakePublicPlayerModel({color, name, id: undefined, timer: {...fakeTimerModel(), sumElapsed}});
 
     beforeEach(() => {
-      movesAnswer = judgeMoves as any;
+      movesAnswer = judgeMoves;
       vi.stubGlobal('location', {href: `http://localhost/judge?id=${judgeId}`, search: '', reload: vi.fn()});
     });
 
@@ -1587,11 +1588,11 @@ describe('ReplayScreen', () => {
     });
 
     describe('the undone moves', () => {
-      const withUndone = {...judgeMoves, moves: [
+      const withUndone: AvailableMoves = {...judgeMoves, moves: [
         {saveId: 10, messages: played},
         {saveId: 11, messages: played, undone: true},
         {saveId: 12, messages: played},
-      ]} as any;
+      ]};
       const movesCalls = () => calls.filter((url) => url.startsWith('api/replay/moves'));
       const switchOf = (wrapper: ReturnType<typeof mountJudge>) => wrapper.find('.replay-show-undone input');
 
@@ -1609,7 +1610,7 @@ describe('ReplayScreen', () => {
         expect(wrapper.findComponent(JudgeHome).props('showUndone')).is.true;
         expect(wrapper.findAll('.replay-move-undone')).to.have.length(1);
 
-        movesAnswer = judgeMoves as any;
+        movesAnswer = judgeMoves;
         await switchOf(wrapper).setValue(false);
         await flushPromises();
         expect(movesCalls()[2]).to.equal(`api/replay/moves?id=${judgeId}`);
@@ -1649,7 +1650,7 @@ describe('ReplayScreen', () => {
         await flushPromises();
 
         // Move 12 is index 1 once the undone move is out of the list.
-        const withoutUndone = {...judgeMoves, moves: [{saveId: 10, messages: played}, {saveId: 12, messages: played}]} as any;
+        const withoutUndone: AvailableMoves = {...judgeMoves, moves: [{saveId: 10, messages: played}, {saveId: 12, messages: played}]};
         movesAnswer = withoutUndone;
         await switchOf(wrapper).setValue(false);
         await flushPromises();
@@ -1686,7 +1687,7 @@ describe('ReplayScreen', () => {
           holdMoves = () => new Promise((resolve) => {
             release = resolve;
           });
-          movesAnswer = {...judgeMoves, moves: remaining.map((saveId) => ({saveId, messages: played}))} as any;
+          movesAnswer = {...judgeMoves, moves: remaining.map((saveId) => ({saveId, messages: played}))};
           await switchOf(wrapper).setValue(false);
           await flushPromises();
           expect(wrapper.findComponent(SpectatorHome).exists(), String(remaining)).is.true;
@@ -1704,7 +1705,7 @@ describe('ReplayScreen', () => {
       it('are offered to the judge of a game that allows it and to the solo player, and to no one else', async () => {
         // A player's moves answer allows a rewind only to the player of a solo game.
         for (const [participantId, canRewind, expected] of [[judgeId, true, true], [judgeId, false, false], [playerId, true, true], [playerId, false, false], [id, true, false]] as const) {
-          movesAnswer = {...judgeMoves, canRewind} as any;
+          movesAnswer = {...judgeMoves, canRewind};
           const wrapper = shallowMount(ReplayScreen, {...globalConfig, props: {participantId}});
           await flushPromises();
           expect(wrapper.findComponent(ReplayPanel).props('canShowUndone'), `${participantId} ${canRewind}`).equals(expected);

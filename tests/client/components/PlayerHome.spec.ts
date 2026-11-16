@@ -14,6 +14,7 @@ import {CardName} from '@/common/cards/CardName';
 import {Phase} from '@/common/Phase';
 import {LogMessage} from '@/common/logs/LogMessage';
 import {LogMessageType} from '@/common/logs/LogMessageType';
+import {PlayerId} from '@/common/Types';
 import raw_settings from '@/genfiles/settings.json';
 
 describe('PlayerHome', () => {
@@ -70,7 +71,7 @@ describe('PlayerHome', () => {
             getVisibilityState: () => true,
             setVisibilityState: () => {},
           },
-        } as any,
+        },
         props: {playerView, replay, settings: raw_settings, ...extra},
       });
     }
@@ -96,7 +97,7 @@ describe('PlayerHome', () => {
     it('shows no log when replaying, unless it is given the live log to show', () => {
       expect(mountHome(playedView(), true).findComponent(LogPanel).exists()).is.false;
 
-      const log = fakeViewModel({id: 'j-judge-id' as any});
+      const log = fakeViewModel({id: 'j-judge-id'});
       const panel = mountHome(playedView(), true, {log, showUndone: true}).findComponent(LogPanel);
       expect(panel.props('viewModel')).to.deep.equal(log);
       expect(panel.props('showUndone')).is.true;
@@ -129,10 +130,10 @@ describe('PlayerHome', () => {
 
   describe('game results link', () => {
     function resultsHref(id: string, password?: string): string | undefined {
-      const playerView = fakePlayerViewModel({id: id as any, password, game: fakeGameModel({phase: Phase.END, spectatorId: 's-spectator-id'})});
+      const playerView = fakePlayerViewModel({id: id as PlayerId, password, game: fakeGameModel({phase: Phase.END, spectatorId: 's-spectator-id'})});
       const wrapper = shallowMount(PlayerHome, {
         ...globalConfig,
-        parentComponent: {methods: {getVisibilityState: () => true, setVisibilityState: () => {}}} as any,
+        parentComponent: {methods: {getVisibilityState: () => true, setVisibilityState: () => {}}},
         props: {playerView, settings: raw_settings},
       });
       return wrapper.findAll('a').find((a) => a.text() === 'Go to game results')?.attributes('href');

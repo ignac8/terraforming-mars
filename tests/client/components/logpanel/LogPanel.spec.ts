@@ -3,7 +3,7 @@ import {expect} from 'chai';
 import {globalConfig} from '../getLocalVue';
 import LogPanel from '@/client/components/logpanel/LogPanel.vue';
 import LogMessageComponent from '@/client/components/logpanel/LogMessageComponent.vue';
-import {fakeViewModel} from '../testHelpers';
+import {fakePlayerViewModel, fakeViewModel} from '../testHelpers';
 import {LogMessage} from '@/common/logs/LogMessage';
 import {LogMessageType} from '@/common/logs/LogMessageType';
 import {LogMessageDataType} from '@/common/logs/LogMessageDataType';
@@ -81,7 +81,7 @@ describe('LogPanel', () => {
   it('sends the seat password with the log request', async () => {
     const wrapper = shallowMount(LogPanel, {
       ...globalConfig,
-      props: {viewModel: fakeViewModel({password: 'secret'} as any)},
+      props: {viewModel: fakePlayerViewModel({password: 'secret'})},
     });
     await flushLogs(wrapper);
 
@@ -94,9 +94,9 @@ describe('LogPanel', () => {
       message.undone = undone;
       return message;
     };
-    (global as any).fetch = (url: string) => {
-      fetchCalls.push(url);
-      return Promise.resolve({ok: true, json: () => Promise.resolve([line('kept'), line('hidden', true)])});
+    global.fetch = (url: string | URL | Request) => {
+      fetchCalls.push(url as unknown as string);
+      return Promise.resolve({ok: true, json: () => Promise.resolve([line('kept'), line('hidden', true)])} as Response);
     };
     const wrapper = mount(LogPanel, {
       ...globalConfig,
@@ -143,7 +143,7 @@ describe('LogPanel', () => {
       message.owner = owner;
       return message;
     };
-    (wrapper.vm as any).messages.push(line('first', 'red'), line('second'), line('third', 'blue'));
+    wrapper.vm.messages.push(line('first', 'red'), line('second'), line('third', 'blue'));
     await wrapper.vm.$nextTick();
 
     const lines = wrapper.findAll('li');
@@ -185,7 +185,7 @@ describe('LogPanel', () => {
       const wrapper = mountReplay(log, 3);
       await flushLogs(wrapper);
 
-      (wrapper.vm as any).selectGeneration(1);
+      wrapper.vm.selectGeneration(1);
       await flushLogs(wrapper);
 
       expect(fetchCalls).is.empty;
@@ -200,7 +200,7 @@ describe('LogPanel', () => {
       await flushLogs(wrapper);
       expect(texts(wrapper)).deep.eq(['Generation 3', 'three']);
 
-      (wrapper.vm as any).selectGeneration(2);
+      wrapper.vm.selectGeneration(2);
       await wrapper.setProps({viewModel: viewIn(3), replayLog: [...log, line('four')]});
       await flushLogs(wrapper);
       expect(texts(wrapper)).deep.eq(['Generation 2', 'two', 'twice']);
@@ -209,13 +209,13 @@ describe('LogPanel', () => {
     it('goes to the newest generation when the replay goes back past the one chosen', async () => {
       const wrapper = mountReplay(log, 3);
       await flushLogs(wrapper);
-      (wrapper.vm as any).selectGeneration(2);
+      wrapper.vm.selectGeneration(2);
       await flushLogs(wrapper);
 
       await wrapper.setProps({viewModel: viewIn(1), replayLog: log.slice(0, 2)});
       await flushLogs(wrapper);
 
-      expect((wrapper.vm as any).selectedGeneration).eq(1);
+      expect(wrapper.vm.selectedGeneration).eq(1);
       expect(texts(wrapper)).deep.eq(['Generation 1', 'one']);
     });
 

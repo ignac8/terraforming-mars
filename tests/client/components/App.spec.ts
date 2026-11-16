@@ -7,6 +7,7 @@ import App from '@/client/components/App.vue';
 import {setTranslationsForTest, translateMessage} from '@/client/directives/i18n';
 import {PreferencesManager} from '@/client/utils/PreferencesManager';
 import {LogMessageDataType} from '@/common/logs/LogMessageDataType';
+import {Message} from '@/common/logs/Message';
 import {fakeGameModel, fakeGameOptionsModel, fakePlayerViewModel, fakePublicPlayerModel} from '@tests/client/components/testHelpers';
 
 // The real replay screen would load the whole game UI, which isn't what the routing tests are about.
@@ -88,7 +89,7 @@ describe('App', () => {
       expect(wrapper.find('.stub-judge').exists(), String(judgeUndo)).equals(!judgeUndo);
       if (judgeUndo) {
         expect(screen.props('participantId')).eq('j1');
-        expect(screen.props('liveJudge')).to.equal((wrapper.vm as any).judge);
+        expect(screen.props('liveJudge')).to.equal(wrapper.vm.judge);
       }
     }
   });
@@ -96,7 +97,7 @@ describe('App', () => {
   it('keeps a finished judge game on the judge screen', async () => {
     const {wrapper, alertStub} = await mountJudgePage('end');
 
-    expect((wrapper.vm as any).screen).eq('judge-home');
+    expect(wrapper.vm.screen).eq('judge-home');
     expect(alertStub.mock.calls).is.empty;
   });
 
@@ -124,8 +125,8 @@ describe('App', () => {
   it('names players in messages on the judge page', async () => {
     await mountJudgePage('action');
 
-    const message = {message: 'Hello ${0}', data: [{type: LogMessageDataType.PLAYER, value: 'red'}]};
-    expect(translateMessage(message as any)).eq('Hello Alice');
+    const message: Message = {message: 'Hello ${0}', data: [{type: LogMessageDataType.PLAYER, value: 'red'}]};
+    expect(translateMessage(message)).eq('Hello Alice');
   });
 
   // Mounts the page of `path` for an incognito game, served a model where the opponent shows as the fake name "Red".
@@ -160,8 +161,8 @@ describe('App', () => {
     });
 
     expect(wrapper.vm.playerView?.players.map((p: {name: string}) => p.name)).deep.eq(['Alice', 'Czerwony']);
-    const message = {message: 'Hello ${0}', data: [{type: LogMessageDataType.PLAYER, value: 'blue'}]};
-    expect(translateMessage(message as any)).eq('Hello Czerwony');
+    const message: Message = {message: 'Hello ${0}', data: [{type: LogMessageDataType.PLAYER, value: 'blue'}]};
+    expect(translateMessage(message)).eq('Hello Czerwony');
   });
 
   it('translates the fake names on a spectator page', async () => {
@@ -189,8 +190,8 @@ describe('App', () => {
     });
 
     expect(wrapper.vm.judge?.players.map((p: {name: string}) => p.name)).deep.eq(['Niebieski', 'Czerwony']);
-    const message = {message: 'Hello ${0}', data: [{type: LogMessageDataType.PLAYER, value: 'blue'}]};
-    expect(translateMessage(message as any)).eq('Hello Czerwony');
+    const message: Message = {message: 'Hello ${0}', data: [{type: LogMessageDataType.PLAYER, value: 'blue'}]};
+    expect(translateMessage(message)).eq('Hello Czerwony');
   });
 
   it('replaces a stale judge password in the address bar', async () => {
@@ -227,7 +228,7 @@ describe('App', () => {
     await mountJudgePage('action', '/judge?id=j1&serverId=1');
 
     // The page rewrites the address bar by passing the model as the history state.
-    expect(replaceState.mock.calls.filter((call) => (call[0] as any)?.id === 'j1')).is.empty;
+    expect(replaceState.mock.calls.filter((call) => (call[0] as {id?: string} | null)?.id === 'j1')).is.empty;
     expect(window.location.search).eq('?id=j1&serverId=1');
   });
 
@@ -235,7 +236,7 @@ describe('App', () => {
     const {wrapper, alertStub} = await mountJudgePage('action');
     vi.stubGlobal('fetch', vi.fn(async () => ({ok: false, status: 401}) as Response));
 
-    await (wrapper.vm as any).updateJudge();
+    await wrapper.vm.updateJudge();
 
     expect(alertStub.mock.calls).deep.eq([['Incorrect judge password. Reopen the judge page from your browser history, or ask the organizer for the judge link with its password.']]);
   });

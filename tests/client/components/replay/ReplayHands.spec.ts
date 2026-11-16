@@ -9,6 +9,8 @@ import {ReplayPrivates} from '@/common/replay/ReplayModel';
 import {CardName} from '@/common/cards/CardName';
 import {ParticipantId} from '@/common/Types';
 
+type CardWrapper = VueWrapper<InstanceType<typeof Card>>;
+
 function privatesOf(color: ReplayPrivates['color'], cardsInHand: Array<CardName>): ReplayPrivates {
   return {
     color,
@@ -42,7 +44,7 @@ describe('ReplayHands', () => {
     const players = wrapper.findAll('.replay-hands-player');
     expect(players).has.length(2);
     const cardNames = (player: typeof players[number]): Array<string> =>
-      player.findAllComponents(Card).map((card: {props(): any}) => card.props().card.name);
+      player.findAllComponents(Card).map((card: CardWrapper) => card.props().card.name);
     expect(cardNames(players[0])).to.deep.equal([CardName.ALGAE, CardName.BIRDS]);
     expect(cardNames(players[1])).to.deep.equal([CardName.ANTS]);
   });
@@ -68,7 +70,7 @@ describe('ReplayHands', () => {
     const players = wrapper.findAll('.replay-hands-player');
     const choice = players[0].find('.judge-pending-choice');
     expect(choice.find('.judge-pending-choice-title').text()).eq('Select card(s) to buy');
-    expect(choice.findAllComponents(Card).map((card: {props(): any}) => card.props().card.name)).to.deep.equal([CardName.COMET]);
+    expect(choice.findAllComponents(Card).map((card: CardWrapper) => card.props().card.name)).to.deep.equal([CardName.COMET]);
     expect(players[1].find('.judge-pending-choice').exists()).is.false;
   });
 
@@ -130,7 +132,7 @@ describe('ReplayHands', () => {
     }
 
     function cardNames(wrapper: VueWrapper): Array<string> {
-      return wrapper.findAllComponents(Card).map((card: {props(): any}) => card.props().card.name);
+      return wrapper.findAllComponents(Card).map((card) => card.props().card.name);
     }
 
     it('folds away one player but keeps the name', async () => {

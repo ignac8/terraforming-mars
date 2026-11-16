@@ -2,6 +2,7 @@ import {expect} from 'chai';
 import {translateFakeNames} from '@/client/utils/incognitoNames';
 import {setTranslationsForTest} from '@/client/directives/i18n';
 import {PreferencesManager} from '@/client/utils/PreferencesManager';
+import {CardName} from '@/common/cards/CardName';
 import {Phase} from '@/common/Phase';
 import {JudgeModel} from '@/common/models/JudgeModel';
 import {PlayerViewModel} from '@/common/models/PlayerModel';
@@ -60,7 +61,7 @@ describe('incognitoNames', () => {
 
   it('leaves a card that shares the label alone', () => {
     const view = incognitoView();
-    view.players[1].tableau = [{name: 'Red'} as any];
+    view.players[1].tableau = [{name: 'Red' as CardName}];
 
     const result = translateFakeNames(view);
 
