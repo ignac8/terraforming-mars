@@ -5,13 +5,14 @@ import {MarsBot} from '../../../src/server/automa/MarsBot';
 import {BonusCardId} from '../../../src/common/automa/AutomaTypes';
 import {BoardName} from '../../../src/common/boards/BoardName';
 import {MarsBotBonusCard} from '../../../src/server/automa/MarsBotBonusCard';
+import {IProjectCard} from '../../../src/server/cards/IProjectCard';
 
 function getMarsBot(game: ReturnType<typeof testGame>[0]): MarsBot {
   return (game.automaHooks as AutomaGameHooks).marsBot;
 }
 
-function hasBonusCard(deck: Array<any>, id: BonusCardId): boolean {
-  return deck.some((c: MarsBotBonusCard | any) => (c as MarsBotBonusCard).id === id);
+function hasBonusCard(deck: Array<IProjectCard | MarsBotBonusCard>, id: BonusCardId): boolean {
+  return deck.some((c) => (c as MarsBotBonusCard).id === id);
 }
 
 describe('ActionDeckColonies (C-10, C-11)', () => {

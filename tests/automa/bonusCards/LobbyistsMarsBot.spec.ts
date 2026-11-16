@@ -7,6 +7,7 @@ import {createBaseBonusCards} from '@/server/automa/MarsBotBonusCard';
 import {MarsBotBonusDeck} from '@/server/automa/MarsBotBonusDeck';
 import {MarsBotBonusResolver} from '@/server/automa/MarsBotBonusResolver';
 import {MarsBotTilePlacer} from '@/server/automa/MarsBotTilePlacer';
+import {setTemperature} from '../../TestingUtils';
 import {createAutomaGame} from '../corps/CorpGame';
 
 describe('LobbyistsMarsBot', () => {
@@ -14,7 +15,7 @@ describe('LobbyistsMarsBot', () => {
   it('option (a): temp 1-2 from completion → raise 2 + destroy', () => {
     const {game, human, marsBot} = createAutomaGame();
     // Temperature at +4 (2 steps from max +8)
-    (game as any).temperature = 4;
+    setTemperature(game, 4);
 
     const cards = createBaseBonusCards();
     const b06 = cards.find((c) => c.id === BonusCardId.B06_LOBBYISTS)!;
@@ -47,7 +48,7 @@ describe('LobbyistsMarsBot', () => {
   // Ocean placement tiebreakers (rulebook page 7)
   it('breaks the tie between ocean spaces by placement bonus icons', () => {
     const {game, human, marsBot} = createAutomaGame();
-    (game as any).temperature = -30;
+    setTemperature(game, -30);
     // Spaces 07 (no bonus) and 43 (one plant) each touch two oceans; 07 comes first on the board.
     for (const id of ['13', '06', '34', '44']) {
       game.simpleAddTile(human, game.board.getSpaceOrThrow(id as SpaceId), {tileType: TileType.OCEAN});

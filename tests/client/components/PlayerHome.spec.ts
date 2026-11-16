@@ -69,7 +69,7 @@ describe('PlayerHome', () => {
             getVisibilityState: () => true,
             setVisibilityState: () => {},
           },
-        } as any,
+        },
         props: {playerView, replay, settings: raw_settings, ...extra},
       });
     }

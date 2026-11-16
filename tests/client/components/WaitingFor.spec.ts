@@ -5,6 +5,7 @@ import {expect} from 'chai';
 import {afterEach, vi} from 'vitest';
 import {SoundManager} from '@/client/utils/SoundManager';
 import WaitingFor from '@/client/components/WaitingFor.vue';
+import {vueRoot} from '@/client/components/vueRoot';
 import {RecursivePartial} from '@/common/utils/utils';
 import {PlayerViewModel, PublicPlayerModel} from '@/common/models/PlayerModel';
 import {WaitingForModel} from '@/common/models/WaitingForModel';
@@ -234,9 +235,9 @@ describe('WaitingFor', () => {
         requestId: 'request-1',
       },
     });
-    const root = wrapper.vm.$root as any;
+    const root = vueRoot(wrapper.vm);
     root.showAlert = (_title: string, _message: string, cb: () => void = () => {}) => cb();
-    (wrapper.vm as any).onsave({type: 'option'});
+    wrapper.vm.onsave({type: 'option'});
     await flushPromises();
     return fetchStub;
   }
@@ -317,7 +318,7 @@ describe('WaitingFor', () => {
   });
 
   describe('at a required prompt', () => {
-    const requiredPrompt = {type: 'option', title: 'test', buttonLabel: 'save'} as any;
+    const requiredPrompt: PlayerInputModel = {type: 'option', title: 'test', buttonLabel: 'save'};
 
     function viewWith(): PlayerViewModel {
       return {
@@ -329,11 +330,11 @@ describe('WaitingFor', () => {
     }
 
     // `rootMethods` stand in for the App methods WaitingFor calls through vueRoot.
-    function mountAt(view: PlayerViewModel, waitingfor: unknown, rootMethods: Record<string, unknown> = {}) {
+    function mountAt(view: PlayerViewModel, waitingfor: PlayerInputModel | undefined, rootMethods: Record<string, unknown> = {}) {
       return mount(WaitingFor, {
         ...globalConfig,
         global: {...globalConfig.global, stubs: {'PlayerInputFactory': PlayerInputFactoryStub}, mocks: rootMethods},
-        props: {playerView: view, waitingfor: waitingfor as any},
+        props: {playerView: view, waitingfor},
       });
     }
 
@@ -382,7 +383,7 @@ describe('WaitingFor', () => {
           }
           swapped = true;
           // What App does with a fetched view.
-          (wrapper.vm.$root as any).playerView = resumed;
+          vueRoot(wrapper.vm).playerView = resumed;
           await wrapper.setProps({playerView: resumed, waitingfor: requiredPrompt});
           return true;
         },
@@ -400,7 +401,7 @@ describe('WaitingFor', () => {
       const view = viewWith();
       const updatePlayer = vi.fn(async () => {
         // What App does with a fetched view.
-        (wrapper.vm.$root as any).playerView = {...view, waitingFor: requiredPrompt};
+        vueRoot(wrapper.vm).playerView = {...view, waitingFor: requiredPrompt};
         return true;
       });
       const wrapper = mountAt(view, {...requiredPrompt, optional: true}, {updatePlayer});

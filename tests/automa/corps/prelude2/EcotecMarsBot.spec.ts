@@ -73,7 +73,7 @@ describe('EcotecMarsBot', () => {
     expect(marsBot.corpSpecificState.get('plantResources')).to.eq(3);
     const mcBefore = marsBot.turnResolver.megacredits;
     // Remove 4 plants — should take 3 from card, excess lost, NOT from MC supply
-    marsBot.player.stock.add('plants' as any, -4);
+    marsBot.player.stock.add(Resource.PLANTS, -4);
     expect(marsBot.corpSpecificState.get('plantResources')).to.eq(0);
     expect(marsBot.turnResolver.megacredits).to.eq(mcBefore); // No MC deducted
   });
@@ -83,7 +83,7 @@ describe('EcotecMarsBot', () => {
     const corp = getMarsBotCorp(CardName.ECOTEC)!;
     marsBot.setCorpAndSetup(corp);
     marsBot.turnResolver.megacredits = 10;
-    marsBot.player.stock.add('steel' as any, -3);
+    marsBot.player.stock.add(Resource.STEEL, -3);
     expect(marsBot.turnResolver.megacredits).to.eq(7);
   });
 

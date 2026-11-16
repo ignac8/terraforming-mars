@@ -196,7 +196,7 @@ describe('MarsBot Integration', () => {
   describe('Game end model', () => {
     it('model includes vpBreakdown at game end', () => {
       const {game, marsBot} = createAutomaGame();
-      (game as any).phase = Phase.END;
+      game.phase = Phase.END;
 
       const model = marsBot.toModel();
       expect(model.vpBreakdown).to.not.be.undefined;
@@ -205,7 +205,7 @@ describe('MarsBot Integration', () => {
 
     it('model does not include vpBreakdown during play', () => {
       const {game, marsBot} = createAutomaGame();
-      (game as any).phase = Phase.ACTION;
+      game.phase = Phase.ACTION;
 
       const model = marsBot.toModel();
       expect(model.vpBreakdown).to.not.be.undefined;
@@ -213,7 +213,7 @@ describe('MarsBot Integration', () => {
 
     it('instantWin is true at gen 20', () => {
       const {game, marsBot} = createAutomaGame();
-      (game as any).generation = 20;
+      game.generation = 20;
       expect(marsBot.toModel().instantWin).to.be.true;
     });
 
@@ -221,11 +221,11 @@ describe('MarsBot Integration', () => {
       const {game, marsBot} = createAutomaGame();
       marsBot.player.setTerraformRating(30);
       marsBot.turnResolver.megacredits = 12;
-      (game as any).generation = 14; // 1 VP per 6 MC
+      game.generation = 14; // 1 VP per 6 MC
       const spaces = game.board.getAvailableSpacesOnLand(marsBot.player);
       game.simpleAddTile(marsBot.player, spaces[5], {tileType: TileType.GREENERY});
       game.claimedMilestones.push({player: marsBot.player, milestone: game.milestones[0]});
-      (game as any).phase = Phase.END;
+      game.phase = Phase.END;
 
       const vp = marsBot.toModel().vpBreakdown!;
       expect(vp.terraformRating).to.eq(30);

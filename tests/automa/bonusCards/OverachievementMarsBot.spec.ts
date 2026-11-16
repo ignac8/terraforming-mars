@@ -30,7 +30,7 @@ describe('OverachievementMarsBot', () => {
 
   it('does NOT try awards when generation < 6', () => {
     const {game, human, marsBot} = createAutomaGame();
-    (game as any).generation = 4;
+    game.generation = 4;
     // MarsBot can't claim any milestone (all at 0)
     // Gen < 6 means no award attempt
 

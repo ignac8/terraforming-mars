@@ -64,7 +64,7 @@ describe('TeractorMarsBot', () => {
   it('replaces the transparent cubes with 18 white cubes on track 6', () => {
     const corp = getMarsBotCorp(CardName.TERACTOR)!;
     expect(corp.trackCubes!.length).to.eq(18);
-    expect(corp.trackCubes!.every((c: any) => c.trackIndex === 5 && c.cubeType === 'white')).to.be.true;
+    expect(corp.trackCubes!.every((c) => 'trackIndex' in c && c.trackIndex === 5 && c.cubeType === 'white')).to.be.true;
   });
 
   it('gains 2 M€ per Earth track advance', () => {

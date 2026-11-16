@@ -14,8 +14,8 @@ describe('PartyPoliticsMarsBot', () => {
     const reserveBefore = turmoil.delegateReserve.get(marsBotPlayer);
     // Trigger the Party Politics bonus card directly
     const card = createBonusCard(BonusCardId.B21_PARTY_POLITICS);
-    // Access private bonusResolver via type cast for testing
-    (marsBot as any).bonusResolver.resolve(card);
+    // Access private bonusResolver for testing
+    marsBot['bonusResolver'].resolve(card);
 
     const reserveAfter = turmoil.delegateReserve.get(marsBotPlayer);
     // At least 1 delegate placed (possibly 2 if T-8 triggered)
@@ -49,7 +49,7 @@ describe('PartyPoliticsMarsBot', () => {
       game.projectDeck.drawPile.push(targetCard);
       const reserveBefore = turmoil.delegateReserve.get(marsBotPlayer);
       const card = createBonusCard(BonusCardId.B21_PARTY_POLITICS);
-      (marsBot as any).bonusResolver.resolve(card);
+      marsBot['bonusResolver'].resolve(card);
       const reserveAfter = turmoil.delegateReserve.get(marsBotPlayer);
       // Should have placed 2 delegates
       expect(reserveBefore - reserveAfter).to.be.at.least(2);

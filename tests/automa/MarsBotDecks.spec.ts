@@ -61,7 +61,7 @@ describe('MarsBot decks', () => {
     const corp = getMarsBotCorp(CardName.ECOLINE)!;
     marsBot.setCorpAndSetup(corp);
     // With the random draw at 0, the card goes on top instead of at the bottom
-    (marsBot as any).random = new ConstRandom(0);
+    Reflect.set(marsBot, 'random', new ConstRandom(0));
 
     corp.beforeActionPhase!(marsBot);
 
@@ -73,7 +73,7 @@ describe('MarsBot decks', () => {
     const {game, marsBot} = createAutomaGame();
     const corp = getMarsBotCorp(CardName.TERRALABS_RESEARCH)!;
     marsBot.setCorpAndSetup(corp);
-    (marsBot as any).random = new ConstRandom(0);
+    Reflect.set(marsBot, 'random', new ConstRandom(0));
     const topCard = game.projectDeck.drawPile[game.projectDeck.drawPile.length - 1];
 
     corp.beforeActionPhase!(marsBot);
@@ -84,7 +84,7 @@ describe('MarsBot decks', () => {
 
   it('shuffles UNMI\'s Government Subsidy into the bonus deck', () => {
     const {marsBot} = createAutomaGame();
-    (marsBot as any).random = new ConstRandom(0);
+    Reflect.set(marsBot, 'random', new ConstRandom(0));
 
     marsBot.setCorpAndSetup(getMarsBotCorp(CardName.UNITED_NATIONS_MARS_INITIATIVE)!);
 
@@ -180,7 +180,7 @@ describe('MarsBot decks', () => {
   it('puts Tycho Magnetics\' Interface Hyperlink at the bottom of the bonus deck', () => {
     const {marsBot} = createAutomaGame();
     // A shuffle would put the card on top with this random draw
-    (marsBot as any).random = new ConstRandom(0.99);
+    Reflect.set(marsBot, 'random', new ConstRandom(0.99));
 
     marsBot.setCorpAndSetup(getMarsBotCorp(CardName.TYCHO_MAGNETICS)!);
 
@@ -327,7 +327,7 @@ describe('MarsBot decks', () => {
     ];
 
     for (let i = 0; i < 46; i++) {
-      const rng = {next: () => 0, nextInt: (n: number) => i % n} as any;
+      const rng = {next: () => 0, nextInt: (n: number) => i % n};
       const corp = MarsBotCorpResolver.selectCorp(CardName.CREDICOR, game.gameOptions, rng);
       expect(expansionCorps).does.not.include(corp.name);
     }

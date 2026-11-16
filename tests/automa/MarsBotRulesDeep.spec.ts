@@ -3,6 +3,7 @@ import {testGame} from '../TestGame';
 import {TestPlayer} from '../TestPlayer';
 import {IGame} from '../../src/server/IGame';
 import {MarsBot} from '../../src/server/automa/MarsBot';
+import {IProjectCard} from '../../src/server/cards/IProjectCard';
 import {MarsBotBoard} from '../../src/server/automa/MarsBotBoard';
 import {MarsBotTurnResolver} from '../../src/server/automa/MarsBotTurnResolver';
 import {MarsBotTilePlacer} from '../../src/server/automa/MarsBotTilePlacer';
@@ -30,8 +31,8 @@ function makeBoard(track1Layout: ReadonlyArray<TrackAction | undefined>): Readon
   );
 }
 
-function mockCard(tags: Tag[], type: string = 'automated') {
-  return {cost: 5, tags, type: type as any, name: 'Mock' as any, metadata: {} as any} as any;
+function mockCard(tags: Tag[], type: string = 'automated'): IProjectCard {
+  return {cost: 5, tags, type, name: 'Mock', metadata: {}} as unknown as IProjectCard;
 }
 
 describe('MarsBot Deep Rules Tests', () => {
@@ -41,7 +42,7 @@ describe('MarsBot Deep Rules Tests', () => {
     it('venus action is ignored (no Failed Action) when Venus not enabled', () => {
       const [game, human] = testGame(1); // No Venus expansion
       const botPlayer = TestPlayer.RED.newPlayer({name: 'bot'});
-      (botPlayer as any).game = game;
+      botPlayer.game = game;
 
       const layout = emptyLayout();
       layout[1] = 'venus';
@@ -57,7 +58,7 @@ describe('MarsBot Deep Rules Tests', () => {
     it('venus2 action is ignored when Venus not enabled', () => {
       const [game, human] = testGame(1);
       const botPlayer = TestPlayer.RED.newPlayer({name: 'bot'});
-      (botPlayer as any).game = game;
+      botPlayer.game = game;
 
       const layout = emptyLayout();
       layout[1] = 'venus2';
@@ -75,7 +76,7 @@ describe('MarsBot Deep Rules Tests', () => {
     it('oxygen at 8 triggers temperature raise (bonus step)', () => {
       const {game, marsBot} = createAutomaGame();
       // Set oxygen to 7 so next raise hits 8 (bonus: raise temperature)
-      (game as any).oxygenLevel = 7;
+      setOxygenLevel(game, 7);
       const tempBefore = game.getTemperature();
       const trBefore = marsBot.player.terraformRating;
 
@@ -104,7 +105,7 @@ describe('MarsBot Deep Rules Tests', () => {
     it('maxed track gets Failed Action, other track still advances', () => {
       const [game, human] = testGame(1);
       const botPlayer = TestPlayer.RED.newPlayer({name: 'bot'});
-      (botPlayer as any).game = game;
+      botPlayer.game = game;
 
       const allEmpty = emptyLayout();
       const boardData = THARSIS_MARSBOT_BOARD.map((def) => ({...def, layout: allEmpty}));
@@ -134,7 +135,7 @@ describe('MarsBot Deep Rules Tests', () => {
     it('milestone claim does not deduct MC from megacredits', () => {
       const [game, human] = testGame(1);
       const botPlayer = TestPlayer.RED.newPlayer({name: 'bot'});
-      (botPlayer as any).game = game;
+      botPlayer.game = game;
       botPlayer.setTerraformRating(35); // Meets Terraformer
 
       const layout = emptyLayout();
@@ -152,7 +153,7 @@ describe('MarsBot Deep Rules Tests', () => {
     it('award funding does not deduct MC from megacredits', () => {
       const [game, human] = testGame(1);
       const botPlayer = TestPlayer.RED.newPlayer({name: 'bot'});
-      (botPlayer as any).game = game;
+      botPlayer.game = game;
 
       // Give bot some tiles so it's ahead on Landlord
       const spaces = game.board.getAvailableSpacesOnLand(botPlayer);
@@ -216,8 +217,8 @@ describe('MarsBot Deep Rules Tests', () => {
       // Terraforming completion happens during a round
       // gameIsOver is checked AFTER production, not mid-round
       // Just verify the check works
-      (game as any).oxygenLevel = 14;
-      (game as any).temperature = 8;
+      setOxygenLevel(game, 14);
+      setTemperature(game, 8);
       const oceanSpaces = game.board.getAvailableSpacesForOcean(game.players[0]);
       for (let i = 0; i < 9 && i < oceanSpaces.length; i++) {
         game.simpleAddTile(game.players[0], oceanSpaces[i], {tileType: TileType.OCEAN});
@@ -232,7 +233,7 @@ describe('MarsBot Deep Rules Tests', () => {
   describe('Temperature heat bonuses (page 9)', () => {
     it('MarsBot gets 2 MC at -20C bonus', () => {
       const {game, marsBot} = createAutomaGame();
-      (game as any).temperature = -22; // 1 step below -20
+      setTemperature(game, -22); // 1 step below -20
 
       const mcBefore = marsBot.turnResolver.megacredits;
       game.increaseTemperature(marsBot.player, 1);
@@ -242,7 +243,7 @@ describe('MarsBot Deep Rules Tests', () => {
 
     it('MarsBot gets 2 MC at both -24C and -20C when raising 3 steps', () => {
       const {game, marsBot} = createAutomaGame();
-      (game as any).temperature = -26; // Raising 3 steps: -26 → -20, crosses both -24 and -20
+      setTemperature(game, -26); // Raising 3 steps: -26 → -20, crosses both -24 and -20
 
       const mcBefore = marsBot.turnResolver.megacredits;
       game.increaseTemperature(marsBot.player, 3);
@@ -346,7 +347,7 @@ describe('MarsBot Deep Rules Tests', () => {
     it('event card with Building tag advances both Building and Event tracks', () => {
       const [game, human] = testGame(1);
       const botPlayer = TestPlayer.RED.newPlayer({name: 'bot'});
-      (botPlayer as any).game = game;
+      botPlayer.game = game;
 
       const allEmpty = emptyLayout();
       const boardData = THARSIS_MARSBOT_BOARD.map((def) => ({...def, layout: allEmpty}));
@@ -362,7 +363,7 @@ describe('MarsBot Deep Rules Tests', () => {
     it('event card with NO explicit tags still advances Event track', () => {
       const [game, human] = testGame(1);
       const botPlayer = TestPlayer.RED.newPlayer({name: 'bot'});
-      (botPlayer as any).game = game;
+      botPlayer.game = game;
 
       const allEmpty = emptyLayout();
       const boardData = THARSIS_MARSBOT_BOARD.map((def) => ({...def, layout: allEmpty}));
@@ -382,9 +383,9 @@ describe('MarsBot Deep Rules Tests', () => {
   describe('MC to VP rulebook example (page 10)', () => {
     it('example: gen 14, 24 MC → 4 VP (1 per 6 MC)', () => {
       const {game, marsBot} = createAutomaGame();
-      (game as any).generation = 14;
+      game.generation = 14;
       marsBot.turnResolver.megacredits = 24;
-      (game as any).phase = 'end';
+      game.phase = 'end';
 
       const vp = marsBot.getVictoryPoints();
       expect(vp.mcToVP).to.eq(4); // floor(24/6) = 4
@@ -392,9 +393,9 @@ describe('MarsBot Deep Rules Tests', () => {
 
     it('example: gen 16, 24 MC → 6 VP (1 per 4 MC)', () => {
       const {game, marsBot} = createAutomaGame();
-      (game as any).generation = 16;
+      game.generation = 16;
       marsBot.turnResolver.megacredits = 24;
-      (game as any).phase = 'end';
+      game.phase = 'end';
 
       const vp = marsBot.getVictoryPoints();
       expect(vp.mcToVP).to.eq(6); // floor(24/4) = 6
@@ -527,7 +528,7 @@ describe('MarsBot Deep Rules Tests', () => {
       const {game, human, marsBot} = createAutomaGame();
       const tilePlacer = new MarsBotTilePlacer(game, marsBot.player, human);
       const spaces = game.board.getAvailableSpacesOnLand(human).slice(0, count);
-      game.projectDeck.drawOrThrow = () => ({cost} as any);
+      game.projectDeck.drawOrThrow = () => fakeCard({cost});
       return spaces.indexOf(tilePlacer['randomTiebreak'](spaces));
     }
 
@@ -653,7 +654,7 @@ describe('MarsBot Deep Rules Tests', () => {
     it('gains MarsBot 2 M€ instead of a card', () => {
       const {game, marsBot, hand, deck} = venusGame();
 
-      (marsBot.turnResolver as any).raiseVenus(1);
+      marsBot.turnResolver['raiseVenus'](1);
 
       expect(game.getVenusScaleLevel()).to.eq(8);
       expect(marsBot.turnResolver.megacredits).to.eq(2);

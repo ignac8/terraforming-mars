@@ -57,7 +57,7 @@ describe('NirgalEnterprisesMarsBot', () => {
       const {game, marsBot} = createAutomaGame();
       marsBot.corp = getMarsBotCorp(CardName.NIRGAL_ENTERPRISES)!;
       marsBot.marsBotBoard.tracks[0].position = 8; // 8 building tags: Builder
-      (game as any).generation = generation;
+      game.generation = generation;
 
       marsBot.corp.beforeActionPhase!(marsBot);
 
@@ -72,7 +72,7 @@ describe('NirgalEnterprisesMarsBot', () => {
       const {game, marsBot} = createAutomaGame();
       marsBot.corp = getMarsBotCorp(CardName.NIRGAL_ENTERPRISES)!;
       marsBot.marsBotBoard.tracks[0].position = 8;
-      (game as any).generation = generation;
+      game.generation = generation;
 
       marsBot.corp.beforeActionPhase!(marsBot);
 
@@ -89,9 +89,9 @@ describe('NirgalEnterprisesMarsBot', () => {
     }
     const mc = marsBot.turnResolver.megacredits;
 
-    (game as any).generation = 3; // No milestone is met.
+    game.generation = 3; // No milestone is met.
     marsBot.corp.beforeActionPhase!(marsBot);
-    (game as any).generation = 7; // Every award slot is taken.
+    game.generation = 7; // Every award slot is taken.
     marsBot.corp.beforeActionPhase!(marsBot);
 
     expect(game.claimedMilestones).is.empty;

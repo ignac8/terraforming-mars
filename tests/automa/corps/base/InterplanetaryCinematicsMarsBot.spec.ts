@@ -57,8 +57,8 @@ describe('InterplanetaryCinematicsMarsBot', () => {
   it('replaces the transparent cubes with 36 white cubes (18 on track 1 + 18 on track 3)', () => {
     const corp = getMarsBotCorp(CardName.INTERPLANETARY_CINEMATICS)!;
     expect(corp.trackCubes!.length).to.eq(36);
-    const track1 = corp.trackCubes!.filter((c: any) => c.trackIndex === 0);
-    const track3 = corp.trackCubes!.filter((c: any) => c.trackIndex === 2);
+    const track1 = corp.trackCubes!.filter((c) => 'trackIndex' in c && c.trackIndex === 0);
+    const track3 = corp.trackCubes!.filter((c) => 'trackIndex' in c && c.trackIndex === 2);
     expect(track1.length).to.eq(18);
     expect(track3.length).to.eq(18);
   });

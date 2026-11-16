@@ -12,6 +12,7 @@ import {statusCode} from '@/common/http/statusCode';
 import {Phase} from '@/common/Phase';
 import {GameLogs} from '@/server/routes/GameLogs';
 import {BoardName} from '@/common/boards/BoardName';
+import {LogMessage} from '@/common/logs/LogMessage';
 use(chaiAsPromised);
 
 describe('ApiGameLogs', () => {
@@ -256,8 +257,8 @@ describe('ApiGameLogs', () => {
     scaffolding.url = '/api/game/logs?id=' + player.id;
     await scaffolding.get(ApiGameLogs.INSTANCE, res);
 
-    const messages = JSON.parse(res.content);
-    expect(messages.map((m: any) => m.message)).deep.eq(['MarsBot only.']);
+    const messages: Array<LogMessage> = JSON.parse(res.content);
+    expect(messages.map((m) => m.message)).deep.eq(['MarsBot only.']);
     expect(messages[0].owner).eq(game.marsBotPlayer!.color);
     expect(messages[0].playerId).is.undefined;
   });

@@ -101,7 +101,7 @@ describe('MarsBot Limitations Fixed', () => {
       // A conditional icon (Ants, per animal) and a fixed one (Search for Life) both count
       marsBot.playedProjectCards.push(new Ants() as IProjectCard);
       marsBot.playedProjectCards.push(new SearchForLife() as IProjectCard);
-      (game as any).phase = Phase.END;
+      game.phase = Phase.END;
 
       const vp = marsBot.getVictoryPoints();
       expect(vp.cardVP).to.eq(2);
@@ -110,7 +110,7 @@ describe('MarsBot Limitations Fixed', () => {
     it('hard mode skips cards with no VP icon (BGG 3386410)', () => {
       const {game, marsBot} = createAutomaGame('hard');
       marsBot.playedProjectCards.push(new Algae() as IProjectCard);
-      (game as any).phase = Phase.END;
+      game.phase = Phase.END;
 
       expect(marsBot.getVictoryPoints().cardVP).to.eq(0);
     });
@@ -118,7 +118,7 @@ describe('MarsBot Limitations Fixed', () => {
     it('hard mode skips cards with a negative VP icon', () => {
       const {game, marsBot} = createAutomaGame('hard');
       marsBot.playedProjectCards.push(new NuclearZone() as IProjectCard);
-      (game as any).phase = Phase.END;
+      game.phase = Phase.END;
 
       expect(marsBot.getVictoryPoints().cardVP).to.eq(0);
     });
@@ -126,7 +126,7 @@ describe('MarsBot Limitations Fixed', () => {
     it('normal mode gives 0 card VP regardless of played cards', () => {
       const {game, marsBot} = createAutomaGame('normal');
       marsBot.playedProjectCards.push(new Algae() as IProjectCard);
-      (game as any).phase = Phase.END;
+      game.phase = Phase.END;
 
       const vp = marsBot.getVictoryPoints();
       expect(vp.cardVP).to.eq(0);
@@ -135,7 +135,7 @@ describe('MarsBot Limitations Fixed', () => {
     it('brutal mode also gets card VP', () => {
       const {game, marsBot} = createAutomaGame('brutal');
       marsBot.playedProjectCards.push(new SearchForLife() as IProjectCard);
-      (game as any).phase = Phase.END;
+      game.phase = Phase.END;
 
       const vp = marsBot.getVictoryPoints();
       expect(vp.cardVP).to.eq(1);

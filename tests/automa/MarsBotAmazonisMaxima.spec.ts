@@ -93,7 +93,7 @@ describe('MarsBotAmazonisMaxima', () => {
       setVenusScaleLevel(game, 30);
       const mc = resolver.megacredits;
 
-      (resolver as any).raiseVenus(1);
+      resolver['raiseVenus'](1);
 
       expect(game.getVenusScaleLevel()).eq(31);
       expect(resolver.megacredits).eq(mc);
@@ -104,7 +104,7 @@ describe('MarsBotAmazonisMaxima', () => {
       setVenusScaleLevel(game, 33);
       const mc = resolver.megacredits;
 
-      (resolver as any).raiseVenus(1);
+      resolver['raiseVenus'](1);
 
       expect(game.getVenusScaleLevel()).eq(33);
       expect(resolver.megacredits).eq(mc + resolver.failedActionMc);

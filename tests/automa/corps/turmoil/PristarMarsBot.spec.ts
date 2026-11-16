@@ -91,7 +91,7 @@ describe('PristarMarsBot', () => {
 
   it('on a 2-step raise, venus2 icon raises the second step', () => {
     const {game, marsBot, tr} = pristarGame(true);
-    (marsBot.turnResolver as any).raiseVenus(2);
+    marsBot.turnResolver['raiseVenus'](2);
     expect(game.getVenusScaleLevel()).to.eq(2);
     expect(marsBot.player.terraformRating).to.eq(tr + 2);
   });
@@ -140,7 +140,7 @@ describe('PristarMarsBot', () => {
     const {game, marsBot} = createAutomaGame();
     marsBot.setCorpAndSetup(getMarsBotCorp(CardName.PRISTAR)!);
     marsBot.corpSpecificState.set('whiteCubeOnCard', 1);
-    (game as any).generation = 2; // even generation → furthest-parameter branch
+    game.generation = 2; // even generation → furthest-parameter branch
     marsBot['bonusResolver'].resolveEffect(createBonusCard(BonusCardId.B16_GOVERNMENT_INTERVENTION));
     expect(marsBot.corpSpecificState.get('whiteCubeOnCard')).to.eq(1);
   });

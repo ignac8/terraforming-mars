@@ -15,7 +15,7 @@ import {Resource} from '../../src/common/Resource';
 import {CardType} from '../../src/common/cards/CardType';
 import {CardName} from '../../src/common/cards/CardName';
 import {SaturnSystems} from '../../src/server/cards/corporation/SaturnSystems';
-import {maxOutOceans, runAllActions} from '../TestingUtils';
+import {fakeCard, maxOutOceans, runAllActions, setOxygenLevel, setTemperature, setVenusScaleLevel} from '../TestingUtils';
 import {MAX_OXYGEN_LEVEL, MAX_TEMPERATURE, MAX_VENUS_SCALE} from '../../src/common/constants';
 import {cast} from '../../src/common/utils/utils';
 import {SelectSpace} from '../../src/server/inputs/SelectSpace';
@@ -92,7 +92,7 @@ describe('MarsBot Fixes', () => {
       const botPlayer = marsBot.player;
 
       // Set temperature to -26 (one step below -24 bonus)
-      (game as any).temperature = -26;
+      setTemperature(game, -26);
 
       const mcBefore = marsBot.turnResolver.megacredits;
       const heatProdBefore = botPlayer.production.get(Resource.HEAT);
@@ -107,7 +107,7 @@ describe('MarsBot Fixes', () => {
     it('human player still gets heat production at -24C', () => {
       const {game, human} = createAutomaGame();
 
-      (game as any).temperature = -26;
+      setTemperature(game, -26);
 
       const heatProdBefore = human.production.get(Resource.HEAT);
       game.increaseTemperature(human, 1);
@@ -117,8 +117,8 @@ describe('MarsBot Fixes', () => {
 
   describe('Game end with Venus Next', () => {
     function terraformMars(game: IGame, player: TestPlayer) {
-      (game as any).oxygenLevel = MAX_OXYGEN_LEVEL;
-      (game as any).temperature = MAX_TEMPERATURE;
+      setOxygenLevel(game, MAX_OXYGEN_LEVEL);
+      setTemperature(game, MAX_TEMPERATURE);
       maxOutOceans(player);
     }
 
@@ -138,7 +138,7 @@ describe('MarsBot Fixes', () => {
       terraformMars(game, human);
 
       expect(game.marsIsTerraformed()).is.false;
-      (game as any).venusScaleLevel = MAX_VENUS_SCALE;
+      setVenusScaleLevel(game, MAX_VENUS_SCALE);
       expect(game.marsIsTerraformed()).is.true;
     });
   });
@@ -147,7 +147,7 @@ describe('MarsBot Fixes', () => {
     it('MarsBot places the bonus ocean itself instead of being asked for a space', () => {
       const {game, marsBot} = createAutomaGame();
       const botPlayer = marsBot.player;
-      (game as any).temperature = -2;
+      setTemperature(game, -2);
       const oceansBefore = game.board.getOceanSpaces().length;
 
       game.increaseTemperature(botPlayer, 1);
@@ -161,7 +161,7 @@ describe('MarsBot Fixes', () => {
     it('MarsBot takes a Failed Action when all oceans are already placed', () => {
       const {game, marsBot} = createAutomaGame();
       const botPlayer = marsBot.player;
-      (game as any).temperature = -2;
+      setTemperature(game, -2);
       for (const space of game.board.getAvailableSpacesForOcean(botPlayer)) {
         if (game.canAddOcean()) {
           game.addOcean(botPlayer, space);
@@ -179,7 +179,7 @@ describe('MarsBot Fixes', () => {
 
     it('human player is still asked where to place the ocean', () => {
       const {game, human} = createAutomaGame();
-      (game as any).temperature = -2;
+      setTemperature(game, -2);
 
       game.increaseTemperature(human, 1);
       runAllActions(game);
@@ -192,8 +192,8 @@ describe('MarsBot Fixes', () => {
     it('MarsBot takes a Failed Action', () => {
       const {game, marsBot} = createAutomaGame();
       const botPlayer = marsBot.player;
-      (game as any).oxygenLevel = 7;
-      (game as any).temperature = MAX_TEMPERATURE;
+      setOxygenLevel(game, 7);
+      setTemperature(game, MAX_TEMPERATURE);
       const mcBefore = marsBot.turnResolver.megacredits;
 
       game.increaseOxygenLevel(botPlayer, 1);
@@ -205,8 +205,8 @@ describe('MarsBot Fixes', () => {
     it('MarsBot raises the temperature when it is not maxed', () => {
       const {game, marsBot} = createAutomaGame();
       const botPlayer = marsBot.player;
-      (game as any).oxygenLevel = 7;
-      (game as any).temperature = 0;
+      setOxygenLevel(game, 7);
+      setTemperature(game, 0);
       const mcBefore = marsBot.turnResolver.megacredits;
 
       game.increaseOxygenLevel(botPlayer, 1);
@@ -259,13 +259,7 @@ describe('MarsBot Fixes', () => {
       const marsBotBoard = marsBot.marsBotBoard;
 
       // Create a mock event card with Space tag
-      const mockEventCard = {
-        cost: 10,
-        tags: [Tag.SPACE],
-        type: 'event' as any,
-        name: 'TestEvent' as any,
-        metadata: {} as any,
-      } as any;
+      const mockEventCard = fakeCard({cost: 10, tags: [Tag.SPACE], type: CardType.EVENT});
 
       marsBot.turnResolver.resolveProjectCard(mockEventCard);
 
@@ -286,10 +280,7 @@ describe('MarsBot Fixes', () => {
       }
 
       // Play a Plant tag card - track 7 is maxed, should fail
-      const mockCard = {
-        cost: 5, tags: [Tag.PLANT], type: 'automated' as any,
-        name: 'TestPlant' as any, metadata: {} as any,
-      } as any;
+      const mockCard = fakeCard({cost: 5, tags: [Tag.PLANT], type: CardType.AUTOMATED});
       resolver.resolveProjectCard(mockCard);
 
       expect(resolver.megacredits).to.eq(5);
@@ -352,13 +343,13 @@ describe('MarsBot Fixes', () => {
     it('advance action is ignored in easy mode', () => {
       const [game, human] = testGame(1);
       const botPlayer = TestPlayer.RED.newPlayer({name: 'marsbot'});
-      (botPlayer as any).game = game;
+      botPlayer.game = game;
 
       const boardData = makeBoardWithTrack1Action(1, 'advance');
       const marsBotBoard = new MarsBotBoard(boardData);
       const resolver = new MarsBotTurnResolver(game, botPlayer, human, marsBotBoard, 'easy');
 
-      const mockCard = {cost: 5, tags: [Tag.BUILDING], type: 'automated' as any, name: 'T' as any, metadata: {} as any} as any;
+      const mockCard = fakeCard({cost: 5, tags: [Tag.BUILDING], type: CardType.AUTOMATED});
       resolver.resolveProjectCard(mockCard);
 
       // Position should be 1 (advanced once), NOT 2 (advance action ignored)
@@ -372,7 +363,7 @@ describe('MarsBot Fixes', () => {
         track.advance();
       }
 
-      const mockCard = {cost: 5, tags: [Tag.PLANT], type: 'automated' as any, name: 'T' as any, metadata: {} as any} as any;
+      const mockCard = fakeCard({cost: 5, tags: [Tag.PLANT], type: CardType.AUTOMATED});
       marsBot.turnResolver.resolveProjectCard(mockCard);
       expect(marsBot.turnResolver.megacredits).to.eq(3);
     });
@@ -392,7 +383,7 @@ describe('MarsBot Fixes', () => {
   describe('Scoring MC-to-VP', () => {
     it('gen 10: 1 VP per 8 MC', () => {
       const {game, marsBot} = createAutomaGame();
-      (game as any).generation = 10;
+      game.generation = 10;
       marsBot.turnResolver.megacredits = 17;
       const vp = marsBot.getVictoryPoints();
       expect(vp.mcToVP).to.eq(2); // floor(17/8)
@@ -400,7 +391,7 @@ describe('MarsBot Fixes', () => {
 
     it('gen 14: 1 VP per 6 MC', () => {
       const {game, marsBot} = createAutomaGame();
-      (game as any).generation = 14;
+      game.generation = 14;
       marsBot.turnResolver.megacredits = 13;
       const vp = marsBot.getVictoryPoints();
       expect(vp.mcToVP).to.eq(2); // floor(13/6)
@@ -408,7 +399,7 @@ describe('MarsBot Fixes', () => {
 
     it('gen 17: 1 VP per 3 MC', () => {
       const {game, marsBot} = createAutomaGame();
-      (game as any).generation = 17;
+      game.generation = 17;
       marsBot.turnResolver.megacredits = 10;
       const vp = marsBot.getVictoryPoints();
       expect(vp.mcToVP).to.eq(3); // floor(10/3)
@@ -445,10 +436,7 @@ describe('MarsBot Fixes', () => {
       const {marsBot} = createAutomaGame();
       // Card with Building + Space tags
       // Track 1 pos 1 = null, Track 2 pos 1 = advance (chains to pos 2)
-      const mockCard = {
-        cost: 10, tags: [Tag.BUILDING, Tag.SPACE], type: 'automated' as any,
-        name: 'MultiTag' as any, metadata: {} as any,
-      } as any;
+      const mockCard = fakeCard({cost: 10, tags: [Tag.BUILDING, Tag.SPACE], type: CardType.AUTOMATED});
       marsBot.turnResolver.resolveProjectCard(mockCard);
 
       expect(marsBot.marsBotBoard.tracks[0].position).to.eq(1); // Building: pos 1 (null)
@@ -460,13 +448,13 @@ describe('MarsBot Fixes', () => {
     it('tag_N action advances another track', () => {
       const [game, human] = testGame(1);
       const botPlayer = TestPlayer.RED.newPlayer({name: 'marsbot'});
-      (botPlayer as any).game = game;
+      botPlayer.game = game;
 
       const boardData = makeBoardWithTrack1Action(1, 'tag_1');
       const marsBotBoard = new MarsBotBoard(boardData);
       const resolver = new MarsBotTurnResolver(game, botPlayer, human, marsBotBoard, 'normal');
 
-      const mockCard = {cost: 5, tags: [Tag.BUILDING], type: 'automated' as any, name: 'T' as any, metadata: {} as any} as any;
+      const mockCard = fakeCard({cost: 5, tags: [Tag.BUILDING], type: CardType.AUTOMATED});
       resolver.resolveProjectCard(mockCard);
 
       expect(marsBotBoard.tracks[0].position).to.eq(1);
@@ -476,13 +464,13 @@ describe('MarsBot Fixes', () => {
     it('advance action moves same track forward again', () => {
       const [game, human] = testGame(1);
       const botPlayer = TestPlayer.RED.newPlayer({name: 'marsbot'});
-      (botPlayer as any).game = game;
+      botPlayer.game = game;
 
       const boardData = makeBoardWithTrack1Action(1, 'advance');
       const marsBotBoard = new MarsBotBoard(boardData);
       const resolver = new MarsBotTurnResolver(game, botPlayer, human, marsBotBoard, 'normal');
 
-      const mockCard = {cost: 5, tags: [Tag.BUILDING], type: 'automated' as any, name: 'T' as any, metadata: {} as any} as any;
+      const mockCard = fakeCard({cost: 5, tags: [Tag.BUILDING], type: CardType.AUTOMATED});
       resolver.resolveProjectCard(mockCard);
 
       expect(marsBotBoard.tracks[0].position).to.eq(2); // 1 + advance = 2
@@ -491,14 +479,14 @@ describe('MarsBot Fixes', () => {
     it('TR action increases terraform rating', () => {
       const [game, human] = testGame(1);
       const botPlayer = TestPlayer.RED.newPlayer({name: 'marsbot'});
-      (botPlayer as any).game = game;
+      botPlayer.game = game;
 
       const boardData = makeBoardWithTrack1Action(1, 'tr3');
       const marsBotBoard = new MarsBotBoard(boardData);
       const resolver = new MarsBotTurnResolver(game, botPlayer, human, marsBotBoard, 'normal');
 
       const startTR = botPlayer.terraformRating;
-      const mockCard = {cost: 5, tags: [Tag.BUILDING], type: 'automated' as any, name: 'T' as any, metadata: {} as any} as any;
+      const mockCard = fakeCard({cost: 5, tags: [Tag.BUILDING], type: CardType.AUTOMATED});
       resolver.resolveProjectCard(mockCard);
 
       expect(botPlayer.terraformRating).to.eq(startTR + 3);
@@ -508,10 +496,7 @@ describe('MarsBot Fixes', () => {
   describe('Wild tags advance least-advanced track', () => {
     it('wild tag advances the least-advanced track (topmost if tied)', () => {
       const {marsBot} = createAutomaGame();
-      const mockCard = {
-        cost: 5, tags: [Tag.WILD], type: 'automated' as any,
-        name: 'WildOnly' as any, metadata: {} as any,
-      } as any;
+      const mockCard = fakeCard({cost: 5, tags: [Tag.WILD], type: CardType.AUTOMATED});
       marsBot.turnResolver.resolveProjectCard(mockCard);
 
       // Wild tag advances the least-advanced track (all at 0, so index 0 = first)
@@ -526,7 +511,7 @@ describe('MarsBot Fixes', () => {
     it('regressed position action is skipped on re-advance', () => {
       const [game, human] = testGame(1);
       const botPlayer = TestPlayer.RED.newPlayer({name: 'marsbot'});
-      (botPlayer as any).game = game;
+      botPlayer.game = game;
 
       // Track 1 pos 1 has tr3 action
       const boardData = makeBoardWithTrack1Action(1, 'tr3');
@@ -535,7 +520,7 @@ describe('MarsBot Fixes', () => {
 
       // Advance to pos 1 (triggers tr3)
       const startTR = botPlayer.terraformRating;
-      const mockCard = {cost: 5, tags: [Tag.BUILDING], type: 'automated' as any, name: 'T' as any, metadata: {} as any} as any;
+      const mockCard = fakeCard({cost: 5, tags: [Tag.BUILDING], type: CardType.AUTOMATED});
       resolver.resolveProjectCard(mockCard);
       expect(botPlayer.terraformRating).to.eq(startTR + 3);
 
@@ -587,13 +572,13 @@ describe('MarsBot Fixes', () => {
     it('isInstantWin returns true at max generation', () => {
       const {game, marsBot} = createAutomaGame();
       // Default max generation for non-prelude is 20
-      (game as any).generation = 20;
+      game.generation = 20;
       expect(marsBot.isInstantWin()).to.be.true;
     });
 
     it('isInstantWin returns false before max generation', () => {
       const {game, marsBot} = createAutomaGame();
-      (game as any).generation = 19;
+      game.generation = 19;
       expect(marsBot.isInstantWin()).to.be.false;
     });
   });
@@ -605,7 +590,7 @@ describe('MarsBot Fixes', () => {
       human.playCard(saturnSystems);
 
       const prodBefore = human.production.megacredits;
-      const jovianCard = {cost: 10, tags: [Tag.JOVIAN], type: CardType.AUTOMATED, name: CardName.ASTEROID_MINING, metadata: {}, requirements: undefined, getVictoryPoints: () => 0} as any;
+      const jovianCard = fakeCard({cost: 10, tags: [Tag.JOVIAN], type: CardType.AUTOMATED, name: CardName.ASTEROID_MINING});
       marsBot.turnResolver.resolveProjectCard(jovianCard);
 
       expect(human.production.megacredits).to.eq(prodBefore + 1);

@@ -1,26 +1,24 @@
 import {expect} from 'chai';
-import {afterEach, beforeEach} from 'vitest';
+import {afterEach, beforeEach, vi} from 'vitest';
 import {fetchReplayMoves, fetchReplayView, fetchVote, postRewind, postVote, ReplayResponseError, translateRefusal} from '@/client/utils/fetchReplay';
 import {PreferencesManager} from '@/client/utils/PreferencesManager';
 
 describe('fetchReplay', () => {
-  let originalFetch: any;
-  let posts: Array<{url: string, init: any}>;
+  let posts: Array<{url: string, init: {method: string, body: string}}>;
 
   beforeEach(() => {
-    originalFetch = (global as any).fetch;
     posts = [];
-    (global as any).fetch = async (url: string, init: any) => {
+    vi.stubGlobal('fetch', async (url: string, init: {method: string, body: string}) => {
       posts.push({url, init});
       return {ok: true, status: 200, json: () => Promise.resolve({})};
-    };
+    });
   });
 
   afterEach(() => {
-    (global as any).fetch = originalFetch;
+    vi.unstubAllGlobals();
     window.history.replaceState({}, '', '/');
     PreferencesManager.INSTANCE.set('lang', 'en');
-    delete (window as any)._translations;
+    delete window._translations;
   });
 
   const urls = () => posts.map(({url}) => url);
@@ -41,10 +39,10 @@ describe('fetchReplay', () => {
 
   it('aborts the view request that a newer one replaces', async () => {
     const signals: Array<AbortSignal> = [];
-    (global as any).fetch = async (_url: string, init: any) => {
+    vi.stubGlobal('fetch', async (_url: string, init: {signal: AbortSignal}) => {
       signals.push(init.signal);
       return {ok: true, status: 200, json: () => Promise.resolve({})};
-    };
+    });
 
     await fetchReplayView('p-player-id', 3, 'blue');
     await fetchReplayView('p-player-id', 4, 'blue');
@@ -53,7 +51,7 @@ describe('fetchReplay', () => {
   });
 
   it('throws what the server refused with, and its status', async () => {
-    (global as any).fetch = async () => ({ok: false, status: 400, text: () => Promise.resolve('Bad request: game not finished')});
+    vi.stubGlobal('fetch', async () => ({ok: false, status: 400, text: () => Promise.resolve('Bad request: game not finished')}));
 
     for (const call of [
       () => fetchReplayMoves('p-player-id'),
@@ -70,7 +68,7 @@ describe('fetchReplay', () => {
   });
 
   it('says so when the server refused without a reason', async () => {
-    (global as any).fetch = async () => ({ok: false, status: 500, text: () => Promise.resolve('')});
+    vi.stubGlobal('fetch', async () => ({ok: false, status: 500, text: () => Promise.resolve('')}));
 
     const error = await fetchReplayMoves('p-player-id').then(() => undefined, (err: unknown) => err as ReplayResponseError);
 
@@ -110,7 +108,7 @@ describe('fetchReplay', () => {
   describe('translateRefusal', () => {
     beforeEach(() => {
       PreferencesManager.INSTANCE.set('lang', 'pl');
-      (window as any)._translations = {'A rewind is already running.': 'Cofanie gry już trwa.'};
+      window._translations = {'A rewind is already running.': 'Cofanie gry już trwa.'};
     });
 
     it('translates the reason the server gives, without the status text before it', () => {

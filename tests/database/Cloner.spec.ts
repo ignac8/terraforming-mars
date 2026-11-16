@@ -177,7 +177,7 @@ describe('Cloner, automa games', () => {
 });
 
 /** Every path in `obj` whose string value mentions one of `needles`, for a legible failure. */
-function pathsHolding(obj: any, needles: Array<string>, path: string = ''): Array<string> {
+function pathsHolding(obj: unknown, needles: Array<string>, path: string = ''): Array<string> {
   if (typeof obj === 'string') {
     return needles.some((needle) => obj.includes(needle)) ? [`${path} = ${obj}`] : [];
   }

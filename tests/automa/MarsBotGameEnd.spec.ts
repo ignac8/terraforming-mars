@@ -3,6 +3,7 @@ import {testGame} from '../TestGame';
 import {TestPlayer} from '../TestPlayer';
 import {IGame} from '../../src/server/IGame';
 import {MarsBot} from '../../src/server/automa/MarsBot';
+import {Game} from '../../src/server/Game';
 import {BoardName} from '../../src/common/boards/BoardName';
 import {TileType} from '../../src/common/TileType';
 import {Phase} from '../../src/common/Phase';
@@ -19,7 +20,7 @@ describe('MarsBot Game End Model', () => {
   describe('toModel VP breakdown', () => {
     it('includes vpBreakdown when game phase is END', () => {
       const {game, marsBot} = createAutomaGame();
-      (game as any).phase = Phase.END;
+      game.phase = Phase.END;
 
       const model = marsBot.toModel();
       expect(model.vpBreakdown).to.not.be.undefined;
@@ -29,7 +30,7 @@ describe('MarsBot Game End Model', () => {
 
     it('includes vpBreakdown during action phase', () => {
       const {game, marsBot} = createAutomaGame();
-      (game as any).phase = Phase.ACTION;
+      game.phase = Phase.ACTION;
 
       const model = marsBot.toModel();
       expect(model.vpBreakdown).to.not.be.undefined;
@@ -38,7 +39,7 @@ describe('MarsBot Game End Model', () => {
 
     it('includes vpBreakdown during research phase', () => {
       const {game, marsBot} = createAutomaGame();
-      (game as any).phase = Phase.RESEARCH;
+      game.phase = Phase.RESEARCH;
 
       const model = marsBot.toModel();
       expect(model.vpBreakdown).to.not.be.undefined;
@@ -46,10 +47,10 @@ describe('MarsBot Game End Model', () => {
 
     it('includes instantWin flag', () => {
       const {game, marsBot} = createAutomaGame();
-      (game as any).generation = 19;
+      game.generation = 19;
       expect(marsBot.toModel().instantWin).to.be.false;
 
-      (game as any).generation = 20;
+      game.generation = 20;
       expect(marsBot.toModel().instantWin).to.be.true;
     });
   });
@@ -58,7 +59,7 @@ describe('MarsBot Game End Model', () => {
     it('TR in breakdown matches player TR', () => {
       const {game, marsBot} = createAutomaGame();
       marsBot.player.setTerraformRating(30);
-      (game as any).phase = Phase.END;
+      game.phase = Phase.END;
 
       const vp = marsBot.toModel().vpBreakdown!;
       expect(vp.terraformRating).to.eq(30);
@@ -68,7 +69,7 @@ describe('MarsBot Game End Model', () => {
       const {game, marsBot} = createAutomaGame();
       game.claimedMilestones.push({player: marsBot.player, milestone: game.milestones[0]});
       game.claimedMilestones.push({player: marsBot.player, milestone: game.milestones[1]});
-      (game as any).phase = Phase.END;
+      game.phase = Phase.END;
 
       const vp = marsBot.toModel().vpBreakdown!;
       expect(vp.milestones).to.eq(10);
@@ -79,7 +80,7 @@ describe('MarsBot Game End Model', () => {
       const spaces = game.board.getAvailableSpacesOnLand(marsBot.player);
       game.simpleAddTile(marsBot.player, spaces[5], {tileType: TileType.GREENERY});
       game.simpleAddTile(marsBot.player, spaces[10], {tileType: TileType.GREENERY});
-      (game as any).phase = Phase.END;
+      game.phase = Phase.END;
 
       const vp = marsBot.toModel().vpBreakdown!;
       expect(vp.greenery).to.eq(2);
@@ -88,8 +89,8 @@ describe('MarsBot Game End Model', () => {
     it('MC to VP at gen 14 (1 per 6 MC)', () => {
       const {game, marsBot} = createAutomaGame();
       marsBot.turnResolver.megacredits = 18;
-      (game as any).generation = 14;
-      (game as any).phase = Phase.END;
+      game.generation = 14;
+      game.phase = Phase.END;
 
       const vp = marsBot.toModel().vpBreakdown!;
       expect(vp.mcToVP).to.eq(3); // floor(18/6) = 3
@@ -98,8 +99,8 @@ describe('MarsBot Game End Model', () => {
     it('MC to VP at gen 17 (1 per 3 MC)', () => {
       const {game, marsBot} = createAutomaGame();
       marsBot.turnResolver.megacredits = 10;
-      (game as any).generation = 17;
-      (game as any).phase = Phase.END;
+      game.generation = 17;
+      game.phase = Phase.END;
 
       const vp = marsBot.toModel().vpBreakdown!;
       expect(vp.mcToVP).to.eq(3); // floor(10/3) = 3
@@ -108,8 +109,8 @@ describe('MarsBot Game End Model', () => {
     it('no MC VP at gen 20', () => {
       const {game, marsBot} = createAutomaGame();
       marsBot.turnResolver.megacredits = 50;
-      (game as any).generation = 20;
-      (game as any).phase = Phase.END;
+      game.generation = 20;
+      game.phase = Phase.END;
 
       const vp = marsBot.toModel().vpBreakdown!;
       expect(vp.mcToVP).to.eq(0);
@@ -119,10 +120,10 @@ describe('MarsBot Game End Model', () => {
       const {game, marsBot} = createAutomaGame();
       marsBot.player.setTerraformRating(25);
       marsBot.turnResolver.megacredits = 16;
-      (game as any).generation = 15; // 1 per 5 MC
+      game.generation = 15; // 1 per 5 MC
       const spaces = game.board.getAvailableSpacesOnLand(marsBot.player);
       game.simpleAddTile(marsBot.player, spaces[10], {tileType: TileType.GREENERY});
-      (game as any).phase = Phase.END;
+      game.phase = Phase.END;
 
       const vp = marsBot.toModel().vpBreakdown!;
       expect(vp.terraformRating).to.eq(25);
@@ -137,7 +138,7 @@ describe('MarsBot Game End Model', () => {
       const {game, human, marsBot} = createAutomaGame();
       human.setTerraformRating(40);
       marsBot.player.setTerraformRating(20);
-      (game as any).phase = Phase.END;
+      game.phase = Phase.END;
 
       const humanVP = human.getVictoryPoints().total;
       const marsBotVP = marsBot.getVictoryPoints().total;
@@ -149,7 +150,7 @@ describe('MarsBot Game End Model', () => {
       // Set both to same TR, no other VP
       human.setTerraformRating(25);
       marsBot.player.setTerraformRating(25);
-      (game as any).phase = Phase.END;
+      game.phase = Phase.END;
 
       // Both have TR 25 as base. Human might have additional VP from cards, but
       // the key rule: tie = MarsBot wins.
@@ -160,7 +161,7 @@ describe('MarsBot Game End Model', () => {
 
     it('MarsBot instant win at gen 20', () => {
       const {game, marsBot} = createAutomaGame();
-      (game as any).generation = 20;
+      game.generation = 20;
 
       expect(marsBot.isInstantWin()).to.be.true;
       expect(marsBot.toModel().instantWin).to.be.true;
@@ -168,7 +169,7 @@ describe('MarsBot Game End Model', () => {
 
     it('MarsBot does not instant win before gen 20', () => {
       const {game, marsBot} = createAutomaGame();
-      (game as any).generation = 19;
+      game.generation = 19;
 
       expect(marsBot.isInstantWin()).to.be.false;
       expect(marsBot.toModel().instantWin).to.be.false;
@@ -185,9 +186,9 @@ describe('MarsBot Game End Model', () => {
       setTestDatabase(db);
       try {
         const {game} = createAutomaGame();
-        (game as any).generation = 19;
+        game.generation = 19;
 
-        (game as any).startGeneration();
+        (game as Game)['startGeneration']();
         await game.finishing;
 
         expect(game.phase).eq(Phase.END);
@@ -232,7 +233,7 @@ describe('MarsBot Game End Model', () => {
       for (let i = 0; i < 10; i++) {
         marsBot.marsBotBoard.tracks[3].advance();
       }
-      (game as any).phase = Phase.END;
+      game.phase = Phase.END;
 
       const vp = marsBot.getVictoryPoints();
       expect(vp.awards).to.eq(5);
@@ -248,7 +249,7 @@ describe('MarsBot Game End Model', () => {
       game.simpleAddTile(human, spaces[10], {tileType: TileType.CITY});
       game.simpleAddTile(human, spaces[15], {tileType: TileType.GREENERY});
       game.simpleAddTile(marsBot.player, spaces[20], {tileType: TileType.CITY});
-      (game as any).phase = Phase.END;
+      game.phase = Phase.END;
 
       const vp = marsBot.getVictoryPoints();
       expect(vp.awards).to.eq(0);
@@ -263,7 +264,7 @@ describe('MarsBot Game End Model', () => {
       game.simpleAddTile(marsBot.player, spaces[10], {tileType: TileType.CITY});
       game.simpleAddTile(marsBot.player, spaces[15], {tileType: TileType.GREENERY});
       game.simpleAddTile(human, spaces[20], {tileType: TileType.CITY});
-      (game as any).phase = Phase.END;
+      game.phase = Phase.END;
 
       const vp = marsBot.getVictoryPoints();
       expect(vp.awards).to.eq(5);
@@ -279,7 +280,7 @@ describe('MarsBot Game End Model', () => {
       game.simpleAddTile(human, spaces[10], {tileType: TileType.CITY});
       game.simpleAddTile(human, spaces[15], {tileType: TileType.GREENERY});
       game.simpleAddTile(marsBot.player, spaces[20], {tileType: TileType.CITY});
-      (game as any).phase = Phase.END;
+      game.phase = Phase.END;
 
       const vp = calculateVictoryPoints(human);
       expect(vp.awards).to.eq(5);
@@ -295,7 +296,7 @@ describe('MarsBot Game End Model', () => {
       game.simpleAddTile(marsBot.player, spaces[10], {tileType: TileType.CITY});
       game.simpleAddTile(marsBot.player, spaces[15], {tileType: TileType.GREENERY});
       game.simpleAddTile(human, spaces[20], {tileType: TileType.CITY});
-      (game as any).phase = Phase.END;
+      game.phase = Phase.END;
 
       const vp = calculateVictoryPoints(human);
       expect(vp.awards).to.eq(0);
@@ -303,7 +304,7 @@ describe('MarsBot Game End Model', () => {
 
     it('no award VP when no awards funded', () => {
       const {game, marsBot} = createAutomaGame();
-      (game as any).phase = Phase.END;
+      game.phase = Phase.END;
 
       const vp = marsBot.getVictoryPoints();
       expect(vp.awards).to.eq(0);

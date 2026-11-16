@@ -108,7 +108,7 @@ describe('LogPanel', () => {
       message.owner = owner;
       return message;
     };
-    (wrapper.vm as any).messages.push(line('first', 'red'), line('second'), line('third', 'blue'));
+    wrapper.vm.messages.push(line('first', 'red'), line('second'), line('third', 'blue'));
     await wrapper.vm.$nextTick();
 
     const lines = wrapper.findAll('li');
@@ -150,7 +150,7 @@ describe('LogPanel', () => {
       const wrapper = mountReplay(log, 3);
       await flushLogs(wrapper);
 
-      (wrapper.vm as any).selectGeneration(1);
+      wrapper.vm.selectGeneration(1);
       await flushLogs(wrapper);
 
       expect(fetchCalls).is.empty;
@@ -165,7 +165,7 @@ describe('LogPanel', () => {
       await flushLogs(wrapper);
       expect(texts(wrapper)).deep.eq(['Generation 3', 'three']);
 
-      (wrapper.vm as any).selectGeneration(2);
+      wrapper.vm.selectGeneration(2);
       await wrapper.setProps({viewModel: viewIn(3), replayLog: [...log, line('four')]});
       await flushLogs(wrapper);
       expect(texts(wrapper)).deep.eq(['Generation 2', 'two', 'twice']);
@@ -174,13 +174,13 @@ describe('LogPanel', () => {
     it('goes to the newest generation when the replay goes back past the one chosen', async () => {
       const wrapper = mountReplay(log, 3);
       await flushLogs(wrapper);
-      (wrapper.vm as any).selectGeneration(2);
+      wrapper.vm.selectGeneration(2);
       await flushLogs(wrapper);
 
       await wrapper.setProps({viewModel: viewIn(1), replayLog: log.slice(0, 2)});
       await flushLogs(wrapper);
 
-      expect((wrapper.vm as any).selectedGeneration).eq(1);
+      expect(wrapper.vm.selectedGeneration).eq(1);
       expect(texts(wrapper)).deep.eq(['Generation 1', 'one']);
     });
 

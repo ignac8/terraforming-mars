@@ -76,7 +76,7 @@ describe('MarsBotCorpResolver', () => {
     it('skips a corp whose expansion is not in play', () => {
       registerMarsBotCorp(createTestCorp({name: CardName.ECOLINE}));
       registerMarsBotCorp(createTestCorp({name: CardName.APHRODITE, requiredExpansions: ['venus']}));
-      const lastCorp = {next: () => 0.99, nextInt: (n: number) => n - 1} as any;
+      const lastCorp = {next: () => 0.99, nextInt: (n: number) => n - 1};
 
       expect(MarsBotCorpResolver.selectCorp(CardName.CREDICOR, DEFAULT_GAME_OPTIONS, lastCorp).name).to.eq(CardName.ECOLINE);
     });
@@ -84,7 +84,7 @@ describe('MarsBotCorpResolver', () => {
     it('draws a corp when any one of its expansions is in play', () => {
       registerMarsBotCorp(createTestCorp({name: CardName.ECOLINE}));
       registerMarsBotCorp(createTestCorp({name: CardName.CELESTIC, requiredExpansions: ['venus', 'colonies']}));
-      const lastCorp = {next: () => 0.99, nextInt: (n: number) => n - 1} as any;
+      const lastCorp = {next: () => 0.99, nextInt: (n: number) => n - 1};
       const withColonies = {...DEFAULT_GAME_OPTIONS, expansions: {...DEFAULT_GAME_OPTIONS.expansions, colonies: true}};
 
       expect(MarsBotCorpResolver.selectCorp(CardName.CREDICOR, withColonies, lastCorp).name).to.eq(CardName.CELESTIC);
@@ -348,14 +348,14 @@ describe('MarsBotCorpResolver', () => {
     beforeEach(restoreMarsBotCorpRegistry);
 
     it('selects a corp excluding human corp', () => {
-      const rng = {next: () => 0, nextInt: (_n: number) => 0} as any;
+      const rng = {next: () => 0, nextInt: (_n: number) => 0};
       const corp = MarsBotCorpResolver.selectCorp(CardName.CREDICOR, DEFAULT_GAME_OPTIONS, rng);
       expect(corp).to.not.be.undefined;
       expect(corp!.name).to.not.eq(CardName.CREDICOR);
     });
 
     it('can select any of the 12 base corps', () => {
-      const rng = {next: () => 0, nextInt: (_n: number) => 0} as any;
+      const rng = {next: () => 0, nextInt: (_n: number) => 0};
       // With Credicor excluded, should get Ecoline (index 0 of 11 remaining)
       const corp = MarsBotCorpResolver.selectCorp(CardName.CREDICOR, DEFAULT_GAME_OPTIONS, rng);
       expect(corp).to.not.be.undefined;

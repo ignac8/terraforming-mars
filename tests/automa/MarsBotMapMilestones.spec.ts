@@ -521,7 +521,7 @@ describe('MarsBot map milestones and awards', () => {
       game.awards = [];
       marsBot.hasColonyCubes = false;
       marsBot.colonyCubePositions = new Set();
-      (AutomaGameSetup as any).placeColonyCubes(game, marsBot);
+      AutomaGameSetup['placeColonyCubes'](game, marsBot);
     }
 
     it('Utopia Planitia\'s own Pioneer places no colony cubes', () => {

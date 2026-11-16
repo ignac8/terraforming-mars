@@ -23,6 +23,7 @@ import {OrOptions} from '../../src/server/inputs/OrOptions';
 import {Predators} from '../../src/server/cards/base/Predators';
 import {Ants} from '../../src/server/cards/base/Ants';
 import {Asteroid} from '../../src/server/cards/base/Asteroid';
+import {IProjectCard} from '../../src/server/cards/IProjectCard';
 import {Random} from '../../src/common/utils/Random';
 import {ColonyName} from '../../src/common/colonies/ColonyName';
 
@@ -209,7 +210,7 @@ describe('MarsBotSessionFixes', () => {
     marsBot.turnResolver.megacredits = 15;
 
     // Simulate MarsBot being the active player when saved
-    (game as any).activePlayer = marsBot.player;
+    game.activePlayer = marsBot.player;
     const serialized = game.serialize();
     expect(serialized.activePlayer).to.eq(marsBot.player.id);
 
@@ -294,7 +295,7 @@ describe('MarsBotSessionFixes', () => {
     // Play a card from action deck
     const projectCard = marsBot.actionDeck.find((c) => 'cost' in c && 'tags' in c);
     if (projectCard) {
-      marsBot.playedProjectCards.push(projectCard as any);
+      marsBot.playedProjectCards.push(projectCard as IProjectCard);
     }
     const count = marsBot.playedProjectCards.length;
 
@@ -376,7 +377,7 @@ describe('MarsBotSessionFixes', () => {
     }
 
     // Claim milestone and fund award as MarsBot
-    (game as any).activePlayer = marsBot.player;
+    game.activePlayer = marsBot.player;
     game.claimedMilestones.push({player: marsBot.player, milestone: game.milestones[0]});
     game.fundedAwards.push({player: marsBot.player, award: game.awards[0]});
 
@@ -791,7 +792,7 @@ describe('MarsBotVenusNext', () => {
     venusTrack.advance(); // position 0 -> 1, triggers 'floater' action via turn resolver
     // Directly test via the action deck mechanism
     marsBot.floaters = 0;
-    (marsBot.turnResolver as any).resolveTrackAction('floater', 7);
+    marsBot.turnResolver['resolveTrackAction']('floater', 7);
     expect(marsBot.floaters).to.eq(1);
   });
 
@@ -979,7 +980,7 @@ describe('MarsBotVenusNext', () => {
       game.claimedMilestones.push({player: marsBot.player, milestone: m});
     }
     // Test canSpendFloatersForExtraCard directly (called in draft path)
-    expect((game.automaHooks as any).canSpendFloatersForExtraCard()).to.be.true;
+    expect(game.automaHooks?.['canSpendFloatersForExtraCard']()).to.be.true;
     // Verify non-draft path spends correctly (draft is async, can't test end-to-end)
     game.automaHooks!.handleResearchPhase();
     expect(marsBot.floaters).to.eq(5);

@@ -122,7 +122,7 @@ describe('rebuild', () => {
 
   it('leaves the shared clock where it was', async () => {
     const saves = await readRebuildSaves(game, target);
-    const lastStoppedAt = (Timer as any).lastStoppedAt;
+    const lastStoppedAt = Timer['lastStoppedAt'];
     try {
       const clock = new FakeClock();
       clock.millis = 1000;
@@ -137,7 +137,7 @@ describe('rebuild', () => {
       next.start();
       expect(next.serialize().startedAt).eq(1000);
     } finally {
-      (Timer as any).lastStoppedAt = lastStoppedAt;
+      Timer['lastStoppedAt'] = lastStoppedAt;
     }
   });
 });

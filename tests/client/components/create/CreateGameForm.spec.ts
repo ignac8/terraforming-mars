@@ -70,7 +70,7 @@ describe('CreateGameForm', () => {
 
   it('default (automa-on) state has all official expansions, MarsBot corp, and draft on', () => {
     const wrapper = shallowMount(CreateGameForm, {...globalConfig});
-    const vm = wrapper.vm as any;
+    const vm = wrapper.vm;
 
     expect(vm.automa).to.be.true;
     expect(vm.automaCorpOption).to.be.true;
@@ -80,7 +80,7 @@ describe('CreateGameForm', () => {
     expect(vm.draftVariant).to.be.true;
     expect(vm.allOfficialExpansions).to.be.true;
 
-    for (const e of ['corpera', 'prelude', 'prelude2', 'promo', 'venus', 'colonies', 'turmoil']) {
+    for (const e of ['corpera', 'prelude', 'prelude2', 'promo', 'venus', 'colonies', 'turmoil'] as const) {
       expect(vm.expansions[e], e).to.be.true;
     }
     // CEO is a fan-made expansion and stays off by default.
@@ -89,7 +89,7 @@ describe('CreateGameForm', () => {
 
   it('turns Player undo on by default', () => {
     const wrapper = shallowMount(CreateGameForm, {...globalConfig});
-    const vm = wrapper.vm as any;
+    const vm = wrapper.vm;
 
     expect((wrapper.find('#undo-checkbox').element as HTMLInputElement).checked).to.be.true;
     expect(vm.newGameConfig.undoOption).to.be.true;
@@ -112,7 +112,7 @@ describe('CreateGameForm', () => {
 
   it('offers skipping MarsBot\'s corporation at final greeneries, off by default', () => {
     const wrapper = shallowMount(CreateGameForm, {...globalConfig});
-    const vm = wrapper.vm as any;
+    const vm = wrapper.vm;
 
     expect(wrapper.find('#automa-final-greenery-no-corp-checkbox').exists()).to.be.true;
     expect(vm.newGameConfig.automaFinalGreeneryNoCorpEffects).to.be.false;
@@ -122,7 +122,7 @@ describe('CreateGameForm', () => {
 
   it('offers keeping the original cards only with Promos, off by default', async () => {
     const wrapper = shallowMount(CreateGameForm, {...globalConfig});
-    const vm = wrapper.vm as any;
+    const vm = wrapper.vm;
 
     expect(wrapper.find('#keepReplacedCards-checkbox').exists()).to.be.true;
     expect(vm.newGameConfig.keepReplacedCards).to.be.false;
@@ -136,7 +136,7 @@ describe('CreateGameForm', () => {
 
   it('offers MarsBot colony VP only with Colonies, off by default', async () => {
     const wrapper = shallowMount(CreateGameForm, {...globalConfig});
-    const vm = wrapper.vm as any;
+    const vm = wrapper.vm;
 
     expect(vm.automaColonyVP).to.be.false;
     expect(wrapper.find('#automa-colony-vp-checkbox').exists()).to.be.true;
@@ -148,7 +148,7 @@ describe('CreateGameForm', () => {
 
   it('sends MarsBot colony VP only when it is on and Colonies are in the game', async () => {
     const wrapper = shallowMount(CreateGameForm, {...globalConfig});
-    const vm = wrapper.vm as any;
+    const vm = wrapper.vm;
 
     expect(vm.newGameConfig.automaColonyVP).to.be.false;
     vm.automaColonyVP = true;
@@ -159,7 +159,7 @@ describe('CreateGameForm', () => {
 
   it('groups the MarsBot options under Multiplayer Options, solo only', async () => {
     const wrapper = shallowMount(CreateGameForm, {...globalConfig});
-    const vm = wrapper.vm as any;
+    const vm = wrapper.vm;
     const stackHeadings = () => wrapper.findAll('.create-game-page-column-stack > .create-game-page-column > h4').map((h) => h.text());
 
     expect(stackHeadings()).to.deep.eq(['Multiplayer Options', 'MarsBot Options']);
@@ -181,7 +181,7 @@ describe('CreateGameForm', () => {
 
   it('Easiest sets every MarsBot option to its easiest value', () => {
     const wrapper = shallowMount(CreateGameForm, {...globalConfig});
-    const vm = wrapper.vm as any;
+    const vm = wrapper.vm;
 
     expect(vm.automaDifficultyChoice).to.eq('normal');
     vm.automaDifficultyChoice = 'easiest';
@@ -201,7 +201,7 @@ describe('CreateGameForm', () => {
 
   it('Hardest sets every MarsBot option to its hardest value', () => {
     const wrapper = shallowMount(CreateGameForm, {...globalConfig});
-    const vm = wrapper.vm as any;
+    const vm = wrapper.vm;
 
     vm.automaDifficultyChoice = 'hardest';
     expect(vm.automaDifficulty).to.eq('brutal');
@@ -222,7 +222,7 @@ describe('CreateGameForm', () => {
 
   it('default (automa-on) state disables options incompatible with automa', () => {
     const wrapper = shallowMount(CreateGameForm, {...globalConfig});
-    const vm = wrapper.vm as any;
+    const vm = wrapper.vm;
 
     expect(vm.altVenusBoard).to.be.false;
     expect(vm.requiresVenusTrackCompletion).to.be.false;
@@ -237,7 +237,7 @@ describe('CreateGameForm', () => {
 
   it('lets the board selector offer only MarsBot boards while automa is on', async () => {
     const wrapper = shallowMount(CreateGameForm, {...globalConfig});
-    const vm = wrapper.vm as any;
+    const vm = wrapper.vm;
     const isBoardDisabled = wrapper.findComponent({name: 'BoardSelector'}).props('isBoardDisabled');
 
     expect(isBoardDisabled(BoardName.HELLAS)).is.false;
@@ -256,7 +256,7 @@ describe('CreateGameForm', () => {
   ] as const) {
     it(`enabling automa keeps only the selected MarsBot boards ${JSON.stringify(run)}`, async () => {
       const wrapper = shallowMount(CreateGameForm, {...globalConfig});
-      const vm = wrapper.vm as any;
+      const vm = wrapper.vm;
       vm.automa = false;
       await vm.$nextTick();
       vm.boards = [...run.boards];
@@ -268,7 +268,7 @@ describe('CreateGameForm', () => {
 
   it('enabling automa disables fan-made expansions and force-offs incompatible options', async () => {
     const wrapper = shallowMount(CreateGameForm, {...globalConfig});
-    const vm = wrapper.vm as any;
+    const vm = wrapper.vm;
 
     vm.automa = false;
     await vm.$nextTick();
@@ -282,7 +282,7 @@ describe('CreateGameForm', () => {
     vm.expansions.ceo = true;
     vm.randomFirstPlayer = true;
     vm.showColoniesList = true;
-    vm.customColonies = ['Ceres'];
+    vm.customColonies = [ColonyName.CERES];
     vm.solarPhaseOption = true;
 
     vm.automa = true;
@@ -317,7 +317,7 @@ describe('CreateGameForm', () => {
   // any default disagrees the snapshots differ and the diff names the field.
   it('default automa-on state already matches what the automa watcher enforces', async () => {
     const wrapper = shallowMount(CreateGameForm, {...globalConfig});
-    const vm = wrapper.vm as any;
+    const vm = wrapper.vm;
     expect(vm.automa).to.be.true;
 
     const snapshot = () => JSON.parse(JSON.stringify(vm.$data));

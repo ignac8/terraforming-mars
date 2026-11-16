@@ -75,32 +75,32 @@ describe('GovernmentInterventionMarsBot', () => {
 
   it('even generation advances Martian parameter without TR', () => {
     const {game, marsBot} = createAutomaGame({venusNextExtension: true});
-    (game as any).generation = 4; // even
+    game.generation = 4; // even
     const trBefore = marsBot.player.terraformRating;
     const card = bonusCard(BonusCardId.B16_GOVERNMENT_INTERVENTION, 'Government Intervention' as CardName);
-    (marsBot as any).bonusResolver.resolve(card);
+    marsBot['bonusResolver'].resolve(card);
     // TR should not have changed (reversed by withoutTRGain)
     expect(marsBot.player.terraformRating).to.eq(trBefore);
   });
 
   it('odd generation raises Venus without TR', () => {
     const {game, marsBot} = createAutomaGame({venusNextExtension: true});
-    (game as any).generation = 3; // odd
+    game.generation = 3; // odd
     const venusBefore = game.getVenusScaleLevel();
     const trBefore = marsBot.player.terraformRating;
     const card = bonusCard(BonusCardId.B16_GOVERNMENT_INTERVENTION, 'Government Intervention' as CardName);
-    (marsBot as any).bonusResolver.resolve(card);
+    marsBot['bonusResolver'].resolve(card);
     expect(game.getVenusScaleLevel()).to.eq(venusBefore + 2);
     expect(marsBot.player.terraformRating).to.eq(trBefore);
   });
 
   it('even gen with Venus complete still advances Martian parameter', () => {
     const {game, marsBot} = createAutomaGame({venusNextExtension: true});
-    (game as any).generation = 3; // odd, but Venus complete → should use Martian branch
-    (game as any).venusScaleLevel = 30;
+    game.generation = 3; // odd, but Venus complete → should use Martian branch
+    setVenusScaleLevel(game, 30);
     const venusBefore = game.getVenusScaleLevel();
     const card = bonusCard(BonusCardId.B16_GOVERNMENT_INTERVENTION, 'Government Intervention' as CardName);
-    (marsBot as any).bonusResolver.resolve(card);
+    marsBot['bonusResolver'].resolve(card);
     // Venus should not change (already maxed, used Martian branch instead)
     expect(game.getVenusScaleLevel()).to.eq(venusBefore);
   });

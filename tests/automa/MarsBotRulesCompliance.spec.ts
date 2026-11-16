@@ -3,6 +3,7 @@ import {testGame} from '../TestGame';
 import {TestPlayer} from '../TestPlayer';
 import {IGame} from '../../src/server/IGame';
 import {MarsBot} from '../../src/server/automa/MarsBot';
+import {IProjectCard} from '../../src/server/cards/IProjectCard';
 import {MarsBotBoard} from '../../src/server/automa/MarsBotBoard';
 import {MarsBotTurnResolver} from '../../src/server/automa/MarsBotTurnResolver';
 import {THARSIS_MARSBOT_BOARD} from '../../src/server/automa/boards/TharsisMarsBot';
@@ -34,8 +35,8 @@ function makeResolver(game: IGame, botPlayer: TestPlayer, human: TestPlayer, boa
   return {board, resolver: new MarsBotTurnResolver(game, botPlayer, human, board, difficulty)};
 }
 
-function mockCard(tags: Tag[], type: string = 'automated') {
-  return {cost: 5, tags, type: type as any, name: 'Mock' as any, metadata: {} as any} as any;
+function mockCard(tags: Tag[], type: string = 'automated'): IProjectCard {
+  return {cost: 5, tags, type, name: 'Mock', metadata: {}} as unknown as IProjectCard;
 }
 
 describe('MarsBot Rules Compliance', () => {
@@ -45,7 +46,7 @@ describe('MarsBot Rules Compliance', () => {
     it('greenery action places a greenery tile', () => {
       const [game, human] = testGame(1);
       const botPlayer = TestPlayer.RED.newPlayer({name: 'bot'});
-      (botPlayer as any).game = game;
+      botPlayer.game = game;
       // Need a tile owned by bot for greenery placement rules
       const spaces = game.board.getAvailableSpacesOnLand(botPlayer);
       game.simpleAddTile(botPlayer, spaces[15], {tileType: TileType.CITY});
@@ -69,7 +70,7 @@ describe('MarsBot Rules Compliance', () => {
     it('ocean action places an ocean tile and raises TR', () => {
       const [game, human] = testGame(1);
       const botPlayer = TestPlayer.RED.newPlayer({name: 'bot'});
-      (botPlayer as any).game = game;
+      botPlayer.game = game;
 
       const layout = emptyLayout();
       layout[1] = 'ocean';
@@ -89,7 +90,7 @@ describe('MarsBot Rules Compliance', () => {
     it('city action places a city tile', () => {
       const [game, human] = testGame(1);
       const botPlayer = TestPlayer.RED.newPlayer({name: 'bot'});
-      (botPlayer as any).game = game;
+      botPlayer.game = game;
 
       const layout = emptyLayout();
       layout[1] = 'city';
@@ -105,7 +106,7 @@ describe('MarsBot Rules Compliance', () => {
     it('temperature action raises temperature and TR', () => {
       const [game, human] = testGame(1);
       const botPlayer = TestPlayer.RED.newPlayer({name: 'bot'});
-      (botPlayer as any).game = game;
+      botPlayer.game = game;
 
       const layout = emptyLayout();
       layout[1] = 'temperature';
@@ -127,7 +128,7 @@ describe('MarsBot Rules Compliance', () => {
     it('tile placement adds 1 MC per bonus icon to megacredits', () => {
       const [game, human] = testGame(1);
       const botPlayer = TestPlayer.RED.newPlayer({name: 'bot'});
-      (botPlayer as any).game = game;
+      botPlayer.game = game;
 
       const layout = emptyLayout();
       layout[1] = 'city';
@@ -150,7 +151,7 @@ describe('MarsBot Rules Compliance', () => {
     it('tile adjacent to ocean gives 2 MC per adjacent ocean', () => {
       const [game, human] = testGame(1);
       const botPlayer = TestPlayer.RED.newPlayer({name: 'bot'});
-      (botPlayer as any).game = game;
+      botPlayer.game = game;
 
       // Place an ocean tile first
       const oceanSpaces = game.board.getAvailableSpacesForOcean(botPlayer);
@@ -173,7 +174,7 @@ describe('MarsBot Rules Compliance', () => {
     it('greenery action with no available space = failed action', () => {
       const [game, human] = testGame(1);
       const botPlayer = TestPlayer.RED.newPlayer({name: 'bot'});
-      (botPlayer as any).game = game;
+      botPlayer.game = game;
 
       // Fill all land spaces
       for (const s of game.board.spaces) {
@@ -192,7 +193,7 @@ describe('MarsBot Rules Compliance', () => {
     it('city action with no available space = failed action', () => {
       const [game, human] = testGame(1);
       const botPlayer = TestPlayer.RED.newPlayer({name: 'bot'});
-      (botPlayer as any).game = game;
+      botPlayer.game = game;
 
       // Fill all spaces with cities (impossible to place another city)
       const availableSpaces = game.board.getAvailableSpacesOnLand(botPlayer);
@@ -214,7 +215,7 @@ describe('MarsBot Rules Compliance', () => {
     it('MarsBot gets failed action when tied but not ahead on any award', () => {
       const [game, human] = testGame(1);
       const botPlayer = TestPlayer.RED.newPlayer({name: 'bot'});
-      (botPlayer as any).game = game;
+      botPlayer.game = game;
       // Both at 0 for all awards — MarsBot is not AHEAD
       const layout = emptyLayout();
       layout[1] = 'award';
@@ -256,7 +257,7 @@ describe('MarsBot Rules Compliance', () => {
   describe('Rule 2.11: Card VP is 0 in normal mode', () => {
     it('cardVP is 0', () => {
       const {game, marsBot} = createAutomaGame();
-      (game as any).phase = Phase.END;
+      game.phase = Phase.END;
       const vp = marsBot.getVictoryPoints();
       expect(vp.cardVP).to.eq(0);
     });
@@ -268,7 +269,7 @@ describe('MarsBot Rules Compliance', () => {
       // Set both to exact same TR, no other VP sources
       human.setTerraformRating(25);
       marsBot.player.setTerraformRating(25);
-      (game as any).phase = Phase.END;
+      game.phase = Phase.END;
 
       const humanVP = human.getVictoryPoints().total;
       const marsBotVP = marsBot.getVictoryPoints().total;
@@ -294,7 +295,7 @@ describe('MarsBot Rules Compliance', () => {
       const {game, marsBot} = createAutomaGame();
       // Simulate research phase toggle (which alternates goesFirst)
       marsBot.buildResearchActionDeck();
-      (game as any).generation = 2;
+      game.generation = 2;
       marsBot.goesFirst = !marsBot.goesFirst; // Simulating what gotoResearchPhase does
       expect(marsBot.goesFirst).to.be.true;
     });
@@ -317,7 +318,7 @@ describe('MarsBot Rules Compliance', () => {
       marsBot.player.actionsTakenThisRound = 0;
 
       // 0 claimed, meets 1 → needs 3+ → should NOT claim
-      (marsBot as any).hardModeFirstTurnMilestone();
+      marsBot['hardModeFirstTurnMilestone']();
       expect(game.claimedMilestones.length).to.eq(0);
     });
 
@@ -332,7 +333,7 @@ describe('MarsBot Rules Compliance', () => {
       game.claimedMilestones.push({player: human, milestone: nonTerraformer[1]});
       marsBot.player.actionsTakenThisRound = 0;
 
-      (marsBot as any).hardModeFirstTurnMilestone();
+      marsBot['hardModeFirstTurnMilestone']();
       expect(game.claimedMilestones.length).to.eq(3); // Now 3
       expect(marsBot.turnResolver.megacredits).to.eq(2); // 10 - 8
     });
@@ -345,7 +346,7 @@ describe('MarsBot Rules Compliance', () => {
       game.claimedMilestones.push({player: human, milestone: game.milestones[1]});
       marsBot.player.actionsTakenThisRound = 0;
 
-      (marsBot as any).hardModeFirstTurnMilestone();
+      marsBot['hardModeFirstTurnMilestone']();
       expect(game.claimedMilestones.length).to.eq(2); // No change
     });
   });
