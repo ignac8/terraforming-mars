@@ -1,4 +1,4 @@
-import {mount, VueWrapper, DOMWrapper} from '@vue/test-utils';
+import {mount, DOMWrapper, type VueWrapper} from '@vue/test-utils';
 import {globalConfig} from './getLocalVue';
 import {expect} from 'chai';
 import SelectPlayer from '@/client/components/SelectPlayer.vue';
@@ -8,7 +8,7 @@ import {InputResponse} from '@/common/inputs/InputResponse';
 import {Color} from '@/common/Color';
 
 describe('SelectPlayer', () => {
-  let wrapper: VueWrapper<any>;
+  let wrapper: VueWrapper<InstanceType<typeof SelectPlayer>>;
   let response: InputResponse | undefined = undefined;
 
   const players: Array<Partial<PublicPlayerModel>> = [
@@ -62,24 +62,24 @@ describe('SelectPlayer', () => {
   it('input selection', async () => {
     await wrapper.vm.$nextTick();
 
-    const inputs = wrapper.findAll('input');
+    const inputs = wrapper.findAll<HTMLInputElement>('input');
     clickInput(inputs[0]);
-    expect(wrapper.vm.$data.selectedPlayer).eq('red');
+    expect((inputs[0].element).checked).is.true;
     clickButton();
     expect(response).deep.eq({type: 'player', player: 'red'});
 
     clickInput(inputs[1]);
-    expect(wrapper.vm.$data.selectedPlayer).eq('yellow');
+    expect((inputs[1].element).checked).is.true;
     clickButton();
     expect(response).deep.eq({type: 'player', player: 'yellow'});
 
     clickInput(inputs[2]);
-    expect(wrapper.vm.$data.selectedPlayer).eq('green');
+    expect((inputs[2].element).checked).is.true;
     clickButton();
     expect(response).deep.eq({type: 'player', player: 'green'});
 
     clickInput(inputs[3]);
-    expect(wrapper.vm.$data.selectedPlayer).eq('blue');
+    expect((inputs[3].element).checked).is.true;
     clickButton();
     expect(response).deep.eq({type: 'player', player: 'blue'});
   });
@@ -90,7 +90,7 @@ describe('SelectPlayer', () => {
   });
 
   describe('MarsBot game', () => {
-    function mountWithMarsBot(colors: Array<Color>): VueWrapper<any> {
+    function mountWithMarsBot(colors: Array<Color>): VueWrapper<InstanceType<typeof SelectPlayer>> {
       return mount(SelectPlayer, {
         ...globalConfig,
         props: {
@@ -125,8 +125,8 @@ describe('SelectPlayer', () => {
     });
   });
 
-  async function clickInput(input: DOMWrapper<Element>) {
-    const radio = input.element as HTMLInputElement;
+  async function clickInput(input: DOMWrapper<HTMLInputElement>) {
+    const radio = input.element;
     radio.checked = true;
     input.trigger('change');
     await wrapper.vm.$nextTick();

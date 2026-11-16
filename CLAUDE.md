@@ -8,7 +8,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 npm run build                # Full build: CSS + JSON static files, server (tsc), client (webpack)
 npm run build:server         # TypeScript compile server only: tsc --build src/tsconfig.json
 npm run build:client         # Webpack production bundle (runs make:cards first)
-npm run build:test           # Compile tests: tsc --build tests/tsconfig.json
+npm run build:test           # Compile tests: vue-tsc --build tests/tsconfig.json
 npm run make:static          # Generate CSS and JSON assets (prerequisite for build)
 npm start                    # Run server (node build/src/server/server.js)
 npm run lint                 # All lints: eslint + i18n audit + vue-tsc

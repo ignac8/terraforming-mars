@@ -20,7 +20,6 @@ export interface ViewModel {
   id: ParticipantId;
   color: Color;
   thisPlayer: PublicPlayerModel | undefined;
-  runId: string;
   /** Every player's VP is filled in, not only the viewer's: the replay of a finished game. */
   allVictoryPoints?: boolean;
 }

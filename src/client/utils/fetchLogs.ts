@@ -20,8 +20,8 @@ export async function fetchLogs(id: ParticipantId, generation: number): Promise<
       return undefined;
     }
     return localColors(await resp.json());
-  } catch (err: any) {
-    if (err.name === 'AbortError') {
+  } catch (err: unknown) {
+    if (err instanceof Error && err.name === 'AbortError') {
       // ignore aborted requests
       return undefined;
     }

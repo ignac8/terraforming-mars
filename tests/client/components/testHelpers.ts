@@ -210,7 +210,6 @@ export function fakePlayerViewModel(overrides?: RecursivePartial<PlayerViewModel
     waitingFor: undefined,
     game: fakeGameModel(),
     players: [thisPlayer],
-    runId: 'run-id',
     ...overrides,
   } as PlayerViewModel;
 }
@@ -231,7 +230,6 @@ export function fakeViewModel(overrides?: RecursivePartial<ViewModel>): ViewMode
     id: 'p-blue-id',
     color: thisPlayer.color,
     thisPlayer,
-    runId: 'run-id',
     ...overrides,
   } as ViewModel;
 }

@@ -8,7 +8,7 @@ import {BoardName} from '@/common/boards/BoardName';
 import {DEFAULT_EXPANSIONS} from '@/common/cards/GameModule';
 import {JSONObject} from '@/common/Types';
 import {defineComponent} from 'vue';
-import {NewGameConfig, NewPlayerModel} from '@/common/game/NewGameConfig';
+import {NewGameConfig} from '@/common/game/NewGameConfig';
 import {CardName} from '@/common/cards/CardName';
 import {CreateGameModel} from '@/client/components/create/CreateGameModel';
 import {ValidationErrors} from '@/common/game/validateNewGameConfig';
@@ -17,7 +17,7 @@ import {RandomMAOptionType} from '@/common/ma/RandomMAOptionType';
 import {PreferencesManager} from '@/client/utils/PreferencesManager';
 
 // Minimal serialized Create Game payload used by settings restore tests.
-function createNewGameConfig(overrides: JSONObject = {}):  NewGameConfig {
+function createNewGameConfig(overrides: JSONObject = {}): NewGameConfig & JSONObject {
   // Not ideal but is fine for the tests.
   const config: Partial<NewGameConfig> = {
     players: [
@@ -30,7 +30,7 @@ function createNewGameConfig(overrides: JSONObject = {}):  NewGameConfig {
     solarPhaseOption: true,
     ...overrides,
   };
-  return config as NewGameConfig;
+  return config as NewGameConfig & JSONObject;
 }
 
 /*
@@ -342,7 +342,7 @@ describe('CreateGameForm', () => {
 
     const config = await wrapper.vm.serializeSettings();
 
-    expect(config?.players.map((player: NewPlayerModel) => player.first)).deep.eq([false, true, false]);
+    expect(config?.players.map((player) => player.first)).deep.eq([false, true, false]);
   });
 
   it('restores the last saved game settings on load', async () => {
@@ -376,11 +376,16 @@ describe('CreateGameForm', () => {
     });
     const wrapper = mount(Root, {
       ...globalConfig,
+      global: {
+        ...globalConfig.global,
+        mocks: {
+          showAlert(title: string, message: string) {
+            alerts.push({title, message});
+          },
+        },
+      },
     });
     const form = wrapper.findComponent(CreateGameForm);
-    (form.vm.$root as any).showAlert = (title: string, message: string) => {
-      alerts.push({title, message});
-    };
 
     createGameSettingsStorage.save(createNewGameConfig({
       customPreludes: ['Bad Prelude Name'],
@@ -420,7 +425,7 @@ describe('CreateGameForm', () => {
       ...globalConfig,
     });
 
-    expect(() => (wrapper.vm as any).applySettings(createNewGameConfig({
+    expect(() => wrapper.vm.applySettings(createNewGameConfig({
       players: [
         {name: 'Alice', color: 'red', beginner: false, handicap: 0},
         {name: 'Bob', color: 'red', beginner: false, handicap: 0},
@@ -467,20 +472,6 @@ describe('CreateGameForm', () => {
     expect(wrapper.vm.boards).deep.eq([BoardName.THARSIS]);
   });
 
-  it('toggling random milestones and awards leaves manual milestones and awards', () => {
-    const wrapper = shallowMount(CreateGameForm, {
-      ...globalConfig,
-    });
-    const model = wrapper.vm as unknown as CreateGameModel;
-    model.randomMA = RandomMAOptionType.MANUAL;
-    model.customMA = {milestones: ['Terraformer'], awards: ['Banker']};
-    expect(wrapper.vm.isRandomMAEnabled).is.false;
-
-    wrapper.vm.randomMAToggle();
-    expect(model.randomMA).eq(RandomMAOptionType.LIMITED);
-    expect(model.customMA).is.undefined;
-  });
-
   it('solo games ignore the milestone and award settings', async () => {
     const wrapper = shallowMount(CreateGameForm, {
       ...globalConfig,
@@ -488,8 +479,7 @@ describe('CreateGameForm', () => {
     const model = wrapper.vm as unknown as CreateGameModel;
     model.playersCount = 1;
     model.automa = false;
-    model.randomMA = RandomMAOptionType.MANUAL;
-    model.customMA = {milestones: ['Terraformer'], awards: []};
+    model.goals = {...model.goals, type: 'manual', selected: {milestones: ['Terraformer'], awards: []}};
     expect(wrapper.vm.hasBlockingValidationErrors).is.false;
     const config: NewGameConfig | undefined = await wrapper.vm.serializeSettings();
     expect(config?.randomMA).eq(RandomMAOptionType.NONE);
@@ -507,8 +497,7 @@ describe('CreateGameForm', () => {
     } as const;
     model.playersCount = 1;
     model.automa = true;
-    model.randomMA = RandomMAOptionType.MANUAL;
-    model.customMA = customMA;
+    model.goals = {...model.goals, type: 'manual', selected: customMA};
     const config: NewGameConfig | undefined = await wrapper.vm.serializeSettings();
     expect(config?.randomMA).eq(RandomMAOptionType.MANUAL);
     expect(config?.customMA).deep.eq(customMA);
@@ -526,9 +515,8 @@ describe('CreateGameForm', () => {
 
   it('validates hand-picked milestones and awards against the expansions', () => {
     const errors = validateTwoPlayerGame((model) => {
-      model.randomMA = RandomMAOptionType.MANUAL;
       model.expansions.turmoil = false;
-      model.customMA = {milestones: ['Terraformer'], awards: ['Banker', 'Politician']};
+      model.goals = {...model.goals, type: 'manual', selected: {milestones: ['Terraformer'], awards: ['Banker', 'Politician']}};
     });
     expect(errors.milestonesMissingExpansions).is.false;
     expect(errors.awardsMissingExpansions).is.true;

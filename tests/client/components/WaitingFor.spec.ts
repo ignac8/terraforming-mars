@@ -8,6 +8,7 @@ import WaitingFor from '@/client/components/WaitingFor.vue';
 import {RecursivePartial} from '@/common/utils/utils';
 import {PlayerViewModel, PublicPlayerModel} from '@/common/models/PlayerModel';
 import {WaitingForModel} from '@/common/models/WaitingForModel';
+import {PlayerInputModel} from '@/common/models/PlayerInputModel';
 import {Phase} from '@/common/Phase';
 import {INVALID_REQUEST_ID} from '@/common/app/AppErrorId';
 
@@ -84,7 +85,7 @@ describe('WaitingFor', () => {
       },
       props: {
         playerView,
-        waitingfor: {type: 'card', title: 'Select a card', buttonLabel: 'Select'} as any,
+        waitingfor: {type: 'card', title: 'Select a card', buttonLabel: 'Select'} as PlayerInputModel,
       },
     });
   }

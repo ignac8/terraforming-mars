@@ -11,6 +11,8 @@ import {sanitizeEscapeVelocityOptions} from '@/common/game/escapeVelocity';
 import {BoardName} from '@/common/boards/BoardName';
 import {RandomBoardOption} from '@/common/boards/RandomBoardOption';
 import {boardOptions} from '@/common/boards/randomBoardOptions';
+import {fromGameOptions, toGameOptions} from './goals/conversions';
+import {RandomMAOptionType} from '@/common/ma/RandomMAOptionType';
 import {CustomMA} from '@/common/ma/CustomMA';
 
 function safeBoolean(val: JSONValue): boolean {
@@ -51,6 +53,10 @@ export class JSONProcessor {
     const validationErrors = this.validatePlayers(players);
     if (validationErrors.length > 0) {
       throw new Error(validationErrors.join('\n'));
+    }
+
+    if (json.randomMA !== undefined && !Object.values(RandomMAOptionType).includes(json.randomMA as RandomMAOptionType)) {
+      throw new Error('Unknown milestone/award type: ' + json.randomMA);
     }
 
     if (json.corporationsDraft !== undefined) {
@@ -149,7 +155,10 @@ export class JSONProcessor {
       'players',
       'solarPhaseOption',
       'constants',
-      // Checked, below.
+      // Converted to goals, below.
+      'randomMA',
+      'modularMA',
+      'includeFanMA',
       'customMA'];
     for (const k in json) {
       if (ignoredFields.includes(k)) {
@@ -157,7 +166,7 @@ export class JSONProcessor {
       }
       if (k in this.model) {
         // This is safe because of the in check, above.
-        (this.model as any)[k] = json[k];
+        Object.assign(this.model, {[k]: json[k]});
       } else {
         this.warnings.push('Unknown property: ' + k);
       }
@@ -167,7 +176,14 @@ export class JSONProcessor {
       this.model.players[i] = players[i];
     }
 
-    this.model.customMA = safeCustomMA(json.customMA) ?? this.model.customMA;
+    // Settings without some of the milestones and awards options keep the form's.
+    const current = toGameOptions(this.model.goals);
+    this.model.goals = fromGameOptions({
+      randomMA: (json.randomMA as RandomMAOptionType | undefined) ?? current.randomMA,
+      modularMA: json.modularMA === undefined ? current.modularMA : safeBoolean(json.modularMA),
+      includeFanMA: json.includeFanMA === undefined ? current.includeFanMA : safeBoolean(json.includeFanMA),
+      customMA: safeCustomMA(json.customMA) ?? current.customMA,
+    });
 
     this.validateCardNames('customCorporations', this.model.customCorporations);
     this.validateCardNames('customPreludes', this.model.customPreludes);
@@ -196,8 +212,7 @@ export class JSONProcessor {
     // Ensure colors are valid and distinct
     const colors = new Set(players.map((p) => p.color));
     for (const color of colors) {
-      // `as any` is OK here since this just validates `color`.
-      if (PLAYER_COLORS.indexOf(color as any) === -1) {
+      if (!(PLAYER_COLORS as ReadonlyArray<string>).includes(color)) {
         errors.push(color + ' is not a color');
       }
     }
