@@ -19,10 +19,12 @@ describe('ServeRulings', () => {
 
     expect(res.headers.get('Content-Type')).eq('text/html; charset=utf-8');
     const data = /<script type="application\/json" id="rulings-data">(.*?)<\/script>/s.exec(res.content);
-    const served: {rulings: Array<unknown>} = JSON.parse(data?.[1] ?? '{"rulings": []}');
+    const served: {rulings: Array<{u: string, q: string, r: string, o: string}>} = JSON.parse(data?.[1] ?? '{"rulings": []}');
     // The page is built from this file. When it changes, the page is rebuilt.
-    const source = fs.readFileSync('automa/bgg-rulings/rulings.jsonl', 'utf8').trim().split('\n');
-    expect(served.rulings).has.length(source.length);
+    const source: Array<{url: string, question: string, ruling: string, quote: string}> =
+      fs.readFileSync('automa/bgg-rulings/rulings.jsonl', 'utf8').trim().split('\n').map((line) => JSON.parse(line));
+    expect(served.rulings.map((x) => [x.u, x.q, x.r, x.o].join('\n')).sort())
+      .deep.eq(source.map((x) => [x.url, x.question, x.ruling, x.quote].join('\n')).sort());
   });
 
   it('compresses the page for a browser that accepts gzip', async () => {

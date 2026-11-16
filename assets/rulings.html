@@ -35,7 +35,7 @@ body {
   margin: 0;
   background: var(--space);
   color: var(--dust);
-  font: 400 16px/1.5 var(--body);
+  font: 400 18px/1.55 var(--body);
 }
 body::before {
   content: "";
@@ -49,7 +49,7 @@ a { color: var(--rust); }
 a:hover { color: var(--ochre); }
 :focus-visible { outline: 2px solid var(--ochre); outline-offset: 2px; }
 .wrap {
-  max-width: 900px;
+  max-width: 960px;
   margin-inline: auto;
   padding-left: max(16px, env(safe-area-inset-left, 0px));
   padding-right: max(16px, env(safe-area-inset-right, 0px));
@@ -98,16 +98,16 @@ a:hover { color: var(--ochre); }
   text-wrap: balance;
 }
 .mast h1 span { color: var(--rust); }
-.mast .lede { margin: 12px 0 0; max-width: 56ch; font-size: 17px; }
+.mast .lede { margin: 12px 0 0; max-width: 56ch; font-size: 20px; }
 .mast .facts {
   margin: 14px 0 0;
-  font: 600 15px/1.3 var(--display);
+  font: 600 17px/1.3 var(--display);
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--ochre);
   font-variant-numeric: tabular-nums;
 }
-.mast .fan { margin: 10px 0 0; max-width: 62ch; font-size: 14px; color: var(--haze); }
+.mast .fan { margin: 10px 0 0; max-width: 62ch; font-size: 16px; color: var(--haze); }
 
 /* Search */
 .bar {
@@ -121,19 +121,19 @@ a:hover { color: var(--ochre); }
 .bar input[type="search"] {
   flex: 1 1 auto;
   min-width: 0;
-  height: 46px;
+  height: 50px;
   padding: 0 14px;
   border: 1px solid var(--seam);
   border-radius: 4px;
   background: var(--regolith);
   color: var(--dust);
-  font: 400 17px var(--body);
+  font: 400 19px var(--body);
 }
 .bar input[type="search"]::placeholder { color: var(--haze); }
 .bar input[type="search"]:focus { border-color: var(--rust); outline: none; box-shadow: 0 0 0 2px var(--rust); }
 .bar .tally {
   flex: 0 0 auto;
-  font: 600 15px var(--display);
+  font: 600 17px var(--display);
   letter-spacing: 0.06em;
   text-transform: uppercase;
   color: var(--haze);
@@ -144,7 +144,7 @@ a:hover { color: var(--ochre); }
 main .wrap { padding-block: 18px 40px; display: grid; gap: 18px; }
 .label {
   margin: 0 0 8px;
-  font: 600 13px var(--display);
+  font: 600 15px var(--display);
   letter-spacing: 0.12em;
   text-transform: uppercase;
   color: var(--haze);
@@ -157,18 +157,18 @@ main .wrap { padding-block: 18px 40px; display: grid; gap: 18px; }
   border-radius: 3px;
   background: var(--crater);
   color: var(--dust);
-  padding: 3px 9px;
-  font: 400 14px/1.4 var(--body);
+  padding: 4px 10px;
+  font: 400 16px/1.4 var(--body);
   cursor: pointer;
 }
 .chip:hover { border-color: var(--rust); }
-.chip small { color: var(--haze); font-size: 12px; font-variant-numeric: tabular-nums; }
+.chip small { color: var(--haze); font-size: 14px; font-variant-numeric: tabular-nums; }
 
 /* Expansion tiles */
 .tiles { display: flex; flex-wrap: wrap; gap: 10px 6px; }
 .tile {
   flex: 0 0 auto;
-  width: 78px;
+  width: 84px;
   padding: 0;
   border: 0;
   background: none;
@@ -177,7 +177,7 @@ main .wrap { padding-block: 18px 40px; display: grid; gap: 18px; }
   display: grid;
   justify-items: center;
   gap: 4px;
-  font: 600 12px/1.15 var(--display);
+  font: 600 14px/1.15 var(--display);
   letter-spacing: 0.05em;
   text-transform: uppercase;
 }
@@ -209,16 +209,16 @@ main .wrap { padding-block: 18px 40px; display: grid; gap: 18px; }
 
 /* Selects and toggle */
 .controls { display: flex; flex-wrap: wrap; gap: 10px 16px; align-items: center; }
-.controls label { display: inline-flex; align-items: center; gap: 8px; font-size: 15px; color: var(--haze); }
+.controls label { display: inline-flex; align-items: center; gap: 8px; font-size: 17px; color: var(--haze); }
 .controls select {
-  height: 36px;
+  height: 40px;
   max-width: 100%;
   padding: 0 8px;
   border: 1px solid var(--seam);
   border-radius: 4px;
   background: var(--crater);
   color: var(--dust);
-  font: 400 15px var(--body);
+  font: 400 17px var(--body);
 }
 .controls input[type="checkbox"] { width: 18px; height: 18px; accent-color: var(--rust); }
 .controls .toggle { color: var(--dust); }
@@ -227,7 +227,7 @@ main .wrap { padding-block: 18px 40px; display: grid; gap: 18px; }
   background: none;
   color: var(--rust);
   padding: 4px 0;
-  font: 400 15px var(--body);
+  font: 400 17px var(--body);
   text-decoration: underline;
   cursor: pointer;
 }
@@ -245,8 +245,8 @@ main .wrap { padding-block: 18px 40px; display: grid; gap: 18px; }
   text-transform: uppercase;
   color: var(--ochre);
 }
-.conflicts p { margin: 4px 0 0; font-size: 14px; color: var(--haze); }
-.conflicts ul { margin: 10px 0 0; padding-left: 20px; display: grid; gap: 8px; font-size: 15px; }
+.conflicts p { margin: 4px 0 0; font-size: 16px; color: var(--haze); }
+.conflicts ul { margin: 10px 0 0; padding-left: 20px; display: grid; gap: 8px; font-size: 17px; }
 .conflicts li { overflow-wrap: anywhere; }
 
 /* Results */
@@ -257,11 +257,11 @@ main .wrap { padding-block: 18px 40px; display: grid; gap: 18px; }
   flex-wrap: wrap;
   align-items: baseline;
   gap: 4px 10px;
-  font: 700 22px/1.1 var(--display);
+  font: 700 25px/1.1 var(--display);
   letter-spacing: 0.06em;
   text-transform: uppercase;
 }
-.group small { font: 600 13px var(--display); letter-spacing: 0.12em; color: var(--rust); }
+.group small { font: 600 15px var(--display); letter-spacing: 0.12em; color: var(--rust); }
 .r {
   min-width: 0;
   background: var(--regolith);
@@ -287,19 +287,19 @@ main .wrap { padding-block: 18px 40px; display: grid; gap: 18px; }
 .r-topic {
   margin: 0;
   min-width: 0;
-  font: 700 17px/1.2 var(--display);
+  font: 700 20px/1.2 var(--display);
   letter-spacing: 0.05em;
   text-transform: uppercase;
   overflow-wrap: anywhere;
 }
 .r.is-superseded .r-topic { text-decoration: line-through; }
 .r-kind {
-  font: 600 12px/1.2 var(--display);
+  font: 600 14px/1.2 var(--display);
   letter-spacing: 0.12em;
   text-transform: uppercase;
   white-space: nowrap;
 }
-.r-body { padding: 12px 14px 12px; display: grid; gap: 8px; }
+.r-body { padding: 14px 16px 14px; display: grid; gap: 10px; }
 .r-body p { margin: 0; max-width: 68ch; overflow-wrap: anywhere; }
 .r-q { font-weight: 600; }
 .r-flags { display: flex; flex-wrap: wrap; gap: 6px; }
@@ -307,19 +307,19 @@ main .wrap { padding-block: 18px 40px; display: grid; gap: 18px; }
   border: 1px solid var(--ochre);
   border-radius: 2px;
   padding: 0 6px;
-  font: 600 12px/1.6 var(--display);
+  font: 600 14px/1.6 var(--display);
   letter-spacing: 0.1em;
   text-transform: uppercase;
   color: var(--ochre);
 }
 .flag.is-red { border-color: var(--event); color: var(--event); }
-.r-note { font-size: 14px; color: var(--ochre); }
+.r-note { font-size: 16px; color: var(--ochre); }
 .r-note.is-red { color: var(--event); }
 .r-quote {
   margin: 2px 0 0;
   max-width: 68ch;
   font-style: italic;
-  font-size: 15px;
+  font-size: 17px;
   color: var(--haze);
   overflow-wrap: anywhere;
 }
@@ -332,31 +332,65 @@ main .wrap { padding-block: 18px 40px; display: grid; gap: 18px; }
   gap: 6px 14px;
   padding: 8px 14px;
   border-top: 1px solid var(--seam);
-  font-size: 14px;
+  font-size: 16px;
   color: var(--haze);
 }
 .r-foot .who { color: var(--dust); }
 .r-foot time { font-variant-numeric: tabular-nums; }
 .r-foot .post { margin-left: auto; white-space: nowrap; }
 .r-cards { display: flex; flex-wrap: wrap; gap: 5px; }
-.r-cards .chip { font-size: 13px; padding: 1px 7px; }
+.r-cards .chip { font-size: 15px; padding: 1px 8px; }
 mark { background: var(--ochre); color: var(--ink); border-radius: 2px; padding: 0 1px; }
 .empty { padding: 26px 0; color: var(--haze); }
 .empty b { color: var(--dust); }
 .more {
   justify-self: center;
-  height: 42px;
+  height: 46px;
   padding: 0 22px;
   border: 1px solid var(--rust);
   border-radius: 4px;
   background: none;
   color: var(--dust);
-  font: 600 15px var(--display);
+  font: 600 17px var(--display);
   letter-spacing: 0.1em;
   text-transform: uppercase;
   cursor: pointer;
 }
 .more:hover { background: var(--rust); color: var(--ink); }
+
+/* Legend: what the banner colours and labels mean, folded away until asked for */
+.legend { border: 1px solid var(--seam); border-radius: 4px; background: var(--regolith); }
+.legend summary {
+  padding: 9px 14px;
+  font: 600 16px var(--display);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+.legend summary:hover { color: var(--ochre); }
+.legend dl {
+  margin: 0;
+  padding: 4px 14px 14px;
+  display: grid;
+  grid-template-columns: minmax(0, max-content) minmax(0, 1fr);
+  gap: 6px 16px;
+  font-size: 17px;
+}
+.legend dt { display: flex; align-items: center; gap: 8px; }
+.legend i {
+  flex: 0 0 auto;
+  width: 14px;
+  height: 14px;
+  border-radius: 2px;
+  background: var(--greenery);
+}
+.legend .is-faq { background: var(--ocean); }
+.legend .is-intent { background: var(--ochre); }
+.legend .is-erratum { background: var(--event); }
+.legend .is-variant { background: var(--venus); }
+.legend .is-old { background: var(--haze); }
+.to-about { border: 0; background: none; padding: 0; color: var(--rust); font: inherit; text-decoration: underline; cursor: pointer; }
+.to-about:hover { color: var(--ochre); }
 
 /* Footer */
 .about { border-top: 1px solid var(--seam); background: var(--regolith); }
@@ -367,18 +401,18 @@ mark { background: var(--ochre); color: var(--ink); border-radius: 2px; padding:
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
-.about p { margin: 0 0 8px; max-width: 68ch; font-size: 15px; color: var(--haze); }
-.about dl { margin: 0; display: grid; grid-template-columns: minmax(0, max-content) minmax(0, 1fr); gap: 5px 16px; font-size: 15px; }
-.about dt { color: var(--dust); font-weight: 600; }
-.about dd { margin: 0; color: var(--haze); }
+.about p { margin: 0 0 8px; max-width: 68ch; font-size: 17px; color: var(--haze); }
+.about dl { margin: 0; display: grid; grid-template-columns: minmax(0, max-content) minmax(0, 1fr); gap: 5px 16px; font-size: 17px; }
+.about dt, .legend dt { color: var(--dust); font-weight: 600; }
+.about dd, .legend dd { margin: 0; color: var(--haze); }
 .about dd b { color: var(--dust); font-weight: 400; font-variant-numeric: tabular-nums; }
 @media (max-width: 520px) {
-  .tile { width: 66px; font-size: 11px; }
+  .tile { width: 66px; font-size: 12px; }
   .tile .hex { width: 54px; height: 61px; }
   .tile .hex b { width: 50px; height: 57px; font-size: 17px; }
   .bar .tally { display: none; }
-  .about dl { grid-template-columns: minmax(0, 1fr); gap: 0; }
-  .about dd { margin-bottom: 8px; }
+  .about dl, .legend dl { grid-template-columns: minmax(0, 1fr); gap: 0; }
+  .about dd, .legend dd { margin-bottom: 8px; }
 }
 @media (prefers-reduced-motion: no-preference) {
   .tile .hex, .chip, .more { transition: background-color 0.12s, border-color 0.12s; }
@@ -392,7 +426,7 @@ mark { background: var(--ochre); color: var(--ink); border-radius: 2px; padding:
     <h1>Terraforming Mars <span>Rulings</span></h1>
     <p class="lede">Rules answers that the designers and publishers posted on BoardGameGeek, for the base game and the official expansions.</p>
     <p class="facts" id="facts"></p>
-    <p class="fan">Unofficial fan index, not affiliated with FryxGames, Stronghold Games or BoardGameGeek. Questions and answers are paraphrased and the quote is verbatim, so follow the link to the post before you settle an argument with it.</p>
+    <p class="fan">Unofficial fan index, not affiliated with FryxGames, Stronghold Games or BoardGameGeek. Questions and answers are paraphrased and the quote is verbatim, so follow the link to the post before you settle an argument with it. <button type="button" class="to-about" id="to-about">Whose answers count and where they come from</button></p>
   </div>
 </header>
 
@@ -426,6 +460,24 @@ mark { background: var(--ochre); color: var(--ink); border-radius: 2px; padding:
       <button type="button" class="reset" id="reset" hidden>Clear filters</button>
     </section>
 
+    <details class="legend" id="legend">
+      <summary>What the colours and labels mean</summary>
+      <dl>
+        <dt><i></i>Ruling</dt><dd>A rules answer.</dd>
+        <dt><i class="is-faq"></i>FAQ</dt><dd>A rules answer filed as a frequently asked question.</dd>
+        <dt><i class="is-intent"></i>Design intent</dt><dd>What the designer meant, where that settles a question the rules leave open.</dd>
+        <dt><i class="is-erratum"></i>Erratum</dt><dd>The printed card or rulebook is wrong and the post gives the correct version.</dd>
+        <dt><i class="is-variant"></i>Variant</dt><dd>An official or endorsed variant, not the standard rules.</dd>
+        <dt><i class="is-old"></i>Pre-release</dt><dd>Posted before the game came out in September 2016, while the rules were still changing.</dd>
+        <dt><i class="is-old"></i>Prototype</dt><dd>From the 2022 fan prototype thread for the Automa, before the published version.</dd>
+        <dt><i class="is-old"></i>Superseded</dt><dd>A later official post on the same question says something else. The card links to it.</dd>
+        <dt>Hedged</dt><dd>The poster said "I think", "I would say" or similar.</dd>
+        <dt>Inferred</dt><dd>The post does not name the card, or answers a question that has to be read from context.</dd>
+        <dt>House rule OK</dt><dd>The poster said to play it however your group likes.</dd>
+        <dt>Reversed</dt><dd>The same poster took it back later in the same thread.</dd>
+      </dl>
+    </details>
+
     <section class="conflicts" id="conflicts" hidden></section>
 
     <section class="results" id="results" aria-label="Rulings"></section>
@@ -433,28 +485,12 @@ mark { background: var(--ochre); color: var(--ink); border-radius: 2px; padding:
   </div>
 </main>
 
-<footer class="about">
+<footer class="about" id="about">
   <div class="wrap">
     <section>
       <h2>Whose answers count</h2>
       <p>Only posts from these BoardGameGeek accounts are included. Other frequent posters in the rules forums are players, so their answers are left out even when they are right.</p>
       <dl id="voices"></dl>
-    </section>
-    <section>
-      <h2>Reading the labels</h2>
-      <dl>
-        <dt>Ruling, FAQ</dt><dd>A rules answer. The banner is green for a ruling and blue for an answer filed as a frequently asked question.</dd>
-        <dt>Design intent</dt><dd>What the designer meant, where that settles a question the rules leave open.</dd>
-        <dt>Erratum</dt><dd>The printed card or rulebook is wrong and the post gives the correct version.</dd>
-        <dt>Variant</dt><dd>An official or endorsed variant, not the standard rules.</dd>
-        <dt>Pre-release</dt><dd>Posted before the game came out in September 2016, while the rules were still changing.</dd>
-        <dt>Prototype</dt><dd>From the 2022 fan prototype thread for the Automa, before the published version.</dd>
-        <dt>Superseded</dt><dd>A later official post on the same question says something else. The card links to it.</dd>
-        <dt>Hedged</dt><dd>The poster said "I think", "I would say" or similar.</dd>
-        <dt>Inferred</dt><dd>The post does not name the card, or answers a question that has to be read from context.</dd>
-        <dt>House rule OK</dt><dd>The poster said to play it however your group likes.</dd>
-        <dt>Reversed</dt><dd>The same poster took it back later in the same thread.</dd>
-      </dl>
     </section>
     <section>
       <h2>Sources and limits</h2>
@@ -723,11 +759,9 @@ mark { background: var(--ochre); color: var(--ink); border-radius: 2px; padding:
       el.q.focus();
     }
   });
-  if ('IntersectionObserver' in window) {
-    new IntersectionObserver(function (entries) {
-      if (entries[0].isIntersecting && !el.more.hidden) { state.shown += PAGE; render(true); }
-    }, {rootMargin: '600px'}).observe(el.more);
-  }
+  document.getElementById('to-about').addEventListener('click', function () {
+    document.getElementById('about').scrollIntoView();
+  });
 
   try { if (localStorage.getItem('tmr-current') === '0') { state.current = false; el.current.checked = false; } } catch (e) { /* storage is optional */ }
   fromHash();
