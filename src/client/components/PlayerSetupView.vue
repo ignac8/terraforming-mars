@@ -53,9 +53,9 @@
 
     <DynamicTitle title="Game details" :color="thisPlayer.color" />
 
-    <div class="player_home_block" v-if="playerView.players.length > 1">
-      <Milestones :showScores="false" :milestones="game.milestones" />
-      <Awards :show-scores="false" :awards="game.awards" />
+    <div class="player_home_block" v-if="playerView.players.length > 1 || isAutoma">
+      <Milestones :showScores="false" :milestones="game.milestones" :isAutoma="isAutoma" :automaMapSet="automaMapSet" />
+      <Awards :show-scores="false" :awards="game.awards" :isAutoma="isAutoma" :automaMapSet="automaMapSet" />
     </div>
 
     <div class="player_home_block player_home_block--turnorder nofloat" v-if="playerView.players.length>1">
@@ -116,6 +116,8 @@ import {Phase} from '@/common/Phase';
 import {GameModel} from '@/common/models/GameModel';
 import {PlayerViewModel, PublicPlayerModel} from '@/common/models/PlayerModel';
 import {TileView} from './board/TileView';
+import {BoardName} from '@/common/boards/BoardName';
+import {marsBotMapSet} from '@/common/automa/marsBotMapSet';
 
 export default defineComponent({
   name: 'PlayerSetupView',
@@ -143,6 +145,12 @@ export default defineComponent({
     },
     isInitialDraftingPhase(): boolean {
       return (this.game.phase === Phase.INITIALDRAFTING) && this.game.gameOptions.initialDraftVariant;
+    },
+    isAutoma(): boolean {
+      return this.game.marsBot !== undefined;
+    },
+    automaMapSet(): BoardName | undefined {
+      return marsBotMapSet(this.game.gameOptions);
     },
   },
   components: {
