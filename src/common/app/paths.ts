@@ -34,6 +34,7 @@ export const paths = {
   PLAYER_INPUT: 'player/input',
   REPLAY: 'replay',
   RESET: 'reset',
+  RULINGS: 'rulings',
   SPECTATOR: 'spectator',
   THE_END: 'the-end',
 } as const;

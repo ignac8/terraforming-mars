@@ -36,6 +36,7 @@ import {ApiRewindVote} from '../routes/ApiRewindVote';
 import {Reset} from '../routes/Reset';
 import {ServeApp} from '../routes/ServeApp';
 import {ServeAsset} from '../routes/ServeAsset';
+import {ServeRulings} from '../routes/ServeRulings';
 import {serverId, statsId} from '../utils/server-ids';
 import {newIpBlocklist} from './IPBlocklist';
 import {newIpTracker} from './IPTracker';
@@ -133,6 +134,7 @@ const handlers: Map<string, IHandler> = new Map(
     [paths.API_REWIND_VOTE, ApiRewindVote.INSTANCE],
     [paths.REPLAY, ServeApp.INSTANCE],
     [paths.RESET, Reset.INSTANCE],
+    [paths.RULINGS, ServeRulings.INSTANCE],
     [paths.SPECTATOR, ServeApp.INSTANCE],
     ['styles.css', ServeAsset.INSTANCE],
     ['sw.js', ServeAsset.INSTANCE],

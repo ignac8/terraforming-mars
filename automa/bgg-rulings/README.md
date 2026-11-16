@@ -21,6 +21,10 @@ are not covered. Fan content (the BGG user-created corporation pack, The Unknown
 
 [rulings.jsonl](rulings.jsonl) has the same 1303 rulings, one JSON object per line, for grep and scripts.
 
+The game site serves them as a searchable page at `/rulings`. That page is `assets/rulings.html`, built
+from rulings.jsonl, so it has to be rebuilt when rulings.jsonl changes
+(`tests/routes/ServeRulings.spec.ts` fails until it is).
+
 ## Whose posts count
 
 Only these accounts. The BGG profile of each one names the person, and most are linked to the
