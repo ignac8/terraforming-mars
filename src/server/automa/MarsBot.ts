@@ -168,7 +168,7 @@ export class MarsBot implements IMarsBot {
         this.tradeFleetCubeKey = trackCubeKey(energyTrackIdx, 9);
       }
     }
-    this.tilePlacer = new MarsBotTilePlacer(game, player, humanPlayer, this);
+    this.tilePlacer = new MarsBotTilePlacer(this);
     this.turnResolver = new MarsBotTurnResolver(
       game, player, humanPlayer, this.marsBotBoard, difficulty, 0, this.tilePlacer,
     );

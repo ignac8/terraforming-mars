@@ -19,7 +19,7 @@ describe('LobbyistsMarsBot', () => {
 
     const cards = createBaseBonusCards();
     const b06 = cards.find((c) => c.id === BonusCardId.B06_LOBBYISTS)!;
-    const tilePlacer = new MarsBotTilePlacer(game, marsBot.player, human);
+    const tilePlacer = new MarsBotTilePlacer(marsBot);
     const bonusDeck = MarsBotBonusDeck.create(new SeededRandom(99));
     const bonusResolver = new MarsBotBonusResolver(game, marsBot.player, human, marsBot.turnResolver, bonusDeck, tilePlacer);
 
@@ -34,7 +34,7 @@ describe('LobbyistsMarsBot', () => {
 
     const cards = createBaseBonusCards();
     const b06 = cards.find((c) => c.id === BonusCardId.B06_LOBBYISTS)!;
-    const tilePlacer = new MarsBotTilePlacer(game, marsBot.player, human);
+    const tilePlacer = new MarsBotTilePlacer(marsBot);
     const bonusDeck = MarsBotBonusDeck.create(new SeededRandom(99));
     const bonusResolver = new MarsBotBonusResolver(game, marsBot.player, human, marsBot.turnResolver, bonusDeck, tilePlacer);
 

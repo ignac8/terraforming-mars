@@ -40,9 +40,9 @@ export class MarsBotTurnResolver {
     public readonly marsBotBoard: MarsBotBoard,
     private readonly difficulty: DifficultyLevel,
     public megacredits: number = 0,
-    tilePlacer?: MarsBotTilePlacer,
+    tilePlacer: MarsBotTilePlacer,
   ) {
-    this.tilePlacer = tilePlacer ?? new MarsBotTilePlacer(game, botPlayer, humanPlayer);
+    this.tilePlacer = tilePlacer;
   }
 
   // ---- Project Card Resolution ----

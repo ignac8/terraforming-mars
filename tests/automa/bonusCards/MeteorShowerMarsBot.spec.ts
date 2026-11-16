@@ -17,9 +17,9 @@ describe('MeteorShowerMarsBot', () => {
 
     const cards = createBaseBonusCards();
     const b01 = cards.find((c) => c.id === BonusCardId.B01_METEOR_SHOWER)!;
-    const tilePlacer = new MarsBotTilePlacer(game, marsBot.player, human);
+    const tilePlacer = new MarsBotTilePlacer(marsBot);
     const bonusDeck = MarsBotBonusDeck.create(new SeededRandom(99));
-    const resolver = new MarsBotTurnResolver(game, marsBot.player, human, marsBot.marsBotBoard, 'normal');
+    const resolver = new MarsBotTurnResolver(game, marsBot.player, human, marsBot.marsBotBoard, 'normal', 0, tilePlacer);
     const bonusResolver = new MarsBotBonusResolver(game, marsBot.player, human, resolver, bonusDeck, tilePlacer);
 
     const destroyed = bonusResolver.resolve(b01);
@@ -34,9 +34,9 @@ describe('MeteorShowerMarsBot', () => {
 
     const cards = createBaseBonusCards();
     const b01 = cards.find((c) => c.id === BonusCardId.B01_METEOR_SHOWER)!;
-    const tilePlacer = new MarsBotTilePlacer(game, marsBot.player, human);
+    const tilePlacer = new MarsBotTilePlacer(marsBot);
     const bonusDeck = MarsBotBonusDeck.create(new SeededRandom(99));
-    const resolver = new MarsBotTurnResolver(game, marsBot.player, human, marsBot.marsBotBoard, 'normal');
+    const resolver = new MarsBotTurnResolver(game, marsBot.player, human, marsBot.marsBotBoard, 'normal', 0, tilePlacer);
     const bonusResolver = new MarsBotBonusResolver(game, marsBot.player, human, resolver, bonusDeck, tilePlacer);
 
     const destroyed = bonusResolver.resolve(b01);

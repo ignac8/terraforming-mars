@@ -7,6 +7,8 @@ import {MarsBotBoard} from '../../src/server/automa/MarsBotBoard';
 import {MarsBot} from '../../src/server/automa/MarsBot';
 import {MarsBotTags} from '../../src/server/automa/MarsBotTags';
 import {MarsBotTurnResolver} from '../../src/server/automa/MarsBotTurnResolver';
+import {MarsBotTilePlacer} from '../../src/server/automa/MarsBotTilePlacer';
+import {fakeMarsBot} from './FakeMarsBot';
 import {THARSIS_MARSBOT_BOARD} from '../../src/server/automa/boards/TharsisMarsBot';
 import {TrackDefinition} from '../../src/common/automa/AutomaTypes';
 import {IProjectCard} from '../../src/server/cards/IProjectCard';
@@ -68,7 +70,7 @@ describe('MarsBotTurnResolver', () => {
     botPlayer.game = game;
     marsBotBoard = new MarsBotBoard(THARSIS_MARSBOT_BOARD);
     botPlayer.tags = new MarsBotTags(botPlayer, marsBotBoard);
-    resolver = new MarsBotTurnResolver(game, botPlayer, human, marsBotBoard, 'normal');
+    resolver = new MarsBotTurnResolver(game, botPlayer, human, marsBotBoard, 'normal', 0, new MarsBotTilePlacer(fakeMarsBot({game, player: botPlayer, humanPlayer: human, megacredits: 0})));
     attachManager(resolver);
   });
 
@@ -112,7 +114,7 @@ describe('MarsBotTurnResolver', () => {
       // TundraFarming has [Tag.PLANT] → Track 7
       const emptyBoardData = makeEmptyBoard();
       const emptyBoard = new MarsBotBoard(emptyBoardData);
-      const r = new MarsBotTurnResolver(game, botPlayer, human, emptyBoard, 'normal');
+      const r = new MarsBotTurnResolver(game, botPlayer, human, emptyBoard, 'normal', 0, new MarsBotTilePlacer(fakeMarsBot({game, player: botPlayer, humanPlayer: human, megacredits: 0})));
 
       // Mock a card with Building + Space tags
       const mockCard = fakeCard({cost: 10, tags: [Tag.BUILDING, Tag.SPACE], type: CardType.AUTOMATED});
@@ -124,7 +126,7 @@ describe('MarsBotTurnResolver', () => {
     it('Wild tags advance least-advanced track', () => {
       const emptyBoardData = makeEmptyBoard();
       const emptyBoard = new MarsBotBoard(emptyBoardData);
-      const r = new MarsBotTurnResolver(game, botPlayer, human, emptyBoard, 'normal');
+      const r = new MarsBotTurnResolver(game, botPlayer, human, emptyBoard, 'normal', 0, new MarsBotTilePlacer(fakeMarsBot({game, player: botPlayer, humanPlayer: human, megacredits: 0})));
       const mockCard = fakeCard({cost: 5, tags: [Tag.WILD], type: CardType.AUTOMATED});
       r.resolveProjectCard(mockCard);
       // Wild tag advances the least-advanced track (all at 0, so track 0 = topmost)
@@ -137,7 +139,7 @@ describe('MarsBotTurnResolver', () => {
     it('unmapped tags are ignored without error', () => {
       const emptyBoardData = makeEmptyBoard();
       const emptyBoard = new MarsBotBoard(emptyBoardData);
-      const r = new MarsBotTurnResolver(game, botPlayer, human, emptyBoard, 'normal');
+      const r = new MarsBotTurnResolver(game, botPlayer, human, emptyBoard, 'normal', 0, new MarsBotTilePlacer(fakeMarsBot({game, player: botPlayer, humanPlayer: human, megacredits: 0})));
       const mockCard = fakeCard({cost: 5, tags: [Tag.VENUS], type: CardType.AUTOMATED});
       r.resolveProjectCard(mockCard);
       // No crash, no track advancement
@@ -149,7 +151,7 @@ describe('MarsBotTurnResolver', () => {
     it('card with no tags at all is a failed action', () => {
       const emptyBoardData = makeEmptyBoard();
       const emptyBoard = new MarsBotBoard(emptyBoardData);
-      const r = new MarsBotTurnResolver(game, botPlayer, human, emptyBoard, 'normal');
+      const r = new MarsBotTurnResolver(game, botPlayer, human, emptyBoard, 'normal', 0, new MarsBotTilePlacer(fakeMarsBot({game, player: botPlayer, humanPlayer: human, megacredits: 0})));
       const mockCard = fakeCard({cost: 5, tags: [], type: CardType.AUTOMATED});
       r.resolveProjectCard(mockCard);
       expect(r.megacredits).to.eq(5);
@@ -158,7 +160,7 @@ describe('MarsBotTurnResolver', () => {
     it('event card with no other tags still advances Event track', () => {
       const emptyBoardData = makeEmptyBoard();
       const emptyBoard = new MarsBotBoard(emptyBoardData);
-      const r = new MarsBotTurnResolver(game, botPlayer, human, emptyBoard, 'normal');
+      const r = new MarsBotTurnResolver(game, botPlayer, human, emptyBoard, 'normal', 0, new MarsBotTilePlacer(fakeMarsBot({game, player: botPlayer, humanPlayer: human, megacredits: 0})));
       // Event card with no explicit tags — only the injected EVENT tag
       const mockCard = fakeCard({cost: 5, tags: [], type: CardType.EVENT});
       r.resolveProjectCard(mockCard);
@@ -180,7 +182,7 @@ describe('MarsBotTurnResolver', () => {
     });
 
     it('gives 3 MC in easy mode', () => {
-      const easyResolver = new MarsBotTurnResolver(game, botPlayer, human, marsBotBoard, 'easy');
+      const easyResolver = new MarsBotTurnResolver(game, botPlayer, human, marsBotBoard, 'easy', 0, new MarsBotTilePlacer(fakeMarsBot({game, player: botPlayer, humanPlayer: human, megacredits: 0})));
       attachManager(easyResolver);
       const track = marsBotBoard.tracks[6];
       for (let i = 0; i < 18; i++) {
@@ -194,7 +196,7 @@ describe('MarsBotTurnResolver', () => {
     it('accumulates MC across multiple failed actions', () => {
       const emptyBoardData = makeEmptyBoard();
       const emptyBoard = new MarsBotBoard(emptyBoardData);
-      const r = new MarsBotTurnResolver(game, botPlayer, human, emptyBoard, 'normal');
+      const r = new MarsBotTurnResolver(game, botPlayer, human, emptyBoard, 'normal', 0, new MarsBotTilePlacer(fakeMarsBot({game, player: botPlayer, humanPlayer: human, megacredits: 0})));
       // Max out track 7
       for (let i = 0; i < 18; i++) {
         emptyBoard.tracks[6].advance();
@@ -219,7 +221,7 @@ describe('MarsBotTurnResolver', () => {
     it('advance action moves same track forward', () => {
       const boardData = makeBoardWithTrack1Action(1, 'advance');
       const b = new MarsBotBoard(boardData);
-      const r = new MarsBotTurnResolver(game, botPlayer, human, b, 'normal');
+      const r = new MarsBotTurnResolver(game, botPlayer, human, b, 'normal', 0, new MarsBotTilePlacer(fakeMarsBot({game, player: botPlayer, humanPlayer: human, megacredits: 0})));
 
       const mockCard = fakeCard({cost: 5, tags: [Tag.BUILDING], type: CardType.AUTOMATED});
       r.resolveProjectCard(mockCard);
@@ -229,7 +231,7 @@ describe('MarsBotTurnResolver', () => {
     it('advance action ignored in easy mode', () => {
       const boardData = makeBoardWithTrack1Action(1, 'advance');
       const b = new MarsBotBoard(boardData);
-      const r = new MarsBotTurnResolver(game, botPlayer, human, b, 'easy');
+      const r = new MarsBotTurnResolver(game, botPlayer, human, b, 'easy', 0, new MarsBotTilePlacer(fakeMarsBot({game, player: botPlayer, humanPlayer: human, megacredits: 0})));
 
       const mockCard = fakeCard({cost: 5, tags: [Tag.BUILDING], type: CardType.AUTOMATED});
       r.resolveProjectCard(mockCard);
@@ -239,7 +241,7 @@ describe('MarsBotTurnResolver', () => {
     it('tag_N action advances another track', () => {
       const boardData = makeBoardWithTrack1Action(1, 'tag_6');
       const b = new MarsBotBoard(boardData);
-      const r = new MarsBotTurnResolver(game, botPlayer, human, b, 'normal');
+      const r = new MarsBotTurnResolver(game, botPlayer, human, b, 'normal', 0, new MarsBotTilePlacer(fakeMarsBot({game, player: botPlayer, humanPlayer: human, megacredits: 0})));
 
       const mockCard = fakeCard({cost: 5, tags: [Tag.BUILDING], type: CardType.AUTOMATED});
       r.resolveProjectCard(mockCard);
@@ -250,7 +252,7 @@ describe('MarsBotTurnResolver', () => {
     it('TR action increases terraform rating', () => {
       const boardData = makeBoardWithTrack1Action(1, 'tr3');
       const b = new MarsBotBoard(boardData);
-      const r = new MarsBotTurnResolver(game, botPlayer, human, b, 'normal');
+      const r = new MarsBotTurnResolver(game, botPlayer, human, b, 'normal', 0, new MarsBotTilePlacer(fakeMarsBot({game, player: botPlayer, humanPlayer: human, megacredits: 0})));
 
       const startTR = botPlayer.terraformRating;
       const mockCard = fakeCard({cost: 5, tags: [Tag.BUILDING], type: CardType.AUTOMATED});
@@ -264,7 +266,7 @@ describe('MarsBotTurnResolver', () => {
         const b = new MarsBotBoard(boardData);
         const freshBotPlayer = TestPlayer.RED.newPlayer({name: `bot${n}`});
         freshBotPlayer.game = game;
-        const r = new MarsBotTurnResolver(game, freshBotPlayer, human, b, 'normal');
+        const r = new MarsBotTurnResolver(game, freshBotPlayer, human, b, 'normal', 0, new MarsBotTilePlacer(fakeMarsBot({game, player: freshBotPlayer, humanPlayer: human, megacredits: 0})));
 
         const startTR = freshBotPlayer.terraformRating;
         const mockCard = fakeCard({cost: 5, tags: [Tag.BUILDING], type: CardType.AUTOMATED});
@@ -276,7 +278,7 @@ describe('MarsBotTurnResolver', () => {
     it('milestone action at end of track gives failed action if all claimed', () => {
       const boardData = makeBoardWithTrack1Action(1, 'milestone');
       const b = new MarsBotBoard(boardData);
-      const r = new MarsBotTurnResolver(game, botPlayer, human, b, 'normal');
+      const r = new MarsBotTurnResolver(game, botPlayer, human, b, 'normal', 0, new MarsBotTilePlacer(fakeMarsBot({game, player: botPlayer, humanPlayer: human, megacredits: 0})));
 
       // Claim all 3 milestones
       for (let i = 0; i < 3 && i < game.milestones.length; i++) {
@@ -291,7 +293,7 @@ describe('MarsBotTurnResolver', () => {
     it('award action gives failed action when all funded', () => {
       const boardData = makeBoardWithTrack1Action(1, 'award');
       const b = new MarsBotBoard(boardData);
-      const r = new MarsBotTurnResolver(game, botPlayer, human, b, 'normal');
+      const r = new MarsBotTurnResolver(game, botPlayer, human, b, 'normal', 0, new MarsBotTilePlacer(fakeMarsBot({game, player: botPlayer, humanPlayer: human, megacredits: 0})));
 
       // Fund all 3 awards
       for (let i = 0; i < 3 && i < game.awards.length; i++) {
@@ -306,7 +308,7 @@ describe('MarsBotTurnResolver', () => {
     it('temperature action fails when already maxed', () => {
       const boardData = makeBoardWithTrack1Action(1, 'temperature');
       const b = new MarsBotBoard(boardData);
-      const r = new MarsBotTurnResolver(game, botPlayer, human, b, 'normal');
+      const r = new MarsBotTurnResolver(game, botPlayer, human, b, 'normal', 0, new MarsBotTilePlacer(fakeMarsBot({game, player: botPlayer, humanPlayer: human, megacredits: 0})));
 
       setTemperature(game, 8); // MAX
       const mockCard = fakeCard({cost: 5, tags: [Tag.BUILDING], type: CardType.AUTOMATED});
@@ -317,7 +319,7 @@ describe('MarsBotTurnResolver', () => {
     it('ocean action fails when 9 oceans placed', () => {
       const boardData = makeBoardWithTrack1Action(1, 'ocean');
       const b = new MarsBotBoard(boardData);
-      const r = new MarsBotTurnResolver(game, botPlayer, human, b, 'normal');
+      const r = new MarsBotTurnResolver(game, botPlayer, human, b, 'normal', 0, new MarsBotTilePlacer(fakeMarsBot({game, player: botPlayer, humanPlayer: human, megacredits: 0})));
 
       // Fill all ocean spaces
       const oceanSpaces = game.board.getAvailableSpacesForOcean(botPlayer);
@@ -335,7 +337,7 @@ describe('MarsBotTurnResolver', () => {
       layout[18] = 'advance'; // At the very last position
       const boardData = THARSIS_MARSBOT_BOARD.map((def, i) => i === 0 ? {...def, layout} as TrackDefinition : def);
       const b = new MarsBotBoard(boardData);
-      const r = new MarsBotTurnResolver(game, botPlayer, human, b, 'normal');
+      const r = new MarsBotTurnResolver(game, botPlayer, human, b, 'normal', 0, new MarsBotTilePlacer(fakeMarsBot({game, player: botPlayer, humanPlayer: human, megacredits: 0})));
 
       // Advance to 17
       for (let i = 0; i < 17; i++) {
@@ -401,7 +403,7 @@ describe('MarsBotTurnResolver', () => {
     });
 
     it('easy mode reduces award values by 5', () => {
-      const easyResolver = new MarsBotTurnResolver(game, botPlayer, human, marsBotBoard, 'easy');
+      const easyResolver = new MarsBotTurnResolver(game, botPlayer, human, marsBotBoard, 'easy', 0, new MarsBotTilePlacer(fakeMarsBot({game, player: botPlayer, humanPlayer: human, megacredits: 0})));
       attachManager(easyResolver);
       for (let i = 0; i < 3; i++) {
         marsBotBoard.tracks[3].advance();
@@ -457,7 +459,7 @@ describe('MarsBotTurnResolver', () => {
     it('venus action fails when venus not enabled', () => {
       const boardData = makeBoardWithTrack1Action(1, 'venus');
       const b = new MarsBotBoard(boardData);
-      const r = new MarsBotTurnResolver(game, botPlayer, human, b, 'normal');
+      const r = new MarsBotTurnResolver(game, botPlayer, human, b, 'normal', 0, new MarsBotTilePlacer(fakeMarsBot({game, player: botPlayer, humanPlayer: human, megacredits: 0})));
 
       const mockCard = fakeCard({cost: 5, tags: [Tag.BUILDING], type: CardType.AUTOMATED});
       r.resolveProjectCard(mockCard);
@@ -470,7 +472,7 @@ describe('MarsBotTurnResolver', () => {
     it('regressed position action is skipped on re-advance', () => {
       const boardData = makeBoardWithTrack1Action(2, 'tr5');
       const b = new MarsBotBoard(boardData);
-      const r = new MarsBotTurnResolver(game, botPlayer, human, b, 'normal');
+      const r = new MarsBotTurnResolver(game, botPlayer, human, b, 'normal', 0, new MarsBotTilePlacer(fakeMarsBot({game, player: botPlayer, humanPlayer: human, megacredits: 0})));
 
       // Advance to pos 2 (gets tr5)
       const startTR = botPlayer.terraformRating;

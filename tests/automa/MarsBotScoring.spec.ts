@@ -6,6 +6,8 @@ import {Space} from '../../src/server/boards/Space';
 import {MarsBotScoring} from '../../src/server/automa/MarsBotScoring';
 import {MarsBotBoard} from '../../src/server/automa/MarsBotBoard';
 import {MarsBotTurnResolver} from '../../src/server/automa/MarsBotTurnResolver';
+import {MarsBotTilePlacer} from '../../src/server/automa/MarsBotTilePlacer';
+import {fakeMarsBot} from './FakeMarsBot';
 import {THARSIS_MARSBOT_BOARD} from '../../src/server/automa/boards/TharsisMarsBot';
 import {TileType} from '../../src/common/TileType';
 import {SpaceType} from '../../src/common/boards/SpaceType';
@@ -23,7 +25,7 @@ describe('MarsBotScoring', () => {
     botPlayer = TestPlayer.RED.newPlayer({name: 'marsbot'});
     botPlayer.game = game;
     board = new MarsBotBoard(THARSIS_MARSBOT_BOARD);
-    turnResolver = new MarsBotTurnResolver(game, botPlayer, human, board, 'normal');
+    turnResolver = new MarsBotTurnResolver(game, botPlayer, human, board, 'normal', 0, new MarsBotTilePlacer(fakeMarsBot({game, player: botPlayer, humanPlayer: human, megacredits: 0})));
   });
 
   function makeScoring(neuralInstanceSpace?: Space) {

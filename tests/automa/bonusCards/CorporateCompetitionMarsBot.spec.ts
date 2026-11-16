@@ -77,7 +77,7 @@ describe('CorporateCompetitionMarsBot', () => {
 
     const cards = createBaseBonusCards();
     const b08 = cards.find((c) => c.id === BonusCardId.B08_CORPORATE_COMPETITION)!;
-    const tilePlacer = new MarsBotTilePlacer(game, marsBot.player, human);
+    const tilePlacer = new MarsBotTilePlacer(marsBot);
     const bonusDeck = MarsBotBonusDeck.create(new SeededRandom(99));
     const bonusResolver = new MarsBotBonusResolver(game, marsBot.player, human, marsBot.turnResolver, bonusDeck, tilePlacer);
 
@@ -100,7 +100,7 @@ describe('CorporateCompetitionMarsBot', () => {
 
     const cards = createBaseBonusCards();
     const b08 = cards.find((c) => c.id === BonusCardId.B08_CORPORATE_COMPETITION)!;
-    const tilePlacer = new MarsBotTilePlacer(game, marsBot.player, human);
+    const tilePlacer = new MarsBotTilePlacer(marsBot);
     const bonusDeck = MarsBotBonusDeck.create(new SeededRandom(99));
     const bonusResolver = new MarsBotBonusResolver(game, marsBot.player, human, marsBot.turnResolver, bonusDeck, tilePlacer);
 
