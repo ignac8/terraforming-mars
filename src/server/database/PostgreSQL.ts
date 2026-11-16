@@ -541,7 +541,7 @@ export class PostgreSQL implements IDatabase {
     }
   }
 
-  // Not part of IDatabase, so invisible to MetricsDelegate.
+  // Not part of IDatabase, so invisible to MetricsDelegate. saveGame counts its errors.
   private async trim(game: IGame) {
     if (this.trimCount <= 0) {
       return;

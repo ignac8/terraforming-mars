@@ -690,7 +690,7 @@ describeDatabaseSuite({
       await db.awaitAllSaves();
       const saveId = game.lastSaveId;
 
-      // The second insert of the save now fails, after the first one has run.
+      // Makes the save's second insert fail, after the first one has run.
       await db.dropGameTable();
       await db.saveGame(game);
 
