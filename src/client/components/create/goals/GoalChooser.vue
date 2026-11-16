@@ -9,8 +9,8 @@
     <!-- As many columns as fit the width, scrolling down for the rest. Awards start a new column. -->
     <div class="create-game-ma-scroll">
       <div class="create-game-ma-lists">
-        <GoalChecklist heading="Milestones" :items="offeredMilestones" :selected="selected.milestones" @update:selected="selected = {...selected, milestones: $event}" :limit="limit" :filterText="filterText" />
-        <GoalChecklist class="create-game-ma-awards" heading="Awards" :items="offeredAwards" :selected="selected.awards" @update:selected="selected = {...selected, awards: $event}" :limit="limit" :filterText="filterText" />
+        <GoalChecklist heading="Milestones" :items="offeredMilestones" :selected="selected.milestones" @update:selected="selected = {...selected, milestones: $event}" :limit="limit" :filterText="filterText" :isDisabled="isGoalDisabled" />
+        <GoalChecklist class="create-game-ma-awards" heading="Awards" :items="offeredAwards" :selected="selected.awards" @update:selected="selected = {...selected, awards: $event}" :limit="limit" :filterText="filterText" :isDisabled="isGoalDisabled" />
       </div>
     </div>
   </div>
@@ -19,14 +19,16 @@
 <script setup lang="ts">
 import {ref} from 'vue';
 import GoalChecklist from './GoalChecklist.vue';
-import {milestoneNames} from '@/common/ma/MilestoneName';
-import {awardNames} from '@/common/ma/AwardName';
+import {MilestoneName, milestoneNames} from '@/common/ma/MilestoneName';
+import {AwardName, awardNames} from '@/common/ma/AwardName';
 import {getAward, getMilestone} from '@/client/MilestoneAwardManifest';
 import {SelectedGoals} from './types';
 
 const props = defineProps<{
   /** How many milestones, and how many awards, a hand-picked selection needs. */
   limit: number,
+  /** True for a milestone or award that can't be picked in this game. */
+  isGoalDisabled?: (name: MilestoneName | AwardName) => boolean,
 }>();
 
 const selected = defineModel<SelectedGoals>('selected', {required: true});

@@ -12,4 +12,20 @@ describe('GoalButton', () => {
     });
     expect(wrapper.exists()).is.true;
   });
+
+  it('disables in the popup the milestones and awards that cannot be picked', async () => {
+    const wrapper = mount(GoalButton, {
+      ...globalConfig,
+      props: {
+        modelValue: {type: 'manual', random: {pool: 'maps', randomness: 'limited'}, selected: {milestones: [], awards: []}},
+        expansions: DEFAULT_EXPANSIONS,
+        isGoalDisabled: (name) => name === 'Mayor' || name === 'Banker',
+      },
+    });
+
+    await wrapper.find('#maSelector-checkbox').setValue(true);
+
+    const disabled = wrapper.findAll('input[type="checkbox"][disabled]').map((input) => input.attributes('value'));
+    expect(disabled).deep.eq(['Mayor', 'Banker']);
+  });
 });

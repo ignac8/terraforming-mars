@@ -373,6 +373,7 @@
               <GoalButton
                 v-model="goals"
                 :expansions="expansions"
+                :isGoalDisabled="isGoalDisabledForAutoma"
               />
 
               <template v-if="expansions.venus">
@@ -639,6 +640,9 @@ import {RULEBOOK_URLS, WIKI_URLS} from '@/client/utils/WikiLinks';
 import {setDocumentTitle} from '@/client/utils/documentTitle';
 import {sanitizeEscapeVelocityOptions} from '@/common/game/escapeVelocity';
 import {isMarsBotBoardChoice} from '@/common/automa/MarsBotBoards';
+import {marsBotCanPlay} from '@/client/components/automa/marsBotGoalFilter';
+import {MilestoneName} from '@/common/ma/MilestoneName';
+import {AwardName} from '@/common/ma/AwardName';
 import {validateNewGameConfig, validationDetails, ValidationErrors} from '@/common/game/validateNewGameConfig';
 import ValidationErrorsPopup from './ValidationErrorsPopup.vue';
 import {getPreferences, PreferencesManager} from '@/client/utils/PreferencesManager';
@@ -1099,6 +1103,9 @@ export default defineComponent({
     },
     isBoardDisabledForAutoma(boardName: BoardName): boolean {
       return this.automa && !isMarsBotBoardChoice(boardName);
+    },
+    isGoalDisabledForAutoma(name: MilestoneName | AwardName): boolean {
+      return this.automa && !marsBotCanPlay(name, {venus: this.expansions.venus, turmoil: this.expansions.turmoil, boards: this.boards});
     },
     getPlayerCubeColorClass(color: Color): string {
       return playerColorClass(color, 'bg');

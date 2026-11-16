@@ -13,10 +13,12 @@ const ITEMS = [
   {name: 'Terraformer', expansion: 'moon'},
 ] as const;
 
-function mountChecklist(selected: ReadonlyArray<MilestoneName | AwardName>, limit = 5, filterText = '') {
+function mountChecklist(
+  selected: ReadonlyArray<MilestoneName | AwardName>, limit = 5, filterText = '',
+  isDisabled?: (name: MilestoneName | AwardName) => boolean) {
   return mount(GoalChecklist, {
     ...globalConfig,
-    props: {heading: 'Milestones', items: ITEMS, selected, limit, filterText},
+    props: {heading: 'Milestones', items: ITEMS, selected, limit, filterText, isDisabled},
   });
 }
 
@@ -52,6 +54,21 @@ describe('GoalChecklist', () => {
     const wrapper = mountChecklist([]);
     expect(checkbox(wrapper, 'Terraformer').element.closest('label')?.querySelector('.expansion-icon-themoon')).is.not.null;
     expect(checkbox(wrapper, 'Mayor').element.closest('label')?.querySelector('.create-game-expansion-icon')).is.null;
+  });
+
+  it('disables and dims the unselected items that cannot be picked', () => {
+    const wrapper = mountChecklist([], 5, '', (name) => name === 'Gardener');
+    expect(checkbox(wrapper, 'Gardener').attributes('disabled')).is.not.undefined;
+    expect(checkbox(wrapper, 'Gardener').element.closest('label')?.classList.contains('create-game-ma-unavailable')).is.true;
+    expect(checkbox(wrapper, 'Mayor').attributes('disabled')).is.undefined;
+    expect(checkbox(wrapper, 'Mayor').element.closest('label')?.classList.contains('create-game-ma-unavailable')).is.false;
+  });
+
+  it('lets a selected item that cannot be picked be unchecked', async () => {
+    const wrapper = mountChecklist(['Gardener'], 5, '', (name) => name === 'Gardener');
+    expect(checkbox(wrapper, 'Gardener').attributes('disabled')).is.undefined;
+    await checkbox(wrapper, 'Gardener').setValue(false);
+    expect(wrapper.emitted('update:selected')?.[0]).deep.eq([[]]);
   });
 
   it('disables unselected items once the limit is reached', () => {

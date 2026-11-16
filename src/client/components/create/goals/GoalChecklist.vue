@@ -5,8 +5,8 @@
       <span v-i18n>{{ heading }}</span>&nbsp;({{ selected.length }}/{{ limit }})
     </div>
     <div v-for="goal in items" :key="goal.name" v-show="matchesFilter(goal)" class="create-game-ma-item">
-      <label class="form-checkbox">
-        <input type="checkbox" :value="goal.name" v-model="selected" :disabled="isFull && !selected.includes(goal.name)">
+      <label class="form-checkbox" :class="{'create-game-ma-unavailable': isUnavailable(goal.name)}">
+        <input type="checkbox" :value="goal.name" v-model="selected" :disabled="(isFull || isUnavailable(goal.name)) && !selected.includes(goal.name)">
         <i class="form-icon"></i>
         <span class="create-game-ma-name">
           <span v-i18n>{{ label(goal.name) }}</span><template v-if="number(goal.name)">&nbsp;({{ number(goal.name) }})</template>
@@ -48,6 +48,8 @@ const props = defineProps<{
   limit: number;
   /** Text the shown items' labels contain. Empty shows them all. */
   filterText: string;
+  /** True for a name that can't be picked in this game. A checked one can still be unchecked. */
+  isDisabled?: (name: T) => boolean;
 }>();
 
 /** The names that are checked. Checking or unchecking a box emits the new list. */
@@ -55,6 +57,11 @@ const selected = defineModel<ReadonlyArray<T>>('selected', {required: true});
 
 /** True when `limit` names are checked, so the unchecked boxes are disabled. */
 const isFull = computed(() => selected.value.length >= props.limit);
+
+/** True when `name` can't be picked in this game and isn't checked, so its box is disabled and dimmed. */
+function isUnavailable(name: T): boolean {
+  return props.isDisabled?.(name) === true && !selected.value.includes(name);
+}
 
 /** The name without a trailing number, such as Tactician for Tactician4. */
 function label(name: T): string {
@@ -109,6 +116,11 @@ function matchesFilter(goal: Goal): boolean {
   margin: .2rem 0;
   padding: .1rem .4rem .1rem 1.2rem;
   cursor: pointer;
+}
+
+// Dimmed like the form's other options that this game can't use.
+.create-game-ma-unavailable {
+  opacity: 0.4;
 }
 
 // Keeps the expansion icon on the same line as the name.

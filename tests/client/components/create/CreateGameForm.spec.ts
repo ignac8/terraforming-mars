@@ -2,6 +2,7 @@ import {mount, shallowMount} from '@vue/test-utils';
 import {globalConfig} from '../getLocalVue';
 import {expect} from 'chai';
 import CreateGameForm from '@/client/components/create/CreateGameForm.vue';
+import GoalButton from '@/client/components/create/goals/GoalButton.vue';
 import {createGameSettingsStorage} from '@/client/components/create/createGameSettingsStorage';
 import {useFakeLocalStorage} from '../FakeLocalStorage';
 import {BoardName} from '@/common/boards/BoardName';
@@ -59,6 +60,33 @@ describe('CreateGameForm', () => {
   useFakeLocalStorage();
   beforeEach(() => {
     PreferencesManager.resetForTest();
+  });
+
+  it('tells the milestones and awards popup what MarsBot cannot play', () => {
+    const wrapper = shallowMount(CreateGameForm, {
+      ...globalConfig,
+    });
+    const vm = wrapper.vm as unknown as CreateGameModel;
+    const isGoalDisabled = wrapper.findComponent(GoalButton).props('isGoalDisabled');
+    if (isGoalDisabled === undefined) {
+      throw new Error('The form gives the popup no check');
+    }
+
+    vm.automa = true;
+    vm.expansions.venus = false;
+    vm.boards = [BoardName.THARSIS];
+    expect(isGoalDisabled('Mayor')).is.false;
+    expect(isGoalDisabled('Networker')).is.true;
+    expect(isGoalDisabled('Venuphile')).is.true;
+    expect(isGoalDisabled('Merchant3')).is.true;
+
+    vm.expansions.venus = true;
+    vm.boards = [BoardName.THARSIS, BoardName.AMAZONIS_PLANITIA];
+    expect(isGoalDisabled('Venuphile')).is.false;
+    expect(isGoalDisabled('Merchant3')).is.false;
+
+    vm.automa = false;
+    expect(isGoalDisabled('Networker')).is.false;
   });
 
   it('mounts without errors', () => {
