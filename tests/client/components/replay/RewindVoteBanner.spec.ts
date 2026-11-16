@@ -2,6 +2,7 @@ import {flushPromises, mount} from '@vue/test-utils';
 import {expect} from 'chai';
 import {afterEach, beforeEach, vi} from 'vitest';
 import {globalConfig} from '../getLocalVue';
+import {stubFetch} from '../../stubFetch';
 import RewindVoteBanner from '@/client/components/replay/RewindVoteBanner.vue';
 import {fakePublicPlayerModel} from '../testHelpers';
 import {PreferencesManager} from '@/client/utils/PreferencesManager';
@@ -53,7 +54,7 @@ describe('RewindVoteBanner', () => {
     vi.stubGlobal('location', {href: 'http://localhost/player', search: ''});
     requests = [];
     answers = [answer(poll(undefined))];
-    vi.stubGlobal('fetch', (url: string, init?: {body?: string}) => {
+    stubFetch((url: string, init?: {body?: string}) => {
       requests.push({url, body: init?.body === undefined ? undefined : JSON.parse(init.body)});
       return (answers.length > 1 ? answers.shift()! : answers[0])();
     });

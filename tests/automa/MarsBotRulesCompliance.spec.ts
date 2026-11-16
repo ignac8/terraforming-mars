@@ -3,17 +3,18 @@ import {testGame} from '../TestGame';
 import {TestPlayer} from '../TestPlayer';
 import {IGame} from '../../src/server/IGame';
 import {MarsBot} from '../../src/server/automa/MarsBot';
-import {IProjectCard} from '../../src/server/cards/IProjectCard';
 import {MarsBotBoard} from '../../src/server/automa/MarsBotBoard';
 import {MarsBotTurnResolver} from '../../src/server/automa/MarsBotTurnResolver';
 import {THARSIS_MARSBOT_BOARD} from '../../src/server/automa/boards/TharsisMarsBot';
 import {TrackAction, TrackDefinition} from '../../src/common/automa/AutomaTypes';
 import {BoardName} from '../../src/common/boards/BoardName';
+import {CardType} from '../../src/common/cards/CardType';
 import {Tag} from '../../src/common/cards/Tag';
 import {TileType} from '../../src/common/TileType';
 import {Phase} from '../../src/common/Phase';
 import {SpaceType} from '../../src/common/boards/SpaceType';
 import {Board} from '../../src/server/boards/Board';
+import {fakeCard} from '../TestingUtils';
 
 function createAutomaGame(difficulty: 'easy' | 'normal' | 'hard' | 'brutal' = 'normal'): {game: IGame, human: TestPlayer, marsBot: MarsBot} {
   const [game, human] = testGame(1, {automa: true, automaDifficulty: difficulty, boardName: BoardName.THARSIS});
@@ -35,10 +36,6 @@ function makeResolver(game: IGame, botPlayer: TestPlayer, human: TestPlayer, boa
   return {board, resolver: new MarsBotTurnResolver(game, botPlayer, human, board, difficulty)};
 }
 
-function mockCard(tags: Tag[], type: string = 'automated'): IProjectCard {
-  return {cost: 5, tags, type, name: 'Mock', metadata: {}} as unknown as IProjectCard;
-}
-
 describe('MarsBot Rules Compliance', () => {
   // ---- Rule 2.6: Track Actions ----
 
@@ -58,7 +55,7 @@ describe('MarsBot Rules Compliance', () => {
       const greeneryBefore = game.board.getGreeneries(botPlayer).length;
       const trBefore = botPlayer.terraformRating;
 
-      resolver.resolveProjectCard(mockCard([Tag.BUILDING]));
+      resolver.resolveProjectCard(fakeCard({cost: 5, tags: [Tag.BUILDING], type: CardType.AUTOMATED}));
 
       expect(game.board.getGreeneries(botPlayer).length).to.eq(greeneryBefore + 1);
       // Greenery raises oxygen which raises TR
@@ -79,7 +76,7 @@ describe('MarsBot Rules Compliance', () => {
       const oceansBefore = game.board.getOceanSpaces().length;
       const trBefore = botPlayer.terraformRating;
 
-      resolver.resolveProjectCard(mockCard([Tag.BUILDING]));
+      resolver.resolveProjectCard(fakeCard({cost: 5, tags: [Tag.BUILDING], type: CardType.AUTOMATED}));
 
       expect(game.board.getOceanSpaces().length).to.eq(oceansBefore + 1);
       expect(botPlayer.terraformRating).to.eq(trBefore + 1);
@@ -97,7 +94,7 @@ describe('MarsBot Rules Compliance', () => {
       const {resolver} = makeResolver(game, botPlayer, human, makeBoard(layout));
 
       const citiesBefore = game.board.getCities(botPlayer).length;
-      resolver.resolveProjectCard(mockCard([Tag.BUILDING]));
+      resolver.resolveProjectCard(fakeCard({cost: 5, tags: [Tag.BUILDING], type: CardType.AUTOMATED}));
       expect(game.board.getCities(botPlayer).length).to.eq(citiesBefore + 1);
     });
   });
@@ -115,7 +112,7 @@ describe('MarsBot Rules Compliance', () => {
       const tempBefore = game.getTemperature();
       const trBefore = botPlayer.terraformRating;
 
-      resolver.resolveProjectCard(mockCard([Tag.BUILDING]));
+      resolver.resolveProjectCard(fakeCard({cost: 5, tags: [Tag.BUILDING], type: CardType.AUTOMATED}));
 
       expect(game.getTemperature()).to.eq(tempBefore + 2); // 1 step = 2°C
       expect(botPlayer.terraformRating).to.eq(trBefore + 1);
@@ -142,7 +139,7 @@ describe('MarsBot Rules Compliance', () => {
 
       if (spaceWithBonus) {
         const mcBefore = resolver.megacredits;
-        resolver.resolveProjectCard(mockCard([Tag.BUILDING]));
+        resolver.resolveProjectCard(fakeCard({cost: 5, tags: [Tag.BUILDING], type: CardType.AUTOMATED}));
         // MC should have increased (from bonus icons and/or ocean adjacency)
         expect(resolver.megacredits).to.be.gte(mcBefore);
       }
@@ -162,7 +159,7 @@ describe('MarsBot Rules Compliance', () => {
       const {resolver} = makeResolver(game, botPlayer, human, makeBoard(layout));
 
       const mcBefore = resolver.megacredits;
-      resolver.resolveProjectCard(mockCard([Tag.BUILDING]));
+      resolver.resolveProjectCard(fakeCard({cost: 5, tags: [Tag.BUILDING], type: CardType.AUTOMATED}));
       // At minimum, the city might be adjacent to the ocean
       expect(resolver.megacredits).to.be.gte(mcBefore);
     });
@@ -186,7 +183,7 @@ describe('MarsBot Rules Compliance', () => {
       const layout = emptyLayout();
       layout[1] = 'greenery';
       const {resolver} = makeResolver(game, botPlayer, human, makeBoard(layout));
-      resolver.resolveProjectCard(mockCard([Tag.BUILDING]));
+      resolver.resolveProjectCard(fakeCard({cost: 5, tags: [Tag.BUILDING], type: CardType.AUTOMATED}));
       expect(resolver.megacredits).to.eq(5);
     });
 
@@ -204,7 +201,7 @@ describe('MarsBot Rules Compliance', () => {
       const layout = emptyLayout();
       layout[1] = 'city';
       const {resolver} = makeResolver(game, botPlayer, human, makeBoard(layout));
-      resolver.resolveProjectCard(mockCard([Tag.BUILDING]));
+      resolver.resolveProjectCard(fakeCard({cost: 5, tags: [Tag.BUILDING], type: CardType.AUTOMATED}));
       expect(resolver.megacredits).to.eq(5);
     });
   });
@@ -221,7 +218,7 @@ describe('MarsBot Rules Compliance', () => {
       layout[1] = 'award';
       const {resolver} = makeResolver(game, botPlayer, human, makeBoard(layout));
 
-      resolver.resolveProjectCard(mockCard([Tag.BUILDING]));
+      resolver.resolveProjectCard(fakeCard({cost: 5, tags: [Tag.BUILDING], type: CardType.AUTOMATED}));
       expect(resolver.megacredits).to.eq(5); // Failed action
     });
   });

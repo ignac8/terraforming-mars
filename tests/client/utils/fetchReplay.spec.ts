@@ -1,5 +1,6 @@
 import {expect} from 'chai';
 import {afterEach, beforeEach, vi} from 'vitest';
+import {stubFetch} from '../stubFetch';
 import {fetchReplayMoves, fetchReplayView, fetchVote, postRewind, postVote, ReplayResponseError, translateRefusal} from '@/client/utils/fetchReplay';
 import {PreferencesManager} from '@/client/utils/PreferencesManager';
 
@@ -8,7 +9,7 @@ describe('fetchReplay', () => {
 
   beforeEach(() => {
     posts = [];
-    vi.stubGlobal('fetch', async (url: string, init: {method: string, body: string}) => {
+    stubFetch(async (url: string, init: {method: string, body: string}) => {
       posts.push({url, init});
       return {ok: true, status: 200, json: () => Promise.resolve({})};
     });
@@ -39,7 +40,7 @@ describe('fetchReplay', () => {
 
   it('aborts the view request that a newer one replaces', async () => {
     const signals: Array<AbortSignal> = [];
-    vi.stubGlobal('fetch', async (_url: string, init: {signal: AbortSignal}) => {
+    stubFetch(async (_url: string, init: {signal: AbortSignal}) => {
       signals.push(init.signal);
       return {ok: true, status: 200, json: () => Promise.resolve({})};
     });
@@ -51,7 +52,7 @@ describe('fetchReplay', () => {
   });
 
   it('throws what the server refused with, and its status', async () => {
-    vi.stubGlobal('fetch', async () => ({ok: false, status: 400, text: () => Promise.resolve('Bad request: game not finished')}));
+    stubFetch(async () => ({ok: false, status: 400, text: () => Promise.resolve('Bad request: game not finished')}));
 
     for (const call of [
       () => fetchReplayMoves('p-player-id'),
@@ -68,7 +69,7 @@ describe('fetchReplay', () => {
   });
 
   it('says so when the server refused without a reason', async () => {
-    vi.stubGlobal('fetch', async () => ({ok: false, status: 500, text: () => Promise.resolve('')}));
+    stubFetch(async () => ({ok: false, status: 500, text: () => Promise.resolve('')}));
 
     const error = await fetchReplayMoves('p-player-id').then(() => undefined, (err: unknown) => err as ReplayResponseError);
 

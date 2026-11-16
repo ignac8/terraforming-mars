@@ -2,6 +2,7 @@ import {flushPromises, shallowMount} from '@vue/test-utils';
 import {expect} from 'chai';
 import {afterEach, beforeEach, vi} from 'vitest';
 import {globalConfig} from './getLocalVue';
+import {stubFetch} from '../stubFetch';
 import GameEnd from '@/client/components/GameEnd.vue';
 import RewindVoteBanner from '@/client/components/replay/RewindVoteBanner.vue';
 import {fakeGameModel, fakeGameOptionsModel, fakePlayerViewModel, fakePublicPlayerModel, fakeSpectatorModel} from './testHelpers';
@@ -89,7 +90,7 @@ describe('GameEnd', () => {
       vi.stubGlobal('location', {href: 'http://localhost/the-end', search: ''});
       requests = [];
       result = 'WAIT';
-      vi.stubGlobal('fetch', (url: string) => {
+      stubFetch((url: string) => {
         requests.push(url);
         return Promise.resolve({ok: true, status: 200, json: () => Promise.resolve({result, waitingFor: []})});
       });

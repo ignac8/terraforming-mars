@@ -26,6 +26,7 @@ import {Asteroid} from '../../src/server/cards/base/Asteroid';
 import {IProjectCard} from '../../src/server/cards/IProjectCard';
 import {Random} from '../../src/common/utils/Random';
 import {ColonyName} from '../../src/common/colonies/ColonyName';
+import {setMarsBotRandom} from './MarsBotRandom';
 
 function createAutomaGame(difficulty: 'easy' | 'normal' | 'hard' | 'brutal' = 'normal'): {game: IGame, human: TestPlayer, marsBot: MarsBot} {
   const [game, human] = testGame(1, {
@@ -888,7 +889,7 @@ describe('MarsBotVenusNext', () => {
     }
     game.automaHooks!.handleResearchPhase();
     marsBot.floaters = 10;
-    (marsBot as unknown as {random: Random}).random = {nextInt: () => 0} as unknown as Random;
+    setMarsBotRandom(marsBot, {nextInt: () => 0} as unknown as Random);
     const extra = new Asteroid();
     game.projectDeck.drawPile.push(extra);
 

@@ -3,13 +3,13 @@ import {testGame} from '../TestGame';
 import {TestPlayer} from '../TestPlayer';
 import {IGame} from '../../src/server/IGame';
 import {MarsBot} from '../../src/server/automa/MarsBot';
-import {IProjectCard} from '../../src/server/cards/IProjectCard';
 import {MarsBotBoard} from '../../src/server/automa/MarsBotBoard';
 import {MarsBotTurnResolver} from '../../src/server/automa/MarsBotTurnResolver';
 import {MarsBotTilePlacer} from '../../src/server/automa/MarsBotTilePlacer';
 import {THARSIS_MARSBOT_BOARD} from '../../src/server/automa/boards/TharsisMarsBot';
 import {TrackAction, TrackDefinition} from '../../src/common/automa/AutomaTypes';
 import {BoardName} from '../../src/common/boards/BoardName';
+import {CardType} from '../../src/common/cards/CardType';
 import {Tag} from '../../src/common/cards/Tag';
 import {TileType} from '../../src/common/TileType';
 import {fakeCard, maxOutOceans, setOxygenLevel, setTemperature, setVenusScaleLevel} from '../TestingUtils';
@@ -31,10 +31,6 @@ function makeBoard(track1Layout: ReadonlyArray<TrackAction | undefined>): Readon
   );
 }
 
-function mockCard(tags: Tag[], type: string = 'automated'): IProjectCard {
-  return {cost: 5, tags, type, name: 'Mock', metadata: {}} as unknown as IProjectCard;
-}
-
 describe('MarsBot Deep Rules Tests', () => {
   // ---- Page 8: Expansion icons ignored without Failed Action ----
 
@@ -49,7 +45,7 @@ describe('MarsBot Deep Rules Tests', () => {
       const marsBotBoard = new MarsBotBoard(makeBoard(layout));
       const resolver = new MarsBotTurnResolver(game, botPlayer, human, marsBotBoard, 'normal');
 
-      resolver.resolveProjectCard(mockCard([Tag.BUILDING]));
+      resolver.resolveProjectCard(fakeCard({cost: 5, tags: [Tag.BUILDING], type: CardType.AUTOMATED}));
       // Venus should be ignored, NOT a failed action
       expect(resolver.megacredits).to.eq(0); // No 5 MC from failed action
       expect(marsBotBoard.tracks[0].position).to.eq(1); // Track still advanced
@@ -65,7 +61,7 @@ describe('MarsBot Deep Rules Tests', () => {
       const marsBotBoard = new MarsBotBoard(makeBoard(layout));
       const resolver = new MarsBotTurnResolver(game, botPlayer, human, marsBotBoard, 'normal');
 
-      resolver.resolveProjectCard(mockCard([Tag.BUILDING]));
+      resolver.resolveProjectCard(fakeCard({cost: 5, tags: [Tag.BUILDING], type: CardType.AUTOMATED}));
       expect(resolver.megacredits).to.eq(0);
     });
   });
@@ -88,7 +84,7 @@ describe('MarsBot Deep Rules Tests', () => {
       game.simpleAddTile(marsBot.player, spaces[15], {tileType: TileType.CITY});
 
       const resolver = new MarsBotTurnResolver(game, marsBot.player, marsBot.humanPlayer, marsBotBoard, 'normal');
-      resolver.resolveProjectCard(mockCard([Tag.BUILDING]));
+      resolver.resolveProjectCard(fakeCard({cost: 5, tags: [Tag.BUILDING], type: CardType.AUTOMATED}));
 
       // Oxygen should be 8, which triggers temperature raise
       expect(game.getOxygenLevel()).to.eq(8);
@@ -119,7 +115,7 @@ describe('MarsBot Deep Rules Tests', () => {
       expect(marsBotBoard.tracks[0].position).to.eq(18);
 
       // Play card with Building + Space tags
-      resolver.resolveProjectCard(mockCard([Tag.BUILDING, Tag.SPACE]));
+      resolver.resolveProjectCard(fakeCard({cost: 5, tags: [Tag.BUILDING, Tag.SPACE], type: CardType.AUTOMATED}));
 
       // Building track maxed → Failed Action (5 MC)
       // Space track should still advance
@@ -144,7 +140,7 @@ describe('MarsBot Deep Rules Tests', () => {
       const resolver = new MarsBotTurnResolver(game, botPlayer, human, marsBotBoard, 'normal');
       resolver.megacredits = 10;
 
-      resolver.resolveProjectCard(mockCard([Tag.BUILDING]));
+      resolver.resolveProjectCard(fakeCard({cost: 5, tags: [Tag.BUILDING], type: CardType.AUTOMATED}));
       // MC should not have decreased (MarsBot doesn't pay for milestones)
       // It might have increased from failed action if couldn't claim
       expect(resolver.megacredits).to.be.gte(10);
@@ -166,7 +162,7 @@ describe('MarsBot Deep Rules Tests', () => {
       const resolver = new MarsBotTurnResolver(game, botPlayer, human, marsBotBoard, 'normal');
       resolver.megacredits = 10;
 
-      resolver.resolveProjectCard(mockCard([Tag.BUILDING]));
+      resolver.resolveProjectCard(fakeCard({cost: 5, tags: [Tag.BUILDING], type: CardType.AUTOMATED}));
       // MC should not have decreased
       expect(resolver.megacredits).to.be.gte(10);
     });
@@ -201,7 +197,7 @@ describe('MarsBot Deep Rules Tests', () => {
       const {game, marsBot} = createAutomaGame();
       const discardBefore = game.projectDeck.discardPile.length;
 
-      const card = mockCard([Tag.BUILDING]);
+      const card = fakeCard({cost: 5, tags: [Tag.BUILDING], type: CardType.AUTOMATED});
       marsBot.turnResolver.resolveProjectCard(card);
 
       expect(game.projectDeck.discardPile.length).to.eq(discardBefore);
@@ -333,7 +329,7 @@ describe('MarsBot Deep Rules Tests', () => {
       const marsBotBoard = new MarsBotBoard(makeBoard(layout));
       const resolver = new MarsBotTurnResolver(game, marsBot.player, human, marsBotBoard, 'normal');
 
-      resolver.resolveProjectCard(mockCard([Tag.BUILDING]));
+      resolver.resolveProjectCard(fakeCard({cost: 5, tags: [Tag.BUILDING], type: CardType.AUTOMATED}));
 
       // Should claim the leftmost qualifying milestone (Terraformer)
       expect(game.claimedMilestones.length).to.eq(1);
@@ -354,7 +350,7 @@ describe('MarsBot Deep Rules Tests', () => {
       const marsBotBoard = new MarsBotBoard(boardData);
       const resolver = new MarsBotTurnResolver(game, botPlayer, human, marsBotBoard, 'normal');
 
-      resolver.resolveProjectCard(mockCard([Tag.BUILDING], 'event'));
+      resolver.resolveProjectCard(fakeCard({cost: 5, tags: [Tag.BUILDING], type: CardType.EVENT}));
 
       expect(marsBotBoard.tracks[0].position).to.eq(1); // Building
       expect(marsBotBoard.tracks[2].position).to.eq(1); // Event (injected)
@@ -371,7 +367,7 @@ describe('MarsBot Deep Rules Tests', () => {
       const resolver = new MarsBotTurnResolver(game, botPlayer, human, marsBotBoard, 'normal');
 
       // Event card with zero explicit tags — should NOT be a failed action
-      resolver.resolveProjectCard(mockCard([], 'event'));
+      resolver.resolveProjectCard(fakeCard({cost: 5, tags: [], type: CardType.EVENT}));
 
       expect(marsBotBoard.tracks[2].position).to.eq(1); // Event tag injected
       expect(resolver.megacredits).to.eq(0); // Not a failed action
@@ -422,7 +418,11 @@ describe('MarsBot Deep Rules Tests', () => {
       const {game, marsBot} = createAutomaGame('hard');
       qualifyForThree(marsBot);
       marsBot.turnResolver.megacredits = 30;
-      marsBot.actionDeck = [mockCard([Tag.MICROBE]), mockCard([Tag.MICROBE]), mockCard([Tag.MICROBE])];
+      marsBot.actionDeck = [
+        fakeCard({cost: 5, tags: [Tag.MICROBE], type: CardType.AUTOMATED}),
+        fakeCard({cost: 5, tags: [Tag.MICROBE], type: CardType.AUTOMATED}),
+        fakeCard({cost: 5, tags: [Tag.MICROBE], type: CardType.AUTOMATED}),
+      ];
       const claimedWhenResolving: Array<number> = [];
       const resolve = marsBot.turnResolver.resolveProjectCard.bind(marsBot.turnResolver);
       marsBot.turnResolver.resolveProjectCard = (card) => {
@@ -443,7 +443,7 @@ describe('MarsBot Deep Rules Tests', () => {
 
       // A new generation checks again
       game.generation++;
-      marsBot.actionDeck = [mockCard([Tag.MICROBE])];
+      marsBot.actionDeck = [fakeCard({cost: 5, tags: [Tag.MICROBE], type: CardType.AUTOMATED})];
       const before = game.claimedMilestones.length;
       marsBot.takeTurn();
       expect(claimedWhenResolving[3]).to.eq(before + 1);
@@ -453,7 +453,7 @@ describe('MarsBot Deep Rules Tests', () => {
       const {game, marsBot} = createAutomaGame('hard');
       qualifyForThree(marsBot);
       marsBot.turnResolver.megacredits = 7;
-      marsBot.actionDeck = [mockCard([Tag.MICROBE])];
+      marsBot.actionDeck = [fakeCard({cost: 5, tags: [Tag.MICROBE], type: CardType.AUTOMATED})];
       marsBot.turnResolver.resolveProjectCard = () => {};
 
       marsBot.takeTurn();
@@ -475,7 +475,7 @@ describe('MarsBot Deep Rules Tests', () => {
         game.simpleAddTile(human, land[i], {tileType: TileType.GREENERY});
       }
       marsBot.turnResolver.megacredits = 8;
-      marsBot.actionDeck = [mockCard([Tag.MICROBE])];
+      marsBot.actionDeck = [fakeCard({cost: 5, tags: [Tag.MICROBE], type: CardType.AUTOMATED})];
       marsBot.turnResolver.resolveProjectCard = () => {};
 
       marsBot.takeTurn();
@@ -550,7 +550,7 @@ describe('MarsBot Deep Rules Tests', () => {
   describe('Played project cards (page 5)', () => {
     it('records a card resolved on a turn exactly once', () => {
       const {marsBot} = createAutomaGame();
-      const card = mockCard([Tag.MICROBE]);
+      const card = fakeCard({cost: 5, tags: [Tag.MICROBE], type: CardType.AUTOMATED});
       marsBot.actionDeck = [card];
 
       marsBot.takeTurn();

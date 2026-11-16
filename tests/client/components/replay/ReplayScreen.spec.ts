@@ -2,6 +2,7 @@ import {config, flushPromises, mount, shallowMount} from '@vue/test-utils';
 import {expect} from 'chai';
 import {afterAll, afterEach, beforeAll, beforeEach, vi} from 'vitest';
 import {globalConfig} from '../getLocalVue';
+import {stubFetch} from '../../stubFetch';
 import ReplayScreen from '@/client/components/replay/ReplayScreen.vue';
 import ReplayPanel from '@/client/components/replay/ReplayPanel.vue';
 import ReplayHands from '@/client/components/replay/ReplayHands.vue';
@@ -87,7 +88,7 @@ describe('ReplayScreen', () => {
       {saveId: 10, messages: []},
       {saveId: 11, messages: []},
     ]};
-    vi.stubGlobal('fetch', async (url: string, init?: {body?: unknown}) => {
+    stubFetch(async (url: string, init?: {body?: unknown}) => {
       calls.push(url);
       if (url.startsWith('api/replay/moves')) {
         await holdMoves?.();
@@ -140,7 +141,7 @@ describe('ReplayScreen', () => {
 
   it('says the game was not found, without a retry', async () => {
     vi.spyOn(console, 'error').mockImplementation(() => {});
-    vi.stubGlobal('fetch', () => Promise.resolve({ok: false, status: 404, text: () => Promise.resolve('Not found: game not found')}));
+    stubFetch(() => Promise.resolve({ok: false, status: 404, text: () => Promise.resolve('Not found: game not found')}));
     const wrapper = mountScreen();
     await flushPromises();
     expect(wrapper.text()).to.contain('This game was not found.');
@@ -150,7 +151,7 @@ describe('ReplayScreen', () => {
 
   it('offers a retry when the server cannot be reached', async () => {
     vi.spyOn(console, 'error').mockImplementation(() => {});
-    vi.stubGlobal('fetch', () => Promise.reject(new TypeError('Failed to fetch')));
+    stubFetch(() => Promise.reject(new TypeError('Failed to fetch')));
     const wrapper = mountScreen();
     await flushPromises();
     expect(wrapper.text()).to.contain('Failed to fetch');
@@ -599,7 +600,7 @@ describe('ReplayScreen', () => {
     const wrapper = mountScreen();
     await flushPromises();
     const working = global.fetch;
-    vi.stubGlobal('fetch', (url: string) => url.startsWith('api/replay/view') ?
+    stubFetch((url: string) => url.startsWith('api/replay/view') ?
       Promise.resolve({ok: false, status: 404, text: () => Promise.resolve('Save not found')}) :
       working(url));
     const panel = () => wrapper.findComponent(ReplayPanel);
@@ -628,7 +629,7 @@ describe('ReplayScreen', () => {
 
   it('shows the server message when the view cannot be loaded', async () => {
     vi.spyOn(console, 'error').mockImplementation(() => {});
-    vi.stubGlobal('fetch', (url: string) => url.startsWith('api/replay/moves') ?
+    stubFetch((url: string) => url.startsWith('api/replay/moves') ?
       respond(movesAnswer) :
       Promise.resolve({ok: false, status: 404, text: () => Promise.resolve('Save not found')}));
     const wrapper = mountScreen();
@@ -645,7 +646,7 @@ describe('ReplayScreen', () => {
     });
     await flushPromises();
     const working = global.fetch;
-    vi.stubGlobal('fetch', (url: string) => url.startsWith('api/replay/view') ?
+    stubFetch((url: string) => url.startsWith('api/replay/view') ?
       Promise.resolve({ok: false, status: 404, text: () => Promise.resolve('Save not found')}) :
       working(url));
     wrapper.findComponent(ReplayPanel).vm.$emit('select', 1);
@@ -726,7 +727,7 @@ describe('ReplayScreen', () => {
       wrapper.findComponent(ReplayPanel).vm.$emit('select', 1);
       await flushPromises();
       const fetchOk = global.fetch;
-      vi.stubGlobal('fetch', (url: string) => {
+      stubFetch((url: string) => {
         if (url.startsWith('api/rewind')) {
           return Promise.resolve({ok: false, status: 400, text: () => Promise.resolve('That moment cannot be rewound, nothing was changed')});
         }
@@ -739,7 +740,7 @@ describe('ReplayScreen', () => {
       expect(wrapper.findComponent(ReplayPanel).exists()).is.false;
       expect(wrapper.find('.replay-error').text()).to.contain('Server down');
       expect(wrapper.find('.rewind-refusal').text()).to.contain('nothing was changed');
-      vi.stubGlobal('fetch', fetchOk);
+      stubFetch(fetchOk);
     });
 
     it('shows a refused rewind in the language of the player', async () => {
@@ -1068,7 +1069,7 @@ describe('ReplayScreen', () => {
       expand(wrapper);
       await flushPromises();
       const working = global.fetch;
-      vi.stubGlobal('fetch', (url: string) => url.startsWith('api/replay/view') ?
+      stubFetch((url: string) => url.startsWith('api/replay/view') ?
         Promise.resolve({ok: false, status: 400, text: () => Promise.resolve('Save not found')}) :
         working(url));
       panel(wrapper).vm.$emit('select', 1);
@@ -1080,7 +1081,7 @@ describe('ReplayScreen', () => {
 
     it('keeps the live game and shows the reason when the moves cannot be loaded', async () => {
       vi.spyOn(console, 'error').mockImplementation(() => {});
-      vi.stubGlobal('fetch', () => Promise.resolve({ok: false, status: 400, text: () => Promise.resolve('Not your game')}));
+      stubFetch(() => Promise.resolve({ok: false, status: 400, text: () => Promise.resolve('Not your game')}));
       const wrapper = mountLive();
       expand(wrapper);
       await flushPromises();

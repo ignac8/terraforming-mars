@@ -1,6 +1,7 @@
 import {flushPromises, mount, shallowMount} from '@vue/test-utils';
 import {defineComponent} from 'vue';
 import {globalConfig} from './getLocalVue';
+import {stubFetch} from '../stubFetch';
 import {expect} from 'chai';
 import {afterEach, vi} from 'vitest';
 import {SoundManager} from '@/client/utils/SoundManager';
@@ -93,7 +94,7 @@ describe('WaitingFor', () => {
 
   function stubServer(players: Array<unknown>) {
     const fetchStub = vi.fn(async () => ({ok: true, json: async () => ({players})}) as Response);
-    vi.stubGlobal('fetch', fetchStub);
+    stubFetch(fetchStub);
     return fetchStub;
   }
 
@@ -122,7 +123,7 @@ describe('WaitingFor', () => {
     const fetchStub = vi.fn(() => new Promise<Response>((resolve) => {
       respond = () => resolve({ok: true, json: async () => ({players: []})} as unknown as Response);
     }));
-    vi.stubGlobal('fetch', fetchStub);
+    stubFetch(fetchStub);
     mountDrafting(draftingView());
 
     await vi.advanceTimersByTimeAsync(10000);
@@ -137,7 +138,7 @@ describe('WaitingFor', () => {
     vi.useFakeTimers();
     vi.spyOn(console, 'warn').mockImplementation(() => {});
     const fetchStub = vi.fn(async () => ({ok: false, status: 404, statusText: 'Not Found'}) as Response);
-    vi.stubGlobal('fetch', fetchStub);
+    stubFetch(fetchStub);
     mountDrafting(draftingView());
 
     await vi.advanceTimersByTimeAsync(10000);
@@ -149,7 +150,7 @@ describe('WaitingFor', () => {
     vi.useFakeTimers();
     vi.spyOn(console, 'warn').mockImplementation(() => {});
     const fetchStub = vi.fn(async () => ({ok: false, status: 503, statusText: 'Service Unavailable'}) as Response);
-    vi.stubGlobal('fetch', fetchStub);
+    stubFetch(fetchStub);
     mountDrafting(draftingView());
 
     await vi.advanceTimersByTimeAsync(10000);
@@ -225,7 +226,7 @@ describe('WaitingFor', () => {
   // answers with `answer`. Alerts are dismissed at once, as if the player clicked OK.
   async function submit(answer: Partial<Response>) {
     const fetchStub = vi.fn(async (_url: string, _options: {body: string}) => answer as Response);
-    vi.stubGlobal('fetch', fetchStub);
+    stubFetch(fetchStub);
     const wrapper = shallowMount(WaitingFor, {
       ...globalConfig,
       global: {...globalConfig.global, stubs: {'PlayerInputFactory': true}},
