@@ -176,4 +176,4 @@ of creating games on the official server, which limits new games per IP.
 
 ## Node Version
 
-`.nvmrc` specifies v24; `package.json` `engines` says `22.x` (upstream's value, kept as-is). Run `nvm use` before any `npm` command to switch to the version `.nvmrc` declares — on other versions, optional deps (`pg`, `better-sqlite3`) get skipped and the client tests break (Node 25+ has a half-working native `localStorage` that conflicts with jsdom).
+`.nvmrc` and `package.json` `engines` both ask for Node 26 (upstream's values). Run `nvm use` before any `npm` command to switch to it — on another version the native modules in `node_modules` (`better-sqlite3`) don't load, and optional deps (`pg`) can get skipped at install.
