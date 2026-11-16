@@ -302,7 +302,15 @@ main .wrap { padding-block: 18px 40px; display: grid; gap: 18px; }
 .r-body { padding: 14px 16px 14px; display: grid; gap: 10px; }
 .r-body p { margin: 0; max-width: 68ch; overflow-wrap: anywhere; }
 .r-q { font-weight: 600; }
+.r-item + .r-item { border-top: 4px solid var(--seam); }
+.r-item.is-old .r-q, .r-item.is-old .r-a { color: var(--haze); }
 .r-flags { display: flex; flex-wrap: wrap; gap: 6px; }
+.flag.is-kind { border-color: var(--greenery); color: var(--greenery); }
+.flag.is-kind[data-kind="faq"] { border-color: var(--ocean); color: var(--ocean); }
+.flag.is-kind[data-kind="intent"] { border-color: var(--ochre); color: var(--ochre); }
+.flag.is-kind[data-kind="erratum"] { border-color: var(--event); color: var(--event); }
+.flag.is-kind[data-kind="variant"] { border-color: var(--venus); color: var(--venus); }
+.flag.is-kind[data-kind="prerelease"], .flag.is-kind[data-kind="prototype"] { border-color: var(--haze); color: var(--haze); }
 .flag {
   border: 1px solid var(--ochre);
   border-radius: 2px;
@@ -572,10 +580,12 @@ mark { background: var(--ochre); color: var(--ink); border-radius: 2px; padding:
     return s;
   }
 
-  function card(x, mark, searching) {
+  /** One answer: the question, the ruling, the quote and who gave it. `withKind` labels its type, for a card that holds several. */
+  function answer(x, mark, searching, withKind) {
     var who = AUTH[x.a];
     var flags = x.f.map(function (f) { return '<span class="flag">' + esc(FLAG[f] || f) + '</span>'; });
     if (x.s) flags.unshift('<span class="flag is-red">Superseded</span>');
+    if (withKind) flags.unshift('<span class="flag is-kind" data-kind="' + esc(x.k) + '">' + esc(KIND[x.k] || x.k) + '</span>');
     var note = '';
     if (x.s) {
       note = '<p class="r-note is-red">A later official post says something else. <a href="' + esc(x.s) + '" target="_blank" rel="noopener noreferrer">Read the later answer</a></p>';
@@ -587,8 +597,7 @@ mark { background: var(--ochre); color: var(--ink); border-radius: 2px; padding:
     var cards = x.c.map(function (c) {
       return '<button type="button" class="chip" data-search="' + esc(c) + '">' + mark(c) + '</button>';
     }).join('');
-    return '<article class="r' + (x.s ? ' is-superseded' : '') + '" data-kind="' + esc(x.k) + '">' +
-      '<header class="r-top"><h3 class="r-topic">' + mark(x.t) + '</h3><span class="r-kind">' + esc(KIND[x.k] || x.k) + '</span></header>' +
+    return '<section class="r-item' + (x.s ? ' is-old' : '') + '">' +
       '<div class="r-body">' +
         (flags.length ? '<div class="r-flags">' + flags.join('') + '</div>' : '') +
         '<p class="r-q">' + mark(x.q) + '</p>' +
@@ -602,7 +611,37 @@ mark { background: var(--ochre); color: var(--ink); border-radius: 2px; padding:
         (searching ? '<span>' + esc(EXP[x.e].name) + ' / ' + esc(x.h) + '</span>' : '') +
         (cards ? '<span class="r-cards">' + cards + '</span>' : '') +
         '<a class="post" href="' + esc(x.u) + '" target="_blank" rel="noopener noreferrer">Post on BGG</a>' +
-      '</footer></article>';
+      '</footer></section>';
+  }
+
+  /** One card per topic. The same question was often asked more than once, so a card can hold several answers, newest first. */
+  function card(items, mark, searching) {
+    var first = R[items[0]];
+    var many = items.length > 1;
+    var allSuperseded = items.every(function (i) { return R[i].s; });
+    return '<article class="r' + (allSuperseded ? ' is-superseded' : '') + '" data-kind="' + esc(first.k) + '">' +
+      '<header class="r-top"><h3 class="r-topic">' + mark(first.t) + '</h3><span class="r-kind">' +
+        (many ? items.length + ' answers' : esc(KIND[first.k] || first.k)) + '</span></header>' +
+      items.map(function (i) { return answer(R[i], mark, searching, many); }).join('') +
+      '</article>';
+  }
+
+  /** Puts the answers of `list` that share an expansion and a topic together, keeping the order of the list. */
+  function byTopic() {
+    var groups = [];
+    var seen = {};
+    list.forEach(function (i) {
+      var key = R[i].e + '|' + R[i].topicLow;
+      if (!seen[key]) {
+        seen[key] = {head: i, items: []};
+        groups.push(seen[key]);
+      }
+      seen[key].items.push(i);
+    });
+    groups.forEach(function (g) {
+      g.items.sort(function (a, b) { return R[a].d < R[b].d ? 1 : R[a].d > R[b].d ? -1 : a - b; });
+    });
+    return groups;
   }
 
   function compute() {
@@ -646,7 +685,9 @@ mark { background: var(--ochre); color: var(--ink); border-radius: 2px; padding:
       btn.classList.toggle('is-empty', n === 0);
     });
 
-    el.tally.textContent = num(list.length) + (list.length === 1 ? ' answer' : ' answers');
+    var groups = byTopic();
+    el.tally.textContent = num(list.length) + (list.length === 1 ? ' answer' : ' answers') +
+      (groups.length < list.length ? ' on ' + num(groups.length) + ' topics' : '');
     var filtered = searching || state.kind || state.author >= 0 || state.exp !== -1 || !state.current;
     el.reset.hidden = !filtered;
 
@@ -665,8 +706,8 @@ mark { background: var(--ochre); color: var(--ink); border-radius: 2px; padding:
       html.push('<p class="empty"><b>No official answer found.</b>' + esc(tip) + '</p>');
     }
     var lastGroup = '';
-    list.slice(0, state.shown).forEach(function (i) {
-      var x = R[i];
+    groups.slice(0, state.shown).forEach(function (group) {
+      var x = R[group.head];
       if (!searching) {
         var g = x.e + '|' + x.h;
         if (g !== lastGroup) {
@@ -674,15 +715,15 @@ mark { background: var(--ochre); color: var(--ink); border-radius: 2px; padding:
           html.push('<h2 class="group"><small>' + esc(EXP[x.e].name) + '</small>' + esc(x.h) + '</h2>');
         }
       }
-      html.push(card(x, mark, searching));
+      html.push(card(group.items, mark, searching));
     });
-    if (list.length > 0 && state.current && c.hiddenOld > 0 && state.shown >= list.length) {
+    if (list.length > 0 && state.current && c.hiddenOld > 0 && state.shown >= groups.length) {
       html.push('<p class="empty">' + num(c.hiddenOld) + ' superseded, pre-release or prototype ' + (c.hiddenOld === 1 ? 'answer is' : 'answers are') + ' hidden. Untick "Current answers only" to see ' + (c.hiddenOld === 1 ? 'it' : 'them') + '.</p>');
     }
     el.results.innerHTML = html.join('');
-    var left = list.length - state.shown;
+    var left = groups.length - state.shown;
     el.more.hidden = left <= 0;
-    if (left > 0) el.more.textContent = 'Show ' + Math.min(PAGE, left) + ' more of ' + num(left);
+    if (left > 0) el.more.textContent = 'Show ' + Math.min(PAGE, left) + ' more of ' + num(left) + ' topics';
   }
 
   function setSearch(text) {
