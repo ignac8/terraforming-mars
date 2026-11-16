@@ -14,6 +14,7 @@
 import {defineComponent} from 'vue';
 import {Timer} from '@/common/Timer';
 import {TimerModel} from '@/common/models/TimerModel';
+import {countedTimerText} from '@/client/utils/escapeVelocityClock';
 
 export default defineComponent({
   name: 'PlayerTimer',
@@ -24,6 +25,11 @@ export default defineComponent({
     },
     live: {
       type: Boolean,
+    },
+    /** Milliseconds to take off the shown time, for the time that counts toward the Escape Velocity penalty. */
+    creditMs: {
+      type: Number,
+      default: 0,
     },
   },
   data() {
@@ -45,6 +51,9 @@ export default defineComponent({
   },
   watch: {
     timer() {
+      this.updateTimer();
+    },
+    creditMs() {
       this.updateTimer();
     },
   },
@@ -76,7 +85,7 @@ export default defineComponent({
   },
   methods: {
     updateTimer() {
-      this.timerText = Timer.toString(this.timer);
+      this.timerText = this.creditMs > 0 ? countedTimerText(this.timer, this.creditMs) : Timer.toString(this.timer);
     },
   },
 });

@@ -284,6 +284,30 @@
               }
             }
           }
+          // The clock with the time that counts toward the Escape Velocity penalty beside it.
+          .player-status-timer--counted {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            align-items: baseline;
+            gap: 0 5px;
+            .player-timer {
+              width: auto;
+            }
+            .player-status-counted {
+              display: flex;
+              align-items: baseline;
+              font-size: 13px;
+              opacity: 0.75;
+              .player-timer-seconds {
+                width: auto;
+              }
+            }
+            .player-status-counted-icon {
+              font-size: 10px;
+              margin-right: 1px;
+            }
+          }
         }
         .player-action-status-container--active {
           background: #e6e1e1;

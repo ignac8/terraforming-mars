@@ -22,6 +22,26 @@ describe('GameEnd', () => {
     expect(wrapper.exists()).to.be.true;
   });
 
+  it('shows the time that counted toward the Escape Velocity penalty under the clock', () => {
+    const player = fakePublicPlayerModel({
+      timer: {sumElapsed: 29 * 60_000 + 7_000, startedAt: 0, running: false},
+      actionsTakenThisGame: 175,
+    });
+    const escapeVelocity = {thresholdMinutes: 20, bonusSectionsPerAction: 2, penaltyPeriodMinutes: 1, penaltyVPPerPeriod: 1};
+    const wrapper = shallowMount(GameEnd, {
+      ...globalConfig,
+      props: {
+        participant: fakePlayerViewModel({
+          thisPlayer: player,
+          players: [player],
+          game: fakeGameModel({gameOptions: fakeGameOptionsModel({showTimers: true, escapeVelocity})}),
+        }),
+      },
+    });
+    expect(wrapper.find('.game-end-timer').text()).eq('29:07');
+    expect(wrapper.find('.game-end-timer-counted').text()).contains('23:17');
+  });
+
   it('links to the replay of the game', () => {
     const wrapper = shallowMount(GameEnd, {
       ...globalConfig,

@@ -3,6 +3,7 @@ import {globalConfig} from '../getLocalVue';
 import {expect} from 'chai';
 import {CardName} from '@/common/cards/CardName';
 import PlayerInfo from '@/client/components/overview/PlayerInfo.vue';
+import PlayerStatus from '@/client/components/overview/PlayerStatus.vue';
 import {PlayerViewModel, PublicPlayerModel} from '@/common/models/PlayerModel';
 import {RecursivePartial} from '@/common/utils/utils';
 import {fakeTimerModel} from '../testHelpers';
@@ -52,5 +53,47 @@ describe('PlayerInfo', () => {
     });
     const test = playerInfo.find('div[class*="played-cards-count"]');
     expect(test.text()).to.eq('3');
+  });
+
+  it('gives the status box the time that the player\'s actions take off the Escape Velocity clock', () => {
+    const thisPlayer: RecursivePartial<PublicPlayerModel> = {
+      color: 'blue',
+      tableau: [],
+      timer: fakeTimerModel(),
+      actionsTakenThisGame: 175,
+      victoryPointsBreakdown: {
+        total: 1,
+      },
+      tags: {},
+    };
+    const playerView: RecursivePartial<PlayerViewModel> = {
+      thisPlayer: thisPlayer,
+      id: 'playerid-foo',
+      game: {
+        gameOptions: {
+          showTimers: true,
+          escapeVelocity: {thresholdMinutes: 20, bonusSectionsPerAction: 2, penaltyPeriodMinutes: 1, penaltyVPPerPeriod: 1},
+        },
+      },
+      players: [thisPlayer],
+    };
+    const playerInfo = shallowMount(PlayerInfo, {
+      ...globalConfig,
+      global: {
+        ...globalConfig.global,
+        mocks: {
+          getVisibilityState: () => false,
+          setVisibilityState: () => {},
+          isServerSideRequestInProgress: false,
+        },
+      },
+      props: {
+        player: asComplete<PublicPlayerModel>(thisPlayer),
+        playerView: asComplete<PlayerViewModel>(playerView),
+        playerIndex: 0,
+        actionLabel: 'none',
+      },
+    });
+    expect(playerInfo.findComponent(PlayerStatus).props('creditMs')).eq(350_000);
   });
 });

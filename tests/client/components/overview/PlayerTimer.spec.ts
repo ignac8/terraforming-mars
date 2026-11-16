@@ -70,4 +70,23 @@ describe('PlayerTimer', () => {
     expect(wrapper.find('.player-timer-minutes').text()).eq('01');
     expect(wrapper.find('.player-timer-seconds').text()).eq('05');
   });
+
+  it('takes the credit off the time, but never below zero', async () => {
+    const wrapper = shallowMount(PlayerTimer, {
+      ...globalConfig,
+      props: {
+        timer: {...fakeTimerModel(), sumElapsed: 65_000},
+        live: false,
+        creditMs: 5_000,
+      },
+    });
+    await wrapper.vm.$nextTick();
+    expect(wrapper.find('.player-timer-minutes').text()).eq('01');
+    expect(wrapper.find('.player-timer-seconds').text()).eq('00');
+
+    await wrapper.setProps({creditMs: 70_000});
+
+    expect(wrapper.find('.player-timer-minutes').text()).eq('00');
+    expect(wrapper.find('.player-timer-seconds').text()).eq('00');
+  });
 });
