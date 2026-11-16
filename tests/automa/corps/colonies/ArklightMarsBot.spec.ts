@@ -3,19 +3,20 @@ import {CardName} from '@/common/cards/CardName';
 import {Tag} from '@/common/cards/Tag';
 import {getMarsBotCorp} from '@/server/automa/corps/MarsBotCorpRegistry';
 import {IProjectCard} from '@/server/cards/IProjectCard';
-import {createAutomaGame, fakeCard, resetCorpRegistry, setupWithAndWithoutEffect} from '../CorpGame';
+import {MarsBotCorp} from '@/server/automa/MarsBotCorp';
+import {createAutomaGame, fakeCard, resetCorpRegistry, setupWithAndWithoutEffect, withoutEffect} from '../CorpGame';
 
 /** M€ Arklight's effect adds when MarsBot resolves `card`, against the same game without the effect. */
 function arklightGain(card: IProjectCard): number {
   const corp = getMarsBotCorp(CardName.ARKLIGHT)!;
-  const run = (c: typeof corp) => {
+  const run = (c: MarsBotCorp) => {
     const {marsBot} = createAutomaGame();
     marsBot.setCorpAndSetup(c);
     const mcBefore = marsBot.turnResolver.megacredits;
     marsBot.turnResolver.resolveProjectCard(card);
     return marsBot.turnResolver.megacredits - mcBefore;
   };
-  return run(corp) - run({...corp, effect: undefined});
+  return run(corp) - run(withoutEffect(corp));
 }
 
 describe('ArklightMarsBot', () => {

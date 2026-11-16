@@ -5,7 +5,7 @@ import {CardName} from '@/common/cards/CardName';
 import {MAX_VENUS_SCALE} from '@/common/constants';
 import {createBonusCard} from '@/server/automa/MarsBotBonusCard';
 import {getMarsBotCorp} from '@/server/automa/corps/MarsBotCorpRegistry';
-import {APHRODITE_MARSBOT_CORP} from '@/server/automa/corps/venusNext/AphroditeMarsBot';
+import {AphroditeMarsBot} from '@/server/automa/corps/venusNext/AphroditeMarsBot';
 import {testGame} from '../../../TestGame';
 import {setVenusScaleLevel} from '../../../TestingUtils';
 import {createCorpFaqGame, resetCorpRegistry} from '../CorpGame';
@@ -17,7 +17,7 @@ describe('AphroditeMarsBot', () => {
   it('gains 2 M€ for each step Venus is raised', () => {
     const {marsBot, calls} = recordingMarsBot();
 
-    APHRODITE_MARSBOT_CORP.effect!.onVenusRaised!(marsBot, 3);
+    new AphroditeMarsBot().onVenusRaised(marsBot, 3);
 
     expect(calls).deep.eq(['gainMc(6)']);
   });

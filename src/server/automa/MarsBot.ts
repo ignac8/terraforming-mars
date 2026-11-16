@@ -21,7 +21,7 @@ import {Space} from '../boards/Space';
 import {Random} from '../../common/utils/Random';
 import {inplaceShuffle} from '../utils/shuffle';
 import {IMarsBot} from './IMarsBot';
-import {IMarsBotCorp} from './IMarsBotCorp';
+import {MarsBotCorp} from './MarsBotCorp';
 import {trackCubeKey} from './corpTrackCubes';
 import {MarsBotTrackCube} from './MarsBotCorpTypes';
 import {MarsBotShippingBoard} from './colonies/MarsBotShippingBoard';
@@ -84,7 +84,7 @@ export class MarsBot implements IMarsBot {
   public playedProjectCards: Array<IProjectCard> = [];
 
   /** Corporation card (Rulebook B). */
-  public corp: IMarsBotCorp | undefined;
+  public corp: MarsBotCorp | undefined;
 
   /** Track cube positions placed by the corporation. Key: "trackIndex:position". */
   public trackCubePositions: Map<string, MarsBotTrackCube> = new Map();
@@ -397,7 +397,7 @@ export class MarsBot implements IMarsBot {
   // ---- Corporation ----
 
   /** Set the corporation and run its setup. */
-  public setCorpAndSetup(corp: IMarsBotCorp): void {
+  public setCorpAndSetup(corp: MarsBotCorp): void {
     this.corp = corp;
     MarsBotCorpResolver.setupCorp(corp, this);
     this.game.log('MarsBot selects corporation: ${0}', (b) => b.rawString(corp.name));
@@ -644,7 +644,7 @@ export class MarsBot implements IMarsBot {
 
   /** Ask the corp to intercept a parameter raise (Pristar). True means the raise is skipped. */
   public interceptsParameterRaise(parameter: GlobalParameter): boolean {
-    return this.corp?.effect?.interceptGlobalParameterRaise?.(this, parameter) ?? false;
+    return this.corp?.interceptGlobalParameterRaise?.(this, parameter) ?? false;
   }
 
   public maybePlaceRandomColony(): boolean {
@@ -713,7 +713,7 @@ export class MarsBot implements IMarsBot {
 
   /** Calculate MarsBot's final VP. */
   public getVictoryPoints(): MarsBotVPBreakdown {
-    const corpVpBonus = this.corp?.effect?.vpBonus?.(this) ?? 0;
+    const corpVpBonus = this.corp?.vpBonus?.(this) ?? 0;
     const scoring = new MarsBotScoring(
       this.game, this.player, this.humanPlayer,
       this.turnResolver, this.difficulty, this.neuralInstanceSpace,

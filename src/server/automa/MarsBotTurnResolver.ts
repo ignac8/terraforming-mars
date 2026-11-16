@@ -72,7 +72,7 @@ export class MarsBotTurnResolver {
     // Resolve each tag left-to-right
     let advancedAny = false;
     for (const tag of tags) {
-      this.marsBotManager?.corp?.effect?.onTagResolved?.(this.marsBotManager, tag);
+      this.marsBotManager?.corp?.onTagResolved?.(this.marsBotManager, tag);
       if (tag === Tag.WILD) {
         // Prelude rule: advance the least-advanced track, topmost if tied
         const leastIndex = this.marsBotBoard.getLeastAdvancedTrackIndex();
@@ -96,7 +96,7 @@ export class MarsBotTurnResolver {
     }
 
     // Notify corp of card resolution
-    this.marsBotManager?.corp?.effect?.onProjectCardResolved?.(this.marsBotManager, card);
+    this.marsBotManager?.corp?.onProjectCardResolved?.(this.marsBotManager, card);
 
     // Notify human player's effect cards (Solar Logistics, Saturn Systems, etc.)
     this.notifyPlayerCards(card);
@@ -169,7 +169,7 @@ export class MarsBotTurnResolver {
     }
 
     if (this.marsBotManager !== undefined && !reAdvance) {
-      this.marsBotManager.corp?.effect?.afterTrackSpaceResolved?.(this.marsBotManager, trackIndex, position);
+      this.marsBotManager.corp?.afterTrackSpaceResolved?.(this.marsBotManager, trackIndex, position);
     }
     return true;
   }
@@ -525,7 +525,7 @@ export class MarsBotTurnResolver {
     const offset = this.difficulty === 'easy' ? -5 : 0;
     const marsBot = this.marsBotManager;
     if (marsBot !== undefined) {
-      const corpBonus = marsBot.corp?.effect?.awardScoreBonus?.(marsBot) ?? 0;
+      const corpBonus = marsBot.corp?.awardScoreBonus?.(marsBot) ?? 0;
       return marsBotAwardScore(award, marsBot) + offset + corpBonus;
     }
     return award.getScore(this.botPlayer) + offset;
@@ -561,7 +561,7 @@ export class MarsBotTurnResolver {
     const mc = this.failedActionMc;
     this.gainMc(mc);
     this.game.log('MarsBot takes a Failed Action, gains ${0} MC', (b) => b.number(mc));
-    this.marsBotManager?.corp?.effect?.onFailedAction?.(this.marsBotManager);
+    this.marsBotManager?.corp?.onFailedAction?.(this.marsBotManager);
   }
 
   /** Add M€ to MarsBot's supply and tell the corp about it (Mining Guild). */
@@ -570,7 +570,7 @@ export class MarsBotTurnResolver {
       return;
     }
     this.megacredits += amount;
-    this.marsBotManager?.corp?.effect?.onMcGained?.(this.marsBotManager, amount);
+    this.marsBotManager?.corp?.onMcGained?.(this.marsBotManager, amount);
   }
 
   /**

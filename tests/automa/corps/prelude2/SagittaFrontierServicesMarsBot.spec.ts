@@ -2,7 +2,7 @@ import {expect} from 'chai';
 import {CardName} from '@/common/cards/CardName';
 import {Tag} from '@/common/cards/Tag';
 import {getMarsBotCorp} from '@/server/automa/corps/MarsBotCorpRegistry';
-import {SAGITTA_FRONTIER_SERVICES_MARSBOT_CORP} from '@/server/automa/corps/prelude2/SagittaFrontierServicesMarsBot';
+import {SagittaFrontierServicesMarsBot} from '@/server/automa/corps/prelude2/SagittaFrontierServicesMarsBot';
 import {ArtificialLake} from '@/server/cards/base/ArtificialLake';
 import {Asteroid} from '@/server/cards/base/Asteroid';
 import {IceCapMelting} from '@/server/cards/base/IceCapMelting';
@@ -16,7 +16,7 @@ describe('SagittaFrontierServicesMarsBot', () => {
   it('gains 8 M€ at setup', () => {
     const {marsBot, calls} = recordingMarsBot();
 
-    SAGITTA_FRONTIER_SERVICES_MARSBOT_CORP.setup!(marsBot);
+    new SagittaFrontierServicesMarsBot().setup(marsBot);
 
     expect(calls).deep.eq(['gainMc(8)']);
   });
@@ -25,7 +25,7 @@ describe('SagittaFrontierServicesMarsBot', () => {
   it('pays more M€ for a card with no tags than for one tag, and nothing for two', () => {
     const paid = [new MicroMills(), new ArtificialLake(), new Asteroid()].map((card) => {
       const {marsBot, calls} = recordingMarsBot({failedActionMc: 5});
-      SAGITTA_FRONTIER_SERVICES_MARSBOT_CORP.effect!.onProjectCardResolved!(marsBot, card);
+      new SagittaFrontierServicesMarsBot().onProjectCardResolved(marsBot, card);
       return calls;
     });
 
@@ -45,7 +45,7 @@ describe('SagittaFrontierServicesMarsBot', () => {
     const corp = getMarsBotCorp(CardName.SAGITTA_FRONTIER_SERVICES)!;
     marsBot.setCorpAndSetup(corp);
     const mcBefore = marsBot.turnResolver.megacredits;
-    corp.effect!.onProjectCardResolved!(marsBot, fakeCard('Tagless', {cost: 5}));
+    corp.onProjectCardResolved!(marsBot, fakeCard('Tagless', {cost: 5}));
     expect(marsBot.turnResolver.megacredits).to.eq(mcBefore + 5);
   });
 
@@ -71,7 +71,7 @@ describe('SagittaFrontierServicesMarsBot', () => {
     const corp = getMarsBotCorp(CardName.SAGITTA_FRONTIER_SERVICES)!;
     marsBot.setCorpAndSetup(corp);
     const mcBefore = marsBot.turnResolver.megacredits;
-    corp.effect!.onProjectCardResolved!(marsBot, new IceCapMelting());
+    corp.onProjectCardResolved!(marsBot, new IceCapMelting());
     expect(marsBot.turnResolver.megacredits).to.eq(mcBefore + 1);
   });
 
@@ -80,7 +80,7 @@ describe('SagittaFrontierServicesMarsBot', () => {
     const corp = getMarsBotCorp(CardName.SAGITTA_FRONTIER_SERVICES)!;
     marsBot.setCorpAndSetup(corp);
     const mcBefore = marsBot.turnResolver.megacredits;
-    corp.effect!.onProjectCardResolved!(marsBot, fakeCard('OneTag', {tags: [Tag.BUILDING], cost: 5}));
+    corp.onProjectCardResolved!(marsBot, fakeCard('OneTag', {tags: [Tag.BUILDING], cost: 5}));
     expect(marsBot.turnResolver.megacredits).to.eq(mcBefore + 1);
   });
 

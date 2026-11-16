@@ -226,7 +226,7 @@ export class AutomaGameHooks {
 
   /** Tells MarsBot's corp it spent floaters to keep an extra card (Stormcraft). */
   private onFloatersSpentForExtraCard(): void {
-    this.marsBot.corp?.effect?.onFloatersSpentForExtraCard?.(this.marsBot);
+    this.marsBot.corp?.onFloatersSpentForExtraCard?.(this.marsBot);
   }
 
   /**
@@ -623,10 +623,10 @@ export class AutomaGameHooks {
   /** Called when the human player plays a project card. Notifies MarsBot's corp. */
   public handleHumanCardPlayed(card: IProjectCard): void {
     const corp = this.marsBot.corp;
-    if (corp?.effect?.onHumanCardPlayed === undefined) {
+    if (corp?.onHumanCardPlayed === undefined) {
       return;
     }
-    corp.effect.onHumanCardPlayed(this.marsBot, card);
+    corp.onHumanCardPlayed(this.marsBot, card);
   }
 
   /**
@@ -665,10 +665,10 @@ export class AutomaGameHooks {
       this.marsBot.turnResolver.tilePlacer.resolveSpecialHex(space);
     }
     const corp = this.marsBot.corp;
-    if (corp?.effect?.onTilePlaced === undefined) {
+    if (corp?.onTilePlaced === undefined) {
       return;
     }
-    corp.effect.onTilePlaced(this.marsBot, player === this.marsBot.player, tileType, space);
+    corp.onTilePlaced(this.marsBot, player === this.marsBot.player, tileType, space);
   }
 
   /**
@@ -679,7 +679,7 @@ export class AutomaGameHooks {
     if (player === this.marsBot.player) {
       return;
     }
-    this.marsBot.corp?.effect?.onColonyPlaced?.(this.marsBot);
+    this.marsBot.corp?.onColonyPlaced?.(this.marsBot);
   }
 
   /**
@@ -690,7 +690,7 @@ export class AutomaGameHooks {
    * for the raise stays.
    */
   public handleVenusRaised(steps: number): void {
-    this.marsBot.corp?.effect?.onVenusRaised?.(this.marsBot, steps);
+    this.marsBot.corp?.onVenusRaised?.(this.marsBot, steps);
     if (this.venusColonyDue) {
       this.venusColonyDue = false;
       const turnResolver = this.marsBot.turnResolver;

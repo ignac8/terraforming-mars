@@ -2,7 +2,7 @@ import {expect} from 'chai';
 import {CardName} from '@/common/cards/CardName';
 import {Tag} from '@/common/cards/Tag';
 import {getMarsBotCorp} from '@/server/automa/corps/MarsBotCorpRegistry';
-import {POINT_LUNA_MARSBOT_CORP} from '@/server/automa/corps/prelude/PointLunaMarsBot';
+import {PointLunaMarsBot} from '@/server/automa/corps/prelude/PointLunaMarsBot';
 import {setAllTracks, setTrack} from '../../FakeMarsBot';
 import {createAutomaGame, resetCorpRegistry} from '../CorpGame';
 import {recordingMarsBot, trackCubes} from '../RecordingMarsBot';
@@ -24,14 +24,14 @@ describe('PointLunaMarsBot', () => {
       setAllTracks(marsBot, 2);
       setTrack(marsBot, Tag.PLANT, 1);
 
-      POINT_LUNA_MARSBOT_CORP.effect!.onTrackCubeTrigger!(marsBot, EARTH, 1, run.cube);
+      new PointLunaMarsBot().onTrackCubeTrigger(marsBot, EARTH, 1, run.cube);
 
       expect(calls).deep.eq(run.calls);
     });
   }
 
   it('puts its cubes on the Earth track', () => {
-    expect(trackCubes(POINT_LUNA_MARSBOT_CORP)).to.have.members([
+    expect(trackCubes(new PointLunaMarsBot())).to.have.members([
       ...[1, 5, 9, 13, 17].map((position) => `earth white ${position}`),
       ...[3, 7, 11, 15].map((position) => `earth black ${position}`),
     ]);
@@ -51,7 +51,7 @@ describe('PointLunaMarsBot', () => {
     marsBot.setCorpAndSetup(corp);
     // All tracks at some position after starting tags. White cube → least advanced.
     const leastBefore = marsBot.marsBotBoard.tracks[marsBot.marsBotBoard.getLeastAdvancedTrackIndex()].position;
-    corp.effect!.onTrackCubeTrigger!(marsBot, 5, 1, 'white');
+    corp.onTrackCubeTrigger!(marsBot, 5, 1, 'white');
     // Some track should have advanced
     expect(marsBot.marsBotBoard.tracks[marsBot.marsBotBoard.getLeastAdvancedTrackIndex()].position).to.be.gte(leastBefore);
   });

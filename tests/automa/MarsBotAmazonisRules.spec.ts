@@ -8,8 +8,8 @@ import {TileType} from '@/common/TileType';
 import {MarsBot} from '@/server/automa/MarsBot';
 import {createBaseBonusCards} from '@/server/automa/MarsBotBonusCard';
 import {getMarsBotCorp} from '@/server/automa/corps/MarsBotCorpRegistry';
-import {NIRGAL_ENTERPRISES_MARSBOT_CORP} from '@/server/automa/corps/prelude2/NirgalEnterprisesMarsBot';
-import {TERRALABS_RESEARCH_MARSBOT_CORP} from '@/server/automa/corps/turmoil/TerralabsResearchMarsBot';
+import {NirgalEnterprisesMarsBot} from '@/server/automa/corps/prelude2/NirgalEnterprisesMarsBot';
+import {TerralabsResearchMarsBot} from '@/server/automa/corps/turmoil/TerralabsResearchMarsBot';
 import {Mine} from '@/server/cards/base/Mine';
 import {testGame} from '../TestGame';
 import {createAutomaGame, resetCorpRegistry} from './corps/CorpGame';
@@ -41,7 +41,7 @@ describe('MarsBotAmazonisRules', () => {
       it(`draws ${run.count} card(s) in generation ${run.generation} on ${run.boardName}`, () => {
         const {marsBot, calls} = recorder(run.boardName, run.generation);
 
-        TERRALABS_RESEARCH_MARSBOT_CORP.beforeActionPhase!(marsBot);
+        new TerralabsResearchMarsBot().beforeActionPhase(marsBot);
 
         expect(calls).deep.eq([`drawProjectCardsToActionDeck(${run.count})`]);
       });
@@ -87,7 +87,7 @@ describe('MarsBotAmazonisRules', () => {
       it(`claims a milestone in generations 2 to 6 and from 11, and funds an award in 7 to 10, generation ${generation}`, () => {
         const {marsBot, calls} = recorder(BoardName.AMAZONIS_PLANITIA, generation);
 
-        NIRGAL_ENTERPRISES_MARSBOT_CORP.beforeActionPhase!(marsBot);
+        new NirgalEnterprisesMarsBot().beforeActionPhase(marsBot);
 
         expect(calls).deep.eq(expected);
       });

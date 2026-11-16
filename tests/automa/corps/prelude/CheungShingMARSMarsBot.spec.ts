@@ -2,7 +2,7 @@ import {expect} from 'chai';
 import {CardName} from '@/common/cards/CardName';
 import {Tag} from '@/common/cards/Tag';
 import {getMarsBotCorp} from '@/server/automa/corps/MarsBotCorpRegistry';
-import {CHEUNG_SHING_MARS_MARSBOT_CORP} from '@/server/automa/corps/prelude/CheungShingMARSMarsBot';
+import {CheungShingMARSMarsBot} from '@/server/automa/corps/prelude/CheungShingMARSMarsBot';
 import {createAutomaGame, resetCorpRegistry} from '../CorpGame';
 import {recordingMarsBot, trackCubes} from '../RecordingMarsBot';
 
@@ -15,10 +15,10 @@ describe('CheungShingMARSMarsBot', () => {
   it('gains 5 M€ for the silver resource cubes on spaces 4 to 18 of the building track', () => {
     const {marsBot, calls} = recordingMarsBot();
 
-    CHEUNG_SHING_MARS_MARSBOT_CORP.effect!.onTrackCubeTrigger!(marsBot, BUILDING, 4, 'credit');
+    new CheungShingMARSMarsBot().onTrackCubeTrigger(marsBot, BUILDING, 4, 'credit');
 
     expect(calls).deep.eq(['gainMc(5)']);
-    expect(trackCubes(CHEUNG_SHING_MARS_MARSBOT_CORP)).deep.eq(Array.from({length: 15}, (_, i) => `building credit ${i + 4}`));
+    expect(trackCubes(new CheungShingMARSMarsBot())).deep.eq(Array.from({length: 15}, (_, i) => `building credit ${i + 4}`));
   });
 
   it('has building tag and building draft priority', () => {

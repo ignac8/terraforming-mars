@@ -2,7 +2,7 @@ import {expect} from 'chai';
 import {CardName} from '@/common/cards/CardName';
 import {Tag} from '@/common/cards/Tag';
 import {getMarsBotCorp} from '@/server/automa/corps/MarsBotCorpRegistry';
-import {SATURN_SYSTEMS_MARSBOT_CORP} from '@/server/automa/corps/base/SaturnSystemsMarsBot';
+import {SaturnSystemsMarsBot} from '@/server/automa/corps/base/SaturnSystemsMarsBot';
 import {Asteroid} from '@/server/cards/base/Asteroid';
 import {AsteroidMining} from '@/server/cards/base/AsteroidMining';
 import {createAutomaGame, fakeCard, resetCorpRegistry, setupWithAndWithoutEffect} from '../CorpGame';
@@ -22,7 +22,7 @@ describe('SaturnSystemsMarsBot', () => {
     it(`advances the event track for a Jovian card MarsBot resolves, ${run.tag} card`, () => {
       const {marsBot, calls} = recordingMarsBot();
 
-      SATURN_SYSTEMS_MARSBOT_CORP.effect!.onProjectCardResolved!(marsBot, run.card);
+      new SaturnSystemsMarsBot().onProjectCardResolved(marsBot, run.card);
 
       expect(calls).deep.eq(run.calls);
     });
@@ -30,7 +30,7 @@ describe('SaturnSystemsMarsBot', () => {
     it(`advances the event track for a Jovian card the player plays, ${run.tag} card`, () => {
       const {marsBot, calls} = recordingMarsBot();
 
-      SATURN_SYSTEMS_MARSBOT_CORP.effect!.onHumanCardPlayed!(marsBot, run.card);
+      new SaturnSystemsMarsBot().onHumanCardPlayed(marsBot, run.card);
 
       expect(calls).deep.eq(run.calls);
     });
@@ -52,7 +52,7 @@ describe('SaturnSystemsMarsBot', () => {
     marsBot.setCorpAndSetup(corp);
 
     const eventTrackBefore = marsBot.marsBotBoard.tracks[2].position; // Event = track 3
-    corp.effect!.onProjectCardResolved!(marsBot, fakeCard('JovianCard', {tags: [Tag.JOVIAN], cost: 10}));
+    corp.onProjectCardResolved!(marsBot, fakeCard('JovianCard', {tags: [Tag.JOVIAN], cost: 10}));
     // Event track should have advanced (may chain from starting tags advancement)
     expect(marsBot.marsBotBoard.tracks[2].position).to.be.gte(eventTrackBefore + 1);
   });
@@ -63,7 +63,7 @@ describe('SaturnSystemsMarsBot', () => {
     marsBot.setCorpAndSetup(corp);
 
     const eventTrackBefore = marsBot.marsBotBoard.tracks[2].position;
-    corp.effect!.onHumanCardPlayed!(marsBot, fakeCard('HumanJovian', {tags: [Tag.JOVIAN], cost: 5}));
+    corp.onHumanCardPlayed!(marsBot, fakeCard('HumanJovian', {tags: [Tag.JOVIAN], cost: 5}));
     expect(marsBot.marsBotBoard.tracks[2].position).to.be.gte(eventTrackBefore + 1);
   });
 
@@ -73,7 +73,7 @@ describe('SaturnSystemsMarsBot', () => {
     marsBot.setCorpAndSetup(corp);
 
     const eventTrackBefore = marsBot.marsBotBoard.tracks[2].position;
-    corp.effect!.onProjectCardResolved!(marsBot, fakeCard('SpaceCard', {tags: [Tag.SPACE], cost: 10}));
+    corp.onProjectCardResolved!(marsBot, fakeCard('SpaceCard', {tags: [Tag.SPACE], cost: 10}));
     expect(marsBot.marsBotBoard.tracks[2].position).to.eq(eventTrackBefore);
   });
 

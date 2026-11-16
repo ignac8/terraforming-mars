@@ -3,7 +3,7 @@ import {Resource} from '@/common/Resource';
 import {CardName} from '@/common/cards/CardName';
 import {Tag} from '@/common/cards/Tag';
 import {getMarsBotCorp} from '@/server/automa/corps/MarsBotCorpRegistry';
-import {INTERPLANETARY_CINEMATICS_MARSBOT_CORP} from '@/server/automa/corps/base/InterplanetaryCinematicsMarsBot';
+import {InterplanetaryCinematicsMarsBot} from '@/server/automa/corps/base/InterplanetaryCinematicsMarsBot';
 import {createAutomaGame, resetCorpRegistry} from '../CorpGame';
 import {recordingMarsBot, trackCubes} from '../RecordingMarsBot';
 
@@ -18,7 +18,7 @@ describe('InterplanetaryCinematicsMarsBot', () => {
     it(`gains 2 M€ for each advance of the building and event tracks, ${run.tag} cube`, () => {
       const {marsBot, calls} = recordingMarsBot();
 
-      INTERPLANETARY_CINEMATICS_MARSBOT_CORP.effect!.onTrackCubeTrigger!(marsBot, run.track, 1, 'white');
+      new InterplanetaryCinematicsMarsBot().onTrackCubeTrigger(marsBot, run.track, 1, 'white');
 
       expect(calls).deep.eq(['gainMc(2)']);
     });
@@ -27,9 +27,9 @@ describe('InterplanetaryCinematicsMarsBot', () => {
   it('puts a white cube on every space of the building and event tracks', () => {
     const all = Array.from({length: 18}, (_, i) => i + 1);
 
-    expect(trackCubes(INTERPLANETARY_CINEMATICS_MARSBOT_CORP))
+    expect(trackCubes(new InterplanetaryCinematicsMarsBot()))
       .to.have.members(['building', 'event'].flatMap((tag) => all.map((position) => `${tag} white ${position}`)));
-    expect(INTERPLANETARY_CINEMATICS_MARSBOT_CORP.trackCubesTriggerEveryAdvance).is.true;
+    expect(new InterplanetaryCinematicsMarsBot().trackCubesTriggerEveryAdvance).is.true;
   });
 
   it('has 2 Event starting tags', () => {
@@ -68,9 +68,9 @@ describe('InterplanetaryCinematicsMarsBot', () => {
     const corp = getMarsBotCorp(CardName.INTERPLANETARY_CINEMATICS)!;
     marsBot.setCorpAndSetup(corp);
     const mcBefore = marsBot.turnResolver.megacredits;
-    corp.effect!.onTrackCubeTrigger!(marsBot, 0, 1, 'white');
+    corp.onTrackCubeTrigger!(marsBot, 0, 1, 'white');
     expect(marsBot.turnResolver.megacredits).to.eq(mcBefore + 2);
-    corp.effect!.onTrackCubeTrigger!(marsBot, 2, 1, 'white');
+    corp.onTrackCubeTrigger!(marsBot, 2, 1, 'white');
     expect(marsBot.turnResolver.megacredits).to.eq(mcBefore + 4);
   });
 });

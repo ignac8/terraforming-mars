@@ -7,7 +7,7 @@ import {MarsBot} from '@/server/automa/MarsBot';
 import {createBonusCard} from '@/server/automa/MarsBotBonusCard';
 import {MarsBotBonusCard} from '@/server/automa/MarsBotBonusCard';
 import {getMarsBotCorp} from '@/server/automa/corps/MarsBotCorpRegistry';
-import {ECOLINE_MARSBOT_CORP} from '@/server/automa/corps/base/EcoLineMarsBot';
+import {EcoLineMarsBot} from '@/server/automa/corps/base/EcoLineMarsBot';
 import {runAllActions} from '../../../TestingUtils';
 import {chooseSource, createCorpFaqGame, resetCorpRegistry} from '../CorpGame';
 import {createAutomaGame} from '../CorpGame';
@@ -24,7 +24,7 @@ describe('EcoLineMarsBot', () => {
   it('adds Rapid Sprouting to the action deck before the action phase', () => {
     const {marsBot, calls} = recordingMarsBot();
 
-    ECOLINE_MARSBOT_CORP.beforeActionPhase!(marsBot);
+    new EcoLineMarsBot().beforeActionPhase(marsBot);
 
     expect(calls).deep.eq(['addBonusCardToActionDeck(B23)']);
   });

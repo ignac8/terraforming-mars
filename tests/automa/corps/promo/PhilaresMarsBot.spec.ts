@@ -7,7 +7,7 @@ import {CardName} from '@/common/cards/CardName';
 import {IGame} from '@/server/IGame';
 import {MarsBot} from '@/server/automa/MarsBot';
 import {getMarsBotCorp} from '@/server/automa/corps/MarsBotCorpRegistry';
-import {PHILARES_MARSBOT_CORP} from '@/server/automa/corps/promo/PhilaresMarsBot';
+import {PhilaresMarsBot} from '@/server/automa/corps/promo/PhilaresMarsBot';
 import {Space} from '@/server/boards/Space';
 import {testGame} from '../../../TestGame';
 import {TestPlayer} from '../../../TestPlayer';
@@ -35,7 +35,7 @@ function placeTile({marsBot, botPlayer, human}: Sides, byMarsBot: boolean, tileT
   });
   marsBot.game.simpleAddTile(placer, space, {tileType});
 
-  PHILARES_MARSBOT_CORP.effect!.onTilePlaced!(marsBot, byMarsBot, tileType, space);
+  new PhilaresMarsBot().onTilePlaced(marsBot, byMarsBot, tileType, space);
 }
 
 /** An empty land space with no tile within two spaces of it. */
@@ -61,7 +61,7 @@ describe('PhilaresMarsBot', () => {
   it('places a greenery, resolves Local Neural Instance and starts with one science resource', () => {
     const {marsBot, calls, corpState} = sides();
 
-    PHILARES_MARSBOT_CORP.setup!(marsBot);
+    new PhilaresMarsBot().setup(marsBot);
 
     expect(calls).deep.eq(['placeGreenery()', 'removeBonusCard(B07)', 'resolveBonusCard(B07)', 'addBonusCardToBonusDeck(B27)']);
     expect(corpState.get('scienceResources')).eq(1);

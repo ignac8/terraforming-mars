@@ -2,7 +2,7 @@ import {expect} from 'chai';
 import {CardName} from '@/common/cards/CardName';
 import {Tag} from '@/common/cards/Tag';
 import {getMarsBotCorp} from '@/server/automa/corps/MarsBotCorpRegistry';
-import {PHOBOLOG_MARSBOT_CORP} from '@/server/automa/corps/base/PhoboLogMarsBot';
+import {PhoboLogMarsBot} from '@/server/automa/corps/base/PhoboLogMarsBot';
 import {resetCorpRegistry} from '../CorpGame';
 import {recordingMarsBot, trackCubes} from '../RecordingMarsBot';
 
@@ -16,7 +16,7 @@ describe('PhoboLogMarsBot', () => {
   it('adds 2 space cards to the bonus deck at setup', () => {
     const {marsBot, calls} = recordingMarsBot();
 
-    PHOBOLOG_MARSBOT_CORP.setup!(marsBot);
+    new PhoboLogMarsBot().setup(marsBot);
 
     expect(calls).deep.eq(['addProjectCardsToBonusDeck(space, 2)']);
   });
@@ -24,10 +24,10 @@ describe('PhoboLogMarsBot', () => {
   it('draws a bonus card for the white cubes on spaces 7, 10, 13 and 15 of the space track', () => {
     const {marsBot, calls} = recordingMarsBot();
 
-    PHOBOLOG_MARSBOT_CORP.effect!.onTrackCubeTrigger!(marsBot, SPACE, 1, 'white');
+    new PhoboLogMarsBot().onTrackCubeTrigger(marsBot, SPACE, 1, 'white');
 
     expect(calls).deep.eq(['maybeDrawAndResolveBonusCard()']);
-    expect(trackCubes(PHOBOLOG_MARSBOT_CORP)).deep.eq([7, 10, 13, 15].map((position) => `space white ${position}`));
+    expect(trackCubes(new PhoboLogMarsBot())).deep.eq([7, 10, 13, 15].map((position) => `space white ${position}`));
   });
 
   it('has 4 white cubes on space track', () => {

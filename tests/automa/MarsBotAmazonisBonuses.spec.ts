@@ -4,7 +4,7 @@ import {BoardName} from '@/common/boards/BoardName';
 import {CardName} from '@/common/cards/CardName';
 import {Tag} from '@/common/cards/Tag';
 import {AUTOMA_COLONIES_MANIFEST} from '@/server/automa/corps/AutomaColoniesManifest';
-import {APHRODITE_MARSBOT_CORP} from '@/server/automa/corps/venusNext/AphroditeMarsBot';
+import {AphroditeMarsBot} from '@/server/automa/corps/venusNext/AphroditeMarsBot';
 import {Ceres} from '@/server/colonies/Ceres';
 import {Europa} from '@/server/colonies/Europa';
 import {Luna} from '@/server/colonies/Luna';
@@ -139,7 +139,7 @@ describe('MarsBotAmazonisBonuses', () => {
       const {game, marsBot} = amazonisGame({colonies: true});
       const europa = new Europa();
       game.colonies = [europa];
-      marsBot.corp = APHRODITE_MARSBOT_CORP;
+      marsBot.corp = new AphroditeMarsBot();
       game.generation = 3;
       setVenusScaleLevel(game, 14);
       const tr = marsBot.player.terraformRating;

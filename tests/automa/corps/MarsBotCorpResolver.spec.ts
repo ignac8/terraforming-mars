@@ -4,7 +4,7 @@ import {TestPlayer} from '../../TestPlayer';
 import {IGame} from '../../../src/server/IGame';
 import {MarsBot} from '../../../src/server/automa/MarsBot';
 import {MarsBotCorpResolver} from '../../../src/server/automa/corps/MarsBotCorpResolver';
-import {IMarsBotCorp} from '../../../src/server/automa/IMarsBotCorp';
+import {MarsBotCorp} from '../../../src/server/automa/MarsBotCorp';
 import {MarsBotTrackCube} from '../../../src/server/automa/MarsBotCorpTypes';
 import {
   registerMarsBotCorp,
@@ -17,7 +17,7 @@ import {SeededRandom} from '../../../src/common/utils/Random';
 import {BoardName} from '../../../src/common/boards/BoardName';
 import {DEFAULT_GAME_OPTIONS} from '../../../src/server/game/GameOptions';
 
-function createTestCorp(overrides: Partial<IMarsBotCorp> & {name: CardName}): IMarsBotCorp {
+function createTestCorp(overrides: Partial<MarsBotCorp> & {name: CardName}): MarsBotCorp {
   return {
     description: '',
     tags: [],
@@ -164,12 +164,10 @@ describe('MarsBotCorpResolver', () => {
       const corp = createTestCorp({
         name: CardName.ECOLINE,
         trackCubes: [{trackIndex: 1, position: 3, cubeType: 'white'}],
-        effect: {
-          onTrackCubeTrigger: (_ctx, trackIndex, position, _cubeType) => {
-            triggered = true;
-            triggeredTrackNum = trackIndex;
-            triggeredPosition = position;
-          },
+        onTrackCubeTrigger: (_ctx, trackIndex, position, _cubeType) => {
+          triggered = true;
+          triggeredTrackNum = trackIndex;
+          triggeredPosition = position;
         },
       });
 
@@ -193,9 +191,7 @@ describe('MarsBotCorpResolver', () => {
           {trackIndex: 1, position: 3, cubeType: 'white'},
           {trackIndex: 1, position: 4, cubeType: 'black'},
         ],
-        effect: {
-          onTrackCubeTrigger: (_ctx, _trackIndex, _position, cubeType) => cubeType === 'white',
-        },
+        onTrackCubeTrigger: (_ctx, _trackIndex, _position, cubeType) => cubeType === 'white',
       });
       marsBot.corp = corp;
       marsBot.trackCubePositions.set('1:3', {trackIndex: 1, position: 3, cubeType: 'white'});
@@ -213,10 +209,8 @@ describe('MarsBotCorpResolver', () => {
       const corp = createTestCorp({
         name: CardName.ECOLINE,
         trackCubes: [{trackIndex: 1, position: 3, cubeType: 'white'}],
-        effect: {
-          onTrackCubeTrigger: () => {
-            triggerCount++;
-          },
+        onTrackCubeTrigger: () => {
+          triggerCount++;
         },
       });
 
@@ -237,10 +231,8 @@ describe('MarsBotCorpResolver', () => {
       marsBot.corp = createTestCorp({
         name: CardName.ECOLINE,
         trackCubes: [{trackIndex: 1, position: 3, cubeType: 'white'}],
-        effect: {
-          onTrackCubeTrigger: () => {
-            triggerCount++;
-          },
+        onTrackCubeTrigger: () => {
+          triggerCount++;
         },
       });
       marsBot.trackCubePositions.set('1:3', {trackIndex: 1, position: 3, cubeType: 'white'});
@@ -259,10 +251,8 @@ describe('MarsBotCorpResolver', () => {
 
       const corp = createTestCorp({
         name: CardName.ECOLINE,
-        effect: {
-          onTrackCubeTrigger: () => {
-            triggered = true;
-          },
+        onTrackCubeTrigger: () => {
+          triggered = true;
         },
       });
 

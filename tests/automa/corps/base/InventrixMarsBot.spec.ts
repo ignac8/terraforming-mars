@@ -1,7 +1,7 @@
 import {expect} from 'chai';
 import {CardName} from '@/common/cards/CardName';
 import {getMarsBotCorp} from '@/server/automa/corps/MarsBotCorpRegistry';
-import {INVENTRIX_MARSBOT_CORP} from '@/server/automa/corps/base/InventrixMarsBot';
+import {InventrixMarsBot} from '@/server/automa/corps/base/InventrixMarsBot';
 import {ArtificialLake} from '@/server/cards/base/ArtificialLake';
 import {MagneticFieldGenerators} from '@/server/cards/base/MagneticFieldGenerators';
 import {createAutomaGame, fakeCard, resetCorpRegistry} from '../CorpGame';
@@ -14,7 +14,7 @@ describe('InventrixMarsBot', () => {
   it('removes Lobbyists at setup', () => {
     const {marsBot, calls} = recordingMarsBot();
 
-    INVENTRIX_MARSBOT_CORP.setup!(marsBot);
+    new InventrixMarsBot().setup(marsBot);
 
     expect(calls).deep.eq(['removeBonusCard(B06)', 'removeBonusCard(B15)']);
   });
@@ -26,7 +26,7 @@ describe('InventrixMarsBot', () => {
     it(`gains 2 M€ for a card with requirements, card ${run.requirements} requirements`, () => {
       const {marsBot, calls} = recordingMarsBot();
 
-      INVENTRIX_MARSBOT_CORP.effect!.onProjectCardResolved!(marsBot, run.card);
+      new InventrixMarsBot().onProjectCardResolved(marsBot, run.card);
 
       expect(calls).deep.eq(run.calls);
     });
@@ -37,7 +37,7 @@ describe('InventrixMarsBot', () => {
     const corp = getMarsBotCorp(CardName.INVENTRIX)!;
     marsBot.setCorpAndSetup(corp);
     const mcBefore = marsBot.turnResolver.megacredits;
-    corp.effect!.onProjectCardResolved!(marsBot, fakeCard('Req', {cost: 10, requirements: true}));
+    corp.onProjectCardResolved!(marsBot, fakeCard('Req', {cost: 10, requirements: true}));
     expect(marsBot.turnResolver.megacredits).to.eq(mcBefore + 2);
   });
 
@@ -46,7 +46,7 @@ describe('InventrixMarsBot', () => {
     const corp = getMarsBotCorp(CardName.INVENTRIX)!;
     marsBot.setCorpAndSetup(corp);
     const mcBefore = marsBot.turnResolver.megacredits;
-    corp.effect!.onProjectCardResolved!(marsBot, fakeCard('NoReq', {cost: 10}));
+    corp.onProjectCardResolved!(marsBot, fakeCard('NoReq', {cost: 10}));
     expect(marsBot.turnResolver.megacredits).to.eq(mcBefore);
   });
 });

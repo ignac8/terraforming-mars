@@ -6,6 +6,7 @@ import {cast} from '@/common/utils/utils';
 import {IGame} from '@/server/IGame';
 import {AutomaGameHooks} from '@/server/automa/AutomaGameHooks';
 import {MarsBot} from '@/server/automa/MarsBot';
+import {MarsBotCorp} from '@/server/automa/MarsBotCorp';
 import {
   clearMarsBotCorpRegistry, restoreMarsBotCorpRegistry,
   getMarsBotCorp,
@@ -39,6 +40,26 @@ export function createCorpFaqGame(corpName: CardName): AutomaGame {
 }
 
 /**
+ * `corp` with its ongoing effect removed: what its card prints, and what it does at setup, at the start of a
+ * generation and before the action phase.
+ */
+export function withoutEffect(corp: MarsBotCorp): MarsBotCorp {
+  return {
+    name: corp.name,
+    description: corp.description,
+    tags: corp.tags,
+    requiredExpansions: corp.requiredExpansions,
+    draftPriority: corp.draftPriority,
+    actionDeckBonusCard: corp.actionDeckBonusCard,
+    trackCubes: corp.trackCubes,
+    trackCubesTriggerEveryAdvance: corp.trackCubesTriggerEveryAdvance,
+    setup: corp.setup?.bind(corp),
+    roundStart: corp.roundStart?.bind(corp),
+    beforeActionPhase: corp.beforeActionPhase?.bind(corp),
+  };
+}
+
+/**
  * Runs the setup of the corporation `name` as it is and with its ongoing effect removed, in identical games.
  *
  * The difference between the two is what the effect made of the starting tags, which resolve as a revealed card
@@ -46,7 +67,7 @@ export function createCorpFaqGame(corpName: CardName): AutomaGame {
  */
 export function setupWithAndWithoutEffect(name: CardName) {
   const corp = getMarsBotCorp(name)!;
-  const run = (c: typeof corp) => {
+  const run = (c: MarsBotCorp) => {
     const {marsBot} = createAutomaGame();
     marsBot.setCorpAndSetup(c);
     return {
@@ -55,7 +76,7 @@ export function setupWithAndWithoutEffect(name: CardName) {
       events: marsBot.marsBotBoard.tracks[2].position,
     };
   };
-  return {withEffect: run(corp), without: run({...corp, effect: undefined})};
+  return {withEffect: run(corp), without: run(withoutEffect(corp))};
 }
 
 /** The MarsBot of a game made with `automa: true`. */

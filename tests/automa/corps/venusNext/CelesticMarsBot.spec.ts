@@ -1,7 +1,7 @@
 import {expect} from 'chai';
 import {CardName} from '@/common/cards/CardName';
 import {getMarsBotCorp} from '@/server/automa/corps/MarsBotCorpRegistry';
-import {CELESTIC_MARSBOT_CORP} from '@/server/automa/corps/venusNext/CelesticMarsBot';
+import {CelesticMarsBot} from '@/server/automa/corps/venusNext/CelesticMarsBot';
 import {MicroMills} from '@/server/cards/base/MicroMills';
 import {createAutomaGame, resetCorpRegistry} from '../CorpGame';
 import {recordingMarsBot} from '../RecordingMarsBot';
@@ -13,9 +13,9 @@ describe('CelesticMarsBot', () => {
   it('adds a floater at setup, at each round start and for each Failed Action', () => {
     const {marsBot, calls} = recordingMarsBot();
 
-    CELESTIC_MARSBOT_CORP.setup!(marsBot);
-    CELESTIC_MARSBOT_CORP.roundStart!(marsBot);
-    CELESTIC_MARSBOT_CORP.effect!.onFailedAction!(marsBot);
+    new CelesticMarsBot().setup(marsBot);
+    new CelesticMarsBot().roundStart(marsBot);
+    new CelesticMarsBot().onFailedAction(marsBot);
 
     expect(calls).deep.eq(['addFloaters(1)', 'addFloaters(1)', 'addFloaters(1)']);
   });

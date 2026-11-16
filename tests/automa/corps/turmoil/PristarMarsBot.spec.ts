@@ -5,7 +5,7 @@ import {BoardName} from '@/common/boards/BoardName';
 import {CardName} from '@/common/cards/CardName';
 import {createBonusCard} from '@/server/automa/MarsBotBonusCard';
 import {getMarsBotCorp} from '@/server/automa/corps/MarsBotCorpRegistry';
-import {PRISTAR_MARSBOT_CORP} from '@/server/automa/corps/turmoil/PristarMarsBot';
+import {PristarMarsBot} from '@/server/automa/corps/turmoil/PristarMarsBot';
 import {testGame} from '../../../TestGame';
 import {setTemperature, setVenusScaleLevel} from '../../../TestingUtils';
 import {createAutomaGame, resetCorpRegistry} from '../CorpGame';
@@ -27,14 +27,14 @@ describe('PristarMarsBot', () => {
 
   it('skips the first raise of a global parameter for 1 TR and 6 M€, and lets the next one through', () => {
     const {marsBot, calls, corpState} = recordingMarsBot();
-    const effect = PRISTAR_MARSBOT_CORP.effect!;
+    const corp = new PristarMarsBot();
     corpState.set('whiteCubeOnCard', 1);
 
-    expect(effect.interceptGlobalParameterRaise!(marsBot, GlobalParameter.TEMPERATURE)).is.true;
+    expect(corp.interceptGlobalParameterRaise(marsBot)).is.true;
     expect(corpState.get('whiteCubeOnCard')).eq(0);
     expect(calls).deep.eq(['raiseTR(1)', 'gainMc(6)']);
 
-    expect(effect.interceptGlobalParameterRaise!(marsBot, GlobalParameter.OXYGEN)).is.false;
+    expect(corp.interceptGlobalParameterRaise(marsBot)).is.false;
     expect(calls).deep.eq(['raiseTR(1)', 'gainMc(6)']);
   });
 
@@ -42,7 +42,7 @@ describe('PristarMarsBot', () => {
     const {marsBot, corpState} = recordingMarsBot();
     corpState.set('whiteCubeOnCard', 0);
 
-    PRISTAR_MARSBOT_CORP.beforeActionPhase!(marsBot);
+    new PristarMarsBot().beforeActionPhase(marsBot);
 
     expect(corpState.get('whiteCubeOnCard')).eq(1);
   });
@@ -54,7 +54,7 @@ describe('PristarMarsBot', () => {
     marsBot.corpSpecificState.set('whiteCubeOnCard', 1);
     const trBefore = marsBot.player.terraformRating;
     const mcBefore = marsBot.turnResolver.megacredits;
-    const skip = corp.effect!.interceptGlobalParameterRaise!(marsBot, GlobalParameter.TEMPERATURE);
+    const skip = corp.interceptGlobalParameterRaise!(marsBot, GlobalParameter.TEMPERATURE);
     expect(skip).to.be.true;
     expect(marsBot.corpSpecificState.get('whiteCubeOnCard')).to.eq(0);
     expect(marsBot.player.terraformRating).to.eq(trBefore + 1);
@@ -66,7 +66,7 @@ describe('PristarMarsBot', () => {
     const corp = getMarsBotCorp(CardName.PRISTAR)!;
     marsBot.setCorpAndSetup(corp);
     marsBot.corpSpecificState.set('whiteCubeOnCard', 0);
-    const skip = corp.effect!.interceptGlobalParameterRaise!(marsBot, GlobalParameter.TEMPERATURE);
+    const skip = corp.interceptGlobalParameterRaise!(marsBot, GlobalParameter.TEMPERATURE);
     expect(skip).to.be.false;
   });
 

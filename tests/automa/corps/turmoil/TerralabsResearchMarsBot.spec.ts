@@ -1,7 +1,7 @@
 import {expect} from 'chai';
 import {CardName} from '@/common/cards/CardName';
 import {getMarsBotCorp} from '@/server/automa/corps/MarsBotCorpRegistry';
-import {TERRALABS_RESEARCH_MARSBOT_CORP} from '@/server/automa/corps/turmoil/TerralabsResearchMarsBot';
+import {TerralabsResearchMarsBot} from '@/server/automa/corps/turmoil/TerralabsResearchMarsBot';
 import {createAutomaGame, resetCorpRegistry} from '../CorpGame';
 import {recordingMarsBot} from '../RecordingMarsBot';
 
@@ -12,7 +12,7 @@ describe('TerralabsResearchMarsBot', () => {
   it('setup takes 8 TR off MarsBot', () => {
     const {marsBot, calls} = recordingMarsBot();
 
-    TERRALABS_RESEARCH_MARSBOT_CORP.setup!(marsBot);
+    new TerralabsResearchMarsBot().setup(marsBot);
 
     expect(calls).deep.eq(['raiseTR(-8)']);
   });
@@ -25,7 +25,7 @@ describe('TerralabsResearchMarsBot', () => {
       const {marsBot, calls} = recordingMarsBot();
       marsBot.game.generation = run.generation;
 
-      TERRALABS_RESEARCH_MARSBOT_CORP.beforeActionPhase!(marsBot);
+      new TerralabsResearchMarsBot().beforeActionPhase(marsBot);
 
       expect(calls).deep.eq([`drawProjectCardsToActionDeck(${run.count})`]);
     });

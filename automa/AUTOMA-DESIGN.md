@@ -543,7 +543,8 @@ All rules from Rulebook A (base game) and Rulebook B (corporations) are implemen
 | **Draft resolver** | `src/server/automa/corps/MarsBotDraftResolver.ts` | `pickCardForMarsBot()` with 4 priority types |
 | **Base game corps** | `src/server/automa/corps/BaseGameCorps.ts` | C01-C12: Credicor, Eco Line, Helion, etc. |
 | **Expansion corps** | `src/server/automa/corps/ExpansionCorps.ts` | C13-C46: Prelude, Venus, Colonies, Turmoil corps |
-| **Corp types** | `src/common/automa/MarsBotCorpTypes.ts` | `IMarsBotCorp`, `MarsBotCorpContext`, `MarsBotCorpEffect` |
+| **Corp base class** | `src/server/automa/MarsBotCorp.ts` | `MarsBotCorp`: the printed fields and the hooks a corporation overrides |
+| **Corp types** | `src/server/automa/MarsBotCorpTypes.ts` | `MarsBotDraftPriority`, `MarsBotTrackCube`, `MarsBotTagTrackCube` |
 
 ---
 
@@ -555,9 +556,9 @@ MarsBot can play with a corporation card (optional, toggle `automaCorpOption` in
 
 ### 7.2 Corporation Framework
 
-- **IMarsBotCorp**: Type with name (the real corporation's `CardName`), description, tags, draftPriority, setup, effect, perGeneration, trackCubes
+- **MarsBotCorp**: Base class every corporation extends, one class per file (`corps/<expansion>/<Name>MarsBot.ts`). The constructor takes name (the real corporation's `CardName`), description, tags, requiredExpansions, draftPriority, actionDeckBonusCard and trackCubes. A corporation keeps no state of its own: one instance serves every game, and what it tracks lives on the bot (`getCorpState`)
 - **IMarsBot**: The bot as corp handlers see it (IPlayer-style: game/player/board references plus operations like advanceTrack, gainMc, placeOcean/City/Greenery, drawAndResolveProjectCard, raiseTR). Implemented by `MarsBot` itself.
-- **MarsBotCorpEffect**: Hooks for onTrackCubeTrigger, onProjectCardResolved, onHumanCardPlayed, onTilePlaced, onVenusRaised, onGlobalParameterRaised, onMcGained, vpBonus. Card hooks receive the real `IProjectCard`.
+- **Hooks**: optional methods on `MarsBotCorp` that a corporation overrides: setup, roundStart, beforeActionPhase, onTrackCubeTrigger, onProjectCardResolved, onHumanCardPlayed, onTilePlaced, onVenusRaised, interceptGlobalParameterRaise, onMcGained, vpBonus and the rest listed in `MarsBotCorp.ts`. The engine checks whether a hook exists, so the base class gives them no default body. Card hooks receive the real `IProjectCard`.
 - **Draft priority types**: tags (standard), mostExpensive (Credicor), leastAdvancedTrack (Aridor), mostTags (Spire)
 - **Draft discard**: the first card the priority doesn't protect. When a tag priority (tags, leastAdvancedTrack)
   protects all of them, the card with the fewest matches goes (Nick, BGG 3398289, over rulebook B p.2);

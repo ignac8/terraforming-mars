@@ -1,7 +1,7 @@
 import {expect} from 'chai';
 import {CardName} from '@/common/cards/CardName';
 import {getMarsBotCorp} from '@/server/automa/corps/MarsBotCorpRegistry';
-import {CREDICOR_MARSBOT_CORP} from '@/server/automa/corps/base/CrediCorMarsBot';
+import {CrediCorMarsBot} from '@/server/automa/corps/base/CrediCorMarsBot';
 import {ArtificialLake} from '@/server/cards/base/ArtificialLake';
 import {MagneticFieldGenerators} from '@/server/cards/base/MagneticFieldGenerators';
 import {createAutomaGame, fakeCard, resetCorpRegistry, setupWithAndWithoutEffect} from '../CorpGame';
@@ -17,7 +17,7 @@ describe('CrediCorMarsBot', () => {
     it(`gains 4 M€ for a card that costs 20 or more, card that costs ${run.cost}`, () => {
       const {marsBot, calls} = recordingMarsBot();
 
-      CREDICOR_MARSBOT_CORP.effect!.onProjectCardResolved!(marsBot, run.card);
+      new CrediCorMarsBot().onProjectCardResolved(marsBot, run.card);
 
       expect(calls).deep.eq(run.calls);
     });
@@ -29,7 +29,7 @@ describe('CrediCorMarsBot', () => {
     marsBot.setCorpAndSetup(corp);
 
     const mcBefore = marsBot.turnResolver.megacredits;
-    corp.effect!.onProjectCardResolved!(marsBot, fakeCard('Expensive', {cost: 25}));
+    corp.onProjectCardResolved!(marsBot, fakeCard('Expensive', {cost: 25}));
     expect(marsBot.turnResolver.megacredits).to.eq(mcBefore + 4);
   });
 
@@ -39,7 +39,7 @@ describe('CrediCorMarsBot', () => {
     marsBot.setCorpAndSetup(corp);
 
     const mcBefore = marsBot.turnResolver.megacredits;
-    corp.effect!.onProjectCardResolved!(marsBot, fakeCard('Cheap', {cost: 15}));
+    corp.onProjectCardResolved!(marsBot, fakeCard('Cheap', {cost: 15}));
     expect(marsBot.turnResolver.megacredits).to.eq(mcBefore);
   });
 

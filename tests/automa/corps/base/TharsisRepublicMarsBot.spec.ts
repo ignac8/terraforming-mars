@@ -2,7 +2,7 @@ import {expect} from 'chai';
 import {TileType} from '@/common/TileType';
 import {CardName} from '@/common/cards/CardName';
 import {getMarsBotCorp} from '@/server/automa/corps/MarsBotCorpRegistry';
-import {THARSIS_REPUBLIC_MARSBOT_CORP} from '@/server/automa/corps/base/TharsisRepublicMarsBot';
+import {TharsisRepublicMarsBot} from '@/server/automa/corps/base/TharsisRepublicMarsBot';
 import {createAutomaGame, resetCorpRegistry} from '../CorpGame';
 import {recordingMarsBot} from '../RecordingMarsBot';
 
@@ -16,7 +16,7 @@ describe('TharsisRepublicMarsBot', () => {
   it('places a city at setup', () => {
     const {marsBot, calls} = recordingMarsBot();
 
-    THARSIS_REPUBLIC_MARSBOT_CORP.setup!(marsBot);
+    new TharsisRepublicMarsBot().setup(marsBot);
 
     expect(calls).deep.eq(['placeCity()']);
   });
@@ -30,7 +30,7 @@ describe('TharsisRepublicMarsBot', () => {
     it(`advances the event track for its own city and gains 2 M€ for a city of the player, ${run.tile}`, () => {
       const {marsBot, calls} = recordingMarsBot();
 
-      THARSIS_REPUBLIC_MARSBOT_CORP.effect!.onTilePlaced!(marsBot, run.byMarsBot, run.tileType, marsBot.game.board.spaces[0]);
+      new TharsisRepublicMarsBot().onTilePlaced(marsBot, run.byMarsBot, run.tileType);
 
       expect(calls).deep.eq(run.calls);
     });
@@ -41,7 +41,7 @@ describe('TharsisRepublicMarsBot', () => {
     const corp = getMarsBotCorp(CardName.THARSIS_REPUBLIC)!;
     marsBot.setCorpAndSetup(corp);
     const mcBefore = marsBot.turnResolver.megacredits;
-    corp.effect!.onTilePlaced!(marsBot, false, TileType.CITY, marsBot.game.board.spaces[0]);
+    corp.onTilePlaced!(marsBot, false, TileType.CITY, marsBot.game.board.spaces[0]);
     expect(marsBot.turnResolver.megacredits).to.eq(mcBefore + 2);
   });
 
@@ -55,7 +55,7 @@ describe('TharsisRepublicMarsBot', () => {
     };
     const mcBefore = marsBot.turnResolver.megacredits;
     const eventBefore = marsBot.marsBotBoard.tracks[2].position;
-    corp.effect!.onTilePlaced!(marsBot, true, TileType.CITY, marsBot.game.board.spaces[0]);
+    corp.onTilePlaced!(marsBot, true, TileType.CITY, marsBot.game.board.spaces[0]);
     expect(marsBot.marsBotBoard.tracks[2].position).to.eq(eventBefore + 1);
     expect(marsBot.turnResolver.megacredits).to.eq(mcBefore);
   });
@@ -65,7 +65,7 @@ describe('TharsisRepublicMarsBot', () => {
     const corp = getMarsBotCorp(CardName.THARSIS_REPUBLIC)!;
     marsBot.setCorpAndSetup(corp);
     const mcBefore = marsBot.turnResolver.megacredits;
-    corp.effect!.onTilePlaced!(marsBot, false, TileType.GREENERY, marsBot.game.board.spaces[0]);
+    corp.onTilePlaced!(marsBot, false, TileType.GREENERY, marsBot.game.board.spaces[0]);
     expect(marsBot.turnResolver.megacredits).to.eq(mcBefore);
   });
 });

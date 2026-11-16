@@ -1,20 +1,20 @@
 import {CardName} from '../../../common/cards/CardName';
-import {IMarsBotCorp} from '../IMarsBotCorp';
+import {MarsBotCorp} from '../MarsBotCorp';
 import {ALL_AUTOMA_MANIFESTS} from './AllAutomaManifests';
 
-const INITIAL_CORPS: Partial<Record<CardName, IMarsBotCorp>> = {};
+const INITIAL_CORPS: Partial<Record<CardName, MarsBotCorp>> = {};
 for (const manifest of ALL_AUTOMA_MANIFESTS) {
   Object.assign(INITIAL_CORPS, manifest.corps);
 }
 
-let ALL_MARSBOT_CORPS: Partial<Record<CardName, IMarsBotCorp>> = {...INITIAL_CORPS};
+let ALL_MARSBOT_CORPS: Partial<Record<CardName, MarsBotCorp>> = {...INITIAL_CORPS};
 
-export function getMarsBotCorp(name: CardName): IMarsBotCorp | undefined {
+export function getMarsBotCorp(name: CardName): MarsBotCorp | undefined {
   return ALL_MARSBOT_CORPS[name];
 }
 
-export function getAllMarsBotCorps(): ReadonlyArray<IMarsBotCorp> {
-  return Object.values(ALL_MARSBOT_CORPS) as ReadonlyArray<IMarsBotCorp>;
+export function getAllMarsBotCorps(): ReadonlyArray<MarsBotCorp> {
+  return Object.values(ALL_MARSBOT_CORPS) as ReadonlyArray<MarsBotCorp>;
 }
 
 // Test helpers
@@ -26,6 +26,6 @@ export function restoreMarsBotCorpRegistry(): void {
   ALL_MARSBOT_CORPS = {...INITIAL_CORPS};
 }
 
-export function registerMarsBotCorp(corp: IMarsBotCorp): void {
+export function registerMarsBotCorp(corp: MarsBotCorp): void {
   ALL_MARSBOT_CORPS[corp.name] = corp;
 }

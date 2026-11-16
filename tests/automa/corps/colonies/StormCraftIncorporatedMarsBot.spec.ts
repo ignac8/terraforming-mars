@@ -4,7 +4,7 @@ import {CardName} from '@/common/cards/CardName';
 import {MAX_TEMPERATURE} from '@/common/constants';
 import {cast} from '@/common/utils/utils';
 import {getMarsBotCorp} from '@/server/automa/corps/MarsBotCorpRegistry';
-import {STORMCRAFT_INCORPORATED_MARSBOT_CORP} from '@/server/automa/corps/colonies/StormCraftIncorporatedMarsBot';
+import {StormCraftIncorporatedMarsBot} from '@/server/automa/corps/colonies/StormCraftIncorporatedMarsBot';
 import {IProjectCard} from '@/server/cards/IProjectCard';
 import {SelectCard} from '@/server/inputs/SelectCard';
 import {testGame} from '../../../TestGame';
@@ -35,9 +35,9 @@ describe('StormCraftIncorporatedMarsBot', () => {
   it('adds a floater at setup and at each round start, and raises the temperature when floaters pay for an extra card', () => {
     const {marsBot, calls} = recordingMarsBot();
 
-    STORMCRAFT_INCORPORATED_MARSBOT_CORP.setup!(marsBot);
-    STORMCRAFT_INCORPORATED_MARSBOT_CORP.roundStart!(marsBot);
-    STORMCRAFT_INCORPORATED_MARSBOT_CORP.effect!.onFloatersSpentForExtraCard!(marsBot);
+    new StormCraftIncorporatedMarsBot().setup(marsBot);
+    new StormCraftIncorporatedMarsBot().roundStart(marsBot);
+    new StormCraftIncorporatedMarsBot().onFloatersSpentForExtraCard(marsBot);
 
     expect(calls).deep.eq(['addFloaters(1)', 'addFloaters(1)', 'raiseTemperature(1)']);
   });

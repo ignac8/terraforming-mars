@@ -3,7 +3,7 @@ import {CardName} from '@/common/cards/CardName';
 import {Tag} from '@/common/cards/Tag';
 import {cast} from '@/common/utils/utils';
 import {getMarsBotCorp} from '@/server/automa/corps/MarsBotCorpRegistry';
-import {SPLICE_MARSBOT_CORP} from '@/server/automa/corps/promo/SpliceMarsBot';
+import {SpliceMarsBot} from '@/server/automa/corps/promo/SpliceMarsBot';
 import {ArchaeBacteria} from '@/server/cards/base/ArchaeBacteria';
 import {Asteroid} from '@/server/cards/base/Asteroid';
 import {Decomposers} from '@/server/cards/base/Decomposers';
@@ -20,13 +20,13 @@ describe('SpliceMarsBot', () => {
   it('gains 8 M€ at setup, 4 M€ for its own microbe cards, and 2 M€ plus 2 M€ for the player for a microbe card that holds no microbes', () => {
     const [game, human] = testGame(1);
     const {marsBot, calls} = recordingMarsBot({game, humanPlayer: human});
-    const effect = SPLICE_MARSBOT_CORP.effect!;
+    const corp = new SpliceMarsBot();
 
-    SPLICE_MARSBOT_CORP.setup!(marsBot);
-    effect.onProjectCardResolved!(marsBot, new Asteroid());
-    effect.onProjectCardResolved!(marsBot, new ArchaeBacteria());
-    effect.onHumanCardPlayed!(marsBot, new Asteroid());
-    effect.onHumanCardPlayed!(marsBot, new ArchaeBacteria());
+    new SpliceMarsBot().setup(marsBot);
+    corp.onProjectCardResolved(marsBot, new Asteroid());
+    corp.onProjectCardResolved(marsBot, new ArchaeBacteria());
+    corp.onHumanCardPlayed(marsBot, new Asteroid());
+    corp.onHumanCardPlayed(marsBot, new ArchaeBacteria());
 
     expect(calls).deep.eq(['gainMc(8)', 'removeBonusCard(B03)', 'addProjectCardsToBonusDeck(microbe, 1)', 'gainMc(4)', 'gainMc(2)']);
     expect(human.stock.megacredits).eq(2);
@@ -37,7 +37,7 @@ describe('SpliceMarsBot', () => {
     const {marsBot, calls} = recordingMarsBot({game, humanPlayer: human});
     const card = new Decomposers();
 
-    SPLICE_MARSBOT_CORP.effect!.onHumanCardPlayed!(marsBot, card);
+    new SpliceMarsBot().onHumanCardPlayed(marsBot, card);
     runAllActions(game);
     const orOptions = cast(human.popWaitingFor(), OrOptions);
     expect(orOptions.options).has.length(2);
@@ -61,7 +61,7 @@ describe('SpliceMarsBot', () => {
     const corp = getMarsBotCorp(CardName.SPLICE)!;
     marsBot.setCorpAndSetup(corp);
     const mcBefore = marsBot.turnResolver.megacredits;
-    corp.effect!.onProjectCardResolved!(marsBot, fakeCard('Microbe', {tags: [Tag.MICROBE], cost: 5}));
+    corp.onProjectCardResolved!(marsBot, fakeCard('Microbe', {tags: [Tag.MICROBE], cost: 5}));
     expect(marsBot.turnResolver.megacredits).to.eq(mcBefore + 4);
   });
 });

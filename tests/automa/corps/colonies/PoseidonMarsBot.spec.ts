@@ -78,7 +78,7 @@ describe('PoseidonMarsBot', () => {
     const marsBot = getMarsBot(game);
     game.colonies = [new Luna()];
     let fired = 0;
-    marsBot.corp = {...AUTOMA_COLONIES_MANIFEST.corps[CardName.POSEIDON]!, effect: {onColonyPlaced: () => fired++}};
+    marsBot.corp = {name: CardName.POSEIDON, description: '', tags: [], onColonyPlaced: () => fired++};
 
     marsBot.maybePlaceRandomColony();
 

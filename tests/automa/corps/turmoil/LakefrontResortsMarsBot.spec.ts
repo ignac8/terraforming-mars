@@ -7,7 +7,7 @@ import {MAX_OXYGEN_LEVEL, MAX_TEMPERATURE} from '@/common/constants';
 import {MarsBot} from '@/server/automa/MarsBot';
 import {createBonusCard} from '@/server/automa/MarsBotBonusCard';
 import {getMarsBotCorp} from '@/server/automa/corps/MarsBotCorpRegistry';
-import {LAKEFRONT_RESORTS_MARSBOT_CORP} from '@/server/automa/corps/turmoil/LakefrontResortsMarsBot';
+import {LakefrontResortsMarsBot} from '@/server/automa/corps/turmoil/LakefrontResortsMarsBot';
 import {IMarsBot} from '@/server/automa/IMarsBot';
 import {Space} from '@/server/boards/Space';
 import {testGame} from '../../../TestGame';
@@ -43,12 +43,12 @@ function resolveIntervention(marsBot: MarsBot) {
 describe('LakefrontResortsMarsBot', () => {
   beforeEach(resetCorpRegistry);
 
-  const effect = LAKEFRONT_RESORTS_MARSBOT_CORP.effect!;
+  const lakefront = new LakefrontResortsMarsBot();
 
   it('setup puts a white cube on the card and pays 3 M€ per adjacent ocean', () => {
     const {marsBot, corpState} = lakefrontBot();
 
-    LAKEFRONT_RESORTS_MARSBOT_CORP.setup!(marsBot);
+    new LakefrontResortsMarsBot().setup(marsBot);
 
     expect(corpState.get('whiteCubeOnCard')).eq(1);
     expect(marsBot.player.oceanBonus).eq(3);
@@ -56,17 +56,16 @@ describe('LakefrontResortsMarsBot', () => {
 
   it('oceans alternate between taking the cube off to advance the building track and putting it back', () => {
     const {marsBot, calls, corpState} = lakefrontBot();
-    const space = marsBot.game.board.spaces[0];
     corpState.set('whiteCubeOnCard', 1);
 
-    effect.onTilePlaced!(marsBot, false, TileType.OCEAN, space);
+    lakefront.onTilePlaced(marsBot, false, TileType.OCEAN);
     expect(corpState.get('whiteCubeOnCard')).eq(0);
     expect(calls).deep.eq([`advanceTrack(${BUILDING})`]);
 
-    effect.onTilePlaced!(marsBot, false, TileType.GREENERY, space);
+    lakefront.onTilePlaced(marsBot, false, TileType.GREENERY);
     expect(corpState.get('whiteCubeOnCard')).eq(0);
 
-    effect.onTilePlaced!(marsBot, true, TileType.OCEAN, space);
+    lakefront.onTilePlaced(marsBot, true, TileType.OCEAN);
     expect(corpState.get('whiteCubeOnCard')).eq(1);
     expect(calls).deep.eq([`advanceTrack(${BUILDING})`]);
   });
@@ -81,7 +80,7 @@ describe('LakefrontResortsMarsBot', () => {
     corpState.set('whiteCubeOnCard', 1);
     marsBot.mcKeptThroughIntervention = 0;
 
-    effect.onTilePlaced!(marsBot, false, TileType.OCEAN, marsBot.game.board.spaces[0]);
+    lakefront.onTilePlaced(marsBot, false, TileType.OCEAN);
 
     expect(marsBot.mcKeptThroughIntervention).eq(4);
   });
@@ -92,7 +91,7 @@ describe('LakefrontResortsMarsBot', () => {
     marsBot.setCorpAndSetup(corp);
     expect(marsBot.corpSpecificState.get('whiteCubeOnCard')).to.eq(1);
     const buildingBefore = marsBot.marsBotBoard.tracks[0].position;
-    corp.effect!.onTilePlaced!(marsBot, false, TileType.OCEAN, marsBot.game.board.spaces[0]);
+    corp.onTilePlaced!(marsBot, false, TileType.OCEAN, marsBot.game.board.spaces[0]);
     expect(marsBot.corpSpecificState.get('whiteCubeOnCard')).to.eq(0);
     expect(marsBot.marsBotBoard.tracks[0].position).to.be.gte(buildingBefore + 1);
   });
@@ -143,7 +142,7 @@ describe('LakefrontResortsMarsBot', () => {
     const corp = getMarsBotCorp(CardName.LAKEFRONT_RESORTS)!;
     marsBot.setCorpAndSetup(corp);
     marsBot.corpSpecificState.set('whiteCubeOnCard', 0);
-    corp.effect!.onTilePlaced!(marsBot, false, TileType.OCEAN, marsBot.game.board.spaces[0]);
+    corp.onTilePlaced!(marsBot, false, TileType.OCEAN, marsBot.game.board.spaces[0]);
     expect(marsBot.corpSpecificState.get('whiteCubeOnCard')).to.eq(1);
   });
 });

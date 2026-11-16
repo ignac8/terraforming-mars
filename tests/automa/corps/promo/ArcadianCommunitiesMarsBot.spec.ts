@@ -5,7 +5,7 @@ import {BoardName} from '@/common/boards/BoardName';
 import {CardName} from '@/common/cards/CardName';
 import {cast} from '@/common/utils/utils';
 import {clearMarsBotCorpRegistry, getMarsBotCorp, registerMarsBotCorp} from '@/server/automa/corps/MarsBotCorpRegistry';
-import {ARCADIAN_COMMUNITIES_MARSBOT_CORP} from '@/server/automa/corps/promo/ArcadianCommunitiesMarsBot';
+import {ArcadianCommunitiesMarsBot} from '@/server/automa/corps/promo/ArcadianCommunitiesMarsBot';
 import {EcoLine} from '@/server/cards/corporation/EcoLine';
 import {Biofuels} from '@/server/cards/prelude/Biofuels';
 import {IPreludeCard} from '@/server/cards/prelude/IPreludeCard';
@@ -24,10 +24,10 @@ describe('ArcadianCommunitiesMarsBot', () => {
   it('resolves Settlers at setup, and it is its action deck bonus card', () => {
     const {marsBot, calls} = recordingMarsBot();
 
-    ARCADIAN_COMMUNITIES_MARSBOT_CORP.setup!(marsBot);
+    new ArcadianCommunitiesMarsBot().setup(marsBot);
 
     expect(calls).deep.eq(['resolveBonusCard(B22)']);
-    expect(ARCADIAN_COMMUNITIES_MARSBOT_CORP.actionDeckBonusCard).eq(BonusCardId.B22_SETTLERS);
+    expect(new ArcadianCommunitiesMarsBot().actionDeckBonusCard).eq(BonusCardId.B22_SETTLERS);
   });
 
   it('pays 3 M€ for the tile MarsBot puts on a space with its marker, and no one else', () => {
@@ -35,7 +35,7 @@ describe('ArcadianCommunitiesMarsBot', () => {
     const [markedByPlayerTile, markedByBotTile, unmarked] = game.board.spaces;
     const markers = new Set([markedByPlayerTile, markedByBotTile]);
     const {marsBot, calls} = recordingMarsBot({game, removeMarker: (space) => markers.delete(space)});
-    const onTilePlaced = ARCADIAN_COMMUNITIES_MARSBOT_CORP.effect!.onTilePlaced!;
+    const onTilePlaced = new ArcadianCommunitiesMarsBot().onTilePlaced;
 
     onTilePlaced(marsBot, false, TileType.CITY, markedByPlayerTile);
     onTilePlaced(marsBot, true, TileType.CITY, unmarked);

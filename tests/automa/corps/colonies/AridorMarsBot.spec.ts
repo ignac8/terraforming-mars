@@ -49,7 +49,7 @@ describe('AridorMarsBot', () => {
     const corp = getMarsBotCorp(CardName.ARIDOR)!;
     marsBot.setCorpAndSetup(corp);
     const eventBefore = marsBot.marsBotBoard.tracks[2].position;
-    corp.effect!.onTrackCubeTrigger!(marsBot, 1, 3, 'white');
+    corp.onTrackCubeTrigger!(marsBot, 1, 3, 'white');
     expect(marsBot.marsBotBoard.tracks[2].position).to.be.gte(eventBefore + 1);
   });
 

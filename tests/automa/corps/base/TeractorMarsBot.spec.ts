@@ -3,7 +3,7 @@ import {Resource} from '@/common/Resource';
 import {CardName} from '@/common/cards/CardName';
 import {Tag} from '@/common/cards/Tag';
 import {getMarsBotCorp} from '@/server/automa/corps/MarsBotCorpRegistry';
-import {TERACTOR_MARSBOT_CORP} from '@/server/automa/corps/base/TeractorMarsBot';
+import {TeractorMarsBot} from '@/server/automa/corps/base/TeractorMarsBot';
 import {createAutomaGame, resetCorpRegistry} from '../CorpGame';
 import {recordingMarsBot, trackCubes} from '../RecordingMarsBot';
 
@@ -17,7 +17,7 @@ describe('TeractorMarsBot', () => {
   it('gains 25 M€ at setup', () => {
     const {marsBot, calls} = recordingMarsBot();
 
-    TERACTOR_MARSBOT_CORP.setup!(marsBot);
+    new TeractorMarsBot().setup(marsBot);
 
     expect(calls).deep.eq(['gainMc(25)']);
   });
@@ -25,11 +25,11 @@ describe('TeractorMarsBot', () => {
   it('gains 2 M€ for each advance of the Earth track, which has a white cube on every space', () => {
     const {marsBot, calls} = recordingMarsBot();
 
-    TERACTOR_MARSBOT_CORP.effect!.onTrackCubeTrigger!(marsBot, EARTH, 1, 'white');
+    new TeractorMarsBot().onTrackCubeTrigger(marsBot, EARTH, 1, 'white');
 
     expect(calls).deep.eq(['gainMc(2)']);
-    expect(trackCubes(TERACTOR_MARSBOT_CORP)).deep.eq(Array.from({length: 18}, (_, i) => `earth white ${i + 1}`));
-    expect(TERACTOR_MARSBOT_CORP.trackCubesTriggerEveryAdvance).is.true;
+    expect(trackCubes(new TeractorMarsBot())).deep.eq(Array.from({length: 18}, (_, i) => `earth white ${i + 1}`));
+    expect(new TeractorMarsBot().trackCubesTriggerEveryAdvance).is.true;
   });
 
   it('gains 25 M€ on setup', () => {
@@ -73,7 +73,7 @@ describe('TeractorMarsBot', () => {
     marsBot.setCorpAndSetup(corp);
     const mcBefore = marsBot.turnResolver.megacredits;
     // Trigger white cube on Earth track (track 6)
-    corp.effect!.onTrackCubeTrigger!(marsBot, 5, 1, 'white');
+    corp.onTrackCubeTrigger!(marsBot, 5, 1, 'white');
     expect(marsBot.turnResolver.megacredits).to.eq(mcBefore + 2);
   });
 });
