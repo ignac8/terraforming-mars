@@ -59,8 +59,9 @@ export class AutomaGameSetup {
     // Override stock/production to intercept resource removal and production decrease
     const marsBotStock = new MarsBotStock(marsBotPlayer);
     const marsBotProduction = new MarsBotProduction(marsBotPlayer);
-    (marsBotPlayer as any).stock = marsBotStock;
-    (marsBotPlayer as any).production = marsBotProduction;
+    const overridable = marsBotPlayer as {-readonly [K in 'stock' | 'production']: IPlayer[K]};
+    overridable.stock = marsBotStock;
+    overridable.production = marsBotProduction;
 
     const marsBot = new MarsBot(game, marsBotPlayer, humanPlayer, boardData, gameOptions.automaDifficulty, rng, restoring);
 
