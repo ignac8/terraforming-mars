@@ -42,7 +42,7 @@ const TEMPLATE_INPUT = {
     tournament: false,
   },
   draftVariant: true,
-  showOtherPlayersVP: false,
+  showVP: 'yours',
   customCorporationsList: [],
   customColoniesList: [],
   customPreludes: [],
@@ -115,7 +115,7 @@ const TEMPLATE_EXPECTED: CreateGameModel = {
   initialDraft: false,
   goals: {type: 'board', random: {pool: 'maps', randomness: 'limited'}, selected: {milestones: [], awards: []}},
   randomFirstPlayer: true,
-  showOtherPlayersVP: false,
+  showVP: 'yours',
   playerPasswords: false,
   judgeLink: false,
   incognito: false,
@@ -248,6 +248,29 @@ const cases: Array<Case> = [
     },
   },
   {
+    description: 'showVP',
+    input: {
+      ...TEMPLATE_INPUT,
+      showVP: 'none',
+    },
+    expected: {
+      ...TEMPLATE_EXPECTED,
+      showVP: 'none',
+    },
+  },
+  {
+    description: 'showVP wins over legacy showOtherPlayersVP',
+    input: {
+      ...TEMPLATE_INPUT,
+      showVP: 'none',
+      showOtherPlayersVP: true,
+    },
+    expected: {
+      ...TEMPLATE_EXPECTED,
+      showVP: 'none',
+    },
+  },
+  {
     description: 'empty boards loads as Tharsis',
     input: {
       ...TEMPLATE_INPUT,
@@ -272,6 +295,23 @@ describe('JSONProcessor', () => {
       expect(model).deep.eq(testCase.expected);
     });
   }
+
+  it('converts legacy showOtherPlayersVP', () => {
+    // Settings saved before showVP replaced showOtherPlayersVP.
+    const input: JSONObject = {...TEMPLATE_INPUT, showOtherPlayersVP: true};
+    delete input.showVP;
+    const model = defaultCreateGameModel();
+    const processor = new JSONProcessor(model);
+    processor.applyJSON(input);
+
+    expect(processor.warnings).is.empty;
+    expect(model).deep.eq({...TEMPLATE_EXPECTED, showVP: 'all'});
+  });
+
+  it('rejects an unknown showVP', () => {
+    const processor = new JSONProcessor(defaultCreateGameModel());
+    expect(() => processor.applyJSON({...TEMPLATE_INPUT, showVP: 'some'})).to.throw('Unknown showVP value: some');
+  });
 
   it('rejects a modularMA or includeFanMA that isn\'t a boolean', () => {
     for (const key of ['modularMA', 'includeFanMA']) {

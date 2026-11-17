@@ -56,7 +56,7 @@ function newGameConfigForTest(): NewGameConfig {
     undoOption: false,
     showTimers: false,
     fastModeOption: false,
-    showOtherPlayersVP: false,
+    showVP: 'yours',
     playerPasswords: false,
     aresExtremeVariant: false,
     politicalAgendasExtension: 'Standard',
@@ -207,7 +207,7 @@ describe('ApiCreateGame', () => {
       expansions: {...newGameConfigForTest().expansions, tournament: true},
       undoOption: true,
       fastModeOption: true,
-      showOtherPlayersVP: true,
+      showVP: 'all',
       playerPasswords: false,
       startingCorporations: 5,
       // Too short for 2 players × 5: must not be rejected, since it is discarded.
@@ -225,7 +225,7 @@ describe('ApiCreateGame', () => {
     expect(game).is.not.undefined;
     const options = game!.gameOptions;
     expect(options.fastModeOption).is.false;
-    expect(options.showOtherPlayersVP).is.false;
+    expect(options.showVP).eq('yours');
     expect(options.playerPasswords).is.true;
     expect(options.customCorporationsList).is.empty;
     expect(options.bannedCards).is.empty;

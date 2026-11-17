@@ -91,7 +91,7 @@ describe('ApiGame', () => {
           'removeNegativeGlobalEvents': false,
           'requiresMoonTrackCompletion': false,
           'requiresVenusTrackCompletion': false,
-          'showOtherPlayersVP': false,
+          'showVP': 'yours',
           'playerPasswords': false,
           'incognito': false,
           'showTimers': true,

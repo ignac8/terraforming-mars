@@ -211,7 +211,7 @@ export class ApiCreateGame extends Handler {
         removeNegativeGlobalEventsOption: gameReq.removeNegativeGlobalEventsOption,
         requiresMoonTrackCompletion: gameReq.requiresMoonTrackCompletion,
         requiresVenusTrackCompletion: gameReq.requiresVenusTrackCompletion,
-        showOtherPlayersVP: gameReq.showOtherPlayersVP,
+        showVP: gameReq.showVP,
         // A finished game can be rewound, so a table with Player undo needs seats that only their players can use.
         // An incognito table needs them too: an open seat link would show its player's real name.
         playerPasswords: (gameReq.playerPasswords ?? false) || incognito || (gameReq.undoOption === true && players.length > 1),

@@ -8,6 +8,7 @@ import {AgendaStyle} from '../../common/turmoil/Types';
 import {Expansion} from '../../common/cards/GameModule';
 import {EscapeVelocityOptions} from '../../common/game/NewGameConfig';
 import {CustomMA} from '../../common/ma/CustomMA';
+import {ShowVP} from '../../common/game/ShowVP';
 
 export type GameOptions = {
   boardName: BoardName;
@@ -17,7 +18,7 @@ export type GameOptions = {
   undoOption: boolean;
   showTimers: boolean;
   fastModeOption: boolean;
-  showOtherPlayersVP: boolean;
+  showVP: ShowVP;
   /**
    * When set, each player page is claimed by the first visitor to open it, and
    * only requests carrying that seat's password may read or act on it.
@@ -168,7 +169,7 @@ export function applyTournamentPreset(options: GameOptions): void {
   options.moonStandardProjectVariant1 = false;
   options.twoCorpsVariant = false;
   options.fastModeOption = false;
-  options.showOtherPlayersVP = false;
+  options.showVP = 'yours';
   options.playerPasswords = true;
   options.customCorporationsList = [];
   options.bannedCards = [];
@@ -238,7 +239,7 @@ export const DEFAULT_GAME_OPTIONS: GameOptions = {
   requiresMoonTrackCompletion: false,
   removeNegativeGlobalEventsOption: false,
   requiresVenusTrackCompletion: false,
-  showOtherPlayersVP: false,
+  showVP: 'yours',
   playerPasswords: false,
   incognito: false,
   showTimers: true,

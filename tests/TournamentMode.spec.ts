@@ -239,7 +239,7 @@ describe('TournamentMode', () => {
       boardName: BoardName.AMAZONIS,
       undoOption: true,
       fastModeOption: true,
-      showOtherPlayersVP: true,
+      showVP: 'all',
       playerPasswords: false,
       customCorporationsList: [CardName.TERACTOR_TOURNAMENT],
       bannedCards: [CardName.MINE],
@@ -265,7 +265,7 @@ describe('TournamentMode', () => {
     expect(options.boardName).to.eq(BoardName.THARSIS);
     expect(options.undoOption).is.true;
     expect(options.fastModeOption).is.false;
-    expect(options.showOtherPlayersVP).is.false;
+    expect(options.showVP).eq('yours');
     expect(options.playerPasswords).is.true;
     expect(options.customCorporationsList).is.empty;
     expect(options.bannedCards).is.empty;
@@ -308,7 +308,7 @@ describe('TournamentMode', () => {
       'moonStandardProjectVariant1', 'pathfindersExpansion', 'playerPasswords',
       'politicalAgendasExtension', 'prelude2Expansion', 'preludeDraftVariant',
       'preludeExtension', 'promoCardsOption', 'randomMA', 'requiresMoonTrackCompletion',
-      'requiresVenusTrackCompletion', 'showOtherPlayersVP', 'shuffleMapOption',
+      'requiresVenusTrackCompletion', 'showVP', 'shuffleMapOption',
       'solarPhaseOption', 'starWarsExpansion', 'turmoilExtension', 'twoCorpsVariant',
       'underworldExpansion', 'venusNextExtension',
     ];

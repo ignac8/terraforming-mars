@@ -74,7 +74,7 @@ describe('CreateGameForm', () => {
 
   function expectTournamentLocks(vm: CreateGameVm) {
     expect(vm.fastModeOption).eq(false);
-    expect(vm.showOtherPlayersVP).eq(false);
+    expect(vm.showVP).eq('yours');
     expect(vm.playerPasswords).eq(true);
     for (const player of vm.players) {
       expect(player.handicap).eq(0);
@@ -94,7 +94,7 @@ describe('CreateGameForm', () => {
   function seedLockedFields(vm: CreateGameVm) {
     vm.undoOption = true;
     vm.fastModeOption = true;
-    vm.showOtherPlayersVP = true;
+    vm.showVP = 'all';
     vm.playerPasswords = false;
     vm.players[0].handicap = 4;
     vm.showCorporationList = true;
@@ -412,7 +412,7 @@ describe('CreateGameForm', () => {
       expansions: {...DEFAULT_EXPANSIONS, tournament: true, prelude: true},
       undoOption: true,
       fastModeOption: true,
-      showOtherPlayersVP: true,
+      showVP: 'all',
       playerPasswords: false,
       customCorporationsList: ['Teractor'],
       customPreludes: ['Donation'],
