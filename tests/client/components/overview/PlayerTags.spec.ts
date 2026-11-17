@@ -92,6 +92,7 @@ describe('PlayerTags', () => {
             underworld: false,
           },
           showTimers: false,
+          showVP: 'yours',
         },
         tags: [
           Tag.BUILDING,
