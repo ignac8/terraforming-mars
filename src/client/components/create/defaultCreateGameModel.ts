@@ -31,7 +31,7 @@ export function defaultCreateGameModel(): CreateGameModel {
     draftVariant: true,
     initialDraft: false,
     randomFirstPlayer: false,
-    showOtherPlayersVP: false,
+    showVP: 'yours',
     // beginnerOption: false,
     showCeosList: false,
     showColoniesList: false,
