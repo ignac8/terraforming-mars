@@ -115,7 +115,7 @@ describe('CreateGameForm', () => {
 
     expectTournamentLocks(wrapper.vm);
     for (const id of ['#customCorps-checkbox', '#bannedCards-checkbox',
-      '#includedCards-checkbox', '#realTimeVP-checkbox', '#fastMode-checkbox',
+      '#includedCards-checkbox', '#showVP-none-radio', '#showVP-yours-radio', '#showVP-all-radio', '#fastMode-checkbox',
       '#playerPasswords-checkbox']) {
       expect(wrapper.find(id).attributes('disabled'), id).is.not.undefined;
     }

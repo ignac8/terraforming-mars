@@ -178,7 +178,7 @@ describe('ServerModel', () => {
   });
 
   it('puts the judge id on the organizer game model only', () => {
-    createTestGame(false);
+    createTestGame('yours');
     expect(Server.getSimpleGameModel(game).judgeId).is.undefined;
 
     game.judgeId = 'jtest';
