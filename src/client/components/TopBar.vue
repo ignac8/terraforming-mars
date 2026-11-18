@@ -2,7 +2,7 @@
   <div class="top-bar-container">
     <div class="top-bar" :class="{'top-bar-collapsed': !isExpanded}">
       <!-- The bar hides the player's name, so say whose resources these are when they aren't the viewer's. -->
-      <div v-show="isExpanded" v-if="player !== undefined" class="top-bar-player-name" :class="'player_bg_color_' + player.color">{{ player.name }}</div>
+      <div v-show="isExpanded" v-if="player !== undefined" class="top-bar-player-name" :class="'player-bg-color-' + player.color">{{ player.name }}</div>
       <PlayerInfo v-show="isExpanded" v-if="shownPlayer !== undefined" :player="shownPlayer" :playerView="playerView" :actionLabel="''" :playerIndex="shownPlayerIndex" :hideZeroTags="true" :isTopBar="true" />
       <div class="top-bar-collapser" @click="toggleBar()">
         <img src="assets/arrows_left.png">

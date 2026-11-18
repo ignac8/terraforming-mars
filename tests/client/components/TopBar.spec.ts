@@ -38,7 +38,7 @@ describe('TopBar', () => {
 
     const info = wrapper.findComponent(PlayerInfo);
     expect(info.props('player').color).eq('blue');
-    expect(wrapper.find('.top-bar-player-name').classes()).to.include('player_bg_color_blue');
+    expect(wrapper.find('.top-bar-player-name').classes()).to.include('player-bg-color-blue');
     // Clicking the name opens the cards of the player at this index in PlayersOverview.
     expect(info.props('playerIndex')).eq(1);
     expect(wrapper.findComponent(TerraformedBanner).exists()).is.false;

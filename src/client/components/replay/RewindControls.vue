@@ -31,7 +31,7 @@
         </thead>
         <tbody>
           <tr v-for="row in clocks" :key="row.color" class="rewind-clock-row">
-            <td><span class="rewind-clock-player" :class="'player_bg_color_' + row.color">{{ row.name }}</span></td>
+            <td><span class="rewind-clock-player" :class="'player-bg-color-' + row.color">{{ row.name }}</span></td>
             <td v-if="showNow">{{ row.now }}</td>
             <td>{{ row.then }}</td>
           </tr>

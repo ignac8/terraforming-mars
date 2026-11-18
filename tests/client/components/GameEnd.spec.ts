@@ -197,8 +197,8 @@ describe('GameEnd', () => {
     const solo = fakePublicPlayerModel({color: 'blue', name: 'Blue', id: undefined});
     const wrapper = shallowMount(GameEnd, {...globalConfig, props: {participant: {...fakeSpectatorModel(), players: [solo]}}});
 
-    expect(wrapper.find('.game_end_table a').exists()).is.false;
-    expect(wrapper.find('.game_end_table').text()).contains('Blue');
+    expect(wrapper.find('.game-end-table a').exists()).is.false;
+    expect(wrapper.find('.game-end-table').text()).contains('Blue');
   });
 
   it('carries the seat password on the link to the viewer\'s own page, and on no other player\'s', () => {

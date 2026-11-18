@@ -70,7 +70,7 @@
         :key="player.color"
         type="button"
         class="replay-view-player"
-        :class="['replay-view-' + player.color, 'player_bg_color_' + player.color, {'replay-view-active': viewAs === player.color}]"
+        :class="['replay-view-' + player.color, 'player-bg-color-' + player.color, {'replay-view-active': viewAs === player.color}]"
         @click="$emit('update:viewAs', player.color)">{{ player.name }}</button>
     </div>
 
@@ -86,11 +86,11 @@
         <ul class="replay-move-messages">
           <LogMessageComponent v-for="(message, j) in move.messages" :key="j" :message="message" :viewModel="viewModel" />
           <li v-if="move.silent" class="replay-move-silent">
-            <span v-for="color in move.movers ?? []" :key="color" :class="['replay-move-mover', 'player_bg_color_' + color]"></span>
+            <span v-for="color in move.movers ?? []" :key="color" :class="['replay-move-mover', 'player-bg-color-' + color]"></span>
             <span v-i18n>Draft pick</span>
           </li>
           <li v-for="(pick, k) in shownPicks(move)" :key="'pick' + k" class="replay-move-pick">
-            <span :class="['replay-move-mover', 'player_bg_color_' + pick.color]"></span>
+            <span :class="['replay-move-mover', 'player-bg-color-' + pick.color]"></span>
             <span><span v-i18n>{{ pickLabel(move, pick) }}</span>: {{ cardNames(pick) }}</span>
           </li>
         </ul>

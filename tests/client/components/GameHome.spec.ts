@@ -51,8 +51,8 @@ describe('GameHome', () => {
     const wrapper = mountGameHome({players: [...AMY_AND_KIM]});
 
     expect(wrapper.findAll('.turn-order').slice(0, 2).map((e) => e.text())).deep.eq(['1st', '2nd']);
-    expect(wrapper.find('.color-square.player_bg_color_red').exists()).is.true;
-    expect(wrapper.find('.color-square.player_bg_color_blue').exists()).is.true;
+    expect(wrapper.find('.color-square.player-bg-color-red').exists()).is.true;
+    expect(wrapper.find('.color-square.player-bg-color-blue').exists()).is.true;
   });
 
   it('hides the turn order and colors of the players in a running incognito game', () => {
@@ -79,6 +79,6 @@ describe('GameHome', () => {
     });
 
     expect(wrapper.findAll('.turn-order').slice(0, 2).map((e) => e.text())).deep.eq(['1st', '2nd']);
-    expect(wrapper.find('.color-square.player_bg_color_red').exists()).is.true;
+    expect(wrapper.find('.color-square.player-bg-color-red').exists()).is.true;
   });
 });

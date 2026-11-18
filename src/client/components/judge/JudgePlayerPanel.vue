@@ -6,7 +6,7 @@
     </div>
 
     <template v-if="!hidden">
-      <div v-for="section in visibleSections" :key="section.title" class="player_home_block player_home_block--hand">
+      <div v-for="section in visibleSections" :key="section.title" class="player-home-block player-home-block--hand">
         <h3 class="judge-player-panel-section" v-i18n>{{ section.title }}</h3>
         <div v-for="card in section.cards" :key="card.name" class="cardbox">
           <Card :card="card" />

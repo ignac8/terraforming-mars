@@ -6,7 +6,7 @@
         <AppButton class="replay-hands-toggle" size="small" :disableOnServerBusy="false" :title="isHidden(player.color) ? 'Show' : 'Hide'" @click="toggle(player.color)" />
       </div>
       <template v-if="!isHidden(player.color)">
-        <div v-for="section in sectionsOf(player)" :key="section.title" class="player_home_block player_home_block--hand">
+        <div v-for="section in sectionsOf(player)" :key="section.title" class="player-home-block player-home-block--hand">
           <h3 class="replay-hands-section" v-i18n>{{ section.title }}</h3>
           <div v-for="card in section.cards" :key="card.name" class="cardbox">
             <Card :card="card" />
