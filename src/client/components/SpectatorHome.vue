@@ -3,7 +3,7 @@
     <TopBar v-if="activePlayer !== undefined" :playerView="spectator" :player="activePlayer" />
 
     <div v-if="game.phase === 'end'">
-      <div class="player_home_block">
+      <div class="player-home-block">
         <DynamicTitle title="This game is over!" :color="spectator.color" />
         <a :href="'the-end?id='+ spectator.id" v-i18n>Go to game results</a>
       </div>
@@ -27,11 +27,11 @@
       :discardPileSize="game.discardPileSize"
       :otherDeckSizes="game.otherDeckSizes" />
 
-    <div v-if="!replay || replayLog !== undefined" class="player_home_block nofloat">
+    <div v-if="!replay || replayLog !== undefined" class="player-home-block nofloat">
       <LogPanel :viewModel="spectator" :step="game.step" :replayLog="replayLog" @spaceClicked="onSpaceClicked" />
     </div>
 
-    <PlayersOverview class="player_home_block player_home_block--players nofloat" :playerView="spectator" id="shortkey-playersoverview" />
+    <PlayersOverview class="player-home-block player-home-block--players nofloat" :playerView="spectator" id="shortkey-playersoverview" />
 
     <GameBoardView
       ref="gameBoardView"
@@ -41,16 +41,16 @@
       @toggleTileView="cycleTileView()"
     />
 
-    <div v-if="game.colonies.length > 0" class="player_home_block" ref="colonies" id="shortkey-colonies">
-      <a name="colonies" class="player_home_anchor"></a>
+    <div v-if="game.colonies.length > 0" class="player-home-block" ref="colonies" id="shortkey-colonies">
+      <a name="colonies" class="player-home-anchor"></a>
       <DynamicTitle title="Colonies" :color="spectator.color" />
       <div class="colonies-fleets-cont">
         <div class="colonies-player-fleets" v-for="player in spectator.players" :key="player.color">
           <div :class="'colonies-fleet colonies-fleet-'+ player.color" v-for="idx in range(Math.max(0, player.fleetSize - player.tradesThisGeneration))" :key="idx"></div>
         </div>
       </div>
-      <div class="player_home_colony_cont">
-        <div class="player_home_colony" v-for="colony in spectator.game.colonies" :key="colony.name">
+      <div class="player-home-colony-cont">
+        <div class="player-home-colony" v-for="colony in spectator.game.colonies" :key="colony.name">
           <Colony :colony="colony" :active="colony.isActive" />
         </div>
       </div>

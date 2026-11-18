@@ -173,7 +173,7 @@ describe('GameEnd', () => {
         participant: fakePlayerViewModel({game: fakeGameModel({marsBot: fakeMarsBot(15)})}),
       },
     });
-    const text = wrapper.find('.game_end_success').text();
+    const text = wrapper.find('.game-end-success').text();
     expect(text).to.include('You beat MarsBot!');
     expect(text).to.include('(20 vs 15)');
   });
@@ -185,7 +185,7 @@ describe('GameEnd', () => {
         participant: fakePlayerViewModel({game: fakeGameModel({marsBot: fakeMarsBot(20)})}),
       },
     });
-    const text = wrapper.find('.game_end_fail').text();
+    const text = wrapper.find('.game-end-fail').text();
     expect(text).to.include('MarsBot wins!');
     expect(text).to.include('(20 vs 20)');
     expect(text).to.include('Tie goes to MarsBot!');

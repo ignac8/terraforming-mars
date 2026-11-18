@@ -1025,7 +1025,7 @@ describe('ReplayScreen', () => {
       expect(calls[calls.length - 1]).to.equal(`api/replay/view?id=${playerId}&save=11&as=blue`);
       expect(wrapper.findComponent(PlayerHome).props('replay')).is.true;
       expect(wrapper.findComponent(WaitingFor).exists()).is.false;
-      expect(wrapper.find('.player_home_block--actions').exists()).is.false;
+      expect(wrapper.find('.player-home-block--actions').exists()).is.false;
 
       panel(wrapper).vm.$emit('back');
       await flushPromises();

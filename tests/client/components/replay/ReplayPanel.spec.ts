@@ -325,11 +325,11 @@ describe('ReplayPanel', () => {
     it('lists the cards under the row, with the colour of who chose them, and leaves out answers that chose none', () => {
       const rows = mountPanel({moves: picked}).findAll('.replay-move');
       const picks = (row: number) => rows[row].findAll('.replay-move-pick').map((pick) => [pick.find('.replay-move-mover').classes().pop(), pick.text()]);
-      expect(picks(0)).deep.eq([['player_bg_color_red', 'kept: Birds, Fish']]);
+      expect(picks(0)).deep.eq([['player-bg-color-red', 'kept: Birds, Fish']]);
       expect(picks(1)).deep.eq([
-        ['player_bg_color_blue', 'drafted: Ants'],
-        ['player_bg_color_red', 'last card passed: Kelp Farming'],
-        ['player_bg_color_green', 'last card passed: Tardigrades'],
+        ['player-bg-color-blue', 'drafted: Ants'],
+        ['player-bg-color-red', 'last card passed: Kelp Farming'],
+        ['player-bg-color-green', 'last card passed: Tardigrades'],
       ]);
       expect(picks(2)).deep.eq([]);
     });
@@ -368,7 +368,7 @@ describe('ReplayPanel', () => {
   it('labels a silent move a draft pick, with the picker\'s colour', () => {
     const rows = mountPanel({moves: [...moves, {saveId: 4, messages: [], silent: true, movers: ['red']}]}).findAll('.replay-move');
     expect(rows[3].find('.replay-move-silent').text()).to.equal('Draft pick');
-    expect(rows[3].find('.replay-move-mover').classes()).to.contain('player_bg_color_red');
+    expect(rows[3].find('.replay-move-mover').classes()).to.contain('player-bg-color-red');
     expect(rows[2].find('.replay-move-silent').exists()).is.false;
   });
 

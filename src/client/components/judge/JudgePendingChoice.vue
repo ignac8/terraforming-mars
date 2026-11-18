@@ -1,5 +1,5 @@
 <template>
-  <div v-if="cards.length > 0" class="player_home_block nofloat judge-pending-choice">
+  <div v-if="cards.length > 0" class="player-home-block nofloat judge-pending-choice">
     <h3 :class="headingClass" v-i18n>Pending choice</h3>
     <div class="judge-pending-choice-title">{{ $t(choice?.title ?? '') }}</div>
     <div class="judge-pending-choice-cards">

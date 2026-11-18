@@ -1,6 +1,6 @@
 <!-- Common widgets between player and spectator views -->
 <template>
-  <a name="board" class="player_home_anchor hotkey-target"></a>
+  <a name="board" class="player-home-anchor hotkey-target"></a>
   <Board
     :spaces="game.spaces"
     :expansions="game.gameOptions.expansions"
@@ -35,7 +35,7 @@
 
   <DeltaProjectBoard v-if="game.gameOptions.expansions.deltaProject" :players="players" />
 
-  <div v-if="players.length > 1 || isAutoma" class="player_home_block--milestones-and-awards">
+  <div v-if="players.length > 1 || isAutoma" class="player-home-block--milestones-and-awards">
     <a class="hotkey-target"></a>
     <Milestones :milestones="game.milestones" :isAutoma="isAutoma" :automaMapSet="automaMapSet" />
     <Awards :awards="game.awards" :isAutoma="isAutoma" :automaMapSet="automaMapSet" />

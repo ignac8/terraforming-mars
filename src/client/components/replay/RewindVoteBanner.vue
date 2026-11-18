@@ -7,7 +7,7 @@
           <div class="rewind-vote-cards" v-i18n>{{ vote.cards === 'shuffle' ? 'Shuffle hidden piles' : 'Same cards' }}</div>
           <ul class="rewind-vote-choices">
             <li v-for="choice in vote.votes" :key="choice.color" class="rewind-vote-choice" :class="'rewind-vote-choice--' + choice.choice">
-              <span class="rewind-vote-name" :class="'player_bg_color_' + choice.color">{{ nameOf(choice.color) }}</span>
+              <span class="rewind-vote-name" :class="'player-bg-color-' + choice.color">{{ nameOf(choice.color) }}</span>
               <span v-i18n>{{ choice.choice === 'yes' ? 'Yes' : choice.choice === 'no' ? 'No' : 'Waiting' }}</span>
             </li>
           </ul>
