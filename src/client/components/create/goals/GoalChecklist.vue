@@ -2,7 +2,7 @@
 <template>
   <div class="create-game-ma-checklist">
     <div class="create-game-ma-heading">
-      <span v-i18n>{{ heading }}</span>&nbsp;({{ selected.length }}/{{ limit }})
+      <span v-i18n>{{ heading }}</span>&nbsp;({{ selected.length }}/{{ MAX_CUSTOM_GOALS }})
     </div>
     <div v-for="goal in items" :key="goal.name" v-show="matchesFilter(goal)" class="create-game-ma-item">
       <label class="form-checkbox" :class="{'create-game-ma-unavailable': isUnavailable(goal.name)}">
@@ -22,6 +22,7 @@ import {computed} from 'vue';
 import {Expansion} from '@/common/cards/GameModule';
 import {MilestoneName} from '@/common/ma/MilestoneName';
 import {AwardName} from '@/common/ma/AwardName';
+import {MAX_CUSTOM_GOALS} from '@/common/ma/CustomMA';
 import {expansionIconClass} from '@/client/utils/expansionIcon';
 import {translateText} from '@/client/directives/i18n';
 
@@ -44,8 +45,6 @@ const props = defineProps<{
   /** The list's title, such as "Milestones", shown above it with the count selected. Translated. */
   heading: string;
   items: ReadonlyArray<Goal>;
-  /** How many may be selected. */
-  limit: number;
   /** Text the shown items' labels contain. Empty shows them all. */
   filterText: string;
   /** True for a name that can't be picked in this game. A checked one can still be unchecked. */
@@ -55,8 +54,8 @@ const props = defineProps<{
 /** The names that are checked. Checking or unchecking a box emits the new list. */
 const selected = defineModel<ReadonlyArray<T>>('selected', {required: true});
 
-/** True when `limit` names are checked, so the unchecked boxes are disabled. */
-const isFull = computed(() => selected.value.length >= props.limit);
+/** True when MAX_CUSTOM_GOALS names are checked, so the unchecked boxes are disabled. */
+const isFull = computed(() => selected.value.length >= MAX_CUSTOM_GOALS);
 
 /** True when `name` can't be picked in this game and isn't checked, so its box is disabled and dimmed. */
 function isUnavailable(name: T): boolean {

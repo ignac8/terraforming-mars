@@ -1,6 +1,7 @@
 <!-- Lets the player pick the game's milestones and awards by hand. -->
 <template>
   <div class="create-game-ma-chooser">
+    <div class="create-game-ma-instructions" v-i18n="[MIN_CUSTOM_GOALS, MAX_CUSTOM_GOALS]">Choose between ${0} to ${1} for each</div>
     <div class="corporations-filter-toolbox-cont">
       <div class="corporations-filter-toolbox">
         <input class="filter" :placeholder="$t('filter')" v-model="filterText">
@@ -9,8 +10,8 @@
     <!-- As many columns as fit the width, scrolling down for the rest. Awards start a new column. -->
     <div class="create-game-ma-scroll">
       <div class="create-game-ma-lists">
-        <GoalChecklist heading="Milestones" :items="offeredMilestones" :selected="selected.milestones" @update:selected="selected = {...selected, milestones: $event}" :limit="limit" :filterText="filterText" :isDisabled="isGoalDisabled" />
-        <GoalChecklist class="create-game-ma-awards" heading="Awards" :items="offeredAwards" :selected="selected.awards" @update:selected="selected = {...selected, awards: $event}" :limit="limit" :filterText="filterText" :isDisabled="isGoalDisabled" />
+        <GoalChecklist heading="Milestones" :items="offeredMilestones" :selected="selected.milestones" @update:selected="selected = {...selected, milestones: $event}" :filterText="filterText" :isDisabled="isGoalDisabled" />
+        <GoalChecklist class="create-game-ma-awards" heading="Awards" :items="offeredAwards" :selected="selected.awards" @update:selected="selected = {...selected, awards: $event}" :filterText="filterText" :isDisabled="isGoalDisabled" />
       </div>
     </div>
   </div>
@@ -21,12 +22,11 @@ import {ref} from 'vue';
 import GoalChecklist from './GoalChecklist.vue';
 import {MilestoneName, milestoneNames} from '@/common/ma/MilestoneName';
 import {AwardName, awardNames} from '@/common/ma/AwardName';
+import {MAX_CUSTOM_GOALS, MIN_CUSTOM_GOALS} from '@/common/ma/CustomMA';
 import {getAward, getMilestone} from '@/client/MilestoneAwardManifest';
 import {SelectedGoals} from './types';
 
-const props = defineProps<{
-  /** How many milestones, and how many awards, a hand-picked selection needs. */
-  limit: number,
+defineProps<{
   /** True for a milestone or award that can't be picked in this game. */
   isGoalDisabled?: (name: MilestoneName | AwardName) => boolean,
 }>();
@@ -47,6 +47,10 @@ const filterText = ref('');
   flex-direction: column;
   flex: 1 1 0;
   min-height: 0;
+}
+
+.create-game-ma-instructions {
+  margin-bottom: 8px;
 }
 
 // Fills the rest of the chooser, and scrolls down when the lists are taller than that.

@@ -11,14 +11,18 @@ const ITEMS = [
   {name: 'Tactician', expansion: undefined},
   {name: 'Tactician4', expansion: undefined},
   {name: 'Terraformer', expansion: 'moon'},
+  {name: 'Builder', expansion: undefined},
+  {name: 'Planner', expansion: undefined},
+  {name: 'Generalist', expansion: undefined},
+  {name: 'Specialist', expansion: undefined},
 ] as const;
 
 function mountChecklist(
-  selected: ReadonlyArray<MilestoneName | AwardName>, limit = 5, filterText = '',
+  selected: ReadonlyArray<MilestoneName | AwardName>, filterText = '',
   isDisabled?: (name: MilestoneName | AwardName) => boolean) {
   return mount(GoalChecklist, {
     ...globalConfig,
-    props: {heading: 'Milestones', items: ITEMS, selected, limit, filterText, isDisabled},
+    props: {heading: 'Milestones', items: ITEMS, selected, filterText, isDisabled},
   });
 }
 
@@ -34,8 +38,8 @@ function isChecked(wrapper: Wrapper, name: string): boolean {
 
 describe('GoalChecklist', () => {
   it('shows the heading with the count', () => {
-    const wrapper = mountChecklist(['Terraformer'], 5);
-    expect(wrapper.find('.create-game-ma-heading').text().replace(/\u00a0/g, ' ')).eq('Milestones (1/5)');
+    const wrapper = mountChecklist(['Terraformer']);
+    expect(wrapper.find('.create-game-ma-heading').text().replace(/\u00a0/g, ' ')).eq('Milestones (1/8)');
   });
 
   it('checks the selected items', () => {
@@ -57,7 +61,7 @@ describe('GoalChecklist', () => {
   });
 
   it('disables and dims the unselected items that cannot be picked', () => {
-    const wrapper = mountChecklist([], 5, '', (name) => name === 'Gardener');
+    const wrapper = mountChecklist([], '', (name) => name === 'Gardener');
     expect(checkbox(wrapper, 'Gardener').attributes('disabled')).is.not.undefined;
     expect(checkbox(wrapper, 'Gardener').element.closest('label')?.classList.contains('create-game-ma-unavailable')).is.true;
     expect(checkbox(wrapper, 'Mayor').attributes('disabled')).is.undefined;
@@ -65,20 +69,20 @@ describe('GoalChecklist', () => {
   });
 
   it('lets a selected item that cannot be picked be unchecked', async () => {
-    const wrapper = mountChecklist(['Gardener'], 5, '', (name) => name === 'Gardener');
+    const wrapper = mountChecklist(['Gardener'], '', (name) => name === 'Gardener');
     expect(checkbox(wrapper, 'Gardener').attributes('disabled')).is.undefined;
     await checkbox(wrapper, 'Gardener').setValue(false);
     expect(wrapper.emitted('update:selected')?.[0]).deep.eq([[]]);
   });
 
   it('disables unselected items once the limit is reached', () => {
-    const wrapper = mountChecklist(['Terraformer', 'Mayor'], 2);
+    const wrapper = mountChecklist(['Terraformer', 'Mayor', 'Tactician', 'Tactician4', 'Builder', 'Planner', 'Generalist', 'Specialist']);
     expect(checkbox(wrapper, 'Gardener').attributes('disabled')).is.not.undefined;
     expect(checkbox(wrapper, 'Mayor').attributes('disabled')).is.undefined;
   });
 
   it('hides items whose labels don\'t match the filter', () => {
-    const wrapper = mountChecklist([], 5, 'tact');
+    const wrapper = mountChecklist([], 'tact');
     expect(checkbox(wrapper, 'Tactician4').element.closest('.create-game-ma-item')?.getAttribute('style') ?? '').not.contains('display: none');
     expect(checkbox(wrapper, 'Mayor').element.closest('.create-game-ma-item')?.getAttribute('style')).contains('display: none');
   });

@@ -272,7 +272,7 @@ export function validateNewGameConfig(config: NewGameConfig, helpers: Helpers): 
 
   if (playerCount > 1 || config.automa === true) {
     try {
-      validateCustomMA(config.customMA, config.randomMA, config.expansions.venus);
+      validateCustomMA(config.customMA, config.randomMA);
     } catch (e) {
       errors.invalidCustomMA = e instanceof Error ? e.message : String(e);
     }
