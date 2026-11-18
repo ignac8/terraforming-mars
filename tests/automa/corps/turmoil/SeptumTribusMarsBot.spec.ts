@@ -4,7 +4,6 @@ import {SeptumTribusMarsBot} from '@/server/automa/corps/turmoil/SeptumTribusMar
 import {testGame} from '../../../TestGame';
 import {recordingMarsBot} from '../RecordingMarsBot';
 
-// C37
 describe('SeptumTribusMarsBot', () => {
   it('needs Turmoil', () => {
     expect(new SeptumTribusMarsBot().requiredExpansions).deep.eq(['turmoil']);

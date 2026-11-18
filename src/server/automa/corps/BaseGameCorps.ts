@@ -8,10 +8,10 @@ import {BonusCardId, CubeType} from '../../../common/automa/AutomaTypes';
 /** Corp state key, set to 1 once the corp's `actionDeckBonusCard` removed itself from the game. */
 export const ACTION_DECK_BONUS_CARD_REMOVED = 'actionDeckBonusCardRemoved';
 
-/** M€ a silver resource cube is worth, which the bot gains on reaching a `credit` cube (Cheung Shing, Morningstar). */
+/** M€ a silver resource cube is worth, which the bot gains on reaching a `credit` cube (Cheung Shing, Morning Star). */
 export const SILVER_CUBE_MC = 5;
 
-/** Generate white cubes for all 18 positions on a track (replaces transparent cubes). */
+/** White cubes on all 18 positions of a track. */
 export function whiteTrackCubes(trackIndex: number): MarsBotTrackCube[] {
   return Array.from({length: 18}, (_, i) => ({trackIndex, position: i + 1, cubeType: 'white' as const}));
 }

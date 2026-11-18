@@ -67,7 +67,7 @@ describe('PhilaresMarsBot', () => {
     expect(corpState.get('scienceResources')).eq(1);
   });
 
-  // C22: each adjacency between the two sides' tiles, whoever just placed the tile
+  // Each adjacency between the two sides' tiles, whoever just placed the tile
   for (const byMarsBot of [true, false]) {
     it(`gains a science resource for each of the other side's tiles that a tile placed by ${byMarsBot ? 'MarsBot' : 'the player'} touches`, () => {
       const bot = sides();

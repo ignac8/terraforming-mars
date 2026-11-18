@@ -21,7 +21,6 @@ function pristarGame(venus: boolean = false) {
   return {game, marsBot, tr: marsBot.player.terraformRating, mc: marsBot.turnResolver.megacredits};
 }
 
-// C36
 describe('PristarMarsBot', () => {
   beforeEach(resetCorpRegistry);
 

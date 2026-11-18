@@ -31,7 +31,7 @@ function createVenusGame(draftVariant: boolean): AutomaGame {
 describe('StormCraftIncorporatedMarsBot', () => {
   beforeEach(resetCorpRegistry);
 
-  // The Setup and Round Start boxes (rulebook B p.1, p.3), then the effect
+  // The Setup and Round Start boxes (rulebook B p.1, p.3) and the ongoing effect
   it('adds a floater at setup and at each round start, and raises the temperature when floaters pay for an extra card', () => {
     const {marsBot, calls} = recordingMarsBot();
 

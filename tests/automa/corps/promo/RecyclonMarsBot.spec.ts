@@ -9,7 +9,7 @@ import {recordingMarsBot, trackCubes} from '../RecordingMarsBot';
 describe('RecyclonMarsBot', () => {
   beforeEach(resetCorpRegistry);
 
-  // C23: the cubes on the building track (rulebook B p.3)
+  // The cubes on the building track (rulebook B p.3)
   it('advances the plant track for the white cubes on spaces 3, 6, 9, 12, 15 and 18 of the building track', () => {
     const {marsBot, calls} = recordingMarsBot();
 

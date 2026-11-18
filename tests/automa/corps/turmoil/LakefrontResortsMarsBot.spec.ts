@@ -39,7 +39,6 @@ function resolveIntervention(marsBot: MarsBot) {
   marsBot['bonusResolver'].resolve(createBonusCard(BonusCardId.B16_GOVERNMENT_INTERVENTION));
 }
 
-// C35
 describe('LakefrontResortsMarsBot', () => {
   beforeEach(resetCorpRegistry);
 

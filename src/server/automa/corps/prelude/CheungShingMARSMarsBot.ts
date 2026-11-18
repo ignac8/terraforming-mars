@@ -12,7 +12,7 @@ export class CheungShingMARSMarsBot extends MarsBotCorp {
       description: 'Tag: Building. Draft: Building. Silver resource cubes on building track from position 4; each earns 5 M€.',
       tags: [Tag.BUILDING],
       draftPriority: {type: 'tags', tags: [Tag.BUILDING]},
-      // Silver resource cubes at positions 4-18 on building track (track 1)
+      // Silver resource cubes at positions 4-18 on the building track
       trackCubes: Array.from({length: 15}, (_, i) => ({trackIndex: 0, position: i + 4, cubeType: 'credit' as const})),
     });
   }

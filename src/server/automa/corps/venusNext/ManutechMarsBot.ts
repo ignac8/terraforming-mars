@@ -9,7 +9,7 @@ export class ManutechMarsBot extends MarsBotCorp {
       name: CardName.MANUTECH,
       description: 'Tag: Building. When any track (including Venus) reaches #5 or #12, after resolving that space, advance it one more space and resolve that one too.',
       tags: [Tag.BUILDING],
-      // Track 7 is Venus. Setup leaves out cubes for tracks the bot does not have.
+      // Track index 7 is Venus. Setup leaves out cubes for tracks the bot does not have.
       trackCubes: Array.from({length: 8}, (_, i) => [
         {trackIndex: i, position: 5, cubeType: 'black' as const},
         {trackIndex: i, position: 12, cubeType: 'black' as const},

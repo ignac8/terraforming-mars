@@ -16,7 +16,7 @@ import {recordingMarsBot} from '../RecordingMarsBot';
 describe('SpliceMarsBot', () => {
   beforeEach(resetCorpRegistry);
 
-  // C24: the Setup box (rulebook B p.1). A microbe card the player plays, a Prelude's too (rulebook B p.4)
+  // The Setup box (rulebook B p.1). Any microbe card the player plays counts, Preludes included (rulebook B p.4)
   it('gains 8 M€ at setup, 4 M€ for its own microbe cards, and 2 M€ plus 2 M€ for the player for a microbe card that holds no microbes', () => {
     const [game, human] = testGame(1);
     const {marsBot, calls} = recordingMarsBot({game, humanPlayer: human});

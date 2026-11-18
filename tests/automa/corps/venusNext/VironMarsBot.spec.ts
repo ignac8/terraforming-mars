@@ -12,7 +12,7 @@ import {recordingMarsBot} from '../RecordingMarsBot';
 describe('VironMarsBot', () => {
   beforeEach(resetCorpRegistry);
 
-  // C25: a blue card with a red arrow is an active card with an action
+  // A blue card with a red arrow is an active card with an action
   it('adds a floater and scores a VP for each active card with an action', () => {
     const {marsBot, calls} = recordingMarsBot();
     const corp = new VironMarsBot();

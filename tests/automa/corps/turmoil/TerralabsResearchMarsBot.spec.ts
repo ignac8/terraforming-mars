@@ -5,7 +5,6 @@ import {TerralabsResearchMarsBot} from '@/server/automa/corps/turmoil/TerralabsR
 import {createAutomaGame, resetCorpRegistry} from '../CorpGame';
 import {recordingMarsBot} from '../RecordingMarsBot';
 
-// C38
 describe('TerralabsResearchMarsBot', () => {
   beforeEach(resetCorpRegistry);
 

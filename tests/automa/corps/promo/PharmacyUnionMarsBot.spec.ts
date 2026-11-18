@@ -12,7 +12,7 @@ import {recordingMarsBot} from '../RecordingMarsBot';
 describe('PharmacyUnionMarsBot', () => {
   beforeEach(resetCorpRegistry);
 
-  // C21: the Setup box (rulebook B p.1). A microbe card the player plays costs it 4 M€, a Prelude's too (rulebook B p.4)
+  // The Setup box (rulebook B p.1). A microbe card the player plays costs it 4 M€, Preludes included (rulebook B p.4)
   it('swaps Meteor Shower for a science card, raises its TR for science cards, and loses 4 M€ for the microbe cards the player plays', () => {
     const {marsBot, calls} = recordingMarsBot({megacredits: 6});
     const corp = new PharmacyUnionMarsBot();

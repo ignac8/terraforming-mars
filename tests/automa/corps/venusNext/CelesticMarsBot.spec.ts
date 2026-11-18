@@ -9,7 +9,7 @@ import {recordingMarsBot} from '../RecordingMarsBot';
 describe('CelesticMarsBot', () => {
   beforeEach(resetCorpRegistry);
 
-  // The Setup and Round Start boxes (rulebook B p.1, p.3), then the effect
+  // The Setup and Round Start boxes (rulebook B p.1, p.3) and the ongoing effect
   it('adds a floater at setup, at each round start and for each Failed Action', () => {
     const {marsBot, calls} = recordingMarsBot();
 

@@ -25,11 +25,11 @@ export class ArcadianCommunitiesMarsBot extends MarsBotCorp {
   public override onTilePlaced(marsBot: IMarsBot, placedByMarsBot: boolean, _tileType: TileType, space: Space): void {
     if (placedByMarsBot && marsBot.removeMarker(space)) {
       marsBot.gainMc(3);
-      marsBot.game.log('MarsBot (Acadian Community): tile on its player marker, +3 M€');
+      marsBot.game.log('MarsBot (Arcadian Communities): tile on its player marker, +3 M€');
     }
   }
 
   public override beforeActionPhase(marsBot: IMarsBot): void {
-    addBonusCardBeforeActionPhase(marsBot, BonusCardId.B22_SETTLERS, 'Acadian Community');
+    addBonusCardBeforeActionPhase(marsBot, BonusCardId.B22_SETTLERS, 'Arcadian Communities');
   }
 }
