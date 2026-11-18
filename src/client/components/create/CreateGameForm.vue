@@ -367,11 +367,7 @@
               <span v-i18n>Random first player</span>
             </label>
 
-            <GoalButton
-              v-model="goals"
-              :expansions="expansions"
-              :disabled="expansions.tournament"
-            />
+            <GoalButton v-model="goals" :disabled="expansions.tournament" />
 
             <template v-if="expansions.venus">
               <input type="checkbox" v-model="requiresVenusTrackCompletion" id="requiresVenusTrackCompletion-checkbox">

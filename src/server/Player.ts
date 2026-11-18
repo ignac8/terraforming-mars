@@ -191,6 +191,10 @@ export class Player implements IPlayer {
 
   public password?: Password;
 
+  public get isMarsBot(): boolean {
+    return this === this.game.marsBotPlayer;
+  }
+
   public get megaCredits(): number {
     return this.stock.megacredits;
   }
