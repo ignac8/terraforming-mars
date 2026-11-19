@@ -17,10 +17,9 @@ import {cardTagsIncludingEvent} from './MarsBotTags';
 import {MarsBotTilePlacer} from './MarsBotTilePlacer';
 import {IMilestone} from '../milestones/IMilestone';
 import {IAward} from '../awards/IAward';
-import {Resource} from '../../common/Resource';
 import {MarsBotCorpResolver} from './corps/MarsBotCorpResolver';
 import {placeColonyForMarsBot, selectRandomColony} from './colonies/MarsBotColonyPlacer';
-import {marsBotCanClaimMilestone, marsBotAwardScore, milestoneRemaining} from './MarsBotMilestoneAwardEval';
+import {humanAwardScore, marsBotCanClaimMilestone, marsBotAwardScore, milestoneRemaining} from './MarsBotMilestoneAwardEval';
 import type {MarsBot} from './MarsBot';
 
 /**
@@ -531,23 +530,9 @@ export class MarsBotTurnResolver {
     return award.getScore(this.botPlayer) + offset;
   }
 
-  /**
-   * Per rules page 8: "MarsBot considers your current number of resources plus your production"
-   * for resource-based awards like Thermalist (heat) and Miner (steel+titanium).
-   */
+  /** The player's score in `award` as MarsBot compares it with its own (`humanAwardScore`). */
   public getHumanAwardValueForComparison(award: IAward): number {
-    const name = award.name;
-    switch (name) {
-    case 'Thermalist':
-      // Heat resources + energy resources (they become heat) + heat production. Energy
-      // production doesn't count; designer ruling, BGG thread 3350125 (TDaver).
-      return this.humanPlayer.heat + this.humanPlayer.energy + this.humanPlayer.production.get(Resource.HEAT);
-    case 'Miner':
-      return this.humanPlayer.steel + this.humanPlayer.titanium +
-        this.humanPlayer.production.get(Resource.STEEL) + this.humanPlayer.production.get(Resource.TITANIUM);
-    default:
-      return award.getScore(this.humanPlayer);
-    }
+    return humanAwardScore(award, this.humanPlayer);
   }
 
   // ---- Utilities ----

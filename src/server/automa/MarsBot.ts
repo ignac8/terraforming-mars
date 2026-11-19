@@ -34,6 +34,9 @@ import {inplaceRemove} from '../../common/utils/utils';
 import {LogHelper} from '../LogHelper';
 import {ColonyName} from '../../common/colonies/ColonyName';
 import {ACTION_DECK_BONUS_CARD_REMOVED} from './corps/corpHelpers';
+import {TileType} from '../../common/TileType';
+import {IAward} from '../awards/IAward';
+import {selectTradeColony, tradeWithColony} from './colonies/MarsBotTrader';
 
 /** Expansion bonus cards set aside at setup: each generation they go back into the action deck. */
 const SET_ASIDE_BONUS_CARDS: ReadonlySet<BonusCardId> = new Set([
@@ -422,6 +425,22 @@ export class MarsBot implements IMarsBot {
     this.turnResolver.advanceTrack(trackIndex);
   }
 
+  public advanceTrackOfTag(tag: Tag): boolean {
+    return this.turnResolver.advanceTrackOfTag(tag);
+  }
+
+  public notifyTagAdvance(tag: Tag): void {
+    this.turnResolver.notifyTagAdvance(tag);
+  }
+
+  public resolveProjectCard(card: IProjectCard): void {
+    this.turnResolver.resolveProjectCard(card);
+  }
+
+  public removePlayedProjectCard(card: IProjectCard): void {
+    inplaceRemove(this.playedProjectCards, card);
+  }
+
   public maybeDrawAndResolveProjectCard(): void {
     if (this.gameHasEnded()) {
       return;
@@ -473,6 +492,10 @@ export class MarsBot implements IMarsBot {
 
   public maybeFundAward(): boolean {
     return this.turnResolver.maybeFundAward();
+  }
+
+  public awardValue(award: IAward): number {
+    return this.turnResolver.getMarsBotAwardValue(award);
   }
 
   public addProjectCardsToBonusDeck(tag: Tag, count: number): void {
@@ -594,6 +617,30 @@ export class MarsBot implements IMarsBot {
 
   public removeMarker(space: Space): boolean {
     return inplaceRemove(this.markerSpaceIds, space.id);
+  }
+
+  public placeNeuralInstance(space: Space): void {
+    this.game.simpleAddTile(this.player, space, {tileType: TileType.NEURAL_INSTANCE});
+    this.gainMc(this.tilePlacer.getTotalPlacementMC(space));
+    this.game.automaHooks?.handleTilePlaced(this.player, TileType.NEURAL_INSTANCE, space);
+    this.neuralInstanceSpace = space;
+  }
+
+  public maybeTrade(source: string): void {
+    const colony = selectTradeColony(this.game, this);
+    if (colony === undefined) {
+      // A bonus card that can't resolve is not a Failed Action (rulebook A, p.5)
+      this.game.log(`MarsBot ${source}: no tradeable colony, no effect (C-17)`);
+      return;
+    }
+    // It must lose 1 MC to trade. With none, the card does nothing (Nick, BGG 3599965).
+    if (this.megacredits < 1) {
+      this.game.log(`MarsBot ${source}: no MC to pay for the trade, no effect (C-17)`);
+      return;
+    }
+
+    tradeWithColony(this, colony);
+    this.game.log(`MarsBot resolves ${source} (C-17)`);
   }
 
   public addBonusCardToBonusDeck(bonusCardId: BonusCardId): void {

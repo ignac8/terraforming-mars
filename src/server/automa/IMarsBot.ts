@@ -1,9 +1,12 @@
 import {BonusCardId} from '../../common/automa/AutomaTypes';
 import {Tag} from '../../common/cards/Tag';
+import {GlobalParameter} from '../../common/GlobalParameter';
 import {IGame} from '../IGame';
 import {IPlayer} from '../IPlayer';
 import {IProjectCard} from '../cards/IProjectCard';
+import {IAward} from '../awards/IAward';
 import {MarsBotBoard} from './MarsBotBoard';
+import {MarsBotBonusDeck} from './MarsBotBonusDeck';
 import {Space} from '../boards/Space';
 
 /** The bot as corp handlers see it, implemented by the bot manager. */
@@ -14,6 +17,7 @@ export interface IMarsBot {
   /** The human opponent. */
   readonly humanPlayer: IPlayer;
   readonly marsBotBoard: MarsBotBoard;
+  readonly bonusDeck: MarsBotBonusDeck;
 
   /** The bot's M€ pool. */
   megacredits: number;
@@ -21,6 +25,8 @@ export interface IMarsBot {
   readonly failedActionMc: number;
   /** M€ that Government Intervention lets the bot keep. Undefined outside Government Intervention. */
   mcKeptThroughIntervention: number | undefined;
+  /** True while Government Intervention raises Venus: the raise's bonuses and the colony it earns pay the bot no M€. */
+  bonusMcBlocked: boolean;
   /** Floaters in the bot's floater pool, which it uses with Venus Next. */
   readonly floaters: number;
   /** Project cards the bot has drawn and resolved, in the order it played them. */
@@ -43,6 +49,14 @@ export interface IMarsBot {
   raiseTR(steps: number): void;
   /** Advances a track and resolves the space it reaches. Does nothing once the game has ended. */
   advanceTrack(trackIndex: number): void;
+  /**
+   * Advances the track that carries `tag` and tells the player's cards about the tag.
+   *
+   * Returns false when no track carries `tag`.
+   */
+  advanceTrackOfTag(tag: Tag): boolean;
+  /** Tells the player's cards about an advance that names `tag`, as if the bot played a card with that tag. */
+  notifyTagAdvance(tag: Tag): void;
 
   /**
    * Draws the top project card and resolves it as a bot action. The deck reshuffles its
@@ -52,6 +66,10 @@ export interface IMarsBot {
   maybeDrawAndResolveProjectCard(): void;
   /** Same as `maybeDrawAndResolveProjectCard`, but only the card's first tag resolves: the others are ignored. */
   maybeDrawAndResolveProjectCardFirstTagOnly(): void;
+  /** Plays `card` for the bot: it goes to the played pile and its tags advance the bot's tracks. */
+  resolveProjectCard(card: IProjectCard): void;
+  /** Takes `card` off the bot's played pile. */
+  removePlayedProjectCard(card: IProjectCard): void;
   /**
    * Draws the top bonus card and resolves it. Does nothing when both bonus piles are empty, or
    * once the game has ended.
@@ -108,6 +126,11 @@ export interface IMarsBot {
    * Failed Action, when the bot cannot fund one.
    */
   maybeFundAward(): boolean;
+  /** The bot's score in `award` as it compares itself with the player, its difficulty's handicap and its corp's bonus included. */
+  awardValue(award: IAward): number;
+
+  /** Asks the bot's corp whether it cancels this raise of `parameter` (Pristar). True means the parameter stays put. */
+  interceptsParameterRaise(parameter: GlobalParameter): boolean;
 
   /**
    * Raises the temperature for a corp effect. The steps it actually moves count toward
@@ -121,8 +144,18 @@ export interface IMarsBot {
   maybePlaceRandomColony(): boolean;
   /** True when a colony tile has room for MarsBot. */
   canPlaceColony(): boolean;
+  /** Puts one of the bot's player markers on `space`, which reserves the space for the bot. */
+  placeMarker(space: Space): void;
   /** Takes the bot's player marker off `space`. True when the space had one. */
   removeMarker(space: Space): boolean;
+  /** Places the bot's Neural Instance tile on `space` and pays the bot its placement M€. */
+  placeNeuralInstance(space: Space): void;
+  /**
+   * Trades with the colony the bot picks, for the bonus card named `source` (C-17).
+   *
+   * Does nothing, with no Failed Action, when no colony can be traded with or the bot has no M€ to pay.
+   */
+  maybeTrade(source: string): void;
 
   /** Corp-specific counters, serialized with the bot. Missing keys read as 0. */
   getCorpState(key: string): number;
