@@ -5,13 +5,15 @@ import {CardName} from '@/common/cards/CardName';
 import {Tag} from '@/common/cards/Tag';
 import {Game} from '@/server/Game';
 import {MarsBot} from '@/server/automa/MarsBot';
+import {MARSBOT_BOARDS} from '@/server/automa/boards/MarsBotBoards';
 import {getMarsBotCorp} from '@/server/automa/corps/MarsBotCorpRegistry';
 import {MarsBotCorpResolver} from '@/server/automa/corps/MarsBotCorpResolver';
+import {AridorMarsBot} from '@/server/automa/corps/colonies/AridorMarsBot';
 import {Luna} from '@/server/colonies/Luna';
 import {Titan} from '@/server/colonies/Titan';
 import {testGame} from '../../../TestGame';
 import {createAutomaGame, getMarsBot, resetCorpRegistry} from '../CorpGame';
-import {TRACK} from '../RecordingMarsBot';
+import {TRACK, recordingMarsBot, trackCubes} from '../RecordingMarsBot';
 
 // The card names the tracks: "Jovian track #6" (white) and "city track #6" (black). Which row
 // carries those tags depends on the map.
@@ -33,6 +35,52 @@ function setUpAridor(boardName: BoardName): MarsBot {
 
 describe('AridorMarsBot', () => {
   beforeEach(resetCorpRegistry);
+
+  it('advances the event track when a cube of either color is reached', () => {
+    const {marsBot, calls} = recordingMarsBot();
+
+    new AridorMarsBot().onTrackCubeTrigger(marsBot);
+
+    expect(calls).deep.eq([`advanceTrack(${TRACK.event})`]);
+  });
+
+  // Each board has the Jovian and city tags on different rows, named here by their first tag
+  for (const run of [
+    {boardName: BoardName.THARSIS, jovianTrack: 'power', cityTrack: 'earth'},
+    {boardName: BoardName.TERRA_CIMMERIA_NOVA, jovianTrack: 'earth', cityTrack: 'science'},
+  ] as const) {
+    it('puts a white cube on #6 of the Jovian track and a black one on #6 of the city track: ' + JSON.stringify(run), () => {
+      expect(trackCubes(new AridorMarsBot(), MARSBOT_BOARDS[run.boardName]!)).to.have.members([
+        'building white 3', 'space white 3', 'science white 3', 'power white 3', `${run.jovianTrack} white 6`,
+        'earth black 3', `${run.cityTrack} black 6`, 'plant black 3', 'plant black 6',
+      ]);
+    });
+  }
+
+  it('adds a colony tile to the game at setup, active, and builds no colony', () => {
+    const [game] = testGame(1, {coloniesExtension: true});
+    const {marsBot, calls} = recordingMarsBot({game});
+    const titan = new Titan();
+    game.discardedColonies = [titan];
+
+    new AridorMarsBot().setup(marsBot);
+
+    expect(game.colonies).includes(titan);
+    expect(game.discardedColonies).is.empty;
+    expect(titan.isActive).is.true;
+    expect(calls).is.empty;
+  });
+
+  it('adds nothing at setup when every colony tile is already in play', () => {
+    const [game] = testGame(1, {coloniesExtension: true});
+    const {marsBot} = recordingMarsBot({game});
+    game.discardedColonies = [];
+    const inPlay = game.colonies.slice();
+
+    new AridorMarsBot().setup(marsBot);
+
+    expect(game.colonies).deep.eq(inPlay);
+  });
 
   it('has leastAdvancedTrack draft priority', () => {
     const corp = getMarsBotCorp(CardName.ARIDOR)!;

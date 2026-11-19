@@ -11,7 +11,7 @@ export class AridorMarsBot extends MarsBotCorp {
       description: 'Draft: tags on the least-advanced track, each counting alike. Setup: add 1 colony tile to the game. White and black cubes across multiple tracks; each cube advances event track.',
       requiredExpansions: ['colonies'],
       draftPriority: {type: 'leastAdvancedTrack'},
-      // The card names the Jovian and city tracks, which sit on different rows from map to map
+      // The card names the Jovian and city tracks, which sit on different rows from board to board
       trackCubes: [
         {trackIndex: 0, position: 3, cubeType: 'white'},
         {trackIndex: 1, position: 3, cubeType: 'white'},

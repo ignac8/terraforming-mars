@@ -7,10 +7,6 @@ import {inplaceRemove, toName} from '../../../common/utils/utils';
 import {pickByFlippedCard} from '../MarsBotCardFlip';
 
 /**
- * Handles MarsBot colony placement logic (C-15b, C-16a, C-19, C-24a, C-24d).
- */
-
-/**
  * Returns all colony tiles eligible for MarsBot to build a colony on.
  * Eligible = active, not full, and MarsBot doesn't already have a colony there.
  */
