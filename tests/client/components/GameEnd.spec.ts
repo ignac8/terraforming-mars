@@ -2,6 +2,7 @@ import {flushPromises, shallowMount} from '@vue/test-utils';
 import {expect} from 'chai';
 import {afterEach, beforeEach, vi} from 'vitest';
 import {globalConfig} from './getLocalVue';
+import {stubFetch} from '../stubFetch';
 import GameEnd from '@/client/components/GameEnd.vue';
 import RewindVoteBanner from '@/client/components/replay/RewindVoteBanner.vue';
 import {fakeGameModel, fakeGameOptionsModel, fakePlayerViewModel, fakePublicPlayerModel, fakeSpectatorModel} from './testHelpers';
@@ -10,6 +11,7 @@ import {BoardName} from '@/common/boards/BoardName';
 import {getGlobalParameterMaximums} from '@/common/boards/GlobalParameterMaximums';
 import {GlobalParameter} from '@/common/GlobalParameter';
 import {ViewModel} from '@/common/models/PlayerModel';
+import {SpectatorModel} from '@/common/models/SpectatorModel';
 
 function fakeMarsBot(total: number): MarsBotModel {
   return {
@@ -54,20 +56,20 @@ describe('GameEnd', () => {
     const wrapper = shallowMount(GameEnd, {
       ...globalConfig,
       props: {
-        participant: fakePlayerViewModel({id: 'p-blue-id' as any}),
+        participant: fakePlayerViewModel({id: 'p-blue-id'}),
       },
     });
     expect(wrapper.find('a.game-end-replay-link').attributes('href')).to.equal('replay?id=p-blue-id');
   });
 
   it('does not offer a vote to rewind a finished multiplayer game', () => {
-    const blue = fakePublicPlayerModel({color: 'blue', id: 'p-blue-id' as any});
-    const red = fakePublicPlayerModel({color: 'red', id: 'p-red-id' as any});
+    const blue = fakePublicPlayerModel({color: 'blue', id: 'p-blue-id'});
+    const red = fakePublicPlayerModel({color: 'red', id: 'p-red-id'});
     const wrapper = shallowMount(GameEnd, {
       ...globalConfig,
       props: {
         participant: fakePlayerViewModel({
-          id: 'p-blue-id' as any,
+          id: 'p-blue-id',
           thisPlayer: blue,
           players: [blue, red],
           game: fakeGameModel({gameOptions: fakeGameOptionsModel({undoOption: true})}),
@@ -78,26 +80,23 @@ describe('GameEnd', () => {
   });
 
   describe('following a rewind of the finished game', () => {
-    const blue = fakePublicPlayerModel({color: 'blue', id: 'p-blue-id' as any});
-    const red = fakePublicPlayerModel({color: 'red', id: 'p-red-id' as any});
-    let originalFetch: any;
+    const blue = fakePublicPlayerModel({color: 'blue', id: 'p-blue-id'});
+    const red = fakePublicPlayerModel({color: 'red', id: 'p-red-id'});
     let requests: Array<string>;
     let result: string;
 
     beforeEach(() => {
       vi.useFakeTimers();
       vi.stubGlobal('location', {href: 'http://localhost/the-end', search: ''});
-      originalFetch = (global as any).fetch;
       requests = [];
       result = 'WAIT';
-      (global as any).fetch = (url: string) => {
+      stubFetch((url: string) => {
         requests.push(url);
         return Promise.resolve({ok: true, status: 200, json: () => Promise.resolve({result, waitingFor: []})});
-      };
+      });
     });
 
     afterEach(() => {
-      (global as any).fetch = originalFetch;
       vi.unstubAllGlobals();
       vi.useRealTimers();
     });
@@ -108,15 +107,15 @@ describe('GameEnd', () => {
 
     function player(options: Parameters<typeof fakeGameOptionsModel>[0], players = [blue, red]) {
       return fakePlayerViewModel({
-        id: 'p-blue-id' as any,
+        id: 'p-blue-id',
         thisPlayer: blue,
         players,
         game: fakeGameModel({undoCount: 4, gameAge: 9, gameOptions: fakeGameOptionsModel(options)}),
       });
     }
 
-    function spectator(options: Parameters<typeof fakeGameOptionsModel>[0], players = [blue, red]) {
-      return {...fakeSpectatorModel(), id: 's-id' as any, players, game: fakeGameModel({undoCount: 4, gameAge: 9, gameOptions: fakeGameOptionsModel(options)})};
+    function spectator(options: Parameters<typeof fakeGameOptionsModel>[0], players = [blue, red]): SpectatorModel {
+      return {...fakeSpectatorModel(), id: 's-id', players, game: fakeGameModel({undoCount: 4, gameAge: 9, gameOptions: fakeGameOptionsModel(options)})};
     }
 
     async function ticks(ms: number) {
@@ -174,7 +173,7 @@ describe('GameEnd', () => {
         participant: fakePlayerViewModel({game: fakeGameModel({marsBot: fakeMarsBot(15)})}),
       },
     });
-    const text = wrapper.find('.game_end_success').text();
+    const text = wrapper.find('.game-end-success').text();
     expect(text).to.include('You beat MarsBot!');
     expect(text).to.include('(20 vs 15)');
   });
@@ -186,7 +185,7 @@ describe('GameEnd', () => {
         participant: fakePlayerViewModel({game: fakeGameModel({marsBot: fakeMarsBot(20)})}),
       },
     });
-    const text = wrapper.find('.game_end_fail').text();
+    const text = wrapper.find('.game-end-fail').text();
     expect(text).to.include('MarsBot wins!');
     expect(text).to.include('(20 vs 20)');
     expect(text).to.include('Tie goes to MarsBot!');
@@ -268,7 +267,7 @@ describe('GameEnd', () => {
         },
       });
 
-      const datasets = (wrapper.vm as any).globalsDataset as ReadonlyArray<{label: string, data: ReadonlyArray<number>}>;
+      const datasets = wrapper.vm.globalsDataset;
 
       expect(datasets.map((d) => d.label)).to.deep.eq(['Temperature', 'Oxygen', 'Oceans', 'Venus']);
       for (const dataset of datasets) {

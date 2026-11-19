@@ -1,9 +1,9 @@
 import {BaseMilestone} from './IMilestone';
 import {IPlayer} from '../IPlayer';
-import {IMarsBot} from '../automa/MarsBotCorpTypes';
-import {marsBotAllTrackPositions} from '../automa/MarsBotMilestoneAwardEval';
+import {IMarsBot} from '@/server/automa/IMarsBot';
 
 export class Specialist extends BaseMilestone {
+  public readonly automaDescription = 'Any track ≥ 10';
   constructor() {
     super(
       'Specialist',
@@ -19,8 +19,8 @@ export class Specialist extends BaseMilestone {
       player.production.heat);
   }
 
-  /** MarsBot specializes by pushing any one track to space 10. */
-  public marsBotCanClaim(bot: IMarsBot): boolean {
-    return marsBotAllTrackPositions(bot).some((position) => position >= 10);
+  /** MarsBot needs space 10 on any one of its tracks, Venus included (rulebook C p.9). */
+  public marsBotCanClaim(marsBot: IMarsBot): boolean {
+    return marsBot.marsBotBoard.tracks.some((track) => track.position >= 10);
   }
 }

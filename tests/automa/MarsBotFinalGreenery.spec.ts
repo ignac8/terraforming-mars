@@ -26,7 +26,7 @@ describe('MarsBot final greenery', () => {
 
   /** The state placeFinalGreeneries runs in: the last generation's production phase. */
   function endGame(game: IGame): void {
-    game.generation = getAutomaMaxGeneration(game.gameOptions.preludeExtension);
+    game.generation = getAutomaMaxGeneration(game.gameOptions.preludeExtension, game.gameOptions.boardName);
     game.phase = Phase.PRODUCTION;
     expect(game.isDoneWithFinalProduction()).is.true;
   }
@@ -120,7 +120,7 @@ describe('MarsBot final greenery', () => {
     const southPole = game.board.spaces.find((sp) => sp.bonus.includes(SpaceBonus.OCEAN))!;
     marsBot.turnResolver.megacredits = 10;
     const placer = marsBot.turnResolver.tilePlacer;
-    const icons = (): number => placer['tiebreakIcons'](southPole, new Set());
+    const icons = (): number => placer['iconCount'](southPole);
     game.phase = Phase.ACTION;
     expect(icons()).to.eq(2.5);
 
@@ -144,7 +144,7 @@ describe('MarsBot final greenery', () => {
       let placed: Space | undefined;
       const placer = marsBot.turnResolver.tilePlacer;
       const find = placer.findGreenerySpace.bind(placer);
-      placer.findGreenerySpace = (where) => placed = find(where);
+      placer.findGreenerySpace = (filter) => placed = find(filter);
       return {game, marsBot, mc, placementMc: () => placer.getTotalPlacementMC(placed!)};
     }
 

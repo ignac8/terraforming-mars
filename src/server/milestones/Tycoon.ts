@@ -1,9 +1,10 @@
 import {BaseMilestone} from './IMilestone';
 import {IPlayer} from '../IPlayer';
 import {CardType} from '../../common/cards/CardType';
-import {IMarsBot} from '../automa/MarsBotCorpTypes';
+import {IMarsBot} from '@/server/automa/IMarsBot';
 
 export class Tycoon extends BaseMilestone {
+  public readonly automaDescription = '15+ blue/green cards in played pile';
   constructor() {
     super(
       'Tycoon',
@@ -15,8 +16,8 @@ export class Tycoon extends BaseMilestone {
       .filter((card) => card.type === CardType.ACTIVE || card.type === CardType.AUTOMATED).length;
   }
 
-  /** MarsBot's project cards live in its own played pile. */
-  public marsBotCanClaim(bot: IMarsBot): boolean {
-    return bot.playedProjectCards.filter((card) => card.type !== CardType.EVENT).length >= 15;
+  /** MarsBot needs 15 blue and green cards in its own played pile (rulebook C p.9). */
+  public marsBotCanClaim(marsBot: IMarsBot): boolean {
+    return marsBot.playedProjectCards.filter((card) => card.type !== CardType.EVENT).length >= 15;
   }
 }

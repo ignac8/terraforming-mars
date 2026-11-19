@@ -1,18 +1,19 @@
 import {IAward} from '../IAward';
 import {IPlayer} from '../../IPlayer';
-import {Tag} from '../../../common/cards/Tag';
-import {IMarsBot} from '../../automa/MarsBotCorpTypes';
+import {Tag} from '@/common/cards/Tag';
+import {IMarsBot} from '@/server/automa/IMarsBot';
 
 export class Promoter implements IAward {
   public readonly name = 'Promoter';
   public readonly description = 'Have the most cards in your event pile';
+  public readonly automaDescription = 'Event track';
 
   public getScore(player: IPlayer): number {
     return player.getPlayedEventsCount();
   }
 
-  /** The automa rules score MarsBot's Promoter as its event track. */
-  public marsBotScore(bot: IMarsBot): number {
-    return bot.marsBotBoard.trackPosition(Tag.EVENT);
+  /** Rulebook C p.10 and p.15. */
+  public marsBotScore(marsBot: IMarsBot): number {
+    return marsBot.marsBotBoard.trackPosition(Tag.EVENT);
   }
 }

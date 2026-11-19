@@ -1,11 +1,12 @@
 <template>
   <li v-if="message !== undefined && message.data !== undefined && message.message !== undefined" @click.prevent="$emit('click')">
+    <span v-if="message.owner !== undefined" class="log-owner" :class="ownerClass" :title="getPlayerName(message.owner)"></span>
     <span v-if="(message.type ?? LogMessageType.DEFAULT) === LogMessageType.DEFAULT" :title="when" v-html="icon"></span>
     <template v-for="(data, idx) in entries" :key="idx">
       <span class="log-plain-text" v-if="typeof(data) === 'string'" v-html="inlineMarkdown(data)"></span>
       <span v-else>
         <span v-if="data.type === undefined || data.value === undefined"></span>
-        <span v-else-if="data.type === LogMessageDataType.PLAYER" class="log-player" :class="'player_bg_color_' + data.value"> {{ getPlayerName(data.value) }} </span>
+        <span v-else-if="data.type === LogMessageDataType.PLAYER" class="log-player" :class="'player-bg-color-' + data.value"> {{ getPlayerName(data.value) }} </span>
         <span v-else-if="data.type === LogMessageDataType.CARD" v-html="cardToHtml(data)"></span>
         <span v-else-if="data.type === LogMessageDataType.GLOBAL_EVENT" class="log-card background-color-global-event" v-i18n>
           {{ data.value }}
@@ -58,7 +59,7 @@ import {SpaceId} from '@/common/Types';
 import {spacesById} from '@/client/utils/spacesById';
 import {getPreferences} from '@/client/utils/PreferencesManager';
 import {gameLocaleToIntlLocale} from '@/client/utils/LocaleUtils';
-import {range} from '@/common/utils/utils';
+import {playerColorClass, range} from '@/common/utils/utils';
 import {renderIcons, renderMarkdown} from '@/client/markdown/markdown';
 import {CardResource} from '@/common/CardResource';
 
@@ -178,7 +179,10 @@ export default defineComponent({
       return new Date(this.message.timestamp).toLocaleString();
     },
     icon() {
-      return this.message.playerId === undefined ? '&#x1f551;' : '&#x1f4ac;';
+      return this.message.playerId === undefined && this.message.owner === undefined ? '&#x1f551;' : '&#x1f4ac;';
+    },
+    ownerClass(): string {
+      return this.message.owner === undefined ? '' : playerColorClass(this.message.owner, 'bg');
     },
     LogMessageType(): typeof LogMessageType {
       return LogMessageType;

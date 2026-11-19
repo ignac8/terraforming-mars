@@ -1,4 +1,5 @@
-import {IMarsBotCorp, corpTrackCubes, trackCubeKey} from '../MarsBotCorpTypes';
+import {MarsBotCorp} from '../MarsBotCorp';
+import {corpTrackCubes, trackCubeKey} from '../corpTrackCubes';
 import {CardName} from '../../../common/cards/CardName';
 import {CardType} from '../../../common/cards/CardType';
 import {IProjectCard} from '../../cards/IProjectCard';
@@ -12,7 +13,7 @@ import type {MarsBot} from '../MarsBot';
  * Orchestrates MarsBot corporation lifecycle: selection, setup, cube triggers, per-gen effects.
  */
 export class MarsBotCorpResolver {
-  public static selectCorp(humanCorpName: CardName, gameOptions: GameOptions, rng: Random): IMarsBotCorp {
+  public static selectCorp(humanCorpName: CardName, gameOptions: GameOptions, rng: Random): MarsBotCorp {
     const allCorps = getAllMarsBotCorps();
     const eligible = allCorps.filter((c) => c.name !== humanCorpName &&
       (c.requiredExpansions === undefined || c.requiredExpansions.some((expansion) => gameOptions.expansions[expansion])));
@@ -25,7 +26,7 @@ export class MarsBotCorpResolver {
   /**
    * Run corp setup: place track cubes, resolve starting tags, call setup box.
    */
-  public static setupCorp(corp: IMarsBotCorp, marsBot: MarsBot): void {
+  public static setupCorp(corp: MarsBotCorp, marsBot: MarsBot): void {
     // 1. Place track cubes, skipping tracks this game's board lacks (Venus without Venus Next).
     // A save keeps the positions, so a restored game never re-resolves them.
     for (const cube of corpTrackCubes(corp, marsBot.marsBotBoard)) {
@@ -45,14 +46,14 @@ export class MarsBotCorpResolver {
       if (trackIndex !== undefined) {
         marsBot.turnResolver.advanceTrack(trackIndex);
       }
-      corp.effect?.onTagResolved?.(marsBot, tag);
+      corp.onTagResolved?.(marsBot, tag);
     }
 
     if (corp.tags.length > 0) {
       // The starting tags stand in for the tags of a project card, so effects that trigger on a
       // card's tags (Arclight, Pharmacy Union, Saturn Systems) fire for them too.
       const tagsCard = {name: corp.name, type: CardType.CORPORATION, tags: [...corp.tags], cost: 0, requirements: [], metadata: {}} as unknown as IProjectCard;
-      corp.effect?.onProjectCardResolved?.(marsBot, tagsCard);
+      corp.onProjectCardResolved?.(marsBot, tagsCard);
       // FAQ: trigger human corp callbacks for MarsBot's starting tags
       // e.g., if human plays Saturn Systems and MarsBot has Jovian starting tag
       marsBot.turnResolver.notifyPlayerCards(tagsCard);
@@ -81,7 +82,7 @@ export class MarsBotCorpResolver {
       corpTrackCubes(corp, marsBot.marsBotBoard).find((c) => c.trackIndex === trackIndex && c.position === position);
     const triggers = firstVisit || corp?.trackCubesTriggerEveryAdvance === true;
     const replacedIcon = corpCube !== undefined && triggers &&
-      corp?.effect?.onTrackCubeTrigger?.(marsBot, trackIndex, position, corpCube.cubeType) === true;
+      corp?.onTrackCubeTrigger?.(marsBot, trackIndex, position, corpCube.cubeType) === true;
     if (!firstVisit || corpCubesOnly) {
       return replacedIcon;
     }
@@ -96,7 +97,7 @@ export class MarsBotCorpResolver {
       if (colony !== undefined) {
         placeColonyForMarsBot(colony, marsBot);
       } else {
-        marsBot.game.log('MarsBot colony cube: no eligible colony tile — Failed Action (C-X3)');
+        marsBot.game.log('MarsBot colony cube: no eligible colony tile: Failed Action (C-X3)');
         marsBot.turnResolver.failedAction();
       }
     }
@@ -106,7 +107,7 @@ export class MarsBotCorpResolver {
         marsBot.tradeFleetCubeKey === trackCubeKey(trackIndex, position) &&
         !marsBot.hasSecondTradeFleet) {
       marsBot.hasSecondTradeFleet = true;
-      marsBot.game.log('MarsBot unlocks 2nd Trade Fleet — Extended Shipping Lines available next generation (C-27)');
+      marsBot.game.log('MarsBot unlocks 2nd Trade Fleet: Extended Shipping Lines available next generation (C-27)');
     }
 
     return replacedIcon;

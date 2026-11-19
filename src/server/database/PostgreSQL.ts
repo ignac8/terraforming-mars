@@ -17,6 +17,7 @@ import {LogMessage} from '@/common/logs/LogMessage';
 import {compressToBrotli, decompressFromBrotli} from './compression';
 import {TableStatePatch, withTableState} from '../rewind/tableState';
 
+
 type StoredSerializedGame = Omit<SerializedGame, 'gameOptions' | 'gameLog'> & {logLength: number};
 
 export const POSTGRESQL_TABLES = ['game', 'games', 'game_results', 'participants', 'completed_game', 'session'] as const;
@@ -308,7 +309,7 @@ export class PostgreSQL implements IDatabase {
     });
   }
 
-  throwIf(err: any, condition: string) {
+  throwIf(err: unknown, condition: string) {
     if (err) {
       console.error('PostgreSQL', condition, err);
       throw err;
@@ -382,9 +383,13 @@ export class PostgreSQL implements IDatabase {
     const options = JSON.stringify(serialized.gameOptions);
     const log = JSON.stringify(serialized.gameLog);
 
-    const storedSerialized: StoredSerializedGame = {...serialized, logLength: game.gameLog.length};
-    (storedSerialized as any).gameLog = [];
-    (storedSerialized as any).gameOptions = {};
+    // TODO(kberg): Figure out why gameLog and gameOptions are still being written so this can be typed as StoredSerializedGame again.
+    const storedSerialized = {
+      ...serialized,
+      logLength: game.gameLog.length,
+      gameLog: [],
+      gameOptions: {},
+    };
     const gameJSON = JSON.stringify(storedSerialized);
     const gameCompressed = this.compressOnWrite ? compressToBrotli(gameJSON) : null;
 
@@ -536,7 +541,7 @@ export class PostgreSQL implements IDatabase {
     }
   }
 
-  // Not part of IDatabase, so invisible to MetricsDelegate.
+  // Not part of IDatabase, so invisible to MetricsDelegate. saveGame counts its errors.
   private async trim(game: IGame) {
     if (this.trimCount <= 0) {
       return;

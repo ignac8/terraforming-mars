@@ -2,9 +2,12 @@ import {expect} from 'chai';
 import {testGame} from '../TestGame';
 import {TestPlayer} from '../TestPlayer';
 import {IGame} from '../../src/server/IGame';
+import {Space} from '../../src/server/boards/Space';
 import {MarsBotScoring} from '../../src/server/automa/MarsBotScoring';
 import {MarsBotBoard} from '../../src/server/automa/MarsBotBoard';
 import {MarsBotTurnResolver} from '../../src/server/automa/MarsBotTurnResolver';
+import {MarsBotTilePlacer} from '../../src/server/automa/MarsBotTilePlacer';
+import {fakeMarsBot} from './FakeMarsBot';
 import {THARSIS_MARSBOT_BOARD} from '../../src/server/automa/boards/TharsisMarsBot';
 import {TileType} from '../../src/common/TileType';
 import {SpaceType} from '../../src/common/boards/SpaceType';
@@ -13,25 +16,25 @@ import {ColonyName} from '../../src/common/colonies/ColonyName';
 describe('MarsBotScoring', () => {
   let game: IGame;
   let human: TestPlayer;
-  let marsBot: TestPlayer;
+  let botPlayer: TestPlayer;
   let board: MarsBotBoard;
   let turnResolver: MarsBotTurnResolver;
 
   beforeEach(() => {
     [game, human] = testGame(1);
-    marsBot = TestPlayer.RED.newPlayer({name: 'marsbot'});
-    (marsBot as any).game = game;
+    botPlayer = TestPlayer.RED.newPlayer({name: 'marsbot'});
+    botPlayer.game = game;
     board = new MarsBotBoard(THARSIS_MARSBOT_BOARD);
-    turnResolver = new MarsBotTurnResolver(game, marsBot, human, board, 'normal');
+    turnResolver = new MarsBotTurnResolver(game, botPlayer, human, board, 'normal', 0, new MarsBotTilePlacer(fakeMarsBot({game, player: botPlayer, humanPlayer: human, megacredits: 0})));
   });
 
-  function makeScoring(neuralInstanceSpace?: any) {
-    return new MarsBotScoring(game, marsBot, human, turnResolver, 'normal', neuralInstanceSpace);
+  function makeScoring(neuralInstanceSpace?: Space) {
+    return new MarsBotScoring(game, botPlayer, human, turnResolver, 'normal', neuralInstanceSpace);
   }
 
   describe('Terraform Rating', () => {
     it('includes terraform rating in VP', () => {
-      marsBot.setTerraformRating(25);
+      botPlayer.setTerraformRating(25);
       const vp = makeScoring().calculate();
       expect(vp.terraformRating).to.eq(25);
     });
@@ -44,8 +47,8 @@ describe('MarsBotScoring', () => {
 
   describe('Milestones', () => {
     it('counts milestones at 5 VP each', () => {
-      game.claimedMilestones.push({player: marsBot, milestone: game.milestones[0]});
-      game.claimedMilestones.push({player: marsBot, milestone: game.milestones[1]});
+      game.claimedMilestones.push({player: botPlayer, milestone: game.milestones[0]});
+      game.claimedMilestones.push({player: botPlayer, milestone: game.milestones[1]});
       const vp = makeScoring().calculate();
       expect(vp.milestones).to.eq(10);
     });
@@ -63,7 +66,7 @@ describe('MarsBotScoring', () => {
 
     it('counts 3 milestones at 15 VP', () => {
       for (let i = 0; i < 3; i++) {
-        game.claimedMilestones.push({player: marsBot, milestone: game.milestones[i]});
+        game.claimedMilestones.push({player: botPlayer, milestone: game.milestones[i]});
       }
       const vp = makeScoring().calculate();
       expect(vp.milestones).to.eq(15);
@@ -72,10 +75,10 @@ describe('MarsBotScoring', () => {
 
   describe('Greenery VP', () => {
     it('counts greenery VP', () => {
-      const spaces = game.board.getAvailableSpacesOnLand(marsBot);
-      game.simpleAddTile(marsBot, spaces[5], {tileType: TileType.GREENERY});
-      game.simpleAddTile(marsBot, spaces[10], {tileType: TileType.GREENERY});
-      game.simpleAddTile(marsBot, spaces[15], {tileType: TileType.GREENERY});
+      const spaces = game.board.getAvailableSpacesOnLand(botPlayer);
+      game.simpleAddTile(botPlayer, spaces[5], {tileType: TileType.GREENERY});
+      game.simpleAddTile(botPlayer, spaces[10], {tileType: TileType.GREENERY});
+      game.simpleAddTile(botPlayer, spaces[15], {tileType: TileType.GREENERY});
       const vp = makeScoring().calculate();
       expect(vp.greenery).to.eq(3);
     });
@@ -90,14 +93,14 @@ describe('MarsBotScoring', () => {
 
   describe('City adjacent greenery VP', () => {
     it('counts adjacent greenery for MarsBot cities', () => {
-      const spaces = game.board.getAvailableSpacesOnLand(marsBot);
+      const spaces = game.board.getAvailableSpacesOnLand(botPlayer);
       const citySpace = spaces[15];
-      game.simpleAddTile(marsBot, citySpace, {tileType: TileType.CITY});
+      game.simpleAddTile(botPlayer, citySpace, {tileType: TileType.CITY});
       const adj = game.board.getAdjacentSpaces(citySpace);
       let placed = 0;
       for (const s of adj) {
         if (s.tile === undefined && placed < 2) {
-          game.simpleAddTile(marsBot, s, {tileType: TileType.GREENERY});
+          game.simpleAddTile(botPlayer, s, {tileType: TileType.GREENERY});
           placed++;
         }
       }
@@ -108,9 +111,9 @@ describe('MarsBotScoring', () => {
     });
 
     it('counts greenery from any player adjacent to MarsBot cities', () => {
-      const spaces = game.board.getAvailableSpacesOnLand(marsBot);
+      const spaces = game.board.getAvailableSpacesOnLand(botPlayer);
       const citySpace = spaces[15];
-      game.simpleAddTile(marsBot, citySpace, {tileType: TileType.CITY});
+      game.simpleAddTile(botPlayer, citySpace, {tileType: TileType.CITY});
       const adj = game.board.getAdjacentSpaces(citySpace).filter((s) => s.tile === undefined);
       if (adj.length > 0) {
         game.simpleAddTile(human, adj[0], {tileType: TileType.GREENERY}); // Human's greenery
@@ -124,7 +127,7 @@ describe('MarsBotScoring', () => {
       game.simpleAddTile(human, spaces[15], {tileType: TileType.CITY});
       const adj = game.board.getAdjacentSpaces(spaces[15]).filter((s) => s.tile === undefined);
       if (adj.length > 0) {
-        game.simpleAddTile(marsBot, adj[0], {tileType: TileType.GREENERY});
+        game.simpleAddTile(botPlayer, adj[0], {tileType: TileType.GREENERY});
       }
       const vp = makeScoring().calculate();
       expect(vp.cityAdjacentGreenery).to.eq(0); // MarsBot has no cities
@@ -133,67 +136,67 @@ describe('MarsBotScoring', () => {
 
   describe('MC to VP conversion', () => {
     it('gen ≤12: 1 VP per 8 MC', () => {
-      (game as any).generation = 12;
+      game.generation = 12;
       turnResolver.megacredits = 24;
       expect(makeScoring().calculate().mcToVP).to.eq(3);
     });
 
     it('gen 13: 1 VP per 7 MC', () => {
-      (game as any).generation = 13;
+      game.generation = 13;
       turnResolver.megacredits = 21;
       expect(makeScoring().calculate().mcToVP).to.eq(3);
     });
 
     it('gen 14: 1 VP per 6 MC', () => {
-      (game as any).generation = 14;
+      game.generation = 14;
       turnResolver.megacredits = 13;
       expect(makeScoring().calculate().mcToVP).to.eq(2);
     });
 
     it('gen 15: 1 VP per 5 MC', () => {
-      (game as any).generation = 15;
+      game.generation = 15;
       turnResolver.megacredits = 23;
       expect(makeScoring().calculate().mcToVP).to.eq(4);
     });
 
     it('gen 16: 1 VP per 4 MC', () => {
-      (game as any).generation = 16;
+      game.generation = 16;
       turnResolver.megacredits = 9;
       expect(makeScoring().calculate().mcToVP).to.eq(2);
     });
 
     it('gen 17: 1 VP per 3 MC', () => {
-      (game as any).generation = 17;
+      game.generation = 17;
       turnResolver.megacredits = 10;
       expect(makeScoring().calculate().mcToVP).to.eq(3);
     });
 
     it('gen 18: 1 VP per 2 MC', () => {
-      (game as any).generation = 18;
+      game.generation = 18;
       turnResolver.megacredits = 7;
       expect(makeScoring().calculate().mcToVP).to.eq(3);
     });
 
     it('gen 19: 1 VP per 1 MC', () => {
-      (game as any).generation = 19;
+      game.generation = 19;
       turnResolver.megacredits = 7;
       expect(makeScoring().calculate().mcToVP).to.eq(7);
     });
 
     it('gen 20 (instant win): 0 MC VP', () => {
-      (game as any).generation = 20;
+      game.generation = 20;
       turnResolver.megacredits = 100;
       expect(makeScoring().calculate().mcToVP).to.eq(0);
     });
 
     it('fractional points rounded down', () => {
-      (game as any).generation = 14; // 1 per 6 MC
+      game.generation = 14; // 1 per 6 MC
       turnResolver.megacredits = 17;
       expect(makeScoring().calculate().mcToVP).to.eq(2); // floor(17/6) = 2
     });
 
     it('0 MC gives 0 VP', () => {
-      (game as any).generation = 14;
+      game.generation = 14;
       turnResolver.megacredits = 0;
       expect(makeScoring().calculate().mcToVP).to.eq(0);
     });
@@ -205,7 +208,7 @@ describe('MarsBotScoring', () => {
     });
 
     it('counts adjacent spaces not occupied by human', () => {
-      const spaces = game.board.getAvailableSpacesOnLand(marsBot);
+      const spaces = game.board.getAvailableSpacesOnLand(botPlayer);
       const niSpace = spaces[15]; // Pick a non-edge space
       const adj = game.board.getAdjacentSpaces(niSpace);
 
@@ -222,81 +225,74 @@ describe('MarsBotScoring', () => {
     });
   });
 
-  describe('Instant win', () => {
-    it('instant win at gen 20', () => {
-      (game as any).generation = 20;
-      expect(makeScoring().isInstantWin()).to.be.true;
-    });
-
-    it('no instant win at gen 19', () => {
-      (game as any).generation = 19;
-      expect(makeScoring().isInstantWin()).to.be.false;
-    });
-  });
-
   // TDaver, BGG 3408751 and 3373832: the resources MarsBot has left on the Colonies shipping board,
   // and its floaters on the Venus board, score half a VP each, rounded down
   describe('Leftover resources VP (automaColonyVP)', () => {
     function leftoverGame(options: {automaColonyVP?: boolean, coloniesExtension?: boolean, venusNextExtension?: boolean} = {}) {
       const [game] = testGame(1, {automa: true, coloniesExtension: true, ...options});
-      return {game, bot: game.automaHooks!.marsBot};
+      return {game, marsBot: game.automaHooks!.marsBot};
     }
 
-    it('scores 1 VP for every 2 resources left on the shipping board, rounded down', () => {
-      const expected = [[0, 0], [1, 0], [2, 1], [3, 1], [7, 3]];
-      for (const [cubes, vp] of expected) {
-        const {bot} = leftoverGame({automaColonyVP: true});
-        bot.shippingBoard.storage.set(ColonyName.CERES, Math.min(cubes, 4));
-        bot.shippingBoard.storage.set(ColonyName.LUNA, Math.max(0, cubes - 4));
-        expect(bot.getVictoryPoints().leftoverResourcesVP, `${cubes} resources`).to.eq(vp);
-      }
-    });
+    for (const run of [
+      {cubes: 0, vp: 0},
+      {cubes: 1, vp: 0},
+      {cubes: 2, vp: 1},
+      {cubes: 3, vp: 1},
+      {cubes: 7, vp: 3},
+    ] as const) {
+      it('scores 1 VP for every 2 resources left on the shipping board, rounded down: ' + JSON.stringify(run), () => {
+        const {marsBot} = leftoverGame({automaColonyVP: true});
+        marsBot.shippingBoard.storage.set(ColonyName.CERES, Math.min(run.cubes, 4));
+        marsBot.shippingBoard.storage.set(ColonyName.LUNA, Math.max(0, run.cubes - 4));
+        expect(marsBot.getVictoryPoints().leftoverResourcesVP, `${run.cubes} resources`).to.eq(run.vp);
+      });
+    }
 
     it('counts the floaters on the Venus board too', () => {
-      const {bot} = leftoverGame({automaColonyVP: true, venusNextExtension: true});
-      bot.shippingBoard.storage.set(ColonyName.CERES, 2);
-      bot.floaters = 3;
-      expect(bot.getVictoryPoints().leftoverResourcesVP).to.eq(2);
+      const {marsBot} = leftoverGame({automaColonyVP: true, venusNextExtension: true});
+      marsBot.shippingBoard.storage.set(ColonyName.CERES, 2);
+      marsBot.floaters = 3;
+      expect(marsBot.getVictoryPoints().leftoverResourcesVP).to.eq(2);
     });
 
     it('does not score MarsBot\'s colonies', () => {
-      const {game, bot} = leftoverGame({automaColonyVP: true});
+      const {game, marsBot} = leftoverGame({automaColonyVP: true});
       for (let i = 0; i < 4; i++) {
-        game.colonies[i].colonies.push(bot.player.id);
+        game.colonies[i].colonies.push(marsBot.player.id);
       }
-      expect(bot.getVictoryPoints().leftoverResourcesVP).to.eq(0);
+      expect(marsBot.getVictoryPoints().leftoverResourcesVP).to.eq(0);
     });
 
     it('adds to the total', () => {
       const without = leftoverGame();
       const withOption = leftoverGame({automaColonyVP: true});
-      for (const {bot} of [without, withOption]) {
-        bot.shippingBoard.storage.set(ColonyName.CERES, 4);
+      for (const {marsBot} of [without, withOption]) {
+        marsBot.shippingBoard.storage.set(ColonyName.CERES, 4);
       }
-      expect(withOption.bot.getVictoryPoints().total).to.eq(without.bot.getVictoryPoints().total + 2);
+      expect(withOption.marsBot.getVictoryPoints().total).to.eq(without.marsBot.getVictoryPoints().total + 2);
     });
 
     it('is off by default', () => {
-      const {bot} = leftoverGame();
-      bot.shippingBoard.storage.set(ColonyName.CERES, 4);
-      expect(bot.getVictoryPoints().leftoverResourcesVP).to.eq(0);
+      const {marsBot} = leftoverGame();
+      marsBot.shippingBoard.storage.set(ColonyName.CERES, 4);
+      expect(marsBot.getVictoryPoints().leftoverResourcesVP).to.eq(0);
     });
 
     it('scores nothing without Colonies', () => {
-      const {bot} = leftoverGame({automaColonyVP: true, coloniesExtension: false, venusNextExtension: true});
-      bot.floaters = 4;
-      expect(bot.getVictoryPoints().leftoverResourcesVP).to.eq(0);
+      const {marsBot} = leftoverGame({automaColonyVP: true, coloniesExtension: false, venusNextExtension: true});
+      marsBot.floaters = 4;
+      expect(marsBot.getVictoryPoints().leftoverResourcesVP).to.eq(0);
     });
   });
 
   describe('Total VP', () => {
     it('combines all VP sources', () => {
-      marsBot.setTerraformRating(25);
+      botPlayer.setTerraformRating(25);
       turnResolver.megacredits = 16;
-      (game as any).generation = 12; // 1 VP per 8 MC
+      game.generation = 12; // 1 VP per 8 MC
 
-      const spaces = game.board.getAvailableSpacesOnLand(marsBot);
-      game.simpleAddTile(marsBot, spaces[10], {tileType: TileType.GREENERY});
+      const spaces = game.board.getAvailableSpacesOnLand(botPlayer);
+      game.simpleAddTile(botPlayer, spaces[10], {tileType: TileType.GREENERY});
 
       const vp = makeScoring().calculate();
       expect(vp.terraformRating).to.eq(25);

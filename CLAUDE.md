@@ -5,10 +5,10 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Build & Development Commands
 
 ```bash
-npm run build                # Full build: CSS + JSON static files, server (tsc), client (webpack)
+npm run build                # Full build: CSS + JSON static files, server (tsc), client (Vite)
 npm run build:server         # TypeScript compile server only: tsc --build src/tsconfig.json
-npm run build:client         # Webpack production bundle (runs make:cards first)
-npm run build:test           # Compile tests: tsc --build tests/tsconfig.json
+npm run build:client         # Vite production bundle (runs make:cards first)
+npm run build:test           # Compile tests: vue-tsc --build tests/tsconfig.json
 npm run make:static          # Generate CSS and JSON assets (prerequisite for build)
 npm start                    # Run server (node build/src/server/server.js)
 npm run lint                 # All lints: eslint + i18n audit + vue-tsc
@@ -35,21 +35,20 @@ npx vitest run tests/client/components/Board.spec.ts
 
 ```bash
 npm run dev:server           # Server with hot reload (tsx watch)
-npm run dev:client           # Webpack watch mode
-npm run watch:less           # CSS rebuild on change
+npm run dev:client           # Vite dev server (proxy to the Node server on :8080)
 ```
 
-However `npm run dev` is much easier to run and a little more powerful / flexible.
+However `npm run dev` is much easier to run and a little more powerful / flexible. It starts the Node server on http://localhost:8080 and Vite (the app) on http://localhost:5173.
 
 ## Architecture
 
 ### Three-Layer Structure
 
 - **`src/server/`** - Game engine, card logic, routes, database. Runs on Node.js.
-- **`src/client/`** - Vue 3 frontend (Options API, `defineComponent`). Bundled with Webpack.
+- **`src/client/`** - Vue 3 frontend (Options API, `defineComponent`). Bundled with Vite.
 - **`src/common/`** - Shared types, enums, and models used by both client and server. No runtime logic that depends on either side.
 
-The `@/` import alias maps to `./src/` (configured in tsconfig paths and webpack).
+The `@/` import alias maps to `./src/` (configured in tsconfig paths and Vite).
 
 ### Game Engine
 
@@ -112,7 +111,9 @@ Vue 3 with Options API. Components are in `src/client/components/`. The root `Ap
 Pluggable backends in `src/server/database/`: `SQLite`, `PostgreSQL`, `LocalFilesystem`. Games are serialized/deserialized through `SerializedGame`/`SerializedPlayer` types. `GameLoader` handles caching and retrieval. Card backward compatibility handled through `CARD_RENAMES` in `src/server/createCard.ts`.
 
 ### Wiki
+
 Good wiki pages:
+
 - [Databases](https://github.com/terraforming-mars/terraforming-mars/wiki/Databases)
 - [dot-env](https://github.com/terraforming-mars/terraforming-mars/wiki/dot-env) pages for local setup
 - [Development tips](https://github.com/terraforming-mars/terraforming-mars/wiki/Development-tips)
@@ -180,11 +181,11 @@ The `automa-android` branch adds `android/`: a standalone Android APK that runs
 the server, its file database, the client and a nodejs-mobile runtime inside
 one app, for playing offline. `android/build-apk.sh` builds it and
 `android/README.md` documents the layout, signing and limits. The only game-code
-hook is the build-time switch `TM_MARSBOT_ONLY` (webpack `DefinePlugin`, off by
+hook is the build-time switch `TM_MARSBOT_ONLY` (a Vite `define`, off by
 default; the APK build sets it), which limits the create-game form to MarsBot
 games and hides the options MarsBot disables.
 Keep `android/` out of `automa` and out of upstream PRs.
 
 ## Node Version
 
-`.nvmrc` specifies v24; `package.json` `engines` says `22.x` (upstream's value, kept as-is). Run `nvm use` before any `npm` command to switch to the version `.nvmrc` declares — on other versions, optional deps (`pg`, `better-sqlite3`) get skipped and the client tests break (Node 25+ has a half-working native `localStorage` that conflicts with jsdom).
+`.nvmrc` and `package.json` `engines` both ask for Node 26 (upstream's values). Run `nvm use` before any `npm` command to switch to it — on another version the native modules in `node_modules` (`better-sqlite3`) don't load, and optional deps (`pg`) can get skipped at install.

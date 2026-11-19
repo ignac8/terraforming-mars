@@ -1,6 +1,8 @@
 import {expect} from 'chai';
 import {Resource} from '../../src/common/Resource';
-import {trackCubeKey, MarsBotTrackCube} from '../../src/server/automa/MarsBotCorpTypes';
+import {CardName} from '../../src/common/cards/CardName';
+import {trackCubeKey} from '../../src/server/automa/corpTrackCubes';
+import {MarsBotTrackCube} from '../../src/server/automa/MarsBotCorpTypes';
 import {MarsBot} from '../../src/server/automa/MarsBot';
 import {THARSIS_MARSBOT_BOARD} from '../../src/server/automa/boards/TharsisMarsBot';
 import {SeededRandom} from '../../src/common/utils/Random';
@@ -60,7 +62,7 @@ describe('MarsBot serialization roundtrip', () => {
     const mb = createMarsBot();
     const cube: MarsBotTrackCube = {trackIndex: 1, position: 5, cubeType: 'black'};
     mb.trackCubePositions.set(trackCubeKey(1, 5), cube);
-    mb.corp = {id: 'C01', name: 'TestCorp', description: '', tags: []} as any;
+    mb.corp = {name: 'TestCorp' as CardName, description: '', tags: []};
 
     const state = mb.serialize();
     const mb2 = createMarsBot();

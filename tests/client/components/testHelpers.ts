@@ -57,7 +57,7 @@ export function fakeGameOptionsModel(overrides?: RecursivePartial<GameOptionsMod
     ceosDraftVariant: false,
     politicalAgendasExtension: 'Standard',
     removeNegativeGlobalEvents: false,
-    showOtherPlayersVP: false,
+    showVP: 'yours',
     showTimers: false,
     shuffleMapOption: false,
     solarPhaseOption: false,
@@ -142,7 +142,7 @@ export function fakePublicPlayerModel(overrides?: RecursivePartial<PublicPlayerM
     handicap: undefined,
     heat: 0,
     heatProduction: 0,
-    id: 'p-blue-id' as any,
+    id: 'p-blue-id',
     influence: 0,
     isActive: false,
     megacredits: 0,
@@ -201,7 +201,7 @@ export function fakePlayerViewModel(overrides?: RecursivePartial<PlayerViewModel
     dealtProjectCards: [],
     dealtCeoCards: [],
     draftedCards: [],
-    id: 'p-blue-id' as any,
+    id: 'p-blue-id',
     color: thisPlayer.color,
     ceoCardsInHand: [],
     pickedCorporationCard: [],
@@ -210,7 +210,6 @@ export function fakePlayerViewModel(overrides?: RecursivePartial<PlayerViewModel
     waitingFor: undefined,
     game: fakeGameModel(),
     players: [thisPlayer],
-    runId: 'run-id',
     ...overrides,
   } as PlayerViewModel;
 }
@@ -231,7 +230,6 @@ export function fakeViewModel(overrides?: RecursivePartial<ViewModel>): ViewMode
     id: 'p-blue-id',
     color: thisPlayer.color,
     thisPlayer,
-    runId: 'run-id',
     ...overrides,
   } as ViewModel;
 }

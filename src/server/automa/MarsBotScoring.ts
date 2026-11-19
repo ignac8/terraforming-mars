@@ -1,6 +1,7 @@
 import {IGame} from '../IGame';
 import {IPlayer} from '../IPlayer';
-import {DifficultyLevel, getAutomaMaxGeneration, MARSBOT_MAX_GENERATION, MARSBOT_MAX_GENERATION_PRELUDE} from '../../common/automa/AutomaTypes';
+import {DifficultyLevel, getAutomaMaxGeneration} from '../../common/automa/AutomaTypes';
+import {BoardName} from '../../common/boards/BoardName';
 import {MarsBotTurnResolver} from './MarsBotTurnResolver';
 import {IProjectCard} from '../cards/IProjectCard';
 import {Space} from '../boards/Space';
@@ -34,7 +35,7 @@ export interface MarsBotVPBreakdown {
 export class MarsBotScoring {
   constructor(
     private readonly game: IGame,
-    private readonly marsBot: IPlayer,
+    private readonly botPlayer: IPlayer,
     private readonly humanPlayer: IPlayer,
     private readonly turnResolver: MarsBotTurnResolver,
     private readonly difficulty: DifficultyLevel,
@@ -43,26 +44,13 @@ export class MarsBotScoring {
     private readonly corpVpBonus: number = 0,
   ) {}
 
-  private getMaxGeneration(): number {
-    const opts = this.game.gameOptions;
-    return getAutomaMaxGeneration(opts.preludeExtension);
-  }
-
-  /** Check if MarsBot instantly wins because max generation reached. Never without a generation limit. */
-  public isInstantWin(): boolean {
-    if (this.game.gameOptions.automaNoGenerationLimit) {
-      return false;
-    }
-    return this.game.generation >= this.getMaxGeneration();
-  }
-
   /** Calculate MarsBot's complete VP breakdown. */
   public calculate(): MarsBotVPBreakdown {
-    const tr = this.marsBot.terraformRating;
+    const tr = this.botPlayer.terraformRating;
     const milestoneResult = this.calculateMilestoneVP();
     const awardResult = this.calculateAwardVP();
     const greenery = this.countGreeneryVP();
-    const cities = this.game.board.getCities(this.marsBot);
+    const cities = this.game.board.getCities(this.botPlayer);
     const cityAdjacentGreenery = this.countCityAdjacentGreeneryVP(cities);
     const neuralInstance = this.calculateNeuralInstanceVP();
     const mcToVP = this.calculateMCtoVP();
@@ -94,7 +82,7 @@ export class MarsBotScoring {
     const details: Array<MADetail> = [];
     let total = 0;
     for (const cm of this.game.claimedMilestones) {
-      if (cm.player === this.marsBot) {
+      if (cm.player === this.botPlayer) {
         total += 5;
         details.push({message: 'Claimed ${0} milestone', messageArgs: [cm.milestone.name], victoryPoint: 5});
       }
@@ -119,7 +107,7 @@ export class MarsBotScoring {
   }
 
   private countGreeneryVP(): number {
-    return this.game.board.getGreeneries(this.marsBot).length;
+    return this.game.board.getGreeneries(this.botPlayer).length;
   }
 
   private countCityAdjacentGreeneryVP(cities: ReadonlyArray<Space>): number {
@@ -176,11 +164,11 @@ export class MarsBotScoring {
    * The rulebook doesn't score them; it is the designer's intent (TDaver, BGG 3408751, 3373832).
    */
   private calculateLeftoverResourcesVP(): number {
-    const bot = this.turnResolver.marsBotManager;
-    if (!this.game.gameOptions.automaColonyVP || !this.game.gameOptions.coloniesExtension || bot === undefined) {
+    const marsBot = this.turnResolver.marsBotManager;
+    if (!this.game.gameOptions.automaColonyVP || !this.game.gameOptions.coloniesExtension || marsBot === undefined) {
       return 0;
     }
-    return Math.floor((sum(Array.from(bot.shippingBoard.storage.values())) + bot.floaters) / 2);
+    return Math.floor((sum(Array.from(marsBot.shippingBoard.storage.values())) + marsBot.floaters) / 2);
   }
 
   /** T-13: 1 VP for each Party Leader or Chairman position MarsBot holds. */
@@ -188,7 +176,7 @@ export class MarsBotScoring {
     if (!this.game.gameOptions.turmoilExtension || this.game.turmoil === undefined) {
       return 0;
     }
-    return Turmoil.getTurmoil(this.game).getVictoryPoints(this.marsBot);
+    return Turmoil.getTurmoil(this.game).getVictoryPoints(this.botPlayer);
   }
 }
 
@@ -200,11 +188,9 @@ function buildMcToVpTable(maxGen: number): ReadonlyArray<{maxGeneration: number,
   return table;
 }
 
-const MC_TO_VP_TABLE = buildMcToVpTable(MARSBOT_MAX_GENERATION);
-const MC_TO_VP_TABLE_PRELUDE = buildMcToVpTable(MARSBOT_MAX_GENERATION_PRELUDE);
-
-export function getMcPerVP(generation: number, preludeExtension: boolean): number | undefined {
-  const table = preludeExtension ? MC_TO_VP_TABLE_PRELUDE : MC_TO_VP_TABLE;
+/** M€ per VP in `generation` on `boardName`, or undefined from the generation limit on. */
+export function getMcPerVP(generation: number, preludeExtension: boolean, boardName: BoardName): number | undefined {
+  const table = buildMcToVpTable(getAutomaMaxGeneration(preludeExtension, boardName));
   const entry = table.find((e) => generation <= e.maxGeneration);
   return entry?.mcPerVP;
 }
@@ -216,12 +202,12 @@ export function getMcPerVP(generation: number, preludeExtension: boolean): numbe
  */
 export function currentMcPerVP(game: IGame): number | undefined {
   const opts = game.gameOptions;
-  const maxGeneration = getAutomaMaxGeneration(opts.preludeExtension);
+  const maxGeneration = getAutomaMaxGeneration(opts.preludeExtension, opts.boardName);
   let generation = game.generation;
   if (opts.automaNoGenerationLimit) {
     generation = Math.min(generation, maxGeneration - 1);
   } else if (generation >= maxGeneration) {
     return undefined;
   }
-  return getMcPerVP(generation, opts.preludeExtension);
+  return getMcPerVP(generation, opts.preludeExtension, opts.boardName);
 }

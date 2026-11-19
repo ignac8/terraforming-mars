@@ -13,12 +13,11 @@ import {
   DifficultyLevel,
 } from '../../common/automa/AutomaTypes';
 import {MarsBotBoard} from './MarsBotBoard';
-import {marsBotCardTags} from './MarsBotTags';
+import {cardTagsIncludingEvent} from './MarsBotTags';
 import {MarsBotTilePlacer} from './MarsBotTilePlacer';
 import {IMilestone} from '../milestones/IMilestone';
 import {IAward} from '../awards/IAward';
 import {Resource} from '../../common/Resource';
-import * as constants from '../../common/constants';
 import {MarsBotCorpResolver} from './corps/MarsBotCorpResolver';
 import {placeColonyForMarsBot, selectRandomColony} from './colonies/MarsBotColonyPlacer';
 import {marsBotCanClaimMilestone, marsBotAwardScore, milestoneRemaining} from './MarsBotMilestoneAwardEval';
@@ -36,14 +35,14 @@ export class MarsBotTurnResolver {
 
   constructor(
     private readonly game: IGame,
-    private readonly marsBot: IPlayer,
+    private readonly botPlayer: IPlayer,
     private readonly humanPlayer: IPlayer,
     public readonly marsBotBoard: MarsBotBoard,
     private readonly difficulty: DifficultyLevel,
     public megacredits: number = 0,
-    tilePlacer?: MarsBotTilePlacer,
+    tilePlacer: MarsBotTilePlacer,
   ) {
-    this.tilePlacer = tilePlacer ?? new MarsBotTilePlacer(game, marsBot, humanPlayer);
+    this.tilePlacer = tilePlacer;
   }
 
   // ---- Project Card Resolution ----
@@ -58,7 +57,7 @@ export class MarsBotTurnResolver {
     // discard pile, so it can't be drawn again
     this.marsBotManager?.playedProjectCards.push(original);
 
-    const allTags = marsBotCardTags(original);
+    const allTags = cardTagsIncludingEvent(original);
     const tags = firstTagOnly ? allTags.slice(0, 1) : allTags;
     // Effects below see only the resolved tags. Object.create keeps the prototype (methods like
     // getVictoryPoints).
@@ -73,7 +72,7 @@ export class MarsBotTurnResolver {
     // Resolve each tag left-to-right
     let advancedAny = false;
     for (const tag of tags) {
-      this.marsBotManager?.corp?.effect?.onTagResolved?.(this.marsBotManager, tag);
+      this.marsBotManager?.corp?.onTagResolved?.(this.marsBotManager, tag);
       if (tag === Tag.WILD) {
         // Prelude rule: advance the least-advanced track, topmost if tied
         const leastIndex = this.marsBotBoard.getLeastAdvancedTrackIndex();
@@ -97,7 +96,7 @@ export class MarsBotTurnResolver {
     }
 
     // Notify corp of card resolution
-    this.marsBotManager?.corp?.effect?.onProjectCardResolved?.(this.marsBotManager, card);
+    this.marsBotManager?.corp?.onProjectCardResolved?.(this.marsBotManager, card);
 
     // Notify human player's effect cards (Solar Logistics, Saturn Systems, etc.)
     this.notifyPlayerCards(card);
@@ -116,7 +115,7 @@ export class MarsBotTurnResolver {
       if (onlyCards !== undefined && !onlyCards.includes(effectCard.name)) {
         continue;
       }
-      this.humanPlayer.defer(effectCard.onCardPlayedByAnyPlayer?.(this.humanPlayer, played, this.marsBot));
+      this.humanPlayer.defer(effectCard.onCardPlayedByAnyPlayer?.(this.humanPlayer, played, this.botPlayer));
     }
   }
 
@@ -170,7 +169,7 @@ export class MarsBotTurnResolver {
     }
 
     if (this.marsBotManager !== undefined && !reAdvance) {
-      this.marsBotManager.corp?.effect?.afterTrackSpaceResolved?.(this.marsBotManager, trackIndex, position);
+      this.marsBotManager.corp?.afterTrackSpaceResolved?.(this.marsBotManager, trackIndex, position);
     }
     return true;
   }
@@ -193,7 +192,7 @@ export class MarsBotTurnResolver {
   /**
    * Tells the player's cards about an advance that names `tag`, as if a card with that tag was played.
    *
-   * A microbe advance resolves Pharmacy Union or Splice (FAQ, rulebook B p.3), and a Jovian one
+   * A microbe advance resolves Pharmacy Union or Splice (FAQ, rulebook B p.4), and a Jovian one
    * Saturn Systems (TDaver, BGG 3356105). The other tags on a shared track don't count.
    */
   public notifyTagAdvance(tag: Tag): void {
@@ -210,7 +209,7 @@ export class MarsBotTurnResolver {
     const trMatch = action.match(/^tr(\d+)$/);
     if (trMatch) {
       const amount = parseInt(trMatch[1], 10);
-      this.marsBot.increaseTerraformRating(amount);
+      this.botPlayer.increaseTerraformRating(amount);
       this.game.log('MarsBot gains ${0} TR', (b) => b.number(amount));
       return;
     }
@@ -302,7 +301,7 @@ export class MarsBotTurnResolver {
    * resolve one at a time, so Pristar's cube cancels only the first (BGG 3431297, 3432237).
    */
   public raiseTemperature(steps: 1 | 2): void {
-    if (this.game.getTemperature() >= constants.MAX_TEMPERATURE) {
+    if (this.game.getTemperature() >= this.game.max.temperature) {
       this.failedAction();
       return;
     }
@@ -311,7 +310,7 @@ export class MarsBotTurnResolver {
       return;
     }
     const before = this.game.getTemperature();
-    this.game.increaseTemperature(this.marsBot, taken as 1 | 2);
+    this.game.increaseTemperature(this.botPlayer, taken as 1 | 2);
     const raised = (this.game.getTemperature() - before) / 2;
     if (this.marsBotManager) {
       this.marsBotManager.temperatureRaises += raised;
@@ -327,9 +326,9 @@ export class MarsBotTurnResolver {
     }
 
     // Place tile and raise oxygen (unless the corp intercepts the raise)
-    const raiseOxygen = this.game.getOxygenLevel() >= constants.MAX_OXYGEN_LEVEL ||
+    const raiseOxygen = this.game.getOxygenLevel() >= this.game.max.oxygen ||
       !this.interceptsRaise(GlobalParameter.OXYGEN);
-    this.game.addGreenery(this.marsBot, space, raiseOxygen);
+    this.game.addGreenery(this.botPlayer, space, raiseOxygen);
 
     // MarsBot placement bonuses: 1 MC per icon, 2 MC per adjacent ocean
     this.gainMc(this.tilePlacer.getTotalPlacementMC(space));
@@ -350,7 +349,7 @@ export class MarsBotTurnResolver {
     if (this.interceptsRaise(GlobalParameter.OCEANS)) {
       return;
     }
-    this.game.addOcean(this.marsBot, space);
+    this.game.addOcean(this.botPlayer, space);
 
     // MarsBot placement bonuses
     this.gainMc(this.tilePlacer.getTotalPlacementMC(space));
@@ -364,7 +363,7 @@ export class MarsBotTurnResolver {
       return;
     }
 
-    this.game.addCity(this.marsBot, space);
+    this.game.addCity(this.botPlayer, space);
 
     // MarsBot placement bonuses
     this.gainMc(this.tilePlacer.getTotalPlacementMC(space));
@@ -373,7 +372,7 @@ export class MarsBotTurnResolver {
 
   /** Like raiseTemperature: Pristar's cube cancels only the first step. */
   private raiseVenus(steps: 1 | 2): void {
-    if (this.game.getVenusScaleLevel() >= constants.MAX_VENUS_SCALE) {
+    if (this.game.getVenusScaleLevel() >= this.game.max.venus) {
       this.failedAction();
       return;
     }
@@ -381,7 +380,7 @@ export class MarsBotTurnResolver {
     if (taken === 0) {
       return;
     }
-    this.game.increaseVenusScaleLevel(this.marsBot, taken as 1 | 2);
+    this.game.increaseVenusScaleLevel(this.botPlayer, taken as 1 | 2);
     this.game.log('MarsBot raises Venus ${0} step(s)', (b) => b.number(taken));
   }
 
@@ -400,8 +399,9 @@ export class MarsBotTurnResolver {
     }
   }
 
-  // Utopia Planitia's colony icon: build like Outer System Foothold, ignored without Colonies.
-  private placeColony(): void {
+  // Utopia Planitia's colony icon and Amazonis Planitia's Venus colony bonus: build like Outer
+  // System Foothold, ignored without Colonies.
+  public placeColony(): void {
     if (!this.game.gameOptions.coloniesExtension || this.marsBotManager === undefined) {
       return;
     }
@@ -424,7 +424,7 @@ export class MarsBotTurnResolver {
       return false;
     }
 
-    this.game.claimedMilestones.push({player: this.marsBot, milestone: best});
+    this.game.claimedMilestones.push({player: this.botPlayer, milestone: best});
     this.game.log('MarsBot claims milestone ${0}', (b) => b.rawString(best.name));
 
     // Briber milestone: lose 12 MC on claim
@@ -485,7 +485,7 @@ export class MarsBotTurnResolver {
     if (this.marsBotManager !== undefined) {
       return marsBotCanClaimMilestone(milestone, this.marsBotManager);
     }
-    return milestone.canClaim(this.marsBot);
+    return milestone.canClaim(this.botPlayer);
   }
 
   /** Funds the unfunded award MarsBot leads the player by the most. False when it leads none. */
@@ -515,7 +515,7 @@ export class MarsBotTurnResolver {
       return false;
     }
 
-    this.game.fundAward(this.marsBot, bestAward);
+    this.game.fundAward(this.botPlayer, bestAward);
     this.game.log('MarsBot funds award ${0}', (b) => b.rawString(bestAward.name));
     return true;
   }
@@ -523,12 +523,12 @@ export class MarsBotTurnResolver {
   /** Get MarsBot's value for an award, with the easy difficulty handicap and its corp's bonus (Nirgal). */
   public getMarsBotAwardValue(award: IAward): number {
     const offset = this.difficulty === 'easy' ? -5 : 0;
-    const bot = this.marsBotManager;
-    if (bot !== undefined) {
-      const corpBonus = bot.corp?.effect?.awardScoreBonus?.(bot) ?? 0;
-      return marsBotAwardScore(award, bot) + offset + corpBonus;
+    const marsBot = this.marsBotManager;
+    if (marsBot !== undefined) {
+      const corpBonus = marsBot.corp?.awardScoreBonus?.(marsBot) ?? 0;
+      return marsBotAwardScore(award, marsBot) + offset + corpBonus;
     }
-    return award.getScore(this.marsBot) + offset;
+    return award.getScore(this.botPlayer) + offset;
   }
 
   /**
@@ -561,7 +561,7 @@ export class MarsBotTurnResolver {
     const mc = this.failedActionMc;
     this.gainMc(mc);
     this.game.log('MarsBot takes a Failed Action, gains ${0} MC', (b) => b.number(mc));
-    this.marsBotManager?.corp?.effect?.onFailedAction?.(this.marsBotManager);
+    this.marsBotManager?.corp?.onFailedAction?.(this.marsBotManager);
   }
 
   /** Add M€ to MarsBot's supply and tell the corp about it (Mining Guild). */
@@ -570,7 +570,34 @@ export class MarsBotTurnResolver {
       return;
     }
     this.megacredits += amount;
-    this.marsBotManager?.corp?.effect?.onMcGained?.(this.marsBotManager, amount);
+    this.marsBotManager?.corp?.onMcGained?.(this.marsBotManager, amount);
+  }
+
+  /**
+   * Runs `action` and caps MarsBot's M€ supply at what it was before, so the action pays MarsBot no
+   * M€ (for Government Intervention). A supply the action lowers stays lowered.
+   *
+   * M€ that Lakefront Resorts' advance brings in stays (rulebook B, p.4).
+   */
+  public withoutMcGain(action: () => void): void {
+    const marsBot = this.marsBotManager;
+    const mcBefore = this.megacredits;
+    if (marsBot !== undefined) {
+      marsBot.mcKeptThroughIntervention = 0;
+    }
+    let kept = 0;
+    try {
+      action();
+    } finally {
+      kept = marsBot?.mcKeptThroughIntervention ?? 0;
+      if (marsBot !== undefined) {
+        marsBot.mcKeptThroughIntervention = undefined;
+      }
+    }
+    if (this.megacredits > mcBefore + kept) {
+      this.megacredits = mcBefore + kept;
+      this.game.log('MarsBot does not receive M€ from Government Intervention');
+    }
   }
 
   /** Pristar: true when the corp consumes its cube to skip this raise. */

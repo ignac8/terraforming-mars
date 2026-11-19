@@ -2,8 +2,8 @@
 //
 // The app runs this with nodejs-mobile as `node main.js --port <port>`. The
 // folder it lives in is the copy of the packaged nodejs-project: server.js (the
-// esbuild bundle of the game server), build/ (the client bundle and styles)
-// and assets/ (images, fonts, index.html). The server serves everything
+// esbuild bundle of the game server), build/ (index.html, the client bundle
+// and styles) and assets/ (images, fonts). The server serves everything
 // relative to its working directory, so this script changes into its own
 // folder before starting it.
 'use strict';

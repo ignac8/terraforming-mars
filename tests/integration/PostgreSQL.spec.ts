@@ -19,6 +19,11 @@ import {SerializedGame} from '../../src/server/SerializedGame';
 
 dotenv.config({path: 'tests/integration/.env', debug: true, quiet: true});
 
+function incrementActionsTaken(player: IPlayer): void {
+  player.actionsTakenThisRound++;
+  player.actionsTakenThisGame++;
+}
+
 /*
  * This test can be run with `npm run test:integration` as long as the test is set up
  * correctly.
@@ -100,7 +105,7 @@ class TestPostgreSQL extends PostgreSQL implements ITestDatabase {
     return res.rows.length > 0;
   }
 
-  setCompletedTime(gameId: GameId, timestampSeconds: number): Promise<QueryResult<any>> {
+  setCompletedTime(gameId: GameId, timestampSeconds: number): Promise<QueryResult<Record<string, unknown>>> {
     return this.client.query('UPDATE completed_game SET completed_time = to_timestamp($1) WHERE game_id = $2', [timestampSeconds, gameId]);
   }
 
@@ -244,7 +249,7 @@ describeDatabaseSuite({
         // A do-nothing player input
         const simpleOption = new SelectOption('');
         p.setWaitingFor(simpleOption, () => {
-          (p as any).incrementActionsTaken();
+          incrementActionsTaken(p);
           p.takeAction();
         });
       }
@@ -325,7 +330,7 @@ describeDatabaseSuite({
           return undefined;
         });
         p.setWaitingFor(simpleOption, () => {
-          (p as any).incrementActionsTaken();
+          incrementActionsTaken(p);
           p.takeAction();
         });
       }
@@ -407,7 +412,7 @@ describeDatabaseSuite({
           return undefined;
         });
         p.setWaitingFor(simpleOption, () => {
-          (p as any).incrementActionsTaken();
+          incrementActionsTaken(p);
           p.takeAction();
         });
       }
@@ -685,7 +690,7 @@ describeDatabaseSuite({
       await db.awaitAllSaves();
       const saveId = game.lastSaveId;
 
-      // The second insert of the save now fails, after the first one has run.
+      // Makes the save's second insert fail, after the first one has run.
       await db.dropGameTable();
       await db.saveGame(game);
 

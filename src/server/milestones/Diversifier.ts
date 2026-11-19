@@ -1,9 +1,9 @@
 import {BaseMilestone} from './IMilestone';
 import {IPlayer} from '../IPlayer';
-import {IMarsBot} from '../automa/MarsBotCorpTypes';
-import {marsBotAllTrackPositions} from '../automa/MarsBotMilestoneAwardEval';
+import {IMarsBot} from '@/server/automa/IMarsBot';
 
 export class Diversifier extends BaseMilestone {
+  public readonly automaDescription = 'Space 3+ on every track (7 of 8 with Venus)';
   constructor() {
     super(
       'Diversifier',
@@ -15,11 +15,12 @@ export class Diversifier extends BaseMilestone {
   }
 
   /**
-   * MarsBot diversifies by reaching space 3 on 7 of its tracks. That is every track without
-   * Venus, which is what Hellas asks for, and 7 of 8 with it, so Hellas and the Milestones &
-   * Awards expansion agree.
+   * MarsBot needs space 3 on 7 of its tracks.
+   *
+   * That is every track without Venus, as Hellas asks (rulebook C p.9), and 7 of 8 with it
+   * (rulebook C p.2), which is also the Milestones & Awards expansion's rule (rulebook C p.13).
    */
-  public marsBotCanClaim(bot: IMarsBot): boolean {
-    return marsBotAllTrackPositions(bot).filter((position) => position >= 3).length >= 7;
+  public marsBotCanClaim(marsBot: IMarsBot): boolean {
+    return marsBot.marsBotBoard.tracks.filter((track) => track.position >= 3).length >= 7;
   }
 }

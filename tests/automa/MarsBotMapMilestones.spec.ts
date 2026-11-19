@@ -1,5 +1,6 @@
 import {expect} from 'chai';
 import {testGame} from '../TestGame';
+import {TestPlayer} from '../TestPlayer';
 import {Game} from '../../src/server/Game';
 import {IGame} from '../../src/server/IGame';
 import {GameOptions} from '../../src/server/game/GameOptions';
@@ -7,8 +8,7 @@ import {MarsBot} from '../../src/server/automa/MarsBot';
 import {marsBotAwardScore, marsBotCanClaimMilestone} from '../../src/server/automa/MarsBotMilestoneAwardEval';
 import {AutomaGameSetup} from '../../src/server/automa/AutomaGameSetup';
 import {BonusCardId} from '../../src/common/automa/AutomaTypes';
-import {createCorpBonusCard} from '../../src/server/automa/MarsBotBonusCard';
-import {marsBotAwardRule, marsBotMilestoneRule} from '../../src/common/automa/MarsBotMADescriptions';
+import {createBonusCard} from '../../src/server/automa/MarsBotBonusCard';
 import {BoardName} from '../../src/common/boards/BoardName';
 import {Tag} from '../../src/common/cards/Tag';
 import {RandomMAOptionType} from '../../src/common/ma/RandomMAOptionType';
@@ -51,7 +51,7 @@ function setTrack(marsBot: MarsBot, tag: Tag, position: number): void {
 
 /** Resolves a bonus card the way a turn does, from the action deck. */
 function resolveFromDeck(marsBot: MarsBot, id: BonusCardId): void {
-  marsBot['bonusResolver'].resolve(createCorpBonusCard(id));
+  marsBot['bonusResolver'].resolve(createBonusCard(id));
 }
 
 function claims(milestone: IMilestone, marsBot: MarsBot): boolean {
@@ -239,10 +239,16 @@ describe('MarsBot map milestones and awards', () => {
       expect(claims(new Tradesman(), marsBot)).is.true;
     });
 
-    it('Trader (Tradesman) is left out without Venus Next', () => {
+    it('Trader (Tradesman) is swapped for a milestone MarsBot can play without Venus Next', () => {
       const {game} = createGame({boardName: BoardName.UTOPIA_PLANITIA});
+      const names = game.milestones.map((milestone) => milestone.name);
 
-      expect(game.milestones.map((milestone) => milestone.name)).does.not.include('Tradesman');
+      expect(names).has.length(5);
+      expect(names).does.not.include('Tradesman');
+      expect([names[0], names[1], names[3], names[4]]).to.deep.eq(['Land Specialist', 'Pioneer', 'Smith', 'Researcher']);
+      for (const name of names) {
+        expect(AutomaGameSetup.supportsMilestone(name, game.gameOptions), name).is.true;
+      }
     });
 
     it('Metallurgist (Smith) needs the Building and Space tracks to add up to 7', () => {
@@ -322,28 +328,89 @@ describe('MarsBot map milestones and awards', () => {
 
   describe('modular milestone filtering', () => {
     it('keeps Merchant without Venus Next, it needs no Venus track', () => {
-      const names = (venus: boolean) => AutomaGameSetup.filterMilestones(
-        [new Merchant(), new Planetologist(), new Tradesman()], {venusNextExtension: venus} as GameOptions).map((m) => m.name);
+      const names = (venus: boolean) => [new Merchant(), new Planetologist(), new Tradesman()]
+        .map((m) => m.name)
+        .filter((name) => AutomaGameSetup.supportsMilestone(name, {venusNextExtension: venus} as GameOptions));
       expect(names(false)).to.deep.eq(['Merchant']);
       expect(names(true)).to.deep.eq(['Merchant', 'Planetologist', 'Tradesman']);
     });
   });
 
+  describe('map sets MarsBot can\'t play in full', () => {
+    const milestoneNames = (game: IGame) => game.milestones.map((milestone) => milestone.name);
+
+    function newUtopiaGame(seed: number): IGame {
+      const player = TestPlayer.BLUE.newPlayer();
+      return Game.newInstance('game-id', [player], player, 'spectator-id', {automa: true, boardName: BoardName.UTOPIA_PLANITIA}, seed);
+    }
+
+    it('Terra Cimmeria swaps Planetologist without Venus Next', () => {
+      const {game} = createGame({boardName: BoardName.TERRA_CIMMERIA_NOVA});
+      const names = milestoneNames(game);
+
+      expect(names).has.length(5);
+      expect(names).does.not.include('Planetologist');
+      expect(names.slice(1)).to.deep.eq(['Architect', 'Coastguard', 'C. Forester', 'Fundraiser']);
+      expect(AutomaGameSetup.supportsMilestone(names[0], game.gameOptions), names[0]).is.true;
+    });
+
+    for (const boardName of [BoardName.UTOPIA_PLANITIA, BoardName.TERRA_CIMMERIA_NOVA]) {
+      it('swaps nothing with Venus Next: ' + boardName, () => {
+        const {game} = createGame({boardName, venusNextExtension: true});
+
+        expect(milestoneNames(game)).to.deep.eq([...milestoneManifest.boards[boardName], 'Hoverlord']);
+        expect(game.awards.map((award) => award.name)).to.deep.eq([...awardManifest.boards[boardName], 'Venuphile']);
+      });
+    }
+
+    it('draws the same replacement from the same seed', () => {
+      const replacements = new Set<MilestoneName>();
+      for (const seed of [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]) {
+        expect(milestoneNames(newUtopiaGame(seed)), `seed ${seed}`).to.deep.eq(milestoneNames(newUtopiaGame(seed)));
+        replacements.add(milestoneNames(newUtopiaGame(seed))[2]);
+      }
+      expect(replacements.size).is.greaterThan(1);
+    });
+
+    it('loads a save with 4 milestones unchanged', () => {
+      const serialized = createGame({boardName: BoardName.UTOPIA_PLANITIA}).game.serialize();
+      // A game created before the swap kept only the milestones MarsBot could play
+      serialized.milestones = ['Land Specialist', 'Pioneer', 'Smith', 'Researcher'];
+
+      const loaded = Game.deserialize(serialized);
+
+      expect(milestoneNames(loaded)).to.deep.eq(['Land Specialist', 'Pioneer', 'Smith', 'Researcher']);
+      expect(loaded.serialize().milestones).to.deep.eq(['Land Specialist', 'Pioneer', 'Smith', 'Researcher']);
+    });
+  });
+
   // Our reading: random milestones and awards deal only those the automa rules support
   describe('random milestones and awards', () => {
-    it('leaves out the ones the automa rules do not cover', () => {
+    it('keeps the ones the automa rules cover', () => {
       const [game] = testGame(1, {automa: true, randomMA: RandomMAOptionType.UNLIMITED, includeFanMA: true, venusNextExtension: true});
       const [milestones, awards] = getCandidates(game.gameOptions);
 
       expect(milestones).to.include.members(['Terraformer', 'Polar Explorer', 'Hoverlord']);
-      for (const name of ['Minimalist', 'Tropicalist', 'Economizer', 'Capitalist']) {
-        expect(milestones).to.not.include(name);
-      }
       expect(awards).to.include.members(['Landlord', 'Desert Settler', 'Venuphile']);
-      for (const name of ['Curator', 'Tourist', 'Urbanist', 'Warmonger', 'Innovator', 'Physicist']) {
-        expect(awards).to.not.include(name);
-      }
     });
+
+    for (const name of ['Minimalist', 'Tropicalist', 'Economizer', 'Capitalist', 'Merchant3']) {
+      it('leaves out a milestone the automa rules do not cover: ' + name, () => {
+        const [game] = testGame(1, {automa: true, randomMA: RandomMAOptionType.UNLIMITED, includeFanMA: true, venusNextExtension: true});
+        const [milestones] = getCandidates(game.gameOptions);
+
+        expect(milestones).to.not.include(name);
+      });
+    }
+
+    for (const name of ['Curator', 'Tourist', 'Urbanist', 'Warmonger', 'Innovator', 'Physicist']) {
+      it('leaves out an award the automa rules do not cover: ' + name, () => {
+        const [game] = testGame(1, {automa: true, randomMA: RandomMAOptionType.UNLIMITED, includeFanMA: true, venusNextExtension: true});
+        const [, awards] = getCandidates(game.gameOptions);
+
+        expect(awards).to.not.include(name);
+      });
+    }
 
     const ALL_EXPANSIONS = {venusNextExtension: true, turmoilExtension: true} as GameOptions;
 
@@ -387,8 +454,8 @@ describe('MarsBot map milestones and awards', () => {
       }
     });
 
-    it('still deals 5 of each, all supported', () => {
-      for (const modularMA of [false, true]) {
+    for (const modularMA of [false, true]) {
+      it('still deals 5 of each, all supported: ' + JSON.stringify({modularMA}), () => {
         for (let i = 0; i < 10; i++) {
           const [game] = testGame(1, {automa: true, randomMA: RandomMAOptionType.UNLIMITED, includeFanMA: true, modularMA});
           expect(game.milestones, `modular ${modularMA}`).has.length(5);
@@ -400,57 +467,11 @@ describe('MarsBot map milestones and awards', () => {
             expect(AutomaGameSetup.supportsAward(award.name, game.gameOptions), award.name).is.true;
           }
         }
-      }
-    });
+      });
+    }
   });
 
-  describe('descriptions', () => {
-    it('a map set uses its own wording', () => {
-      expect(marsBotMilestoneRule('Rim Settler', BoardName.HELLAS)).to.eq('Science/Jovian track ≥ 6');
-      expect(marsBotMilestoneRule('Fundraiser', BoardName.TERRA_CIMMERIA_NOVA)).to.eq('Event track ≥ 10');
-      expect(marsBotMilestoneRule('Farmer', BoardName.VASTITAS_BOREALIS_NOVA)).to.eq('Science/Microbe track or Bio track ≥ 6');
-      expect(marsBotAwardRule('Traveller', BoardName.VASTITAS_BOREALIS_NOVA)).to.eq('Earth/Jovian track + 5');
-    });
-
-    it('Agronomist counts the Plant/Animal track on Vastitas Borealis, the Bio track elsewhere', () => {
-      expect(marsBotMilestoneRule('Agronomist', BoardName.VASTITAS_BOREALIS_NOVA)).to.eq('Plant/Animal track ≥ 4');
-      expect(marsBotMilestoneRule('Agronomist')).to.eq('Bio track ≥ 4');
-    });
-
-    it('describes the rest of the Milestones & Awards expansion', () => {
-      for (const name of ['Trader', 'Sponsor', 'Lobbyist', 'Pioneer'] as const) {
-        expect(marsBotMilestoneRule(name), name).is.a('string');
-      }
-      for (const name of ['Biologist', 'Constructor'] as const) {
-        expect(marsBotAwardRule(name), name).is.a('string');
-      }
-    });
-
-    // The descriptions are the "MarsBot: ..." hints on the board's milestones and awards
-    it('describe every milestone and award the modular sets let MarsBot play', () => {
-      const options = {venusNextExtension: true, turmoilExtension: true} as GameOptions;
-      for (const name of Object.keys(milestoneManifest.all) as Array<MilestoneName>) {
-        if (AutomaGameSetup.supportsMilestone(name, options)) {
-          expect(marsBotMilestoneRule(name), name).is.a('string');
-        }
-      }
-      for (const name of Object.keys(awardManifest.all) as Array<AwardName>) {
-        if (AutomaGameSetup.supportsAward(name, options)) {
-          expect(marsBotAwardRule(name), name).is.a('string');
-        }
-      }
-    });
-
-    it('the modular wording is the default', () => {
-      expect(marsBotMilestoneRule('Rim Settler')).to.eq('Energy track ≥ 5');
-      expect(marsBotMilestoneRule('Fundraiser')).to.eq('Event track ≥ 8');
-      expect(marsBotMilestoneRule('Farmer')).to.eq('Bio track ≥ 7');
-    });
-
-    it('a map set falls back to the default for milestones it does not reword', () => {
-      expect(marsBotMilestoneRule('Energizer', BoardName.HELLAS)).to.eq('Energy track ≥ 6');
-    });
-
+  describe('map sets', () => {
     it('random milestones and awards still use the map rule of the map\'s own milestone', () => {
       const {marsBot} = createGame({boardName: BoardName.HELLAS, randomMA: RandomMAOptionType.UNLIMITED});
       setTrack(marsBot, Tag.JOVIAN, 6);
@@ -470,6 +491,29 @@ describe('MarsBot map milestones and awards', () => {
     });
   });
 
+  describe('Amazonis Planitia', () => {
+    it('deals the map\'s own milestones and awards without swapping any', () => {
+      const {game} = createGame({boardName: BoardName.AMAZONIS_PLANITIA, turmoilExtension: true, coloniesExtension: true});
+
+      expect(game.milestones.map((milestone) => milestone.name)).to.deep.eq(['Terran', 'Landshaper', 'Merchant3', 'Sponsor', 'Lobbyist']);
+      expect(game.awards.map((award) => award.name)).to.deep.eq(['Collector', 'Innovator', 'Constructor', 'Manufacturer', 'Physicist']);
+    });
+
+    for (const run of [
+      {boardName: BoardName.AMAZONIS_PLANITIA, modularMA: false, supported: true},
+      {boardName: BoardName.THARSIS, modularMA: false, supported: false},
+      {boardName: BoardName.AMAZONIS_PLANITIA, modularMA: true, supported: false},
+    ]) {
+      it('supports Merchant3, Innovator and Physicist only in a game on the map without the modular milestones: ' + JSON.stringify(run), () => {
+        const options = {boardName: run.boardName, modularMA: run.modularMA, venusNextExtension: true, turmoilExtension: true} as GameOptions;
+
+        expect(AutomaGameSetup.supportsMilestone('Merchant3', options)).eq(run.supported);
+        expect(AutomaGameSetup.supportsAward('Innovator', options)).eq(run.supported);
+        expect(AutomaGameSetup.supportsAward('Physicist', options)).eq(run.supported);
+      });
+    }
+  });
+
   describe('Pioneer colony cubes', () => {
     /** Deals `Pioneer` as the only milestone and reruns the cube setup. */
     function dealPioneer(game: IGame, marsBot: MarsBot): void {
@@ -477,14 +521,13 @@ describe('MarsBot map milestones and awards', () => {
       game.awards = [];
       marsBot.hasColonyCubes = false;
       marsBot.colonyCubePositions = new Set();
-      (AutomaGameSetup as any).placeColonyCubes(game, marsBot);
+      AutomaGameSetup['placeColonyCubes'](game, marsBot);
     }
 
     it('Utopia Planitia\'s own Pioneer places no colony cubes', () => {
       const {game, marsBot} = createGame({boardName: BoardName.UTOPIA_PLANITIA});
       expect(game.milestones.map((m) => m.name)).to.include('Pioneer');
       expect(marsBot.hasColonyCubes).is.false;
-      expect(marsBotMilestoneRule('Pioneer', BoardName.UTOPIA_PLANITIA)).to.eq('4+ colonies');
     });
 
     it('the modular Pioneer places colony cubes', () => {
@@ -492,7 +535,6 @@ describe('MarsBot map milestones and awards', () => {
       dealPioneer(game, marsBot);
       expect(marsBot.hasColonyCubes).is.true;
       expect(marsBot.colonyCubePositions.size).to.eq(3);
-      expect(marsBotMilestoneRule('Pioneer')).to.match(/^4\+ colonies \(cubes/);
     });
 
     it('Pioneer dealt at random on another map places colony cubes', () => {

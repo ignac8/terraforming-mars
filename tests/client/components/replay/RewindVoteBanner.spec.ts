@@ -2,6 +2,7 @@ import {flushPromises, mount} from '@vue/test-utils';
 import {expect} from 'chai';
 import {afterEach, beforeEach, vi} from 'vitest';
 import {globalConfig} from '../getLocalVue';
+import {stubFetch} from '../../stubFetch';
 import RewindVoteBanner from '@/client/components/replay/RewindVoteBanner.vue';
 import {fakePublicPlayerModel} from '../testHelpers';
 import {PreferencesManager} from '@/client/utils/PreferencesManager';
@@ -35,7 +36,6 @@ function poll(vote: RewindVoteModel | undefined, overrides: Partial<RewindVotePo
 }
 
 describe('RewindVoteBanner', () => {
-  let originalFetch: any;
   /** The requests sent, in order. */
   let requests: Array<{url: string, body?: unknown}>;
   /** What the next requests answer. The last one repeats. */
@@ -52,17 +52,15 @@ describe('RewindVoteBanner', () => {
   beforeEach(() => {
     vi.useFakeTimers();
     vi.stubGlobal('location', {href: 'http://localhost/player', search: ''});
-    originalFetch = (global as any).fetch;
     requests = [];
     answers = [answer(poll(undefined))];
-    (global as any).fetch = (url: string, init?: {body?: string}) => {
+    stubFetch((url: string, init?: {body?: string}) => {
       requests.push({url, body: init?.body === undefined ? undefined : JSON.parse(init.body)});
       return (answers.length > 1 ? answers.shift()! : answers[0])();
-    };
+    });
   });
 
   afterEach(() => {
-    (global as any).fetch = originalFetch;
     vi.unstubAllGlobals();
     vi.useRealTimers();
     vi.restoreAllMocks();
@@ -135,7 +133,7 @@ describe('RewindVoteBanner', () => {
 
   it('leaves a player name that is also a word, like Red, untranslated in another language', async () => {
     PreferencesManager.INSTANCE.set('lang', 'pl');
-    (window as any)._translations = {
+    window._translations = {
       '${0} asks to rewind to before move ${1} of generation ${2}.': '${0} prosi o cofnięcie gry do stanu sprzed ruchu ${1} w pokoleniu ${2}.',
       'Red': 'Czerwony',
     };
@@ -146,7 +144,7 @@ describe('RewindVoteBanner', () => {
       expect(wrapper.find('.rewind-vote-title').text()).equals('Red prosi o cofnięcie gry do stanu sprzed ruchu 3 w pokoleniu 2.');
     } finally {
       PreferencesManager.INSTANCE.set('lang', 'en');
-      delete (window as any)._translations;
+      delete window._translations;
     }
   });
 

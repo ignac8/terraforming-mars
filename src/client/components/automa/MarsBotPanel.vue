@@ -66,6 +66,7 @@
 <script lang="ts">
 import {defineComponent} from 'vue';
 import {TrackAction} from '@/common/automa/AutomaTypes';
+import {Tag} from '@/common/cards/Tag';
 import {MarsBotModel} from '@/common/models/MarsBotModel';
 
 const ACTION_ICONS: Partial<Record<TrackAction, string>> = {
@@ -138,6 +139,9 @@ export default defineComponent({
       }
       if (action.startsWith('tag_')) {
         const tag = action.slice(4);
+        if (tag === Tag.SCIENCE) {
+          return '+Sc';
+        }
         return '+' + tag.charAt(0).toUpperCase();
       }
       return ACTION_ICONS[action] ?? '?';

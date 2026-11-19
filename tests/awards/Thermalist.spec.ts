@@ -6,10 +6,10 @@ import {testGame} from '../TestGame';
 
 describe('Thermalist', () => {
   it('MarsBot scores its Energy track plus 5', () => {
-    const bot = fakeMarsBot();
-    setTrack(bot, Tag.POWER, 3);
+    const marsBot = fakeMarsBot();
+    setTrack(marsBot, Tag.POWER, 3);
 
-    expect(new Thermalist().marsBotScore(bot)).eq(8);
+    expect(new Thermalist().marsBotScore(marsBot)).eq(8);
   });
 
   it('scores a player by energy, heat and heat production mid game', () => {

@@ -25,9 +25,9 @@ import {CardName} from '../../common/cards/CardName';
 import {AwardScorer} from '../awards/AwardScorer';
 import {SpaceId} from '../../common/Types';
 import {cardsToModel, coloniesToModel} from './ModelUtils';
-import {runId} from '../utils/server-ids';
 import {toName} from '../../common/utils/utils';
 import {MAX_AWARDS, MAX_MILESTONES} from '../../common/constants';
+import {escapeVelocityPenalty} from '../game/calculateVictoryPoints';
 
 export class Server {
   public static getSimpleGameModel(game: IGame): SimpleGameModel {
@@ -118,7 +118,6 @@ export class Server {
       game: this.getGameModel(player.game),
       id: player.id,
       color: player.color,
-      runId: runId,
       requestId: player.requestId,
       thisPlayer: thisPlayer,
       players: players,
@@ -150,7 +149,6 @@ export class Server {
       game: this.getGameModel(game),
       players: game.playersInGenerationOrder.map((p) => this.getPlayer(p, false)),
       thisPlayer: undefined,
-      runId: runId,
     };
   }
 
@@ -322,14 +320,34 @@ export class Server {
       globalParameterSteps: {},
     };
 
-    if (game.phase === Phase.END || game.isSoloMode() ||
-        game.gameOptions.showOtherPlayersVP === true || modelIsForThisPlayer) {
+    if (Server.isVictoryPointsVisible(game, modelIsForThisPlayer)) {
       this.addVictoryPoints(model, player);
+    } else {
+      // The clock and the action count are public, so the time penalty shows even while the rest of the VP is hidden.
+      const penalty = escapeVelocityPenalty(player);
+      if (penalty > 0) {
+        model.victoryPointsBreakdown.escapeVelocity = -penalty;
+      }
     }
 
     model.deltaProject = player.deltaProjectData;
 
     return model;
+  }
+
+  /** Returns true when the player's victory points may be sent in this model. */
+  private static isVictoryPointsVisible(game: IGame, modelIsForThisPlayer: boolean): boolean {
+    if (game.phase === Phase.END) {
+      return true;
+    }
+    switch (game.gameOptions.showVP) {
+    case 'all':
+      return true;
+    case 'yours':
+      return modelIsForThisPlayer || game.isSoloMode();
+    case 'none':
+      return false;
+    }
   }
 
   /** Fills in the VP of `player`, which a model for anyone else leaves at zero while the game runs. */
@@ -495,7 +513,7 @@ export class Server {
       ceosDraftVariant: options.ceosDraftVariant,
       politicalAgendasExtension: options.politicalAgendasExtension,
       removeNegativeGlobalEvents: options.removeNegativeGlobalEventsOption,
-      showOtherPlayersVP: options.showOtherPlayersVP,
+      showVP: options.showVP,
       showTimers: options.showTimers,
       shuffleMapOption: options.shuffleMapOption,
       solarPhaseOption: options.solarPhaseOption,

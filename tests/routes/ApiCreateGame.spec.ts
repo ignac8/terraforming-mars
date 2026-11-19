@@ -44,7 +44,7 @@ function newGameConfigForTest(): NewGameConfig {
     undoOption: false,
     showTimers: false,
     fastModeOption: false,
-    showOtherPlayersVP: false,
+    showVP: 'yours',
     aresExtremeVariant: false,
     politicalAgendasExtension: 'Standard',
     solarPhaseOption: false,
@@ -139,15 +139,56 @@ describe('ApiCreateGame', () => {
   });
 
   it('picks a MarsBot game board only from the selected boards MarsBot supports', async () => {
-    await postConfig({...newGameConfigForTest(), automa: true, boards: [BoardName.AMAZONIS_PLANITIA, BoardName.HELLAS, BoardName.ARABIA_TERRA]});
+    await postConfig({...newGameConfigForTest(), automa: true, boards: [BoardName.VASTITAS_BOREALIS, BoardName.HELLAS, BoardName.ARABIA_TERRA]});
     expect(res.statusCode).eq(statusCode.ok);
     const model = JSON.parse(res.content) as SimpleGameModel;
     const game = await scaffolding.ctx.gameLoader.getGame(model.id);
     expect(game!.gameOptions.boardName).eq(BoardName.HELLAS);
   });
 
-  it('falls back to Tharsis when no selected board supports MarsBot', async () => {
+  it('plays Amazonis Planitia against MarsBot when it is the only supported board selected', async () => {
     await postConfig({...newGameConfigForTest(), automa: true, boards: [BoardName.AMAZONIS_PLANITIA, BoardName.ARABIA_TERRA]});
+    expect(res.statusCode).eq(statusCode.ok);
+    const model = JSON.parse(res.content) as SimpleGameModel;
+    const game = await scaffolding.ctx.gameLoader.getGame(model.id);
+    expect(game!.gameOptions.boardName).eq(BoardName.AMAZONIS_PLANITIA);
+  });
+
+  describe('with the Milestones & Awards expansion', () => {
+    const modularMAConfig = {
+      ...newGameConfigForTest(),
+      automa: true,
+      modularMA: true,
+      randomMA: RandomMAOptionType.LIMITED,
+    };
+
+    async function postedBoard(config: object): Promise<BoardName> {
+      res = new MockResponse();
+      await postConfig(config);
+      expect(res.statusCode).eq(statusCode.ok);
+      const model = JSON.parse(res.content) as SimpleGameModel;
+      const game = await scaffolding.ctx.gameLoader.getGame(model.id);
+      return game!.gameOptions.boardName;
+    }
+
+    it('never starts a MarsBot game on Amazonis Planitia', async () => {
+      for (let i = 0; i < 20; i++) {
+        expect(await postedBoard({...modularMAConfig, boards: [BoardName.AMAZONIS_PLANITIA, BoardName.HELLAS]})).eq(BoardName.HELLAS);
+      }
+    });
+
+    it('falls back to Tharsis when Amazonis Planitia is the only board selected', async () => {
+      expect(await postedBoard({...modularMAConfig, boards: [BoardName.AMAZONIS_PLANITIA]})).eq(BoardName.THARSIS);
+    });
+
+    it('keeps Amazonis Planitia among the choices when random milestones and awards are off', async () => {
+      const config = {...modularMAConfig, randomMA: RandomMAOptionType.NONE, boards: [BoardName.AMAZONIS_PLANITIA]};
+      expect(await postedBoard(config)).eq(BoardName.AMAZONIS_PLANITIA);
+    });
+  });
+
+  it('falls back to Tharsis when no selected board supports MarsBot', async () => {
+    await postConfig({...newGameConfigForTest(), automa: true, boards: [BoardName.VASTITAS_BOREALIS, BoardName.ARABIA_TERRA]});
     expect(res.statusCode).eq(statusCode.ok);
     const model = JSON.parse(res.content) as SimpleGameModel;
     const game = await scaffolding.ctx.gameLoader.getGame(model.id);
@@ -225,11 +266,14 @@ describe('ApiCreateGame', () => {
     awards: ['Banker', 'Scientist', 'Thermalist', 'Miner', 'Celebrity'],
   };
 
-  it('uses custom milestones and awards', async () => {
+  // One-player games ignore milestones and awards.
+  function twoPlayerConfig() {
     const config = newGameConfigForTest();
-    // One-player games ignore milestones and awards.
-    const players = [config.players[0], {...config.players[0], name: 'Robot 2', color: 'red', first: false}];
-    await postConfig({...config, players, randomMA: RandomMAOptionType.MANUAL, customMA});
+    return {...config, players: [config.players[0], {...config.players[0], name: 'Robot 2', color: 'red', first: false}]};
+  }
+
+  it('uses custom milestones and awards', async () => {
+    await postConfig({...twoPlayerConfig(), randomMA: RandomMAOptionType.MANUAL, customMA});
     expect(res.statusCode).eq(statusCode.ok);
     const model = JSON.parse(res.content) as SimpleGameModel;
     const game = await scaffolding.ctx.gameLoader.getGame(model.id);
@@ -255,16 +299,22 @@ describe('ApiCreateGame', () => {
     expect(res.content).contains('MarsBot plays against one player only');
   });
 
-  it('rejects custom milestones and awards unless they are manual', async () => {
-    await postConfig({...newGameConfigForTest(), randomMA: RandomMAOptionType.LIMITED, customMA});
-    expect(res.statusCode).eq(statusCode.badRequest);
-    expect(res.content).contains('customMA requires randomMA');
+  it('rejects custom milestones and awards of the wrong size', async () => {
+    await postConfig({...twoPlayerConfig(), randomMA: RandomMAOptionType.MANUAL, customMA: {...customMA, awards: ['Banker']}});
+    expect(res.statusCode).eq(statusCode.internalServerError);
+    expect(res.content).contains('You must have between 3 and 8 custom awards');
   });
 
-  it('rejects custom milestones and awards of the wrong size', async () => {
-    await postConfig({...newGameConfigForTest(), randomMA: RandomMAOptionType.MANUAL, customMA: {...customMA, awards: ['Banker']}});
-    expect(res.statusCode).eq(statusCode.badRequest);
-    expect(res.content).contains('customMA must have 5 awards');
+  it('rejects custom milestones and awards from missing expansions', async () => {
+    const config = twoPlayerConfig();
+    await postConfig({
+      ...config,
+      expansions: {...config.expansions, turmoil: false},
+      randomMA: RandomMAOptionType.MANUAL,
+      customMA: {...customMA, awards: ['Banker', 'Scientist', 'Thermalist', 'Miner', 'Politician']},
+    });
+    expect(res.statusCode).eq(statusCode.internalServerError);
+    expect(res.content).contains('Politician needs the Turmoil expansion');
   });
 
   async function createdEscapeVelocity(escapeVelocity: object) {

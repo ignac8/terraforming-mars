@@ -27,7 +27,7 @@ describe('SelectDelegate', () => {
   });
 
   describe('MarsBot game', () => {
-    function mountWithMarsBot(colors: Array<ColorWithNeutral>, onsave: (r: InputResponse) => void = () => {}): VueWrapper<any> {
+    function mountWithMarsBot(colors: Array<ColorWithNeutral>, onsave: (r: InputResponse) => void = () => {}): VueWrapper<InstanceType<typeof SelectDelegate>> {
       return mount(SelectDelegate, {
         ...globalConfig,
         props: {

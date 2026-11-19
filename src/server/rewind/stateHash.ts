@@ -3,7 +3,7 @@ import {SerializedAutomaState, SerializedGame} from '../SerializedGame';
 import {GameOptions} from '../game/GameOptions';
 import {CardName} from '../../common/cards/CardName';
 import {BonusCardId} from '../../common/automa/AutomaTypes';
-import {createCorpBonusCard} from '../automa/MarsBotBonusCard';
+import {createBonusCard} from '../automa/MarsBotBonusCard';
 
 type Json = string | number | boolean | null | undefined | ReadonlyArray<Json> | {readonly [key: string]: Json};
 
@@ -52,7 +52,7 @@ function withOldBonusDeckPiles(state: SerializedAutomaState): Omit<SerializedAut
   if (state.bonusDeck === undefined) {
     return state;
   }
-  const ids = new Map(Object.values(BonusCardId).map((id) => [createCorpBonusCard(id).name, id]));
+  const ids = new Map(Object.values(BonusCardId).map((id) => [createBonusCard(id).name, id]));
   const toOldForm = (name: CardName) => ids.get(name) ?? name;
   const {bonusDeck, ...rest} = state;
   return {...rest, bonusDeckDrawPile: bonusDeck.drawPile.map(toOldForm), bonusDeckDiscardPile: bonusDeck.discardPile.map(toOldForm)};

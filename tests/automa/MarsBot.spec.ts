@@ -6,6 +6,7 @@ import {IGame} from '../../src/server/IGame';
 import {MarsBot} from '../../src/server/automa/MarsBot';
 import {BoardName} from '../../src/common/boards/BoardName';
 import {TileType} from '../../src/common/TileType';
+import {setOxygenLevel, setTemperature} from '../TestingUtils';
 
 function createAutomaGame(difficulty: 'easy' | 'normal' | 'hard' | 'brutal' = 'normal'): {game: IGame, human: TestPlayer, marsBot: MarsBot} {
   const [game, human] = testGame(1, {
@@ -157,13 +158,13 @@ describe('MarsBot', () => {
 
     it('instant win at generation 20', () => {
       const {game, marsBot} = createAutomaGame();
-      (game as any).generation = 20;
+      game.generation = 20;
       expect(marsBot.isInstantWin()).to.be.true;
     });
 
     it('no instant win before generation 20', () => {
       const {game, marsBot} = createAutomaGame();
-      (game as any).generation = 19;
+      game.generation = 19;
       expect(marsBot.isInstantWin()).to.be.false;
     });
   });
@@ -171,15 +172,15 @@ describe('MarsBot', () => {
   describe('Game End', () => {
     it('game is over at generation 20 in automa mode', () => {
       const {game} = createAutomaGame();
-      (game as any).generation = 20;
+      game.generation = 20;
       expect(game.gameIsOver()).to.be.true;
     });
 
     it('game is over when Mars is terraformed', () => {
       const {game} = createAutomaGame();
       // Set all global params to max
-      (game as any).oxygenLevel = 14;
-      (game as any).temperature = 8;
+      setOxygenLevel(game, 14);
+      setTemperature(game, 8);
       // Place 9 ocean tiles
       const oceanSpaces = game.board.getAvailableSpacesForOcean(game.players[0]);
       for (let i = 0; i < 9 && i < oceanSpaces.length; i++) {

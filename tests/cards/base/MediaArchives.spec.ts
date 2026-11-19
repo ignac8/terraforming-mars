@@ -6,6 +6,7 @@ import {ImportedHydrogen} from '../../../src/server/cards/base/ImportedHydrogen'
 import {testGame} from '../../TestingUtils';
 import {cast} from '../../../src/common/utils/utils';
 import {Tag} from '../../../src/common/cards/Tag';
+import {setTrack} from '../../automa/FakeMarsBot';
 
 describe('MediaArchives', () => {
   it('Should play', () => {
@@ -20,15 +21,11 @@ describe('MediaArchives', () => {
     expect(player.megaCredits).to.eq(3);
   });
 
-  // MarsBot has no played events: its event track counts instead (automa rulebook A p.4).
+  // MarsBot has no played events: its event track counts instead (automa rulebook A p.5).
   it('counts MarsBot\'s event track', () => {
     const card = new MediaArchives();
     const [game, player] = testGame(1, {automa: true});
-    const marsBotBoard = game.automaHooks!.marsBot.marsBotBoard;
-    const eventTrack = marsBotBoard.tracks[marsBotBoard.tagToTrack[Tag.EVENT]!];
-    for (let i = 0; i < 4; i++) {
-      eventTrack.advance();
-    }
+    setTrack(game.automaHooks!.marsBot, Tag.EVENT, 4);
     player.playedCards.push(card, new Virus());
 
     cast(card.play(player), undefined);

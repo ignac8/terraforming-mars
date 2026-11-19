@@ -84,9 +84,9 @@ describe('Cloner', () => {
     const newPlayer = new Player('new-player1', 'red', false, 0, 'p-new-player1-id');
     const newGame = Cloner.clone('g-new-id', [newPlayer], 0, game.serialize());
 
-    const marsBot = newGame.marsBotPlayer!;
-    expect(marsBot.id).eq('p-g-new-id-marsbot');
-    expect(Turmoil.getTurmoil(newGame).delegateReserve.get(marsBot)).eq(DELEGATES_PER_PLAYER);
+    const botPlayer = newGame.marsBotPlayer!;
+    expect(botPlayer.id).eq('p-g-new-id-marsbot');
+    expect(Turmoil.getTurmoil(newGame).delegateReserve.get(botPlayer)).eq(DELEGATES_PER_PLAYER);
   });
 });
 
@@ -111,8 +111,8 @@ describe('Cloner, automa games', () => {
 
     const reloaded = Game.deserialize(game.serialize());
 
-    const marsBot = reloaded.getPlayerById('p-g-old-game-id-marsbot');
-    expect(reloaded.turmoil!.delegateReserve.get(marsBot)).eq(DELEGATES_PER_PLAYER);
+    const botPlayer = reloaded.getPlayerById('p-g-old-game-id-marsbot');
+    expect(reloaded.turmoil!.delegateReserve.get(botPlayer)).eq(DELEGATES_PER_PLAYER);
   });
 
   it('clones a solo automa game', () => {
@@ -129,10 +129,10 @@ describe('Cloner, automa games', () => {
 
   it('clones an automa game in which MarsBot holds delegates and tiles', () => {
     const game = soloAutomaGame('g-old-game-id', 'p-old-player1-id');
-    const marsBot = game.getPlayerById('p-g-old-game-id-marsbot');
-    game.turmoil!.sendDelegateToParty(marsBot, PartyName.MARS, game);
-    const space = game.board.getAvailableSpacesOnLand(marsBot)[0];
-    game.addGreenery(marsBot, space);
+    const botPlayer = game.getPlayerById('p-g-old-game-id-marsbot');
+    game.turmoil!.sendDelegateToParty(botPlayer, PartyName.MARS, game);
+    const space = game.board.getAvailableSpacesOnLand(botPlayer)[0];
+    game.addGreenery(botPlayer, space);
 
     const newPlayer = new Player('new-player1', 'red', false, 0, 'p-new-player1-id');
     const newGame = Cloner.clone('g-new-id', [newPlayer], 0, game.serialize());
@@ -177,7 +177,7 @@ describe('Cloner, automa games', () => {
 });
 
 /** Every path in `obj` whose string value mentions one of `needles`, for a legible failure. */
-function pathsHolding(obj: any, needles: Array<string>, path: string = ''): Array<string> {
+function pathsHolding(obj: unknown, needles: Array<string>, path: string = ''): Array<string> {
   if (typeof obj === 'string') {
     return needles.some((needle) => obj.includes(needle)) ? [`${path} = ${obj}`] : [];
   }

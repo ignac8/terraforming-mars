@@ -1,15 +1,15 @@
 import {expect} from 'chai';
-import {RimSettler} from '../../src/server/milestones/RimSettler';
-import {TestPlayer} from '../TestPlayer';
+import {BoardName} from '@/common/boards/BoardName';
+import {Tag} from '@/common/cards/Tag';
+import {THARSIS_MARSBOT_BOARD} from '@/server/automa/boards/TharsisMarsBot';
+import {RimSettler} from '@/server/milestones/RimSettler';
 import {testGame} from '../TestGame';
-import {IMarsBot} from '../../src/server/automa/MarsBotCorpTypes';
-import {MarsBotBoard} from '../../src/server/automa/MarsBotBoard';
-import {THARSIS_MARSBOT_BOARD} from '../../src/server/automa/boards/TharsisMarsBot';
+import {fakeMarsBot, setTrack} from '../automa/FakeMarsBot';
+import {TestPlayer} from '../TestPlayer';
 
 describe('RimSettler', () => {
-  const milestone = new RimSettler();
-
   it('Can claim with 3 jovian tags', () => {
+    const milestone = new RimSettler();
     const player = TestPlayer.BLUE.newPlayer();
     player.tagsForTest = {jovian: 2};
     expect(milestone.canClaim(player)).is.false;
@@ -18,15 +18,27 @@ describe('RimSettler', () => {
     expect(milestone.canClaim(player)).is.true;
   });
 
-  it('MarsBot claims it at space 5 of its Jovian track', () => {
-    const board = new MarsBotBoard(THARSIS_MARSBOT_BOARD);
-    const bot = {game: testGame(1)[0], marsBotBoard: board} as unknown as IMarsBot;
-    for (let i = 0; i < 4; i++) {
-      board.tracks[4].advance();
-    }
-    expect(milestone.marsBotCanClaim(bot)).is.false;
+  // Hellas and Elysium pair Jovian with Science, where Tharsis pairs it with Energy.
+  const scienceJovianTracks = THARSIS_MARSBOT_BOARD.map((track) => ({
+    ...track,
+    tags: track.tags.includes(Tag.SCIENCE) ? [...track.tags, Tag.JOVIAN] : track.tags.filter((tag) => tag !== Tag.JOVIAN),
+  }));
 
-    board.tracks[4].advance();
-    expect(milestone.marsBotCanClaim(bot)).is.true;
-  });
+  for (const run of [
+    {boardName: BoardName.HELLAS, modularMA: false, science: 5, power: 6, expected: false},
+    {boardName: BoardName.HELLAS, modularMA: false, science: 6, power: 0, expected: true},
+    {boardName: BoardName.HELLAS, modularMA: true, science: 6, power: 4, expected: false},
+    {boardName: BoardName.HELLAS, modularMA: true, science: 0, power: 5, expected: true},
+    {boardName: BoardName.ELYSIUM, modularMA: false, science: 6, power: 4, expected: false},
+  ] as const) {
+    it('MarsBot reads its Jovian track on Hellas and its Energy track elsewhere: ' + JSON.stringify(run), () => {
+      const [game] = testGame(1, {boardName: run.boardName, modularMA: run.modularMA});
+      // The Milestones & Awards expansion plays MarsBot's Tharsis board on any map.
+      const marsBot = fakeMarsBot({tracks: run.modularMA ? THARSIS_MARSBOT_BOARD : scienceJovianTracks, game});
+      setTrack(marsBot, Tag.SCIENCE, run.science);
+      setTrack(marsBot, Tag.POWER, run.power);
+
+      expect(new RimSettler().marsBotCanClaim(marsBot)).eq(run.expected);
+    });
+  }
 });

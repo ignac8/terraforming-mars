@@ -1,5 +1,6 @@
 import {expect} from 'chai';
 import {testGame} from '../../TestGame';
+import {fakeCard} from '../../TestingUtils';
 import {AutomaGameHooks} from '../../../src/server/automa/AutomaGameHooks';
 import {MarsBot} from '../../../src/server/automa/MarsBot';
 import {
@@ -106,7 +107,7 @@ describe('MarsBotColonyPlacer (C-15b, C-16a, C-19, C-24a)', () => {
       const ceres = new Ceres();
       game.colonies = [luna, ceres];
       // Inject a 0-cost card at the front of the draw pile
-      game.projectDeck.drawPile.unshift({cost: 0} as any);
+      game.projectDeck.drawPile.unshift(fakeCard({cost: 0}));
       // Should NOT return undefined — 0-cost maps to last tile (index N-1 = 1 = ceres)
       const selected = selectRandomColony(game, marsBot);
       expect(selected).to.not.be.undefined;

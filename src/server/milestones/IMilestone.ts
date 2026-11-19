@@ -1,18 +1,23 @@
 import {MilestoneName} from '../../common/ma/MilestoneName';
+import {BoardName} from '../../common/boards/BoardName';
 import {IPlayer} from '../IPlayer';
-import {IMarsBot} from '@/server/automa/MarsBotCorpTypes';
+import {IMarsBot} from '@/server/automa/IMarsBot';
 
 export interface IMilestone {
   name: MilestoneName;
   description: string;
   canClaim(player: IPlayer): boolean;
   getScore(player: IPlayer): number;
+  /** How MarsBot meets the criteria. */
+  automaDescription?: string;
+  /** The automa description for this milestone, when played on certain maps. */
+  automaMapDescriptions?: Partial<Record<BoardName, string>>;
   /**
    * Whether MarsBot meets the criteria.
    *
    * Only for milestones where the automa rules differ from `canClaim` for MarsBot's player.
    */
-  marsBotCanClaim?(bot: IMarsBot): boolean;
+  marsBotCanClaim?(marsBot: IMarsBot): boolean;
   /** How far the player is from claiming this: 0 when they qualify. Left out when it can't be counted. */
   remaining?(player: IPlayer): number;
 }

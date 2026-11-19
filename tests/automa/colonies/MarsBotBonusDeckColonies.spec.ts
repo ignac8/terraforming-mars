@@ -4,10 +4,10 @@ import {BonusCardId} from '../../../src/common/automa/AutomaTypes';
 import {SeededRandom} from '../../../src/common/utils/Random';
 
 describe('MarsBotBonusDeck — Colonies variants', () => {
-  describe('createWithColonies (C-2, C-3)', () => {
+  describe('create with Colonies (C-2, C-3)', () => {
     let deck: MarsBotBonusDeck;
     beforeEach(() => {
-      deck = MarsBotBonusDeck.createWithColonies(new SeededRandom(0));
+      deck = MarsBotBonusDeck.create(new SeededRandom(0), {colonies: true});
     });
 
     it('has 9 cards (base 8 − B05 + B17 + B18)', () => {
@@ -46,10 +46,10 @@ describe('MarsBotBonusDeck — Colonies variants', () => {
     });
   });
 
-  describe('createWithVenusAndColonies (C-2, C-3 + Venus)', () => {
+  describe('create with Venus Next and Colonies (C-2, C-3)', () => {
     let deck: MarsBotBonusDeck;
     beforeEach(() => {
-      deck = MarsBotBonusDeck.createWithVenusAndColonies(new SeededRandom(0));
+      deck = MarsBotBonusDeck.create(new SeededRandom(0), {venus: true, colonies: true});
     });
 
     it('has 9 cards', () => {

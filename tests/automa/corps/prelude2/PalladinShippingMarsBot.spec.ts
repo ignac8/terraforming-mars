@@ -1,0 +1,54 @@
+import {expect} from 'chai';
+import {CardName} from '@/common/cards/CardName';
+import {getMarsBotCorp} from '@/server/automa/corps/MarsBotCorpRegistry';
+import {PalladinShippingMarsBot} from '@/server/automa/corps/prelude2/PalladinShippingMarsBot';
+import {createAutomaGame, resetCorpRegistry} from '../CorpGame';
+import {TRACK, recordingMarsBot, trackCubes} from '../RecordingMarsBot';
+
+describe('PalladinShippingMarsBot', () => {
+  beforeEach(resetCorpRegistry);
+
+  it('gains 5 M€ at setup', () => {
+    const {marsBot, calls} = recordingMarsBot();
+
+    new PalladinShippingMarsBot().setup(marsBot);
+
+    expect(calls).deep.eq(['gainMc(5)']);
+  });
+
+  // A white and a black cube on the card pay for one temperature step
+  it('raises the temperature once a white and a black cube are on the card', () => {
+    const {marsBot, calls, corpState} = recordingMarsBot();
+    const corp = new PalladinShippingMarsBot();
+
+    corp.onTrackCubeTrigger(marsBot, TRACK.space, 3, 'white');
+    corp.onTrackCubeTrigger(marsBot, TRACK.space, 4, 'white');
+    corp.onTrackCubeTrigger(marsBot, TRACK.event, 3, 'black');
+
+    expect(calls).deep.eq(['raiseTemperature(1)']);
+    expect(corpState.get('whiteCubesOnCard')).eq(1);
+    expect(corpState.get('blackCubesOnCard')).eq(0);
+  });
+
+  it('puts white cubes on the space track and black cubes on the same spaces of the event track', () => {
+    expect(trackCubes(new PalladinShippingMarsBot())).to.have.members([
+      ...[3, 4, 6, 8, 10, 11].map((position) => `space white ${position}`),
+      ...[3, 4, 6, 8, 10, 11].map((position) => `event black ${position}`),
+    ]);
+  });
+
+  it('collects cubes and pairs them for temperature raise', () => {
+    const {marsBot} = createAutomaGame();
+    const corp = getMarsBotCorp(CardName.PALLADIN_SHIPPING)!;
+    marsBot.setCorpAndSetup(corp);
+
+    // Collect 1 white cube
+    corp.onTrackCubeTrigger!(marsBot, 1, 3, 'white');
+    expect(marsBot.corpSpecificState.get('whiteCubesOnCard')).to.eq(1);
+
+    // Collect 1 black cube: should pair and raise temp
+    corp.onTrackCubeTrigger!(marsBot, 2, 3, 'black');
+    expect(marsBot.corpSpecificState.get('whiteCubesOnCard')).to.eq(0);
+    expect(marsBot.corpSpecificState.get('blackCubesOnCard')).to.eq(0);
+  });
+});

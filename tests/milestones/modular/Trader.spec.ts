@@ -1,17 +1,16 @@
 import {expect} from 'chai';
-import {Trader} from '../../../src/server/milestones/modular/Trader';
+import {Tag} from '@/common/cards/Tag';
+import {THARSIS_MARSBOT_BOARD} from '@/server/automa/boards/TharsisMarsBot';
+import {VENUS_MARSBOT_TRACK} from '@/server/automa/boards/VenusMarsBot';
+import {Trader} from '@/server/milestones/modular/Trader';
+import {fakeMarsBot, setTrack} from '../../automa/FakeMarsBot';
+import {CardResource} from '@/common/CardResource';
 import {TestPlayer} from '../../TestPlayer';
 import {fakeCard} from '../../TestingUtils';
-import {CardResource} from '../../../src/common/CardResource';
-import {IMarsBot} from '../../../src/server/automa/MarsBotCorpTypes';
-import {MarsBotBoard} from '../../../src/server/automa/MarsBotBoard';
-import {THARSIS_MARSBOT_BOARD} from '../../../src/server/automa/boards/TharsisMarsBot';
-import {VENUS_MARSBOT_TRACK} from '../../../src/server/automa/boards/VenusMarsBot';
 
 describe('Trader', () => {
-  const milestone = new Trader();
-
   it('Can claim with 3 resource types on cards', () => {
+    const milestone = new Trader();
     const player = TestPlayer.BLUE.newPlayer();
     for (const resourceType of [CardResource.MICROBE, CardResource.ANIMAL]) {
       const card = fakeCard({resourceType});
@@ -26,17 +25,19 @@ describe('Trader', () => {
     expect(milestone.canClaim(player)).is.true;
   });
 
-  it('MarsBot claims it with bio, earth and Venus tracks at space 2', () => {
-    const board = new MarsBotBoard([...THARSIS_MARSBOT_BOARD, VENUS_MARSBOT_TRACK]);
-    const bot = {marsBotBoard: board} as unknown as IMarsBot;
-    for (const index of [5, 6]) {
-      board.tracks[index].advance();
-      board.tracks[index].advance();
-    }
-    board.tracks[7].advance();
-    expect(milestone.marsBotCanClaim(bot)).is.false;
+  for (const run of [
+    {plant: 1, earth: 2, venus: 2, expected: false},
+    {plant: 2, earth: 1, venus: 2, expected: false},
+    {plant: 2, earth: 2, venus: 1, expected: false},
+    {plant: 2, earth: 2, venus: 2, expected: true},
+  ] as const) {
+    it('MarsBot needs space 2 on its Bio, Earth and Venus tracks: ' + JSON.stringify(run), () => {
+      const marsBot = fakeMarsBot({tracks: [...THARSIS_MARSBOT_BOARD, VENUS_MARSBOT_TRACK]});
+      setTrack(marsBot, Tag.PLANT, run.plant);
+      setTrack(marsBot, Tag.EARTH, run.earth);
+      setTrack(marsBot, Tag.VENUS, run.venus);
 
-    board.tracks[7].advance();
-    expect(milestone.marsBotCanClaim(bot)).is.true;
-  });
+      expect(new Trader().marsBotCanClaim(marsBot)).eq(run.expected);
+    });
+  }
 });

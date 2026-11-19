@@ -1,3 +1,4 @@
+import {CardName} from '../cards/CardName';
 import {Color} from '../Color';
 import {LogMessage} from '../logs/LogMessage';
 import {PendingChoiceModel} from '../models/PendingChoiceModel';
@@ -10,8 +11,20 @@ import {SpectatorModel} from '../models/SpectatorModel';
  * saves tell. A step that several players answered together, like research, is every one of theirs. Colours and not
  * ids, because a running game's public models carry no player ids.
  * `silent`: a player answered but nothing was logged, which only a draft pick does.
+ * `picks`: the cards chosen by the answers that left this move, one entry per card answer, in answer order.
+ * `at`: when the answer that left this move was given, in epoch milliseconds. Autoplay in real time waits
+ * `at(i) - at(i - 1)` on move i. Undefined when nothing tells.
  */
-export type ReplayMove = {saveId: number; messages: Array<LogMessage>; undone?: boolean; silent?: boolean; movers?: Array<Color>};
+export type ReplayMove = {
+  saveId: number; messages: Array<LogMessage>; undone?: boolean; silent?: boolean; movers?: Array<Color>;
+  picks?: Array<ReplayPick>; at?: number;
+};
+
+/**
+ * Cards a player chose, such as a draft pick or the cards kept from a draw. `auto`: the draft handed over the last card
+ * of a hand without asking; it rides on the row of the pick that caused it.
+ */
+export type ReplayPick = {color: Color; cards: Array<CardName>; auto?: boolean};
 
 export type ReplayViewAs = 'all' | Color;
 

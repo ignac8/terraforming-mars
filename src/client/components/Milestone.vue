@@ -5,12 +5,12 @@
     </div>
     <div class="ma-name--milestones" :class="nameCss">
       <span ref="name" v-i18n>{{ name }}</span>
-      <div v-if="showScores" class="ma-scores player_home_block--milestones-and-awards-scores">
+      <div v-if="showScores" class="ma-scores player-home-block--milestones-and-awards-scores">
         <template v-for="score in sortedScores" :key="score.color">
           <p
             v-if="playerSymbol(score.color).length > 0"
             class="ma-score"
-            :class="`player_bg_color_${score.color}`"
+            :class="`player-bg-color-${score.color}`"
             v-text="playerSymbol(score.color)"
             data-test="player-score"
           ></p>
@@ -36,7 +36,6 @@ import {ClaimedMilestoneModel, MilestoneScore} from '@/common/models/ClaimedMile
 import {getMilestone} from '@/client/MilestoneAwardManifest';
 import {playerSymbol} from '@/client/utils/playerSymbol';
 import {Color} from '@/common/Color';
-import {marsBotMilestoneRule} from '@/common/automa/MarsBotMADescriptions';
 import {BoardName} from '@/common/boards/BoardName';
 import {fitTextWhenReady} from '@/client/utils/textFit';
 import {comparing, reversed} from '@/common/utils/Ordering';
@@ -88,7 +87,7 @@ export default defineComponent({
     },
     getClass(score: MilestoneScore): string {
       let classes = 'ma-score';
-      classes += ` player_bg_color_${score.color}`;
+      classes += ` player-bg-color-${score.color}`;
       if (score.claimable) {
         classes += ' claimable';
       } else {
@@ -114,7 +113,9 @@ export default defineComponent({
       return getMilestone(this.milestone.name).description;
     },
     automaRule(): string | undefined {
-      return marsBotMilestoneRule(this.milestone.name, this.automaMapSet);
+      const milestone = getMilestone(this.milestone.name);
+      const mapRule = this.automaMapSet === undefined ? undefined : milestone.automaMapDescriptions?.[this.automaMapSet];
+      return mapRule ?? milestone.automaDescription;
     },
   },
 });

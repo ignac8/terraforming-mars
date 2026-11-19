@@ -31,7 +31,7 @@ import {RecordedInput} from './rewind/RecordedInput';
 import {stateHash} from './rewind/stateHash';
 import {CardResource} from '../common/CardResource';
 import {Resource} from '../common/Resource';
-import {AndThen, DeferredAction, SimpleDeferredAction} from './deferredActions/DeferredAction';
+import {AndThen, IDeferredAction, SimpleDeferredAction} from './deferredActions/DeferredAction';
 import {Priority} from './deferredActions/Priority';
 import {DeferredActionsQueue} from './deferredActions/DeferredActionsQueue';
 import {SelectPaymentDeferred} from './deferredActions/SelectPaymentDeferred';
@@ -55,17 +55,19 @@ import {MoonData} from './moon/MoonData';
 import {MoonExpansion} from './moon/MoonExpansion';
 import {TurmoilHandler} from './turmoil/TurmoilHandler';
 import {SeededRandom, UnseededRandom} from '../common/utils/Random';
-import {chooseMilestonesAndAwards} from './ma/MilestoneAwardSelector';
+import {chooseMilestonesAndAwards, replaceUnsupportedAgainstMarsBot} from './ma/MilestoneAwardSelector';
 import {BoardType} from './boards/BoardType';
 import {MultiSet} from 'mnemonist';
 import {GrantVenusAltTrackBonusDeferred} from './venusNext/GrantVenusAltTrackBonusDeferred';
 import {PathfindersExpansion} from './pathfinders/PathfindersExpansion';
 import {PathfindersData} from './pathfinders/PathfindersData';
 import {DeltaProject} from './cards/delta/DeltaProject';
+import {MiningCard} from './cards/base/MiningCard';
 import {AddResourcesToCard} from './deferredActions/AddResourcesToCard';
 import {ColonyDeserializer} from './colonies/ColonyDeserializer';
 import {GameLoader} from './database/GameLoader';
 import {DEFAULT_GAME_OPTIONS, GameOptions} from './game/GameOptions';
+import {isShowVP, showVPFromLegacy} from '../common/game/ShowVP';
 import {CorporationDeck, PreludeDeck, ProjectDeck, CeoDeck} from './cards/Deck';
 import {Logger} from './logs/Logger';
 import {addDays, stringToNumber} from './database/utils';
@@ -119,7 +121,7 @@ export class Game implements IGame, Logger {
   public readonly gameOptions: Readonly<GameOptions>;
   public readonly players: ReadonlyArray<IPlayer>;
   public readonly marsBotPlayer: IPlayer | undefined;
-  public readonly allPlayers: ReadonlyArray<IPlayer>;
+  public readonly playersPlusMarsBot: ReadonlyArray<IPlayer>;
   // The API makes this readonly.
   public playersInGenerationOrder: ReadonlyArray<IPlayer> = [];
 
@@ -261,14 +263,14 @@ export class Game implements IGame, Logger {
     this.players = players;
     // Set before the active player is looked up, since MarsBot can be the active player.
     this.marsBotPlayer = marsBotPlayer;
-    this.allPlayers = marsBotPlayer === undefined ? players : [...players, marsBotPlayer];
+    this.playersPlusMarsBot = marsBotPlayer === undefined ? players : [...players, marsBotPlayer];
     const playerIds = players.map(toID);
-    const allPlayerIds = this.allPlayers.map(toID);
+    const playersPlusMarsBotIds = this.playersPlusMarsBot.map(toID);
     if (playerIds.includes(first.id) === false) {
       throw new Error('Cannot find first player ' + first.id + ' in [' + playerIds + ']');
     }
-    if (allPlayerIds.includes(activePlayer) === false) {
-      throw new Error('Cannot find active player ' + activePlayer + ' in [' + allPlayerIds + ']');
+    if (playersPlusMarsBotIds.includes(activePlayer) === false) {
+      throw new Error('Cannot find active player ' + activePlayer + ' in [' + playersPlusMarsBotIds + ']');
     }
     if (new Set(playerIds).size !== players.length) {
       throw new Error('Duplicate player found: [' + playerIds + ']');
@@ -408,13 +410,10 @@ export class Game implements IGame, Logger {
       game.aresData = AresSetup.initialData(gameOptions.aresHazards, players);
     }
 
-    const {milestones, awards} = chooseMilestonesAndAwards(gameOptions);
+    const drawn = chooseMilestonesAndAwards(gameOptions);
+    const {milestones, awards} = gameOptions.automa ? replaceUnsupportedAgainstMarsBot(drawn, gameOptions, rng) : drawn;
     game.milestones = milestones.map(milestoneManifest.createOrThrow);
     game.awards = awards.map(awardManifest.createOrThrow);
-    if (gameOptions.automa) {
-      game.milestones = AutomaGameSetup.filterMilestones(game.milestones, gameOptions);
-      game.awards = AutomaGameSetup.filterAwards(game.awards, gameOptions);
-    }
 
     // Add colonies stuff
     if (gameOptions.coloniesExtension) {
@@ -611,6 +610,7 @@ export class Game implements IGame, Logger {
       prompt: {type: waitingFor.type, title: typeof title === 'string' ? title : title.message},
       response: structuredClone(input),
       stateHash: stateHash(this.serialize()),
+      at: Date.now(),
     };
     (this.inputsSinceSave ??= []).push(recorded);
     return recorded;
@@ -714,14 +714,14 @@ export class Game implements IGame, Logger {
 
   // Function to retrieve a player by it's id
   public getPlayerById(id: PlayerId): IPlayer {
-    const player = this.allPlayers.find((p) => p.id === id);
+    const player = this.playersPlusMarsBot.find((p) => p.id === id);
     if (player === undefined) {
       throw new Error(`player ${id} does not exist on game ${this.id}`);
     }
     return player;
   }
 
-  public defer<T>(action: DeferredAction<T>, priority?: Priority): AndThen<T> {
+  public defer<T>(action: IDeferredAction<T>, priority?: Priority): AndThen<T> {
     if (priority !== undefined) {
       action.priority = priority;
     }
@@ -1767,15 +1767,29 @@ export class Game implements IGame, Logger {
         {title: 'Select how to pay for building a colony'}))
         .andThen(() => this.defer(new BuildColony(player)));
       break;
-    case SpaceBonus.STANDARD_RESOURCE:
+    case SpaceBonus.STANDARD_RESOURCE: {
+      const gainStandardResource = (resource: Resource) => {
+        player.stock.add(resource, 1, {log: true});
+        onStandardResource?.(resource);
+        return undefined;
+      };
+      if (player.lastCardPlayed) {
+        const lastCardPlayed = player.tableau.get(player.lastCardPlayed);
+        // Mining cards treat this bonus as the steel or titanium production the player chose.
+        if (lastCardPlayed instanceof MiningCard) {
+          const miningResource = lastCardPlayed.bonusResource?.[0];
+          if (miningResource !== undefined) {
+            gainStandardResource(miningResource);
+            break;
+          }
+        }
+      }
+
       // A space has this bonus at most once. If one ever has more, use SelectResources (see Philares).
       player.defer(new SelectResource('Select a standard resource to gain')
-        .andThen((resource) => {
-          player.stock.add(resource, 1, {log: true});
-          onStandardResource?.(resource);
-          return undefined;
-        }));
+        .andThen(gainStandardResource));
       break;
+    }
     default:
       throw new Error('Unhandled space bonus ' + spaceBonus + '. Report this exact error, please.');
     }
@@ -1951,6 +1965,13 @@ export class Game implements IGame, Logger {
     if (gameOptions.escapeVelocity !== undefined) {
       gameOptions.escapeVelocity = sanitizeEscapeVelocityOptions(gameOptions.escapeVelocity);
     }
+    // TODO(kberg): Remove after 2027-02-01
+    // Older games store the boolean showOtherPlayersVP instead of showVP.
+    const legacyOptions: GameOptions & {showOtherPlayersVP?: boolean} = gameOptions;
+    if (!isShowVP(legacyOptions.showVP)) {
+      gameOptions.showVP = showVPFromLegacy(legacyOptions.showOtherPlayersVP);
+    }
+    delete legacyOptions.showOtherPlayersVP;
     const players = d.players.map((element) => Player.deserialize(element));
     // MarsBot isn't serialized with the players, so it is recreated from the game id.
     const marsBotPlayer = gameOptions.automa ? AutomaGameSetup.createMarsBotPlayer(d.id) : undefined;
@@ -1986,7 +2007,7 @@ export class Game implements IGame, Logger {
     });
 
     game.milestones = milestones;
-    game.claimedMilestones = deserializeClaimedMilestones(d.claimedMilestones, game.allPlayers, milestones);
+    game.claimedMilestones = deserializeClaimedMilestones(d.claimedMilestones, game.playersPlusMarsBot, milestones);
 
     const awards: Array<IAward> = [];
     d.awards.forEach((awardName) => {
@@ -1998,7 +2019,7 @@ export class Game implements IGame, Logger {
     });
 
     game.awards = awards;
-    game.fundedAwards = deserializeFundedAwards(d.fundedAwards, game.allPlayers, awards);
+    game.fundedAwards = deserializeFundedAwards(d.fundedAwards, game.playersPlusMarsBot, awards);
 
     if (gameOptions.aresExtension) {
       game.aresData = d.aresData;
@@ -2013,7 +2034,7 @@ export class Game implements IGame, Logger {
 
     // Reload turmoil elements if needed
     if (d.turmoil && gameOptions.turmoilExtension) {
-      game.turmoil = Turmoil.deserialize(d.turmoil, game.allPlayers);
+      game.turmoil = Turmoil.deserialize(d.turmoil, game.playersPlusMarsBot);
     }
 
     // Reload moon elements if needed

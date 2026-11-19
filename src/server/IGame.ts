@@ -12,7 +12,7 @@ import {LogMessage} from '../common/logs/LogMessage';
 import {Phase} from '../common/Phase';
 import {IPlayer} from './IPlayer';
 import {PlayerId, GameId, SpectatorId, SpaceId, isGameId} from '../common/Types';
-import {AndThen, DeferredAction} from './deferredActions/DeferredAction';
+import {AndThen, IDeferredAction} from './deferredActions/DeferredAction';
 import {Priority} from './deferredActions/Priority';
 import {DeferredActionsQueue} from './deferredActions/DeferredActionsQueue';
 import {SerializedGame} from './SerializedGame';
@@ -42,6 +42,7 @@ import {IStandardProjectCard} from './cards/IStandardProjectCard';
 import {GlobalParameterTracks} from '@/server/boards/GlobalParameterTracks';
 import {RewindRecord} from './rewind/RewindRecord';
 import {Resource} from '@/common/Resource';
+import {isObject} from '@/common/utils/utils';
 
 export interface Score {
   corporation: String;
@@ -115,7 +116,7 @@ export interface IGame extends Logger {
    *
    * For anything MarsBot can own, like tiles, delegates and milestones.
    */
-  readonly allPlayers: ReadonlyArray<IPlayer>;
+  readonly playersPlusMarsBot: ReadonlyArray<IPlayer>;
   readonly playersInGenerationOrder: ReadonlyArray<IPlayer>;
 
   /**
@@ -204,7 +205,7 @@ export interface IGame extends Logger {
   saveGameResults(): void | Promise<void>;
   // Retrieve a player by its id
   getPlayerById(id: PlayerId): IPlayer;
-  defer<T>(action: DeferredAction<T>, priority?: Priority): AndThen<T>;
+  defer<T>(action: IDeferredAction<T>, priority?: Priority): AndThen<T>;
   milestoneClaimed(milestone: IMilestone): boolean;
   /** Returns true if Mars is fully terraformed, meaning the game should end with this generation. */
   marsIsTerraformed(): boolean;
@@ -349,6 +350,6 @@ export interface IGame extends Logger {
   getActionCount(): number;
 }
 
-export function isIGame(object: any): object is IGame {
-  return object !== undefined && object.hasOwnProperty('id') && isGameId(object.id);
+export function isIGame(object: unknown): object is IGame {
+  return isObject(object) && 'id' in object && isGameId(object.id);
 }

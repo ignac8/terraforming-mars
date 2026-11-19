@@ -126,9 +126,10 @@ export class VoteTable {
     return this.call(ApiRewindVote.INSTANCE, `/api/rewind/vote?id=${id}${query}`, 'post', typeof body === 'string' ? body : JSON.stringify(body));
   }
 
-  /** Posts an answer to the player's prompt, the way the game page does, but without a request id. */
-  public input(id: PlayerId, body: object, query = ''): Promise<MockResponse> {
-    return this.call(PlayerInput.INSTANCE, `/player/input?id=${id}${query}`, 'post', JSON.stringify(body));
+  /** Posts an answer to the player's prompt with that prompt's request id, the way the game page does. */
+  public async input(id: PlayerId, body: object, query = ''): Promise<MockResponse> {
+    const requestId = (await this.live()).getPlayerById(id).requestId;
+    return this.call(PlayerInput.INSTANCE, `/player/input?id=${id}${query}`, 'post', JSON.stringify({requestId, ...body}));
   }
 
   /** Deletes the newest `count` saves and reloads the game, as the operator's load_game form does. */

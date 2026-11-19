@@ -17,6 +17,7 @@ import {ColonyMetadata} from '../../common/colonies/ColonyMetadata';
 import {Units} from '../../common/Units';
 import {ALL_COLONIES_TILES, getColonyModule} from '../colonies/ColonyManifest';
 import {milestoneManifest} from '../milestones/Milestones';
+import {marsBotAwardNeeds, marsBotMilestoneNeeds} from '../automa/marsBotGoalNeeds';
 import {awardManifest} from '../awards/Awards';
 import {awardNames} from '../../common/ma/AwardName';
 import {milestoneNames} from '../../common/ma/MilestoneName';
@@ -195,10 +196,14 @@ class MilestoneProcessor {
   public static json: Array<ClientMilestone> = [];
   public static makeJson() {
     milestoneNames.forEach((name) => {
+      const milestone = milestoneManifest.createOrThrow(name);
       MilestoneProcessor.json.push({
         name,
-        description: milestoneManifest.createOrThrow(name).description,
+        description: milestone.description,
         requirements: milestoneManifest.all[name].compatibility,
+        automaDescription: milestone.automaDescription,
+        automaMapDescriptions: milestone.automaMapDescriptions,
+        automaNeeds: marsBotMilestoneNeeds(name),
       });
     });
   }
@@ -208,10 +213,14 @@ class AwardProcessor {
   public static json: Array<ClientAward> = [];
   public static makeJson() {
     awardNames.forEach((name) => {
+      const award = awardManifest.createOrThrow(name);
       AwardProcessor.json.push({
         name,
-        description: awardManifest.createOrThrow(name).description,
+        description: award.description,
         requirements: awardManifest.all[name].compatibility,
+        automaDescription: award.automaDescription,
+        automaMapDescriptions: award.automaMapDescriptions,
+        automaNeeds: marsBotAwardNeeds(name),
       });
     });
   }

@@ -2,12 +2,14 @@ import {expect} from 'chai';
 import {testGame} from '../TestGame';
 import {Tag} from '../../src/common/cards/Tag';
 import {BoardName} from '../../src/common/boards/BoardName';
-import {MARSBOT_BOARD_NAMES, isMarsBotBoardChoice} from '../../src/common/automa/MarsBotBoards';
+import {MARSBOT_BOARD_NAMES, isMarsBotBoardChoice, modularMABlocksMarsBot} from '../../src/common/automa/MarsBotBoards';
 import {MARSBOT_BOARDS} from '../../src/server/automa/boards/MarsBotBoards';
 import {VENUS_MARSBOT_TRACK} from '../../src/server/automa/boards/VenusMarsBot';
 import {AutomaGameHooks} from '../../src/server/automa/AutomaGameHooks';
 import {MarsBot} from '../../src/server/automa/MarsBot';
+import {AutomaGameSetup} from '../../src/server/automa/AutomaGameSetup';
 import {ColonyName} from '../../src/common/colonies/ColonyName';
+import {RandomMAOptionType} from '../../src/common/ma/RandomMAOptionType';
 
 const MARS_TAGS = [Tag.BUILDING, Tag.SPACE, Tag.EVENT, Tag.SCIENCE, Tag.POWER, Tag.JOVIAN, Tag.EARTH, Tag.CITY, Tag.PLANT, Tag.ANIMAL, Tag.MICROBE];
 
@@ -16,15 +18,15 @@ function getMarsBot(game: ReturnType<typeof testGame>[0]): MarsBot {
 }
 
 function tracksOf(boardName: BoardName) {
-  return MARSBOT_BOARDS[boardName]!.base;
+  return MARSBOT_BOARDS[boardName]!;
 }
 
 describe('MarsBot boards', () => {
-  it('has a board for every supported map', () => {
-    for (const boardName of MARSBOT_BOARD_NAMES) {
+  for (const boardName of MARSBOT_BOARD_NAMES) {
+    it('has a board for every supported map: ' + boardName, () => {
       expect(MARSBOT_BOARDS[boardName], boardName).is.not.undefined;
-    }
-  });
+    });
+  }
 
   for (const boardName of MARSBOT_BOARD_NAMES) {
     describe(boardName, () => {
@@ -38,12 +40,12 @@ describe('MarsBot boards', () => {
         }
       });
 
-      it('puts every Mars tag on exactly one track', () => {
-        const tracks = tracksOf(boardName);
-        for (const tag of MARS_TAGS) {
+      for (const tag of MARS_TAGS) {
+        it('puts every Mars tag on exactly one track: ' + tag, () => {
+          const tracks = tracksOf(boardName);
           expect(tracks.filter((t) => t.tags.includes(tag)), tag).has.length(1);
-        }
-      });
+        });
+      }
 
       it('keeps the Building, Space, Event, Science, Energy, Earth, Bio slot order', () => {
         const tracks = tracksOf(boardName);
@@ -62,7 +64,7 @@ describe('MarsBot boards', () => {
       });
 
       it('adds the Venus track with Venus Next', () => {
-        expect(MARSBOT_BOARDS[boardName]!.withVenus).deep.eq([...tracksOf(boardName), VENUS_MARSBOT_TRACK]);
+        expect(AutomaGameSetup.getBoardData(boardName, true)).deep.eq([...tracksOf(boardName), VENUS_MARSBOT_TRACK]);
       });
 
       it('sets up a game', () => {
@@ -73,30 +75,37 @@ describe('MarsBot boards', () => {
     });
   }
 
-  it('pairs tags per rulebook C, page 8', () => {
-    const trackOf = (boardName: BoardName, tag: Tag) => tracksOf(boardName).findIndex((t) => t.tags.includes(tag));
+  // The six rulebook maps follow rulebook C, page 8. Amazonis Planitia is not in the rulebooks.
+  for (const run of [
     // Tharsis and Utopia Planitia: Jovian with Energy, City with Earth, Microbe with Plant
-    for (const boardName of [BoardName.THARSIS, BoardName.UTOPIA_PLANITIA]) {
-      expect(trackOf(boardName, Tag.JOVIAN)).eq(4);
-      expect(trackOf(boardName, Tag.CITY)).eq(5);
-      expect(trackOf(boardName, Tag.MICROBE)).eq(6);
-    }
+    {boardName: BoardName.THARSIS, tag: Tag.JOVIAN, track: 4},
+    {boardName: BoardName.THARSIS, tag: Tag.CITY, track: 5},
+    {boardName: BoardName.THARSIS, tag: Tag.MICROBE, track: 6},
+    {boardName: BoardName.UTOPIA_PLANITIA, tag: Tag.JOVIAN, track: 4},
+    {boardName: BoardName.UTOPIA_PLANITIA, tag: Tag.CITY, track: 5},
+    {boardName: BoardName.UTOPIA_PLANITIA, tag: Tag.MICROBE, track: 6},
     // Hellas and Elysium: Jovian with Science
-    for (const boardName of [BoardName.HELLAS, BoardName.ELYSIUM]) {
-      expect(trackOf(boardName, Tag.JOVIAN)).eq(3);
-      expect(trackOf(boardName, Tag.CITY)).eq(5);
-    }
+    {boardName: BoardName.HELLAS, tag: Tag.JOVIAN, track: 3},
+    {boardName: BoardName.HELLAS, tag: Tag.CITY, track: 5},
+    {boardName: BoardName.ELYSIUM, tag: Tag.JOVIAN, track: 3},
+    {boardName: BoardName.ELYSIUM, tag: Tag.CITY, track: 5},
     // Terra Cimmeria: Jovian with Earth, City with Science
-    expect(trackOf(BoardName.TERRA_CIMMERIA_NOVA, Tag.JOVIAN)).eq(5);
-    expect(trackOf(BoardName.TERRA_CIMMERIA_NOVA, Tag.CITY)).eq(3);
+    {boardName: BoardName.TERRA_CIMMERIA_NOVA, tag: Tag.JOVIAN, track: 5},
+    {boardName: BoardName.TERRA_CIMMERIA_NOVA, tag: Tag.CITY, track: 3},
     // Vastitas Borealis: Microbe with Science, City with Energy, Jovian with Earth
-    expect(trackOf(BoardName.VASTITAS_BOREALIS_NOVA, Tag.MICROBE)).eq(3);
-    expect(trackOf(BoardName.VASTITAS_BOREALIS_NOVA, Tag.CITY)).eq(4);
-    expect(trackOf(BoardName.VASTITAS_BOREALIS_NOVA, Tag.JOVIAN)).eq(5);
-  });
+    {boardName: BoardName.VASTITAS_BOREALIS_NOVA, tag: Tag.MICROBE, track: 3},
+    {boardName: BoardName.VASTITAS_BOREALIS_NOVA, tag: Tag.CITY, track: 4},
+    {boardName: BoardName.VASTITAS_BOREALIS_NOVA, tag: Tag.JOVIAN, track: 5},
+    // Amazonis Planitia: Animal with Science
+    {boardName: BoardName.AMAZONIS_PLANITIA, tag: Tag.ANIMAL, track: 3},
+  ] as const) {
+    it('pairs tags on each map: ' + JSON.stringify(run), () => {
+      expect(tracksOf(run.boardName).findIndex((t) => t.tags.includes(run.tag))).eq(run.track);
+    });
+  }
 
   it('uses the Tharsis board with the Milestones & Awards expansion, whatever the map', () => {
-    const [game] = testGame(1, {automa: true, boardName: BoardName.HELLAS, modularMA: true});
+    const [game] = testGame(1, {automa: true, boardName: BoardName.HELLAS, randomMA: RandomMAOptionType.UNLIMITED, modularMA: true});
     const marsBot = getMarsBot(game);
     expect(game.gameOptions.boardName).eq(BoardName.HELLAS);
     // Jovian sits on the Energy track on Tharsis, on the Science track on Hellas
@@ -117,13 +126,31 @@ describe('MarsBot boards', () => {
     expect(bio.position).eq(bioBefore);
   });
 
-  it('accepts only MarsBot maps in the create form', () => {
-    for (const boardName of MARSBOT_BOARD_NAMES) {
+  for (const boardName of MARSBOT_BOARD_NAMES) {
+    it('accepts a MarsBot map in the create form: ' + boardName, () => {
       expect(isMarsBotBoardChoice(boardName)).is.true;
-    }
+    });
+  }
+
+  it('rejects the other maps in the create form', () => {
     expect(isMarsBotBoardChoice(BoardName.ARABIA_TERRA)).is.false;
     expect(isMarsBotBoardChoice(BoardName.VASTITAS_BOREALIS)).is.false;
-    // MarsBot is built for normal-size boards only
-    expect(isMarsBotBoardChoice(BoardName.AMAZONIS_PLANITIA)).is.false;
+  });
+
+  it('keeps MarsBot off Amazonis Planitia while the Milestones & Awards expansion is in play', () => {
+    for (const randomMA of [RandomMAOptionType.LIMITED, RandomMAOptionType.UNLIMITED, RandomMAOptionType.MANUAL]) {
+      expect(modularMABlocksMarsBot(BoardName.AMAZONIS_PLANITIA, {modularMA: true, randomMA}), randomMA).is.true;
+    }
+    expect(modularMABlocksMarsBot(BoardName.AMAZONIS_PLANITIA, {modularMA: true, randomMA: RandomMAOptionType.NONE})).is.false;
+    expect(modularMABlocksMarsBot(BoardName.AMAZONIS_PLANITIA, {modularMA: false, randomMA: RandomMAOptionType.LIMITED})).is.false;
+  });
+
+  it('plays Amazonis Planitia on its own board, with Animal on the Science track', () => {
+    const [game] = testGame(1, {automa: true, boardName: BoardName.AMAZONIS_PLANITIA});
+    const board = getMarsBot(game).marsBotBoard;
+
+    expect(game.gameOptions.boardName).eq(BoardName.AMAZONIS_PLANITIA);
+    expect(board.tracks[3].definition.tags).deep.eq([Tag.SCIENCE, Tag.ANIMAL]);
+    expect(board.tracks[0].definition.layout[7]).eq('tag_science');
   });
 });

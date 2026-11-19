@@ -33,15 +33,17 @@ import {Space} from '../boards/Space';
  * the game proceeds with normal behavior.
  */
 export class AutomaGameHooks {
+  /**
+   * True while MarsBot's Venus raise has crossed the colony bonus and the colony is not built yet.
+   *
+   * Only set inside one synchronous raise, so never saved.
+   */
+  private venusColonyDue: boolean = false;
+
   constructor(
     private readonly game: IGame,
     public readonly marsBot: MarsBot,
   ) {}
-
-  /** Check if a player is the MarsBot player. */
-  public isAutomaPlayer(player: IPlayer): boolean {
-    return player === this.marsBot.player;
-  }
 
   // ---- Solo mode overrides ----
 
@@ -50,7 +52,7 @@ export class AutomaGameHooks {
     return false;
   }
 
-  /** Automa: game goes up to generation 20 (or 18 with Prelude). */
+  /** Automa: game goes up to generation 20 (18 with Prelude), two more on Amazonis Planitia. */
   public lastSoloGeneration(): number {
     return this.getMaxGeneration();
   }
@@ -58,7 +60,7 @@ export class AutomaGameHooks {
   /** Get the max generation for this automa game. */
   public getMaxGeneration(): number {
     const opts = this.game.gameOptions;
-    return getAutomaMaxGeneration(opts.preludeExtension);
+    return getAutomaMaxGeneration(opts.preludeExtension, opts.boardName);
   }
 
   /** Automa: game ends when Mars is terraformed or, with a generation limit, at the max generation. */
@@ -224,7 +226,7 @@ export class AutomaGameHooks {
 
   /** Tells MarsBot's corp it spent floaters to keep an extra card (Stormcraft). */
   private onFloatersSpentForExtraCard(): void {
-    this.marsBot.corp?.effect?.onFloatersSpentForExtraCard?.(this.marsBot);
+    this.marsBot.corp?.onFloatersSpentForExtraCard?.(this.marsBot);
   }
 
   /**
@@ -422,20 +424,47 @@ export class AutomaGameHooks {
   }
 
   /**
-   * Handle the Venus 8% card bonus for MarsBot: 2 MC instead of a card, as for the heat production
-   * bonus on the temperature track (BGG 3358342, 3424237, 3733436). Government Intervention pays
-   * no MC from bonuses. Returns true if handled.
+   * Pays MarsBot 2 MC instead of the plant production Amazonis Planitia prints at -12C, as for the
+   * heat production bonuses on the temperature track. Returns true if handled.
+   */
+  public handleTemperaturePlantBonus(player: IPlayer): boolean {
+    if (player === this.marsBot.player) {
+      this.marsBot.gainMc(2);
+      this.game.log('MarsBot gains 2 MC (temperature plant bonus)');
+      return true;
+    }
+    return false;
+  }
+
+  /**
+   * Pays MarsBot 2 MC instead of a card for a card bonus (Venus 8%, and oxygen 7% on Amazonis
+   * Planitia), as for the heat production bonus on the temperature track (BGG 3358342, 3424237,
+   * 3733436). Government Intervention pays no MC from bonuses. Returns true if handled.
    */
   public handleVenusCardBonus(player: IPlayer): boolean {
     if (player !== this.marsBot.player) {
       return false;
     }
     if (this.marsBot.bonusMcBlocked) {
-      this.game.log('MarsBot gains no MC for the Venus card bonus (Government Intervention)');
+      this.game.log('MarsBot gains no MC for the card bonus (Government Intervention)');
       return true;
     }
     this.marsBot.gainMc(2);
-    this.game.log('MarsBot gains 2 MC (Venus card bonus)');
+    this.game.log('MarsBot gains 2 MC (card bonus)');
+    return true;
+  }
+
+  /**
+   * Takes MarsBot's colony for the colony bonus Amazonis Planitia prints at 16% Venus, so no colony
+   * choice is left for MarsBot to answer. The colony is built once the raise has finished
+   * (`handleVenusRaised`), because a corporation's reaction to it can raise Venus again. Returns
+   * true if handled, which includes the game without Colonies, where the bonus is ignored.
+   */
+  public handleVenusColonyBonus(player: IPlayer): boolean {
+    if (player !== this.marsBot.player) {
+      return false;
+    }
+    this.venusColonyDue = true;
     return true;
   }
 
@@ -534,8 +563,8 @@ export class AutomaGameHooks {
     if (source === 'self') {
       return false;
     }
-    const marsBot = this.marsBot.player;
-    if (marsBot === player) {
+    const botPlayer = this.marsBot.player;
+    if (botPlayer === player) {
       return false;
     }
     const storage = this.storageHolding(resourceType);
@@ -594,10 +623,10 @@ export class AutomaGameHooks {
   /** Called when the human player plays a project card. Notifies MarsBot's corp. */
   public handleHumanCardPlayed(card: IProjectCard): void {
     const corp = this.marsBot.corp;
-    if (corp?.effect?.onHumanCardPlayed === undefined) {
+    if (corp?.onHumanCardPlayed === undefined) {
       return;
     }
-    corp.effect.onHumanCardPlayed(this.marsBot, card);
+    corp.onHumanCardPlayed(this.marsBot, card);
   }
 
   /**
@@ -636,10 +665,10 @@ export class AutomaGameHooks {
       this.marsBot.turnResolver.tilePlacer.resolveSpecialHex(space);
     }
     const corp = this.marsBot.corp;
-    if (corp?.effect?.onTilePlaced === undefined) {
+    if (corp?.onTilePlaced === undefined) {
       return;
     }
-    corp.effect.onTilePlaced(this.marsBot, player === this.marsBot.player, tileType, space);
+    corp.onTilePlaced(this.marsBot, player === this.marsBot.player, tileType, space);
   }
 
   /**
@@ -650,16 +679,27 @@ export class AutomaGameHooks {
     if (player === this.marsBot.player) {
       return;
     }
-    this.marsBot.corp?.effect?.onColonyPlaced?.(this.marsBot);
+    this.marsBot.corp?.onColonyPlaced?.(this.marsBot);
   }
 
-  /** Called when either player raises the Venus scale by `steps`. Notifies MarsBot's corp. */
+  /**
+   * Called once the Venus scale has risen by `steps`, for either player. Notifies MarsBot's corp, then
+   * builds the colony MarsBot's raise earned.
+   *
+   * When Government Intervention raised Venus, the colony pays MarsBot no M€ and the corp's payment
+   * for the raise stays.
+   */
   public handleVenusRaised(steps: number): void {
-    const corp = this.marsBot.corp;
-    if (corp?.effect?.onVenusRaised === undefined) {
-      return;
+    this.marsBot.corp?.onVenusRaised?.(this.marsBot, steps);
+    if (this.venusColonyDue) {
+      this.venusColonyDue = false;
+      const turnResolver = this.marsBot.turnResolver;
+      if (this.marsBot.bonusMcBlocked) {
+        turnResolver.withoutMcGain(() => turnResolver.placeColony());
+      } else {
+        turnResolver.placeColony();
+      }
     }
-    corp.effect.onVenusRaised(this.marsBot, steps);
   }
 
   // ---- Card interaction hooks ----

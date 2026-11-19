@@ -1,11 +1,15 @@
 import {BaseMilestone} from './IMilestone';
 import {IPlayer} from '../IPlayer';
 import {Tag} from '../../common/cards/Tag';
-import {IMarsBot} from '../automa/MarsBotCorpTypes';
 import {BoardName} from '../../common/boards/BoardName';
-import {marsBotUsesMapSet} from '../automa/MarsBotMilestoneAwardEval';
+import {IMarsBot} from '@/server/automa/IMarsBot';
+import {marsBotUsesBoardGoals} from '@/server/automa/MarsBotMilestoneAwardEval';
 
 export class RimSettler extends BaseMilestone {
+  public readonly automaDescription = 'Energy track ≥ 5';
+  public readonly automaMapDescriptions = {
+    [BoardName.HELLAS]: 'Science/Jovian track ≥ 6',
+  };
   constructor() {
     super(
       'Rim Settler',
@@ -17,13 +21,15 @@ export class RimSettler extends BaseMilestone {
   }
 
   /**
-   * On Hellas MarsBot needs space 6 of its Jovian track, which it shares with Science. The
-   * Milestones & Awards expansion asks for space 5 of the Energy track.
+   * MarsBot needs space 6 of its Jovian track on Hellas (rulebook C p.9), which it shares with
+   * Science there (rulebook C p.8).
+   *
+   * The Milestones & Awards expansion asks for space 5 of the Energy track (rulebook C p.14).
    */
-  public marsBotCanClaim(bot: IMarsBot): boolean {
-    if (marsBotUsesMapSet(bot, BoardName.HELLAS)) {
-      return bot.marsBotBoard.trackPosition(Tag.JOVIAN) >= 6;
+  public marsBotCanClaim(marsBot: IMarsBot): boolean {
+    if (marsBotUsesBoardGoals(marsBot, BoardName.HELLAS)) {
+      return marsBot.marsBotBoard.trackPosition(Tag.JOVIAN) >= 6;
     }
-    return bot.marsBotBoard.trackPosition(Tag.POWER) >= 5;
+    return marsBot.marsBotBoard.trackPosition(Tag.POWER) >= 5;
   }
 }

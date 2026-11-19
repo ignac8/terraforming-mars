@@ -2,9 +2,14 @@ import {LogMessageType} from './LogMessageType';
 import {LogMessageData} from './LogMessageData';
 import {Message} from './Message';
 import {PlayerId} from '../Types';
+import {Color} from '../Color';
 
 export class LogMessage implements Message {
   public playerId?: PlayerId;
+  // Set by the log routes in place of playerId on a private line of a finished game, so everyone sees whose it was.
+  public owner?: Color;
+  // Set by a replay on the lines of a move that a rewind undid, which only the solo player's replay lists, when asked.
+  public undone?: boolean;
   public timestamp = Date.now();
   public type?: LogMessageType;
   constructor(

@@ -22,7 +22,7 @@ function isId(value: unknown): value is number {
 }
 
 function parse(body: string): VoteRequest {
-  let entity: any;
+  let entity: unknown;
   try {
     entity = JSON.parse(body);
   } catch {
@@ -30,11 +30,12 @@ function parse(body: string): VoteRequest {
   }
   if (typeof entity === 'object' && entity !== null && !Array.isArray(entity)) {
     const keys = Object.keys(entity).length;
-    if (entity.action === 'request' && keys === 3 && isId(entity.saveId) && (entity.cards === 'same' || entity.cards === 'shuffle')) {
-      return {action: 'request', saveId: entity.saveId, cards: entity.cards};
+    const {action, saveId, cards, voteId} = entity as Record<string, unknown>;
+    if (action === 'request' && keys === 3 && isId(saveId) && (cards === 'same' || cards === 'shuffle')) {
+      return {action: 'request', saveId, cards};
     }
-    if ((entity.action === 'yes' || entity.action === 'no' || entity.action === 'cancel') && keys === 2 && isId(entity.voteId)) {
-      return {action: entity.action, voteId: entity.voteId};
+    if ((action === 'yes' || action === 'no' || action === 'cancel') && keys === 2 && isId(voteId)) {
+      return {action, voteId};
     }
   }
   throw RouteError.badRequest('invalid vote');

@@ -1,20 +1,23 @@
 import {flushPromises, mount, shallowMount} from '@vue/test-utils';
 import {defineComponent} from 'vue';
 import {globalConfig} from './getLocalVue';
+import {stubFetch} from '../stubFetch';
 import {expect} from 'chai';
 import {afterEach, vi} from 'vitest';
 import {SoundManager} from '@/client/utils/SoundManager';
 import WaitingFor from '@/client/components/WaitingFor.vue';
+import {vueRoot} from '@/client/components/vueRoot';
 import {RecursivePartial} from '@/common/utils/utils';
 import {PlayerViewModel, PublicPlayerModel} from '@/common/models/PlayerModel';
 import {WaitingForModel} from '@/common/models/WaitingForModel';
+import {PlayerInputModel} from '@/common/models/PlayerInputModel';
 import {Phase} from '@/common/Phase';
 import {INVALID_REQUEST_ID} from '@/common/app/AppErrorId';
 
 describe('WaitingFor', () => {
   const thisPlayer: Partial<PublicPlayerModel> = {
     color: 'red',
-  } as any;
+  };
 
   const playerView: RecursivePartial<PlayerViewModel> = {
     id: 'p-player-id',
@@ -84,14 +87,14 @@ describe('WaitingFor', () => {
       },
       props: {
         playerView,
-        waitingfor: {type: 'card', title: 'Select a card', buttonLabel: 'Select'} as any,
+        waitingfor: {type: 'card', title: 'Select a card', buttonLabel: 'Select'} as PlayerInputModel,
       },
     });
   }
 
   function stubServer(players: Array<unknown>) {
     const fetchStub = vi.fn(async () => ({ok: true, json: async () => ({players})}) as Response);
-    vi.stubGlobal('fetch', fetchStub);
+    stubFetch(fetchStub);
     return fetchStub;
   }
 
@@ -120,7 +123,7 @@ describe('WaitingFor', () => {
     const fetchStub = vi.fn(() => new Promise<Response>((resolve) => {
       respond = () => resolve({ok: true, json: async () => ({players: []})} as unknown as Response);
     }));
-    vi.stubGlobal('fetch', fetchStub);
+    stubFetch(fetchStub);
     mountDrafting(draftingView());
 
     await vi.advanceTimersByTimeAsync(10000);
@@ -135,7 +138,7 @@ describe('WaitingFor', () => {
     vi.useFakeTimers();
     vi.spyOn(console, 'warn').mockImplementation(() => {});
     const fetchStub = vi.fn(async () => ({ok: false, status: 404, statusText: 'Not Found'}) as Response);
-    vi.stubGlobal('fetch', fetchStub);
+    stubFetch(fetchStub);
     mountDrafting(draftingView());
 
     await vi.advanceTimersByTimeAsync(10000);
@@ -147,7 +150,7 @@ describe('WaitingFor', () => {
     vi.useFakeTimers();
     vi.spyOn(console, 'warn').mockImplementation(() => {});
     const fetchStub = vi.fn(async () => ({ok: false, status: 503, statusText: 'Service Unavailable'}) as Response);
-    vi.stubGlobal('fetch', fetchStub);
+    stubFetch(fetchStub);
     mountDrafting(draftingView());
 
     await vi.advanceTimersByTimeAsync(10000);
@@ -189,7 +192,7 @@ describe('WaitingFor', () => {
       },
       props: {
         playerView,
-        waitingfor: {type: 'option', title: 'test', buttonLabel: 'save'} as any,
+        waitingfor: {type: 'option', title: 'test', buttonLabel: 'save'},
       },
     });
   }
@@ -223,7 +226,7 @@ describe('WaitingFor', () => {
   // answers with `answer`. Alerts are dismissed at once, as if the player clicked OK.
   async function submit(answer: Partial<Response>) {
     const fetchStub = vi.fn(async (_url: string, _options: {body: string}) => answer as Response);
-    vi.stubGlobal('fetch', fetchStub);
+    stubFetch(fetchStub);
     const wrapper = shallowMount(WaitingFor, {
       ...globalConfig,
       global: {...globalConfig.global, stubs: {'PlayerInputFactory': true}},
@@ -233,9 +236,9 @@ describe('WaitingFor', () => {
         requestId: 'request-1',
       },
     });
-    const root = wrapper.vm.$root as any;
+    const root = vueRoot(wrapper.vm);
     root.showAlert = (_title: string, _message: string, cb: () => void = () => {}) => cb();
-    (wrapper.vm as any).onsave({type: 'option'});
+    wrapper.vm.onsave({type: 'option'});
     await flushPromises();
     return fetchStub;
   }
@@ -316,7 +319,7 @@ describe('WaitingFor', () => {
   });
 
   describe('at a required prompt', () => {
-    const requiredPrompt = {type: 'option', title: 'test', buttonLabel: 'save'} as any;
+    const requiredPrompt: PlayerInputModel = {type: 'option', title: 'test', buttonLabel: 'save'};
 
     function viewWith(): PlayerViewModel {
       return {
@@ -328,11 +331,11 @@ describe('WaitingFor', () => {
     }
 
     // `rootMethods` stand in for the App methods WaitingFor calls through vueRoot.
-    function mountAt(view: PlayerViewModel, waitingfor: unknown, rootMethods: Record<string, unknown> = {}) {
+    function mountAt(view: PlayerViewModel, waitingfor: PlayerInputModel | undefined, rootMethods: Record<string, unknown> = {}) {
       return mount(WaitingFor, {
         ...globalConfig,
         global: {...globalConfig.global, stubs: {'PlayerInputFactory': PlayerInputFactoryStub}, mocks: rootMethods},
-        props: {playerView: view, waitingfor: waitingfor as any},
+        props: {playerView: view, waitingfor},
       });
     }
 
@@ -381,7 +384,7 @@ describe('WaitingFor', () => {
           }
           swapped = true;
           // What App does with a fetched view.
-          (wrapper.vm.$root as any).playerView = resumed;
+          vueRoot(wrapper.vm).playerView = resumed;
           await wrapper.setProps({playerView: resumed, waitingfor: requiredPrompt});
           return true;
         },
@@ -399,7 +402,7 @@ describe('WaitingFor', () => {
       const view = viewWith();
       const updatePlayer = vi.fn(async () => {
         // What App does with a fetched view.
-        (wrapper.vm.$root as any).playerView = {...view, waitingFor: requiredPrompt};
+        vueRoot(wrapper.vm).playerView = {...view, waitingFor: requiredPrompt};
         return true;
       });
       const wrapper = mountAt(view, {...requiredPrompt, optional: true}, {updatePlayer});

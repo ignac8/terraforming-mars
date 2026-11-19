@@ -7,7 +7,7 @@ import {MarsBot} from '../../src/server/automa/MarsBot';
 import {BoardName} from '../../src/common/boards/BoardName';
 import {GlobalParameter} from '../../src/common/GlobalParameter';
 import {Phase} from '../../src/common/Phase';
-import {createCorpBonusCard} from '../../src/server/automa/MarsBotBonusCard';
+import {createBonusCard} from '../../src/server/automa/MarsBotBonusCard';
 import {BonusCardId} from '../../src/common/automa/AutomaTypes';
 import {CardName} from '../../src/common/cards/CardName';
 import {Asteroid} from '../../src/server/cards/base/Asteroid';
@@ -16,6 +16,7 @@ import {Greenhouses} from '../../src/server/cards/base/Greenhouses';
 import {Tag} from '../../src/common/cards/Tag';
 import {loadSandboxGame} from '../../src/server/replay/sandbox';
 import {Thermalist} from '../../src/server/awards/Thermalist';
+import {getMarsBotCorp} from '../../src/server/automa/corps/MarsBotCorpRegistry';
 
 function createAutomaGame(): {game: IGame, marsBot: MarsBot} {
   const [game] = testGame(1, {
@@ -47,6 +48,26 @@ describe('MarsBotReload', () => {
     expect(steps[GlobalParameter.OXYGEN]).to.eq(3);
     expect(steps[GlobalParameter.VENUS]).to.eq(4);
     expect(steps[GlobalParameter.OCEANS]).to.eq(0);
+  });
+
+  // The bot player is rebuilt on load and saves hold no ocean bonus, so saves from before Lakefront set it load the same way
+  it('keeps Lakefront Resorts\' 3 M€ per adjacent ocean across a reload', () => {
+    const {game, marsBot} = createAutomaGame();
+    marsBot.setCorpAndSetup(getMarsBotCorp(CardName.LAKEFRONT_RESORTS)!);
+    expect(marsBot.player.oceanBonus).to.eq(3);
+
+    const restored = Game.deserialize(game.serialize());
+
+    expect(restored.automaHooks!.marsBot.player.oceanBonus).to.eq(3);
+  });
+
+  it('keeps the usual 2 M€ per adjacent ocean across a reload without Lakefront Resorts', () => {
+    const {game, marsBot} = createAutomaGame();
+    marsBot.setCorpAndSetup(getMarsBotCorp(CardName.PRISTAR)!);
+
+    const restored = Game.deserialize(game.serialize());
+
+    expect(restored.automaHooks!.marsBot.player.oceanBonus).to.eq(2);
   });
 
   it('keeps the Hard mode first-turn check generation across a reload', () => {
@@ -152,7 +173,7 @@ describe('MarsBotReload', () => {
 
   it('keeps MarsBot\'s player markers across a reload', () => {
     const {game, marsBot} = createAutomaGame();
-    marsBot['bonusResolver'].resolve(createCorpBonusCard(BonusCardId.B22_SETTLERS));
+    marsBot['bonusResolver'].resolve(createBonusCard(BonusCardId.B22_SETTLERS));
     const [id] = marsBot.markerSpaceIds;
 
     const restored = Game.deserialize(game.serialize());

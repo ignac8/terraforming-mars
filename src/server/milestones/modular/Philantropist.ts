@@ -1,8 +1,9 @@
 import {BaseMilestone} from '../IMilestone';
 import {IPlayer} from '../../IPlayer';
 import {CardType} from '../../../common/cards/CardType';
-import {IMarsBot} from '../../automa/MarsBotCorpTypes';
+import {IMarsBot} from '@/server/automa/IMarsBot';
 export class Philantropist extends BaseMilestone {
+  public readonly automaDescription = '5+ cards with non-negative VP';
   constructor() {
     super(
       'Philantropist',
@@ -32,9 +33,9 @@ export class Philantropist extends BaseMilestone {
     return cardsWithVP.length;
   }
 
-  /** MarsBot's cards live in its own played pile; the same VP filter applies there. */
-  public marsBotCanClaim(bot: IMarsBot): boolean {
-    return bot.playedProjectCards.filter((card) => {
+  /** MarsBot needs 5 such cards in its own played pile (rulebook C p.13). */
+  public marsBotCanClaim(marsBot: IMarsBot): boolean {
+    return marsBot.playedProjectCards.filter((card) => {
       const victoryPoints = card.metadata.victoryPoints;
       if (card.type === CardType.EVENT || victoryPoints === undefined) {
         return false;

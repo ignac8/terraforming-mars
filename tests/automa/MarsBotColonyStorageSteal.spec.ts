@@ -7,6 +7,7 @@ import {BoardName} from '../../src/common/boards/BoardName';
 import {ColonyName} from '../../src/common/colonies/ColonyName';
 import {CardResource} from '../../src/common/CardResource';
 import {Resource} from '../../src/common/Resource';
+import {GlobalEventName} from '../../src/common/turmoil/globalEvents/GlobalEventName';
 import {OrOptions} from '../../src/server/inputs/OrOptions';
 import {SelectAmount} from '../../src/server/inputs/SelectAmount';
 import {PlayerInput} from '../../src/server/PlayerInput';
@@ -359,7 +360,7 @@ describe('MarsBot colony storage as stock resources (C-25)', () => {
       marsBot.turnResolver.megacredits = 10;
       marsBot.shippingBoard.storage.set(ColonyName.GANYMEDE, 4);
 
-      marsBot.player.stock.deduct(Resource.PLANTS, 3, {log: true, from: {globalEvent: 'Eco Sabotage' as any}});
+      marsBot.player.stock.deduct(Resource.PLANTS, 3, {log: true, from: {globalEvent: GlobalEventName.ECO_SABOTAGE}});
 
       expect(marsBot.turnResolver.megacredits).eq(7);
       expect(marsBot.shippingBoard.get(ColonyName.GANYMEDE)).eq(4);
@@ -382,7 +383,7 @@ describe('MarsBot colony storage as stock resources (C-25)', () => {
   });
 
   describe('Ecoline and Ecotec plants', () => {
-    // FAQ (rulebook B, p.3): the player may target the corporation card; TDaver, BGG 3341536
+    // FAQ (rulebook B, p.4): the player may target the corporation card; TDaver, BGG 3341536
     it('lets the player steal plants from the corp card', () => {
       const {game, human, marsBot} = createAutomaGame();
       marsBot.turnResolver.megacredits = 10;

@@ -9,6 +9,10 @@ import {Message} from '../logs/Message';
 import {LogMessageDataType} from '../logs/LogMessageDataType';
 import {BoardName} from '../boards/BoardName';
 import {validateCustomMA} from '../ma/CustomMA';
+import {MilestoneName} from '../ma/MilestoneName';
+import {AwardName} from '../ma/AwardName';
+import {RandomMAOptionType} from '../ma/RandomMAOptionType';
+import {modularMABlocksMarsBot} from '../automa/MarsBotBoards';
 
 const REVISED_COUNT_ALGORITHM = false;
 
@@ -26,12 +30,15 @@ export type ValidationErrors = {
   soloWithoutCorporateEra: boolean;
   infiniteEnergyBug: boolean;
   altVenusBoardOnAmazonis: boolean;
+  marsBotModularMAOnAmazonis: boolean;
+  marsBotManualModularMAOnAmazonis: boolean;
   prelude2WithoutPrelude: boolean;
   deltaProjectWithoutPrelude: boolean;
   notEnoughCorporations: number;
-  modularMAInDevelopment: boolean;
   /** Why customMA is invalid, or empty when it's valid. */
   invalidCustomMA: string;
+  milestonesMissingExpansions: boolean;
+  awardsMissingExpansions: boolean;
 };
 
 function mustSelectAtLeast(message: string, required: number): Message {
@@ -90,6 +97,15 @@ export const validationDetails: Record<keyof ValidationErrors, {blocking: boolea
     blocking: false,
     message: 'The Alt. Venus Board does not extend to the end of the Venus track on Amazonis Planitia.',
   },
+  marsBotModularMAOnAmazonis: {
+    blocking: true,
+    message: 'MarsBot can\'t play Amazonis Planitia with Official Random α milestones and awards yet. Untick it or leave Amazonis Planitia out.',
+  },
+  // The form hides the Official Random α checkbox for hand-picked milestones and awards.
+  marsBotManualModularMAOnAmazonis: {
+    blocking: true,
+    message: 'MarsBot can\'t play Amazonis Planitia with Official Random α milestones and awards yet. Leave Amazonis Planitia out, or set modularMA to false in the settings you imported.',
+  },
   prelude2WithoutPrelude: {
     blocking: false,
     message: 'Prelude 2 without Prelude will only include its project cards, not its preludes.',
@@ -102,10 +118,6 @@ export const validationDetails: Record<keyof ValidationErrors, {blocking: boolea
     blocking: true,
     message: (errors) => mustSelectAtLeast('Must select at least ${0} corporations', errors.notEnoughCorporations),
   },
-  modularMAInDevelopment: {
-    blocking: false,
-    message: 'The Official Random Milestones and Awards are still in active development. Please don\'t report anything unless it breaks the game. These are always fully random.',
-  },
   invalidCustomMA: {
     blocking: true,
     message: (errors) => ({
@@ -113,11 +125,22 @@ export const validationDetails: Record<keyof ValidationErrors, {blocking: boolea
       data: [{type: LogMessageDataType.RAW_STRING, value: errors.invalidCustomMA}],
     }),
   },
+  // Blocking, unlike the card lists, because the server rejects these.
+  milestonesMissingExpansions: {
+    blocking: true,
+    message: 'Some of the milestones you selected need expansions you have not enabled.',
+  },
+  awardsMissingExpansions: {
+    blocking: true,
+    message: 'Some of the awards you selected need expansions you have not enabled.',
+  },
 };
 
 export type Helpers = {
   getCardCompatibility: (name: CardName) => ReadonlyArray<Expansion>,
   getColonyExpansion: (name: ColonyName) => Expansion | undefined,
+  getMilestoneExpansion: (name: MilestoneName) => Expansion | undefined,
+  getAwardExpansion: (name: AwardName) => Expansion | undefined,
 };
 
 export function validateNewGameConfig(config: NewGameConfig, helpers: Helpers): ValidationErrors {
@@ -135,11 +158,14 @@ export function validateNewGameConfig(config: NewGameConfig, helpers: Helpers): 
     soloWithoutCorporateEra: false,
     infiniteEnergyBug: false,
     altVenusBoardOnAmazonis: false,
+    marsBotModularMAOnAmazonis: false,
+    marsBotManualModularMAOnAmazonis: false,
     prelude2WithoutPrelude: false,
     deltaProjectWithoutPrelude: false,
     notEnoughCorporations: 0,
-    modularMAInDevelopment: false,
     invalidCustomMA: '',
+    milestonesMissingExpansions: false,
+    awardsMissingExpansions: false,
   };
 
   if (config.escapeVelocity && hasNegativeEscapeVelocityOption(config.escapeVelocity)) {
@@ -177,16 +203,20 @@ export function validateNewGameConfig(config: NewGameConfig, helpers: Helpers): 
     errors.altVenusBoardOnAmazonis = true;
   }
 
+  if (config.automa === true && config.boards.some((board) => modularMABlocksMarsBot(board, config))) {
+    if (config.randomMA === RandomMAOptionType.MANUAL) {
+      errors.marsBotManualModularMAOnAmazonis = true;
+    } else {
+      errors.marsBotModularMAOnAmazonis = true;
+    }
+  }
+
   if (config.expansions.prelude2 && !config.expansions.prelude) {
     errors.prelude2WithoutPrelude = true;
   }
 
   if (config.expansions.deltaProject && !config.expansions.prelude) {
     errors.deltaProjectWithoutPrelude = true;
-  }
-
-  if (config.modularMA) {
-    errors.modularMAInDevelopment = true;
   }
 
   function isMissingExpansion(name: CardName): boolean {
@@ -240,10 +270,18 @@ export function validateNewGameConfig(config: NewGameConfig, helpers: Helpers): 
     errors.ceosMissingExpansions = config.customCeos.filter(isMissingExpansion);
   }
 
-  try {
-    validateCustomMA(config.customMA, config.randomMA, config.expansions.venus);
-  } catch (e) {
-    errors.invalidCustomMA = e instanceof Error ? e.message : String(e);
+  if (playerCount > 1 || config.automa === true) {
+    try {
+      validateCustomMA(config.customMA, config.randomMA);
+    } catch (e) {
+      errors.invalidCustomMA = e instanceof Error ? e.message : String(e);
+    }
+    // customMA comes from untrusted JSON, so it may not have the arrays validateCustomMA requires.
+    if (Array.isArray(config.customMA?.milestones) && Array.isArray(config.customMA?.awards)) {
+      const missing = (expansion: Expansion | undefined) => expansion !== undefined && !config.expansions[expansion];
+      errors.milestonesMissingExpansions = config.customMA.milestones.some((name) => missing(helpers.getMilestoneExpansion(name)));
+      errors.awardsMissingExpansions = config.customMA.awards.some((name) => missing(helpers.getAwardExpansion(name)));
+    }
   }
   return errors;
 }

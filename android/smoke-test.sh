@@ -40,19 +40,25 @@ for _ in $(seq 1 120); do
 done
 curl -fsS -o /dev/null "$BASE/" || die "the server did not answer on $BASE"
 
-# The client bundle the WebView asks for, in the encoding it asks for.
-for asset in main.js vendors.js styles.css; do
-    encoding=$(curl -fsS -H 'Accept-Encoding: br' -o /dev/null -w '%{http_code} %{size_download}' "$BASE/$asset") \
-        || die "GET /$asset failed"
-    echo "GET /$asset (br): $encoding"
+PAGE=$(curl -fsS "$BASE/") || die "GET / failed"
+
+# The client bundle the WebView asks for, in the encoding it asks for. Vite
+# names the entry, its preloaded chunks and the stylesheet by content hash,
+# so take them from the page.
+ASSETS=$(grep -oE '(src|href)="/(main-[^"/]+\.js|client-[^"/]+\.css|chunks/[^"]+\.js)"' <<< "$PAGE" \
+    | cut -d'"' -f2 || true)
+grep -q '^/main-' <<< "$ASSETS" || die "the page links no /main-<hash>.js entry"
+grep -q '^/client-' <<< "$ASSETS" || die "the page links no /client-<hash>.css stylesheet"
+for asset in $ASSETS; do
+    encoding=$(curl -fsS -H 'Accept-Encoding: br' -o /dev/null -w '%{http_code} %{size_download}' "$BASE$asset") \
+        || die "GET $asset failed"
+    echo "GET $asset (br): $encoding"
 done
-curl -fsS -o /dev/null "$BASE/assets/index.html" || die "GET /assets/index.html failed"
 curl -fsS -o /dev/null "$BASE/favicon.ico" || die "GET /favicon.ico failed"
 
 # The app has no network: OfflineRequests serves the Google Fonts stylesheet
 # for Ubuntu from its assets and answers anything else off the phone with a
 # 404, so a new off-device link in the page would go missing in the app.
-PAGE=$(curl -fsS "$BASE/") || die "GET / failed"
 OFF_DEVICE=$(grep -oE '(src|href)="(https?:)?//[^"]*"' <<< "$PAGE" \
     | grep -vxF 'href="https://fonts.googleapis.com/css?family=Ubuntu&display=swap"' || true)
 [ -z "$OFF_DEVICE" ] || die "the page links off the phone, which the app answers with a 404: $OFF_DEVICE"

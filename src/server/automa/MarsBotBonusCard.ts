@@ -34,8 +34,8 @@ export function createBaseBonusCards(): Array<MarsBotBonusCard> {
   ];
 }
 
-/** Create a single bonus card by ID. Covers base and corp-specific cards. */
-export function createCorpBonusCard(id: BonusCardId): MarsBotBonusCard {
+/** Create a single bonus card by ID, from any set. */
+export function createBonusCard(id: BonusCardId): MarsBotBonusCard {
   return bonusCard(id, BONUS_CARD_NAMES.get(id) ?? (id as unknown as CardName));
 }
 
@@ -80,11 +80,10 @@ export function marsBotBonusCardsFromJSON(names: ReadonlyArray<CardName>): Array
   for (const name of names) {
     const id = byName.get(name);
     const card = id !== undefined ? bonusCard(id, name) : newProjectCard(name);
-    if (card !== undefined) {
-      cards.push(card);
-    } else {
-      console.warn(`bonus card ${name} not found while loading game.`);
+    if (card === undefined) {
+      throw new Error(`Cannot restore MarsBot bonus deck card ${name}`);
     }
+    cards.push(card);
   }
   return cards;
 }

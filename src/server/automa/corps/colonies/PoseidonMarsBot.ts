@@ -1,0 +1,29 @@
+import {CardName} from '@/common/cards/CardName';
+import {IMarsBot} from '@/server/automa/IMarsBot';
+import {MarsBotCorp} from '@/server/automa/MarsBotCorp';
+
+export class PoseidonMarsBot extends MarsBotCorp {
+  constructor() {
+    super({
+      name: CardName.POSEIDON,
+      description: 'Setup: place 1 colony. Each colony you or MarsBot build (setup included) advances MarsBot\'s least-advanced track.',
+      requiredExpansions: ['colonies'],
+    });
+  }
+
+  public override setup(marsBot: IMarsBot): void {
+    // C-33: Place 1 colony using random selection (C-15b method)
+    const placed = marsBot.maybePlaceRandomColony();
+    if (placed) {
+      marsBot.game.log('MarsBot (${0}): placed 1 colony (C-33)', (b) => b.cardName(this.name));
+    } else {
+      marsBot.game.log('MarsBot (${0}): no eligible colony tile for setup (C-33)', (b) => b.cardName(this.name));
+    }
+  }
+
+  // C-33: each colony either player builds advances the least-advanced track
+  public override onColonyPlaced(marsBot: IMarsBot): void {
+    marsBot.advanceTrack(marsBot.marsBotBoard.getLeastAdvancedTrackIndex());
+    marsBot.game.log('MarsBot (${0}): colony placed → advance least-advanced track (C-33)', (b) => b.cardName(this.name));
+  }
+}

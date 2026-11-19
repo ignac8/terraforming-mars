@@ -1,14 +1,14 @@
 import {expect} from 'chai';
-import {Specialist} from '../../src/server/milestones/Specialist';
+import {Tag} from '@/common/cards/Tag';
+import {THARSIS_MARSBOT_BOARD} from '@/server/automa/boards/TharsisMarsBot';
+import {VENUS_MARSBOT_TRACK} from '@/server/automa/boards/VenusMarsBot';
+import {Specialist} from '@/server/milestones/Specialist';
+import {fakeMarsBot, setTrack} from '../automa/FakeMarsBot';
 import {testGame} from '../TestGame';
-import {IMarsBot} from '../../src/server/automa/MarsBotCorpTypes';
-import {MarsBotBoard} from '../../src/server/automa/MarsBotBoard';
-import {THARSIS_MARSBOT_BOARD} from '../../src/server/automa/boards/TharsisMarsBot';
 
 describe('Specialist', () => {
-  const milestone = new Specialist();
-
   it('Can claim with 10 production of one resource', () => {
+    const milestone = new Specialist();
     const [, player] = testGame(2);
     player.production.override({energy: 9});
     expect(milestone.canClaim(player)).is.false;
@@ -17,15 +17,16 @@ describe('Specialist', () => {
     expect(milestone.canClaim(player)).is.true;
   });
 
-  it('MarsBot claims it with any one track at space 10', () => {
-    const board = new MarsBotBoard(THARSIS_MARSBOT_BOARD);
-    const bot = {marsBotBoard: board} as unknown as IMarsBot;
-    for (let i = 0; i < 9; i++) {
-      board.tracks[3].advance();
-    }
-    expect(milestone.marsBotCanClaim(bot)).is.false;
+  for (const run of [
+    {tag: Tag.SCIENCE, position: 9, expected: false},
+    {tag: Tag.SCIENCE, position: 10, expected: true},
+    {tag: Tag.VENUS, position: 10, expected: true},
+  ] as const) {
+    it('MarsBot needs space 10 on any one track, Venus included: ' + JSON.stringify(run), () => {
+      const marsBot = fakeMarsBot({tracks: [...THARSIS_MARSBOT_BOARD, VENUS_MARSBOT_TRACK]});
+      setTrack(marsBot, run.tag, run.position);
 
-    board.tracks[3].advance();
-    expect(milestone.marsBotCanClaim(bot)).is.true;
-  });
+      expect(new Specialist().marsBotCanClaim(marsBot)).eq(run.expected);
+    });
+  }
 });

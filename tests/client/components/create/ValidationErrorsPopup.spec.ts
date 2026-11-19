@@ -19,11 +19,14 @@ const NO_ERRORS: ValidationErrors = {
   soloWithoutCorporateEra: false,
   infiniteEnergyBug: false,
   altVenusBoardOnAmazonis: false,
+  marsBotModularMAOnAmazonis: false,
+  marsBotManualModularMAOnAmazonis: false,
   prelude2WithoutPrelude: false,
   deltaProjectWithoutPrelude: false,
   notEnoughCorporations: 0,
-  modularMAInDevelopment: false,
   invalidCustomMA: '',
+  milestonesMissingExpansions: false,
+  awardsMissingExpansions: false,
 };
 
 describe('ValidationErrorsPopup', () => {

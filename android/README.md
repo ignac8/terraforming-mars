@@ -15,8 +15,8 @@ APK
 └── assets/nodejs-project.zip     unzipped into the app's files dir on first launch:
     ├── main.js                   launcher: polyfills, env, chdir, require('./server.js')
     ├── server.js                 the game server, esbuild-bundled into one file
-    ├── build/                    client bundle (main.js, vendors.js, chunks/) + styles.css
-    ├── assets/                   images, fonts, index.html
+    ├── build/                    client: index.html, main-<hash>.js, chunks/, client-<hash>.css
+    ├── assets/                   images, fonts
     └── db/files/                 the LocalFilesystem database (created at runtime, kept across updates)
 ```
 
@@ -44,7 +44,7 @@ APK
   JSON-files database), `NODE_ENV=production`, `SERVER_ID=offline` (fixed,
   so the admin button works; the server only listens on the phone's own
   loopback). The one game-code change on this branch is a build-time
-  switch: `webpack.config.js` defines `process.env.TM_MARSBOT_ONLY`, off by
+  switch: `vite.config.mts` defines `process.env.TM_MARSBOT_ONLY`, off by
   default. When it is `1`, `CreateGameForm.vue` fixes one human seat with
   MarsBot on and hides, rather than greys out, everything that cannot be
   changed in such a game: the player count, the MarsBot toggle, the board

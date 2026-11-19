@@ -1,35 +1,27 @@
 import {expect} from 'chai';
-import {Botanist} from '../../../src/server/awards/arabiaTerra/Botanist';
+import {Tag} from '@/common/cards/Tag';
+import {Botanist} from '@/server/awards/arabiaTerra/Botanist';
+import {fakeMarsBot, setTrack} from '../../automa/FakeMarsBot';
+import {Resource} from '@/common/Resource';
 import {testGame} from '../../TestGame';
-import {Resource} from '../../../src/common/Resource';
-import {IMarsBot} from '../../../src/server/automa/MarsBotCorpTypes';
-import {MarsBotBoard} from '../../../src/server/automa/MarsBotBoard';
-import {THARSIS_MARSBOT_BOARD} from '../../../src/server/automa/boards/TharsisMarsBot';
 
 describe('Botanist', () => {
-  const award = new Botanist();
-
   it('scores a player by plant production', () => {
     const [, player] = testGame(2);
     player.production.add(Resource.PLANTS, 4);
 
-    expect(award.getScore(player)).to.eq(4);
+    expect(new Botanist().getScore(player)).to.eq(4);
   });
 
-  it('scores MarsBot by its bio track minus 2', () => {
-    const board = new MarsBotBoard(THARSIS_MARSBOT_BOARD);
-    const bot = {marsBotBoard: board} as unknown as IMarsBot;
-    for (let i = 0; i < 5; i++) {
-      board.tracks[6].advance();
-    }
-    expect(award.marsBotScore(bot)).to.eq(3);
-  });
+  for (const run of [
+    {position: 6, expected: 4},
+    {position: 0, expected: -2},
+  ] as const) {
+    it('MarsBot scores its Bio track minus 2, even below 0: ' + JSON.stringify(run), () => {
+      const marsBot = fakeMarsBot();
+      setTrack(marsBot, Tag.PLANT, run.position);
 
-  it('MarsBot never scores below zero', () => {
-    const board = new MarsBotBoard(THARSIS_MARSBOT_BOARD);
-    const bot = {marsBotBoard: board} as unknown as IMarsBot;
-    board.tracks[6].advance();
-
-    expect(award.marsBotScore(bot)).to.eq(0);
-  });
+      expect(new Botanist().marsBotScore(marsBot)).eq(run.expected);
+    });
+  }
 });

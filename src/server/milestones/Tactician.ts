@@ -1,9 +1,10 @@
 import {BaseMilestone} from './IMilestone';
 import {IPlayer} from '../IPlayer';
 import {CardType} from '../../common/cards/CardType';
-import {IMarsBot} from '../automa/MarsBotCorpTypes';
+import {IMarsBot} from '@/server/automa/IMarsBot';
 
 export class Tactician extends BaseMilestone {
+  public readonly automaDescription = '35+ M€';
   constructor() {
     super(
       'Tactician',
@@ -23,8 +24,8 @@ export class Tactician extends BaseMilestone {
     return validCards.length;
   }
 
-  /** MarsBot's cards carry no requirements. It qualifies with 35 M€ on hand. */
-  public marsBotCanClaim(bot: IMarsBot): boolean {
-    return bot.megacredits >= 35;
+  /** MarsBot needs 35 M€ on hand, since its cards carry no requirements (rulebook C p.9). */
+  public marsBotCanClaim(marsBot: IMarsBot): boolean {
+    return marsBot.megacredits >= 35;
   }
 }

@@ -36,7 +36,7 @@ export class MarsBotStock extends Stock {
 
     // Per automa rules, all MarsBot resources are its MC supply, plus the colony storage area
     // that holds the resource (C-25), plus for plants the ones on Ecoline's or Ecotec's card
-    // (rulebook B, p.3 FAQ). Cards check target.steel > 0 etc. to decide if stealing is possible,
+    // (rulebook B, p.4 FAQ). Cards check target.steel > 0 etc. to decide if stealing is possible,
     // and cap the amount by it. MarsBot's scoring never reads these.
     const stock = this;
     for (const resource of ALL_RESOURCES) {
@@ -178,7 +178,7 @@ export class MarsBotStock extends Stock {
   }
 
   /**
-   * FAQ (rulebook B, p.3): the player may remove or steal the plants on Ecoline's or Ecotec's card,
+   * FAQ (rulebook B, p.4): the player may remove or steal the plants on Ecoline's or Ecotec's card,
    * and the excess is lost. The player picks the card or the usual sources, never both: "you can
    * remove either 2mc or that 1 plant" (TDaver, BGG 3341536).
    */

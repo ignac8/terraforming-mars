@@ -3,8 +3,8 @@ import {IPlayer} from '../IPlayer';
 import {Board} from '../boards/Board';
 import {MilestoneName} from '../../common/ma/MilestoneName';
 import {BoardName} from '../../common/boards/BoardName';
-import {IMarsBot} from '../automa/MarsBotCorpTypes';
-import {marsBotUsesMapSet} from '../automa/MarsBotMilestoneAwardEval';
+import {IMarsBot} from '@/server/automa/IMarsBot';
+import {marsBotUsesBoardGoals} from '@/server/automa/MarsBotMilestoneAwardEval';
 
 export class Irrigator extends BaseMilestone {
   constructor(
@@ -24,18 +24,23 @@ export class Irrigator extends BaseMilestone {
 
 // Variant from Terra Cimmeria Nova.
 export class Coastguard extends Irrigator {
+  public readonly automaDescription = '4+ tiles adjacent to ocean';
+  public readonly automaMapDescriptions = {
+    [BoardName.TERRA_CIMMERIA_NOVA]: '3+ tiles adjacent to ocean',
+  };
   constructor() {
     super('Coastguard', 3);
   }
 
   /**
-   * Terra Cimmeria leaves this milestone unchanged for MarsBot. The Milestones & Awards
-   * expansion puts its threshold at 4 tiles adjacent to oceans.
+   * MarsBot keeps the milestone's own 3 tiles on Terra Cimmeria (rulebook C p.9).
+   *
+   * The Milestones & Awards expansion asks for 4 tiles adjacent to oceans (rulebook C p.13).
    */
-  public marsBotCanClaim(bot: IMarsBot): boolean {
-    if (marsBotUsesMapSet(bot, BoardName.TERRA_CIMMERIA_NOVA)) {
-      return this.canClaim(bot.player);
+  public marsBotCanClaim(marsBot: IMarsBot): boolean {
+    if (marsBotUsesBoardGoals(marsBot, BoardName.TERRA_CIMMERIA_NOVA)) {
+      return this.canClaim(marsBot.player);
     }
-    return this.getScore(bot.player) >= 4;
+    return this.getScore(marsBot.player) >= 4;
   }
 }

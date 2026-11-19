@@ -1,11 +1,12 @@
 import {IAward} from './IAward';
 import {IPlayer} from '../IPlayer';
 import {Tag} from '@/common/cards/Tag';
-import {IMarsBot} from '@/server/automa/MarsBotCorpTypes';
+import {IMarsBot} from '@/server/automa/IMarsBot';
 
 export class Miner implements IAward {
   public readonly name = 'Miner';
   public readonly description = 'Have the most steel and titanium';
+  public readonly automaDescription = 'Space track + 5';
   public getScore(player: IPlayer): number {
     if (player.game.isDoneWithFinalProduction()) {
       return player.steel + player.titanium;
@@ -14,7 +15,7 @@ export class Miner implements IAward {
     }
   }
 
-  public marsBotScore(bot: IMarsBot): number {
-    return bot.marsBotBoard.trackPosition(Tag.SPACE) + 5;
+  public marsBotScore(marsBot: IMarsBot): number {
+    return marsBot.marsBotBoard.trackPosition(Tag.SPACE) + 5;
   }
 }

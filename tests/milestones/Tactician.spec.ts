@@ -9,7 +9,7 @@ import {Algae} from '../../src/server/cards/base/Algae';
 import {TestPlayer} from '../TestPlayer';
 import {fakeCard} from '../TestingUtils';
 import {CardType} from '../../src/common/cards/CardType';
-import {IMarsBot} from '../../src/server/automa/MarsBotCorpTypes';
+import {fakeMarsBot} from '../automa/FakeMarsBot';
 
 describe('Tactician', () => {
   let milestone: Tactician;
@@ -65,8 +65,14 @@ describe('Tactician', () => {
     expect(milestone.canClaim(player)).is.true;
   });
 
-  it('MarsBot claims it with 35 M€', () => {
-    expect(milestone.marsBotCanClaim({megacredits: 34} as unknown as IMarsBot)).is.false;
-    expect(milestone.marsBotCanClaim({megacredits: 35} as unknown as IMarsBot)).is.true;
-  });
+  for (const run of [
+    {megacredits: 34, expected: false},
+    {megacredits: 35, expected: true},
+  ] as const) {
+    it('MarsBot needs 35 M€: ' + JSON.stringify(run), () => {
+      const marsBot = fakeMarsBot({megacredits: run.megacredits});
+
+      expect(milestone.marsBotCanClaim(marsBot)).eq(run.expected);
+    });
+  }
 });

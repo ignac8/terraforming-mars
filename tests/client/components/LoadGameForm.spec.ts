@@ -31,7 +31,7 @@ describe('LoadGameForm', () => {
           getVisibilityState: () => false,
           setVisibilityState: () => {},
         },
-      } as any,
+      },
     });
   }
 
@@ -50,7 +50,7 @@ describe('LoadGameForm', () => {
     const wrapper = mount();
 
     wrapper.setData({gameId: 'g123', rollbackCount: 1});
-    (wrapper.vm as any).loadGame();
+    wrapper.vm.loadGame();
 
     expect(urls).deep.eq(['load_game?serverId=abc%2F1']);
   });
@@ -65,7 +65,7 @@ describe('LoadGameForm', () => {
     const wrapper = mount();
 
     wrapper.setData({gameId: 'g123', rollbackCount: 1});
-    (wrapper.vm as any).loadGame();
+    wrapper.vm.loadGame();
 
     expect(urls).deep.eq(['load_game?serverId=']);
   });

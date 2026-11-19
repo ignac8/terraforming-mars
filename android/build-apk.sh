@@ -52,10 +52,10 @@ if [ -z "${SKIP_GAME_BUILD:-}" ]; then
     log "Installing the game's dependencies in $MAIN_CHECKOUT"
     (cd "$MAIN_CHECKOUT" && npm ci --no-audit --no-fund)
 fi
-# The static files (styles.css from Less, the generated settings.json the
-# server compiles against) and the client are always built, so the APK
-# never carries a stale stylesheet, and because TM_MARSBOT_ONLY is a
-# build-time switch (webpack.config.js) that is off in a normal build and on
+# The static files (the generated settings.json the server compiles
+# against) and the client (bundle and stylesheet) are always built, so the
+# APK never carries a stale stylesheet, and because TM_MARSBOT_ONLY is a
+# build-time switch (vite.config.mts) that is off in a normal build and on
 # in the app. The server build needs the static files first.
 log "Building the static files"
 (cd "$MAIN_CHECKOUT" && npm run make:static)
@@ -65,8 +65,12 @@ if [ -z "${SKIP_GAME_BUILD:-}" ]; then
 fi
 log "Building the client with TM_MARSBOT_ONLY=1"
 (cd "$MAIN_CHECKOUT" && TM_MARSBOT_ONLY=1 npm run build:client)
-for f in build/src/server/server.js build/main.js.br build/vendors.js.br build/styles.css.br assets/index.html; do
+for f in build/src/server/server.js build/index.html; do
     [ -f "$MAIN_CHECKOUT/$f" ] || die "$MAIN_CHECKOUT/$f is missing; run npm run build there"
+done
+# Vite names the entry and the stylesheet by content hash (build/index.html links them).
+for f in 'build/main-*.js.br' 'build/client-*.css.br'; do
+    compgen -G "$MAIN_CHECKOUT/$f" > /dev/null || die "$MAIN_CHECKOUT/$f is missing; run npm run build there"
 done
 
 # --- 2. nodejs-project: server bundle, client, assets -----------------------

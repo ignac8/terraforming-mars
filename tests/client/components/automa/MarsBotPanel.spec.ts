@@ -41,4 +41,17 @@ describe('MarsBotPanel', () => {
     const stats = wrapper.findAll('.marsbot-stat').map((stat) => stat.text());
     expect(stats.some((stat) => stat.startsWith('Corporation'))).to.be.false;
   });
+
+  it('labels the Science and Space track icons differently', () => {
+    const model = {
+      ...fakeMarsBot(0),
+      tracks: [{tags: [], productions: [], position: 0, layout: [undefined, 'tag_science', 'tag_space']}],
+    } as Partial<MarsBotModel> as MarsBotModel;
+    const wrapper = shallowMount(MarsBotPanel, {
+      ...globalConfig,
+      props: {model},
+    });
+    const icons = wrapper.findAll('.marsbot-action-icon').map((icon) => icon.text());
+    expect(icons).deep.eq(['+Sc', '+S']);
+  });
 });

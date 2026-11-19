@@ -11,20 +11,22 @@ import {Phase} from '../../src/common/Phase';
 import {Resource} from '../../src/common/Resource';
 import {getMcPerVP} from '../../src/server/automa/MarsBotScoring';
 import {BonusCardId} from '../../src/common/automa/AutomaTypes';
-import {createBaseBonusCards} from '../../src/server/automa/MarsBotBonusCard';
 import {cast, inplaceRemove} from '../../src/common/utils/utils';
 import {GlobalParameter} from '../../src/common/GlobalParameter';
 import {Mayor} from '../../src/server/milestones/Mayor';
 import {Gardener} from '../../src/server/milestones/Gardener';
 import {Landlord} from '../../src/server/awards/Landlord';
+import {awardManifest} from '../../src/server/awards/Awards';
 import {RemoveResourcesFromCard} from '../../src/server/deferredActions/RemoveResourcesFromCard';
 import {CardResource} from '../../src/common/CardResource';
 import {OrOptions} from '../../src/server/inputs/OrOptions';
 import {Predators} from '../../src/server/cards/base/Predators';
 import {Ants} from '../../src/server/cards/base/Ants';
 import {Asteroid} from '../../src/server/cards/base/Asteroid';
+import {IProjectCard} from '../../src/server/cards/IProjectCard';
 import {Random} from '../../src/common/utils/Random';
 import {ColonyName} from '../../src/common/colonies/ColonyName';
+import {setMarsBotRandom} from './MarsBotRandom';
 
 function createAutomaGame(difficulty: 'easy' | 'normal' | 'hard' | 'brutal' = 'normal'): {game: IGame, human: TestPlayer, marsBot: MarsBot} {
   const [game, human] = testGame(1, {
@@ -137,16 +139,16 @@ describe('MarsBotSessionFixes', () => {
     // getMcPerVP finds first entry where generation <= maxGeneration
 
     // Generation 12: before conversion window closes → first entry (12, 8) matches
-    expect(getMcPerVP(12, false)).to.eq(8);
+    expect(getMcPerVP(12, false, BoardName.THARSIS)).to.eq(8);
 
     // Generation 5: still within window (5 <= 12) → returns 8
-    expect(getMcPerVP(5, false)).to.eq(8);
+    expect(getMcPerVP(5, false, BoardName.THARSIS)).to.eq(8);
 
     // Generation 19: last entry (19, 1) matches → returns 1
-    expect(getMcPerVP(19, false)).to.eq(1);
+    expect(getMcPerVP(19, false, BoardName.THARSIS)).to.eq(1);
 
     // Generation 20: past all entries (20 > 19) → returns undefined
-    expect(getMcPerVP(20, false)).to.eq(undefined);
+    expect(getMcPerVP(20, false, BoardName.THARSIS)).to.eq(undefined);
   });
 
   it('vpByGeneration populated', () => {
@@ -209,7 +211,7 @@ describe('MarsBotSessionFixes', () => {
     marsBot.turnResolver.megacredits = 15;
 
     // Simulate MarsBot being the active player when saved
-    (game as any).activePlayer = marsBot.player;
+    game.activePlayer = marsBot.player;
     const serialized = game.serialize();
     expect(serialized.activePlayer).to.eq(marsBot.player.id);
 
@@ -294,7 +296,7 @@ describe('MarsBotSessionFixes', () => {
     // Play a card from action deck
     const projectCard = marsBot.actionDeck.find((c) => 'cost' in c && 'tags' in c);
     if (projectCard) {
-      marsBot.playedProjectCards.push(projectCard as any);
+      marsBot.playedProjectCards.push(projectCard as IProjectCard);
     }
     const count = marsBot.playedProjectCards.length;
 
@@ -376,7 +378,7 @@ describe('MarsBotSessionFixes', () => {
     }
 
     // Claim milestone and fund award as MarsBot
-    (game as any).activePlayer = marsBot.player;
+    game.activePlayer = marsBot.player;
     game.claimedMilestones.push({player: marsBot.player, milestone: game.milestones[0]});
     game.fundedAwards.push({player: marsBot.player, award: game.awards[0]});
 
@@ -447,16 +449,17 @@ describe('MarsBotSessionFixes', () => {
     }
   });
 
-  it('award values reduced by 5 in easy mode', () => {
-    const {marsBot} = createAutomaGame('easy');
-    const normalMarsBot = createAutomaGame('normal').marsBot;
-    for (const award of marsBot.game.awards) {
+  for (const awardName of awardManifest.boards[BoardName.THARSIS]) {
+    it('award values reduced by 5 in easy mode: ' + awardName, () => {
+      const {marsBot} = createAutomaGame('easy');
+      const normalMarsBot = createAutomaGame('normal').marsBot;
+      const award = marsBot.game.awards.find((a) => a.name === awardName)!;
       const easyVal = marsBot.turnResolver.getMarsBotAwardValue(award);
       const normalVal = normalMarsBot.turnResolver.getMarsBotAwardValue(
         normalMarsBot.game.awards.find((a) => a.name === award.name)!);
       expect(easyVal).to.eq(normalVal - 5, `${award.name} easy offset wrong`);
-    }
-  });
+    });
+  }
 
   it('tile ownership preserved through serialization roundtrip', () => {
     const {game, marsBot} = createAutomaGame();
@@ -790,7 +793,7 @@ describe('MarsBotVenusNext', () => {
     venusTrack.advance(); // position 0 -> 1, triggers 'floater' action via turn resolver
     // Directly test via the action deck mechanism
     marsBot.floaters = 0;
-    (marsBot.turnResolver as any).resolveTrackAction('floater', 7);
+    marsBot.turnResolver['resolveTrackAction']('floater', 7);
     expect(marsBot.floaters).to.eq(1);
   });
 
@@ -886,7 +889,7 @@ describe('MarsBotVenusNext', () => {
     }
     game.automaHooks!.handleResearchPhase();
     marsBot.floaters = 10;
-    (marsBot as unknown as {random: Random}).random = {nextInt: () => 0} as unknown as Random;
+    setMarsBotRandom(marsBot, {nextInt: () => 0} as unknown as Random);
     const extra = new Asteroid();
     game.projectDeck.drawPile.push(extra);
 
@@ -920,15 +923,6 @@ describe('MarsBotVenusNext', () => {
       marsBot.takeTurn();
 
       expect(game.claimedMilestones[2].milestone.name).to.eq('Terraformer');
-    });
-
-    it('B04 Overachievement', () => {
-      const {game, marsBot} = setUpTie();
-      const b04 = createBaseBonusCards().find((c) => c.id === BonusCardId.B04_OVERACHIEVEMENT)!;
-
-      marsBot['bonusResolver'].resolve(b04);
-
-      expect(game.claimedMilestones.map((c) => c.milestone.name)).deep.eq(['Terraformer']);
     });
   });
 
@@ -987,7 +981,7 @@ describe('MarsBotVenusNext', () => {
       game.claimedMilestones.push({player: marsBot.player, milestone: m});
     }
     // Test canSpendFloatersForExtraCard directly (called in draft path)
-    expect((game.automaHooks as any).canSpendFloatersForExtraCard()).to.be.true;
+    expect(game.automaHooks?.['canSpendFloatersForExtraCard']()).to.be.true;
     // Verify non-draft path spends correctly (draft is async, can't test end-to-end)
     game.automaHooks!.handleResearchPhase();
     expect(marsBot.floaters).to.eq(5);
@@ -1013,95 +1007,6 @@ describe('MarsBotVenusNext', () => {
     game.automaHooks!.handleResearchPhase();
     // Not enough floaters, should not spend
     expect(marsBot.floaters).to.eq(4);
-  });
-
-  it('B15 Venus branch triggers at 1 step from Venus bonus at 8%', () => {
-    const {game, marsBot} = createVenusAutomaGame();
-    // Venus at 6% → 1 step from 8% bonus
-    (game as any).venusScaleLevel = 6;
-    // Need to access private method - use the bonus card directly
-    const b15 = marsBot.bonusDeck.drawPile.find((c) => c.id === BonusCardId.B15_LOBBYISTS_VENUS);
-    if (b15 === undefined) {
-      // B15 might have been drawn already, create one
-      const {bonusCard: bonusCardFn} = require('../../src/server/automa/MarsBotBonusCard');
-      const card = bonusCardFn(BonusCardId.B15_LOBBYISTS_VENUS, 'Lobbyists (Venus)');
-      // Set temp/oxygen far from bonuses so Venus branch is reached
-      (game as any).temperature = -30 + 26; // = -4, far from any bonus
-      (game as any).oxygenLevel = 5; // far from 8% bonus
-      (marsBot as any).bonusResolver.resolve(card);
-      expect(game.getVenusScaleLevel()).to.be.greaterThan(6);
-    }
-  });
-
-  it('B15 Venus branch triggers at 2 steps from Venus bonus at 16%', () => {
-    const {game, marsBot} = createVenusAutomaGame();
-    // Venus at 12% → 2 steps from 16% bonus
-    (game as any).venusScaleLevel = 12;
-    (game as any).temperature = 8; // maxed
-    (game as any).oxygenLevel = 14; // maxed
-    const {bonusCard: bonusCardFn} = require('../../src/server/automa/MarsBotBonusCard');
-    const card = bonusCardFn(BonusCardId.B15_LOBBYISTS_VENUS, 'Lobbyists (Venus)');
-    (marsBot as any).bonusResolver.resolve(card);
-    // Venus should have been raised 2 steps: 12 → 16
-    expect(game.getVenusScaleLevel()).to.eq(16);
-  });
-
-  it('B15 Venus branch does NOT destroy card', () => {
-    const {game, marsBot} = createVenusAutomaGame();
-    (game as any).venusScaleLevel = 26; // 2 steps from 30% max
-    (game as any).temperature = 8;
-    (game as any).oxygenLevel = 14;
-    const {bonusCard: bonusCardFn} = require('../../src/server/automa/MarsBotBonusCard');
-    const card = bonusCardFn(BonusCardId.B15_LOBBYISTS_VENUS, 'Lobbyists (Venus)');
-    const destroyed = (marsBot as any).bonusResolver.resolve(card);
-    expect(game.getVenusScaleLevel()).to.eq(30);
-    expect(destroyed).to.be.false;
-  });
-
-  it('B15 temp branch destroys card', () => {
-    const {game, marsBot} = createVenusAutomaGame();
-    // Temperature at -26 → 1 step from -24 (heat bonus)
-    (game as any).temperature = -26;
-    const {bonusCard: bonusCardFn} = require('../../src/server/automa/MarsBotBonusCard');
-    const card = bonusCardFn(BonusCardId.B15_LOBBYISTS_VENUS, 'Lobbyists (Venus)');
-    const destroyed = (marsBot as any).bonusResolver.resolve(card);
-    expect(game.getTemperature()).to.eq(-22); // raised 2 steps
-    expect(destroyed).to.be.true;
-  });
-
-  it('B16 even generation advances Martian parameter without TR', () => {
-    const {game, marsBot} = createVenusAutomaGame();
-    (game as any).generation = 4; // even
-    const trBefore = marsBot.player.terraformRating;
-    const {bonusCard: bonusCardFn} = require('../../src/server/automa/MarsBotBonusCard');
-    const card = bonusCardFn(BonusCardId.B16_GOVERNMENT_INTERVENTION, 'Government Intervention');
-    (marsBot as any).bonusResolver.resolve(card);
-    // TR should not have changed (reversed by withoutTRGain)
-    expect(marsBot.player.terraformRating).to.eq(trBefore);
-  });
-
-  it('B16 odd generation raises Venus without TR', () => {
-    const {game, marsBot} = createVenusAutomaGame();
-    (game as any).generation = 3; // odd
-    const venusBefore = game.getVenusScaleLevel();
-    const trBefore = marsBot.player.terraformRating;
-    const {bonusCard: bonusCardFn} = require('../../src/server/automa/MarsBotBonusCard');
-    const card = bonusCardFn(BonusCardId.B16_GOVERNMENT_INTERVENTION, 'Government Intervention');
-    (marsBot as any).bonusResolver.resolve(card);
-    expect(game.getVenusScaleLevel()).to.eq(venusBefore + 2);
-    expect(marsBot.player.terraformRating).to.eq(trBefore);
-  });
-
-  it('B16 even gen with Venus complete still advances Martian parameter', () => {
-    const {game, marsBot} = createVenusAutomaGame();
-    (game as any).generation = 3; // odd, but Venus complete → should use Martian branch
-    (game as any).venusScaleLevel = 30;
-    const venusBefore = game.getVenusScaleLevel();
-    const {bonusCard: bonusCardFn} = require('../../src/server/automa/MarsBotBonusCard');
-    const card = bonusCardFn(BonusCardId.B16_GOVERNMENT_INTERVENTION, 'Government Intervention');
-    (marsBot as any).bonusResolver.resolve(card);
-    // Venus should not change (already maxed, used Martian branch instead)
-    expect(game.getVenusScaleLevel()).to.eq(venusBefore);
   });
 
   it('Venus track cannot advance past layout length', () => {

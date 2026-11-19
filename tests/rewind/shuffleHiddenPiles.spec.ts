@@ -7,19 +7,23 @@ import {BoardName} from '../../src/common/boards/BoardName';
 
 type Pile = {
   get: (d: SerializedGame) => Array<unknown>;
-  set: (d: SerializedGame, pile: Array<any>) => void;
+  set: (d: SerializedGame, pile: Array<unknown>) => void;
 };
 
+function pileOf<T>(get: (d: SerializedGame) => Array<T>, set: (d: SerializedGame, pile: Array<T>) => void): Pile {
+  return {get, set: (d, pile) => set(d, pile as Array<T>)};
+}
+
 const hiddenPiles: Array<[string, Pile]> = [
-  ['projectDeck', {get: (d) => d.projectDeck.drawPile, set: (d, p) => d.projectDeck.drawPile = p}],
-  ['corporationDeck', {get: (d) => d.corporationDeck.drawPile, set: (d, p) => d.corporationDeck.drawPile = p}],
-  ['preludeDeck', {get: (d) => d.preludeDeck.drawPile, set: (d, p) => d.preludeDeck.drawPile = p}],
-  ['ceoDeck', {get: (d) => d.ceoDeck.drawPile, set: (d, p) => d.ceoDeck.drawPile = p}],
-  ['globalEventDealer', {
-    get: (d) => d.turmoil!.globalEventDealer.deck,
-    set: (d, p) => d.turmoil!.globalEventDealer.deck = p,
-  }],
-  ['underworld tokens', {get: (d) => d.underworldData.tokens, set: (d, p) => d.underworldData.tokens = p}],
+  ['projectDeck', pileOf((d) => d.projectDeck.drawPile, (d, p) => d.projectDeck.drawPile = p)],
+  ['corporationDeck', pileOf((d) => d.corporationDeck.drawPile, (d, p) => d.corporationDeck.drawPile = p)],
+  ['preludeDeck', pileOf((d) => d.preludeDeck.drawPile, (d, p) => d.preludeDeck.drawPile = p)],
+  ['ceoDeck', pileOf((d) => d.ceoDeck.drawPile, (d, p) => d.ceoDeck.drawPile = p)],
+  ['globalEventDealer', pileOf(
+    (d) => d.turmoil!.globalEventDealer.deck,
+    (d, p) => d.turmoil!.globalEventDealer.deck = p,
+  )],
+  ['underworld tokens', pileOf((d) => d.underworldData.tokens, (d, p) => d.underworldData.tokens = p)],
 ];
 
 describe('shuffleHiddenPiles', () => {

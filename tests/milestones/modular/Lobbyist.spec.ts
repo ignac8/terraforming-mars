@@ -6,7 +6,7 @@ import {PartyName} from '../../../src/common/turmoil/PartyName';
 import {IGame} from '../../../src/server/IGame';
 import {TestPlayer} from '../../TestPlayer';
 import {IParty} from '../../../src/server/turmoil/parties/IParty';
-import {IMarsBot} from '../../../src/server/automa/MarsBotCorpTypes';
+import {fakeMarsBot} from '../../automa/FakeMarsBot';
 
 describe('Lobbyist', () => {
   let milestone: Lobbyist;
@@ -25,6 +25,12 @@ describe('Lobbyist', () => {
     scientists = turmoil.getPartyByName(PartyName.SCIENTISTS)!;
     greens = turmoil.getPartyByName(PartyName.GREENS)!;
     reds = turmoil.getPartyByName(PartyName.REDS)!;
+  });
+
+  it('MarsBot cannot claim it without Turmoil', () => {
+    const [game, player] = testGame(1, {turmoilExtension: false});
+
+    expect(milestone.marsBotCanClaim(fakeMarsBot({game, player}))).is.false;
   });
 
   it('Gives 0 score if player has no delegates', () => {
@@ -62,18 +68,23 @@ describe('Lobbyist', () => {
     expect(milestone.getScore(player2)).to.eq(2); // Only player’s 2 delegates, ignores player delegates and party leaders
   });
 
-  it('MarsBot claims it as Chairman leading two parties', () => {
-    const bot = {game, player} as unknown as IMarsBot;
-    turmoil.sendDelegateToParty(player, PartyName.REDS, game);
-    turmoil.sendDelegateToParty(player, PartyName.UNITY, game);
-    expect(milestone.marsBotCanClaim(bot)).is.false;
-
-    turmoil.chairman = player;
-    expect(milestone.marsBotCanClaim(bot)).is.true;
-  });
-
   it('Gives 0 score without Turmoil', () => {
     const [/* game */, player] = testGame(1, {turmoilExtension: false});
     expect(milestone.getScore(player)).to.eq(0);
   });
+
+  for (const run of [
+    {chairman: false, leaders: 2, expected: false},
+    {chairman: true, leaders: 1, expected: false},
+    {chairman: true, leaders: 2, expected: true},
+  ] as const) {
+    it('MarsBot needs the Chairman and 2 Party Leaders: ' + JSON.stringify(run), () => {
+      const marsBot = fakeMarsBot({game, player});
+
+      turmoil.chairman = run.chairman ? player : 'NEUTRAL';
+      turmoil.parties.forEach((party, index) => party.partyLeader = index < run.leaders ? player : undefined);
+
+      expect(milestone.marsBotCanClaim(marsBot)).eq(run.expected);
+    });
+  }
 });

@@ -4,7 +4,8 @@ import {TestPlayer} from '../../TestPlayer';
 import {IGame} from '../../../src/server/IGame';
 import {MarsBot} from '../../../src/server/automa/MarsBot';
 import {MarsBotCorpResolver} from '../../../src/server/automa/corps/MarsBotCorpResolver';
-import {IMarsBotCorp, MarsBotTrackCube} from '../../../src/server/automa/MarsBotCorpTypes';
+import {MarsBotCorp} from '../../../src/server/automa/MarsBotCorp';
+import {MarsBotTrackCube} from '../../../src/server/automa/MarsBotCorpTypes';
 import {
   registerMarsBotCorp,
   clearMarsBotCorpRegistry, restoreMarsBotCorpRegistry,
@@ -16,7 +17,7 @@ import {SeededRandom} from '../../../src/common/utils/Random';
 import {BoardName} from '../../../src/common/boards/BoardName';
 import {DEFAULT_GAME_OPTIONS} from '../../../src/server/game/GameOptions';
 
-function createTestCorp(overrides: Partial<IMarsBotCorp> & {name: CardName}): IMarsBotCorp {
+function createTestCorp(overrides: Partial<MarsBotCorp> & {name: CardName}): MarsBotCorp {
   return {
     description: '',
     tags: [],
@@ -75,7 +76,7 @@ describe('MarsBotCorpResolver', () => {
     it('skips a corp whose expansion is not in play', () => {
       registerMarsBotCorp(createTestCorp({name: CardName.ECOLINE}));
       registerMarsBotCorp(createTestCorp({name: CardName.APHRODITE, requiredExpansions: ['venus']}));
-      const lastCorp = {next: () => 0.99, nextInt: (n: number) => n - 1} as any;
+      const lastCorp = {next: () => 0.99, nextInt: (n: number) => n - 1};
 
       expect(MarsBotCorpResolver.selectCorp(CardName.CREDICOR, DEFAULT_GAME_OPTIONS, lastCorp).name).to.eq(CardName.ECOLINE);
     });
@@ -83,7 +84,7 @@ describe('MarsBotCorpResolver', () => {
     it('draws a corp when any one of its expansions is in play', () => {
       registerMarsBotCorp(createTestCorp({name: CardName.ECOLINE}));
       registerMarsBotCorp(createTestCorp({name: CardName.CELESTIC, requiredExpansions: ['venus', 'colonies']}));
-      const lastCorp = {next: () => 0.99, nextInt: (n: number) => n - 1} as any;
+      const lastCorp = {next: () => 0.99, nextInt: (n: number) => n - 1};
       const withColonies = {...DEFAULT_GAME_OPTIONS, expansions: {...DEFAULT_GAME_OPTIONS.expansions, colonies: true}};
 
       expect(MarsBotCorpResolver.selectCorp(CardName.CREDICOR, withColonies, lastCorp).name).to.eq(CardName.CELESTIC);
@@ -163,12 +164,10 @@ describe('MarsBotCorpResolver', () => {
       const corp = createTestCorp({
         name: CardName.ECOLINE,
         trackCubes: [{trackIndex: 1, position: 3, cubeType: 'white'}],
-        effect: {
-          onTrackCubeTrigger: (_ctx, trackIndex, position, _cubeType) => {
-            triggered = true;
-            triggeredTrackNum = trackIndex;
-            triggeredPosition = position;
-          },
+        onTrackCubeTrigger: (_ctx, trackIndex, position, _cubeType) => {
+          triggered = true;
+          triggeredTrackNum = trackIndex;
+          triggeredPosition = position;
         },
       });
 
@@ -192,9 +191,7 @@ describe('MarsBotCorpResolver', () => {
           {trackIndex: 1, position: 3, cubeType: 'white'},
           {trackIndex: 1, position: 4, cubeType: 'black'},
         ],
-        effect: {
-          onTrackCubeTrigger: (_ctx, _trackIndex, _position, cubeType) => cubeType === 'white',
-        },
+        onTrackCubeTrigger: (_ctx, _trackIndex, _position, cubeType) => cubeType === 'white',
       });
       marsBot.corp = corp;
       marsBot.trackCubePositions.set('1:3', {trackIndex: 1, position: 3, cubeType: 'white'});
@@ -212,10 +209,8 @@ describe('MarsBotCorpResolver', () => {
       const corp = createTestCorp({
         name: CardName.ECOLINE,
         trackCubes: [{trackIndex: 1, position: 3, cubeType: 'white'}],
-        effect: {
-          onTrackCubeTrigger: () => {
-            triggerCount++;
-          },
+        onTrackCubeTrigger: () => {
+          triggerCount++;
         },
       });
 
@@ -236,10 +231,8 @@ describe('MarsBotCorpResolver', () => {
       marsBot.corp = createTestCorp({
         name: CardName.ECOLINE,
         trackCubes: [{trackIndex: 1, position: 3, cubeType: 'white'}],
-        effect: {
-          onTrackCubeTrigger: () => {
-            triggerCount++;
-          },
+        onTrackCubeTrigger: () => {
+          triggerCount++;
         },
       });
       marsBot.trackCubePositions.set('1:3', {trackIndex: 1, position: 3, cubeType: 'white'});
@@ -258,10 +251,8 @@ describe('MarsBotCorpResolver', () => {
 
       const corp = createTestCorp({
         name: CardName.ECOLINE,
-        effect: {
-          onTrackCubeTrigger: () => {
-            triggered = true;
-          },
+        onTrackCubeTrigger: () => {
+          triggered = true;
         },
       });
 
@@ -302,6 +293,24 @@ describe('MarsBotCorpResolver', () => {
       expect(marsBot2.hasCubeAt(1, 7)).to.not.be.undefined;
       expect(marsBot2.triggeredCubePositions.has('1:7')).to.be.true;
     });
+
+    it('round-trips floaters', () => {
+      const {marsBot} = createAutomaGame();
+      marsBot.floaters = 7;
+      const state = marsBot.serialize();
+      const {marsBot: marsBot2} = createAutomaGame();
+      marsBot2.restoreState(state);
+      expect(marsBot2.floaters).to.eq(7);
+    });
+
+    it('round-trips corpSpecificState', () => {
+      const {marsBot} = createAutomaGame();
+      marsBot.corpSpecificState.set('test', 42);
+      const state = marsBot.serialize();
+      const {marsBot: marsBot2} = createAutomaGame();
+      marsBot2.restoreState(state);
+      expect(marsBot2.corpSpecificState.get('test')).to.eq(42);
+    });
   });
 
   describe('registry', () => {
@@ -321,6 +330,25 @@ describe('MarsBotCorpResolver', () => {
 
       expect(getAllMarsBotCorps().filter((c) => c.name === CardName.ECOLINE)).to.have.length(1);
       expect(getAllMarsBotCorps().find((c) => c.name === CardName.ECOLINE)?.description).to.eq('second');
+    });
+  });
+
+  // The describes above start from an empty registry. These tests read the real corporations.
+  describe('with every corporation registered', () => {
+    beforeEach(restoreMarsBotCorpRegistry);
+
+    it('selects a corp excluding human corp', () => {
+      const rng = {next: () => 0, nextInt: (_n: number) => 0};
+      const corp = MarsBotCorpResolver.selectCorp(CardName.CREDICOR, DEFAULT_GAME_OPTIONS, rng);
+      expect(corp).to.not.be.undefined;
+      expect(corp!.name).to.not.eq(CardName.CREDICOR);
+    });
+
+    it('can select any of the 12 base corps', () => {
+      const rng = {next: () => 0, nextInt: (_n: number) => 0};
+      // With Credicor excluded, should get Ecoline (index 0 of 11 remaining)
+      const corp = MarsBotCorpResolver.selectCorp(CardName.CREDICOR, DEFAULT_GAME_OPTIONS, rng);
+      expect(corp).to.not.be.undefined;
     });
   });
 });

@@ -1,9 +1,10 @@
 import {BaseMilestone} from './IMilestone';
 import {IPlayer} from '../IPlayer';
 import {CardResource} from '../../common/CardResource';
-import {IMarsBot} from '../automa/MarsBotCorpTypes';
+import {IMarsBot} from '@/server/automa/IMarsBot';
 
 export class Hoverlord extends BaseMilestone {
+  public readonly automaDescription = '7+ floaters on its Venus board';
   constructor() {
     super(
       'Hoverlord',
@@ -19,7 +20,7 @@ export class Hoverlord extends BaseMilestone {
   }
 
   /** MarsBot stores its floaters on its Venus board. */
-  public marsBotCanClaim(bot: IMarsBot): boolean {
-    return bot.floaters >= 7;
+  public marsBotCanClaim(marsBot: IMarsBot): boolean {
+    return marsBot.floaters >= 7;
   }
 }

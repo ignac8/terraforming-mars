@@ -3,6 +3,8 @@ import {testGame} from '../../TestGame';
 import {Engineer} from '../../../src/server/milestones/modular/Engineer';
 import {TestPlayer} from '../../TestPlayer';
 import {Resource} from '../../../src/common/Resource';
+import {Tag} from '@/common/cards/Tag';
+import {fakeMarsBot, setTrack} from '../../automa/FakeMarsBot';
 
 describe('Engineer', () => {
   let milestone: Engineer;
@@ -43,4 +45,17 @@ describe('Engineer', () => {
 
     expect(milestone.canClaim(player)).is.true;
   });
+
+  for (const run of [
+    {power: 4, earth: 5, expected: false},
+    {power: 4, earth: 6, expected: true},
+  ] as const) {
+    it('MarsBot needs its Power and Earth tracks to add up to 10: ' + JSON.stringify(run), () => {
+      const marsBot = fakeMarsBot();
+      setTrack(marsBot, Tag.POWER, run.power);
+      setTrack(marsBot, Tag.EARTH, run.earth);
+
+      expect(milestone.marsBotCanClaim(marsBot)).eq(run.expected);
+    });
+  }
 });
