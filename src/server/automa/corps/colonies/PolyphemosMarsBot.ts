@@ -14,7 +14,7 @@ export class PolyphemosMarsBot extends MarsBotCorp {
 
   public override setup(marsBot: IMarsBot): void {
     marsBot.gainMc(25);
-    marsBot.game.log('MarsBot (Polyphemos): +25 M€');
+    marsBot.game.log('MarsBot (${0}): +25:r:mc:', (b) => b.cardName(this.name));
   }
 
   public override beforeActionPhase(marsBot: IMarsBot): void {

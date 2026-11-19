@@ -23,7 +23,7 @@ import {MarsBotTurmoilHelper} from './turmoil/MarsBotTurmoilHelper';
 import {pickByFlippedCard} from './MarsBotCardFlip';
 import {selectTradeColony, tradeWithColony} from './colonies/MarsBotTrader';
 import type {MarsBot} from './MarsBot';
-import {ACTION_DECK_BONUS_CARD_REMOVED} from './corps/BaseGameCorps';
+import {ACTION_DECK_BONUS_CARD_REMOVED} from './corps/corpHelpers';
 import {MARSBOT_BONUS_CARD_EFFECTS} from './bonusCards/MarsBotBonusCardEffects';
 
 /**

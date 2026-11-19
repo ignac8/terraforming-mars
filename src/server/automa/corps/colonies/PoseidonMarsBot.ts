@@ -15,15 +15,15 @@ export class PoseidonMarsBot extends MarsBotCorp {
     // C-33: Place 1 colony using random selection (C-15b method)
     const placed = marsBot.maybePlaceRandomColony();
     if (placed) {
-      marsBot.game.log('MarsBot (Poseidon): placed 1 colony (C-33)');
+      marsBot.game.log('MarsBot (${0}): placed 1 colony (C-33)', (b) => b.cardName(this.name));
     } else {
-      marsBot.game.log('MarsBot (Poseidon): no eligible colony tile for setup (C-33)');
+      marsBot.game.log('MarsBot (${0}): no eligible colony tile for setup (C-33)', (b) => b.cardName(this.name));
     }
   }
 
   // C-33: each colony either player builds advances the least-advanced track
   public override onColonyPlaced(marsBot: IMarsBot): void {
     marsBot.advanceTrack(marsBot.marsBotBoard.getLeastAdvancedTrackIndex());
-    marsBot.game.log('MarsBot (Poseidon): colony placed → advance least-advanced track (C-33)');
+    marsBot.game.log('MarsBot (${0}): colony placed → advance least-advanced track (C-33)', (b) => b.cardName(this.name));
   }
 }

@@ -28,12 +28,12 @@ export class AridorMarsBot extends MarsBotCorp {
 
   public override setup(marsBot: IMarsBot): void {
     if (addRandomColonyTile(marsBot.game) === undefined) {
-      marsBot.game.log('MarsBot (Aridor): no colony tile left to add');
+      marsBot.game.log('MarsBot (${0}): no colony tile left to add', (b) => b.cardName(this.name));
     }
   }
 
   public override onTrackCubeTrigger(marsBot: IMarsBot): void {
     marsBot.advanceTrack(2); // Event track = index 2
-    marsBot.game.log('MarsBot (Aridor): cube reached: advance event track');
+    marsBot.game.log('MarsBot (${0}): cube reached: advance event track', (b) => b.cardName(this.name));
   }
 }
