@@ -26,6 +26,7 @@ describe('LocalNeuralInstanceMarsBot', () => {
     const destroyed = marsBot['bonusResolver'].resolve(neuralInstance());
 
     expect(marsBot.neuralInstanceSpace?.tile?.tileType).to.eq(TileType.NEURAL_INSTANCE);
+    expect(marsBot.turnResolver.megacredits).to.eq(new MarsBotTilePlacer(marsBot).getTotalPlacementMC(marsBot.neuralInstanceSpace!));
     expect(destroyed).to.be.true;
     expect(marsBot.bonusDeck.discardPile.map((c) => c.id)).does.not.include(BonusCardId.B07_LOCAL_NEURAL_INSTANCE);
   });

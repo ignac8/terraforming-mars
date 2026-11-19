@@ -17,6 +17,7 @@ export interface IMarsBot {
   /** The human opponent. */
   readonly humanPlayer: IPlayer;
   readonly marsBotBoard: MarsBotBoard;
+  /** The bot's bonus deck: the bonus cards, and the project cards a corp put there. */
   readonly bonusDeck: MarsBotBonusDeck;
 
   /** The bot's M€ pool. */
