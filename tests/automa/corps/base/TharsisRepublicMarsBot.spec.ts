@@ -6,9 +6,6 @@ import {TharsisRepublicMarsBot} from '@/server/automa/corps/base/TharsisRepublic
 import {createAutomaGame, resetCorpRegistry} from '../CorpGame';
 import {recordingMarsBot} from '../RecordingMarsBot';
 
-// Track index on the Tharsis board
-const EVENT = 2;
-
 describe('TharsisRepublicMarsBot', () => {
   beforeEach(resetCorpRegistry);
 
@@ -22,7 +19,7 @@ describe('TharsisRepublicMarsBot', () => {
   });
 
   for (const run of [
-    {tileType: TileType.CITY, byMarsBot: true, tile: 'MarsBot city', calls: [`advanceTrack(${EVENT})`]},
+    {tileType: TileType.CITY, byMarsBot: true, tile: 'MarsBot city', calls: ['advanceTrack(2)']},
     {tileType: TileType.CITY, byMarsBot: false, tile: 'player city', calls: ['gainMc(2)']},
     {tileType: TileType.CAPITAL, byMarsBot: false, tile: 'player capital', calls: ['gainMc(2)']},
     {tileType: TileType.GREENERY, byMarsBot: false, tile: 'player greenery', calls: []},

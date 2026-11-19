@@ -7,14 +7,13 @@ import {InterplanetaryCinematicsMarsBot} from '@/server/automa/corps/base/Interp
 import {createAutomaGame, resetCorpRegistry} from '../CorpGame';
 import {recordingMarsBot, trackCubes} from '../RecordingMarsBot';
 
-// Track indexes on the Tharsis board
-const BUILDING = 0;
+// Track index on the Tharsis board
 const EVENT = 2;
 
 describe('InterplanetaryCinematicsMarsBot', () => {
   beforeEach(resetCorpRegistry);
 
-  for (const run of [{track: BUILDING, tag: 'building'}, {track: EVENT, tag: 'event'}]) {
+  for (const run of [{track: 0, tag: 'building'}, {track: EVENT, tag: 'event'}]) {
     it(`gains 2 M€ for each advance of the building and event tracks, ${run.tag} cube`, () => {
       const {marsBot, calls} = recordingMarsBot();
 

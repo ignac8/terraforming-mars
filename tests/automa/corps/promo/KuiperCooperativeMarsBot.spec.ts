@@ -5,9 +5,6 @@ import {KuiperCooperativeMarsBot} from '@/server/automa/corps/promo/KuiperCooper
 import {resetCorpRegistry} from '../CorpGame';
 import {recordingMarsBot, trackCubes} from '../RecordingMarsBot';
 
-// Track index on the Tharsis board
-const SPACE = 1;
-
 describe('KuiperCooperativeMarsBot', () => {
   beforeEach(resetCorpRegistry);
 
@@ -18,7 +15,7 @@ describe('KuiperCooperativeMarsBot', () => {
     it(`raises the temperature for a white cube and places an ocean for a black one, ${run.cube} cube`, () => {
       const {marsBot, calls} = recordingMarsBot();
 
-      new KuiperCooperativeMarsBot().onTrackCubeTrigger(marsBot, SPACE, 4, run.cube);
+      new KuiperCooperativeMarsBot().onTrackCubeTrigger(marsBot, 1, 4, run.cube);
 
       expect(calls).deep.eq(run.calls);
     });
