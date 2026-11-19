@@ -76,10 +76,6 @@ export function recordingMarsBot(fields: Partial<IMarsBot> = {}): RecordingMarsB
       record('withoutTRGain')();
       action();
     },
-    withoutMcGain: (action) => {
-      record('withoutMcGain')();
-      action();
-    },
     withoutTRorMcGain: (action) => {
       record('withoutTRorMcGain')();
       action();

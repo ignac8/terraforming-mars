@@ -58,6 +58,8 @@ export interface IMarsBot {
    * no effect (rulebook A p.5; BGG 3599965, 3623553).
    */
   maybeAdvanceTrack(trackIndex: number): void;
+  /** Takes up to `amount` M€ from the bot, stopping at zero, and returns how much it lost. */
+  loseMc(amount: number): number;
   /**
    * Advances the track that carries `tag` and tells the player's cards about the tag.
    *
@@ -79,8 +81,6 @@ export interface IMarsBot {
   resolveProjectCard(card: IProjectCard): void;
   /** Takes `card` off the bot's played pile. */
   removePlayedProjectCard(card: IProjectCard): void;
-  /** Takes up to `amount` M€ from the bot, stopping at zero, and returns how much it lost. */
-  loseMc(amount: number): number;
   /**
    * Draws the top bonus card and resolves it. Does nothing when both bonus piles are empty, or
    * once the game has ended.
