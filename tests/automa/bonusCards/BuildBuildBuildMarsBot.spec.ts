@@ -4,29 +4,118 @@ import {BonusCardId} from '@/common/automa/AutomaTypes';
 import {SpaceType} from '@/common/boards/SpaceType';
 import {CardName} from '@/common/cards/CardName';
 import {IGame} from '@/server/IGame';
-import {MarsBot} from '@/server/automa/MarsBot';
+import {IPlayer} from '@/server/IPlayer';
 import {createBonusCard} from '@/server/automa/MarsBotBonusCard';
+import {MarsBotBonusDeck} from '@/server/automa/MarsBotBonusDeck';
+import {MarsBotTilePlacer} from '@/server/automa/MarsBotTilePlacer';
+import {BuildBuildBuildMarsBot} from '@/server/automa/bonusCards/BuildBuildBuildMarsBot';
 import {Space} from '@/server/boards/Space';
 import {Capital} from '@/server/cards/base/Capital';
 import {NuclearZone} from '@/server/cards/base/NuclearZone';
+import {IProjectCard} from '@/server/cards/IProjectCard';
+import {newProjectCard} from '@/server/createCard';
+import {testGame} from '../../TestGame';
 import {createAutomaGame, resetCorpRegistry} from '../corps/CorpGame';
+import {recordingMarsBot} from '../corps/RecordingMarsBot';
 
 /** An empty land space with no tile within two spaces of it. */
-function quietSpace(game: IGame, marsBot: MarsBot): Space {
+function quietSpace(game: IGame, player: IPlayer): Space {
   const board = game.board;
-  return board.getAvailableSpacesOnLand(marsBot.player).find((space) => {
-    const adj = board.getAdjacentSpaces(space);
+  const space = board.getAvailableSpacesOnLand(player).find((candidate) => {
+    const adj = board.getAdjacentSpaces(candidate);
     return adj.length === 6 && adj.every((s) => s.spaceType === SpaceType.LAND &&
       board.getAdjacentSpaces(s).every((t) => t.tile === undefined));
-  })!;
+  });
+  if (space === undefined) {
+    throw new Error('No quiet space');
+  }
+  return space;
+}
+
+function setup(megacredits: number, playedProjectCards: Array<IProjectCard> = []) {
+  const [game, human, botPlayer] = testGame(2);
+  const removed: Array<IProjectCard> = [];
+  const {marsBot, calls} = recordingMarsBot({
+    game,
+    player: botPlayer,
+    humanPlayer: human,
+    megacredits,
+    playedProjectCards,
+    bonusDeck: new MarsBotBonusDeck([], [], game.rng),
+    removePlayedProjectCard: (card) => removed.push(card),
+  });
+  return {game, human, marsBot, calls, removed};
 }
 
 describe('BuildBuildBuildMarsBot', () => {
   beforeEach(resetCorpRegistry);
 
+  for (const run of [
+    {megacredits: 20, after: 15},
+    {megacredits: 2, after: 0},
+  ] as const) {
+    it('places a city next to the greenery of the player and loses 5 M€: ' + JSON.stringify(run), () => {
+      const {game, human, marsBot, calls} = setup(run.megacredits);
+      const greenery = quietSpace(game, human);
+      game.simpleAddTile(human, greenery, {tileType: TileType.GREENERY});
+      const card = createBonusCard(BonusCardId.B27_BUILD_BUILD_BUILD);
+
+      const kept = new BuildBuildBuildMarsBot().resolve(marsBot, card);
+
+      const cities = game.board.getCities(marsBot.player);
+      expect(cities).has.length(1);
+      expect(game.board.getAdjacentSpaces(cities[0])).includes(greenery);
+      expect(calls).deep.eq([`gainMc(${new MarsBotTilePlacer(marsBot).getTotalPlacementMC(cities[0])})`]);
+      expect(marsBot.megacredits).eq(run.after);
+      expect(kept).is.false;
+    });
+  }
+
+  it('places the tile of a card it played next to the city of the player, then loses the card and 3 M€', () => {
+    const nuclearZone = new NuclearZone();
+    const {game, human, marsBot, calls, removed} = setup(10, [nuclearZone]);
+    const city = quietSpace(game, human);
+    game.simpleAddTile(human, city, {tileType: TileType.CITY});
+
+    const kept = new BuildBuildBuildMarsBot().resolve(marsBot, createBonusCard(BonusCardId.B27_BUILD_BUILD_BUILD));
+
+    const space = game.board.getSpaceByTileCard(CardName.NUCLEAR_ZONE);
+    expect(space?.tile?.tileType).eq(TileType.NUCLEAR_ZONE);
+    expect(space?.player).eq(marsBot.player);
+    expect(game.board.getAdjacentSpaces(city)).includes(space);
+    expect(removed).deep.eq([nuclearZone]);
+    expect(calls).deep.eq([`gainMc(${new MarsBotTilePlacer(marsBot).getTotalPlacementMC(space!)})`]);
+    expect(marsBot.megacredits).eq(7);
+    expect(kept).is.false;
+  });
+
+  for (const run of [
+    {played: undefined, humanCity: false},
+    {played: CardName.NUCLEAR_ZONE, humanCity: false},
+    // Capital's tile is a city, which can't go next to the city of the player
+    {played: CardName.CAPITAL, humanCity: true},
+  ] as const) {
+    it('with nothing to build, gains 3 M€ and goes back into the bonus deck: ' + JSON.stringify(run), () => {
+      const played = run.played === undefined ? undefined : newProjectCard(run.played);
+      const {game, human, marsBot, calls, removed} = setup(0, played === undefined ? [] : [played]);
+      if (run.humanCity) {
+        game.simpleAddTile(human, quietSpace(game, human), {tileType: TileType.CITY});
+      }
+      const card = createBonusCard(BonusCardId.B27_BUILD_BUILD_BUILD);
+
+      const kept = new BuildBuildBuildMarsBot().resolve(marsBot, card);
+
+      expect(game.board.spaces.filter((s) => s.player === marsBot.player)).is.empty;
+      expect(removed).is.empty;
+      expect(calls).deep.eq(['gainMc(3)']);
+      expect(marsBot.bonusDeck.drawPile).deep.eq([card]);
+      expect(kept).is.true;
+    });
+  }
+
   it('a. places a city next to the greenery of the player, then loses 5 M€', () => {
     const {game, human, marsBot} = createAutomaGame();
-    const greenery = quietSpace(game, marsBot);
+    const greenery = quietSpace(game, marsBot.player);
     game.simpleAddTile(human, greenery, {tileType: TileType.GREENERY});
     marsBot.megacredits = 20;
     const card = createBonusCard(BonusCardId.B27_BUILD_BUILD_BUILD);
@@ -43,7 +132,7 @@ describe('BuildBuildBuildMarsBot', () => {
 
   it('b. places the special tile of a card it played next to the city of the player, then loses the card and 3 M€', () => {
     const {game, human, marsBot} = createAutomaGame();
-    const city = quietSpace(game, marsBot);
+    const city = quietSpace(game, marsBot.player);
     game.simpleAddTile(human, city, {tileType: TileType.CITY});
     const nuclearZone = new NuclearZone();
     marsBot.playedProjectCards.push(nuclearZone);
@@ -62,7 +151,7 @@ describe('BuildBuildBuildMarsBot', () => {
 
   it('b. leaves out a played Capital, which is a city', () => {
     const {game, human, marsBot} = createAutomaGame();
-    game.simpleAddTile(human, quietSpace(game, marsBot), {tileType: TileType.CITY});
+    game.simpleAddTile(human, quietSpace(game, marsBot.player), {tileType: TileType.CITY});
     marsBot.playedProjectCards.push(new Capital());
 
     marsBot['bonusResolver'].resolve(createBonusCard(BonusCardId.B27_BUILD_BUILD_BUILD));
