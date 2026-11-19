@@ -1,5 +1,6 @@
 import {BonusCardId} from '@/common/automa/AutomaTypes';
 import {IMarsBot} from '@/server/automa/IMarsBot';
+import {createBonusCard} from '@/server/automa/MarsBotBonusCard';
 import {MarsBotBonusCardEffect} from '@/server/automa/bonusCards/MarsBotBonusCardEffect';
 import {maybeAdvanceTrack} from '@/server/automa/bonusCards/bonusCardHelpers';
 
@@ -15,7 +16,7 @@ export class DiversificationMarsBot extends MarsBotBonusCardEffect {
     maybeAdvanceTrack(marsBot, leastIndex);
     const lost = Math.min(4, marsBot.megacredits);
     marsBot.megacredits -= lost;
-    marsBot.game.log('MarsBot resolves Diversification: advance least-advanced track, lose ${0} M€', (b) => b.number(lost));
+    marsBot.game.log('MarsBot (${0}): advance least-advanced track, lose ${1}:r:mc:', (b) => b.cardName(createBonusCard(this.id).name).number(lost));
     return false;
   }
 }

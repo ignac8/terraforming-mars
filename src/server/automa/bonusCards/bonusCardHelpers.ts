@@ -15,8 +15,10 @@ import {ICard} from '@/server/cards/ICard';
 import {venusStepsBetween} from '@/server/venusNext/venusScale';
 
 /**
- * Advances a track for a bonus card. A maxed track stays put: a bonus card that can't resolve
- * takes no Failed Action (rulebook A p.5; BGG 3599965, 3623553).
+ * Advances a track for a bonus card.
+ *
+ * A maxed track stays put: a bonus card that can't resolve takes no Failed Action (rulebook A p.5;
+ * BGG 3599965, 3623553).
  */
 export function maybeAdvanceTrack(marsBot: IMarsBot, trackIndex: number): void {
   if (!marsBot.marsBotBoard.tracks[trackIndex].canAdvance()) {
@@ -34,13 +36,12 @@ export function loseMc(marsBot: IMarsBot, amount: number): number {
 }
 
 /**
- * Removes the player's animal or microbe worth the most VP (Invasive Species, and Corporate
- * Competition's Excentric). False when no card has one MarsBot may remove.
+ * Removes the player's animal or microbe worth the most VP, for the bonus card `source`.
  *
- * Cards that score their resources come first, then the rest; a tie goes to a flipped project
- * card (BGG 3360797).
+ * False when no card has one MarsBot may remove. Cards that score their resources come first, then
+ * the rest; a tie goes to a flipped project card (BGG 3360797).
  */
-export function maybeRemoveAnimalOrMicrobe(marsBot: IMarsBot, source: string): boolean {
+export function maybeRemoveAnimalOrMicrobe(marsBot: IMarsBot, source: CardName): boolean {
   const game = marsBot.game;
   const humanPlayer = marsBot.humanPlayer;
   // Protected Habitat blocks animal/microbe removal
@@ -55,14 +56,14 @@ export function maybeRemoveAnimalOrMicrobe(marsBot: IMarsBot, source: string): b
     const tied = candidates.filter((played) => vpPerResource(played) === best);
     const card = tied.length > 1 ? pickByFlippedCard(game, tied) ?? tied[0] : tied[0];
     humanPlayer.removeResourceFrom(card, 1, {removingPlayer: marsBot.player, log: false});
-    game.log('MarsBot\'s ${0}: removed 1 ${1} from ${2}',
-      (b) => b.rawString(source).rawString(card.resourceType ?? '').card(card));
+    game.log('MarsBot (${0}): removed 1 ${1} from ${2}',
+      (b) => b.cardName(source).rawString(card.resourceType ?? '').card(card));
     return true;
   }
   if (isProtected) {
-    game.log('MarsBot\'s ${0}: blocked by Protected Habitats', (b) => b.rawString(source));
+    game.log('MarsBot (${0}): blocked by Protected Habitats', (b) => b.cardName(source));
   } else {
-    game.log('MarsBot\'s ${0}: no animal/microbe resources to remove', (b) => b.rawString(source));
+    game.log('MarsBot (${0}): no animal/microbe resources to remove', (b) => b.cardName(source));
   }
   return false;
 }

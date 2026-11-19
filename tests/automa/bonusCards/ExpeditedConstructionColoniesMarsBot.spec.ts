@@ -3,17 +3,55 @@ import {BonusCardId} from '@/common/automa/AutomaTypes';
 import {BoardName} from '@/common/boards/BoardName';
 import {CardName} from '@/common/cards/CardName';
 import {ColonyName} from '@/common/colonies/ColonyName';
+import {TileType} from '@/common/TileType';
 import {MarsBotBonusCard, bonusCard} from '@/server/automa/MarsBotBonusCard';
 import {Ceres} from '@/server/colonies/Ceres';
 import {Luna} from '@/server/colonies/Luna';
+import {ExpeditedConstructionColoniesMarsBot} from '@/server/automa/bonusCards/ExpeditedConstructionColoniesMarsBot';
 import {testGame} from '../../TestGame';
 import {getMarsBot} from '../corps/CorpGame';
+import {recordingMarsBot} from '../corps/RecordingMarsBot';
 
 function b17Card(): MarsBotBonusCard {
   return bonusCard(BonusCardId.B17_EXPEDITED_CONSTRUCTION_COLONIES, 'Expedited Construction (Colonies)' as CardName);
 }
 
 describe('ExpeditedConstructionColoniesMarsBot', () => {
+  // Space 12 is next to all three oceans and has no icons, so the city earns 2 M€ per ocean
+  it('places a city next to 2 greenery or ocean tiles and is destroyed', () => {
+    const [game, human, botPlayer] = testGame(2, {coloniesExtension: true});
+    const {marsBot, calls} = recordingMarsBot({game, player: botPlayer, humanPlayer: human, megacredits: 0});
+    for (const id of ['06', '07', '13'] as const) {
+      game.simpleAddTile(human, game.board.getSpaceOrThrow(id), {tileType: TileType.OCEAN});
+    }
+
+    const destroyed = new ExpeditedConstructionColoniesMarsBot().resolve(marsBot);
+
+    expect(game.board.getSpaceOrThrow('12').tile?.tileType).eq(TileType.CITY);
+    expect(calls).deep.eq(['gainMc(6)']);
+    expect(destroyed).is.true;
+  });
+
+  for (const run of [
+    {botColonies: 0, calls: ['maybePlaceRandomColony()']},
+    {botColonies: 1, calls: ['maybePlaceRandomColony()']},
+    {botColonies: 2, calls: []},
+  ] as const) {
+    it('without a city space, places a colony while MarsBot has at most 1 and is kept: ' + JSON.stringify(run), () => {
+      const [game, human, botPlayer] = testGame(2, {coloniesExtension: true});
+      const {marsBot, calls} = recordingMarsBot({game, player: botPlayer, humanPlayer: human, megacredits: 0});
+      game.colonies = [new Luna(), new Ceres()];
+      for (const colony of game.colonies.slice(0, run.botColonies)) {
+        colony.colonies.push(botPlayer.id);
+      }
+
+      const destroyed = new ExpeditedConstructionColoniesMarsBot().resolve(marsBot);
+
+      expect(calls).deep.eq(run.calls);
+      expect(destroyed).is.false;
+    });
+  }
+
   it('C-15a: places city if adjacent to ≥2 greenery/ocean tiles and destroys card', () => {
     const [game] = testGame(1, {automa: true, coloniesExtension: true, boardName: BoardName.THARSIS});
     const marsBot = getMarsBot(game);

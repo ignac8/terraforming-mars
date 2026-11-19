@@ -1,11 +1,30 @@
 import {expect} from 'chai';
 import {BonusCardId} from '@/common/automa/AutomaTypes';
 import {createBonusCard} from '@/server/automa/MarsBotBonusCard';
+import {DiversificationMarsBot} from '@/server/automa/bonusCards/DiversificationMarsBot';
 import {createAutomaGame, resetCorpRegistry} from '../corps/CorpGame';
+import {setAllTracks} from '../FakeMarsBot';
+import {TRACK, recordingMarsBot} from '../corps/RecordingMarsBot';
 import {maxTracks} from './BonusCardGame';
 
 describe('DiversificationMarsBot', () => {
   beforeEach(resetCorpRegistry);
+
+  for (const run of [
+    {megacredits: 6, megacreditsLeft: 2},
+    {megacredits: 3, megacreditsLeft: 0},
+  ] as const) {
+    it('advances the least-advanced track, then loses up to 4 M€: ' + JSON.stringify(run), () => {
+      const {marsBot, calls} = recordingMarsBot({megacredits: run.megacredits});
+      setAllTracks(marsBot, 4);
+      marsBot.marsBotBoard.tracks[TRACK.science].position = 2;
+
+      new DiversificationMarsBot().resolve(marsBot);
+
+      expect(calls).deep.eq([`advanceTrack(${TRACK.science})`]);
+      expect(marsBot.megacredits).eq(run.megacreditsLeft);
+    });
+  }
 
   it('loses up to 4 M€ after advancing', () => {
     const {marsBot} = createAutomaGame();

@@ -4,6 +4,7 @@ import {SpaceType} from '@/common/boards/SpaceType';
 import {CardType} from '@/common/cards/CardType';
 import {Tag} from '@/common/cards/Tag';
 import {IMarsBot} from '@/server/automa/IMarsBot';
+import {createBonusCard} from '@/server/automa/MarsBotBonusCard';
 import {humanAwardScore, marsBotUsesBoardGoals} from '@/server/automa/MarsBotMilestoneAwardEval';
 import {cardTagsIncludingEvent} from '@/server/automa/MarsBotTags';
 import {MarsBotTilePlacer} from '@/server/automa/MarsBotTilePlacer';
@@ -157,7 +158,7 @@ export class CorporateCompetitionMarsBot extends MarsBotBonusCardEffect {
     case 'Cultivator': return maybePlaceGreenery(marsBot);
     case 'Magnate': return revealAndResolveCard((c) => c.type === CardType.AUTOMATED);
     case 'Space Baron': return advanceTrackOf(Tag.SPACE);
-    case 'Excentric': return maybeRemoveAnimalOrMicrobe(marsBot, 'Corporate Competition');
+    case 'Excentric': return maybeRemoveAnimalOrMicrobe(marsBot, createBonusCard(this.id).name);
     case 'Contractor': return advanceTrackOf(Tag.BUILDING);
     // Elysium (B10)
     case 'Celebrity': return revealAndResolveCard((c) => c.cost >= 20);

@@ -4,9 +4,41 @@ import {createBaseBonusCards, createBonusCard} from '@/server/automa/MarsBotBonu
 import {MarsBotBonusResolver} from '@/server/automa/MarsBotBonusResolver';
 import {ProtectedHabitats} from '@/server/cards/base/ProtectedHabitats';
 import {AsteroidDeflectionSystem} from '@/server/cards/promo/AsteroidDeflectionSystem';
+import {MeteorShowerMarsBot} from '@/server/automa/bonusCards/MeteorShowerMarsBot';
+import {testGame} from '../../TestGame';
 import {createAutomaGame} from '../corps/CorpGame';
+import {recordingMarsBot} from '../corps/RecordingMarsBot';
 
 describe('MeteorShowerMarsBot', () => {
+  for (const run of [
+    {plants: 2, plantsLeft: 0, destroyed: false},
+    {plants: 3, plantsLeft: 0, destroyed: true},
+    {plants: 7, plantsLeft: 2, destroyed: true},
+  ] as const) {
+    it('removes up to 5 plants and is destroyed once 3 are lost: ' + JSON.stringify(run), () => {
+      const [game, human, botPlayer] = testGame(2);
+      const {marsBot} = recordingMarsBot({game, player: botPlayer, humanPlayer: human});
+      human.plants = run.plants;
+
+      const destroyed = new MeteorShowerMarsBot().resolve(marsBot);
+
+      expect(human.plants).eq(run.plantsLeft);
+      expect(destroyed).eq(run.destroyed);
+    });
+  }
+
+  it('is destroyed without removing plants when they are protected', () => {
+    const [game, human, botPlayer] = testGame(2);
+    const {marsBot} = recordingMarsBot({game, player: botPlayer, humanPlayer: human});
+    human.plants = 10;
+    human.playedCards.push(new ProtectedHabitats());
+
+    const destroyed = new MeteorShowerMarsBot().resolve(marsBot);
+
+    expect(human.plants).eq(10);
+    expect(destroyed).is.true;
+  });
+
   it('card is NOT destroyed when human loses <3 plants', () => {
     const {human, marsBot} = createAutomaGame();
     human.plants = 2;

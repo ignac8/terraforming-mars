@@ -2,7 +2,9 @@ import {expect} from 'chai';
 import {BonusCardId} from '@/common/automa/AutomaTypes';
 import {MarsBot} from '@/server/automa/MarsBot';
 import {createBonusCard} from '@/server/automa/MarsBotBonusCard';
+import {InvestorsMarsBot} from '@/server/automa/bonusCards/InvestorsMarsBot';
 import {createAutomaGame, resetCorpRegistry} from '../corps/CorpGame';
+import {TRACK, recordingMarsBot} from '../corps/RecordingMarsBot';
 import {maxTracks} from './BonusCardGame';
 
 function setTracks(marsBot: MarsBot, positions: Array<number>) {
@@ -13,6 +15,24 @@ function setTracks(marsBot: MarsBot, positions: Array<number>) {
 
 describe('InvestorsMarsBot', () => {
   beforeEach(resetCorpRegistry);
+
+  for (const run of [
+    {generation: 2, tracks: [5, 3, 1, 4, 4, 6, 2], after: [5, 3, 2, 4, 4, 5, 2], calls: [`advanceTrack(${TRACK.event})`]},
+    // Ties go to the upper track: space over event, building over science
+    {generation: 4, tracks: [4, 1, 1, 4, 2, 2, 3], after: [3, 2, 1, 4, 2, 2, 3], calls: [`advanceTrack(${TRACK.space})`]},
+    {generation: 3, tracks: [5, 3, 2, 4, 4, 6, 3], after: [5, 3, 2, 4, 4, 6, 3], calls: ['gainMc(2)']},
+  ] as const) {
+    it('in an even generation moves the least- and most-advanced tracks, otherwise gains M€: ' + JSON.stringify(run), () => {
+      const {marsBot, calls} = recordingMarsBot();
+      marsBot.game.generation = run.generation;
+      marsBot.marsBotBoard.tracks.forEach((track, i) => track.position = run.tracks[i]);
+
+      new InvestorsMarsBot().resolve(marsBot);
+
+      expect(marsBot.marsBotBoard.tracks.map((track) => track.position)).deep.eq(run.after);
+      expect(calls).deep.eq(run.calls);
+    });
+  }
 
   it('in an even generation advances the least-advanced track and moves the most-advanced one back', () => {
     const {game, marsBot} = createAutomaGame();
