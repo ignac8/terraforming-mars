@@ -33,6 +33,7 @@ import {SpaceId} from '../../common/Types';
 import {inplaceRemove} from '../../common/utils/utils';
 import {LogHelper} from '../LogHelper';
 import {ColonyName} from '../../common/colonies/ColonyName';
+import {ACTION_DECK_BONUS_CARD_REMOVED} from './corps/corpHelpers';
 
 /** Expansion bonus cards set aside at setup: each generation they go back into the action deck. */
 const SET_ASIDE_BONUS_CARDS: ReadonlySet<BonusCardId> = new Set([
@@ -534,9 +535,19 @@ export class MarsBot implements IMarsBot {
     if (this.actionDeck.some((c) => !this.isProjectCard(c) && c.id === bonusCardId)) {
       return;
     }
+    // A corporation's card that removed itself from the game doesn't come back (Vitor's Overachievement)
+    const corp = this.corp;
+    if (bonusCardId === corp?.actionDeckBonusCard && this.getCorpState(ACTION_DECK_BONUS_CARD_REMOVED) > 0) {
+      return;
+    }
     // Take the card out of the bonus deck when it is there, otherwise create it
     const card = this.bonusDeck.findAndRemove(bonusCardId) ?? createBonusCard(bonusCardId);
     this.shuffleIntoActionDeck(card);
+    if (corp !== undefined) {
+      this.game.log('MarsBot (${0}): ${1} added to action deck', (b) => b.cardName(corp.name).cardName(card.name));
+    } else {
+      this.game.log('MarsBot: ${0} added to action deck', (b) => b.cardName(card.name));
+    }
   }
 
   /** Puts a card into the action deck at a random position. */

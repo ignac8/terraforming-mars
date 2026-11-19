@@ -3,6 +3,7 @@ import {marsBotMapRules} from '@/common/automa/MarsBotMapRules';
 import {CardName} from '@/common/cards/CardName';
 import {Tag} from '@/common/cards/Tag';
 import {IMarsBot} from '@/server/automa/IMarsBot';
+import {createBonusCard} from '@/server/automa/MarsBotBonusCard';
 import {MarsBotCorp} from '@/server/automa/MarsBotCorp';
 
 export class NirgalEnterprisesMarsBot extends MarsBotCorp {
@@ -16,7 +17,7 @@ export class NirgalEnterprisesMarsBot extends MarsBotCorp {
 
   public override setup(marsBot: IMarsBot): void {
     marsBot.removeBonusCard(BonusCardId.B04_OVERACHIEVEMENT);
-    marsBot.game.log('MarsBot (${0}): Overachievement removed from bonus deck', (b) => b.cardName(this.name));
+    marsBot.game.log('MarsBot (${0}): ${1} removed from bonus deck', (b) => b.cardName(this.name).cardName(createBonusCard(BonusCardId.B04_OVERACHIEVEMENT).name));
   }
 
   public override awardScoreBonus(): number {
