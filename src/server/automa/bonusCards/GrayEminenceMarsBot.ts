@@ -1,10 +1,14 @@
 import {BonusCardId} from '@/common/automa/AutomaTypes';
 import {MarsBotBonusCardEffect} from '@/server/automa/bonusCards/MarsBotBonusCardEffect';
+import type {MarsBotBonusResolver} from '@/server/automa/MarsBotBonusResolver';
 
 // B29: Gray Eminence (Septem Tribus — T-7 delegate placement, no T-8 repeat)
-export const GRAY_EMINENCE_MARSBOT_BONUS_CARD: MarsBotBonusCardEffect = {
-  id: BonusCardId.B29_GRAY_EMINENCE,
-  resolve(resolver) {
+export class GrayEminenceMarsBot extends MarsBotBonusCardEffect {
+  constructor() {
+    super({id: BonusCardId.B29_GRAY_EMINENCE});
+  }
+
+  public override resolve(resolver: MarsBotBonusResolver): boolean {
     const turmoil = resolver.game.turmoil;
     if (turmoil === undefined) {
       resolver.game.log('MarsBot resolves Gray Eminence: Turmoil not active');
@@ -23,5 +27,5 @@ export const GRAY_EMINENCE_MARSBOT_BONUS_CARD: MarsBotBonusCardEffect = {
       resolver.game.log('MarsBot places delegate in ${0} (Gray Eminence)', (b) => b.partyName(partyName));
     }
     return false;
-  },
-};
+  }
+}

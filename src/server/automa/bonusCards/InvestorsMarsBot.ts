@@ -1,9 +1,13 @@
 import {BonusCardId} from '@/common/automa/AutomaTypes';
 import {MarsBotBonusCardEffect} from '@/server/automa/bonusCards/MarsBotBonusCardEffect';
+import type {MarsBotBonusResolver} from '@/server/automa/MarsBotBonusResolver';
 
-export const INVESTORS_MARSBOT_BONUS_CARD: MarsBotBonusCardEffect = {
-  id: BonusCardId.B32_INVESTORS,
-  resolve(resolver) {
+export class InvestorsMarsBot extends MarsBotBonusCardEffect {
+  constructor() {
+    super({id: BonusCardId.B32_INVESTORS});
+  }
+
+  public override resolve(resolver: MarsBotBonusResolver): boolean {
     // Utopia Invest: a. in an even generation, advance the least-advanced track and move the
     // most-advanced track back 1 space; b. otherwise gain 1 M€ per space of the least-advanced
     // track. Ties go to the upper track.
@@ -20,5 +24,5 @@ export const INVESTORS_MARSBOT_BONUS_CARD: MarsBotBonusCardEffect = {
       resolver.game.log('MarsBot resolves Investors: +${0} M€ (least-advanced track)', (b) => b.number(amount));
     }
     return false;
-  },
-};
+  }
+}

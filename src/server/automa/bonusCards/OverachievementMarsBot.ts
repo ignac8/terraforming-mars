@@ -1,11 +1,15 @@
 import {BonusCardId} from '@/common/automa/AutomaTypes';
 import {marsBotMapRules} from '@/common/automa/MarsBotMapRules';
 import {MarsBotBonusCardEffect} from '@/server/automa/bonusCards/MarsBotBonusCardEffect';
+import type {MarsBotBonusResolver} from '@/server/automa/MarsBotBonusResolver';
 
 // B04: Overachievement
-export const OVERACHIEVEMENT_MARSBOT_BONUS_CARD: MarsBotBonusCardEffect = {
-  id: BonusCardId.B04_OVERACHIEVEMENT,
-  resolve(resolver) {
+export class OverachievementMarsBot extends MarsBotBonusCardEffect {
+  constructor() {
+    super({id: BonusCardId.B04_OVERACHIEVEMENT});
+  }
+
+  public override resolve(resolver: MarsBotBonusResolver): boolean {
     // Claim a milestone; failing that, fund an award once the map's generation threshold for it is reached
     const {generationShift} = marsBotMapRules(resolver.game.gameOptions.boardName);
     const done = resolver.turnResolver.maybeClaimMilestone() ||
@@ -17,5 +21,5 @@ export const OVERACHIEVEMENT_MARSBOT_BONUS_CARD: MarsBotBonusCardEffect = {
     resolver.turnResolver.gainMc(5);
     resolver.game.log('MarsBot gains 5 MC (Overachievement failed)');
     return false;
-  },
-};
+  }
+}

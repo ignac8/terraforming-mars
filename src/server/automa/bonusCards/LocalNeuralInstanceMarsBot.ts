@@ -1,11 +1,15 @@
 import {TileType} from '@/common/TileType';
 import {BonusCardId} from '@/common/automa/AutomaTypes';
 import {MarsBotBonusCardEffect} from '@/server/automa/bonusCards/MarsBotBonusCardEffect';
+import type {MarsBotBonusResolver} from '@/server/automa/MarsBotBonusResolver';
 
 // B07: Local Neural Instance. The card is removed only once its tile is placed.
-export const LOCAL_NEURAL_INSTANCE_MARSBOT_BONUS_CARD: MarsBotBonusCardEffect = {
-  id: BonusCardId.B07_LOCAL_NEURAL_INSTANCE,
-  resolve(resolver) {
+export class LocalNeuralInstanceMarsBot extends MarsBotBonusCardEffect {
+  constructor() {
+    super({id: BonusCardId.B07_LOCAL_NEURAL_INSTANCE});
+  }
+
+  public override resolve(resolver: MarsBotBonusResolver): boolean {
     const space = resolver.tilePlacer.findNeuralInstanceSpace();
     if (space !== undefined) {
       resolver.game.simpleAddTile(resolver.botPlayer, space, {tileType: TileType.NEURAL_INSTANCE});
@@ -24,5 +28,5 @@ export const LOCAL_NEURAL_INSTANCE_MARSBOT_BONUS_CARD: MarsBotBonusCardEffect = 
       resolver.turnResolver.resolveProjectCard(drawnCard);
     }
     return false;
-  },
-};
+  }
+}

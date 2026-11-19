@@ -1,13 +1,17 @@
 import {BonusCardId} from '@/common/automa/AutomaTypes';
 import {MarsBotBonusCardEffect} from '@/server/automa/bonusCards/MarsBotBonusCardEffect';
+import type {MarsBotBonusResolver} from '@/server/automa/MarsBotBonusResolver';
 
 /** The Corporate Competition helpers that don't cost MarsBot 5 M€ (rulebook C, p.12). */
 const FREE_HELPER_AWARDS: ReadonlyArray<string> = ['Forecaster'];
 
 // B08: Corporate Competition
-export const CORPORATE_COMPETITION_MARSBOT_BONUS_CARD: MarsBotBonusCardEffect = {
-  id: BonusCardId.B08_CORPORATE_COMPETITION,
-  resolve(resolver) {
+export class CorporateCompetitionMarsBot extends MarsBotBonusCardEffect {
+  constructor() {
+    super({id: BonusCardId.B08_CORPORATE_COMPETITION});
+  }
+
+  public override resolve(resolver: MarsBotBonusResolver): boolean {
     const canPay = resolver.turnResolver.megacredits >= 5;
     const funded = resolver.game.awards.filter((a) => resolver.game.hasBeenFunded(a));
     if (!canPay || funded.length === 0) {
@@ -49,5 +53,5 @@ export const CORPORATE_COMPETITION_MARSBOT_BONUS_CARD: MarsBotBonusCardEffect = 
       resolver.drawAndResolveAnotherBonus();
     }
     return false;
-  },
-};
+  }
+}

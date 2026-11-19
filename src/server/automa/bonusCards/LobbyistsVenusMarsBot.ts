@@ -1,10 +1,14 @@
 import {GlobalParameter} from '@/common/GlobalParameter';
 import {BonusCardId} from '@/common/automa/AutomaTypes';
 import {MarsBotBonusCardEffect} from '@/server/automa/bonusCards/MarsBotBonusCardEffect';
+import type {MarsBotBonusResolver} from '@/server/automa/MarsBotBonusResolver';
 
-export const LOBBYISTS_VENUS_MARSBOT_BONUS_CARD: MarsBotBonusCardEffect = {
-  id: BonusCardId.B15_LOBBYISTS_VENUS,
-  resolve(resolver) {
+export class LobbyistsVenusMarsBot extends MarsBotBonusCardEffect {
+  constructor() {
+    super({id: BonusCardId.B15_LOBBYISTS_VENUS});
+  }
+
+  public override resolve(resolver: MarsBotBonusResolver): boolean {
     if (resolver.lobbyistsTempBranch()) {
       return true;
     }
@@ -23,5 +27,5 @@ export const LOBBYISTS_VENUS_MARSBOT_BONUS_CARD: MarsBotBonusCardEffect = {
 
     resolver.advanceFurthestParameter();
     return false;
-  },
-};
+  }
+}

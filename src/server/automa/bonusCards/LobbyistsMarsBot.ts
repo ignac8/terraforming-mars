@@ -1,10 +1,14 @@
 import {BonusCardId} from '@/common/automa/AutomaTypes';
 import {MarsBotBonusCardEffect} from '@/server/automa/bonusCards/MarsBotBonusCardEffect';
+import type {MarsBotBonusResolver} from '@/server/automa/MarsBotBonusResolver';
 
 // B06: Lobbyists / B15: Lobbyists (Venus) — shared (a) temp and (b) oxygen branches
-export const LOBBYISTS_MARSBOT_BONUS_CARD: MarsBotBonusCardEffect = {
-  id: BonusCardId.B06_LOBBYISTS,
-  resolve(resolver) {
+export class LobbyistsMarsBot extends MarsBotBonusCardEffect {
+  constructor() {
+    super({id: BonusCardId.B06_LOBBYISTS});
+  }
+
+  public override resolve(resolver: MarsBotBonusResolver): boolean {
     if (resolver.lobbyistsTempBranch()) {
       return true;
     }
@@ -19,5 +23,5 @@ export const LOBBYISTS_MARSBOT_BONUS_CARD: MarsBotBonusCardEffect = {
 
     resolver.advanceFurthestParameter();
     return false;
-  },
-};
+  }
+}

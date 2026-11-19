@@ -1,10 +1,14 @@
 import {BonusCardId} from '@/common/automa/AutomaTypes';
 import {MarsBotBonusCardEffect} from '@/server/automa/bonusCards/MarsBotBonusCardEffect';
+import type {MarsBotBonusResolver} from '@/server/automa/MarsBotBonusResolver';
 
 // B02: Invasive Species
-export const INVASIVE_SPECIES_MARSBOT_BONUS_CARD: MarsBotBonusCardEffect = {
-  id: BonusCardId.B02_INVASIVE_SPECIES,
-  resolve(resolver) {
+export class InvasiveSpeciesMarsBot extends MarsBotBonusCardEffect {
+  constructor() {
+    super({id: BonusCardId.B02_INVASIVE_SPECIES});
+  }
+
+  public override resolve(resolver: MarsBotBonusResolver): boolean {
     resolver.maybeRemoveAnimalOrMicrobe('Invasive Species');
     // a. With Venus Next or Colonies, MarsBot gains 2 M€ and 1 floater; b. otherwise 5 M€
     const opts = resolver.game.gameOptions;
@@ -18,5 +22,5 @@ export const INVASIVE_SPECIES_MARSBOT_BONUS_CARD: MarsBotBonusCardEffect = {
     }
     // Card is NOT destroyed in base game
     return false;
-  },
-};
+  }
+}

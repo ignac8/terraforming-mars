@@ -1,10 +1,14 @@
 import {BonusCardId} from '@/common/automa/AutomaTypes';
 import {MarsBotBonusCardEffect} from '@/server/automa/bonusCards/MarsBotBonusCardEffect';
+import type {MarsBotBonusResolver} from '@/server/automa/MarsBotBonusResolver';
 
 // B21: Party Politics (T-7, T-8)
-export const PARTY_POLITICS_MARSBOT_BONUS_CARD: MarsBotBonusCardEffect = {
-  id: BonusCardId.B21_PARTY_POLITICS,
-  resolve(resolver) {
+export class PartyPoliticsMarsBot extends MarsBotBonusCardEffect {
+  constructor() {
+    super({id: BonusCardId.B21_PARTY_POLITICS});
+  }
+
+  public override resolve(resolver: MarsBotBonusResolver): boolean {
     const turmoil = resolver.game.turmoil;
     if (turmoil === undefined) {
       resolver.game.log('MarsBot resolves Party Politics: Turmoil not active');
@@ -32,5 +36,5 @@ export const PARTY_POLITICS_MARSBOT_BONUS_CARD: MarsBotBonusCardEffect = {
       }
     }
     return false;
-  },
-};
+  }
+}

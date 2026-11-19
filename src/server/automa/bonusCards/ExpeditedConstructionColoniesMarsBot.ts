@@ -1,11 +1,15 @@
 import {BonusCardId} from '@/common/automa/AutomaTypes';
 import {MarsBotBonusCardEffect} from '@/server/automa/bonusCards/MarsBotBonusCardEffect';
+import type {MarsBotBonusResolver} from '@/server/automa/MarsBotBonusResolver';
 import {selectRandomColony, placeColonyForMarsBot} from '@/server/automa/colonies/MarsBotColonyPlacer';
 
 // B17: Expedited Construction (Colonies) — C-15
-export const EXPEDITED_CONSTRUCTION_COLONIES_MARSBOT_BONUS_CARD: MarsBotBonusCardEffect = {
-  id: BonusCardId.B17_EXPEDITED_CONSTRUCTION_COLONIES,
-  resolve(resolver) {
+export class ExpeditedConstructionColoniesMarsBot extends MarsBotBonusCardEffect {
+  constructor() {
+    super({id: BonusCardId.B17_EXPEDITED_CONSTRUCTION_COLONIES});
+  }
+
+  public override resolve(resolver: MarsBotBonusResolver): boolean {
     // C-15a: Place city adjacent to ≥2 greenery/ocean tiles → destroy card
     const citySpace = resolver.tilePlacer.findExpeditedConstructionCitySpace();
     if (citySpace !== undefined) {
@@ -32,5 +36,5 @@ export const EXPEDITED_CONSTRUCTION_COLONIES_MARSBOT_BONUS_CARD: MarsBotBonusCar
     // C-15c: No effect
     resolver.game.log('MarsBot Expedited Construction Colonies: no effect (C-15c)');
     return false;
-  },
-};
+  }
+}

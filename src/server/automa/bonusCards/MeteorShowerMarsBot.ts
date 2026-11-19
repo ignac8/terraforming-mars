@@ -1,11 +1,15 @@
 import {Resource} from '@/common/Resource';
 import {BonusCardId} from '@/common/automa/AutomaTypes';
 import {MarsBotBonusCardEffect} from '@/server/automa/bonusCards/MarsBotBonusCardEffect';
+import type {MarsBotBonusResolver} from '@/server/automa/MarsBotBonusResolver';
 
 // B01: Meteor Shower
-export const METEOR_SHOWER_MARSBOT_BONUS_CARD: MarsBotBonusCardEffect = {
-  id: BonusCardId.B01_METEOR_SHOWER,
-  resolve(resolver) {
+export class MeteorShowerMarsBot extends MarsBotBonusCardEffect {
+  constructor() {
+    super({id: BonusCardId.B01_METEOR_SHOWER});
+  }
+
+  public override resolve(resolver: MarsBotBonusResolver): boolean {
     // Asteroid Deflection System and Protected Habitat block plant removal
     if (resolver.humanPlayer.plantsAreProtected()) {
       resolver.game.log('MarsBot\'s Meteor Shower: blocked by plant protection');
@@ -23,5 +27,5 @@ export const METEOR_SHOWER_MARSBOT_BONUS_CARD: MarsBotBonusCardEffect = {
       return true;
     }
     return false;
-  },
-};
+  }
+}

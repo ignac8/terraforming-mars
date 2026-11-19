@@ -2,14 +2,18 @@ import {BonusCardId} from '@/common/automa/AutomaTypes';
 import {Tag} from '@/common/cards/Tag';
 import {cardTagsIncludingEvent} from '@/server/automa/MarsBotTags';
 import {MarsBotBonusCardEffect} from '@/server/automa/bonusCards/MarsBotBonusCardEffect';
+import type {MarsBotBonusResolver} from '@/server/automa/MarsBotBonusResolver';
 import {IProjectCard} from '@/server/cards/IProjectCard';
 import {inplaceShuffle} from '@/server/utils/shuffle';
 
 // B30: Interface Hyperlink (Tycho Magnetics): draw 1 card per space of the energy track, at least
 // 2, play the 2 best and discard the rest. The card is destroyed once it plays a card.
-export const INTERFACE_HYPERLINK_MARSBOT_BONUS_CARD: MarsBotBonusCardEffect = {
-  id: BonusCardId.B30_INTERFACE_HYPERLINK,
-  resolve(resolver) {
+export class InterfaceHyperlinkMarsBot extends MarsBotBonusCardEffect {
+  constructor() {
+    super({id: BonusCardId.B30_INTERFACE_HYPERLINK});
+  }
+
+  public override resolve(resolver: MarsBotBonusResolver): boolean {
     const marsBotBoard = resolver.turnResolver.marsBotBoard;
     const energyTrack = marsBotBoard.tagToTrack[Tag.POWER];
     const count = Math.max(2, energyTrack === undefined ? 0 : marsBotBoard.tracks[energyTrack].position);
@@ -31,5 +35,5 @@ export const INTERFACE_HYPERLINK_MARSBOT_BONUS_CARD: MarsBotBonusCardEffect = {
     }
     resolver.game.log('Interface Hyperlink is destroyed');
     return true;
-  },
-};
+  }
+}

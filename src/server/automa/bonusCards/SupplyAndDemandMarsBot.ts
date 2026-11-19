@@ -1,10 +1,14 @@
 import {BonusCardId} from '@/common/automa/AutomaTypes';
 import {MarsBotBonusCardEffect} from '@/server/automa/bonusCards/MarsBotBonusCardEffect';
+import type {MarsBotBonusResolver} from '@/server/automa/MarsBotBonusResolver';
 
 // Factorum: take up to 3 M€ from the corp card; with none taken, advance the energy track
-export const SUPPLY_AND_DEMAND_MARSBOT_BONUS_CARD: MarsBotBonusCardEffect = {
-  id: BonusCardId.B24_SUPPLY_AND_DEMAND,
-  resolve(resolver) {
+export class SupplyAndDemandMarsBot extends MarsBotBonusCardEffect {
+  constructor() {
+    super({id: BonusCardId.B24_SUPPLY_AND_DEMAND});
+  }
+
+  public override resolve(resolver: MarsBotBonusResolver): boolean {
     const marsBot = resolver.marsBotManager;
     const taken = Math.min(3, marsBot?.getCorpState('mcOnCard') ?? 0);
     if (marsBot !== undefined && taken > 0) {
@@ -16,5 +20,5 @@ export const SUPPLY_AND_DEMAND_MARSBOT_BONUS_CARD: MarsBotBonusCardEffect = {
       resolver.game.log('MarsBot resolves Supply & Demand: advance energy track');
     }
     return false;
-  },
-};
+  }
+}

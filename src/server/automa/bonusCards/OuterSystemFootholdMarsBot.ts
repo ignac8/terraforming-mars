@@ -1,12 +1,16 @@
 import {BonusCardId} from '@/common/automa/AutomaTypes';
 import {MarsBotBonusDeckCard, bonusCardDisplayName} from '@/server/automa/MarsBotBonusCard';
 import {MarsBotBonusCardEffect} from '@/server/automa/bonusCards/MarsBotBonusCardEffect';
+import type {MarsBotBonusResolver} from '@/server/automa/MarsBotBonusResolver';
 import {selectRandomColony, placeColonyForMarsBot} from '@/server/automa/colonies/MarsBotColonyPlacer';
 
 // B18: Outer System Foothold — C-16
-export const OUTER_SYSTEM_FOOTHOLD_MARSBOT_BONUS_CARD: MarsBotBonusCardEffect = {
-  id: BonusCardId.B18_OUTER_SYSTEM_FOOTHOLD,
-  resolve(resolver) {
+export class OuterSystemFootholdMarsBot extends MarsBotBonusCardEffect {
+  constructor() {
+    super({id: BonusCardId.B18_OUTER_SYSTEM_FOOTHOLD});
+  }
+
+  public override resolve(resolver: MarsBotBonusResolver): boolean {
     const marsBot = resolver.marsBotManager;
     if (marsBot === undefined) {
       resolver.game.log('MarsBot Outer System Foothold: no MarsBot manager available');
@@ -40,5 +44,5 @@ export const OUTER_SYSTEM_FOOTHOLD_MARSBOT_BONUS_CARD: MarsBotBonusCardEffect = 
 
     // The card itself (B18) is discarded by the caller after resolve() returns.
     return false;
-  },
-};
+  }
+}

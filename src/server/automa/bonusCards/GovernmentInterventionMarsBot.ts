@@ -1,10 +1,14 @@
 import {BonusCardId} from '@/common/automa/AutomaTypes';
 import {MarsBotBonusCardEffect} from '@/server/automa/bonusCards/MarsBotBonusCardEffect';
+import type {MarsBotBonusResolver} from '@/server/automa/MarsBotBonusResolver';
 
 // B16: Government Intervention
-export const GOVERNMENT_INTERVENTION_MARSBOT_BONUS_CARD: MarsBotBonusCardEffect = {
-  id: BonusCardId.B16_GOVERNMENT_INTERVENTION,
-  resolve(resolver) {
+export class GovernmentInterventionMarsBot extends MarsBotBonusCardEffect {
+  constructor() {
+    super({id: BonusCardId.B16_GOVERNMENT_INTERVENTION});
+  }
+
+  public override resolve(resolver: MarsBotBonusResolver): boolean {
     const venus = resolver.game.getVenusScaleLevel();
     const isEvenGen = resolver.game.generation % 2 === 0;
     const venusComplete = venus >= resolver.game.max.venus;
@@ -36,5 +40,5 @@ export const GOVERNMENT_INTERVENTION_MARSBOT_BONUS_CARD: MarsBotBonusCardEffect 
       });
     }
     return false;
-  },
-};
+  }
+}

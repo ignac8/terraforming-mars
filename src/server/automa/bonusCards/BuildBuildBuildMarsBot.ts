@@ -3,6 +3,8 @@ import {BonusCardId} from '@/common/automa/AutomaTypes';
 import {CardName} from '@/common/cards/CardName';
 import {inplaceRemove} from '@/common/utils/utils';
 import {MarsBotBonusCardEffect} from '@/server/automa/bonusCards/MarsBotBonusCardEffect';
+import {MarsBotBonusCard} from '@/server/automa/MarsBotBonusCard';
+import type {MarsBotBonusResolver} from '@/server/automa/MarsBotBonusResolver';
 import {inplaceShuffle} from '@/server/utils/shuffle';
 
 /**
@@ -30,9 +32,12 @@ const SPECIAL_TILES: ReadonlyMap<CardName, TileType> = new Map([
 // Philares: a. a city next to the player's greenery, then lose 5 M€; b. the special tile of a
 // card MarsBot played next to the player's city, then lose that card and 3 M€; c. gain 3 M€
 // and shuffle this card back into the bonus deck
-export const BUILD_BUILD_BUILD_MARSBOT_BONUS_CARD: MarsBotBonusCardEffect = {
-  id: BonusCardId.B27_BUILD_BUILD_BUILD,
-  resolve(resolver, card) {
+export class BuildBuildBuildMarsBot extends MarsBotBonusCardEffect {
+  constructor() {
+    super({id: BonusCardId.B27_BUILD_BUILD_BUILD});
+  }
+
+  public override resolve(resolver: MarsBotBonusResolver, card: MarsBotBonusCard): boolean {
     const citySpace = resolver.tilePlacer.findCitySpaceNextToHumanGreenery();
     if (citySpace !== undefined) {
       resolver.game.addCity(resolver.botPlayer, citySpace);
@@ -61,5 +66,5 @@ export const BUILD_BUILD_BUILD_MARSBOT_BONUS_CARD: MarsBotBonusCardEffect = {
     inplaceShuffle(resolver.bonusDeck.drawPile, resolver.game.rng);
     resolver.game.log('MarsBot resolves Build Build Build: +3 M€, card shuffled back into the bonus deck');
     return true;
-  },
-};
+  }
+}

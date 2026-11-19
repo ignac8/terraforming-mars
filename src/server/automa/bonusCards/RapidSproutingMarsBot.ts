@@ -1,11 +1,15 @@
 import {BonusCardId} from '@/common/automa/AutomaTypes';
 import {MarsBotBonusCardEffect} from '@/server/automa/bonusCards/MarsBotBonusCardEffect';
+import type {MarsBotBonusResolver} from '@/server/automa/MarsBotBonusResolver';
 
 // Ecoline: a. spend the plant on the corp card to place a greenery; b. otherwise put a plant there.
 // With no greenery space the plant is spent anyway, and a bonus card that can't resolve is not a Failed Action.
-export const RAPID_SPROUTING_MARSBOT_BONUS_CARD: MarsBotBonusCardEffect = {
-  id: BonusCardId.B23_RAPID_SPROUTING,
-  resolve(resolver) {
+export class RapidSproutingMarsBot extends MarsBotBonusCardEffect {
+  constructor() {
+    super({id: BonusCardId.B23_RAPID_SPROUTING});
+  }
+
+  public override resolve(resolver: MarsBotBonusResolver): boolean {
     const marsBot = resolver.marsBotManager;
     if (marsBot === undefined) {
       return false;
@@ -22,5 +26,5 @@ export const RAPID_SPROUTING_MARSBOT_BONUS_CARD: MarsBotBonusCardEffect = {
       resolver.game.log('MarsBot resolves Rapid Sprouting: 1 plant on the corporation card');
     }
     return false;
-  },
-};
+  }
+}
