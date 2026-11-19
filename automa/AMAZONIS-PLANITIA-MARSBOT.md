@@ -214,7 +214,7 @@ land on a Venus icon) cannot raise Venus again in the middle of the first raise.
 
 Lobbyists ("1–2 steps from a bonus or completion") reads these bonus steps from
 `game.globalParameterTracks`, not the standard-map constants (`isNearBonusStep` in
-`MarsBotBonusResolver`). Oxygen 8 % is not a bonus step here.
+`bonusCards/bonusCardHelpers.ts`). Oxygen 8 % is not a bonus step here.
 
 Government Intervention's Venus raise across 16 % still builds the colony, or takes the Failed Action when no
 colony tile is left, and the corporation still reacts to it. The M€ gained from the colony (Europa's ocean, the
@@ -242,7 +242,7 @@ track at Tharsis' rate.
 
 In code this is not a new card: every map's Corporate Competition runs through B08
 (`bonusCards/CorporateCompetitionMarsBot.ts`), which picks a push by award name in
-`MarsBotBonusResolver.tryHelperAction` (B09–B13 are enum values only). Collector, Constructor, Manufacturer
+`CorporateCompetitionMarsBot.tryHelperAction` (B09–B13 are enum values only). Collector, Constructor, Manufacturer
 and Venuphile use helpers the other maps share; Innovator and Physicist are this map's own:
 
 | Award | Push |
@@ -291,7 +291,7 @@ together would make the big map end faster than a standard one.
 
 - `src/server/automa` reads the map's maxima from `game.max.*` and uses no `constants.MAX_*`. With the
   standard-map maxima MarsBot would call temperature done at +8 °C and take Failed Actions.
-- The Lobbyists branches in `MarsBotBonusResolver.ts` ask `isNearBonusStep` whether a parameter is 1 to 2 steps
+- The Lobbyists branches in `bonusCards/bonusCardHelpers.ts` ask `isNearBonusStep` whether a parameter is 1 to 2 steps
   from a bonus step or its maximum, from the map's own bonus tracks (4.6a) and the game's maxima.
 - The board is registered in `MARSBOT_BOARD_NAMES` (`src/common/automa/MarsBotBoards.ts`) and `MARSBOT_BOARDS`
   (`src/server/automa/boards/MarsBotBoards.ts`). `MARSBOT_BOARDS` holds one board per map, seven tracks;

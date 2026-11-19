@@ -211,10 +211,13 @@ The other corporation manifests, the map boards and the expansion bonus cards on
    (base difficulty plays without a corporation).
 2. **Phase 3 - capabilities**: Stock, Scoring, BonusResolver (split 2-3 ways by bonus
    group), TurnResolver (split track-advancement vs card resolution). Since 2026-11-10 each
-   bonus card is its own file, `bonusCards/<Card>MarsBot.ts` exporting
-   `<NAME>_MARSBOT_BONUS_CARD` (`{id, resolve(resolver, card)}`), listed in
-   `MarsBotBonusCardEffects.ts`; `MarsBotBonusResolver` keeps the lookup and the tools the
-   cards share, after kberg's "each card into its own file" on #8687. Their tests are one spec
+   bonus card is its own file, `bonusCards/<Card>MarsBot.ts`, after kberg's "each card into
+   its own file" on #8687. Since 2026-11-19 each is a class `<Card>MarsBot extends
+   MarsBotBonusCardEffect` (id through the constructor, `resolve(marsBot: IMarsBot, card)`
+   overridden), listed as instances in `MarsBotBonusCardEffects.ts`; the tools the cards share
+   are free functions on an `IMarsBot` in `bonusCards/bonusCardHelpers.ts`, Corporate
+   Competition holds its own `tryHelperAction`, and `MarsBotBonusResolver` keeps only the lookup
+   and the discard rules. Their tests are one spec
    per card too, `tests/automa/bonusCards/<Card>MarsBot.spec.ts` (26 specs, 122 tests; B05
    Expedited Construction got its first two tests on 2026-11-10). Tests that only use a
    bonus card as a trigger stayed in the mixed specs (Law Suit, reload, party selection,
