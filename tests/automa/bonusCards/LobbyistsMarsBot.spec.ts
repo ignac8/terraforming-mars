@@ -2,26 +2,21 @@ import {expect} from 'chai';
 import {TileType} from '@/common/TileType';
 import {SpaceId} from '@/common/Types';
 import {BonusCardId} from '@/common/automa/AutomaTypes';
-import {SeededRandom} from '@/common/utils/Random';
 import {createBaseBonusCards} from '@/server/automa/MarsBotBonusCard';
-import {MarsBotBonusDeck} from '@/server/automa/MarsBotBonusDeck';
 import {MarsBotBonusResolver} from '@/server/automa/MarsBotBonusResolver';
-import {MarsBotTilePlacer} from '@/server/automa/MarsBotTilePlacer';
 import {setTemperature} from '../../TestingUtils';
 import {createAutomaGame} from '../corps/CorpGame';
 
 describe('LobbyistsMarsBot', () => {
   // Detailed options (rulebook pages 6-7)
   it('option (a): temp 1-2 from completion → raise 2 + destroy', () => {
-    const {game, human, marsBot} = createAutomaGame();
+    const {game, marsBot} = createAutomaGame();
     // Temperature at +4 (2 steps from max +8)
     setTemperature(game, 4);
 
     const cards = createBaseBonusCards();
     const b06 = cards.find((c) => c.id === BonusCardId.B06_LOBBYISTS)!;
-    const tilePlacer = new MarsBotTilePlacer(marsBot);
-    const bonusDeck = MarsBotBonusDeck.create(new SeededRandom(99));
-    const bonusResolver = new MarsBotBonusResolver(game, marsBot.player, human, marsBot.turnResolver, bonusDeck, tilePlacer);
+    const bonusResolver = new MarsBotBonusResolver(marsBot);
 
     const destroyed = bonusResolver.resolve(b06);
     expect(game.getTemperature()).to.eq(8); // Raised 2 steps (4°C)
@@ -29,14 +24,12 @@ describe('LobbyistsMarsBot', () => {
   });
 
   it('option (d): advance furthest parameter, measured in steps remaining', () => {
-    const {game, human, marsBot} = createAutomaGame();
+    const {game, marsBot} = createAutomaGame();
     // From the start temperature has 19 steps left, oxygen 14 and oceans 9
 
     const cards = createBaseBonusCards();
     const b06 = cards.find((c) => c.id === BonusCardId.B06_LOBBYISTS)!;
-    const tilePlacer = new MarsBotTilePlacer(marsBot);
-    const bonusDeck = MarsBotBonusDeck.create(new SeededRandom(99));
-    const bonusResolver = new MarsBotBonusResolver(game, marsBot.player, human, marsBot.turnResolver, bonusDeck, tilePlacer);
+    const bonusResolver = new MarsBotBonusResolver(marsBot);
 
     const tempBefore = game.getTemperature();
     const destroyed = bonusResolver.resolve(b06);

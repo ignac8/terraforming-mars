@@ -2,11 +2,21 @@ import {expect} from 'chai';
 import {TileType} from '@/common/TileType';
 import {BonusCardId} from '@/common/automa/AutomaTypes';
 import {SpaceType} from '@/common/boards/SpaceType';
+import {MarsBot} from '@/server/automa/MarsBot';
 import {createBaseBonusCards} from '@/server/automa/MarsBotBonusCard';
+import {MarsBotTilePlacer} from '@/server/automa/MarsBotTilePlacer';
 import {createAutomaGame} from '../corps/CorpGame';
 
 function neuralInstance() {
   return createBaseBonusCards().find((c) => c.id === BonusCardId.B07_LOCAL_NEURAL_INSTANCE)!;
+}
+
+/** Covers the board with the player's greeneries until no space is left for the Neural Instance tile. */
+function leaveNoNeuralInstanceSpace(marsBot: MarsBot): void {
+  const placer = new MarsBotTilePlacer(marsBot);
+  for (let space = placer.findNeuralInstanceSpace(); space !== undefined; space = placer.findNeuralInstanceSpace()) {
+    marsBot.game.simpleAddTile(marsBot.humanPlayer, space, {tileType: TileType.GREENERY});
+  }
 }
 
 describe('LocalNeuralInstanceMarsBot', () => {
@@ -22,7 +32,7 @@ describe('LocalNeuralInstanceMarsBot', () => {
 
   it('goes to the bonus discard pile when its tile cannot be placed', () => {
     const {marsBot} = createAutomaGame();
-    marsBot.turnResolver.tilePlacer.findNeuralInstanceSpace = () => undefined;
+    leaveNoNeuralInstanceSpace(marsBot);
     const played = marsBot.playedProjectCards.length;
 
     const destroyed = marsBot['bonusResolver'].resolve(neuralInstance());
@@ -35,7 +45,7 @@ describe('LocalNeuralInstanceMarsBot', () => {
 
   it('records the project card in its fallback', () => {
     const {marsBot} = createAutomaGame();
-    marsBot['tilePlacer'].findNeuralInstanceSpace = () => undefined;
+    leaveNoNeuralInstanceSpace(marsBot);
     const b07 = createBaseBonusCards().find((c) => c.id === BonusCardId.B07_LOCAL_NEURAL_INSTANCE)!;
 
     marsBot['bonusResolver'].resolve(b07);
@@ -46,12 +56,10 @@ describe('LocalNeuralInstanceMarsBot', () => {
   it('gains 1 MC per covered icon', () => {
     const {game, marsBot} = createAutomaGame();
     const space = game.board.spaces.find((s) => s.bonus.length >= 2 && s.spaceType === SpaceType.LAND)!;
-    marsBot['tilePlacer'].findNeuralInstanceSpace = () => space;
-    const b07 = createBaseBonusCards().find((c) => c.id === BonusCardId.B07_LOCAL_NEURAL_INSTANCE)!;
 
-    marsBot['bonusResolver'].resolve(b07);
+    marsBot.placeNeuralInstance(space);
 
-    const expected = marsBot['tilePlacer'].getTotalPlacementMC(space);
+    const expected = new MarsBotTilePlacer(marsBot).getTotalPlacementMC(space);
     expect(expected).to.be.gte(2);
     expect(marsBot.turnResolver.megacredits).to.eq(expected);
   });

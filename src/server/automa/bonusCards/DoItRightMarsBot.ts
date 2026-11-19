@@ -1,6 +1,7 @@
 import {BonusCardId} from '@/common/automa/AutomaTypes';
+import {IMarsBot} from '@/server/automa/IMarsBot';
 import {MarsBotBonusCardEffect} from '@/server/automa/bonusCards/MarsBotBonusCardEffect';
-import type {MarsBotBonusResolver} from '@/server/automa/MarsBotBonusResolver';
+import {lobbyistsOceanBranch, lobbyistsOxygenBranch, lobbyistsTempBranch} from '@/server/automa/bonusCards/bonusCardHelpers';
 
 // Inventrix: the first of Lobbyists' temperature, oxygen and ocean branches that applies
 export class DoItRightMarsBot extends MarsBotBonusCardEffect {
@@ -8,13 +9,13 @@ export class DoItRightMarsBot extends MarsBotBonusCardEffect {
     super({id: BonusCardId.B25_DO_IT_RIGHT});
   }
 
-  public override resolve(resolver: MarsBotBonusResolver): boolean {
-    if (resolver.lobbyistsTempBranch('Do It Right') ||
-      resolver.lobbyistsOxygenBranch('Do It Right') ||
-      resolver.lobbyistsOceanBranch('Do It Right')) {
+  public override resolve(marsBot: IMarsBot): boolean {
+    if (lobbyistsTempBranch(marsBot, 'Do It Right') ||
+      lobbyistsOxygenBranch(marsBot, 'Do It Right') ||
+      lobbyistsOceanBranch(marsBot, 'Do It Right')) {
       return false;
     }
-    resolver.game.log('MarsBot resolves Do It Right: no effect');
+    marsBot.game.log('MarsBot resolves Do It Right: no effect');
     return false;
   }
 }

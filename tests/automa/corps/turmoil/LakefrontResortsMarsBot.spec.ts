@@ -6,6 +6,7 @@ import {CardName} from '@/common/cards/CardName';
 import {MAX_OXYGEN_LEVEL, MAX_TEMPERATURE} from '@/common/constants';
 import {MarsBot} from '@/server/automa/MarsBot';
 import {createBonusCard} from '@/server/automa/MarsBotBonusCard';
+import {MarsBotTilePlacer} from '@/server/automa/MarsBotTilePlacer';
 import {getMarsBotCorp} from '@/server/automa/corps/MarsBotCorpRegistry';
 import {LakefrontResortsMarsBot} from '@/server/automa/corps/turmoil/LakefrontResortsMarsBot';
 import {IMarsBot} from '@/server/automa/IMarsBot';
@@ -98,7 +99,7 @@ describe('LakefrontResortsMarsBot', () => {
     const ocean = game.board.getAvailableSpacesForOcean(marsBot.player)[0];
     const land = game.board.getAdjacentSpaces(ocean).find((s) => s.spaceType === SpaceType.LAND)!;
     game.simpleAddTile(marsBot.player, ocean, {tileType: TileType.OCEAN});
-    const tilePlacer = marsBot['bonusResolver']['tilePlacer'];
+    const tilePlacer = new MarsBotTilePlacer(marsBot);
     expect(tilePlacer.getOceanAdjacencyMC(land)).to.eq(2);
     marsBot.setCorpAndSetup(getMarsBotCorp(CardName.LAKEFRONT_RESORTS)!);
     expect(tilePlacer.getOceanAdjacencyMC(land)).to.eq(3);

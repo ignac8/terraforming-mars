@@ -1,6 +1,6 @@
 import {BonusCardId} from '@/common/automa/AutomaTypes';
+import {IMarsBot} from '@/server/automa/IMarsBot';
 import {MarsBotBonusCardEffect} from '@/server/automa/bonusCards/MarsBotBonusCardEffect';
-import type {MarsBotBonusResolver} from '@/server/automa/MarsBotBonusResolver';
 
 // B03: Research and Development
 export class ResearchAndDevelopmentMarsBot extends MarsBotBonusCardEffect {
@@ -8,11 +8,11 @@ export class ResearchAndDevelopmentMarsBot extends MarsBotBonusCardEffect {
     super({id: BonusCardId.B03_RESEARCH_AND_DEVELOPMENT});
   }
 
-  public override resolve(resolver: MarsBotBonusResolver): boolean {
-    const drawnCard = resolver.game.projectDeck.draw(resolver.game);
+  public override resolve(marsBot: IMarsBot): boolean {
+    const drawnCard = marsBot.game.projectDeck.draw(marsBot.game);
     if (drawnCard !== undefined) {
-      resolver.game.log('MarsBot draws and resolves ${0} (R&D)', (b) => b.card(drawnCard));
-      resolver.turnResolver.resolveProjectCard(drawnCard);
+      marsBot.game.log('MarsBot draws and resolves ${0} (R&D)', (b) => b.card(drawnCard));
+      marsBot.resolveProjectCard(drawnCard);
     }
     return false;
   }

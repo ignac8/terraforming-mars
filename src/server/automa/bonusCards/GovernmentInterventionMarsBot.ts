@@ -1,6 +1,7 @@
 import {BonusCardId} from '@/common/automa/AutomaTypes';
+import {IMarsBot} from '@/server/automa/IMarsBot';
 import {MarsBotBonusCardEffect} from '@/server/automa/bonusCards/MarsBotBonusCardEffect';
-import type {MarsBotBonusResolver} from '@/server/automa/MarsBotBonusResolver';
+import {advanceFurthestParameter, withoutTRGain, withoutTRorMcGain} from '@/server/automa/bonusCards/bonusCardHelpers';
 
 // B16: Government Intervention
 export class GovernmentInterventionMarsBot extends MarsBotBonusCardEffect {
@@ -8,34 +9,29 @@ export class GovernmentInterventionMarsBot extends MarsBotBonusCardEffect {
     super({id: BonusCardId.B16_GOVERNMENT_INTERVENTION});
   }
 
-  public override resolve(resolver: MarsBotBonusResolver): boolean {
-    const venus = resolver.game.getVenusScaleLevel();
-    const isEvenGen = resolver.game.generation % 2 === 0;
-    const venusComplete = venus >= resolver.game.max.venus;
+  public override resolve(marsBot: IMarsBot): boolean {
+    const venus = marsBot.game.getVenusScaleLevel();
+    const isEvenGen = marsBot.game.generation % 2 === 0;
+    const venusComplete = venus >= marsBot.game.max.venus;
 
     // Only the first effect that is possible is evaluated: with every Martian parameter at its
     // maximum, an even generation falls through to raising Venus (rulebook C, p.3)
     let advanced = false;
     if (isEvenGen || venusComplete) {
-      resolver.withoutTRorMcGain(() => {
-        advanced = resolver.advanceFurthestParameter(false);
+      withoutTRorMcGain(marsBot, () => {
+        advanced = advanceFurthestParameter(marsBot, false);
       });
     }
-    if (!advanced && venus < resolver.game.max.venus) {
+    if (!advanced && venus < marsBot.game.max.venus) {
       // FAQ (rulebook B, p.4): Aphrodite's 2 M€ per Venus step still applies, and raising
       // Venus pays MarsBot no other M€, so the 8% bonus pays nothing, nor does the colony Amazonis
       // Planitia prints at 16% (`handleVenusRaised`).
-      const marsBot = resolver.marsBotManager;
-      resolver.withoutTRGain(() => {
-        if (marsBot !== undefined) {
-          marsBot.bonusMcBlocked = true;
-        }
+      withoutTRGain(marsBot, () => {
+        marsBot.bonusMcBlocked = true;
         try {
-          resolver.game.increaseVenusScaleLevel(resolver.botPlayer, 1);
+          marsBot.game.increaseVenusScaleLevel(marsBot.player, 1);
         } finally {
-          if (marsBot !== undefined) {
-            marsBot.bonusMcBlocked = false;
-          }
+          marsBot.bonusMcBlocked = false;
         }
       });
     }

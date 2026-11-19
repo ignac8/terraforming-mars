@@ -2,13 +2,10 @@ import {expect} from 'chai';
 import {TileType} from '@/common/TileType';
 import {BonusCardId} from '@/common/automa/AutomaTypes';
 import {CardName} from '@/common/cards/CardName';
-import {SeededRandom} from '@/common/utils/Random';
 import {inplaceRemove} from '@/common/utils/utils';
 import {Game} from '@/server/Game';
 import {createBaseBonusCards, createBonusCard} from '@/server/automa/MarsBotBonusCard';
-import {MarsBotBonusDeck} from '@/server/automa/MarsBotBonusDeck';
 import {MarsBotBonusResolver} from '@/server/automa/MarsBotBonusResolver';
-import {MarsBotTilePlacer} from '@/server/automa/MarsBotTilePlacer';
 import {getMarsBotCorp} from '@/server/automa/corps/MarsBotCorpRegistry';
 import {createAutomaGame, resetCorpRegistry} from '../corps/CorpGame';
 import {actionDeckIds, bonusDeckIds} from './BonusCardGame';
@@ -29,16 +26,14 @@ describe('OverachievementMarsBot', () => {
   beforeEach(resetCorpRegistry);
 
   it('does NOT try awards when generation < 6', () => {
-    const {game, human, marsBot} = createAutomaGame();
+    const {game, marsBot} = createAutomaGame();
     game.generation = 4;
     // MarsBot can't claim any milestone (all at 0)
     // Gen < 6 means no award attempt
 
     const cards = createBaseBonusCards();
     const b04 = cards.find((c) => c.id === BonusCardId.B04_OVERACHIEVEMENT)!;
-    const tilePlacer = new MarsBotTilePlacer(marsBot);
-    const bonusDeck = MarsBotBonusDeck.create(new SeededRandom(99));
-    const bonusResolver = new MarsBotBonusResolver(game, marsBot.player, human, marsBot.turnResolver, bonusDeck, tilePlacer);
+    const bonusResolver = new MarsBotBonusResolver(marsBot);
 
     const awardsBefore = game.fundedAwards.length;
     const destroyed = bonusResolver.resolve(b04);

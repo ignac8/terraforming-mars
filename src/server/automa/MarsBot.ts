@@ -176,13 +176,7 @@ export class MarsBot implements IMarsBot {
     this.turnResolver = new MarsBotTurnResolver(
       game, player, humanPlayer, this.marsBotBoard, difficulty, 0, this.tilePlacer,
     );
-    this.bonusResolver = new MarsBotBonusResolver(
-      game, player, humanPlayer, this.turnResolver, this.bonusDeck, this.tilePlacer,
-    );
-    this.bonusResolver.onNeuralInstancePlaced = (space) => {
-      this.neuralInstanceSpace = space;
-    };
-    this.bonusResolver.marsBotManager = this;
+    this.bonusResolver = new MarsBotBonusResolver(this);
   }
 
   // ---- Setup ----
@@ -1007,8 +1001,7 @@ export class MarsBot implements IMarsBot {
       this.actionDeck = this.deserializeDeckCards(state.actionDeckCardNames);
     }
 
-    // Restore bonus deck (bonus cards + project cards a corporation put there). The bonus resolver
-    // holds this.bonusDeck, so the restored piles replace its own.
+    // Restore bonus deck (bonus cards + project cards a corporation put there) into the deck's own piles.
     const bonusDeck = MarsBotBonusDeck.deserialize(state.bonusDeck ?? {
       // Older saves hold the piles under their own keys, bonus cards by id
       drawPile: (state.bonusDeckDrawPile ?? []).map(bonusDeckCardName),

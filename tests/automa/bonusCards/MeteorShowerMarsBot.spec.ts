@@ -1,26 +1,19 @@
 import {expect} from 'chai';
 import {BonusCardId} from '@/common/automa/AutomaTypes';
-import {SeededRandom} from '@/common/utils/Random';
 import {createBaseBonusCards, createBonusCard} from '@/server/automa/MarsBotBonusCard';
-import {MarsBotBonusDeck} from '@/server/automa/MarsBotBonusDeck';
 import {MarsBotBonusResolver} from '@/server/automa/MarsBotBonusResolver';
-import {MarsBotTilePlacer} from '@/server/automa/MarsBotTilePlacer';
-import {MarsBotTurnResolver} from '@/server/automa/MarsBotTurnResolver';
 import {ProtectedHabitats} from '@/server/cards/base/ProtectedHabitats';
 import {AsteroidDeflectionSystem} from '@/server/cards/promo/AsteroidDeflectionSystem';
 import {createAutomaGame} from '../corps/CorpGame';
 
 describe('MeteorShowerMarsBot', () => {
   it('card is NOT destroyed when human loses <3 plants', () => {
-    const {game, human, marsBot} = createAutomaGame();
+    const {human, marsBot} = createAutomaGame();
     human.plants = 2;
 
     const cards = createBaseBonusCards();
     const b01 = cards.find((c) => c.id === BonusCardId.B01_METEOR_SHOWER)!;
-    const tilePlacer = new MarsBotTilePlacer(marsBot);
-    const bonusDeck = MarsBotBonusDeck.create(new SeededRandom(99));
-    const resolver = new MarsBotTurnResolver(game, marsBot.player, human, marsBot.marsBotBoard, 'normal', 0, tilePlacer);
-    const bonusResolver = new MarsBotBonusResolver(game, marsBot.player, human, resolver, bonusDeck, tilePlacer);
+    const bonusResolver = new MarsBotBonusResolver(marsBot);
 
     const destroyed = bonusResolver.resolve(b01);
 
@@ -29,15 +22,12 @@ describe('MeteorShowerMarsBot', () => {
   });
 
   it('card IS destroyed when human loses >=3 plants', () => {
-    const {game, human, marsBot} = createAutomaGame();
+    const {human, marsBot} = createAutomaGame();
     human.plants = 5;
 
     const cards = createBaseBonusCards();
     const b01 = cards.find((c) => c.id === BonusCardId.B01_METEOR_SHOWER)!;
-    const tilePlacer = new MarsBotTilePlacer(marsBot);
-    const bonusDeck = MarsBotBonusDeck.create(new SeededRandom(99));
-    const resolver = new MarsBotTurnResolver(game, marsBot.player, human, marsBot.marsBotBoard, 'normal', 0, tilePlacer);
-    const bonusResolver = new MarsBotBonusResolver(game, marsBot.player, human, resolver, bonusDeck, tilePlacer);
+    const bonusResolver = new MarsBotBonusResolver(marsBot);
 
     const destroyed = bonusResolver.resolve(b01);
 

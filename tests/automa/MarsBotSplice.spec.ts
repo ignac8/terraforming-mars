@@ -18,6 +18,7 @@ import {OrOptions} from '../../src/server/inputs/OrOptions';
 import {MarsBotCorpResolver} from '../../src/server/automa/corps/MarsBotCorpResolver';
 import {ColonyName} from '../../src/common/colonies/ColonyName';
 import {getAllMarsBotCorps, getMarsBotCorp} from '../../src/server/automa/corps/MarsBotCorpRegistry';
+import {CorporateCompetitionMarsBot} from '../../src/server/automa/bonusCards/CorporateCompetitionMarsBot';
 import {runAllActions} from '../TestingUtils';
 import {cast} from '../../src/common/utils/utils';
 
@@ -27,7 +28,7 @@ function createAutomaGame(venusNextExtension: boolean = false): {game: Game, hum
 }
 
 function helperAction(marsBot: MarsBot, awardName: string): boolean {
-  return marsBot['bonusResolver']['tryHelperAction'](awardName);
+  return new CorporateCompetitionMarsBot().tryHelperAction(marsBot, awardName);
 }
 
 function passForThisGeneration(player: TestPlayer): void {

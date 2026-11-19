@@ -1,4 +1,5 @@
 import {expect} from 'chai';
+import {TileType} from '@/common/TileType';
 import {BonusCardId} from '@/common/automa/AutomaTypes';
 import {CardName} from '@/common/cards/CardName';
 import {createBonusCard} from '@/server/automa/MarsBotBonusCard';
@@ -26,9 +27,11 @@ describe('RapidSproutingMarsBot', () => {
   // The plant is spent anyway (our reading), and a bonus card that can't resolve is not a Failed Action
   // (rulebook A, p.5)
   it('spends the plant and takes no Failed Action when no greenery can be placed', () => {
-    const {game, marsBot} = createAutomaGame();
+    const {game, human, marsBot} = createAutomaGame();
     marsBot.setCorpState('plantResources', 1);
-    marsBot['bonusResolver']['tilePlacer'].findGreenerySpace = () => undefined;
+    for (const space of game.board.getAvailableSpacesOnLand(human)) {
+      game.simpleAddTile(human, space, {tileType: TileType.GREENERY});
+    }
 
     marsBot['bonusResolver'].resolve(createBonusCard(BonusCardId.B23_RAPID_SPROUTING));
 

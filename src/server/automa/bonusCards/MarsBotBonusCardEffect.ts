@@ -1,6 +1,6 @@
 import {BonusCardId} from '@/common/automa/AutomaTypes';
 import {MarsBotBonusCard} from '@/server/automa/MarsBotBonusCard';
-import type {MarsBotBonusResolver} from '@/server/automa/MarsBotBonusResolver';
+import {IMarsBot} from '@/server/automa/IMarsBot';
 
 export type MarsBotBonusCardEffectProperties = Pick<MarsBotBonusCardEffect, 'id'>;
 
@@ -17,9 +17,9 @@ export abstract class MarsBotBonusCardEffect {
   }
 
   /**
-   * Resolves `card` with the tools of `resolver`.
+   * Resolves `card` for `marsBot`.
    *
    * Returns true when the card must not be discarded: it was destroyed, or it went back into the bonus deck.
    */
-  public abstract resolve(resolver: MarsBotBonusResolver, card: MarsBotBonusCard): boolean;
+  public abstract resolve(marsBot: IMarsBot, card: MarsBotBonusCard): boolean;
 }

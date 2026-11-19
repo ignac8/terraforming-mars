@@ -5,14 +5,12 @@ import {BonusCardId} from '@/common/automa/AutomaTypes';
 import {BoardName} from '@/common/boards/BoardName';
 import {SpaceType} from '@/common/boards/SpaceType';
 import {RandomMAOptionType} from '@/common/ma/RandomMAOptionType';
-import {SeededRandom} from '@/common/utils/Random';
 import {IGame} from '@/server/IGame';
 import {MarsBot} from '@/server/automa/MarsBot';
 import {createBaseBonusCards, createBonusCard} from '@/server/automa/MarsBotBonusCard';
-import {MarsBotBonusDeck} from '@/server/automa/MarsBotBonusDeck';
 import {MarsBotBonusResolver} from '@/server/automa/MarsBotBonusResolver';
-import {MarsBotTilePlacer} from '@/server/automa/MarsBotTilePlacer';
 import {trackCubeKey} from '@/server/automa/corpTrackCubes';
+import {CorporateCompetitionMarsBot} from '@/server/automa/bonusCards/CorporateCompetitionMarsBot';
 import {Board} from '@/server/boards/Board';
 import {Space} from '@/server/boards/Space';
 import {IProjectCard} from '@/server/cards/IProjectCard';
@@ -42,7 +40,7 @@ function setup(margins: Record<string, number>) {
 }
 
 function helper(marsBot: MarsBot, awardName: string): boolean {
-  return marsBot['bonusResolver']['tryHelperAction'](awardName);
+  return new CorporateCompetitionMarsBot().tryHelperAction(marsBot, awardName);
 }
 
 /** Runs the helper and returns the indexes of the tracks it moved. */
@@ -72,14 +70,12 @@ function stackDeck(game: IGame, ...cardsFromTop: Array<IProjectCard>): void {
 
 describe('CorporateCompetitionMarsBot', () => {
   it('fails when MarsBot has <5 MC', () => {
-    const {game, human, marsBot} = createAutomaGame();
+    const {marsBot} = createAutomaGame();
     marsBot.turnResolver.megacredits = 3;
 
     const cards = createBaseBonusCards();
     const b08 = cards.find((c) => c.id === BonusCardId.B08_CORPORATE_COMPETITION)!;
-    const tilePlacer = new MarsBotTilePlacer(marsBot);
-    const bonusDeck = MarsBotBonusDeck.create(new SeededRandom(99));
-    const bonusResolver = new MarsBotBonusResolver(game, marsBot.player, human, marsBot.turnResolver, bonusDeck, tilePlacer);
+    const bonusResolver = new MarsBotBonusResolver(marsBot);
 
     // With <5 MC, should draw another bonus card instead
     bonusResolver.resolve(b08);
@@ -100,9 +96,7 @@ describe('CorporateCompetitionMarsBot', () => {
 
     const cards = createBaseBonusCards();
     const b08 = cards.find((c) => c.id === BonusCardId.B08_CORPORATE_COMPETITION)!;
-    const tilePlacer = new MarsBotTilePlacer(marsBot);
-    const bonusDeck = MarsBotBonusDeck.create(new SeededRandom(99));
-    const bonusResolver = new MarsBotBonusResolver(game, marsBot.player, human, marsBot.turnResolver, bonusDeck, tilePlacer);
+    const bonusResolver = new MarsBotBonusResolver(marsBot);
 
     const mcBefore = marsBot.turnResolver.megacredits;
     bonusResolver.resolve(b08);
@@ -188,7 +182,7 @@ describe('CorporateCompetitionMarsBot', () => {
     const tracks = marsBot.marsBotBoard.tracks;
     tracks[2].position = tracks[2].definition.layout.length - 1;
     tracks[0].position = 3;
-    expect(marsBot['bonusResolver']['tryHelperAction']('Mogul')).is.false;
+    expect(new CorporateCompetitionMarsBot().tryHelperAction(marsBot, 'Mogul')).is.false;
     expect(tracks[0].position).to.eq(3);
     expect(marsBot.turnResolver.megacredits).to.eq(0);
   });

@@ -1,10 +1,11 @@
 import {TileType} from '@/common/TileType';
 import {BonusCardId} from '@/common/automa/AutomaTypes';
 import {CardName} from '@/common/cards/CardName';
-import {inplaceRemove} from '@/common/utils/utils';
+import {IMarsBot} from '@/server/automa/IMarsBot';
 import {MarsBotBonusCardEffect} from '@/server/automa/bonusCards/MarsBotBonusCardEffect';
+import {loseMc} from '@/server/automa/bonusCards/bonusCardHelpers';
+import {MarsBotTilePlacer} from '@/server/automa/MarsBotTilePlacer';
 import {MarsBotBonusCard} from '@/server/automa/MarsBotBonusCard';
-import type {MarsBotBonusResolver} from '@/server/automa/MarsBotBonusResolver';
 import {inplaceShuffle} from '@/server/utils/shuffle';
 
 /**
@@ -37,34 +38,34 @@ export class BuildBuildBuildMarsBot extends MarsBotBonusCardEffect {
     super({id: BonusCardId.B27_BUILD_BUILD_BUILD});
   }
 
-  public override resolve(resolver: MarsBotBonusResolver, card: MarsBotBonusCard): boolean {
-    const citySpace = resolver.tilePlacer.findCitySpaceNextToHumanGreenery();
+  public override resolve(marsBot: IMarsBot, card: MarsBotBonusCard): boolean {
+    const tilePlacer = new MarsBotTilePlacer(marsBot);
+    const citySpace = tilePlacer.findCitySpaceNextToHumanGreenery();
     if (citySpace !== undefined) {
-      resolver.game.addCity(resolver.botPlayer, citySpace);
-      resolver.turnResolver.gainMc(resolver.tilePlacer.getTotalPlacementMC(citySpace));
-      const lost = resolver.loseMc(5);
-      resolver.game.log('MarsBot resolves Build Build Build: city next to the player\'s greenery, loses ${0} M€', (b) => b.number(lost));
+      marsBot.game.addCity(marsBot.player, citySpace);
+      marsBot.gainMc(tilePlacer.getTotalPlacementMC(citySpace));
+      const lost = loseMc(marsBot, 5);
+      marsBot.game.log('MarsBot resolves Build Build Build: city next to the player\'s greenery, loses ${0} M€', (b) => b.number(lost));
       return false;
     }
 
-    const marsBot = resolver.marsBotManager;
-    const played = marsBot?.playedProjectCards.find((c) => SPECIAL_TILES.has(c.name));
+    const played = marsBot.playedProjectCards.find((c) => SPECIAL_TILES.has(c.name));
     const tileType = played === undefined ? undefined : SPECIAL_TILES.get(played.name);
-    const specialSpace = tileType === undefined ? undefined : resolver.tilePlacer.findSpecialTileSpaceNextToHumanCity();
-    if (marsBot !== undefined && played !== undefined && tileType !== undefined && specialSpace !== undefined) {
-      resolver.game.addTile(resolver.botPlayer, specialSpace, {tileType, card: played.name});
-      resolver.turnResolver.gainMc(resolver.tilePlacer.getTotalPlacementMC(specialSpace));
-      inplaceRemove(marsBot.playedProjectCards, played);
-      const lost = resolver.loseMc(3);
-      resolver.game.log('MarsBot resolves Build Build Build: ${0} tile next to the player\'s city, removes the card and loses ${1} M€',
+    const specialSpace = tileType === undefined ? undefined : tilePlacer.findSpecialTileSpaceNextToHumanCity();
+    if (played !== undefined && tileType !== undefined && specialSpace !== undefined) {
+      marsBot.game.addTile(marsBot.player, specialSpace, {tileType, card: played.name});
+      marsBot.gainMc(tilePlacer.getTotalPlacementMC(specialSpace));
+      marsBot.removePlayedProjectCard(played);
+      const lost = loseMc(marsBot, 3);
+      marsBot.game.log('MarsBot resolves Build Build Build: ${0} tile next to the player\'s city, removes the card and loses ${1} M€',
         (b) => b.card(played).number(lost));
       return false;
     }
 
-    resolver.turnResolver.gainMc(3);
-    resolver.bonusDeck.drawPile.push(card);
-    inplaceShuffle(resolver.bonusDeck.drawPile, resolver.game.rng);
-    resolver.game.log('MarsBot resolves Build Build Build: +3 M€, card shuffled back into the bonus deck');
+    marsBot.gainMc(3);
+    marsBot.bonusDeck.drawPile.push(card);
+    inplaceShuffle(marsBot.bonusDeck.drawPile, marsBot.game.rng);
+    marsBot.game.log('MarsBot resolves Build Build Build: +3 M€, card shuffled back into the bonus deck');
     return true;
   }
 }

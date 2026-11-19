@@ -1,7 +1,7 @@
 import {BonusCardId} from '@/common/automa/AutomaTypes';
 import {marsBotMapRules} from '@/common/automa/MarsBotMapRules';
+import {IMarsBot} from '@/server/automa/IMarsBot';
 import {MarsBotBonusCardEffect} from '@/server/automa/bonusCards/MarsBotBonusCardEffect';
-import type {MarsBotBonusResolver} from '@/server/automa/MarsBotBonusResolver';
 
 // B04: Overachievement
 export class OverachievementMarsBot extends MarsBotBonusCardEffect {
@@ -9,17 +9,17 @@ export class OverachievementMarsBot extends MarsBotBonusCardEffect {
     super({id: BonusCardId.B04_OVERACHIEVEMENT});
   }
 
-  public override resolve(resolver: MarsBotBonusResolver): boolean {
+  public override resolve(marsBot: IMarsBot): boolean {
     // Claim a milestone; failing that, fund an award once the map's generation threshold for it is reached
-    const {generationShift} = marsBotMapRules(resolver.game.gameOptions.boardName);
-    const done = resolver.turnResolver.maybeClaimMilestone() ||
-      (resolver.game.generation >= 6 + generationShift && resolver.turnResolver.maybeFundAward());
+    const {generationShift} = marsBotMapRules(marsBot.game.gameOptions.boardName);
+    const done = marsBot.maybeClaimMilestone() ||
+      (marsBot.game.generation >= 6 + generationShift && marsBot.maybeFundAward());
     if (done) {
-      resolver.game.log('Overachievement is destroyed');
+      marsBot.game.log('Overachievement is destroyed');
       return true;
     }
-    resolver.turnResolver.gainMc(5);
-    resolver.game.log('MarsBot gains 5 MC (Overachievement failed)');
+    marsBot.gainMc(5);
+    marsBot.game.log('MarsBot gains 5 MC (Overachievement failed)');
     return false;
   }
 }

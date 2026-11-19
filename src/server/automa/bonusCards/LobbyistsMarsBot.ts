@@ -1,6 +1,7 @@
 import {BonusCardId} from '@/common/automa/AutomaTypes';
+import {IMarsBot} from '@/server/automa/IMarsBot';
 import {MarsBotBonusCardEffect} from '@/server/automa/bonusCards/MarsBotBonusCardEffect';
-import type {MarsBotBonusResolver} from '@/server/automa/MarsBotBonusResolver';
+import {advanceFurthestParameter, lobbyistsOceanBranch, lobbyistsOxygenBranch, lobbyistsTempBranch} from '@/server/automa/bonusCards/bonusCardHelpers';
 
 // B06: Lobbyists / B15: Lobbyists (Venus) — shared (a) temp and (b) oxygen branches
 export class LobbyistsMarsBot extends MarsBotBonusCardEffect {
@@ -8,20 +9,20 @@ export class LobbyistsMarsBot extends MarsBotBonusCardEffect {
     super({id: BonusCardId.B06_LOBBYISTS});
   }
 
-  public override resolve(resolver: MarsBotBonusResolver): boolean {
-    if (resolver.lobbyistsTempBranch()) {
+  public override resolve(marsBot: IMarsBot): boolean {
+    if (lobbyistsTempBranch(marsBot)) {
       return true;
     }
-    if (resolver.lobbyistsOxygenBranch()) {
+    if (lobbyistsOxygenBranch(marsBot)) {
       return true;
     }
 
     // (c) B06: Ocean adjacent to 2+ oceans
-    if (resolver.lobbyistsOceanBranch()) {
+    if (lobbyistsOceanBranch(marsBot)) {
       return true;
     }
 
-    resolver.advanceFurthestParameter();
+    advanceFurthestParameter(marsBot);
     return false;
   }
 }

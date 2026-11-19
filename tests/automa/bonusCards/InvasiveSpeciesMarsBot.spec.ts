@@ -2,11 +2,8 @@ import {expect} from 'chai';
 import {BonusCardId} from '@/common/automa/AutomaTypes';
 import {BoardName} from '@/common/boards/BoardName';
 import {ColonyName} from '@/common/colonies/ColonyName';
-import {SeededRandom} from '@/common/utils/Random';
 import {createBaseBonusCards} from '@/server/automa/MarsBotBonusCard';
-import {MarsBotBonusDeck} from '@/server/automa/MarsBotBonusDeck';
 import {MarsBotBonusResolver} from '@/server/automa/MarsBotBonusResolver';
-import {MarsBotTilePlacer} from '@/server/automa/MarsBotTilePlacer';
 import {Ants} from '@/server/cards/base/Ants';
 import {Birds} from '@/server/cards/base/Birds';
 import {Fish} from '@/server/cards/base/Fish';
@@ -24,14 +21,12 @@ function invasiveSpecies() {
 describe('InvasiveSpeciesMarsBot', () => {
   // Edge cases (rulebook page 6)
   it('MarsBot gains 5 MC even when human has no animals/microbes', () => {
-    const {game, human, marsBot} = createAutomaGame();
+    const {marsBot} = createAutomaGame();
     // Human has no cards with resources
 
     const cards = createBaseBonusCards();
     const b02 = cards.find((c) => c.id === BonusCardId.B02_INVASIVE_SPECIES)!;
-    const tilePlacer = new MarsBotTilePlacer(marsBot);
-    const bonusDeck = MarsBotBonusDeck.create(new SeededRandom(99));
-    const bonusResolver = new MarsBotBonusResolver(game, marsBot.player, human, marsBot.turnResolver, bonusDeck, tilePlacer);
+    const bonusResolver = new MarsBotBonusResolver(marsBot);
 
     bonusResolver.resolve(b02);
     expect(marsBot.turnResolver.megacredits).to.eq(5);

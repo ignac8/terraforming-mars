@@ -1,8 +1,8 @@
 import {BonusCardId} from '@/common/automa/AutomaTypes';
 import {Tag} from '@/common/cards/Tag';
 import {cardTagsIncludingEvent} from '@/server/automa/MarsBotTags';
+import {IMarsBot} from '@/server/automa/IMarsBot';
 import {MarsBotBonusCardEffect} from '@/server/automa/bonusCards/MarsBotBonusCardEffect';
-import type {MarsBotBonusResolver} from '@/server/automa/MarsBotBonusResolver';
 import {IProjectCard} from '@/server/cards/IProjectCard';
 import {inplaceShuffle} from '@/server/utils/shuffle';
 
@@ -13,27 +13,27 @@ export class InterfaceHyperlinkMarsBot extends MarsBotBonusCardEffect {
     super({id: BonusCardId.B30_INTERFACE_HYPERLINK});
   }
 
-  public override resolve(resolver: MarsBotBonusResolver): boolean {
-    const marsBotBoard = resolver.turnResolver.marsBotBoard;
+  public override resolve(marsBot: IMarsBot): boolean {
+    const marsBotBoard = marsBot.marsBotBoard;
     const energyTrack = marsBotBoard.tagToTrack[Tag.POWER];
     const count = Math.max(2, energyTrack === undefined ? 0 : marsBotBoard.tracks[energyTrack].position);
-    const drawn = resolver.game.projectDeck.drawN(resolver.game, count);
+    const drawn = marsBot.game.projectDeck.drawN(marsBot.game, count);
     if (drawn.length === 0) {
-      resolver.game.log('MarsBot resolves Interface Hyperlink: no cards to draw');
+      marsBot.game.log('MarsBot resolves Interface Hyperlink: no cards to draw');
       return false;
     }
     // Science cards first, then the most expensive, then the most tags, then at random
     const science = (card: IProjectCard) => cardTagsIncludingEvent(card).includes(Tag.SCIENCE) ? 1 : 0;
     const tagCount = (card: IProjectCard) => cardTagsIncludingEvent(card).length;
-    inplaceShuffle(drawn, resolver.game.rng);
+    inplaceShuffle(drawn, marsBot.game.rng);
     drawn.sort((a, b) => science(b) - science(a) || b.cost - a.cost || tagCount(b) - tagCount(a));
     const discarded = drawn.splice(2);
-    resolver.game.projectDeck.discard(...discarded);
+    marsBot.game.projectDeck.discard(...discarded);
     for (const card of drawn) {
-      resolver.game.log('MarsBot draws and resolves ${0} (Interface Hyperlink)', (b) => b.card(card));
-      resolver.turnResolver.resolveProjectCard(card);
+      marsBot.game.log('MarsBot draws and resolves ${0} (Interface Hyperlink)', (b) => b.card(card));
+      marsBot.resolveProjectCard(card);
     }
-    resolver.game.log('Interface Hyperlink is destroyed');
+    marsBot.game.log('Interface Hyperlink is destroyed');
     return true;
   }
 }
