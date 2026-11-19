@@ -4,12 +4,24 @@ import {CardName} from '@/common/cards/CardName';
 import {Tag} from '@/common/cards/Tag';
 import {createBonusCard} from '@/server/automa/MarsBotBonusCard';
 import {getMarsBotCorp} from '@/server/automa/corps/MarsBotCorpRegistry';
+import {PolyphemosMarsBot} from '@/server/automa/corps/colonies/PolyphemosMarsBot';
 import {IceCapMelting} from '@/server/cards/base/IceCapMelting';
 import {Research} from '@/server/cards/base/Research';
 import {createAutomaGame, resetCorpRegistry} from '../CorpGame';
+import {recordingMarsBot} from '../RecordingMarsBot';
 
 describe('PolyphemosMarsBot', () => {
   beforeEach(resetCorpRegistry);
+
+  it('gains 25 M€ at setup and discards a project card before the action phase', () => {
+    const {marsBot, calls} = recordingMarsBot();
+    const corp = new PolyphemosMarsBot();
+
+    corp.setup(marsBot);
+    corp.beforeActionPhase(marsBot);
+
+    expect(calls).deep.eq(['gainMc(25)', 'maybeDiscardProjectCardWithFewestTags()']);
+  });
 
   it('gains at least 25 M€ on setup (plus MC from starting tag track actions)', () => {
     const {marsBot} = createAutomaGame();

@@ -3,12 +3,33 @@ import {BoardName} from '@/common/boards/BoardName';
 import {CardName} from '@/common/cards/CardName';
 import {ColonyName} from '@/common/colonies/ColonyName';
 import {AUTOMA_COLONIES_MANIFEST} from '@/server/automa/corps/AutomaColoniesManifest';
+import {PoseidonMarsBot} from '@/server/automa/corps/colonies/PoseidonMarsBot';
 import {Ceres} from '@/server/colonies/Ceres';
 import {Luna} from '@/server/colonies/Luna';
 import {testGame} from '../../../TestGame';
+import {setAllTracks} from '../../FakeMarsBot';
 import {getMarsBot} from '../CorpGame';
+import {TRACK, recordingMarsBot} from '../RecordingMarsBot';
 
 describe('PoseidonMarsBot', () => {
+  it('places a colony at setup', () => {
+    const {marsBot, calls} = recordingMarsBot();
+
+    new PoseidonMarsBot().setup(marsBot);
+
+    expect(calls).deep.eq(['maybePlaceRandomColony()']);
+  });
+
+  it('advances the least-advanced track for each colony either player builds', () => {
+    const {marsBot, calls} = recordingMarsBot();
+    setAllTracks(marsBot, 4);
+    marsBot.marsBotBoard.tracks[TRACK.power].position = 2;
+
+    new PoseidonMarsBot().onColonyPlaced(marsBot);
+
+    expect(calls).deep.eq([`advanceTrack(${TRACK.power})`]);
+  });
+
   it('maybePlaceRandomColony places on one of the available tiles', () => {
     const [game] = testGame(1, {automa: true, coloniesExtension: true, boardName: BoardName.THARSIS});
     const marsBot = getMarsBot(game);
