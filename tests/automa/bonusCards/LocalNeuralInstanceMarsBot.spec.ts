@@ -2,17 +2,23 @@ import {expect} from 'chai';
 import {TileType} from '@/common/TileType';
 import {BonusCardId} from '@/common/automa/AutomaTypes';
 import {SpaceType} from '@/common/boards/SpaceType';
-import {MarsBot} from '@/server/automa/MarsBot';
+import {IMarsBot} from '@/server/automa/IMarsBot';
 import {createBaseBonusCards} from '@/server/automa/MarsBotBonusCard';
 import {MarsBotTilePlacer} from '@/server/automa/MarsBotTilePlacer';
+import {LocalNeuralInstanceMarsBot} from '@/server/automa/bonusCards/LocalNeuralInstanceMarsBot';
+import {Space} from '@/server/boards/Space';
+import {IProjectCard} from '@/server/cards/IProjectCard';
+import {Mine} from '@/server/cards/base/Mine';
+import {testGame} from '../../TestGame';
 import {createAutomaGame} from '../corps/CorpGame';
+import {recordingMarsBot} from '../corps/RecordingMarsBot';
 
 function neuralInstance() {
   return createBaseBonusCards().find((c) => c.id === BonusCardId.B07_LOCAL_NEURAL_INSTANCE)!;
 }
 
 /** Covers the board with the player's greeneries until no space is left for the Neural Instance tile. */
-function leaveNoNeuralInstanceSpace(marsBot: MarsBot): void {
+function leaveNoNeuralInstanceSpace(marsBot: IMarsBot): void {
   const placer = new MarsBotTilePlacer(marsBot);
   for (let space = placer.findNeuralInstanceSpace(); space !== undefined; space = placer.findNeuralInstanceSpace()) {
     marsBot.game.simpleAddTile(marsBot.humanPlayer, space, {tileType: TileType.GREENERY});
@@ -20,6 +26,35 @@ function leaveNoNeuralInstanceSpace(marsBot: MarsBot): void {
 }
 
 describe('LocalNeuralInstanceMarsBot', () => {
+  for (const run of [
+    {spaceLeft: true, placed: 1, played: 0, destroyed: true},
+    {spaceLeft: false, placed: 0, played: 1, destroyed: false},
+  ] as const) {
+    it('places its tile and is destroyed, otherwise resolves a project card and is kept: ' + JSON.stringify(run), () => {
+      const [game, human, botPlayer] = testGame(2);
+      const placed: Array<Space> = [];
+      const played: Array<IProjectCard> = [];
+      const {marsBot} = recordingMarsBot({
+        game,
+        player: botPlayer,
+        humanPlayer: human,
+        megacredits: 0,
+        placeNeuralInstance: (space) => placed.push(space),
+        resolveProjectCard: (card) => played.push(card),
+      });
+      if (!run.spaceLeft) {
+        leaveNoNeuralInstanceSpace(marsBot);
+      }
+      game.projectDeck.drawPile.push(new Mine());
+
+      const destroyed = new LocalNeuralInstanceMarsBot().resolve(marsBot);
+
+      expect(placed).has.length(run.placed);
+      expect(played).has.length(run.played);
+      expect(destroyed).eq(run.destroyed);
+    });
+  }
+
   it('is removed once its tile is placed', () => {
     const {marsBot} = createAutomaGame();
 
