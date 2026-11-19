@@ -72,12 +72,7 @@ export function placeColonyForMarsBot(colony: IColony, marsBot: MarsBot): void {
     // The colony is placed either way (no build bonus, the ocean is the reward). Only the ocean
     // gives way to a Failed Action when none fits (rulebook C, p.5).
     directAddColony(colony, marsBot);
-    if (!game.canAddOcean() || marsBot.turnResolver.tilePlacer.findOceanSpace() === undefined) {
-      marsBot.turnResolver.failedAction();
-      return;
-    }
-    // placeOcean handles tile placement, TR gain, and placement bonuses
-    marsBot.turnResolver.placeOcean();
+    marsBot.placeOcean();
     return;
   }
 
