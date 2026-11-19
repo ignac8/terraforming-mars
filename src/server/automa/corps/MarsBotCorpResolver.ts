@@ -92,12 +92,12 @@ export class MarsBotCorpResolver {
     if (marsBot.hasColonyCubes && marsBot.colonyCubePositions.has(trackCubeKey(trackIndex, position))) {
       const cost = 5;
       marsBot.turnResolver.megacredits = Math.max(0, marsBot.turnResolver.megacredits - cost);
-      marsBot.game.log('MarsBot loses ${0} MC for colony cube trigger (C-X3)', (b) => b.number(cost));
+      marsBot.game.log('MarsBot loses ${0}:r:mc: for its colony cube', (b) => b.number(cost));
       const colony = selectRandomColony(marsBot.game, marsBot);
       if (colony !== undefined) {
         placeColonyForMarsBot(colony, marsBot);
       } else {
-        marsBot.game.log('MarsBot colony cube: no eligible colony tile: Failed Action (C-X3)');
+        marsBot.game.log('MarsBot: no colony tile to build on, Failed Action');
         marsBot.turnResolver.failedAction();
       }
     }

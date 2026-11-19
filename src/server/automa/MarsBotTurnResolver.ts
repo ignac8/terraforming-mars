@@ -411,7 +411,6 @@ export class MarsBotTurnResolver {
       return;
     }
     placeColonyForMarsBot(colony, this.marsBotManager);
-    this.game.log('MarsBot places a colony on ${0}', (b) => b.colony(colony));
   }
 
   // ---- Milestones & Awards ----

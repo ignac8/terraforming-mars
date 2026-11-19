@@ -72,6 +72,7 @@ export function placeColonyForMarsBot(colony: IColony, marsBot: MarsBot): void {
     // The colony is placed either way (no build bonus, the ocean is the reward). Only the ocean
     // gives way to a Failed Action when none fits (rulebook C, p.5).
     directAddColony(colony, marsBot);
+    game.log('MarsBot builds colony on ${0}', (b) => b.colony(colony));
     marsBot.placeOcean();
     return;
   }
@@ -83,19 +84,19 @@ export function placeColonyForMarsBot(colony: IColony, marsBot: MarsBot): void {
   if (colonyName === ColonyName.TITAN) {
     if (!game.gameOptions.venusNextExtension) {
       // Without Venus: store as floaters in Titan shipping board area
+      game.log('MarsBot builds colony on ${0}, gains 2 floaters in Titan storage', (b) => b.colony(colony));
       marsBot.shippingBoard.add(ColonyName.TITAN, 2, marsBot);
-      game.log('MarsBot builds colony on Titan, gains 2 floaters in Titan storage (C-19/C-23)');
     } else {
       // With Venus: add 2 floaters to floaters
+      game.log('MarsBot builds colony on ${0}, gains 2 floaters', (b) => b.colony(colony));
       marsBot.floaters += 2;
-      game.log('MarsBot builds colony on Titan, gains 2 floaters (C-19, Venus rules)');
     }
     return;
   }
 
   // Standard colony placement: 2 resources to shipping board (C-19)
+  game.log('MarsBot builds colony on ${0}, gains 2 resources in storage', (b) => b.colony(colony));
   marsBot.shippingBoard.add(colonyName, 2, marsBot);
-  game.log('MarsBot builds colony on ${0}, gains 2 resources in storage (C-19)', (b) => b.colony(colony));
 }
 
 /**
@@ -118,6 +119,4 @@ function directAddColony(colony: IColony, marsBot: MarsBot): void {
 
   // C-33: notify corp effect (e.g. Poseidon advances least-advanced track)
   marsBot.corp?.onColonyPlaced?.(marsBot);
-
-  marsBot.game.log('MarsBot builds colony on ${0}', (b) => b.colony(colony));
 }
