@@ -3,16 +3,45 @@ import {BonusCardId} from '@/common/automa/AutomaTypes';
 import {BoardName} from '@/common/boards/BoardName';
 import {CardName} from '@/common/cards/CardName';
 import {ColonyName} from '@/common/colonies/ColonyName';
-import {MarsBotBonusCard, bonusCard} from '@/server/automa/MarsBotBonusCard';
+import {MarsBotBonusCard, bonusCard, createBonusCard} from '@/server/automa/MarsBotBonusCard';
+import {MarsBotBonusDeck} from '@/server/automa/MarsBotBonusDeck';
+import {OuterSystemFootholdMarsBot} from '@/server/automa/bonusCards/OuterSystemFootholdMarsBot';
 import {Luna} from '@/server/colonies/Luna';
 import {testGame} from '../../TestGame';
 import {getMarsBot} from '../corps/CorpGame';
+import {recordingMarsBot} from '../corps/RecordingMarsBot';
 
 function b18Card(): MarsBotBonusCard {
   return bonusCard(BonusCardId.B18_OUTER_SYSTEM_FOOTHOLD, 'Outer System Foothold' as CardName);
 }
 
 describe('OuterSystemFootholdMarsBot', () => {
+  it('places a colony, then draws a bonus card and discards it without resolving it', () => {
+    const [game] = testGame(1, {coloniesExtension: true});
+    const investors = createBonusCard(BonusCardId.B32_INVESTORS);
+    const meteorShower = createBonusCard(BonusCardId.B01_METEOR_SHOWER);
+    const {marsBot, calls} = recordingMarsBot({game, bonusDeck: new MarsBotBonusDeck([meteorShower, investors], [], game.rng)});
+
+    const kept = new OuterSystemFootholdMarsBot().resolve(marsBot);
+
+    expect(calls).deep.eq(['maybePlaceRandomColony()']);
+    expect(marsBot.bonusDeck.drawPile).deep.eq([meteorShower]);
+    expect(marsBot.bonusDeck.discardPile).deep.eq([investors]);
+    expect(kept).is.false;
+  });
+
+  it('keeps itself out of the reshuffle when the draw pile is empty', () => {
+    const [game] = testGame(1, {coloniesExtension: true});
+    const self = createBonusCard(BonusCardId.B18_OUTER_SYSTEM_FOOTHOLD);
+    const investors = createBonusCard(BonusCardId.B32_INVESTORS);
+    const {marsBot} = recordingMarsBot({game, bonusDeck: new MarsBotBonusDeck([], [self, investors], game.rng)});
+
+    new OuterSystemFootholdMarsBot().resolve(marsBot);
+
+    expect(marsBot.bonusDeck.drawPile).is.empty;
+    expect(marsBot.bonusDeck.discardPile).deep.eq([self, investors]);
+  });
+
   it('C-16a/b: places colony and gains 2 resources', () => {
     const [game] = testGame(1, {automa: true, coloniesExtension: true, boardName: BoardName.THARSIS});
     const marsBot = getMarsBot(game);
