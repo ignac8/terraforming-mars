@@ -68,7 +68,7 @@ CONFIG='{
   "expansions": {"corpera": true, "promo": false, "venus": false, "colonies": false, "prelude": false,
     "prelude2": false, "turmoil": false, "community": false, "ares": false, "moon": false,
     "pathfinders": false, "ceo": false, "starwars": false, "underworld": false, "deltaProject": false},
-  "board": "tharsis", "seed": 0.5, "randomFirstPlayer": false, "undoOption": false, "showTimers": false,
+  "boards": ["tharsis"], "seed": 0.5, "randomFirstPlayer": false, "undoOption": false, "showTimers": false,
   "fastModeOption": false, "showOtherPlayersVP": false, "aresExtremeVariant": false,
   "politicalAgendasExtension": "Standard", "solarPhaseOption": false,
   "removeNegativeGlobalEventsOption": false, "modularMA": false, "draftVariant": false,
@@ -108,8 +108,8 @@ node -e '
 
 # Play the first move: pick the first corporation and no project cards.
 CORPORATION=$(node -e 'console.log(JSON.parse(process.argv[1]).dealtCorporationCards[0].name)' "$PLAYER")
-INPUT=$(node -e 'console.log(JSON.stringify({type: "initialCards", responses: [
-  {type: "card", cards: [process.argv[1]]}, {type: "card", cards: []}]}))' "$CORPORATION")
+INPUT=$(node -e 'console.log(JSON.stringify({requestId: JSON.parse(process.argv[2]).requestId, type: "initialCards", responses: [
+  {type: "card", cards: [process.argv[1]]}, {type: "card", cards: []}]}))' "$CORPORATION" "$PLAYER")
 AFTER=$(curl -fsS -H 'Content-Type: application/json' -d "$INPUT" "$BASE/player/input?id=$PLAYER_ID") \
     || die "POST /player/input failed"
 node -e '
