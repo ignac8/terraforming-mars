@@ -1,3 +1,4 @@
+import {marsBotMapRules} from '@/common/automa/MarsBotMapRules';
 import {CardName} from '@/common/cards/CardName';
 import {Tag} from '@/common/cards/Tag';
 import {IMarsBot} from '@/server/automa/IMarsBot';
@@ -7,7 +8,7 @@ export class TerralabsResearchMarsBot extends MarsBotCorp {
   constructor() {
     super({
       name: CardName.TERRALABS_RESEARCH,
-      description: 'Tag: Science. Setup: TR -8. Each generation: draw 1 card to action deck (2 cards from generation 9 onward).',
+      description: 'Tag: Science. Setup: TR -8. Each generation: draw 1 card to action deck (2 cards from generation 9 onward, one generation later on Amazonis Planitia).',
       tags: [Tag.SCIENCE],
     });
   }
@@ -19,7 +20,8 @@ export class TerralabsResearchMarsBot extends MarsBotCorp {
   }
 
   public override beforeActionPhase(marsBot: IMarsBot): void {
-    const count = marsBot.game.generation <= 8 ? 1 : 2;
+    const {generationShift} = marsBotMapRules(marsBot.game.gameOptions.boardName);
+    const count = marsBot.game.generation >= 9 + generationShift ? 2 : 1;
     marsBot.drawProjectCardsToActionDeck(count);
     marsBot.game.log('MarsBot (${0}): drew ${1} card(s) to action deck', (b) => b.cardName(this.name).number(count));
   }
