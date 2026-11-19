@@ -23,7 +23,6 @@ import {IColony} from '../colonies/IColony';
 import {ColonyName} from '../../common/colonies/ColonyName';
 import {CardResource} from '../../common/CardResource';
 import {Space} from '../boards/Space';
-import {withoutMcGain} from './bonusCards/bonusCardHelpers';
 
 /**
  * All automa (MarsBot) hooks into the Game lifecycle.
@@ -696,7 +695,7 @@ export class AutomaGameHooks {
       this.venusColonyDue = false;
       const turnResolver = this.marsBot.turnResolver;
       if (this.marsBot.bonusMcBlocked) {
-        withoutMcGain(this.marsBot, () => turnResolver.placeColony());
+        this.marsBot.withoutMcGain(() => turnResolver.placeColony());
       } else {
         turnResolver.placeColony();
       }

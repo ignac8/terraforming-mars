@@ -6,7 +6,8 @@ import {IGame} from '../../src/server/IGame';
 import {MarsBot} from '../../src/server/automa/MarsBot';
 import {BoardName} from '../../src/common/boards/BoardName';
 import {TileType} from '../../src/common/TileType';
-import {setOxygenLevel, setTemperature} from '../TestingUtils';
+import {maxOutOceans, setOxygenLevel, setTemperature} from '../TestingUtils';
+import {CardName} from '../../src/common/cards/CardName';
 
 function createAutomaGame(difficulty: 'easy' | 'normal' | 'hard' | 'brutal' = 'normal'): {game: IGame, human: TestPlayer, marsBot: MarsBot} {
   const [game, human] = testGame(1, {
@@ -188,6 +189,110 @@ describe('MarsBot', () => {
       }
       expect(game.marsIsTerraformed()).to.be.true;
       expect(game.gameIsOver()).to.be.true;
+    });
+  });
+
+  describe('Bonus card members', () => {
+    it('maybeAdvanceTrack leaves a maxed track where it is, with no Failed Action', () => {
+      const {marsBot} = createAutomaGame();
+      const power = marsBot.marsBotBoard.tracks[4];
+      const max = power.definition.layout.length - 1;
+      power.position = max;
+
+      marsBot.maybeAdvanceTrack(4);
+
+      expect(power.position).to.eq(max);
+      expect(marsBot.megacredits).to.eq(0);
+    });
+
+    for (const run of [
+      {megacredits: 20, lost: 5, left: 15},
+      {megacredits: 2, lost: 2, left: 0},
+    ] as const) {
+      it('loseMc takes up to the amount, stopping at zero: ' + JSON.stringify(run), () => {
+        const {marsBot} = createAutomaGame();
+        marsBot.megacredits = run.megacredits;
+
+        const lost = marsBot.loseMc(5);
+
+        expect(lost).to.eq(run.lost);
+        expect(marsBot.megacredits).to.eq(run.left);
+      });
+    }
+
+    for (const run of [
+      {temperature: -30, oxygen: 0, oceans: 0, after: {temperature: -28, oxygen: 0, oceans: 0}},
+      {temperature: 0, oxygen: 0, oceans: 0, after: {temperature: 0, oxygen: 1, oceans: 0}},
+      {temperature: 0, oxygen: 9, oceans: 0, after: {temperature: 0, oxygen: 9, oceans: 1}},
+      // Oxygen and temperature both have 9 steps left, though temperature is further along
+      {temperature: -10, oxygen: 5, oceans: 9, after: {temperature: -10, oxygen: 6, oceans: 9}},
+    ] as const) {
+      it('advanceFurthestParameter raises the parameter with the most steps left: ' + JSON.stringify(run), () => {
+        const {game, human, marsBot} = createAutomaGame();
+        setTemperature(game, run.temperature);
+        setOxygenLevel(game, run.oxygen);
+        maxOutOceans(human, run.oceans);
+
+        marsBot.advanceFurthestParameter(CardName.AUTOMA_LOBBYISTS);
+
+        expect({
+          temperature: game.getTemperature(),
+          oxygen: game.getOxygenLevel(),
+          oceans: game.board.getOceanSpaces().length,
+        }).deep.eq(run.after);
+      });
+    }
+
+    for (const run of [
+      {allowCorpIntercept: true, temperature: -30},
+      {allowCorpIntercept: false, temperature: -28},
+    ] as const) {
+      it('advanceFurthestParameter lets a corp cancel the raise only when allowed: ' + JSON.stringify(run), () => {
+        const {game, marsBot} = createAutomaGame();
+        marsBot.interceptsParameterRaise = () => true;
+
+        marsBot.advanceFurthestParameter(CardName.AUTOMA_GOVERNMENT_INTERVENTION, run.allowCorpIntercept);
+
+        expect(game.getTemperature()).to.eq(run.temperature);
+      });
+    }
+
+    for (const run of [
+      {accepted: ['21'], placed: true, oxygen: 1},
+      {accepted: [], placed: false, oxygen: 0},
+    ] as const) {
+      it('maybePlaceGreenery places a greenery only on a space the filter accepts, raising the oxygen: ' + JSON.stringify(run), () => {
+        const {game, marsBot} = createAutomaGame();
+        const accepted: ReadonlyArray<string> = run.accepted;
+
+        const placed = marsBot.maybePlaceGreenery((space) => accepted.includes(space.id));
+
+        expect(game.board.getGreeneries(marsBot.player).map((space) => space.id)).deep.eq(accepted);
+        expect(game.getOxygenLevel()).to.eq(run.oxygen);
+        expect(placed).to.eq(run.placed);
+      });
+    }
+
+    it('withoutTRorMcGain takes back the TR and M€ the action gives', () => {
+      const {marsBot} = createAutomaGame();
+      const tr = marsBot.player.terraformRating;
+
+      marsBot.withoutTRorMcGain(() => {
+        marsBot.player.increaseTerraformRating(2);
+        marsBot.gainMc(6);
+      });
+
+      expect(marsBot.player.terraformRating).to.eq(tr);
+      expect(marsBot.megacredits).to.eq(0);
+    });
+
+    it('withoutMcGain leaves M€ the action spends spent', () => {
+      const {marsBot} = createAutomaGame();
+      marsBot.megacredits = 10;
+
+      marsBot.withoutMcGain(() => marsBot.loseMc(4));
+
+      expect(marsBot.megacredits).to.eq(6);
     });
   });
 });

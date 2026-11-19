@@ -21,7 +21,7 @@ describe('DiversificationMarsBot', () => {
 
       new DiversificationMarsBot().resolve(marsBot);
 
-      expect(calls).deep.eq([`advanceTrack(${TRACK.science})`]);
+      expect(calls).deep.eq([`maybeAdvanceTrack(${TRACK.science})`]);
       expect(marsBot.megacredits).eq(run.megacreditsLeft);
     });
   }

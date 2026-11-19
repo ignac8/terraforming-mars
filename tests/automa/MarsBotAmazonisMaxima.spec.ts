@@ -2,7 +2,6 @@ import {expect} from 'chai';
 import {BonusCardId} from '@/common/automa/AutomaTypes';
 import {BoardName} from '@/common/boards/BoardName';
 import {CardName} from '@/common/cards/CardName';
-import {advanceFurthestParameter, maybePlaceGreenery} from '@/server/automa/bonusCards/bonusCardHelpers';
 import {getMarsBotCorp} from '@/server/automa/corps/MarsBotCorpRegistry';
 import {testGame} from '../TestGame';
 import {maxOutOceans, setOxygenLevel, setTemperature, setVenusScaleLevel} from '../TestingUtils';
@@ -81,7 +80,7 @@ describe('MarsBotAmazonisMaxima', () => {
       const {game, marsBot} = pristarAmazonisGame();
       setOxygenLevel(game, 14);
 
-      maybePlaceGreenery(marsBot);
+      marsBot.maybePlaceGreenery();
 
       expect(game.getOxygenLevel()).eq(14);
       expect(marsBot.corpSpecificState.get('whiteCubeOnCard')).eq(0);
@@ -159,7 +158,7 @@ describe('MarsBotAmazonisMaxima', () => {
       setTemperature(game, 8);
       maxOutOceans(game.players[0], 9);
 
-      advanceFurthestParameter(marsBot, CardName.AUTOMA_LOBBYISTS);
+      marsBot.advanceFurthestParameter(CardName.AUTOMA_LOBBYISTS);
 
       expect(game.getOxygenLevel()).eq(15);
       expect(game.board.getOceanSpaces()).has.length(9);
@@ -171,7 +170,7 @@ describe('MarsBotAmazonisMaxima', () => {
       setTemperature(game, 8);
       maxOutOceans(game.players[0], 10);
 
-      advanceFurthestParameter(marsBot, CardName.AUTOMA_LOBBYISTS);
+      marsBot.advanceFurthestParameter(CardName.AUTOMA_LOBBYISTS);
 
       expect(game.getTemperature()).eq(10);
       expect(game.board.getOceanSpaces()).has.length(10);
@@ -183,7 +182,7 @@ describe('MarsBotAmazonisMaxima', () => {
       setTemperature(game, 14);
       maxOutOceans(game.players[0], 11);
 
-      expect(advanceFurthestParameter(marsBot, CardName.AUTOMA_LOBBYISTS)).is.false;
+      expect(marsBot.advanceFurthestParameter(CardName.AUTOMA_LOBBYISTS)).is.false;
     });
   });
 

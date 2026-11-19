@@ -420,6 +420,14 @@ export class MarsBot implements IMarsBot {
     this.turnResolver.advanceTrack(trackIndex);
   }
 
+  public maybeAdvanceTrack(trackIndex: number): void {
+    if (!this.marsBotBoard.tracks[trackIndex].canAdvance()) {
+      this.game.log('MarsBot: track ${0} at max, no effect', (b) => b.number(trackIndex + 1));
+      return;
+    }
+    this.advanceTrack(trackIndex);
+  }
+
   public advanceTrackOfTag(tag: Tag): boolean {
     return this.turnResolver.advanceTrackOfTag(tag);
   }
@@ -434,6 +442,12 @@ export class MarsBot implements IMarsBot {
 
   public removePlayedProjectCard(card: IProjectCard): void {
     inplaceRemove(this.playedProjectCards, card);
+  }
+
+  public loseMc(amount: number): number {
+    const lost = Math.min(amount, this.megacredits);
+    this.megacredits -= lost;
+    return lost;
   }
 
   public maybeDrawAndResolveProjectCard(): void {
@@ -528,6 +542,107 @@ export class MarsBot implements IMarsBot {
       return;
     }
     this.turnResolver.raiseTemperature(steps);
+  }
+
+  public advanceFurthestParameter(source: CardName, allowCorpIntercept: boolean = true): boolean {
+    const game = this.game;
+    const tempRemaining = (game.max.temperature - game.getTemperature()) / 2;
+    const oxyRemaining = game.max.oxygen - game.getOxygenLevel();
+    const oceanRemaining = game.max.oceans - game.board.getOceanSpaces().length;
+
+    const params: Array<{message: string, remaining: number, action: () => boolean}> = [
+      {message: 'MarsBot (${0}): raises the oxygen, furthest from completion', remaining: oxyRemaining, action: () => {
+        if (game.getOxygenLevel() < game.max.oxygen) {
+          if (allowCorpIntercept && this.interceptsParameterRaise(GlobalParameter.OXYGEN)) {
+            return true;
+          }
+          game.increaseOxygenLevel(this.player, 1);
+          return true;
+        }
+        return false;
+      }},
+      {message: 'MarsBot (${0}): places an ocean, furthest from completion', remaining: oceanRemaining, action: () => {
+        if (game.canAddOcean()) {
+          const tilePlacer = new MarsBotTilePlacer(this);
+          const space = tilePlacer.findOceanSpace();
+          if (space) {
+            if (allowCorpIntercept && this.interceptsParameterRaise(GlobalParameter.OCEANS)) {
+              return true;
+            }
+            game.addOcean(this.player, space);
+            this.gainMc(tilePlacer.getTotalPlacementMC(space));
+            return true;
+          }
+        }
+        return false;
+      }},
+      {message: 'MarsBot (${0}): raises the temperature, furthest from completion', remaining: tempRemaining, action: () => {
+        if (game.getTemperature() < game.max.temperature) {
+          if (allowCorpIntercept && this.interceptsParameterRaise(GlobalParameter.TEMPERATURE)) {
+            return true;
+          }
+          game.increaseTemperature(this.player, 1);
+          return true;
+        }
+        return false;
+      }},
+    ];
+
+    // Most steps remaining first, tie order preserved (oxygen, oceans, temperature)
+    params.sort((a, b) => b.remaining - a.remaining);
+
+    for (const p of params) {
+      if (p.action()) {
+        game.log(p.message, (b) => b.cardName(source));
+        return true;
+      }
+    }
+    return false;
+  }
+
+  public maybePlaceGreenery(filter?: (space: Space) => boolean): boolean {
+    const game = this.game;
+    const tilePlacer = new MarsBotTilePlacer(this);
+    const space = tilePlacer.findGreenerySpace(filter);
+    if (space === undefined) {
+      return false;
+    }
+    const raiseOxygen = game.getOxygenLevel() >= game.max.oxygen ||
+      !this.interceptsParameterRaise(GlobalParameter.OXYGEN);
+    game.addGreenery(this.player, space, raiseOxygen);
+    this.gainMc(tilePlacer.getTotalPlacementMC(space));
+    return true;
+  }
+
+  public withoutTRGain(action: () => void): void {
+    const trBefore = this.player.terraformRating;
+    action();
+    const trGained = this.player.terraformRating - trBefore;
+    if (trGained > 0) {
+      this.player.decreaseTerraformRating(trGained);
+      this.game.log('MarsBot (${0}): returns ${1} TR', (b) => b.cardName(CardName.AUTOMA_GOVERNMENT_INTERVENTION).number(trGained));
+    }
+  }
+
+  public withoutMcGain(action: () => void): void {
+    const mcBefore = this.megacredits;
+    this.mcKeptThroughIntervention = 0;
+    let kept = 0;
+    try {
+      action();
+    } finally {
+      kept = this.mcKeptThroughIntervention ?? 0;
+      this.mcKeptThroughIntervention = undefined;
+    }
+    const returned = this.megacredits - (mcBefore + kept);
+    if (returned > 0) {
+      this.megacredits = mcBefore + kept;
+      this.game.log('MarsBot (${0}): returns ${1}:r:mc:', (b) => b.cardName(CardName.AUTOMA_GOVERNMENT_INTERVENTION).number(returned));
+    }
+  }
+
+  public withoutTRorMcGain(action: () => void): void {
+    this.withoutMcGain(() => this.withoutTRGain(action));
   }
 
   public placeOcean(): void {

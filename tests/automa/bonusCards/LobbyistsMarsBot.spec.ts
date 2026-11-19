@@ -1,12 +1,13 @@
 import {expect} from 'chai';
 import {TileType} from '@/common/TileType';
 import {SpaceId} from '@/common/Types';
+import {CardName} from '@/common/cards/CardName';
 import {BonusCardId} from '@/common/automa/AutomaTypes';
 import {GlobalParameter} from '@/common/GlobalParameter';
 import {createBaseBonusCards} from '@/server/automa/MarsBotBonusCard';
 import {MarsBotBonusResolver} from '@/server/automa/MarsBotBonusResolver';
 import {LobbyistsMarsBot} from '@/server/automa/bonusCards/LobbyistsMarsBot';
-import {maxOutOceans, setOxygenLevel, setTemperature} from '../../TestingUtils';
+import {setOxygenLevel, setTemperature} from '../../TestingUtils';
 import {testGame} from '../../TestGame';
 import {createAutomaGame} from '../corps/CorpGame';
 import {recordingMarsBot} from '../corps/RecordingMarsBot';
@@ -63,7 +64,7 @@ describe('LobbyistsMarsBot', () => {
     // Spaces 07 (no bonus) and 43 (one plant) each touch two of these, and 43 covers more icons.
     // 43 pays 1 M€ for the plant icon and 2 M€ for each adjacent ocean.
     {oceans: ['06', '13', '34', '44'], after: ['06', '13', '34', '43', '44'], calls: ['gainMc(5)'], destroyed: true},
-    {oceans: ['34'], after: ['34'], calls: [], destroyed: false},
+    {oceans: ['34'], after: ['34'], calls: [`advanceFurthestParameter(${CardName.AUTOMA_LOBBYISTS})`], destroyed: false},
   ] as const) {
     it('places an ocean only next to 2 oceans, and is then destroyed: ' + JSON.stringify(run), () => {
       const [game, human, botPlayer] = testGame(2);
@@ -80,30 +81,15 @@ describe('LobbyistsMarsBot', () => {
     });
   }
 
-  for (const run of [
-    {temperature: -30, oxygen: 0, oceans: 0, after: {temperature: -28, oxygen: 0, oceans: 0}},
-    {temperature: 0, oxygen: 0, oceans: 0, after: {temperature: 0, oxygen: 1, oceans: 0}},
-    {temperature: 0, oxygen: 9, oceans: 0, after: {temperature: 0, oxygen: 9, oceans: 1}},
-    // Oxygen and temperature both have 9 steps left, though temperature is further along
-    {temperature: -10, oxygen: 5, oceans: 9, after: {temperature: -10, oxygen: 6, oceans: 9}},
-  ] as const) {
-    it('otherwise raises the parameter with the most steps left and is kept: ' + JSON.stringify(run), () => {
-      const [game, human, botPlayer] = testGame(2);
-      const {marsBot} = recordingMarsBot({game, player: botPlayer, humanPlayer: human, megacredits: 0, interceptsParameterRaise: () => false});
-      setTemperature(game, run.temperature);
-      setOxygenLevel(game, run.oxygen);
-      maxOutOceans(human, run.oceans);
+  it('otherwise raises the parameter furthest from completion and is kept', () => {
+    const [game, human, botPlayer] = testGame(2);
+    const {marsBot, calls} = recordingMarsBot({game, player: botPlayer, humanPlayer: human, megacredits: 0, interceptsParameterRaise: () => false});
 
-      const destroyed = new LobbyistsMarsBot().resolve(marsBot);
+    const destroyed = new LobbyistsMarsBot().resolve(marsBot);
 
-      expect({
-        temperature: game.getTemperature(),
-        oxygen: game.getOxygenLevel(),
-        oceans: game.board.getOceanSpaces().length,
-      }).deep.eq(run.after);
-      expect(destroyed).is.false;
-    });
-  }
+    expect(calls).deep.eq([`advanceFurthestParameter(${CardName.AUTOMA_LOBBYISTS})`]);
+    expect(destroyed).is.false;
+  });
 
   // Detailed options (rulebook pages 6-7)
   it('option (a): temp 1-2 from completion → raise 2 + destroy', () => {

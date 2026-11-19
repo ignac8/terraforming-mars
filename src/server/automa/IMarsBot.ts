@@ -1,4 +1,5 @@
 import {BonusCardId} from '../../common/automa/AutomaTypes';
+import {CardName} from '../../common/cards/CardName';
 import {Tag} from '../../common/cards/Tag';
 import {GlobalParameter} from '../../common/GlobalParameter';
 import {IGame} from '../IGame';
@@ -51,6 +52,13 @@ export interface IMarsBot {
   /** Advances a track and resolves the space it reaches. Does nothing once the game has ended. */
   advanceTrack(trackIndex: number): void;
   /**
+   * Advances a track for a bonus card, like `advanceTrack`.
+   *
+   * A maxed track stays put, and the bot takes no Failed Action: a bonus card that can't resolve has
+   * no effect (rulebook A p.5; BGG 3599965, 3623553).
+   */
+  maybeAdvanceTrack(trackIndex: number): void;
+  /**
    * Advances the track that carries `tag` and tells the player's cards about the tag.
    *
    * Returns false when no track carries `tag`.
@@ -71,6 +79,8 @@ export interface IMarsBot {
   resolveProjectCard(card: IProjectCard): void;
   /** Takes `card` off the bot's played pile. */
   removePlayedProjectCard(card: IProjectCard): void;
+  /** Takes up to `amount` M€ from the bot, stopping at zero, and returns how much it lost. */
+  loseMc(amount: number): number;
   /**
    * Draws the top bonus card and resolves it. Does nothing when both bonus piles are empty, or
    * once the game has ended.
@@ -138,6 +148,35 @@ export interface IMarsBot {
    * `temperatureRaises`. Unlike a track icon, a maxed temperature does nothing, with no Failed Action.
    */
   raiseTemperature(steps: 1 | 2): void;
+  /**
+   * Raises the global parameter furthest from completion, for the bonus card `source`.
+   *
+   * Distance counts steps remaining (a temperature step is 2 degrees), and a tie goes to oxygen, then
+   * oceans, then temperature. With `allowCorpIntercept` false, no corp may cancel the raise. Returns
+   * false when every parameter is already complete.
+   */
+  advanceFurthestParameter(source: CardName, allowCorpIntercept?: boolean): boolean;
+  /**
+   * Places a greenery for the bot on a space that `filter` accepts, raising the oxygen.
+   *
+   * Returns false, with no Failed Action, when no such space is left.
+   */
+  maybePlaceGreenery(filter?: (space: Space) => boolean): boolean;
+  /** Runs `action` and takes back any TR it gave the bot (Government Intervention). */
+  withoutTRGain(action: () => void): void;
+  /**
+   * Runs `action` and caps the bot's M€ at what it was before, so the action pays the bot no M€
+   * (Government Intervention). M€ the action costs the bot stays spent.
+   *
+   * M€ that Lakefront Resorts' advance brings in stays (rulebook B, p.4).
+   */
+  withoutMcGain(action: () => void): void;
+  /**
+   * Runs `action` and takes back any TR or M€ it gave the bot (Government Intervention).
+   *
+   * M€ that Lakefront Resorts' advance brings in stays (rulebook B, p.4).
+   */
+  withoutTRorMcGain(action: () => void): void;
   placeOcean(): void;
   placeCity(): void;
   placeGreenery(): void;

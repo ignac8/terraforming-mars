@@ -12,6 +12,8 @@ const RECORDED = [
   'gainMc',
   'raiseTR',
   'raiseTemperature',
+  'advanceFurthestParameter',
+  'maybePlaceGreenery',
   'placeOcean',
   'placeCity',
   'placeGreenery',
@@ -43,8 +45,9 @@ export type RecordingMarsBot = {
 /**
  * Creates a bot that records the calls a corporation makes into it instead of acting on them.
  *
- * It keeps corp state, an advance moves the track's marker, and no corp cancels a raise. `fields` sets any
- * other field, the way fakeMarsBot() takes them. The game has 1 player unless `fields` brings its own.
+ * It keeps corp state, an advance moves the track's marker, no corp cancels a raise, and a `without...`
+ * member runs its action. `fields` sets any other field, the way fakeMarsBot() takes them. The game has
+ * 1 player unless `fields` brings its own.
  */
 export function recordingMarsBot(fields: Partial<IMarsBot> = {}): RecordingMarsBot {
   const calls: Array<string> = [];
@@ -57,10 +60,30 @@ export function recordingMarsBot(fields: Partial<IMarsBot> = {}): RecordingMarsB
       record('advanceTrack')(trackIndex);
       marsBot.marsBotBoard.tracks[trackIndex].position++;
     },
+    maybeAdvanceTrack: (trackIndex) => {
+      record('maybeAdvanceTrack')(trackIndex);
+      marsBot.marsBotBoard.tracks[trackIndex].position++;
+    },
+    loseMc: (amount) => {
+      record('loseMc')(amount);
+      return amount;
+    },
     getCorpState: (key) => corpState.get(key) ?? 0,
     setCorpState: (key, value) => corpState.set(key, value),
     interceptsParameterRaise: () => false,
     bonusMcBlocked: false,
+    withoutTRGain: (action) => {
+      record('withoutTRGain')();
+      action();
+    },
+    withoutMcGain: (action) => {
+      record('withoutMcGain')();
+      action();
+    },
+    withoutTRorMcGain: (action) => {
+      record('withoutTRorMcGain')();
+      action();
+    },
     ...fields,
   });
   return {marsBot, calls, corpState};

@@ -12,8 +12,10 @@ export class OverachievementMarsBot extends MarsBotBonusCardEffect {
   public override resolve(marsBot: IMarsBot): boolean {
     // Claim a milestone; failing that, fund an award once the map's generation threshold for it is reached
     const {generationShift} = marsBotMapRules(marsBot.game.gameOptions.boardName);
-    const done = marsBot.maybeClaimMilestone() ||
-      (marsBot.game.generation >= 6 + generationShift && marsBot.maybeFundAward());
+    let done = marsBot.maybeClaimMilestone();
+    if (!done && marsBot.game.generation >= 6 + generationShift) {
+      done = marsBot.maybeFundAward();
+    }
     if (done) {
       marsBot.game.log('Overachievement is destroyed');
       return true;

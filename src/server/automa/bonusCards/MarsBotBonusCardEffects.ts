@@ -27,7 +27,11 @@ import {InterfaceHyperlinkMarsBot} from './InterfaceHyperlinkMarsBot';
 import {GovernmentSubsidyMarsBot} from './GovernmentSubsidyMarsBot';
 import {InvestorsMarsBot} from './InvestorsMarsBot';
 
-/** The effect of each bonus card. An id without one does nothing when it is resolved. */
+/**
+ * The effect of each bonus card. An id without one does nothing when it is resolved.
+ *
+ * The effects keep no state, so these instances serve every game.
+ */
 export const MARSBOT_BONUS_CARD_EFFECTS: Partial<Record<BonusCardId, MarsBotBonusCardEffect>> = {
   [BonusCardId.B01_METEOR_SHOWER]: new MeteorShowerMarsBot(),
   [BonusCardId.B02_INVASIVE_SPECIES]: new InvasiveSpeciesMarsBot(),
