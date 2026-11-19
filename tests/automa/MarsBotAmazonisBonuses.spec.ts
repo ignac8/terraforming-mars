@@ -170,7 +170,7 @@ describe('MarsBotAmazonisBonuses', () => {
       expect(game.getVenusScaleLevel()).eq(16);
       expect(marsBot.turnResolver.megacredits).eq(mc);
       expect(logs).includes('MarsBot: no colony tile to build on, Failed Action');
-      expect(logs).includes('MarsBot does not receive M€ from Government Intervention');
+      expect(logs).includes(`MarsBot (Government Intervention:automa): returns ${marsBot.turnResolver.failedActionMc}:r:mc:`);
     });
 
     it('still asks a human where to build the colony', () => {

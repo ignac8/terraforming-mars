@@ -1,11 +1,32 @@
 import {expect} from 'chai';
 import {BonusCardId} from '@/common/automa/AutomaTypes';
 import {createBonusCard} from '@/server/automa/MarsBotBonusCard';
+import {DoItRightMarsBot} from '@/server/automa/bonusCards/DoItRightMarsBot';
 import {setTemperature} from '../../TestingUtils';
+import {testGame} from '../../TestGame';
 import {createAutomaGame, resetCorpRegistry} from '../corps/CorpGame';
+import {recordingMarsBot} from '../corps/RecordingMarsBot';
 
 describe('DoItRightMarsBot', () => {
   beforeEach(resetCorpRegistry);
+
+  for (const run of [
+    {temperature: -26, after: -22},
+    {temperature: -30, after: -30},
+  ] as const) {
+    it('resolves the first Lobbyists branch that applies, else nothing, and is never destroyed: ' + JSON.stringify(run), () => {
+      const [game, human, botPlayer] = testGame(2);
+      const {marsBot} = recordingMarsBot({game, player: botPlayer, humanPlayer: human, megacredits: 0, interceptsParameterRaise: () => false});
+      setTemperature(game, run.temperature);
+
+      const destroyed = new DoItRightMarsBot().resolve(marsBot);
+
+      expect(game.getTemperature()).eq(run.after);
+      expect(game.getOxygenLevel()).eq(0);
+      expect(game.board.getOceanSpaces()).is.empty;
+      expect(destroyed).is.false;
+    });
+  }
 
   it('raises the temperature 2 steps when it is 1 or 2 steps from a bonus', () => {
     const {game, marsBot} = createAutomaGame();
