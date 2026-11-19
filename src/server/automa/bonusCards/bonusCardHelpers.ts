@@ -77,8 +77,12 @@ function vpPerResource(card: ICard): number {
   return 0;
 }
 
-/** Lobbyists branch (c): an ocean space next to 2+ oceans takes an ocean. */
-export function lobbyistsOceanBranch(marsBot: IMarsBot, source: string = 'Lobbyists'): boolean {
+/**
+ * Places an ocean next to 2 or more oceans, for the Lobbyists card `source`.
+ *
+ * False when no ocean space touches 2 oceans, or the oceans are complete.
+ */
+export function lobbyistsOceanBranch(marsBot: IMarsBot, source: CardName): boolean {
   const game = marsBot.game;
   if (!game.canAddOcean()) {
     return false;
@@ -90,12 +94,12 @@ export function lobbyistsOceanBranch(marsBot: IMarsBot, source: string = 'Lobbyi
     return false;
   }
   if (marsBot.interceptsParameterRaise(GlobalParameter.OCEANS)) {
-    game.log(`MarsBot skips the ocean (${source})`);
+    game.log('MarsBot (${0}): skips the ocean', (b) => b.cardName(source));
     return true;
   }
   game.addOcean(marsBot.player, space);
   marsBot.gainMc(tilePlacer.getTotalPlacementMC(space));
-  game.log(`MarsBot places ocean (${source})`);
+  game.log('MarsBot (${0}): places an ocean', (b) => b.cardName(source));
   return true;
 }
 
@@ -107,7 +111,7 @@ export function isNearBonusStep(game: IGame, type: keyof GlobalParameterTracks):
 
 /**
  * Counts the steps from the current level of the `type` parameter to the nearer of the next bonus step
- * printed on the map's track and the track's maximum.
+ * printed on the board's track and the track's maximum.
  *
  * A temperature step is 2 degrees, an oxygen step 1%, and a Venus step 2% up to 30%, then 1%.
  * Returns 0 when the track is at its maximum.
@@ -132,21 +136,31 @@ function stepsToNextBonus(game: IGame, type: keyof GlobalParameterTracks): numbe
   }
 }
 
-/** Lobbyists shared branch (a): temperature 1-2 steps from bonus or completion. */
-export function lobbyistsTempBranch(marsBot: IMarsBot, source: string = 'Lobbyists'): boolean {
+/**
+ * Raises the temperature 2 steps when it is 1 or 2 steps from a bonus step or its maximum, for the
+ * Lobbyists card `source`.
+ *
+ * False when the temperature is further away.
+ */
+export function lobbyistsTempBranch(marsBot: IMarsBot, source: CardName): boolean {
   const game = marsBot.game;
   if (isNearBonusStep(game, 'temperature')) {
     // Pristar's cube cancels only the first of the 2 steps
     const steps = marsBot.interceptsParameterRaise(GlobalParameter.TEMPERATURE) ? 1 : 2;
     game.increaseTemperature(marsBot.player, steps);
-    game.log(`MarsBot raises temperature ${steps} step(s) (${source})`);
+    game.log('MarsBot (${0}): raises the temperature ${1} step(s)', (b) => b.cardName(source).number(steps));
     return true;
   }
   return false;
 }
 
-/** Lobbyists shared branch (b): oxygen 1-2 steps from bonus or completion. */
-export function lobbyistsOxygenBranch(marsBot: IMarsBot, source: string = 'Lobbyists'): boolean {
+/**
+ * Places a greenery and raises the oxygen once more when the oxygen is 1 or 2 steps from a bonus step
+ * or its maximum, for the Lobbyists card `source`.
+ *
+ * False when the oxygen is further away, or no greenery space is left.
+ */
+export function lobbyistsOxygenBranch(marsBot: IMarsBot, source: CardName): boolean {
   const game = marsBot.game;
   if (isNearBonusStep(game, 'oxygen')) {
     const tilePlacer = new MarsBotTilePlacer(marsBot);
@@ -155,11 +169,11 @@ export function lobbyistsOxygenBranch(marsBot: IMarsBot, source: string = 'Lobby
       const raiseOxygen = game.getOxygenLevel() >= game.max.oxygen ||
         !marsBot.interceptsParameterRaise(GlobalParameter.OXYGEN);
       game.addGreenery(marsBot.player, greenerySpace, raiseOxygen);
-      marsBot.gainMc(tilePlacer.getPlacementBonusMC(greenerySpace) + tilePlacer.getOceanAdjacencyMC(greenerySpace));
+      marsBot.gainMc(tilePlacer.getTotalPlacementMC(greenerySpace));
       if (game.getOxygenLevel() < game.max.oxygen && !marsBot.interceptsParameterRaise(GlobalParameter.OXYGEN)) {
         game.increaseOxygenLevel(marsBot.player, 1);
       }
-      game.log(`MarsBot places greenery and raises oxygen twice (${source})`);
+      game.log('MarsBot (${0}): places a greenery and raises the oxygen', (b) => b.cardName(source));
       return true;
     }
   }
@@ -185,14 +199,14 @@ export function maybePlaceGreenery(marsBot: IMarsBot, filter?: (space: Space) =>
   return true;
 }
 
-/** Execute an action and reverse any TR gained (for Government Intervention). */
+/** Runs `action` and takes back any TR it gave MarsBot (for Government Intervention). */
 export function withoutTRGain(marsBot: IMarsBot, action: () => void): void {
   const trBefore = marsBot.player.terraformRating;
   action();
   const trGained = marsBot.player.terraformRating - trBefore;
   if (trGained > 0) {
     marsBot.player.decreaseTerraformRating(trGained);
-    marsBot.game.log('MarsBot does not receive TR from Government Intervention');
+    marsBot.game.log('MarsBot (${0}): returns ${1} TR', (b) => b.cardName(CardName.AUTOMA_GOVERNMENT_INTERVENTION).number(trGained));
   }
 }
 
@@ -212,14 +226,15 @@ export function withoutMcGain(marsBot: IMarsBot, action: () => void): void {
     kept = marsBot.mcKeptThroughIntervention ?? 0;
     marsBot.mcKeptThroughIntervention = undefined;
   }
-  if (marsBot.megacredits > mcBefore + kept) {
+  const returned = marsBot.megacredits - (mcBefore + kept);
+  if (returned > 0) {
     marsBot.megacredits = mcBefore + kept;
-    marsBot.game.log('MarsBot does not receive M€ from Government Intervention');
+    marsBot.game.log('MarsBot (${0}): returns ${1}:r:mc:', (b) => b.cardName(CardName.AUTOMA_GOVERNMENT_INTERVENTION).number(returned));
   }
 }
 
 /**
- * Execute an action and reverse any TR or M€ gained (for Government Intervention).
+ * Runs `action` and takes back any TR or M€ it gave MarsBot (for Government Intervention).
  *
  * M€ that Lakefront Resorts' advance brings in stays (rulebook B, p.4).
  */
@@ -228,19 +243,20 @@ export function withoutTRorMcGain(marsBot: IMarsBot, action: () => void): void {
 }
 
 /**
- * Advance the global parameter furthest from completion, measured in steps remaining
- * (a temperature step is 2 degrees). Tie: oxygen > ocean > temperature.
+ * Raises the global parameter furthest from completion, for the bonus card `source`.
  *
- * Returns false when every parameter is already complete.
+ * Distance counts steps remaining (a temperature step is 2 degrees), and a tie goes to oxygen, then
+ * oceans, then temperature. With `allowCorpIntercept` false, no corp may cancel the raise. Returns
+ * false when every parameter is already complete.
  */
-export function advanceFurthestParameter(marsBot: IMarsBot, allowCorpIntercept: boolean = true): boolean {
+export function advanceFurthestParameter(marsBot: IMarsBot, source: CardName, allowCorpIntercept: boolean = true): boolean {
   const game = marsBot.game;
   const tempRemaining = (game.max.temperature - game.getTemperature()) / 2;
   const oxyRemaining = game.max.oxygen - game.getOxygenLevel();
   const oceanRemaining = game.max.oceans - game.board.getOceanSpaces().length;
 
-  const params: Array<{name: string, remaining: number, action: () => boolean}> = [
-    {name: 'oxygen', remaining: oxyRemaining, action: () => {
+  const params: Array<{message: string, remaining: number, action: () => boolean}> = [
+    {message: 'MarsBot (${0}): raises the oxygen, furthest from completion', remaining: oxyRemaining, action: () => {
       if (game.getOxygenLevel() < game.max.oxygen) {
         if (allowCorpIntercept && marsBot.interceptsParameterRaise(GlobalParameter.OXYGEN)) {
           return true;
@@ -250,7 +266,7 @@ export function advanceFurthestParameter(marsBot: IMarsBot, allowCorpIntercept: 
       }
       return false;
     }},
-    {name: 'ocean', remaining: oceanRemaining, action: () => {
+    {message: 'MarsBot (${0}): places an ocean, furthest from completion', remaining: oceanRemaining, action: () => {
       if (game.canAddOcean()) {
         const tilePlacer = new MarsBotTilePlacer(marsBot);
         const space = tilePlacer.findOceanSpace();
@@ -259,13 +275,13 @@ export function advanceFurthestParameter(marsBot: IMarsBot, allowCorpIntercept: 
             return true;
           }
           game.addOcean(marsBot.player, space);
-          marsBot.gainMc(tilePlacer.getPlacementBonusMC(space) + tilePlacer.getOceanAdjacencyMC(space));
+          marsBot.gainMc(tilePlacer.getTotalPlacementMC(space));
           return true;
         }
       }
       return false;
     }},
-    {name: 'temperature', remaining: tempRemaining, action: () => {
+    {message: 'MarsBot (${0}): raises the temperature, furthest from completion', remaining: tempRemaining, action: () => {
       if (game.getTemperature() < game.max.temperature) {
         if (allowCorpIntercept && marsBot.interceptsParameterRaise(GlobalParameter.TEMPERATURE)) {
           return true;
@@ -277,13 +293,12 @@ export function advanceFurthestParameter(marsBot: IMarsBot, allowCorpIntercept: 
     }},
   ];
 
-  // Most steps remaining first, tie order preserved (oxy > ocean > temp). Furthest from
-  // completion counts steps, not the fraction done.
+  // Most steps remaining first, tie order preserved (oxygen, oceans, temperature)
   params.sort((a, b) => b.remaining - a.remaining);
 
   for (const p of params) {
     if (p.action()) {
-      game.log('MarsBot advances ${0} (furthest from completion)', (b) => b.rawString(p.name));
+      game.log(p.message, (b) => b.cardName(source));
       return true;
     }
   }

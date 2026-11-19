@@ -159,7 +159,7 @@ describe('MarsBotAmazonisMaxima', () => {
       setTemperature(game, 8);
       maxOutOceans(game.players[0], 9);
 
-      advanceFurthestParameter(marsBot);
+      advanceFurthestParameter(marsBot, CardName.AUTOMA_LOBBYISTS);
 
       expect(game.getOxygenLevel()).eq(15);
       expect(game.board.getOceanSpaces()).has.length(9);
@@ -171,7 +171,7 @@ describe('MarsBotAmazonisMaxima', () => {
       setTemperature(game, 8);
       maxOutOceans(game.players[0], 10);
 
-      advanceFurthestParameter(marsBot);
+      advanceFurthestParameter(marsBot, CardName.AUTOMA_LOBBYISTS);
 
       expect(game.getTemperature()).eq(10);
       expect(game.board.getOceanSpaces()).has.length(10);
@@ -183,7 +183,7 @@ describe('MarsBotAmazonisMaxima', () => {
       setTemperature(game, 14);
       maxOutOceans(game.players[0], 11);
 
-      expect(advanceFurthestParameter(marsBot)).is.false;
+      expect(advanceFurthestParameter(marsBot, CardName.AUTOMA_LOBBYISTS)).is.false;
     });
   });
 

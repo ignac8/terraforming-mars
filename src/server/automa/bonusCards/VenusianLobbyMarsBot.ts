@@ -1,6 +1,8 @@
 import {GlobalParameter} from '@/common/GlobalParameter';
 import {BonusCardId} from '@/common/automa/AutomaTypes';
+import {Tag} from '@/common/cards/Tag';
 import {IMarsBot} from '@/server/automa/IMarsBot';
+import {createBonusCard} from '@/server/automa/MarsBotBonusCard';
 import {MarsBotBonusCardEffect} from '@/server/automa/bonusCards/MarsBotBonusCardEffect';
 import {advanceFurthestParameter, maybeAdvanceTrack} from '@/server/automa/bonusCards/bonusCardHelpers';
 
@@ -10,22 +12,22 @@ export class VenusianLobbyMarsBot extends MarsBotBonusCardEffect {
   }
 
   public override resolve(marsBot: IMarsBot): boolean {
+    const name = createBonusCard(this.id).name;
     if (marsBot.game.gameOptions.venusNextExtension) {
-      // Morningstar: raise Venus 1 step and advance the Venus track (index 7), then raise the
-      // global parameter furthest from its maximum
+      // Morningstar: raise Venus 1 step and advance the Venus track, then raise the global parameter
+      // furthest from its maximum
       if (marsBot.game.getVenusScaleLevel() < marsBot.game.max.venus && !marsBot.interceptsParameterRaise(GlobalParameter.VENUS)) {
         marsBot.game.increaseVenusScaleLevel(marsBot.player, 1);
       }
-      if (marsBot.marsBotBoard.tracks.length > 7) {
-        maybeAdvanceTrack(marsBot, 7);
+      const venusTrack = marsBot.marsBotBoard.tagToTrack[Tag.VENUS];
+      if (venusTrack !== undefined) {
+        maybeAdvanceTrack(marsBot, venusTrack);
       }
-      marsBot.game.log('MarsBot resolves Venusian Lobby: raise Venus, advance Venus track');
-      advanceFurthestParameter(marsBot);
+      marsBot.game.log('MarsBot (${0}): raises Venus and advances the Venus track', (b) => b.cardName(name));
+      advanceFurthestParameter(marsBot, name);
     } else {
-      // Without Venus, advance least-advanced track
-      const leastIdx = marsBot.marsBotBoard.getLeastAdvancedTrackIndex();
-      maybeAdvanceTrack(marsBot, leastIdx);
-      marsBot.game.log('MarsBot resolves Venusian Lobby: advance least-advanced track (no Venus)');
+      maybeAdvanceTrack(marsBot, marsBot.marsBotBoard.getLeastAdvancedTrackIndex());
+      marsBot.game.log('MarsBot (${0}): advances the least-advanced track', (b) => b.cardName(name));
     }
     return false;
   }
