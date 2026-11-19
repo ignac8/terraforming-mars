@@ -22,15 +22,19 @@ import {CEO_CARDS_DEALT_PER_PLAYER} from '../../common/constants';
 import {hasNegativeEscapeVelocityOption, sanitizeEscapeVelocityOptions} from '../../common/game/escapeVelocity';
 import {MARSBOT_BOARD_NAMES, modularMABlocksMarsBot} from '../../common/automa/MarsBotBoards';
 import {AutomaGameSetup} from '../automa/AutomaGameSetup';
+import {isObject} from '@/common/utils/utils';
 
 function parseQuotaConfig(struct: unknown): QuotaConfig {
-  if (typeof struct !== 'object' || struct === null) {
+  if (!isObject(struct)) {
     throw new Error('quota config is not an object');
   }
-  const {limit, per} = struct as {limit?: unknown, per?: unknown};
-  if (limit === undefined) {
+  if (!('limit' in struct)) {
     throw new Error('limit is absent');
   }
+  if (!('per' in struct)) {
+    throw new Error('per is absent');
+  }
+  const {limit, per} = struct;
   const parsedLimit = Number.parseInt(String(limit));
   if (isNaN(parsedLimit)) {
     throw new Error('limit is invalid');
