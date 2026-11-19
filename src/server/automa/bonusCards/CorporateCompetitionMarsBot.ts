@@ -3,6 +3,7 @@ import {BoardName} from '@/common/boards/BoardName';
 import {SpaceType} from '@/common/boards/SpaceType';
 import {CardType} from '@/common/cards/CardType';
 import {Tag} from '@/common/cards/Tag';
+import {AwardName} from '@/common/ma/AwardName';
 import {IMarsBot} from '@/server/automa/IMarsBot';
 import {createBonusCard} from '@/server/automa/MarsBotBonusCard';
 import {humanAwardScore, marsBotUsesBoardGoals} from '@/server/automa/MarsBotMilestoneAwardEval';
@@ -15,22 +16,20 @@ import {Space} from '@/server/boards/Space';
 import {IProjectCard} from '@/server/cards/IProjectCard';
 
 /** The Corporate Competition helpers that don't cost MarsBot 5 M€ (rulebook C, p.12). */
-const FREE_HELPER_AWARDS: ReadonlyArray<string> = ['Forecaster'];
+const FREE_HELPER_AWARDS: ReadonlyArray<AwardName> = ['Forecaster'];
 
-// B08: Corporate Competition
 export class CorporateCompetitionMarsBot extends MarsBotBonusCardEffect {
   constructor() {
     super({id: BonusCardId.B08_CORPORATE_COMPETITION});
   }
 
   public override resolve(marsBot: IMarsBot): boolean {
-    const canPay = marsBot.megacredits >= 5;
-    const funded = marsBot.game.awards.filter((a) => marsBot.game.hasBeenFunded(a));
-    if (!canPay || funded.length === 0) {
-      // Not enough MC or nothing funded, draw another bonus card
+    const name = createBonusCard(this.id).name;
+    if (marsBot.megacredits < 5) {
       marsBot.maybeDrawAndResolveBonusCard();
       return false;
     }
+    const funded = marsBot.game.awards.filter((a) => marsBot.game.hasBeenFunded(a));
 
     // The closest award is the one the player leads by the least or is tied on. If MarsBot
     // leads every funded award, it is the one with the smallest gap.
@@ -49,12 +48,12 @@ export class CorporateCompetitionMarsBot extends MarsBotBonusCardEffect {
     for (const {award} of sorted) {
       if (this.tryHelperAction(marsBot, award.name)) {
         if (FREE_HELPER_AWARDS.includes(award.name)) {
-          marsBot.game.log('MarsBot resolves Corporate Competition on ${0}', (b) => b.rawString(award.name));
+          marsBot.game.log('MarsBot (${0}): helps with ${1}', (b) => b.cardName(name).award(award));
         } else {
           // A helper can itself cost M€ (a colony cube), so MarsBot may have less than 5 left
           const lost = Math.min(5, marsBot.megacredits);
           marsBot.megacredits -= lost;
-          marsBot.game.log('MarsBot resolves Corporate Competition on ${0}, loses ${1} MC', (b) => b.rawString(award.name).number(lost));
+          marsBot.game.log('MarsBot (${0}): helps with ${1}, loses ${2}:r:mc:', (b) => b.cardName(name).award(award).number(lost));
         }
         resolved = true;
         break;
@@ -72,11 +71,12 @@ export class CorporateCompetitionMarsBot extends MarsBotBonusCardEffect {
    *
    * Returns false when the award has no helper or its helper can't be taken.
    */
-  public tryHelperAction(marsBot: IMarsBot, awardName: string): boolean {
+  public tryHelperAction(marsBot: IMarsBot, awardName: AwardName): boolean {
     const game = marsBot.game;
     const marsBotBoard = marsBot.marsBotBoard;
     const board = game.board;
     const tilePlacer = new MarsBotTilePlacer(marsBot);
+    const name = createBonusCard(this.id).name;
     // A helper that would advance a maxed track is impossible, so MarsBot skips its award
     // instead of taking a Failed Action (rulebook A, p.7).
     const advance = (trackIndex: number) => {
@@ -132,7 +132,7 @@ export class CorporateCompetitionMarsBot extends MarsBotBonusCardEffect {
       if (card === undefined) {
         return false;
       }
-      game.log('MarsBot reveals ${0} (Corporate Competition)', (b) => b.card(card));
+      game.log('MarsBot (${0}): reveals and resolves ${1}', (b) => b.cardName(name).card(card));
       marsBot.resolveProjectCard(card);
       marsBot.gainMc(mc);
       return true;
@@ -158,7 +158,7 @@ export class CorporateCompetitionMarsBot extends MarsBotBonusCardEffect {
     case 'Cultivator': return maybePlaceGreenery(marsBot);
     case 'Magnate': return revealAndResolveCard((c) => c.type === CardType.AUTOMATED);
     case 'Space Baron': return advanceTrackOf(Tag.SPACE);
-    case 'Excentric': return maybeRemoveAnimalOrMicrobe(marsBot, createBonusCard(this.id).name);
+    case 'Excentric': return maybeRemoveAnimalOrMicrobe(marsBot, name);
     case 'Contractor': return advanceTrackOf(Tag.BUILDING);
     // Elysium (B10)
     case 'Celebrity': return revealAndResolveCard((c) => c.cost >= 20);
@@ -194,7 +194,6 @@ export class CorporateCompetitionMarsBot extends MarsBotBonusCardEffect {
     case 'Manufacturer': return advanceTrackOfEither([Tag.BUILDING, Tag.POWER], 'less');
     case 'Physicist': return advanceTrackOfEither([Tag.SCIENCE, Tag.SPACE], 'less');
     case 'Politician': return false;
-    case 'Supplier': return advanceTrackOf(Tag.POWER);
     case 'Visionary': return advance(marsBotBoard.getLeastAdvancedTrackIndex(true));
     // Venus Next: added to ALL Corporate Competition variants
     case 'Venuphile': return advanceTrackOf(Tag.VENUS);

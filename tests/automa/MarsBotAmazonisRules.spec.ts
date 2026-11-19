@@ -4,6 +4,7 @@ import {BoardName} from '@/common/boards/BoardName';
 import {SpaceType} from '@/common/boards/SpaceType';
 import {CardName} from '@/common/cards/CardName';
 import {Tag} from '@/common/cards/Tag';
+import {AwardName} from '@/common/ma/AwardName';
 import {TileType} from '@/common/TileType';
 import {MarsBot} from '@/server/automa/MarsBot';
 import {createBaseBonusCards} from '@/server/automa/MarsBotBonusCard';
@@ -151,7 +152,7 @@ describe('MarsBotAmazonisRules', () => {
   });
 
   describe('Corporate Competition', () => {
-    function helper(marsBot: MarsBot, awardName: string): boolean {
+    function helper(marsBot: MarsBot, awardName: AwardName): boolean {
       return new CorporateCompetitionMarsBot().tryHelperAction(marsBot, awardName);
     }
 

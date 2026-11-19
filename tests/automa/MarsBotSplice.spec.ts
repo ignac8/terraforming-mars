@@ -7,6 +7,7 @@ import {MarsBot} from '../../src/server/automa/MarsBot';
 import {BoardName} from '../../src/common/boards/BoardName';
 import {Tag} from '../../src/common/cards/Tag';
 import {CardName} from '../../src/common/cards/CardName';
+import {AwardName} from '../../src/common/ma/AwardName';
 import {Phase} from '../../src/common/Phase';
 import {Splice} from '../../src/server/cards/promo/Splice';
 import {PharmacyUnion} from '../../src/server/cards/promo/PharmacyUnion';
@@ -27,7 +28,7 @@ function createAutomaGame(venusNextExtension: boolean = false): {game: Game, hum
   return {game: game as Game, human, marsBot: game.automaHooks!.marsBot};
 }
 
-function helperAction(marsBot: MarsBot, awardName: string): boolean {
+function helperAction(marsBot: MarsBot, awardName: AwardName): boolean {
   return new CorporateCompetitionMarsBot().tryHelperAction(marsBot, awardName);
 }
 
