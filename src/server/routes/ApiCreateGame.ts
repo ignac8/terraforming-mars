@@ -22,15 +22,19 @@ import {hasNegativeEscapeVelocityOption, sanitizeEscapeVelocityOptions} from '..
 import {UnseededRandom} from '../../common/utils/Random';
 import {shuffleSeats} from '../incognito/shuffleSeats';
 import {Phase} from '../../common/Phase';
+import {isObject} from '@/common/utils/utils';
 
 function parseQuotaConfig(struct: unknown): QuotaConfig {
-  if (typeof struct !== 'object' || struct === null) {
+  if (!isObject(struct)) {
     throw new Error('quota config is not an object');
   }
-  const {limit, per} = struct as {limit?: unknown, per?: unknown};
-  if (limit === undefined) {
+  if (!('limit' in struct)) {
     throw new Error('limit is absent');
   }
+  if (!('per' in struct)) {
+    throw new Error('per is absent');
+  }
+  const {limit, per} = struct;
   const parsedLimit = Number.parseInt(String(limit));
   if (isNaN(parsedLimit)) {
     throw new Error('limit is invalid');
