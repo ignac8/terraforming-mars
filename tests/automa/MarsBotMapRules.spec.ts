@@ -2,12 +2,13 @@ import {expect} from 'chai';
 import {getAutomaMaxGeneration} from '@/common/automa/AutomaTypes';
 import {marsBotMapRules} from '@/common/automa/MarsBotMapRules';
 import {BoardName} from '@/common/boards/BoardName';
+import {Tag} from '@/common/cards/Tag';
 import {getMcPerVP} from '@/server/automa/MarsBotScoring';
 import {testGame} from '../TestGame';
 
 describe('MarsBotMapRules', () => {
   it('gives only Amazonis Planitia extra rules', () => {
-    expect(marsBotMapRules(BoardName.AMAZONIS_PLANITIA)).deep.eq({extraGenerations: 2, generationShift: 1, turmoilTRExtra: 1});
+    expect(marsBotMapRules(BoardName.AMAZONIS_PLANITIA)).deep.eq({extraGenerations: 2, generationShift: 1, turmoilTRExtra: 1, tradeFleetCubeShift: 1});
     for (const boardName of [
       BoardName.THARSIS,
       BoardName.HELLAS,
@@ -16,7 +17,7 @@ describe('MarsBotMapRules', () => {
       BoardName.VASTITAS_BOREALIS_NOVA,
       BoardName.TERRA_CIMMERIA_NOVA,
     ]) {
-      expect(marsBotMapRules(boardName), boardName).deep.eq({extraGenerations: 0, generationShift: 0, turmoilTRExtra: 0});
+      expect(marsBotMapRules(boardName), boardName).deep.eq({extraGenerations: 0, generationShift: 0, turmoilTRExtra: 0, tradeFleetCubeShift: 0});
     }
   });
 
@@ -135,6 +136,28 @@ describe('MarsBotMapRules', () => {
 
         game.generation = run.last;
         expect(marsBot.getVictoryPoints().mcToVP).eq(7);
+      });
+    }
+
+    for (const run of [
+      {boardName: BoardName.AMAZONIS_PLANITIA, cubeSpace: 10},
+      {boardName: BoardName.THARSIS, cubeSpace: 9},
+    ] as const) {
+      it('unlocks the 2nd Trade Fleet on its Energy track space: ' + JSON.stringify(run), () => {
+        const [game] = testGame(1, {automa: true, coloniesExtension: true, boardName: run.boardName});
+        const marsBot = game.automaHooks!.marsBot;
+        const energyTrack = marsBot.marsBotBoard.tagToTrack[Tag.POWER]!;
+        const track = marsBot.marsBotBoard.tracks[energyTrack];
+
+        while (track.position < run.cubeSpace - 1) {
+          marsBot.turnResolver.advanceTrack(energyTrack);
+        }
+        expect(track.position).eq(run.cubeSpace - 1);
+        expect(marsBot.hasSecondTradeFleet).is.false;
+
+        marsBot.turnResolver.advanceTrack(energyTrack);
+        expect(track.position).eq(run.cubeSpace);
+        expect(marsBot.hasSecondTradeFleet).is.true;
       });
     }
   });

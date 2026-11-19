@@ -225,8 +225,9 @@ raises give MarsBot no rewards to the colony.
 
 ### 4.7 Colonies
 
-No change. The second fleet cube stays on Energy track space 9 (rule C-6); this board moves the Energy
-track at Tharsis' rate.
+The second fleet cube goes on Energy track space 10, not 9 (rule C-6); `tradeFleetCubeShift` in
+`marsBotMapRules` holds the one. The game runs about 2 generations longer, so on space 9 the fleet unlocks by
+game end in about 71 % of games against 55 % on a standard map; on space 10 it is about 56 %.
 
 ### 4.8 Turmoil
 
@@ -305,7 +306,7 @@ together would make the big map end faster than a standard one.
 ## 6. Decisions the design left open
 
 - The per-map numbers live in one object per map, returned by `marsBotMapRules`: `extraGenerations` 2,
-  `generationShift` 1 and `turmoilTRExtra` 1 on this map, all 0 elsewhere. Manufacturer's −3 sits on the
+  `generationShift` 1, `turmoilTRExtra` 1 and `tradeFleetCubeShift` 1 on this map, all 0 elsewhere. Manufacturer's −3 sits on the
   award itself (`Manufacturer.marsBotScore`), not in that object.
 - The Turmoil harder variant also moves by one: MarsBot starts at 9 TR with the rulebook reduction and at 12
   with the harder one (4.8).

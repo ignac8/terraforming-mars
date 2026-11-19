@@ -102,7 +102,7 @@ export class MarsBotCorpResolver {
       }
     }
 
-    // 2nd Trade Fleet cube (Colonies, C-6/C-27): unlock when Energy track position 9 is reached
+    // 2nd Trade Fleet cube (Colonies, C-6/C-27): unlock when the Energy track reaches the cube
     if (marsBot.tradeFleetCubeKey !== undefined &&
         marsBot.tradeFleetCubeKey === trackCubeKey(trackIndex, position) &&
         !marsBot.hasSecondTradeFleet) {

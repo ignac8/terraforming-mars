@@ -6,6 +6,7 @@ import {GlobalParameter} from '../../common/GlobalParameter';
 import {CardName} from '../../common/cards/CardName';
 import {newCard} from '../createCard';
 import {DifficultyLevel, BonusCardId, LAKEFRONT_OCEAN_BONUS, TrackDefinition, getAutomaMaxGeneration} from '../../common/automa/AutomaTypes';
+import {marsBotMapRules} from '../../common/automa/MarsBotMapRules';
 import {Tag} from '../../common/cards/Tag';
 import {currentMcPerVP} from './MarsBotScoring';
 import {MarsBotBoard} from './MarsBotBoard';
@@ -165,11 +166,11 @@ export class MarsBot implements IMarsBot {
     } else {
       this.bonusDeck = MarsBotBonusDeck.create(random, {venus: opts.venusNextExtension, colonies: opts.coloniesExtension});
     }
-    // C-6: the 2nd Trade Fleet starts on space 9 of the Energy track, on every map
+    // C-6: the 2nd Trade Fleet starts on space 9 of the Energy track, moved up by the map's shift
     if (opts.coloniesExtension) {
       const energyTrackIdx = this.marsBotBoard.tagToTrack[Tag.POWER];
       if (energyTrackIdx !== undefined) {
-        this.tradeFleetCubeKey = trackCubeKey(energyTrackIdx, 9);
+        this.tradeFleetCubeKey = trackCubeKey(energyTrackIdx, 9 + marsBotMapRules(opts.boardName).tradeFleetCubeShift);
       }
     }
     this.tilePlacer = new MarsBotTilePlacer(this);

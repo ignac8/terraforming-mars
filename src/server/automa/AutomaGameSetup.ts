@@ -249,7 +249,7 @@ export class AutomaGameSetup {
   }
 
   /**
-   * C-6: Place the 2nd Trade Fleet cube on space 9 of the Energy track.
+   * C-6: Place the 2nd Trade Fleet cube on the Energy track: space 9, or 10 on Amazonis Planitia.
    * When triggered (C-27), MarsBot unlocks the 2nd trade fleet and Extended Shipping Lines.
    */
   private static place2ndTradeFleetCube(game: IGame, marsBot: MarsBot): void {
