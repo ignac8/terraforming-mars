@@ -86,6 +86,7 @@ Each fork PR's body starts with what it waits for. Fork #73 to #81 were folded i
 |---------|-------------|-----------|-----------------------------------------------|
 | [#83](https://github.com/ignac8/terraforming-mars/pull/83) | `marsbot-bot-rename` (on `marsbot-loops-outside-it`) | #8703 (#8700 and #8702 merged) | Every `IMarsBot` in main's code is `marsBot` (57 declarations in 41 files), with #8702's player rename. Main merged in through its base on 2026-11-09 (`d40cf6fc0`, no conflicts, now 41 files with #8702's half in main). Goes up as its own PR once #8703 is in; #8703's squash may need one more names-only merge. kberg approved it on the fork (2026-11-09): he had only asked for the player rename, but `bot` to `marsBot` "is fine" |
 | [#29](https://github.com/ignac8/terraforming-mars/pull/29) | `fix-ocean-count-text` (on `main`) | Nothing: held by choice (2026-11-09) | Stops hardcoding 9 oceans in card and tile text. Merges cleanly with main now. It changes translation keys, so check the locale edits (Polish and English text only) before it goes up |
+| None yet | `marsbot-map-rules` (on `marsbot-corps-turmoil`) | 100% of the official automa code upstream: Amazonis Planitia is unofficial, so it goes last (user, 2026-11-19: "since it is unofficial, we can port it after we have 100% of automa official code ported") | `da27fa75c`: `MarsBotMapRules.ts` (19 lines) and the generation shift in Nirgal and Terralabs, whose generation windows start one generation later on Amazonis Planitia, with an Amazonis case in each spec (3 fail without the shift). Until then the upstream versions keep the plain windows. Needs main merged in and its base moved to main before it opens; the drafted title is "Start Nirgal's and Terralabs' generation windows one generation later on Amazonis Planitia" |
 
 Moved upstream and closed on the fork: #48 as #8671, #49 and #67 as #8677, #51 as #8662, #56 as #8663, #64 as
 #8675, #65 as #8724, #66 as #8676, #68 as #8689, #69 as #8690, #70 as #8691, #71 as #8692, #72 as #8693. #57 went into #69 and
@@ -203,7 +204,7 @@ registry/resolver and the Colonies corporations, and the client UI (needs `GameM
 The other corporation manifests, the map boards and the expansion bonus cards only need
 `IMarsBot`, so they went up as #8683 to #8688.
 
-## Remaining phases (as of 2026-11-09)
+## Remaining phases (as of 2026-11-19)
 
 1. **Phase 2 - MarsBot skeleton** (3-4 PRs). Its gates are met: the IPlayer-style `IMarsBot`
    shape came out of the #8207 review, and #8203/#8206 merged. First slice should be corp-free
@@ -223,10 +224,14 @@ The other corporation manifests, the map boards and the expansion bonus cards on
    are in (#8625). Still to go: AutomaGameHooks (split 2-3 ways), routes/ServerModel wiring,
    then client UI.
 4. **Phase 5 - expansions**: Turmoil delegate placement (#8671), the other boards (#8683) and
-   the Venus and Colonies bonus decks (#8684) are in; the corporation manifests are open
-   (#8685 to #8688). Still to go: the registry and resolver, colonies and the Colonies
+   the Venus and Colonies bonus decks (#8684) are in; of the corporation manifests #8685 and
+   #8686 merged on 2026-11-19, #8687 and #8688 are open. Still to go: the registry and resolver, colonies and the Colonies
    corporations. The ~15 small upstream-card touches ride along with whichever hook PR
    needs them.
+6. **Last - Amazonis Planitia** (unofficial, so only after 100% of the official automa code
+   is upstream; user, 2026-11-19): `MarsBotMapRules` and every Amazonis rule MarsBot follows
+   (the generation shift in Nirgal and Terralabs, already on `marsbot-map-rules`; the longer
+   generation limit, the extra Turmoil TR, the Amazonis bonuses, maxima and milestones and awards).
 
 ## Process per PR
 
