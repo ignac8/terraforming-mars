@@ -5,10 +5,7 @@ import {CardName} from '@/common/cards/CardName';
 import {getMarsBotCorp} from '@/server/automa/corps/MarsBotCorpRegistry';
 import {FactorumMarsBot} from '@/server/automa/corps/promo/FactorumMarsBot';
 import {createAutomaGame, resetCorpRegistry} from '../CorpGame';
-import {recordingMarsBot, trackCubes} from '../RecordingMarsBot';
-
-// Track index on the Tharsis board
-const BUILDING = 0;
+import {TRACK, recordingMarsBot, trackCubes} from '../RecordingMarsBot';
 
 describe('FactorumMarsBot', () => {
   beforeEach(resetCorpRegistry);
@@ -17,9 +14,9 @@ describe('FactorumMarsBot', () => {
     const {marsBot, corpState} = recordingMarsBot();
     const corp = new FactorumMarsBot();
 
-    corp.onTrackCubeTrigger(marsBot, BUILDING, 1, 'white');
-    corp.onTrackCubeTrigger(marsBot, BUILDING, 2, 'white');
-    corp.onTrackCubeTrigger(marsBot, 1, 1, 'white');
+    corp.onTrackCubeTrigger(marsBot, TRACK.building, 1, 'white');
+    corp.onTrackCubeTrigger(marsBot, TRACK.building, 2, 'white');
+    corp.onTrackCubeTrigger(marsBot, TRACK.space, 1, 'white');
 
     expect(corpState.get('mcOnCard')).eq(2);
   });

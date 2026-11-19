@@ -13,10 +13,8 @@ import {Space} from '@/server/boards/Space';
 import {testGame} from '../../../TestGame';
 import {setOxygenLevel, setTemperature} from '../../../TestingUtils';
 import {createAutomaGame, resetCorpRegistry} from '../CorpGame';
-import {RecordingMarsBot, recordingMarsBot} from '../RecordingMarsBot';
+import {TRACK, RecordingMarsBot, recordingMarsBot} from '../RecordingMarsBot';
 
-// Track index on the Tharsis board
-const BUILDING = 0;
 
 /** A recording bot whose player is MarsBot's player in an automa game. */
 function lakefrontBot(fields: Partial<IMarsBot> = {}): RecordingMarsBot {
@@ -59,14 +57,14 @@ describe('LakefrontResortsMarsBot', () => {
 
     lakefront.onTilePlaced(marsBot, false, TileType.OCEAN);
     expect(corpState.get('whiteCubeOnCard')).eq(0);
-    expect(calls).deep.eq([`advanceTrack(${BUILDING})`]);
+    expect(calls).deep.eq([`advanceTrack(${TRACK.building})`]);
 
     lakefront.onTilePlaced(marsBot, false, TileType.GREENERY);
     expect(corpState.get('whiteCubeOnCard')).eq(0);
 
     lakefront.onTilePlaced(marsBot, true, TileType.OCEAN);
     expect(corpState.get('whiteCubeOnCard')).eq(1);
-    expect(calls).deep.eq([`advanceTrack(${BUILDING})`]);
+    expect(calls).deep.eq([`advanceTrack(${TRACK.building})`]);
   });
 
   // FAQ (rulebook B p.4): Lakefront overrides Government Intervention's "no M€"

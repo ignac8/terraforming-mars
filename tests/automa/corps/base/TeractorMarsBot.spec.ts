@@ -5,10 +5,7 @@ import {Tag} from '@/common/cards/Tag';
 import {getMarsBotCorp} from '@/server/automa/corps/MarsBotCorpRegistry';
 import {TeractorMarsBot} from '@/server/automa/corps/base/TeractorMarsBot';
 import {createAutomaGame, resetCorpRegistry} from '../CorpGame';
-import {recordingMarsBot, trackCubes} from '../RecordingMarsBot';
-
-// Track index on the Tharsis board
-const EARTH = 5;
+import {TRACK, recordingMarsBot, trackCubes} from '../RecordingMarsBot';
 
 describe('TeractorMarsBot', () => {
   beforeEach(resetCorpRegistry);
@@ -25,7 +22,7 @@ describe('TeractorMarsBot', () => {
   it('gains 2 M€ for each advance of the Earth track, which has a white cube on every space', () => {
     const {marsBot, calls} = recordingMarsBot();
 
-    new TeractorMarsBot().onTrackCubeTrigger(marsBot, EARTH, 1, 'white');
+    new TeractorMarsBot().onTrackCubeTrigger(marsBot, TRACK.earth, 1, 'white');
 
     expect(calls).deep.eq(['gainMc(2)']);
     expect(trackCubes(new TeractorMarsBot())).deep.eq(Array.from({length: 18}, (_, i) => `earth white ${i + 1}`));

@@ -6,10 +6,8 @@ import {Tag} from '@/common/cards/Tag';
 import {getMarsBotCorp} from '@/server/automa/corps/MarsBotCorpRegistry';
 import {MiningGuildMarsBot} from '@/server/automa/corps/base/MiningGuildMarsBot';
 import {createAutomaGame, resetCorpRegistry} from '../CorpGame';
-import {recordingMarsBot} from '../RecordingMarsBot';
+import {TRACK, recordingMarsBot} from '../RecordingMarsBot';
 
-// Track index on the Tharsis board
-const BUILDING = 0;
 
 // Our reading: the card ticks for every 10 M€ MarsBot gains (njshaw2, BGG 3553988), so what
 // is left of a gain after the card empties comes off the refilled card.
@@ -39,12 +37,12 @@ describe('MiningGuildMarsBot', () => {
       if (run.mcOnCard !== undefined) {
         corpState.set('mcOnCard', run.mcOnCard);
       }
-      marsBot.marsBotBoard.tracks[BUILDING].position = run.building ?? 3;
+      marsBot.marsBotBoard.tracks[TRACK.building].position = run.building ?? 3;
 
       corp.onMcGained(marsBot, run.gain);
 
       expect(corpState.get('mcOnCard')).eq(run.card);
-      expect(calls).deep.eq(Array(run.advances).fill(`advanceTrack(${BUILDING})`));
+      expect(calls).deep.eq(Array(run.advances).fill(`advanceTrack(${TRACK.building})`));
     });
   }
 

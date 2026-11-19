@@ -11,10 +11,10 @@ import {Luna} from '@/server/colonies/Luna';
 import {Titan} from '@/server/colonies/Titan';
 import {testGame} from '../../../TestGame';
 import {createAutomaGame, getMarsBot, resetCorpRegistry} from '../CorpGame';
+import {TRACK} from '../RecordingMarsBot';
 
 // The card names the tracks: "Jovian track #6" (white) and "city track #6" (black). Which row
 // carries those tags depends on the map.
-const EVENT = 2;
 const boards: Array<[BoardName, number, number]> = [
   [BoardName.THARSIS, 4, 5],
   [BoardName.UTOPIA_PLANITIA, 4, 5],
@@ -149,22 +149,22 @@ describe('AridorMarsBot', () => {
 
     it(`the Jovian and city cubes advance the event track from the Jovian cube on ${boardName}`, () => {
       const marsBot = setUpAridor(boardName);
-      const event = marsBot.marsBotBoard.tracks[EVENT].position;
+      const event = marsBot.marsBotBoard.tracks[TRACK.event].position;
 
       MarsBotCorpResolver.onTrackAdvanced(marsBot, jovian, 6);
 
       // The event track's icons can move it on further
-      expect(marsBot.marsBotBoard.tracks[EVENT].position).to.be.above(event);
+      expect(marsBot.marsBotBoard.tracks[TRACK.event].position).to.be.above(event);
     });
   }
 
   it('the Jovian and city cubes leave no cube on #6 of the Hellas energy track', () => {
     const marsBot = setUpAridor(BoardName.HELLAS);
-    const event = marsBot.marsBotBoard.tracks[EVENT].position;
+    const event = marsBot.marsBotBoard.tracks[TRACK.event].position;
 
     expect(marsBot.hasCubeAt(4, 6)).is.undefined;
     MarsBotCorpResolver.onTrackAdvanced(marsBot, 4, 6);
-    expect(marsBot.marsBotBoard.tracks[EVENT].position).to.eq(event);
+    expect(marsBot.marsBotBoard.tracks[TRACK.event].position).to.eq(event);
   });
 
   it('the Jovian and city cubes stay where a game saved before the fix had them', () => {

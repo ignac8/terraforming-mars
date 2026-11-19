@@ -6,10 +6,7 @@ import {getMarsBotCorp} from '@/server/automa/corps/MarsBotCorpRegistry';
 import {EcotecMarsBot} from '@/server/automa/corps/prelude2/EcotecMarsBot';
 import {runAllActions} from '../../../TestingUtils';
 import {chooseSource, createAutomaGame, createCorpFaqGame, fakeCard, resetCorpRegistry} from '../CorpGame';
-import {recordingMarsBot, trackCubes} from '../RecordingMarsBot';
-
-// Track index on the Tharsis board
-const PLANT = 6;
+import {TRACK, recordingMarsBot, trackCubes} from '../RecordingMarsBot';
 
 describe('EcotecMarsBot', () => {
   beforeEach(resetCorpRegistry);
@@ -24,7 +21,7 @@ describe('EcotecMarsBot', () => {
     new EcotecMarsBot().beforeActionPhase(marsBot);
 
     expect(corpState.get('plantResources')).eq(0);
-    expect(calls).deep.eq([`advanceTrack(${PLANT})`]);
+    expect(calls).deep.eq([`advanceTrack(${TRACK.plant})`]);
   });
 
   it('has a white cube on every space of the plant track', () => {

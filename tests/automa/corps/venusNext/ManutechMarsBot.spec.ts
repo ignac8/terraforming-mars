@@ -11,10 +11,8 @@ import {getMarsBotCorp} from '@/server/automa/corps/MarsBotCorpRegistry';
 import {ManutechMarsBot} from '@/server/automa/corps/venusNext/ManutechMarsBot';
 import {testGame} from '../../../TestGame';
 import {createAutomaGame, resetCorpRegistry} from '../CorpGame';
-import {recordingMarsBot, trackCubes} from '../RecordingMarsBot';
+import {TRACK, recordingMarsBot, trackCubes} from '../RecordingMarsBot';
 
-// Track index on the Tharsis board
-const EVENT = 2;
 
 function createVenusGame(): MarsBot {
   const [game] = testGame(1, {automa: true, venusNextExtension: true, boardName: BoardName.THARSIS});
@@ -28,10 +26,10 @@ describe('ManutechMarsBot', () => {
     const {marsBot, calls} = recordingMarsBot();
 
     for (const position of [5, 6, 12]) {
-      new ManutechMarsBot().afterTrackSpaceResolved(marsBot, EVENT, position);
+      new ManutechMarsBot().afterTrackSpaceResolved(marsBot, TRACK.event, position);
     }
 
-    expect(calls).deep.eq([`advanceTrack(${EVENT})`, `advanceTrack(${EVENT})`]);
+    expect(calls).deep.eq([`advanceTrack(${TRACK.event})`, `advanceTrack(${TRACK.event})`]);
   });
 
   it('puts a black cube on #5 and #12 of every track, Venus included', () => {

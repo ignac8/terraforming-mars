@@ -7,10 +7,7 @@ import {Asteroid} from '@/server/cards/base/Asteroid';
 import {PowerPlant} from '@/server/cards/base/PowerPlant';
 import {SolarWindPower} from '@/server/cards/base/SolarWindPower';
 import {createAutomaGame, resetCorpRegistry} from '../CorpGame';
-import {recordingMarsBot, trackCubes} from '../RecordingMarsBot';
-
-// Track index on the Tharsis board
-const POWER = 4;
+import {TRACK, recordingMarsBot, trackCubes} from '../RecordingMarsBot';
 
 describe('ThorgateMarsBot', () => {
   beforeEach(resetCorpRegistry);
@@ -27,7 +24,7 @@ describe('ThorgateMarsBot', () => {
   it('resolves the first tag of a project card and raises the temperature for the white cubes on spaces 4, 6, 8 and 10 of the power track', () => {
     const {marsBot, calls} = recordingMarsBot();
 
-    new ThorgateMarsBot().onTrackCubeTrigger(marsBot, POWER, 1, 'white');
+    new ThorgateMarsBot().onTrackCubeTrigger(marsBot, TRACK.power, 1, 'white');
 
     expect(calls).deep.eq(['maybeDrawAndResolveProjectCardFirstTagOnly()', 'raiseTemperature(1)']);
     expect(trackCubes(new ThorgateMarsBot())).deep.eq([4, 6, 8, 10].map((position) => `power white ${position}`));

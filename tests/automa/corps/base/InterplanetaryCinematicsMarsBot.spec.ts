@@ -5,15 +5,12 @@ import {Tag} from '@/common/cards/Tag';
 import {getMarsBotCorp} from '@/server/automa/corps/MarsBotCorpRegistry';
 import {InterplanetaryCinematicsMarsBot} from '@/server/automa/corps/base/InterplanetaryCinematicsMarsBot';
 import {createAutomaGame, resetCorpRegistry} from '../CorpGame';
-import {recordingMarsBot, trackCubes} from '../RecordingMarsBot';
-
-// Track index on the Tharsis board
-const EVENT = 2;
+import {TRACK, recordingMarsBot, trackCubes} from '../RecordingMarsBot';
 
 describe('InterplanetaryCinematicsMarsBot', () => {
   beforeEach(resetCorpRegistry);
 
-  for (const run of [{track: 0, tag: 'building'}, {track: EVENT, tag: 'event'}]) {
+  for (const run of [{track: TRACK.building, tag: 'building'}, {track: TRACK.event, tag: 'event'}]) {
     it(`gains 2 M€ for each advance of the building and event tracks, ${run.tag} cube`, () => {
       const {marsBot, calls} = recordingMarsBot();
 
