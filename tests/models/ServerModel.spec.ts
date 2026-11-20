@@ -179,11 +179,14 @@ describe('ServerModel', () => {
 
   it('puts the judge id on the organizer game model only', () => {
     createTestGame('yours');
-    expect(Server.getSimpleGameModel(game).judgeId).is.undefined;
-
     game.judgeId = 'jtest';
 
-    expect(Server.getSimpleGameModel(game).judgeId).eq('jtest');
+    // The unauthenticated /api/game path must not leak the claimable judge seat.
+    expect(Server.getSimpleGameModel(game).judgeId).is.undefined;
+    // The organizer's create-game response and serverId-gated callers still carry it.
+    expect(Server.getSimpleGameModel(game, {includeJudgeId: true}).judgeId).eq('jtest');
+    expect(Server.getSimpleGameModel(game, {real: true}).judgeId).eq('jtest');
+
     expect(JSON.stringify(Server.getGameModel(game))).does.not.contain('jtest');
     expect(JSON.stringify(Server.getSpectatorModel(game))).does.not.contain('jtest');
   });

@@ -254,7 +254,8 @@ export class ApiCreateGame extends Handler {
       ctx.gameLoader.add(game);
       // Only games that are actually created count against the quota.
       this.quotaHandlers.forEach((handler) => handler.record(ctx));
-      responses.writeJson(res, ctx, Server.getSimpleGameModel(game));
+      // The creator is the organizer, so their create-game response carries the judge link.
+      responses.writeJson(res, ctx, Server.getSimpleGameModel(game, {includeJudgeId: true}));
     } catch (error) {
       if (error instanceof RouteError) {
         throw error;

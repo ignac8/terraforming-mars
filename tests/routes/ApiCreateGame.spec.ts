@@ -482,6 +482,7 @@ describe('ApiCreateGame', () => {
       {...base, players: base.players.slice(0, 1), expansions: tournamentExpansions, judgeLink: true},
     ];
     const judgeIds: Array<string | undefined> = [];
+    const responseJudgeIds: Array<string | undefined> = [];
     for (const config of configs) {
       req = new MockRequest();
       res = new MockResponse();
@@ -491,11 +492,14 @@ describe('ApiCreateGame', () => {
       const model = JSON.parse(res.content) as SimpleGameModel;
       const game = await scaffolding.ctx.gameLoader.getGame(model.id);
       judgeIds.push(game!.judgeId);
+      responseJudgeIds.push(model.judgeId);
     }
     expect(isJudgeId(judgeIds[0]!)).is.true;
     expect(judgeIds[1]).is.undefined;
     expect(judgeIds[2]).is.undefined;
     expect(judgeIds[3]).is.undefined;
+    // The organizer's create-game response carries the judge link.
+    expect(responseJudgeIds[0]).eq(judgeIds[0]);
   });
 
   it('keeps Player undo in a tournament game, with or without a judge link', async () => {
