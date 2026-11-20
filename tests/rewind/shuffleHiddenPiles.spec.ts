@@ -49,15 +49,17 @@ describe('shuffleHiddenPiles', () => {
       expect(pile.get(d), name).has.members(pile.get(before));
       expect(pile.get(d), name).not.deep.eq(pile.get(before));
     }
-    expect(d.seed).not.eq(before.seed);
-    expect(d.currentSeed).eq(Math.floor(d.seed * 4294967296));
+    // The game continues on a fresh, strong (sfc32) generator; the legacy seed fields are cleared.
+    expect(d.rng).not.deep.eq(before.rng);
+    expect(d.rng?.kind).eq('sfc32');
+    expect(d.seed).eq(undefined);
+    expect(d.currentSeed).eq(undefined);
 
-    // Put the shuffled piles and both seeds back; everything else must be untouched.
+    // Put the shuffled piles and the generator back; everything else must be untouched.
     for (const [, pile] of hiddenPiles) {
       pile.set(d, pile.get(before) as Array<unknown>);
     }
-    d.seed = before.seed;
-    d.currentSeed = before.currentSeed;
+    d.rng = before.rng;
     expect(d).deep.eq(before);
   });
 });
