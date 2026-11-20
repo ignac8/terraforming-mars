@@ -404,7 +404,7 @@ export class MarsBotTurnResolver {
     if (!this.game.gameOptions.coloniesExtension || this.marsBotManager === undefined) {
       return;
     }
-    const colony = selectRandomColony(this.game, this.marsBotManager);
+    const colony = selectRandomColony(this.marsBotManager);
     if (colony === undefined) {
       this.game.log('MarsBot: no colony tile to build on, Failed Action');
       this.failedAction();

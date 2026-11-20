@@ -28,7 +28,7 @@ describe('MarsBotColonyPlacer (C-15b, C-16a, C-19, C-24a)', () => {
       const luna = new Luna();
       luna.isActive = false;
       game.colonies = [luna];
-      const eligible = eligibleColoniesForMarsBot(game, marsBot);
+      const eligible = eligibleColoniesForMarsBot(marsBot);
       expect(eligible.length).to.eq(0);
     });
 
@@ -38,7 +38,7 @@ describe('MarsBotColonyPlacer (C-15b, C-16a, C-19, C-24a)', () => {
       const luna = new Luna();
       luna.colonies = ['p1', 'p2', 'p3']; // MAX_COLONIES_PER_TILE = 3
       game.colonies = [luna];
-      const eligible = eligibleColoniesForMarsBot(game, marsBot);
+      const eligible = eligibleColoniesForMarsBot(marsBot);
       expect(eligible.length).to.eq(0);
     });
 
@@ -48,7 +48,7 @@ describe('MarsBotColonyPlacer (C-15b, C-16a, C-19, C-24a)', () => {
       const luna = new Luna();
       luna.colonies = [marsBot.player.id];
       game.colonies = [luna];
-      const eligible = eligibleColoniesForMarsBot(game, marsBot);
+      const eligible = eligibleColoniesForMarsBot(marsBot);
       expect(eligible.length).to.eq(0);
     });
 
@@ -57,7 +57,7 @@ describe('MarsBotColonyPlacer (C-15b, C-16a, C-19, C-24a)', () => {
       const marsBot = getMarsBot(game);
       const luna = new Luna();
       game.colonies = [luna];
-      const eligible = eligibleColoniesForMarsBot(game, marsBot);
+      const eligible = eligibleColoniesForMarsBot(marsBot);
       expect(eligible.length).to.eq(1);
     });
   });
@@ -75,7 +75,7 @@ describe('MarsBotColonyPlacer (C-15b, C-16a, C-19, C-24a)', () => {
       // Put it back so selectRandomColony can draw it
       game.projectDeck.drawPile.push(drawnCard);
 
-      const colony = selectRandomColony(game, marsBot);
+      const colony = selectRandomColony(marsBot);
       expect(colony).to.not.be.undefined;
       // Index = (cost - 1) % 2
       const expectedIndex = (drawnCard.cost - 1) % 2;
@@ -87,7 +87,7 @@ describe('MarsBotColonyPlacer (C-15b, C-16a, C-19, C-24a)', () => {
       const marsBot = getMarsBot(game);
       game.colonies = [new Luna()];
       const discardBefore = game.projectDeck.discardPile.length;
-      selectRandomColony(game, marsBot);
+      selectRandomColony(marsBot);
       expect(game.projectDeck.discardPile.length).to.eq(discardBefore + 1);
     });
 
@@ -95,7 +95,7 @@ describe('MarsBotColonyPlacer (C-15b, C-16a, C-19, C-24a)', () => {
       const [game] = testGame(1, {automa: true, coloniesExtension: true, boardName: BoardName.THARSIS});
       const marsBot = getMarsBot(game);
       game.colonies = []; // No colonies in game
-      const colony = selectRandomColony(game, marsBot);
+      const colony = selectRandomColony(marsBot);
       expect(colony).to.be.undefined;
     });
 
@@ -109,7 +109,7 @@ describe('MarsBotColonyPlacer (C-15b, C-16a, C-19, C-24a)', () => {
       // Inject a 0-cost card at the front of the draw pile
       game.projectDeck.drawPile.unshift(fakeCard({cost: 0}));
       // Should NOT return undefined — 0-cost maps to last tile (index N-1 = 1 = ceres)
-      const selected = selectRandomColony(game, marsBot);
+      const selected = selectRandomColony(marsBot);
       expect(selected).to.not.be.undefined;
       expect(selected!.name).to.eq(ColonyName.CERES); // (0-1+2)%2 = 1 = ceres
     });

@@ -1,17 +1,14 @@
 import {IGame} from '../../IGame';
 import {IColony} from '../../colonies/IColony';
 import {ColonyName} from '../../../common/colonies/ColonyName';
-import type {MarsBot} from '../MarsBot';
+import {IMarsBot} from '../IMarsBot';
 import {comparing} from '../../../common/utils/Ordering';
 import {inplaceRemove, toName} from '../../../common/utils/utils';
 import {pickByFlippedCard} from '../MarsBotCardFlip';
 
-/**
- * Returns all colony tiles eligible for MarsBot to build a colony on.
- * Eligible = active, not full, and MarsBot doesn't already have a colony there.
- */
-export function eligibleColoniesForMarsBot(game: IGame, marsBot: MarsBot): Array<IColony> {
-  return game.colonies.filter((colony) => {
+/** The colony tiles MarsBot can build on: active, not full, and without a colony of its own. */
+export function eligibleColoniesForMarsBot(marsBot: IMarsBot): Array<IColony> {
+  return marsBot.game.colonies.filter((colony) => {
     if (!colony.isActive) {
       return false;
     }
@@ -26,12 +23,12 @@ export function eligibleColoniesForMarsBot(game: IGame, marsBot: MarsBot): Array
 }
 
 /**
- * C-15b / C-16a: Randomly select a colony tile for MarsBot to build on.
+ * Picks a colony tile for MarsBot to build on by flipping a project card (C-15b, C-16a).
  *
- * Returns the selected colony, or undefined if no eligible tiles.
+ * Returns undefined when no tile is eligible.
  */
-export function selectRandomColony(game: IGame, marsBot: MarsBot): IColony | undefined {
-  return pickByFlippedCard(game, eligibleColoniesForMarsBot(game, marsBot));
+export function selectRandomColony(marsBot: IMarsBot): IColony | undefined {
+  return pickByFlippedCard(marsBot.game, eligibleColoniesForMarsBot(marsBot));
 }
 
 /**
@@ -54,16 +51,13 @@ export function addRandomColonyTile(game: IGame): IColony | undefined {
 }
 
 /**
- * Place a colony for MarsBot on the given colony tile.
+ * Builds a colony for MarsBot on `colony`.
  *
- * C-19: MarsBot ignores the printed tile reward; gains 2 resources into the
- *       corresponding shipping board storage area instead.
- * C-24a: Europa — place an ocean tile (raise TR 1) instead of 2 resources.
- *         If impossible, Failed Action. No storage.
- * C-23: Titan + !venusNext — add 2 to Titan storage (floaters).
- *        Titan + venusNext — add 2 floaters to floaters.
+ * MarsBot ignores the tile's printed reward and stores 2 resources in the tile's storage area instead
+ * (C-19). Europa places an ocean, or takes a Failed Action when none fits (C-24a). Titan gives 2
+ * floaters (C-23).
  */
-export function placeColonyForMarsBot(colony: IColony, marsBot: MarsBot): void {
+export function placeColonyForMarsBot(colony: IColony, marsBot: IMarsBot): void {
   const game = marsBot.game;
   const colonyName = colony.name;
 
@@ -80,17 +74,13 @@ export function placeColonyForMarsBot(colony: IColony, marsBot: MarsBot): void {
   // All other tiles: add colony and give 2 resources to shipping board (C-19)
   directAddColony(colony, marsBot);
 
-  // C-23: Titan handling
   if (colonyName === ColonyName.TITAN) {
-    if (!game.gameOptions.venusNextExtension) {
-      // Without Venus: store as floaters in Titan shipping board area
-      game.log('MarsBot builds colony on ${0}, gains 2 floaters in Titan storage', (b) => b.colony(colony));
-      marsBot.shippingBoard.add(ColonyName.TITAN, 2);
-    } else {
-      // With Venus: add 2 floaters to floaters
+    if (game.gameOptions.expansions.venus) {
       game.log('MarsBot builds colony on ${0}, gains 2 floaters', (b) => b.colony(colony));
-      marsBot.floaters += 2;
+    } else {
+      game.log('MarsBot builds colony on ${0}, gains 2 floaters in Titan storage', (b) => b.colony(colony));
     }
+    marsBot.addFloaters(2);
     return;
   }
 
@@ -100,10 +90,11 @@ export function placeColonyForMarsBot(colony: IColony, marsBot: MarsBot): void {
 }
 
 /**
- * Directly add MarsBot to a colony tile without giving the printed build bonus.
- * Updates the colony array and track position. Fires onColonyAddedByAnyPlayer callbacks.
+ * Adds MarsBot's colony to `colony` without the printed build bonus.
+ *
+ * Moves the colony track up to the number of colonies, and tells the player's cards and MarsBot's corp.
  */
-function directAddColony(colony: IColony, marsBot: MarsBot): void {
+function directAddColony(colony: IColony, marsBot: IMarsBot): void {
   colony.colonies.push(marsBot.player.id);
   // Keep track position at least equal to the number of colonies (per Colony.ts addColony)
   if (colony.trackPosition < colony.colonies.length) {
@@ -117,6 +108,5 @@ function directAddColony(colony: IColony, marsBot: MarsBot): void {
     }
   }
 
-  // C-33: notify corp effect (e.g. Poseidon advances least-advanced track)
-  marsBot.corp?.onColonyPlaced?.(marsBot);
+  marsBot.notifyColonyPlaced();
 }

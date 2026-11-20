@@ -93,7 +93,7 @@ export class MarsBotCorpResolver {
       const cost = 5;
       marsBot.turnResolver.megacredits = Math.max(0, marsBot.turnResolver.megacredits - cost);
       marsBot.game.log('MarsBot loses ${0}:r:mc: for its colony cube', (b) => b.number(cost));
-      const colony = selectRandomColony(marsBot.game, marsBot);
+      const colony = selectRandomColony(marsBot);
       if (colony !== undefined) {
         placeColonyForMarsBot(colony, marsBot);
       } else {

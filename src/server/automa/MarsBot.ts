@@ -818,7 +818,7 @@ export class MarsBot implements IMarsBot {
   }
 
   public maybePlaceRandomColony(): boolean {
-    const colony = selectRandomColony(this.game, this);
+    const colony = selectRandomColony(this);
     if (colony === undefined) {
       return false;
     }
@@ -827,7 +827,7 @@ export class MarsBot implements IMarsBot {
   }
 
   public canPlaceColony(): boolean {
-    return eligibleColoniesForMarsBot(this.game, this).length > 0;
+    return eligibleColoniesForMarsBot(this).length > 0;
   }
 
   public maybeDiscardProjectCardWithFewestTags(): void {
