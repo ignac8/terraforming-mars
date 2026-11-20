@@ -1,4 +1,7 @@
 import {expect} from 'chai';
+import {CardName} from '@/common/cards/CardName';
+import {ShippingLinesMarsBot} from '@/server/automa/bonusCards/ShippingLinesMarsBot';
+import {recordingMarsBot} from '../corps/RecordingMarsBot';
 import {BonusCardId} from '@/common/automa/AutomaTypes';
 import {BoardName} from '@/common/boards/BoardName';
 import {ColonyName} from '@/common/colonies/ColonyName';
@@ -10,11 +13,20 @@ import {testGame} from '../../TestGame';
 import {getMarsBot, createAutomaGame} from '../corps/CorpGame';
 import {bonusDeckIds} from './BonusCardGame';
 
+
 function b19Card(): MarsBotBonusCard {
   return createBonusCard(BonusCardId.B19_SHIPPING_LINES);
 }
 
 describe('ShippingLinesMarsBot', () => {
+  it('trades with a colony', () => {
+    const traded: Array<CardName> = [];
+    const {marsBot} = recordingMarsBot({maybeTrade: (cardName) => traded.push(cardName)});
+
+    expect(new ShippingLinesMarsBot().resolve(marsBot)).is.false;
+    expect(traded).deep.eq([CardName.AUTOMA_SHIPPING_LINES]);
+  });
+
   it('C-17: selects best colony and trades', () => {
     const [game] = testGame(1, {automa: true, coloniesExtension: true, boardName: BoardName.THARSIS});
     const marsBot = getMarsBot(game);
