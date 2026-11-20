@@ -54,7 +54,7 @@ const RESEARCH_SENSITIVE_MILESTONES: Partial<Record<MilestoneName, FrozenScore>>
   Planner: frozenHandScore, // cards in hand
   Minimalist: frozenHandScore, // cards in hand
   Capitalist: frozenMegacreditScore, // M€
-  Briber: frozenMegacreditScore, // spendableMegacredits(), which varies only by M€ during research
+  Briber: frozenMegacreditScore, // spendableMegacredits(), dominated by M€; never on an official board
 };
 
 const RESEARCH_SENSITIVE_AWARDS: Partial<Record<AwardName, FrozenScore>> = {
