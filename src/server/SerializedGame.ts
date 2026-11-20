@@ -1,4 +1,5 @@
 import {Phase} from '../common/Phase';
+import {SerializedRandom} from '../common/utils/Random';
 import {SerializedClaimedMilestone} from './milestones/ClaimedMilestone';
 import {SerializedFundedAward} from './awards/FundedAward';
 import {DeferredAction} from './deferredActions/DeferredAction';
@@ -30,7 +31,8 @@ export type SerializedGame = {
     beholdTheEmperor?: boolean;
     board: SerializedBoard;
     ceoDeck: SerializedDeck;
-    currentSeed: number;
+    /** @deprecated pre-2026-11 saves only; superseded by `rng`. */
+    currentSeed?: number;
     claimedMilestones: Array<SerializedClaimedMilestone>;
     clonedGamedId?: string;
     colonies: Array<SerializedColony>;
@@ -72,7 +74,10 @@ export type SerializedGame = {
     rewindVote?: SerializedRewindVote;
     /** Written only for the game's current generation. */
     rewindRequestLimits?: RewindRequestLimits;
-    seed: number;
+    /** @deprecated pre-2026-11 saves only; superseded by `rng`. */
+    seed?: number;
+    /** The game's random generator. Absent only in pre-2026-11 saves, which carry `seed`/`currentSeed`. */
+    rng?: SerializedRandom;
     someoneHasRemovedOtherPlayersPlants: boolean;
     spectatorId: SpectatorId;
     stJosephCathedrals: Array<SpaceId>;

@@ -24,7 +24,7 @@ import {Turmoil} from './turmoil/Turmoil';
 import {AutomaGameHooks} from './automa/AutomaGameHooks';
 import {AresData} from '../common/ares/AresData';
 import {MoonData} from './moon/MoonData';
-import {SeededRandom} from '../common/utils/Random';
+import {GameRandom} from '../common/utils/Random';
 import {PathfindersData} from './pathfinders/PathfindersData';
 import {GameOptions} from './game/GameOptions';
 import {CorporationDeck, PreludeDeck, ProjectDeck, CeoDeck} from './cards/Deck';
@@ -55,7 +55,7 @@ export interface IGame extends Logger {
   readonly gameOptions: Readonly<GameOptions>;
   // Game-level data
   lastSaveId: number;
-  readonly rng: SeededRandom;
+  readonly rng: GameRandom;
   readonly spectatorId: SpectatorId;
   deferredActions: DeferredActionsQueue;
   /** Run every deferred action, including any added while running them, and then call `cb`. */
