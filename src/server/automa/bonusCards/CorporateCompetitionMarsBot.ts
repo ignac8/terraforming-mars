@@ -1,14 +1,15 @@
 import {BonusCardId} from '@/common/automa/AutomaTypes';
+import {CardName} from '@/common/cards/CardName';
 import {BoardName} from '@/common/boards/BoardName';
 import {SpaceType} from '@/common/boards/SpaceType';
 import {CardType} from '@/common/cards/CardType';
 import {Tag} from '@/common/cards/Tag';
 import {AwardName} from '@/common/ma/AwardName';
 import {IMarsBot} from '@/server/automa/IMarsBot';
+import {MarsBotBonusCard} from '@/server/automa/MarsBotBonusCard';
 import {marsBotUsesBoardGoals} from '@/server/automa/MarsBotMilestoneAwardEval';
 import {cardTagsIncludingEvent} from '@/server/automa/MarsBotTags';
 import {MarsBotTilePlacer} from '@/server/automa/MarsBotTilePlacer';
-import {MarsBotBonusCardEffect} from '@/server/automa/bonusCards/MarsBotBonusCardEffect';
 import {maybeRemoveAnimalOrMicrobe} from '@/server/automa/bonusCards/bonusCardHelpers';
 import {Board, isSpecialTileSpace} from '@/server/boards/Board';
 import {Space} from '@/server/boards/Space';
@@ -17,9 +18,9 @@ import {IProjectCard} from '@/server/cards/IProjectCard';
 /** The Corporate Competition helpers that don't cost MarsBot 5 M€ (rulebook C, p.12). */
 const FREE_HELPER_AWARDS: ReadonlyArray<AwardName> = ['Forecaster'];
 
-export class CorporateCompetitionMarsBot extends MarsBotBonusCardEffect {
+export class CorporateCompetitionMarsBot extends MarsBotBonusCard {
   constructor() {
-    super({id: BonusCardId.B08_CORPORATE_COMPETITION});
+    super({id: BonusCardId.B08_CORPORATE_COMPETITION, name: CardName.AUTOMA_CORPORATE_COMPETITION});
   }
 
   public override resolve(marsBot: IMarsBot): boolean {

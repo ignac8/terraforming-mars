@@ -1,12 +1,13 @@
 import {BonusCardId} from '@/common/automa/AutomaTypes';
+import {CardName} from '@/common/cards/CardName';
 import {marsBotMapRules} from '@/common/automa/MarsBotMapRules';
 import {IMarsBot} from '@/server/automa/IMarsBot';
-import {MarsBotBonusCardEffect} from '@/server/automa/bonusCards/MarsBotBonusCardEffect';
+import {MarsBotBonusCard} from '@/server/automa/MarsBotBonusCard';
 
 // B04: Overachievement
-export class OverachievementMarsBot extends MarsBotBonusCardEffect {
+export class OverachievementMarsBot extends MarsBotBonusCard {
   constructor() {
-    super({id: BonusCardId.B04_OVERACHIEVEMENT});
+    super({id: BonusCardId.B04_OVERACHIEVEMENT, name: CardName.AUTOMA_OVERACHIEVEMENT});
   }
 
   public override resolve(marsBot: IMarsBot): boolean {

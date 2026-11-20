@@ -4,7 +4,7 @@ import {SpaceId} from '@/common/Types';
 import {CardName} from '@/common/cards/CardName';
 import {BonusCardId} from '@/common/automa/AutomaTypes';
 import {GlobalParameter} from '@/common/GlobalParameter';
-import {createBaseBonusCards} from '@/server/automa/MarsBotBonusCard';
+import {createBaseBonusCards} from '@/server/automa/bonusCards/MarsBotBonusCards';
 import {MarsBotBonusResolver} from '@/server/automa/MarsBotBonusResolver';
 import {LobbyistsMarsBot} from '@/server/automa/bonusCards/LobbyistsMarsBot';
 import {setOxygenLevel, setTemperature} from '../../TestingUtils';

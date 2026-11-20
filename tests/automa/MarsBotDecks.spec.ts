@@ -3,7 +3,8 @@ import {testGame} from '../TestGame';
 import {Game} from '../../src/server/Game';
 import {IGame} from '../../src/server/IGame';
 import {MarsBot} from '../../src/server/automa/MarsBot';
-import {MarsBotBonusCard, createBonusCard} from '../../src/server/automa/MarsBotBonusCard';
+import {MarsBotBonusCard} from '../../src/server/automa/MarsBotBonusCard';
+import {createBonusCard} from '../../src/server/automa/bonusCards/MarsBotBonusCards';
 import {BonusCardId} from '../../src/common/automa/AutomaTypes';
 import {BoardName} from '../../src/common/boards/BoardName';
 import {CardName} from '../../src/common/cards/CardName';
@@ -249,6 +250,18 @@ describe('MarsBot decks', () => {
 
     expect(restored.bonusDeck.drawPile.map((c) => c.name)).deep.eq(marsBot.bonusDeck.drawPile.map((c) => c.name));
     expect(restored.bonusDeck.discardPile.map((c) => c.name)).deep.eq([CardName.TARDIGRADES]);
+    expect(restored.bonusDeck.drawPile.map((c) => c.constructor)).deep.eq(marsBot.bonusDeck.drawPile.map((c) => c.constructor));
+    expect(restored.bonusDeck.discardPile[0]).instanceOf(Tardigrades);
+  });
+
+  it('keeps the bonus cards of the action deck across a reload, each as its own class', () => {
+    const {game, marsBot} = createAutomaGame();
+    marsBot.actionDeck = [createBonusCard(BonusCardId.B25_DO_IT_RIGHT), new Asteroid(), createBonusCard(BonusCardId.B04_OVERACHIEVEMENT)];
+
+    const restored = Game.deserialize(game.serialize()).automaHooks!.marsBot;
+
+    expect(restored.actionDeck.map((c) => c.name)).deep.eq(marsBot.actionDeck.map((c) => c.name));
+    expect(restored.actionDeck.map((c) => c.constructor)).deep.eq(marsBot.actionDeck.map((c) => c.constructor));
   });
 
   it('loads the bonus deck of an older save, which holds bonus cards by id, and plays on from it', () => {
@@ -270,6 +283,8 @@ describe('MarsBot decks', () => {
 
     expect(restored.bonusDeck.drawPile).deep.eq(marsBot.bonusDeck.drawPile);
     expect(restored.bonusDeck.discardPile).deep.eq(marsBot.bonusDeck.discardPile);
+    expect(restored.bonusDeck.drawPile.map((c) => c.constructor)).deep.eq(marsBot.bonusDeck.drawPile.map((c) => c.constructor));
+    expect(restored.bonusDeck.discardPile.map((c) => c.constructor)).deep.eq(marsBot.bonusDeck.discardPile.map((c) => c.constructor));
 
     restored.takeTurn();
 

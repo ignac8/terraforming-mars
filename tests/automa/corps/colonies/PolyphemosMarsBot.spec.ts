@@ -2,7 +2,7 @@ import {expect} from 'chai';
 import {BonusCardId} from '@/common/automa/AutomaTypes';
 import {CardName} from '@/common/cards/CardName';
 import {Tag} from '@/common/cards/Tag';
-import {createBonusCard} from '@/server/automa/MarsBotBonusCard';
+import {createBonusCard} from '@/server/automa/bonusCards/MarsBotBonusCards';
 import {getMarsBotCorp} from '@/server/automa/corps/MarsBotCorpRegistry';
 import {PolyphemosMarsBot} from '@/server/automa/corps/colonies/PolyphemosMarsBot';
 import {IceCapMelting} from '@/server/cards/base/IceCapMelting';

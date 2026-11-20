@@ -1,10 +1,10 @@
 import {expect} from 'chai';
 import {BonusCardId} from '@/common/automa/AutomaTypes';
 import {BoardName} from '@/common/boards/BoardName';
-import {CardName} from '@/common/cards/CardName';
 import {ColonyName} from '@/common/colonies/ColonyName';
 import {TileType} from '@/common/TileType';
-import {MarsBotBonusCard, bonusCard} from '@/server/automa/MarsBotBonusCard';
+import {MarsBotBonusCard} from '@/server/automa/MarsBotBonusCard';
+import {createBonusCard} from '@/server/automa/bonusCards/MarsBotBonusCards';
 import {Ceres} from '@/server/colonies/Ceres';
 import {Luna} from '@/server/colonies/Luna';
 import {ExpeditedConstructionColoniesMarsBot} from '@/server/automa/bonusCards/ExpeditedConstructionColoniesMarsBot';
@@ -13,7 +13,7 @@ import {getMarsBot} from '../corps/CorpGame';
 import {recordingMarsBot} from '../corps/RecordingMarsBot';
 
 function b17Card(): MarsBotBonusCard {
-  return bonusCard(BonusCardId.B17_EXPEDITED_CONSTRUCTION_COLONIES, 'Expedited Construction (Colonies)' as CardName);
+  return createBonusCard(BonusCardId.B17_EXPEDITED_CONSTRUCTION_COLONIES);
 }
 
 describe('ExpeditedConstructionColoniesMarsBot', () => {

@@ -1,6 +1,6 @@
 import {expect} from 'chai';
 import {BonusCardId} from '@/common/automa/AutomaTypes';
-import {createBaseBonusCards, createBonusCard} from '@/server/automa/MarsBotBonusCard';
+import {createBaseBonusCards, createBonusCard} from '@/server/automa/bonusCards/MarsBotBonusCards';
 import {MarsBotBonusResolver} from '@/server/automa/MarsBotBonusResolver';
 import {ProtectedHabitats} from '@/server/cards/base/ProtectedHabitats';
 import {AsteroidDeflectionSystem} from '@/server/cards/promo/AsteroidDeflectionSystem';

@@ -3,7 +3,7 @@ import {SerializedAutomaState, SerializedGame} from '../SerializedGame';
 import {GameOptions} from '../game/GameOptions';
 import {CardName} from '../../common/cards/CardName';
 import {BonusCardId} from '../../common/automa/AutomaTypes';
-import {createBonusCard} from '../automa/MarsBotBonusCard';
+import {createBonusCard} from '../automa/bonusCards/MarsBotBonusCards';
 
 type Json = string | number | boolean | null | undefined | ReadonlyArray<Json> | {readonly [key: string]: Json};
 

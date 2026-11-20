@@ -2,7 +2,7 @@ import {expect} from 'chai';
 import {BonusCardId} from '@/common/automa/AutomaTypes';
 import {BoardName} from '@/common/boards/BoardName';
 import {ColonyName} from '@/common/colonies/ColonyName';
-import {createBaseBonusCards} from '@/server/automa/MarsBotBonusCard';
+import {createBaseBonusCards} from '@/server/automa/bonusCards/MarsBotBonusCards';
 import {MarsBotBonusResolver} from '@/server/automa/MarsBotBonusResolver';
 import {Ants} from '@/server/cards/base/Ants';
 import {Birds} from '@/server/cards/base/Birds';

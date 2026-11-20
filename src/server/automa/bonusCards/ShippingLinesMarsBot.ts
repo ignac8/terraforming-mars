@@ -1,11 +1,12 @@
 import {BonusCardId} from '@/common/automa/AutomaTypes';
+import {CardName} from '@/common/cards/CardName';
 import {IMarsBot} from '@/server/automa/IMarsBot';
-import {MarsBotBonusCardEffect} from '@/server/automa/bonusCards/MarsBotBonusCardEffect';
+import {MarsBotBonusCard} from '@/server/automa/MarsBotBonusCard';
 
 // B19: Shipping Lines / B20: Extended Shipping Lines — C-17
-export class ShippingLinesMarsBot extends MarsBotBonusCardEffect {
+export class ShippingLinesMarsBot extends MarsBotBonusCard {
   constructor() {
-    super({id: BonusCardId.B19_SHIPPING_LINES});
+    super({id: BonusCardId.B19_SHIPPING_LINES, name: CardName.AUTOMA_SHIPPING_LINES});
   }
 
   public override resolve(marsBot: IMarsBot): boolean {

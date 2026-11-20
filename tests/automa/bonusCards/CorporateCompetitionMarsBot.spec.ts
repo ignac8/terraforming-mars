@@ -12,7 +12,7 @@ import {IGame} from '@/server/IGame';
 import {IMarsBot} from '@/server/automa/IMarsBot';
 import {MarsBot} from '@/server/automa/MarsBot';
 import {MarsBotBoard} from '@/server/automa/MarsBotBoard';
-import {createBaseBonusCards, createBonusCard} from '@/server/automa/MarsBotBonusCard';
+import {createBaseBonusCards, createBonusCard} from '@/server/automa/bonusCards/MarsBotBonusCards';
 import {MarsBotBonusResolver} from '@/server/automa/MarsBotBonusResolver';
 import {THARSIS_MARSBOT_BOARD} from '@/server/automa/boards/TharsisMarsBot';
 import {VENUS_MARSBOT_TRACK} from '@/server/automa/boards/VenusMarsBot';

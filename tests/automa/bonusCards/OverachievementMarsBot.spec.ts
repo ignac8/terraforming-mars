@@ -4,7 +4,7 @@ import {BonusCardId} from '@/common/automa/AutomaTypes';
 import {CardName} from '@/common/cards/CardName';
 import {inplaceRemove} from '@/common/utils/utils';
 import {Game} from '@/server/Game';
-import {createBaseBonusCards, createBonusCard} from '@/server/automa/MarsBotBonusCard';
+import {createBaseBonusCards, createBonusCard} from '@/server/automa/bonusCards/MarsBotBonusCards';
 import {MarsBotBonusResolver} from '@/server/automa/MarsBotBonusResolver';
 import {getMarsBotCorp} from '@/server/automa/corps/MarsBotCorpRegistry';
 import {createAutomaGame, resetCorpRegistry} from '../corps/CorpGame';

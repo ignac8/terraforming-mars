@@ -8,7 +8,7 @@ import {Resource} from '../../src/common/Resource';
 import {ProtectedHabitats} from '../../src/server/cards/base/ProtectedHabitats';
 import {SponsoredAcademies} from '../../src/server/cards/venusNext/SponsoredAcademies';
 import {BonusCardId} from '../../src/common/automa/AutomaTypes';
-import {createBonusCard} from '../../src/server/automa/MarsBotBonusCard';
+import {createBonusCard} from '../../src/server/automa/bonusCards/MarsBotBonusCards';
 import {Livestock} from '../../src/server/cards/base/Livestock';
 import {Tardigrades} from '../../src/server/cards/base/Tardigrades';
 import {Flooding} from '../../src/server/cards/base/Flooding';

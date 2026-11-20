@@ -4,7 +4,7 @@ import {BoardName} from '@/common/boards/BoardName';
 import {GlobalParameter} from '@/common/GlobalParameter';
 import {CardName} from '@/common/cards/CardName';
 import {Tag} from '@/common/cards/Tag';
-import {createBonusCard} from '@/server/automa/MarsBotBonusCard';
+import {createBonusCard} from '@/server/automa/bonusCards/MarsBotBonusCards';
 import {MarsBotBoard} from '@/server/automa/MarsBotBoard';
 import {THARSIS_MARSBOT_BOARD} from '@/server/automa/boards/TharsisMarsBot';
 import {VENUS_MARSBOT_TRACK} from '@/server/automa/boards/VenusMarsBot';

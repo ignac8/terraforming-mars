@@ -2,7 +2,7 @@ import {expect} from 'chai';
 import {BonusCardId} from '@/common/automa/AutomaTypes';
 import {BoardName} from '@/common/boards/BoardName';
 import {CardName} from '@/common/cards/CardName';
-import {bonusCard, createBonusCard} from '@/server/automa/MarsBotBonusCard';
+import {createBonusCard} from '@/server/automa/bonusCards/MarsBotBonusCards';
 import {GovernmentInterventionMarsBot} from '@/server/automa/bonusCards/GovernmentInterventionMarsBot';
 import {testGame} from '../../TestGame';
 import {maxOutOceans, setOxygenLevel, setTemperature, setVenusScaleLevel} from '../../TestingUtils';
@@ -107,7 +107,7 @@ describe('GovernmentInterventionMarsBot', () => {
     const {game, marsBot} = createAutomaGame({venusNextExtension: true});
     game.generation = 4; // even
     const trBefore = marsBot.player.terraformRating;
-    const card = bonusCard(BonusCardId.B16_GOVERNMENT_INTERVENTION, 'Government Intervention' as CardName);
+    const card = createBonusCard(BonusCardId.B16_GOVERNMENT_INTERVENTION);
     marsBot['bonusResolver'].resolve(card);
     // TR should not have changed (reversed by withoutTRGain)
     expect(marsBot.player.terraformRating).to.eq(trBefore);
@@ -118,7 +118,7 @@ describe('GovernmentInterventionMarsBot', () => {
     game.generation = 3; // odd
     const venusBefore = game.getVenusScaleLevel();
     const trBefore = marsBot.player.terraformRating;
-    const card = bonusCard(BonusCardId.B16_GOVERNMENT_INTERVENTION, 'Government Intervention' as CardName);
+    const card = createBonusCard(BonusCardId.B16_GOVERNMENT_INTERVENTION);
     marsBot['bonusResolver'].resolve(card);
     expect(game.getVenusScaleLevel()).to.eq(venusBefore + 2);
     expect(marsBot.player.terraformRating).to.eq(trBefore);
@@ -129,7 +129,7 @@ describe('GovernmentInterventionMarsBot', () => {
     game.generation = 3; // odd, but Venus complete → should use Martian branch
     setVenusScaleLevel(game, 30);
     const venusBefore = game.getVenusScaleLevel();
-    const card = bonusCard(BonusCardId.B16_GOVERNMENT_INTERVENTION, 'Government Intervention' as CardName);
+    const card = createBonusCard(BonusCardId.B16_GOVERNMENT_INTERVENTION);
     marsBot['bonusResolver'].resolve(card);
     // Venus should not change (already maxed, used Martian branch instead)
     expect(game.getVenusScaleLevel()).to.eq(venusBefore);

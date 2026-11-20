@@ -8,7 +8,7 @@ import {MarsBot} from '../../src/server/automa/MarsBot';
 import {marsBotAwardScore, marsBotCanClaimMilestone} from '../../src/server/automa/MarsBotMilestoneAwardEval';
 import {AutomaGameSetup} from '../../src/server/automa/AutomaGameSetup';
 import {BonusCardId} from '../../src/common/automa/AutomaTypes';
-import {createBonusCard} from '../../src/server/automa/MarsBotBonusCard';
+import {createBonusCard} from '../../src/server/automa/bonusCards/MarsBotBonusCards';
 import {BoardName} from '../../src/common/boards/BoardName';
 import {Tag} from '../../src/common/cards/Tag';
 import {RandomMAOptionType} from '../../src/common/ma/RandomMAOptionType';

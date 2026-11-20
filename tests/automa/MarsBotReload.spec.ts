@@ -7,7 +7,7 @@ import {MarsBot} from '../../src/server/automa/MarsBot';
 import {BoardName} from '../../src/common/boards/BoardName';
 import {GlobalParameter} from '../../src/common/GlobalParameter';
 import {Phase} from '../../src/common/Phase';
-import {createBonusCard} from '../../src/server/automa/MarsBotBonusCard';
+import {createBonusCard} from '../../src/server/automa/bonusCards/MarsBotBonusCards';
 import {BonusCardId} from '../../src/common/automa/AutomaTypes';
 import {CardName} from '../../src/common/cards/CardName';
 import {Asteroid} from '../../src/server/cards/base/Asteroid';

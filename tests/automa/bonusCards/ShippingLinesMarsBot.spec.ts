@@ -1,9 +1,9 @@
 import {expect} from 'chai';
 import {BonusCardId} from '@/common/automa/AutomaTypes';
 import {BoardName} from '@/common/boards/BoardName';
-import {CardName} from '@/common/cards/CardName';
 import {ColonyName} from '@/common/colonies/ColonyName';
-import {MarsBotBonusCard, bonusCard, createBonusCard} from '@/server/automa/MarsBotBonusCard';
+import {MarsBotBonusCard} from '@/server/automa/MarsBotBonusCard';
+import {createBonusCard} from '@/server/automa/bonusCards/MarsBotBonusCards';
 import {Europa} from '@/server/colonies/Europa';
 import {Luna} from '@/server/colonies/Luna';
 import {testGame} from '../../TestGame';
@@ -11,7 +11,7 @@ import {getMarsBot, createAutomaGame} from '../corps/CorpGame';
 import {bonusDeckIds} from './BonusCardGame';
 
 function b19Card(): MarsBotBonusCard {
-  return bonusCard(BonusCardId.B19_SHIPPING_LINES, 'Shipping Lines' as CardName);
+  return createBonusCard(BonusCardId.B19_SHIPPING_LINES);
 }
 
 describe('ShippingLinesMarsBot', () => {

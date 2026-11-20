@@ -1,6 +1,6 @@
 import {expect} from 'chai';
 import {BonusCardId} from '@/common/automa/AutomaTypes';
-import {createBonusCard} from '@/server/automa/MarsBotBonusCard';
+import {createBonusCard} from '@/server/automa/bonusCards/MarsBotBonusCards';
 import {Turmoil} from '@/server/turmoil/Turmoil';
 import {PartyPoliticsMarsBot} from '@/server/automa/bonusCards/PartyPoliticsMarsBot';
 import {fakeCard} from '../../TestingUtils';

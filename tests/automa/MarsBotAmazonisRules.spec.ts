@@ -7,7 +7,7 @@ import {Tag} from '@/common/cards/Tag';
 import {AwardName} from '@/common/ma/AwardName';
 import {TileType} from '@/common/TileType';
 import {MarsBot} from '@/server/automa/MarsBot';
-import {createBaseBonusCards} from '@/server/automa/MarsBotBonusCard';
+import {createBaseBonusCards} from '@/server/automa/bonusCards/MarsBotBonusCards';
 import {CorporateCompetitionMarsBot} from '@/server/automa/bonusCards/CorporateCompetitionMarsBot';
 import {getMarsBotCorp} from '@/server/automa/corps/MarsBotCorpRegistry';
 import {NirgalEnterprisesMarsBot} from '@/server/automa/corps/prelude2/NirgalEnterprisesMarsBot';

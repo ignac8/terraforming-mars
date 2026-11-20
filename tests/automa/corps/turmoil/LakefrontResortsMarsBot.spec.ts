@@ -5,7 +5,7 @@ import {SpaceType} from '@/common/boards/SpaceType';
 import {CardName} from '@/common/cards/CardName';
 import {MAX_OXYGEN_LEVEL, MAX_TEMPERATURE} from '@/common/constants';
 import {MarsBot} from '@/server/automa/MarsBot';
-import {createBonusCard} from '@/server/automa/MarsBotBonusCard';
+import {createBonusCard} from '@/server/automa/bonusCards/MarsBotBonusCards';
 import {MarsBotTilePlacer} from '@/server/automa/MarsBotTilePlacer';
 import {getMarsBotCorp} from '@/server/automa/corps/MarsBotCorpRegistry';
 import {LakefrontResortsMarsBot} from '@/server/automa/corps/turmoil/LakefrontResortsMarsBot';

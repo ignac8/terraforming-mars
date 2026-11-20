@@ -1,6 +1,6 @@
 import {expect} from 'chai';
 import {BonusCardId} from '@/common/automa/AutomaTypes';
-import {createBonusCard} from '@/server/automa/MarsBotBonusCard';
+import {createBonusCard} from '@/server/automa/bonusCards/MarsBotBonusCards';
 import {SupplyAndDemandMarsBot} from '@/server/automa/bonusCards/SupplyAndDemandMarsBot';
 import {createAutomaGame, resetCorpRegistry} from '../corps/CorpGame';
 import {TRACK, recordingMarsBot} from '../corps/RecordingMarsBot';

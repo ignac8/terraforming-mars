@@ -1,15 +1,15 @@
 import {expect} from 'chai';
 import {BonusCardId} from '@/common/automa/AutomaTypes';
 import {BoardName} from '@/common/boards/BoardName';
-import {CardName} from '@/common/cards/CardName';
 import {ColonyName} from '@/common/colonies/ColonyName';
-import {MarsBotBonusCard, bonusCard} from '@/server/automa/MarsBotBonusCard';
+import {MarsBotBonusCard} from '@/server/automa/MarsBotBonusCard';
+import {createBonusCard} from '@/server/automa/bonusCards/MarsBotBonusCards';
 import {Luna} from '@/server/colonies/Luna';
 import {testGame} from '../../TestGame';
 import {getMarsBot} from '../corps/CorpGame';
 
 function b20Card(): MarsBotBonusCard {
-  return bonusCard(BonusCardId.B20_EXTENDED_SHIPPING_LINES, 'Extended Shipping Lines' as CardName);
+  return createBonusCard(BonusCardId.B20_EXTENDED_SHIPPING_LINES);
 }
 
 describe('ExtendedShippingLinesMarsBot', () => {

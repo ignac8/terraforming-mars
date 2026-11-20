@@ -1,10 +1,10 @@
-import {MarsBotBonusCard, MarsBotBonusDeckCard} from './MarsBotBonusCard';
+import {MarsBotBonusCard} from './MarsBotBonusCard';
+import {MarsBotBonusDeckCard} from './bonusCards/MarsBotBonusCards';
 import type {MarsBot} from './MarsBot';
 import {ACTION_DECK_BONUS_CARD_REMOVED} from './corps/corpHelpers';
-import {MARSBOT_BONUS_CARD_EFFECTS} from './bonusCards/MarsBotBonusCardEffects';
 
 /**
- * Resolves MarsBot's bonus cards: looks up the effect of a card and keeps the bonus deck in order around it.
+ * Resolves MarsBot's bonus cards: resolves a card and keeps the bonus deck in order around it.
  */
 export class MarsBotBonusResolver {
   constructor(private readonly marsBot: MarsBot) {}
@@ -39,6 +39,6 @@ export class MarsBotBonusResolver {
    * Returns true when the card must not be discarded: it was destroyed, or it went back into the bonus deck.
    */
   public resolveEffect(card: MarsBotBonusCard): boolean {
-    return MARSBOT_BONUS_CARD_EFFECTS[card.id]?.resolve(this.marsBot, card) ?? false;
+    return card.resolve(this.marsBot);
   }
 }

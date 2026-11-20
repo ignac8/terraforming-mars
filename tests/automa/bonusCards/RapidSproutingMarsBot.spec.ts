@@ -2,7 +2,7 @@ import {expect} from 'chai';
 import {TileType} from '@/common/TileType';
 import {BonusCardId} from '@/common/automa/AutomaTypes';
 import {CardName} from '@/common/cards/CardName';
-import {createBonusCard} from '@/server/automa/MarsBotBonusCard';
+import {createBonusCard} from '@/server/automa/bonusCards/MarsBotBonusCards';
 import {getMarsBotCorp} from '@/server/automa/corps/MarsBotCorpRegistry';
 import {RapidSproutingMarsBot} from '@/server/automa/bonusCards/RapidSproutingMarsBot';
 import {createAutomaGame, resetCorpRegistry} from '../corps/CorpGame';

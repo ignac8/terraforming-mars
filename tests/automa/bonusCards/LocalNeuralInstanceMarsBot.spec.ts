@@ -3,7 +3,7 @@ import {TileType} from '@/common/TileType';
 import {BonusCardId} from '@/common/automa/AutomaTypes';
 import {SpaceType} from '@/common/boards/SpaceType';
 import {IMarsBot} from '@/server/automa/IMarsBot';
-import {createBaseBonusCards} from '@/server/automa/MarsBotBonusCard';
+import {createBaseBonusCards} from '@/server/automa/bonusCards/MarsBotBonusCards';
 import {MarsBotTilePlacer} from '@/server/automa/MarsBotTilePlacer';
 import {LocalNeuralInstanceMarsBot} from '@/server/automa/bonusCards/LocalNeuralInstanceMarsBot';
 import {Space} from '@/server/boards/Space';

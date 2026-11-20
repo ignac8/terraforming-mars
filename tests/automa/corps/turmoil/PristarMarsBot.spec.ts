@@ -3,7 +3,7 @@ import {GlobalParameter} from '@/common/GlobalParameter';
 import {BonusCardId} from '@/common/automa/AutomaTypes';
 import {BoardName} from '@/common/boards/BoardName';
 import {CardName} from '@/common/cards/CardName';
-import {createBonusCard} from '@/server/automa/MarsBotBonusCard';
+import {createBonusCard} from '@/server/automa/bonusCards/MarsBotBonusCards';
 import {getMarsBotCorp} from '@/server/automa/corps/MarsBotCorpRegistry';
 import {PristarMarsBot} from '@/server/automa/corps/turmoil/PristarMarsBot';
 import {testGame} from '../../../TestGame';

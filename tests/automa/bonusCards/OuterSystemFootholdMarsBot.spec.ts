@@ -1,9 +1,9 @@
 import {expect} from 'chai';
 import {BonusCardId} from '@/common/automa/AutomaTypes';
 import {BoardName} from '@/common/boards/BoardName';
-import {CardName} from '@/common/cards/CardName';
 import {ColonyName} from '@/common/colonies/ColonyName';
-import {MarsBotBonusCard, bonusCard, createBonusCard} from '@/server/automa/MarsBotBonusCard';
+import {MarsBotBonusCard} from '@/server/automa/MarsBotBonusCard';
+import {createBonusCard} from '@/server/automa/bonusCards/MarsBotBonusCards';
 import {MarsBotBonusDeck} from '@/server/automa/MarsBotBonusDeck';
 import {OuterSystemFootholdMarsBot} from '@/server/automa/bonusCards/OuterSystemFootholdMarsBot';
 import {Luna} from '@/server/colonies/Luna';
@@ -12,7 +12,7 @@ import {getMarsBot} from '../corps/CorpGame';
 import {recordingMarsBot} from '../corps/RecordingMarsBot';
 
 function b18Card(): MarsBotBonusCard {
-  return bonusCard(BonusCardId.B18_OUTER_SYSTEM_FOOTHOLD, 'Outer System Foothold' as CardName);
+  return createBonusCard(BonusCardId.B18_OUTER_SYSTEM_FOOTHOLD);
 }
 
 describe('OuterSystemFootholdMarsBot', () => {
@@ -65,7 +65,7 @@ describe('OuterSystemFootholdMarsBot', () => {
     game.colonies = [new Luna()];
 
     // Put a filler bonus card in the deck so draw() can return something
-    const fillerCard = bonusCard(BonusCardId.B03_RESEARCH_AND_DEVELOPMENT, 'R&D' as CardName);
+    const fillerCard = createBonusCard(BonusCardId.B03_RESEARCH_AND_DEVELOPMENT);
     marsBot.bonusDeck.drawPile = [fillerCard];
 
     const card = b18Card();
