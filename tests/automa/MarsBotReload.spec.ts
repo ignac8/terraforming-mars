@@ -293,8 +293,8 @@ describe('MarsBotReload', () => {
       // Nothing is re-entered on load.
       game.phase = Phase.END;
 
-      expect(loadSandboxGame(game.serialize()).rng.current).eq(game.rng.current);
-      expect(Game.deserialize(game.serialize()).rng.current).eq(game.rng.current);
+      expect(loadSandboxGame(game.serialize()).rng.serialize()).deep.eq(game.rng.serialize());
+      expect(Game.deserialize(game.serialize()).rng.serialize()).deep.eq(game.rng.serialize());
     });
   }
 });

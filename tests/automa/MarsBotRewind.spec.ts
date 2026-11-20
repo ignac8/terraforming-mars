@@ -1,4 +1,5 @@
 import {expect} from 'chai';
+import {SerializedRandom} from '../../src/common/utils/Random';
 import {IGame} from '../../src/server/IGame';
 import {IPlayer} from '../../src/server/IPlayer';
 import {SerializedGame} from '../../src/server/SerializedGame';
@@ -38,7 +39,7 @@ describe('Rewinding a MarsBot game', () => {
   // The cards the first draft round of that generation offered.
   let firstPile: Array<CardName>;
   // Where the random generator stood when that pile was offered.
-  let firstSeed: number;
+  let firstSeed: SerializedRandom;
   // The action prompt after the draft and one heat conversion.
   let convert: number;
 
@@ -56,7 +57,7 @@ describe('Rewinding a MarsBot game', () => {
     expect(game.phase).eq(Phase.RESEARCH);
     research = game.lastSaveId - 1;
     firstPile = offered(player);
-    firstSeed = game.rng.current;
+    firstSeed = game.rng.serialize();
     // Every draft pick, against MarsBot's random ones, then the buy.
     while (cast(player.getWaitingFor(), SelectCard).title.toString().startsWith('Draft round')) {
       player.process({type: 'card', cards: [offered(player)[0]]});
@@ -76,7 +77,7 @@ describe('Rewinding a MarsBot game', () => {
     const restored = await rewindGame(game, player, research, 'same');
 
     expect(offered(restored.getPlayerById(player.id))).deep.eq(firstPile);
-    expect(restored.rng.current).eq(firstSeed);
+    expect(restored.rng.serialize()).deep.eq(firstSeed);
   });
 
   it('replays MarsBot\'s draft picks to a later move without a mismatch', async () => {
