@@ -196,11 +196,11 @@ export interface IMarsBot {
   /** Places the bot's Neural Instance tile on `space` and pays the bot its placement M€. */
   placeNeuralInstance(space: Space): void;
   /**
-   * Trades with the colony the bot picks, for the bonus card named `source` (C-17).
+   * Trades with the colony the bot picks, for the bonus card `cardName` (C-17).
    *
    * Does nothing, with no Failed Action, when no colony can be traded with or the bot has no M€ to pay.
    */
-  maybeTrade(source: string): void;
+  maybeTrade(cardName: CardName): void;
 
   /** Corp-specific counters, serialized with the bot. Missing keys read as 0. */
   getCorpState(key: string): number;

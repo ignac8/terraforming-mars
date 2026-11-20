@@ -734,21 +734,21 @@ export class MarsBot implements IMarsBot {
     this.neuralInstanceSpace = space;
   }
 
-  public maybeTrade(source: string): void {
+  public maybeTrade(cardName: CardName): void {
     const colony = selectTradeColony(this.game, this);
     if (colony === undefined) {
       // A bonus card that can't resolve is not a Failed Action (rulebook A, p.5)
-      this.game.log(`MarsBot ${source}: no tradeable colony, no effect (C-17)`);
+      this.game.log('MarsBot (${0}): no tradeable colony, no effect (C-17)', (b) => b.cardName(cardName));
       return;
     }
     // It must lose 1 MC to trade. With none, the card does nothing (Nick, BGG 3599965).
     if (this.megacredits < 1) {
-      this.game.log(`MarsBot ${source}: no MC to pay for the trade, no effect (C-17)`);
+      this.game.log('MarsBot (${0}): no MC to pay for the trade, no effect (C-17)', (b) => b.cardName(cardName));
       return;
     }
 
     tradeWithColony(this, colony);
-    this.game.log(`MarsBot resolves ${source} (C-17)`);
+    this.game.log('MarsBot resolves ${0} (C-17)', (b) => b.cardName(cardName));
   }
 
   public addBonusCardToBonusDeck(bonusCardId: BonusCardId): void {

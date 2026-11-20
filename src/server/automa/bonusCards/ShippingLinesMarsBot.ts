@@ -10,7 +10,7 @@ export class ShippingLinesMarsBot extends MarsBotBonusCard {
   }
 
   public override resolve(marsBot: IMarsBot): boolean {
-    marsBot.maybeTrade('Shipping Lines');
+    marsBot.maybeTrade(this.name);
     return false;
   }
 }
