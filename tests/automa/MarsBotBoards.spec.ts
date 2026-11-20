@@ -78,29 +78,29 @@ describe('MarsBot boards', () => {
   // The six rulebook maps follow rulebook C, page 8. Amazonis Planitia is not in the rulebooks.
   for (const run of [
     // Tharsis and Utopia Planitia: Jovian with Energy, City with Earth, Microbe with Plant
-    {boardName: BoardName.THARSIS, tag: Tag.JOVIAN, track: 4},
-    {boardName: BoardName.THARSIS, tag: Tag.CITY, track: 5},
-    {boardName: BoardName.THARSIS, tag: Tag.MICROBE, track: 6},
-    {boardName: BoardName.UTOPIA_PLANITIA, tag: Tag.JOVIAN, track: 4},
-    {boardName: BoardName.UTOPIA_PLANITIA, tag: Tag.CITY, track: 5},
-    {boardName: BoardName.UTOPIA_PLANITIA, tag: Tag.MICROBE, track: 6},
+    {boardName: BoardName.THARSIS, tag: Tag.JOVIAN, expected: 4},
+    {boardName: BoardName.THARSIS, tag: Tag.CITY, expected: 5},
+    {boardName: BoardName.THARSIS, tag: Tag.MICROBE, expected: 6},
+    {boardName: BoardName.UTOPIA_PLANITIA, tag: Tag.JOVIAN, expected: 4},
+    {boardName: BoardName.UTOPIA_PLANITIA, tag: Tag.CITY, expected: 5},
+    {boardName: BoardName.UTOPIA_PLANITIA, tag: Tag.MICROBE, expected: 6},
     // Hellas and Elysium: Jovian with Science
-    {boardName: BoardName.HELLAS, tag: Tag.JOVIAN, track: 3},
-    {boardName: BoardName.HELLAS, tag: Tag.CITY, track: 5},
-    {boardName: BoardName.ELYSIUM, tag: Tag.JOVIAN, track: 3},
-    {boardName: BoardName.ELYSIUM, tag: Tag.CITY, track: 5},
+    {boardName: BoardName.HELLAS, tag: Tag.JOVIAN, expected: 3},
+    {boardName: BoardName.HELLAS, tag: Tag.CITY, expected: 5},
+    {boardName: BoardName.ELYSIUM, tag: Tag.JOVIAN, expected: 3},
+    {boardName: BoardName.ELYSIUM, tag: Tag.CITY, expected: 5},
     // Terra Cimmeria: Jovian with Earth, City with Science
-    {boardName: BoardName.TERRA_CIMMERIA_NOVA, tag: Tag.JOVIAN, track: 5},
-    {boardName: BoardName.TERRA_CIMMERIA_NOVA, tag: Tag.CITY, track: 3},
+    {boardName: BoardName.TERRA_CIMMERIA_NOVA, tag: Tag.JOVIAN, expected: 5},
+    {boardName: BoardName.TERRA_CIMMERIA_NOVA, tag: Tag.CITY, expected: 3},
     // Vastitas Borealis: Microbe with Science, City with Energy, Jovian with Earth
-    {boardName: BoardName.VASTITAS_BOREALIS_NOVA, tag: Tag.MICROBE, track: 3},
-    {boardName: BoardName.VASTITAS_BOREALIS_NOVA, tag: Tag.CITY, track: 4},
-    {boardName: BoardName.VASTITAS_BOREALIS_NOVA, tag: Tag.JOVIAN, track: 5},
+    {boardName: BoardName.VASTITAS_BOREALIS_NOVA, tag: Tag.MICROBE, expected: 3},
+    {boardName: BoardName.VASTITAS_BOREALIS_NOVA, tag: Tag.CITY, expected: 4},
+    {boardName: BoardName.VASTITAS_BOREALIS_NOVA, tag: Tag.JOVIAN, expected: 5},
     // Amazonis Planitia: Animal with Science
-    {boardName: BoardName.AMAZONIS_PLANITIA, tag: Tag.ANIMAL, track: 3},
+    {boardName: BoardName.AMAZONIS_PLANITIA, tag: Tag.ANIMAL, expected: 3},
   ] as const) {
     it('pairs tags on each map: ' + JSON.stringify(run), () => {
-      expect(tracksOf(run.boardName).findIndex((t) => t.tags.includes(run.tag))).eq(run.track);
+      expect(tracksOf(run.boardName).findIndex((t) => t.tags.includes(run.tag))).eq(run.expected);
     });
   }
 

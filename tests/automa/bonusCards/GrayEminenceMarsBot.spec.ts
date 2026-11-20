@@ -23,9 +23,9 @@ describe('GrayEminenceMarsBot', () => {
   beforeEach(resetCorpRegistry);
 
   for (const run of [
-    {reserve: 7, placed: 2, calls: []},
-    {reserve: 1, placed: 1, calls: ['gainMc(2)']},
-    {reserve: 0, placed: 0, calls: ['gainMc(2)', 'gainMc(2)']},
+    {reserve: 7, expected: {placed: 2, calls: []}},
+    {reserve: 1, expected: {placed: 1, calls: ['gainMc(2)']}},
+    {reserve: 0, expected: {placed: 0, calls: ['gainMc(2)', 'gainMc(2)']}},
   ] as const) {
     it('places 2 delegates, gaining 2 M€ for each it cannot place: ' + JSON.stringify(run), () => {
       const [game, human] = testGame(1, {automa: true, turmoilExtension: true});
@@ -36,8 +36,8 @@ describe('GrayEminenceMarsBot', () => {
 
       new GrayEminenceMarsBot().resolve(marsBot);
 
-      expect(run.reserve - turmoil.delegateReserve.get(botPlayer)).eq(run.placed);
-      expect(calls).deep.eq(run.calls);
+      expect(run.reserve - turmoil.delegateReserve.get(botPlayer)).eq(run.expected.placed);
+      expect(calls).deep.eq(run.expected.calls);
     });
   }
 

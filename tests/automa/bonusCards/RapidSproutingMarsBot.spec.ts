@@ -13,8 +13,8 @@ describe('RapidSproutingMarsBot', () => {
   beforeEach(resetCorpRegistry);
 
   for (const run of [
-    {plants: 0, after: {plants: 1, calls: []}},
-    {plants: 1, after: {plants: 0, calls: ['maybePlaceGreenery()']}},
+    {plants: 0, expected: {plants: 1, calls: []}},
+    {plants: 1, expected: {plants: 0, calls: ['maybePlaceGreenery()']}},
   ] as const) {
     it('puts a plant on the corporation card, or spends it on a greenery: ' + JSON.stringify(run), () => {
       const {marsBot, calls, corpState} = recordingMarsBot();
@@ -22,7 +22,7 @@ describe('RapidSproutingMarsBot', () => {
 
       new RapidSproutingMarsBot().resolve(marsBot);
 
-      expect({plants: corpState.get('plantResources'), calls}).deep.eq(run.after);
+      expect({plants: corpState.get('plantResources'), calls}).deep.eq(run.expected);
     });
   }
 

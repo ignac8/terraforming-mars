@@ -206,8 +206,8 @@ describe('MarsBot', () => {
     });
 
     for (const run of [
-      {megacredits: 20, lost: 5, left: 15},
-      {megacredits: 2, lost: 2, left: 0},
+      {megacredits: 20, expected: {lost: 5, left: 15}},
+      {megacredits: 2, expected: {lost: 2, left: 0}},
     ] as const) {
       it('loseMc takes up to the amount, stopping at zero: ' + JSON.stringify(run), () => {
         const {marsBot} = createAutomaGame();
@@ -215,17 +215,17 @@ describe('MarsBot', () => {
 
         const lost = marsBot.loseMc(5);
 
-        expect(lost).to.eq(run.lost);
-        expect(marsBot.megacredits).to.eq(run.left);
+        expect(lost).to.eq(run.expected.lost);
+        expect(marsBot.megacredits).to.eq(run.expected.left);
       });
     }
 
     for (const run of [
-      {temperature: -30, oxygen: 0, oceans: 0, after: {temperature: -28, oxygen: 0, oceans: 0}},
-      {temperature: 0, oxygen: 0, oceans: 0, after: {temperature: 0, oxygen: 1, oceans: 0}},
-      {temperature: 0, oxygen: 9, oceans: 0, after: {temperature: 0, oxygen: 9, oceans: 1}},
+      {temperature: -30, oxygen: 0, oceans: 0, expected: {temperature: -28, oxygen: 0, oceans: 0}},
+      {temperature: 0, oxygen: 0, oceans: 0, expected: {temperature: 0, oxygen: 1, oceans: 0}},
+      {temperature: 0, oxygen: 9, oceans: 0, expected: {temperature: 0, oxygen: 9, oceans: 1}},
       // Oxygen and temperature both have 9 steps left, though temperature is further along
-      {temperature: -10, oxygen: 5, oceans: 9, after: {temperature: -10, oxygen: 6, oceans: 9}},
+      {temperature: -10, oxygen: 5, oceans: 9, expected: {temperature: -10, oxygen: 6, oceans: 9}},
     ] as const) {
       it('advanceFurthestParameter raises the parameter with the most steps left: ' + JSON.stringify(run), () => {
         const {game, human, marsBot} = createAutomaGame();
@@ -239,13 +239,13 @@ describe('MarsBot', () => {
           temperature: game.getTemperature(),
           oxygen: game.getOxygenLevel(),
           oceans: game.board.getOceanSpaces().length,
-        }).deep.eq(run.after);
+        }).deep.eq(run.expected);
       });
     }
 
     for (const run of [
-      {allowCorpIntercept: true, temperature: -30},
-      {allowCorpIntercept: false, temperature: -28},
+      {allowCorpIntercept: true, expected: -30},
+      {allowCorpIntercept: false, expected: -28},
     ] as const) {
       it('advanceFurthestParameter lets a corp cancel the raise only when allowed: ' + JSON.stringify(run), () => {
         const {game, marsBot} = createAutomaGame();
@@ -253,13 +253,13 @@ describe('MarsBot', () => {
 
         marsBot.advanceFurthestParameter(CardName.AUTOMA_GOVERNMENT_INTERVENTION, run.allowCorpIntercept);
 
-        expect(game.getTemperature()).to.eq(run.temperature);
+        expect(game.getTemperature()).to.eq(run.expected);
       });
     }
 
     for (const run of [
-      {accepted: ['21'], placed: true, oxygen: 1},
-      {accepted: [], placed: false, oxygen: 0},
+      {accepted: ['21'], expected: {placed: true, oxygen: 1}},
+      {accepted: [], expected: {placed: false, oxygen: 0}},
     ] as const) {
       it('maybePlaceGreenery places a greenery only on a space the filter accepts, raising the oxygen: ' + JSON.stringify(run), () => {
         const {game, marsBot} = createAutomaGame();
@@ -268,8 +268,8 @@ describe('MarsBot', () => {
         const placed = marsBot.maybePlaceGreenery((space) => accepted.includes(space.id));
 
         expect(game.board.getGreeneries(marsBot.player).map((space) => space.id)).deep.eq(accepted);
-        expect(game.getOxygenLevel()).to.eq(run.oxygen);
-        expect(placed).to.eq(run.placed);
+        expect(game.getOxygenLevel()).to.eq(run.expected.oxygen);
+        expect(placed).to.eq(run.expected.placed);
       });
     }
 

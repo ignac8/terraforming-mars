@@ -234,17 +234,17 @@ describe('MarsBotScoring', () => {
     }
 
     for (const run of [
-      {cubes: 0, vp: 0},
-      {cubes: 1, vp: 0},
-      {cubes: 2, vp: 1},
-      {cubes: 3, vp: 1},
-      {cubes: 7, vp: 3},
+      {cubes: 0, expected: 0},
+      {cubes: 1, expected: 0},
+      {cubes: 2, expected: 1},
+      {cubes: 3, expected: 1},
+      {cubes: 7, expected: 3},
     ] as const) {
       it('scores 1 VP for every 2 resources left on the shipping board, rounded down: ' + JSON.stringify(run), () => {
         const {marsBot} = leftoverGame({automaColonyVP: true});
         marsBot.shippingBoard.storage.set(ColonyName.CERES, Math.min(run.cubes, 4));
         marsBot.shippingBoard.storage.set(ColonyName.LUNA, Math.max(0, run.cubes - 4));
-        expect(marsBot.getVictoryPoints().leftoverResourcesVP, `${run.cubes} resources`).to.eq(run.vp);
+        expect(marsBot.getVictoryPoints().leftoverResourcesVP, `${run.cubes} resources`).to.eq(run.expected);
       });
     }
 

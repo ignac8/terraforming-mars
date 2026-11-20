@@ -269,6 +269,7 @@ export class MarsBot implements IMarsBot {
       const discarded = draftedCards.pop();
       if (discarded) {
         this.game.projectDeck.discardPile.push(discarded);
+        this.game.log('MarsBot discards ${0} after the draft', (b) => b.card(discarded));
       }
     }
 
@@ -544,7 +545,7 @@ export class MarsBot implements IMarsBot {
     this.turnResolver.raiseTemperature(steps);
   }
 
-  public advanceFurthestParameter(source: CardName, allowCorpIntercept: boolean = true): boolean {
+  public advanceFurthestParameter(cardName: CardName, allowCorpIntercept: boolean = true): boolean {
     const game = this.game;
     const tempRemaining = (game.max.temperature - game.getTemperature()) / 2;
     const oxyRemaining = game.max.oxygen - game.getOxygenLevel();
@@ -593,7 +594,7 @@ export class MarsBot implements IMarsBot {
 
     for (const p of params) {
       if (p.action()) {
-        game.log(p.message, (b) => b.cardName(source));
+        game.log(p.message, (b) => b.cardName(cardName));
         return true;
       }
     }
@@ -627,13 +628,9 @@ export class MarsBot implements IMarsBot {
   public withoutMcGain(action: () => void): void {
     const mcBefore = this.megacredits;
     this.mcKeptThroughIntervention = 0;
-    let kept = 0;
-    try {
-      action();
-    } finally {
-      kept = this.mcKeptThroughIntervention ?? 0;
-      this.mcKeptThroughIntervention = undefined;
-    }
+    action();
+    const kept = this.mcKeptThroughIntervention ?? 0;
+    this.mcKeptThroughIntervention = undefined;
     const returned = this.megacredits - (mcBefore + kept);
     if (returned > 0) {
       this.megacredits = mcBefore + kept;

@@ -36,16 +36,16 @@ describe('MarsBotAmazonisRules', () => {
 
   describe('Terralabs', () => {
     for (const run of [
-      {boardName: BoardName.AMAZONIS_PLANITIA, generation: 9, count: 1},
-      {boardName: BoardName.AMAZONIS_PLANITIA, generation: 10, count: 2},
-      {boardName: BoardName.THARSIS, generation: 9, count: 2},
+      {boardName: BoardName.AMAZONIS_PLANITIA, generation: 9, expected: 1},
+      {boardName: BoardName.AMAZONIS_PLANITIA, generation: 10, expected: 2},
+      {boardName: BoardName.THARSIS, generation: 9, expected: 2},
     ]) {
-      it(`draws ${run.count} card(s) in generation ${run.generation} on ${run.boardName}`, () => {
+      it(`draws ${run.expected} card(s) in generation ${run.generation} on ${run.boardName}`, () => {
         const {marsBot, calls} = recorder(run.boardName, run.generation);
 
         new TerralabsResearchMarsBot().beforeActionPhase(marsBot);
 
-        expect(calls).deep.eq([`drawProjectCardsToActionDeck(${run.count})`]);
+        expect(calls).deep.eq([`drawProjectCardsToActionDeck(${run.expected})`]);
       });
     }
   });

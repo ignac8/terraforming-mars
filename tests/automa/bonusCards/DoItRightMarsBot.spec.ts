@@ -11,8 +11,8 @@ describe('DoItRightMarsBot', () => {
   beforeEach(resetCorpRegistry);
 
   for (const run of [
-    {temperature: -26, after: -22},
-    {temperature: -30, after: -30},
+    {temperature: -26, expected: -22},
+    {temperature: -30, expected: -30},
   ] as const) {
     it('resolves the first Lobbyists branch that applies, else nothing, and is never destroyed: ' + JSON.stringify(run), () => {
       const [game, human, botPlayer] = testGame(2);
@@ -21,7 +21,7 @@ describe('DoItRightMarsBot', () => {
 
       const destroyed = new DoItRightMarsBot().resolve(marsBot);
 
-      expect(game.getTemperature()).eq(run.after);
+      expect(game.getTemperature()).eq(run.expected);
       expect(game.getOxygenLevel()).eq(0);
       expect(game.board.getOceanSpaces()).is.empty;
       expect(destroyed).is.false;

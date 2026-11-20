@@ -149,13 +149,13 @@ export interface IMarsBot {
    */
   raiseTemperature(steps: 1 | 2): void;
   /**
-   * Raises the global parameter furthest from completion, for the bonus card `source`.
+   * Raises the global parameter furthest from completion, for the bonus card `cardName`.
    *
    * Distance counts steps remaining (a temperature step is 2 degrees), and a tie goes to oxygen, then
    * oceans, then temperature. With `allowCorpIntercept` false, no corp may cancel the raise. Returns
    * false when every parameter is already complete.
    */
-  advanceFurthestParameter(source: CardName, allowCorpIntercept?: boolean): boolean;
+  advanceFurthestParameter(cardName: CardName, allowCorpIntercept?: boolean): boolean;
   /**
    * Places a greenery for the bot on a space that `filter` accepts, raising the oxygen.
    *

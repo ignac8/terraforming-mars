@@ -281,6 +281,7 @@ export class AutomaGameSetup {
     const card = game.projectDeck.draw(game);
     if (card !== undefined) {
       game.projectDeck.discardPile.push(card);
+      game.log('MarsBot reveals ${0} to place a delegate', (b) => b.card(card, {cost: true}));
     }
     // Place 1 MarsBot delegate in a random party (only if reserve is non-empty)
     if (!turmoil.delegateReserve.has(marsBotPlayer)) {

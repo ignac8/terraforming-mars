@@ -140,8 +140,8 @@ describe('MarsBotMapRules', () => {
     }
 
     for (const run of [
-      {boardName: BoardName.AMAZONIS_PLANITIA, cubeSpace: 10},
-      {boardName: BoardName.THARSIS, cubeSpace: 9},
+      {boardName: BoardName.AMAZONIS_PLANITIA, expected: 10},
+      {boardName: BoardName.THARSIS, expected: 9},
     ] as const) {
       it('unlocks the 2nd Trade Fleet on its Energy track space: ' + JSON.stringify(run), () => {
         const [game] = testGame(1, {automa: true, coloniesExtension: true, boardName: run.boardName});
@@ -149,14 +149,14 @@ describe('MarsBotMapRules', () => {
         const energyTrack = marsBot.marsBotBoard.tagToTrack[Tag.POWER]!;
         const track = marsBot.marsBotBoard.tracks[energyTrack];
 
-        while (track.position < run.cubeSpace - 1) {
+        while (track.position < run.expected - 1) {
           marsBot.turnResolver.advanceTrack(energyTrack);
         }
-        expect(track.position).eq(run.cubeSpace - 1);
+        expect(track.position).eq(run.expected - 1);
         expect(marsBot.hasSecondTradeFleet).is.false;
 
         marsBot.turnResolver.advanceTrack(energyTrack);
-        expect(track.position).eq(run.cubeSpace);
+        expect(track.position).eq(run.expected);
         expect(marsBot.hasSecondTradeFleet).is.true;
       });
     }

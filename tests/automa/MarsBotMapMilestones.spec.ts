@@ -500,16 +500,16 @@ describe('MarsBot map milestones and awards', () => {
     });
 
     for (const run of [
-      {boardName: BoardName.AMAZONIS_PLANITIA, modularMA: false, supported: true},
-      {boardName: BoardName.THARSIS, modularMA: false, supported: false},
-      {boardName: BoardName.AMAZONIS_PLANITIA, modularMA: true, supported: false},
+      {boardName: BoardName.AMAZONIS_PLANITIA, modularMA: false, expected: true},
+      {boardName: BoardName.THARSIS, modularMA: false, expected: false},
+      {boardName: BoardName.AMAZONIS_PLANITIA, modularMA: true, expected: false},
     ]) {
       it('supports Merchant3, Innovator and Physicist only in a game on the map without the modular milestones: ' + JSON.stringify(run), () => {
         const options = {boardName: run.boardName, modularMA: run.modularMA, venusNextExtension: true, turmoilExtension: true} as GameOptions;
 
-        expect(AutomaGameSetup.supportsMilestone('Merchant3', options)).eq(run.supported);
-        expect(AutomaGameSetup.supportsAward('Innovator', options)).eq(run.supported);
-        expect(AutomaGameSetup.supportsAward('Physicist', options)).eq(run.supported);
+        expect(AutomaGameSetup.supportsMilestone('Merchant3', options)).eq(run.expected);
+        expect(AutomaGameSetup.supportsAward('Innovator', options)).eq(run.expected);
+        expect(AutomaGameSetup.supportsAward('Physicist', options)).eq(run.expected);
       });
     }
   });
