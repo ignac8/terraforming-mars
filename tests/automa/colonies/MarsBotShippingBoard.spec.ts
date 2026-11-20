@@ -57,24 +57,24 @@ describe('MarsBotShippingBoard (C-18)', () => {
     });
 
     it('stores resources for a normal colony', () => {
-      marsBot.shippingBoard.add(ColonyName.CERES, 2, marsBot);
+      marsBot.shippingBoard.add(ColonyName.CERES, 2);
       expect(marsBot.shippingBoard.get(ColonyName.CERES)).to.eq(2);
     });
 
     it('accumulates resources across multiple adds', () => {
-      marsBot.shippingBoard.add(ColonyName.LUNA, 2, marsBot);
-      marsBot.shippingBoard.add(ColonyName.LUNA, 1, marsBot);
+      marsBot.shippingBoard.add(ColonyName.LUNA, 2);
+      marsBot.shippingBoard.add(ColonyName.LUNA, 1);
       expect(marsBot.shippingBoard.get(ColonyName.LUNA)).to.eq(3);
     });
 
     it('silently ignores Europa (C-24d)', () => {
-      marsBot.shippingBoard.add(ColonyName.EUROPA, 5, marsBot);
+      marsBot.shippingBoard.add(ColonyName.EUROPA, 5);
       expect(marsBot.shippingBoard.get(ColonyName.EUROPA)).to.eq(0);
     });
 
     it('stores resources for Titan but no overflow check (C-23)', () => {
       // Add 7 to Titan; should NOT trigger track advance (exempt from C-12)
-      marsBot.shippingBoard.add(ColonyName.TITAN, 7, marsBot);
+      marsBot.shippingBoard.add(ColonyName.TITAN, 7);
       expect(marsBot.shippingBoard.get(ColonyName.TITAN)).to.eq(7);
       // Track positions unchanged
       const eventTrackIdx = marsBot.marsBotBoard.tagToTrack[Tag.EVENT]!;
@@ -93,7 +93,7 @@ describe('MarsBotShippingBoard (C-18)', () => {
     it('Ceres overflow advances Building track', () => {
       const buildingIdx = marsBot.marsBotBoard.tagToTrack[Tag.BUILDING]!;
       const before = marsBot.marsBotBoard.tracks[buildingIdx].position;
-      marsBot.shippingBoard.add(ColonyName.CERES, 5, marsBot);
+      marsBot.shippingBoard.add(ColonyName.CERES, 5);
       expect(marsBot.marsBotBoard.tracks[buildingIdx].position).to.be.greaterThan(before);
       expect(marsBot.shippingBoard.get(ColonyName.CERES)).to.eq(0);
     });
@@ -101,7 +101,7 @@ describe('MarsBotShippingBoard (C-18)', () => {
     it('Luna overflow advances Event track', () => {
       const eventIdx = marsBot.marsBotBoard.tagToTrack[Tag.EVENT]!;
       const before = marsBot.marsBotBoard.tracks[eventIdx].position;
-      marsBot.shippingBoard.add(ColonyName.LUNA, 5, marsBot);
+      marsBot.shippingBoard.add(ColonyName.LUNA, 5);
       expect(marsBot.marsBotBoard.tracks[eventIdx].position).to.be.greaterThan(before);
       expect(marsBot.shippingBoard.get(ColonyName.LUNA)).to.eq(0);
     });
@@ -109,29 +109,29 @@ describe('MarsBotShippingBoard (C-18)', () => {
     it('does NOT overflow below threshold (4 resources)', () => {
       const buildingIdx = marsBot.marsBotBoard.tagToTrack[Tag.BUILDING]!;
       const before = marsBot.marsBotBoard.tracks[buildingIdx].position;
-      marsBot.shippingBoard.add(ColonyName.CERES, 4, marsBot);
+      marsBot.shippingBoard.add(ColonyName.CERES, 4);
       expect(marsBot.marsBotBoard.tracks[buildingIdx].position).to.eq(before);
       expect(marsBot.shippingBoard.get(ColonyName.CERES)).to.eq(4);
     });
 
     it('leaves remainder after overflow', () => {
-      marsBot.shippingBoard.add(ColonyName.CERES, 7, marsBot);
+      marsBot.shippingBoard.add(ColonyName.CERES, 7);
       expect(marsBot.shippingBoard.get(ColonyName.CERES)).to.eq(2);
     });
 
     it('loops if ≥5 still after removal (adding 10 overflows twice)', () => {
       const buildingIdx = marsBot.marsBotBoard.tagToTrack[Tag.BUILDING]!;
       const before = marsBot.marsBotBoard.tracks[buildingIdx].position;
-      marsBot.shippingBoard.add(ColonyName.CERES, 10, marsBot);
+      marsBot.shippingBoard.add(ColonyName.CERES, 10);
       expect(marsBot.marsBotBoard.tracks[buildingIdx].position).to.eq(before + 2);
       expect(marsBot.shippingBoard.get(ColonyName.CERES)).to.eq(0);
     });
 
     it('partial overflow from previous + new resources', () => {
-      marsBot.shippingBoard.add(ColonyName.CERES, 3, marsBot);
+      marsBot.shippingBoard.add(ColonyName.CERES, 3);
       const buildingIdx = marsBot.marsBotBoard.tagToTrack[Tag.BUILDING]!;
       const before = marsBot.marsBotBoard.tracks[buildingIdx].position;
-      marsBot.shippingBoard.add(ColonyName.CERES, 2, marsBot); // total = 5 → overflow
+      marsBot.shippingBoard.add(ColonyName.CERES, 2); // total = 5 → overflow
       expect(marsBot.marsBotBoard.tracks[buildingIdx].position).to.eq(before + 1);
       expect(marsBot.shippingBoard.get(ColonyName.CERES)).to.eq(0);
     });
@@ -141,14 +141,14 @@ describe('MarsBotShippingBoard (C-18)', () => {
     it('round-trips shipping board storage', () => {
       const [game] = testGame(1, {automa: true, coloniesExtension: true, boardName: BoardName.THARSIS});
       const marsBot = getMarsBot(game);
-      marsBot.shippingBoard.add(ColonyName.CERES, 3, marsBot);
-      marsBot.shippingBoard.add(ColonyName.LUNA, 2, marsBot);
+      marsBot.shippingBoard.add(ColonyName.CERES, 3);
+      marsBot.shippingBoard.add(ColonyName.LUNA, 2);
 
       const state = marsBot.serialize();
       expect(state.shippingBoard).to.not.be.undefined;
 
       const marsBot2 = getMarsBot(game); // Fresh ref from same game
-      marsBot2.shippingBoard = new MarsBotShippingBoard();
+      marsBot2.shippingBoard = new MarsBotShippingBoard(marsBot2);
       marsBot2.restoreState(state);
 
       expect(marsBot2.shippingBoard.get(ColonyName.CERES)).to.eq(3);

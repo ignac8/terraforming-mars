@@ -85,7 +85,7 @@ export function placeColonyForMarsBot(colony: IColony, marsBot: MarsBot): void {
     if (!game.gameOptions.venusNextExtension) {
       // Without Venus: store as floaters in Titan shipping board area
       game.log('MarsBot builds colony on ${0}, gains 2 floaters in Titan storage', (b) => b.colony(colony));
-      marsBot.shippingBoard.add(ColonyName.TITAN, 2, marsBot);
+      marsBot.shippingBoard.add(ColonyName.TITAN, 2);
     } else {
       // With Venus: add 2 floaters to floaters
       game.log('MarsBot builds colony on ${0}, gains 2 floaters', (b) => b.colony(colony));
@@ -96,7 +96,7 @@ export function placeColonyForMarsBot(colony: IColony, marsBot: MarsBot): void {
 
   // Standard colony placement: 2 resources to shipping board (C-19)
   game.log('MarsBot builds colony on ${0}, gains 2 resources in storage', (b) => b.colony(colony));
-  marsBot.shippingBoard.add(colonyName, 2, marsBot);
+  marsBot.shippingBoard.add(colonyName, 2);
 }
 
 /**

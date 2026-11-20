@@ -237,7 +237,7 @@ describe('MarsBotTrader (C-17, C-20, C-22, C-24b)', () => {
         const scienceTrackIdx = marsBot.marsBotBoard.tagToTrack[Tag.SCIENCE]!;
         const before = marsBot.marsBotBoard.tracks[scienceTrackIdx].position;
         // Add 5 to Pluto → overflow → advance Science track
-        marsBot.shippingBoard.add(ColonyName.PLUTO, 5, marsBot);
+        marsBot.shippingBoard.add(ColonyName.PLUTO, 5);
         expect(marsBot.marsBotBoard.tracks[scienceTrackIdx].position).to.be.greaterThan(before);
         expect(marsBot.shippingBoard.get(ColonyName.PLUTO)).to.eq(0);
       });

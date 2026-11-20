@@ -225,7 +225,7 @@ describe('MarsBotColonyPlacer (C-15b, C-16a, C-19, C-24a)', () => {
       const titan = new Titan();
       game.colonies = [titan, new Luna()];
       // Add enough Titan floaters to hit overflow threshold
-      marsBot.shippingBoard.add(ColonyName.TITAN, 3, marsBot);
+      marsBot.shippingBoard.add(ColonyName.TITAN, 3);
       const plantIdx = marsBot.marsBotBoard.tagToTrack[Tag.PLANT]!;
       const plantBefore = marsBot.marsBotBoard.tracks[plantIdx].position;
       placeColonyForMarsBot(titan, marsBot); // Adds 2 more = 5 total, but exempt from C-12

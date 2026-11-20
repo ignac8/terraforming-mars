@@ -98,7 +98,7 @@ describe('MarsBot final greenery', () => {
       endGame(game);
       const tracks = marsBot.marsBotBoard.tracks.map((track) => track.position);
 
-      marsBot.shippingBoard.add(ColonyName.CERES, 5, marsBot);
+      marsBot.shippingBoard.add(ColonyName.CERES, 5);
 
       expect(marsBot.shippingBoard.get(ColonyName.CERES)).to.eq(5);
       expect(marsBot.marsBotBoard.tracks.map((track) => track.position)).deep.eq(tracks);
@@ -108,7 +108,7 @@ describe('MarsBot final greenery', () => {
       game.phase = Phase.ACTION;
       const tracks = marsBot.marsBotBoard.tracks.map((track) => track.position);
 
-      marsBot.shippingBoard.add(ColonyName.CERES, 5, marsBot);
+      marsBot.shippingBoard.add(ColonyName.CERES, 5);
 
       expect(marsBot.shippingBoard.get(ColonyName.CERES)).to.eq(0);
       expect(marsBot.marsBotBoard.tracks.map((track) => track.position)).not.deep.eq(tracks);

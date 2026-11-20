@@ -653,7 +653,7 @@ export class AutomaGameHooks {
       this.marsBot.floaters += 1;
       this.game.log('MarsBot gains 1 floater as Titan colony bonus (C-21, C-23)');
     } else {
-      this.marsBot.shippingBoard.add(colony.name, 1, this.marsBot);
+      this.marsBot.shippingBoard.add(colony.name, 1);
       this.game.log('MarsBot gains 1 resource to ${0} storage (C-21)', (b) => b.colony(colony));
     }
     return true;

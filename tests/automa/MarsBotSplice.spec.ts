@@ -184,7 +184,7 @@ describe('MarsBot and the player\'s Pharmacy Union', () => {
     const pharmacyUnion = new PharmacyUnion();
     human.playedCards.push(pharmacyUnion);
 
-    marsBot.shippingBoard.add(ColonyName.ENCELADUS, 5, marsBot);
+    marsBot.shippingBoard.add(ColonyName.ENCELADUS, 5);
     runAllActions(game);
 
     expect(pharmacyUnion.resourceCount).to.eq(1);
@@ -195,7 +195,7 @@ describe('MarsBot and the player\'s Pharmacy Union', () => {
     marsBot.setCorpAndSetup(getMarsBotCorp(CardName.ARKLIGHT)!);
     const mc = marsBot.turnResolver.megacredits;
 
-    marsBot.shippingBoard.add(ColonyName.GANYMEDE, 5, marsBot);
+    marsBot.shippingBoard.add(ColonyName.GANYMEDE, 5);
 
     // Only the plant track's own icons pay M€, not Arklight's "plant or animal" effect
     const plantTrack = marsBot.marsBotBoard.tracks[marsBot.marsBotBoard.tagToTrack[Tag.PLANT]!];

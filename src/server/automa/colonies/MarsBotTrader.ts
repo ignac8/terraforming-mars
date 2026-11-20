@@ -90,7 +90,7 @@ export function tradeWithColony(marsBot: MarsBot, colony: IColony): void {
         (b) => b.number(amount),
       );
     } else {
-      marsBot.shippingBoard.add(colony.name, amount, marsBot);
+      marsBot.shippingBoard.add(colony.name, amount);
       game.log(
         'MarsBot trades with ${0}, gains ${1} resource(s) to storage (C-20)',
         (b) => b.colony(colony).number(amount),

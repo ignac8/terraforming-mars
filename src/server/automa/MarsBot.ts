@@ -130,7 +130,7 @@ export class MarsBot implements IMarsBot {
   public hasSecondTradeFleet: boolean = false;
 
   /** Shipping Board with 11 storage areas, one per colony tile (C-18). */
-  public shippingBoard: MarsBotShippingBoard = new MarsBotShippingBoard();
+  public shippingBoard: MarsBotShippingBoard = new MarsBotShippingBoard(this);
 
   /**
    * True while Government Intervention raises Venus: its global parameter bonuses and the colony the
@@ -784,7 +784,7 @@ export class MarsBot implements IMarsBot {
 
   public addFloaters(count: number): void {
     if (this.usesTitanStorageForFloaters()) {
-      this.shippingBoard.add(ColonyName.TITAN, count, this);
+      this.shippingBoard.add(ColonyName.TITAN, count);
     } else {
       this.floaters += count;
     }

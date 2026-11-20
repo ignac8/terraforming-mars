@@ -120,7 +120,7 @@ describe('MarsBot boards', () => {
     const scienceBefore = science.position;
     const bioBefore = bio.position;
 
-    marsBot.shippingBoard.add(ColonyName.ENCELADUS, 5, marsBot);
+    marsBot.shippingBoard.add(ColonyName.ENCELADUS, 5);
 
     expect(science.position).is.greaterThan(scienceBefore);
     expect(bio.position).eq(bioBefore);
