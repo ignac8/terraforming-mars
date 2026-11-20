@@ -499,5 +499,28 @@ describe('TournamentMode', () => {
       expect(seen(p2, p1)).deep.eq({cards: 2, megacredits: 14});
       expect(boughtLogs(game)).has.length(1);
     });
+
+    // The Planner milestone (Tharsis) scores a player's hand size, which getMilestones also sends
+    // to opponents. Without the snapshot it would reveal how many cards a player just bought.
+    it('not through the Planner milestone score', () => {
+      const [game, p1, p2] = testGame(2, {tournamentExpansion: true, judgeLink: true});
+      expect(game.milestones.map(toName)).contains('Planner');
+      p1.megaCredits = 20;
+      p2.megaCredits = 20;
+      game.gotoResearchPhase();
+
+      const p1Cards = cast(p1.getWaitingFor(), SelectCard);
+      p1.process({type: 'card', cards: p1Cards.cards.slice(0, 2).map(toName)});
+
+      const plannerScore = (model: {milestones: ReadonlyArray<{name: string, scores: ReadonlyArray<{color: string, score: number}>}>}) =>
+        model.milestones.find((m) => m.name === 'Planner')!.scores.find((s) => s.color === p1.color)!.score;
+
+      // p1 just bought 2 cards; opponents and spectators still see the frozen pre-buy hand of 0.
+      expect(plannerScore(Server.getPlayerModel(p2).game)).eq(0);
+      expect(plannerScore(Server.getSpectatorModel(game).game)).eq(0);
+      // p1's own view and the judge's view stay live.
+      expect(plannerScore(Server.getPlayerModel(p1).game)).eq(2);
+      expect(plannerScore(Server.getJudgeModel(game).game)).eq(2);
+    });
   });
 });

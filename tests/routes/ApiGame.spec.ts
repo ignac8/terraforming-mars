@@ -31,6 +31,19 @@ describe('ApiGame', () => {
     expect(res.content).eq('Bad request: invalid game id');
   });
 
+  it('does not expose the judge id', async () => {
+    const player = TestPlayer.BLACK.newPlayer();
+    const game = Game.newInstance('game-valid-id', [player], player, 'spectatorid');
+    game.judgeId = 'jtest';
+    scaffolding.ctx.gameLoader.add(game);
+    scaffolding.url = '/api/game?id=game-valid-id';
+    await scaffolding.get(ApiGame.INSTANCE, res);
+    const json = JSON.parse(res.content);
+    // The judge seat is claimed by the first caller, so its id must not leak on this unauthenticated route.
+    expect(json.judgeId).is.undefined;
+    expect(json.spectatorId).eq('spectatorid');
+  });
+
   it('valid id', async () => {
     const player = TestPlayer.BLACK.newPlayer();
     scaffolding.ctx.gameLoader.add(Game.newInstance('game-valid-id', [player], player, 'spectatorid'));

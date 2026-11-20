@@ -1,6 +1,6 @@
 import {CardModel} from '../../common/models/CardModel';
 import {Color} from '../../common/Color';
-import {IGame} from '../IGame';
+import {IGame, ResearchSnapshot} from '../IGame';
 import {GameOptions} from '../game/GameOptions';
 import {SimpleGameModel} from '../../common/models/SimpleGameModel';
 import {GameOptionsModel} from '../../common/models/GameOptionsModel';
@@ -24,11 +24,54 @@ import {createPathfindersModel} from './PathfindersModel';
 import {MoonModel} from '../../common/models/MoonModel';
 import {CardName} from '../../common/cards/CardName';
 import {AwardScorer} from '../awards/AwardScorer';
-import {SpaceId} from '../../common/Types';
+import {MilestoneName} from '../../common/ma/MilestoneName';
+import {AwardName} from '../../common/ma/AwardName';
+import {PlayerId, SpaceId} from '../../common/Types';
 import {cardsToModel, coloniesToModel} from './ModelUtils';
 import {toName} from '../../common/utils/utils';
 import {MAX_AWARDS, MAX_MILESTONES} from '../../common/constants';
 import {escapeVelocityPenalty} from '../game/calculateVictoryPoints';
+
+/**
+ * Whose view a game model is being built for. A player sees their own live research values; the
+ * judge sees everyone's live; a spectator (undefined) sees everyone's frozen to the snapshot.
+ */
+type Viewer = IPlayer | 'judge' | undefined;
+
+type FrozenSnapshot = {cards: number, megacredits: number};
+/** Maps a live milestone/award score to what it was at the pre-research snapshot's hand size / M€. */
+type FrozenScore = (live: number, player: IPlayer, frozen: FrozenSnapshot) => number;
+
+// During the tournament research reveal window, opponents' hand size and M€ are frozen to a
+// pre-purchase snapshot (see getPlayer / researchSnapshot). A milestone or award whose score reads
+// one of those hidden values would otherwise leak a player's post-purchase figure to opponents
+// before the reveal, so the ones that do are listed here with the adjustment that restores the
+// frozen score. Keep these in sync with the matching getScore methods.
+const frozenHandScore: FrozenScore = (live, player, frozen) => live - player.cardsInHand.length + frozen.cards;
+const frozenMegacreditScore: FrozenScore = (live, player, frozen) => live - player.megaCredits + frozen.megacredits;
+
+const RESEARCH_SENSITIVE_MILESTONES: Partial<Record<MilestoneName, FrozenScore>> = {
+  Planner: frozenHandScore, // cards in hand
+  Minimalist: frozenHandScore, // cards in hand
+  Capitalist: frozenMegacreditScore, // M€
+  Briber: frozenMegacreditScore, // spendableMegacredits(), which varies only by M€ during research
+};
+
+const RESEARCH_SENSITIVE_AWARDS: Partial<Record<AwardName, FrozenScore>> = {
+  Visionary: frozenHandScore, // cards in hand
+  // Collector counts distinct resource types held, so only whether any M€ is held can leak.
+  Collector: (live, player, frozen) => live - (player.megaCredits > 0 ? 1 : 0) + (frozen.megacredits > 0 ? 1 : 0),
+};
+
+/** The research snapshot to score against: none for the judge, who sees live values. */
+function researchSnapshotFor(game: IGame, viewer: Viewer): ResearchSnapshot | undefined {
+  return viewer === 'judge' ? undefined : game.researchSnapshot;
+}
+
+/** The viewer's own seat, whose scores stay live. Undefined for the judge and for spectators. */
+function viewerSeatId(viewer: Viewer): PlayerId | undefined {
+  return viewer !== undefined && viewer !== 'judge' ? viewer.id : undefined;
+}
 
 export class Server {
   /**
@@ -37,7 +80,7 @@ export class Server {
    * While an incognito game runs, the players come out alphabetical, with the neutral color. Ids are kept.
    * Pass `real` for the organizer's routes, which need the true seat order and colors.
    */
-  public static getSimpleGameModel(game: IGame, options?: {real?: boolean}): SimpleGameModel {
+  public static getSimpleGameModel(game: IGame, options?: {real?: boolean, includeJudgeId?: boolean}): SimpleGameModel {
     const hidden = game.gameOptions.incognito && game.phase !== Phase.END && options?.real !== true;
     const players = game.playersInGenerationOrder.map((player) => ({
       color: hidden ? 'neutral' as const : player.color,
@@ -55,7 +98,10 @@ export class Server {
       phase: game.phase,
       players,
       spectatorId: game.spectatorId,
-      judgeId: game.judgeId,
+      // Whoever first opens the judge link claims the judge seat, so the judge id only goes to the
+      // organizer's create-game response (includeJudgeId) and serverId-gated callers (real), never
+      // the unauthenticated /api/game route.
+      judgeId: (options?.real === true || options?.includeJudgeId === true) ? game.judgeId : undefined,
       gameOptions: this.getGameOptionsAsModel(game.gameOptions),
       lastSoloGeneration: game.lastSoloGeneration(),
       expectedPurgeTimeMs: game.expectedPurgeTimeMs(),
@@ -77,10 +123,10 @@ export class Server {
     };
   }
 
-  public static getGameModel(game: IGame): GameModel {
+  public static getGameModel(game: IGame, viewer?: Viewer): GameModel {
     return {
       aresData: game.aresData,
-      awards: this.getAwards(game),
+      awards: this.getAwards(game, viewer),
       colonies: coloniesToModel(game, game.colonies, false, true),
       deckSize: game.projectDeck.drawPile.length,
       // Unbought cards are discarded as each player chooses, so the size waits like the purchases do.
@@ -95,7 +141,7 @@ export class Server {
       isSoloModeWin: game.isSoloModeWin(),
       isTerraformed: game.marsIsTerraformed(),
       lastSoloGeneration: game.lastSoloGeneration(),
-      milestones: this.getMilestones(game),
+      milestones: this.getMilestones(game, viewer),
       moon: this.getMoonModel(game),
       name: game.name,
       oceans: game.board.getOceanSpaces().length,
@@ -129,7 +175,7 @@ export class Server {
       ...privates,
       // A frozen game takes no input. The judge still sees every prompt.
       waitingFor: game.frozen ? undefined : privates.waitingFor,
-      game: this.getGameModel(player.game),
+      game: this.getGameModel(player.game, player),
       id: player.id,
       password: player.password,
       color: player.color,
@@ -166,7 +212,7 @@ export class Server {
       color: 'neutral',
       id: game.judgeId,
       password: game.judgePassword,
-      game: this.getGameModel(game),
+      game: this.getGameModel(game, 'judge'),
       // The judge sees every player's VP. Passing true also skips the research-phase snapshot,
       // so the judge sees live values. Player ids stay hidden until the game ends.
       players: players.map((p) => this.getPlayer(p, true)),
@@ -205,10 +251,12 @@ export class Server {
     });
   }
 
-  public static getMilestones(game: IGame): Array<ClaimedMilestoneModel> {
+  public static getMilestones(game: IGame, viewer?: Viewer): Array<ClaimedMilestoneModel> {
     const allMilestones = game.milestones;
     const claimedMilestones = game.claimedMilestones;
     const milestoneModels: Array<ClaimedMilestoneModel> = [];
+    const snapshot = researchSnapshotFor(game, viewer);
+    const viewerId = viewerSeatId(viewer);
 
     for (const milestone of allMilestones) {
       const claimed = claimedMilestones.find(
@@ -218,7 +266,7 @@ export class Server {
       if (claimed === undefined && claimedMilestones.length < MAX_MILESTONES) {
         scores = game.players.map((player) => ({
           color: player.color,
-          score: milestone.getScore(player),
+          score: this.researchScore(milestone.getScore(player), RESEARCH_SENSITIVE_MILESTONES[milestone.name], player, snapshot, viewerId),
           // Tournament games leave spotting a claimable milestone to the players.
           claimable: !game.gameOptions.tournamentExpansion && milestone.canClaim(player),
         }));
@@ -235,9 +283,11 @@ export class Server {
     return milestoneModels;
   }
 
-  public static getAwards(game: IGame): Array<FundedAwardModel> {
+  public static getAwards(game: IGame, viewer?: Viewer): Array<FundedAwardModel> {
     const fundedAwards = game.fundedAwards;
     const awardModels: Array<FundedAwardModel> = [];
+    const snapshot = researchSnapshotFor(game, viewer);
+    const viewerId = viewerSeatId(viewer);
 
     for (const award of game.awards) {
       const funded = fundedAwards.find((a) => a.award.name === award.name);
@@ -246,7 +296,7 @@ export class Server {
       if (fundedAwards.length < MAX_AWARDS || funded !== undefined) {
         scores = game.players.map((player) => ({
           color: player.color,
-          score: scorer.get(player),
+          score: this.researchScore(scorer.get(player), RESEARCH_SENSITIVE_AWARDS[award.name], player, snapshot, viewerId),
         }));
       }
 
@@ -259,6 +309,24 @@ export class Server {
     }
 
     return awardModels;
+  }
+
+  /**
+   * A milestone or award score for one player, with any research-hidden value frozen to the
+   * snapshot for players other than the viewer, mirroring how getPlayer hides hand size and M€.
+   */
+  private static researchScore(
+    live: number,
+    frozenScore: FrozenScore | undefined,
+    player: IPlayer,
+    snapshot: ResearchSnapshot | undefined,
+    viewerId: PlayerId | undefined,
+  ): number {
+    if (frozenScore === undefined || snapshot === undefined || player.id === viewerId) {
+      return live;
+    }
+    const frozen = snapshot.players.get(player.id);
+    return frozen === undefined ? live : frozenScore(live, player, frozen);
   }
 
   public static getWaitingFor(
