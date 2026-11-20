@@ -29,6 +29,8 @@ const RECORDED = [
   'maybeDrawAndResolveBonusCard',
   'maybeClaimMilestone',
   'maybeFundAward',
+  'maybeDiscardProjectCardWithFewestTags',
+  'maybePlaceRandomColony',
 ] as const satisfies ReadonlyArray<keyof IMarsBot>;
 
 export type RecordingMarsBot = {
@@ -54,6 +56,14 @@ export function recordingMarsBot(fields: Partial<IMarsBot> = {}): RecordingMarsB
     advanceTrack: (trackIndex) => {
       record('advanceTrack')(trackIndex);
       marsBot.marsBotBoard.tracks[trackIndex].position++;
+    },
+    maybeAdvanceTrack: (trackIndex) => {
+      record('maybeAdvanceTrack')(trackIndex);
+      marsBot.marsBotBoard.tracks[trackIndex].position++;
+    },
+    loseMc: (amount) => {
+      record('loseMc')(amount);
+      return amount;
     },
     getCorpState: (key) => corpState.get(key) ?? 0,
     setCorpState: (key, value) => corpState.set(key, value),

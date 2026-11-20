@@ -12,7 +12,7 @@ import {runAllActions} from '../TestingUtils';
 import {IPlayer} from '../../src/server/IPlayer';
 import {GameLoader} from '../../src/server/database/GameLoader';
 import {GameId} from '../../src/common/Types';
-import {QueryResult} from 'pg';
+import {Pool, QueryResult} from 'pg';
 import {SelectInitialCards} from '../../src/server/inputs/SelectInitialCards';
 import {cast, range} from '../../src/common/utils/utils';
 import {SerializedGame} from '../../src/server/SerializedGame';
@@ -65,7 +65,7 @@ class TestPostgreSQL extends PostgreSQL implements ITestDatabase {
 
   public async afterEach() {
     for (const table of POSTGRESQL_TABLES) {
-      await this.client.query('DROP TABLE IF EXISTS ' + table);
+      await this.pool.query('DROP TABLE IF EXISTS ' + table);
     }
   }
 
@@ -83,7 +83,7 @@ class TestPostgreSQL extends PostgreSQL implements ITestDatabase {
   }
 
   async status(gameId: GameId): Promise<Status> {
-    const result = await this.client.query('SELECT DISTINCT status FROM games WHERE game_id = $1 LIMIT 1', [gameId]);
+    const result = await this.pool.query('SELECT DISTINCT status FROM games WHERE game_id = $1 LIMIT 1', [gameId]);
     const statusText = result.rows[0].status;
     if (statusText === 'running' || statusText === 'finished') {
       return statusText;
@@ -92,7 +92,7 @@ class TestPostgreSQL extends PostgreSQL implements ITestDatabase {
   }
 
   async completedTime(gameId: GameId): Promise<number | undefined> {
-    const res = await this.client.query('SELECT completed_time FROM completed_game WHERE game_id = $1', [gameId]);
+    const res = await this.pool.query('SELECT completed_time FROM completed_game WHERE game_id = $1', [gameId]);
     if (res.rows.length === 0 || res.rows[0] === undefined) {
       return undefined;
     }
@@ -101,39 +101,43 @@ class TestPostgreSQL extends PostgreSQL implements ITestDatabase {
   }
 
   async hasGameResults(gameId: GameId): Promise<boolean> {
-    const res = await this.client.query('SELECT 1 FROM game_results WHERE game_id = $1', [gameId]);
+    const res = await this.pool.query('SELECT 1 FROM game_results WHERE game_id = $1', [gameId]);
     return res.rows.length > 0;
   }
 
   setCompletedTime(gameId: GameId, timestampSeconds: number): Promise<QueryResult<Record<string, unknown>>> {
-    return this.client.query('UPDATE completed_game SET completed_time = to_timestamp($1) WHERE game_id = $2', [timestampSeconds, gameId]);
+    return this.pool.query('UPDATE completed_game SET completed_time = to_timestamp($1) WHERE game_id = $2', [timestampSeconds, gameId]);
   }
 
   // Simulates an orphaned row: deletes every `games` row for a game while leaving its
   // `game` and `participants` rows behind.
   public async deleteGamesRows(gameId: GameId): Promise<void> {
-    await this.client.query('DELETE FROM games WHERE game_id = $1', [gameId]);
+    await this.pool.query('DELETE FROM games WHERE game_id = $1', [gameId]);
   }
 
   // The shared log and options of a game, as stored.
   public async getLogRow(gameId: GameId): Promise<{log: string, options: string}> {
-    const res = await this.client.query('SELECT log, options FROM game WHERE game_id = $1', [gameId]);
+    const res = await this.pool.query('SELECT log, options FROM game WHERE game_id = $1', [gameId]);
     return res.rows[0];
   }
 
   public async setLog(gameId: GameId, log: string): Promise<void> {
-    await this.client.query('UPDATE game SET log = $1 WHERE game_id = $2', [log, gameId]);
+    await this.pool.query('UPDATE game SET log = $1 WHERE game_id = $2', [log, gameId]);
   }
 
   public async dropGameTable(): Promise<void> {
-    await this.client.query('DROP TABLE game');
+    await this.pool.query('DROP TABLE game');
   }
 
   // Reads the two raw storage columns for a single save so tests can assert which
   // representation (plain-text `game` vs. compressed `game_compressed`) is populated.
   public async getRawGame(gameId: GameId, saveId: number): Promise<{game: string | null, gameCompressed: Buffer | null}> {
-    const res = await this.client.query('SELECT game, game_compressed FROM games WHERE game_id = $1 AND save_id = $2', [gameId, saveId]);
+    const res = await this.pool.query('SELECT game, game_compressed FROM games WHERE game_id = $1 AND save_id = $2', [gameId, saveId]);
     return {game: res.rows[0].game, gameCompressed: res.rows[0].game_compressed};
+  }
+
+  public getPool(): Pool {
+    return this.pool;
   }
 }
 
@@ -873,6 +877,65 @@ describeDatabaseSuite({
       db.setCompressOnWrite(false);
       const serialized = await db.getGameVersion(game.id, saveId);
       expect(serialized.players[0].megaCredits).eq(91);
+    });
+
+    it('saveGame rolls back every write when one fails', async () => {
+      const db = dbFactory();
+
+      // saveGame writes games, then game. Without the game table the second write fails.
+      await db.getPool().query('DROP TABLE game');
+
+      const player = TestPlayer.BLACK.newPlayer();
+      const gameId = 'game-id-transaction';
+      const game = Game.newInstance(gameId, [player], player, 'spectatorid');
+      await db.awaitAllSaves();
+
+      // stats() queries the game table, so read the counter directly.
+      expect(db.getStatistics().saveErrorCount).eq(1);
+      expect(await db.getSaveIds('game-id-transaction')).is.empty;
+      expect(game.lastSaveId).eq(0);
+    });
+
+    it('overlapping saves each store the save id they were taken with', async () => {
+      const db = dbFactory();
+      const player = TestPlayer.BLACK.newPlayer();
+      const game = Game.newInstance('game-id-overlap', [player], player, 'spectatorid');
+      await db.awaitAllSaves();
+
+      await Promise.all([db.saveGame(game), db.saveGame(game)]);
+
+      expect(await db.getSaveIds(game.id)).has.members([0, 1, 2]);
+      expect((await db.getGameVersion(game.id, 1)).lastSaveId).eq(1);
+      expect((await db.getGameVersion(game.id, 2)).lastSaveId).eq(2);
+      expect(game.lastSaveId).eq(3);
+    });
+
+    it('writes overlapping saves of one game in the order they were taken', async () => {
+      const db = dbFactory();
+      const player = TestPlayer.BLACK.newPlayer();
+      const game = Game.newInstance('game-id-in-order', [player], player, 'spectatorid');
+      await db.awaitAllSaves();
+
+      // Holds the first connection back until the second save is written, or 200ms pass.
+      let secondWritten = () => {};
+      const secondDone = new Promise<void>((resolve) => {
+        secondWritten = resolve;
+      });
+      const pool = db.getPool();
+      const connect = pool.connect.bind(pool);
+      pool.connect = async () => {
+        pool.connect = connect;
+        await Promise.race([secondDone, new Promise((resolve) => setTimeout(resolve, 200))]);
+        return connect();
+      };
+
+      const first = db.saveGame(game);
+      game.log('one more');
+      const second = db.saveGame(game).then(secondWritten);
+      await Promise.all([first, second]);
+
+      const loaded = await db.getGame(game.id);
+      expect(loaded.gameLog).has.length(game.gameLog.length);
     });
   },
 });
