@@ -23,7 +23,7 @@ describe('MarsBotTrader (C-17, C-20, C-22, C-24b)', () => {
       const [game] = testGame(1, {automa: true, coloniesExtension: true, boardName: BoardName.THARSIS});
       const marsBot = getMarsBot(game);
       game.colonies = [];
-      expect(selectTradeColony(game, marsBot)).to.be.undefined;
+      expect(selectTradeColony(marsBot)).to.be.undefined;
     });
 
     it('returns undefined when all colonies already visited (C-22)', () => {
@@ -32,7 +32,7 @@ describe('MarsBotTrader (C-17, C-20, C-22, C-24b)', () => {
       const luna = new Luna();
       luna.visitor = 'psome-player';
       game.colonies = [luna];
-      expect(selectTradeColony(game, marsBot)).to.be.undefined;
+      expect(selectTradeColony(marsBot)).to.be.undefined;
     });
 
     it('selects the colony with the highest track position (C-17a)', () => {
@@ -43,7 +43,7 @@ describe('MarsBotTrader (C-17, C-20, C-22, C-24b)', () => {
       const ceres = new Ceres();
       ceres.trackPosition = 5;
       game.colonies = [luna, ceres];
-      expect(selectTradeColony(game, marsBot)!.name).to.eq(ColonyName.CERES);
+      expect(selectTradeColony(marsBot)!.name).to.eq(ColonyName.CERES);
     });
 
     it('tiebreaks by preferring a colony where MarsBot has a presence (C-17b)', () => {
@@ -55,7 +55,7 @@ describe('MarsBotTrader (C-17, C-20, C-22, C-24b)', () => {
       ceres.trackPosition = 4;
       ceres.colonies = [marsBot.player.id];
       game.colonies = [luna, ceres];
-      expect(selectTradeColony(game, marsBot)!.name).to.eq(ColonyName.CERES);
+      expect(selectTradeColony(marsBot)!.name).to.eq(ColonyName.CERES);
     });
 
     it('uses random tiebreak (C-17c) when still tied after C-17a and C-17b', () => {
@@ -70,7 +70,7 @@ describe('MarsBotTrader (C-17, C-20, C-22, C-24b)', () => {
       // Ensure there is at least one card in the project deck
       expect(game.projectDeck.drawPile.length).to.be.greaterThan(0);
       const discardBefore = game.projectDeck.discardPile.length;
-      const result = selectTradeColony(game, marsBot);
+      const result = selectTradeColony(marsBot);
       // Should have flipped one card (random tiebreak)
       expect(game.projectDeck.discardPile.length).to.eq(discardBefore + 1);
       expect(result).to.not.be.undefined;
@@ -82,7 +82,7 @@ describe('MarsBotTrader (C-17, C-20, C-22, C-24b)', () => {
       const luna = new Luna();
       luna.isActive = false;
       game.colonies = [luna];
-      expect(selectTradeColony(game, marsBot)).to.be.undefined;
+      expect(selectTradeColony(marsBot)).to.be.undefined;
     });
   });
 

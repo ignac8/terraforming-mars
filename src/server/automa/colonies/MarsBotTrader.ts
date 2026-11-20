@@ -1,30 +1,24 @@
-import {IGame} from '../../IGame';
-import {IColony} from '../../colonies/IColony';
-import {ColonyName} from '../../../common/colonies/ColonyName';
-import {ColoniesHandler} from '../../colonies/ColoniesHandler';
-import type {MarsBot} from '../MarsBot';
-import {pickByFlippedCard} from '../MarsBotCardFlip';
+import {CardName} from '@/common/cards/CardName';
+import {ColonyName} from '@/common/colonies/ColonyName';
+import {IGame} from '@/server/IGame';
+import {IColony} from '@/server/colonies/IColony';
+import {ColoniesHandler} from '@/server/colonies/ColoniesHandler';
+import {IMarsBot} from '@/server/automa/IMarsBot';
+import {pickByFlippedCard} from '@/server/automa/MarsBotCardFlip';
 
-/**
- * MarsBot colony trading logic (C-17, C-20, C-22, C-24b, C-24c).
- */
-
-/** C-17c: Break a tie among candidate tiles by flipping a project card, like C-15b. */
+/** Breaks a tie among candidate tiles by flipping a project card, like C-15b (C-17c). */
 function selectTiedColony(game: IGame, candidates: Array<IColony>): IColony {
   return pickByFlippedCard(game, candidates) ?? candidates[0];
 }
 
 /**
- * Select the colony tile for MarsBot to trade with (C-17a/b/c).
+ * The colony tile MarsBot trades with (C-17).
  *
- * Priority:
- *   C-17a: Highest track position.
- *   C-17b: Tiebreak — prefer tiles where MarsBot already has a colony.
- *   C-17c: Tiebreak — random via project-card cost.
- *
- * Returns undefined if no tradeable colonies exist.
+ * The tile furthest along its colony track wins (C-17a). A tie goes to a tile with MarsBot's colony
+ * (C-17b), then to a flipped project card (C-17c). Returns undefined when no tile can be traded with.
  */
-export function selectTradeColony(game: IGame, marsBot: MarsBot): IColony | undefined {
+export function selectTradeColony(marsBot: IMarsBot): IColony | undefined {
+  const game = marsBot.game;
   const tradeable = ColoniesHandler.tradeableColonies(game);
   if (tradeable.length === 0) {
     return undefined;
@@ -54,37 +48,29 @@ export function selectTradeColony(game: IGame, marsBot: MarsBot): IColony | unde
 }
 
 /**
- * Execute MarsBot's trade action with the given colony tile.
+ * Trades with `colony` for MarsBot.
  *
- * C-17d: MarsBot loses 1 MC before trading.
- * C-20:  MarsBot ignores colony track income; gains 2 resources into the
- *         corresponding shipping board area. +1 extra if it already has a colony
- *         there. Human players with colonies receive their colony bonus per core rules.
- * C-22:  Marks the colony tile as visited.
- * C-24b: Europa — MarsBot raises TR 1 step instead of gaining 2 resources.
- *
- * Also resets the colony track position after trade (per core rules).
+ * MarsBot pays 1 M€ (C-17d) and stores 2 resources in the tile's storage area instead of the track's
+ * income, 3 when it has a colony there (C-20). Europa raises its TR instead (C-24b), and Titan gives
+ * floaters (C-23). The player's colonies on the tile pay their colony bonus, the track drops back to
+ * the number of colonies, and the tile is visited until the end of the generation (C-22).
  */
-export function tradeWithColony(marsBot: MarsBot, colony: IColony): void {
+export function tradeWithColony(marsBot: IMarsBot, colony: IColony): void {
   const game = marsBot.game;
 
-  // C-17d: MarsBot loses 1 MC
-  marsBot.turnResolver.megacredits = Math.max(0, marsBot.turnResolver.megacredits - 1);
+  marsBot.loseMc(1);
   game.log('MarsBot pays 1 MC to trade with ${0} (C-17d)', (b) => b.colony(colony));
 
-  // C-22: Mark trade fleet used on this tile
   colony.visitor = marsBot.player.id;
 
-  // C-24b: Europa — raise TR 1 step instead of resources
   if (colony.name === ColonyName.EUROPA) {
     marsBot.player.increaseTerraformRating(1);
     game.log('MarsBot trades with Europa, raises TR 1 step (C-24b)');
   } else {
-    // C-20: base 2 resources; +1 if MarsBot already has a colony here
     const amount = colony.colonies.includes(marsBot.player.id) ? 3 : 2;
     // C-23: Titan storage is only used without Venus Next; with Venus, gain floaters instead
-    if (colony.name === ColonyName.TITAN && game.gameOptions.venusNextExtension) {
-      marsBot.floaters += amount;
+    if (colony.name === ColonyName.TITAN && game.gameOptions.expansions.venus) {
+      marsBot.addFloaters(amount);
       game.log(
         'MarsBot trades with Titan, gains ${0} floater(s) (C-20, C-23)',
         (b) => b.number(amount),
@@ -98,19 +84,38 @@ export function tradeWithColony(marsBot: MarsBot, colony: IColony): void {
     }
   }
 
-  // C-20: Human players with a colony here receive their colony bonus per core rules.
-  // (MarsBot's own colony "bonus" is the +1 extra resource handled above, not the tile bonus.)
+  // MarsBot's own colony "bonus" is the extra resource above, not the tile's bonus
   for (const playerId of colony.colonies) {
     if (playerId === marsBot.player.id) {
       continue;
     }
     const humanPlayer = game.players.find((p) => p.id === playerId);
     if (humanPlayer !== undefined) {
-      // isGiveColonyBonus=false so complex bonuses are deferred into the game queue.
       colony.giveColonyBonus(humanPlayer);
     }
   }
 
-  // Reset colony track to number of colonies after trade (per core colony rules)
   colony.trackPosition = colony.colonies.length;
+}
+
+/**
+ * Trades with the colony MarsBot picks, for the bonus card `cardName` (C-17).
+ *
+ * Does nothing, with no Failed Action, when no colony can be traded with or MarsBot has no M€ to pay.
+ */
+export function maybeTrade(marsBot: IMarsBot, cardName: CardName): void {
+  const colony = selectTradeColony(marsBot);
+  if (colony === undefined) {
+    // A bonus card that can't resolve is not a Failed Action (rulebook A, p.5)
+    marsBot.game.log('MarsBot (${0}): no tradeable colony, no effect (C-17)', (b) => b.cardName(cardName));
+    return;
+  }
+  // It must lose 1 MC to trade. With none, the card does nothing (Nick, BGG 3599965).
+  if (marsBot.megacredits < 1) {
+    marsBot.game.log('MarsBot (${0}): no MC to pay for the trade, no effect (C-17)', (b) => b.cardName(cardName));
+    return;
+  }
+
+  tradeWithColony(marsBot, colony);
+  marsBot.game.log('MarsBot resolves ${0} (C-17)', (b) => b.cardName(cardName));
 }

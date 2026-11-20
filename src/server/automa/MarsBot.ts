@@ -38,7 +38,7 @@ import {ColonyName} from '../../common/colonies/ColonyName';
 import {ACTION_DECK_BONUS_CARD_REMOVED} from './corps/corpHelpers';
 import {TileType} from '../../common/TileType';
 import {IAward} from '../awards/IAward';
-import {selectTradeColony, tradeWithColony} from './colonies/MarsBotTrader';
+import {maybeTrade} from './colonies/MarsBotTrader';
 
 /** Expansion bonus cards set aside at setup: each generation they go back into the action deck. */
 const SET_ASIDE_BONUS_CARDS: ReadonlySet<BonusCardId> = new Set([
@@ -735,20 +735,7 @@ export class MarsBot implements IMarsBot {
   }
 
   public maybeTrade(cardName: CardName): void {
-    const colony = selectTradeColony(this.game, this);
-    if (colony === undefined) {
-      // A bonus card that can't resolve is not a Failed Action (rulebook A, p.5)
-      this.game.log('MarsBot (${0}): no tradeable colony, no effect (C-17)', (b) => b.cardName(cardName));
-      return;
-    }
-    // It must lose 1 MC to trade. With none, the card does nothing (Nick, BGG 3599965).
-    if (this.megacredits < 1) {
-      this.game.log('MarsBot (${0}): no MC to pay for the trade, no effect (C-17)', (b) => b.cardName(cardName));
-      return;
-    }
-
-    tradeWithColony(this, colony);
-    this.game.log('MarsBot resolves ${0} (C-17)', (b) => b.cardName(cardName));
+    maybeTrade(this, cardName);
   }
 
   public addBonusCardToBonusDeck(bonusCardId: BonusCardId): void {
