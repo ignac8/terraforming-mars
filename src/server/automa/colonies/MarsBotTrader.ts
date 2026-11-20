@@ -59,28 +59,20 @@ export function tradeWithColony(marsBot: IMarsBot, colony: IColony): void {
   const game = marsBot.game;
 
   marsBot.loseMc(1);
-  game.log('MarsBot pays 1 MC to trade with ${0} (C-17d)', (b) => b.colony(colony));
-
   colony.visitor = marsBot.player.id;
 
   if (colony.name === ColonyName.EUROPA) {
+    game.log('MarsBot pays 1:r:mc: to trade with ${0}, raises its TR 1 step', (b) => b.colony(colony));
     marsBot.player.increaseTerraformRating(1);
-    game.log('MarsBot trades with Europa, raises TR 1 step (C-24b)');
   } else {
     const amount = colony.colonies.includes(marsBot.player.id) ? 3 : 2;
     // C-23: Titan storage is only used without Venus Next; with Venus, gain floaters instead
     if (colony.name === ColonyName.TITAN && game.gameOptions.expansions.venus) {
+      game.log('MarsBot pays 1:r:mc: to trade with ${0}, gains ${1} floaters', (b) => b.colony(colony).number(amount));
       marsBot.addFloaters(amount);
-      game.log(
-        'MarsBot trades with Titan, gains ${0} floater(s) (C-20, C-23)',
-        (b) => b.number(amount),
-      );
     } else {
+      game.log('MarsBot pays 1:r:mc: to trade with ${0}, gains ${1} resources in storage', (b) => b.colony(colony).number(amount));
       marsBot.shippingBoard.add(colony.name, amount);
-      game.log(
-        'MarsBot trades with ${0}, gains ${1} resource(s) to storage (C-20)',
-        (b) => b.colony(colony).number(amount),
-      );
     }
   }
 
@@ -107,15 +99,14 @@ export function maybeTrade(marsBot: IMarsBot, cardName: CardName): void {
   const colony = selectTradeColony(marsBot);
   if (colony === undefined) {
     // A bonus card that can't resolve is not a Failed Action (rulebook A, p.5)
-    marsBot.game.log('MarsBot (${0}): no tradeable colony, no effect (C-17)', (b) => b.cardName(cardName));
+    marsBot.game.log('MarsBot (${0}): no colony to trade with', (b) => b.cardName(cardName));
     return;
   }
-  // It must lose 1 MC to trade. With none, the card does nothing (Nick, BGG 3599965).
+  // It must lose 1 M€ to trade. With none, the card does nothing (Nick, BGG 3599965).
   if (marsBot.megacredits < 1) {
-    marsBot.game.log('MarsBot (${0}): no MC to pay for the trade, no effect (C-17)', (b) => b.cardName(cardName));
+    marsBot.game.log('MarsBot (${0}): no M€ to pay for the trade', (b) => b.cardName(cardName));
     return;
   }
 
   tradeWithColony(marsBot, colony);
-  marsBot.game.log('MarsBot resolves ${0} (C-17)', (b) => b.cardName(cardName));
 }
