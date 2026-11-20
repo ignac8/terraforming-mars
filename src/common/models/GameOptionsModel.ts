@@ -19,6 +19,7 @@ export type GameOptionsModel = {
   fastModeOption: boolean,
   includedCards: ReadonlyArray<CardName>;
   includeFanMA: boolean,
+  keepReplacedCards: boolean,
   initialDraftVariant: boolean,
   preludeDraftVariant: boolean,
   ceosDraftVariant: boolean,

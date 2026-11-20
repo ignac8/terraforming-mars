@@ -508,6 +508,7 @@ export class Server {
       fastModeOption: options.fastModeOption,
       includedCards: options.includedCards,
       includeFanMA: options.includeFanMA,
+      keepReplacedCards: options.keepReplacedCards,
       initialDraftVariant: options.initialDraftVariant,
       preludeDraftVariant: options.preludeDraftVariant,
       ceosDraftVariant: options.ceosDraftVariant,
