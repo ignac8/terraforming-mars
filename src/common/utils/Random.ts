@@ -1,7 +1,7 @@
 /**
  * A serialized random generator, tagged by algorithm so an old save
  * (mulberry32, 32-bit state) and a new one (sfc32, 128-bit state) can both
- * be restored. See {@link serializeRandom} / {@link deserializeRandom}.
+ * be restored. Produced by each generator's `serialize()`, restored by {@link deserializeRandom}.
  */
 export type SerializedRandom =
   | {kind: 'mulberry32', seed: number, current: number}
