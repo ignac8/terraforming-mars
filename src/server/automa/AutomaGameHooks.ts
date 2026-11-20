@@ -679,7 +679,7 @@ export class AutomaGameHooks {
     if (player === this.marsBot.player) {
       return;
     }
-    this.marsBot.corp?.onColonyPlaced?.(this.marsBot);
+    this.marsBot.notifyColonyPlaced();
   }
 
   /**

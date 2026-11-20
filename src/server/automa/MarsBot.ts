@@ -813,6 +813,10 @@ export class MarsBot implements IMarsBot {
     return this.corp?.interceptGlobalParameterRaise?.(this, parameter) ?? false;
   }
 
+  public notifyColonyPlaced(): void {
+    this.corp?.onColonyPlaced?.(this);
+  }
+
   public maybePlaceRandomColony(): boolean {
     const colony = selectRandomColony(this.game, this);
     if (colony === undefined) {
