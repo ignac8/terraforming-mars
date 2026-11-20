@@ -77,19 +77,19 @@ class FakePool {
 
 class TestPostgreSQL extends PostgreSQL {
   // trim() runs outside the transaction, so it's off unless a test turns it on.
-  constructor(public readonly pool: FakePool, trimCount = 0) {
+  constructor(public readonly fakePool: FakePool, trimCount = 0) {
     super();
     this.trimCount = trimCount;
   }
 
-  protected override get client(): pg.Pool {
-    return this.pool as unknown as pg.Pool;
+  protected override get pool(): pg.Pool {
+    return this.fakePool as unknown as pg.Pool;
   }
 }
 
 // Keeps the trimCount PostgreSQL picks by default.
 class DefaultPostgreSQL extends PostgreSQL {
-  constructor(public readonly pool: FakePool) {
+  constructor(public readonly fakePool: FakePool) {
     super();
   }
 
@@ -97,8 +97,8 @@ class DefaultPostgreSQL extends PostgreSQL {
     return this.trimCount;
   }
 
-  protected override get client(): pg.Pool {
-    return this.pool as unknown as pg.Pool;
+  protected override get pool(): pg.Pool {
+    return this.fakePool as unknown as pg.Pool;
   }
 }
 
@@ -124,7 +124,7 @@ describe('PostgreSQL', () => {
       {connection: 'conn1', sql: 'INSERT INTO participants'},
       {connection: 'conn1', sql: 'COMMIT'},
     ]);
-    expect(pool.released).deep.eq([{connection: 'conn1', err: undefined}]);
+    expect(pool.released).deep.eq([{connection: 'conn1', err: false}]);
     expect(game.lastSaveId).eq(1);
   });
 
@@ -174,7 +174,7 @@ describe('PostgreSQL', () => {
       'conn1 INSERT INTO game',
       'conn1 ROLLBACK',
     ]);
-    expect(pool.released).deep.eq([{connection: 'conn1', err: undefined}]);
+    expect(pool.released).deep.eq([{connection: 'conn1', err: false}]);
     expect(game.lastSaveId).eq(0);
   });
 
