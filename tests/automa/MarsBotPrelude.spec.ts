@@ -31,27 +31,27 @@ describe('MarsBot Prelude Support', () => {
     it('MarsBot receives 3 extra project cards with Prelude (7 total in initial action deck)', () => {
       const {marsBot} = createAutomaGame({prelude: true});
       // Normal: 3 project + 1 bonus = 4. With Prelude: 6 project + 1 bonus = 7
-      expect(marsBot.actionDeck.length).to.eq(7);
+      expect(marsBot.actionDeck.cards.length).to.eq(7);
     });
 
     it('MarsBot has normal 4-card action deck without Prelude', () => {
       const {marsBot} = createAutomaGame();
-      expect(marsBot.actionDeck.length).to.eq(4);
+      expect(marsBot.actionDeck.cards.length).to.eq(4);
     });
 
     it('Brutal MarsBot starts with 4 project cards instead of 3', () => {
       const {marsBot} = createAutomaGame({difficulty: 'brutal'});
-      expect(marsBot.actionDeck.length).to.eq(5);
+      expect(marsBot.actionDeck.cards.length).to.eq(5);
     });
 
     it('Brutal MarsBot with Prelude starts with 7 project cards', () => {
       const {marsBot} = createAutomaGame({prelude: true, difficulty: 'brutal'});
-      expect(marsBot.actionDeck.length).to.eq(8);
+      expect(marsBot.actionDeck.cards.length).to.eq(8);
     });
 
     it('MarsBot receives 3 extra project cards with Prelude 2 only', () => {
       const {marsBot} = createAutomaGame({prelude: true, prelude2: true});
-      expect(marsBot.actionDeck.length).to.eq(7);
+      expect(marsBot.actionDeck.cards.length).to.eq(7);
     });
   });
 

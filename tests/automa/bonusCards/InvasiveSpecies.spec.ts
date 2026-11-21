@@ -3,7 +3,6 @@ import {BonusCardId} from '@/common/automa/AutomaTypes';
 import {BoardName} from '@/common/boards/BoardName';
 import {ColonyName} from '@/common/colonies/ColonyName';
 import {createBaseBonusCards} from '@/server/automa/bonusCards/MarsBotBonusCards';
-import {MarsBotBonusResolver} from '@/server/automa/MarsBotBonusResolver';
 import {Ants} from '@/server/cards/base/Ants';
 import {Birds} from '@/server/cards/base/Birds';
 import {Fish} from '@/server/cards/base/Fish';
@@ -106,9 +105,8 @@ describe('InvasiveSpecies', () => {
 
     const cards = createBaseBonusCards();
     const b02 = cards.find((c) => c.id === BonusCardId.B02_INVASIVE_SPECIES)!;
-    const bonusResolver = new MarsBotBonusResolver(marsBot);
 
-    bonusResolver.resolve(b02);
+    marsBot.actionDeck.playBonusCard(b02);
     expect(marsBot.megacredits).to.eq(5);
   });
 
@@ -120,7 +118,7 @@ describe('InvasiveSpecies', () => {
     birds.resourceCount = 1; // 1 VP
     human.playedCards.push(pets, birds);
 
-    marsBot['bonusResolver'].resolve(invasiveSpecies());
+    marsBot.actionDeck.playBonusCard(invasiveSpecies());
 
     expect(pets.resourceCount).to.eq(6);
     expect(birds.resourceCount).to.eq(0);
@@ -135,7 +133,7 @@ describe('InvasiveSpecies', () => {
     birds.resourceCount = 1; // 1 VP per animal
     human.playedCards.push(ants, birds);
 
-    marsBot['bonusResolver'].resolve(invasiveSpecies());
+    marsBot.actionDeck.playBonusCard(invasiveSpecies());
 
     expect(birds.resourceCount).to.eq(0);
     expect(ants.resourceCount).to.eq(4);
@@ -149,7 +147,7 @@ describe('InvasiveSpecies', () => {
     tardigrades.resourceCount = 3; // 0 VP now, 1/4 VP per microbe
     human.playedCards.push(bacteria, tardigrades);
 
-    marsBot['bonusResolver'].resolve(invasiveSpecies());
+    marsBot.actionDeck.playBonusCard(invasiveSpecies());
 
     expect(tardigrades.resourceCount).to.eq(2);
     expect(bacteria.resourceCount).to.eq(3);
@@ -164,7 +162,7 @@ describe('InvasiveSpecies', () => {
     human.playedCards.push(birds, fish);
     game.projectDeck.drawPile.push(new Mine()); // Cost 4 counts to the 2nd of 2
 
-    marsBot['bonusResolver'].resolve(invasiveSpecies());
+    marsBot.actionDeck.playBonusCard(invasiveSpecies());
 
     expect(birds.resourceCount).to.eq(1);
     expect(fish.resourceCount).to.eq(0);
@@ -174,7 +172,7 @@ describe('InvasiveSpecies', () => {
     const [game] = testGame(1, {automa: true, venusNextExtension: true, boardName: BoardName.THARSIS});
     const marsBot = game.automaHooks!.marsBot;
 
-    marsBot['bonusResolver'].resolve(invasiveSpecies());
+    marsBot.actionDeck.playBonusCard(invasiveSpecies());
 
     expect(marsBot.megacredits).to.eq(2);
     expect(marsBot.floaters).to.eq(1);
@@ -187,7 +185,7 @@ describe('InvasiveSpecies', () => {
     });
     const marsBot = game.automaHooks!.marsBot;
 
-    marsBot['bonusResolver'].resolve(invasiveSpecies());
+    marsBot.actionDeck.playBonusCard(invasiveSpecies());
 
     expect(marsBot.megacredits).to.eq(2);
     expect(marsBot.shippingBoard.storage.get(ColonyName.TITAN)).to.eq(1);
@@ -201,7 +199,7 @@ describe('InvasiveSpecies', () => {
     });
     const marsBot = game.automaHooks!.marsBot;
 
-    marsBot['bonusResolver'].resolve(invasiveSpecies());
+    marsBot.actionDeck.playBonusCard(invasiveSpecies());
 
     expect(marsBot.megacredits).to.eq(2);
     expect(marsBot.shippingBoard.storage.get(ColonyName.TITAN) ?? 0).to.eq(0);

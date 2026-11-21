@@ -51,7 +51,7 @@ function setTrack(marsBot: MarsBot, tag: Tag, position: number): void {
 
 /** Resolves a bonus card the way a turn does, from the action deck. */
 function resolveFromDeck(marsBot: MarsBot, id: BonusCardId): void {
-  marsBot['bonusResolver'].resolve(createBonusCard(id));
+  marsBot.actionDeck.playBonusCard(createBonusCard(id));
 }
 
 function claims(milestone: IMilestone, marsBot: MarsBot): boolean {
@@ -174,9 +174,9 @@ describe('MarsBot map milestones and awards', () => {
   describe('Utopia Planitia', () => {
     it('Specialist needs 3 destroyed bonus cards', () => {
       const {marsBot} = createGame({boardName: BoardName.UTOPIA_PLANITIA});
-      marsBot.destroyedBonusCards = 2;
+      marsBot.actionDeck.destroyedBonusCards = 2;
       expect(claims(new LandSpecialist(), marsBot)).is.false;
-      marsBot.destroyedBonusCards = 3;
+      marsBot.actionDeck.destroyedBonusCards = 3;
       expect(claims(new LandSpecialist(), marsBot)).is.true;
     });
 
@@ -215,7 +215,7 @@ describe('MarsBot map milestones and awards', () => {
 
     it('the destroyed bonus card count survives a reload', () => {
       const {game, marsBot} = createGame({boardName: BoardName.UTOPIA_PLANITIA});
-      marsBot.destroyedBonusCards = 2;
+      marsBot.actionDeck.destroyedBonusCards = 2;
 
       const restored = Game.deserialize(game.serialize());
 

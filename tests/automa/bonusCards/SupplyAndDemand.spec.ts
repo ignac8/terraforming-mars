@@ -28,7 +28,7 @@ describe('SupplyAndDemand', () => {
   it('takes up to 3 M€ from the corporation card', () => {
     const {marsBot} = createAutomaGame();
     marsBot.setCorpState('mcOnCard', 5);
-    marsBot['bonusResolver'].resolve(createBonusCard(BonusCardId.B24_SUPPLY_AND_DEMAND));
+    marsBot.actionDeck.playBonusCard(createBonusCard(BonusCardId.B24_SUPPLY_AND_DEMAND));
     expect(marsBot.megacredits).to.eq(3);
     expect(marsBot.getCorpState('mcOnCard')).to.eq(2);
     expect(marsBot.marsBotBoard.tracks[4].position).to.eq(0);
@@ -36,7 +36,7 @@ describe('SupplyAndDemand', () => {
 
   it('with no M€ on the card advances the energy track', () => {
     const {marsBot} = createAutomaGame();
-    marsBot['bonusResolver'].resolve(createBonusCard(BonusCardId.B24_SUPPLY_AND_DEMAND));
+    marsBot.actionDeck.playBonusCard(createBonusCard(BonusCardId.B24_SUPPLY_AND_DEMAND));
     expect(marsBot.marsBotBoard.tracks[4].position).to.be.greaterThan(0);
     expect(marsBot.marsBotBoard.tracks[0].position).to.eq(0);
   });
@@ -46,7 +46,7 @@ describe('SupplyAndDemand', () => {
   it('takes no Failed Action when advancing a maxed track', () => {
     const {marsBot} = createAutomaGame();
     maxTracks(marsBot);
-    marsBot['bonusResolver'].resolve(createBonusCard(BonusCardId.B24_SUPPLY_AND_DEMAND));
+    marsBot.actionDeck.playBonusCard(createBonusCard(BonusCardId.B24_SUPPLY_AND_DEMAND));
     expect(marsBot.megacredits).to.eq(0);
   });
 });

@@ -24,7 +24,7 @@ describe('ResearchAndDevelopment', () => {
     const {marsBot} = createAutomaGame();
     const rnd = createBaseBonusCards().find((c) => c.id === BonusCardId.B03_RESEARCH_AND_DEVELOPMENT)!;
 
-    marsBot['bonusResolver'].resolve(rnd);
+    marsBot.actionDeck.playBonusCard(rnd);
 
     expect(marsBot.playedProjectCards).to.have.length(1);
   });

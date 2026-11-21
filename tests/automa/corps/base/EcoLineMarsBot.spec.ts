@@ -14,7 +14,7 @@ import {createAutomaGame} from '../CorpGame';
 import {recordingMarsBot} from '../RecordingMarsBot';
 
 function rapidSprouting(marsBot: MarsBot): void {
-  marsBot['bonusResolver'].resolve(createBonusCard(BonusCardId.B23_RAPID_SPROUTING));
+  marsBot.actionDeck.playBonusCard(createBonusCard(BonusCardId.B23_RAPID_SPROUTING));
 }
 
 describe('EcoLineMarsBot', () => {
@@ -116,9 +116,9 @@ describe('EcoLineMarsBot', () => {
     const corp = getMarsBotCorp(CardName.ECOLINE)!;
     marsBot.setCorpAndSetup(corp);
 
-    const deckBefore = marsBot.actionDeck.length;
+    const deckBefore = marsBot.actionDeck.cards.length;
     corp.beforeActionPhase!(marsBot);
-    expect(marsBot.actionDeck.length).to.eq(deckBefore + 1);
-    expect(marsBot.actionDeck.map((c) => (c as MarsBotBonusCard).id)).to.include(BonusCardId.B23_RAPID_SPROUTING);
+    expect(marsBot.actionDeck.cards.length).to.eq(deckBefore + 1);
+    expect(marsBot.actionDeck.cards.map((c) => (c as MarsBotBonusCard).id)).to.include(BonusCardId.B23_RAPID_SPROUTING);
   });
 });

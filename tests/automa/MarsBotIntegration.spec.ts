@@ -178,7 +178,7 @@ describe('MarsBot Integration', () => {
   describe('MarsBot turn does not crash', () => {
     it('MarsBot can take a full turn with project card', () => {
       const {marsBot} = createAutomaGame();
-      expect(marsBot.actionDeck.length).to.eq(4);
+      expect(marsBot.actionDeck.cards.length).to.eq(4);
 
       // Take turn should not crash
       marsBot.takeTurn();
@@ -186,7 +186,7 @@ describe('MarsBot Integration', () => {
 
     it('MarsBot passes when deck is empty', () => {
       const {game, marsBot} = createAutomaGame();
-      marsBot.actionDeck = [];
+      marsBot.actionDeck.cards = [];
 
       marsBot.takeTurn();
       expect(game.hasPassedThisActionPhase(marsBot.player)).to.be.true;

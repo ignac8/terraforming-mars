@@ -39,7 +39,7 @@ describe('Investors', () => {
     game.generation = 2;
     setTracks(marsBot, [5, 3, 1, 4, 4, 6, 2]);
 
-    marsBot['bonusResolver'].resolve(createBonusCard(BonusCardId.B32_INVESTORS));
+    marsBot.actionDeck.playBonusCard(createBonusCard(BonusCardId.B32_INVESTORS));
 
     expect(marsBot.marsBotBoard.tracks.map((t) => t.position)).deep.eq([5, 3, 2, 4, 4, 5, 2]);
     expect(marsBot.megacredits).to.eq(0);
@@ -50,7 +50,7 @@ describe('Investors', () => {
     game.generation = 2;
     setTracks(marsBot, [5, 3, 1, 4, 4, 6, 2]);
 
-    marsBot['bonusResolver'].resolve(createBonusCard(BonusCardId.B32_INVESTORS));
+    marsBot.actionDeck.playBonusCard(createBonusCard(BonusCardId.B32_INVESTORS));
 
     expect(marsBot.marsBotBoard.tracks[5].regressedPositions.has(6)).is.true;
   });
@@ -60,7 +60,7 @@ describe('Investors', () => {
     game.generation = 4;
     setTracks(marsBot, [4, 1, 1, 4, 2, 2, 3]);
 
-    marsBot['bonusResolver'].resolve(createBonusCard(BonusCardId.B32_INVESTORS));
+    marsBot.actionDeck.playBonusCard(createBonusCard(BonusCardId.B32_INVESTORS));
 
     expect(marsBot.marsBotBoard.tracks.map((t) => t.position)).deep.eq([3, 2, 1, 4, 2, 2, 3]);
   });
@@ -70,7 +70,7 @@ describe('Investors', () => {
     game.generation = 3;
     setTracks(marsBot, [5, 3, 2, 4, 4, 6, 3]);
 
-    marsBot['bonusResolver'].resolve(createBonusCard(BonusCardId.B32_INVESTORS));
+    marsBot.actionDeck.playBonusCard(createBonusCard(BonusCardId.B32_INVESTORS));
 
     expect(marsBot.marsBotBoard.tracks.map((t) => t.position)).deep.eq([5, 3, 2, 4, 4, 6, 3]);
     expect(marsBot.megacredits).to.eq(2);
@@ -82,7 +82,7 @@ describe('Investors', () => {
     const {game, marsBot} = createAutomaGame();
     game.generation = 2;
     maxTracks(marsBot);
-    marsBot['bonusResolver'].resolve(createBonusCard(BonusCardId.B32_INVESTORS));
+    marsBot.actionDeck.playBonusCard(createBonusCard(BonusCardId.B32_INVESTORS));
     expect(marsBot.megacredits).to.eq(0);
     expect(marsBot.marsBotBoard.tracks[0].position).to.eq(17);
   });

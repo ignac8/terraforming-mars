@@ -13,7 +13,6 @@ import {IMarsBot} from '@/server/automa/IMarsBot';
 import {MarsBot} from '@/server/automa/MarsBot';
 import {MarsBotBoard} from '@/server/automa/MarsBotBoard';
 import {createBaseBonusCards, createBonusCard} from '@/server/automa/bonusCards/MarsBotBonusCards';
-import {MarsBotBonusResolver} from '@/server/automa/MarsBotBonusResolver';
 import {THARSIS_MARSBOT_BOARD} from '@/server/automa/boards/TharsisMarsBot';
 import {VENUS_MARSBOT_TRACK} from '@/server/automa/boards/VenusMarsBot';
 import {trackCubeKey} from '@/server/automa/corpTrackCubes';
@@ -348,10 +347,9 @@ describe('CorporateCompetition', () => {
 
     const cards = createBaseBonusCards();
     const b08 = cards.find((c) => c.id === BonusCardId.B08_CORPORATE_COMPETITION)!;
-    const bonusResolver = new MarsBotBonusResolver(marsBot);
 
     // With <5 MC, should draw another bonus card instead
-    bonusResolver.resolve(b08);
+    marsBot.actionDeck.playBonusCard(b08);
     // MC should still be 3 (no deduction since it couldn't afford)
     // It might have gained MC from the fallback bonus card resolution
   });
@@ -369,10 +367,9 @@ describe('CorporateCompetition', () => {
 
     const cards = createBaseBonusCards();
     const b08 = cards.find((c) => c.id === BonusCardId.B08_CORPORATE_COMPETITION)!;
-    const bonusResolver = new MarsBotBonusResolver(marsBot);
 
     const mcBefore = marsBot.megacredits;
-    bonusResolver.resolve(b08);
+    marsBot.actionDeck.playBonusCard(b08);
     // Helper for Scientist = advance track 4. Costs 5 MC.
     // Track advance may trigger actions that grant additional MC, so just verify 5 was deducted
     expect(marsBot.megacredits).to.be.lte(mcBefore - 5 + 10); // At most 10 MC gained from track actions
@@ -393,7 +390,7 @@ describe('CorporateCompetition', () => {
     marsBot.marsBotBoard.tracks[1].position = 6;
     marsBot.megacredits = 5;
 
-    marsBot['bonusResolver'].resolve(createBaseBonusCards().find((c) => c.id === BonusCardId.B08_CORPORATE_COMPETITION)!);
+    marsBot.actionDeck.playBonusCard(createBaseBonusCards().find((c) => c.id === BonusCardId.B08_CORPORATE_COMPETITION)!);
 
     expect(marsBot.marsBotBoard.tracks[1].position).to.eq(7);
     expect(ceres.colonies).includes(marsBot.player.id);
@@ -402,7 +399,7 @@ describe('CorporateCompetition', () => {
 
   it('competes for the award the player leads by the least, over one MarsBot leads', () => {
     const {marsBot, b08} = setup({Scientist: 2, Miner: -4});
-    marsBot['bonusResolver'].resolve(b08);
+    marsBot.actionDeck.playBonusCard(b08);
     // Scientist moves the science track; Miner would have moved the space track
     expect(marsBot.marsBotBoard.tracks[3].position).to.be.greaterThan(0);
     expect(marsBot.marsBotBoard.tracks[1].position).to.eq(0);
@@ -410,7 +407,7 @@ describe('CorporateCompetition', () => {
 
   it('when MarsBot leads every award, competes for the smallest gap', () => {
     const {marsBot, b08} = setup({Scientist: -1, Miner: -4});
-    marsBot['bonusResolver'].resolve(b08);
+    marsBot.actionDeck.playBonusCard(b08);
     // Scientist moves the science track; Miner would have moved the space track
     expect(marsBot.marsBotBoard.tracks[3].position).to.be.greaterThan(0);
     expect(marsBot.marsBotBoard.tracks[1].position).to.eq(0);
@@ -422,7 +419,7 @@ describe('CorporateCompetition', () => {
     // 10 for the comparison, 0 for the final count
     human.energy = 1;
     human.production.override({heat: 9, energy: 0, megacredits: 0, steel: 0, titanium: 0, plants: 0});
-    marsBot['bonusResolver'].resolve(b08);
+    marsBot.actionDeck.playBonusCard(b08);
     // The tie on Thermalist is closer than Scientist's lead of 2
     expect(marsBot.marsBotBoard.tracks[4].position).to.be.greaterThan(0);
     expect(marsBot.marsBotBoard.tracks[3].position).to.eq(0);
@@ -433,7 +430,7 @@ describe('CorporateCompetition', () => {
     const {marsBot, b08} = setup({Scientist: 0, Banker: 3});
     const tracks = marsBot.marsBotBoard.tracks;
     tracks[3].position = tracks[3].definition.layout.length - 1;
-    marsBot['bonusResolver'].resolve(b08);
+    marsBot.actionDeck.playBonusCard(b08);
     // Banker advances the building track, the upper of the two tied tracks
     expect(tracks[0].position).to.eq(1);
     expect(marsBot.megacredits).to.eq(5);
@@ -445,7 +442,7 @@ describe('CorporateCompetition', () => {
     tracks[3].position = tracks[3].definition.layout.length - 1;
     marsBot.bonusDeck.drawPile.push(createBonusCard(BonusCardId.B31_GOVERNMENT_SUBSIDY));
     const tr = marsBot.player.terraformRating;
-    marsBot['bonusResolver'].resolve(b08);
+    marsBot.actionDeck.playBonusCard(b08);
     expect(marsBot.player.terraformRating).to.eq(tr + 1);
     expect(marsBot.megacredits).to.eq(10);
   });
@@ -465,7 +462,7 @@ describe('CorporateCompetition', () => {
     const tracks = marsBot.marsBotBoard.tracks;
     tracks[0].position = 3;
     tracks[2].position = 2;
-    marsBot['bonusResolver'].resolve(b08);
+    marsBot.actionDeck.playBonusCard(b08);
     expect(tracks[0].position).to.eq(3);
     expect(tracks[2].position).to.eq(3);
     expect(tracks[4].position).to.eq(0);
@@ -525,7 +522,7 @@ describe('CorporateCompetition', () => {
     stackDeck(game, new Mine(), new Algae());
     marsBot.megacredits = 5;
 
-    marsBot['bonusResolver'].resolve(createBaseBonusCards().find((c) => c.id === BonusCardId.B08_CORPORATE_COMPETITION)!);
+    marsBot.actionDeck.playBonusCard(createBaseBonusCards().find((c) => c.id === BonusCardId.B08_CORPORATE_COMPETITION)!);
 
     expect(marsBot.marsBotBoard.tracks[6].position).to.be.greaterThan(0);
     expect(marsBot.megacredits).eq(5);
@@ -541,7 +538,7 @@ describe('CorporateCompetition', () => {
     marsBot.megacredits = 4;
     const tr = marsBot.player.terraformRating;
 
-    marsBot['bonusResolver'].resolve(createBaseBonusCards().find((c) => c.id === BonusCardId.B08_CORPORATE_COMPETITION)!);
+    marsBot.actionDeck.playBonusCard(createBaseBonusCards().find((c) => c.id === BonusCardId.B08_CORPORATE_COMPETITION)!);
 
     expect(marsBot.marsBotBoard.tracks[6].position).to.eq(0);
     expect(marsBot.player.terraformRating).to.eq(tr + 1);
@@ -553,7 +550,7 @@ describe('CorporateCompetition', () => {
     game.fundAward(human, game.awards.find((a) => a.name === 'Scientist')!);
     marsBot.megacredits = 4;
 
-    marsBot['bonusResolver'].resolve(createBaseBonusCards().find((c) => c.id === BonusCardId.B08_CORPORATE_COMPETITION)!);
+    marsBot.actionDeck.playBonusCard(createBaseBonusCards().find((c) => c.id === BonusCardId.B08_CORPORATE_COMPETITION)!);
 
     expect(marsBot.marsBotBoard.tracks[3].position).to.eq(0);
   });
@@ -677,7 +674,7 @@ describe('CorporateCompetition', () => {
     const b08 = marsBot.bonusDeck.drawPile.find((c) => c.id === 'B08');
     if (b08) {
       // Calling resolve should not crash even with no funded awards
-      marsBot['bonusResolver'].resolve(b08);
+      marsBot.actionDeck.playBonusCard(b08);
     }
   });
 });

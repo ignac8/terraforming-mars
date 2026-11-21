@@ -259,12 +259,12 @@ describe('MarsBotSessionFixes', () => {
 
   it('action deck roundtrip preserves project and bonus cards', () => {
     const {game, marsBot} = createAutomaGame();
-    const deckSize = marsBot.actionDeck.length;
+    const deckSize = marsBot.actionDeck.cards.length;
     expect(deckSize).to.be.gt(0);
 
     const serialized = game.serialize();
     const restored = Game.deserialize(serialized);
-    expect(restored.automaHooks!.marsBot.actionDeck.length).to.eq(deckSize);
+    expect(restored.automaHooks!.marsBot.actionDeck.cards.length).to.eq(deckSize);
   });
 
   it('bonus deck roundtrip preserves draw and discard piles', () => {
@@ -295,7 +295,7 @@ describe('MarsBotSessionFixes', () => {
   it('played project cards roundtrip', () => {
     const {game, marsBot} = createAutomaGame();
     // Play a card from action deck
-    const projectCard = marsBot.actionDeck.find((c) => 'cost' in c && 'tags' in c);
+    const projectCard = marsBot.actionDeck.cards.find((c) => 'cost' in c && 'tags' in c);
     if (projectCard) {
       marsBot.playedProjectCards.push(projectCard as IProjectCard);
     }
@@ -337,12 +337,12 @@ describe('MarsBotSessionFixes', () => {
   it('deserialization does not rebuild initial action deck', () => {
     const {game, marsBot} = createAutomaGame();
     // Empty the action deck to simulate mid-game
-    marsBot.actionDeck = [];
+    marsBot.actionDeck.cards = [];
 
     const serialized = game.serialize();
     const restored = Game.deserialize(serialized);
     // Should still be empty, not rebuilt
-    expect(restored.automaHooks!.marsBot.actionDeck.length).to.eq(0);
+    expect(restored.automaHooks!.marsBot.actionDeck.cards.length).to.eq(0);
   });
 
   it('comprehensive roundtrip: all MarsBot state preserved', () => {
@@ -401,7 +401,7 @@ describe('MarsBotSessionFixes', () => {
     expect(rm.temperatureRaises).to.eq(5);
     expect(rm.vpByGeneration).to.deep.eq([10, 20, 30]);
     expect(rm.corpSpecificState.get('testKey')).to.eq(99);
-    expect(rm.actionDeck.length).to.eq(marsBot.actionDeck.length);
+    expect(rm.actionDeck.cards.length).to.eq(marsBot.actionDeck.cards.length);
     expect(rm.bonusDeck.drawPile.length).to.eq(marsBot.bonusDeck.drawPile.length);
     expect(rm.playedProjectCards.length).to.eq(marsBot.playedProjectCards.length);
     expect(rm.neuralInstanceSpace?.id).to.eq(landSpace.id);
@@ -426,7 +426,7 @@ describe('MarsBotSessionFixes', () => {
   it('allOtherPlayersHavePassed returns true when MarsBot has passed', () => {
     const {game, marsBot} = createAutomaGame();
     // Drain MarsBot's action deck
-    marsBot.actionDeck = [];
+    marsBot.actionDeck.cards = [];
     marsBot.takeTurn(); // This should mark MarsBot as passed
     expect(game.hasPassedThisActionPhase(marsBot.player)).to.be.true;
     expect(game.automaHooks!.allOtherPlayersHavePassed()).to.be.true;
@@ -800,15 +800,15 @@ describe('MarsBotVenusNext', () => {
 
   it('B16 Government Intervention shuffled into action deck', () => {
     const {marsBot} = createVenusAutomaGame();
-    marsBot.buildResearchActionDeck();
-    const hasB16 = marsBot.actionDeck.some((c) => 'id' in c && c.id === BonusCardId.B16_GOVERNMENT_INTERVENTION);
+    marsBot.actionDeck.buildResearch();
+    const hasB16 = marsBot.actionDeck.cards.some((c) => 'id' in c && c.id === BonusCardId.B16_GOVERNMENT_INTERVENTION);
     expect(hasB16).to.be.true;
   });
 
   it('non-Venus game does not have B16 in action deck', () => {
     const {marsBot} = createAutomaGame();
-    marsBot.buildResearchActionDeck();
-    const hasB16 = marsBot.actionDeck.some((c) => 'id' in c && c.id === BonusCardId.B16_GOVERNMENT_INTERVENTION);
+    marsBot.actionDeck.buildResearch();
+    const hasB16 = marsBot.actionDeck.cards.some((c) => 'id' in c && c.id === BonusCardId.B16_GOVERNMENT_INTERVENTION);
     expect(hasB16).to.be.false;
   });
 
@@ -851,20 +851,20 @@ describe('MarsBotVenusNext', () => {
     const cards = marsBot.game.projectDeck.drawN(marsBot.game, 4);
 
     // Without skipDiscard: 4 cards -> discard 1 -> 3 project + 1 bonus + B16 = 5
-    marsBot.buildResearchActionDeckFromDraft([...cards], false);
-    const normalSize = marsBot.actionDeck.length;
+    marsBot.actionDeck.buildResearchFromDraft([...cards], false);
+    const normalSize = marsBot.actionDeck.cards.length;
 
     // With skipDiscard: 4 cards -> keep all -> 4 project + 1 bonus + B16 = 6
     const cards2 = marsBot.game.projectDeck.drawN(marsBot.game, 4);
-    marsBot.buildResearchActionDeckFromDraft([...cards2], true);
-    expect(marsBot.actionDeck.length).to.eq(normalSize + 1);
+    marsBot.actionDeck.buildResearchFromDraft([...cards2], true);
+    expect(marsBot.actionDeck.cards.length).to.eq(normalSize + 1);
   });
 
   it('floater extra card not triggered when Hoverlord still available', () => {
     const {marsBot} = createVenusAutomaGame();
     marsBot.floaters = 10;
     // Hoverlord is still available (not claimed, not all milestones claimed)
-    marsBot.buildResearchActionDeck();
+    marsBot.actionDeck.buildResearch();
     // Floaters should not be spent
     expect(marsBot.floaters).to.eq(10);
   });
@@ -896,7 +896,7 @@ describe('MarsBotVenusNext', () => {
 
     game.automaHooks!['handleFloaterExtraCard']();
 
-    expect(marsBot.actionDeck[0]).to.eq(extra);
+    expect(marsBot.actionDeck.cards[0]).to.eq(extra);
   });
 
   describe('Hoverlord is considered last among tied milestones', () => {
@@ -919,7 +919,7 @@ describe('MarsBotVenusNext', () => {
         game.claimedMilestones.push({player: human, milestone});
       }
       marsBot.megacredits = 8;
-      marsBot.actionDeck = [];
+      marsBot.actionDeck.cards = [];
 
       marsBot.takeTurn();
 
@@ -965,14 +965,14 @@ describe('MarsBotVenusNext', () => {
     const marsBot = game.automaHooks!.marsBot;
     // Brutal uses skipDiscard=true, keeps all 4 cards
     const cards = game.projectDeck.drawN(game, 4);
-    marsBot.buildResearchActionDeckFromDraft([...cards], true);
+    marsBot.actionDeck.buildResearchFromDraft([...cards], true);
     // All 4 project cards + 1 bonus + B16 = 6 cards, no discard
-    const withSkip = marsBot.actionDeck.length;
+    const withSkip = marsBot.actionDeck.cards.length;
 
     const cards2 = game.projectDeck.drawN(game, 4);
-    marsBot.buildResearchActionDeckFromDraft([...cards2], false);
+    marsBot.actionDeck.buildResearchFromDraft([...cards2], false);
     // 3 project cards + 1 bonus + B16 = 5 cards (1 discarded)
-    expect(marsBot.actionDeck.length).to.eq(withSkip - 1);
+    expect(marsBot.actionDeck.cards.length).to.eq(withSkip - 1);
   });
 
   it('floater spending: Normal draft spends 5 to keep 4th card', () => {

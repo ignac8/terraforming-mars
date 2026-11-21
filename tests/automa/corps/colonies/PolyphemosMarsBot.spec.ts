@@ -41,30 +41,30 @@ describe('PolyphemosMarsBot', () => {
     const corp = getMarsBotCorp(CardName.POLYPHEMOS)!;
     const iceCapMelting = new IceCapMelting(); // Its Event tag only
     const bonus = createBonusCard(BonusCardId.B03_RESEARCH_AND_DEVELOPMENT);
-    marsBot.actionDeck = [bonus, new Research(), iceCapMelting];
+    marsBot.actionDeck.cards = [bonus, new Research(), iceCapMelting];
 
     corp.beforeActionPhase!(marsBot);
 
-    expect(marsBot.actionDeck.map((c) => c.name)).to.deep.eq([bonus.name, CardName.RESEARCH]);
+    expect(marsBot.actionDeck.cards.map((c) => c.name)).to.deep.eq([bonus.name, CardName.RESEARCH]);
     expect(game.projectDeck.discardPile).to.include(iceCapMelting);
   });
 
   it('discards nothing when the action deck holds no project card', () => {
     const {marsBot} = createAutomaGame();
     const corp = getMarsBotCorp(CardName.POLYPHEMOS)!;
-    marsBot.actionDeck = [createBonusCard(BonusCardId.B03_RESEARCH_AND_DEVELOPMENT)];
+    marsBot.actionDeck.cards = [createBonusCard(BonusCardId.B03_RESEARCH_AND_DEVELOPMENT)];
 
     corp.beforeActionPhase!(marsBot);
 
-    expect(marsBot.actionDeck).has.length(1);
+    expect(marsBot.actionDeck.cards).has.length(1);
   });
 
   it('discards card with fewest tags from action deck', () => {
     const {marsBot} = createAutomaGame();
     const corp = getMarsBotCorp(CardName.POLYPHEMOS)!;
     marsBot.setCorpAndSetup(corp);
-    const deckBefore = marsBot.actionDeck.length;
+    const deckBefore = marsBot.actionDeck.cards.length;
     corp.beforeActionPhase!(marsBot);
-    expect(marsBot.actionDeck.length).to.eq(deckBefore - 1);
+    expect(marsBot.actionDeck.cards.length).to.eq(deckBefore - 1);
   });
 });

@@ -55,7 +55,7 @@ describe('MarsBot Turmoil — Setup', () => {
 
   it('T-3: Party Politics (B21) is in the initial action deck', () => {
     const {marsBot} = createTurmoilGame();
-    const hasPartyPolitics = marsBot.actionDeck.some(
+    const hasPartyPolitics = marsBot.actionDeck.cards.some(
       (card) => !('cost' in card) && (card as MarsBotBonusCard).id === BonusCardId.B21_PARTY_POLITICS,
     );
     expect(hasPartyPolitics).to.be.true;
@@ -69,8 +69,8 @@ describe('MarsBot Turmoil — Setup', () => {
   it('T-6: Party Politics is in action deck on generation 2', () => {
     const {marsBot} = createTurmoilGame();
     // Simulate research phase (builds gen 2 action deck)
-    marsBot.buildResearchActionDeck();
-    const hasPartyPolitics = marsBot.actionDeck.some(
+    marsBot.actionDeck.buildResearch();
+    const hasPartyPolitics = marsBot.actionDeck.cards.some(
       (card) => !('cost' in card) && (card as MarsBotBonusCard).id === BonusCardId.B21_PARTY_POLITICS,
     );
     expect(hasPartyPolitics).to.be.true;
@@ -734,7 +734,7 @@ describe('MarsBot C37 Septem Tribus — Turmoil interaction (Rules-covered: C37)
     marsBot.setCorpAndSetup(septumTribus);
 
     // B21 must have been removed from the initial action deck by the corp setup
-    expect(hasBonusCard(marsBot.actionDeck, BonusCardId.B21_PARTY_POLITICS)).to.be.false;
+    expect(hasBonusCard(marsBot.actionDeck.cards, BonusCardId.B21_PARTY_POLITICS)).to.be.false;
   });
 
   it('C37: adds all delegates of an unused colour to MarsBot\'s reserve', () => {
@@ -771,9 +771,9 @@ describe('MarsBot C37 Septem Tribus — Turmoil interaction (Rules-covered: C37)
     const {marsBot} = createTurmoilGame();
     const septumTribus = getMarsBotCorp(CardName.SEPTUM_TRIBUS)!;
     marsBot.setCorpAndSetup(septumTribus);
-    marsBot.buildResearchActionDeck();
+    marsBot.actionDeck.buildResearch();
 
-    expect(hasBonusCard(marsBot.actionDeck, BonusCardId.B21_PARTY_POLITICS)).to.be.false;
+    expect(hasBonusCard(marsBot.actionDeck.cards, BonusCardId.B21_PARTY_POLITICS)).to.be.false;
   });
 
   it('C37: B29 (Gray Eminence) is in the gen-2 action deck exactly once', () => {
@@ -781,11 +781,11 @@ describe('MarsBot C37 Septem Tribus — Turmoil interaction (Rules-covered: C37)
     const septumTribus = getMarsBotCorp(CardName.SEPTUM_TRIBUS)!;
     marsBot.setCorpAndSetup(septumTribus);
     game.generation = 2;
-    marsBot.buildResearchActionDeck();
+    marsBot.actionDeck.buildResearch();
     game.automaHooks!.handleBeforeActionPhase();
 
     // The generation effect adds it whether or not the bonus draw already did
-    const grayEminences = marsBot.actionDeck.filter((c) => hasBonusCard([c], BonusCardId.B29_GRAY_EMINENCE));
+    const grayEminences = marsBot.actionDeck.cards.filter((c) => hasBonusCard([c], BonusCardId.B29_GRAY_EMINENCE));
     expect(grayEminences).to.have.length(1);
   });
 });

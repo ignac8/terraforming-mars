@@ -5,7 +5,6 @@ import {CardName} from '@/common/cards/CardName';
 import {BonusCardId} from '@/common/automa/AutomaTypes';
 import {GlobalParameter} from '@/common/GlobalParameter';
 import {createBaseBonusCards} from '@/server/automa/bonusCards/MarsBotBonusCards';
-import {MarsBotBonusResolver} from '@/server/automa/MarsBotBonusResolver';
 import {Lobbyists} from '@/server/automa/bonusCards/Lobbyists';
 import {setOxygenLevel, setTemperature} from '../../TestingUtils';
 import {testGame} from '../../TestGame';
@@ -99,9 +98,8 @@ describe('Lobbyists', () => {
 
     const cards = createBaseBonusCards();
     const b06 = cards.find((c) => c.id === BonusCardId.B06_LOBBYISTS)!;
-    const bonusResolver = new MarsBotBonusResolver(marsBot);
 
-    const destroyed = bonusResolver.resolve(b06);
+    const destroyed = marsBot.actionDeck.playBonusCard(b06);
     expect(game.getTemperature()).to.eq(8); // Raised 2 steps (4°C)
     expect(destroyed).to.be.true;
   });
@@ -112,10 +110,9 @@ describe('Lobbyists', () => {
 
     const cards = createBaseBonusCards();
     const b06 = cards.find((c) => c.id === BonusCardId.B06_LOBBYISTS)!;
-    const bonusResolver = new MarsBotBonusResolver(marsBot);
 
     const tempBefore = game.getTemperature();
-    const destroyed = bonusResolver.resolve(b06);
+    const destroyed = marsBot.actionDeck.playBonusCard(b06);
     // None of a/b/c apply, so option d fires
     expect(game.getTemperature()).to.eq(tempBefore + 2);
     expect(destroyed).to.be.false; // Option d does NOT destroy
@@ -131,7 +128,7 @@ describe('Lobbyists', () => {
     }
     const b06 = createBaseBonusCards().find((c) => c.id === BonusCardId.B06_LOBBYISTS)!;
 
-    marsBot['bonusResolver'].resolve(b06);
+    marsBot.actionDeck.playBonusCard(b06);
 
     expect(game.board.getSpaceOrThrow('43' as SpaceId).tile?.tileType).to.eq(TileType.OCEAN);
     expect(game.board.getSpaceOrThrow('07' as SpaceId).tile).is.undefined;

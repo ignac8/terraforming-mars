@@ -121,7 +121,7 @@ describe('MarsBot and the player\'s Splice', () => {
       saves.push(JSON.parse(JSON.stringify(game.serialize())));
       return Promise.resolve();
     };
-    marsBot.actionDeck = [new SulphurEatingBacteria()];
+    marsBot.actionDeck.cards = [new SulphurEatingBacteria()];
     human.megaCredits = 0;
 
     game.phase = Phase.ACTION;
@@ -144,7 +144,7 @@ describe('MarsBot and the player\'s Splice', () => {
     const restoredBot = restored.automaHooks!.marsBot;
     expect(restored.activePlayer).to.eq(restoredHuman);
     expect(restoredHuman.getWaitingFor()).is.not.undefined;
-    const top = restoredBot.actionDeck[0];
+    const top = restoredBot.actionDeck.cards[0];
     expect('name' in top && top.name).to.eq(CardName.SULPHUR_EATING_BACTERIA);
 
     passForThisGeneration(restoredHuman);

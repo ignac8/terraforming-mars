@@ -112,7 +112,7 @@ describe('BuildBuildBuild', () => {
     marsBot.megacredits = 20;
     const card = createBonusCard(BonusCardId.B27_BUILD_BUILD_BUILD);
 
-    marsBot['bonusResolver'].resolve(card);
+    marsBot.actionDeck.playBonusCard(card);
 
     const cities = game.board.getCities(marsBot.player);
     expect(cities).has.length(1);
@@ -130,7 +130,7 @@ describe('BuildBuildBuild', () => {
     marsBot.playedProjectCards.push(nuclearZone);
     marsBot.megacredits = 10;
 
-    marsBot['bonusResolver'].resolve(createBonusCard(BonusCardId.B27_BUILD_BUILD_BUILD));
+    marsBot.actionDeck.playBonusCard(createBonusCard(BonusCardId.B27_BUILD_BUILD_BUILD));
 
     const space = game.board.getSpaceByTileCard(CardName.NUCLEAR_ZONE)!;
     expect(space.tile?.tileType).to.eq(TileType.NUCLEAR_ZONE);
@@ -146,7 +146,7 @@ describe('BuildBuildBuild', () => {
     game.simpleAddTile(human, quietSpace(game, marsBot.player), {tileType: TileType.CITY});
     marsBot.playedProjectCards.push(new Capital());
 
-    marsBot['bonusResolver'].resolve(createBonusCard(BonusCardId.B27_BUILD_BUILD_BUILD));
+    marsBot.actionDeck.playBonusCard(createBonusCard(BonusCardId.B27_BUILD_BUILD_BUILD));
 
     expect(game.board.getSpaceByTileCard(CardName.CAPITAL)).is.undefined;
     expect(marsBot.megacredits).to.eq(3);
@@ -156,7 +156,7 @@ describe('BuildBuildBuild', () => {
     const {game, marsBot} = createAutomaGame();
     const card = createBonusCard(BonusCardId.B27_BUILD_BUILD_BUILD);
 
-    marsBot['bonusResolver'].resolve(card);
+    marsBot.actionDeck.playBonusCard(card);
 
     expect(game.board.getCities(marsBot.player)).is.empty;
     expect(marsBot.megacredits).to.eq(3);

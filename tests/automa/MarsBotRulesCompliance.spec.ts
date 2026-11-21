@@ -290,7 +290,7 @@ describe('MarsBot Rules Compliance', () => {
     it('gen 2: MarsBot goes first', () => {
       const {game, marsBot} = createAutomaGame();
       // Simulate research phase toggle (which alternates goesFirst)
-      marsBot.buildResearchActionDeck();
+      marsBot.actionDeck.buildResearch();
       game.generation = 2;
       marsBot.goesFirst = !marsBot.goesFirst; // Simulating what gotoResearchPhase does
       expect(marsBot.goesFirst).to.be.true;
@@ -372,12 +372,12 @@ describe('MarsBot Rules Compliance', () => {
   describe('Rule 2.4: MarsBot plays one card per turn', () => {
     it('action deck decreases after takeTurn', () => {
       const {marsBot} = createAutomaGame();
-      const deckBefore = marsBot.actionDeck.length;
+      const deckBefore = marsBot.actionDeck.cards.length;
       expect(deckBefore).to.eq(4);
 
       marsBot.takeTurn();
       // Deck should decrease (by 1 for project card, possibly more if bonus card draws extra)
-      expect(marsBot.actionDeck.length).to.be.lt(deckBefore);
+      expect(marsBot.actionDeck.cards.length).to.be.lt(deckBefore);
     });
   });
 });

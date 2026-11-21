@@ -173,7 +173,7 @@ describe('MarsBotReload', () => {
 
   it('keeps MarsBot\'s player markers across a reload', () => {
     const {game, marsBot} = createAutomaGame();
-    marsBot['bonusResolver'].resolve(createBonusCard(BonusCardId.B22_SETTLERS));
+    marsBot.actionDeck.playBonusCard(createBonusCard(BonusCardId.B22_SETTLERS));
     const [id] = marsBot.markerSpaceIds;
 
     const restored = Game.deserialize(game.serialize());
@@ -304,7 +304,7 @@ describe('MarsBotReload', () => {
     {megacreditsKey: 'megacredits'},
     {megacreditsKey: 'mcSupply'},
   ] as const) {
-    it('restores M€, the played pile and the temperature count of an older save: ' + JSON.stringify(run), () => {
+    it('restores M€, the played pile, the temperature count and the action deck of an older save: ' + JSON.stringify(run), () => {
       const [game] = testGame(1, {automa: true, automaDifficulty: 'hard', boardName: BoardName.THARSIS});
       const marsBot = game.automaHooks!.marsBot;
       const {megacredits, ...rest} = savedState;
@@ -314,6 +314,9 @@ describe('MarsBotReload', () => {
       expect(marsBot.megacredits).eq(25);
       expect(marsBot.playedProjectCards.map((card) => card.name)).deep.eq(savedState.playedProjectCardNames);
       expect(marsBot.temperatureRaises).eq(1);
+      expect(marsBot.actionDeck.cards.map((card) => card.name))
+        .deep.eq(['Black Polar Dust', 'Wave Power', 'Nuclear Zone', 'Invasive Species:automa']);
+      expect(marsBot.destroyedBonusCards).eq(2);
       expect(marsBot.serialize()).deep.eq(savedState);
     });
   }

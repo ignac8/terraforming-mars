@@ -1,7 +1,6 @@
 import {expect} from 'chai';
 import {BonusCardId} from '@/common/automa/AutomaTypes';
 import {createBaseBonusCards, createBonusCard} from '@/server/automa/bonusCards/MarsBotBonusCards';
-import {MarsBotBonusResolver} from '@/server/automa/MarsBotBonusResolver';
 import {ProtectedHabitats} from '@/server/cards/base/ProtectedHabitats';
 import {AsteroidDeflectionSystem} from '@/server/cards/promo/AsteroidDeflectionSystem';
 import {MeteorShower} from '@/server/automa/bonusCards/MeteorShower';
@@ -45,9 +44,8 @@ describe('MeteorShower', () => {
 
     const cards = createBaseBonusCards();
     const b01 = cards.find((c) => c.id === BonusCardId.B01_METEOR_SHOWER)!;
-    const bonusResolver = new MarsBotBonusResolver(marsBot);
 
-    const destroyed = bonusResolver.resolve(b01);
+    const destroyed = marsBot.actionDeck.playBonusCard(b01);
 
     expect(human.plants).to.eq(0); // Lost 2 plants
     expect(destroyed).to.be.false; // NOT destroyed (lost <3)
@@ -59,9 +57,8 @@ describe('MeteorShower', () => {
 
     const cards = createBaseBonusCards();
     const b01 = cards.find((c) => c.id === BonusCardId.B01_METEOR_SHOWER)!;
-    const bonusResolver = new MarsBotBonusResolver(marsBot);
 
-    const destroyed = bonusResolver.resolve(b01);
+    const destroyed = marsBot.actionDeck.playBonusCard(b01);
 
     expect(human.plants).to.eq(0); // Lost 5 plants
     expect(destroyed).to.be.true; // Destroyed
@@ -78,7 +75,7 @@ describe('MeteorShower', () => {
       return;
     }
     const plantsBefore = human.plants;
-    marsBot['bonusResolver'].resolveEffect(createBonusCard(BonusCardId.B01_METEOR_SHOWER));
+    createBonusCard(BonusCardId.B01_METEOR_SHOWER).resolve(marsBot);
     expect(human.plants).to.eq(plantsBefore);
   });
 
@@ -92,7 +89,7 @@ describe('MeteorShower', () => {
       return;
     }
     const plantsBefore = human.plants;
-    marsBot['bonusResolver'].resolveEffect(createBonusCard(BonusCardId.B01_METEOR_SHOWER));
+    createBonusCard(BonusCardId.B01_METEOR_SHOWER).resolve(marsBot);
     expect(human.plants).to.eq(plantsBefore);
   });
 });

@@ -59,7 +59,7 @@ describe('GrayEminence', () => {
     const {marsBot, turmoil} = turmoilGame();
     const before = botDelegates(turmoil, marsBot);
     expect(Math.max(...before)).to.eq(0);
-    marsBot['bonusResolver'].resolve(createBonusCard(BonusCardId.B29_GRAY_EMINENCE));
+    marsBot.actionDeck.playBonusCard(createBonusCard(BonusCardId.B29_GRAY_EMINENCE));
     const after = botDelegates(turmoil, marsBot);
     expect(after.reduce((a, b) => a + b, 0)).to.eq(2);
     expect(Math.max(...after)).to.eq(1);
@@ -70,7 +70,7 @@ describe('GrayEminence', () => {
     game.projectDeck.drawPile.push(new Mine(), new Capital()); // Capital (26) first, then Mine (4)
     const discarded = game.projectDeck.discardPile.length;
 
-    marsBot['bonusResolver'].resolve(createBonusCard(BonusCardId.B29_GRAY_EMINENCE));
+    marsBot.actionDeck.playBonusCard(createBonusCard(BonusCardId.B29_GRAY_EMINENCE));
 
     // 26 counts to the 2nd of 6 tied parties; 4 counts to the 4th of the 5 left
     expect(botDelegates(turmoil, marsBot)).deep.eq([0, 1, 0, 0, 1, 0]);
@@ -80,7 +80,7 @@ describe('GrayEminence', () => {
   it('gains 2 M€ for each delegate it cannot place', () => {
     const {marsBot, turmoil} = turmoilGame();
     turmoil.delegateReserve.remove(marsBot.player, turmoil.delegateReserve.get(marsBot.player) - 1);
-    marsBot['bonusResolver'].resolve(createBonusCard(BonusCardId.B29_GRAY_EMINENCE));
+    marsBot.actionDeck.playBonusCard(createBonusCard(BonusCardId.B29_GRAY_EMINENCE));
     expect(botDelegates(turmoil, marsBot).reduce((a, b) => a + b, 0)).to.eq(1);
     expect(marsBot.megacredits).to.eq(2);
   });

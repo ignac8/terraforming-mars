@@ -65,7 +65,7 @@ describe('MorningStarIncMarsBot', () => {
   it('removes the Venus Next Lobbyists from the bonus deck', () => {
     const {marsBot} = createVenusAutomaGame();
     const deck = marsBot['bonusDeck'];
-    const ids = () => [...deck.drawPile, ...deck.discardPile, ...marsBot.actionDeck].map((c) => (c as {id?: BonusCardId}).id);
+    const ids = () => [...deck.drawPile, ...deck.discardPile, ...marsBot.actionDeck.cards].map((c) => (c as {id?: BonusCardId}).id);
     expect(ids()).to.include(BonusCardId.B15_LOBBYISTS_VENUS);
     marsBot.setCorpAndSetup(getMarsBotCorp(CardName.MORNING_STAR_INC)!);
     expect(ids()).to.not.include(BonusCardId.B15_LOBBYISTS_VENUS);

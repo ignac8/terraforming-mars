@@ -140,7 +140,7 @@ describe('PristarMarsBot', () => {
     marsBot.setCorpAndSetup(getMarsBotCorp(CardName.PRISTAR)!);
     marsBot.corpSpecificState.set('whiteCubeOnCard', 1);
     game.generation = 2; // even generation → furthest-parameter branch
-    marsBot['bonusResolver'].resolveEffect(createBonusCard(BonusCardId.B16_GOVERNMENT_INTERVENTION));
+    createBonusCard(BonusCardId.B16_GOVERNMENT_INTERVENTION).resolve(marsBot);
     expect(marsBot.corpSpecificState.get('whiteCubeOnCard')).to.eq(1);
   });
 });

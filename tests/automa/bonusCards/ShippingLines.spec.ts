@@ -36,7 +36,7 @@ describe('ShippingLines', () => {
     marsBot.megacredits = 3;
     const card = b19Card();
     marsBot.bonusDeck.drawPile.push(card);
-    marsBot['bonusResolver'].resolve(card);
+    marsBot.actionDeck.playBonusCard(card);
     // Should have spent 1 MC and gained 2 resources to Luna
     expect(marsBot.megacredits).to.eq(2);
     expect(marsBot.shippingBoard.get(ColonyName.LUNA)).to.eq(2);
@@ -52,7 +52,7 @@ describe('ShippingLines', () => {
     marsBot.megacredits = 0;
     const card = b19Card();
     marsBot.bonusDeck.drawPile.push(card);
-    marsBot['bonusResolver'].resolve(card);
+    marsBot.actionDeck.playBonusCard(card);
     expect(marsBot.megacredits).to.eq(0);
     expect(marsBot.shippingBoard.get(ColonyName.LUNA)).to.eq(0);
     expect(luna.visitor).is.undefined;
@@ -66,7 +66,7 @@ describe('ShippingLines', () => {
     marsBot.megacredits = 3;
     const card = b19Card();
     marsBot.bonusDeck.drawPile.push(card);
-    marsBot['bonusResolver'].resolve(card);
+    marsBot.actionDeck.playBonusCard(card);
     expect(marsBot.megacredits).to.eq(3);
   });
 
@@ -80,7 +80,7 @@ describe('ShippingLines', () => {
     const trBefore = marsBot.player.terraformRating;
     const card = b19Card();
     marsBot.bonusDeck.drawPile.push(card);
-    marsBot['bonusResolver'].resolve(card);
+    marsBot.actionDeck.playBonusCard(card);
     expect(marsBot.player.terraformRating).to.eq(trBefore + 1);
     expect(marsBot.shippingBoard.get(ColonyName.EUROPA)).to.eq(0);
   });
@@ -88,8 +88,8 @@ describe('ShippingLines', () => {
   it('stays out of the bonus deck after it resolves, and so does Extended Shipping Lines', () => {
     const {marsBot} = createAutomaGame({coloniesExtension: true});
 
-    marsBot['bonusResolver'].resolve(createBonusCard(BonusCardId.B19_SHIPPING_LINES));
-    marsBot['bonusResolver'].resolve(createBonusCard(BonusCardId.B20_EXTENDED_SHIPPING_LINES));
+    marsBot.actionDeck.playBonusCard(createBonusCard(BonusCardId.B19_SHIPPING_LINES));
+    marsBot.actionDeck.playBonusCard(createBonusCard(BonusCardId.B20_EXTENDED_SHIPPING_LINES));
 
     expect(bonusDeckIds(marsBot)).does.not.include(BonusCardId.B19_SHIPPING_LINES);
     expect(bonusDeckIds(marsBot)).does.not.include(BonusCardId.B20_EXTENDED_SHIPPING_LINES);

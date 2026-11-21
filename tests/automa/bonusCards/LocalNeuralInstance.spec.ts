@@ -58,7 +58,7 @@ describe('LocalNeuralInstance', () => {
   it('is removed once its tile is placed', () => {
     const {marsBot} = createAutomaGame();
 
-    const destroyed = marsBot['bonusResolver'].resolve(neuralInstance());
+    const destroyed = marsBot.actionDeck.playBonusCard(neuralInstance());
 
     expect(marsBot.neuralInstanceSpace?.tile?.tileType).to.eq(TileType.NEURAL_INSTANCE);
     expect(marsBot.megacredits).to.eq(new MarsBotTilePlacer(marsBot).getTotalPlacementMC(marsBot.neuralInstanceSpace!));
@@ -71,7 +71,7 @@ describe('LocalNeuralInstance', () => {
     leaveNoNeuralInstanceSpace(marsBot);
     const played = marsBot.playedProjectCards.length;
 
-    const destroyed = marsBot['bonusResolver'].resolve(neuralInstance());
+    const destroyed = marsBot.actionDeck.playBonusCard(neuralInstance());
 
     expect(marsBot.neuralInstanceSpace).to.be.undefined;
     expect(marsBot.playedProjectCards).has.length(played + 1); // The project card it resolved instead
@@ -84,7 +84,7 @@ describe('LocalNeuralInstance', () => {
     leaveNoNeuralInstanceSpace(marsBot);
     const b07 = createBaseBonusCards().find((c) => c.id === BonusCardId.B07_LOCAL_NEURAL_INSTANCE)!;
 
-    marsBot['bonusResolver'].resolve(b07);
+    marsBot.actionDeck.playBonusCard(b07);
 
     expect(marsBot.playedProjectCards).to.have.length(1);
   });

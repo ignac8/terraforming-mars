@@ -42,7 +42,7 @@ describe('MarsBot', () => {
 
     it('MarsBot has initial action deck of 4 cards', () => {
       const {marsBot} = createAutomaGame();
-      expect(marsBot.actionDeck.length).to.eq(4);
+      expect(marsBot.actionDeck.cards.length).to.eq(4);
     });
 
     it('milestones are not disabled in automa games', () => {
@@ -69,21 +69,21 @@ describe('MarsBot', () => {
   describe('Action Deck', () => {
     it('builds research action deck with 4 cards (3 project + 1 bonus)', () => {
       const {marsBot} = createAutomaGame();
-      marsBot.buildResearchActionDeck();
-      expect(marsBot.actionDeck.length).to.eq(4);
+      marsBot.actionDeck.buildResearch();
+      expect(marsBot.actionDeck.cards.length).to.eq(4);
     });
 
     it('brutal mode builds with 5 cards (4 project + 1 bonus)', () => {
       const {marsBot} = createAutomaGame('brutal');
-      marsBot.buildResearchActionDeck();
-      expect(marsBot.actionDeck.length).to.eq(5);
+      marsBot.actionDeck.buildResearch();
+      expect(marsBot.actionDeck.cards.length).to.eq(5);
     });
   });
 
   describe('Turn Resolution', () => {
     it('MarsBot passes when action deck is empty', () => {
       const {game, marsBot} = createAutomaGame();
-      marsBot.actionDeck = []; // Empty deck
+      marsBot.actionDeck.cards = []; // Empty deck
 
       const passedBefore = game.hasPassedThisActionPhase(marsBot.player);
       expect(passedBefore).to.be.false;
@@ -96,7 +96,7 @@ describe('MarsBot', () => {
 
     it('MarsBot action deck has cards after setup', () => {
       const {marsBot} = createAutomaGame();
-      expect(marsBot.actionDeck.length).to.eq(4);
+      expect(marsBot.actionDeck.cards.length).to.eq(4);
     });
   });
 

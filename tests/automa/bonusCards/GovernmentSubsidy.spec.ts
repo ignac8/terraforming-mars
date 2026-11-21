@@ -22,7 +22,7 @@ describe('GovernmentSubsidy', () => {
   it('raises TR 1 step', () => {
     const {marsBot} = createAutomaGame();
     const tr = marsBot.player.terraformRating;
-    marsBot['bonusResolver'].resolve(createBonusCard(BonusCardId.B31_GOVERNMENT_SUBSIDY));
+    marsBot.actionDeck.playBonusCard(createBonusCard(BonusCardId.B31_GOVERNMENT_SUBSIDY));
     expect(marsBot.player.terraformRating).to.eq(tr + 1);
     expect(marsBot.megacredits).to.eq(0);
   });

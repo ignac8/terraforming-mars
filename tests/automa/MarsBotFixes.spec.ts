@@ -416,15 +416,15 @@ describe('MarsBot Fixes', () => {
   describe('Brutal mode', () => {
     it('builds action deck with 5 cards', () => {
       const {marsBot} = createAutomaGame('brutal');
-      marsBot.buildResearchActionDeck();
-      expect(marsBot.actionDeck.length).to.eq(5);
+      marsBot.actionDeck.buildResearch();
+      expect(marsBot.actionDeck.cards.length).to.eq(5);
     });
   });
 
   describe('Passing behavior', () => {
     it('MarsBot passes when action deck is empty', () => {
       const {game, marsBot} = createAutomaGame();
-      marsBot.actionDeck = [];
+      marsBot.actionDeck.cards = [];
 
       marsBot.takeTurn();
       expect(game.hasPassedThisActionPhase(marsBot.player)).to.be.true;

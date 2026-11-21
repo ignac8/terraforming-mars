@@ -55,7 +55,7 @@ describe('VenusianLobby', () => {
   it('raises Venus, advances the Venus track and raises the furthest parameter', () => {
     const [game] = testGame(1, {automa: true, venusNextExtension: true, boardName: BoardName.THARSIS});
     const marsBot = game.automaHooks!.marsBot;
-    marsBot['bonusResolver'].resolve(createBonusCard(BonusCardId.B26_VENUSIAN_LOBBY));
+    marsBot.actionDeck.playBonusCard(createBonusCard(BonusCardId.B26_VENUSIAN_LOBBY));
     expect(game.getVenusScaleLevel()).to.eq(2);
     expect(marsBot.marsBotBoard.tracks[7].position).to.eq(1);
     // Everything is at its start, and temperature has the most steps left (19, against 14 and 9)
@@ -69,7 +69,7 @@ describe('VenusianLobby', () => {
     const [game] = testGame(1, {automa: true, venusNextExtension: true, boardName: BoardName.THARSIS});
     const marsBot = game.automaHooks!.marsBot;
     maxTracks(marsBot);
-    marsBot['bonusResolver'].resolve(createBonusCard(BonusCardId.B26_VENUSIAN_LOBBY));
+    marsBot.actionDeck.playBonusCard(createBonusCard(BonusCardId.B26_VENUSIAN_LOBBY));
     expect(game.getVenusScaleLevel()).to.eq(2);
     expect(marsBot.megacredits).to.eq(0);
   });

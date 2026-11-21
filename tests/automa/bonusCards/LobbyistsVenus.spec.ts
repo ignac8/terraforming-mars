@@ -67,7 +67,7 @@ describe('LobbyistsVenus', () => {
       // Set temp/oxygen far from bonuses so Venus branch is reached
       setTemperature(game, -30 + 26); // = -4, far from any bonus
       setOxygenLevel(game, 5); // far from 8% bonus
-      marsBot['bonusResolver'].resolve(card);
+      marsBot.actionDeck.playBonusCard(card);
       expect(game.getVenusScaleLevel()).to.be.greaterThan(6);
     }
   });
@@ -79,7 +79,7 @@ describe('LobbyistsVenus', () => {
     setTemperature(game, 8); // maxed
     setOxygenLevel(game, 14); // maxed
     const card = createBonusCard(BonusCardId.B15_LOBBYISTS_VENUS);
-    marsBot['bonusResolver'].resolve(card);
+    marsBot.actionDeck.playBonusCard(card);
     // Venus should have been raised 2 steps: 12 → 16
     expect(game.getVenusScaleLevel()).to.eq(16);
   });
@@ -90,7 +90,7 @@ describe('LobbyistsVenus', () => {
     setTemperature(game, 8);
     setOxygenLevel(game, 14);
     const card = createBonusCard(BonusCardId.B15_LOBBYISTS_VENUS);
-    const destroyed = marsBot['bonusResolver'].resolve(card);
+    const destroyed = marsBot.actionDeck.playBonusCard(card);
     expect(game.getVenusScaleLevel()).to.eq(30);
     expect(destroyed).to.be.false;
   });
@@ -100,7 +100,7 @@ describe('LobbyistsVenus', () => {
     // Temperature at -26 → 1 step from -24 (heat bonus)
     setTemperature(game, -26);
     const card = createBonusCard(BonusCardId.B15_LOBBYISTS_VENUS);
-    const destroyed = marsBot['bonusResolver'].resolve(card);
+    const destroyed = marsBot.actionDeck.playBonusCard(card);
     expect(game.getTemperature()).to.eq(-22); // raised 2 steps
     expect(destroyed).to.be.true;
   });

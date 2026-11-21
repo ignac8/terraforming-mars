@@ -34,8 +34,8 @@ describe('MarsBot Draft Variant', () => {
   describe('Non-drafting research (default)', () => {
     it('MarsBot gets 4 cards without draft', () => {
       const {marsBot} = createAutomaGameNoDraft();
-      marsBot.buildResearchActionDeck();
-      expect(marsBot.actionDeck.length).to.eq(4);
+      marsBot.actionDeck.buildResearch();
+      expect(marsBot.actionDeck.cards.length).to.eq(4);
     });
   });
 
@@ -105,7 +105,7 @@ describe('MarsBot Draft Variant', () => {
 
       // MarsBot should have built its action deck from the draft
       // 4 drafted → discard 1 → 3 cards + 1 bonus = 4 total
-      expect(marsBot.actionDeck.length).to.eq(4);
+      expect(marsBot.actionDeck.cards.length).to.eq(4);
     });
 
     it('project deck reduces by 8 cards (two piles of 4)', () => {
@@ -187,16 +187,16 @@ describe('MarsBot Draft Variant', () => {
     it('builds deck from 4 drafted cards: discard 1, add bonus, total 4', () => {
       const {game, marsBot} = createAutomaGameNoDraft();
       const cards = game.projectDeck.drawN(game, 4);
-      marsBot.buildResearchActionDeckFromDraft(cards);
+      marsBot.actionDeck.buildResearchFromDraft(cards);
       // 4 drafted → discard 1 = 3 project + 1 bonus = 4
-      expect(marsBot.actionDeck.length).to.eq(4);
+      expect(marsBot.actionDeck.cards.length).to.eq(4);
     });
 
     it('discards 1 card to project discard pile', () => {
       const {game, marsBot} = createAutomaGameNoDraft();
       const discardBefore = game.projectDeck.discardPile.length;
       const cards = game.projectDeck.drawN(game, 4);
-      marsBot.buildResearchActionDeckFromDraft(cards);
+      marsBot.actionDeck.buildResearchFromDraft(cards);
       expect(game.projectDeck.discardPile.length).to.eq(discardBefore + 1);
     });
   });

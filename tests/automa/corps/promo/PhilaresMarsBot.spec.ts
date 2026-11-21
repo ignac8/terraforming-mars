@@ -112,7 +112,7 @@ describe('PhilaresMarsBot', () => {
     const bonusIds = [...marsBot.bonusDeck.drawPile, ...marsBot.bonusDeck.discardPile].map((c) => c.id);
     expect(bonusIds).does.not.include(BonusCardId.B07_LOCAL_NEURAL_INSTANCE);
     expect(bonusIds).includes(BonusCardId.B27_BUILD_BUILD_BUILD);
-    expect(marsBot.actionDeck.some((c) => 'id' in c && c.id === BonusCardId.B07_LOCAL_NEURAL_INSTANCE)).is.false;
+    expect(marsBot.actionDeck.cards.some((c) => 'id' in c && c.id === BonusCardId.B07_LOCAL_NEURAL_INSTANCE)).is.false;
   });
 
   it('setup does not count Local Neural Instance as a destroyed bonus card', () => {

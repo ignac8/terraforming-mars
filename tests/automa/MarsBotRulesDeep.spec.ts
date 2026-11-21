@@ -254,14 +254,14 @@ describe('MarsBot Deep Rules Tests', () => {
   describe('Research phase deck building (page 4)', () => {
     it('action deck has exactly 4 cards after research (normal)', () => {
       const {marsBot} = createAutomaGame();
-      marsBot.buildResearchActionDeck();
-      expect(marsBot.actionDeck.length).to.eq(4);
+      marsBot.actionDeck.buildResearch();
+      expect(marsBot.actionDeck.cards.length).to.eq(4);
     });
 
     it('action deck has exactly 5 cards after research (brutal)', () => {
       const {marsBot} = createAutomaGame('brutal');
-      marsBot.buildResearchActionDeck();
-      expect(marsBot.actionDeck.length).to.eq(5);
+      marsBot.actionDeck.buildResearch();
+      expect(marsBot.actionDeck.cards.length).to.eq(5);
     });
 
     it('bonus deck reshuffles automatically when draw pile exhausted', () => {
@@ -421,7 +421,7 @@ describe('MarsBot Deep Rules Tests', () => {
       const {game, marsBot} = createAutomaGame('hard');
       qualifyForThree(marsBot);
       marsBot.megacredits = 30;
-      marsBot.actionDeck = [
+      marsBot.actionDeck.cards = [
         fakeCard({cost: 5, tags: [Tag.MICROBE], type: CardType.AUTOMATED}),
         fakeCard({cost: 5, tags: [Tag.MICROBE], type: CardType.AUTOMATED}),
         fakeCard({cost: 5, tags: [Tag.MICROBE], type: CardType.AUTOMATED}),
@@ -446,7 +446,7 @@ describe('MarsBot Deep Rules Tests', () => {
 
       // A new generation checks again
       game.generation++;
-      marsBot.actionDeck = [fakeCard({cost: 5, tags: [Tag.MICROBE], type: CardType.AUTOMATED})];
+      marsBot.actionDeck.cards = [fakeCard({cost: 5, tags: [Tag.MICROBE], type: CardType.AUTOMATED})];
       const before = game.claimedMilestones.length;
       marsBot.takeTurn();
       expect(claimedWhenResolving[3]).to.eq(before + 1);
@@ -456,7 +456,7 @@ describe('MarsBot Deep Rules Tests', () => {
       const {game, marsBot} = createAutomaGame('hard');
       qualifyForThree(marsBot);
       marsBot.megacredits = 7;
-      marsBot.actionDeck = [fakeCard({cost: 5, tags: [Tag.MICROBE], type: CardType.AUTOMATED})];
+      marsBot.actionDeck.cards = [fakeCard({cost: 5, tags: [Tag.MICROBE], type: CardType.AUTOMATED})];
       marsBot.turnResolver.resolveProjectCard = () => {};
 
       marsBot.takeTurn();
@@ -478,7 +478,7 @@ describe('MarsBot Deep Rules Tests', () => {
         game.simpleAddTile(human, land[i], {tileType: TileType.GREENERY});
       }
       marsBot.megacredits = 8;
-      marsBot.actionDeck = [fakeCard({cost: 5, tags: [Tag.MICROBE], type: CardType.AUTOMATED})];
+      marsBot.actionDeck.cards = [fakeCard({cost: 5, tags: [Tag.MICROBE], type: CardType.AUTOMATED})];
       marsBot.turnResolver.resolveProjectCard = () => {};
 
       marsBot.takeTurn();
@@ -554,7 +554,7 @@ describe('MarsBot Deep Rules Tests', () => {
     it('records a card resolved on a turn exactly once', () => {
       const {marsBot} = createAutomaGame();
       const card = fakeCard({cost: 5, tags: [Tag.MICROBE], type: CardType.AUTOMATED});
-      marsBot.actionDeck = [card];
+      marsBot.actionDeck.cards = [card];
 
       marsBot.takeTurn();
 

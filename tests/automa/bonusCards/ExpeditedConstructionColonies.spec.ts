@@ -65,7 +65,7 @@ describe('ExpeditedConstructionColonies', () => {
     marsBot.bonusDeck.drawPile.push(card);
 
     const tilesBefore = game.board.spaces.filter((s) => s.tile !== undefined).length;
-    const destroyed = marsBot['bonusResolver'].resolve(card);
+    const destroyed = marsBot.actionDeck.playBonusCard(card);
 
     // If city placed, tile count should increase and card should be destroyed
     const tilesAfter = game.board.spaces.filter((s) => s.tile !== undefined).length;
@@ -82,7 +82,7 @@ describe('ExpeditedConstructionColonies', () => {
     game.colonies = [luna];
     const card = b17Card();
     marsBot.bonusDeck.drawPile.push(card);
-    const destroyed = marsBot['bonusResolver'].resolve(card);
+    const destroyed = marsBot.actionDeck.playBonusCard(card);
     // Either a colony was placed or no eligible colony was found
     // Card should NOT be destroyed in this branch
     expect(destroyed).to.be.false;
@@ -96,7 +96,7 @@ describe('ExpeditedConstructionColonies', () => {
     const card = b17Card();
     marsBot.bonusDeck.drawPile.push(card);
     const storageBefore = marsBot.shippingBoard.get(ColonyName.LUNA);
-    marsBot['bonusResolver'].resolve(card);
+    marsBot.actionDeck.playBonusCard(card);
     // Only meaningful if luna colony was placed
     if (luna.colonies.includes(marsBot.player.id)) {
       expect(marsBot.shippingBoard.get(ColonyName.LUNA)).to.eq(storageBefore + 2);
@@ -113,7 +113,7 @@ describe('ExpeditedConstructionColonies', () => {
     game.colonies = [luna, ceres];
     const card = b17Card();
     marsBot.bonusDeck.drawPile.push(card);
-    const destroyed = marsBot['bonusResolver'].resolve(card);
+    const destroyed = marsBot.actionDeck.playBonusCard(card);
     expect(destroyed).to.be.false;
     // No new colonies should be added
     expect(luna.colonies.filter((id) => id === marsBot.player.id).length).to.eq(1);

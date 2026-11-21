@@ -372,7 +372,7 @@ describe('MarsBot Resource Interaction (rules page 4-5)', () => {
       human.plants = 10;
       expect(new LawSuit().canPlay(human)).is.false;
 
-      marsBot['bonusResolver'].resolveEffect(createBonusCard(BonusCardId.B01_METEOR_SHOWER));
+      createBonusCard(BonusCardId.B01_METEOR_SHOWER).resolve(marsBot);
 
       expect(human.plants).eq(5);
       expect(new LawSuit().canPlay(human)).is.true;
@@ -384,7 +384,7 @@ describe('MarsBot Resource Interaction (rules page 4-5)', () => {
       human.playedCards.push(tardigrades);
       tardigrades.resourceCount = 4;
 
-      marsBot['bonusResolver'].resolveEffect(createBonusCard(BonusCardId.B02_INVASIVE_SPECIES));
+      createBonusCard(BonusCardId.B02_INVASIVE_SPECIES).resolve(marsBot);
 
       expect(tardigrades.resourceCount).eq(3);
       expect(new LawSuit().canPlay(human)).is.true;
@@ -395,7 +395,7 @@ describe('MarsBot Resource Interaction (rules page 4-5)', () => {
       human.plants = 10;
       human.playedCards.push(new ProtectedHabitats());
 
-      marsBot['bonusResolver'].resolveEffect(createBonusCard(BonusCardId.B01_METEOR_SHOWER));
+      createBonusCard(BonusCardId.B01_METEOR_SHOWER).resolve(marsBot);
 
       expect(human.plants).eq(10);
       expect(new LawSuit().canPlay(human)).is.false;

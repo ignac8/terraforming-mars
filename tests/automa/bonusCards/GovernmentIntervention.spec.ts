@@ -56,7 +56,7 @@ describe('GovernmentIntervention', () => {
     const tr = marsBot.player.terraformRating;
     const mc = marsBot.megacredits;
 
-    marsBot['bonusResolver'].resolve(createBonusCard(BonusCardId.B16_GOVERNMENT_INTERVENTION));
+    marsBot.actionDeck.playBonusCard(createBonusCard(BonusCardId.B16_GOVERNMENT_INTERVENTION));
 
     expect(game.getTemperature()).to.eq(-24);
     expect(marsBot.player.terraformRating).to.eq(tr);
@@ -72,7 +72,7 @@ describe('GovernmentIntervention', () => {
     setTemperature(game, 8);
     const venus = game.getVenusScaleLevel();
 
-    marsBot['bonusResolver'].resolve(createBonusCard(BonusCardId.B16_GOVERNMENT_INTERVENTION));
+    marsBot.actionDeck.playBonusCard(createBonusCard(BonusCardId.B16_GOVERNMENT_INTERVENTION));
 
     expect(game.getVenusScaleLevel()).to.eq(venus + 2);
   });
@@ -86,7 +86,7 @@ describe('GovernmentIntervention', () => {
     maxOutOceans(game.players[0]);
     setTemperature(game, -10);
 
-    marsBot['bonusResolver'].resolve(createBonusCard(BonusCardId.B16_GOVERNMENT_INTERVENTION));
+    marsBot.actionDeck.playBonusCard(createBonusCard(BonusCardId.B16_GOVERNMENT_INTERVENTION));
 
     expect(game.getTemperature()).to.eq(-8);
     expect(game.getOxygenLevel()).to.eq(7);
@@ -96,7 +96,7 @@ describe('GovernmentIntervention', () => {
     const {game, marsBot, hand} = venusGame();
     game.generation = 3;
 
-    marsBot['bonusResolver'].resolve(createBonusCard(BonusCardId.B16_GOVERNMENT_INTERVENTION));
+    marsBot.actionDeck.playBonusCard(createBonusCard(BonusCardId.B16_GOVERNMENT_INTERVENTION));
 
     expect(game.getVenusScaleLevel()).to.eq(8);
     expect(marsBot.megacredits).to.eq(0);
@@ -108,7 +108,7 @@ describe('GovernmentIntervention', () => {
     game.generation = 4; // even
     const trBefore = marsBot.player.terraformRating;
     const card = createBonusCard(BonusCardId.B16_GOVERNMENT_INTERVENTION);
-    marsBot['bonusResolver'].resolve(card);
+    marsBot.actionDeck.playBonusCard(card);
     // TR should not have changed (reversed by withoutTRGain)
     expect(marsBot.player.terraformRating).to.eq(trBefore);
   });
@@ -119,7 +119,7 @@ describe('GovernmentIntervention', () => {
     const venusBefore = game.getVenusScaleLevel();
     const trBefore = marsBot.player.terraformRating;
     const card = createBonusCard(BonusCardId.B16_GOVERNMENT_INTERVENTION);
-    marsBot['bonusResolver'].resolve(card);
+    marsBot.actionDeck.playBonusCard(card);
     expect(game.getVenusScaleLevel()).to.eq(venusBefore + 2);
     expect(marsBot.player.terraformRating).to.eq(trBefore);
   });
@@ -130,7 +130,7 @@ describe('GovernmentIntervention', () => {
     setVenusScaleLevel(game, 30);
     const venusBefore = game.getVenusScaleLevel();
     const card = createBonusCard(BonusCardId.B16_GOVERNMENT_INTERVENTION);
-    marsBot['bonusResolver'].resolve(card);
+    marsBot.actionDeck.playBonusCard(card);
     // Venus should not change (already maxed, used Martian branch instead)
     expect(game.getVenusScaleLevel()).to.eq(venusBefore);
   });
@@ -138,7 +138,7 @@ describe('GovernmentIntervention', () => {
   it('stays out of the bonus deck after it resolves', () => {
     const {marsBot} = createAutomaGame({venusNextExtension: true});
 
-    marsBot['bonusResolver'].resolve(createBonusCard(BonusCardId.B16_GOVERNMENT_INTERVENTION));
+    marsBot.actionDeck.playBonusCard(createBonusCard(BonusCardId.B16_GOVERNMENT_INTERVENTION));
 
     expect(bonusDeckIds(marsBot)).does.not.include(BonusCardId.B16_GOVERNMENT_INTERVENTION);
   });

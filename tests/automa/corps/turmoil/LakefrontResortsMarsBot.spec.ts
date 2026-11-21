@@ -35,7 +35,7 @@ function interventionWithBuildingAt(position: number) {
 }
 
 function resolveIntervention(marsBot: MarsBot) {
-  marsBot['bonusResolver'].resolve(createBonusCard(BonusCardId.B16_GOVERNMENT_INTERVENTION));
+  marsBot.actionDeck.playBonusCard(createBonusCard(BonusCardId.B16_GOVERNMENT_INTERVENTION));
 }
 
 describe('LakefrontResortsMarsBot', () => {

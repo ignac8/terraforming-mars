@@ -24,9 +24,9 @@ describe('Diversification', () => {
     const {marsBot} = createAutomaGame();
     marsBot.turnResolver.advanceTrack = () => true;
     marsBot.megacredits = 6;
-    marsBot['bonusResolver'].resolve(createBonusCard(BonusCardId.B28_DIVERSIFICATION));
+    marsBot.actionDeck.playBonusCard(createBonusCard(BonusCardId.B28_DIVERSIFICATION));
     expect(marsBot.megacredits).to.eq(2);
-    marsBot['bonusResolver'].resolve(createBonusCard(BonusCardId.B28_DIVERSIFICATION));
+    marsBot.actionDeck.playBonusCard(createBonusCard(BonusCardId.B28_DIVERSIFICATION));
     expect(marsBot.megacredits).to.eq(0);
   });
 
@@ -38,7 +38,7 @@ describe('Diversification', () => {
     // Least advanced should be one of the others (all at 0)
     const leastIdx = marsBot.marsBotBoard.getLeastAdvancedTrackIndex();
     const trackBefore = marsBot.marsBotBoard.tracks[leastIdx].position;
-    marsBot['bonusResolver'].resolve(card);
+    marsBot.actionDeck.playBonusCard(card);
     expect(marsBot.marsBotBoard.tracks[leastIdx].position).to.be.gte(trackBefore + 1);
   });
 
@@ -48,7 +48,7 @@ describe('Diversification', () => {
     const {marsBot} = createAutomaGame();
     maxTracks(marsBot);
     marsBot.megacredits = 4;
-    marsBot['bonusResolver'].resolve(createBonusCard(BonusCardId.B28_DIVERSIFICATION));
+    marsBot.actionDeck.playBonusCard(createBonusCard(BonusCardId.B28_DIVERSIFICATION));
     expect(marsBot.megacredits).to.eq(0);
   });
 });

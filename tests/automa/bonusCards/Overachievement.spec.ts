@@ -5,7 +5,6 @@ import {CardName} from '@/common/cards/CardName';
 import {inplaceRemove} from '@/common/utils/utils';
 import {Game} from '@/server/Game';
 import {createBaseBonusCards, createBonusCard} from '@/server/automa/bonusCards/MarsBotBonusCards';
-import {MarsBotBonusResolver} from '@/server/automa/MarsBotBonusResolver';
 import {getMarsBotCorp} from '@/server/automa/corps/MarsBotCorpRegistry';
 import {createAutomaGame, resetCorpRegistry} from '../corps/CorpGame';
 import {actionDeckIds, bonusDeckIds} from './BonusCardGame';
@@ -33,10 +32,9 @@ describe('Overachievement', () => {
 
     const cards = createBaseBonusCards();
     const b04 = cards.find((c) => c.id === BonusCardId.B04_OVERACHIEVEMENT)!;
-    const bonusResolver = new MarsBotBonusResolver(marsBot);
 
     const awardsBefore = game.fundedAwards.length;
-    const destroyed = bonusResolver.resolve(b04);
+    const destroyed = marsBot.actionDeck.playBonusCard(b04);
 
     expect(game.fundedAwards.length).to.eq(awardsBefore); // No award funded
     expect(marsBot.megacredits).to.eq(5); // Failed → 5 MC
@@ -56,7 +54,7 @@ describe('Overachievement', () => {
     marsBot.awardValue = () => 10;
     const b04 = createBaseBonusCards().find((c) => c.id === BonusCardId.B04_OVERACHIEVEMENT)!;
 
-    marsBot['bonusResolver'].resolve(b04);
+    marsBot.actionDeck.playBonusCard(b04);
 
     expect(game.fundedAwards.map((f) => f.award.name)).deep.eq(['Miner']);
   });
@@ -74,7 +72,7 @@ describe('Overachievement', () => {
     }
     const b04 = createBaseBonusCards().find((c) => c.id === BonusCardId.B04_OVERACHIEVEMENT)!;
 
-    const destroyed = marsBot['bonusResolver'].resolve(b04);
+    const destroyed = marsBot.actionDeck.playBonusCard(b04);
 
     expect(destroyed).is.true;
     expect(game.claimedMilestones.map((c) => c.milestone.name)).deep.eq(['Gardener']);
@@ -84,7 +82,7 @@ describe('Overachievement', () => {
     const {game, marsBot} = setUpTie();
     const b04 = createBaseBonusCards().find((c) => c.id === BonusCardId.B04_OVERACHIEVEMENT)!;
 
-    marsBot['bonusResolver'].resolve(b04);
+    marsBot.actionDeck.playBonusCard(b04);
 
     expect(game.claimedMilestones.map((c) => c.milestone.name)).deep.eq(['Terraformer']);
   });
@@ -93,7 +91,7 @@ describe('Overachievement', () => {
     const {marsBot} = createAutomaGame();
     marsBot.setCorpAndSetup(getMarsBotCorp(CardName.VITOR)!);
 
-    marsBot['bonusResolver'].resolve(createBonusCard(BonusCardId.B04_OVERACHIEVEMENT));
+    marsBot.actionDeck.playBonusCard(createBonusCard(BonusCardId.B04_OVERACHIEVEMENT));
 
     expect(marsBot.megacredits).eq(5);
     expect(bonusDeckIds(marsBot)).does.not.include(BonusCardId.B04_OVERACHIEVEMENT);
@@ -107,7 +105,7 @@ describe('Overachievement', () => {
       milestone.marsBotCanClaim = () => true;
     }
 
-    const destroyed = marsBot['bonusResolver'].resolve(createBonusCard(BonusCardId.B04_OVERACHIEVEMENT));
+    const destroyed = marsBot.actionDeck.playBonusCard(createBonusCard(BonusCardId.B04_OVERACHIEVEMENT));
     expect(destroyed).is.true;
     expect(game.claimedMilestones).has.length(1);
 
@@ -123,7 +121,7 @@ describe('Overachievement', () => {
   it('is still discarded to the bonus deck without Vitor', () => {
     const {marsBot} = createAutomaGame();
 
-    marsBot['bonusResolver'].resolve(createBonusCard(BonusCardId.B04_OVERACHIEVEMENT));
+    marsBot.actionDeck.playBonusCard(createBonusCard(BonusCardId.B04_OVERACHIEVEMENT));
 
     expect(marsBot.bonusDeck.discardPile.map((c) => c.id)).includes(BonusCardId.B04_OVERACHIEVEMENT);
   });

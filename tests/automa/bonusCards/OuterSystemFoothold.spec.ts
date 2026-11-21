@@ -50,7 +50,7 @@ describe('OuterSystemFoothold', () => {
     const card = b18Card();
     marsBot.bonusDeck.discardPile.push(card); // Will be restored; deck starts fresh
     marsBot.bonusDeck.drawPile.push(card);
-    const destroyed = marsBot['bonusResolver'].resolve(card);
+    const destroyed = marsBot.actionDeck.playBonusCard(card);
     // Luna should have marsBot as a colony or shipping board got resources
     const hasColony = luna.colonies.includes(marsBot.player.id);
     if (hasColony) {
@@ -69,7 +69,7 @@ describe('OuterSystemFoothold', () => {
     marsBot.bonusDeck.drawPile = [fillerCard];
 
     const card = b18Card();
-    marsBot['bonusResolver'].resolve(card);
+    marsBot.actionDeck.playBonusCard(card);
 
     // The filler should have been discarded (not resolved, so deck megacredits unchanged)
     // Since R&D would have changed megacredits, and it was just discarded, no change expected
@@ -85,7 +85,7 @@ describe('OuterSystemFoothold', () => {
     const card = b18Card();
     marsBot.bonusDeck.drawPile = [];
     marsBot.bonusDeck.discardPile = [card];
-    marsBot['bonusResolver'].resolve(card);
+    marsBot.actionDeck.playBonusCard(card);
     // B18 should be back in discard but not have been drawn (no infinite loop)
     // No crash = success
   });

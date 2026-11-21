@@ -22,9 +22,9 @@ describe('ActionDeckColonies (C-10, C-11)', () => {
 
     // Simulate gen 2
     game.generation = 2;
-    marsBot.buildResearchActionDeck();
+    marsBot.actionDeck.buildResearch();
 
-    expect(hasBonusCard(marsBot.actionDeck, BonusCardId.B19_SHIPPING_LINES)).to.be.true;
+    expect(hasBonusCard(marsBot.actionDeck.cards, BonusCardId.B19_SHIPPING_LINES)).to.be.true;
   });
 
   it('C-10: Shipping Lines NOT added in gen 1', () => {
@@ -33,9 +33,9 @@ describe('ActionDeckColonies (C-10, C-11)', () => {
 
     // Gen 1 (initial deck, no shipping lines)
     game.generation = 1;
-    marsBot.buildResearchActionDeck();
+    marsBot.actionDeck.buildResearch();
 
-    expect(hasBonusCard(marsBot.actionDeck, BonusCardId.B19_SHIPPING_LINES)).to.be.false;
+    expect(hasBonusCard(marsBot.actionDeck.cards, BonusCardId.B19_SHIPPING_LINES)).to.be.false;
   });
 
   it('C-11: Extended Shipping Lines (B20) added if hasSecondTradeFleet', () => {
@@ -44,10 +44,10 @@ describe('ActionDeckColonies (C-10, C-11)', () => {
 
     game.generation = 2;
     marsBot.hasSecondTradeFleet = true;
-    marsBot.buildResearchActionDeck();
+    marsBot.actionDeck.buildResearch();
 
-    expect(hasBonusCard(marsBot.actionDeck, BonusCardId.B19_SHIPPING_LINES)).to.be.true;
-    expect(hasBonusCard(marsBot.actionDeck, BonusCardId.B20_EXTENDED_SHIPPING_LINES)).to.be.true;
+    expect(hasBonusCard(marsBot.actionDeck.cards, BonusCardId.B19_SHIPPING_LINES)).to.be.true;
+    expect(hasBonusCard(marsBot.actionDeck.cards, BonusCardId.B20_EXTENDED_SHIPPING_LINES)).to.be.true;
   });
 
   it('C-11: Extended Shipping Lines NOT added if hasSecondTradeFleet is false', () => {
@@ -56,9 +56,9 @@ describe('ActionDeckColonies (C-10, C-11)', () => {
 
     game.generation = 2;
     marsBot.hasSecondTradeFleet = false;
-    marsBot.buildResearchActionDeck();
+    marsBot.actionDeck.buildResearch();
 
-    expect(hasBonusCard(marsBot.actionDeck, BonusCardId.B20_EXTENDED_SHIPPING_LINES)).to.be.false;
+    expect(hasBonusCard(marsBot.actionDeck.cards, BonusCardId.B20_EXTENDED_SHIPPING_LINES)).to.be.false;
   });
 
   it('C-10: Shipping Lines NOT added without coloniesExtension', () => {
@@ -66,9 +66,9 @@ describe('ActionDeckColonies (C-10, C-11)', () => {
     const marsBot = getMarsBot(game);
 
     game.generation = 2;
-    marsBot.buildResearchActionDeck();
+    marsBot.actionDeck.buildResearch();
 
-    expect(hasBonusCard(marsBot.actionDeck, BonusCardId.B19_SHIPPING_LINES)).to.be.false;
+    expect(hasBonusCard(marsBot.actionDeck.cards, BonusCardId.B19_SHIPPING_LINES)).to.be.false;
   });
 
   it('C-10: Shipping Lines injected via buildResearchActionDeckFromDraft', () => {
@@ -77,8 +77,8 @@ describe('ActionDeckColonies (C-10, C-11)', () => {
 
     game.generation = 2;
     const cards = game.projectDeck.drawN(game, 4);
-    marsBot.buildResearchActionDeckFromDraft(cards, true);
+    marsBot.actionDeck.buildResearchFromDraft(cards, true);
 
-    expect(hasBonusCard(marsBot.actionDeck, BonusCardId.B19_SHIPPING_LINES)).to.be.true;
+    expect(hasBonusCard(marsBot.actionDeck.cards, BonusCardId.B19_SHIPPING_LINES)).to.be.true;
   });
 });

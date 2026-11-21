@@ -39,6 +39,12 @@ export interface IMarsBot {
   readonly temperatureRaises: number;
   /** How many bonus cards have been destroyed while the bot resolved them. */
   readonly destroyedBonusCards: number;
+  /** The bonus card the bot's corp returns to its action deck every generation. Undefined without one. */
+  readonly actionDeckBonusCard: BonusCardId | undefined;
+  /** True when the bot's corp puts its own card in Party Politics' place in the action deck. */
+  readonly replacesPartyPolitics: boolean;
+  /** True once the bot has unlocked its 2nd Trade Fleet, which adds Extended Shipping Lines to its action deck (C-11). */
+  readonly hasSecondTradeFleet: boolean;
   /** The bot's Shipping Board, where its colonies and trades store their resources (C-18). */
   readonly shippingBoard: MarsBotShippingBoard;
   /**

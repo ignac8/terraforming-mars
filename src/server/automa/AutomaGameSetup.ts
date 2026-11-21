@@ -87,7 +87,7 @@ export class AutomaGameSetup {
           AutomaGameSetup.placeExtraSetupDelegate(game, marsBotPlayer, rng);
         }
       }
-      marsBot.buildInitialActionDeck();
+      marsBot.actionDeck.buildInitial();
       AutomaGameSetup.activateColonyTiles(game);
       AutomaGameSetup.placeColonyCubes(game, marsBot);
       AutomaGameSetup.place2ndTradeFleetCube(game, marsBot);

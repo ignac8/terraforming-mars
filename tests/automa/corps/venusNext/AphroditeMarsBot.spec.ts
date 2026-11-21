@@ -53,7 +53,7 @@ describe('AphroditeMarsBot', () => {
     const tr = marsBot.player.terraformRating;
     const mc = marsBot.megacredits;
 
-    marsBot['bonusResolver'].resolve(createBonusCard(BonusCardId.B16_GOVERNMENT_INTERVENTION));
+    marsBot.actionDeck.playBonusCard(createBonusCard(BonusCardId.B16_GOVERNMENT_INTERVENTION));
 
     expect(game.getVenusScaleLevel()).eq(2);
     expect(marsBot.player.terraformRating).eq(tr);
@@ -66,7 +66,7 @@ describe('AphroditeMarsBot', () => {
     setVenusScaleLevel(game, 6);
     const mc = marsBot.megacredits;
 
-    marsBot['bonusResolver'].resolve(createBonusCard(BonusCardId.B16_GOVERNMENT_INTERVENTION));
+    marsBot.actionDeck.playBonusCard(createBonusCard(BonusCardId.B16_GOVERNMENT_INTERVENTION));
 
     expect(game.getVenusScaleLevel()).eq(8);
     expect(marsBot.megacredits).eq(mc + 2);

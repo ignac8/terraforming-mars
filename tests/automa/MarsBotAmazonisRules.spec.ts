@@ -63,7 +63,7 @@ describe('MarsBotAmazonisRules', () => {
       }
       const b04 = createBaseBonusCards().find((c) => c.id === BonusCardId.B04_OVERACHIEVEMENT)!;
 
-      marsBot['bonusResolver'].resolve(b04);
+      marsBot.actionDeck.playBonusCard(b04);
 
       return {game, marsBot};
     }
@@ -215,7 +215,7 @@ describe('MarsBotAmazonisRules', () => {
     it('a funded Physicist makes Corporate Competition push the Space track, the upper of two tied tracks', () => {
       const {marsBot, b08} = competeFor('Physicist');
 
-      marsBot['bonusResolver'].resolve(b08);
+      marsBot.actionDeck.playBonusCard(b08);
 
       expect(marsBot.marsBotBoard.tracks[track(marsBot, Tag.SPACE)].position).greaterThan(0);
       expect(marsBot.marsBotBoard.tracks[track(marsBot, Tag.SCIENCE)].position).eq(0);
@@ -226,7 +226,7 @@ describe('MarsBotAmazonisRules', () => {
       const mine = new Mine();
       game.projectDeck.drawPile.push(mine);
 
-      marsBot['bonusResolver'].resolve(b08);
+      marsBot.actionDeck.playBonusCard(b08);
 
       expect(marsBot.playedProjectCards).to.include(mine);
     });

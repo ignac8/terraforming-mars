@@ -59,7 +59,7 @@ describe('ArcadianCommunitiesMarsBot', () => {
     expect(marsBot.corp).to.eq(corp);
     expect(marsBot.markerSpaceIds).has.length(1);
     expect(game.board.getGreeneries(marsBot.player)).is.empty;
-    const settlers = marsBot.actionDeck.filter((c) => 'id' in c && c.id === BonusCardId.B22_SETTLERS);
+    const settlers = marsBot.actionDeck.cards.filter((c) => 'id' in c && c.id === BonusCardId.B22_SETTLERS);
     expect(settlers).has.length(1);
   });
 
@@ -72,7 +72,7 @@ describe('ArcadianCommunitiesMarsBot', () => {
     human.pickedCorporationCard = new EcoLine();
     const biofuels = new Biofuels();
     human.preludeCardsInHand = [biofuels];
-    const settlers = () => marsBot.actionDeck.filter((c) => 'id' in c && c.id === BonusCardId.B22_SETTLERS);
+    const settlers = () => marsBot.actionDeck.cards.filter((c) => 'id' in c && c.id === BonusCardId.B22_SETTLERS);
 
     game.automaHooks!.handlePostCorporationSetup();
     expect(marsBot.beforeActionPhasePending).is.true;
@@ -101,7 +101,7 @@ describe('ArcadianCommunitiesMarsBot', () => {
     human.preludeCardsInHand = [headStart, biofuels];
     // Head Start's actions are dropped when there is nothing to do with them
     human.heat = 8;
-    const settlers = () => marsBot.actionDeck.filter((c) => 'id' in c && c.id === BonusCardId.B22_SETTLERS);
+    const settlers = () => marsBot.actionDeck.cards.filter((c) => 'id' in c && c.id === BonusCardId.B22_SETTLERS);
 
     game.automaHooks!.handlePostCorporationSetup();
     human.takeAction();

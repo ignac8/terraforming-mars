@@ -34,7 +34,7 @@ describe('ExtendedShippingLines', () => {
     marsBot.megacredits = 3;
     const card = b20Card();
     marsBot.bonusDeck.drawPile.push(card);
-    marsBot['bonusResolver'].resolve(card);
+    marsBot.actionDeck.playBonusCard(card);
     expect(marsBot.megacredits).to.eq(2);
     expect(marsBot.shippingBoard.get(ColonyName.LUNA)).to.eq(2);
   });
@@ -48,7 +48,7 @@ describe('ExtendedShippingLines', () => {
     marsBot.megacredits = 3;
     const card = b20Card();
     marsBot.bonusDeck.drawPile.push(card);
-    marsBot['bonusResolver'].resolve(card);
+    marsBot.actionDeck.playBonusCard(card);
     expect(marsBot.megacredits).to.eq(3);
     expect(marsBot.shippingBoard.get(ColonyName.LUNA)).to.eq(0);
   });

@@ -45,7 +45,7 @@ describe('ExpeditedConstruction', () => {
     const megacredits = marsBot.megacredits;
     const card = createBonusCard(BonusCardId.B05_EXPEDITED_CONSTRUCTION);
 
-    const destroyed = marsBot['bonusResolver'].resolve(card);
+    const destroyed = marsBot.actionDeck.playBonusCard(card);
 
     const city = game.board.getSpaceOrThrow('12');
     expect(city.tile?.tileType).eq(TileType.CITY);
@@ -60,7 +60,7 @@ describe('ExpeditedConstruction', () => {
     const megacredits = marsBot.megacredits;
     const card = createBonusCard(BonusCardId.B05_EXPEDITED_CONSTRUCTION);
 
-    const destroyed = marsBot['bonusResolver'].resolve(card);
+    const destroyed = marsBot.actionDeck.playBonusCard(card);
 
     expect(game.board.spaces.filter((space) => space.tile !== undefined)).is.empty;
     expect(marsBot.megacredits).eq(megacredits);

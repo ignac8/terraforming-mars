@@ -165,7 +165,7 @@ export class AutomaGameHooks {
       this.handleDraftResearchPhase();
       return true; // Draft handled — don't call runResearchPhase for human
     }
-    this.marsBot.buildResearchActionDeck();
+    this.marsBot.actionDeck.buildResearch();
     this.handleFloaterExtraCard();
     return false;
   }
@@ -273,7 +273,7 @@ export class AutomaGameHooks {
             this.game.log('MarsBot discards ${0} after the draft', (b) => b.card(discarded));
           }
         }
-        this.marsBot.buildResearchActionDeckFromDraft(finalMarsBotCards, skipDiscard || draftPriority !== undefined);
+        this.marsBot.actionDeck.buildResearchFromDraft(finalMarsBotCards, skipDiscard || draftPriority !== undefined);
         // Brutal: spend 5 floaters for a 5th card from project deck
         if (isBrutal && canSpend) {
           this.marsBot.spendFloaters(5);
