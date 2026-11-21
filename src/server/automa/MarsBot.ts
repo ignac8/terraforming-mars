@@ -316,7 +316,7 @@ export class MarsBot implements IMarsBot {
     }
 
     if (this.isProjectCard(card)) {
-      this.turnResolver.resolveProjectCard(card as IProjectCard);
+      this.resolveProjectCard(card);
     } else {
       const bonusCard = card as MarsBotBonusCard;
       this.game.log('MarsBot plays bonus card: ${0}', (b) => b.rawString(bonusCardDisplayName(bonusCard)));
@@ -439,7 +439,18 @@ export class MarsBot implements IMarsBot {
   }
 
   public resolveProjectCard(card: IProjectCard): void {
-    this.turnResolver.resolveProjectCard(card);
+    this.playProjectCard(card, false);
+  }
+
+  /**
+   * Puts `card` on MarsBot's played pile and resolves it, only its first tag with `firstTagOnly`.
+   *
+   * Every resolved project card goes to the played pile (rulebook A, p.5), not the project discard pile,
+   * so it can't be drawn again.
+   */
+  private playProjectCard(card: IProjectCard, firstTagOnly: boolean): void {
+    this.playedProjectCards.push(card);
+    this.turnResolver.resolveProjectCard(card, firstTagOnly);
   }
 
   public removePlayedProjectCard(card: IProjectCard): void {
@@ -460,7 +471,7 @@ export class MarsBot implements IMarsBot {
     if (cards.length === 0) {
       return;
     }
-    this.turnResolver.resolveProjectCard(cards[0]);
+    this.playProjectCard(cards[0], false);
   }
 
   public maybeDrawAndResolveProjectCardFirstTagOnly(): void {
@@ -471,7 +482,7 @@ export class MarsBot implements IMarsBot {
     if (cards.length === 0) {
       return;
     }
-    this.turnResolver.resolveProjectCard(cards[0], true);
+    this.playProjectCard(cards[0], true);
   }
 
   /**
@@ -538,12 +549,21 @@ export class MarsBot implements IMarsBot {
     this.actionDeck = kept;
   }
 
+  /** The steps resolve one at a time, so Pristar's cube cancels only the first (BGG 3431297, 3432237). */
   public raiseTemperature(steps: 1 | 2): void {
     // A corp effect is a reaction, not an action, so a maxed temperature is no Failed Action (Nick)
     if (this.game.getTemperature() >= this.game.max.temperature) {
       return;
     }
-    this.turnResolver.raiseTemperature(steps);
+    const taken = this.interceptsParameterRaise(GlobalParameter.TEMPERATURE) ? steps - 1 : steps;
+    if (taken === 0) {
+      return;
+    }
+    const before = this.game.getTemperature();
+    this.game.increaseTemperature(this.player, taken as 1 | 2);
+    const raised = (this.game.getTemperature() - before) / 2;
+    this.temperatureRaises += raised;
+    this.game.log('MarsBot raises temperature ${0} step(s)', (b) => b.number(raised));
   }
 
   public advanceFurthestParameter(cardName: CardName, allowCorpIntercept: boolean = true): boolean {

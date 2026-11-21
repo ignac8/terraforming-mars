@@ -199,7 +199,7 @@ describe('MarsBot Deep Rules Tests', () => {
       const discardBefore = game.projectDeck.discardPile.length;
 
       const card = fakeCard({cost: 5, tags: [Tag.BUILDING], type: CardType.AUTOMATED});
-      marsBot.turnResolver.resolveProjectCard(card);
+      marsBot.resolveProjectCard(card);
 
       expect(game.projectDeck.discardPile.length).to.eq(discardBefore);
       expect(marsBot.playedProjectCards).to.include(card);

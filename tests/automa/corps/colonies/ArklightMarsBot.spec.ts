@@ -15,7 +15,7 @@ function arklightGain(card: IProjectCard): number {
     const {marsBot} = createAutomaGame();
     marsBot.setCorpAndSetup(c);
     const mcBefore = marsBot.turnResolver.megacredits;
-    marsBot.turnResolver.resolveProjectCard(card);
+    marsBot.resolveProjectCard(card);
     return marsBot.turnResolver.megacredits - mcBefore;
   };
   return run(corp) - run(withoutEffect(corp));

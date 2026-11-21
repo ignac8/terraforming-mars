@@ -39,7 +39,7 @@ describe('EcotecMarsBot', () => {
     const {marsBot} = createAutomaGame();
     const corp = getMarsBotCorp(CardName.ECOTEC)!;
     marsBot.setCorpAndSetup(corp);
-    marsBot.turnResolver.resolveProjectCard(fakeCard('PlantCard', {tags: [Tag.PLANT, Tag.MICROBE, Tag.SPACE], cost: 5}));
+    marsBot.resolveProjectCard(fakeCard('PlantCard', {tags: [Tag.PLANT, Tag.MICROBE, Tag.SPACE], cost: 5}));
     expect(marsBot.corpSpecificState.get('plantResources')).to.eq(5);
   });
 
@@ -47,7 +47,7 @@ describe('EcotecMarsBot', () => {
     const {marsBot} = createAutomaGame();
     const corp = getMarsBotCorp(CardName.ECOTEC)!;
     marsBot.setCorpAndSetup(corp);
-    marsBot.turnResolver.resolveProjectCard(fakeCard('SpaceCard', {tags: [Tag.SPACE, Tag.BUILDING], cost: 5}));
+    marsBot.resolveProjectCard(fakeCard('SpaceCard', {tags: [Tag.SPACE, Tag.BUILDING], cost: 5}));
     expect(marsBot.corpSpecificState.get('plantResources')).to.eq(3);
   });
 

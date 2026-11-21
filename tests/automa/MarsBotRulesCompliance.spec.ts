@@ -3,10 +3,7 @@ import {testGame} from '../TestGame';
 import {TestPlayer} from '../TestPlayer';
 import {IGame} from '../../src/server/IGame';
 import {MarsBot} from '../../src/server/automa/MarsBot';
-import {MarsBotBoard} from '../../src/server/automa/MarsBotBoard';
-import {MarsBotTurnResolver} from '../../src/server/automa/MarsBotTurnResolver';
-import {MarsBotTilePlacer} from '../../src/server/automa/MarsBotTilePlacer';
-import {fakeMarsBot} from './FakeMarsBot';
+import {SeededRandom} from '../../src/common/utils/Random';
 import {THARSIS_MARSBOT_BOARD} from '../../src/server/automa/boards/TharsisMarsBot';
 import {TrackAction, TrackDefinition} from '../../src/common/automa/AutomaTypes';
 import {BoardName} from '../../src/common/boards/BoardName';
@@ -34,8 +31,9 @@ function emptyLayout(): Array<TrackAction | undefined> {
 }
 
 function makeResolver(game: IGame, botPlayer: TestPlayer, human: TestPlayer, boardData: ReadonlyArray<TrackDefinition>, difficulty: 'easy' | 'normal' | 'hard' | 'brutal' = 'normal') {
-  const board = new MarsBotBoard(boardData);
-  return {board, resolver: new MarsBotTurnResolver(game, botPlayer, human, board, difficulty, 0, new MarsBotTilePlacer(fakeMarsBot({game, player: botPlayer, humanPlayer: human, megacredits: 0})))};
+  const marsBot = new MarsBot(game, botPlayer, human, boardData, difficulty, new SeededRandom(0));
+  marsBot.turnResolver.marsBotManager = marsBot;
+  return {board: marsBot.marsBotBoard, resolver: marsBot.turnResolver};
 }
 
 describe('MarsBot Rules Compliance', () => {

@@ -40,7 +40,7 @@ describe('CelesticMarsBot', () => {
     marsBot.corp = getMarsBotCorp(CardName.CELESTIC)!;
     const mc = marsBot.turnResolver.megacredits;
 
-    marsBot.turnResolver.resolveProjectCard(new MicroMills()); // No tags: a Failed Action
+    marsBot.resolveProjectCard(new MicroMills()); // No tags: a Failed Action
 
     expect(marsBot.floaters).to.eq(1);
     expect(marsBot.turnResolver.megacredits).to.eq(mc + 5);

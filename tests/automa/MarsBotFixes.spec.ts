@@ -263,7 +263,7 @@ describe('MarsBot Fixes', () => {
       // Create a mock event card with Space tag
       const mockEventCard = fakeCard({cost: 10, tags: [Tag.SPACE], type: CardType.EVENT});
 
-      marsBot.turnResolver.resolveProjectCard(mockEventCard);
+      marsBot.resolveProjectCard(mockEventCard);
 
       // Space tag → Track 2 (pos 1 = advance, chains to pos 2), Event tag → Track 3 (pos 1 = advance, chains to pos 2)
       expect(marsBotBoard.tracks[1].position).to.eq(2);
@@ -366,7 +366,7 @@ describe('MarsBot Fixes', () => {
       }
 
       const mockCard = fakeCard({cost: 5, tags: [Tag.PLANT], type: CardType.AUTOMATED});
-      marsBot.turnResolver.resolveProjectCard(mockCard);
+      marsBot.resolveProjectCard(mockCard);
       expect(marsBot.turnResolver.megacredits).to.eq(3);
     });
 
@@ -439,7 +439,7 @@ describe('MarsBot Fixes', () => {
       // Card with Building + Space tags
       // Track 1 pos 1 = null, Track 2 pos 1 = advance (chains to pos 2)
       const mockCard = fakeCard({cost: 10, tags: [Tag.BUILDING, Tag.SPACE], type: CardType.AUTOMATED});
-      marsBot.turnResolver.resolveProjectCard(mockCard);
+      marsBot.resolveProjectCard(mockCard);
 
       expect(marsBot.marsBotBoard.tracks[0].position).to.eq(1); // Building: pos 1 (null)
       expect(marsBot.marsBotBoard.tracks[1].position).to.eq(2); // Space: pos 1 (advance) → pos 2
@@ -499,7 +499,7 @@ describe('MarsBot Fixes', () => {
     it('wild tag advances the least-advanced track (topmost if tied)', () => {
       const {marsBot} = createAutomaGame();
       const mockCard = fakeCard({cost: 5, tags: [Tag.WILD], type: CardType.AUTOMATED});
-      marsBot.turnResolver.resolveProjectCard(mockCard);
+      marsBot.resolveProjectCard(mockCard);
 
       // Wild tag advances the least-advanced track (all at 0, so index 0 = first)
       expect(marsBot.marsBotBoard.tracks[0].position).to.eq(1);
@@ -593,7 +593,7 @@ describe('MarsBot Fixes', () => {
 
       const prodBefore = human.production.megacredits;
       const jovianCard = fakeCard({cost: 10, tags: [Tag.JOVIAN], type: CardType.AUTOMATED, name: CardName.ASTEROID_MINING});
-      marsBot.turnResolver.resolveProjectCard(jovianCard);
+      marsBot.resolveProjectCard(jovianCard);
 
       expect(human.production.megacredits).to.eq(prodBefore + 1);
     });

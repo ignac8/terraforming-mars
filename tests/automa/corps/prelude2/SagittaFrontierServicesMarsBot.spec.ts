@@ -53,7 +53,7 @@ describe('SagittaFrontierServicesMarsBot', () => {
     const {marsBot} = createAutomaGame();
     marsBot.setCorpAndSetup(getMarsBotCorp(CardName.SAGITTA_FRONTIER_SERVICES)!);
     const mcBefore = marsBot.turnResolver.megacredits;
-    marsBot.turnResolver.resolveProjectCard(new MicroMills());
+    marsBot.resolveProjectCard(new MicroMills());
     expect(marsBot.turnResolver.megacredits).to.eq(mcBefore + 10);
   });
 
@@ -62,7 +62,7 @@ describe('SagittaFrontierServicesMarsBot', () => {
     const {marsBot} = createAutomaGame({automaDifficulty: 'easy'});
     marsBot.setCorpAndSetup(getMarsBotCorp(CardName.SAGITTA_FRONTIER_SERVICES)!);
     const mcBefore = marsBot.turnResolver.megacredits;
-    marsBot.turnResolver.resolveProjectCard(new MicroMills());
+    marsBot.resolveProjectCard(new MicroMills());
     expect(marsBot.turnResolver.megacredits).to.eq(mcBefore + 6);
   });
 

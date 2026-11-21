@@ -50,7 +50,7 @@ describe('MarsBot and the player\'s Splice', () => {
   });
 
   it('pays 2 M€ for a MarsBot card that holds microbes, without asking MarsBot', () => {
-    marsBot.turnResolver.resolveProjectCard(new Tardigrades());
+    marsBot.resolveProjectCard(new Tardigrades());
     runAllActions(game);
 
     expect(human.megaCredits).to.eq(2);
@@ -59,7 +59,7 @@ describe('MarsBot and the player\'s Splice', () => {
   });
 
   it('pays 2 M€ for a MarsBot microbe card that holds no resources', () => {
-    marsBot.turnResolver.resolveProjectCard(new IndustrialMicrobes());
+    marsBot.resolveProjectCard(new IndustrialMicrobes());
     runAllActions(game);
 
     expect(human.megaCredits).to.eq(2);
@@ -172,7 +172,7 @@ describe('MarsBot and the player\'s Pharmacy Union', () => {
     const pharmacyUnion = new PharmacyUnion();
     human.playedCards.push(pharmacyUnion);
 
-    marsBot.turnResolver.resolveProjectCard(new Tardigrades());
+    marsBot.resolveProjectCard(new Tardigrades());
     runAllActions(game);
 
     expect(pharmacyUnion.resourceCount).to.eq(1);

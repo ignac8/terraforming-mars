@@ -212,7 +212,7 @@ describe('MarsBotReload', () => {
   it('keeps the cards MarsBot resolved out of the project discard pile across a reload', () => {
     const {game, marsBot} = createAutomaGame();
     const asteroid = new Asteroid();
-    marsBot.turnResolver.resolveProjectCard(asteroid);
+    marsBot.resolveProjectCard(asteroid);
 
     const restored = Game.deserialize(game.serialize());
 
@@ -224,7 +224,7 @@ describe('MarsBotReload', () => {
   it('removes cards MarsBot played from the project discard pile in older saves', () => {
     const {game, marsBot} = createAutomaGame();
     const asteroid = new Asteroid();
-    marsBot.turnResolver.resolveProjectCard(asteroid);
+    marsBot.resolveProjectCard(asteroid);
     // Older saves also left the resolved card in the project discard pile
     game.projectDeck.discardPile.push(asteroid);
 
@@ -237,7 +237,7 @@ describe('MarsBotReload', () => {
   it('removes every card MarsBot played from the project piles in older saves', () => {
     const {game, marsBot} = createAutomaGame();
     const cards = [new Asteroid(), new Research()];
-    cards.forEach((card) => marsBot.turnResolver.resolveProjectCard(card));
+    cards.forEach((card) => marsBot.resolveProjectCard(card));
     game.projectDeck.discardPile.push(new Asteroid(), new Research());
 
     const restored = Game.deserialize(game.serialize());
@@ -250,7 +250,7 @@ describe('MarsBotReload', () => {
   it('removes cards MarsBot played from the project draw pile in older saves', () => {
     const {game, marsBot} = createAutomaGame();
     const asteroid = new Asteroid();
-    marsBot.turnResolver.resolveProjectCard(asteroid);
+    marsBot.resolveProjectCard(asteroid);
     // An older save may have reshuffled the resolved card into the draw pile
     game.projectDeck.drawPile.push(new Asteroid());
 

@@ -46,15 +46,9 @@ export class MarsBotTurnResolver {
 
   // ---- Project Card Resolution ----
 
-  /**
-   * Resolve a project card: advance tracks based on tags. With `firstTagOnly` the other tags are
-   * ignored (Thorgate), but the whole card goes to the played pile.
-   */
+  /** Resolve a project card: advance tracks based on tags. With `firstTagOnly` the other tags are ignored (Thorgate). */
   public resolveProjectCard(original: IProjectCard, firstTagOnly: boolean = false): void {
     this.game.log('MarsBot plays ${0}', (b) => b.card(original));
-    // Every resolved project card goes to MarsBot's played pile (rulebook A, p.5), not the project
-    // discard pile, so it can't be drawn again
-    this.marsBotManager?.playedProjectCards.push(original);
 
     const allTags = cardTagsIncludingEvent(original);
     const tags = firstTagOnly ? allTags.slice(0, 1) : allTags;
@@ -295,26 +289,13 @@ export class MarsBotTurnResolver {
 
   // ---- Terraforming Actions ----
 
-  /**
-   * Raises the temperature, or takes a Failed Action when it is already at its maximum. The steps
-   * resolve one at a time, so Pristar's cube cancels only the first (BGG 3431297, 3432237).
-   */
+  /** Raises the temperature, or takes a Failed Action when it is already at its maximum. */
   public raiseTemperature(steps: 1 | 2): void {
     if (this.game.getTemperature() >= this.game.max.temperature) {
       this.failedAction();
       return;
     }
-    const taken = this.interceptsRaise(GlobalParameter.TEMPERATURE) ? steps - 1 : steps;
-    if (taken === 0) {
-      return;
-    }
-    const before = this.game.getTemperature();
-    this.game.increaseTemperature(this.botPlayer, taken as 1 | 2);
-    const raised = (this.game.getTemperature() - before) / 2;
-    if (this.marsBotManager) {
-      this.marsBotManager.temperatureRaises += raised;
-    }
-    this.game.log('MarsBot raises temperature ${0} step(s)', (b) => b.number(raised));
+    this.marsBotManager?.raiseTemperature(steps);
   }
 
   public placeGreenery(): void {
