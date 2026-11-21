@@ -1,129 +1,28 @@
+// MarsBot's tracks (MarsBotPanel.vue), shown under its row in the player overview.
 .marsbot-panel {
-  background: #303030;
+  background: @bg_main;
   border: 1px solid rgba(170, 170, 170, 0.6);
   border-radius: 4px;
-  padding: 12px;
+  padding: 10px 12px;
   margin: 8px 0;
-  color: #ddd;
-  display: inline-block;
-  text-shadow: 1px 1px 1px #222;
+  color: @text_main;
+  display: block;
+  width: fit-content;
+  max-width: 100%;
+  font-family: @font_family_main;
+  text-shadow: 1px 1px 1px @grey_900;
 }
 .marsbot-title {
-  font-family: Ubuntu, sans-serif;
-  margin: 0 0 8px 0;
-  font-size: 20px;
+  font-family: @font_family_main;
+  margin: 0 0 6px 0;
+  font-size: 16px;
   color: #ffcc64;
   text-transform: uppercase;
   letter-spacing: 1px;
-  text-shadow: -1px -1px 6px rgba(255, 204, 100, 0.3), 1px 1px 1px #222;
-}
-.marsbot-difficulty {
-  font-size: 14px;
-  color: #aaa;
-  font-weight: normal;
-  text-transform: none;
-  letter-spacing: 0;
-}
-.marsbot-stats {
-  display: flex;
-  gap: 14px;
-  margin-bottom: 10px;
-  font-size: 14px;
-  flex-wrap: wrap;
-}
-.marsbot-stat b {
-  color: #ffcc64;
-  font-family: Prototype, monospace;
-}
-// One grid for all rows, so the squares start on the same column whatever
-// the label width.
-.marsbot-tracks {
-  display: grid;
-  grid-template-columns: max-content max-content max-content;
-  align-items: center;
-  gap: 4px 6px;
-}
-.marsbot-track {
-  display: contents;
-}
-.marsbot-track-label {
-  min-width: max-content;
-  display: flex;
-  gap: 4px;
-  align-items: center;
-  margin-right: 6px;
-}
-.marsbot-track-num {
-  font-family: Prototype, monospace;
-  font-weight: bold;
-  font-size: 14px;
-  color: #ffcc64;
-  min-width: 24px;
-}
-.marsbot-track-tags {
-  font-size: 12px;
-  color: #aaa;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-.marsbot-track-prod {
-  font-size: 11px;
-  color: #888;
-  white-space: nowrap;
-}
-.marsbot-track-squares {
-  display: flex;
-  gap: 2px;
-  flex-shrink: 0;
-}
-.marsbot-square {
-  width: 18px;
-  height: 18px;
-  border: 1px solid #555;
-  border-radius: 2px;
-  background: #222;
-  flex-shrink: 0;
-  position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-.marsbot-square.filled {
-  background: #5755d9;
-  border-color: #4b48d6;
-}
-.marsbot-square.has-action {
-  border-color: #777;
-}
-.marsbot-action-icon {
-  font-size: 10px;
-  color: #777;
-  line-height: 1;
-  font-weight: bold;
-}
-.marsbot-square.filled .marsbot-action-icon {
-  color: #fff;
-}
-.marsbot-track-pos {
-  font-family: Prototype, monospace;
-  font-size: 13px;
-  color: #ccc;
-  min-width: 16px;
-  text-align: right;
-}
-.marsbot-corp {
-  font-size: 14px;
-  margin-bottom: 8px;
-  color: #ccc;
-}
-.marsbot-corp b {
-  color: #ffcc64;
 }
 .marsbot-instant-win {
-  background: #5755d9;
-  color: #fff;
-  font-family: Ubuntu, sans-serif;
+  background: @bg_action;
+  color: @text_action;
   font-weight: bold;
   font-size: 16px;
   text-align: center;
@@ -136,9 +35,153 @@
 .marsbot-corp-desc {
   font-size: 12px;
   color: #aaa;
-  margin-top: 2px;
   font-style: italic;
+  margin-bottom: 6px;
 }
+.marsbot-vp-sources {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px 12px;
+  font-size: 12px;
+  color: #aaa;
+  margin-bottom: 8px;
+}
+.marsbot-vp-source b {
+  color: @text_main;
+  font-weight: normal;
+  font-family: Prototype, monospace;
+}
+// One grid for all rows, so the squares start on the same column whatever the label width.
+.marsbot-tracks {
+  display: grid;
+  grid-template-columns: max-content max-content max-content;
+  align-items: center;
+  gap: 3px 8px;
+}
+.marsbot-track {
+  display: contents;
+}
+.marsbot-track-label {
+  display: flex;
+  gap: 2px;
+  align-items: center;
+}
+.marsbot-tag {
+  width: 22px;
+  height: 22px;
+  border-radius: @radius_circle;
+  background-size: cover !important;
+  background-position: center !important;
+  box-shadow: 0 0 2px #000;
+}
+.marsbot-prod {
+  width: 20px;
+  height: 20px;
+  margin-left: 4px;
+  background: center / contain no-repeat;
+  outline: 2px solid #8b5a2b;
+  outline-offset: -1px;
+  border-radius: 2px;
+}
+.marsbot-prod--megacredits { background-image: url("assets/resources/megacredit.png"); }
+.marsbot-prod--steel { background-image: url("assets/resources/steel.png"); }
+.marsbot-prod--titanium { background-image: url("assets/resources/titanium.png"); }
+.marsbot-prod--plants { background-image: url("assets/resources/plant.png"); }
+.marsbot-prod--energy { background-image: url("assets/resources/power.png"); }
+.marsbot-prod--heat { background-image: url("assets/resources/heat.png"); }
+.marsbot-track-pos {
+  font-family: Prototype, monospace;
+  font-size: 14px;
+  color: #ffcc64;
+  min-width: 18px;
+  text-align: right;
+}
+.marsbot-track-squares {
+  display: flex;
+  gap: 2px;
+}
+.marsbot-square {
+  width: 24px;
+  height: 24px;
+  box-sizing: border-box;
+  border: 1px solid #555;
+  border-radius: 3px;
+  background: @grey_900;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.marsbot-square.filled {
+  background: @bg_action;
+  border-color: @border_action;
+}
+.marsbot-square.cube-white {
+  border-color: #fff;
+  box-shadow: inset 0 0 0 2px #fff;
+}
+.marsbot-square.cube-black {
+  border-color: #000;
+  box-shadow: inset 0 0 0 2px #000;
+}
+.marsbot-square.cube-credit {
+  border-color: #ffcc64;
+  box-shadow: inset 0 0 0 2px #ffcc64;
+}
+.marsbot-action-icon {
+  width: 19px;
+  height: 19px;
+  background: center / contain no-repeat;
+  opacity: 0.55;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: Prototype, monospace;
+  font-size: 11px;
+  color: #888;
+}
+.marsbot-square.filled .marsbot-action-icon {
+  opacity: 1;
+  color: @text_action;
+}
+.marsbot-action-count {
+  position: absolute;
+  right: 1px;
+  bottom: -1px;
+  font-family: Prototype, monospace;
+  font-size: 10px;
+  color: #fff;
+  text-shadow: 0 0 2px #000, 0 0 2px #000;
+}
+.marsbot-action-icon--greenery { background-image: url("assets/tiles/greenery_no_O2.png"); }
+.marsbot-action-icon--ocean { background-image: url("assets/tiles/ocean.png"); }
+.marsbot-action-icon--city { background-image: url("assets/tiles/city.png"); }
+.marsbot-action-icon--colony { background-image: url("assets/tiles/colony.png"); }
+.marsbot-action-icon--temperature { background-image: url("assets/global-parameters/temperature.png"); }
+.marsbot-action-icon--venus { background-image: url("assets/global-parameters/venus.png"); }
+.marsbot-action-icon--floater { background-image: url("assets/resources/floater.png"); }
+.marsbot-action-icon--tr { background-image: url("assets/resources/tr.png"); }
+.marsbot-action-icon--milestone,
+.marsbot-action-icon--award {
+  width: auto;
+  height: auto;
+  padding: 0 2px;
+  border-radius: 2px;
+  background: #ffcc64;
+  color: @grey_900;
+  text-shadow: none;
+}
+.marsbot-square.filled .marsbot-action-icon--milestone,
+.marsbot-square.filled .marsbot-action-icon--award {
+  color: @grey_900;
+}
+@marsbot-tags: building, space, science, power, earth, jovian, venus, plant, microbe, animal, city, event, wild;
+each(@marsbot-tags, {
+  .marsbot-action-icon--tag-@{value} {
+    background-image: url("assets/tags/@{value}.png");
+    border-radius: @radius_circle;
+  }
+});
 .marsbot-shipping-board {
   display: flex;
   flex-wrap: wrap;
@@ -162,30 +205,6 @@
 .marsbot-shipping-area b {
   color: #ffcc64;
   font-family: Prototype, monospace;
-}
-.marsbot-square.cube-white {
-  border-color: #fff;
-  box-shadow: inset 0 0 0 2px #fff;
-}
-.marsbot-square.cube-black {
-  border-color: #000;
-  box-shadow: inset 0 0 0 2px #000;
-}
-.marsbot-square.cube-credit {
-  border-color: #ffcc64;
-  box-shadow: inset 0 0 0 2px #ffcc64;
-}
-.marsbot-square.filled.cube-white {
-  background: #7b79e0;
-  border-color: #fff;
-}
-.marsbot-square.filled.cube-black {
-  background: #000;
-  border-color: #000;
-}
-.marsbot-square.filled.cube-credit {
-  background: #d4a017;
-  border-color: #ffcc64;
 }
 
 // MarsBot's row in the player overview (MarsBotRow.vue).
