@@ -15,7 +15,6 @@ import {
 import {MarsBotBoard} from './MarsBotBoard';
 import {cardTagsIncludingEvent} from './MarsBotTags';
 import {MarsBotTilePlacer} from './MarsBotTilePlacer';
-import {placeColonyForMarsBot, selectRandomColony} from './colonies/MarsBotColonyPlacer';
 import type {MarsBot} from './MarsBot';
 
 /**
@@ -345,7 +344,7 @@ export class MarsBotTurnResolver {
     this.game.log('MarsBot places city');
   }
 
-  /** Like raiseTemperature: Pristar's cube cancels only the first step. */
+  /** The steps resolve one at a time, so Pristar's cube cancels only the first (BGG 3431297, 3432237). */
   private raiseVenus(steps: 1 | 2): void {
     if (this.game.getVenusScaleLevel() >= this.game.max.venus) {
       this.failedAction();
@@ -360,16 +359,13 @@ export class MarsBotTurnResolver {
   }
 
   // C-8/C-14: Gain `count` floaters. With Venus → floaters; without Venus but with Colonies and
-  // Titan dealt → Titan storage; otherwise ignored (C-13; Nick, BGG 3341542).
+  // Titan dealt → Titan storage, where `addFloaters` puts them then; otherwise ignored (C-13; Nick, BGG 3341542).
   public gainFloaters(count: number): void {
-    if (this.marsBotManager === undefined) {
-      return;
-    }
     if (this.game.gameOptions.venusNextExtension) {
-      this.marsBotManager.floaters += count;
+      this.marsBotManager?.addFloaters(count);
       this.game.log('MarsBot gains ${0} floater(s)', (b) => b.number(count));
     } else if (this.game.gameOptions.coloniesExtension && this.game.colonies.some((colony) => colony.name === ColonyName.TITAN)) {
-      this.marsBotManager.shippingBoard.add(ColonyName.TITAN, count);
+      this.marsBotManager?.addFloaters(count);
       this.game.log('MarsBot gains ${0} floater token(s) in Titan storage (C-14)', (b) => b.number(count));
     }
   }
@@ -377,16 +373,13 @@ export class MarsBotTurnResolver {
   // Utopia Planitia's colony icon and Amazonis Planitia's Venus colony bonus: build like Outer
   // System Foothold, ignored without Colonies.
   public placeColony(): void {
-    if (!this.game.gameOptions.coloniesExtension || this.marsBotManager === undefined) {
+    if (!this.game.gameOptions.coloniesExtension) {
       return;
     }
-    const colony = selectRandomColony(this.marsBotManager);
-    if (colony === undefined) {
+    if (!this.marsBotManager?.maybePlaceRandomColony()) {
       this.game.log('MarsBot: no colony tile to build on, Failed Action');
       this.failedAction();
-      return;
     }
-    placeColonyForMarsBot(colony, this.marsBotManager);
   }
 
   // ---- Utilities ----
