@@ -6,7 +6,7 @@ import {IProjectCard} from '../../cards/IProjectCard';
 import {Random} from '../../../common/utils/Random';
 import {GameOptions} from '../../game/GameOptions';
 import {getAllMarsBotCorps} from './MarsBotCorpRegistry';
-import {selectRandomColony, placeColonyForMarsBot} from '../colonies/MarsBotColonyPlacer';
+import {selectRandomColony, placeColony} from '../colonies/MarsBotColonyPlacer';
 import type {MarsBot} from '../MarsBot';
 
 /**
@@ -95,7 +95,7 @@ export class MarsBotCorpResolver {
       marsBot.game.log('MarsBot loses ${0}:r:mc: for its colony cube', (b) => b.number(cost));
       const colony = selectRandomColony(marsBot);
       if (colony !== undefined) {
-        placeColonyForMarsBot(colony, marsBot);
+        placeColony(colony, marsBot);
       } else {
         marsBot.game.log('MarsBot: no colony tile to build on, Failed Action');
         marsBot.turnResolver.failedAction();

@@ -1,11 +1,13 @@
 import {expect} from 'chai';
 import {ColonyName} from '@/common/colonies/ColonyName';
+import {PartyName} from '@/common/turmoil/PartyName';
 import {MarsBotShippingBoard} from '@/server/automa/colonies/MarsBotShippingBoard';
-import {eligibleColoniesForMarsBot, placeColonyForMarsBot} from '@/server/automa/colonies/MarsBotColonyPlacer';
+import {eligibleColonies, placeColony} from '@/server/automa/colonies/MarsBotColonyPlacer';
 import {Poseidon} from '@/server/cards/colonies/Poseidon';
 import {ColonyDeserializer} from '@/server/colonies/ColonyDeserializer';
 import {Luna} from '@/server/colonies/Luna';
 import {testGame} from '../../TestGame';
+import {setRulingParty} from '../../TestingUtils';
 import {fakeMarsBot} from '../FakeMarsBot';
 import {recordingMarsBot} from '../corps/RecordingMarsBot';
 import {fakeCard} from '../../TestingUtils';
@@ -18,8 +20,8 @@ import {Ceres} from '../../../src/server/colonies/Ceres';
 import {BoardName} from '../../../src/common/boards/BoardName';
 import {Tag} from '../../../src/common/cards/Tag';
 
-function setup() {
-  const [game, human, botPlayer] = testGame(2, {coloniesExtension: true});
+function setup(options: {turmoilExtension?: boolean} = {}) {
+  const [game, human, botPlayer] = testGame(2, {coloniesExtension: true, ...options});
   const notices: Array<string> = [];
   const {marsBot, calls} = recordingMarsBot({
     game,
@@ -49,9 +51,18 @@ describe('MarsBotColonyPlacer', () => {
       luna.colonies = run.colonies.map((owner) => owner === 'bot' ? botPlayer.id : human.id);
       game.colonies = [luna];
 
-      expect(eligibleColoniesForMarsBot(marsBot)).deep.eq(run.expected ? [luna] : []);
+      expect(eligibleColonies(marsBot)).deep.eq(run.expected ? [luna] : []);
     });
   }
+
+  it('lists Europa while Reds rule, since MarsBot ignores the ruling policy', () => {
+    const {game, marsBot} = setup({turmoilExtension: true});
+    const europa = new Europa();
+    game.colonies = [europa];
+    setRulingParty(game, PartyName.REDS);
+
+    expect(eligibleColonies(marsBot)).deep.eq([europa]);
+  });
 
   for (const run of [
     {colonyName: ColonyName.LUNA, expected: {stored: 2, calls: []}},
@@ -59,12 +70,14 @@ describe('MarsBotColonyPlacer', () => {
     {colonyName: ColonyName.TITAN, expected: {stored: 0, calls: ['addFloaters(2)']}},
   ] as const) {
     it("builds a colony and takes MarsBot's reward instead of the tile's: " + JSON.stringify(run), () => {
-      const {botPlayer, marsBot, calls} = setup();
+      const {game, botPlayer, marsBot, calls} = setup();
       const colony = ColonyDeserializer.deserialize(run.colonyName)!;
 
-      placeColonyForMarsBot(colony, marsBot);
+      placeColony(colony, marsBot);
 
       expect(colony.colonies).deep.eq([botPlayer.id]);
+      expect(botPlayer.production.megacredits).eq(0);
+      expect(game.deferredActions.length).eq(0);
       expect(marsBot.shippingBoard.get(run.colonyName)).eq(run.expected.stored);
       expect(calls).deep.eq(run.expected.calls);
     });
@@ -76,21 +89,21 @@ describe('MarsBotColonyPlacer', () => {
     const luna = new Luna();
     luna.colonies = [human.id];
 
-    placeColonyForMarsBot(luna, marsBot);
+    placeColony(luna, marsBot);
 
     expect(luna.trackPosition).eq(2);
     expect(notices).deep.eq(['notifyColonyPlaced()']);
     expect(human.production.megacredits).eq(1);
   });
 
-  describe('eligibleColoniesForMarsBot', () => {
+  describe('eligibleColonies', () => {
     it('excludes inactive colonies', () => {
       const [game] = testGame(1, {automa: true, coloniesExtension: true, boardName: BoardName.THARSIS});
       const marsBot = getMarsBot(game);
       const luna = new Luna();
       luna.isActive = false;
       game.colonies = [luna];
-      const eligible = eligibleColoniesForMarsBot(marsBot);
+      const eligible = eligibleColonies(marsBot);
       expect(eligible.length).to.eq(0);
     });
 
@@ -100,7 +113,7 @@ describe('MarsBotColonyPlacer', () => {
       const luna = new Luna();
       luna.colonies = ['p1', 'p2', 'p3']; // MAX_COLONIES_PER_TILE = 3
       game.colonies = [luna];
-      const eligible = eligibleColoniesForMarsBot(marsBot);
+      const eligible = eligibleColonies(marsBot);
       expect(eligible.length).to.eq(0);
     });
 
@@ -110,7 +123,7 @@ describe('MarsBotColonyPlacer', () => {
       const luna = new Luna();
       luna.colonies = [marsBot.player.id];
       game.colonies = [luna];
-      const eligible = eligibleColoniesForMarsBot(marsBot);
+      const eligible = eligibleColonies(marsBot);
       expect(eligible.length).to.eq(0);
     });
 
@@ -119,7 +132,7 @@ describe('MarsBotColonyPlacer', () => {
       const marsBot = getMarsBot(game);
       const luna = new Luna();
       game.colonies = [luna];
-      const eligible = eligibleColoniesForMarsBot(marsBot);
+      const eligible = eligibleColonies(marsBot);
       expect(eligible.length).to.eq(1);
     });
   });
@@ -177,13 +190,13 @@ describe('MarsBotColonyPlacer', () => {
     });
   });
 
-  describe('placeColonyForMarsBot (C-19)', () => {
+  describe('placeColony (C-19)', () => {
     it('adds MarsBot to colony.colonies array', () => {
       const [game] = testGame(1, {automa: true, coloniesExtension: true, boardName: BoardName.THARSIS});
       const marsBot = getMarsBot(game);
       const luna = new Luna();
       game.colonies = [luna];
-      placeColonyForMarsBot(luna, marsBot);
+      placeColony(luna, marsBot);
       expect(luna.colonies).to.include(marsBot.player.id);
     });
 
@@ -192,7 +205,7 @@ describe('MarsBotColonyPlacer', () => {
       const marsBot = getMarsBot(game);
       const luna = new Luna();
       game.colonies = [luna];
-      placeColonyForMarsBot(luna, marsBot);
+      placeColony(luna, marsBot);
       expect(marsBot.shippingBoard.get(ColonyName.LUNA)).to.eq(2);
     });
 
@@ -203,7 +216,7 @@ describe('MarsBotColonyPlacer', () => {
       luna.trackPosition = 1;
       luna.colonies = ['phuman-id']; // 1 colony already
       game.colonies = [luna];
-      placeColonyForMarsBot(luna, marsBot);
+      placeColony(luna, marsBot);
       expect(luna.trackPosition).to.be.at.least(luna.colonies.length);
     });
   });
@@ -215,7 +228,7 @@ describe('MarsBotColonyPlacer', () => {
       const europa = new Europa();
       game.colonies = [europa];
       const oceansBefore = game.board.getOceanSpaces().length;
-      placeColonyForMarsBot(europa, marsBot);
+      placeColony(europa, marsBot);
       expect(game.board.getOceanSpaces().length).to.eq(oceansBefore + 1);
       expect(marsBot.shippingBoard.get(ColonyName.EUROPA)).to.eq(0); // No storage
     });
@@ -226,7 +239,7 @@ describe('MarsBotColonyPlacer', () => {
       const europa = new Europa();
       game.colonies = [europa];
       game.projectDeck.discardPile.length = 0;
-      placeColonyForMarsBot(europa, marsBot);
+      placeColony(europa, marsBot);
       expect(game.projectDeck.discardPile).has.length(1);
     });
 
@@ -235,7 +248,7 @@ describe('MarsBotColonyPlacer', () => {
       const marsBot = getMarsBot(game);
       const europa = new Europa();
       game.colonies = [europa];
-      placeColonyForMarsBot(europa, marsBot);
+      placeColony(europa, marsBot);
       expect(europa.colonies).to.include(marsBot.player.id);
     });
 
@@ -249,7 +262,7 @@ describe('MarsBotColonyPlacer', () => {
         marsBot.turnResolver.placeOcean();
       }
       const mcBefore = marsBot.megacredits;
-      placeColonyForMarsBot(europa, marsBot);
+      placeColony(europa, marsBot);
       // Should be a failed action (gains MC)
       expect(marsBot.megacredits).to.be.greaterThan(mcBefore);
       expect(europa.colonies).to.include(marsBot.player.id);
@@ -262,7 +275,7 @@ describe('MarsBotColonyPlacer', () => {
       const marsBot = getMarsBot(game);
       const titan = new Titan();
       game.colonies = [titan];
-      placeColonyForMarsBot(titan, marsBot);
+      placeColony(titan, marsBot);
       expect(marsBot.shippingBoard.get(ColonyName.TITAN)).to.eq(2);
     });
 
@@ -277,7 +290,7 @@ describe('MarsBotColonyPlacer', () => {
       const titan = new Titan();
       game.colonies = [titan];
       const floatersBefore = marsBot.floaters;
-      placeColonyForMarsBot(titan, marsBot);
+      placeColony(titan, marsBot);
       expect(marsBot.floaters).to.eq(floatersBefore + 2);
     });
 
@@ -290,7 +303,7 @@ describe('MarsBotColonyPlacer', () => {
       marsBot.shippingBoard.add(ColonyName.TITAN, 3);
       const plantIdx = marsBot.marsBotBoard.tagToTrack[Tag.PLANT]!;
       const plantBefore = marsBot.marsBotBoard.tracks[plantIdx].position;
-      placeColonyForMarsBot(titan, marsBot); // Adds 2 more = 5 total, but exempt from C-12
+      placeColony(titan, marsBot); // Adds 2 more = 5 total, but exempt from C-12
       expect(marsBot.marsBotBoard.tracks[plantIdx].position).to.eq(plantBefore); // No overflow
     });
   });

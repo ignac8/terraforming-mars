@@ -24,7 +24,7 @@ import {MarsBotCorp} from './MarsBotCorp';
 import {trackCubeKey} from './corpTrackCubes';
 import {MarsBotTrackCube} from './MarsBotCorpTypes';
 import {MarsBotShippingBoard} from './colonies/MarsBotShippingBoard';
-import {eligibleColoniesForMarsBot, selectRandomColony, placeColonyForMarsBot} from './colonies/MarsBotColonyPlacer';
+import {eligibleColonies, selectRandomColony, placeColony} from './colonies/MarsBotColonyPlacer';
 import {MarsBotCorpResolver} from './corps/MarsBotCorpResolver';
 import {getMarsBotCorp} from './corps/MarsBotCorpRegistry';
 import {SerializedAutomaState} from '../SerializedGame';
@@ -674,12 +674,12 @@ export class MarsBot implements IMarsBot {
     if (colony === undefined) {
       return false;
     }
-    placeColonyForMarsBot(colony, this);
+    placeColony(colony, this);
     return true;
   }
 
   public canPlaceColony(): boolean {
-    return eligibleColoniesForMarsBot(this).length > 0;
+    return eligibleColonies(this).length > 0;
   }
 
   public maybeDiscardProjectCardWithFewestTags(): void {

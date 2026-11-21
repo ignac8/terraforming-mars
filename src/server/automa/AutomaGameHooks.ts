@@ -673,8 +673,8 @@ export class AutomaGameHooks {
   }
 
   /**
-   * Called when `player` builds a colony through the normal colony rules. MarsBot builds its
-   * colonies without them and notifies its corp itself, so only the human's colonies arrive here.
+   * Called when `player` builds a colony. MarsBot notifies its corp itself after building, so only
+   * the human's colonies notify it here.
    */
   public handleColonyBuilt(player: IPlayer): void {
     if (player === this.marsBot.player) {
