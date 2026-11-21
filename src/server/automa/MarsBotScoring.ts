@@ -33,7 +33,6 @@ export interface MarsBotVPBreakdown {
 export class MarsBotScoring {
   constructor(
     private readonly marsBot: IMarsBot,
-    private readonly corpVpBonus: number = 0,
   ) {}
 
   /** Calculate MarsBot's complete VP breakdown. */
@@ -50,6 +49,7 @@ export class MarsBotScoring {
     const vermin = this.calculateVerminPenalty(cities);
     const leftoverResourcesVP = this.calculateLeftoverResourcesVP();
     const turmoilVP = this.calculateTurmoilVP();
+    const corpVP = this.marsBot.corpVictoryPoints();
 
     return {
       terraformRating: tr,
@@ -63,8 +63,8 @@ export class MarsBotScoring {
       vermin,
       leftoverResourcesVP,
       turmoilVP,
-      corpVP: this.corpVpBonus,
-      total: tr + milestoneResult.total + awardResult.total + greenery + cityAdjacentGreenery + neuralInstance + mcToVP + cardVP + vermin + leftoverResourcesVP + turmoilVP + this.corpVpBonus,
+      corpVP,
+      total: tr + milestoneResult.total + awardResult.total + greenery + cityAdjacentGreenery + neuralInstance + mcToVP + cardVP + vermin + leftoverResourcesVP + turmoilVP + corpVP,
       detailsMilestones: milestoneResult.details,
       detailsAwards: awardResult.details,
     };
