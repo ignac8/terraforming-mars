@@ -70,7 +70,7 @@ describe('PartyPolitics', () => {
     }
 
     if (targetCard.cost % 3 === 0) {
-      // Put this card on top so it gets flipped for T-8 (draw() uses pop(), so push = top)
+      // Put this card on top so it gets revealed for T-8 (draw() uses pop(), so push = top)
       game.projectDeck.drawPile.push(targetCard);
       const reserveBefore = turmoil.delegateReserve.get(marsBotPlayer);
       const card = createBonusCard(BonusCardId.B21_PARTY_POLITICS);

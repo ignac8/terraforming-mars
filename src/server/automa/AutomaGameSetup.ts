@@ -266,7 +266,7 @@ export class AutomaGameSetup {
   }
 
   /**
-   * T-15: Flip a project card (discard it) and place 1 MarsBot delegate at a random party.
+   * T-15: Reveal a project card (discard it) and place 1 MarsBot delegate at a random party.
    * Called during setup once per delegate in automaTurmoilSetupDelegates (0 to 2).
    */
   private static placeExtraSetupDelegate(game: IGame, marsBotPlayer: IPlayer, rng: Random): void {
@@ -274,7 +274,7 @@ export class AutomaGameSetup {
     if (turmoil === undefined) {
       return;
     }
-    // Flip a project card for randomness (T-15 rule: "flip a project deck card")
+    // Reveal a project card for randomness (T-15 rule: "flip a project deck card")
     const card = game.projectDeck.draw(game);
     if (card !== undefined) {
       game.projectDeck.discardPile.push(card);

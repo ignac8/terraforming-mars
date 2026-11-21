@@ -4,7 +4,7 @@ import {ColonyName} from '../../../common/colonies/ColonyName';
 import {IMarsBot} from '../IMarsBot';
 import {comparing} from '../../../common/utils/Ordering';
 import {inplaceRemove, toName} from '../../../common/utils/utils';
-import {pickByFlippedCard} from '../MarsBotCardFlip';
+import {pickByRevealedCard} from '../MarsBotCardReveal';
 
 /** The colony tiles MarsBot can build on: active, not full, and without a colony of its own. */
 export function eligibleColonies(marsBot: IMarsBot): Array<IColony> {
@@ -28,7 +28,7 @@ export function eligibleColonies(marsBot: IMarsBot): Array<IColony> {
  * Returns undefined when no tile is eligible.
  */
 export function selectRandomColony(marsBot: IMarsBot): IColony | undefined {
-  return pickByFlippedCard(marsBot.game, eligibleColonies(marsBot));
+  return pickByRevealedCard(marsBot.game, eligibleColonies(marsBot));
 }
 
 /**
@@ -37,7 +37,7 @@ export function selectRandomColony(marsBot: IMarsBot): IColony | undefined {
  * Returns the added tile, or undefined when every tile is already in play.
  */
 export function addRandomColonyTile(game: IGame): IColony | undefined {
-  const colony = pickByFlippedCard(game, game.discardedColonies);
+  const colony = pickByRevealedCard(game, game.discardedColonies);
   if (colony === undefined) {
     return undefined;
   }

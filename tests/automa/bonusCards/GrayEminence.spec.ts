@@ -65,7 +65,7 @@ describe('GrayEminence', () => {
     expect(Math.max(...after)).to.eq(1);
   });
 
-  it('breaks the last tie by flipping a project card and counting through the parties by its cost', () => {
+  it('breaks the last tie by revealing a project card and counting through the parties by its cost', () => {
     const {game, marsBot, turmoil} = turmoilGame();
     game.projectDeck.drawPile.push(new Mine(), new Capital()); // Capital (26) first, then Mine (4)
     const discarded = game.projectDeck.discardPile.length;

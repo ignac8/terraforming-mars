@@ -69,7 +69,7 @@ describe('InvasiveSpecies', () => {
     expect(tardigrades.resourceCount).eq(3);
   });
 
-  it('breaks a tie by flipping a project card', () => {
+  it('breaks a tie by revealing a project card', () => {
     const [game, human, botPlayer] = testGame(2);
     const {marsBot} = recordingMarsBot({game, player: botPlayer, humanPlayer: human});
     const birds = new Birds();
@@ -153,7 +153,7 @@ describe('InvasiveSpecies', () => {
     expect(bacteria.resourceCount).to.eq(3);
   });
 
-  it('breaks a tie by flipping a project card', () => {
+  it('breaks a tie by revealing a project card', () => {
     const {game, human, marsBot} = createAutomaGame();
     const birds = new Birds();
     birds.resourceCount = 1;

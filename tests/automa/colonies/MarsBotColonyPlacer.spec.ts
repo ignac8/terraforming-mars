@@ -157,7 +157,7 @@ describe('MarsBotColonyPlacer', () => {
       expect(colony!.name).to.eq([luna, ceres][expectedIndex].name);
     });
 
-    it('discards the flipped card', () => {
+    it('discards the revealed card', () => {
       const [game] = testGame(1, {automa: true, coloniesExtension: true, boardName: BoardName.THARSIS});
       const marsBot = getMarsBot(game);
       game.colonies = [new Luna()];
@@ -233,7 +233,7 @@ describe('MarsBotColonyPlacer', () => {
       expect(marsBot.shippingBoard.get(ColonyName.EUROPA)).to.eq(0); // No storage
     });
 
-    it('flips one project card to break a tie between ocean spaces', () => {
+    it('reveals one project card to break a tie between ocean spaces', () => {
       const [game] = testGame(1, {automa: true, coloniesExtension: true, boardName: BoardName.THARSIS});
       const marsBot = getMarsBot(game);
       const europa = new Europa();

@@ -191,7 +191,7 @@ describe('MarsBotAmazonisRules', () => {
       expect(marsBot.marsBotBoard.tracks[space].position).eq(6);
     });
 
-    it('Innovator flips a project card and plays it', () => {
+    it('Innovator reveals a project card and plays it', () => {
       const {game, marsBot} = amazonisGame();
       const mine = new Mine();
       game.projectDeck.drawPile.push(mine);
@@ -221,7 +221,7 @@ describe('MarsBotAmazonisRules', () => {
       expect(marsBot.marsBotBoard.tracks[track(marsBot, Tag.SCIENCE)].position).eq(0);
     });
 
-    it('a funded Innovator makes Corporate Competition flip a card', () => {
+    it('a funded Innovator makes Corporate Competition reveal a card', () => {
       const {game, marsBot, b08} = competeFor('Innovator');
       const mine = new Mine();
       game.projectDeck.drawPile.push(mine);

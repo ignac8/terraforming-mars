@@ -36,13 +36,13 @@ function getMarsBot(game: ReturnType<typeof testGame>[0]): MarsBot {
 }
 
 describe('MarsBotTrader', () => {
-  // The flipped card's cost picks among the tied tiles: (cost - 1) % 2, so cost 2 picks the second
+  // The revealed card's cost picks among the tied tiles: (cost - 1) % 2, so cost 2 picks the second
   for (const run of [
     {tiles: [{colonyName: ColonyName.LUNA, track: 5, botColony: false}, {colonyName: ColonyName.CERES, track: 3, botColony: false}], expected: ColonyName.LUNA},
     {tiles: [{colonyName: ColonyName.LUNA, track: 4, botColony: true}, {colonyName: ColonyName.CERES, track: 4, botColony: false}], expected: ColonyName.LUNA},
     {tiles: [{colonyName: ColonyName.LUNA, track: 4, botColony: false}, {colonyName: ColonyName.CERES, track: 4, botColony: false}], expected: ColonyName.CERES},
   ] as const) {
-    it('trades with the tile furthest along its track, then with its colony, then by a flipped card: ' + JSON.stringify(run), () => {
+    it('trades with the tile furthest along its track, then with its colony, then by a revealed card: ' + JSON.stringify(run), () => {
       const {game, botPlayer, marsBot} = setup();
       game.colonies = run.tiles.map((tile) => {
         const colony = ColonyDeserializer.deserialize(tile.colonyName)!;
@@ -160,7 +160,7 @@ describe('MarsBotTrader', () => {
       expect(game.projectDeck.drawPile.length).to.be.greaterThan(0);
       const discardBefore = game.projectDeck.discardPile.length;
       const result = selectTradeColony(marsBot);
-      // Should have flipped one card (random tiebreak)
+      // Should have revealed one card (random tiebreak)
       expect(game.projectDeck.discardPile.length).to.eq(discardBefore + 1);
       expect(result).to.not.be.undefined;
     });

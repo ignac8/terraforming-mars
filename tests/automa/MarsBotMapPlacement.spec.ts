@@ -95,10 +95,10 @@ function pick(placer: MarsBotTilePlacer, a: Space, b: Space): Space | undefined 
 function expectTie(game: IGame, placer: MarsBotTilePlacer, a: Space, b: Space): void {
   game.projectDeck.discardPile.length = 0;
   pick(placer, a, b);
-  expect(game.projectDeck.discardPile, 'the tie should be broken with a flipped card').has.length(1);
+  expect(game.projectDeck.discardPile, 'the tie should be broken with a revealed card').has.length(1);
 }
 
-/** MarsBot picks `winner` whichever way round the spaces come, without flipping a card to break a tie. */
+/** MarsBot picks `winner` whichever way round the spaces come, without revealing a card to break a tie. */
 function expectWins(game: IGame, placer: MarsBotTilePlacer, winner: Space, loser: Space): void {
   game.projectDeck.discardPile.length = 0;
   expect(pick(placer, winner, loser)).to.eq(winner);
