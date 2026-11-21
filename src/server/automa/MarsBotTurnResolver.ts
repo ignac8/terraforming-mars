@@ -15,7 +15,6 @@ import {
 import {MarsBotBoard} from './MarsBotBoard';
 import {cardTagsIncludingEvent} from './MarsBotTags';
 import {MarsBotTilePlacer} from './MarsBotTilePlacer';
-import {MarsBotCorpResolver} from './corps/MarsBotCorpResolver';
 import {placeColonyForMarsBot, selectRandomColony} from './colonies/MarsBotColonyPlacer';
 import type {MarsBot} from './MarsBot';
 
@@ -62,7 +61,7 @@ export class MarsBotTurnResolver {
     // Resolve each tag left-to-right
     let advancedAny = false;
     for (const tag of tags) {
-      this.marsBotManager?.corp?.onTagResolved?.(this.marsBotManager, tag);
+      this.marsBotManager?.notifyTagResolved(tag);
       if (tag === Tag.WILD) {
         // Prelude rule: advance the least-advanced track, topmost if tied
         const leastIndex = this.marsBotBoard.getLeastAdvancedTrackIndex();
@@ -86,7 +85,7 @@ export class MarsBotTurnResolver {
     }
 
     // Notify corp of card resolution
-    this.marsBotManager?.corp?.onProjectCardResolved?.(this.marsBotManager, card);
+    this.marsBotManager?.notifyProjectCardResolved(card);
 
     // Notify human player's effect cards (Solar Logistics, Saturn Systems, etc.)
     this.notifyPlayerCards(card);
@@ -145,8 +144,7 @@ export class MarsBotTurnResolver {
     const position = track.position;
 
     // Cube trigger — fires BEFORE track icon resolution (corp cubes, colony cubes, trade fleet cube)
-    if (this.marsBotManager !== undefined &&
-        MarsBotCorpResolver.onTrackAdvanced(this.marsBotManager, trackIndex, position)) {
+    if (this.marsBotManager?.triggerTrackCube(trackIndex, position)) {
       this.game.log('MarsBot: ${0} track to ${1}, icon replaced by a corp cube',
         (b) => b.rawString(name).number(position));
     } else if (result.type === 'action') {
@@ -158,8 +156,8 @@ export class MarsBotTurnResolver {
         (b) => b.rawString(name).number(position));
     }
 
-    if (this.marsBotManager !== undefined && !reAdvance) {
-      this.marsBotManager.corp?.afterTrackSpaceResolved?.(this.marsBotManager, trackIndex, position);
+    if (!reAdvance) {
+      this.marsBotManager?.notifyTrackSpaceResolved(trackIndex, position);
     }
     return true;
   }
@@ -402,7 +400,7 @@ export class MarsBotTurnResolver {
     const mc = this.failedActionMc;
     this.gainMc(mc);
     this.game.log('MarsBot takes a Failed Action, gains ${0} MC', (b) => b.number(mc));
-    this.marsBotManager?.corp?.onFailedAction?.(this.marsBotManager);
+    this.marsBotManager?.notifyFailedAction();
   }
 
   /** Add M€ to MarsBot's supply and tell the corp about it (Mining Guild). */

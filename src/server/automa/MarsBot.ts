@@ -824,6 +824,26 @@ export class MarsBot implements IMarsBot {
     return this.corp?.interceptGlobalParameterRaise?.(this, parameter) ?? false;
   }
 
+  public notifyTagResolved(tag: Tag): void {
+    this.corp?.onTagResolved?.(this, tag);
+  }
+
+  public notifyProjectCardResolved(card: IProjectCard): void {
+    this.corp?.onProjectCardResolved?.(this, card);
+  }
+
+  public triggerTrackCube(trackIndex: number, position: number): boolean {
+    return MarsBotCorpResolver.onTrackAdvanced(this, trackIndex, position);
+  }
+
+  public notifyTrackSpaceResolved(trackIndex: number, position: number): void {
+    this.corp?.afterTrackSpaceResolved?.(this, trackIndex, position);
+  }
+
+  public notifyFailedAction(): void {
+    this.corp?.onFailedAction?.(this);
+  }
+
   public notifyColonyPlaced(): void {
     this.corp?.onColonyPlaced?.(this);
   }
