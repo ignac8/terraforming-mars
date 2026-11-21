@@ -678,7 +678,7 @@ No 2nd place VP in 2-player automa games (same as standard 2-player TM rules). O
 - MarsBot is a row in the player overview (`MarsBotRow.vue`), below the human's row, in its player colour. It reuses `PlayerInfo`'s classes, so it wraps with upstream's player rows below 1740px.
 - The row shows M€ (M€ per VP in the production slot), the action and bonus decks, VP, TR and one box per track with that track's tags and MarsBot's position.
 - The tracks (`MarsBotPanel.vue`) follow straight after the player rows, drawn with tag, tile, global parameter and TR icons instead of letter codes. Nothing MarsBot stays in the board area.
-- With MarsBot in the game, `.players-overview--marsbot` makes the overview one grid column, so the human's and MarsBot's rows always share one width. The panel's text lines use `contain: inline-size` so a long corporation description wraps instead of widening that column.
+- With MarsBot in the game, `.players-overview--marsbot` makes the overview as wide as its widest row and lets every row fill it, so the human's and MarsBot's rows always share one width. It stays a block (upstream's table-caption), so the rows keep their usual spacing. The panel's text lines use `contain: inline-size` so a long corporation description wraps instead of widening the overview.
 
 ---
 

@@ -112,6 +112,9 @@
   align-items: center;
   justify-content: center;
 }
+.marsbot-square.has-action {
+  border-color: #777;
+}
 .marsbot-square.filled {
   background: @bg_action;
   border-color: @border_action;
@@ -127,6 +130,15 @@
 .marsbot-square.cube-credit {
   border-color: #ffcc64;
   box-shadow: inset 0 0 0 2px #ffcc64;
+}
+.marsbot-square.filled.cube-white {
+  background: #7b79e0;
+}
+.marsbot-square.filled.cube-black {
+  background: #000;
+}
+.marsbot-square.filled.cube-credit {
+  background: #d4a017;
 }
 .marsbot-action-icon {
   width: 19px;
@@ -211,6 +223,11 @@ each(@marsbot-tags, {
 .marsbot-row .resource-item-prod-count {
   font-size: 11px;
 }
+// Nothing opens on click, unlike a player's name and corporation.
+.marsbot-row .player-info-details .player-info-name,
+.marsbot-row .player-info-details .player-info-corp {
+  cursor: default;
+}
 .marsbot-deck .resource-icon {
   background: url(./assets/resources/card.png) center / contain no-repeat;
 }
@@ -235,26 +252,22 @@ each(@marsbot-tags, {
   margin-top: 6px;
 }
 
-// With MarsBot in the game, the player rows share one column as wide as the widest row,
+// With MarsBot in the game, the overview is as wide as its widest row and every row fills it,
 // so the human's row and MarsBot's row line up, also when upstream wraps them below 1740px.
-.players-overview--marsbot {
-  display: grid;
+// The doubled class outranks upstream's `.players-overview .player-info` whatever the import order.
+.players-overview.players-overview--marsbot {
   width: fit-content;
   max-width: 100%;
 }
-.players-overview--marsbot > .player-info {
+.players-overview.players-overview--marsbot > .player-info {
   width: auto;
 }
-.players-overview--marsbot > :not(.player-info) {
-  justify-self: start;
-}
-// The panel's text lines wrap to the tracks' width instead of widening the shared column (and so both rows).
+// The panel's text lines wrap to the tracks' width instead of widening the overview (and so both rows).
 .marsbot-corp-desc,
 .marsbot-vp-sources,
 .marsbot-shipping-board {
   contain: inline-size;
 }
-.players-overview--marsbot > .other-player {
-  justify-self: stretch;
+.players-overview.players-overview--marsbot > .other-player {
   contain: inline-size;
 }
