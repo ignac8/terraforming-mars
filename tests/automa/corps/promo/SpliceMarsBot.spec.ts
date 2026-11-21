@@ -51,17 +51,17 @@ describe('SpliceMarsBot', () => {
   it('gains 8 M€ on setup and removes R&D', () => {
     const {marsBot} = createAutomaGame();
     const corp = getMarsBotCorp(CardName.SPLICE)!;
-    const mcBefore = marsBot.turnResolver.megacredits;
+    const mcBefore = marsBot.megacredits;
     marsBot.setCorpAndSetup(corp);
-    expect(marsBot.turnResolver.megacredits).to.eq(mcBefore + 8);
+    expect(marsBot.megacredits).to.eq(mcBefore + 8);
   });
 
   it('marsbot microbe card → +4 M€', () => {
     const {marsBot} = createAutomaGame();
     const corp = getMarsBotCorp(CardName.SPLICE)!;
     marsBot.setCorpAndSetup(corp);
-    const mcBefore = marsBot.turnResolver.megacredits;
+    const mcBefore = marsBot.megacredits;
     corp.onProjectCardResolved!(marsBot, fakeCard('Microbe', {tags: [Tag.MICROBE], cost: 5}));
-    expect(marsBot.turnResolver.megacredits).to.eq(mcBefore + 4);
+    expect(marsBot.megacredits).to.eq(mcBefore + 4);
   });
 });

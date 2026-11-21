@@ -31,11 +31,11 @@ describe('ExtendedShippingLines', () => {
     const luna = new Luna();
     luna.trackPosition = 3;
     game.colonies = [luna];
-    marsBot.turnResolver.megacredits = 3;
+    marsBot.megacredits = 3;
     const card = b20Card();
     marsBot.bonusDeck.drawPile.push(card);
     marsBot['bonusResolver'].resolve(card);
-    expect(marsBot.turnResolver.megacredits).to.eq(2);
+    expect(marsBot.megacredits).to.eq(2);
     expect(marsBot.shippingBoard.get(ColonyName.LUNA)).to.eq(2);
   });
 
@@ -45,11 +45,11 @@ describe('ExtendedShippingLines', () => {
     const luna = new Luna();
     luna.visitor = 'psome-player'; // Already traded
     game.colonies = [luna];
-    marsBot.turnResolver.megacredits = 3;
+    marsBot.megacredits = 3;
     const card = b20Card();
     marsBot.bonusDeck.drawPile.push(card);
     marsBot['bonusResolver'].resolve(card);
-    expect(marsBot.turnResolver.megacredits).to.eq(3);
+    expect(marsBot.megacredits).to.eq(3);
     expect(marsBot.shippingBoard.get(ColonyName.LUNA)).to.eq(0);
   });
 });

@@ -381,27 +381,27 @@ describe('MarsBot special placement hexes', () => {
     }
 
     it('is available even when MarsBot cannot pay for it', () => {
-      s.marsBot.turnResolver.megacredits = 0;
+      s.marsBot.megacredits = 0;
 
       expect(s.game.board.getAvailableSpacesOnLand(s.marsBot.player)).to.include(southPole);
     });
 
     it('is preferred to a space with two icons when MarsBot has 6 M€', () => {
-      s.marsBot.turnResolver.megacredits = 6;
+      s.marsBot.megacredits = 6;
       const other = rival();
 
       expectWins(s.game, s.placer, southPole, other);
     });
 
     it('counts as a space without rewards with 5 M€', () => {
-      s.marsBot.turnResolver.megacredits = 5;
+      s.marsBot.megacredits = 5;
       const other = rival();
 
       expectWins(s.game, s.placer, other, southPole);
     });
 
     it('does not count M€ in the Luna storage towards the cost', () => {
-      s.marsBot.turnResolver.megacredits = 5;
+      s.marsBot.megacredits = 5;
       s.marsBot.shippingBoard.storage.set(ColonyName.LUNA, 3);
       const other = rival();
 
@@ -409,7 +409,7 @@ describe('MarsBot special placement hexes', () => {
     });
 
     it('counts as a space without rewards when no ocean is left', () => {
-      s.marsBot.turnResolver.megacredits = 20;
+      s.marsBot.megacredits = 20;
       for (const space of s.game.board.getAvailableSpacesForOcean(s.marsBot.player)) {
         s.game.simpleAddTile(s.marsBot.player, space, {tileType: TileType.OCEAN});
       }
@@ -423,7 +423,7 @@ describe('MarsBot special placement hexes', () => {
     });
 
     it('places an ocean, gains 1 TR and loses 6 M€ instead of gaining resources', () => {
-      s.marsBot.turnResolver.megacredits = 10;
+      s.marsBot.megacredits = 10;
       const tr = s.marsBot.player.terraformRating;
       const oceans = s.game.board.getOceanSpaces().length;
 
@@ -433,32 +433,32 @@ describe('MarsBot special placement hexes', () => {
       expect(placed).has.length(oceans + 1);
       expect(s.marsBot.player.terraformRating).to.eq(tr + 1);
       // 6 M€ lost. The ocean pays out like any other ocean MarsBot places, the city does not.
-      expect(s.marsBot.turnResolver.megacredits).to.eq(4 + s.placer.getTotalPlacementMC(placed[placed.length - 1]));
+      expect(s.marsBot.megacredits).to.eq(4 + s.placer.getTotalPlacementMC(placed[placed.length - 1]));
     });
 
     it('does not charge M€ for an ocean its corporation swallows', () => {
       s.marsBot.setCorpAndSetup(getMarsBotCorp(CardName.PRISTAR)!);
       s.marsBot.setCorpState('whiteCubeOnCard', 1);
-      s.marsBot.turnResolver.megacredits = 10;
+      s.marsBot.megacredits = 10;
       const tr = s.marsBot.player.terraformRating;
 
       s.game.addCity(s.marsBot.player, southPole);
 
       expect(s.game.board.getOceanSpaces()).has.length(0);
       // Pristar's own +6 M€ and +1 TR, and nothing paid for the hex
-      expect(s.marsBot.turnResolver.megacredits).to.eq(16);
+      expect(s.marsBot.megacredits).to.eq(16);
       expect(s.marsBot.player.terraformRating).to.eq(tr + 1);
     });
 
     it('does nothing when MarsBot cannot pay', () => {
-      s.marsBot.turnResolver.megacredits = 5;
+      s.marsBot.megacredits = 5;
       const tr = s.marsBot.player.terraformRating;
 
       s.game.addCity(s.marsBot.player, southPole);
 
       expect(s.game.board.getOceanSpaces()).has.length(0);
       expect(s.marsBot.player.terraformRating).to.eq(tr);
-      expect(s.marsBot.turnResolver.megacredits).to.eq(5);
+      expect(s.marsBot.megacredits).to.eq(5);
     });
   });
 
@@ -482,14 +482,14 @@ describe('MarsBot special placement hexes', () => {
     }
 
     it('is available with no M€ and no colony left to build', () => {
-      s.marsBot.turnResolver.megacredits = 0;
+      s.marsBot.megacredits = 0;
       s.game.colonies.forEach((colony) => colony.colonies.push(s.marsBot.player.id));
 
       expect(s.game.board.getAvailableSpacesOnLand(s.marsBot.player)).to.include(msl);
     });
 
     it('is preferred to a space with two icons, but not to one with three, when MarsBot has 5 M€', () => {
-      s.marsBot.turnResolver.megacredits = 5;
+      s.marsBot.megacredits = 5;
       const two = rival(2);
       const three = rival(3);
 
@@ -498,13 +498,13 @@ describe('MarsBot special placement hexes', () => {
     });
 
     it('counts as a space without rewards with 4 M€', () => {
-      s.marsBot.turnResolver.megacredits = 4;
+      s.marsBot.megacredits = 4;
 
       expect(pick(s.placer, msl, rival(2))).to.eq(rival(2));
     });
 
     it('counts as a space without rewards when MarsBot has a colony on every tile', () => {
-      s.marsBot.turnResolver.megacredits = 20;
+      s.marsBot.megacredits = 20;
       s.game.colonies.forEach((colony) => colony.colonies.push(s.marsBot.player.id));
 
       expect(pick(s.placer, msl, rival(2))).to.eq(rival(2));
@@ -515,31 +515,31 @@ describe('MarsBot special placement hexes', () => {
     });
 
     it('builds a colony and loses 5 M€ instead of gaining resources', () => {
-      s.marsBot.turnResolver.megacredits = 7;
+      s.marsBot.megacredits = 7;
 
       s.game.addCity(s.marsBot.player, msl);
 
       expect(builtColonies()).to.eq(1);
-      expect(s.marsBot.turnResolver.megacredits).to.eq(2);
+      expect(s.marsBot.megacredits).to.eq(2);
     });
 
     it('does not charge M€ when the project deck has no card to pick the colony', () => {
-      s.marsBot.turnResolver.megacredits = 7;
+      s.marsBot.megacredits = 7;
       s.game.projectDeck.drawN = () => [];
 
       s.game.addCity(s.marsBot.player, msl);
 
       expect(builtColonies()).to.eq(0);
-      expect(s.marsBot.turnResolver.megacredits).to.eq(7);
+      expect(s.marsBot.megacredits).to.eq(7);
     });
 
     it('does nothing when MarsBot cannot pay', () => {
-      s.marsBot.turnResolver.megacredits = 4;
+      s.marsBot.megacredits = 4;
 
       s.game.addCity(s.marsBot.player, msl);
 
       expect(builtColonies()).to.eq(0);
-      expect(s.marsBot.turnResolver.megacredits).to.eq(4);
+      expect(s.marsBot.megacredits).to.eq(4);
     });
 
     it('is an ordinary space without Colonies', () => {
@@ -547,10 +547,10 @@ describe('MarsBot special placement hexes', () => {
       const spaces = without.game.board.spaces;
       expect(spaces.some((sp) => sp.bonus.includes(SpaceBonus.COLONY))).is.false;
 
-      without.marsBot.turnResolver.megacredits = 10;
+      without.marsBot.megacredits = 10;
       without.game.addCity(without.marsBot.player, spaces.find((sp) => sp.id === msl.id)!);
 
-      expect(without.marsBot.turnResolver.megacredits).to.eq(10);
+      expect(without.marsBot.megacredits).to.eq(10);
     });
   });
 
@@ -568,27 +568,27 @@ describe('MarsBot special placement hexes', () => {
     }
 
     it('is available even when MarsBot cannot pay for it', () => {
-      s.marsBot.turnResolver.megacredits = 0;
+      s.marsBot.megacredits = 0;
 
       expect(s.game.board.getAvailableSpacesOnLand(s.marsBot.player)).to.include(northPole);
     });
 
     it('is preferred to a space with two icons when MarsBot has 4 M€', () => {
-      s.marsBot.turnResolver.megacredits = 4;
+      s.marsBot.megacredits = 4;
       const other = rival();
 
       expectWins(s.game, s.placer, northPole, other);
     });
 
     it('counts as a space without rewards with 3 M€', () => {
-      s.marsBot.turnResolver.megacredits = 3;
+      s.marsBot.megacredits = 3;
       const other = rival();
 
       expectWins(s.game, s.placer, other, northPole);
     });
 
     it('counts as a space without rewards once the temperature is maxed', () => {
-      s.marsBot.turnResolver.megacredits = 20;
+      s.marsBot.megacredits = 20;
       setTemperature(s.game, s.game.max.temperature);
       const other = rival();
 
@@ -600,7 +600,7 @@ describe('MarsBot special placement hexes', () => {
     });
 
     it('raises the temperature, gains 1 TR and loses 4 M€ instead of gaining resources', () => {
-      s.marsBot.turnResolver.megacredits = 6;
+      s.marsBot.megacredits = 6;
       const tr = s.marsBot.player.terraformRating;
       const temperature = s.game.getTemperature();
 
@@ -608,30 +608,30 @@ describe('MarsBot special placement hexes', () => {
 
       expect(s.game.getTemperature()).to.eq(temperature + 2);
       expect(s.marsBot.player.terraformRating).to.eq(tr + 1);
-      expect(s.marsBot.turnResolver.megacredits).to.eq(2);
+      expect(s.marsBot.megacredits).to.eq(2);
     });
 
     it('does not charge M€ for a temperature raise its corporation swallows', () => {
       s.marsBot.setCorpAndSetup(getMarsBotCorp(CardName.PRISTAR)!);
       s.marsBot.setCorpState('whiteCubeOnCard', 1);
-      s.marsBot.turnResolver.megacredits = 6;
+      s.marsBot.megacredits = 6;
       const temperature = s.game.getTemperature();
 
       s.game.addCity(s.marsBot.player, northPole);
 
       expect(s.game.getTemperature()).to.eq(temperature);
       // Pristar's own +6 M€, and nothing paid for the hex
-      expect(s.marsBot.turnResolver.megacredits).to.eq(12);
+      expect(s.marsBot.megacredits).to.eq(12);
     });
 
     it('does nothing when MarsBot cannot pay', () => {
-      s.marsBot.turnResolver.megacredits = 3;
+      s.marsBot.megacredits = 3;
       const temperature = s.game.getTemperature();
 
       s.game.addCity(s.marsBot.player, northPole);
 
       expect(s.game.getTemperature()).to.eq(temperature);
-      expect(s.marsBot.turnResolver.megacredits).to.eq(3);
+      expect(s.marsBot.megacredits).to.eq(3);
     });
   });
 
@@ -668,9 +668,9 @@ describe('MarsBot special placement hexes', () => {
       expect(s.placer.getPlacementBonusMC(space)).to.eq(0);
       expect(s.game.board.getAvailableSpacesOnLand(s.marsBot.player)).to.include(space);
 
-      s.marsBot.turnResolver.megacredits = 3;
+      s.marsBot.megacredits = 3;
       s.game.addCity(s.marsBot.player, space);
-      expect(s.marsBot.turnResolver.megacredits).to.eq(3);
+      expect(s.marsBot.megacredits).to.eq(3);
     });
   });
 });

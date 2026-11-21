@@ -193,14 +193,14 @@ describe('MarsBot and the player\'s Pharmacy Union', () => {
   it('does not resolve MarsBot\'s own corp when a colony storage overflow advances a track (BGG 3535330)', () => {
     const {marsBot} = createAutomaGame();
     marsBot.setCorpAndSetup(getMarsBotCorp(CardName.ARKLIGHT)!);
-    const mc = marsBot.turnResolver.megacredits;
+    const mc = marsBot.megacredits;
 
     marsBot.shippingBoard.add(ColonyName.GANYMEDE, 5);
 
     // Only the plant track's own icons pay M€, not Arklight's "plant or animal" effect
     const plantTrack = marsBot.marsBotBoard.tracks[marsBot.marsBotBoard.tagToTrack[Tag.PLANT]!];
     expect(plantTrack.position).is.greaterThan(0);
-    expect(marsBot.turnResolver.megacredits - mc).is.lessThan(2);
+    expect(marsBot.megacredits - mc).is.lessThan(2);
   });
 });
 

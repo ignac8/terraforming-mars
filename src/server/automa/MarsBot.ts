@@ -5,7 +5,7 @@ import {Resource} from '../../common/Resource';
 import {GlobalParameter} from '../../common/GlobalParameter';
 import {CardName} from '../../common/cards/CardName';
 import {newCard} from '../createCard';
-import {DifficultyLevel, BonusCardId, LAKEFRONT_OCEAN_BONUS, TrackDefinition, getAutomaMaxGeneration} from '../../common/automa/AutomaTypes';
+import {DifficultyLevel, BonusCardId, FAILED_ACTION_MC, FAILED_ACTION_MC_EASY, LAKEFRONT_OCEAN_BONUS, TrackDefinition, getAutomaMaxGeneration} from '../../common/automa/AutomaTypes';
 import {marsBotMapRules} from '../../common/automa/MarsBotMapRules';
 import {Tag} from '../../common/cards/Tag';
 import {currentMcPerVP} from './MarsBotScoring';
@@ -93,6 +93,8 @@ export class MarsBot implements IMarsBot {
   /** Corporation card (Rulebook B). */
   public corp: MarsBotCorp | undefined;
 
+  public megacredits: number = 0;
+
   /** Track cube positions placed by the corporation. Key: "trackIndex:position". */
   public trackCubePositions: Map<string, MarsBotTrackCube> = new Map();
 
@@ -176,9 +178,7 @@ export class MarsBot implements IMarsBot {
       }
     }
     this.tilePlacer = new MarsBotTilePlacer(this);
-    this.turnResolver = new MarsBotTurnResolver(
-      game, player, humanPlayer, this.marsBotBoard, difficulty, 0, this.tilePlacer,
-    );
+    this.turnResolver = new MarsBotTurnResolver(this, this.tilePlacer);
     this.bonusResolver = new MarsBotBonusResolver(this);
   }
 
@@ -331,7 +331,7 @@ export class MarsBot implements IMarsBot {
   /** Hard mode: on first turn of each gen, if 8 MC and meets milestone conditions, claim.
    * MarsBot starts at 0 MC and accumulates from failed actions (5 MC each) and placement bonuses. */
   private hardModeFirstTurnMilestone(): void {
-    if (this.turnResolver.megacredits < 8) {
+    if (this.megacredits < 8) {
       return;
     }
     if (this.game.allMilestonesClaimed()) {
@@ -349,7 +349,7 @@ export class MarsBot implements IMarsBot {
       const toClaim = selectMilestone(this, getClaimableMilestones(this));
       if (toClaim) {
         this.game.claimedMilestones.push({player: this.player, milestone: toClaim});
-        this.turnResolver.megacredits -= 8;
+        this.megacredits -= 8;
         this.game.log('MarsBot claims milestone ${0} (Hard mode), loses 8 MC', (b) => b.rawString(toClaim.name));
       }
     }
@@ -387,7 +387,7 @@ export class MarsBot implements IMarsBot {
       }
       // Do NOT raise oxygen or award TR for final greenery
       this.game.addGreenery(this.player, space, false);
-      this.turnResolver.gainMc(this.tilePlacer.getTotalPlacementMC(space));
+      this.gainMc(this.tilePlacer.getTotalPlacementMC(space));
       track.advance();
       this.game.log('MarsBot places final greenery (${0} track)', (b) => b.rawString(name));
       if (!this.game.gameOptions.automaFinalGreeneryNoCorpEffects) {
@@ -407,16 +407,8 @@ export class MarsBot implements IMarsBot {
 
   // ---- IMarsBot: the view corp handlers get ----
 
-  public get megacredits(): number {
-    return this.turnResolver.megacredits;
-  }
-
-  public set megacredits(mc: number) {
-    this.turnResolver.megacredits = mc;
-  }
-
   public get failedActionMc(): number {
-    return this.turnResolver.failedActionMc;
+    return this.difficulty === 'easy' ? FAILED_ACTION_MC_EASY : FAILED_ACTION_MC;
   }
 
   public advanceTrack(trackIndex: number): void {
@@ -815,8 +807,13 @@ export class MarsBot implements IMarsBot {
     return opts.coloniesExtension && !opts.venusNextExtension;
   }
 
+  /** Adds M€ to MarsBot's supply and tells the corp about it (Mining Guild). */
   public gainMc(amount: number): void {
-    this.turnResolver.gainMc(amount);
+    if (amount <= 0) {
+      return;
+    }
+    this.megacredits += amount;
+    this.corp?.onMcGained?.(this, amount);
   }
 
   /** Ask the corp to intercept a parameter raise (Pristar). True means the raise is skipped. */
@@ -964,7 +961,7 @@ export class MarsBot implements IMarsBot {
         layout: track.definition.layout,
       })),
       terraformRating: this.player.terraformRating,
-      megacredits: this.turnResolver.megacredits,
+      megacredits: this.megacredits,
       actionDeckSize: this.actionDeck.length,
       bonusDeckSize: this.bonusDeck.drawPile.length,
       vpBreakdown: vp,
@@ -984,7 +981,7 @@ export class MarsBot implements IMarsBot {
     const mcPerVP = currentMcPerVP(this.game);
     if (mcPerVP !== undefined) {
       model.mcPerVP = mcPerVP;
-      model.mcVP = Math.floor(this.turnResolver.megacredits / mcPerVP);
+      model.mcVP = Math.floor(this.megacredits / mcPerVP);
     }
     // C-18: Shipping Board storage (Colonies)
     if (opts.coloniesExtension && this.shippingBoard.storage.size > 0) {
@@ -999,7 +996,7 @@ export class MarsBot implements IMarsBot {
     const state: SerializedAutomaState = {
       trackPositions: this.marsBotBoard.tracks.map((t) => t.position),
       trackRegressedPositions: this.marsBotBoard.tracks.map((t) => Array.from(t.regressedPositions)),
-      megacredits: this.turnResolver.megacredits,
+      megacredits: this.megacredits,
       goesFirst: this.goesFirst,
       difficulty: this.difficulty,
       actionDeckCardNames: this.actionDeck.map((c) => this.isProjectCard(c) ? c.name : (c as MarsBotBonusCard).id),
@@ -1067,7 +1064,7 @@ export class MarsBot implements IMarsBot {
     }
 
     // Restore MC
-    this.turnResolver.megacredits = state.megacredits ?? state.mcSupply ?? 0;
+    this.megacredits = state.megacredits ?? state.mcSupply ?? 0;
 
     // The bot player is rebuilt from scratch on load, so its scoring state lives here.
     if (state.terraformRating !== undefined) {

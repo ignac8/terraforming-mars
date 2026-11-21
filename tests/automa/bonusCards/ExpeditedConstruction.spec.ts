@@ -42,7 +42,7 @@ describe('ExpeditedConstruction', () => {
     for (const id of ['06', '07', '13'] as const) {
       game.simpleAddTile(human, game.board.getSpaceOrThrow(id), {tileType: TileType.OCEAN});
     }
-    const megacredits = marsBot.turnResolver.megacredits;
+    const megacredits = marsBot.megacredits;
     const card = createBonusCard(BonusCardId.B05_EXPEDITED_CONSTRUCTION);
 
     const destroyed = marsBot['bonusResolver'].resolve(card);
@@ -50,20 +50,20 @@ describe('ExpeditedConstruction', () => {
     const city = game.board.getSpaceOrThrow('12');
     expect(city.tile?.tileType).eq(TileType.CITY);
     expect(city.player).eq(marsBot.player);
-    expect(marsBot.turnResolver.megacredits).eq(megacredits + 6);
+    expect(marsBot.megacredits).eq(megacredits + 6);
     expect(destroyed).is.true;
     expect(marsBot.bonusDeck.discardPile).does.not.include(card);
   });
 
   it('takes no Failed Action and goes back to the bonus deck when no space is next to 2 such tiles', () => {
     const {game, marsBot} = createAutomaGame();
-    const megacredits = marsBot.turnResolver.megacredits;
+    const megacredits = marsBot.megacredits;
     const card = createBonusCard(BonusCardId.B05_EXPEDITED_CONSTRUCTION);
 
     const destroyed = marsBot['bonusResolver'].resolve(card);
 
     expect(game.board.spaces.filter((space) => space.tile !== undefined)).is.empty;
-    expect(marsBot.turnResolver.megacredits).eq(megacredits);
+    expect(marsBot.megacredits).eq(megacredits);
     expect(destroyed).is.false;
     expect(marsBot.bonusDeck.discardPile).includes(card);
   });

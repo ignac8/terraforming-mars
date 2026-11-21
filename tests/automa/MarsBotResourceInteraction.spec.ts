@@ -50,48 +50,48 @@ describe('MarsBot Resource Interaction (rules page 4-5)', () => {
   describe('Remove resources from MarsBot → deduct from MC supply', () => {
     it('removing plants from MarsBot deducts from megacredits', () => {
       const {marsBot} = createAutomaGame();
-      marsBot.turnResolver.megacredits = 10;
+      marsBot.megacredits = 10;
 
       // Simulate removing 3 plants (via stock.add with negative amount)
       marsBot.player.stock.add(Resource.PLANTS, -3, {log: true, from: {player: marsBot.player}});
-      expect(marsBot.turnResolver.megacredits).to.eq(7);
+      expect(marsBot.megacredits).to.eq(7);
     });
 
     it('removing steel from MarsBot deducts from megacredits', () => {
       const {marsBot} = createAutomaGame();
-      marsBot.turnResolver.megacredits = 10;
+      marsBot.megacredits = 10;
 
       marsBot.player.stock.add(Resource.STEEL, -2, {log: true, from: {player: marsBot.player}});
-      expect(marsBot.turnResolver.megacredits).to.eq(8);
+      expect(marsBot.megacredits).to.eq(8);
     });
 
     it('removing more than megacredits clamps to 0', () => {
       const {marsBot} = createAutomaGame();
-      marsBot.turnResolver.megacredits = 3;
+      marsBot.megacredits = 3;
 
       marsBot.player.stock.add(Resource.PLANTS, -10, {log: true, from: {player: marsBot.player}});
-      expect(marsBot.turnResolver.megacredits).to.eq(0);
+      expect(marsBot.megacredits).to.eq(0);
     });
 
     it('removing heat from MarsBot deducts from megacredits', () => {
       const {marsBot} = createAutomaGame();
-      marsBot.turnResolver.megacredits = 15;
+      marsBot.megacredits = 15;
 
       marsBot.player.stock.add(Resource.HEAT, -5, {log: true, from: {player: marsBot.player}});
-      expect(marsBot.turnResolver.megacredits).to.eq(10);
+      expect(marsBot.megacredits).to.eq(10);
     });
   });
 
   describe('Steal resources from MarsBot → deduct from MC supply', () => {
     it('stealing resources deducts from MarsBot megacredits', () => {
       const {human, marsBot} = createAutomaGame();
-      marsBot.turnResolver.megacredits = 10;
+      marsBot.megacredits = 10;
 
       // Use stock.steal which calls deduct internally
       marsBot.player.stock.steal(Resource.PLANTS, 3, human);
 
       // MarsBot should have lost MC
-      expect(marsBot.turnResolver.megacredits).to.eq(7);
+      expect(marsBot.megacredits).to.eq(7);
     });
   });
 
@@ -174,18 +174,18 @@ describe('MarsBot Resource Interaction (rules page 4-5)', () => {
   describe('Resource additions to MarsBot are ignored', () => {
     it('adding plants to MarsBot does not affect megacredits', () => {
       const {marsBot} = createAutomaGame();
-      marsBot.turnResolver.megacredits = 10;
+      marsBot.megacredits = 10;
 
       marsBot.player.stock.add(Resource.PLANTS, 5);
-      expect(marsBot.turnResolver.megacredits).to.eq(10); // Unchanged
+      expect(marsBot.megacredits).to.eq(10); // Unchanged
     });
 
     it('adding MC to MarsBot does not affect megacredits', () => {
       const {marsBot} = createAutomaGame();
-      marsBot.turnResolver.megacredits = 10;
+      marsBot.megacredits = 10;
 
       marsBot.player.stock.add(Resource.MEGACREDITS, 5);
-      expect(marsBot.turnResolver.megacredits).to.eq(10); // Unchanged
+      expect(marsBot.megacredits).to.eq(10); // Unchanged
     });
   });
 
@@ -234,9 +234,9 @@ describe('MarsBot Resource Interaction (rules page 4-5)', () => {
     it('Sponsored Academies gives MarsBot 1 MC instead of card draw', () => {
       const {human, marsBot} = createAutomaGame();
       human.cardsInHand.push(...human.game.projectDeck.drawN(human.game, 3));
-      const mcBefore = marsBot.turnResolver.megacredits;
+      const mcBefore = marsBot.megacredits;
       human.playCard(new SponsoredAcademies());
-      expect(marsBot.turnResolver.megacredits).to.eq(mcBefore + 1);
+      expect(marsBot.megacredits).to.eq(mcBefore + 1);
     });
   });
 
@@ -262,7 +262,7 @@ describe('MarsBot Resource Interaction (rules page 4-5)', () => {
 
     /** MarsBot's M€ plus the positions of all its tracks: removing, stealing or decreasing production lowers it. */
     function marsBotHoldings(marsBot: MarsBot): number {
-      return marsBot.turnResolver.megacredits + marsBot.marsBotBoard.tracks.reduce((sum, track) => sum + track.position, 0);
+      return marsBot.megacredits + marsBot.marsBotBoard.tracks.reduce((sum, track) => sum + track.position, 0);
     }
 
     const cards: Array<{name: CardName, action?: boolean}> = [
@@ -289,7 +289,7 @@ describe('MarsBot Resource Interaction (rules page 4-5)', () => {
           venusNextExtension: true, coloniesExtension: true, turmoilExtension: true, promoCardsOption: true, prelude2Expansion: true,
         });
         const marsBot = game.automaHooks!.marsBot;
-        marsBot.turnResolver.megacredits = 20;
+        marsBot.megacredits = 20;
         for (const track of marsBot.marsBotBoard.tracks) {
           track.advance();
           track.advance();
@@ -326,7 +326,7 @@ describe('MarsBot Resource Interaction (rules page 4-5)', () => {
 
     it('Flooding defaults to the adjacent MarsBot tile\'s owner', () => {
       const {game, human, marsBot} = createAutomaGame();
-      marsBot.turnResolver.megacredits = 20;
+      marsBot.megacredits = 20;
       human.megaCredits = 20;
       const ocean = game.board.getAvailableSpacesForOcean(human)
         .find((space) => game.board.getAdjacentSpaces(space).some((s) => s.spaceType === SpaceType.LAND && s.tile === undefined))!;
@@ -340,28 +340,28 @@ describe('MarsBot Resource Interaction (rules page 4-5)', () => {
       takeDefault(cast(human.popWaitingFor(), OrOptions), human, marsBot);
       runAllActions(game);
 
-      expect(marsBot.turnResolver.megacredits).eq(16);
+      expect(marsBot.megacredits).eq(16);
       expect(human.megaCredits).gte(20);
     });
 
     // MarsBot pays every resource out of its M€ supply, so the M€ option takes the most from it.
     it('Sabotage defaults to removing 7 M€ from MarsBot', () => {
       const {human, marsBot} = createAutomaGame();
-      marsBot.turnResolver.megacredits = 20;
+      marsBot.megacredits = 20;
 
       takeDefault(cast(new Sabotage().play(human), OrOptions), human, marsBot);
 
-      expect(marsBot.turnResolver.megacredits).eq(13);
+      expect(marsBot.megacredits).eq(13);
     });
 
     it('Hired Raiders defaults to stealing 3 M€ from MarsBot', () => {
       const {human, marsBot} = createAutomaGame();
-      marsBot.turnResolver.megacredits = 20;
+      marsBot.megacredits = 20;
       human.megaCredits = 0;
 
       takeDefault(cast(new HiredRaiders().play(human), OrOptions), human, marsBot);
 
-      expect(marsBot.turnResolver.megacredits).eq(17);
+      expect(marsBot.megacredits).eq(17);
       expect(human.megaCredits).eq(3);
       expect(human.steel).eq(0);
     });
@@ -403,12 +403,12 @@ describe('MarsBot Resource Interaction (rules page 4-5)', () => {
 
     it('Law Suit defaults to MarsBot', () => {
       const {human, marsBot} = createAutomaGame();
-      marsBot.turnResolver.megacredits = 20;
+      marsBot.megacredits = 20;
       human.removingPlayers.push(marsBot.player.id);
 
       takeDefault(new LawSuit().play(human)!, human, marsBot);
 
-      expect(marsBot.turnResolver.megacredits).eq(17);
+      expect(marsBot.megacredits).eq(17);
     });
   });
 });

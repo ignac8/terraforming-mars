@@ -26,13 +26,13 @@ describe('AphroditeMarsBot', () => {
     const [game, human] = testGame(1, {automa: true, venusNextExtension: true, boardName: BoardName.THARSIS});
     const marsBot = game.automaHooks!.marsBot;
     marsBot.setCorpAndSetup(getMarsBotCorp(CardName.APHRODITE)!);
-    const mc = marsBot.turnResolver.megacredits;
+    const mc = marsBot.megacredits;
 
     game.increaseVenusScaleLevel(human, 2);
-    expect(marsBot.turnResolver.megacredits).to.eq(mc + 4);
+    expect(marsBot.megacredits).to.eq(mc + 4);
 
     game.increaseVenusScaleLevel(marsBot.player, 1);
-    expect(marsBot.turnResolver.megacredits).to.eq(mc + 6);
+    expect(marsBot.megacredits).to.eq(mc + 6);
   });
 
   it('gains nothing once Venus is maxed', () => {
@@ -40,35 +40,35 @@ describe('AphroditeMarsBot', () => {
     const marsBot = game.automaHooks!.marsBot;
     marsBot.setCorpAndSetup(getMarsBotCorp(CardName.APHRODITE)!);
     setVenusScaleLevel(game, MAX_VENUS_SCALE);
-    const mc = marsBot.turnResolver.megacredits;
+    const mc = marsBot.megacredits;
 
     game.increaseVenusScaleLevel(human, 2);
 
-    expect(marsBot.turnResolver.megacredits).to.eq(mc);
+    expect(marsBot.megacredits).to.eq(mc);
   });
 
   it('gains the M€ but not the TR when Government Intervention raises Venus', () => {
     const {game, marsBot} = createCorpFaqGame(CardName.APHRODITE);
     game.generation = 3;
     const tr = marsBot.player.terraformRating;
-    const mc = marsBot.turnResolver.megacredits;
+    const mc = marsBot.megacredits;
 
     marsBot['bonusResolver'].resolve(createBonusCard(BonusCardId.B16_GOVERNMENT_INTERVENTION));
 
     expect(game.getVenusScaleLevel()).eq(2);
     expect(marsBot.player.terraformRating).eq(tr);
-    expect(marsBot.turnResolver.megacredits).eq(mc + 2);
+    expect(marsBot.megacredits).eq(mc + 2);
   });
 
   it('gains the Aphrodite M€ but not the Venus 8% bonus when Government Intervention raises Venus', () => {
     const {game, marsBot} = createCorpFaqGame(CardName.APHRODITE);
     game.generation = 3;
     setVenusScaleLevel(game, 6);
-    const mc = marsBot.turnResolver.megacredits;
+    const mc = marsBot.megacredits;
 
     marsBot['bonusResolver'].resolve(createBonusCard(BonusCardId.B16_GOVERNMENT_INTERVENTION));
 
     expect(game.getVenusScaleLevel()).eq(8);
-    expect(marsBot.turnResolver.megacredits).eq(mc + 2);
+    expect(marsBot.megacredits).eq(mc + 2);
   });
 });

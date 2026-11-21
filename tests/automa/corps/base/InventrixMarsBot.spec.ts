@@ -36,17 +36,17 @@ describe('InventrixMarsBot', () => {
     const {marsBot} = createAutomaGame();
     const corp = getMarsBotCorp(CardName.INVENTRIX)!;
     marsBot.setCorpAndSetup(corp);
-    const mcBefore = marsBot.turnResolver.megacredits;
+    const mcBefore = marsBot.megacredits;
     corp.onProjectCardResolved!(marsBot, fakeCard('Req', {cost: 10, requirements: true}));
-    expect(marsBot.turnResolver.megacredits).to.eq(mcBefore + 2);
+    expect(marsBot.megacredits).to.eq(mcBefore + 2);
   });
 
   it('does NOT gain M€ for cards without requirements', () => {
     const {marsBot} = createAutomaGame();
     const corp = getMarsBotCorp(CardName.INVENTRIX)!;
     marsBot.setCorpAndSetup(corp);
-    const mcBefore = marsBot.turnResolver.megacredits;
+    const mcBefore = marsBot.megacredits;
     corp.onProjectCardResolved!(marsBot, fakeCard('NoReq', {cost: 10}));
-    expect(marsBot.turnResolver.megacredits).to.eq(mcBefore);
+    expect(marsBot.megacredits).to.eq(mcBefore);
   });
 });

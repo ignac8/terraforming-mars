@@ -76,7 +76,7 @@ function maxTrack(marsBot: IMarsBot, tag: Tag): void {
 
 function setup(margins: Record<string, number>) {
   const {game, human, marsBot} = createAutomaGame();
-  marsBot.turnResolver.megacredits = 10;
+  marsBot.megacredits = 10;
   for (const [name, margin] of Object.entries(margins)) {
     const award = game.awards.find((a) => a.name === name)!;
     game.fundAward(human, award);
@@ -344,7 +344,7 @@ describe('CorporateCompetition', () => {
 
   it('fails when MarsBot has <5 MC', () => {
     const {marsBot} = createAutomaGame();
-    marsBot.turnResolver.megacredits = 3;
+    marsBot.megacredits = 3;
 
     const cards = createBaseBonusCards();
     const b08 = cards.find((c) => c.id === BonusCardId.B08_CORPORATE_COMPETITION)!;
@@ -358,7 +358,7 @@ describe('CorporateCompetition', () => {
 
   it('deducts 5 MC on successful helper action', () => {
     const {game, human, marsBot} = createAutomaGame();
-    marsBot.turnResolver.megacredits = 10;
+    marsBot.megacredits = 10;
 
     // Fund an award so B08 has something to help with
     game.fundAward(human, game.awards.find((a) => a.name === 'Scientist')!);
@@ -371,12 +371,12 @@ describe('CorporateCompetition', () => {
     const b08 = cards.find((c) => c.id === BonusCardId.B08_CORPORATE_COMPETITION)!;
     const bonusResolver = new MarsBotBonusResolver(marsBot);
 
-    const mcBefore = marsBot.turnResolver.megacredits;
+    const mcBefore = marsBot.megacredits;
     bonusResolver.resolve(b08);
     // Helper for Scientist = advance track 4. Costs 5 MC.
     // Track advance may trigger actions that grant additional MC, so just verify 5 was deducted
-    expect(marsBot.turnResolver.megacredits).to.be.lte(mcBefore - 5 + 10); // At most 10 MC gained from track actions
-    expect(marsBot.turnResolver.megacredits).to.be.lt(mcBefore); // Overall MC decreased
+    expect(marsBot.megacredits).to.be.lte(mcBefore - 5 + 10); // At most 10 MC gained from track actions
+    expect(marsBot.megacredits).to.be.lt(mcBefore); // Overall MC decreased
   });
 
   it('takes no more than MarsBot has when the helper itself cost M€ (colony cube, C-X3)', () => {
@@ -391,13 +391,13 @@ describe('CorporateCompetition', () => {
     marsBot.colonyCubePositions = new Set([key]);
     marsBot.trackCubePositions.set(key, {trackIndex: 1, position: 7, cubeType: 'black'});
     marsBot.marsBotBoard.tracks[1].position = 6;
-    marsBot.turnResolver.megacredits = 5;
+    marsBot.megacredits = 5;
 
     marsBot['bonusResolver'].resolve(createBaseBonusCards().find((c) => c.id === BonusCardId.B08_CORPORATE_COMPETITION)!);
 
     expect(marsBot.marsBotBoard.tracks[1].position).to.eq(7);
     expect(ceres.colonies).includes(marsBot.player.id);
-    expect(marsBot.turnResolver.megacredits).to.eq(0);
+    expect(marsBot.megacredits).to.eq(0);
   });
 
   it('competes for the award the player leads by the least, over one MarsBot leads', () => {
@@ -436,7 +436,7 @@ describe('CorporateCompetition', () => {
     marsBot['bonusResolver'].resolve(b08);
     // Banker advances the building track, the upper of the two tied tracks
     expect(tracks[0].position).to.eq(1);
-    expect(marsBot.turnResolver.megacredits).to.eq(5);
+    expect(marsBot.megacredits).to.eq(5);
   });
 
   it('draws another bonus card without a Failed Action when no helper can resolve', () => {
@@ -447,7 +447,7 @@ describe('CorporateCompetition', () => {
     const tr = marsBot.player.terraformRating;
     marsBot['bonusResolver'].resolve(b08);
     expect(marsBot.player.terraformRating).to.eq(tr + 1);
-    expect(marsBot.turnResolver.megacredits).to.eq(10);
+    expect(marsBot.megacredits).to.eq(10);
   });
 
   it('skips Mogul when the most advanced track is maxed', () => {
@@ -457,7 +457,7 @@ describe('CorporateCompetition', () => {
     tracks[0].position = 3;
     expect(new CorporateCompetition().tryHelperAction(marsBot, 'Mogul')).is.false;
     expect(tracks[0].position).to.eq(3);
-    expect(marsBot.turnResolver.megacredits).to.eq(0);
+    expect(marsBot.megacredits).to.eq(0);
   });
 
   it('for Banker advances the less-advanced of the building and event tracks', () => {
@@ -513,9 +513,9 @@ describe('CorporateCompetition', () => {
   it('Forecaster helper reveals cards until one with a requirement and plays it', () => {
     const {game, marsBot} = createAutomaGame();
     stackDeck(game, new Mine(), new Algae());
-    const mc = marsBot.turnResolver.megacredits;
+    const mc = marsBot.megacredits;
     expect(movedTracks(marsBot, 'Forecaster')).deep.eq([6]);
-    expect(marsBot.turnResolver.megacredits).eq(mc);
+    expect(marsBot.megacredits).eq(mc);
   });
 
   it('Forecaster in a full Corporate Competition costs nothing', () => {
@@ -523,12 +523,12 @@ describe('CorporateCompetition', () => {
     const marsBot = game.automaHooks!.marsBot;
     game.fundAward(human, game.awards.find((a) => a.name === 'Forecaster')!);
     stackDeck(game, new Mine(), new Algae());
-    marsBot.turnResolver.megacredits = 5;
+    marsBot.megacredits = 5;
 
     marsBot['bonusResolver'].resolve(createBaseBonusCards().find((c) => c.id === BonusCardId.B08_CORPORATE_COMPETITION)!);
 
     expect(marsBot.marsBotBoard.tracks[6].position).to.be.greaterThan(0);
-    expect(marsBot.turnResolver.megacredits).eq(5);
+    expect(marsBot.megacredits).eq(5);
   });
 
   // B12: "If MarsBot has at least 5 MC" has no exception for Forecaster
@@ -538,20 +538,20 @@ describe('CorporateCompetition', () => {
     game.fundAward(human, game.awards.find((a) => a.name === 'Forecaster')!);
     stackDeck(game, new Mine(), new Algae());
     marsBot.bonusDeck.drawPile.push(createBonusCard(BonusCardId.B31_GOVERNMENT_SUBSIDY));
-    marsBot.turnResolver.megacredits = 4;
+    marsBot.megacredits = 4;
     const tr = marsBot.player.terraformRating;
 
     marsBot['bonusResolver'].resolve(createBaseBonusCards().find((c) => c.id === BonusCardId.B08_CORPORATE_COMPETITION)!);
 
     expect(marsBot.marsBotBoard.tracks[6].position).to.eq(0);
     expect(marsBot.player.terraformRating).to.eq(tr + 1);
-    expect(marsBot.turnResolver.megacredits).eq(4);
+    expect(marsBot.megacredits).eq(4);
   });
 
   it('other helpers still need 5 M€ in Corporate Competition', () => {
     const {game, human, marsBot} = createAutomaGame();
     game.fundAward(human, game.awards.find((a) => a.name === 'Scientist')!);
-    marsBot.turnResolver.megacredits = 4;
+    marsBot.megacredits = 4;
 
     marsBot['bonusResolver'].resolve(createBaseBonusCards().find((c) => c.id === BonusCardId.B08_CORPORATE_COMPETITION)!);
 
@@ -561,10 +561,10 @@ describe('CorporateCompetition', () => {
   it('Administrator helper plays a card with no tags, not an event, and gains 5 M€', () => {
     const {game, marsBot} = createAutomaGame();
     stackDeck(game, new IceCapMelting(), new MicroMills());
-    const mc = marsBot.turnResolver.megacredits;
+    const mc = marsBot.megacredits;
     expect(movedTracks(marsBot, 'Administrator')).is.empty;
     // 5 M€ for the tagless card's Failed Action, 5 M€ from the card.
-    expect(marsBot.turnResolver.megacredits).eq(mc + 10);
+    expect(marsBot.megacredits).eq(mc + 10);
   });
 
   // "Reveal until" has no cap short of the whole deck (Nick, Q&A 20)

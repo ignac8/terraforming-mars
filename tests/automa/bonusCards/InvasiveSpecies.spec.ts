@@ -109,7 +109,7 @@ describe('InvasiveSpecies', () => {
     const bonusResolver = new MarsBotBonusResolver(marsBot);
 
     bonusResolver.resolve(b02);
-    expect(marsBot.turnResolver.megacredits).to.eq(5);
+    expect(marsBot.megacredits).to.eq(5);
   });
 
   it('skips Pets, whose animals cannot be removed', () => {
@@ -176,7 +176,7 @@ describe('InvasiveSpecies', () => {
 
     marsBot['bonusResolver'].resolve(invasiveSpecies());
 
-    expect(marsBot.turnResolver.megacredits).to.eq(2);
+    expect(marsBot.megacredits).to.eq(2);
     expect(marsBot.floaters).to.eq(1);
   });
 
@@ -189,7 +189,7 @@ describe('InvasiveSpecies', () => {
 
     marsBot['bonusResolver'].resolve(invasiveSpecies());
 
-    expect(marsBot.turnResolver.megacredits).to.eq(2);
+    expect(marsBot.megacredits).to.eq(2);
     expect(marsBot.shippingBoard.storage.get(ColonyName.TITAN)).to.eq(1);
   });
 
@@ -203,7 +203,7 @@ describe('InvasiveSpecies', () => {
 
     marsBot['bonusResolver'].resolve(invasiveSpecies());
 
-    expect(marsBot.turnResolver.megacredits).to.eq(2);
+    expect(marsBot.megacredits).to.eq(2);
     expect(marsBot.shippingBoard.storage.get(ColonyName.TITAN) ?? 0).to.eq(0);
   });
 });

@@ -76,12 +76,12 @@ describe('MarsBot serialization roundtrip', () => {
 
   it('preserves megacredits', () => {
     const mb = createMarsBot();
-    mb.turnResolver.megacredits = 42;
+    mb.megacredits = 42;
 
     const state = mb.serialize();
     const mb2 = createMarsBot();
     mb2.restoreState(state);
 
-    expect(mb2.turnResolver.megacredits).to.eq(42);
+    expect(mb2.megacredits).to.eq(42);
   });
 });

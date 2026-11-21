@@ -33,26 +33,26 @@ describe('EcoLineMarsBot', () => {
   it('destroys the Ecoline plant, and the excess is lost', () => {
     const {game, human, marsBot} = createCorpFaqGame(CardName.ECOLINE);
     rapidSprouting(marsBot);
-    marsBot.turnResolver.megacredits = 20;
+    marsBot.megacredits = 20;
 
     marsBot.player.stock.add(Resource.PLANTS, -3, {from: {player: human}});
     chooseSource(game, human, 0);
 
     expect(marsBot.getCorpState('plantResources')).eq(0);
-    expect(marsBot.turnResolver.megacredits).eq(20);
+    expect(marsBot.megacredits).eq(20);
   });
 
   // "you can remove either 2mc or that 1 plant. You cannot remove 1 MC and 1 plant" (TDaver, BGG 3341536)
   it('lets the player destroy from the M€ supply instead, leaving the plant', () => {
     const {game, human, marsBot} = createCorpFaqGame(CardName.ECOLINE);
     rapidSprouting(marsBot);
-    marsBot.turnResolver.megacredits = 20;
+    marsBot.megacredits = 20;
 
     marsBot.player.stock.add(Resource.PLANTS, -3, {from: {player: human}});
     chooseSource(game, human, 1);
 
     expect(marsBot.getCorpState('plantResources')).eq(1);
-    expect(marsBot.turnResolver.megacredits).eq(17);
+    expect(marsBot.megacredits).eq(17);
   });
 
   it('takes the plant without asking when the M€ supply is empty', () => {
@@ -78,20 +78,20 @@ describe('EcoLineMarsBot', () => {
   it('steals the Ecoline plant, and the excess is lost', () => {
     const {game, human, marsBot} = createCorpFaqGame(CardName.ECOLINE);
     rapidSprouting(marsBot);
-    marsBot.turnResolver.megacredits = 20;
+    marsBot.megacredits = 20;
 
     marsBot.player.stock.steal(Resource.PLANTS, 3, human);
     chooseSource(game, human, 0);
 
     expect(human.plants).eq(1);
     expect(marsBot.getCorpState('plantResources')).eq(0);
-    expect(marsBot.turnResolver.megacredits).eq(20);
+    expect(marsBot.megacredits).eq(20);
   });
 
   it('counts the plants on the card for Crash Site Cleanup and Law Suit when the player destroys them', () => {
     const {game, human, marsBot} = createCorpFaqGame(CardName.ECOLINE);
     rapidSprouting(marsBot);
-    marsBot.turnResolver.megacredits = 20;
+    marsBot.megacredits = 20;
 
     marsBot.player.stock.add(Resource.PLANTS, -3, {from: {player: human}});
     chooseSource(game, human, 0);

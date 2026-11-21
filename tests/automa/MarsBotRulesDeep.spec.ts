@@ -48,7 +48,7 @@ describe('MarsBot Deep Rules Tests', () => {
 
       resolver.resolveProjectCard(fakeCard({cost: 5, tags: [Tag.BUILDING], type: CardType.AUTOMATED}));
       // Venus should be ignored, NOT a failed action
-      expect(resolver.megacredits).to.eq(0); // No 5 MC from failed action
+      expect(marsBot.megacredits).to.eq(0); // No 5 MC from failed action
       expect(marsBotBoard.tracks[0].position).to.eq(1); // Track still advanced
     });
 
@@ -63,7 +63,7 @@ describe('MarsBot Deep Rules Tests', () => {
       const resolver = marsBot.turnResolver;
 
       resolver.resolveProjectCard(fakeCard({cost: 5, tags: [Tag.BUILDING], type: CardType.AUTOMATED}));
-      expect(resolver.megacredits).to.eq(0);
+      expect(marsBot.megacredits).to.eq(0);
     });
   });
 
@@ -120,7 +120,7 @@ describe('MarsBot Deep Rules Tests', () => {
 
       // Building track maxed → Failed Action (5 MC)
       // Space track should still advance
-      expect(resolver.megacredits).to.eq(5);
+      expect(marsBot.megacredits).to.eq(5);
       expect(marsBotBoard.tracks[1].position).to.eq(1);
       expect(marsBotBoard.tracks[0].position).to.eq(18); // Unchanged
     });
@@ -139,12 +139,12 @@ describe('MarsBot Deep Rules Tests', () => {
       layout[1] = 'milestone';
       const marsBot = standaloneMarsBot(game, botPlayer, human, makeBoard(layout));
       const resolver = marsBot.turnResolver;
-      resolver.megacredits = 10;
+      marsBot.megacredits = 10;
 
       resolver.resolveProjectCard(fakeCard({cost: 5, tags: [Tag.BUILDING], type: CardType.AUTOMATED}));
       // MC should not have decreased (MarsBot doesn't pay for milestones)
       // It might have increased from failed action if couldn't claim
-      expect(resolver.megacredits).to.be.gte(10);
+      expect(marsBot.megacredits).to.be.gte(10);
     });
 
     it('award funding does not deduct MC from megacredits', () => {
@@ -161,11 +161,11 @@ describe('MarsBot Deep Rules Tests', () => {
       layout[1] = 'award';
       const marsBot = standaloneMarsBot(game, botPlayer, human, makeBoard(layout));
       const resolver = marsBot.turnResolver;
-      resolver.megacredits = 10;
+      marsBot.megacredits = 10;
 
       resolver.resolveProjectCard(fakeCard({cost: 5, tags: [Tag.BUILDING], type: CardType.AUTOMATED}));
       // MC should not have decreased
-      expect(resolver.megacredits).to.be.gte(10);
+      expect(marsBot.megacredits).to.be.gte(10);
     });
   });
 
@@ -232,20 +232,20 @@ describe('MarsBot Deep Rules Tests', () => {
       const {game, marsBot} = createAutomaGame();
       setTemperature(game, -22); // 1 step below -20
 
-      const mcBefore = marsBot.turnResolver.megacredits;
+      const mcBefore = marsBot.megacredits;
       game.increaseTemperature(marsBot.player, 1);
       // Should cross -20, giving 2 MC
-      expect(marsBot.turnResolver.megacredits).to.eq(mcBefore + 2);
+      expect(marsBot.megacredits).to.eq(mcBefore + 2);
     });
 
     it('MarsBot gets 2 MC at both -24C and -20C when raising 3 steps', () => {
       const {game, marsBot} = createAutomaGame();
       setTemperature(game, -26); // Raising 3 steps: -26 → -20, crosses both -24 and -20
 
-      const mcBefore = marsBot.turnResolver.megacredits;
+      const mcBefore = marsBot.megacredits;
       game.increaseTemperature(marsBot.player, 3);
       // Crosses both -24 and -20, giving 2 MC each = 4 MC total
-      expect(marsBot.turnResolver.megacredits).to.eq(mcBefore + 4);
+      expect(marsBot.megacredits).to.eq(mcBefore + 4);
     });
   });
 
@@ -373,7 +373,7 @@ describe('MarsBot Deep Rules Tests', () => {
       resolver.resolveProjectCard(fakeCard({cost: 5, tags: [], type: CardType.EVENT}));
 
       expect(marsBotBoard.tracks[2].position).to.eq(1); // Event tag injected
-      expect(resolver.megacredits).to.eq(0); // Not a failed action
+      expect(marsBot.megacredits).to.eq(0); // Not a failed action
     });
   });
 
@@ -383,7 +383,7 @@ describe('MarsBot Deep Rules Tests', () => {
     it('example: gen 14, 24 MC → 4 VP (1 per 6 MC)', () => {
       const {game, marsBot} = createAutomaGame();
       game.generation = 14;
-      marsBot.turnResolver.megacredits = 24;
+      marsBot.megacredits = 24;
       game.phase = 'end';
 
       const vp = marsBot.getVictoryPoints();
@@ -393,7 +393,7 @@ describe('MarsBot Deep Rules Tests', () => {
     it('example: gen 16, 24 MC → 6 VP (1 per 4 MC)', () => {
       const {game, marsBot} = createAutomaGame();
       game.generation = 16;
-      marsBot.turnResolver.megacredits = 24;
+      marsBot.megacredits = 24;
       game.phase = 'end';
 
       const vp = marsBot.getVictoryPoints();
@@ -420,7 +420,7 @@ describe('MarsBot Deep Rules Tests', () => {
     it('claims before the card resolves, once per generation', () => {
       const {game, marsBot} = createAutomaGame('hard');
       qualifyForThree(marsBot);
-      marsBot.turnResolver.megacredits = 30;
+      marsBot.megacredits = 30;
       marsBot.actionDeck = [
         fakeCard({cost: 5, tags: [Tag.MICROBE], type: CardType.AUTOMATED}),
         fakeCard({cost: 5, tags: [Tag.MICROBE], type: CardType.AUTOMATED}),
@@ -455,7 +455,7 @@ describe('MarsBot Deep Rules Tests', () => {
     it('does not claim on the first turn when MarsBot has less than 8 MC', () => {
       const {game, marsBot} = createAutomaGame('hard');
       qualifyForThree(marsBot);
-      marsBot.turnResolver.megacredits = 7;
+      marsBot.megacredits = 7;
       marsBot.actionDeck = [fakeCard({cost: 5, tags: [Tag.MICROBE], type: CardType.AUTOMATED})];
       marsBot.turnResolver.resolveProjectCard = () => {};
 
@@ -477,7 +477,7 @@ describe('MarsBot Deep Rules Tests', () => {
       for (const i of [40, 41, 42]) {
         game.simpleAddTile(human, land[i], {tileType: TileType.GREENERY});
       }
-      marsBot.turnResolver.megacredits = 8;
+      marsBot.megacredits = 8;
       marsBot.actionDeck = [fakeCard({cost: 5, tags: [Tag.MICROBE], type: CardType.AUTOMATED})];
       marsBot.turnResolver.resolveProjectCard = () => {};
 
@@ -584,7 +584,7 @@ describe('MarsBot Deep Rules Tests', () => {
 
       const greenery = game.board.spaces.find((s) => s.tile?.tileType === TileType.GREENERY)!;
       expect(greenery).is.not.undefined;
-      expect(marsBot.turnResolver.megacredits).to.eq(marsBot['tilePlacer'].getTotalPlacementMC(greenery));
+      expect(marsBot.megacredits).to.eq(marsBot['tilePlacer'].getTotalPlacementMC(greenery));
     });
 
     it('final greenery skips a track whose next space was regressed from', () => {
@@ -610,7 +610,7 @@ describe('MarsBot Deep Rules Tests', () => {
       game.increaseOxygenLevel(marsBot.player, 1);
 
       expect(game.getOxygenLevel()).to.eq(8);
-      expect(marsBot.turnResolver.megacredits).to.eq(FAILED_ACTION_MC);
+      expect(marsBot.megacredits).to.eq(FAILED_ACTION_MC);
     });
 
     it('oxygen reaching 8% raises the temperature when it can', () => {
@@ -620,7 +620,7 @@ describe('MarsBot Deep Rules Tests', () => {
       game.increaseOxygenLevel(marsBot.player, 1);
 
       expect(game.getTemperature()).to.eq(-28);
-      expect(marsBot.turnResolver.megacredits).to.eq(0);
+      expect(marsBot.megacredits).to.eq(0);
     });
 
     it('the player gets nothing', () => {
@@ -630,7 +630,7 @@ describe('MarsBot Deep Rules Tests', () => {
 
       game.increaseOxygenLevel(human, 1);
 
-      expect(marsBot.turnResolver.megacredits).to.eq(0);
+      expect(marsBot.megacredits).to.eq(0);
     });
 
     it('temperature reaching 0C with every ocean placed', () => {
@@ -640,7 +640,7 @@ describe('MarsBot Deep Rules Tests', () => {
 
       game.increaseTemperature(marsBot.player, 1);
 
-      expect(marsBot.turnResolver.megacredits).to.eq(FAILED_ACTION_MC);
+      expect(marsBot.megacredits).to.eq(FAILED_ACTION_MC);
     });
   });
 
@@ -660,7 +660,7 @@ describe('MarsBot Deep Rules Tests', () => {
       marsBot.turnResolver['raiseVenus'](1);
 
       expect(game.getVenusScaleLevel()).to.eq(8);
-      expect(marsBot.turnResolver.megacredits).to.eq(2);
+      expect(marsBot.megacredits).to.eq(2);
       expect(marsBot.player.cardsInHand).has.length(hand);
       expect(game.projectDeck.drawPile).has.length(deck);
     });

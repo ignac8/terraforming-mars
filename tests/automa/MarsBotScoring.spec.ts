@@ -4,10 +4,9 @@ import {TestPlayer} from '../TestPlayer';
 import {IGame} from '../../src/server/IGame';
 import {Space} from '../../src/server/boards/Space';
 import {MarsBotScoring} from '../../src/server/automa/MarsBotScoring';
-import {MarsBotBoard} from '../../src/server/automa/MarsBotBoard';
+import {MarsBot} from '../../src/server/automa/MarsBot';
 import {MarsBotTurnResolver} from '../../src/server/automa/MarsBotTurnResolver';
-import {MarsBotTilePlacer} from '../../src/server/automa/MarsBotTilePlacer';
-import {fakeMarsBot} from './FakeMarsBot';
+import {standaloneMarsBot} from './corps/CorpGame';
 import {THARSIS_MARSBOT_BOARD} from '../../src/server/automa/boards/TharsisMarsBot';
 import {TileType} from '../../src/common/TileType';
 import {SpaceType} from '../../src/common/boards/SpaceType';
@@ -17,15 +16,15 @@ describe('MarsBotScoring', () => {
   let game: IGame;
   let human: TestPlayer;
   let botPlayer: TestPlayer;
-  let board: MarsBotBoard;
+  let marsBot: MarsBot;
   let turnResolver: MarsBotTurnResolver;
 
   beforeEach(() => {
     [game, human] = testGame(1);
     botPlayer = TestPlayer.RED.newPlayer({name: 'marsbot'});
     botPlayer.game = game;
-    board = new MarsBotBoard(THARSIS_MARSBOT_BOARD);
-    turnResolver = new MarsBotTurnResolver(game, botPlayer, human, board, 'normal', 0, new MarsBotTilePlacer(fakeMarsBot({game, player: botPlayer, humanPlayer: human, megacredits: 0})));
+    marsBot = standaloneMarsBot(game, botPlayer, human, THARSIS_MARSBOT_BOARD);
+    turnResolver = marsBot.turnResolver;
   });
 
   function makeScoring(neuralInstanceSpace?: Space) {
@@ -137,67 +136,67 @@ describe('MarsBotScoring', () => {
   describe('MC to VP conversion', () => {
     it('gen ≤12: 1 VP per 8 MC', () => {
       game.generation = 12;
-      turnResolver.megacredits = 24;
+      marsBot.megacredits = 24;
       expect(makeScoring().calculate().mcToVP).to.eq(3);
     });
 
     it('gen 13: 1 VP per 7 MC', () => {
       game.generation = 13;
-      turnResolver.megacredits = 21;
+      marsBot.megacredits = 21;
       expect(makeScoring().calculate().mcToVP).to.eq(3);
     });
 
     it('gen 14: 1 VP per 6 MC', () => {
       game.generation = 14;
-      turnResolver.megacredits = 13;
+      marsBot.megacredits = 13;
       expect(makeScoring().calculate().mcToVP).to.eq(2);
     });
 
     it('gen 15: 1 VP per 5 MC', () => {
       game.generation = 15;
-      turnResolver.megacredits = 23;
+      marsBot.megacredits = 23;
       expect(makeScoring().calculate().mcToVP).to.eq(4);
     });
 
     it('gen 16: 1 VP per 4 MC', () => {
       game.generation = 16;
-      turnResolver.megacredits = 9;
+      marsBot.megacredits = 9;
       expect(makeScoring().calculate().mcToVP).to.eq(2);
     });
 
     it('gen 17: 1 VP per 3 MC', () => {
       game.generation = 17;
-      turnResolver.megacredits = 10;
+      marsBot.megacredits = 10;
       expect(makeScoring().calculate().mcToVP).to.eq(3);
     });
 
     it('gen 18: 1 VP per 2 MC', () => {
       game.generation = 18;
-      turnResolver.megacredits = 7;
+      marsBot.megacredits = 7;
       expect(makeScoring().calculate().mcToVP).to.eq(3);
     });
 
     it('gen 19: 1 VP per 1 MC', () => {
       game.generation = 19;
-      turnResolver.megacredits = 7;
+      marsBot.megacredits = 7;
       expect(makeScoring().calculate().mcToVP).to.eq(7);
     });
 
     it('gen 20 (instant win): 0 MC VP', () => {
       game.generation = 20;
-      turnResolver.megacredits = 100;
+      marsBot.megacredits = 100;
       expect(makeScoring().calculate().mcToVP).to.eq(0);
     });
 
     it('fractional points rounded down', () => {
       game.generation = 14; // 1 per 6 MC
-      turnResolver.megacredits = 17;
+      marsBot.megacredits = 17;
       expect(makeScoring().calculate().mcToVP).to.eq(2); // floor(17/6) = 2
     });
 
     it('0 MC gives 0 VP', () => {
       game.generation = 14;
-      turnResolver.megacredits = 0;
+      marsBot.megacredits = 0;
       expect(makeScoring().calculate().mcToVP).to.eq(0);
     });
   });
@@ -288,7 +287,7 @@ describe('MarsBotScoring', () => {
   describe('Total VP', () => {
     it('combines all VP sources', () => {
       botPlayer.setTerraformRating(25);
-      turnResolver.megacredits = 16;
+      marsBot.megacredits = 16;
       game.generation = 12; // 1 VP per 8 MC
 
       const spaces = game.board.getAvailableSpacesOnLand(botPlayer);

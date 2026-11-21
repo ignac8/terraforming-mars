@@ -75,9 +75,6 @@ export class AutomaGameSetup {
     // Add MarsBot to human's opponents so cards that target opponents can see MarsBot
     (humanPlayer.opponents as Array<IPlayer>).push(marsBotPlayer);
 
-    // Wire MarsBot manager ref into turn resolver (for corp cube triggers)
-    marsBot.turnResolver.marsBotManager = marsBot;
-
     // Only for new games, not deserialization
     if (!restoring) {
       // T-1: Add MarsBot's 7 delegates to the reserve (Turmoil setup)

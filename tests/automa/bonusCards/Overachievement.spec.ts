@@ -39,7 +39,7 @@ describe('Overachievement', () => {
     const destroyed = bonusResolver.resolve(b04);
 
     expect(game.fundedAwards.length).to.eq(awardsBefore); // No award funded
-    expect(marsBot.turnResolver.megacredits).to.eq(5); // Failed → 5 MC
+    expect(marsBot.megacredits).to.eq(5); // Failed → 5 MC
     expect(destroyed).to.be.false; // Not destroyed
   });
 
@@ -95,7 +95,7 @@ describe('Overachievement', () => {
 
     marsBot['bonusResolver'].resolve(createBonusCard(BonusCardId.B04_OVERACHIEVEMENT));
 
-    expect(marsBot.turnResolver.megacredits).eq(5);
+    expect(marsBot.megacredits).eq(5);
     expect(bonusDeckIds(marsBot)).does.not.include(BonusCardId.B04_OVERACHIEVEMENT);
   });
 

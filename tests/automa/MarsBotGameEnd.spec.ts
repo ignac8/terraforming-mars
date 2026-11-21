@@ -88,7 +88,7 @@ describe('MarsBot Game End Model', () => {
 
     it('MC to VP at gen 14 (1 per 6 MC)', () => {
       const {game, marsBot} = createAutomaGame();
-      marsBot.turnResolver.megacredits = 18;
+      marsBot.megacredits = 18;
       game.generation = 14;
       game.phase = Phase.END;
 
@@ -98,7 +98,7 @@ describe('MarsBot Game End Model', () => {
 
     it('MC to VP at gen 17 (1 per 3 MC)', () => {
       const {game, marsBot} = createAutomaGame();
-      marsBot.turnResolver.megacredits = 10;
+      marsBot.megacredits = 10;
       game.generation = 17;
       game.phase = Phase.END;
 
@@ -108,7 +108,7 @@ describe('MarsBot Game End Model', () => {
 
     it('no MC VP at gen 20', () => {
       const {game, marsBot} = createAutomaGame();
-      marsBot.turnResolver.megacredits = 50;
+      marsBot.megacredits = 50;
       game.generation = 20;
       game.phase = Phase.END;
 
@@ -119,7 +119,7 @@ describe('MarsBot Game End Model', () => {
     it('total includes all VP sources', () => {
       const {game, marsBot} = createAutomaGame();
       marsBot.player.setTerraformRating(25);
-      marsBot.turnResolver.megacredits = 16;
+      marsBot.megacredits = 16;
       game.generation = 15; // 1 per 5 MC
       const spaces = game.board.getAvailableSpacesOnLand(marsBot.player);
       game.simpleAddTile(marsBot.player, spaces[10], {tileType: TileType.GREENERY});
@@ -212,7 +212,7 @@ describe('MarsBot Game End Model', () => {
 
     it('has megacredits', () => {
       const {marsBot} = createAutomaGame();
-      marsBot.turnResolver.megacredits = 42;
+      marsBot.megacredits = 42;
       expect(marsBot.toModel().megacredits).to.eq(42);
     });
 

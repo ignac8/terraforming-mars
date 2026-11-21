@@ -75,9 +75,9 @@ describe('MiningGuildMarsBot', () => {
   it('card starts at 10, and the M€ its starting tags earn count down from it', () => {
     const {marsBot} = createAutomaGame();
     const corp = getMarsBotCorp(CardName.MINING_GUILD)!;
-    const mcBefore = marsBot.turnResolver.megacredits;
+    const mcBefore = marsBot.megacredits;
     marsBot.setCorpAndSetup(corp);
-    const earned = marsBot.turnResolver.megacredits - mcBefore;
+    const earned = marsBot.megacredits - mcBefore;
     expect(earned).is.greaterThan(0);
     expect(marsBot.corpSpecificState.get('mcOnCard')).to.eq(10 - earned);
   });
@@ -95,7 +95,7 @@ describe('MiningGuildMarsBot', () => {
   it('when card empties, refill, advance building track, and take the rest off the refilled card', () => {
     // Tharsis building #3 has no icon
     const marsBot = miningGuild(2, 2);
-    marsBot.turnResolver.gainMc(5);
+    marsBot.gainMc(5);
     expect(marsBot.corpSpecificState.get('mcOnCard')).to.eq(7);
     expect(marsBot.marsBotBoard.tracks[0].position).to.eq(3);
   });
@@ -103,14 +103,14 @@ describe('MiningGuildMarsBot', () => {
   it('a gain that empties the card several times advances once per emptying', () => {
     // Tharsis building #3 and #4 have no icon, #5 gives TR
     const marsBot = miningGuild(2, 2);
-    marsBot.turnResolver.gainMc(25);
+    marsBot.gainMc(25);
     expect(marsBot.corpSpecificState.get('mcOnCard')).to.eq(7);
     expect(marsBot.marsBotBoard.tracks[0].position).to.eq(5);
   });
 
   it('stops once the building track reaches #18', () => {
     const marsBot = miningGuild(2, 17);
-    marsBot.turnResolver.gainMc(15);
+    marsBot.gainMc(15);
     expect(marsBot.corpSpecificState.get('mcOnCard')).to.eq(10);
     expect(marsBot.marsBotBoard.tracks[0].position).to.eq(18);
   });
@@ -121,11 +121,11 @@ describe('MiningGuildMarsBot', () => {
     marsBot.game.generation = getAutomaMaxGeneration(marsBot.game.gameOptions.preludeExtension, marsBot.game.gameOptions.boardName);
     marsBot.game.phase = Phase.PRODUCTION;
     expect(marsBot.game.isDoneWithFinalProduction()).is.true;
-    const mc = marsBot.turnResolver.megacredits;
+    const mc = marsBot.megacredits;
 
-    marsBot.turnResolver.gainMc(5);
+    marsBot.gainMc(5);
 
-    expect(marsBot.turnResolver.megacredits).to.eq(mc + 5);
+    expect(marsBot.megacredits).to.eq(mc + 5);
     expect(marsBot.corpSpecificState.get('mcOnCard')).to.eq(2);
     expect(marsBot.marsBotBoard.tracks[0].position).to.eq(2);
   });
@@ -133,21 +133,21 @@ describe('MiningGuildMarsBot', () => {
   it('takes the M€ the building track advance earns off the refilled card', () => {
     // Tharsis building #2 places an ocean, which pays M€
     const marsBot = miningGuild(1, 1);
-    const mc = marsBot.turnResolver.megacredits;
-    marsBot.turnResolver.gainMc(1);
-    const earnedByAdvance = marsBot.turnResolver.megacredits - mc - 1;
+    const mc = marsBot.megacredits;
+    marsBot.gainMc(1);
+    const earnedByAdvance = marsBot.megacredits - mc - 1;
     expect(earnedByAdvance).is.greaterThan(0);
     expect(marsBot.corpSpecificState.get('mcOnCard')).to.eq(10 - earnedByAdvance);
   });
 
   // Corp hook wiring
-  it('counts down through turnResolver.gainMc', () => {
+  it('counts down through gainMc', () => {
     const {marsBot} = createAutomaGame();
     marsBot.setCorpAndSetup(getMarsBotCorp(CardName.MINING_GUILD)!);
     marsBot.corpSpecificState.set('mcOnCard', 10);
-    const mcBefore = marsBot.turnResolver.megacredits;
-    marsBot.turnResolver.gainMc(4);
-    expect(marsBot.turnResolver.megacredits).to.eq(mcBefore + 4);
+    const mcBefore = marsBot.megacredits;
+    marsBot.gainMc(4);
+    expect(marsBot.megacredits).to.eq(mcBefore + 4);
     expect(marsBot.corpSpecificState.get('mcOnCard')).to.eq(6);
   });
 });

@@ -84,14 +84,14 @@ describe('ManutechMarsBot', () => {
     const marsBot = createVenusGame();
     marsBot.setCorpAndSetup(getMarsBotCorp(CardName.MANUTECH)!);
     marsBot.marsBotBoard.tracks[7].position = 11;
-    const mc = marsBot.turnResolver.megacredits;
+    const mc = marsBot.megacredits;
     const tr = marsBot.player.terraformRating;
 
     marsBot.advanceTrack(7);
 
     expect(marsBot.marsBotBoard.tracks[7].position).to.eq(12);
     expect(marsBot.player.terraformRating).to.eq(tr + 5);
-    expect(marsBot.turnResolver.megacredits).to.eq(mc + FAILED_ACTION_MC);
+    expect(marsBot.megacredits).to.eq(mc + FAILED_ACTION_MC);
   });
 
   it('a save from before the Venus cubes still loads and advances Venus at #5', () => {

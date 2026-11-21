@@ -71,6 +71,6 @@ describe('VenusianLobby', () => {
     maxTracks(marsBot);
     marsBot['bonusResolver'].resolve(createBonusCard(BonusCardId.B26_VENUSIAN_LOBBY));
     expect(game.getVenusScaleLevel()).to.eq(2);
-    expect(marsBot.turnResolver.megacredits).to.eq(0);
+    expect(marsBot.megacredits).to.eq(0);
   });
 });

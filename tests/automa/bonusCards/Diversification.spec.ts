@@ -23,11 +23,11 @@ describe('Diversification', () => {
   it('loses up to 4 M€ after advancing', () => {
     const {marsBot} = createAutomaGame();
     marsBot.turnResolver.advanceTrack = () => true;
-    marsBot.turnResolver.megacredits = 6;
+    marsBot.megacredits = 6;
     marsBot['bonusResolver'].resolve(createBonusCard(BonusCardId.B28_DIVERSIFICATION));
-    expect(marsBot.turnResolver.megacredits).to.eq(2);
+    expect(marsBot.megacredits).to.eq(2);
     marsBot['bonusResolver'].resolve(createBonusCard(BonusCardId.B28_DIVERSIFICATION));
-    expect(marsBot.turnResolver.megacredits).to.eq(0);
+    expect(marsBot.megacredits).to.eq(0);
   });
 
   it('advances least-advanced track', () => {
@@ -47,8 +47,8 @@ describe('Diversification', () => {
   it('takes no Failed Action when advancing a maxed track', () => {
     const {marsBot} = createAutomaGame();
     maxTracks(marsBot);
-    marsBot.turnResolver.megacredits = 4;
+    marsBot.megacredits = 4;
     marsBot['bonusResolver'].resolve(createBonusCard(BonusCardId.B28_DIVERSIFICATION));
-    expect(marsBot.turnResolver.megacredits).to.eq(0);
+    expect(marsBot.megacredits).to.eq(0);
   });
 });

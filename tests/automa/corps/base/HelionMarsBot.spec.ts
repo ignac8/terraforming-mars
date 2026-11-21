@@ -123,11 +123,11 @@ describe('HelionMarsBot', () => {
     marsBot.setCorpAndSetup(getMarsBotCorp(CardName.HELION)!);
     setTemperature(game, MAX_TEMPERATURE);
     marsBot.marsBotBoard.tracks[5].position = 2; // Earth 3: no icon, a black cube
-    const mc = marsBot.turnResolver.megacredits;
+    const mc = marsBot.megacredits;
 
     marsBot.advanceTrack(5);
 
     expect(game.getTemperature()).to.eq(MAX_TEMPERATURE);
-    expect(marsBot.turnResolver.megacredits).to.eq(mc);
+    expect(marsBot.megacredits).to.eq(mc);
   });
 });

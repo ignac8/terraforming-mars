@@ -24,6 +24,6 @@ describe('GovernmentSubsidy', () => {
     const tr = marsBot.player.terraformRating;
     marsBot['bonusResolver'].resolve(createBonusCard(BonusCardId.B31_GOVERNMENT_SUBSIDY));
     expect(marsBot.player.terraformRating).to.eq(tr + 1);
-    expect(marsBot.turnResolver.megacredits).to.eq(0);
+    expect(marsBot.megacredits).to.eq(0);
   });
 });

@@ -38,11 +38,11 @@ describe('CelesticMarsBot', () => {
   it('gains 1 more floater with each Failed Action', () => {
     const {marsBot} = createAutomaGame();
     marsBot.corp = getMarsBotCorp(CardName.CELESTIC)!;
-    const mc = marsBot.turnResolver.megacredits;
+    const mc = marsBot.megacredits;
 
     marsBot.resolveProjectCard(new MicroMills()); // No tags: a Failed Action
 
     expect(marsBot.floaters).to.eq(1);
-    expect(marsBot.turnResolver.megacredits).to.eq(mc + 5);
+    expect(marsBot.megacredits).to.eq(mc + 5);
   });
 });

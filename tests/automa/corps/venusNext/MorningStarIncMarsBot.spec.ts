@@ -55,11 +55,11 @@ describe('MorningStarIncMarsBot', () => {
     const {marsBot} = createVenusAutomaGame();
     marsBot.setCorpAndSetup(getMarsBotCorp(CardName.MORNING_STAR_INC)!);
     marsBot.marsBotBoard.tracks[7].position = 4;
-    const mc = marsBot.turnResolver.megacredits;
+    const mc = marsBot.megacredits;
 
     marsBot.advanceTrack(7);
 
-    expect(marsBot.turnResolver.megacredits).to.eq(mc + 5);
+    expect(marsBot.megacredits).to.eq(mc + 5);
   });
 
   it('removes the Venus Next Lobbyists from the bonus deck', () => {

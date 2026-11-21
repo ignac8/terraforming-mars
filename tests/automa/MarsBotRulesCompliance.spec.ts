@@ -32,8 +32,7 @@ function emptyLayout(): Array<TrackAction | undefined> {
 
 function makeResolver(game: IGame, botPlayer: TestPlayer, human: TestPlayer, boardData: ReadonlyArray<TrackDefinition>, difficulty: 'easy' | 'normal' | 'hard' | 'brutal' = 'normal') {
   const marsBot = new MarsBot(game, botPlayer, human, boardData, difficulty, new SeededRandom(0));
-  marsBot.turnResolver.marsBotManager = marsBot;
-  return {board: marsBot.marsBotBoard, resolver: marsBot.turnResolver};
+  return {marsBot, board: marsBot.marsBotBoard, resolver: marsBot.turnResolver};
 }
 
 describe('MarsBot Rules Compliance', () => {
@@ -129,7 +128,7 @@ describe('MarsBot Rules Compliance', () => {
 
       const layout = emptyLayout();
       layout[1] = 'city';
-      const {resolver} = makeResolver(game, botPlayer, human, makeBoard(layout));
+      const {marsBot, resolver} = makeResolver(game, botPlayer, human, makeBoard(layout));
 
       // Find a space with bonus icons
       const spaceWithBonus = game.board.spaces.find((s) =>
@@ -138,10 +137,10 @@ describe('MarsBot Rules Compliance', () => {
       );
 
       if (spaceWithBonus) {
-        const mcBefore = resolver.megacredits;
+        const mcBefore = marsBot.megacredits;
         resolver.resolveProjectCard(fakeCard({cost: 5, tags: [Tag.BUILDING], type: CardType.AUTOMATED}));
         // MC should have increased (from bonus icons and/or ocean adjacency)
-        expect(resolver.megacredits).to.be.gte(mcBefore);
+        expect(marsBot.megacredits).to.be.gte(mcBefore);
       }
     });
 
@@ -156,12 +155,12 @@ describe('MarsBot Rules Compliance', () => {
 
       const layout = emptyLayout();
       layout[1] = 'city';
-      const {resolver} = makeResolver(game, botPlayer, human, makeBoard(layout));
+      const {marsBot, resolver} = makeResolver(game, botPlayer, human, makeBoard(layout));
 
-      const mcBefore = resolver.megacredits;
+      const mcBefore = marsBot.megacredits;
       resolver.resolveProjectCard(fakeCard({cost: 5, tags: [Tag.BUILDING], type: CardType.AUTOMATED}));
       // At minimum, the city might be adjacent to the ocean
-      expect(resolver.megacredits).to.be.gte(mcBefore);
+      expect(marsBot.megacredits).to.be.gte(mcBefore);
     });
   });
 
@@ -182,9 +181,9 @@ describe('MarsBot Rules Compliance', () => {
 
       const layout = emptyLayout();
       layout[1] = 'greenery';
-      const {resolver} = makeResolver(game, botPlayer, human, makeBoard(layout));
+      const {marsBot, resolver} = makeResolver(game, botPlayer, human, makeBoard(layout));
       resolver.resolveProjectCard(fakeCard({cost: 5, tags: [Tag.BUILDING], type: CardType.AUTOMATED}));
-      expect(resolver.megacredits).to.eq(5);
+      expect(marsBot.megacredits).to.eq(5);
     });
 
     it('city action with no available space = failed action', () => {
@@ -200,9 +199,9 @@ describe('MarsBot Rules Compliance', () => {
 
       const layout = emptyLayout();
       layout[1] = 'city';
-      const {resolver} = makeResolver(game, botPlayer, human, makeBoard(layout));
+      const {marsBot, resolver} = makeResolver(game, botPlayer, human, makeBoard(layout));
       resolver.resolveProjectCard(fakeCard({cost: 5, tags: [Tag.BUILDING], type: CardType.AUTOMATED}));
-      expect(resolver.megacredits).to.eq(5);
+      expect(marsBot.megacredits).to.eq(5);
     });
   });
 
@@ -216,10 +215,10 @@ describe('MarsBot Rules Compliance', () => {
       // Both at 0 for all awards — MarsBot is not AHEAD
       const layout = emptyLayout();
       layout[1] = 'award';
-      const {resolver} = makeResolver(game, botPlayer, human, makeBoard(layout));
+      const {marsBot, resolver} = makeResolver(game, botPlayer, human, makeBoard(layout));
 
       resolver.resolveProjectCard(fakeCard({cost: 5, tags: [Tag.BUILDING], type: CardType.AUTOMATED}));
-      expect(resolver.megacredits).to.eq(5); // Failed action
+      expect(marsBot.megacredits).to.eq(5); // Failed action
     });
   });
 
@@ -310,7 +309,7 @@ describe('MarsBot Rules Compliance', () => {
   describe('Rule 2.12: Hard mode milestone conditions', () => {
     it('does not claim when 0 milestones claimed and MarsBot meets <3', () => {
       const {game, marsBot} = createAutomaGame('hard');
-      marsBot.turnResolver.megacredits = 10;
+      marsBot.megacredits = 10;
       marsBot.player.setTerraformRating(35); // Meets Terraformer only (1 milestone)
       marsBot.player.actionsTakenThisRound = 0;
 
@@ -321,7 +320,7 @@ describe('MarsBot Rules Compliance', () => {
 
     it('claims when 2 milestones claimed and MarsBot meets any', () => {
       const {game, human, marsBot} = createAutomaGame('hard');
-      marsBot.turnResolver.megacredits = 10;
+      marsBot.megacredits = 10;
       marsBot.player.setTerraformRating(35); // Meets Terraformer
 
       // Claim 2 OTHER milestones (not Terraformer) so MarsBot can still claim Terraformer
@@ -332,12 +331,12 @@ describe('MarsBot Rules Compliance', () => {
 
       marsBot['hardModeFirstTurnMilestone']();
       expect(game.claimedMilestones.length).to.eq(3); // Now 3
-      expect(marsBot.turnResolver.megacredits).to.eq(2); // 10 - 8
+      expect(marsBot.megacredits).to.eq(2); // 10 - 8
     });
 
     it('does not claim when not enough MC', () => {
       const {game, human, marsBot} = createAutomaGame('hard');
-      marsBot.turnResolver.megacredits = 5; // Less than 8
+      marsBot.megacredits = 5; // Less than 8
       marsBot.player.setTerraformRating(35);
       game.claimedMilestones.push({player: human, milestone: game.milestones[0]});
       game.claimedMilestones.push({player: human, milestone: game.milestones[1]});
@@ -353,9 +352,9 @@ describe('MarsBot Rules Compliance', () => {
   describe('Rule 2.9: MarsBot skips production', () => {
     it('MarsBot MC supply unchanged during production', () => {
       const {marsBot} = createAutomaGame();
-      marsBot.turnResolver.megacredits = 15;
+      marsBot.megacredits = 15;
       marsBot.runProductionPhase();
-      expect(marsBot.turnResolver.megacredits).to.eq(15);
+      expect(marsBot.megacredits).to.eq(15);
     });
 
     it('MarsBot TR does not add MC during production', () => {

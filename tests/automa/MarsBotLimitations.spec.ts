@@ -152,7 +152,7 @@ describe('MarsBot Limitations Fixed', () => {
       marsBot.marsBotBoard.tracks[0].advance();
       marsBot.marsBotBoard.tracks[0].advance();
       marsBot.marsBotBoard.tracks[2].advance();
-      marsBot.turnResolver.megacredits = 15;
+      marsBot.megacredits = 15;
       marsBot.goesFirst = true;
 
       const state = marsBot.serialize();
@@ -174,7 +174,7 @@ describe('MarsBot Limitations Fixed', () => {
       state.floaterCount = 4;
 
       marsBot.restoreState(state);
-      expect(marsBot.turnResolver.megacredits).to.eq(23);
+      expect(marsBot.megacredits).to.eq(23);
       expect(marsBot.floaters).to.eq(4);
     });
 
@@ -215,7 +215,7 @@ describe('MarsBot Limitations Fixed', () => {
       marsBot.marsBotBoard.tracks[0].advance();
       marsBot.marsBotBoard.tracks[0].advance();
       marsBot.marsBotBoard.tracks[0].advance();
-      marsBot.turnResolver.megacredits = 20;
+      marsBot.megacredits = 20;
       marsBot.goesFirst = true;
 
       const state = marsBot.serialize();
@@ -226,7 +226,7 @@ describe('MarsBot Limitations Fixed', () => {
 
       marsBot2.restoreState(state);
       expect(marsBot2.marsBotBoard.tracks[0].position).to.eq(3);
-      expect(marsBot2.turnResolver.megacredits).to.eq(20);
+      expect(marsBot2.megacredits).to.eq(20);
       expect(marsBot2.goesFirst).to.be.true;
     });
 
@@ -251,7 +251,7 @@ describe('MarsBot Limitations Fixed', () => {
     it('serialized game has automaState when automa enabled', () => {
       const {game, marsBot} = createAutomaGame();
       marsBot.marsBotBoard.tracks[0].advance();
-      marsBot.turnResolver.megacredits = 10;
+      marsBot.megacredits = 10;
 
       const serialized = game.serialize();
       expect(serialized.automaState).to.not.be.undefined;

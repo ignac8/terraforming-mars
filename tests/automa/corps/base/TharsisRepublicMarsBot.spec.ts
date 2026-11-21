@@ -37,9 +37,9 @@ describe('TharsisRepublicMarsBot', () => {
     const {marsBot} = createAutomaGame();
     const corp = getMarsBotCorp(CardName.THARSIS_REPUBLIC)!;
     marsBot.setCorpAndSetup(corp);
-    const mcBefore = marsBot.turnResolver.megacredits;
+    const mcBefore = marsBot.megacredits;
     corp.onTilePlaced!(marsBot, false, TileType.CITY, marsBot.game.board.spaces[0]);
-    expect(marsBot.turnResolver.megacredits).to.eq(mcBefore + 2);
+    expect(marsBot.megacredits).to.eq(mcBefore + 2);
   });
 
   it('advances event track when MarsBot places city, without the 2 M€', () => {
@@ -50,19 +50,19 @@ describe('TharsisRepublicMarsBot', () => {
       marsBot.marsBotBoard.tracks[i].position++;
       return true;
     };
-    const mcBefore = marsBot.turnResolver.megacredits;
+    const mcBefore = marsBot.megacredits;
     const eventBefore = marsBot.marsBotBoard.tracks[2].position;
     corp.onTilePlaced!(marsBot, true, TileType.CITY, marsBot.game.board.spaces[0]);
     expect(marsBot.marsBotBoard.tracks[2].position).to.eq(eventBefore + 1);
-    expect(marsBot.turnResolver.megacredits).to.eq(mcBefore);
+    expect(marsBot.megacredits).to.eq(mcBefore);
   });
 
   it('does not trigger on greenery placement', () => {
     const {marsBot} = createAutomaGame();
     const corp = getMarsBotCorp(CardName.THARSIS_REPUBLIC)!;
     marsBot.setCorpAndSetup(corp);
-    const mcBefore = marsBot.turnResolver.megacredits;
+    const mcBefore = marsBot.megacredits;
     corp.onTilePlaced!(marsBot, false, TileType.GREENERY, marsBot.game.board.spaces[0]);
-    expect(marsBot.turnResolver.megacredits).to.eq(mcBefore);
+    expect(marsBot.megacredits).to.eq(mcBefore);
   });
 });

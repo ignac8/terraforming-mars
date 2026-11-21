@@ -20,9 +20,9 @@ function vitorGain(card: IProjectCard): number {
   const {marsBot} = createAutomaGame();
   const corp = getMarsBotCorp(CardName.VITOR)!;
   marsBot.setCorpAndSetup(corp);
-  const mcBefore = marsBot.turnResolver.megacredits;
+  const mcBefore = marsBot.megacredits;
   corp.onProjectCardResolved!(marsBot, card);
-  return marsBot.turnResolver.megacredits - mcBefore;
+  return marsBot.megacredits - mcBefore;
 }
 
 describe('VitorMarsBot', () => {

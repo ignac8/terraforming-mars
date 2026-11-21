@@ -87,7 +87,7 @@ describe('NirgalEnterprisesMarsBot', () => {
     for (const award of game.awards.slice(0, 3)) {
       game.fundAward(human, award);
     }
-    const mc = marsBot.turnResolver.megacredits;
+    const mc = marsBot.megacredits;
 
     game.generation = 3; // No milestone is met.
     marsBot.corp.beforeActionPhase!(marsBot);
@@ -96,6 +96,6 @@ describe('NirgalEnterprisesMarsBot', () => {
 
     expect(game.claimedMilestones).is.empty;
     expect(game.fundedAwards).has.length(3);
-    expect(marsBot.turnResolver.megacredits).to.eq(mc);
+    expect(marsBot.megacredits).to.eq(mc);
   });
 });

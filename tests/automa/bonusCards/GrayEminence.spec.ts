@@ -82,6 +82,6 @@ describe('GrayEminence', () => {
     turmoil.delegateReserve.remove(marsBot.player, turmoil.delegateReserve.get(marsBot.player) - 1);
     marsBot['bonusResolver'].resolve(createBonusCard(BonusCardId.B29_GRAY_EMINENCE));
     expect(botDelegates(turmoil, marsBot).reduce((a, b) => a + b, 0)).to.eq(1);
-    expect(marsBot.turnResolver.megacredits).to.eq(2);
+    expect(marsBot.megacredits).to.eq(2);
   });
 });

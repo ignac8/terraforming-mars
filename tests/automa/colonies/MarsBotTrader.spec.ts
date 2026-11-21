@@ -181,9 +181,9 @@ describe('MarsBotTrader', () => {
       const marsBot = getMarsBot(game);
       const luna = new Luna();
       game.colonies = [luna];
-      const mcBefore = marsBot.turnResolver.megacredits;
+      const mcBefore = marsBot.megacredits;
       tradeWithColony(marsBot, luna);
-      expect(marsBot.turnResolver.megacredits).to.eq(Math.max(0, mcBefore - 1));
+      expect(marsBot.megacredits).to.eq(Math.max(0, mcBefore - 1));
     });
 
     it('marks colony.visitor with MarsBot player id (C-22)', () => {

@@ -95,7 +95,7 @@ export class MarsBotScoring {
     let total = 0;
     for (const fa of this.game.fundedAwards) {
       const award = fa.award;
-      const marsBotScore = this.turnResolver.marsBotManager?.awardValue(award) ?? award.getScore(this.botPlayer);
+      const marsBotScore = this.turnResolver.marsBot.awardValue(award);
       const humanScore = award.getScore(this.humanPlayer);
 
       if (marsBotScore >= humanScore) {
@@ -133,7 +133,7 @@ export class MarsBotScoring {
     if (mcPerVP === undefined) {
       return 0;
     }
-    return Math.floor(this.turnResolver.megacredits / mcPerVP);
+    return Math.floor(this.turnResolver.marsBot.megacredits / mcPerVP);
   }
 
   /** Vermin: -1 VP per city when 10+ animals on Vermin card. Applies to ALL players. */
@@ -164,8 +164,8 @@ export class MarsBotScoring {
    * The rulebook doesn't score them; it is the designer's intent (TDaver, BGG 3408751, 3373832).
    */
   private calculateLeftoverResourcesVP(): number {
-    const marsBot = this.turnResolver.marsBotManager;
-    if (!this.game.gameOptions.automaColonyVP || !this.game.gameOptions.coloniesExtension || marsBot === undefined) {
+    const marsBot = this.turnResolver.marsBot;
+    if (!this.game.gameOptions.automaColonyVP || !this.game.gameOptions.coloniesExtension) {
       return 0;
     }
     return Math.floor((sum(Array.from(marsBot.shippingBoard.storage.values())) + marsBot.floaters) / 2);

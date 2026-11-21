@@ -71,10 +71,10 @@ describe('PlayerTradeHook (C-21, C-24c)', () => {
       const europa = new Europa();
       europa.colonies = [marsBot.player.id];
       game.colonies = [europa];
-      const mcBefore = marsBot.turnResolver.megacredits;
+      const mcBefore = marsBot.megacredits;
       const result = game.automaHooks!.handleColonyBonus(europa, marsBot.player.id);
       expect(result).to.be.true;
-      expect(marsBot.turnResolver.megacredits).to.eq(mcBefore + 1);
+      expect(marsBot.megacredits).to.eq(mcBefore + 1);
       // No storage change for Europa
       expect(marsBot.shippingBoard.get(ColonyName.EUROPA)).to.eq(0);
     });

@@ -33,12 +33,12 @@ describe('ShippingLines', () => {
     const luna = new Luna();
     luna.trackPosition = 4;
     game.colonies = [luna];
-    marsBot.turnResolver.megacredits = 3;
+    marsBot.megacredits = 3;
     const card = b19Card();
     marsBot.bonusDeck.drawPile.push(card);
     marsBot['bonusResolver'].resolve(card);
     // Should have spent 1 MC and gained 2 resources to Luna
-    expect(marsBot.turnResolver.megacredits).to.eq(2);
+    expect(marsBot.megacredits).to.eq(2);
     expect(marsBot.shippingBoard.get(ColonyName.LUNA)).to.eq(2);
     expect(luna.visitor).to.eq(marsBot.player.id);
   });
@@ -49,11 +49,11 @@ describe('ShippingLines', () => {
     const marsBot = getMarsBot(game);
     const luna = new Luna();
     game.colonies = [luna];
-    marsBot.turnResolver.megacredits = 0;
+    marsBot.megacredits = 0;
     const card = b19Card();
     marsBot.bonusDeck.drawPile.push(card);
     marsBot['bonusResolver'].resolve(card);
-    expect(marsBot.turnResolver.megacredits).to.eq(0);
+    expect(marsBot.megacredits).to.eq(0);
     expect(marsBot.shippingBoard.get(ColonyName.LUNA)).to.eq(0);
     expect(luna.visitor).is.undefined;
   });
@@ -63,11 +63,11 @@ describe('ShippingLines', () => {
     const [game] = testGame(1, {automa: true, coloniesExtension: true, boardName: BoardName.THARSIS});
     const marsBot = getMarsBot(game);
     game.colonies = []; // No colonies
-    marsBot.turnResolver.megacredits = 3;
+    marsBot.megacredits = 3;
     const card = b19Card();
     marsBot.bonusDeck.drawPile.push(card);
     marsBot['bonusResolver'].resolve(card);
-    expect(marsBot.turnResolver.megacredits).to.eq(3);
+    expect(marsBot.megacredits).to.eq(3);
   });
 
   it('C-24b: Europa trade raises TR instead of resources', () => {
@@ -76,7 +76,7 @@ describe('ShippingLines', () => {
     const europa = new Europa();
     europa.trackPosition = 5;
     game.colonies = [europa];
-    marsBot.turnResolver.megacredits = 3;
+    marsBot.megacredits = 3;
     const trBefore = marsBot.player.terraformRating;
     const card = b19Card();
     marsBot.bonusDeck.drawPile.push(card);

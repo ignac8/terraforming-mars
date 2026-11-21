@@ -524,14 +524,14 @@ describe('MarsBot Turmoil — Automatic skips (T-5 T-9 T-11a)', () => {
     const botPlayer = marsBot.player;
     setRulingParty(game, PartyName.REDS);
     game.phase = Phase.ACTION;
-    marsBot.turnResolver.megacredits = 10;
+    marsBot.megacredits = 10;
     const trBefore = botPlayer.terraformRating;
 
     botPlayer.increaseTerraformRating(1);
     runAllActions(game);
 
     expect(botPlayer.terraformRating).to.equal(trBefore + 1);
-    expect(marsBot.turnResolver.megacredits).to.equal(10);
+    expect(marsBot.megacredits).to.equal(10);
     expect(botPlayer.getWaitingFor()).is.undefined;
   });
 });

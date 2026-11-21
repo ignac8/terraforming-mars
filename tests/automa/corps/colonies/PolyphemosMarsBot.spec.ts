@@ -26,9 +26,9 @@ describe('PolyphemosMarsBot', () => {
   it('gains at least 25 M€ on setup (plus MC from starting tag track actions)', () => {
     const {marsBot} = createAutomaGame();
     const corp = getMarsBotCorp(CardName.POLYPHEMOS)!;
-    const mcBefore = marsBot.turnResolver.megacredits;
+    const mcBefore = marsBot.megacredits;
     marsBot.setCorpAndSetup(corp);
-    expect(marsBot.turnResolver.megacredits).to.be.gte(mcBefore + 25);
+    expect(marsBot.megacredits).to.be.gte(mcBefore + 25);
   });
 
   it('has 6 starting tags (3 Space + 3 Event)', () => {

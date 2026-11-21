@@ -141,11 +141,11 @@ describe('MarsBot', () => {
   describe('Production Phase', () => {
     it('MarsBot skips production (no resource changes)', () => {
       const {marsBot} = createAutomaGame();
-      const mcBefore = marsBot.turnResolver.megacredits;
+      const mcBefore = marsBot.megacredits;
 
       marsBot.runProductionPhase();
 
-      expect(marsBot.turnResolver.megacredits).to.eq(mcBefore);
+      expect(marsBot.megacredits).to.eq(mcBefore);
     });
   });
 

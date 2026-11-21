@@ -30,12 +30,12 @@ describe('MarsBotAmazonisBonuses', () => {
     it('pays MarsBot 2 M€ instead of plant production', () => {
       const {game, marsBot} = amazonisGame({colonies: false});
       setTemperature(game, -14);
-      const mc = marsBot.turnResolver.megacredits;
+      const mc = marsBot.megacredits;
 
       marsBot.turnResolver.raiseTemperature(1);
 
       expect(game.getTemperature()).eq(-12);
-      expect(marsBot.turnResolver.megacredits).eq(mc + 2);
+      expect(marsBot.megacredits).eq(mc + 2);
     });
 
     it('still gives a human the plant production', () => {
@@ -50,12 +50,12 @@ describe('MarsBotAmazonisBonuses', () => {
     it('pays MarsBot 2 M€ when Lobbyists raises two steps across it', () => {
       const {game, marsBot} = amazonisGame({colonies: false});
       setTemperature(game, -14);
-      const mc = marsBot.turnResolver.megacredits;
+      const mc = marsBot.megacredits;
 
       marsBot.resolveBonusCard(BonusCardId.B06_LOBBYISTS);
 
       expect(game.getTemperature()).eq(-10);
-      expect(marsBot.turnResolver.megacredits).eq(mc + 2);
+      expect(marsBot.megacredits).eq(mc + 2);
     });
 
     it('pays MarsBot no M€ when Government Intervention raises across it', () => {
@@ -67,12 +67,12 @@ describe('MarsBotAmazonisBonuses', () => {
       setOxygenLevel(game, 14);
       maxOutOceans(human, 9);
       setVenusScaleLevel(game, 30);
-      const mc = marsBot.turnResolver.megacredits;
+      const mc = marsBot.megacredits;
 
       marsBot.resolveBonusCard(BonusCardId.B16_GOVERNMENT_INTERVENTION);
 
       expect(game.getTemperature()).eq(-12);
-      expect(marsBot.turnResolver.megacredits).eq(mc);
+      expect(marsBot.megacredits).eq(mc);
     });
   });
 
@@ -125,12 +125,12 @@ describe('MarsBotAmazonisBonuses', () => {
     it('does nothing without Colonies, and defers nothing', () => {
       const {game, marsBot, luna} = amazonisGame({colonies: false});
       setVenusScaleLevel(game, 14);
-      const mc = marsBot.turnResolver.megacredits;
+      const mc = marsBot.megacredits;
 
       game.increaseVenusScaleLevel(marsBot.player, 1);
 
       expect(game.getVenusScaleLevel()).eq(16);
-      expect(marsBot.turnResolver.megacredits).eq(mc);
+      expect(marsBot.megacredits).eq(mc);
       expect(luna.colonies).is.empty;
       expect(game.deferredActions.length).eq(0);
     });
@@ -143,7 +143,7 @@ describe('MarsBotAmazonisBonuses', () => {
       game.generation = 3;
       setVenusScaleLevel(game, 14);
       const tr = marsBot.player.terraformRating;
-      const mc = marsBot.turnResolver.megacredits;
+      const mc = marsBot.megacredits;
 
       marsBot.resolveBonusCard(BonusCardId.B16_GOVERNMENT_INTERVENTION);
 
@@ -154,7 +154,7 @@ describe('MarsBotAmazonisBonuses', () => {
       // An ocean on a hex that pays nothing would prove nothing
       expect(marsBot.turnResolver.tilePlacer.getTotalPlacementMC(oceans[0])).greaterThan(0);
       expect(marsBot.player.terraformRating).eq(tr);
-      expect(marsBot.turnResolver.megacredits).eq(mc + 2);
+      expect(marsBot.megacredits).eq(mc + 2);
     });
 
     it('takes back the Failed Action M€ under Government Intervention when no colony tile is left', () => {
@@ -162,15 +162,15 @@ describe('MarsBotAmazonisBonuses', () => {
       luna.colonies.push(marsBot.player.id);
       game.generation = 3;
       setVenusScaleLevel(game, 14);
-      const mc = marsBot.turnResolver.megacredits;
+      const mc = marsBot.megacredits;
 
       marsBot.resolveBonusCard(BonusCardId.B16_GOVERNMENT_INTERVENTION);
 
       const logs = game.gameLog.map(formatMessage);
       expect(game.getVenusScaleLevel()).eq(16);
-      expect(marsBot.turnResolver.megacredits).eq(mc);
+      expect(marsBot.megacredits).eq(mc);
       expect(logs).includes('MarsBot: no colony tile to build on, Failed Action');
-      expect(logs).includes(`MarsBot (Government Intervention:automa): returns ${marsBot.turnResolver.failedActionMc}:r:mc:`);
+      expect(logs).includes(`MarsBot (Government Intervention:automa): returns ${marsBot.failedActionMc}:r:mc:`);
     });
 
     it('still asks a human where to build the colony', () => {

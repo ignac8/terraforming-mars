@@ -26,7 +26,7 @@ import {message} from '../logs/MessageBuilder';
  * Ganymede plants, Luna M€) counts as that resource too (C-25). When a player removes or steals
  * and both the MC supply and that area hold something, the player chooses the source or splits.
  * Resource additions (from game engine bonuses) are ignored since MarsBot
- * doesn't use resources — MC is tracked separately in turnResolver.megacredits.
+ * doesn't use resources — MC is tracked separately in MarsBot.megacredits.
  */
 export class MarsBotStock extends Stock {
   private marsBotRef: MarsBot | undefined;
@@ -52,7 +52,7 @@ export class MarsBotStock extends Stock {
 
   /** MarsBot's MC supply, which is what it spends. The resource getters add colony storage on top. */
   private get supply(): number {
-    return this.marsBotRef?.turnResolver.megacredits ?? 0;
+    return this.marsBotRef?.megacredits ?? 0;
   }
 
   private storage(resource: Resource): number {
@@ -62,13 +62,13 @@ export class MarsBotStock extends Stock {
   /** MarsBot has megacredits, not separate resource pools. */
   public override has(units: Units): boolean {
     const total = Units.values(units).reduce((a, b) => a + b, 0);
-    return (this.marsBotRef?.turnResolver.megacredits ?? 0) >= total;
+    return (this.marsBotRef?.megacredits ?? 0) >= total;
   }
 
   /** MarsBot can adjust if megacredits can cover the total cost. */
   public override canAdjust(units: Units): boolean {
     const cost = Units.values(units).reduce((sum, v) => sum + Math.min(0, v), 0);
-    return (this.marsBotRef?.turnResolver.megacredits ?? 0) + cost >= 0;
+    return (this.marsBotRef?.megacredits ?? 0) + cost >= 0;
   }
 
   public override add(
@@ -111,7 +111,7 @@ export class MarsBotStock extends Stock {
       }
     }
     // Positive amounts (resource gains from placement bonuses etc.) are ignored
-    // MarsBot gets MC from turnResolver.megacredits via tile placement calculations
+    // MarsBot gets MC from MarsBot.megacredits via tile placement calculations
   }
 
   /**
@@ -265,8 +265,8 @@ export class MarsBotStock extends Stock {
     if (marsBot === undefined) {
       return;
     }
-    const mc = Math.min(amount, marsBot.turnResolver.megacredits);
-    marsBot.turnResolver.megacredits -= mc;
+    const mc = Math.min(amount, marsBot.megacredits);
+    marsBot.megacredits -= mc;
     if (fromStorage > 0) {
       marsBot.shippingBoard.spend(COLONY_STORAGE_FOR_RESOURCE[resource], fromStorage);
     }

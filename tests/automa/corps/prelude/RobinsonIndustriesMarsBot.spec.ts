@@ -21,8 +21,8 @@ describe('RobinsonIndustriesMarsBot', () => {
   it('gains 10 M€ on setup', () => {
     const {marsBot} = createAutomaGame();
     const corp = getMarsBotCorp(CardName.ROBINSON_INDUSTRIES)!;
-    const mcBefore = marsBot.turnResolver.megacredits;
+    const mcBefore = marsBot.megacredits;
     marsBot.setCorpAndSetup(corp);
-    expect(marsBot.turnResolver.megacredits).to.eq(mcBefore + 10);
+    expect(marsBot.megacredits).to.eq(mcBefore + 10);
   });
 });

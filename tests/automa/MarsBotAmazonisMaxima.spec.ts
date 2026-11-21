@@ -25,25 +25,25 @@ describe('MarsBotAmazonisMaxima', () => {
 
   describe('temperature', () => {
     it('raises the temperature past 8 without a Failed Action', () => {
-      const {game, resolver} = amazonisGame();
+      const {game, marsBot, resolver} = amazonisGame();
       setTemperature(game, 8);
-      const mc = resolver.megacredits;
+      const mc = marsBot.megacredits;
 
       resolver.raiseTemperature(1);
 
       expect(game.getTemperature()).eq(10);
-      expect(resolver.megacredits).eq(mc);
+      expect(marsBot.megacredits).eq(mc);
     });
 
     it('takes a Failed Action at 14', () => {
-      const {game, resolver} = amazonisGame();
+      const {game, marsBot, resolver} = amazonisGame();
       setTemperature(game, 14);
-      const mc = resolver.megacredits;
+      const mc = marsBot.megacredits;
 
       resolver.raiseTemperature(1);
 
       expect(game.getTemperature()).eq(14);
-      expect(resolver.megacredits).eq(mc + resolver.failedActionMc);
+      expect(marsBot.megacredits).eq(mc + marsBot.failedActionMc);
     });
 
     it('lets a corp effect raise the temperature past 8', () => {
@@ -89,25 +89,25 @@ describe('MarsBotAmazonisMaxima', () => {
 
   describe('Venus', () => {
     it('raises Venus past 30 one step at a time', () => {
-      const {game, resolver} = amazonisGame(true);
+      const {game, marsBot, resolver} = amazonisGame(true);
       setVenusScaleLevel(game, 30);
-      const mc = resolver.megacredits;
+      const mc = marsBot.megacredits;
 
       resolver['raiseVenus'](1);
 
       expect(game.getVenusScaleLevel()).eq(31);
-      expect(resolver.megacredits).eq(mc);
+      expect(marsBot.megacredits).eq(mc);
     });
 
     it('takes a Failed Action at 33', () => {
-      const {game, resolver} = amazonisGame(true);
+      const {game, marsBot, resolver} = amazonisGame(true);
       setVenusScaleLevel(game, 33);
-      const mc = resolver.megacredits;
+      const mc = marsBot.megacredits;
 
       resolver['raiseVenus'](1);
 
       expect(game.getVenusScaleLevel()).eq(33);
-      expect(resolver.megacredits).eq(mc + resolver.failedActionMc);
+      expect(marsBot.megacredits).eq(mc + marsBot.failedActionMc);
     });
 
     it('raises Venus with Venusian Lobby past 30', () => {
@@ -140,14 +140,14 @@ describe('MarsBotAmazonisMaxima', () => {
     });
 
     it('takes a Failed Action at 11 oceans', () => {
-      const {game, resolver} = amazonisGame();
+      const {game, marsBot, resolver} = amazonisGame();
       maxOutOceans(game.players[0], 11);
-      const mc = resolver.megacredits;
+      const mc = marsBot.megacredits;
 
       resolver.placeOcean();
 
       expect(game.board.getOceanSpaces()).has.length(11);
-      expect(resolver.megacredits).eq(mc + resolver.failedActionMc);
+      expect(marsBot.megacredits).eq(mc + marsBot.failedActionMc);
     });
   });
 

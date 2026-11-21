@@ -42,7 +42,7 @@ describe('Investors', () => {
     marsBot['bonusResolver'].resolve(createBonusCard(BonusCardId.B32_INVESTORS));
 
     expect(marsBot.marsBotBoard.tracks.map((t) => t.position)).deep.eq([5, 3, 2, 4, 4, 5, 2]);
-    expect(marsBot.turnResolver.megacredits).to.eq(0);
+    expect(marsBot.megacredits).to.eq(0);
   });
 
   it('does not re-trigger the space it moved the most-advanced track back from', () => {
@@ -73,7 +73,7 @@ describe('Investors', () => {
     marsBot['bonusResolver'].resolve(createBonusCard(BonusCardId.B32_INVESTORS));
 
     expect(marsBot.marsBotBoard.tracks.map((t) => t.position)).deep.eq([5, 3, 2, 4, 4, 6, 3]);
-    expect(marsBot.turnResolver.megacredits).to.eq(2);
+    expect(marsBot.megacredits).to.eq(2);
   });
 
   // A bonus card that can't resolve takes no Failed Action (rulebook A p.5 B.a; BGG 3599965 and
@@ -83,7 +83,7 @@ describe('Investors', () => {
     game.generation = 2;
     maxTracks(marsBot);
     marsBot['bonusResolver'].resolve(createBonusCard(BonusCardId.B32_INVESTORS));
-    expect(marsBot.turnResolver.megacredits).to.eq(0);
+    expect(marsBot.megacredits).to.eq(0);
     expect(marsBot.marsBotBoard.tracks[0].position).to.eq(17);
   });
 });

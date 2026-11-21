@@ -35,10 +35,10 @@ describe('CheungShingMARSMarsBot', () => {
     const {marsBot} = createAutomaGame();
     marsBot.setCorpAndSetup(getMarsBotCorp(CardName.CHEUNG_SHING_MARS)!);
     marsBot.marsBotBoard.tracks[0].position = 3;
-    const mc = marsBot.turnResolver.megacredits;
+    const mc = marsBot.megacredits;
 
     marsBot.advanceTrack(0);
 
-    expect(marsBot.turnResolver.megacredits).to.eq(mc + 5);
+    expect(marsBot.megacredits).to.eq(mc + 5);
   });
 });

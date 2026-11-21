@@ -33,9 +33,9 @@ describe('TeractorMarsBot', () => {
     const {marsBot} = createAutomaGame();
     const corp = getMarsBotCorp(CardName.TERACTOR)!;
 
-    const mcBefore = marsBot.turnResolver.megacredits;
+    const mcBefore = marsBot.megacredits;
     marsBot.setCorpAndSetup(corp);
-    expect(marsBot.turnResolver.megacredits).to.eq(mcBefore + 25);
+    expect(marsBot.megacredits).to.eq(mcBefore + 25);
   });
 
   it('has earth draft priority', () => {
@@ -49,12 +49,12 @@ describe('TeractorMarsBot', () => {
     marsBot.marsBotBoard.tracks[5].position = 3;
     marsBot.advanceTrack(5); // Earth 4: 3 TR
     marsBot.regressTrack(Resource.HEAT);
-    const mc = marsBot.turnResolver.megacredits;
+    const mc = marsBot.megacredits;
     const tr = marsBot.player.terraformRating;
 
     marsBot.advanceTrack(5);
 
-    expect(marsBot.turnResolver.megacredits).to.eq(mc + 2);
+    expect(marsBot.megacredits).to.eq(mc + 2);
     expect(marsBot.player.terraformRating).to.eq(tr);
   });
 
@@ -68,9 +68,9 @@ describe('TeractorMarsBot', () => {
     const {marsBot} = createAutomaGame();
     const corp = getMarsBotCorp(CardName.TERACTOR)!;
     marsBot.setCorpAndSetup(corp);
-    const mcBefore = marsBot.turnResolver.megacredits;
+    const mcBefore = marsBot.megacredits;
     // Trigger white cube on Earth track (track 6)
     corp.onTrackCubeTrigger!(marsBot, 5, 1, 'white');
-    expect(marsBot.turnResolver.megacredits).to.eq(mcBefore + 2);
+    expect(marsBot.megacredits).to.eq(mcBefore + 2);
   });
 });

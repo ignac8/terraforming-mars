@@ -140,7 +140,7 @@ describe('MarsBotTurnResolver', () => {
       const r = marsBot.turnResolver;
       const mockCard = fakeCard({cost: 5, tags: [], type: CardType.AUTOMATED});
       r.resolveProjectCard(mockCard);
-      expect(r.megacredits).to.eq(5);
+      expect(marsBot.megacredits).to.eq(5);
     });
 
     it('event card with no other tags still advances Event track', () => {
@@ -152,7 +152,7 @@ describe('MarsBotTurnResolver', () => {
       const mockCard = fakeCard({cost: 5, tags: [], type: CardType.EVENT});
       r.resolveProjectCard(mockCard);
       expect(emptyBoard.tracks[2].position).to.eq(1); // Event track
-      expect(r.megacredits).to.eq(0); // NOT a failed action
+      expect(marsBot.megacredits).to.eq(0); // NOT a failed action
     });
   });
 
@@ -165,7 +165,7 @@ describe('MarsBotTurnResolver', () => {
       expect(track.position).to.eq(18);
 
       resolver.resolveProjectCard(new Algae() as IProjectCard);
-      expect(resolver.megacredits).to.eq(5);
+      expect(marsBot.megacredits).to.eq(5);
     });
 
     it('gives 3 MC in easy mode', () => {
@@ -177,7 +177,7 @@ describe('MarsBotTurnResolver', () => {
       }
 
       easyResolver.resolveProjectCard(new Algae() as IProjectCard);
-      expect(easyResolver.megacredits).to.eq(3);
+      expect(easyMarsBot.megacredits).to.eq(3);
     });
 
     it('accumulates MC across multiple failed actions', () => {
@@ -192,7 +192,7 @@ describe('MarsBotTurnResolver', () => {
 
       r.resolveProjectCard(new Algae() as IProjectCard); // 5 MC
       r.resolveProjectCard(new Algae() as IProjectCard); // 5 MC
-      expect(r.megacredits).to.eq(10);
+      expect(marsBot.megacredits).to.eq(10);
     });
 
     // A bonus card that can't resolve takes no Failed Action (rulebook A p.5 B.a; BGG 3599965 and
@@ -201,7 +201,7 @@ describe('MarsBotTurnResolver', () => {
       const {marsBot} = createAutomaGame();
       maxTracks(marsBot);
       marsBot.turnResolver.advanceTrack(0);
-      expect(marsBot.turnResolver.megacredits).to.eq(5);
+      expect(marsBot.megacredits).to.eq(5);
     });
   });
 
@@ -277,7 +277,7 @@ describe('MarsBotTurnResolver', () => {
 
       const mockCard = fakeCard({cost: 5, tags: [Tag.BUILDING], type: CardType.AUTOMATED});
       r.resolveProjectCard(mockCard);
-      expect(r.megacredits).to.eq(5); // Failed action
+      expect(marsBot.megacredits).to.eq(5); // Failed action
     });
 
     it('award action gives failed action when all funded', () => {
@@ -292,7 +292,7 @@ describe('MarsBotTurnResolver', () => {
 
       const mockCard = fakeCard({cost: 5, tags: [Tag.BUILDING], type: CardType.AUTOMATED});
       r.resolveProjectCard(mockCard);
-      expect(r.megacredits).to.eq(5); // Failed action
+      expect(marsBot.megacredits).to.eq(5); // Failed action
     });
 
     it('temperature action fails when already maxed', () => {
@@ -303,7 +303,7 @@ describe('MarsBotTurnResolver', () => {
       setTemperature(game, 8); // MAX
       const mockCard = fakeCard({cost: 5, tags: [Tag.BUILDING], type: CardType.AUTOMATED});
       r.resolveProjectCard(mockCard);
-      expect(r.megacredits).to.eq(5);
+      expect(marsBot.megacredits).to.eq(5);
     });
 
     it('ocean action fails when 9 oceans placed', () => {
@@ -318,7 +318,7 @@ describe('MarsBotTurnResolver', () => {
       }
       const mockCard = fakeCard({cost: 5, tags: [Tag.BUILDING], type: CardType.AUTOMATED});
       r.resolveProjectCard(mockCard);
-      expect(r.megacredits).to.eq(5);
+      expect(marsBot.megacredits).to.eq(5);
     });
 
     it('chained advance that hits max gives failed action', () => {
@@ -339,7 +339,7 @@ describe('MarsBotTurnResolver', () => {
       r.resolveProjectCard(mockCard);
       // Pos 18 = advance, but can't advance further → failed action
       expect(b.tracks[0].position).to.eq(18);
-      expect(r.megacredits).to.eq(5);
+      expect(marsBot.megacredits).to.eq(5);
     });
   });
 

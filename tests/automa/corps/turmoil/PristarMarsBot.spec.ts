@@ -18,7 +18,7 @@ function pristarGame(venus: boolean = false) {
   const marsBot = game.automaHooks!.marsBot;
   marsBot.setCorpAndSetup(getMarsBotCorp(CardName.PRISTAR)!);
   marsBot.corpSpecificState.set('whiteCubeOnCard', 1);
-  return {game, marsBot, tr: marsBot.player.terraformRating, mc: marsBot.turnResolver.megacredits};
+  return {game, marsBot, tr: marsBot.player.terraformRating, mc: marsBot.megacredits};
 }
 
 describe('PristarMarsBot', () => {
@@ -52,12 +52,12 @@ describe('PristarMarsBot', () => {
     marsBot.setCorpAndSetup(corp);
     marsBot.corpSpecificState.set('whiteCubeOnCard', 1);
     const trBefore = marsBot.player.terraformRating;
-    const mcBefore = marsBot.turnResolver.megacredits;
+    const mcBefore = marsBot.megacredits;
     const skip = corp.interceptGlobalParameterRaise!(marsBot, GlobalParameter.TEMPERATURE);
     expect(skip).to.be.true;
     expect(marsBot.corpSpecificState.get('whiteCubeOnCard')).to.eq(0);
     expect(marsBot.player.terraformRating).to.eq(trBefore + 1);
-    expect(marsBot.turnResolver.megacredits).to.eq(mcBefore + 6);
+    expect(marsBot.megacredits).to.eq(mcBefore + 6);
   });
 
   it('does not intercept without white cube', () => {
@@ -84,7 +84,7 @@ describe('PristarMarsBot', () => {
     marsBot.turnResolver.raiseTemperature(2);
     expect(game.getTemperature()).to.eq(-28);
     expect(marsBot.player.terraformRating).to.eq(tr + 2);
-    expect(marsBot.turnResolver.megacredits).to.eq(mc + 6);
+    expect(marsBot.megacredits).to.eq(mc + 6);
     expect(marsBot.temperatureRaises).to.eq(1);
   });
 
@@ -118,11 +118,11 @@ describe('PristarMarsBot', () => {
     marsBot.corpSpecificState.set('whiteCubeOnCard', 1);
     const oceansBefore = game.board.getOceanSpaces().length;
     const trBefore = marsBot.player.terraformRating;
-    const mcBefore = marsBot.turnResolver.megacredits;
+    const mcBefore = marsBot.megacredits;
     marsBot.turnResolver.placeOcean();
     expect(game.board.getOceanSpaces().length).to.eq(oceansBefore);
     expect(marsBot.player.terraformRating).to.eq(trBefore + 1);
-    expect(marsBot.turnResolver.megacredits).to.eq(mcBefore + 6);
+    expect(marsBot.megacredits).to.eq(mcBefore + 6);
     expect(marsBot.corpSpecificState.get('whiteCubeOnCard')).to.eq(0);
   });
 

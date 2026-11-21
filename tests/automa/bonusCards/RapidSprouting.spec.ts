@@ -62,7 +62,7 @@ describe('RapidSprouting', () => {
 
     expect(game.board.getGreeneries(marsBot.player)).is.empty;
     expect(marsBot.getCorpState('plantResources')).to.eq(0);
-    expect(marsBot.turnResolver.megacredits).to.eq(0);
+    expect(marsBot.megacredits).to.eq(0);
   });
 
   it('stays out of the bonus deck after it resolves, as the generation card of a corporation', () => {

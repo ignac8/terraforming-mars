@@ -78,7 +78,7 @@ describe('MarsBotAmazonisRules', () => {
       const {game, marsBot} = resolveOverachievement(6);
 
       expect(game.fundedAwards).is.empty;
-      expect(marsBot.turnResolver.megacredits).eq(5);
+      expect(marsBot.megacredits).eq(5);
     });
   });
 
@@ -165,7 +165,7 @@ describe('MarsBotAmazonisRules', () => {
     /** Funds the award for the player, which leads it by 1, and gives MarsBot 10 M€. */
     function competeFor(awardName: string) {
       const {game, human, marsBot} = amazonisGame();
-      marsBot.turnResolver.megacredits = 10;
+      marsBot.megacredits = 10;
       const award = game.awards.find((a) => a.name === awardName)!;
       game.fundAward(human, award);
       award.getScore = () => 11;

@@ -42,12 +42,12 @@ describe('InterplanetaryCinematicsMarsBot', () => {
     marsBot.advanceTrack(2);
     marsBot.regressTrack(Resource.STEEL);
     marsBot.regressTrack(Resource.MEGACREDITS);
-    const mc = marsBot.turnResolver.megacredits;
+    const mc = marsBot.megacredits;
 
     marsBot.advanceTrack(0);
     marsBot.advanceTrack(2);
 
-    expect(marsBot.turnResolver.megacredits).to.eq(mc + 4);
+    expect(marsBot.megacredits).to.eq(mc + 4);
   });
 
   it('replaces the transparent cubes with 36 white cubes (18 on track 1 + 18 on track 3)', () => {
@@ -63,10 +63,10 @@ describe('InterplanetaryCinematicsMarsBot', () => {
     const {marsBot} = createAutomaGame();
     const corp = getMarsBotCorp(CardName.INTERPLANETARY_CINEMATICS)!;
     marsBot.setCorpAndSetup(corp);
-    const mcBefore = marsBot.turnResolver.megacredits;
+    const mcBefore = marsBot.megacredits;
     corp.onTrackCubeTrigger!(marsBot, 0, 1, 'white');
-    expect(marsBot.turnResolver.megacredits).to.eq(mcBefore + 2);
+    expect(marsBot.megacredits).to.eq(mcBefore + 2);
     corp.onTrackCubeTrigger!(marsBot, 2, 1, 'white');
-    expect(marsBot.turnResolver.megacredits).to.eq(mcBefore + 4);
+    expect(marsBot.megacredits).to.eq(mcBefore + 4);
   });
 });

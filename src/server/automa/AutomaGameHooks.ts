@@ -710,8 +710,8 @@ export class AutomaGameHooks {
     if (spaceOwner !== this.marsBot.player) {
       return false;
     }
-    if (this.marsBot.turnResolver.megacredits >= 2) {
-      this.marsBot.turnResolver.megacredits -= 2;
+    if (this.marsBot.megacredits >= 2) {
+      this.marsBot.megacredits -= 2;
       this.marsBot.turnResolver.advanceTrack(this.marsBot.marsBotBoard.getLeastAdvancedTrackIndex());
       this.game.log('MarsBot pays 2 MC and advances least-advanced track (St. Joseph)');
     } else {

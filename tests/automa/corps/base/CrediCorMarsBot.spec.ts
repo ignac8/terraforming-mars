@@ -28,9 +28,9 @@ describe('CrediCorMarsBot', () => {
     const corp = getMarsBotCorp(CardName.CREDICOR)!;
     marsBot.setCorpAndSetup(corp);
 
-    const mcBefore = marsBot.turnResolver.megacredits;
+    const mcBefore = marsBot.megacredits;
     corp.onProjectCardResolved!(marsBot, fakeCard('Expensive', {cost: 25}));
-    expect(marsBot.turnResolver.megacredits).to.eq(mcBefore + 4);
+    expect(marsBot.megacredits).to.eq(mcBefore + 4);
   });
 
   it('does not gain M€ when card costs less than 20', () => {
@@ -38,9 +38,9 @@ describe('CrediCorMarsBot', () => {
     const corp = getMarsBotCorp(CardName.CREDICOR)!;
     marsBot.setCorpAndSetup(corp);
 
-    const mcBefore = marsBot.turnResolver.megacredits;
+    const mcBefore = marsBot.megacredits;
     corp.onProjectCardResolved!(marsBot, fakeCard('Cheap', {cost: 15}));
-    expect(marsBot.turnResolver.megacredits).to.eq(mcBefore);
+    expect(marsBot.megacredits).to.eq(mcBefore);
   });
 
   it('has mostExpensive draft priority', () => {

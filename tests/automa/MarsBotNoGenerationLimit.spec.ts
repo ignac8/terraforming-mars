@@ -37,7 +37,7 @@ describe('MarsBot without a generation limit', () => {
 
   it('converts megacredits at 1 per VP from the last table row onward', () => {
     const {game, marsBot} = createAutomaGame(true);
-    marsBot.turnResolver.megacredits = 7;
+    marsBot.megacredits = 7;
 
     game.generation = MARSBOT_MAX_GENERATION - 1;
     expect(marsBot.getVictoryPoints().mcToVP).to.eq(7);

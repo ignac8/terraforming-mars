@@ -2,7 +2,7 @@ import {expect} from 'chai';
 import {testGame} from '../TestGame';
 import {Game} from '../../src/server/Game';
 import {IGame} from '../../src/server/IGame';
-import {SerializedGame} from '../../src/server/SerializedGame';
+import {SerializedAutomaState, SerializedGame} from '../../src/server/SerializedGame';
 import {MarsBot} from '../../src/server/automa/MarsBot';
 import {BoardName} from '../../src/common/boards/BoardName';
 import {GlobalParameter} from '../../src/common/GlobalParameter';
@@ -295,6 +295,26 @@ describe('MarsBotReload', () => {
 
       expect(loadSandboxGame(game.serialize()).rng.serialize()).deep.eq(game.rng.serialize());
       expect(Game.deserialize(game.serialize()).rng.serialize()).deep.eq(game.rng.serialize());
+    });
+  }
+
+  // MarsBot's part of a generation 6 save of a Hard game, written while the turn resolver held MarsBot's M€
+  const savedState: SerializedAutomaState = JSON.parse('{"trackPositions":[4,4,4,4,3,4,4],"trackRegressedPositions":[[],[],[],[],[],[],[]],"megacredits":25,"goesFirst":true,"difficulty":"hard","actionDeckCardNames":["Black Polar Dust","Wave Power","Nuclear Zone","B02"],"bonusDeck":{"drawPile":["Meteor Shower:automa"],"discardPile":["Research and Development:automa","Expedited Construction:automa","Overachievement:automa","Corporate Competition:automa"]},"neuralInstanceSpaceId":"55","playedProjectCardNames":["Adaptation Technology","Martian Rails","Herbivores","Geothermal Power","Tundra Farming","Special Design","Earth Office","Release of Inert Gases","Vesta Shipyard","Cloud Seeding","Imported GHG","Birds","Business Network","Phobos Space Haven","Industrial Microbes","Mohole Area"],"firstTurnCheckedGeneration":5,"beforeActionPhasePending":false,"marsBotPlayerId":"p-game-id-marsbot","terraformRating":33,"globalParameterSteps":{"oceans":2,"oxygen":2,"temperature":3,"venus":0,"moon-habitat":0,"moon-mining":0,"moon-logistic":0},"vpByGeneration":[23,31,36,46,53],"temperatureRaises":1,"destroyedBonusCards":2}');
+  for (const run of [
+    {megacreditsKey: 'megacredits'},
+    {megacreditsKey: 'mcSupply'},
+  ] as const) {
+    it('restores M€, the played pile and the temperature count of an older save: ' + JSON.stringify(run), () => {
+      const [game] = testGame(1, {automa: true, automaDifficulty: 'hard', boardName: BoardName.THARSIS});
+      const marsBot = game.automaHooks!.marsBot;
+      const {megacredits, ...rest} = savedState;
+
+      marsBot.restoreState({...rest, [run.megacreditsKey]: megacredits} as SerializedAutomaState);
+
+      expect(marsBot.megacredits).eq(25);
+      expect(marsBot.playedProjectCards.map((card) => card.name)).deep.eq(savedState.playedProjectCardNames);
+      expect(marsBot.temperatureRaises).eq(1);
+      expect(marsBot.serialize()).deep.eq(savedState);
     });
   }
 });

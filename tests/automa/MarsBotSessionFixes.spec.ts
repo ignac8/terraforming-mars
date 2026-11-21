@@ -76,7 +76,7 @@ describe('MarsBotSessionFixes', () => {
 
   it('MarsBot resource getters report megacredits', () => {
     const {marsBot} = createAutomaGame();
-    marsBot.turnResolver.megacredits = 42;
+    marsBot.megacredits = 42;
 
     expect(marsBot.player.steel).to.eq(42);
     expect(marsBot.player.megaCredits).to.eq(42);
@@ -85,12 +85,12 @@ describe('MarsBotSessionFixes', () => {
 
   it('steal from MarsBot deducts megacredits', () => {
     const {marsBot, human} = createAutomaGame();
-    marsBot.turnResolver.megacredits = 10;
+    marsBot.megacredits = 10;
     const humanSteelBefore = human.steel;
 
     marsBot.player.stock.steal(Resource.STEEL, 2, human);
 
-    expect(marsBot.turnResolver.megacredits).to.eq(8);
+    expect(marsBot.megacredits).to.eq(8);
     expect(human.steel).to.eq(humanSteelBefore + 2);
   });
 
@@ -209,7 +209,7 @@ describe('MarsBotSessionFixes', () => {
   it('deserialization works when activePlayer is MarsBot', () => {
     const {game, marsBot} = createAutomaGame();
     marsBot.marsBotBoard.tracks[0].advance();
-    marsBot.turnResolver.megacredits = 15;
+    marsBot.megacredits = 15;
 
     // Simulate MarsBot being the active player when saved
     game.activePlayer = marsBot.player;
@@ -220,7 +220,7 @@ describe('MarsBotSessionFixes', () => {
     expect(restored.automaHooks?.marsBot).to.not.be.undefined;
     expect(restored.activePlayer.id).to.eq(marsBot.player.id);
     expect(restored.automaHooks!.marsBot.marsBotBoard.tracks[0].position).to.eq(1);
-    expect(restored.automaHooks!.marsBot.turnResolver.megacredits).to.eq(15);
+    expect(restored.automaHooks!.marsBot.megacredits).to.eq(15);
   });
 
   it('deserialization works when activePlayer is human', () => {
@@ -354,7 +354,7 @@ describe('MarsBotSessionFixes', () => {
     marsBot.marsBotBoard.tracks[1].advance();
     // Regress track 0 from position 2 to 1
     marsBot.marsBotBoard.tracks[0].regress();
-    marsBot.turnResolver.megacredits = 42;
+    marsBot.megacredits = 42;
     marsBot.goesFirst = true;
     marsBot.floaters = 3;
     marsBot.temperatureRaises = 5;
@@ -395,7 +395,7 @@ describe('MarsBotSessionFixes', () => {
     expect(rm.marsBotBoard.tracks[0].position).to.eq(1);
     expect(rm.marsBotBoard.tracks[0].regressedPositions.has(2)).to.eq(true);
     expect(rm.marsBotBoard.tracks[1].position).to.eq(1);
-    expect(rm.turnResolver.megacredits).to.eq(42);
+    expect(rm.megacredits).to.eq(42);
     expect(rm.goesFirst).to.eq(true);
     expect(rm.floaters).to.eq(3);
     expect(rm.temperatureRaises).to.eq(5);
@@ -532,7 +532,7 @@ describe('MarsBotSessionFixes', () => {
 
   it('CrashSiteCleanup hook triggered when removing plants from MarsBot', () => {
     const {game, human, marsBot} = createAutomaGame();
-    marsBot.turnResolver.megacredits = 10;
+    marsBot.megacredits = 10;
 
     expect(game.someoneHasRemovedOtherPlayersPlants).to.be.false;
 
@@ -543,18 +543,18 @@ describe('MarsBotSessionFixes', () => {
 
   it('RemoveResourcesFromCard targets MarsBot MC supply when only option', () => {
     const {human, marsBot} = createAutomaGame();
-    marsBot.turnResolver.megacredits = 10;
+    marsBot.megacredits = 10;
 
     const action = new RemoveResourcesFromCard(human, undefined, 1, {source: 'opponents'});
     action.execute();
 
     // Auto-executed since MarsBot MC is the only target
-    expect(marsBot.turnResolver.megacredits).to.eq(9);
+    expect(marsBot.megacredits).to.eq(9);
   });
 
   it('RemoveResourcesFromCard offers choice when both cards and MarsBot MC available', () => {
     const {human, marsBot} = createAutomaGame();
-    marsBot.turnResolver.megacredits = 10;
+    marsBot.megacredits = 10;
 
     // Give human a card with animals so there are card targets too
     const predators = new Predators();
@@ -570,7 +570,7 @@ describe('MarsBotSessionFixes', () => {
 
   it('RemoveResourcesFromCard does not offer MarsBot when source is self', () => {
     const {human, marsBot} = createAutomaGame();
-    marsBot.turnResolver.megacredits = 10;
+    marsBot.megacredits = 10;
 
     const action = new RemoveResourcesFromCard(human, undefined, 1, {source: 'self', blockable: false});
     const result = action.execute();
@@ -581,7 +581,7 @@ describe('MarsBotSessionFixes', () => {
 
   it('RemoveResourcesFromCard does not offer MarsBot when MC is 0', () => {
     const {human, marsBot} = createAutomaGame();
-    marsBot.turnResolver.megacredits = 0;
+    marsBot.megacredits = 0;
 
     const action = new RemoveResourcesFromCard(human, undefined, 1, {source: 'opponents'});
     const result = action.execute();
@@ -592,7 +592,7 @@ describe('MarsBotSessionFixes', () => {
   describe('removing a card resource from MarsBot\'s colony storage (C-25)', () => {
     it('offers the M€ supply and the Enceladus storage for microbes', () => {
       const {human, marsBot} = createAutomaGame();
-      marsBot.turnResolver.megacredits = 10;
+      marsBot.megacredits = 10;
       marsBot.shippingBoard.storage.set(ColonyName.ENCELADUS, 3);
 
       const result = new RemoveResourcesFromCard(human, CardResource.MICROBE, 2, {source: 'opponents'}).execute();
@@ -604,12 +604,12 @@ describe('MarsBotSessionFixes', () => {
       ]);
       options[1].process({type: 'option'}, human);
       expect(marsBot.shippingBoard.get(ColonyName.ENCELADUS)).to.eq(1);
-      expect(marsBot.turnResolver.megacredits).to.eq(10);
+      expect(marsBot.megacredits).to.eq(10);
     });
 
     it('takes from the Miranda storage for animals when the M€ supply is empty', () => {
       const {human, marsBot} = createAutomaGame();
-      marsBot.turnResolver.megacredits = 0;
+      marsBot.megacredits = 0;
       marsBot.shippingBoard.storage.set(ColonyName.MIRANDA, 4);
 
       // The storage is the only target, so it is removed without asking
@@ -621,7 +621,7 @@ describe('MarsBotSessionFixes', () => {
 
     it('offers no storage for a resource no storage area holds', () => {
       const {human, marsBot} = createAutomaGame();
-      marsBot.turnResolver.megacredits = 0;
+      marsBot.megacredits = 0;
       marsBot.shippingBoard.storage.set(ColonyName.ENCELADUS, 3);
 
       const result = new RemoveResourcesFromCard(human, CardResource.ANIMAL, 1, {source: 'opponents'}).execute();
@@ -632,7 +632,7 @@ describe('MarsBotSessionFixes', () => {
 
     it('does not offer the storage when the source is self', () => {
       const {human, marsBot} = createAutomaGame();
-      marsBot.turnResolver.megacredits = 0;
+      marsBot.megacredits = 0;
       marsBot.shippingBoard.storage.set(ColonyName.ENCELADUS, 3);
 
       expect(RemoveResourcesFromCard.hasAvailableTargets(human, CardResource.MICROBE, 'self')).is.false;
@@ -641,7 +641,7 @@ describe('MarsBotSessionFixes', () => {
 
   it('Predators canAct returns true when MarsBot has MC', () => {
     const {human, marsBot} = createAutomaGame();
-    marsBot.turnResolver.megacredits = 5;
+    marsBot.megacredits = 5;
     const predators = new Predators();
     human.playedCards.push(predators);
 
@@ -650,7 +650,7 @@ describe('MarsBotSessionFixes', () => {
 
   it('Ants canAct returns true when MarsBot has MC', () => {
     const {human, marsBot} = createAutomaGame();
-    marsBot.turnResolver.megacredits = 5;
+    marsBot.megacredits = 5;
     const ants = new Ants();
     human.playedCards.push(ants);
 
@@ -664,7 +664,7 @@ describe('MarsBotSessionFixes', () => {
 
   it('LawSuit hook triggered when removing resources from MarsBot', () => {
     const {human, marsBot} = createAutomaGame();
-    marsBot.turnResolver.megacredits = 10;
+    marsBot.megacredits = 10;
 
     marsBot.player.stock.add(Resource.STEEL, -2, {log: true, from: {player: human}});
 
@@ -918,7 +918,7 @@ describe('MarsBotVenusNext', () => {
         const milestone = game.milestones.find((m) => m.name === name)!;
         game.claimedMilestones.push({player: human, milestone});
       }
-      marsBot.turnResolver.megacredits = 8;
+      marsBot.megacredits = 8;
       marsBot.actionDeck = [];
 
       marsBot.takeTurn();

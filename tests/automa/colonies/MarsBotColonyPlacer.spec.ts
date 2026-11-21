@@ -248,10 +248,10 @@ describe('MarsBotColonyPlacer', () => {
       while (game.canAddOcean()) {
         marsBot.turnResolver.placeOcean();
       }
-      const mcBefore = marsBot.turnResolver.megacredits;
+      const mcBefore = marsBot.megacredits;
       placeColonyForMarsBot(europa, marsBot);
       // Should be a failed action (gains MC)
-      expect(marsBot.turnResolver.megacredits).to.be.greaterThan(mcBefore);
+      expect(marsBot.megacredits).to.be.greaterThan(mcBefore);
       expect(europa.colonies).to.include(marsBot.player.id);
     });
   });

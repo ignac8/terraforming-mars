@@ -34,7 +34,7 @@ describe('MarsBot final greenery', () => {
   it('does not trigger the Hellas south pole', () => {
     const {game, marsBot} = setup(BoardName.HELLAS);
     const southPole = game.board.spaces.find((sp) => sp.bonus.includes(SpaceBonus.OCEAN))!;
-    marsBot.turnResolver.megacredits = 10;
+    marsBot.megacredits = 10;
     endGame(game);
     const tr = marsBot.player.terraformRating;
 
@@ -42,20 +42,20 @@ describe('MarsBot final greenery', () => {
 
     expect(game.board.getOceanSpaces()).has.length(0);
     expect(marsBot.player.terraformRating).to.eq(tr);
-    expect(marsBot.turnResolver.megacredits).to.eq(10);
+    expect(marsBot.megacredits).to.eq(10);
   });
 
   it('does not trigger the Vastitas Borealis north pole', () => {
     const {game, marsBot} = setup(BoardName.VASTITAS_BOREALIS_NOVA);
     const northPole = game.board.spaces.find((sp) => sp.bonus.includes(SpaceBonus.TEMPERATURE_4MC))!;
-    marsBot.turnResolver.megacredits = 10;
+    marsBot.megacredits = 10;
     endGame(game);
     const temperature = game.getTemperature();
 
     game.addGreenery(marsBot.player, northPole, false);
 
     expect(game.getTemperature()).to.eq(temperature);
-    expect(marsBot.turnResolver.megacredits).to.eq(10);
+    expect(marsBot.megacredits).to.eq(10);
   });
 
   describe('on Terra Cimmeria with Colonies', () => {
@@ -69,7 +69,7 @@ describe('MarsBot final greenery', () => {
 
     it('builds no colony on MSL Curiosity and advances no track', () => {
       const msl = game.board.spaces.find((sp) => sp.bonus.includes(SpaceBonus.COLONY))!;
-      marsBot.turnResolver.megacredits = 10;
+      marsBot.megacredits = 10;
       marsBot.shippingBoard.storage.set(ColonyName.LUNA, 4);
       marsBot.shippingBoard.storage.set(ColonyName.CERES, 4);
       endGame(game);
@@ -79,19 +79,19 @@ describe('MarsBot final greenery', () => {
 
       expect(game.colonies.map((colony) => colony.colonies.length)).deep.eq([0, 0]);
       expect(marsBot.marsBotBoard.tracks.map((track) => track.position)).deep.eq(tracks);
-      expect(marsBot.turnResolver.megacredits).to.eq(10);
+      expect(marsBot.megacredits).to.eq(10);
     });
 
     it('still builds the colony during the action phase', () => {
       const msl = game.board.spaces.find((sp) => sp.bonus.includes(SpaceBonus.COLONY))!;
-      marsBot.turnResolver.megacredits = 10;
+      marsBot.megacredits = 10;
       game.phase = Phase.ACTION;
       expect(game.isDoneWithFinalProduction()).is.false;
 
       game.addGreenery(marsBot.player, msl, false);
 
       expect(game.colonies.flatMap((colony) => colony.colonies)).has.length(1);
-      expect(marsBot.turnResolver.megacredits).to.eq(5);
+      expect(marsBot.megacredits).to.eq(5);
     });
 
     it('stops the Shipping Board overflowing', () => {
@@ -118,7 +118,7 @@ describe('MarsBot final greenery', () => {
   it('counts a special hex as a space without rewards in the tiebreak', () => {
     const {game, marsBot} = setup(BoardName.HELLAS);
     const southPole = game.board.spaces.find((sp) => sp.bonus.includes(SpaceBonus.OCEAN))!;
-    marsBot.turnResolver.megacredits = 10;
+    marsBot.megacredits = 10;
     const placer = marsBot.turnResolver.tilePlacer;
     const icons = (): number => placer['iconCount'](southPole);
     game.phase = Phase.ACTION;
@@ -140,7 +140,7 @@ describe('MarsBot final greenery', () => {
       }
       marsBot.marsBotBoard.tracks[EARTH].position = 11;
       endGame(game);
-      const mc = marsBot.turnResolver.megacredits;
+      const mc = marsBot.megacredits;
       let placed: Space | undefined;
       const placer = marsBot.turnResolver.tilePlacer;
       const find = placer.findGreenerySpace.bind(placer);
@@ -154,7 +154,7 @@ describe('MarsBot final greenery', () => {
       marsBot.placeFinalGreeneries();
 
       expect(marsBot.marsBotBoard.tracks[EARTH].position).to.eq(12);
-      expect(marsBot.turnResolver.megacredits).to.eq(mc + placementMc() + 2);
+      expect(marsBot.megacredits).to.eq(mc + placementMc() + 2);
     });
 
     it('skips the corp cubes with automaFinalGreeneryNoCorpEffects', () => {
@@ -163,7 +163,7 @@ describe('MarsBot final greenery', () => {
       marsBot.placeFinalGreeneries();
 
       expect(marsBot.marsBotBoard.tracks[EARTH].position).to.eq(12);
-      expect(marsBot.turnResolver.megacredits).to.eq(mc + placementMc());
+      expect(marsBot.megacredits).to.eq(mc + placementMc());
     });
 
     it('gains nothing from Helion\'s black cube with the temperature maxed', () => {
@@ -172,7 +172,7 @@ describe('MarsBot final greenery', () => {
 
       marsBot.placeFinalGreeneries();
 
-      expect(marsBot.turnResolver.megacredits).to.eq(mc + placementMc());
+      expect(marsBot.megacredits).to.eq(mc + placementMc());
     });
 
     it('does not chain into Manutech\'s extra advance (BGG 3385156)', () => {
@@ -190,7 +190,7 @@ describe('MarsBot final greenery', () => {
       marsBot.placeFinalGreeneries();
 
       expect(marsBot.marsBotBoard.tracks[EARTH].position).to.eq(11);
-      expect(marsBot.turnResolver.megacredits).to.eq(mc + FAILED_ACTION_MC);
+      expect(marsBot.megacredits).to.eq(mc + FAILED_ACTION_MC);
       expect(game.board.getGreeneries(marsBot.player)).to.have.length(0);
     });
   });

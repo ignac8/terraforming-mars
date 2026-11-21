@@ -63,7 +63,7 @@ describe('MarsBot colony storage as stock resources (C-25)', () => {
   describe('stealing', () => {
     it('asks how many come from the Ceres storage, starting with all of them', () => {
       const {game, human, marsBot} = createAutomaGame();
-      marsBot.turnResolver.megacredits = 10;
+      marsBot.megacredits = 10;
       marsBot.shippingBoard.storage.set(ColonyName.CERES, 3);
 
       marsBot.player.stock.steal(Resource.STEEL, 2, human);
@@ -77,33 +77,33 @@ describe('MarsBot colony storage as stock resources (C-25)', () => {
 
     it('takes from the Ceres storage when the player chooses all of it', () => {
       const {game, human, marsBot} = createAutomaGame();
-      marsBot.turnResolver.megacredits = 10;
+      marsBot.megacredits = 10;
       marsBot.shippingBoard.storage.set(ColonyName.CERES, 3);
 
       marsBot.player.stock.steal(Resource.STEEL, 2, human);
       takeFromStorage(game, human, 2);
 
       expect(marsBot.shippingBoard.get(ColonyName.CERES)).eq(1);
-      expect(marsBot.turnResolver.megacredits).eq(10);
+      expect(marsBot.megacredits).eq(10);
       expect(human.steel).eq(2);
     });
 
     it('takes from the M€ supply when the player chooses 0', () => {
       const {game, human, marsBot} = createAutomaGame();
-      marsBot.turnResolver.megacredits = 10;
+      marsBot.megacredits = 10;
       marsBot.shippingBoard.storage.set(ColonyName.CERES, 3);
 
       marsBot.player.stock.steal(Resource.STEEL, 2, human);
       takeFromStorage(game, human, 0);
 
       expect(marsBot.shippingBoard.get(ColonyName.CERES)).eq(3);
-      expect(marsBot.turnResolver.megacredits).eq(8);
+      expect(marsBot.megacredits).eq(8);
       expect(human.steel).eq(2);
     });
 
     it('splits one steal between the supply and the storage', () => {
       const {game, human, marsBot} = createAutomaGame();
-      marsBot.turnResolver.megacredits = 10;
+      marsBot.megacredits = 10;
       marsBot.shippingBoard.storage.set(ColonyName.CERES, 3);
 
       marsBot.player.stock.steal(Resource.STEEL, 3, human);
@@ -112,13 +112,13 @@ describe('MarsBot colony storage as stock resources (C-25)', () => {
       amount.process({type: 'amount', amount: 2});
 
       expect(marsBot.shippingBoard.get(ColonyName.CERES)).eq(1);
-      expect(marsBot.turnResolver.megacredits).eq(9);
+      expect(marsBot.megacredits).eq(9);
       expect(human.steel).eq(3);
     });
 
     it('rejects an amount outside what the steal allows', () => {
       const {game, human, marsBot} = createAutomaGame();
-      marsBot.turnResolver.megacredits = 10;
+      marsBot.megacredits = 10;
       marsBot.shippingBoard.storage.set(ColonyName.CERES, 3);
 
       marsBot.player.stock.steal(Resource.STEEL, 3, human);
@@ -130,7 +130,7 @@ describe('MarsBot colony storage as stock resources (C-25)', () => {
 
     it('gives the thief only what is left when two steals are queued', () => {
       const {game, human, marsBot} = createAutomaGame();
-      marsBot.turnResolver.megacredits = 3;
+      marsBot.megacredits = 3;
       marsBot.shippingBoard.storage.set(ColonyName.CERES, 3);
 
       marsBot.player.stock.steal(Resource.STEEL, 4, human);
@@ -142,13 +142,13 @@ describe('MarsBot colony storage as stock resources (C-25)', () => {
       takeFromStorage(game, human, 3);
 
       expect(marsBot.shippingBoard.get(ColonyName.CERES)).eq(0);
-      expect(marsBot.turnResolver.megacredits).eq(0);
+      expect(marsBot.megacredits).eq(0);
       expect(human.steel).eq(6);
     });
 
     it('starts the field at what the supply cannot cover', () => {
       const {game, human, marsBot} = createAutomaGame();
-      marsBot.turnResolver.megacredits = 1;
+      marsBot.megacredits = 1;
       marsBot.shippingBoard.storage.set(ColonyName.CERES, 5);
 
       marsBot.player.stock.steal(Resource.STEEL, 4, human);
@@ -158,17 +158,17 @@ describe('MarsBot colony storage as stock resources (C-25)', () => {
       expect(amount.toModel()).deep.include({min: 3, max: 4});
       amount.process({type: 'amount', amount: 3});
       expect(marsBot.shippingBoard.get(ColonyName.CERES)).eq(2);
-      expect(marsBot.turnResolver.megacredits).eq(0);
+      expect(marsBot.megacredits).eq(0);
       expect(human.steel).eq(4);
     });
 
     it('does not ask when the storage is empty, and takes M€ as before', () => {
       const {game, human, marsBot} = createAutomaGame();
-      marsBot.turnResolver.megacredits = 10;
+      marsBot.megacredits = 10;
 
       marsBot.player.stock.steal(Resource.STEEL, 2, human);
 
-      expect(marsBot.turnResolver.megacredits).eq(8);
+      expect(marsBot.megacredits).eq(8);
       expect(human.steel).eq(2);
       runAllActions(game);
       expect(human.popWaitingFor()).is.undefined;
@@ -176,12 +176,12 @@ describe('MarsBot colony storage as stock resources (C-25)', () => {
 
     it('ignores a storage area that holds another resource', () => {
       const {game, human, marsBot} = createAutomaGame();
-      marsBot.turnResolver.megacredits = 10;
+      marsBot.megacredits = 10;
       marsBot.shippingBoard.storage.set(ColonyName.TRITON, 4);
 
       marsBot.player.stock.steal(Resource.STEEL, 2, human);
 
-      expect(marsBot.turnResolver.megacredits).eq(8);
+      expect(marsBot.megacredits).eq(8);
       expect(marsBot.shippingBoard.get(ColonyName.TRITON)).eq(4);
       runAllActions(game);
       expect(human.popWaitingFor()).is.undefined;
@@ -189,7 +189,7 @@ describe('MarsBot colony storage as stock resources (C-25)', () => {
 
     it('takes from the storage without asking when the M€ supply is empty', () => {
       const {game, human, marsBot} = createAutomaGame();
-      marsBot.turnResolver.megacredits = 0;
+      marsBot.megacredits = 0;
       marsBot.shippingBoard.storage.set(ColonyName.CERES, 3);
 
       marsBot.player.stock.steal(Resource.STEEL, 2, human);
@@ -202,12 +202,12 @@ describe('MarsBot colony storage as stock resources (C-25)', () => {
 
     it('takes both when asked for more than either holds, without asking', () => {
       const {game, human, marsBot} = createAutomaGame();
-      marsBot.turnResolver.megacredits = 1;
+      marsBot.megacredits = 1;
       marsBot.shippingBoard.storage.set(ColonyName.CERES, 2);
 
       marsBot.player.stock.steal(Resource.STEEL, 5, human);
 
-      expect(marsBot.turnResolver.megacredits).eq(0);
+      expect(marsBot.megacredits).eq(0);
       expect(marsBot.shippingBoard.get(ColonyName.CERES)).eq(0);
       expect(human.steel).eq(3);
       runAllActions(game);
@@ -225,7 +225,7 @@ describe('MarsBot colony storage as stock resources (C-25)', () => {
     for (const [resource, colony] of resources) {
       it(`steals ${resource} from ${colony} storage`, () => {
         const {game, human, marsBot} = createAutomaGame();
-        marsBot.turnResolver.megacredits = 10;
+        marsBot.megacredits = 10;
         marsBot.shippingBoard.storage.set(colony, 4);
         human.stock.override(Units.EMPTY);
 
@@ -233,14 +233,14 @@ describe('MarsBot colony storage as stock resources (C-25)', () => {
         takeFromStorage(game, human, 2);
 
         expect(marsBot.shippingBoard.get(colony)).eq(2);
-        expect(marsBot.turnResolver.megacredits).eq(10);
+        expect(marsBot.megacredits).eq(10);
         expect(human.stock.get(resource)).eq(2);
       });
     }
 
     it('is reachable through the Steal Resources action when only the storage holds steel', () => {
       const {game, human, marsBot} = createAutomaGame();
-      marsBot.turnResolver.megacredits = 0;
+      marsBot.megacredits = 0;
       marsBot.shippingBoard.storage.set(ColonyName.CERES, 3);
 
       const or = cast(new StealResources(human, Resource.STEEL, 2).execute(), OrOptions);
@@ -253,7 +253,7 @@ describe('MarsBot colony storage as stock resources (C-25)', () => {
 
     it('is offered by Hired Raiders as a steel steal and then asks for the source', () => {
       const {game, human, marsBot} = createAutomaGame();
-      marsBot.turnResolver.megacredits = 10;
+      marsBot.megacredits = 10;
       marsBot.shippingBoard.storage.set(ColonyName.CERES, 5);
 
       const cardOptions = cast(new HiredRaiders().play(human), OrOptions);
@@ -267,7 +267,7 @@ describe('MarsBot colony storage as stock resources (C-25)', () => {
 
     it('reports the storage as part of the resource a card checks for', () => {
       const {marsBot} = createAutomaGame();
-      marsBot.turnResolver.megacredits = 4;
+      marsBot.megacredits = 4;
       marsBot.shippingBoard.storage.set(ColonyName.CERES, 3);
       marsBot.shippingBoard.storage.set(ColonyName.LUNA, 2);
 
@@ -278,7 +278,7 @@ describe('MarsBot colony storage as stock resources (C-25)', () => {
 
     it('lets a card target MarsBot whose only steel is in storage', () => {
       const {human, marsBot} = createAutomaGame();
-      marsBot.turnResolver.megacredits = 0;
+      marsBot.megacredits = 0;
       marsBot.shippingBoard.storage.set(ColonyName.CERES, 3);
 
       expect(StealResources.getCandidates(human, Resource.STEEL, 2)).deep.eq([marsBot.player]);
@@ -286,7 +286,7 @@ describe('MarsBot colony storage as stock resources (C-25)', () => {
 
     it('keeps spending to the M€ supply', () => {
       const {marsBot} = createAutomaGame();
-      marsBot.turnResolver.megacredits = 2;
+      marsBot.megacredits = 2;
       marsBot.shippingBoard.storage.set(ColonyName.LUNA, 5);
 
       expect(marsBot.megacredits).eq(2);
@@ -297,55 +297,55 @@ describe('MarsBot colony storage as stock resources (C-25)', () => {
   describe('removing', () => {
     it('removes titanium from the Triton storage when the player chooses it', () => {
       const {game, human, marsBot} = createAutomaGame();
-      marsBot.turnResolver.megacredits = 10;
+      marsBot.megacredits = 10;
       marsBot.shippingBoard.storage.set(ColonyName.TRITON, 4);
 
       marsBot.player.attack(human, Resource.TITANIUM, 3, {log: true});
       takeFromStorage(game, human, 3);
 
       expect(marsBot.shippingBoard.get(ColonyName.TRITON)).eq(1);
-      expect(marsBot.turnResolver.megacredits).eq(10);
+      expect(marsBot.megacredits).eq(10);
       expect(human.titanium).eq(0);
     });
 
     it('removes M€ from the Luna storage', () => {
       const {game, human, marsBot} = createAutomaGame();
-      marsBot.turnResolver.megacredits = 10;
+      marsBot.megacredits = 10;
       marsBot.shippingBoard.storage.set(ColonyName.LUNA, 4);
 
       marsBot.player.attack(human, Resource.MEGACREDITS, 4, {log: true});
       takeFromStorage(game, human, 4);
 
       expect(marsBot.shippingBoard.get(ColonyName.LUNA)).eq(0);
-      expect(marsBot.turnResolver.megacredits).eq(10);
+      expect(marsBot.megacredits).eq(10);
     });
 
     it('removes from the M€ supply when the player chooses it', () => {
       const {game, human, marsBot} = createAutomaGame();
-      marsBot.turnResolver.megacredits = 10;
+      marsBot.megacredits = 10;
       marsBot.shippingBoard.storage.set(ColonyName.TRITON, 4);
 
       marsBot.player.attack(human, Resource.TITANIUM, 3, {log: true});
       takeFromStorage(game, human, 0);
 
       expect(marsBot.shippingBoard.get(ColonyName.TRITON)).eq(4);
-      expect(marsBot.turnResolver.megacredits).eq(7);
+      expect(marsBot.megacredits).eq(7);
     });
 
     it('does not ask when the storage is empty', () => {
       const {game, human, marsBot} = createAutomaGame();
-      marsBot.turnResolver.megacredits = 10;
+      marsBot.megacredits = 10;
 
       marsBot.player.attack(human, Resource.TITANIUM, 3, {log: true});
       runAllActions(game);
 
-      expect(marsBot.turnResolver.megacredits).eq(7);
+      expect(marsBot.megacredits).eq(7);
       expect(human.popWaitingFor()).is.undefined;
     });
 
     it('lets Law Suit see the removal from storage', () => {
       const {game, human, marsBot} = createAutomaGame();
-      marsBot.turnResolver.megacredits = 0;
+      marsBot.megacredits = 0;
       marsBot.shippingBoard.storage.set(ColonyName.GANYMEDE, 4);
 
       marsBot.player.attack(human, Resource.PLANTS, 2, {log: true});
@@ -357,18 +357,18 @@ describe('MarsBot colony storage as stock resources (C-25)', () => {
 
     it('does not offer storage for removals that no player makes', () => {
       const {marsBot} = createAutomaGame();
-      marsBot.turnResolver.megacredits = 10;
+      marsBot.megacredits = 10;
       marsBot.shippingBoard.storage.set(ColonyName.GANYMEDE, 4);
 
       marsBot.player.stock.deduct(Resource.PLANTS, 3, {log: true, from: {globalEvent: GlobalEventName.ECO_SABOTAGE}});
 
-      expect(marsBot.turnResolver.megacredits).eq(7);
+      expect(marsBot.megacredits).eq(7);
       expect(marsBot.shippingBoard.get(ColonyName.GANYMEDE)).eq(4);
     });
 
     it('card resource removal from the M€ supply leaves the Luna storage alone', () => {
       const {human, marsBot} = createAutomaGame();
-      marsBot.turnResolver.megacredits = 10;
+      marsBot.megacredits = 10;
       marsBot.shippingBoard.storage.set(ColonyName.LUNA, 4);
       marsBot.shippingBoard.storage.set(ColonyName.ENCELADUS, 3);
 
@@ -377,7 +377,7 @@ describe('MarsBot colony storage as stock resources (C-25)', () => {
       const options = cast(new RemoveResourcesFromCard(human, CardResource.MICROBE, 2, {source: 'opponents'}).execute(), OrOptions);
       options.options[0].process({type: 'option'}, human);
 
-      expect(marsBot.turnResolver.megacredits).eq(8);
+      expect(marsBot.megacredits).eq(8);
       expect(marsBot.shippingBoard.get(ColonyName.LUNA)).eq(4);
     });
   });
@@ -386,7 +386,7 @@ describe('MarsBot colony storage as stock resources (C-25)', () => {
     // FAQ (rulebook B, p.4): the player may target the corporation card; TDaver, BGG 3341536
     it('lets the player steal plants from the corp card', () => {
       const {game, human, marsBot} = createAutomaGame();
-      marsBot.turnResolver.megacredits = 10;
+      marsBot.megacredits = 10;
       marsBot.shippingBoard.storage.set(ColonyName.GANYMEDE, 4);
       marsBot.corpSpecificState.set('plantResources', 3);
 
@@ -400,7 +400,7 @@ describe('MarsBot colony storage as stock resources (C-25)', () => {
 
       expect(marsBot.corpSpecificState.get('plantResources')).eq(1);
       expect(marsBot.shippingBoard.get(ColonyName.GANYMEDE)).eq(4);
-      expect(marsBot.turnResolver.megacredits).eq(10);
+      expect(marsBot.megacredits).eq(10);
       expect(human.plants).eq(2);
       runAllActions(game);
       expect(human.popWaitingFor()).is.undefined;
@@ -408,7 +408,7 @@ describe('MarsBot colony storage as stock resources (C-25)', () => {
 
     it('lets the player steal from the Ganymede storage instead, leaving the corp card', () => {
       const {game, human, marsBot} = createAutomaGame();
-      marsBot.turnResolver.megacredits = 10;
+      marsBot.megacredits = 10;
       marsBot.shippingBoard.storage.set(ColonyName.GANYMEDE, 4);
       marsBot.corpSpecificState.set('plantResources', 3);
 
@@ -423,7 +423,7 @@ describe('MarsBot colony storage as stock resources (C-25)', () => {
 
     it('takes a removal that no player makes off the corp card, without asking', () => {
       const {game, human, marsBot} = createAutomaGame();
-      marsBot.turnResolver.megacredits = 10;
+      marsBot.megacredits = 10;
       marsBot.corpSpecificState.set('plantResources', 3);
 
       marsBot.player.stock.add(Resource.PLANTS, -2);
@@ -431,12 +431,12 @@ describe('MarsBot colony storage as stock resources (C-25)', () => {
 
       expect(human.popWaitingFor()).is.undefined;
       expect(marsBot.corpSpecificState.get('plantResources')).eq(1);
-      expect(marsBot.turnResolver.megacredits).eq(10);
+      expect(marsBot.megacredits).eq(10);
     });
 
     it('lets the player remove plants from the corp card', () => {
       const {game, human, marsBot} = createAutomaGame();
-      marsBot.turnResolver.megacredits = 10;
+      marsBot.megacredits = 10;
       marsBot.shippingBoard.storage.set(ColonyName.GANYMEDE, 4);
       marsBot.corpSpecificState.set('plantResources', 3);
 
@@ -447,13 +447,13 @@ describe('MarsBot colony storage as stock resources (C-25)', () => {
       // The excess is lost
       expect(marsBot.corpSpecificState.get('plantResources')).eq(0);
       expect(marsBot.shippingBoard.get(ColonyName.GANYMEDE)).eq(4);
-      expect(marsBot.turnResolver.megacredits).eq(10);
+      expect(marsBot.megacredits).eq(10);
       expect(human.popWaitingFor()).is.undefined;
     });
 
     it('makes MarsBot a target for plant removal when only its corp card has plants', () => {
       const {game, human, marsBot} = createAutomaGame();
-      marsBot.turnResolver.megacredits = 0;
+      marsBot.megacredits = 0;
       marsBot.corpSpecificState.set('plantResources', 2);
 
       game.defer(new RemoveAnyPlants(human, 3));
@@ -470,7 +470,7 @@ describe('MarsBot colony storage as stock resources (C-25)', () => {
 
     it('can remove more than the M€ supply holds, and labels each source with what it gives', () => {
       const {game, human, marsBot} = createAutomaGame();
-      marsBot.turnResolver.megacredits = 1;
+      marsBot.megacredits = 1;
       marsBot.corpSpecificState.set('plantResources', 2);
 
       game.defer(new RemoveAnyPlants(human, 3));
@@ -484,12 +484,12 @@ describe('MarsBot colony storage as stock resources (C-25)', () => {
       choose(or, 0, human);
 
       expect(marsBot.corpSpecificState.get('plantResources')).eq(0);
-      expect(marsBot.turnResolver.megacredits).eq(1);
+      expect(marsBot.megacredits).eq(1);
     });
 
     it('offers the Ganymede storage once the corp card is out of plants', () => {
       const {game, human, marsBot} = createAutomaGame();
-      marsBot.turnResolver.megacredits = 10;
+      marsBot.megacredits = 10;
       marsBot.shippingBoard.storage.set(ColonyName.GANYMEDE, 4);
       marsBot.corpSpecificState.set('plantResources', 0);
 
@@ -504,7 +504,7 @@ describe('MarsBot colony storage as stock resources (C-25)', () => {
   describe('state', () => {
     it('keeps the storage in the serialized shipping board', () => {
       const {game, human, marsBot} = createAutomaGame();
-      marsBot.turnResolver.megacredits = 10;
+      marsBot.megacredits = 10;
       marsBot.shippingBoard.storage.set(ColonyName.CERES, 3);
 
       marsBot.player.stock.steal(Resource.STEEL, 2, human);

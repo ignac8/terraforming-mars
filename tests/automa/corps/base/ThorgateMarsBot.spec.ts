@@ -41,9 +41,9 @@ describe('ThorgateMarsBot', () => {
     const {marsBot} = createAutomaGame();
     const corp = getMarsBotCorp(CardName.THORGATE)!;
 
-    const mcBefore = marsBot.turnResolver.megacredits;
+    const mcBefore = marsBot.megacredits;
     marsBot.setCorpAndSetup(corp);
-    expect(marsBot.turnResolver.megacredits).to.eq(mcBefore + 10);
+    expect(marsBot.megacredits).to.eq(mcBefore + 10);
   });
 
   it('has energy draft priority', () => {

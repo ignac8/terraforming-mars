@@ -99,7 +99,7 @@ describe('MarsBotMapRules', () => {
 
     it('converts M€ at 1 VP per 8 until generation 14 on Amazonis Planitia', () => {
       const {game, marsBot} = setup(BoardName.AMAZONIS_PLANITIA, false);
-      marsBot.turnResolver.megacredits = 14;
+      marsBot.megacredits = 14;
 
       game.generation = 14;
       expect(marsBot.getVictoryPoints().mcToVP).eq(1);
@@ -112,7 +112,7 @@ describe('MarsBotMapRules', () => {
 
     it('converts M€ at 1 VP per 8 until generation 12 on Amazonis Planitia with Prelude', () => {
       const {game, marsBot} = setup(BoardName.AMAZONIS_PLANITIA, true);
-      marsBot.turnResolver.megacredits = 14;
+      marsBot.megacredits = 14;
 
       game.generation = 12;
       expect(marsBot.getVictoryPoints().mcToVP).eq(1);
@@ -129,7 +129,7 @@ describe('MarsBotMapRules', () => {
     ]) {
       it('still converts M€ in the last two generations before the limit on Amazonis Planitia: ' + JSON.stringify(run), () => {
         const {game, marsBot} = setup(BoardName.AMAZONIS_PLANITIA, run.preludeExtension);
-        marsBot.turnResolver.megacredits = 7;
+        marsBot.megacredits = 7;
 
         game.generation = run.secondToLast;
         expect(marsBot.getVictoryPoints().mcToVP).eq(3);

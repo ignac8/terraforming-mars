@@ -38,22 +38,22 @@ describe('MarsBot colony track action (Utopia Planitia)', () => {
     const marsBot = getMarsBot(game);
     game.colonies = [];
     marsBot.marsBotBoard.tracks[SPACE_TRACK].position = COLONY_SPACE - 1;
-    const mc = marsBot.turnResolver.megacredits;
+    const mc = marsBot.megacredits;
 
     marsBot.advanceTrack(SPACE_TRACK);
 
-    expect(marsBot.turnResolver.megacredits).is.greaterThan(mc);
+    expect(marsBot.megacredits).is.greaterThan(mc);
   });
 
   it('does nothing without Colonies', () => {
     const [game] = testGame(1, {automa: true, coloniesExtension: false, boardName: BoardName.UTOPIA_PLANITIA});
     const marsBot = getMarsBot(game);
     marsBot.marsBotBoard.tracks[SPACE_TRACK].position = COLONY_SPACE - 1;
-    const mc = marsBot.turnResolver.megacredits;
+    const mc = marsBot.megacredits;
 
     marsBot.advanceTrack(SPACE_TRACK);
 
     expect(marsBot.marsBotBoard.tracks[SPACE_TRACK].position).eq(COLONY_SPACE);
-    expect(marsBot.turnResolver.megacredits).eq(mc);
+    expect(marsBot.megacredits).eq(mc);
   });
 });

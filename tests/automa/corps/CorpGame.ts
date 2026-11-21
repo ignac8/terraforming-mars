@@ -38,9 +38,7 @@ export function createAutomaGame(options: Partial<TestGameOptions> = {}): Automa
  * A MarsBot on the board `tracks`, built for `game` without its setup: the game's own players stay as they are.
  */
 export function standaloneMarsBot(game: IGame, player: IPlayer, humanPlayer: IPlayer, tracks: ReadonlyArray<TrackDefinition>, difficulty: DifficultyLevel = 'normal'): MarsBot {
-  const marsBot = new MarsBot(game, player, humanPlayer, tracks, difficulty, new SeededRandom(0));
-  marsBot.turnResolver.marsBotManager = marsBot;
-  return marsBot;
+  return new MarsBot(game, player, humanPlayer, tracks, difficulty, new SeededRandom(0));
 }
 
 /** A Venus game in which MarsBot has run the setup of `corpName`, for the corporation FAQ (rulebook B, p.4). */
@@ -83,7 +81,7 @@ export function setupWithAndWithoutEffect(name: CardName) {
     const {marsBot} = createAutomaGame();
     marsBot.setCorpAndSetup(c);
     return {
-      mc: marsBot.turnResolver.megacredits,
+      mc: marsBot.megacredits,
       tr: marsBot.player.terraformRating,
       events: marsBot.marsBotBoard.tracks[2].position,
     };

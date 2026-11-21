@@ -1,4 +1,4 @@
-import {BonusCardId} from '../../common/automa/AutomaTypes';
+import {BonusCardId, DifficultyLevel} from '../../common/automa/AutomaTypes';
 import {CardName} from '../../common/cards/CardName';
 import {Tag} from '../../common/cards/Tag';
 import {GlobalParameter} from '../../common/GlobalParameter';
@@ -19,6 +19,7 @@ export interface IMarsBot {
   /** The human opponent. */
   readonly humanPlayer: IPlayer;
   readonly marsBotBoard: MarsBotBoard;
+  readonly difficulty: DifficultyLevel;
   /** The bot's bonus deck: the bonus cards, and the project cards a corp put there. */
   readonly bonusDeck: MarsBotBonusDeck;
 

@@ -54,13 +54,13 @@ describe('GovernmentIntervention', () => {
     maxOutOceans(game.players[0]);
     setTemperature(game, -26);
     const tr = marsBot.player.terraformRating;
-    const mc = marsBot.turnResolver.megacredits;
+    const mc = marsBot.megacredits;
 
     marsBot['bonusResolver'].resolve(createBonusCard(BonusCardId.B16_GOVERNMENT_INTERVENTION));
 
     expect(game.getTemperature()).to.eq(-24);
     expect(marsBot.player.terraformRating).to.eq(tr);
-    expect(marsBot.turnResolver.megacredits).to.eq(mc);
+    expect(marsBot.megacredits).to.eq(mc);
   });
 
   it('raises Venus instead when every Martian parameter is complete on an even generation', () => {
@@ -99,7 +99,7 @@ describe('GovernmentIntervention', () => {
     marsBot['bonusResolver'].resolve(createBonusCard(BonusCardId.B16_GOVERNMENT_INTERVENTION));
 
     expect(game.getVenusScaleLevel()).to.eq(8);
-    expect(marsBot.turnResolver.megacredits).to.eq(0);
+    expect(marsBot.megacredits).to.eq(0);
     expect(marsBot.player.cardsInHand).has.length(hand);
   });
 

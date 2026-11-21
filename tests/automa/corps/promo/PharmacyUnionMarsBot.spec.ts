@@ -41,9 +41,9 @@ describe('PharmacyUnionMarsBot', () => {
     const {marsBot} = createAutomaGame();
     const corp = getMarsBotCorp(CardName.PHARMACY_UNION)!;
     marsBot.setCorpAndSetup(corp);
-    marsBot.turnResolver.megacredits = 10;
+    marsBot.megacredits = 10;
     corp.onHumanCardPlayed!(marsBot, fakeCard('MicrobeCard', {tags: [Tag.MICROBE], cost: 5}));
-    expect(marsBot.turnResolver.megacredits).to.eq(6);
+    expect(marsBot.megacredits).to.eq(6);
   });
 
   // Starting tags resolve as a revealed card (rulebook B, setup step 4)
