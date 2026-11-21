@@ -53,7 +53,7 @@ describe('Overachievement', () => {
     // Miner and Thermalist compare the player's resources plus production
     human.steel = 6; // leads Miner by 4
     human.heat = 11;
-    marsBot.turnResolver.getMarsBotAwardValue = () => 10;
+    marsBot.awardValue = () => 10;
     const b04 = createBaseBonusCards().find((c) => c.id === BonusCardId.B04_OVERACHIEVEMENT)!;
 
     marsBot['bonusResolver'].resolve(b04);
@@ -103,7 +103,9 @@ describe('Overachievement', () => {
     const {game, marsBot} = createAutomaGame();
     const corp = getMarsBotCorp(CardName.VITOR)!;
     marsBot.setCorpAndSetup(corp);
-    marsBot.turnResolver.marsBotMeetsMilestone = () => true;
+    for (const milestone of game.milestones) {
+      milestone.marsBotCanClaim = () => true;
+    }
 
     const destroyed = marsBot['bonusResolver'].resolve(createBonusCard(BonusCardId.B04_OVERACHIEVEMENT));
     expect(destroyed).is.true;

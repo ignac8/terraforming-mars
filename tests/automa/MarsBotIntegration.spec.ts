@@ -170,7 +170,7 @@ describe('MarsBot Integration', () => {
       // Import Server to get the model (indirect test via automaHooks)
       const award = game.awards.find((a) => a.name === 'Scientist');
       expect(award).to.not.be.undefined;
-      const marsBotScore = marsBot.turnResolver.getMarsBotAwardValue(award!);
+      const marsBotScore = marsBot.awardValue(award!);
       expect(marsBotScore).to.eq(6);
     });
   });

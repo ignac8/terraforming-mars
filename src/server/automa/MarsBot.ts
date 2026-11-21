@@ -39,6 +39,7 @@ import {ACTION_DECK_BONUS_CARD_REMOVED} from './corps/corpHelpers';
 import {TileType} from '../../common/TileType';
 import {IAward} from '../awards/IAward';
 import {maybeTrade} from './colonies/MarsBotTrader';
+import {getClaimableMilestones, marsBotAwardScore, marsBotCanClaimMilestone, maybeClaimMilestone, maybeFundAward, selectMilestone} from './MarsBotMilestoneAwardEval';
 
 /** Expansion bonus cards set aside at setup: each generation they go back into the action deck. */
 const SET_ASIDE_BONUS_CARDS: ReadonlySet<BonusCardId> = new Set([
@@ -339,13 +340,13 @@ export class MarsBot implements IMarsBot {
 
     const unclaimed = this.game.milestones.filter((m) => !this.game.milestoneClaimed(m));
     const claimedCount = this.game.claimedMilestones.length;
-    const canClaimCount = unclaimed.filter((m) => this.turnResolver.marsBotMeetsMilestone(m)).length;
+    const canClaimCount = unclaimed.filter((m) => marsBotCanClaimMilestone(m, this)).length;
 
     // MarsBot claims when it can fill all 3 milestone slots (needs 3 - claimedCount eligible).
     const shouldClaim = claimedCount < 3 && claimedCount + canClaimCount >= 3;
 
     if (shouldClaim) {
-      const toClaim = this.turnResolver.selectMilestone(this.turnResolver.getClaimableMilestones());
+      const toClaim = selectMilestone(this, getClaimableMilestones(this));
       if (toClaim) {
         this.game.claimedMilestones.push({player: this.player, milestone: toClaim});
         this.turnResolver.megacredits -= 8;
@@ -509,15 +510,18 @@ export class MarsBot implements IMarsBot {
   }
 
   public maybeClaimMilestone(): boolean {
-    return this.turnResolver.maybeClaimMilestone();
+    return maybeClaimMilestone(this);
   }
 
   public maybeFundAward(): boolean {
-    return this.turnResolver.maybeFundAward();
+    return maybeFundAward(this);
   }
 
+  /** MarsBot's score in `award`, with the easy difficulty handicap and its corp's bonus (Nirgal). */
   public awardValue(award: IAward): number {
-    return this.turnResolver.getMarsBotAwardValue(award);
+    const offset = this.difficulty === 'easy' ? -5 : 0;
+    const corpBonus = this.corp?.awardScoreBonus?.(this) ?? 0;
+    return marsBotAwardScore(award, this) + offset + corpBonus;
   }
 
   public addProjectCardsToBonusDeck(tag: Tag, count: number): void {

@@ -12,6 +12,7 @@ import {SearchForLife} from '../../src/server/cards/base/SearchForLife';
 import {Ants} from '../../src/server/cards/base/Ants';
 import {NuclearZone} from '../../src/server/cards/base/NuclearZone';
 import {IProjectCard} from '../../src/server/cards/IProjectCard';
+import {humanAwardScore} from '../../src/server/automa/MarsBotMilestoneAwardEval';
 
 function createAutomaGame(difficulty: 'easy' | 'normal' | 'hard' | 'brutal' = 'normal'): {game: IGame, human: TestPlayer, marsBot: MarsBot} {
   const [game, human] = testGame(1, {automa: true, automaDifficulty: difficulty, boardName: BoardName.THARSIS});
@@ -36,7 +37,7 @@ describe('MarsBot Limitations Fixed', () => {
 
       // MarsBot is ahead (8 > 7), so it should fund Thermalist
       const thermalist = game.awards.find((a) => a.name === 'Thermalist')!;
-      const marsBotVal = marsBot.turnResolver.getMarsBotAwardValue(thermalist);
+      const marsBotVal = marsBot.awardValue(thermalist);
       expect(marsBotVal).to.eq(8);
       // Human standard getScore = 2 (just heat), but for MarsBot comparison = 2 + 5 = 7
     });
@@ -49,7 +50,7 @@ describe('MarsBot Limitations Fixed', () => {
 
       const thermalist = game.awards.find((a) => a.name === 'Thermalist')!;
 
-      expect(marsBot.turnResolver.getHumanAwardValueForComparison(thermalist)).to.eq(2 + 3 + 5);
+      expect(humanAwardScore(thermalist, marsBot.humanPlayer)).to.eq(2 + 3 + 5);
     });
 
     it('Miner comparison includes human steel + titanium production', () => {
@@ -66,7 +67,7 @@ describe('MarsBot Limitations Fixed', () => {
       human.production.override({steel: 2, titanium: 1, megacredits: 0, heat: 0, plants: 0, energy: 0});
 
       const miner = game.awards.find((a) => a.name === 'Miner')!;
-      const marsBotVal = marsBot.turnResolver.getMarsBotAwardValue(miner);
+      const marsBotVal = marsBot.awardValue(miner);
       expect(marsBotVal).to.eq(9);
     });
 

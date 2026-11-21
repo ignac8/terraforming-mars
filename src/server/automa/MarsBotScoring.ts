@@ -95,7 +95,7 @@ export class MarsBotScoring {
     let total = 0;
     for (const fa of this.game.fundedAwards) {
       const award = fa.award;
-      const marsBotScore = this.turnResolver.getMarsBotAwardValue(award);
+      const marsBotScore = this.turnResolver.marsBotManager?.awardValue(award) ?? award.getScore(this.botPlayer);
       const humanScore = award.getScore(this.humanPlayer);
 
       if (marsBotScore >= humanScore) {

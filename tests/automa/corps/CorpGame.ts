@@ -12,6 +12,9 @@ import {
   getMarsBotCorp,
 } from '@/server/automa/corps/MarsBotCorpRegistry';
 import {IProjectCard} from '@/server/cards/IProjectCard';
+import {IPlayer} from '@/server/IPlayer';
+import {DifficultyLevel, TrackDefinition} from '@/common/automa/AutomaTypes';
+import {SeededRandom} from '@/common/utils/Random';
 import {OrOptions} from '@/server/inputs/OrOptions';
 import {testGame, TestGameOptions} from '../../TestGame';
 import {TestPlayer} from '../../TestPlayer';
@@ -29,6 +32,15 @@ export function createAutomaGame(options: Partial<TestGameOptions> = {}): Automa
   });
   expect(game.automaHooks?.marsBot).to.not.be.undefined;
   return {game, human, marsBot: game.automaHooks!.marsBot};
+}
+
+/**
+ * A MarsBot on the board `tracks`, built for `game` without its setup: the game's own players stay as they are.
+ */
+export function standaloneMarsBot(game: IGame, player: IPlayer, humanPlayer: IPlayer, tracks: ReadonlyArray<TrackDefinition>, difficulty: DifficultyLevel = 'normal'): MarsBot {
+  const marsBot = new MarsBot(game, player, humanPlayer, tracks, difficulty, new SeededRandom(0));
+  marsBot.turnResolver.marsBotManager = marsBot;
+  return marsBot;
 }
 
 /** A Venus game in which MarsBot has run the setup of `corpName`, for the corporation FAQ (rulebook B, p.4). */

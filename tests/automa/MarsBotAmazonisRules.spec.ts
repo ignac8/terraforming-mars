@@ -54,8 +54,10 @@ describe('MarsBotAmazonisRules', () => {
     function resolveOverachievement(generation: number) {
       const {game, marsBot} = amazonisGame();
       game.generation = generation;
-      marsBot.turnResolver.marsBotMeetsMilestone = () => false;
-      marsBot.turnResolver.getMarsBotAwardValue = () => 10;
+      for (const milestone of game.milestones) {
+        milestone.marsBotCanClaim = () => false;
+      }
+      marsBot.awardValue = () => 10;
       for (const award of game.awards) {
         award.getScore = () => 0;
       }
@@ -98,8 +100,10 @@ describe('MarsBotAmazonisRules', () => {
     it('funds an award rather than claim a milestone in generation 10', () => {
       const {game, marsBot} = amazonisGame();
       marsBot.corp = getMarsBotCorp(CardName.NIRGAL_ENTERPRISES)!;
-      marsBot.turnResolver.marsBotMeetsMilestone = () => true;
-      marsBot.turnResolver.getMarsBotAwardValue = () => 10;
+      for (const milestone of game.milestones) {
+        milestone.marsBotCanClaim = () => true;
+      }
+      marsBot.awardValue = () => 10;
       for (const award of game.awards) {
         award.getScore = () => 0;
       }
@@ -114,8 +118,10 @@ describe('MarsBotAmazonisRules', () => {
     it('claims a milestone in generation 6 and funds no award', () => {
       const {game, marsBot} = amazonisGame();
       marsBot.corp = getMarsBotCorp(CardName.NIRGAL_ENTERPRISES)!;
-      marsBot.turnResolver.marsBotMeetsMilestone = () => true;
-      marsBot.turnResolver.getMarsBotAwardValue = () => 10;
+      for (const milestone of game.milestones) {
+        milestone.marsBotCanClaim = () => true;
+      }
+      marsBot.awardValue = () => 10;
       game.generation = 6;
 
       marsBot.corp.beforeActionPhase!(marsBot);
@@ -163,7 +169,7 @@ describe('MarsBotAmazonisRules', () => {
       const award = game.awards.find((a) => a.name === awardName)!;
       game.fundAward(human, award);
       award.getScore = () => 11;
-      marsBot.turnResolver.getMarsBotAwardValue = () => 10;
+      marsBot.awardValue = () => 10;
       const b08 = createBaseBonusCards().find((c) => c.id === BonusCardId.B08_CORPORATE_COMPETITION)!;
       return {game, marsBot, b08};
     }

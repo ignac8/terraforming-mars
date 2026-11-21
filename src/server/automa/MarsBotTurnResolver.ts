@@ -15,11 +15,8 @@ import {
 import {MarsBotBoard} from './MarsBotBoard';
 import {cardTagsIncludingEvent} from './MarsBotTags';
 import {MarsBotTilePlacer} from './MarsBotTilePlacer';
-import {IMilestone} from '../milestones/IMilestone';
-import {IAward} from '../awards/IAward';
 import {MarsBotCorpResolver} from './corps/MarsBotCorpResolver';
 import {placeColonyForMarsBot, selectRandomColony} from './colonies/MarsBotColonyPlacer';
-import {humanAwardScore, marsBotCanClaimMilestone, marsBotAwardScore, milestoneRemaining} from './MarsBotMilestoneAwardEval';
 import type {MarsBot} from './MarsBot';
 
 /**
@@ -228,13 +225,13 @@ export class MarsBotTurnResolver {
       return;
 
     case 'milestone':
-      if (!this.maybeClaimMilestone()) {
+      if (!this.marsBotManager?.maybeClaimMilestone()) {
         this.failedAction();
       }
       return;
 
     case 'award':
-      if (!this.maybeFundAward()) {
+      if (!this.marsBotManager?.maybeFundAward()) {
         this.failedAction();
       }
       return;
@@ -392,127 +389,6 @@ export class MarsBotTurnResolver {
       return;
     }
     placeColonyForMarsBot(colony, this.marsBotManager);
-  }
-
-  // ---- Milestones & Awards ----
-
-  /** Claims the best milestone MarsBot meets. False when it meets none. */
-  public maybeClaimMilestone(): boolean {
-    const best = this.selectMilestone(this.getClaimableMilestones());
-    if (best === undefined) {
-      return false;
-    }
-
-    this.game.claimedMilestones.push({player: this.botPlayer, milestone: best});
-    this.game.log('MarsBot claims milestone ${0}', (b) => b.rawString(best.name));
-
-    // Briber milestone: lose 12 MC on claim
-    if (best.name === 'Briber') {
-      this.megacredits = Math.max(0, this.megacredits - 12);
-      this.game.log('MarsBot loses 12 MC (Briber)');
-    }
-    return true;
-  }
-
-  /**
-   * Picks the milestone to claim from those MarsBot meets, by the tiebreakers on page 8:
-   * 1) one the human also meets, 2) the one the human is closest to meeting, 3) leftmost
-   * (Hoverlord last).
-   */
-  public selectMilestone(claimable: ReadonlyArray<IMilestone>): IMilestone | undefined {
-    const sorted = claimable.toSorted((a, b) => {
-      if (a.name === 'Hoverlord') {
-        return 1;
-      }
-      if (b.name === 'Hoverlord') {
-        return -1;
-      }
-      return 0;
-    });
-
-    const humanAlsoQualifies = sorted.filter((m) => m.canClaim(this.humanPlayer));
-    if (humanAlsoQualifies.length > 0) {
-      return humanAlsoQualifies[0];
-    }
-
-    let best: IMilestone | undefined;
-    let bestRemaining = Infinity;
-    for (const m of sorted) {
-      const remaining = milestoneRemaining(m, this.humanPlayer);
-      if (best === undefined || remaining < bestRemaining) {
-        bestRemaining = remaining;
-        best = m;
-      }
-    }
-    return best;
-  }
-
-  public getClaimableMilestones(): Array<IMilestone> {
-    if (this.game.allMilestonesClaimed()) {
-      return [];
-    }
-    return this.game.milestones.filter((m) => {
-      if (this.game.milestoneClaimed(m)) {
-        return false;
-      }
-      return this.marsBotMeetsMilestone(m);
-    });
-  }
-
-  /** Check if MarsBot meets a milestone. */
-  public marsBotMeetsMilestone(milestone: IMilestone): boolean {
-    if (this.marsBotManager !== undefined) {
-      return marsBotCanClaimMilestone(milestone, this.marsBotManager);
-    }
-    return milestone.canClaim(this.botPlayer);
-  }
-
-  /** Funds the unfunded award MarsBot leads the player by the most. False when it leads none. */
-  public maybeFundAward(): boolean {
-    if (this.game.allAwardsFunded()) {
-      return false;
-    }
-
-    const unfunded = this.game.awards.filter((a) => !this.game.hasBeenFunded(a));
-    // Find the award where MarsBot is most ahead of the human
-    let bestAward: IAward | undefined;
-    let bestMargin = -Infinity;
-
-    for (const award of unfunded) {
-      const marsBotValue = this.getMarsBotAwardValue(award);
-      // Per rules (page 8): "MarsBot considers your current number of resources plus your production"
-      const humanValue = this.getHumanAwardValueForComparison(award);
-      const margin = marsBotValue - humanValue;
-      if (margin > bestMargin || (margin === bestMargin && bestAward?.name === 'Venuphile')) {
-        bestMargin = margin;
-        bestAward = award;
-      }
-    }
-
-    if (bestAward === undefined || bestMargin <= 0) {
-      // MarsBot is not ahead on any award
-      return false;
-    }
-
-    this.game.fundAward(this.botPlayer, bestAward);
-    this.game.log('MarsBot funds award ${0}', (b) => b.rawString(bestAward.name));
-    return true;
-  }
-
-  /** Get MarsBot's value for an award, with the easy difficulty handicap and its corp's bonus (Nirgal). */
-  public getMarsBotAwardValue(award: IAward): number {
-    const offset = this.difficulty === 'easy' ? -5 : 0;
-    const marsBot = this.marsBotManager;
-    if (marsBot !== undefined) {
-      const corpBonus = marsBot.corp?.awardScoreBonus?.(marsBot) ?? 0;
-      return marsBotAwardScore(award, marsBot) + offset + corpBonus;
-    }
-    return award.getScore(this.botPlayer) + offset;
-  }
-
-  /** The player's score in `award` as MarsBot compares it with its own (`humanAwardScore`). */
-  public getHumanAwardValueForComparison(award: IAward): number {
-    return humanAwardScore(award, this.humanPlayer);
   }
 
   // ---- Utilities ----

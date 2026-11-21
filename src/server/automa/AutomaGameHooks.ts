@@ -13,6 +13,7 @@ import {inplaceRemove} from '../../common/utils/utils';
 import {inplaceShuffle} from '../utils/shuffle';
 import {MarsBotCorpResolver} from './corps/MarsBotCorpResolver';
 import {MarsBotDraftResolver} from './corps/MarsBotDraftResolver';
+import {marsBotCanClaimMilestone} from './MarsBotMilestoneAwardEval';
 import {SerializedAutomaState} from '../SerializedGame';
 import {IAward} from '../awards/IAward';
 import {IMilestone} from '../milestones/IMilestone';
@@ -525,7 +526,7 @@ export class AutomaGameHooks {
 
   /** Get MarsBot's score for a specific award (track-based). */
   public getMarsBotAwardScore(award: IAward): number {
-    return this.marsBot.turnResolver.getMarsBotAwardValue(award);
+    return this.marsBot.awardValue(award);
   }
 
   /** Get MarsBot's score for a specific milestone. */
@@ -535,7 +536,7 @@ export class AutomaGameHooks {
 
   /** Check if MarsBot can claim a specific milestone. */
   public canMarsBotClaimMilestone(milestone: IMilestone): boolean {
-    return this.marsBot.turnResolver.marsBotMeetsMilestone(milestone);
+    return marsBotCanClaimMilestone(milestone, this.marsBot);
   }
 
   /** Track MarsBot VP at end of each generation (for chart). */

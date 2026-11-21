@@ -27,6 +27,7 @@ import {IProjectCard} from '../../src/server/cards/IProjectCard';
 import {Random} from '../../src/common/utils/Random';
 import {ColonyName} from '../../src/common/colonies/ColonyName';
 import {setMarsBotRandom} from './MarsBotRandom';
+import {marsBotCanClaimMilestone} from '../../src/server/automa/MarsBotMilestoneAwardEval';
 
 function createAutomaGame(difficulty: 'easy' | 'normal' | 'hard' | 'brutal' = 'normal'): {game: IGame, human: TestPlayer, marsBot: MarsBot} {
   const [game, human] = testGame(1, {
@@ -104,7 +105,7 @@ describe('MarsBotSessionFixes', () => {
       game.addCity(marsBot.player, spaces[0]);
     }
 
-    expect(marsBot.turnResolver.marsBotMeetsMilestone(mayor)).to.be.true;
+    expect(marsBotCanClaimMilestone(mayor, marsBot)).to.be.true;
   });
 
   it('Gardener milestone counts MarsBot greeneries', () => {
@@ -118,7 +119,7 @@ describe('MarsBotSessionFixes', () => {
       game.addGreenery(marsBot.player, spaces[0], false);
     }
 
-    expect(marsBot.turnResolver.marsBotMeetsMilestone(gardener)).to.be.true;
+    expect(marsBotCanClaimMilestone(gardener, marsBot)).to.be.true;
   });
 
   it('Landlord award counts MarsBot tiles', () => {
@@ -130,7 +131,7 @@ describe('MarsBotSessionFixes', () => {
     expect(spaces.length).to.be.greaterThan(0);
     game.addCity(marsBot.player, spaces[0]);
 
-    expect(marsBot.turnResolver.getMarsBotAwardValue(landlord)).to.be.greaterThan(0);
+    expect(marsBot.awardValue(landlord)).to.be.greaterThan(0);
   });
 
   it('getMcPerVP returns correct values', () => {
@@ -454,8 +455,8 @@ describe('MarsBotSessionFixes', () => {
       const {marsBot} = createAutomaGame('easy');
       const normalMarsBot = createAutomaGame('normal').marsBot;
       const award = marsBot.game.awards.find((a) => a.name === awardName)!;
-      const easyVal = marsBot.turnResolver.getMarsBotAwardValue(award);
-      const normalVal = normalMarsBot.turnResolver.getMarsBotAwardValue(
+      const easyVal = marsBot.awardValue(award);
+      const normalVal = normalMarsBot.awardValue(
         normalMarsBot.game.awards.find((a) => a.name === award.name)!);
       expect(easyVal).to.eq(normalVal - 5, `${award.name} easy offset wrong`);
     });

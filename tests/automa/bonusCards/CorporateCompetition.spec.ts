@@ -83,7 +83,7 @@ function setup(margins: Record<string, number>) {
     // human score minus MarsBot score
     award.getScore = () => 10 + margin;
   }
-  marsBot.turnResolver.getMarsBotAwardValue = () => 10;
+  marsBot.awardValue = () => 10;
   const b08 = createBaseBonusCards().find((c) => c.id === BonusCardId.B08_CORPORATE_COMPETITION)!;
   return {game, human, marsBot, b08};
 }

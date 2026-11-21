@@ -3,10 +3,8 @@ import {testGame} from '../TestGame';
 import {TestPlayer} from '../TestPlayer';
 import {IGame} from '../../src/server/IGame';
 import {MarsBot} from '../../src/server/automa/MarsBot';
-import {MarsBotBoard} from '../../src/server/automa/MarsBotBoard';
-import {MarsBotTurnResolver} from '../../src/server/automa/MarsBotTurnResolver';
 import {MarsBotTilePlacer} from '../../src/server/automa/MarsBotTilePlacer';
-import {fakeMarsBot} from './FakeMarsBot';
+import {standaloneMarsBot} from './corps/CorpGame';
 import {THARSIS_MARSBOT_BOARD} from '../../src/server/automa/boards/TharsisMarsBot';
 import {TrackAction, TrackDefinition} from '../../src/common/automa/AutomaTypes';
 import {BoardName} from '../../src/common/boards/BoardName';
@@ -16,6 +14,7 @@ import {TileType} from '../../src/common/TileType';
 import {fakeCard, maxOutOceans, setOxygenLevel, setTemperature, setVenusScaleLevel} from '../TestingUtils';
 import {FAILED_ACTION_MC} from '../../src/common/automa/AutomaTypes';
 import {MAX_TEMPERATURE} from '../../src/common/constants';
+import {selectMilestone} from '../../src/server/automa/MarsBotMilestoneAwardEval';
 
 function createAutomaGame(difficulty: 'easy' | 'normal' | 'hard' | 'brutal' = 'normal'): {game: IGame, human: TestPlayer, marsBot: MarsBot} {
   const [game, human] = testGame(1, {automa: true, automaDifficulty: difficulty, boardName: BoardName.THARSIS});
@@ -43,8 +42,9 @@ describe('MarsBot Deep Rules Tests', () => {
 
       const layout = emptyLayout();
       layout[1] = 'venus';
-      const marsBotBoard = new MarsBotBoard(makeBoard(layout));
-      const resolver = new MarsBotTurnResolver(game, botPlayer, human, marsBotBoard, 'normal', 0, new MarsBotTilePlacer(fakeMarsBot({game, player: botPlayer, humanPlayer: human, megacredits: 0})));
+      const marsBot = standaloneMarsBot(game, botPlayer, human, makeBoard(layout));
+      const marsBotBoard = marsBot.marsBotBoard;
+      const resolver = marsBot.turnResolver;
 
       resolver.resolveProjectCard(fakeCard({cost: 5, tags: [Tag.BUILDING], type: CardType.AUTOMATED}));
       // Venus should be ignored, NOT a failed action
@@ -59,8 +59,8 @@ describe('MarsBot Deep Rules Tests', () => {
 
       const layout = emptyLayout();
       layout[1] = 'venus2';
-      const marsBotBoard = new MarsBotBoard(makeBoard(layout));
-      const resolver = new MarsBotTurnResolver(game, botPlayer, human, marsBotBoard, 'normal', 0, new MarsBotTilePlacer(fakeMarsBot({game, player: botPlayer, humanPlayer: human, megacredits: 0})));
+      const marsBot = standaloneMarsBot(game, botPlayer, human, makeBoard(layout));
+      const resolver = marsBot.turnResolver;
 
       resolver.resolveProjectCard(fakeCard({cost: 5, tags: [Tag.BUILDING], type: CardType.AUTOMATED}));
       expect(resolver.megacredits).to.eq(0);
@@ -79,12 +79,11 @@ describe('MarsBot Deep Rules Tests', () => {
 
       const layout = emptyLayout();
       layout[1] = 'greenery'; // Greenery raises oxygen
-      const marsBotBoard = new MarsBotBoard(makeBoard(layout));
       // Place a city for greenery placement rules
       const spaces = game.board.getAvailableSpacesOnLand(marsBot.player);
       game.simpleAddTile(marsBot.player, spaces[15], {tileType: TileType.CITY});
 
-      const resolver = new MarsBotTurnResolver(game, marsBot.player, marsBot.humanPlayer, marsBotBoard, 'normal', 0, new MarsBotTilePlacer(marsBot));
+      const resolver = standaloneMarsBot(game, marsBot.player, marsBot.humanPlayer, makeBoard(layout)).turnResolver;
       resolver.resolveProjectCard(fakeCard({cost: 5, tags: [Tag.BUILDING], type: CardType.AUTOMATED}));
 
       // Oxygen should be 8, which triggers temperature raise
@@ -106,8 +105,9 @@ describe('MarsBot Deep Rules Tests', () => {
 
       const allEmpty = emptyLayout();
       const boardData = THARSIS_MARSBOT_BOARD.map((def) => ({...def, layout: allEmpty}));
-      const marsBotBoard = new MarsBotBoard(boardData);
-      const resolver = new MarsBotTurnResolver(game, botPlayer, human, marsBotBoard, 'normal', 0, new MarsBotTilePlacer(fakeMarsBot({game, player: botPlayer, humanPlayer: human, megacredits: 0})));
+      const marsBot = standaloneMarsBot(game, botPlayer, human, boardData);
+      const marsBotBoard = marsBot.marsBotBoard;
+      const resolver = marsBot.turnResolver;
 
       // Max out Track 1 (Building)
       for (let i = 0; i < 18; i++) {
@@ -137,8 +137,8 @@ describe('MarsBot Deep Rules Tests', () => {
 
       const layout = emptyLayout();
       layout[1] = 'milestone';
-      const marsBotBoard = new MarsBotBoard(makeBoard(layout));
-      const resolver = new MarsBotTurnResolver(game, botPlayer, human, marsBotBoard, 'normal', 0, new MarsBotTilePlacer(fakeMarsBot({game, player: botPlayer, humanPlayer: human, megacredits: 0})));
+      const marsBot = standaloneMarsBot(game, botPlayer, human, makeBoard(layout));
+      const resolver = marsBot.turnResolver;
       resolver.megacredits = 10;
 
       resolver.resolveProjectCard(fakeCard({cost: 5, tags: [Tag.BUILDING], type: CardType.AUTOMATED}));
@@ -159,8 +159,8 @@ describe('MarsBot Deep Rules Tests', () => {
 
       const layout = emptyLayout();
       layout[1] = 'award';
-      const marsBotBoard = new MarsBotBoard(makeBoard(layout));
-      const resolver = new MarsBotTurnResolver(game, botPlayer, human, marsBotBoard, 'normal', 0, new MarsBotTilePlacer(fakeMarsBot({game, player: botPlayer, humanPlayer: human, megacredits: 0})));
+      const marsBot = standaloneMarsBot(game, botPlayer, human, makeBoard(layout));
+      const resolver = marsBot.turnResolver;
       resolver.megacredits = 10;
 
       resolver.resolveProjectCard(fakeCard({cost: 5, tags: [Tag.BUILDING], type: CardType.AUTOMATED}));
@@ -327,8 +327,8 @@ describe('MarsBot Deep Rules Tests', () => {
 
       const layout = emptyLayout();
       layout[1] = 'milestone';
-      const marsBotBoard = new MarsBotBoard(makeBoard(layout));
-      const resolver = new MarsBotTurnResolver(game, marsBot.player, human, marsBotBoard, 'normal', 0, new MarsBotTilePlacer(marsBot));
+      const standalone = standaloneMarsBot(game, marsBot.player, human, makeBoard(layout));
+      const resolver = standalone.turnResolver;
 
       resolver.resolveProjectCard(fakeCard({cost: 5, tags: [Tag.BUILDING], type: CardType.AUTOMATED}));
 
@@ -348,8 +348,9 @@ describe('MarsBot Deep Rules Tests', () => {
 
       const allEmpty = emptyLayout();
       const boardData = THARSIS_MARSBOT_BOARD.map((def) => ({...def, layout: allEmpty}));
-      const marsBotBoard = new MarsBotBoard(boardData);
-      const resolver = new MarsBotTurnResolver(game, botPlayer, human, marsBotBoard, 'normal', 0, new MarsBotTilePlacer(fakeMarsBot({game, player: botPlayer, humanPlayer: human, megacredits: 0})));
+      const marsBot = standaloneMarsBot(game, botPlayer, human, boardData);
+      const marsBotBoard = marsBot.marsBotBoard;
+      const resolver = marsBot.turnResolver;
 
       resolver.resolveProjectCard(fakeCard({cost: 5, tags: [Tag.BUILDING], type: CardType.EVENT}));
 
@@ -364,8 +365,9 @@ describe('MarsBot Deep Rules Tests', () => {
 
       const allEmpty = emptyLayout();
       const boardData = THARSIS_MARSBOT_BOARD.map((def) => ({...def, layout: allEmpty}));
-      const marsBotBoard = new MarsBotBoard(boardData);
-      const resolver = new MarsBotTurnResolver(game, botPlayer, human, marsBotBoard, 'normal', 0, new MarsBotTilePlacer(fakeMarsBot({game, player: botPlayer, humanPlayer: human, megacredits: 0})));
+      const marsBot = standaloneMarsBot(game, botPlayer, human, boardData);
+      const marsBotBoard = marsBot.marsBotBoard;
+      const resolver = marsBot.turnResolver;
 
       // Event card with zero explicit tags — should NOT be a failed action
       resolver.resolveProjectCard(fakeCard({cost: 5, tags: [], type: CardType.EVENT}));
@@ -498,7 +500,7 @@ describe('MarsBot Deep Rules Tests', () => {
       game.simpleAddTile(human, land[5], {tileType: TileType.CITY});
       game.simpleAddTile(human, land[15], {tileType: TileType.CITY});
 
-      const picked = marsBot.turnResolver.selectMilestone(claimableOf(game, 'Terraformer', 'Mayor'));
+      const picked = selectMilestone(marsBot, claimableOf(game, 'Terraformer', 'Mayor'));
 
       expect(picked?.name).to.eq('Mayor');
     });
@@ -509,7 +511,7 @@ describe('MarsBot Deep Rules Tests', () => {
       human.cardsInHand = Array.from({length: 14}, () => fakeCard()); // 2 from Planner
       human.playedCards.push(fakeCard(), fakeCard(), fakeCard(), fakeCard());
 
-      const picked = marsBot.turnResolver.selectMilestone(claimableOf(game, 'Terraformer', 'Planner'));
+      const picked = selectMilestone(marsBot, claimableOf(game, 'Terraformer', 'Planner'));
 
       expect(picked?.name).to.eq('Planner');
     });

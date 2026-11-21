@@ -35,7 +35,7 @@ describe('NirgalEnterprisesMarsBot', () => {
 
   it('scores 2 more in every award', () => {
     const {game, marsBot} = createAutomaGame();
-    const scores = () => game.awards.map((award) => marsBot.turnResolver.getMarsBotAwardValue(award));
+    const scores = () => game.awards.map((award) => marsBot.awardValue(award));
     const before = scores();
 
     marsBot.corp = getMarsBotCorp(CardName.NIRGAL_ENTERPRISES)!;
