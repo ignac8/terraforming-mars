@@ -282,7 +282,8 @@ src/common/automa/
 └── MarsBotModel.ts         # Client model (tracks with layout, MC, VP, corp, globalParamSteps)
 
 src/client/components/automa/
-└── MarsBotPanel.vue        # In-game display (tracks with action icons, MC, VP, corp effect, MC/VP ratio)
+├── MarsBotRow.vue          # MarsBot's row in the player overview (MC, MC/VP, decks, VP, TR, track positions)
+└── MarsBotPanel.vue        # MarsBot's tracks under the player rows (game icons, corp effect, VP sources)
 ```
 
 ### 3.3 Integration Points (via AutomaGameHooks)
@@ -673,6 +674,12 @@ No 2nd place VP in 2-player automa games (same as standard 2-player TM rules). O
 - Milestone/award MarsBot rules moved below item lists (were above)
 - "All" expansion button works for automa (enables compatible expansions only)
 
+### 9.9 Player-row layout
+- MarsBot is a row in the player overview (`MarsBotRow.vue`), below the human's row, in its player colour. It reuses `PlayerInfo`'s classes, so it wraps with upstream's player rows below 1740px.
+- The row shows M€ (M€ per VP in the production slot), the action and bonus decks, VP, TR and one box per track with that track's tags and MarsBot's position.
+- The tracks (`MarsBotPanel.vue`) follow straight after the player rows, drawn with tag, tile, global parameter and TR icons instead of letter codes. Nothing MarsBot stays in the board area.
+- With MarsBot in the game, `.players-overview--marsbot` makes the overview one grid column, so the human's and MarsBot's rows always share one width. The panel's text lines use `contain: inline-size` so a long corporation description wraps instead of widening that column.
+
 ---
 
 ## 10. Implementation Status
@@ -733,7 +740,7 @@ Upstream's side was whitespace-only; kept the automa guard `if (gameOptions.auto
 Upstream added a required `name` parameter as the **2nd** constructor argument (`new Game(id, name, players, …)`), with deserialize falling back to `d.name ?? generateGameName(UnseededRandom.INSTANCE)` for old saves (upstream TODO: remove fallback by 2026-07-01). The automa deserialize path was combined to pass **both** the new `name` and the automa `marsBotPlayer` (last, optional) arguments. Constructor signature is now `(id, name, players, first, activePlayer, gameOptions, rng, board, projectDeck, corporationDeck, preludeDeck, ceoDeck, tags, marsBotPlayer?)`. Pinned by a regression test in `MarsBotSessionFixes.spec.ts` ("serialization roundtrip preserves both game name and MarsBot") so a future bad merge dropping/reordering either arg fails fast.
 
 ### 12.3 GameBoardView coexistence (`GameBoardView.vue`)
-`MarsBotPanel` (automa) and `DeltaProjectBoard` (upstream) now render side by side. Upstream renamed the component's `playerCount` prop to `players`, so the milestones/awards visibility condition was reconciled from `playerCount > 1 || isAutoma` to `players.length > 1 || isAutoma`, preserving the automa-shows-MA behavior.
+`MarsBotPanel` no longer renders here; it moved to `PlayersOverview.vue` with `MarsBotRow` (see 9.9), the only upstream file that change touches. Upstream renamed the component's `playerCount` prop to `players`, so the milestones/awards visibility condition was reconciled from `playerCount > 1 || isAutoma` to `players.length > 1 || isAutoma`, preserving the automa-shows-MA behavior.
 
 ### 12.4 Delta Project ↔ automa
 Delta Project is a community (unofficial) expansion. Automa support is intentionally scoped to official expansions only, so no MarsBot interaction with Delta Project is implemented and none is planned — this is out of scope by design, not a tracked gap. The merge only ensures the two features render side by side without breaking automa.
