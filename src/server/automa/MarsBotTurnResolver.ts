@@ -364,7 +364,7 @@ export class MarsBotTurnResolver {
   public failedAction(): void {
     const mc = this.marsBot.failedActionMc;
     this.marsBot.gainMc(mc);
-    this.marsBot.game.log('MarsBot takes a Failed Action, gains ${0} MC', (b) => b.number(mc));
+    this.marsBot.game.log('MarsBot takes a Failed Action, gains ${0} M€', (b) => b.number(mc));
     this.marsBot.notifyFailedAction();
   }
 }
