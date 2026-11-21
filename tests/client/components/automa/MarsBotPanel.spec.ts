@@ -54,6 +54,40 @@ describe('MarsBotPanel', () => {
     expect(iconKinds(withLayout([undefined, 'tag_science', 'tag_space']))).deep.eq(['tag-science', 'tag-space']);
   });
 
+  it('leaves the empty squares of a layout sent as JSON blank', () => {
+    // JSON turns the layout's empty squares into null.
+    const layout = JSON.parse(JSON.stringify([undefined, undefined, 'ocean']));
+    expect(iconKinds(withLayout(layout))).deep.eq(['ocean']);
+    expect(mount(withLayout(layout)).findAll('.has-action')).to.have.length(1);
+  });
+
+  it('turns an advance of a track by index into that track\'s tag', () => {
+    expect(iconKinds(withLayout([undefined, 'tag_0']))).deep.eq(['tag-science']);
+  });
+
+  it('shows a plain advance for a track index MarsBot does not have', () => {
+    expect(iconKinds(withLayout([undefined, 'tag_5']))).deep.eq(['advance']);
+  });
+
+  it('labels each track with its tags and productions', () => {
+    const wrapper = mount(fakeMarsBot({tracks: [{tags: [Tag.POWER, Tag.JOVIAN], productions: ['energy'], position: 0}]}));
+    expect(wrapper.findAll('.marsbot-tag').map((tag) => tag.classes())).deep.eq([
+      ['marsbot-tag', 'tooltip', 'tooltip-bottom', 'tag-power'],
+      ['marsbot-tag', 'tooltip', 'tooltip-bottom', 'tag-jovian'],
+    ]);
+    expect(wrapper.find('.marsbot-prod').classes()).to.include('marsbot-prod--energy');
+  });
+
+  it('marks the squares holding cubes and actions', () => {
+    const model = withLayout([undefined, undefined, 'ocean', undefined]);
+    const squares = mount({...model, trackCubes: [{trackIndex: 0, position: 1, cubeType: 'white'}, {trackIndex: 0, position: 3, cubeType: 'credit'}]}).findAll('.marsbot-square');
+    expect(squares.map((square) => square.classes().filter((c) => c !== 'marsbot-square'))).deep.eq([
+      ['cube-white'],
+      ['has-action'],
+      ['cube-credit'],
+    ]);
+  });
+
   it('marks TR steps and two-step actions with a number', () => {
     const model = withLayout([undefined, 'tr3', 'temperature2']);
     expect(iconKinds(model)).deep.eq(['tr', 'temperature']);

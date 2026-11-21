@@ -65,6 +65,7 @@
 import {defineComponent} from 'vue';
 import {MarsBotModel, MarsBotTrackModel} from '@/common/models/MarsBotModel';
 import {playerColorClass} from '@/common/utils/utils';
+import {translateTextWithParams} from '@/client/directives/i18n';
 
 export default defineComponent({
   name: 'MarsBotRow',
@@ -90,7 +91,8 @@ export default defineComponent({
   },
   methods: {
     trackTooltip(track: MarsBotTrackModel): string {
-      return [...track.tags, ...track.productions].map((name) => this.$t(name)).join(', ');
+      const names = [...track.tags, ...track.productions].map((name) => this.$t(name)).join(', ');
+      return translateTextWithParams('${0} track', [names]);
     },
   },
 });

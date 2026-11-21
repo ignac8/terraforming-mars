@@ -65,6 +65,15 @@ describe('MarsBotRow', () => {
     expect(wrapper.find('.player-info-corp').exists()).to.be.false;
   });
 
+  it('names a track\'s tags and productions in its tooltip', () => {
+    const boxes = mount(fakeMarsBot()).findAll('.marsbot-track-box');
+    expect(boxes.map((box) => box.attributes('data-tooltip'))).deep.eq(['power, jovian, energy track', 'venus track']);
+  });
+
+  it('shows MarsBot\'s difficulty', () => {
+    expect(mount(fakeMarsBot({difficulty: 'hard'})).find('.player-action-status').text()).eq('hard');
+  });
+
   it('leaves the production slot empty without M€ per VP', () => {
     const wrapper = mount(fakeMarsBot({mcPerVP: undefined}));
     expect(wrapper.find('.resource-item--megacredits .resource-item-prod-count').text()).eq('');

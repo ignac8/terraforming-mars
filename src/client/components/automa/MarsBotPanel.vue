@@ -28,9 +28,9 @@
             }"
             :title="getActionTooltip(track, i)"
           >
-            <template v-if="getAction(track, i)">
-              <span class="marsbot-action-icon" :class="'marsbot-action-icon--' + actionKind(getAction(track, i)!)">{{ actionText(getAction(track, i)!) }}</span>
-              <span v-if="actionCount(getAction(track, i)!)" class="marsbot-action-count">{{ actionCount(getAction(track, i)!) }}</span>
+            <template v-for="icon in actionIcon(track, i)" :key="icon.kind">
+              <span class="marsbot-action-icon" :class="'marsbot-action-icon--' + icon.kind">{{ icon.text }}</span>
+              <span v-if="icon.count" class="marsbot-action-count">{{ icon.count }}</span>
             </template>
           </div>
         </div>
@@ -72,17 +72,23 @@ const ACTION_LABELS: Partial<Record<TrackAction, string>> = {
   'tr5': 'Raise TR +5', 'tr6': 'Raise TR +6', 'tr7': 'Raise TR +7', 'tr8': 'Raise TR +8',
 };
 
-// The two-step actions share their one-step icon and show a "2".
+/** Actions drawn with their one-step icon and a "2". */
 const TWO_STEP_ACTIONS: ReadonlyArray<TrackAction> = ['temperature2', 'venus2', 'floater2'];
 
-// Shown as text instead of an icon.
+/** Text shown in place of an icon for actions without one. */
 const ACTION_TEXT: Partial<Record<TrackAction, string>> = {
   'milestone': 'M',
   'award': 'A',
   'advance': '»',
 };
 
-const VP_SOURCES: ReadonlyArray<[keyof MarsBotVPModel, string]> = [
+/** A field of `MarsBotVPModel` that holds a number of VP. */
+type VPKey = {[K in keyof MarsBotVPModel]: MarsBotVPModel[K] extends number ? K : never}[keyof MarsBotVPModel];
+
+/** An action square's icon. */
+type ActionIcon = {kind: string, text: string, count: string};
+
+const VP_SOURCES: ReadonlyArray<[VPKey, string]> = [
   ['terraformRating', 'TR'],
   ['milestones', 'Milestones'],
   ['awards', 'Awards'],
@@ -109,7 +115,7 @@ export default defineComponent({
     vpSources(): Array<{label: string, vp: number}> {
       const breakdown = this.model.vpBreakdown;
       return VP_SOURCES
-        .map(([key, label]) => ({label, vp: breakdown[key] as number}))
+        .map(([key, label]) => ({label, vp: breakdown[key]}))
         .filter((source) => source.vp);
     },
   },
@@ -130,15 +136,32 @@ export default defineComponent({
       if (!track.layout) {
         return undefined;
       }
-      return track.layout[position];
+      // JSON sends the empty squares as null.
+      return track.layout[position] ?? undefined;
     },
-    // The CSS modifier that picks the icon: the action itself, 'tr' for TR steps, 'tag-<tag>' for track advances.
+    /*
+     * Lists the icon of the action at `position`: one icon, or none on a square without an action.
+     *
+     * A list so the template can bind it with v-for instead of calling getAction again.
+     */
+    actionIcon(track: MarsBotTrackModel, position: number): Array<ActionIcon> {
+      const action = this.getAction(track, position);
+      if (action === undefined) {
+        return [];
+      }
+      return [{kind: this.actionKind(action), text: this.actionText(action), count: this.actionCount(action)}];
+    },
+    /*
+     * Names the CSS modifier that picks the action's icon.
+     *
+     * 'tr' for TR steps, 'tag-<tag>' for track advances, and 'advance' for an advance of a track MarsBot does not have.
+     */
     actionKind(action: TrackAction): string {
       if (action.startsWith('tag_')) {
         const target = action.slice(4);
         const index = Number(target);
         const tag = Number.isInteger(index) ? this.model.tracks[index]?.tags[0] : target;
-        return 'tag-' + tag;
+        return tag === undefined ? 'advance' : 'tag-' + tag;
       }
       if (/^tr\d$/.test(action)) {
         return 'tr';
@@ -151,7 +174,7 @@ export default defineComponent({
     actionText(action: TrackAction): string {
       return ACTION_TEXT[action] ?? '';
     },
-    // The small number in the corner: TR steps, or 2 for two-step actions.
+    /* Numbers the corner of the action's square: its TR steps, 2 for a two-step action, or nothing. */
     actionCount(action: TrackAction): string {
       if (/^tr\d$/.test(action)) {
         return action.slice(2);
