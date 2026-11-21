@@ -5,7 +5,6 @@ import {IGame} from '../../src/server/IGame';
 import {Space} from '../../src/server/boards/Space';
 import {MarsBotScoring} from '../../src/server/automa/MarsBotScoring';
 import {MarsBot} from '../../src/server/automa/MarsBot';
-import {MarsBotTurnResolver} from '../../src/server/automa/MarsBotTurnResolver';
 import {standaloneMarsBot} from './corps/CorpGame';
 import {THARSIS_MARSBOT_BOARD} from '../../src/server/automa/boards/TharsisMarsBot';
 import {TileType} from '../../src/common/TileType';
@@ -17,18 +16,17 @@ describe('MarsBotScoring', () => {
   let human: TestPlayer;
   let botPlayer: TestPlayer;
   let marsBot: MarsBot;
-  let turnResolver: MarsBotTurnResolver;
 
   beforeEach(() => {
     [game, human] = testGame(1);
     botPlayer = TestPlayer.RED.newPlayer({name: 'marsbot'});
     botPlayer.game = game;
     marsBot = standaloneMarsBot(game, botPlayer, human, THARSIS_MARSBOT_BOARD);
-    turnResolver = marsBot.turnResolver;
   });
 
   function makeScoring(neuralInstanceSpace?: Space) {
-    return new MarsBotScoring(game, botPlayer, human, turnResolver, 'normal', neuralInstanceSpace);
+    marsBot.neuralInstanceSpace = neuralInstanceSpace;
+    return new MarsBotScoring(marsBot);
   }
 
   describe('Terraform Rating', () => {

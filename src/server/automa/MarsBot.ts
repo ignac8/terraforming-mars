@@ -912,12 +912,7 @@ export class MarsBot implements IMarsBot {
   /** Calculate MarsBot's final VP. */
   public getVictoryPoints(): MarsBotVPBreakdown {
     const corpVpBonus = this.corp?.vpBonus?.(this) ?? 0;
-    const scoring = new MarsBotScoring(
-      this.game, this.player, this.humanPlayer,
-      this.turnResolver, this.difficulty, this.neuralInstanceSpace,
-      this.playedProjectCards, corpVpBonus,
-    );
-    return scoring.calculate();
+    return new MarsBotScoring(this, corpVpBonus).calculate();
   }
 
   /** Check if MarsBot instantly wins (gen 20, 18 with Prelude, two more on Amazonis Planitia). Never without a generation limit. */

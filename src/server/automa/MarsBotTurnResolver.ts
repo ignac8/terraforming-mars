@@ -12,7 +12,7 @@ import {IMarsBot} from './IMarsBot';
 /** Resolves the project cards MarsBot plays: their tags advance its tracks, and the spaces reached resolve their icons. */
 export class MarsBotTurnResolver {
   constructor(
-    public readonly marsBot: IMarsBot,
+    private readonly marsBot: IMarsBot,
     public readonly tilePlacer: MarsBotTilePlacer,
   ) {}
 

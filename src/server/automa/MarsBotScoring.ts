@@ -1,9 +1,7 @@
 import {IGame} from '../IGame';
-import {IPlayer} from '../IPlayer';
-import {DifficultyLevel, getAutomaMaxGeneration} from '../../common/automa/AutomaTypes';
+import {getAutomaMaxGeneration} from '../../common/automa/AutomaTypes';
 import {BoardName} from '../../common/boards/BoardName';
-import {MarsBotTurnResolver} from './MarsBotTurnResolver';
-import {IProjectCard} from '../cards/IProjectCard';
+import {IMarsBot} from './IMarsBot';
 import {Space} from '../boards/Space';
 import {Board} from '../boards/Board';
 import {MADetail} from '../../common/game/VictoryPointsBreakdown';
@@ -34,23 +32,17 @@ export interface MarsBotVPBreakdown {
  */
 export class MarsBotScoring {
   constructor(
-    private readonly game: IGame,
-    private readonly botPlayer: IPlayer,
-    private readonly humanPlayer: IPlayer,
-    private readonly turnResolver: MarsBotTurnResolver,
-    private readonly difficulty: DifficultyLevel,
-    private readonly neuralInstanceSpace: Space | undefined,
-    private readonly playedProjectCards: ReadonlyArray<IProjectCard> = [],
+    private readonly marsBot: IMarsBot,
     private readonly corpVpBonus: number = 0,
   ) {}
 
   /** Calculate MarsBot's complete VP breakdown. */
   public calculate(): MarsBotVPBreakdown {
-    const tr = this.botPlayer.terraformRating;
+    const tr = this.marsBot.player.terraformRating;
     const milestoneResult = this.calculateMilestoneVP();
     const awardResult = this.calculateAwardVP();
     const greenery = this.countGreeneryVP();
-    const cities = this.game.board.getCities(this.botPlayer);
+    const cities = this.marsBot.game.board.getCities(this.marsBot.player);
     const cityAdjacentGreenery = this.countCityAdjacentGreeneryVP(cities);
     const neuralInstance = this.calculateNeuralInstanceVP();
     const mcToVP = this.calculateMCtoVP();
@@ -81,8 +73,8 @@ export class MarsBotScoring {
   private calculateMilestoneVP(): {total: number, details: Array<MADetail>} {
     const details: Array<MADetail> = [];
     let total = 0;
-    for (const cm of this.game.claimedMilestones) {
-      if (cm.player === this.botPlayer) {
+    for (const cm of this.marsBot.game.claimedMilestones) {
+      if (cm.player === this.marsBot.player) {
         total += 5;
         details.push({message: 'Claimed ${0} milestone', messageArgs: [cm.milestone.name], victoryPoint: 5});
       }
@@ -93,10 +85,10 @@ export class MarsBotScoring {
   private calculateAwardVP(): {total: number, details: Array<MADetail>} {
     const details: Array<MADetail> = [];
     let total = 0;
-    for (const fa of this.game.fundedAwards) {
+    for (const fa of this.marsBot.game.fundedAwards) {
       const award = fa.award;
-      const marsBotScore = this.turnResolver.marsBot.awardValue(award);
-      const humanScore = award.getScore(this.humanPlayer);
+      const marsBotScore = this.marsBot.awardValue(award);
+      const humanScore = award.getScore(this.marsBot.humanPlayer);
 
       if (marsBotScore >= humanScore) {
         total += 5;
@@ -107,38 +99,38 @@ export class MarsBotScoring {
   }
 
   private countGreeneryVP(): number {
-    return this.game.board.getGreeneries(this.botPlayer).length;
+    return this.marsBot.game.board.getGreeneries(this.marsBot.player).length;
   }
 
   private countCityAdjacentGreeneryVP(cities: ReadonlyArray<Space>): number {
     let vp = 0;
     for (const space of cities) {
-      const adj = this.game.board.getAdjacentSpaces(space);
+      const adj = this.marsBot.game.board.getAdjacentSpaces(space);
       vp += adj.filter((s) => Board.isGreenerySpace(s)).length;
     }
     return vp;
   }
 
   private calculateNeuralInstanceVP(): number {
-    if (this.neuralInstanceSpace === undefined) {
+    if (this.marsBot.neuralInstanceSpace === undefined) {
       return 0;
     }
-    const adj = this.game.board.getAdjacentSpaces(this.neuralInstanceSpace);
+    const adj = this.marsBot.game.board.getAdjacentSpaces(this.marsBot.neuralInstanceSpace);
     // 1 VP per adjacent space NOT occupied by human (empty or MarsBot-owned)
-    return adj.filter((s) => s.player !== this.humanPlayer).length;
+    return adj.filter((s) => s.player !== this.marsBot.humanPlayer).length;
   }
 
   private calculateMCtoVP(): number {
-    const mcPerVP = currentMcPerVP(this.game);
+    const mcPerVP = currentMcPerVP(this.marsBot.game);
     if (mcPerVP === undefined) {
       return 0;
     }
-    return Math.floor(this.turnResolver.marsBot.megacredits / mcPerVP);
+    return Math.floor(this.marsBot.megacredits / mcPerVP);
   }
 
   /** Vermin: -1 VP per city when 10+ animals on Vermin card. Applies to ALL players. */
   private calculateVerminPenalty(cities: ReadonlyArray<Space>): number {
-    if (!this.game.verminInEffect) {
+    if (!this.marsBot.game.verminInEffect) {
       return 0;
     }
     return -1 * cities.length;
@@ -146,12 +138,12 @@ export class MarsBotScoring {
 
   /** Hard/Brutal mode: 1 VP per card with a non-negative VP icon in MarsBot's played pile. */
   private calculateCardVP(): number {
-    if (this.difficulty !== 'hard' && this.difficulty !== 'brutal') {
+    if (this.marsBot.difficulty !== 'hard' && this.marsBot.difficulty !== 'brutal') {
       return 0;
     }
     // Designer ruling, BGG thread 3386410 (TDaver): a card with no VP icon doesn't count, one
     // with a conditional or per-resource icon does, and a negative icon doesn't.
-    return this.playedProjectCards.filter((card) => {
+    return this.marsBot.playedProjectCards.filter((card) => {
       const vp = printedVictoryPoints(card);
       return vp !== undefined && vp >= 0;
     }).length;
@@ -164,19 +156,18 @@ export class MarsBotScoring {
    * The rulebook doesn't score them; it is the designer's intent (TDaver, BGG 3408751, 3373832).
    */
   private calculateLeftoverResourcesVP(): number {
-    const marsBot = this.turnResolver.marsBot;
-    if (!this.game.gameOptions.automaColonyVP || !this.game.gameOptions.coloniesExtension) {
+    if (!this.marsBot.game.gameOptions.automaColonyVP || !this.marsBot.game.gameOptions.coloniesExtension) {
       return 0;
     }
-    return Math.floor((sum(Array.from(marsBot.shippingBoard.storage.values())) + marsBot.floaters) / 2);
+    return Math.floor((sum(Array.from(this.marsBot.shippingBoard.storage.values())) + this.marsBot.floaters) / 2);
   }
 
   /** T-13: 1 VP for each Party Leader or Chairman position MarsBot holds. */
   private calculateTurmoilVP(): number {
-    if (!this.game.gameOptions.turmoilExtension || this.game.turmoil === undefined) {
+    if (!this.marsBot.game.gameOptions.turmoilExtension || this.marsBot.game.turmoil === undefined) {
       return 0;
     }
-    return Turmoil.getTurmoil(this.game).getVictoryPoints(this.botPlayer);
+    return Turmoil.getTurmoil(this.marsBot.game).getVictoryPoints(this.marsBot.player);
   }
 }
 

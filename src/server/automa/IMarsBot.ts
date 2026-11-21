@@ -210,6 +210,8 @@ export interface IMarsBot {
   removeMarker(space: Space): boolean;
   /** Places the bot's Neural Instance tile on `space` and pays the bot its placement M€. */
   placeNeuralInstance(space: Space): void;
+  /** The space holding the bot's Neural Instance tile. Undefined until it places one. */
+  readonly neuralInstanceSpace: Space | undefined;
   /**
    * Trades with the colony the bot picks, for the bonus card `cardName` (C-17).
    *
