@@ -3,6 +3,7 @@ import {expect} from 'chai';
 import {globalConfig} from '../getLocalVue';
 import MarsBotPanel from '@/client/components/automa/MarsBotPanel.vue';
 import {MarsBotModel, MarsBotTrackModel, MarsBotVPModel} from '@/common/models/MarsBotModel';
+import {Tag} from '@/common/cards/Tag';
 
 function fakeMarsBot(overrides: Partial<MarsBotModel> = {}): MarsBotModel {
   return {
@@ -25,7 +26,7 @@ function fakeMarsBot(overrides: Partial<MarsBotModel> = {}): MarsBotModel {
 }
 
 function withLayout(layout: MarsBotTrackModel['layout']): MarsBotModel {
-  return fakeMarsBot({tracks: [{tags: ['science'], productions: [], position: 0, layout}]});
+  return fakeMarsBot({tracks: [{tags: [Tag.SCIENCE], productions: [], position: 0, layout}]});
 }
 
 function mount(model: MarsBotModel) {

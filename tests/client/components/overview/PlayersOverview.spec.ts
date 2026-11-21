@@ -94,7 +94,7 @@ describe('PlayersOverview', () => {
 
   // The tag names of the last three children, e.g. ['player-info-stub', 'mars-bot-row-stub', 'mars-bot-panel-stub'].
   function lastChildren(wrapper: ReturnType<typeof shallowMount>): Array<string> {
-    return Array.from(wrapper.element.children).slice(-3).map((child) => child.tagName.toLowerCase());
+    return Array.from((wrapper.element as Element).children).slice(-3).map((child) => child.tagName.toLowerCase());
   }
 
   it('puts MarsBot\'s row and tracks after the player\'s row', () => {
