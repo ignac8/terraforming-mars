@@ -242,8 +242,8 @@ game end in about 71 % of games against 55 % on a standard map; on space 10 it i
 ### 4.9 New bonus card: Corporate Competition (Amazonis)
 
 In code this is not a new card: every map's Corporate Competition runs through B08
-(`bonusCards/CorporateCompetitionMarsBot.ts`), which picks a push by award name in
-`CorporateCompetitionMarsBot.tryHelperAction` (B09–B13 are enum values only). Collector, Constructor, Manufacturer
+(`bonusCards/CorporateCompetition.ts`), which picks a push by award name in
+`CorporateCompetition.tryHelperAction` (B09–B13 are enum values only). Collector, Constructor, Manufacturer
 and Venuphile use helpers the other maps share; Innovator and Physicist are this map's own:
 
 | Award | Push |

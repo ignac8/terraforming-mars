@@ -8,7 +8,7 @@ import {AwardName} from '@/common/ma/AwardName';
 import {TileType} from '@/common/TileType';
 import {MarsBot} from '@/server/automa/MarsBot';
 import {createBaseBonusCards} from '@/server/automa/bonusCards/MarsBotBonusCards';
-import {CorporateCompetitionMarsBot} from '@/server/automa/bonusCards/CorporateCompetitionMarsBot';
+import {CorporateCompetition} from '@/server/automa/bonusCards/CorporateCompetition';
 import {getMarsBotCorp} from '@/server/automa/corps/MarsBotCorpRegistry';
 import {NirgalEnterprisesMarsBot} from '@/server/automa/corps/prelude2/NirgalEnterprisesMarsBot';
 import {TerralabsResearchMarsBot} from '@/server/automa/corps/turmoil/TerralabsResearchMarsBot';
@@ -153,7 +153,7 @@ describe('MarsBotAmazonisRules', () => {
 
   describe('Corporate Competition', () => {
     function helper(marsBot: MarsBot, awardName: AwardName): boolean {
-      return new CorporateCompetitionMarsBot().tryHelperAction(marsBot, awardName);
+      return new CorporateCompetition().tryHelperAction(marsBot, awardName);
     }
 
     /** Funds the award for the player, which leads it by 1, and gives MarsBot 10 M€. */
