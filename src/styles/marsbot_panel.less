@@ -248,3 +248,13 @@ each(@marsbot-tags, {
 .players-overview--marsbot > :not(.player-info) {
   justify-self: start;
 }
+// The panel's text lines wrap to the tracks' width instead of widening the shared column (and so both rows).
+.marsbot-corp-desc,
+.marsbot-vp-sources,
+.marsbot-shipping-board {
+  contain: inline-size;
+}
+.players-overview--marsbot > .other-player {
+  justify-self: stretch;
+  contain: inline-size;
+}
