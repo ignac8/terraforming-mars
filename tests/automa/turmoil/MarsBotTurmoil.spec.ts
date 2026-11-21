@@ -766,7 +766,7 @@ describe('MarsBot C37 Septem Tribus — Turmoil interaction (Rules-covered: C37)
   });
 
   it('C37: B21 (Party Politics) is NOT in the gen-2 action deck when Septem Tribus is active', () => {
-    // Bug: buildResearchActionDeck() called addPartyPolitics() unconditionally, re-adding B21
+    // Bug: buildResearch() called addPartyPolitics() unconditionally, re-adding B21
     // every generation even with Septem Tribus. Fix 1 (corp guard) prevents this.
     const {marsBot} = createTurmoilGame();
     const septumTribus = getMarsBotCorp(CardName.SEPTUM_TRIBUS)!;

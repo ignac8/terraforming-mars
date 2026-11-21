@@ -71,7 +71,7 @@ describe('ActionDeckColonies (C-10, C-11)', () => {
     expect(hasBonusCard(marsBot.actionDeck.cards, BonusCardId.B19_SHIPPING_LINES)).to.be.false;
   });
 
-  it('C-10: Shipping Lines injected via buildResearchActionDeckFromDraft', () => {
+  it('C-10: Shipping Lines injected via buildResearchFromDraft', () => {
     const [game] = testGame(1, {automa: true, coloniesExtension: true, boardName: BoardName.THARSIS});
     const marsBot = getMarsBot(game);
 

@@ -254,11 +254,11 @@ Key design decisions:
 src/server/automa/
 ├── AutomaGameHooks.ts      # Single contact point between Game.ts and automa logic
 ├── AutomaGameSetup.ts      # Game setup: creates MarsBot, wires hooks, registers corps
-├── MarsBot.ts              # Main manager: board, decks, turns, scoring, model, serialization
+├── MarsBot.ts              # Main manager: board, turns, scoring, model, serialization
+├── MarsBotActionDeck.ts    # Action deck: builds, plays its top card, moves bonus cards, save
 ├── MarsBotBoard.ts         # 7-track board with positions and tag-to-track mapping
 ├── MarsBotBonusCard.ts     # Bonus card definitions (B01-B08, B22-B32 corp cards)
 ├── MarsBotBonusDeck.ts     # Bonus deck: draw, discard, destroy, reshuffle
-├── MarsBotBonusResolver.ts # All bonus card effects (B01-B08 + B22-B32)
 ├── MarsBotTurnResolver.ts  # Project card resolution, track actions, milestones, awards
 ├── MarsBotTilePlacer.ts    # Tile placement with automa tiebreakers
 ├── MarsBotScoring.ts       # End-game VP: TR + milestones + awards + tiles + NI + MC→VP + corpVP
@@ -330,9 +330,8 @@ Other integration:
 ```
 MarsBot.takeTurn():
   if actionDeck is empty → pass, signal game
-  card = actionDeck.shift()
-  if ProjectCard → turnResolver.resolveProjectCard(card)
-  if BonusCard → bonusResolver.resolve(card)
+  actionDeck.playTopCard(): a project card → resolveProjectCard(card),
+    a bonus card → actionDeck.playBonusCard(card)
   if hard/brutal → hardModeFirstTurnMilestone()
   game.playerIsFinishedTakingActions()
 
@@ -526,9 +525,9 @@ All rules from Rulebook A (base game) and Rulebook B (corporations) are implemen
 |-----------|------|-------------|
 | **Automa hooks** | `src/server/automa/AutomaGameHooks.ts` | All lifecycle hooks into Game.ts |
 | **Automa setup** | `src/server/automa/AutomaGameSetup.ts` | `setup()`, creates MarsBot + hooks |
-| **MarsBot manager** | `src/server/automa/MarsBot.ts` | `takeTurn()`, `buildResearchActionDeck()`, `toModel()` |
+| **MarsBot manager** | `src/server/automa/MarsBot.ts` | `takeTurn()`, `toModel()` |
 | **Turn resolver** | `src/server/automa/MarsBotTurnResolver.ts` | `resolveProjectCard()`, `advanceTrackPublic()`, `getMarsBotAwardValue()`, `marsBotMeetsMilestone()` |
-| **Bonus resolver** | `src/server/automa/MarsBotBonusResolver.ts` | `resolve()` for B01-B08 |
+| **Action deck** | `src/server/automa/MarsBotActionDeck.ts` | `buildResearch()`, `playTopCard()`, `playBonusCard()` |
 | **Tile placer** | `src/server/automa/MarsBotTilePlacer.ts` | `findGreenerySpace()`, `findCitySpace()`, `findOceanSpace()`, `getTotalPlacementMC()` |
 | **Tag override** | `src/server/automa/MarsBotTags.ts` | `rawCount()` returns track positions |
 | **Scoring** | `src/server/automa/MarsBotScoring.ts` | `calculate()` → `MarsBotVPBreakdown` |

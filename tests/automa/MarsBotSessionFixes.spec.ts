@@ -876,7 +876,7 @@ describe('MarsBotVenusNext', () => {
     for (const m of game.milestones.slice(0, 3)) {
       game.claimedMilestones.push({player: marsBot.player, milestone: m});
     }
-    // handleResearchPhase calls buildResearchActionDeck + handleFloaterExtraCard
+    // handleResearchPhase calls actionDeck.buildResearch + handleFloaterExtraCard
     game.automaHooks!.handleResearchPhase();
     // Non-draft: should have spent 5 floaters and drawn 1 extra card
     expect(marsBot.floaters).to.eq(5);

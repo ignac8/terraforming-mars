@@ -40,7 +40,6 @@ describe('PartyPolitics', () => {
     const reserveBefore = turmoil.delegateReserve.get(marsBotPlayer);
     // Trigger the Party Politics bonus card directly
     const card = createBonusCard(BonusCardId.B21_PARTY_POLITICS);
-    // Access private bonusResolver for testing
     marsBot.actionDeck.playBonusCard(card);
 
     const reserveAfter = turmoil.delegateReserve.get(marsBotPlayer);

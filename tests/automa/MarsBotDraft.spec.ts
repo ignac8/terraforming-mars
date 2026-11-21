@@ -183,7 +183,7 @@ describe('MarsBot Draft Variant', () => {
     });
   });
 
-  describe('buildResearchActionDeckFromDraft', () => {
+  describe('buildResearchFromDraft', () => {
     it('builds deck from 4 drafted cards: discard 1, add bonus, total 4', () => {
       const {game, marsBot} = createAutomaGameNoDraft();
       const cards = game.projectDeck.drawN(game, 4);
