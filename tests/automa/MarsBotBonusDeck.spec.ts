@@ -7,9 +7,9 @@ import {MarsBotBonusCard} from '../../src/server/automa/MarsBotBonusCard';
 import {MeteorShower} from '../../src/server/automa/bonusCards/MeteorShower';
 import {testGame} from '../TestGame';
 import {recordingMarsBot} from './corps/RecordingMarsBot';
-import {CardName} from '../../src/common/cards/CardName';
 import {Asteroid} from '../../src/server/cards/base/Asteroid';
 import {Tardigrades} from '../../src/server/cards/base/Tardigrades';
+import {CardName} from '../../src/common/cards/CardName';
 
 describe('MarsBotBonusDeck', () => {
   const logger = {log: () => {}};
@@ -22,12 +22,6 @@ describe('MarsBotBonusDeck', () => {
   it('starts with the 8 base cards in the draw pile', () => {
     expect(deck.drawPile.length).to.eq(8);
     expect(deck.discardPile.length).to.eq(0);
-  });
-
-  it('createBonusCard creates a card with correct ID and name', () => {
-    const card = createBonusCard(BonusCardId.B23_RAPID_SPROUTING);
-    expect(card.id).to.eq(BonusCardId.B23_RAPID_SPROUTING);
-    expect(card.name).to.eq(CardName.AUTOMA_RAPID_SPROUTING);
   });
 
   for (const run of [
@@ -120,6 +114,12 @@ describe('MarsBotBonusDeck', () => {
 
     expect(restored.drawPile).to.deep.eq(expansionDeck.drawPile);
     expect(restored.discardPile).to.deep.eq(expansionDeck.discardPile);
+  });
+
+  it('createBonusCard creates a card with correct ID and name', () => {
+    const card = createBonusCard(BonusCardId.B23_RAPID_SPROUTING);
+    expect(card.id).to.eq(BonusCardId.B23_RAPID_SPROUTING);
+    expect(card.name).to.eq(CardName.AUTOMA_RAPID_SPROUTING);
   });
 
   it('draws a card', () => {
