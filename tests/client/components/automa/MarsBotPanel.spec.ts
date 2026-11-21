@@ -66,7 +66,14 @@ describe('MarsBotPanel', () => {
   });
 
   it('shows a plain advance for a track index MarsBot does not have', () => {
-    expect(iconKinds(withLayout([undefined, 'tag_5']))).deep.eq(['advance']);
+    const model = withLayout([undefined, 'tag_5']);
+    expect(iconKinds(model)).deep.eq(['advance']);
+    expect(mount(model).find('.marsbot-action-icon').text()).eq('»');
+  });
+
+  it('writes the milestone, award and advance squares as text', () => {
+    const icons = mount(withLayout([undefined, 'milestone', 'award', 'advance'])).findAll('.marsbot-action-icon');
+    expect(icons.map((icon) => icon.text())).deep.eq(['M', 'A', '»']);
   });
 
   it('labels each track with its tags and productions', () => {

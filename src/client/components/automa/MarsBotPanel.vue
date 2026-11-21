@@ -75,8 +75,8 @@ const ACTION_LABELS: Partial<Record<TrackAction, string>> = {
 /** Actions drawn with their one-step icon and a "2". */
 const TWO_STEP_ACTIONS: ReadonlyArray<TrackAction> = ['temperature2', 'venus2', 'floater2'];
 
-/** Text shown in place of an icon for actions without one. */
-const ACTION_TEXT: Partial<Record<TrackAction, string>> = {
+/** Text shown in place of an icon, by icon kind. */
+const ACTION_TEXT: Readonly<Record<string, string>> = {
   'milestone': 'M',
   'award': 'A',
   'advance': '»',
@@ -149,7 +149,8 @@ export default defineComponent({
       if (action === undefined) {
         return [];
       }
-      return [{kind: this.actionKind(action), text: this.actionText(action), count: this.actionCount(action)}];
+      const kind = this.actionKind(action);
+      return [{kind, text: ACTION_TEXT[kind] ?? '', count: this.actionCount(action)}];
     },
     /*
      * Names the CSS modifier that picks the action's icon.
@@ -170,9 +171,6 @@ export default defineComponent({
         return action.slice(0, -1);
       }
       return action;
-    },
-    actionText(action: TrackAction): string {
-      return ACTION_TEXT[action] ?? '';
     },
     /* Numbers the corner of the action's square: its TR steps, 2 for a two-step action, or nothing. */
     actionCount(action: TrackAction): string {
