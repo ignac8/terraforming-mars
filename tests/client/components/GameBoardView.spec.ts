@@ -21,7 +21,7 @@ describe('GameBoardView', () => {
     expect(wrapper.exists()).to.be.true;
   });
 
-  it('does not render MarsBotPanel when game.marsBot is undefined', () => {
+  it('does not flag isAutoma when game.marsBot is undefined', () => {
     const wrapper = shallowMount(GameBoardView, {
       ...globalConfig,
       props: {
@@ -30,12 +30,11 @@ describe('GameBoardView', () => {
         players: [fakePublicPlayerModel(), fakePublicPlayerModel()],
       },
     });
-    expect(wrapper.findComponent(MarsBotPanel).exists()).to.be.false;
     expect(wrapper.findComponent(Milestones).props('isAutoma')).to.be.false;
     expect(wrapper.findComponent(Awards).props('isAutoma')).to.be.false;
   });
 
-  it('renders MarsBotPanel and flags isAutoma when game.marsBot is set', () => {
+  it('flags isAutoma but leaves MarsBot\'s tracks to the player rows when game.marsBot is set', () => {
     const wrapper = shallowMount(GameBoardView, {
       ...globalConfig,
       props: {
@@ -44,7 +43,7 @@ describe('GameBoardView', () => {
         players: [],
       },
     });
-    expect(wrapper.findComponent(MarsBotPanel).exists()).to.be.true;
+    expect(wrapper.findComponent(MarsBotPanel).exists()).to.be.false;
     expect(wrapper.findComponent(Milestones).props('isAutoma')).to.be.true;
     expect(wrapper.findComponent(Awards).props('isAutoma')).to.be.true;
   });

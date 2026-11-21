@@ -5,6 +5,9 @@ import PlayerInfo from '@/client/components/overview/PlayerInfo.vue';
 import PlayersOverview from '@/client/components/overview/PlayersOverview.vue';
 import {fakeGameModel, fakePublicPlayerModel, fakeViewModel} from '../testHelpers';
 import {Phase} from '@/common/Phase';
+import MarsBotRow from '@/client/components/automa/MarsBotRow.vue';
+import MarsBotPanel from '@/client/components/automa/MarsBotPanel.vue';
+import {MarsBotModel} from '@/common/models/MarsBotModel';
 
 describe('PlayersOverview', () => {
   it('mounts without errors', () => {
@@ -87,5 +90,39 @@ describe('PlayersOverview', () => {
     await wrapper.setProps({playerView: fakeViewModel({players: [red, blue], thisPlayer: undefined})});
 
     expect(wrapper.findAllComponents(PlayerInfo).map((info) => info.props('player').color)).deep.eq(['red', 'blue']);
+  });
+
+  // The tag names of the last three children, e.g. ['player-info-stub', 'mars-bot-row-stub', 'mars-bot-panel-stub'].
+  function lastChildren(wrapper: ReturnType<typeof shallowMount>): Array<string> {
+    return Array.from(wrapper.element.children).slice(-3).map((child) => child.tagName.toLowerCase());
+  }
+
+  it('puts MarsBot\'s row and tracks after the player\'s row', () => {
+    const wrapper = shallowMount(PlayersOverview, {
+      ...globalConfig,
+      props: {playerView: fakeViewModel({game: fakeGameModel({marsBot: {} as MarsBotModel})})},
+    });
+    expect(wrapper.findComponent(MarsBotRow).exists()).to.be.true;
+    expect(lastChildren(wrapper)).deep.eq(['player-info-stub', 'mars-bot-row-stub', 'mars-bot-panel-stub']);
+    expect(wrapper.classes()).to.include('players-overview--marsbot');
+  });
+
+  it('shows MarsBot to spectators too', () => {
+    const blue = fakePublicPlayerModel({color: 'blue'});
+    const wrapper = shallowMount(PlayersOverview, {
+      ...globalConfig,
+      props: {playerView: fakeViewModel({game: fakeGameModel({marsBot: {} as MarsBotModel}), players: [blue], thisPlayer: undefined})},
+    });
+    expect(lastChildren(wrapper)).deep.eq(['player-info-stub', 'mars-bot-row-stub', 'mars-bot-panel-stub']);
+  });
+
+  it('leaves player rows alone without MarsBot', () => {
+    const wrapper = shallowMount(PlayersOverview, {
+      ...globalConfig,
+      props: {playerView: fakeViewModel()},
+    });
+    expect(wrapper.findComponent(MarsBotRow).exists()).to.be.false;
+    expect(wrapper.findComponent(MarsBotPanel).exists()).to.be.false;
+    expect(wrapper.classes()).not.to.include('players-overview--marsbot');
   });
 });

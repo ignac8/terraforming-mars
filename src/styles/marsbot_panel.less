@@ -234,3 +234,17 @@ each(@marsbot-tags, {
 .marsbot-track-box .tag-count-display {
   margin-top: 6px;
 }
+
+// With MarsBot in the game, the player rows share one column as wide as the widest row,
+// so the human's row and MarsBot's row line up, also when upstream wraps them below 1740px.
+.players-overview--marsbot {
+  display: grid;
+  width: fit-content;
+  max-width: 100%;
+}
+.players-overview--marsbot > .player-info {
+  width: auto;
+}
+.players-overview--marsbot > :not(.player-info) {
+  justify-self: start;
+}

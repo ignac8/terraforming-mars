@@ -1,5 +1,5 @@
 <template>
-  <div class="players-overview" v-if="hasPlayers">
+  <div class="players-overview" :class="{'players-overview--marsbot': playerView.game.marsBot !== undefined}" v-if="hasPlayers">
     <OverviewSettings />
     <div class="other-player" v-if="thisPlayer === undefined || players.length > 1">
       <div v-for="(otherPlayer, index) in playersInOrder" :key="otherPlayer.color">
@@ -22,6 +22,10 @@
       :firstForGen="getIsFirstForGen(thisPlayer)"
       :actionLabel="getActionLabel(thisPlayer)"
       :playerIndex="-1" />
+    <template v-if="playerView.game.marsBot">
+      <MarsBotRow :model="playerView.game.marsBot" />
+      <MarsBotPanel :model="playerView.game.marsBot" />
+    </template>
   </div>
 </template>
 
@@ -30,6 +34,8 @@ import {defineComponent} from 'vue';
 import PlayerInfo from '@/client/components/overview/PlayerInfo.vue';
 import OverviewSettings from '@/client/components/overview/OverviewSettings.vue';
 import OtherPlayer from '@/client/components/OtherPlayer.vue';
+import MarsBotRow from '@/client/components/automa/MarsBotRow.vue';
+import MarsBotPanel from '@/client/components/automa/MarsBotPanel.vue';
 import {ViewModel, PublicPlayerModel} from '@/common/models/PlayerModel';
 import {ActionLabel} from '@/client/components/overview/ActionLabel';
 import {Phase} from '@/common/Phase';
@@ -93,6 +99,8 @@ export default defineComponent({
     PlayerInfo,
     OverviewSettings,
     OtherPlayer,
+    MarsBotRow,
+    MarsBotPanel,
   },
   methods: {
     getIsFirstForGen(player: PublicPlayerModel): boolean {

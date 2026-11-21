@@ -31,8 +31,6 @@
     <PlanetaryTracks :tracks="game.pathfinders" :gameOptions="game.gameOptions" />
   </template>
 
-  <MarsBotPanel v-if="game.marsBot" :model="game.marsBot" />
-
   <DeltaProjectBoard v-if="game.gameOptions.expansions.deltaProject" :players="players" />
 
   <div v-if="players.length > 1 || isAutoma" class="player-home-block--milestones-and-awards">
@@ -55,7 +53,6 @@ import Awards from '@/client/components/Awards.vue';
 import Turmoil from '@/client/components/turmoil/Turmoil.vue';
 import MoonBoard from '@/client/components/moon/MoonBoard.vue';
 import PlanetaryTracks from '@/client/components/pathfinders/PlanetaryTracks.vue';
-import MarsBotPanel from '@/client/components/automa/MarsBotPanel.vue';
 import {TileView} from './board/TileView';
 import {scrollToSpace} from '@/client/utils/boardScroll';
 import {BoardName} from '@/common/boards/BoardName';
@@ -86,7 +83,6 @@ export default defineComponent({
     Turmoil,
     MoonBoard,
     PlanetaryTracks,
-    MarsBotPanel,
   },
   computed: {
     isAutoma(): boolean {
