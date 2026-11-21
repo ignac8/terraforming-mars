@@ -234,51 +234,27 @@ registry/resolver, and the client UI (needs `GameModel.marsBot`).
 The other corporation manifests, the map boards and the expansion bonus cards only need
 `IMarsBot`, so they went up as #8683 to #8688.
 
-## Remaining phases (as of 2026-11-19)
+## Remaining phases (as of 2026-11-21)
 
-1. **Phase 2 - MarsBot skeleton** (3-4 PRs). Its gates are met: the IPlayer-style `IMarsBot`
-   shape came out of the #8207 review, and #8203/#8206 merged. First slice should be corp-free
-   (base difficulty plays without a corporation).
-2. **Phase 3 - capabilities**: Stock, Scoring, BonusResolver (split 2-3 ways by bonus
-   group), TurnResolver (split track-advancement vs card resolution). Since 2026-11-10 each
-   bonus card is its own file, `bonusCards/<Card>MarsBot.ts`, after kberg's "each card into
-   its own file" on #8687. Since 2026-11-19 each is a class `<Card>MarsBot extends
-   MarsBotBonusCardEffect` (id through the constructor, `resolve(marsBot: IMarsBot, card)`
-   overridden), listed as instances in `MarsBotBonusCardEffects.ts`; the tools the cards share
-   are free functions on an `IMarsBot` in `bonusCards/bonusCardHelpers.ts` (Lobbyists' in `LobbyistsBase`), Corporate
-   Competition holds its own `tryHelperAction`, and `MarsBotBonusResolver` keeps only the lookup
-   and the discard rules. Their tests are one spec
-   per card too, `tests/automa/bonusCards/<Card>MarsBot.spec.ts` (26 specs, 122 tests; B05
-   Expedited Construction got its first two tests on 2026-11-10). Tests that only use a
-   bonus card as a trigger stayed in the mixed specs (Law Suit, reload, party selection,
-   Land Specialist, deck composition). He was asked there
-   whether `tests/automa/boards/MarsBotBoards.spec.ts` should be one spec per board too.
-   **Shape changed 2026-11-19 (user): spokes, not a chain.** #8740 (base class and ten cards) is
-   the hub; fork #85 (parameter raises), #86 (card play) and #87 (tiles and decks) each sit on it
-   alone, with their `IMarsBot` members and helpers at separate anchors so they merge cleanly with
-   each other (checked with `git merge-tree`). Corporate Competition sits on #85 and #86 together
-   and brings the greenery filter. Colonies and the core have their own plans (colonies: shipping
-   board C1 off main, placer C2 and trader C3 on it, Shipping Lines C4 on #8740; core: turn
-   resolver, milestone and award choice, scoring and `MarsBotActionDeck` first, then the `MarsBot`
-   class, wiring, route, client panel; the hooks class stays). **Earlier, 2026-11-19 (user):** the bonus cards go up as fork PRs.
-   Each card becomes a class first (a base-class PR leads, as #8723 did for the
-   corporations); `resolve(marsBot: IMarsBot, card)` replaces the resolver, its shared tools
-   become free functions, and `IMarsBot` grows by about 9 members (no separate resolver type);
-   `MarsBotBonusCardEffects.ts` waits for the dispatcher. Order: base class and the 9 cards that
-   need nothing new, card play (Research and Development, Interface Hyperlink), parameter raises,
-   shipping board, tiles and decks, Corporate Competition, colony placer and trader, Stock, Scoring.
-3. **Phase 4 - game integration**: the automa option, MarsBot's player and `AutomaGameSetup`
-   are in (#8625). Still to go: AutomaGameHooks (split 2-3 ways), routes/ServerModel wiring,
-   then client UI.
-4. **Phase 5 - expansions**: Turmoil delegate placement (#8671), the other boards (#8683) and
-   the Venus and Colonies bonus decks (#8684) are in; all four corporation manifests (#8685 to
-   #8688) merged on 2026-11-19. The Colonies corporations merged as #8738, so every corporation is in. Still to go: the registry
-   and resolver, and colonies. The ~15 small upstream-card touches ride along with whichever hook PR
-   needs them.
+1. **Bonus cards:** all merged except Corporate Competition (#8747). The one-type fold (and no `MarsBot`
+   suffix on the card classes) waits as fork #89, after #8747.
+2. **Colonies:** shipping board #8750 and Shipping Lines #8751 merged; placer #8752 and trader #8753 open.
+   Colony hooks come with the hooks PRs.
+3. **Core pieces** (core plan A1-A4): turn resolver #8754, goals #8755, scoring #8756 open; action deck
+   fork #94 (after #8747 and #89).
+4. **MarsBot itself** (B1-B4): the `MarsBot` class once A1-A4, #8752 and #8753 merge; then the engine
+   wiring (`AutomaGameHooks` grown per PR), the create-game route, and the client panel. First playable
+   by a person after B4.
+5. **Spokes on the wiring** (~13): Stock, difficulty, corporations (2), draft, Venus, Turmoil, Prelude,
+   card hooks, the milestone and award pool, two game options, end screen.
 6. **Last - Amazonis Planitia** (unofficial, so only after 100% of the official automa code
    is upstream; user, 2026-11-19): `MarsBotMapRules` and every Amazonis rule MarsBot follows
    (the generation shift in Nirgal and Terralabs, already on `marsbot-map-rules`; the longer
    generation limit, the extra Turmoil TR, the Amazonis bonuses, maxima and milestones and awards).
+
+Share upstream (2026-11-21, non-blank lines of automa's MarsBot server code found identically, the
+renamed bonus card files mapped to their old names): 48.8% merged, 60.0% with the open upstream PRs,
+67.3% with the fork PRs too.
 
 ## Process per PR
 
