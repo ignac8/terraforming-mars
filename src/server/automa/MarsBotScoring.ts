@@ -27,7 +27,7 @@ export interface MarsBotVPBreakdown {
   detailsAwards: Array<MADetail>;
 }
 
-/** The calculation of MarsBot's final score, with its automa-specific rules. */
+/** Calculates MarsBot's final score with its automa-specific rules. */
 export class MarsBotScoring {
   constructor(
     private readonly marsBot: IMarsBot,

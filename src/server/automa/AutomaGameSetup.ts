@@ -28,7 +28,7 @@ import {MAManifest} from '../ma/MAManifest';
 import {trackCubeKey} from './corpTrackCubes';
 
 /**
- * The automa-specific game setup, which also hands `Game` the hooks into its lifecycle.
+ * Sets up the automa side of a game and hands `Game` the hooks into its lifecycle.
  *
  * It is the only automa class that `Game` needs to know about.
  */

@@ -9,7 +9,7 @@ import {getAllMarsBotCorps} from './MarsBotCorpRegistry';
 import {selectRandomColony, placeColony} from '../colonies/MarsBotColonyPlacer';
 import type {MarsBot} from '../MarsBot';
 
-/** MarsBot's corporation: how it is chosen, set up and triggered by track cubes. */
+/** Chooses MarsBot's corporation, sets it up, and resolves the cubes its track markers reach. */
 export class MarsBotCorpResolver {
   public static selectCorp(humanCorpName: CardName, gameOptions: GameOptions, rng: Random): MarsBotCorp {
     const allCorps = getAllMarsBotCorps();

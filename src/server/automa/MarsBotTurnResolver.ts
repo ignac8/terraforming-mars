@@ -9,7 +9,7 @@ import {cardTagsIncludingEvent} from './MarsBotTags';
 import {MarsBotTilePlacer} from './MarsBotTilePlacer';
 import {IMarsBot} from './IMarsBot';
 
-/** A resolver of the project cards MarsBot plays: their tags advance its tracks, and the spaces reached resolve their icons. */
+/** Resolves the project cards MarsBot plays: their tags advance its tracks, and the spaces reached resolve their icons. */
 export class MarsBotTurnResolver {
   constructor(
     private readonly marsBot: IMarsBot,
