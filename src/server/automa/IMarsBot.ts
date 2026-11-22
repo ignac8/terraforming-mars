@@ -1,9 +1,12 @@
 import {BonusCardId} from '../../common/automa/AutomaTypes';
+import {GlobalParameter} from '../../common/GlobalParameter';
+import {CardName} from '../../common/cards/CardName';
 import {Tag} from '../../common/cards/Tag';
 import {IGame} from '../IGame';
 import {IPlayer} from '../IPlayer';
 import {IProjectCard} from '../cards/IProjectCard';
 import {MarsBotBoard} from './MarsBotBoard';
+import {MarsBotBonusDeck} from './MarsBotBonusDeck';
 import {Space} from '../boards/Space';
 
 /** The bot as corp handlers see it, implemented by the bot manager. */
@@ -52,6 +55,12 @@ export interface IMarsBot {
   maybeAdvanceTrack(trackIndex: number): void;
   /** Takes up to `amount` M€ from the bot, stopping at zero, and returns how much it lost. */
   loseMc(amount: number): number;
+  /**
+   * Advances the track that carries `tag` and tells the player's cards about the tag.
+   *
+   * Returns false when no track carries `tag`.
+   */
+  advanceTrackOfTag(tag: Tag): boolean;
 
   /**
    * Draws the top project card and resolves it as a bot action. The deck reshuffles its
@@ -61,6 +70,10 @@ export interface IMarsBot {
   maybeDrawAndResolveProjectCard(): void;
   /** Same as `maybeDrawAndResolveProjectCard`, but only the card's first tag resolves: the others are ignored. */
   maybeDrawAndResolveProjectCardFirstTagOnly(): void;
+  /** Plays `card` for the bot: it goes to the played pile and its tags advance the bot's tracks. */
+  resolveProjectCard(card: IProjectCard): void;
+  /** Places the bot's Neural Instance tile on `space` and pays the bot its placement M€. */
+  placeNeuralInstance(space: Space): void;
   /**
    * Draws the top bonus card and resolves it. Does nothing when both bonus piles are empty, or
    * once the game has ended.
@@ -123,6 +136,32 @@ export interface IMarsBot {
    * `temperatureRaises`. Unlike a track icon, a maxed temperature does nothing, with no Failed Action.
    */
   raiseTemperature(steps: 1 | 2): void;
+  /** Asks the bot's corp whether it cancels this raise of `parameter` (Pristar). True means the parameter stays put. */
+  interceptsParameterRaise(parameter: GlobalParameter): boolean;
+  /** True while Government Intervention raises Venus: the raise's bonuses and the colony it earns pay the bot no M€. */
+  bonusMcBlocked: boolean;
+  /**
+   * Raises the global parameter furthest from completion, for the bonus card `cardName`.
+   *
+   * Distance counts steps remaining (a temperature step is 2 degrees), and a tie goes to oxygen, then
+   * oceans, then temperature. With `allowCorpIntercept` false, no corp may cancel the raise. Returns
+   * false when every parameter is already complete.
+   */
+  advanceFurthestParameter(cardName: CardName, allowCorpIntercept?: boolean): boolean;
+  /**
+   * Places a greenery for the bot, raising the oxygen.
+   *
+   * Returns false, with no Failed Action, when no greenery space is left.
+   */
+  maybePlaceGreenery(): boolean;
+  /** Runs `action` and takes back any TR it gave the bot (Government Intervention). */
+  withoutTRGain(action: () => void): void;
+  /**
+   * Runs `action` and takes back any TR or M€ it gave the bot (Government Intervention).
+   *
+   * M€ that Lakefront Resorts' advance brings in stays (rulebook B, p.4).
+   */
+  withoutTRorMcGain(action: () => void): void;
   placeOcean(): void;
   placeCity(): void;
   placeGreenery(): void;
@@ -132,6 +171,18 @@ export interface IMarsBot {
   canPlaceColony(): boolean;
   /** Takes the bot's player marker off `space`. True when the space had one. */
   removeMarker(space: Space): boolean;
+  /** The bot's bonus deck. */
+  readonly bonusDeck: MarsBotBonusDeck;
+  /** Puts one of the bot's player markers on `space`, which reserves the space for the bot. */
+  placeMarker(space: Space): void;
+  /** Takes `card` off the bot's played pile. */
+  removePlayedProjectCard(card: IProjectCard): void;
+  /**
+   * Trades with the colony the bot picks, for the bonus card `cardName` (C-17).
+   *
+   * Does nothing, with no Failed Action, when no colony can be traded with or the bot has no M€ to pay.
+   */
+  maybeTrade(cardName: CardName): void;
 
   /** Corp-specific counters, serialized with the bot. Missing keys read as 0. */
   getCorpState(key: string): number;
