@@ -47,8 +47,8 @@ function competitionBot(gameOptions: Partial<TestGameOptions> = {}, fields: Part
     game, player: botPlayer, humanPlayer: human, megacredits: 5, interceptsParameterRaise: () => false,
     awardValue: () => 5,
     advanceTrackOfTag: (tag) => calls.push(`advanceTrackOfTag(${tag})`) > 0,
-    notifyTagAdvance: (tag) => {
-      calls.push(`notifyTagAdvance(${tag})`);
+    onTagAdvance: (tag) => {
+      calls.push(`onTagAdvance(${tag})`);
     },
     resolveProjectCard: (card) => {
       calls.push(`resolveProjectCard(${card.name})`);
@@ -185,10 +185,10 @@ describe('CorporateCompetition', () => {
   for (const run of [
     {award: 'Scientist', base: 0, positions: {}, maxed: [], expected: ['advanceTrackOfTag(science)']},
     {award: 'Scientist', base: 0, positions: {}, maxed: [Tag.SCIENCE], expected: []},
-    {award: 'Banker', base: 0, positions: {building: 3, event: 2}, maxed: [], expected: [`advanceTrack(${TRACK.event})`, 'notifyTagAdvance(event)']},
-    {award: 'Banker', base: 0, positions: {building: 2, event: 2}, maxed: [], expected: [`advanceTrack(${TRACK.building})`, 'notifyTagAdvance(building)']},
-    {award: 'Traveller', base: 0, positions: {earth: 3, power: 1}, maxed: [], expected: [`advanceTrack(${TRACK.earth})`, 'notifyTagAdvance(earth)']},
-    {award: 'Traveller', base: 0, positions: {earth: 3, power: 6}, maxed: [], expected: [`advanceTrack(${TRACK.power})`, 'notifyTagAdvance(jovian)']},
+    {award: 'Banker', base: 0, positions: {building: 3, event: 2}, maxed: [], expected: [`advanceTrack(${TRACK.event})`, 'onTagAdvance(event)']},
+    {award: 'Banker', base: 0, positions: {building: 2, event: 2}, maxed: [], expected: [`advanceTrack(${TRACK.building})`, 'onTagAdvance(building)']},
+    {award: 'Traveller', base: 0, positions: {earth: 3, power: 1}, maxed: [], expected: [`advanceTrack(${TRACK.earth})`, 'onTagAdvance(earth)']},
+    {award: 'Traveller', base: 0, positions: {earth: 3, power: 6}, maxed: [], expected: [`advanceTrack(${TRACK.power})`, 'onTagAdvance(jovian)']},
     {award: 'Traveller', base: 0, positions: {power: 1}, maxed: [Tag.EARTH], expected: []},
     {award: 'Mogul', base: 0, positions: {science: 4}, maxed: [], expected: [`advanceTrack(${TRACK.science})`]},
     {award: 'Mogul', base: 0, positions: {}, maxed: [Tag.SCIENCE], expected: []},

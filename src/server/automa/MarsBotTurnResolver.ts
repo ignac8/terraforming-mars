@@ -149,18 +149,19 @@ export class MarsBotTurnResolver {
       return false;
     }
     if (this.advanceTrack(trackIndex)) {
-      this.notifyTagAdvance(tag);
+      this.onTagAdvance(tag);
     }
     return true;
   }
 
   /**
-   * Tells the player's cards about an advance that names `tag`, as if a card with that tag was played.
+   * Called when a track advances for `tag`.
    *
-   * A microbe advance resolves Pharmacy Union or Splice (FAQ, rulebook B p.4), and a Jovian one
-   * Saturn Systems (TDaver, BGG 3356105). The other tags on a shared track don't count.
+   * The player's cards see it as if a card with that tag was played. A microbe advance resolves Pharmacy Union or
+   * Splice (FAQ, rulebook B p.4), and a Jovian one Saturn Systems (TDaver, BGG 3356105). The other tags on a shared
+   * track don't count.
    */
-  public notifyTagAdvance(tag: Tag): void {
+  public onTagAdvance(tag: Tag): void {
     const cards = tag === Tag.MICROBE ? [CardName.PHARMACY_UNION, CardName.SPLICE] :
       tag === Tag.JOVIAN ? [CardName.SATURN_SYSTEMS] : [];
     if (cards.length > 0) {

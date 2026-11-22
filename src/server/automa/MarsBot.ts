@@ -311,8 +311,8 @@ export class MarsBot implements IMarsBot {
     return this.turnResolver.advanceTrackOfTag(tag);
   }
 
-  public notifyTagAdvance(tag: Tag): void {
-    this.turnResolver.notifyTagAdvance(tag);
+  public onTagAdvance(tag: Tag): void {
+    this.turnResolver.onTagAdvance(tag);
   }
 
   public resolveProjectCard(card: IProjectCard): void {
