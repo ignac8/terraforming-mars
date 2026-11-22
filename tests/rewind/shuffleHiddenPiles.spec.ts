@@ -4,6 +4,8 @@ import {SerializedGame} from '../../src/server/SerializedGame';
 import {shuffleHiddenPiles} from '../../src/server/rewind/shuffleHiddenPiles';
 import {SeededRandom} from '../../src/common/utils/Random';
 import {BoardName} from '../../src/common/boards/BoardName';
+import {SerializedDeck} from '../../src/server/cards/SerializedDeck';
+import {GlobalEventName} from '../../src/common/turmoil/globalEvents/GlobalEventName';
 
 type Pile = {
   get: (d: SerializedGame) => Array<unknown>;
@@ -14,14 +16,23 @@ function pileOf<T>(get: (d: SerializedGame) => Array<T>, set: (d: SerializedGame
   return {get, set: (d, pile) => set(d, pile as Array<T>)};
 }
 
+/* The global event deck of a new game, which saves in the `SerializedDeck` shape. */
+function eventDeck(d: SerializedGame): SerializedDeck<GlobalEventName> {
+  const dealer = d.turmoil!.globalEventDealer;
+  if (!('drawPile' in dealer)) {
+    throw new Error('expected a SerializedDeck global event dealer');
+  }
+  return dealer;
+}
+
 const hiddenPiles: Array<[string, Pile]> = [
   ['projectDeck', pileOf((d) => d.projectDeck.drawPile, (d, p) => d.projectDeck.drawPile = p)],
   ['corporationDeck', pileOf((d) => d.corporationDeck.drawPile, (d, p) => d.corporationDeck.drawPile = p)],
   ['preludeDeck', pileOf((d) => d.preludeDeck.drawPile, (d, p) => d.preludeDeck.drawPile = p)],
   ['ceoDeck', pileOf((d) => d.ceoDeck.drawPile, (d, p) => d.ceoDeck.drawPile = p)],
   ['globalEventDealer', pileOf(
-    (d) => d.turmoil!.globalEventDealer.deck,
-    (d, p) => d.turmoil!.globalEventDealer.deck = p,
+    (d) => eventDeck(d).drawPile,
+    (d, p) => eventDeck(d).drawPile = p,
   )],
   ['underworld tokens', pileOf((d) => d.underworldData.tokens, (d, p) => d.underworldData.tokens = p)],
 ];
