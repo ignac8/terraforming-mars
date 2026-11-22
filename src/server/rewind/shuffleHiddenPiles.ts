@@ -1,7 +1,6 @@
 import {SerializedGame} from '../SerializedGame';
-import {Random} from '../../common/utils/Random';
+import {Random, StrongRandom} from '../../common/utils/Random';
 import {inplaceShuffle} from '../utils/shuffle';
-import {createStrongRandom} from '../utils/createStrongRandom';
 import {shuffleMarsBotHiddenPiles} from '../automa/shuffleMarsBotHiddenPiles';
 
 /**
@@ -27,7 +26,7 @@ export function shuffleHiddenPiles(d: SerializedGame, random: Random): void {
   }
 
   // Continue on a fresh, strong generator so the reshuffled piles stay unpredictable.
-  d.rng = createStrongRandom().serialize();
+  d.rng = StrongRandom.newInstance().serialize();
   delete d.seed;
   delete d.currentSeed;
 }

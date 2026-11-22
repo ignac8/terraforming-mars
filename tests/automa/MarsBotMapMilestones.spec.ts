@@ -12,6 +12,7 @@ import {createBonusCard} from '../../src/server/automa/bonusCards/MarsBotBonusCa
 import {BoardName} from '../../src/common/boards/BoardName';
 import {Tag} from '../../src/common/cards/Tag';
 import {RandomMAOptionType} from '../../src/common/ma/RandomMAOptionType';
+import {SeededRandom} from '../../src/common/utils/Random';
 import {getCandidates} from '../../src/server/ma/MilestoneAwardSelector';
 import {milestoneManifest} from '../../src/server/milestones/Milestones';
 import {awardManifest} from '../../src/server/awards/Awards';
@@ -343,7 +344,7 @@ describe('MarsBot map milestones and awards', () => {
 
     function newUtopiaGame(seed: number): IGame {
       const player = TestPlayer.BLUE.newPlayer();
-      return Game.newInstance('game-id', [player], player, 'spectator-id', {automa: true, boardName: BoardName.UTOPIA_PLANITIA}, seed);
+      return Game.newInstance('game-id', [player], player, 'spectator-id', {automa: true, boardName: BoardName.UTOPIA_PLANITIA}, new SeededRandom(seed));
     }
 
     it('Terra Cimmeria swaps Planetologist without Venus Next', () => {
