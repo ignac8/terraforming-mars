@@ -35,7 +35,7 @@ export class PartyHooks {
     if (player.game.phase !== Phase.ACTION) {
       return false;
     }
-    // T-5: MarsBot ignores the ruling party's policy.
+    // MarsBot ignores the ruling party's policy (rulebook C, p.6).
     if (player.isMarsBot) {
       return false;
     }

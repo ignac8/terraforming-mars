@@ -87,13 +87,13 @@ export type GameOptions = {
   automaDifficulty: 'easy' | 'normal' | 'hard' | 'brutal';
   automaCorpOption: boolean;
   /**
-   * T-14: how much Turmoil lowers MarsBot's starting TR. The rulebook default
-   * is 10 (MarsBot starts on 10 TR); 7 is its harder variant (13 TR).
+   * How much Turmoil lowers MarsBot's starting TR. The rulebook default
+   * is 10 (MarsBot starts on 10 TR, rulebook C, p.6); 7 is its harder variant (13 TR, rulebook C, p.7).
    */
   automaTurmoilTRReduction?: 7 | 10;
   /**
-   * T-15: MarsBot delegates seeded into random parties at setup, the
-   * rulebook's other harder variant: 0, 1 or 2.
+   * MarsBot delegates seeded into random parties at setup, the
+   * rulebook's other harder variant (rulebook C, p.7): 0, 1 or 2.
    */
   automaTurmoilSetupDelegates?: 0 | 1 | 2;
   /**

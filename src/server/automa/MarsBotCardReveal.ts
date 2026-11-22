@@ -1,7 +1,7 @@
 import {IGame} from '../IGame';
 
 /**
- * Picks one of `options` at random the rulebook way (rulebook A, tiebreak 3; C-15b).
+ * Picks one of `options` at random the rulebook way (rulebook A, p.9, tiebreak 3; rulebook C, p.4).
  *
  * The cost of a revealed project card, counted through `options` from the first, picks the option.
  * The card is then discarded.

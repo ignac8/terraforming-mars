@@ -26,7 +26,7 @@ export class Revolution extends GlobalEvent implements IGlobalEvent {
   }
   public override bespokeResolve(game: IGame) {
     const turmoil = Turmoil.getTurmoil(game);
-    // Solo, and automa games too: MarsBot takes no part in the Revolution ranking (T-10/T-10b).
+    // Solo, and automa games too: MarsBot takes no part in the Revolution ranking (rulebook C, p.7).
     if (game.isSoloMode() || game.automaHooks !== undefined) {
       if (this.getScore(game.playersInGenerationOrder[0], turmoil) >= 4 ) {
         game.playersInGenerationOrder[0].decreaseTerraformRating(2, {log: true});

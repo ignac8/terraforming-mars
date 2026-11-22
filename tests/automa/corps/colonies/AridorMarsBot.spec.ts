@@ -119,7 +119,7 @@ describe('AridorMarsBot', () => {
     expect(marsBot.shippingBoard.storage.size).to.eq(0);
   });
 
-  it('starts the added tile active, as C-1 starts every colony tile in a MarsBot game', () => {
+  it('starts the added tile active, as every colony tile starts in a MarsBot game (rulebook C, p.4)', () => {
     const [game] = testGame(1, {automa: true, coloniesExtension: true, boardName: BoardName.THARSIS});
     const marsBot = getMarsBot(game);
     const titan = new Titan();

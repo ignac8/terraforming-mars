@@ -38,18 +38,18 @@ function createTurmoilGame(): {game: IGame, humanPlayer: TestPlayer, marsBot: Ma
 }
 
 describe('MarsBot Turmoil — Setup', () => {
-  it('T-2: MarsBot starting TR is 10 (reduced by 10)', () => {
+  it('MarsBot starting TR is 10 (reduced by 10, rulebook C, p.6)', () => {
     const {marsBot} = createTurmoilGame();
     expect(marsBot.player.terraformRating).to.equal(MARSBOT_STARTING_TR - 10);
   });
 
-  it('T-1: MarsBot has 7 delegates in the reserve', () => {
+  it('MarsBot has 7 delegates in the reserve (rulebook C, p.6)', () => {
     const {game, marsBot} = createTurmoilGame();
     const turmoil = Turmoil.getTurmoil(game);
     expect(turmoil.delegateReserve.get(marsBot.player)).to.equal(DELEGATES_PER_PLAYER);
   });
 
-  it('T-3: Party Politics (B21) is in the initial action deck', () => {
+  it('Party Politics (B21) is in the initial action deck (rulebook C, p.6)', () => {
     const {marsBot} = createTurmoilGame();
     const hasPartyPolitics = marsBot.actionDeck.cards.some(
       (card) => !('cost' in card) && (card as MarsBotBonusCard).id === BonusCardId.B21_PARTY_POLITICS,
@@ -57,12 +57,12 @@ describe('MarsBot Turmoil — Setup', () => {
     expect(hasPartyPolitics).to.be.true;
   });
 
-  it('T-2: Without Turmoil, MarsBot starting TR is 20', () => {
+  it('Without Turmoil, MarsBot starting TR is 20', () => {
     const [game] = testGame(1, {automa: true, boardName: BoardName.THARSIS});
     expect(game.automaHooks!.marsBot.player.terraformRating).to.equal(MARSBOT_STARTING_TR);
   });
 
-  it('T-6: Party Politics is in action deck on generation 2', () => {
+  it('Party Politics is in action deck on generation 2 (rulebook C, p.6)', () => {
     const {marsBot} = createTurmoilGame();
     marsBot.actionDeck.buildResearch();
     const hasPartyPolitics = marsBot.actionDeck.cards.some(
@@ -72,8 +72,8 @@ describe('MarsBot Turmoil — Setup', () => {
   });
 });
 
-describe('MarsBot Turmoil — Party Politics delegate selection (T-7)', () => {
-  it('T-7.1: picks party where +1 makes MarsBot leader AND party dominant', () => {
+describe('MarsBot Turmoil — Party Politics delegate selection (rulebook C, p.6)', () => {
+  it('picks party where +1 makes MarsBot leader AND party dominant', () => {
     const {game, marsBot} = createTurmoilGame();
     const turmoil = Turmoil.getTurmoil(game);
     const marsBotPlayer = marsBot.player;
@@ -90,12 +90,12 @@ describe('MarsBot Turmoil — Party Politics delegate selection (T-7)', () => {
     expect(selected).to.equal(PartyName.SCIENTISTS);
   });
 
-  it('T-7.2: picks party where +1 makes MarsBot party leader', () => {
+  it('picks party where +1 makes MarsBot party leader', () => {
     const {game, marsBot} = createTurmoilGame();
     const turmoil = Turmoil.getTurmoil(game);
     const marsBotPlayer = marsBot.player;
 
-    // Kelvinists stays dominant, so T-7.1 can't pick Scientists.
+    // Kelvinists stays dominant, so the first priority can't pick Scientists.
     for (let i = 0; i < 5; i++) {
       turmoil.sendDelegateToParty('NEUTRAL', PartyName.KELVINISTS, game);
     }
@@ -109,7 +109,7 @@ describe('MarsBot Turmoil — Party Politics delegate selection (T-7)', () => {
     expect(selected).to.equal(PartyName.SCIENTISTS);
   });
 
-  it('T-7.3: picks party where MarsBot is already leader and +1 makes dominant', () => {
+  it('picks party where MarsBot is already leader and +1 makes dominant', () => {
     const {game, marsBot} = createTurmoilGame();
     const turmoil = Turmoil.getTurmoil(game);
     const marsBotPlayer = marsBot.player;
@@ -131,11 +131,11 @@ describe('MarsBot Turmoil — Party Politics delegate selection (T-7)', () => {
     expect(selected).to.equal(PartyName.UNITY);
   });
 
-  it('T-7.4: picks party where human has fewest delegates', () => {
+  it('picks party where human has fewest delegates', () => {
     const {game, humanPlayer} = createTurmoilGame();
     const turmoil = Turmoil.getTurmoil(game);
 
-    // A NEUTRAL delegate in every party rules out T-7.1 and T-7.2.
+    // A NEUTRAL delegate in every party rules out the first two priorities.
     for (const name of Object.values(PartyName)) {
       turmoil.sendDelegateToParty('NEUTRAL', name, game);
     }
@@ -148,12 +148,12 @@ describe('MarsBot Turmoil — Party Politics delegate selection (T-7)', () => {
     expect(selected).to.equal(PartyName.GREENS);
   });
 
-  it('T-7.5: tiebreaker picks party where MarsBot has fewest delegates', () => {
+  it('tiebreaker picks party where MarsBot has fewest delegates', () => {
     const {game, marsBot} = createTurmoilGame();
     const turmoil = Turmoil.getTurmoil(game);
     const marsBotPlayer = marsBot.player;
 
-    // The human has no delegates anywhere, so T-7.4 ties, and only Reds holds a MarsBot delegate.
+    // The human has no delegates anywhere, so the fourth priority ties, and only Reds holds a MarsBot delegate.
     turmoil.sendDelegateToParty(marsBotPlayer, PartyName.REDS, game);
 
     const selected = turmoilHelper(game).selectParty();
@@ -161,7 +161,7 @@ describe('MarsBot Turmoil — Party Politics delegate selection (T-7)', () => {
     expect(selected).to.not.be.undefined;
   });
 
-  it('T-7.6: final tiebreaker selects a valid party', () => {
+  it('final tiebreaker selects a valid party', () => {
     const {game} = createTurmoilGame();
 
     const selected = turmoilHelper(game).selectParty();
@@ -184,7 +184,7 @@ describe('MarsBot Turmoil — Party Politics delegate selection (T-7)', () => {
   });
 });
 
-describe('MarsBot Turmoil — End-of-game VP (T-13)', () => {
+describe('MarsBot Turmoil — End-of-game VP (rulebook C, p.7)', () => {
   it('MarsBot scores 1 VP for being party leader', () => {
     const {game, marsBot} = createTurmoilGame();
     const turmoil = Turmoil.getTurmoil(game);
@@ -343,8 +343,8 @@ describe('MarsBot Turmoil — serialization', () => {
   });
 });
 
-describe('MarsBot Turmoil — Global Events solo resolution (T-10/T-10b)', () => {
-  it('Revolution does not crash in automa game (T-10b)', () => {
+describe('MarsBot Turmoil — Global Events solo resolution (rulebook C, p.7)', () => {
+  it('Revolution does not crash in automa game', () => {
     const {game, humanPlayer} = createTurmoilGame();
     const revolution = new Revolution();
 
@@ -355,7 +355,7 @@ describe('MarsBot Turmoil — Global Events solo resolution (T-10/T-10b)', () =>
     expect(humanPlayer.terraformRating).to.equal(trBefore);
   });
 
-  it('Revolution loses 2 TR when human score >= 4 in automa game (T-10b)', () => {
+  it('Revolution loses 2 TR when human score >= 4 in automa game', () => {
     const {game, humanPlayer} = createTurmoilGame();
     const turmoil = Turmoil.getTurmoil(game);
     const revolution = new Revolution();
@@ -378,7 +378,7 @@ describe('MarsBot Turmoil — Global Events solo resolution (T-10/T-10b)', () =>
     expect(humanPlayer.terraformRating).to.equal(trBefore - 2);
   });
 
-  it('Election does not grant TR to MarsBot in automa game (T-10)', () => {
+  it('Election does not grant TR to MarsBot in automa game', () => {
     const {game, humanPlayer, marsBot} = createTurmoilGame();
     const election = new Election();
 
@@ -390,7 +390,7 @@ describe('MarsBot Turmoil — Global Events solo resolution (T-10/T-10b)', () =>
     expect(humanPlayer.terraformRating).to.equal(humanTR);
   });
 
-  it('Election grants 2 TR to human when score >= 10 in automa game (T-10/T-10b)', () => {
+  it('Election grants 2 TR to human when score >= 10 in automa game', () => {
     const {game, humanPlayer} = createTurmoilGame();
     const turmoil = Turmoil.getTurmoil(game);
     const election = new Election();
@@ -409,8 +409,8 @@ describe('MarsBot Turmoil — Global Events solo resolution (T-10/T-10b)', () =>
   });
 });
 
-describe('MarsBot Turmoil — Automatic skips (T-5 T-9 T-11a)', () => {
-  it('T-9: MarsBot does NOT lose TR during Turmoil TR Revision', () => {
+describe('MarsBot Turmoil — Automatic skips (rulebook C, p.6-7)', () => {
+  it('MarsBot does NOT lose TR during Turmoil TR Revision', () => {
     const {game, marsBot} = createTurmoilGame();
     const turmoil = Turmoil.getTurmoil(game);
     const trBefore = marsBot.player.terraformRating;
@@ -422,7 +422,7 @@ describe('MarsBot Turmoil — Automatic skips (T-5 T-9 T-11a)', () => {
     expect(marsBot.player.terraformRating).to.equal(trBefore);
   });
 
-  it('T-11a: MarsBot does NOT receive Ruling Party Bonus (Turmoil new government)', () => {
+  it('MarsBot does NOT receive Ruling Party Bonus (Turmoil new government)', () => {
     const {game, marsBot} = createTurmoilGame();
     const marsBotPlayer = marsBot.player;
 
@@ -431,7 +431,7 @@ describe('MarsBot Turmoil — Automatic skips (T-5 T-9 T-11a)', () => {
     expect(marsBotPlayer.stock.megacredits).to.equal(mcBefore);
   });
 
-  it('T-5: MarsBot does NOT receive Ruling Party Policy effect (onPolicyStart)', () => {
+  it('MarsBot does NOT receive Ruling Party Policy effect (onPolicyStart)', () => {
     const {game, marsBot} = createTurmoilGame();
     const marsBotPlayer = marsBot.player;
 
@@ -441,7 +441,7 @@ describe('MarsBot Turmoil — Automatic skips (T-5 T-9 T-11a)', () => {
     expect(marsBotPlayer.getSteelValue()).to.equal(steelValueBefore);
   });
 
-  it('T-5: MarsBot raises TR under Reds without paying and without being asked to pay', () => {
+  it('MarsBot raises TR under Reds without paying and without being asked to pay', () => {
     const {game, marsBot} = createTurmoilGame();
     const botPlayer = marsBot.player;
     setRulingParty(game, PartyName.REDS);
@@ -458,8 +458,8 @@ describe('MarsBot Turmoil — Automatic skips (T-5 T-9 T-11a)', () => {
   });
 });
 
-describe('MarsBot Turmoil — Chairman rules (T-11b T-11c)', () => {
-  it('T-11b: MarsBot gains 1 TR when it becomes chairman', () => {
+describe('MarsBot Turmoil — Chairman rules (rulebook C, p.7)', () => {
+  it('MarsBot gains 1 TR when it becomes chairman', () => {
     const {game, marsBot} = createTurmoilGame();
     const turmoil = Turmoil.getTurmoil(game);
     const marsBotPlayer = marsBot.player;
@@ -471,7 +471,7 @@ describe('MarsBot Turmoil — Chairman rules (T-11b T-11c)', () => {
     expect(marsBotPlayer.terraformRating).to.equal(trBefore + 1);
   });
 
-  it('T-11b: MarsBot gains 1 TR when it becomes chairman via full runTurmoilPhase', () => {
+  it('MarsBot gains 1 TR when it becomes chairman via full runTurmoilPhase', () => {
     const {game, marsBot} = createTurmoilGame();
     const turmoil = Turmoil.getTurmoil(game);
     const marsBotPlayer = marsBot.player;
@@ -492,7 +492,7 @@ describe('MarsBot Turmoil — Chairman rules (T-11b T-11c)', () => {
     expect(turmoil.chairman).to.equal(marsBotPlayer);
   });
 
-  it('T-11c: MarsBot delegates from ruling party return to reserve (not lost) after New Government', () => {
+  it('MarsBot delegates from ruling party return to reserve (not lost) after New Government', () => {
     const {game, marsBot} = createTurmoilGame();
     const turmoil = Turmoil.getTurmoil(game);
     const marsBotPlayer = marsBot.player;
@@ -514,7 +514,7 @@ describe('MarsBot Turmoil — Chairman rules (T-11b T-11c)', () => {
     expect(reds.partyLeader).to.be.undefined;
   });
 
-  it('T-11c: MarsBot does NOT use the free lobby delegate action each generation', () => {
+  it('MarsBot does NOT use the free lobby delegate action each generation', () => {
     const {game, marsBot} = createTurmoilGame();
     const turmoil = Turmoil.getTurmoil(game);
     const marsBotPlayer = marsBot.player;
@@ -527,7 +527,7 @@ describe('MarsBot Turmoil — Chairman rules (T-11b T-11c)', () => {
   });
 });
 
-describe('MarsBot Turmoil — Difficulty options (T-14 T-15)', () => {
+describe('MarsBot Turmoil — Difficulty options (rulebook C, p.7)', () => {
   function delegatesInParties(game: ReturnType<typeof testGame>[0]): number {
     const turmoil = Turmoil.getTurmoil(game);
     const marsBotPlayer = game.automaHooks!.marsBot.player;
@@ -538,7 +538,7 @@ describe('MarsBot Turmoil — Difficulty options (T-14 T-15)', () => {
     return inParties;
   }
 
-  it('T-14: by default MarsBot starts at 10 TR (reduced by 10) with no seeded delegates', () => {
+  it('by default MarsBot starts at 10 TR (reduced by 10) with no seeded delegates', () => {
     const [game] = testGame(1, {
       automa: true,
       turmoilExtension: true,
@@ -550,7 +550,7 @@ describe('MarsBot Turmoil — Difficulty options (T-14 T-15)', () => {
     expect(Turmoil.getTurmoil(game).delegateReserve.get(marsBotPlayer)).to.equal(DELEGATES_PER_PLAYER);
   });
 
-  it('T-14: automaTurmoilTRReduction=7 → MarsBot starts at 13 TR and still seeds no delegates', () => {
+  it('automaTurmoilTRReduction=7 → MarsBot starts at 13 TR and still seeds no delegates', () => {
     const [game] = testGame(1, {
       automa: true,
       turmoilExtension: true,
@@ -561,7 +561,7 @@ describe('MarsBot Turmoil — Difficulty options (T-14 T-15)', () => {
     expect(delegatesInParties(game)).to.equal(0);
   });
 
-  it('T-15: automaTurmoilSetupDelegates=1 → 1 MarsBot delegate seeded, TR reduction unchanged', () => {
+  it('automaTurmoilSetupDelegates=1 → 1 MarsBot delegate seeded, TR reduction unchanged', () => {
     const [game] = testGame(1, {
       automa: true,
       turmoilExtension: true,
@@ -574,7 +574,7 @@ describe('MarsBot Turmoil — Difficulty options (T-14 T-15)', () => {
     expect(marsBotPlayer.terraformRating).to.equal(MARSBOT_STARTING_TR - 10);
   });
 
-  it('T-15: automaTurmoilSetupDelegates=2 → 2 MarsBot delegates seeded', () => {
+  it('automaTurmoilSetupDelegates=2 → 2 MarsBot delegates seeded', () => {
     const [game] = testGame(1, {
       automa: true,
       turmoilExtension: true,
@@ -586,7 +586,7 @@ describe('MarsBot Turmoil — Difficulty options (T-14 T-15)', () => {
     expect(Turmoil.getTurmoil(game).delegateReserve.get(marsBotPlayer)).to.equal(DELEGATES_PER_PLAYER - 2);
   });
 
-  it('T-14 + T-15 combine: reduction 7 and 2 seeded delegates', () => {
+  it('both difficulty options combine: reduction 7 and 2 seeded delegates', () => {
     const [game] = testGame(1, {
       automa: true,
       turmoilExtension: true,

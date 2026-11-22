@@ -53,7 +53,7 @@ describe('ExpeditedConstructionColonies', () => {
     });
   }
 
-  it('C-15b: gains 2 resources if colony placed', () => {
+  it('gains 2 resources if colony placed', () => {
     const [game] = testGame(1, {automa: true, coloniesExtension: true, boardName: BoardName.THARSIS});
     const marsBot = getMarsBot(game);
     const luna = new Luna();
@@ -66,7 +66,7 @@ describe('ExpeditedConstructionColonies', () => {
     expect(marsBot.shippingBoard.get(ColonyName.LUNA)).to.eq(storageBefore + 2);
   });
 
-  it('C-15c: no effect if MarsBot already has 2+ colonies', () => {
+  it('no effect if MarsBot already has 2+ colonies', () => {
     const [game] = testGame(1, {automa: true, coloniesExtension: true, boardName: BoardName.THARSIS});
     const marsBot = getMarsBot(game);
     const luna = new Luna();

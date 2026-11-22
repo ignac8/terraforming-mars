@@ -12,8 +12,8 @@ function getMarsBotFromGame(game: ReturnType<typeof testGame>[0]): MarsBot {
   return (game.automaHooks as AutomaGameHooks).marsBot;
 }
 
-describe('MarsBot Colonies — 2nd Trade Fleet Cube (C-6, C-27)', () => {
-  it('places white cube at Energy track position 9 when coloniesExtension enabled (C-6)', () => {
+describe('MarsBot Colonies — 2nd Trade Fleet Cube', () => {
+  it('places white cube at Energy track position 9 when coloniesExtension enabled (rulebook C, p.4)', () => {
     const [game] = testGame(1, {automa: true, coloniesExtension: true, boardName: BoardName.THARSIS});
     const marsBot = getMarsBotFromGame(game);
 
@@ -35,7 +35,7 @@ describe('MarsBot Colonies — 2nd Trade Fleet Cube (C-6, C-27)', () => {
     expect(marsBot.trackCubePositions.has(key)).to.be.false;
   });
 
-  it('tradeFleetCubeKey is set when coloniesExtension enabled (C-6)', () => {
+  it('tradeFleetCubeKey is set when coloniesExtension enabled', () => {
     const [game] = testGame(1, {automa: true, coloniesExtension: true, boardName: BoardName.THARSIS});
     const marsBot = getMarsBotFromGame(game);
     expect(marsBot.tradeFleetCubeKey).to.eq('4:9');
@@ -55,7 +55,7 @@ describe('MarsBot Colonies — 2nd Trade Fleet Cube (C-6, C-27)', () => {
     expect(marsBot.hasSecondTradeFleet).to.be.false;
   });
 
-  it('unlocks 2nd trade fleet when Energy track reaches position 9 (C-27)', () => {
+  it('unlocks 2nd trade fleet when Energy track reaches position 9 (rulebook C, p.6)', () => {
     const [game] = testGame(1, {automa: true, coloniesExtension: true, boardName: BoardName.THARSIS});
     const marsBot = getMarsBotFromGame(game);
     const energyTrackIdx = marsBot.marsBotBoard.tagToTrack[Tag.POWER]!;

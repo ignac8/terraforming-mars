@@ -20,7 +20,7 @@ export interface MarsBotVPBreakdown {
   cardVP: number; // Only in Hard/Brutal mode
   vermin: number;
   leftoverResourcesVP: number; // With automaColonyVP: 1 VP per 2 resources left on the shipping board and Venus floaters
-  turmoilVP: number; // T-13: 1 VP per party leader or chairman position
+  turmoilVP: number; // 1 VP per party leader or chairman position (rulebook C, p.7)
   corpVP: number; // VP the corporation adds at the end (Viron)
   total: number;
   detailsMilestones: Array<MADetail>;
@@ -160,7 +160,7 @@ export class MarsBotScoring {
     return Math.floor((sum(Array.from(this.marsBot.shippingBoard.storage.values())) + this.marsBot.floaters) / 2);
   }
 
-  /** Scores 1 VP for each Party Leader or Chairman position MarsBot holds (T-13). */
+  /** Scores 1 VP for each Party Leader or Chairman position MarsBot holds (rulebook C, p.7). */
   private calculateTurmoilVP(): number {
     if (!this.marsBot.game.gameOptions.turmoilExtension || this.marsBot.game.turmoil === undefined) {
       return 0;

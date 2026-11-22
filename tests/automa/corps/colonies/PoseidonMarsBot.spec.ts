@@ -44,7 +44,7 @@ describe('PoseidonMarsBot', () => {
     expect(hasLuna || hasCeres).to.be.true;
   });
 
-  it('gains 2 resources to shipping board (C-33)', () => {
+  it('gains 2 resources to shipping board (rulebook C, p.5)', () => {
     const [game] = testGame(1, {automa: true, coloniesExtension: true, boardName: BoardName.THARSIS});
     const marsBot = getMarsBot(game);
     const luna = new Luna();
@@ -59,7 +59,7 @@ describe('PoseidonMarsBot', () => {
     expect(CardName.POSEIDON).to.not.be.undefined;
   });
 
-  it('colony placement advances least-advanced track (C-33 ongoing effect)', () => {
+  it('colony placement advances least-advanced track (Poseidon card C33 ongoing effect)', () => {
     const [game] = testGame(1, {automa: true, coloniesExtension: true, boardName: BoardName.THARSIS});
     const marsBot = getMarsBot(game);
     const luna = new Luna();

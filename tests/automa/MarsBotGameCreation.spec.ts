@@ -19,18 +19,18 @@ describe('MarsBotGameCreation', () => {
       expect(game.gameOptions.venusNextExtension).to.be.true;
     });
 
-    it('automa game supports Colonies (C-1)', () => {
+    it('automa game supports Colonies', () => {
       const [game] = testGame(1, {
         automa: true,
         coloniesExtension: true,
         boardName: BoardName.THARSIS,
       });
       expect(game.gameOptions.coloniesExtension).to.be.true;
-      // C-1: 2-player setup = 5 colonies active
+      // 2-player setup = 5 colonies active (rulebook C, p.4)
       expect(game.colonies.length).to.eq(5);
     });
 
-    it('starts Titan, Enceladus and Miranda active on their second step (C-1)', () => {
+    it('starts Titan, Enceladus and Miranda active on their second step (rulebook C, p.4)', () => {
       const customColoniesList = [ColonyName.TITAN, ColonyName.ENCELADUS, ColonyName.MIRANDA, ColonyName.LUNA, ColonyName.CERES];
       const [game] = testGame(1, {
         automa: true,

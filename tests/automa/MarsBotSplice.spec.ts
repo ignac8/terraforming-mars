@@ -180,7 +180,7 @@ describe("MarsBot and the player's Pharmacy Union", () => {
     expect(marsBot.player.getWaitingFor()).is.undefined;
   });
 
-  it('adds a disease when Enceladus storage overflows into the microbe track (C-12)', () => {
+  it('adds a disease when Enceladus storage overflows into the microbe track (rulebook C, p.4)', () => {
     const {game, human, marsBot} = createAutomaGame();
     const pharmacyUnion = new PharmacyUnion();
     human.playedCards.push(pharmacyUnion);

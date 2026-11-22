@@ -106,16 +106,16 @@ export class MarsBot implements IMarsBot {
   public floaters: number = 0;
 
   /**
-   * Track-cube key of the 2nd Trade Fleet position (Colonies, C-6). Undefined without Colonies.
+   * Track-cube key of the 2nd Trade Fleet position (Colonies, rulebook C, p.4). Undefined without Colonies.
    *
    * Saved with the game, because a save can have the cube on the Event track.
    */
   public tradeFleetCubeKey: string | undefined = undefined;
 
-  /** Whether MarsBot has unlocked the 2nd Trade Fleet (Colonies, C-27). */
+  /** Whether MarsBot has unlocked the 2nd Trade Fleet (Colonies, rulebook C, p.6). */
   public hasSecondTradeFleet: boolean = false;
 
-  /** Shipping Board with 11 storage areas, one per colony tile (C-18). */
+  /** Shipping Board with 11 storage areas, one per colony tile (rulebook C, p.5). */
   public shippingBoard: MarsBotShippingBoard = new MarsBotShippingBoard(this);
 
   /**
@@ -153,7 +153,7 @@ export class MarsBot implements IMarsBot {
     } else {
       this.bonusDeck = MarsBotBonusDeck.create(random, {venus: opts.venusNextExtension, colonies: opts.coloniesExtension});
     }
-    // C-6: the 2nd Trade Fleet starts on space 9 of the Energy track, moved up by the map's shift
+    // The 2nd Trade Fleet starts on space 9 of the Energy track (rulebook C, p.4), moved up by the map's shift
     if (opts.coloniesExtension) {
       const energyTrackIdx = this.marsBotBoard.tagToTrack[Tag.POWER];
       if (energyTrackIdx !== undefined) {
@@ -621,7 +621,7 @@ export class MarsBot implements IMarsBot {
     }
   }
 
-  /** True when MarsBot keeps its floaters in the Titan storage area: Colonies without Venus Next (C-14, C-23). */
+  /** True when MarsBot keeps its floaters in the Titan storage area: Colonies without Venus Next (rulebook C, p.4-5). */
   private usesTitanStorageForFloaters(): boolean {
     const opts = this.game.gameOptions;
     return opts.coloniesExtension && !opts.venusNextExtension;
@@ -814,7 +814,7 @@ export class MarsBot implements IMarsBot {
     if (this.corp !== undefined) {
       state.corpId = this.corp.name;
     }
-    // Corp cubes and the trade fleet cube (C-6) both go in the cube positions.
+    // Corp cubes and the trade fleet cube both go in the cube positions.
     if (this.trackCubePositions.size > 0) {
       state.trackCubePositions = Array.from(this.trackCubePositions.values());
     }

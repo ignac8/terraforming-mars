@@ -51,7 +51,7 @@ describe('MarsBotShippingBoard', () => {
     expect(advanced).is.empty;
   });
 
-  describe('storage and resource mapping (C-25)', () => {
+  describe('storage and resource mapping (rulebook C, p.5)', () => {
     it('COLONY_STORAGE_TAG maps Ceres to BUILDING', () => {
       expect(COLONY_STORAGE_TAG[ColonyName.CERES]).to.eq(Tag.BUILDING);
     });
@@ -76,13 +76,13 @@ describe('MarsBotShippingBoard', () => {
     it('COLONY_STORAGE_TAG maps Triton to SPACE', () => {
       expect(COLONY_STORAGE_TAG[ColonyName.TRITON]).to.eq(Tag.SPACE);
     });
-    it('COLONY_STORAGE_TAG maps Pluto to SCIENCE (C-26)', () => {
+    it('COLONY_STORAGE_TAG maps Pluto to SCIENCE (rulebook C, p.5)', () => {
       expect(COLONY_STORAGE_TAG[ColonyName.PLUTO]).to.eq(Tag.SCIENCE);
     });
-    it('COLONY_STORAGE_TAG has no entry for Titan (exempt from C-12, C-23)', () => {
+    it('COLONY_STORAGE_TAG has no entry for Titan (exempt from the overflow rule, rulebook C, p.4-5)', () => {
       expect(COLONY_STORAGE_TAG[ColonyName.TITAN]).to.be.undefined;
     });
-    it('COLONY_STORAGE_TAG has no entry for Europa (no storage, C-24d)', () => {
+    it('COLONY_STORAGE_TAG has no entry for Europa (no storage, rulebook C, p.5)', () => {
       expect(COLONY_STORAGE_TAG[ColonyName.EUROPA]).to.be.undefined;
     });
   });
@@ -106,12 +106,12 @@ describe('MarsBotShippingBoard', () => {
       expect(marsBot.shippingBoard.get(ColonyName.LUNA)).to.eq(3);
     });
 
-    it('silently ignores Europa (C-24d)', () => {
+    it('silently ignores Europa', () => {
       marsBot.shippingBoard.add(ColonyName.EUROPA, 5);
       expect(marsBot.shippingBoard.get(ColonyName.EUROPA)).to.eq(0);
     });
 
-    it('stores resources for Titan but no overflow check (C-23)', () => {
+    it('stores resources for Titan but no overflow check', () => {
       marsBot.shippingBoard.add(ColonyName.TITAN, 7);
       expect(marsBot.shippingBoard.get(ColonyName.TITAN)).to.eq(7);
       const eventTrackIdx = marsBot.marsBotBoard.tagToTrack[Tag.EVENT]!;
@@ -119,7 +119,7 @@ describe('MarsBotShippingBoard', () => {
     });
   });
 
-  describe('C-12 overflow: ≥5 resources → advance track', () => {
+  describe('overflow: ≥5 resources → advance track (rulebook C, p.4)', () => {
     let marsBot: MarsBot;
 
     beforeEach(() => {

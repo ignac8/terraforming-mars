@@ -42,7 +42,7 @@ describe('OuterSystemFoothold', () => {
     expect(marsBot.bonusDeck.discardPile).deep.eq([self, investors]);
   });
 
-  it('C-16a/b: places colony and gains 2 resources', () => {
+  it('places colony and gains 2 resources', () => {
     const [game] = testGame(1, {automa: true, coloniesExtension: true, boardName: BoardName.THARSIS});
     const marsBot = getMarsBot(game);
     const luna = new Luna();
@@ -58,7 +58,7 @@ describe('OuterSystemFoothold', () => {
     expect(destroyed).to.be.false;
   });
 
-  it('C-16c/d: draws and discards a bonus card (not resolves)', () => {
+  it('draws and discards a bonus card (not resolves)', () => {
     const [game] = testGame(1, {automa: true, coloniesExtension: true, boardName: BoardName.THARSIS});
     const marsBot = getMarsBot(game);
     game.colonies = [new Luna()];

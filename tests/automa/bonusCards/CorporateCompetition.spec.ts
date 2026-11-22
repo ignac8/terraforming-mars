@@ -362,7 +362,7 @@ describe('CorporateCompetition', () => {
     expect(marsBot.megacredits).to.be.lt(mcBefore);
   });
 
-  it('takes no more than MarsBot has when the helper itself cost M€ (colony cube, C-X3)', () => {
+  it('takes no more than MarsBot has when the helper itself cost M€ (colony cube, rulebook C, p.14)', () => {
     const [game, human] = testGame(1, {automa: true, coloniesExtension: true, boardName: BoardName.THARSIS});
     const marsBot = game.automaHooks!.marsBot;
     const ceres = new Ceres();

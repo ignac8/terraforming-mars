@@ -43,14 +43,14 @@ export interface IMarsBot {
   readonly actionDeckBonusCard: BonusCardId | undefined;
   /** True when the bot's corp puts its own card in Party Politics' place in the action deck. */
   readonly replacesPartyPolitics: boolean;
-  /** True once the bot has unlocked its 2nd Trade Fleet, which adds Extended Shipping Lines to its action deck (C-11). */
+  /** True once the bot has unlocked its 2nd Trade Fleet, which adds Extended Shipping Lines to its action deck (rulebook C, p.4). */
   readonly hasSecondTradeFleet: boolean;
-  /** The bot's Shipping Board, where its colonies and trades store their resources (C-18). */
+  /** The bot's Shipping Board, where its colonies and trades store their resources (rulebook C, p.5). */
   readonly shippingBoard: MarsBotShippingBoard;
   /**
    * Adds floaters to the bot's floater pool with Venus Next.
    *
-   * With Colonies and without Venus Next they go to its Titan storage area instead (C-14, C-23).
+   * With Colonies and without Venus Next they go to its Titan storage area instead (rulebook C, p.4-5).
    */
   addFloaters(count: number): void;
   /** Removes floaters from where `addFloaters` puts them, stopping at zero. */
@@ -204,7 +204,7 @@ export interface IMarsBot {
   placeOcean(): void;
   placeCity(): void;
   placeGreenery(): void;
-  /** Places a colony on a randomly selected eligible tile (Colonies rule C-15b). Returns true if placed. */
+  /** Places a colony on a randomly selected eligible tile (rulebook C, p.4). Returns true if placed. */
   maybePlaceRandomColony(): boolean;
   /** True when a colony tile has room for MarsBot. */
   canPlaceColony(): boolean;
@@ -221,7 +221,7 @@ export interface IMarsBot {
   /** The VP the bot's corp adds to its score at the end of the game. */
   corpVictoryPoints(): number;
   /**
-   * Trades with the colony the bot picks, for the bonus card `cardName` (C-17).
+   * Trades with the colony the bot picks, for the bonus card `cardName` (rulebook C, p.5).
    *
    * Does nothing, with no Failed Action, when no colony can be traded with or the bot has no M€ to pay.
    */

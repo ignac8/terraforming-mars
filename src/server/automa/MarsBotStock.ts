@@ -23,7 +23,7 @@ import {message} from '../logs/MessageBuilder';
  *
  * A removal deducts M€ from `MarsBot.megacredits`, except that the matching colony storage area
  * (Ceres steel, Triton titanium, Io heat, Callisto energy, Ganymede plants, Luna M€) counts as that
- * resource too (C-25). When a player removes or steals and both the M€ supply and that area hold
+ * resource too (rulebook C, p.5). When a player removes or steals and both the M€ supply and that area hold
  * something, the player chooses the source or splits.
  *
  * Resource additions (from game engine bonuses) are ignored, since MarsBot doesn't use resources.
@@ -35,7 +35,7 @@ export class MarsBotStock extends Stock {
     this.marsBotRef = marsBot;
 
     // Per automa rules, all MarsBot resources are its M€ supply, plus the colony storage area
-    // that holds the resource (C-25), plus for plants the ones on Ecoline's or Ecotec's card
+    // that holds the resource, plus for plants the ones on Ecoline's or Ecotec's card
     // (rulebook B, p.4 FAQ). Cards check `target.steel > 0` etc. to decide if stealing is possible,
     // and cap the amount by it. MarsBot's scoring never reads these.
     const stock = this;
@@ -94,7 +94,7 @@ export class MarsBotStock extends Stock {
         }
       };
       // A player removing from MarsBot chooses between its M€ supply and the matching colony
-      // storage area (C-25). Anything else (events, MarsBot itself) comes out of the M€ supply.
+      // storage area. Anything else (events, MarsBot itself) comes out of the M€ supply.
       const fromStock = () => {
         if (taker !== undefined && this.storage(resource) > 0) {
           this.removeFromSources(resource, -amount, taker, amount, options, undefined);

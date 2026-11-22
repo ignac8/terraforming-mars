@@ -138,7 +138,7 @@ describe('MarsBotColonyPlacer', () => {
     });
   });
 
-  describe('selectRandomColony (C-15b method)', () => {
+  describe('selectRandomColony', () => {
     it('uses card cost to index into eligible colonies', () => {
       const [game] = testGame(1, {automa: true, coloniesExtension: true, boardName: BoardName.THARSIS});
       const marsBot = getMarsBot(game);
@@ -186,7 +186,7 @@ describe('MarsBotColonyPlacer', () => {
     });
   });
 
-  describe('placeColony (C-19)', () => {
+  describe('placeColony', () => {
     it('adds MarsBot to colony.colonies array', () => {
       const [game] = testGame(1, {automa: true, coloniesExtension: true, boardName: BoardName.THARSIS});
       const marsBot = getMarsBot(game);
@@ -196,7 +196,7 @@ describe('MarsBotColonyPlacer', () => {
       expect(luna.colonies).to.include(marsBot.player.id);
     });
 
-    it('adds 2 resources to shipping board instead of printed reward (C-19)', () => {
+    it('adds 2 resources to shipping board instead of printed reward (rulebook C, p.5)', () => {
       const [game] = testGame(1, {automa: true, coloniesExtension: true, boardName: BoardName.THARSIS});
       const marsBot = getMarsBot(game);
       const luna = new Luna();
@@ -217,7 +217,7 @@ describe('MarsBotColonyPlacer', () => {
     });
   });
 
-  describe('Europa special case (C-24a)', () => {
+  describe('Europa special case (rulebook C, p.5)', () => {
     it('places ocean tile instead of 2 resources', () => {
       const [game] = testGame(1, {automa: true, coloniesExtension: true, boardName: BoardName.THARSIS});
       const marsBot = getMarsBot(game);
@@ -263,7 +263,7 @@ describe('MarsBotColonyPlacer', () => {
     });
   });
 
-  describe('Titan special case (C-23)', () => {
+  describe('Titan special case (rulebook C, p.5)', () => {
     it('without Venus Next: adds 2 to Titan storage', () => {
       const [game] = testGame(1, {automa: true, coloniesExtension: true, boardName: BoardName.THARSIS});
       const marsBot = getMarsBot(game);
@@ -288,7 +288,7 @@ describe('MarsBotColonyPlacer', () => {
       expect(marsBot.floaters).to.eq(floatersBefore + 2);
     });
 
-    it('Titan storage overflow does NOT advance any track (C-23)', () => {
+    it('Titan storage overflow does NOT advance any track (rulebook C, p.5)', () => {
       const [game] = testGame(1, {automa: true, coloniesExtension: true, boardName: BoardName.THARSIS});
       const marsBot = getMarsBot(game);
       const titan = new Titan();
@@ -296,7 +296,7 @@ describe('MarsBotColonyPlacer', () => {
       marsBot.shippingBoard.add(ColonyName.TITAN, 3);
       const plantIdx = marsBot.marsBotBoard.tagToTrack[Tag.PLANT]!;
       const plantBefore = marsBot.marsBotBoard.tracks[plantIdx].position;
-      placeColony(titan, marsBot); // 3 + 2 reaches the overflow of 5, which Titan is exempt from (C-12)
+      placeColony(titan, marsBot); // 3 + 2 reaches the overflow of 5, which Titan is exempt from (rulebook C, p.4)
       expect(marsBot.marsBotBoard.tracks[plantIdx].position).to.eq(plantBefore);
     });
   });

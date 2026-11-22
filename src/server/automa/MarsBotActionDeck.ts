@@ -73,7 +73,7 @@ export class MarsBotActionDeck {
     }
   }
 
-  /** Adds Party Politics (B21) to `deck` with Turmoil, unless the corp puts its own card in its place (T-3, T-6). */
+  /** Adds Party Politics (B21) to `deck` with Turmoil, unless the corp puts its own card in its place (rulebook C, p.6). */
   private addPartyPolitics(deck: Array<IProjectCard | MarsBotBonusCard>): void {
     if (!this.marsBot.game.gameOptions.turmoilExtension) {
       return;
@@ -85,9 +85,9 @@ export class MarsBotActionDeck {
   }
 
   /**
-   * Adds Shipping Lines (B19) to `deck` with Colonies after generation 1 (C-10).
+   * Adds Shipping Lines (B19) to `deck` with Colonies after generation 1 (rulebook C, p.4).
    *
-   * Extended Shipping Lines (B20) comes with it once the 2nd Trade Fleet is unlocked (C-11).
+   * Extended Shipping Lines (B20) comes with it once the 2nd Trade Fleet is unlocked (rulebook C, p.4 and p.6).
    */
   private addShippingLines(deck: Array<IProjectCard | MarsBotBonusCard>): void {
     if (!this.marsBot.game.gameOptions.coloniesExtension) {

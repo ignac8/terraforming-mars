@@ -15,8 +15,8 @@ function hasBonusCard(deck: Array<IProjectCard | MarsBotBonusCard>, id: BonusCar
   return deck.some((c) => (c as MarsBotBonusCard).id === id);
 }
 
-describe('ActionDeckColonies (C-10, C-11)', () => {
-  it('C-10: Shipping Lines (B19) injected into action deck from gen 2+', () => {
+describe('ActionDeckColonies', () => {
+  it('Shipping Lines (B19) injected into action deck from gen 2+', () => {
     const [game] = testGame(1, {automa: true, coloniesExtension: true, boardName: BoardName.THARSIS});
     const marsBot = getMarsBot(game);
 
@@ -26,7 +26,7 @@ describe('ActionDeckColonies (C-10, C-11)', () => {
     expect(hasBonusCard(marsBot.actionDeck.cards, BonusCardId.B19_SHIPPING_LINES)).to.be.true;
   });
 
-  it('C-10: Shipping Lines NOT added in gen 1', () => {
+  it('Shipping Lines NOT added in gen 1', () => {
     const [game] = testGame(1, {automa: true, coloniesExtension: true, boardName: BoardName.THARSIS});
     const marsBot = getMarsBot(game);
 
@@ -36,7 +36,7 @@ describe('ActionDeckColonies (C-10, C-11)', () => {
     expect(hasBonusCard(marsBot.actionDeck.cards, BonusCardId.B19_SHIPPING_LINES)).to.be.false;
   });
 
-  it('C-11: Extended Shipping Lines (B20) added if hasSecondTradeFleet', () => {
+  it('Extended Shipping Lines (B20) added if hasSecondTradeFleet', () => {
     const [game] = testGame(1, {automa: true, coloniesExtension: true, boardName: BoardName.THARSIS});
     const marsBot = getMarsBot(game);
 
@@ -48,7 +48,7 @@ describe('ActionDeckColonies (C-10, C-11)', () => {
     expect(hasBonusCard(marsBot.actionDeck.cards, BonusCardId.B20_EXTENDED_SHIPPING_LINES)).to.be.true;
   });
 
-  it('C-11: Extended Shipping Lines NOT added if hasSecondTradeFleet is false', () => {
+  it('Extended Shipping Lines NOT added if hasSecondTradeFleet is false', () => {
     const [game] = testGame(1, {automa: true, coloniesExtension: true, boardName: BoardName.THARSIS});
     const marsBot = getMarsBot(game);
 
@@ -59,7 +59,7 @@ describe('ActionDeckColonies (C-10, C-11)', () => {
     expect(hasBonusCard(marsBot.actionDeck.cards, BonusCardId.B20_EXTENDED_SHIPPING_LINES)).to.be.false;
   });
 
-  it('C-10: Shipping Lines NOT added without coloniesExtension', () => {
+  it('Shipping Lines NOT added without coloniesExtension', () => {
     const [game] = testGame(1, {automa: true, coloniesExtension: false, boardName: BoardName.THARSIS});
     const marsBot = getMarsBot(game);
 
@@ -69,7 +69,7 @@ describe('ActionDeckColonies (C-10, C-11)', () => {
     expect(hasBonusCard(marsBot.actionDeck.cards, BonusCardId.B19_SHIPPING_LINES)).to.be.false;
   });
 
-  it('C-10: Shipping Lines injected via buildResearchFromDraft', () => {
+  it('Shipping Lines injected via buildResearchFromDraft', () => {
     const [game] = testGame(1, {automa: true, coloniesExtension: true, boardName: BoardName.THARSIS});
     const marsBot = getMarsBot(game);
 

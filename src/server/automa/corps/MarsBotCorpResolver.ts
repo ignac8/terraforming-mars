@@ -83,7 +83,7 @@ export class MarsBotCorpResolver {
     }
 
     // Colony cubes (modular Pioneer and Constructor), set by `AutomaGameSetup`, cost 5 M€ and build a colony
-    // on a random eligible tile (C-X3)
+    // on a random eligible tile (rulebook C, p.14)
     if (marsBot.hasColonyCubes && marsBot.colonyCubePositions.has(trackCubeKey(trackIndex, position))) {
       const cost = 5;
       marsBot.megacredits = Math.max(0, marsBot.megacredits - cost);
@@ -97,7 +97,7 @@ export class MarsBotCorpResolver {
       }
     }
 
-    // 2nd Trade Fleet cube (Colonies, C-6/C-27): unlock when the Energy track reaches the cube
+    // 2nd Trade Fleet cube (Colonies, rulebook C, p.4 and p.6): unlock when the Energy track reaches the cube
     if (marsBot.tradeFleetCubeKey !== undefined &&
         marsBot.tradeFleetCubeKey === trackCubeKey(trackIndex, position) &&
         !marsBot.hasSecondTradeFleet) {

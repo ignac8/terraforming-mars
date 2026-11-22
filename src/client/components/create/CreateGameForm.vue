@@ -790,7 +790,7 @@ export default defineComponent({
         if (this.goals.random.pool === 'maps-fan') {
           this.goals = {...this.goals, random: {...this.goals.random, pool: 'maps'}};
         }
-        // T-5: MarsBot ignores ruling party policy, force Standard agendas
+        // MarsBot ignores ruling party policy (rulebook C, p.6), force Standard agendas
         this.politicalAgendasExtension = 'Standard';
         // Disable unsupported / fan-made expansions (Venus, Colonies, Turmoil are supported and stay as-is)
         this.expansions.ares = false;

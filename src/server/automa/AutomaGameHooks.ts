@@ -177,7 +177,7 @@ export class AutomaGameHooks {
    *
    * With Venus Next it needs 5 floaters and Hoverlord unavailable. With Colonies and without Venus
    * Next it needs 5 floaters in its Titan storage, and Hoverlord counts as unavailable because it is
-   * not in the game (C-X2, C-9).
+   * not in the game (rulebook C, p.4).
    */
   private canSpendFloatersForExtraCard(): boolean {
     const opts = this.game.gameOptions;
@@ -621,8 +621,8 @@ export class AutomaGameHooks {
   /**
    * Replaces MarsBot's colony bonus, when the player trades with a colony where MarsBot has a colony.
    *
-   * MarsBot gets 1 resource on its shipping board instead of the printed tile bonus (C-21), or 1 M€
-   * for Europa (C-24c).
+   * MarsBot gets 1 resource on its shipping board instead of the printed tile bonus, or 1 M€
+   * for Europa (rulebook C, p.5).
    *
    * Returns true if MarsBot's colony bonus was handled, and the caller skips the normal flow.
    */
@@ -635,7 +635,7 @@ export class AutomaGameHooks {
       this.game.log('MarsBot gains 1 MC as Europa colony bonus (C-24c)');
       return true;
     }
-    // Titan storage only holds floaters without Venus Next (C-23). With Venus Next MarsBot gains a floater.
+    // Titan storage only holds floaters without Venus Next. With Venus Next MarsBot gains a floater.
     if (colony.name === ColonyName.TITAN && this.game.gameOptions.venusNextExtension) {
       this.marsBot.floaters += 1;
       this.game.log('MarsBot gains 1 floater as Titan colony bonus (C-21, C-23)');

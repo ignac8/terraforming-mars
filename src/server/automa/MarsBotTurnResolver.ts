@@ -337,10 +337,10 @@ export class MarsBotTurnResolver {
   }
 
   /**
-   * Gains `count` floaters (C-8, C-14).
+   * Gains `count` floaters (rulebook C, p.4).
    *
    * With Venus they are floaters. Without Venus but with Colonies and Titan dealt, they go to Titan
-   * storage, where `addFloaters` puts them then. Otherwise they are ignored (C-13; Nick, BGG 3341542).
+   * storage, where `addFloaters` puts them then. Otherwise they are ignored (rulebook C, p.4; Nick, BGG 3341542).
    */
   public gainFloaters(count: number): void {
     if (this.marsBot.game.gameOptions.venusNextExtension) {

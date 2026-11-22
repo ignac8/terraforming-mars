@@ -4,7 +4,7 @@ import {BonusCardId} from '../../../src/common/automa/AutomaTypes';
 import {SeededRandom} from '../../../src/common/utils/Random';
 
 describe('MarsBotBonusDeck — Colonies variants', () => {
-  describe('create with Colonies (C-2, C-3)', () => {
+  describe('create with Colonies', () => {
     let deck: MarsBotBonusDeck;
     beforeEach(() => {
       deck = MarsBotBonusDeck.create(new SeededRandom(0), {colonies: true});
@@ -29,12 +29,12 @@ describe('MarsBotBonusDeck — Colonies variants', () => {
       expect(ids).to.include(BonusCardId.B18_OUTER_SYSTEM_FOOTHOLD);
     });
 
-    it('does NOT contain Shipping Lines (B19) — set aside initially (C-7)', () => {
+    it('does NOT contain Shipping Lines (B19) — set aside initially (rulebook C, p.4)', () => {
       const ids = deck.drawPile.map((c) => c.id);
       expect(ids).to.not.include(BonusCardId.B19_SHIPPING_LINES);
     });
 
-    it('does NOT contain Extended Shipping Lines (B20) — set aside initially (C-7)', () => {
+    it('does NOT contain Extended Shipping Lines (B20) — set aside initially (rulebook C, p.4)', () => {
       const ids = deck.drawPile.map((c) => c.id);
       expect(ids).to.not.include(BonusCardId.B20_EXTENDED_SHIPPING_LINES);
     });
@@ -46,7 +46,7 @@ describe('MarsBotBonusDeck — Colonies variants', () => {
     });
   });
 
-  describe('create with Venus Next and Colonies (C-2, C-3)', () => {
+  describe('create with Venus Next and Colonies', () => {
     let deck: MarsBotBonusDeck;
     beforeEach(() => {
       deck = MarsBotBonusDeck.create(new SeededRandom(0), {venus: true, colonies: true});
@@ -81,7 +81,7 @@ describe('MarsBotBonusDeck — Colonies variants', () => {
       expect(ids).to.include(BonusCardId.B15_LOBBYISTS_VENUS);
     });
 
-    it('does NOT contain Shipping Lines (B19) initially (C-7)', () => {
+    it('does NOT contain Shipping Lines (B19) initially (rulebook C, p.4)', () => {
       const ids = deck.drawPile.map((c) => c.id);
       expect(ids).to.not.include(BonusCardId.B19_SHIPPING_LINES);
     });

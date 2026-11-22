@@ -23,7 +23,7 @@ export function eligibleColonies(marsBot: IMarsBot): Array<IColony> {
 }
 
 /**
- * Picks a colony tile for MarsBot to build on by revealing a project card (C-15b, C-16a).
+ * Picks a colony tile for MarsBot to build on by revealing a project card (rulebook C, p.4-5).
  *
  * Returns undefined when no tile is eligible.
  */
@@ -32,7 +32,7 @@ export function selectRandomColony(marsBot: IMarsBot): IColony | undefined {
 }
 
 /**
- * Adds one of the colony tiles left out of the game to it, picked the C-15b way (Aridor's setup).
+ * Adds one of the colony tiles left out of the game to it, picked the way Expedited Construction picks one (rulebook C, p.4; Aridor's setup).
  *
  * Returns the added tile, or undefined when every tile is already in play.
  */
@@ -44,7 +44,7 @@ export function addRandomColonyTile(game: IGame): IColony | undefined {
   game.colonies.push(colony);
   game.colonies.sort(comparing(toName));
   inplaceRemove(game.discardedColonies, colony);
-  // C-1: every colony tile in a MarsBot game starts active, Titan, Enceladus and Miranda included
+  // Every colony tile in a MarsBot game starts active, Titan, Enceladus and Miranda included (rulebook C, p.4)
   colony.isActive = true;
   game.log('MarsBot added a new Colony tile: ${0}', (b) => b.colony(colony));
   return colony;
@@ -53,15 +53,15 @@ export function addRandomColonyTile(game: IGame): IColony | undefined {
 /**
  * Builds a colony for MarsBot on `colony`.
  *
- * MarsBot ignores the tile's printed reward and stores 2 resources in the tile's storage area instead
- * (C-19). Europa places an ocean, or takes a Failed Action when none fits (C-24a). Titan gives 2
- * floaters (C-23).
+ * MarsBot ignores the tile's printed reward and stores 2 resources in the tile's storage area instead.
+ * Europa places an ocean, or takes a Failed Action when none fits. Titan gives 2
+ * floaters (rulebook C, p.5).
  */
 export function placeColony(colony: IColony, marsBot: IMarsBot): void {
   const game = marsBot.game;
   const colonyName = colony.name;
 
-  // C-24a: Europa places an ocean instead of storing 2 resources
+  // Europa places an ocean instead of storing 2 resources
   if (colonyName === ColonyName.EUROPA) {
     // The colony is placed either way (no build bonus, the ocean is the reward). Only the ocean
     // gives way to a Failed Action when none fits (rulebook C, p.5).

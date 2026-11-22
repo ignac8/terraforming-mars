@@ -418,7 +418,7 @@ export class Game implements IGame, Logger {
     // Add colonies stuff
     if (gameOptions.coloniesExtension) {
       const colonyDealer = new ColonyDealer(rng, gameOptions);
-      // Automa games are set up as 2-player (C-1): draw 5 colonies instead of 4
+      // Automa games are set up as 2-player (rulebook C, p.4): draw 5 colonies instead of 4
       colonyDealer.drawColonies(gameOptions.automa ? 2 : players.length);
       game.colonies = colonyDealer.colonies;
       game.discardedColonies = colonyDealer.discardedColonies;
@@ -926,7 +926,7 @@ export class Game implements IGame, Logger {
         player.setWaitingFor(this.selectInitialCards(player));
       }
     }
-    // Skip solo-mode colony penalty for automa games (automa uses 2-player setup, C-1)
+    // Skip solo-mode colony penalty for automa games (automa uses 2-player setup, rulebook C, p.4)
     if (this.players.length === 1 && this.gameOptions.coloniesExtension && !this.gameOptions.automa) {
       this.players[0].production.add(Resource.MEGACREDITS, -2);
       this.defer(new RemoveColonyFromGame(this.players[0]));

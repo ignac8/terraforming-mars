@@ -553,7 +553,7 @@ describe('MarsBotSessionFixes', () => {
     expect(result).to.be.undefined;
   });
 
-  describe("removing a card resource from MarsBot's colony storage (C-25)", () => {
+  describe("removing a card resource from MarsBot's colony storage", () => {
     it('offers the M€ supply and the Enceladus storage for microbes', () => {
       const {human, marsBot} = createAutomaGame();
       marsBot.megacredits = 10;

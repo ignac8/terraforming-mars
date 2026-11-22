@@ -20,10 +20,10 @@ import {Units} from '../../src/common/Units';
 import {runAllActions} from '../TestingUtils';
 import {cast} from '../../src/common/utils/utils';
 
-// C-25 (rulebook C, p.5): resources on Ceres, Luna, Io, Enceladus, Ganymede, Callisto, Miranda
+// Rulebook C, p.5: resources on Ceres, Luna, Io, Enceladus, Ganymede, Callisto, Miranda
 // and Triton are resources of the indicated type for the player's cards. The player may steal or
 // remove from them as usual, and picks between them and the M€ supply (BGG 3599965).
-describe('MarsBot colony storage as stock resources (C-25)', () => {
+describe('MarsBot colony storage as stock resources', () => {
   function createAutomaGame(): {game: IGame, human: TestPlayer, marsBot: MarsBot} {
     const [game, human] = testGame(1, {
       automa: true, automaDifficulty: 'normal', boardName: BoardName.THARSIS, coloniesExtension: true,

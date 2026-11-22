@@ -51,7 +51,7 @@ export class AutomaGameSetup {
    */
   public static setup(game: IGame, marsBotPlayer: IPlayer, humanPlayer: IPlayer, gameOptions: GameOptions, rng: Random, restoring: boolean): AutomaGameHooks {
     const boardData = AutomaGameSetup.getBoardData(AutomaGameSetup.marsBotBoardName(gameOptions), gameOptions.venusNextExtension);
-    // T-2/T-14: Turmoil reduces MarsBot's starting TR by 10 (rulebook default) or by 7 (harder variant),
+    // Turmoil reduces MarsBot's starting TR by 10 (rulebook C, p.6) or by 7, the harder variant (rulebook C, p.7),
     // and by one more on Amazonis Planitia.
     const turmoilTRReduction = (gameOptions.automaTurmoilTRReduction ?? 10) + marsBotMapRules(gameOptions.boardName).turmoilTRExtra;
     const startingTR = gameOptions.turmoilExtension ? MARSBOT_STARTING_TR - turmoilTRReduction : MARSBOT_STARTING_TR;
@@ -76,11 +76,11 @@ export class AutomaGameSetup {
     (humanPlayer.opponents as Array<IPlayer>).push(marsBotPlayer);
 
     if (!restoring) {
-      // T-1: MarsBot's 7 delegates go in the reserve.
+      // MarsBot's 7 delegates go in the reserve (rulebook C, p.6).
       if (gameOptions.turmoilExtension && game.turmoil !== undefined) {
         game.turmoil.delegateReserve.add(marsBotPlayer, DELEGATES_PER_PLAYER);
         game.log('MarsBot: 7 delegates placed in reserve (Turmoil)');
-        // T-15: Extra delegates seeded at setup raise the difficulty.
+        // Extra delegates seeded at setup raise the difficulty (rulebook C, p.7).
         const setupDelegates = gameOptions.automaTurmoilSetupDelegates ?? 0;
         for (let i = 0; i < setupDelegates; i++) {
           AutomaGameSetup.placeExtraSetupDelegate(game, marsBotPlayer, rng);
@@ -195,7 +195,7 @@ export class AutomaGameSetup {
   }
 
   /**
-   * C-1: Starts every colony tile in play active, Titan, Enceladus and Miranda included.
+   * Starts every colony tile in play active, Titan, Enceladus and Miranda included (rulebook C, p.4).
    *
    * Their trackers already sit on the second step.
    */
@@ -243,9 +243,9 @@ export class AutomaGameSetup {
   }
 
   /**
-   * Places the 2nd Trade Fleet cube on the Energy track: space 9, or 10 on Amazonis Planitia (C-6).
+   * Places the 2nd Trade Fleet cube on the Energy track: space 9, or 10 on Amazonis Planitia (rulebook C, p.4).
    *
-   * When triggered (C-27), MarsBot unlocks the 2nd trade fleet and Extended Shipping Lines.
+   * When triggered (rulebook C, p.6), MarsBot unlocks the 2nd trade fleet and Extended Shipping Lines.
    */
   private static place2ndTradeFleetCube(game: IGame, marsBot: MarsBot): void {
     if (!game.gameOptions.coloniesExtension || marsBot.tradeFleetCubeKey === undefined) {
@@ -263,7 +263,7 @@ export class AutomaGameSetup {
   }
 
   /**
-   * Reveals a project card, discarding it, and places 1 MarsBot delegate in a random party (T-15).
+   * Reveals a project card, discarding it, and places 1 MarsBot delegate in a random party (rulebook C, p.7).
    *
    * Setup calls it once per delegate in `automaTurmoilSetupDelegates` (0 to 2).
    */
@@ -272,7 +272,7 @@ export class AutomaGameSetup {
     if (turmoil === undefined) {
       return;
     }
-    // T-15 says to "flip a project deck card" for the randomness.
+    // The rulebook says to "flip a card from the project deck" for the randomness.
     const card = game.projectDeck.draw(game);
     if (card !== undefined) {
       game.projectDeck.discardPile.push(card);

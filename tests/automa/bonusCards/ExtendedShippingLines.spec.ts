@@ -25,7 +25,7 @@ describe('ExtendedShippingLines', () => {
     expect(traded).deep.eq([CardName.AUTOMA_EXTENDED_SHIPPING_LINES]);
   });
 
-  it('C-17: same trade logic as B19', () => {
+  it('same trade logic as B19', () => {
     const [game] = testGame(1, {automa: true, coloniesExtension: true, boardName: BoardName.THARSIS});
     const marsBot = getMarsBot(game);
     const luna = new Luna();
@@ -39,7 +39,7 @@ describe('ExtendedShippingLines', () => {
     expect(marsBot.shippingBoard.get(ColonyName.LUNA)).to.eq(2);
   });
 
-  it('C-17: no effect and no Failed Action if all colonies visited', () => {
+  it('no effect and no Failed Action if all colonies visited', () => {
     const [game] = testGame(1, {automa: true, coloniesExtension: true, boardName: BoardName.THARSIS});
     const marsBot = getMarsBot(game);
     const luna = new Luna();

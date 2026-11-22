@@ -20,7 +20,7 @@ function registerColonyCube(marsBot: MarsBot, trackIndex: number, position: numb
   marsBot.hasColonyCubes = true;
 }
 
-describe('ColonyCubeTrigger (C-X3)', () => {
+describe('ColonyCubeTrigger', () => {
   it('places a colony when colony cube is triggered', () => {
     const [game] = testGame(1, {automa: true, coloniesExtension: true, boardName: BoardName.THARSIS});
     const marsBot = getMarsBot(game);

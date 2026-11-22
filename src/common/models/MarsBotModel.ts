@@ -24,7 +24,7 @@ export type MarsBotVPModel = {
   cardVP: number;
   vermin: number;
   leftoverResourcesVP: number; // With automaColonyVP: 1 VP per 2 resources left on the shipping board and Venus floaters
-  turmoilVP: number; // T-13: 1 VP per party leader or chairman position
+  turmoilVP: number; // 1 VP per party leader or chairman position (rulebook C, p.7)
   corpVP: number; // VP the corporation adds at the end (Viron)
   total: number;
   detailsMilestones: ReadonlyArray<MADetail>;
@@ -49,6 +49,6 @@ export type MarsBotModel = {
   mcVP?: number;
   globalParameterSteps: Record<GlobalParameter, number>;
   vpByGeneration: ReadonlyArray<number>;
-  /** Colonies Shipping Board storage areas (C-18). Keys are ColonyName strings. */
+  /** Colonies Shipping Board storage areas (rulebook C, p.5). Keys are ColonyName strings. */
   shippingBoard?: Record<string, number>;
 };

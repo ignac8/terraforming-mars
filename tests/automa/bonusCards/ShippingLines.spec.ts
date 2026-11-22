@@ -27,7 +27,7 @@ describe('ShippingLines', () => {
     expect(traded).deep.eq([CardName.AUTOMA_SHIPPING_LINES]);
   });
 
-  it('C-17: selects best colony and trades', () => {
+  it('selects best colony and trades', () => {
     const [game] = testGame(1, {automa: true, coloniesExtension: true, boardName: BoardName.THARSIS});
     const marsBot = getMarsBot(game);
     const luna = new Luna();
@@ -43,7 +43,7 @@ describe('ShippingLines', () => {
   });
 
   // Nick: with no M€ to pay, the card does nothing (BGG 3599965); rulebook A p.5: no Failed Action.
-  it('C-17: no effect and no Failed Action with 0 M€', () => {
+  it('no effect and no Failed Action with 0 M€', () => {
     const [game] = testGame(1, {automa: true, coloniesExtension: true, boardName: BoardName.THARSIS});
     const marsBot = getMarsBot(game);
     const luna = new Luna();
@@ -58,7 +58,7 @@ describe('ShippingLines', () => {
   });
 
   // A bonus card that can't resolve is not a Failed Action (rulebook A, p.5)
-  it('C-17: no effect and no Failed Action if no tradeable colony', () => {
+  it('no effect and no Failed Action if no tradeable colony', () => {
     const [game] = testGame(1, {automa: true, coloniesExtension: true, boardName: BoardName.THARSIS});
     const marsBot = getMarsBot(game);
     game.colonies = [];
@@ -69,7 +69,7 @@ describe('ShippingLines', () => {
     expect(marsBot.megacredits).to.eq(3);
   });
 
-  it('C-24b: Europa trade raises TR instead of resources', () => {
+  it('Europa trade raises TR instead of resources', () => {
     const [game] = testGame(1, {automa: true, coloniesExtension: true, boardName: BoardName.THARSIS});
     const marsBot = getMarsBot(game);
     const europa = new Europa();

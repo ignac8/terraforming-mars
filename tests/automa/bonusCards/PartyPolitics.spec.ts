@@ -43,7 +43,7 @@ describe('PartyPolitics', () => {
     marsBot.actionDeck.playBonusCard(card);
 
     const reserveAfter = turmoil.delegateReserve.get(marsBotPlayer);
-    // At least 1 delegate is placed, 2 when T-8 applies.
+    // At least 1 delegate is placed, 2 when the revealed card's cost divides by 3.
     expect(reserveAfter).to.be.lessThan(reserveBefore);
   });
 
