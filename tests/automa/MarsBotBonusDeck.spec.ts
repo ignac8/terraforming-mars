@@ -136,11 +136,11 @@ describe('MarsBotBonusDeck', () => {
     expect(restored.discardPile).to.deep.eq(expansionDeck.discardPile);
   });
 
-  it('createBonusCard creates the card of each name', () => {
-    for (const name of Object.values(BonusCardName)) {
+  for (const name of Object.values(BonusCardName)) {
+    it('createBonusCard creates the card of its name: ' + name, () => {
       expect(createBonusCard(name).name).to.eq(name);
-    }
-  });
+    });
+  }
 
   it('draws a card', () => {
     const card = deck.draw(logger);
