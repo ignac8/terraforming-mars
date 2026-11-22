@@ -16,7 +16,8 @@ export function shuffleHiddenPiles(d: SerializedGame, random: Random): void {
   inplaceShuffle(d.preludeDeck.drawPile, random);
   inplaceShuffle(d.ceoDeck.drawPile, random);
   if (d.turmoil !== undefined) {
-    inplaceShuffle(d.turmoil.globalEventDealer.deck, random);
+    const dealer = d.turmoil.globalEventDealer;
+    inplaceShuffle('drawPile' in dealer ? dealer.drawPile : dealer.deck, random);
   }
   if (d.underworldData !== undefined) {
     inplaceShuffle(d.underworldData.tokens, random);
