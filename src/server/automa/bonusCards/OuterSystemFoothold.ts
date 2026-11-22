@@ -9,7 +9,6 @@ export class OuterSystemFoothold extends MarsBotBonusCard {
   }
 
   public override resolve(marsBot: IMarsBot): boolean {
-    // A colony on a random eligible tile
     if (marsBot.maybePlaceRandomColony()) {
       marsBot.game.log('MarsBot (${0}): places a colony', (b) => b.cardName(this.name));
     } else {

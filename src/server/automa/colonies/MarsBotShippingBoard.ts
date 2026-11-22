@@ -88,7 +88,7 @@ export class MarsBotShippingBoard {
   /**
    * Removes resources from a storage area without triggering overflow, stopping at zero.
    *
-   * Used for floater spending (C-9): deduct from Titan storage.
+   * Floater spending takes from Titan's storage area this way (C-9).
    */
   public spend(colonyName: ColonyName, amount: number): void {
     const current = this.storage.get(colonyName) ?? 0;

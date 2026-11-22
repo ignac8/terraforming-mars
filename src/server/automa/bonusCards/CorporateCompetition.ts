@@ -192,7 +192,7 @@ export class CorporateCompetition extends MarsBotBonusCard {
     case 'Physicist': return advanceTrackOfEither([Tag.SCIENCE, Tag.SPACE], 'less');
     case 'Politician': return false;
     case 'Visionary': return advance(marsBotBoard.getLeastAdvancedTrackIndex(true));
-    // Venus Next: added to ALL Corporate Competition variants
+    // Venus Next adds this award to every Corporate Competition variant
     case 'Venuphile': return advanceTrackOf(Tag.VENUS);
     default:
       return false;

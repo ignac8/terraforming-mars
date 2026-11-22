@@ -4,7 +4,6 @@ import {marsBotMapRules} from '@/common/automa/MarsBotMapRules';
 import {IMarsBot} from '@/server/automa/IMarsBot';
 import {MarsBotBonusCard} from '@/server/automa/MarsBotBonusCard';
 
-// B04: Overachievement
 export class Overachievement extends MarsBotBonusCard {
   constructor() {
     super({id: BonusCardId.B04_OVERACHIEVEMENT, name: CardName.AUTOMA_OVERACHIEVEMENT});

@@ -18,7 +18,7 @@ export class ExpeditedConstruction extends MarsBotBonusCard {
       marsBot.game.log('MarsBot (${0}): places a city, card destroyed', (b) => b.cardName(this.name));
       return true;
     }
-    // No failed action if can't place
+    // Not a Failed Action when no city fits
     return false;
   }
 }

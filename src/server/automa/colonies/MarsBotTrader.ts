@@ -12,7 +12,7 @@ function selectTiedColony(game: IGame, candidates: Array<IColony>): IColony {
 }
 
 /**
- * The colony tile MarsBot trades with (C-17).
+ * Picks the colony tile MarsBot trades with (C-17).
  *
  * The tile furthest along its colony track wins (C-17a). A tie goes to a tile with MarsBot's colony
  * (C-17b), then to a revealed project card (C-17c). Returns undefined when no tile can be traded with.

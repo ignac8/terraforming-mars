@@ -69,7 +69,7 @@ export function createBonusCard(id: BonusCardId): MarsBotBonusCard {
   return BONUS_CARDS.get(id)?.() ?? new MarsBotBonusCard({id, name: id as unknown as CardName});
 }
 
-/** Create the base set of bonus cards (B01-B08). */
+/** Creates the base set of bonus cards (B01-B08). */
 export function createBaseBonusCards(): Array<MarsBotBonusCard> {
   return [
     BonusCardId.B01_METEOR_SHOWER,
@@ -96,7 +96,7 @@ export function bonusCardDisplayName(card: MarsBotBonusDeckCard): string {
   return card.name.split(':')[0];
 }
 
-/** Restore bonus deck cards from their serialized names: bonus cards, and project cards a corporation put there. */
+/** Restores the bonus deck cards from their serialized names: bonus cards, and project cards a corporation put there. */
 export function marsBotBonusCardsFromJSON(names: ReadonlyArray<CardName>): Array<MarsBotBonusDeckCard> {
   const byName = new Map<CardName, BonusCardId>();
   for (const id of BONUS_CARDS.keys()) {

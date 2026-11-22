@@ -9,9 +9,7 @@ import {getAllMarsBotCorps} from './MarsBotCorpRegistry';
 import {selectRandomColony, placeColony} from '../colonies/MarsBotColonyPlacer';
 import type {MarsBot} from '../MarsBot';
 
-/**
- * Orchestrates MarsBot corporation lifecycle: selection, setup, cube triggers, per-gen effects.
- */
+/** MarsBot's corporation: how it is chosen, set up and triggered by track cubes. */
 export class MarsBotCorpResolver {
   public static selectCorp(humanCorpName: CardName, gameOptions: GameOptions, rng: Random): MarsBotCorp {
     const allCorps = getAllMarsBotCorps();
@@ -23,9 +21,7 @@ export class MarsBotCorpResolver {
     return eligible[rng.nextInt(eligible.length)];
   }
 
-  /**
-   * Run corp setup: place track cubes, resolve starting tags, call setup box.
-   */
+  /** Sets up `corp` for `marsBot`: places its track cubes, runs its setup box, then resolves its starting tags. */
   public static setupCorp(corp: MarsBotCorp, marsBot: MarsBot): void {
     // 1. Place track cubes, skipping tracks this game's board lacks (Venus without Venus Next).
     // A save keeps the positions, so a restored game never re-resolves them.
@@ -33,7 +29,7 @@ export class MarsBotCorpResolver {
       marsBot.trackCubePositions.set(trackCubeKey(cube.trackIndex, cube.position), cube);
     }
 
-    // 2. Call corp-specific setup (rulebook B, p.1: the Setup box resolves before the starting tags)
+    // 2. The Setup box resolves before the starting tags (rulebook B, p.1)
     if (corp.setup !== undefined) {
       corp.setup(marsBot);
     }
@@ -54,14 +50,13 @@ export class MarsBotCorpResolver {
       // card's tags (Arclight, Pharmacy Union, Saturn Systems) fire for them too.
       const tagsCard = {name: corp.name, type: CardType.CORPORATION, tags: [...corp.tags], cost: 0, requirements: [], metadata: {}} as unknown as IProjectCard;
       corp.onProjectCardResolved?.(marsBot, tagsCard);
-      // FAQ: trigger human corp callbacks for MarsBot's starting tags
-      // e.g., if human plays Saturn Systems and MarsBot has Jovian starting tag
+      // FAQ: the player's cards see the starting tags too, e.g. Saturn Systems for a Jovian one.
       marsBot.turnResolver.notifyPlayerCards(tagsCard);
     }
   }
 
   /**
-   * Called when a track advances to a new position. Checks for cube triggers.
+   * Fires the track cube at `position` on track `trackIndex`, if one is there, once MarsBot's track has advanced to it.
    *
    * Returns true when a corp cube replaced the icon printed on that space, so the caller
    * leaves the icon unresolved. With `corpCubesOnly` the colony and trade fleet cubes stay
@@ -87,8 +82,8 @@ export class MarsBotCorpResolver {
       return replacedIcon;
     }
 
-    // Colony cubes (modular Pioneer/Constructor): positions set by AutomaGameSetup
-    // C-X3: deduct 5 MC then place a colony on a randomly selected eligible tile
+    // Colony cubes (modular Pioneer and Constructor), set by `AutomaGameSetup`, cost 5 M€ and build a colony
+    // on a random eligible tile (C-X3)
     if (marsBot.hasColonyCubes && marsBot.colonyCubePositions.has(trackCubeKey(trackIndex, position))) {
       const cost = 5;
       marsBot.megacredits = Math.max(0, marsBot.megacredits - cost);

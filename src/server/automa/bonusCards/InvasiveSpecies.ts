@@ -29,7 +29,6 @@ export class InvasiveSpecies extends MarsBotBonusCard {
       marsBot.gainMc(5);
       marsBot.game.log('MarsBot (${0}): +5:r:mc:', (b) => b.cardName(this.name));
     }
-    // The card is never destroyed
     return false;
   }
 }
