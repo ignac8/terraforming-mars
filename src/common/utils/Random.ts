@@ -18,6 +18,15 @@ export abstract class Random {
   public nextInt(range: number): number {
     return Math.floor(this.next() * range);
   }
+
+  /**
+   * Saves the generator's state, to be restored by {@link deserializeRandom}.
+   *
+   * Throws for a generator that can't be restored, such as {@link UnseededRandom}.
+   */
+  public serialize(): SerializedRandom {
+    throw new Error(`${this.constructor.name} cannot be serialized`);
+  }
 }
 /**
  * A seedable generator using mulberry32, which keeps its whole state in one 32-bit word.
@@ -48,7 +57,7 @@ export class SeededRandom extends Random {
     return ((t ^ t >>> 14) >>> 0) / 4294967296;
   }
 
-  public serialize(): SerializedRandom {
+  public override serialize(): SerializedRandom {
     return {kind: 'mulberry32', seed: this.seed, current: this.currentSeed};
   }
 }
@@ -107,16 +116,15 @@ export class StrongRandom extends Random {
     return (t >>> 0) / 4294967296;
   }
 
-  public serialize(): SerializedRandom {
+  public override serialize(): SerializedRandom {
     return {kind: 'sfc32', state: [this.a >>> 0, this.b >>> 0, this.c >>> 0, this.d >>> 0]};
   }
 }
 
 /** The seedable, serializable generators a game may run on. */
-export type GameRandom = SeededRandom | StrongRandom;
 
 /** Restores a generator from its {@link SerializedRandom} form (either algorithm). */
-export function deserializeRandom(data: SerializedRandom): GameRandom {
+export function deserializeRandom(data: SerializedRandom): Random {
   switch (data.kind) {
   case 'mulberry32':
     return new SeededRandom(data.seed, data.current);

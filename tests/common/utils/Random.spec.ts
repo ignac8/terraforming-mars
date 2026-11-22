@@ -1,5 +1,5 @@
 import {expect} from 'chai';
-import {SeededRandom, StrongRandom, deserializeRandom} from '../../../src/common/utils/Random';
+import {ConstRandom, SeededRandom, StrongRandom, UnseededRandom, deserializeRandom} from '../../../src/common/utils/Random';
 import {range} from '../../../src/common/utils/utils';
 
 describe('Random', () => {
@@ -98,4 +98,13 @@ describe('Random', () => {
       expect(a.next()).to.not.eq(b.next());
     });
   });
+
+  for (const run of [
+    {name: 'UnseededRandom', random: UnseededRandom.INSTANCE},
+    {name: 'ConstRandom', random: new ConstRandom(0.5)},
+  ]) {
+    it(`${run.name} cannot be serialized`, () => {
+      expect(() => run.random.serialize()).to.throw(`${run.name} cannot be serialized`);
+    });
+  }
 });

@@ -51,7 +51,7 @@ import {AresSetup} from './ares/AresSetup';
 import {MoonData} from './moon/MoonData';
 import {MoonExpansion} from './moon/MoonExpansion';
 import {TurmoilHandler} from './turmoil/TurmoilHandler';
-import {GameRandom, SeededRandom, UnseededRandom, deserializeRandom} from '../common/utils/Random';
+import {Random, SeededRandom, UnseededRandom, deserializeRandom} from '../common/utils/Random';
 import {chooseMilestonesAndAwards} from './ma/MilestoneAwardSelector';
 import {BoardType} from './boards/BoardType';
 import {MultiSet} from 'mnemonist';
@@ -115,7 +115,7 @@ export class Game implements IGame, Logger {
   // Game-level data
   public lastSaveId: number = 0;
   private clonedGamedId: string | undefined;
-  public rng: GameRandom;
+  public rng: Random;
   public spectatorId: SpectatorId;
   public deferredActions: DeferredActionsQueue = new DeferredActionsQueue();
   public createdTime: Date = new Date(0);
@@ -210,7 +210,7 @@ export class Game implements IGame, Logger {
     activePlayer: PlayerId,
     spectatorId: SpectatorId,
     gameOptions: GameOptions,
-    rng: GameRandom,
+    rng: Random,
     board: MarsBoard,
     projectDeck: ProjectDeck,
     corporationDeck: CorporationDeck,
@@ -278,7 +278,7 @@ export class Game implements IGame, Logger {
     firstPlayer: IPlayer,
     spectatorId: SpectatorId,
     partialOptions: Partial<GameOptions> = {},
-    rng: GameRandom = new SeededRandom(0)): Game {
+    rng: Random = new SeededRandom(0)): Game {
     if (partialOptions.expansions === undefined) {
       partialOptions.expansions = {
         corpera: partialOptions.corporateEra ?? false,
@@ -1752,7 +1752,7 @@ export class Game implements IGame, Logger {
 
     const board = GameSetup.deserializeBoard(marsBotPlayer === undefined ? players : [...players, marsBotPlayer], gameOptions, d);
 
-    let rng: GameRandom;
+    let rng: Random;
     if (d.rng !== undefined) {
       rng = deserializeRandom(d.rng);
     } else if (d.seed !== undefined) {

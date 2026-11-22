@@ -9,7 +9,7 @@ import {WaterImportFromEuropa} from '../src/server/cards/base/WaterImportFromEur
 import {Phase} from '../src/common/Phase';
 import {addCity, addGreenery, addOcean, doWait, fakeCard, forceGenerationEnd, maxOutOceans, runAllActions, setOxygenLevel, setTemperature, setVenusScaleLevel, testGame} from './TestingUtils';
 import {cast, isObject, range, toName} from '../src/common/utils/utils';
-import {SeededRandom, StrongRandom} from '../src/common/utils/Random';
+import {ConstRandom, SeededRandom, StrongRandom} from '../src/common/utils/Random';
 import {TestPlayer} from './TestPlayer';
 import {SaturnSystems} from '../src/server/cards/corporation/SaturnSystems';
 import {Resource} from '../src/common/Resource';
@@ -837,6 +837,13 @@ describe('Game', () => {
       game.addTile(player, oceanSpace, {tileType: TileType.NEW_HOLLAND});
     }).to.not.throw();
     expect(oceanSpace.tile!.tileType).to.eq(TileType.NEW_HOLLAND);
+  });
+
+  it('runs on any random generator', () => {
+    const player = TestPlayer.BLUE.newPlayer();
+    const game = Game.newInstance('gconst', [player], player, 'sconst', {}, new ConstRandom(0));
+
+    expect(game.rng).instanceOf(ConstRandom);
   });
 
   it('round-trips a strong random generator and continues the same sequence', () => {
