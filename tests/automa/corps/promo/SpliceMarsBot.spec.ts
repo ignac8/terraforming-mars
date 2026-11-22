@@ -28,7 +28,13 @@ describe('SpliceMarsBot', () => {
     corp.onHumanCardPlayed(marsBot, new Asteroid());
     corp.onHumanCardPlayed(marsBot, new ArchaeBacteria());
 
-    const expectedCalls = ['gainMc(8)', 'removeBonusCard(Research and Development)', 'addProjectCardsToBonusDeck(microbe, 1)', 'gainMc(4)', 'gainMc(2)'];
+    const expectedCalls = [
+      'gainMc(8)',
+      'removeBonusCard(Research and Development)',
+      'addProjectCardsToBonusDeck(microbe, 1)',
+      'gainMc(4)',
+      'gainMc(2)',
+    ];
     expect(calls).deep.eq(expectedCalls);
     expect(human.stock.megacredits).eq(2);
   });
