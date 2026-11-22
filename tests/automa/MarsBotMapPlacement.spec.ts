@@ -59,7 +59,10 @@ function nextToVolcano(game: IGame, space: Space): boolean {
   return space.volcanic === true || game.board.getAdjacentSpaces(space).some((s) => s.volcanic === true);
 }
 
-/** Free land spaces whose bonus doesn't cost M€, so only the tiebreaker under test can tell them apart. */
+/**
+ * Lists the free land spaces whose bonus doesn't cost M€, so only the tiebreaker under test can tell them
+ * apart.
+ */
 function plainSpaces(game: IGame): ReadonlyArray<Space> {
   return game.board.getSpaces(SpaceType.LAND).filter((space) =>
     space.tile === undefined &&
@@ -87,7 +90,7 @@ function pair(
   throw new Error('No such pair of spaces on this board');
 }
 
-/** Which of the two spaces MarsBot would put a city on, when nothing else is a candidate. */
+/** Picks the space of the two that MarsBot would put a city on, when nothing else is a candidate. */
 function pick(placer: MarsBotTilePlacer, a: Space, b: Space): Space | undefined {
   return placer.findCitySpace((space) => space === a || space === b);
 }
@@ -98,7 +101,10 @@ function expectTie(game: IGame, placer: MarsBotTilePlacer, a: Space, b: Space): 
   expect(game.projectDeck.discardPile, 'the tie should be broken with a revealed card').has.length(1);
 }
 
-/** MarsBot picks `winner` whichever way round the spaces come, without revealing a card to break a tie. */
+/**
+ * Expects MarsBot to pick `winner` whichever way round the spaces come, without revealing a card to break a
+ * tie.
+ */
 function expectWins(game: IGame, placer: MarsBotTilePlacer, winner: Space, loser: Space): void {
   game.projectDeck.discardPile.length = 0;
   expect(pick(placer, winner, loser)).to.eq(winner);
@@ -289,7 +295,10 @@ describe('MarsBot tile placement tiebreakers by map', () => {
 describe('MarsBot tile placement with the Milestones & Awards expansion', () => {
   const MODULAR: Partial<GameOptions> = {randomMA: RandomMAOptionType.UNLIMITED, modularMA: true};
 
-  /** The Vastitas Borealis board played with the Tharsis aid, and exactly these milestones and awards in play. */
+  /**
+   * Starts a game on `boardName`, Vastitas Borealis by default, played with the Tharsis aid and with exactly
+   * these milestones and awards in play.
+   */
   function modularSetup(milestones: Array<IMilestone> = [], awards: Array<IAward> = [], boardName = BoardName.VASTITAS_BOREALIS_NOVA): Setup {
     const s = setup(boardName, MODULAR);
     s.game.milestones = milestones;
@@ -374,7 +383,8 @@ describe('MarsBot special placement hexes', () => {
       southPole = s.game.board.spaces.find((sp) => sp.bonus.includes(SpaceBonus.OCEAN))!;
     });
 
-    // Polar too, since the polar region comes before reward icons on Hellas.
+    // Finds a space with two icons that is polar too, since the polar region comes before reward icons on
+    // Hellas.
     function rival(): Space {
       return plainSpaces(s.game).find((sp) => hasIcons(2)(sp) && sp.y >= s.game.board.bottomRow - 1 &&
         oceansNextTo(s.game, sp) === oceansNextTo(s.game, southPole))!;
@@ -433,7 +443,8 @@ describe('MarsBot special placement hexes', () => {
       expect(placed).has.length(oceans + 1);
       expect(s.marsBot.player.terraformRating).to.eq(tr + 1);
       // 6 M€ lost. The ocean pays out like any other ocean MarsBot places, the city does not.
-      expect(s.marsBot.megacredits).to.eq(4 + s.placer.getTotalPlacementMC(placed[placed.length - 1]));
+      const ocean = placed[placed.length - 1];
+      expect(s.marsBot.megacredits).to.eq(4 + s.placer.getTotalPlacementMC(ocean));
     });
 
     it('does not charge M€ for an ocean its corporation swallows', () => {
@@ -500,14 +511,18 @@ describe('MarsBot special placement hexes', () => {
     it('counts as a space without rewards with 4 M€', () => {
       s.marsBot.megacredits = 4;
 
-      expect(pick(s.placer, msl, rival(2))).to.eq(rival(2));
+      const two = rival(2);
+
+      expect(pick(s.placer, msl, two)).to.eq(two);
     });
 
     it('counts as a space without rewards when MarsBot has a colony on every tile', () => {
       s.marsBot.megacredits = 20;
       s.game.colonies.forEach((colony) => colony.colonies.push(s.marsBot.player.id));
 
-      expect(pick(s.placer, msl, rival(2))).to.eq(rival(2));
+      const two = rival(2);
+
+      expect(pick(s.placer, msl, two)).to.eq(two);
     });
 
     it('never pays M€ for the colony icon', () => {

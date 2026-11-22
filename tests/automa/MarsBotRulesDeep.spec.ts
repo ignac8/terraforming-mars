@@ -32,11 +32,9 @@ function makeBoard(track1Layout: ReadonlyArray<TrackAction | undefined>): Readon
 }
 
 describe('MarsBot Deep Rules Tests', () => {
-  // ---- Page 8: Expansion icons ignored without Failed Action ----
-
   describe('Expansion icons ignored when expansion not in use (page 8)', () => {
     it('venus action is ignored (no Failed Action) when Venus not enabled', () => {
-      const [game, human] = testGame(1); // No Venus expansion
+      const [game, human] = testGame(1);
       const botPlayer = TestPlayer.RED.newPlayer({name: 'bot'});
       botPlayer.game = game;
 
@@ -47,7 +45,6 @@ describe('MarsBot Deep Rules Tests', () => {
       const resolver = marsBot.turnResolver;
 
       resolver.resolveProjectCard(fakeCard({cost: 5, tags: [Tag.BUILDING], type: CardType.AUTOMATED}));
-      // Venus should be ignored, NOT a failed action
       expect(marsBot.megacredits).to.eq(0); // No 5 MC from failed action
       expect(marsBotBoard.tracks[0].position).to.eq(1); // Track still advanced
     });
@@ -67,18 +64,15 @@ describe('MarsBot Deep Rules Tests', () => {
     });
   });
 
-  // ---- Page 9: Terraforming chain bonuses ----
-
   describe('Terraforming bonus chains (page 9)', () => {
     it('oxygen at 8 triggers temperature raise (bonus step)', () => {
       const {game, marsBot} = createAutomaGame();
-      // Set oxygen to 7 so next raise hits 8 (bonus: raise temperature)
       setOxygenLevel(game, 7);
       const tempBefore = game.getTemperature();
       const trBefore = marsBot.player.terraformRating;
 
       const layout = emptyLayout();
-      layout[1] = 'greenery'; // Greenery raises oxygen
+      layout[1] = 'greenery';
       // Place a city for greenery placement rules
       const spaces = game.board.getAvailableSpacesOnLand(marsBot.player);
       game.simpleAddTile(marsBot.player, spaces[15], {tileType: TileType.CITY});
@@ -86,7 +80,6 @@ describe('MarsBot Deep Rules Tests', () => {
       const resolver = standaloneMarsBot(game, marsBot.player, marsBot.humanPlayer, makeBoard(layout)).turnResolver;
       resolver.resolveProjectCard(fakeCard({cost: 5, tags: [Tag.BUILDING], type: CardType.AUTOMATED}));
 
-      // Oxygen should be 8, which triggers temperature raise
       expect(game.getOxygenLevel()).to.eq(8);
       // Temperature should have increased by 2 (1 step = 2°C from the bonus)
       expect(game.getTemperature()).to.eq(tempBefore + 2);
@@ -94,8 +87,6 @@ describe('MarsBot Deep Rules Tests', () => {
       expect(marsBot.player.terraformRating).to.be.gte(trBefore + 2);
     });
   });
-
-  // ---- Page 5: Multiple tags, one track maxed ----
 
   describe('Multiple tags where one track is maxed (page 5)', () => {
     it('maxed track gets Failed Action, other track still advances', () => {
@@ -109,24 +100,18 @@ describe('MarsBot Deep Rules Tests', () => {
       const marsBotBoard = marsBot.marsBotBoard;
       const resolver = marsBot.turnResolver;
 
-      // Max out Track 1 (Building)
       for (let i = 0; i < 18; i++) {
         marsBotBoard.tracks[0].advance();
       }
       expect(marsBotBoard.tracks[0].position).to.eq(18);
 
-      // Play card with Building + Space tags
       resolver.resolveProjectCard(fakeCard({cost: 5, tags: [Tag.BUILDING, Tag.SPACE], type: CardType.AUTOMATED}));
 
-      // Building track maxed → Failed Action (5 MC)
-      // Space track should still advance
       expect(marsBot.megacredits).to.eq(5);
       expect(marsBotBoard.tracks[1].position).to.eq(1);
-      expect(marsBotBoard.tracks[0].position).to.eq(18); // Unchanged
+      expect(marsBotBoard.tracks[0].position).to.eq(18);
     });
   });
-
-  // ---- Page 8: MarsBot does NOT pay for milestones or awards ----
 
   describe('MarsBot does not pay for milestones or awards (page 8)', () => {
     it('milestone claim does not deduct MC from megacredits', () => {
@@ -142,8 +127,7 @@ describe('MarsBot Deep Rules Tests', () => {
       marsBot.megacredits = 10;
 
       resolver.resolveProjectCard(fakeCard({cost: 5, tags: [Tag.BUILDING], type: CardType.AUTOMATED}));
-      // MC should not have decreased (MarsBot doesn't pay for milestones)
-      // It might have increased from failed action if couldn't claim
+      // A Failed Action can raise it when the milestone cannot be claimed.
       expect(marsBot.megacredits).to.be.gte(10);
     });
 
@@ -164,18 +148,14 @@ describe('MarsBot Deep Rules Tests', () => {
       marsBot.megacredits = 10;
 
       resolver.resolveProjectCard(fakeCard({cost: 5, tags: [Tag.BUILDING], type: CardType.AUTOMATED}));
-      // MC should not have decreased
       expect(marsBot.megacredits).to.be.gte(10);
     });
   });
-
-  // ---- Page 3: Setup verification ----
 
   describe('Setup rules (page 3)', () => {
     it('initial action deck draws from project deck', () => {
       const {game} = createAutomaGame();
       // The project deck should have been reduced by 3 cards for MarsBot + 10 for human
-      // Just verify it's less than the full deck
       expect(game.projectDeck.drawPile.length).to.be.lt(200);
     });
 
@@ -191,10 +171,8 @@ describe('MarsBot Deep Rules Tests', () => {
     });
   });
 
-  // ---- Page 5: Card placed in played pile after resolution ----
-
   describe('Card goes to the played pile after resolution (page 5)', () => {
-    it('project card goes to MarsBot\'s played pile, not the project discard pile', () => {
+    it("project card goes to MarsBot's played pile, not the project discard pile", () => {
       const {game, marsBot} = createAutomaGame();
       const discardBefore = game.projectDeck.discardPile.length;
 
@@ -206,14 +184,9 @@ describe('MarsBot Deep Rules Tests', () => {
     });
   });
 
-  // ---- Page 10: Game end — "finish the round" ----
-
   describe('Game end timing (page 10)', () => {
     it('game is not over mid-round when mars is terraformed', () => {
       const {game} = createAutomaGame();
-      // Terraforming completion happens during a round
-      // gameIsOver is checked AFTER production, not mid-round
-      // Just verify the check works
       setOxygenLevel(game, 14);
       setTemperature(game, 8);
       const oceanSpaces = game.board.getAvailableSpacesForOcean(game.players[0]);
@@ -225,8 +198,6 @@ describe('MarsBot Deep Rules Tests', () => {
     });
   });
 
-  // ---- Page 9: Temperature heat bonuses at -24C and -20C ----
-
   describe('Temperature heat bonuses (page 9)', () => {
     it('MarsBot gets 2 MC at -20C bonus', () => {
       const {game, marsBot} = createAutomaGame();
@@ -234,7 +205,6 @@ describe('MarsBot Deep Rules Tests', () => {
 
       const mcBefore = marsBot.megacredits;
       game.increaseTemperature(marsBot.player, 1);
-      // Should cross -20, giving 2 MC
       expect(marsBot.megacredits).to.eq(mcBefore + 2);
     });
 
@@ -244,12 +214,9 @@ describe('MarsBot Deep Rules Tests', () => {
 
       const mcBefore = marsBot.megacredits;
       game.increaseTemperature(marsBot.player, 3);
-      // Crosses both -24 and -20, giving 2 MC each = 4 MC total
       expect(marsBot.megacredits).to.eq(mcBefore + 4);
     });
   });
-
-  // ---- Page 4: Research phase deck building ----
 
   describe('Research phase deck building (page 4)', () => {
     it('action deck has exactly 4 cards after research (normal)', () => {
@@ -267,7 +234,6 @@ describe('MarsBot Deep Rules Tests', () => {
     it('bonus deck reshuffles automatically when draw pile exhausted', () => {
       const {game, marsBot} = createAutomaGame();
       // 7 in draw pile (1 used for initial action deck), 0 in discard
-      // Draw all remaining and discard them
       const drawn = [];
       while (marsBot.bonusDeck.drawPile.length > 0) {
         const card = marsBot.bonusDeck.draw(game)!;
@@ -277,14 +243,10 @@ describe('MarsBot Deep Rules Tests', () => {
         marsBot.bonusDeck.discard(c);
       }
 
-      // Now draw pile is 0, discard has all cards
-      // Next draw should reshuffle
       const card = marsBot.bonusDeck.draw(game);
       expect(card).to.not.be.undefined;
     });
   });
-
-  // ---- Page 6: Destroyed bonus cards never return ----
 
   describe('Destroyed bonus cards (page 6)', () => {
     it('a card that is never discarded does not return after reshuffle', () => {
@@ -312,8 +274,6 @@ describe('MarsBot Deep Rules Tests', () => {
     });
   });
 
-  // ---- Page 8: Milestone tiebreaker #3 leftmost ----
-
   describe('Milestone tiebreaker #3: leftmost (page 8)', () => {
     it('claims leftmost milestone when human does not qualify for any', () => {
       const {game, human, marsBot} = createAutomaGame();
@@ -332,13 +292,10 @@ describe('MarsBot Deep Rules Tests', () => {
 
       resolver.resolveProjectCard(fakeCard({cost: 5, tags: [Tag.BUILDING], type: CardType.AUTOMATED}));
 
-      // Should claim the leftmost qualifying milestone (Terraformer)
-      expect(game.claimedMilestones.length).to.eq(1);
-      expect(game.claimedMilestones[0].milestone.name).to.eq('Terraformer');
+      const terraformer = game.milestones.find((m) => m.name === 'Terraformer')!;
+      expect(game.claimedMilestones).deep.eq([{player: marsBot.player, milestone: terraformer}]);
     });
   });
-
-  // ---- Page 5: Event tag injected for EVENT type cards ----
 
   describe('Event cards inject Event tag (page 5)', () => {
     it('event card with Building tag advances both Building and Event tracks', () => {
@@ -369,15 +326,12 @@ describe('MarsBot Deep Rules Tests', () => {
       const marsBotBoard = marsBot.marsBotBoard;
       const resolver = marsBot.turnResolver;
 
-      // Event card with zero explicit tags — should NOT be a failed action
       resolver.resolveProjectCard(fakeCard({cost: 5, tags: [], type: CardType.EVENT}));
 
-      expect(marsBotBoard.tracks[2].position).to.eq(1); // Event tag injected
-      expect(marsBot.megacredits).to.eq(0); // Not a failed action
+      expect(marsBotBoard.tracks[2].position).to.eq(1);
+      expect(marsBot.megacredits).to.eq(0);
     });
   });
-
-  // ---- Page 10: MC to VP example from rulebook ----
 
   describe('MC to VP rulebook example (page 10)', () => {
     it('example: gen 14, 24 MC → 4 VP (1 per 6 MC)', () => {
@@ -483,7 +437,8 @@ describe('MarsBot Deep Rules Tests', () => {
 
       marsBot.takeTurn();
 
-      expect(game.claimedMilestones[0].milestone.name).to.eq('Gardener');
+      const gardener = game.milestones.find((m) => m.name === 'Gardener')!;
+      expect(game.claimedMilestones[0].milestone).to.eq(gardener);
     });
   });
 
@@ -584,7 +539,8 @@ describe('MarsBot Deep Rules Tests', () => {
 
       const greenery = game.board.spaces.find((s) => s.tile?.tileType === TileType.GREENERY)!;
       expect(greenery).is.not.undefined;
-      expect(marsBot.megacredits).to.eq(marsBot['tilePlacer'].getTotalPlacementMC(greenery));
+      const placementMC = marsBot['tilePlacer'].getTotalPlacementMC(greenery);
+      expect(marsBot.megacredits).to.eq(placementMC);
     });
 
     it('final greenery skips a track whose next space was regressed from', () => {
