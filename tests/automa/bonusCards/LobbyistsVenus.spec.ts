@@ -85,7 +85,7 @@ describe('LobbyistsVenus', () => {
     setTemperature(game, -26);
     const card = createBonusCard(BonusCardName.LOBBYISTS_VENUS);
     const destroyed = marsBot.actionDeck.playBonusCard(card);
-    expect(game.getTemperature()).to.eq(-22);
+    expect(game.getTemperature()).to.eq(-22); // raised 2 steps
     expect(destroyed).to.be.true;
   });
 });

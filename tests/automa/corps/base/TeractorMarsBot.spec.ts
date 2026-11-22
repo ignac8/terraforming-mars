@@ -71,6 +71,7 @@ describe('TeractorMarsBot', () => {
     const corp = getMarsBotCorp(CardName.TERACTOR)!;
     marsBot.setCorpAndSetup(corp);
     const mcBefore = marsBot.megacredits;
+    // Trigger white cube on Earth track (track 6)
     corp.onTrackCubeTrigger!(marsBot, 5, 1, 'white');
     expect(marsBot.megacredits).to.eq(mcBefore + 2);
   });

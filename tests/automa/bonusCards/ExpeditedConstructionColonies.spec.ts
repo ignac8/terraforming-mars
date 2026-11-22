@@ -78,6 +78,7 @@ describe('ExpeditedConstructionColonies', () => {
     marsBot.bonusDeck.drawPile.push(card);
     const destroyed = marsBot.actionDeck.playBonusCard(card);
     expect(destroyed).to.be.false;
+    // No new colonies should be added
     const botColoniesOnLuna = luna.colonies.filter((id) => id === marsBot.player.id);
     expect(botColoniesOnLuna).has.length(1);
   });

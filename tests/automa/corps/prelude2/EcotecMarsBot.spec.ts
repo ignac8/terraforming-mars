@@ -68,8 +68,10 @@ describe('EcotecMarsBot', () => {
     const {marsBot} = createAutomaGame();
     const corp = getMarsBotCorp(CardName.ECOTEC)!;
     marsBot.setCorpAndSetup(corp);
+    // Ecotec starts with 2 plant resources and 1 more from its starting plant tag
     expect(marsBot.corpSpecificState.get('plantResources')).to.eq(3);
     const mcBefore = marsBot.megacredits;
+    // Remove 4 plants — should take 3 from card, excess lost, NOT from MC supply
     marsBot.player.stock.add(Resource.PLANTS, -4);
     expect(marsBot.corpSpecificState.get('plantResources')).to.eq(0);
     expect(marsBot.megacredits).to.eq(mcBefore);

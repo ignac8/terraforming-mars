@@ -87,6 +87,7 @@ describe('MiningGuildMarsBot', () => {
     const corp = getMarsBotCorp(CardName.MINING_GUILD)!;
     marsBot.setCorpAndSetup(corp);
     marsBot.corpSpecificState.set('mcOnCard', 10);
+    // 5 MC earned: card counts down 10 → 5
     corp.onMcGained!(marsBot, 5);
     expect(marsBot.corpSpecificState.get('mcOnCard')).to.eq(5);
   });

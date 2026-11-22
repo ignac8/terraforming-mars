@@ -185,6 +185,7 @@ describe('AridorMarsBot', () => {
 
       expect(marsBot.marsBotBoard.definitions[jovian].tags).includes(Tag.JOVIAN);
       expect(marsBot.marsBotBoard.definitions[city].tags).includes(Tag.CITY);
+      // Nine cubes on nine different spaces
       const spaces = new Set(expected.map(([track, position]) => `${track}:${position}`));
       expect(spaces.size).to.eq(9);
     });

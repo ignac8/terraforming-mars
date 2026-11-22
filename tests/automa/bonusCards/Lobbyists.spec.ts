@@ -93,12 +93,13 @@ describe('Lobbyists', () => {
   // Detailed options (rulebook pages 6-7)
   it('option (a): temp 1-2 from completion → raise 2 + destroy', () => {
     const {game, marsBot} = createAutomaGame();
+    // Temperature at +4 (2 steps from max +8)
     setTemperature(game, 4);
 
     const b06 = createBonusCard(BonusCardName.LOBBYISTS);
 
     const destroyed = marsBot.actionDeck.playBonusCard(b06);
-    expect(game.getTemperature()).to.eq(8);
+    expect(game.getTemperature()).to.eq(8); // Raised 2 steps (4°C)
     expect(destroyed).to.be.true;
   });
 
@@ -111,7 +112,7 @@ describe('Lobbyists', () => {
     const tempBefore = game.getTemperature();
     const destroyed = marsBot.actionDeck.playBonusCard(b06);
     expect(game.getTemperature()).to.eq(tempBefore + 2);
-    expect(destroyed).to.be.false;
+    expect(destroyed).to.be.false; // Option d does NOT destroy
   });
 
   // Ocean placement tiebreakers (rulebook page 7)
