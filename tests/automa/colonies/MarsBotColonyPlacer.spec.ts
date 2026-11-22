@@ -144,9 +144,9 @@ describe('MarsBotColonyPlacer', () => {
       const marsBot = getMarsBot(game);
       const luna = new Luna();
       const ceres = new Ceres();
-      // Draw a project card with known cost from the test deck
       game.colonies = [luna, ceres];
 
+      // Draw a project card with known cost from the test deck
       const drawnCard = game.projectDeck.drawN(game, 1)[0];
       // Put the card back so `selectRandomColony` draws it.
       game.projectDeck.drawPile.push(drawnCard);

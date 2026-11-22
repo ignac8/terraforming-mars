@@ -120,7 +120,7 @@ describe('MarsBot Game End Model', () => {
       const {game, marsBot} = createAutomaGame();
       marsBot.player.setTerraformRating(25);
       marsBot.megacredits = 16;
-      game.generation = 15; // 1 per 5 MC
+      game.generation = 15; // 1 VP per 5 M€
       const spaces = game.board.getAvailableSpacesOnLand(marsBot.player);
       game.simpleAddTile(marsBot.player, spaces[10], {tileType: TileType.GREENERY});
       game.phase = Phase.END;

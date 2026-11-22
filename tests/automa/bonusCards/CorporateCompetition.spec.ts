@@ -360,7 +360,7 @@ describe('CorporateCompetition', () => {
     // Helper for Scientist = advance track 4. Costs 5 MC.
     // Track advance may trigger actions that grant additional MC, so just verify 5 was deducted
     expect(marsBot.megacredits).to.be.lte(mcBefore - 5 + 10); // At most 10 MC gained from track actions
-    expect(marsBot.megacredits).to.be.lt(mcBefore); // Overall MC decreased
+    expect(marsBot.megacredits).to.be.lt(mcBefore);
   });
 
   it('takes no more than MarsBot has when the helper itself cost M€ (colony cube, rulebook C, p.14)', () => {
@@ -622,7 +622,7 @@ describe('CorporateCompetition', () => {
   });
 
   it('Highlander helper on Vastitas Borealis also keeps away from spaces reserved for an ocean', () => {
-    /** Fills every land space except those next to an ocean-reserved space, which the modular Highlander may still use. */
+    /** Fills every land space except those next to an ocean-reserved space, which the modular Highlander may use. */
     const fillAwayFromReservedOceans = (game: IGame, human: TestPlayer) => {
       const board = game.board;
       for (const space of board.getSpaces(SpaceType.LAND).filter((sp) => sp.tile === undefined)) {

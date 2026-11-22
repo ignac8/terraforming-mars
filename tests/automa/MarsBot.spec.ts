@@ -114,6 +114,7 @@ describe('MarsBot', () => {
 
     it('regressTrack maps production types correctly', () => {
       const {marsBot} = createAutomaGame();
+      // Advance all tracks to position 1
       for (let i = 0; i < 7; i++) {
         marsBot.marsBotBoard.tracks[i].advance();
       }

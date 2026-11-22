@@ -207,6 +207,7 @@ describe('FloaterHandling', () => {
         marsBot.turnResolver['resolveTrackAction']('floater', 0);
       }
 
+      // No track advancement should happen (Titan is exempt from the overflow check)
       expect(board.tracks[eventIdx].position).to.eq(before);
       expect(marsBot.shippingBoard.get(ColonyName.TITAN)).to.eq(6);
     });

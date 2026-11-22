@@ -310,7 +310,7 @@ describe('MarsBot Rules Compliance', () => {
       const mcBefore = marsBot.player.megaCredits;
       marsBot.player.setTerraformRating(30);
       marsBot.runProductionPhase();
-      // Normal production would add TR to MC, but MarsBot skips
+      // Normal production would add TR to M€, but MarsBot skips
       expect(marsBot.player.megaCredits).to.eq(mcBefore);
     });
   });

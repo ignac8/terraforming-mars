@@ -219,7 +219,7 @@ describe('MarsBot Integration', () => {
       const {game, marsBot} = createAutomaGame();
       marsBot.player.setTerraformRating(30);
       marsBot.megacredits = 12;
-      game.generation = 14; // 1 VP per 6 MC
+      game.generation = 14; // 1 VP per 6 M€
       const spaces = game.board.getAvailableSpacesOnLand(marsBot.player);
       game.simpleAddTile(marsBot.player, spaces[5], {tileType: TileType.GREENERY});
       game.claimedMilestones.push({player: marsBot.player, milestone: game.milestones[0]});

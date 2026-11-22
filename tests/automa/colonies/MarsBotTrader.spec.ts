@@ -172,6 +172,7 @@ describe('MarsBotTrader', () => {
       expect(game.projectDeck.drawPile.length).to.be.greaterThan(0);
       const discardBefore = game.projectDeck.discardPile.length;
       const result = selectTradeColony(marsBot);
+      // Should have revealed one card (random tiebreak)
       expect(game.projectDeck.discardPile.length).to.eq(discardBefore + 1);
       expect(result).to.not.be.undefined;
     });
