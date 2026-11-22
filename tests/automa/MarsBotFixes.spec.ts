@@ -53,7 +53,6 @@ describe('MarsBot Fixes', () => {
       const {game, marsBot} = createAutomaGame();
       const botPlayer = marsBot.player;
 
-      // Find a space with bonus icons
       const spaceWithBonus = game.board.spaces.find((s) =>
         s.bonus.length > 0 && s.tile === undefined && s.spaceType === SpaceType.LAND,
       );
@@ -64,12 +63,9 @@ describe('MarsBot Fixes', () => {
 
         game.addCity(botPlayer, spaceWithBonus);
 
-        // MarsBot should NOT have gained any resources
         expect(botPlayer.plants).to.eq(plantsBefore);
         expect(botPlayer.steel).to.eq(steelBefore);
         expect(botPlayer.titanium).to.eq(titaniumBefore);
-        // MC might change from ocean adjacency in normal flow, but should NOT from tile bonuses
-        // (ocean adjacency is also blocked for MarsBot now)
       }
     });
 
@@ -90,7 +86,6 @@ describe('MarsBot Fixes', () => {
       const {game, marsBot} = createAutomaGame();
       const botPlayer = marsBot.player;
 
-      // Set temperature to -26 (one step below -24 bonus)
       setTemperature(game, -26);
 
       const mcBefore = marsBot.megacredits;
@@ -98,7 +93,6 @@ describe('MarsBot Fixes', () => {
 
       game.increaseTemperature(botPlayer, 1);
 
-      // MarsBot should get 2 MC, NOT heat production
       expect(marsBot.megacredits).to.eq(mcBefore + 2);
       expect(botPlayer.production.get(Resource.HEAT)).to.eq(heatProdBefore);
     });
@@ -220,21 +214,16 @@ describe('MarsBot Fixes', () => {
       const {marsBot} = createAutomaGame();
       const marsBotBoard = marsBot.marsBotBoard;
 
-      // Make MarsBot meet Builder (track 1 >= 8) and Planner (all tracks >= 4)
-      // Set track 1 to 8
+      // MarsBot meets Builder (track 1 >= 8) and Planner (all tracks >= 4)
       for (let i = 0; i < 8; i++) {
         marsBotBoard.tracks[0].advance();
       }
-      // Set all tracks to 4
       for (let t = 1; t < 7; t++) {
         for (let i = 0; i < 4; i++) {
           marsBotBoard.tracks[t].advance();
         }
       }
 
-      // Human has 0 building tags (far from Builder=8) but 20 TR (close to Terraformer=35)
-      // So Terraformer is "closer" for the human than Builder
-      // But MarsBot doesn't meet Terraformer, so this test just verifies no crash
       expect(marsBotBoard.tracks[0].position).to.eq(8);
     });
   });
@@ -257,7 +246,6 @@ describe('MarsBot Fixes', () => {
       const {marsBot} = createAutomaGame();
       const marsBotBoard = marsBot.marsBotBoard;
 
-      // Create a mock event card with Space tag
       const mockEventCard = fakeCard({cost: 10, tags: [Tag.SPACE], type: CardType.EVENT});
 
       marsBot.resolveProjectCard(mockEventCard);
@@ -273,12 +261,11 @@ describe('MarsBot Fixes', () => {
       const {marsBot} = createAutomaGame();
       const resolver = marsBot.turnResolver;
 
-      // Max out a track
       for (let i = 0; i < 18; i++) {
         marsBot.marsBotBoard.tracks[6].advance();
       }
 
-      // Play a Plant tag card - track 7 is maxed, should fail
+      // Track 7 is maxed, so a Plant tag card fails.
       const mockCard = fakeCard({cost: 5, tags: [Tag.PLANT], type: CardType.AUTOMATED});
       resolver.resolveProjectCard(mockCard);
 
@@ -371,11 +358,11 @@ describe('MarsBot Fixes', () => {
     it('award values reduced by 5 in easy mode', () => {
       const {marsBot, game} = createAutomaGame('easy');
       // Scientist award = track 4 position + offset
-      marsBot.marsBotBoard.tracks[3].advance(); // position 1
+      marsBot.marsBotBoard.tracks[3].advance();
       const award = game.awards.find((a) => a.name === 'Scientist');
       if (award) {
         const val = marsBot.awardValue(award);
-        expect(val).to.eq(1 - 5); // position 1 + offset -5 = -4
+        expect(val).to.eq(1 - 5);
       }
     });
   });
@@ -434,8 +421,6 @@ describe('MarsBot Fixes', () => {
   describe('Multiple tags on one card', () => {
     it('advances multiple tracks for multi-tag card', () => {
       const {marsBot} = createAutomaGame();
-      // Card with Building + Space tags
-      // Track 1 pos 1 = null, Track 2 pos 1 = advance (chains to pos 2)
       const mockCard = fakeCard({cost: 10, tags: [Tag.BUILDING, Tag.SPACE], type: CardType.AUTOMATED});
       marsBot.resolveProjectCard(mockCard);
 
@@ -501,7 +486,6 @@ describe('MarsBot Fixes', () => {
       const mockCard = fakeCard({cost: 5, tags: [Tag.WILD], type: CardType.AUTOMATED});
       marsBot.resolveProjectCard(mockCard);
 
-      // Wild tag advances the least-advanced track (all at 0, so index 0 = first)
       expect(marsBot.marsBotBoard.tracks[0].position).to.eq(1);
       for (let t = 1; t < 7; t++) {
         expect(marsBot.marsBotBoard.tracks[t].position).to.eq(0);
@@ -515,7 +499,6 @@ describe('MarsBot Fixes', () => {
       const botPlayer = TestPlayer.RED.newPlayer({name: 'marsbot'});
       botPlayer.game = game;
 
-      // Track 1 pos 1 has tr3 action
       const boardData = makeBoardWithTrack1Action(1, 'tr3');
       const marsBot = standaloneMarsBot(game, botPlayer, human, boardData);
       const marsBotBoard = marsBot.marsBotBoard;
@@ -527,20 +510,15 @@ describe('MarsBot Fixes', () => {
       resolver.resolveProjectCard(mockCard);
       expect(botPlayer.terraformRating).to.eq(startTR + 3);
 
-      // Advance to pos 2
       resolver.resolveProjectCard(mockCard);
       expect(marsBotBoard.tracks[0].position).to.eq(2);
 
-      // Regress back to pos 1
       marsBotBoard.tracks[0].regress();
       expect(marsBotBoard.tracks[0].position).to.eq(1);
 
-      // Re-advance to pos 2 - the action at pos 2 should be null (it's null in our layout)
-      // But the IMPORTANT thing: pos 2 was regressed from, so action should be skipped
       const trBefore = botPlayer.terraformRating;
       resolver.resolveProjectCard(mockCard);
       expect(marsBotBoard.tracks[0].position).to.eq(2);
-      // No TR gain from skipped action
       expect(botPlayer.terraformRating).to.eq(trBefore);
     });
   });
@@ -553,18 +531,14 @@ describe('MarsBot Fixes', () => {
         marsBot.marsBotBoard.tracks[0].advance();
       }
       marsBot.megacredits = 10;
-      // MarsBot needs 3 claimable milestones when 0 are claimed
-      // Builder (track 0 >= 8) is met. Need 2 more.
-      // Advance other tracks for Planner (all tracks >= 4) — need all 7 tracks at 4
+      // Planner needs all 7 tracks at 4
       for (let t = 1; t < 7; t++) {
         for (let i = 0; i < 4; i++) {
           marsBot.marsBotBoard.tracks[t].advance();
         }
       }
-      // Now Builder (track 0 >= 8) and Planner (all >= 4) are met
       // Terraformer needs TR >= 35
       marsBot.player.setTerraformRating(35);
-      // 3 milestones claimable, 0 claimed → should claim
       marsBot.takeTurn();
       expect(game.claimedMilestones.length).to.be.gte(1);
       expect(marsBot.megacredits).to.eq(2); // 10 - 8 = 2
@@ -622,7 +596,6 @@ describe('MarsBot Fixes', () => {
       }
 
       const vp = marsBot.getVictoryPoints();
-      // MarsBot should win or tie (it has track position, human has 0)
       expect(vp.detailsAwards.length).to.be.gte(1);
       expect(vp.detailsAwards[0].victoryPoint).to.eq(5);
     });

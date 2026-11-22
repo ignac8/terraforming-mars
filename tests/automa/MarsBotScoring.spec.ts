@@ -18,7 +18,7 @@ import {standaloneMarsBot} from './corps/CorpGame';
 import {THARSIS_MARSBOT_BOARD} from '../../src/server/automa/boards/TharsisMarsBot';
 import {ColonyName} from '../../src/common/colonies/ColonyName';
 
-/** A bot on a 2-player game, with the award values in `awardValues`. */
+/** Builds a fake MarsBot on a 2-player game, scoring each award from `awardValues`. */
 function setup(fields: Partial<IMarsBot> = {}, awardValues: Record<string, number> = {}) {
   const [game, human, botPlayer] = testGame(2, {turmoilExtension: true});
   const marsBot = fakeMarsBot({
@@ -33,7 +33,7 @@ function setup(fields: Partial<IMarsBot> = {}, awardValues: Record<string, numbe
   return {game, human, botPlayer, marsBot};
 }
 
-/** An empty land space whose six neighbours are all empty land. */
+/** Finds an empty land space whose six neighbours are all empty land. */
 function inlandSpace(marsBot: IMarsBot): Space {
   return marsBot.game.board.getAvailableSpacesOnLand(marsBot.player).find((space) => {
     const adjacent = marsBot.game.board.getAdjacentSpaces(space);
@@ -51,12 +51,16 @@ describe('MarsBotScoring', () => {
 
   it('scores 5 VP for each milestone MarsBot claimed', () => {
     const {game, human, botPlayer, marsBot} = setup();
-    game.claimedMilestones.push({player: botPlayer, milestone: new Terraformer()}, {player: human, milestone: new Mayor()});
+    game.claimedMilestones.push(
+      {player: botPlayer, milestone: new Terraformer()},
+      {player: human, milestone: new Mayor()},
+    );
 
     const vp = new MarsBotScoring(marsBot).calculate();
 
+    const expectedDetails = [{message: 'Claimed ${0} milestone', messageArgs: ['Terraformer'], victoryPoint: 5}];
     expect(vp.milestones).eq(5);
-    expect(vp.detailsMilestones).deep.eq([{message: 'Claimed ${0} milestone', messageArgs: ['Terraformer'], victoryPoint: 5}]);
+    expect(vp.detailsMilestones).deep.eq(expectedDetails);
   });
 
   for (const run of [
@@ -77,8 +81,14 @@ describe('MarsBotScoring', () => {
     const {game, human, marsBot} = setup({}, {Banker: 1});
     game.fundedAwards.push({player: human, award: new Banker()});
 
-    expect(new MarsBotScoring(marsBot).calculate().detailsAwards)
-      .deep.eq([{message: '${0} place for ${1} award (funded by ${2})', messageArgs: ['1st', 'Banker', human.name], victoryPoint: 5}]);
+    const vp = new MarsBotScoring(marsBot).calculate();
+
+    const expectedDetails = [{
+      message: '${0} place for ${1} award (funded by ${2})',
+      messageArgs: ['1st', 'Banker', human.name],
+      victoryPoint: 5,
+    }];
+    expect(vp.detailsAwards).deep.eq(expectedDetails);
   });
 
   it("scores MarsBot's greeneries, and the greeneries next to its cities", () => {
@@ -91,7 +101,8 @@ describe('MarsBotScoring', () => {
 
     const vp = new MarsBotScoring(marsBot).calculate();
 
-    expect({greenery: vp.greenery, cityAdjacentGreenery: vp.cityAdjacentGreenery}).deep.eq({greenery: 1, cityAdjacentGreenery: 2});
+    expect(vp.greenery).eq(1);
+    expect(vp.cityAdjacentGreenery).eq(2);
   });
 
   it("scores 1 VP for each space next to the Neural Instance that the player doesn't hold", () => {
@@ -167,7 +178,9 @@ describe('MarsBotScoring', () => {
 
   it('scores no Turmoil VP without Turmoil', () => {
     const [game, human, botPlayer] = testGame(2);
-    const marsBot = fakeMarsBot({game, player: botPlayer, humanPlayer: human, megacredits: 0, neuralInstanceSpace: undefined});
+    const marsBot = fakeMarsBot({
+      game, player: botPlayer, humanPlayer: human, megacredits: 0, neuralInstanceSpace: undefined,
+    });
 
     expect(new MarsBotScoring(marsBot).calculate().turmoilVP).eq(0);
   });
@@ -180,7 +193,8 @@ describe('MarsBotScoring', () => {
 
     const vp = new MarsBotScoring(marsBot).calculate();
 
-    expect({corpVP: vp.corpVP, total: vp.total}).deep.eq({corpVP: 4, total: 20 + 5 + 5 + 2 + 1 + 4});
+    expect(vp.corpVP).eq(4);
+    expect(vp.total).eq(20 + 5 + 5 + 2 + 1 + 4);
   });
 
   let game: IGame;
@@ -284,7 +298,7 @@ describe('MarsBotScoring', () => {
       game.simpleAddTile(botPlayer, citySpace, {tileType: TileType.CITY});
       const adj = game.board.getAdjacentSpaces(citySpace).filter((s) => s.tile === undefined);
       if (adj.length > 0) {
-        game.simpleAddTile(human, adj[0], {tileType: TileType.GREENERY}); // Human's greenery
+        game.simpleAddTile(human, adj[0], {tileType: TileType.GREENERY});
       }
       const vp = makeScoring().calculate();
       expect(vp.cityAdjacentGreenery).to.be.gte(1);
@@ -358,7 +372,7 @@ describe('MarsBotScoring', () => {
     });
 
     it('fractional points rounded down', () => {
-      game.generation = 14; // 1 per 6 MC
+      game.generation = 14; // 1 per 6 M€
       marsBot.megacredits = 17;
       expect(makeScoring().calculate().mcToVP).to.eq(2); // floor(17/6) = 2
     });
@@ -380,7 +394,6 @@ describe('MarsBotScoring', () => {
       const niSpace = spaces[15]; // Pick a non-edge space
       const adj = game.board.getAdjacentSpaces(niSpace);
 
-      // Place human tile on one adjacent space
       const humanAdj = adj.find((s) => s.tile === undefined && s.spaceType === SpaceType.LAND);
       if (humanAdj) {
         game.simpleAddTile(human, humanAdj, {tileType: TileType.CITY});
@@ -412,7 +425,8 @@ describe('MarsBotScoring', () => {
         const {marsBot} = leftoverGame({automaColonyVP: true});
         marsBot.shippingBoard.storage.set(ColonyName.CERES, Math.min(run.cubes, 4));
         marsBot.shippingBoard.storage.set(ColonyName.LUNA, Math.max(0, run.cubes - 4));
-        expect(marsBot.getVictoryPoints().leftoverResourcesVP, `${run.cubes} resources`).to.eq(run.expected);
+        const vp = marsBot.getVictoryPoints();
+        expect(vp.leftoverResourcesVP, `${run.cubes} resources`).to.eq(run.expected);
       });
     }
 
@@ -423,7 +437,7 @@ describe('MarsBotScoring', () => {
       expect(marsBot.getVictoryPoints().leftoverResourcesVP).to.eq(2);
     });
 
-    it('does not score MarsBot\'s colonies', () => {
+    it("does not score MarsBot's colonies", () => {
       const {game, marsBot} = leftoverGame({automaColonyVP: true});
       for (let i = 0; i < 4; i++) {
         game.colonies[i].colonies.push(marsBot.player.id);
@@ -437,7 +451,9 @@ describe('MarsBotScoring', () => {
       for (const {marsBot} of [without, withOption]) {
         marsBot.shippingBoard.storage.set(ColonyName.CERES, 4);
       }
-      expect(withOption.marsBot.getVictoryPoints().total).to.eq(without.marsBot.getVictoryPoints().total + 2);
+      const totalWithout = without.marsBot.getVictoryPoints().total;
+      const totalWith = withOption.marsBot.getVictoryPoints().total;
+      expect(totalWith).to.eq(totalWithout + 2);
     });
 
     it('is off by default', () => {
@@ -457,7 +473,7 @@ describe('MarsBotScoring', () => {
     it('combines all VP sources', () => {
       botPlayer.setTerraformRating(25);
       marsBot.megacredits = 16;
-      game.generation = 12; // 1 VP per 8 MC
+      game.generation = 12; // 1 VP per 8 M€
 
       const spaces = game.board.getAvailableSpacesOnLand(botPlayer);
       game.simpleAddTile(botPlayer, spaces[10], {tileType: TileType.GREENERY});

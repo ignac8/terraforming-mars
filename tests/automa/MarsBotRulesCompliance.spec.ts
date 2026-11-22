@@ -36,8 +36,6 @@ function makeResolver(game: IGame, botPlayer: TestPlayer, human: TestPlayer, boa
 }
 
 describe('MarsBot Rules Compliance', () => {
-  // ---- Rule 2.6: Track Actions ----
-
   describe('Rule 2.6: Greenery track action places tile + raises oxygen + grants TR', () => {
     it('greenery action places a greenery tile', () => {
       const [game, human] = testGame(1);
@@ -118,8 +116,6 @@ describe('MarsBot Rules Compliance', () => {
     });
   });
 
-  // ---- Rule 2.7: Placement Bonuses ----
-
   describe('Rule 2.7: Placement bonuses give MC to megacredits', () => {
     it('tile placement adds 1 MC per bonus icon to megacredits', () => {
       const [game, human] = testGame(1);
@@ -130,7 +126,6 @@ describe('MarsBot Rules Compliance', () => {
       layout[1] = 'city';
       const {marsBot, resolver} = makeResolver(game, botPlayer, human, makeBoard(layout));
 
-      // Find a space with bonus icons
       const spaceWithBonus = game.board.spaces.find((s) =>
         s.bonus.length > 0 && s.tile === undefined && s.spaceType === SpaceType.LAND &&
         game.board.getAdjacentSpaces(s).every((adj) => !Board.isCitySpace(adj)),
@@ -139,7 +134,6 @@ describe('MarsBot Rules Compliance', () => {
       if (spaceWithBonus) {
         const mcBefore = marsBot.megacredits;
         resolver.resolveProjectCard(fakeCard({cost: 5, tags: [Tag.BUILDING], type: CardType.AUTOMATED}));
-        // MC should have increased (from bonus icons and/or ocean adjacency)
         expect(marsBot.megacredits).to.be.gte(mcBefore);
       }
     });
@@ -149,7 +143,6 @@ describe('MarsBot Rules Compliance', () => {
       const botPlayer = TestPlayer.RED.newPlayer({name: 'bot'});
       botPlayer.game = game;
 
-      // Place an ocean tile first
       const oceanSpaces = game.board.getAvailableSpacesForOcean(botPlayer);
       game.simpleAddTile(botPlayer, oceanSpaces[0], {tileType: TileType.OCEAN});
 
@@ -159,12 +152,9 @@ describe('MarsBot Rules Compliance', () => {
 
       const mcBefore = marsBot.megacredits;
       resolver.resolveProjectCard(fakeCard({cost: 5, tags: [Tag.BUILDING], type: CardType.AUTOMATED}));
-      // At minimum, the city might be adjacent to the ocean
       expect(marsBot.megacredits).to.be.gte(mcBefore);
     });
   });
-
-  // ---- Rule 2.5: Failed Actions ----
 
   describe('Rule 2.5: Failed Action scenarios', () => {
     it('greenery action with no available space = failed action', () => {
@@ -172,7 +162,6 @@ describe('MarsBot Rules Compliance', () => {
       const botPlayer = TestPlayer.RED.newPlayer({name: 'bot'});
       botPlayer.game = game;
 
-      // Fill all land spaces
       for (const s of game.board.spaces) {
         if (s.tile === undefined && s.spaceType === SpaceType.LAND) {
           game.simpleAddTile(botPlayer, s, {tileType: TileType.GREENERY});
@@ -191,7 +180,6 @@ describe('MarsBot Rules Compliance', () => {
       const botPlayer = TestPlayer.RED.newPlayer({name: 'bot'});
       botPlayer.game = game;
 
-      // Fill all spaces with cities (impossible to place another city)
       const availableSpaces = game.board.getAvailableSpacesOnLand(botPlayer);
       for (const s of availableSpaces) {
         game.simpleAddTile(botPlayer, s, {tileType: TileType.CITY});
@@ -205,8 +193,6 @@ describe('MarsBot Rules Compliance', () => {
     });
   });
 
-  // ---- Rule 2.6: Award tiebreakers ----
-
   describe('Rule 2.6: Award funding tiebreakers', () => {
     it('MarsBot gets failed action when tied but not ahead on any award', () => {
       const [game, human] = testGame(1);
@@ -218,11 +204,9 @@ describe('MarsBot Rules Compliance', () => {
       const {marsBot, resolver} = makeResolver(game, botPlayer, human, makeBoard(layout));
 
       resolver.resolveProjectCard(fakeCard({cost: 5, tags: [Tag.BUILDING], type: CardType.AUTOMATED}));
-      expect(marsBot.megacredits).to.eq(5); // Failed action
+      expect(marsBot.megacredits).to.eq(5);
     });
   });
-
-  // ---- Rule 2.11: Game End ----
 
   describe('Rule 2.11: Final greenery placement', () => {
     it('places greenery for tracks where next action is greenery', () => {
@@ -232,9 +216,8 @@ describe('MarsBot Rules Compliance', () => {
       game.simpleAddTile(marsBot.player, spaces[15], {tileType: TileType.CITY});
 
       // Advance Track 7 to position where next action is greenery (pos 3 = greenery on Track 7)
-      marsBot.marsBotBoard.tracks[6].advance(); // pos 1
-      marsBot.marsBotBoard.tracks[6].advance(); // pos 2
-      // Next action (pos 3) = greenery
+      marsBot.marsBotBoard.tracks[6].advance();
+      marsBot.marsBotBoard.tracks[6].advance();
 
       const greeneryBefore = game.board.getGreeneries(marsBot.player).length;
       marsBot.placeFinalGreeneries();
@@ -262,24 +245,17 @@ describe('MarsBot Rules Compliance', () => {
   describe('Rule 2.11: Tie = MarsBot wins', () => {
     it('when scores are equal, MarsBot wins (human does NOT win)', () => {
       const {game, human, marsBot} = createAutomaGame();
-      // Set both to exact same TR, no other VP sources
       human.setTerraformRating(25);
       marsBot.player.setTerraformRating(25);
       game.phase = Phase.END;
 
       const humanVP = human.getVictoryPoints().total;
       const marsBotVP = marsBot.getVictoryPoints().total;
-      // Human total might differ due to card VP etc, but with minimal setup:
-      // The rule is: if marsBot >= human, marsBot wins
-      // We verify the model communicates this
       if (humanVP === marsBotVP) {
-        // Tie = MarsBot wins per rules
         expect(marsBot.toModel().instantWin).to.be.false; // Not instant win, just tie win
       }
     });
   });
-
-  // ---- Rule 2.2: First Player Alternation ----
 
   describe('Rule 2.2: First player alternates each generation', () => {
     it('gen 1: human goes first', () => {
@@ -289,7 +265,6 @@ describe('MarsBot Rules Compliance', () => {
 
     it('gen 2: MarsBot goes first', () => {
       const {game, marsBot} = createAutomaGame();
-      // Simulate research phase toggle (which alternates goesFirst)
       marsBot.actionDeck.buildResearch();
       game.generation = 2;
       marsBot.goesFirst = !marsBot.goesFirst; // Simulating what gotoResearchPhase does
@@ -303,8 +278,6 @@ describe('MarsBot Rules Compliance', () => {
       expect(marsBot.goesFirst).to.be.false;
     });
   });
-
-  // ---- Rule 2.12: Difficulty Levels ----
 
   describe('Rule 2.12: Hard mode milestone conditions', () => {
     it('does not claim when 0 milestones claimed and MarsBot meets <3', () => {
@@ -330,7 +303,7 @@ describe('MarsBot Rules Compliance', () => {
       marsBot.player.actionsTakenThisRound = 0;
 
       marsBot['hardModeFirstTurnMilestone']();
-      expect(game.claimedMilestones.length).to.eq(3); // Now 3
+      expect(game.claimedMilestones.length).to.eq(3);
       expect(marsBot.megacredits).to.eq(2); // 10 - 8
     });
 
@@ -343,11 +316,9 @@ describe('MarsBot Rules Compliance', () => {
       marsBot.player.actionsTakenThisRound = 0;
 
       marsBot['hardModeFirstTurnMilestone']();
-      expect(game.claimedMilestones.length).to.eq(2); // No change
+      expect(game.claimedMilestones.length).to.eq(2);
     });
   });
-
-  // ---- Rule 2.9: Production Phase ----
 
   describe('Rule 2.9: MarsBot skips production', () => {
     it('MarsBot MC supply unchanged during production', () => {
@@ -362,12 +333,10 @@ describe('MarsBot Rules Compliance', () => {
       const mcBefore = marsBot.player.megaCredits;
       marsBot.player.setTerraformRating(30);
       marsBot.runProductionPhase();
-      // Normal production would add TR to MC, but MarsBot skips
+      // Normal production would add TR to M€, but MarsBot skips
       expect(marsBot.player.megaCredits).to.eq(mcBefore);
     });
   });
-
-  // ---- Rule 2.4: Turn alternation ----
 
   describe('Rule 2.4: MarsBot plays one card per turn', () => {
     it('action deck decreases after takeTurn', () => {

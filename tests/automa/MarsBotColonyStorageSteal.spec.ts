@@ -35,7 +35,7 @@ describe('MarsBot colony storage as stock resources (C-25)', () => {
     return typeof input.title === 'string' ? input.title : input.title.message;
   }
 
-  /** The values filled into an option's message. */
+  /** Lists the values filled into an option's message. */
   function valuesOf(input: PlayerInput): Array<string> {
     return typeof input.title === 'string' ? [] : input.title.data.map((d) => String(d.value));
   }
@@ -71,7 +71,8 @@ describe('MarsBot colony storage as stock resources (C-25)', () => {
       // Nothing happens until the player answers
       expect(human.steel).eq(0);
       const amount = storagePrompt(game, human);
-      expect(titleOf(amount)).eq('Take ${0} ${1} from MarsBot: how many from its ${2} colony storage? The rest comes from its M€ supply');
+      const title = titleOf(amount);
+      expect(title).eq('Take ${0} ${1} from MarsBot: how many from its ${2} colony storage? The rest comes from its M€ supply');
       expect(amount.toModel()).deep.include({type: 'amount', min: 0, max: 2, maxByDefault: true});
     });
 
@@ -374,7 +375,8 @@ describe('MarsBot colony storage as stock resources (C-25)', () => {
 
       const tardigrades = new Tardigrades();
       human.playedCards.push(tardigrades);
-      const options = cast(new RemoveResourcesFromCard(human, CardResource.MICROBE, 2, {source: 'opponents'}).execute(), OrOptions);
+      const removal = new RemoveResourcesFromCard(human, CardResource.MICROBE, 2, {source: 'opponents'});
+      const options = cast(removal.execute(), OrOptions);
       options.options[0].process({type: 'option'}, human);
 
       expect(marsBot.megacredits).eq(8);
@@ -392,7 +394,8 @@ describe('MarsBot colony storage as stock resources (C-25)', () => {
 
       marsBot.player.stock.steal(Resource.PLANTS, 2, human);
       const or = prompt(game, human);
-      expect(or.options.map(titleOf)).deep.eq([
+      const titles = or.options.map(titleOf);
+      expect(titles).deep.eq([
         '${0} ${1} plants from MarsBot\'s corporation card (the rest is lost)',
         '${0} ${1} from MarsBot\'s M€ supply or its ${2} colony storage',
       ]);
@@ -479,8 +482,9 @@ describe('MarsBot colony storage as stock resources (C-25)', () => {
       expect(valuesOf(targets.options[target])[0]).eq('3');
       choose(targets, target, human);
       const or = prompt(game, human);
+      const amounts = or.options.map((o) => valuesOf(o)[1]);
       // 2 plants come off the card, 1 M€ out of the supply
-      expect(or.options.map((o) => valuesOf(o)[1])).deep.eq(['2', '1']);
+      expect(amounts).deep.eq(['2', '1']);
       choose(or, 0, human);
 
       expect(marsBot.corpSpecificState.get('plantResources')).eq(0);

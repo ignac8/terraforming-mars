@@ -38,7 +38,7 @@ function stackProjectDeck(game: IGame, cards: Array<IProjectCard>) {
 }
 
 describe('MarsBot decks', () => {
-  it('puts a corporation\'s generation card in the action deck only once a generation', () => {
+  it("puts a corporation's generation card in the action deck only once a generation", () => {
     const {marsBot} = createAutomaGame();
     const corp = getMarsBotCorp(CardName.VITOR)!;
     marsBot.setCorpAndSetup(corp);
@@ -46,7 +46,8 @@ describe('MarsBot decks', () => {
     corp.beforeActionPhase!(marsBot);
     corp.beforeActionPhase!(marsBot);
 
-    expect(actionDeckIds(marsBot).filter((id) => id === BonusCardId.B04_OVERACHIEVEMENT)).has.length(1);
+    const overachievements = actionDeckIds(marsBot).filter((id) => id === BonusCardId.B04_OVERACHIEVEMENT);
+    expect(overachievements).has.length(1);
   });
 
   it('drops generation cards from the bonus deck of an older save', () => {
@@ -58,7 +59,7 @@ describe('MarsBot decks', () => {
     expect(bonusDeckIds(restored)).does.not.include(BonusCardId.B16_GOVERNMENT_INTERVENTION);
   });
 
-  it('shuffles a corporation\'s generation card into the action deck', () => {
+  it("shuffles a corporation's generation card into the action deck", () => {
     const {marsBot} = createAutomaGame();
     const corp = getMarsBotCorp(CardName.ECOLINE)!;
     marsBot.setCorpAndSetup(corp);
@@ -71,7 +72,7 @@ describe('MarsBot decks', () => {
     expect(actionDeckIds(marsBot)[0]).eq(BonusCardId.B23_RAPID_SPROUTING);
   });
 
-  it('shuffles Terralabs\' generation card into the action deck', () => {
+  it("shuffles Terralabs' generation card into the action deck", () => {
     const {game, marsBot} = createAutomaGame();
     const corp = getMarsBotCorp(CardName.TERRALABS_RESEARCH)!;
     marsBot.setCorpAndSetup(corp);
@@ -84,7 +85,7 @@ describe('MarsBot decks', () => {
     expect(marsBot.actionDeck.cards[0]).eq(topCard);
   });
 
-  it('shuffles UNMI\'s Government Subsidy into the bonus deck', () => {
+  it("shuffles UNMI's Government Subsidy into the bonus deck", () => {
     const {marsBot} = createAutomaGame();
     setMarsBotRandom(marsBot, new ConstRandom(0));
 
@@ -103,8 +104,9 @@ describe('MarsBot decks', () => {
 
     marsBot.setCorpAndSetup(getMarsBotCorp(CardName.UNITED_NATIONS_MARS_INITIATIVE)!);
 
+    const bonusIdsInActionDeck = actionDeckIds(marsBot).filter((id) => id !== undefined);
     // C12: "Do not add a bonus card to MarsBot's action deck during setup."
-    expect(actionDeckIds(marsBot).filter((id) => id !== undefined)).to.have.members(expansionCards);
+    expect(bonusIdsInActionDeck).to.have.members(expansionCards);
     expect(marsBot.bonusDeck.drawPile).includes(setupCard);
     // The setup card and Government Subsidy
     expect(marsBot.bonusDeck.drawPile).has.length(bonusCards + 2);
@@ -159,7 +161,7 @@ describe('MarsBot decks', () => {
     });
   });
 
-  it('moves a bonus card into UNMI\'s action deck from generation 2', () => {
+  it("moves a bonus card into UNMI's action deck from generation 2", () => {
     const {game, marsBot} = createAutomaGame();
     const corp = getMarsBotCorp(CardName.UNITED_NATIONS_MARS_INITIATIVE)!;
     marsBot.setCorpAndSetup(corp);
@@ -179,7 +181,7 @@ describe('MarsBot decks', () => {
     expect(marsBot.bonusDeck.discardPile).is.empty;
   });
 
-  it('puts Tycho Magnetics\' Interface Hyperlink at the bottom of the bonus deck', () => {
+  it("puts Tycho Magnetics' Interface Hyperlink at the bottom of the bonus deck", () => {
     const {marsBot} = createAutomaGame();
     // A shuffle would put the card on top with this random draw
     setMarsBotRandom(marsBot, new ConstRandom(0.99));
@@ -190,7 +192,7 @@ describe('MarsBot decks', () => {
     expect(marsBot.bonusDeck.drawPile[0].id).eq(BonusCardId.B30_INTERFACE_HYPERLINK);
   });
 
-  it('puts Phobolog\'s first 2 space cards in the bonus deck and discards the others it reveals', () => {
+  it("puts Phobolog's first 2 space cards in the bonus deck and discards the others it reveals", () => {
     const {game, marsBot} = createAutomaGame();
     const mine = new Mine();
     const asteroid = new Asteroid();
@@ -205,7 +207,7 @@ describe('MarsBot decks', () => {
     expect(game.projectDeck.discardPile).to.include(mine);
   });
 
-  it('puts a science card in Pharmacy Union\'s bonus deck', () => {
+  it("puts a science card in Pharmacy Union's bonus deck", () => {
     const {game, marsBot} = createAutomaGame();
     const searchForLife = new SearchForLife();
     stackProjectDeck(game, [new Mine(), searchForLife]);
@@ -216,7 +218,7 @@ describe('MarsBot decks', () => {
     expect(bonusDeckIds(marsBot)).does.not.include(BonusCardId.B01_METEOR_SHOWER);
   });
 
-  it('puts a microbe card in Splice\'s bonus deck', () => {
+  it("puts a microbe card in Splice's bonus deck", () => {
     const {game, marsBot} = createAutomaGame();
     const tardigrades = new Tardigrades();
     stackProjectDeck(game, [new Mine(), tardigrades]);
@@ -248,20 +250,33 @@ describe('MarsBot decks', () => {
 
     const restored = Game.deserialize(game.serialize()).automaHooks!.marsBot;
 
-    expect(restored.bonusDeck.drawPile.map((c) => c.name)).deep.eq(marsBot.bonusDeck.drawPile.map((c) => c.name));
-    expect(restored.bonusDeck.discardPile.map((c) => c.name)).deep.eq([CardName.TARDIGRADES]);
-    expect(restored.bonusDeck.drawPile.map((c) => c.constructor)).deep.eq(marsBot.bonusDeck.drawPile.map((c) => c.constructor));
+    const drawNames = marsBot.bonusDeck.drawPile.map((c) => c.name);
+    const restoredDrawNames = restored.bonusDeck.drawPile.map((c) => c.name);
+    const restoredDiscardNames = restored.bonusDeck.discardPile.map((c) => c.name);
+    const drawClasses = marsBot.bonusDeck.drawPile.map((c) => c.constructor);
+    const restoredDrawClasses = restored.bonusDeck.drawPile.map((c) => c.constructor);
+    expect(restoredDrawNames).deep.eq(drawNames);
+    expect(restoredDiscardNames).deep.eq([CardName.TARDIGRADES]);
+    expect(restoredDrawClasses).deep.eq(drawClasses);
     expect(restored.bonusDeck.discardPile[0]).instanceOf(Tardigrades);
   });
 
   it('keeps the bonus cards of the action deck across a reload, each as its own class', () => {
     const {game, marsBot} = createAutomaGame();
-    marsBot.actionDeck.cards = [createBonusCard(BonusCardId.B25_DO_IT_RIGHT), new Asteroid(), createBonusCard(BonusCardId.B04_OVERACHIEVEMENT)];
+    marsBot.actionDeck.cards = [
+      createBonusCard(BonusCardId.B25_DO_IT_RIGHT),
+      new Asteroid(),
+      createBonusCard(BonusCardId.B04_OVERACHIEVEMENT),
+    ];
 
     const restored = Game.deserialize(game.serialize()).automaHooks!.marsBot;
 
-    expect(restored.actionDeck.cards.map((c) => c.name)).deep.eq(marsBot.actionDeck.cards.map((c) => c.name));
-    expect(restored.actionDeck.cards.map((c) => c.constructor)).deep.eq(marsBot.actionDeck.cards.map((c) => c.constructor));
+    const names = marsBot.actionDeck.cards.map((c) => c.name);
+    const restoredNames = restored.actionDeck.cards.map((c) => c.name);
+    const classes = marsBot.actionDeck.cards.map((c) => c.constructor);
+    const restoredClasses = restored.actionDeck.cards.map((c) => c.constructor);
+    expect(restoredNames).deep.eq(names);
+    expect(restoredClasses).deep.eq(classes);
   });
 
   it('loads the bonus deck of an older save, which holds bonus cards by id, and plays on from it', () => {
@@ -283,13 +298,18 @@ describe('MarsBot decks', () => {
 
     expect(restored.bonusDeck.drawPile).deep.eq(marsBot.bonusDeck.drawPile);
     expect(restored.bonusDeck.discardPile).deep.eq(marsBot.bonusDeck.discardPile);
-    expect(restored.bonusDeck.drawPile.map((c) => c.constructor)).deep.eq(marsBot.bonusDeck.drawPile.map((c) => c.constructor));
-    expect(restored.bonusDeck.discardPile.map((c) => c.constructor)).deep.eq(marsBot.bonusDeck.discardPile.map((c) => c.constructor));
+    const drawClasses = marsBot.bonusDeck.drawPile.map((c) => c.constructor);
+    const restoredDrawClasses = restored.bonusDeck.drawPile.map((c) => c.constructor);
+    const discardClasses = marsBot.bonusDeck.discardPile.map((c) => c.constructor);
+    const restoredDiscardClasses = restored.bonusDeck.discardPile.map((c) => c.constructor);
+    expect(restoredDrawClasses).deep.eq(drawClasses);
+    expect(restoredDiscardClasses).deep.eq(discardClasses);
 
     restored.takeTurn();
 
+    const lastDiscarded = restored.bonusDeck.discardPile.slice(-2).map((c) => c.id);
     expect(restored.bonusDeck.drawPile.at(-1)?.name).eq(CardName.ASTEROID);
-    expect(restored.bonusDeck.discardPile.slice(-2).map((c) => c.id)).deep.eq([BonusCardId.B02_INVASIVE_SPECIES, BonusCardId.B08_CORPORATE_COMPETITION]);
+    expect(lastDiscarded).deep.eq([BonusCardId.B02_INVASIVE_SPECIES, BonusCardId.B08_CORPORATE_COMPETITION]);
   });
 
   it('lets the player add a microbe to the microbe card they play against Splice', () => {

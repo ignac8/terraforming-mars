@@ -18,6 +18,7 @@ import {HiredRaiders} from '../../src/server/cards/base/HiredRaiders';
 import {CardName} from '../../src/common/cards/CardName';
 import {Units} from '../../src/common/Units';
 import {SpaceType} from '../../src/common/boards/SpaceType';
+import {Space} from '../../src/server/boards/Space';
 import {PlayerInput} from '../../src/server/PlayerInput';
 import {OrOptions} from '../../src/server/inputs/OrOptions';
 import {SelectOption} from '../../src/server/inputs/SelectOption';
@@ -52,7 +53,6 @@ describe('MarsBot Resource Interaction (rules page 4-5)', () => {
       const {marsBot} = createAutomaGame();
       marsBot.megacredits = 10;
 
-      // Simulate removing 3 plants (via stock.add with negative amount)
       marsBot.player.stock.add(Resource.PLANTS, -3, {log: true, from: {player: marsBot.player}});
       expect(marsBot.megacredits).to.eq(7);
     });
@@ -87,10 +87,8 @@ describe('MarsBot Resource Interaction (rules page 4-5)', () => {
       const {human, marsBot} = createAutomaGame();
       marsBot.megacredits = 10;
 
-      // Use stock.steal which calls deduct internally
       marsBot.player.stock.steal(Resource.PLANTS, 3, human);
 
-      // MarsBot should have lost MC
       expect(marsBot.megacredits).to.eq(7);
     });
   });
@@ -102,7 +100,6 @@ describe('MarsBot Resource Interaction (rules page 4-5)', () => {
       marsBot.marsBotBoard.tracks[0].advance();
       expect(marsBot.marsBotBoard.tracks[0].position).to.eq(2);
 
-      // Decrease steel production via production.add with negative
       marsBot.player.production.add(Resource.STEEL, -1, {log: true, from: {player: marsBot.player}});
       expect(marsBot.marsBotBoard.tracks[0].position).to.eq(1);
     });
@@ -166,7 +163,6 @@ describe('MarsBot Resource Interaction (rules page 4-5)', () => {
       const posBefore = marsBot.marsBotBoard.tracks[0].position;
 
       marsBot.player.production.add(Resource.STEEL, 3, {log: true});
-      // No change — MarsBot ignores production increases
       expect(marsBot.marsBotBoard.tracks[0].position).to.eq(posBefore);
     });
   });
@@ -177,7 +173,7 @@ describe('MarsBot Resource Interaction (rules page 4-5)', () => {
       marsBot.megacredits = 10;
 
       marsBot.player.stock.add(Resource.PLANTS, 5);
-      expect(marsBot.megacredits).to.eq(10); // Unchanged
+      expect(marsBot.megacredits).to.eq(10);
     });
 
     it('adding MC to MarsBot does not affect megacredits', () => {
@@ -185,7 +181,7 @@ describe('MarsBot Resource Interaction (rules page 4-5)', () => {
       marsBot.megacredits = 10;
 
       marsBot.player.stock.add(Resource.MEGACREDITS, 5);
-      expect(marsBot.megacredits).to.eq(10); // Unchanged
+      expect(marsBot.megacredits).to.eq(10);
     });
   });
 
@@ -260,7 +256,7 @@ describe('MarsBot Resource Interaction (rules page 4-5)', () => {
       throw new Error(`The default choice is a ${input.constructor.name}`);
     }
 
-    /** MarsBot's M€ plus the positions of all its tracks: removing, stealing or decreasing production lowers it. */
+    /** Sums MarsBot's M€ and the positions of all its tracks, which removing, stealing or decreasing production lowers. */
     function marsBotHoldings(marsBot: MarsBot): number {
       return marsBot.megacredits + marsBot.marsBotBoard.tracks.reduce((sum, track) => sum + track.position, 0);
     }
@@ -319,18 +315,21 @@ describe('MarsBot Resource Interaction (rules page 4-5)', () => {
         }
         runAllActions(game);
 
+        const resourceCounts = resourceCards.map((c) => c.resourceCount);
+
         expect(marsBotHoldings(marsBot), 'MarsBot lost something').lt(holdingsBefore);
-        expect(resourceCards.map((c) => c.resourceCount), 'the human\'s cards kept their resources').deep.eq([3, 3]);
+        expect(resourceCounts, "the human's cards kept their resources").deep.eq([3, 3]);
       });
     }
 
-    it('Flooding defaults to the adjacent MarsBot tile\'s owner', () => {
+    it("Flooding defaults to the adjacent MarsBot tile's owner", () => {
       const {game, human, marsBot} = createAutomaGame();
       marsBot.megacredits = 20;
       human.megaCredits = 20;
+      const isEmptyLand = (space: Space) => space.spaceType === SpaceType.LAND && space.tile === undefined;
       const ocean = game.board.getAvailableSpacesForOcean(human)
-        .find((space) => game.board.getAdjacentSpaces(space).some((s) => s.spaceType === SpaceType.LAND && s.tile === undefined))!;
-      const land = game.board.getAdjacentSpaces(ocean).find((s) => s.spaceType === SpaceType.LAND && s.tile === undefined)!;
+        .find((space) => game.board.getAdjacentSpaces(space).some(isEmptyLand))!;
+      const land = game.board.getAdjacentSpaces(ocean).find(isEmptyLand)!;
       addGreenery(marsBot.player, land.id);
 
       new Flooding().play(human);
