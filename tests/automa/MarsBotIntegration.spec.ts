@@ -200,7 +200,7 @@ describe('MarsBot Integration', () => {
       expect(model.vpBreakdown!.terraformRating).to.eq(20);
     });
 
-    it('model does not include vpBreakdown during play', () => {
+    it('model includes vpBreakdown during play', () => {
       const {game, marsBot} = createAutomaGame();
       game.phase = Phase.ACTION;
 

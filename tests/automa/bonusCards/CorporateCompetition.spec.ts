@@ -342,17 +342,6 @@ describe('CorporateCompetition', () => {
     expect(helped).is.true;
   });
 
-  it('fails when MarsBot has <5 MC', () => {
-    const {marsBot} = createAutomaGame();
-    marsBot.megacredits = 3;
-
-    const cards = createBaseBonusCards();
-    const b08 = cards.find((c) => c.id === BonusCardId.B08_CORPORATE_COMPETITION)!;
-
-    // With less than 5 M€ it draws another bonus card. The test only checks that this does not throw.
-    marsBot.actionDeck.playBonusCard(b08);
-  });
-
   it('deducts 5 MC on successful helper action', () => {
     const {game, human, marsBot} = createAutomaGame();
     marsBot.megacredits = 10;
@@ -662,14 +651,5 @@ describe('CorporateCompetition', () => {
     expect(helper(marsBot, 'Founder')).is.true;
     const city = game.board.getCities(marsBot.player)[0];
     expect(game.board.getAdjacentSpaces(city)).to.include(preserve);
-  });
-
-  it('draws another bonus card when it cannot resolve', () => {
-    // With no funded awards B08 draws another bonus card. The test only checks that this does not throw.
-    const {marsBot} = createAutomaGame();
-    const b08 = marsBot.bonusDeck.drawPile.find((c) => c.id === 'B08');
-    if (b08) {
-      marsBot.actionDeck.playBonusCard(b08);
-    }
   });
 });

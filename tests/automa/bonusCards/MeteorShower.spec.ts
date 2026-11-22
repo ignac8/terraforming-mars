@@ -64,32 +64,14 @@ describe('MeteorShower', () => {
     expect(destroyed).to.be.true;
   });
 
-  it('is blocked by Asteroid Deflection System', () => {
+  it('is blocked by Asteroid Deflection System, and destroyed without removing plants', () => {
     const {human, marsBot} = createAutomaGame();
     human.plants = 10;
-    human.playCard(new AsteroidDeflectionSystem());
+    human.playedCards.push(new AsteroidDeflectionSystem());
 
-    const bonusCard = marsBot.bonusDeck.drawPile.find((c) => c.id === BonusCardId.B01_METEOR_SHOWER);
-    if (bonusCard === undefined) {
-      // The card may already have been drawn, so there is nothing to check.
-      return;
-    }
-    const plantsBefore = human.plants;
-    createBonusCard(BonusCardId.B01_METEOR_SHOWER).resolve(marsBot);
-    expect(human.plants).to.eq(plantsBefore);
-  });
+    const destroyed = createBonusCard(BonusCardId.B01_METEOR_SHOWER).resolve(marsBot);
 
-  it('is blocked by Protected Habitats', () => {
-    const {human, marsBot} = createAutomaGame();
-    human.plants = 10;
-    human.playCard(new ProtectedHabitats());
-
-    const bonusCard = marsBot.bonusDeck.drawPile.find((c) => c.id === BonusCardId.B01_METEOR_SHOWER);
-    if (bonusCard === undefined) {
-      return;
-    }
-    const plantsBefore = human.plants;
-    createBonusCard(BonusCardId.B01_METEOR_SHOWER).resolve(marsBot);
-    expect(human.plants).to.eq(plantsBefore);
+    expect(human.plants).to.eq(10);
+    expect(destroyed).is.true;
   });
 });

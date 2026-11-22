@@ -58,22 +58,6 @@ describe('LobbyistsVenus', () => {
     expect(game.board.getOceanSpaces()).has.length(4);
   });
 
-  it('Venus branch triggers at 1 step from Venus bonus at 8%', () => {
-    const {game, marsBot} = createAutomaGame({venusNextExtension: true});
-    // Venus at 6% is 1 step from the bonus at 8%.
-    setVenusScaleLevel(game, 6);
-    const b15 = marsBot.bonusDeck.drawPile.find((c) => c.id === BonusCardId.B15_LOBBYISTS_VENUS);
-    if (b15 === undefined) {
-      // The card may already have been drawn.
-      const card = createBonusCard(BonusCardId.B15_LOBBYISTS_VENUS);
-      // Temperature and oxygen far from their bonuses, so the Venus branch is reached.
-      setTemperature(game, -4);
-      setOxygenLevel(game, 5);
-      marsBot.actionDeck.playBonusCard(card);
-      expect(game.getVenusScaleLevel()).to.be.greaterThan(6);
-    }
-  });
-
   it('Venus branch triggers at 2 steps from Venus bonus at 16%', () => {
     const {game, marsBot} = createAutomaGame({venusNextExtension: true});
     // Venus at 12% is 2 steps from the bonus at 16%.

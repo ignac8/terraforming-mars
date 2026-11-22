@@ -53,38 +53,6 @@ describe('ExpeditedConstructionColonies', () => {
     });
   }
 
-  it('C-15a: places city if adjacent to ≥2 greenery/ocean tiles and destroys card', () => {
-    const [game] = testGame(1, {automa: true, coloniesExtension: true, boardName: BoardName.THARSIS});
-    const marsBot = getMarsBot(game);
-    game.colonies = [new Luna()];
-    const oceansNeeded = 2;
-    for (let i = 0; i < oceansNeeded; i++) {
-      marsBot.turnResolver.placeOcean();
-    }
-    const card = b17Card();
-    marsBot.bonusDeck.drawPile.push(card);
-
-    const tilesBefore = game.board.spaces.filter((s) => s.tile !== undefined).length;
-    const destroyed = marsBot.actionDeck.playBonusCard(card);
-
-    const tilesAfter = game.board.spaces.filter((s) => s.tile !== undefined).length;
-    // Checks the card only when a city was placed.
-    if (tilesAfter > tilesBefore) {
-      expect(destroyed).to.be.true;
-    }
-  });
-
-  it('C-15b: places colony if MarsBot has ≤1 colonies and no city space', () => {
-    const [game] = testGame(1, {automa: true, coloniesExtension: true, boardName: BoardName.THARSIS});
-    const marsBot = getMarsBot(game);
-    const luna = new Luna();
-    game.colonies = [luna];
-    const card = b17Card();
-    marsBot.bonusDeck.drawPile.push(card);
-    const destroyed = marsBot.actionDeck.playBonusCard(card);
-    expect(destroyed).to.be.false;
-  });
-
   it('C-15b: gains 2 resources if colony placed', () => {
     const [game] = testGame(1, {automa: true, coloniesExtension: true, boardName: BoardName.THARSIS});
     const marsBot = getMarsBot(game);
@@ -94,9 +62,8 @@ describe('ExpeditedConstructionColonies', () => {
     marsBot.bonusDeck.drawPile.push(card);
     const storageBefore = marsBot.shippingBoard.get(ColonyName.LUNA);
     marsBot.actionDeck.playBonusCard(card);
-    if (luna.colonies.includes(marsBot.player.id)) {
-      expect(marsBot.shippingBoard.get(ColonyName.LUNA)).to.eq(storageBefore + 2);
-    }
+    expect(luna.colonies).deep.eq([marsBot.player.id]);
+    expect(marsBot.shippingBoard.get(ColonyName.LUNA)).to.eq(storageBefore + 2);
   });
 
   it('C-15c: no effect if MarsBot already has 2+ colonies', () => {

@@ -145,16 +145,6 @@ describe('MarsBot Game End Model', () => {
       expect(humanVP).to.be.gt(marsBotVP);
     });
 
-    it('MarsBot wins on tie', () => {
-      const {game, human, marsBot} = createAutomaGame();
-      human.setTerraformRating(25);
-      marsBot.player.setTerraformRating(25);
-      game.phase = Phase.END;
-
-      const model = marsBot.toModel();
-      expect(model.vpBreakdown).to.not.be.undefined;
-    });
-
     it('MarsBot instant win at gen 20', () => {
       const {game, marsBot} = createAutomaGame();
       game.generation = 20;

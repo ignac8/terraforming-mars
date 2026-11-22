@@ -12,7 +12,6 @@ import {Tag} from '../../src/common/cards/Tag';
 import {TileType} from '../../src/common/TileType';
 import {Phase} from '../../src/common/Phase';
 import {SpaceType} from '../../src/common/boards/SpaceType';
-import {Board} from '../../src/server/boards/Board';
 import {fakeCard} from '../TestingUtils';
 
 function createAutomaGame(difficulty: 'easy' | 'normal' | 'hard' | 'brutal' = 'normal'): {game: IGame, human: TestPlayer, marsBot: MarsBot} {
@@ -117,43 +116,34 @@ describe('MarsBot Rules Compliance', () => {
   });
 
   describe('Rule 2.7: Placement bonuses give MC to megacredits', () => {
-    it('tile placement adds 1 MC per bonus icon to megacredits', () => {
-      const [game, human] = testGame(1);
-      const botPlayer = TestPlayer.RED.newPlayer({name: 'bot'});
-      botPlayer.game = game;
+    // Space 03 holds two steel icons and touches the ocean space 04. It is the only land space left open.
+    for (const run of [
+      {ocean: false, expected: 2},
+      {ocean: true, expected: 4},
+    ]) {
+      it('a city pays 1 MC per bonus icon and 2 MC per adjacent ocean: ' + JSON.stringify(run), () => {
+        const [game, human] = testGame(1);
+        const botPlayer = TestPlayer.RED.newPlayer({name: 'bot'});
+        botPlayer.game = game;
+        for (const space of game.board.spaces) {
+          if (space.tile === undefined && space.spaceType === SpaceType.LAND && space.id !== '03') {
+            game.simpleAddTile(human, space, {tileType: TileType.GREENERY});
+          }
+        }
+        if (run.ocean) {
+          game.simpleAddTile(human, game.board.getSpaceOrThrow('04'), {tileType: TileType.OCEAN});
+        }
 
-      const layout = emptyLayout();
-      layout[1] = 'city';
-      const {marsBot, resolver} = makeResolver(game, botPlayer, human, makeBoard(layout));
+        const layout = emptyLayout();
+        layout[1] = 'city';
+        const {marsBot, resolver} = makeResolver(game, botPlayer, human, makeBoard(layout));
 
-      const spaceWithBonus = game.board.spaces.find((s) =>
-        s.bonus.length > 0 && s.tile === undefined && s.spaceType === SpaceType.LAND &&
-        game.board.getAdjacentSpaces(s).every((adj) => !Board.isCitySpace(adj)),
-      );
-
-      if (spaceWithBonus) {
-        const mcBefore = marsBot.megacredits;
         resolver.resolveProjectCard(fakeCard({cost: 5, tags: [Tag.BUILDING], type: CardType.AUTOMATED}));
-        expect(marsBot.megacredits).to.be.gte(mcBefore);
-      }
-    });
 
-    it('tile adjacent to ocean gives 2 MC per adjacent ocean', () => {
-      const [game, human] = testGame(1);
-      const botPlayer = TestPlayer.RED.newPlayer({name: 'bot'});
-      botPlayer.game = game;
-
-      const oceanSpaces = game.board.getAvailableSpacesForOcean(botPlayer);
-      game.simpleAddTile(botPlayer, oceanSpaces[0], {tileType: TileType.OCEAN});
-
-      const layout = emptyLayout();
-      layout[1] = 'city';
-      const {marsBot, resolver} = makeResolver(game, botPlayer, human, makeBoard(layout));
-
-      const mcBefore = marsBot.megacredits;
-      resolver.resolveProjectCard(fakeCard({cost: 5, tags: [Tag.BUILDING], type: CardType.AUTOMATED}));
-      expect(marsBot.megacredits).to.be.gte(mcBefore);
-    });
+        expect(game.board.getCities(botPlayer).map((space) => space.id)).deep.eq(['03']);
+        expect(marsBot.megacredits).to.eq(run.expected);
+      });
+    }
   });
 
   describe('Rule 2.5: Failed Action scenarios', () => {
@@ -221,7 +211,8 @@ describe('MarsBot Rules Compliance', () => {
 
       const greeneryBefore = game.board.getGreeneries(marsBot.player).length;
       marsBot.placeFinalGreeneries();
-      expect(game.board.getGreeneries(marsBot.player).length).to.be.gte(greeneryBefore);
+      expect(game.board.getGreeneries(marsBot.player).length).to.eq(greeneryBefore + 1);
+      expect(marsBot.marsBotBoard.tracks[6].position).to.eq(3);
     });
 
     it('does NOT place greenery when next action is not greenery', () => {
@@ -239,21 +230,6 @@ describe('MarsBot Rules Compliance', () => {
       game.phase = Phase.END;
       const vp = marsBot.getVictoryPoints();
       expect(vp.cardVP).to.eq(0);
-    });
-  });
-
-  describe('Rule 2.11: Tie = MarsBot wins', () => {
-    it('when scores are equal, MarsBot wins (human does NOT win)', () => {
-      const {game, human, marsBot} = createAutomaGame();
-      human.setTerraformRating(25);
-      marsBot.player.setTerraformRating(25);
-      game.phase = Phase.END;
-
-      const humanVP = human.getVictoryPoints().total;
-      const marsBotVP = marsBot.getVictoryPoints().total;
-      if (humanVP === marsBotVP) {
-        expect(marsBot.toModel().instantWin).to.be.false; // Not instant win, just tie win
-      }
     });
   });
 

@@ -10,7 +10,7 @@ import {Tag} from '../../src/common/cards/Tag';
 
 describe('MarsBotGameCreation', () => {
   describe('Server-side expansion gating', () => {
-    it('automa game forces Venus off', () => {
+    it('automa game keeps Venus Next on', () => {
       const [game] = testGame(1, {
         automa: true,
         venusNextExtension: true,

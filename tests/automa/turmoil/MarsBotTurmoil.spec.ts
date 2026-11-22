@@ -360,16 +360,22 @@ describe('MarsBot Turmoil — Global Events solo resolution (T-10/T-10b)', () =>
     const turmoil = Turmoil.getTurmoil(game);
     const revolution = new Revolution();
 
-    // Influence 2: chairman 1 and dominant party leader 1.
+    // Influence 3: chairman 1, dominant party leader 1 and a second delegate 1.
     turmoil.chairman = humanPlayer;
     turmoil.dominantParty = turmoil.getPartyByName(PartyName.GREENS);
     turmoil.dominantParty.partyLeader = humanPlayer;
     turmoil.dominantParty.delegates.add(humanPlayer, 4);
-
     const trBefore = humanPlayer.terraformRating;
+
+    humanPlayer.tagsForTest = {earth: 0};
+    expect(revolution.getScore(humanPlayer, turmoil)).to.eq(3);
     revolution.bespokeResolve(game);
-    // The score is 2 without Earth tags, below the threshold of 4.
     expect(humanPlayer.terraformRating).to.equal(trBefore);
+
+    humanPlayer.tagsForTest = {earth: 1};
+    expect(revolution.getScore(humanPlayer, turmoil)).to.eq(4);
+    revolution.bespokeResolve(game);
+    expect(humanPlayer.terraformRating).to.equal(trBefore - 2);
   });
 
   it('Election does not grant TR to MarsBot in automa game (T-10)', () => {
@@ -389,16 +395,17 @@ describe('MarsBot Turmoil — Global Events solo resolution (T-10/T-10b)', () =>
     const turmoil = Turmoil.getTurmoil(game);
     const election = new Election();
 
-    // Influence 2: chairman 1 and dominant party leader 1.
+    // Influence 3: chairman 1, dominant party leader 1 and a second delegate 1.
     turmoil.chairman = humanPlayer;
     turmoil.dominantParty = turmoil.getPartyByName(PartyName.GREENS);
     turmoil.dominantParty.partyLeader = humanPlayer;
     turmoil.dominantParty.delegates.add(humanPlayer, 4);
+    humanPlayer.tagsForTest = {building: 7};
+    expect(election.getScore(humanPlayer, turmoil, game)).to.eq(10);
 
     const trBefore = humanPlayer.terraformRating;
-    expect(() => election.bespokeResolve(game)).not.to.throw();
-    // Influence 2 alone is below the threshold of 5 for a TR gain.
-    expect(humanPlayer.terraformRating).to.be.at.least(trBefore);
+    election.bespokeResolve(game);
+    expect(humanPlayer.terraformRating).to.equal(trBefore + 2);
   });
 });
 

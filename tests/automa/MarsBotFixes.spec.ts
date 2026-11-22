@@ -209,25 +209,6 @@ describe('MarsBot Fixes', () => {
     });
   });
 
-  describe('Milestone tiebreaker #2 - closest to meeting', () => {
-    it('uses humanMilestoneCloseness when no human qualifies', () => {
-      const {marsBot} = createAutomaGame();
-      const marsBotBoard = marsBot.marsBotBoard;
-
-      // MarsBot meets Builder (track 1 >= 8) and Planner (all tracks >= 4)
-      for (let i = 0; i < 8; i++) {
-        marsBotBoard.tracks[0].advance();
-      }
-      for (let t = 1; t < 7; t++) {
-        for (let i = 0; i < 4; i++) {
-          marsBotBoard.tracks[t].advance();
-        }
-      }
-
-      expect(marsBotBoard.tracks[0].position).to.eq(8);
-    });
-  });
-
   describe('Neural Instance tile type', () => {
     it('NEURAL_INSTANCE tile type exists', () => {
       expect(TileType.NEURAL_INSTANCE).to.eq(44);
@@ -490,36 +471,6 @@ describe('MarsBot Fixes', () => {
       for (let t = 1; t < 7; t++) {
         expect(marsBot.marsBotBoard.tracks[t].position).to.eq(0);
       }
-    });
-  });
-
-  describe('Regressed positions skip actions', () => {
-    it('regressed position action is skipped on re-advance', () => {
-      const [game, human] = testGame(1);
-      const botPlayer = TestPlayer.RED.newPlayer({name: 'marsbot'});
-      botPlayer.game = game;
-
-      const boardData = makeBoardWithTrack1Action(1, 'tr3');
-      const marsBot = standaloneMarsBot(game, botPlayer, human, boardData);
-      const marsBotBoard = marsBot.marsBotBoard;
-      const resolver = marsBot.turnResolver;
-
-      // Advance to pos 1 (triggers tr3)
-      const startTR = botPlayer.terraformRating;
-      const mockCard = fakeCard({cost: 5, tags: [Tag.BUILDING], type: CardType.AUTOMATED});
-      resolver.resolveProjectCard(mockCard);
-      expect(botPlayer.terraformRating).to.eq(startTR + 3);
-
-      resolver.resolveProjectCard(mockCard);
-      expect(marsBotBoard.tracks[0].position).to.eq(2);
-
-      marsBotBoard.tracks[0].regress();
-      expect(marsBotBoard.tracks[0].position).to.eq(1);
-
-      const trBefore = botPlayer.terraformRating;
-      resolver.resolveProjectCard(mockCard);
-      expect(marsBotBoard.tracks[0].position).to.eq(2);
-      expect(botPlayer.terraformRating).to.eq(trBefore);
     });
   });
 

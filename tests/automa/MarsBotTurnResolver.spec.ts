@@ -652,17 +652,6 @@ describe('MarsBotTurnResolver', () => {
     });
   });
 
-  describe('Venus actions (ignored in base game)', () => {
-    it('venus action fails when venus not enabled', () => {
-      const boardData = makeBoardWithTrack1Action(1, 'venus');
-      const marsBot = standaloneMarsBot(game, botPlayer, human, boardData);
-      const r = marsBot.turnResolver;
-
-      const mockCard = fakeCard({cost: 5, tags: [Tag.BUILDING], type: CardType.AUTOMATED});
-      r.resolveProjectCard(mockCard);
-    });
-  });
-
   describe('Regressed positions', () => {
     it('regressed position action is skipped on re-advance', () => {
       const boardData = makeBoardWithTrack1Action(2, 'tr5');

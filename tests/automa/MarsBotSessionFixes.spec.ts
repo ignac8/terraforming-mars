@@ -880,13 +880,6 @@ describe('MarsBotVenusNext', () => {
     });
   });
 
-  it('Hoverlord milestone tiebreaker: considered last', () => {
-    const {marsBot} = createVenusAutomaGame();
-    const milestones = marsBot.game.milestones;
-    const hoverlord = milestones.find((m) => m.name === 'Hoverlord');
-    expect(hoverlord).to.not.be.undefined;
-  });
-
   it('floater spending: Brutal non-draft spends only 5 floaters (not 10)', () => {
     const [game] = testGame(1, {
       automa: true,
@@ -937,7 +930,7 @@ describe('MarsBotVenusNext', () => {
     expect(marsBot.floaters).to.eq(5);
   });
 
-  it('floater spending: not triggered when Hoverlord not in milestones', () => {
+  it('floater spending: spends 5 floaters when Hoverlord is not in the milestones', () => {
     const {game, marsBot} = createVenusAutomaGame();
     marsBot.floaters = 10;
     game.milestones = game.milestones.filter((m) => m.name !== 'Hoverlord');

@@ -184,20 +184,6 @@ describe('MarsBot Deep Rules Tests', () => {
     });
   });
 
-  describe('Game end timing (page 10)', () => {
-    it('game is not over mid-round when mars is terraformed', () => {
-      const {game} = createAutomaGame();
-      setOxygenLevel(game, 14);
-      setTemperature(game, 8);
-      const oceanSpaces = game.board.getAvailableSpacesForOcean(game.players[0]);
-      for (let i = 0; i < 9 && i < oceanSpaces.length; i++) {
-        game.simpleAddTile(game.players[0], oceanSpaces[i], {tileType: TileType.OCEAN});
-      }
-      expect(game.marsIsTerraformed()).to.be.true;
-      expect(game.gameIsOver()).to.be.true;
-    });
-  });
-
   describe('Temperature heat bonuses (page 9)', () => {
     it('MarsBot gets 2 MC at -20C bonus', () => {
       const {game, marsBot} = createAutomaGame();

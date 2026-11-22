@@ -77,14 +77,6 @@ describe('MarsBot Limitations Fixed', () => {
   });
 
   describe('Hard mode card VP tracking', () => {
-    it('played project cards are tracked', () => {
-      const {marsBot} = createAutomaGame('hard');
-      expect(marsBot.playedProjectCards.length).to.eq(0);
-
-      marsBot.takeTurn();
-      expect(marsBot.playedProjectCards.length).to.be.gte(0);
-    });
-
     it('hard mode scores 1 VP per card with a non-negative VP icon', () => {
       const {game, marsBot} = createAutomaGame('hard');
 

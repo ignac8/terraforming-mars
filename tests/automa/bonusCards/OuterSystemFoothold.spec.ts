@@ -72,17 +72,4 @@ describe('OuterSystemFoothold', () => {
 
     expect(marsBot.bonusDeck.discardPile).to.include(fillerCard);
   });
-
-  it('C-16c: B18 is excluded from the reshuffle for the draw', () => {
-    const [game] = testGame(1, {automa: true, coloniesExtension: true, boardName: BoardName.THARSIS});
-    const marsBot = getMarsBot(game);
-    game.colonies = [new Luna()];
-
-    // Only B18 itself is in the discard pile, so the draw must not take it.
-    const card = b18Card();
-    marsBot.bonusDeck.drawPile = [];
-    marsBot.bonusDeck.discardPile = [card];
-    // The test passes when the draw ends instead of looping.
-    marsBot.actionDeck.playBonusCard(card);
-  });
 });

@@ -351,10 +351,26 @@ describe('MarsBotCorpResolver', () => {
     });
 
     it('can select any of the 12 base corps', () => {
-      const rng = {next: () => 0, nextInt: (_n: number) => 0};
-      // With Credicor excluded, should get Ecoline (index 0 of 11 remaining)
-      const corp = MarsBotCorpResolver.selectCorp(CardName.CREDICOR, DEFAULT_GAME_OPTIONS, rng);
-      expect(corp).to.not.be.undefined;
+      const baseCorps = [
+        CardName.CREDICOR, CardName.ECOLINE, CardName.HELION, CardName.INTERPLANETARY_CINEMATICS,
+        CardName.INVENTRIX, CardName.MINING_GUILD, CardName.PHOBOLOG, CardName.SATURN_SYSTEMS,
+        CardName.TERACTOR, CardName.THARSIS_REPUBLIC, CardName.THORGATE, CardName.UNITED_NATIONS_MARS_INITIATIVE,
+      ];
+      // Every index the rng can pick, once the human's corp is out. Credicor and Ecoline take turns as it.
+      const selectable = new Set<CardName>();
+      for (const humanCorp of [CardName.CREDICOR, CardName.ECOLINE]) {
+        let eligible = 0;
+        const countEligible = {next: () => 0, nextInt: (n: number) => {
+          eligible = n;
+          return 0;
+        }};
+        MarsBotCorpResolver.selectCorp(humanCorp, DEFAULT_GAME_OPTIONS, countEligible);
+        for (let index = 0; index < eligible; index++) {
+          selectable.add(MarsBotCorpResolver.selectCorp(humanCorp, DEFAULT_GAME_OPTIONS, {next: () => 0, nextInt: () => index}).name);
+        }
+      }
+
+      expect([...selectable]).to.include.members(baseCorps);
     });
   });
 });

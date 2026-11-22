@@ -2,6 +2,8 @@ import {expect} from 'chai';
 import {testGame} from '../TestGame';
 import {TestPlayer} from '../TestPlayer';
 import {IGame} from '../../src/server/IGame';
+import {Game} from '../../src/server/Game';
+import {Phase} from '../../src/common/Phase';
 import {MarsBot} from '../../src/server/automa/MarsBot';
 import {BoardName} from '../../src/common/boards/BoardName';
 import {SelectCard} from '../../src/server/inputs/SelectCard';
@@ -156,7 +158,7 @@ describe('MarsBot Draft Variant', () => {
       expect(draftMessages).is.empty;
     });
 
-    it('swapped piles mean human sees different cards each round', () => {
+    it('swapped piles mean the human sees the other pile each round', () => {
       const {game, human} = createAutomaGameWithDraft();
       game.gotoResearchPhase();
 
@@ -164,7 +166,8 @@ describe('MarsBot Draft Variant', () => {
       (human.getWaitingFor() as SelectCard<IProjectCard>).cb([round1Cards[0]]);
 
       const round2Cards = [...(human.getWaitingFor() as SelectCard<IProjectCard>).cards];
-      expect(round2Cards.length).to.eq(3);
+      expect(round2Cards).has.length(3);
+      expect(round2Cards.filter((card) => round1Cards.includes(card))).is.empty;
     });
   });
 
@@ -188,7 +191,10 @@ describe('MarsBot Draft Variant', () => {
   describe('Draft disabled in automa mode', () => {
     it('standard draft phase is bypassed for automa', () => {
       const {game} = createAutomaGameWithDraft();
-      expect(game.gameOptions.draftVariant).to.be.true;
+
+      (game as Game)['startGeneration']();
+
+      expect(game.phase).to.eq(Phase.RESEARCH);
     });
   });
 });
