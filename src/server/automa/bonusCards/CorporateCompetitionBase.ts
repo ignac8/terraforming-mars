@@ -4,10 +4,10 @@ import {CardType} from '@/common/cards/CardType';
 import {Tag} from '@/common/cards/Tag';
 import {AwardName} from '@/common/ma/AwardName';
 import {IMarsBot} from '@/server/automa/IMarsBot';
-import {MarsBotBonusCard} from '@/server/automa/bonusCards/MarsBotBonusCard';
 import {marsBotUsesBoardGoals} from '@/server/automa/MarsBotMilestoneAwardEval';
 import {cardTagsIncludingEvent} from '@/server/automa/MarsBotTags';
 import {MarsBotTilePlacer} from '@/server/automa/MarsBotTilePlacer';
+import {MarsBotBonusCard} from '@/server/automa/bonusCards/MarsBotBonusCard';
 import {maybeRemoveAnimalOrMicrobe} from '@/server/automa/bonusCards/bonusCardHelpers';
 import {Board, isSpecialTileSpace} from '@/server/boards/Board';
 import {Space} from '@/server/boards/Space';
@@ -22,9 +22,10 @@ import {IProjectCard} from '@/server/cards/IProjectCard';
 const FREE_HELPER_AWARDS: ReadonlyArray<AwardName> = ['Forecaster'];
 
 /**
- * The effect every Corporate Competition card shares: help with the funded award the player is closest to.
+ * The Corporate Competition cards, one for each board (B08-B13) and one for the Milestones & Awards expansion (B14).
  *
- * The helper action comes from the award's name, so the card for each board differs only in its name.
+ * The cards differ only in the awards they print. Every card here can help with every award, since random awards
+ * bring other boards' awards into play.
  */
 export abstract class CorporateCompetitionBase extends MarsBotBonusCard {
   public override resolve(marsBot: IMarsBot): boolean {

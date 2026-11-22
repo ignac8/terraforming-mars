@@ -3,6 +3,7 @@ import {BASE_BONUS_CARDS, MarsBotBonusDeck} from '../../src/server/automa/MarsBo
 import {SeededRandom} from '../../src/common/utils/Random';
 import {createBonusCard} from '../../src/server/automa/bonusCards/MarsBotBonusCards';
 import {BonusCardName} from '../../src/common/automa/BonusCardName';
+import {BoardName} from '../../src/common/boards/BoardName';
 import {MarsBotBonusCard} from '../../src/server/automa/bonusCards/MarsBotBonusCard';
 import {MeteorShower} from '../../src/server/automa/bonusCards/MeteorShower';
 import {testGame} from '../TestGame';
@@ -55,13 +56,75 @@ describe('MarsBotBonusDeck', () => {
         ],
       },
     },
+    {
+      expansions: 'Hellas',
+      venus: false,
+      colonies: false,
+      boardName: BoardName.HELLAS,
+      expected: {
+        removed: [BonusCardName.CORPORATE_COMPETITION],
+        added: [BonusCardName.CORPORATE_COMPETITION_HELLAS],
+      },
+    },
+    {
+      expansions: 'Elysium',
+      venus: false,
+      colonies: false,
+      boardName: BoardName.ELYSIUM,
+      expected: {
+        removed: [BonusCardName.CORPORATE_COMPETITION],
+        added: [BonusCardName.CORPORATE_COMPETITION_ELYSIUM],
+      },
+    },
+    {
+      expansions: 'Utopia Planitia',
+      venus: false,
+      colonies: false,
+      boardName: BoardName.UTOPIA_PLANITIA,
+      expected: {
+        removed: [BonusCardName.CORPORATE_COMPETITION],
+        added: [BonusCardName.CORPORATE_COMPETITION_UTOPIA],
+      },
+    },
+    {
+      expansions: 'Terra Cimmeria',
+      venus: false,
+      colonies: false,
+      boardName: BoardName.TERRA_CIMMERIA_NOVA,
+      expected: {
+        removed: [BonusCardName.CORPORATE_COMPETITION],
+        added: [BonusCardName.CORPORATE_COMPETITION_CIMMERIA],
+      },
+    },
+    {
+      expansions: 'Vastitas Borealis',
+      venus: false,
+      colonies: false,
+      boardName: BoardName.VASTITAS_BOREALIS_NOVA,
+      expected: {
+        removed: [BonusCardName.CORPORATE_COMPETITION],
+        added: [BonusCardName.CORPORATE_COMPETITION_BOREALIS],
+      },
+    },
+    {
+      expansions: 'Milestones & Awards on Hellas',
+      venus: false,
+      colonies: false,
+      boardName: BoardName.HELLAS,
+      modularMA: true,
+      expected: {
+        removed: [BonusCardName.CORPORATE_COMPETITION],
+        added: [BonusCardName.CORPORATE_COMPETITION_MA],
+      },
+    },
   ]) {
     it('swaps cards in the ' + run.expansions + ' deck', () => {
       const expected = BASE_BONUS_CARDS
         .filter((name) => !run.expected.removed.some((removed) => removed === name))
         .concat(run.expected.added);
 
-      const expansionDeck = MarsBotBonusDeck.create(new SeededRandom(42), {venus: run.venus, colonies: run.colonies});
+      const expansionDeck = MarsBotBonusDeck.create(
+        new SeededRandom(42), {venus: run.venus, colonies: run.colonies, boardName: run.boardName, modularMA: run.modularMA});
 
       expect(expansionDeck.drawPile.map((card) => card.name)).to.have.members(expected);
       expect(expansionDeck.discardPile).to.be.empty;

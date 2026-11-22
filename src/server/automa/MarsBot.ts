@@ -152,7 +152,12 @@ export class MarsBot implements IMarsBot {
     if (restoring) {
       this.bonusDeck = new MarsBotBonusDeck([], [], random);
     } else {
-      this.bonusDeck = MarsBotBonusDeck.create(random, {venus: opts.venusNextExtension, colonies: opts.coloniesExtension});
+      this.bonusDeck = MarsBotBonusDeck.create(random, {
+        venus: opts.venusNextExtension,
+        colonies: opts.coloniesExtension,
+        boardName: opts.boardName,
+        modularMA: opts.modularMA,
+      });
     }
     // The 2nd Trade Fleet starts on space 9 of the Energy track (rulebook C, p.4), moved up by the map's shift
     if (opts.coloniesExtension) {
