@@ -105,7 +105,7 @@ export class MarsBotTurnResolver {
       this.marsBot.game.log('MarsBot: the game has ended, ${0} track does not advance', (b) => b.rawString(name));
       return false;
     }
-    // Moving back up after a regression retriggers nothing (rulebook B, p.3)
+    // Moving back up after a regression retriggers nothing (rulebook B, p.3-4)
     const reAdvance = track.regressedPositions.has(track.position + 1);
 
     const result = track.advance();
