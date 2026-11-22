@@ -268,6 +268,7 @@ describe('MarsBotTrader', () => {
         game.colonies = [ceres];
         const steelBefore = player.steel;
         tradeWithColony(marsBot, ceres);
+        // Ceres colony bonus = 1 steel
         expect(player.steel).to.be.greaterThan(steelBefore);
       });
 
@@ -333,6 +334,7 @@ describe('MarsBotTrader', () => {
         game.colonies = [pluto];
         const scienceTrackIdx = marsBot.marsBotBoard.tagToTrack[Tag.SCIENCE]!;
         const before = marsBot.marsBotBoard.tracks[scienceTrackIdx].position;
+        // Add 5 to Pluto → overflow → advance Science track
         marsBot.shippingBoard.add(ColonyName.PLUTO, 5);
         expect(marsBot.marsBotBoard.tracks[scienceTrackIdx].position).to.be.greaterThan(before);
         expect(marsBot.shippingBoard.get(ColonyName.PLUTO)).to.eq(0);

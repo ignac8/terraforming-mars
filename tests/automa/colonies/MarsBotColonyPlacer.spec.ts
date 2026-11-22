@@ -144,6 +144,7 @@ describe('MarsBotColonyPlacer', () => {
       const marsBot = getMarsBot(game);
       const luna = new Luna();
       const ceres = new Ceres();
+      // Draw a project card with known cost from the test deck
       game.colonies = [luna, ceres];
 
       const drawnCard = game.projectDeck.drawN(game, 1)[0];
@@ -167,7 +168,7 @@ describe('MarsBotColonyPlacer', () => {
     it('returns undefined if no eligible colonies', () => {
       const [game] = testGame(1, {automa: true, coloniesExtension: true, boardName: BoardName.THARSIS});
       const marsBot = getMarsBot(game);
-      game.colonies = [];
+      game.colonies = []; // No colonies in game
       const colony = selectRandomColony(marsBot);
       expect(colony).to.be.undefined;
     });
@@ -179,10 +180,12 @@ describe('MarsBotColonyPlacer', () => {
       const luna = new Luna();
       const ceres = new Ceres();
       game.colonies = [luna, ceres];
+      // Inject a 0-cost card at the front of the draw pile
       game.projectDeck.drawPile.unshift(fakeCard({cost: 0}));
+      // Should NOT return undefined — 0-cost maps to last tile (index N-1 = 1 = ceres)
       const selected = selectRandomColony(marsBot);
       expect(selected).to.not.be.undefined;
-      expect(selected!.name).to.eq(ColonyName.CERES);
+      expect(selected!.name).to.eq(ColonyName.CERES); // (0-1+2)%2 = 1 = ceres
     });
   });
 
@@ -210,7 +213,7 @@ describe('MarsBotColonyPlacer', () => {
       const marsBot = getMarsBot(game);
       const luna = new Luna();
       luna.trackPosition = 1;
-      luna.colonies = ['phuman-id'];
+      luna.colonies = ['phuman-id']; // 1 colony already
       game.colonies = [luna];
       placeColony(luna, marsBot);
       expect(luna.trackPosition).to.be.at.least(luna.colonies.length);
@@ -226,7 +229,7 @@ describe('MarsBotColonyPlacer', () => {
       const oceansBefore = game.board.getOceanSpaces().length;
       placeColony(europa, marsBot);
       expect(game.board.getOceanSpaces().length).to.eq(oceansBefore + 1);
-      expect(marsBot.shippingBoard.get(ColonyName.EUROPA)).to.eq(0);
+      expect(marsBot.shippingBoard.get(ColonyName.EUROPA)).to.eq(0); // No storage
     });
 
     it('reveals one project card to break a tie between ocean spaces', () => {
@@ -253,11 +256,13 @@ describe('MarsBotColonyPlacer', () => {
       const marsBot = getMarsBot(game);
       const europa = new Europa();
       game.colonies = [europa];
+      // Max all oceans
       while (game.canAddOcean()) {
         marsBot.turnResolver.placeOcean();
       }
       const mcBefore = marsBot.megacredits;
       placeColony(europa, marsBot);
+      // Should be a failed action (gains MC)
       expect(marsBot.megacredits).to.be.greaterThan(mcBefore);
       expect(europa.colonies).to.include(marsBot.player.id);
     });
@@ -293,11 +298,12 @@ describe('MarsBotColonyPlacer', () => {
       const marsBot = getMarsBot(game);
       const titan = new Titan();
       game.colonies = [titan, new Luna()];
+      // Add enough Titan floaters to hit overflow threshold
       marsBot.shippingBoard.add(ColonyName.TITAN, 3);
       const plantIdx = marsBot.marsBotBoard.tagToTrack[Tag.PLANT]!;
       const plantBefore = marsBot.marsBotBoard.tracks[plantIdx].position;
       placeColony(titan, marsBot); // 3 + 2 reaches the overflow of 5, which Titan is exempt from (rulebook C, p.4)
-      expect(marsBot.marsBotBoard.tracks[plantIdx].position).to.eq(plantBefore);
+      expect(marsBot.marsBotBoard.tracks[plantIdx].position).to.eq(plantBefore); // No overflow
     });
   });
 });

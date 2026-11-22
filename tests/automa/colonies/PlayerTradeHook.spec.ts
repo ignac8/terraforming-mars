@@ -89,6 +89,7 @@ describe('PlayerTradeHook', () => {
 
       const storeBefore = marsBot.shippingBoard.get(ColonyName.LUNA);
 
+      // Player trades with Luna — GiveColonyBonus should give MarsBot 1 resource (rulebook C, p.5)
       luna.trade(player, {usesTradeFleet: false, decreaseTrackAfterTrade: false, giveColonyBonuses: true});
 
       game.deferredActions.runAll(() => {});

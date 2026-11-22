@@ -93,6 +93,7 @@ describe('FloaterHandling', () => {
       const marsBot = getMarsBot(game);
       marsBot.shippingBoard.add(ColonyName.TITAN, 5);
 
+      // Trigger research phase (gen 2+)
       game.generation = 2;
       game.automaHooks!.handleResearchPhase();
 
@@ -114,11 +115,12 @@ describe('FloaterHandling', () => {
     it('deducts 5 from Titan storage when extra card is claimed', () => {
       const [game] = testGame(1, {automa: true, coloniesExtension: true, boardName: BoardName.THARSIS});
       const marsBot = getMarsBot(game);
-      marsBot.shippingBoard.add(ColonyName.TITAN, 7);
+      marsBot.shippingBoard.add(ColonyName.TITAN, 7); // 7 floaters in Titan
 
       game.generation = 2;
       game.automaHooks!.handleResearchPhase();
 
+      // 5 should be spent, leaving 2
       expect(marsBot.shippingBoard.get(ColonyName.TITAN)).to.eq(2);
     });
   });

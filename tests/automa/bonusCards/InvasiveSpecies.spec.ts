@@ -98,8 +98,10 @@ describe('InvasiveSpecies', () => {
     expect(birds.resourceCount).eq(1);
   });
 
+  // Edge cases (rulebook page 6)
   it('MarsBot gains 5 MC even when human has no animals/microbes', () => {
     const {marsBot} = createAutomaGame();
+    // Human has no cards with resources
 
     const b02 = createBonusCard(BonusCardName.INVASIVE_SPECIES);
 

@@ -338,6 +338,7 @@ describe('MarsBotTurnResolver', () => {
       const r = marsBot.turnResolver;
       const mockCard = fakeCard({cost: 5, tags: [Tag.VENUS], type: CardType.AUTOMATED});
       r.resolveProjectCard(mockCard);
+      // No crash, no track advancement
       for (let t = 0; t < 7; t++) {
         expect(emptyBoard.tracks[t].position).to.eq(0);
       }
@@ -361,7 +362,7 @@ describe('MarsBotTurnResolver', () => {
       const mockCard = fakeCard({cost: 5, tags: [], type: CardType.EVENT});
       r.resolveProjectCard(mockCard);
       expect(emptyBoard.tracks[2].position).to.eq(1); // Event track
-      expect(marsBot.megacredits).to.eq(0);
+      expect(marsBot.megacredits).to.eq(0); // NOT a failed action
     });
   });
 
@@ -394,12 +395,13 @@ describe('MarsBotTurnResolver', () => {
       const marsBot = standaloneMarsBot(game, botPlayer, human, emptyBoardData);
       const emptyBoard = marsBot.marsBotBoard;
       const r = marsBot.turnResolver;
+      // Max out track 7
       for (let i = 0; i < 18; i++) {
         emptyBoard.tracks[6].advance();
       }
 
-      r.resolveProjectCard(new Algae() as IProjectCard);
-      r.resolveProjectCard(new Algae() as IProjectCard);
+      r.resolveProjectCard(new Algae() as IProjectCard); // 5 MC
+      r.resolveProjectCard(new Algae() as IProjectCard); // 5 MC
       expect(marsBot.megacredits).to.eq(10);
     });
 
@@ -433,7 +435,7 @@ describe('MarsBotTurnResolver', () => {
 
       const mockCard = fakeCard({cost: 5, tags: [Tag.BUILDING], type: CardType.AUTOMATED});
       r.resolveProjectCard(mockCard);
-      expect(b.tracks[0].position).to.eq(1);
+      expect(b.tracks[0].position).to.eq(1); // advance ignored
     });
 
     it('tag_N action advances another track', () => {
@@ -478,13 +480,14 @@ describe('MarsBotTurnResolver', () => {
       const marsBot = standaloneMarsBot(game, botPlayer, human, boardData);
       const r = marsBot.turnResolver;
 
+      // Claim all 3 milestones
       for (let i = 0; i < 3 && i < game.milestones.length; i++) {
         game.claimedMilestones.push({player: human, milestone: game.milestones[i]});
       }
 
       const mockCard = fakeCard({cost: 5, tags: [Tag.BUILDING], type: CardType.AUTOMATED});
       r.resolveProjectCard(mockCard);
-      expect(marsBot.megacredits).to.eq(5);
+      expect(marsBot.megacredits).to.eq(5); // Failed action
     });
 
     it('award action gives failed action when all funded', () => {
@@ -492,13 +495,14 @@ describe('MarsBotTurnResolver', () => {
       const marsBot = standaloneMarsBot(game, botPlayer, human, boardData);
       const r = marsBot.turnResolver;
 
+      // Fund all 3 awards
       for (let i = 0; i < 3 && i < game.awards.length; i++) {
         game.fundedAwards.push({player: human, award: game.awards[i]});
       }
 
       const mockCard = fakeCard({cost: 5, tags: [Tag.BUILDING], type: CardType.AUTOMATED});
       r.resolveProjectCard(mockCard);
-      expect(marsBot.megacredits).to.eq(5);
+      expect(marsBot.megacredits).to.eq(5); // Failed action
     });
 
     it('temperature action fails when already maxed', () => {
@@ -517,6 +521,7 @@ describe('MarsBotTurnResolver', () => {
       const marsBot = standaloneMarsBot(game, botPlayer, human, boardData);
       const r = marsBot.turnResolver;
 
+      // Fill all ocean spaces
       const oceanSpaces = game.board.getAvailableSpacesForOcean(botPlayer);
       for (const s of oceanSpaces) {
         game.simpleAddTile(botPlayer, s, {tileType: 1}); // TileType.OCEAN
@@ -528,18 +533,20 @@ describe('MarsBotTurnResolver', () => {
 
     it('chained advance that hits max gives failed action', () => {
       const layout = new Array(19).fill(undefined);
-      layout[18] = 'advance';
+      layout[18] = 'advance'; // At the very last position
       const boardData = THARSIS_MARSBOT_BOARD.map((def, i) => i === 0 ? {...def, layout} as TrackDefinition : def);
       const marsBot = standaloneMarsBot(game, botPlayer, human, boardData);
       const b = marsBot.marsBotBoard;
       const r = marsBot.turnResolver;
 
+      // Advance to 17
       for (let i = 0; i < 17; i++) {
         b.tracks[0].advance();
       }
 
       const mockCard = fakeCard({cost: 5, tags: [Tag.BUILDING], type: CardType.AUTOMATED});
       r.resolveProjectCard(mockCard);
+      // Pos 18 = advance, but can't advance further → failed action
       expect(b.tracks[0].position).to.eq(18);
       expect(marsBot.megacredits).to.eq(5);
     });
@@ -665,13 +672,15 @@ describe('MarsBotTurnResolver', () => {
       r.resolveProjectCard(mockCard); // pos 2 (tr5)
       expect(botPlayer.terraformRating).to.eq(startTR + 5);
 
+      // Regress from pos 2
       b.tracks[0].regress();
       expect(b.tracks[0].position).to.eq(1);
 
+      // Re-advance to pos 2 — action should be skipped
       const trBefore = botPlayer.terraformRating;
       r.resolveProjectCard(mockCard);
       expect(b.tracks[0].position).to.eq(2);
-      expect(botPlayer.terraformRating).to.eq(trBefore);
+      expect(botPlayer.terraformRating).to.eq(trBefore); // No TR gain
     });
   });
 });

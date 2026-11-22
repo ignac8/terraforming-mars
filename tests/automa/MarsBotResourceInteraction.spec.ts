@@ -87,6 +87,7 @@ describe('MarsBot Resource Interaction (rules page 4-5)', () => {
       const {human, marsBot} = createAutomaGame();
       marsBot.megacredits = 10;
 
+      // Use stock.steal which calls deduct internally
       marsBot.player.stock.steal(Resource.PLANTS, 3, human);
 
       expect(marsBot.megacredits).to.eq(7);

@@ -65,6 +65,7 @@ describe('PoseidonMarsBot', () => {
     const luna = new Luna();
     game.colonies = [luna];
 
+    // Assign Poseidon corp so the effect fires
     marsBot.corp = AUTOMA_COLONIES_MANIFEST.corps[CardName.POSEIDON];
     const tracks = marsBot.marsBotBoard.tracks;
     const leastIdx = tracks.reduce((minIdx, track, i) => track.position < tracks[minIdx].position ? i : minIdx, 0);

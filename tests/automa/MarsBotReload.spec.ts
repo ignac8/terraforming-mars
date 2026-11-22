@@ -57,7 +57,7 @@ describe('MarsBotReload', () => {
     expect(steps[GlobalParameter.OCEANS]).to.eq(0);
   });
 
-  // The bot player is rebuilt on load, and saves hold no ocean bonus.
+  // The bot player is rebuilt on load and saves hold no ocean bonus, so saves from before Lakefront set it load the same way
   it("keeps Lakefront Resorts' 3 M€ per adjacent ocean across a reload", () => {
     const {game, marsBot} = createAutomaGame();
     marsBot.setCorpAndSetup(getMarsBotCorp(CardName.LAKEFRONT_RESORTS)!);
@@ -234,6 +234,7 @@ describe('MarsBotReload', () => {
     const {game, marsBot} = createAutomaGame();
     const asteroid = new Asteroid();
     marsBot.resolveProjectCard(asteroid);
+    // Older saves also left the resolved card in the project discard pile
     game.projectDeck.discardPile.push(asteroid);
 
     const restored = Game.deserialize(game.serialize());
@@ -262,6 +263,7 @@ describe('MarsBotReload', () => {
     const {game, marsBot} = createAutomaGame();
     const asteroid = new Asteroid();
     marsBot.resolveProjectCard(asteroid);
+    // An older save may have reshuffled the resolved card into the draw pile
     game.projectDeck.drawPile.push(new Asteroid());
 
     const restored = Game.deserialize(game.serialize());
@@ -311,7 +313,7 @@ describe('MarsBotReload', () => {
     });
   }
 
-  // MarsBot's part of a generation 6 save of a Hard game.
+  // MarsBot's part of a generation 6 save of a Hard game, written while the turn resolver held MarsBot's M€
   const savedState: SerializedAutomaState = JSON.parse('{"trackPositions":[4,4,4,4,3,4,4],"trackRegressedPositions":[[],[],[],[],[],[],[]],"megacredits":25,"goesFirst":true,"difficulty":"hard","actionDeckCardNames":["Black Polar Dust","Wave Power","Nuclear Zone","B02"],"bonusDeck":{"drawPile":["Meteor Shower:automa"],"discardPile":["Research and Development:automa","Expedited Construction:automa","Overachievement:automa","Corporate Competition:automa"]},"neuralInstanceSpaceId":"55","playedProjectCardNames":["Adaptation Technology","Martian Rails","Herbivores","Geothermal Power","Tundra Farming","Special Design","Earth Office","Release of Inert Gases","Vesta Shipyard","Cloud Seeding","Imported GHG","Birds","Business Network","Phobos Space Haven","Industrial Microbes","Mohole Area"],"firstTurnCheckedGeneration":5,"beforeActionPhasePending":false,"marsBotPlayerId":"p-game-id-marsbot","terraformRating":33,"globalParameterSteps":{"oceans":2,"oxygen":2,"temperature":3,"venus":0,"moon-habitat":0,"moon-mining":0,"moon-logistic":0},"vpByGeneration":[23,31,36,46,53],"temperatureRaises":1,"destroyedBonusCards":2}');
   for (const run of [
     {megacreditsKey: 'megacredits'},

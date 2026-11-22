@@ -34,7 +34,7 @@ function makeBoard(track1Layout: ReadonlyArray<TrackAction | undefined>): Readon
 describe('MarsBot Deep Rules Tests', () => {
   describe('Expansion icons ignored when expansion not in use (page 8)', () => {
     it('venus action is ignored (no Failed Action) when Venus not enabled', () => {
-      const [game, human] = testGame(1);
+      const [game, human] = testGame(1); // No Venus expansion
       const botPlayer = TestPlayer.RED.newPlayer({name: 'bot'});
       botPlayer.game = game;
 
@@ -45,6 +45,7 @@ describe('MarsBot Deep Rules Tests', () => {
       const resolver = marsBot.turnResolver;
 
       resolver.resolveProjectCard(fakeCard({cost: 5, tags: [Tag.BUILDING], type: CardType.AUTOMATED}));
+      // Venus should be ignored, NOT a failed action
       expect(marsBot.megacredits).to.eq(0); // No 5 MC from failed action
       expect(marsBotBoard.tracks[0].position).to.eq(1); // Track still advanced
     });
@@ -67,12 +68,13 @@ describe('MarsBot Deep Rules Tests', () => {
   describe('Terraforming bonus chains (page 9)', () => {
     it('oxygen at 8 triggers temperature raise (bonus step)', () => {
       const {game, marsBot} = createAutomaGame();
+      // Set oxygen to 7 so next raise hits 8 (bonus: raise temperature)
       setOxygenLevel(game, 7);
       const tempBefore = game.getTemperature();
       const trBefore = marsBot.player.terraformRating;
 
       const layout = emptyLayout();
-      layout[1] = 'greenery';
+      layout[1] = 'greenery'; // Greenery raises oxygen
       // Place a city for greenery placement rules
       const spaces = game.board.getAvailableSpacesOnLand(marsBot.player);
       game.simpleAddTile(marsBot.player, spaces[15], {tileType: TileType.CITY});
@@ -100,6 +102,7 @@ describe('MarsBot Deep Rules Tests', () => {
       const marsBotBoard = marsBot.marsBotBoard;
       const resolver = marsBot.turnResolver;
 
+      // Max out Track 1 (Building)
       for (let i = 0; i < 18; i++) {
         marsBotBoard.tracks[0].advance();
       }
@@ -107,9 +110,11 @@ describe('MarsBot Deep Rules Tests', () => {
 
       resolver.resolveProjectCard(fakeCard({cost: 5, tags: [Tag.BUILDING, Tag.SPACE], type: CardType.AUTOMATED}));
 
+      // Building track maxed → Failed Action (5 MC)
+      // Space track should still advance
       expect(marsBot.megacredits).to.eq(5);
       expect(marsBotBoard.tracks[1].position).to.eq(1);
-      expect(marsBotBoard.tracks[0].position).to.eq(18);
+      expect(marsBotBoard.tracks[0].position).to.eq(18); // Unchanged
     });
   });
 
@@ -156,6 +161,7 @@ describe('MarsBot Deep Rules Tests', () => {
     it('initial action deck draws from project deck', () => {
       const {game} = createAutomaGame();
       // The project deck should have been reduced by 3 cards for MarsBot + 10 for human
+      // Just verify it's less than the full deck
       expect(game.projectDeck.drawPile.length).to.be.lt(200);
     });
 
@@ -191,6 +197,7 @@ describe('MarsBot Deep Rules Tests', () => {
 
       const mcBefore = marsBot.megacredits;
       game.increaseTemperature(marsBot.player, 1);
+      // Should cross -20, giving 2 MC
       expect(marsBot.megacredits).to.eq(mcBefore + 2);
     });
 
@@ -200,6 +207,7 @@ describe('MarsBot Deep Rules Tests', () => {
 
       const mcBefore = marsBot.megacredits;
       game.increaseTemperature(marsBot.player, 3);
+      // Crosses both -24 and -20, giving 2 MC each = 4 MC total
       expect(marsBot.megacredits).to.eq(mcBefore + 4);
     });
   });
@@ -229,6 +237,8 @@ describe('MarsBot Deep Rules Tests', () => {
         marsBot.bonusDeck.discard(c);
       }
 
+      // Now draw pile is 0, discard has all cards
+      // Next draw should reshuffle
       const card = marsBot.bonusDeck.draw(game);
       expect(card).to.not.be.undefined;
     });
@@ -312,10 +322,11 @@ describe('MarsBot Deep Rules Tests', () => {
       const marsBotBoard = marsBot.marsBotBoard;
       const resolver = marsBot.turnResolver;
 
+      // Event card with zero explicit tags — should NOT be a failed action
       resolver.resolveProjectCard(fakeCard({cost: 5, tags: [], type: CardType.EVENT}));
 
-      expect(marsBotBoard.tracks[2].position).to.eq(1);
-      expect(marsBot.megacredits).to.eq(0);
+      expect(marsBotBoard.tracks[2].position).to.eq(1); // Event tag injected
+      expect(marsBot.megacredits).to.eq(0); // Not a failed action
     });
   });
 

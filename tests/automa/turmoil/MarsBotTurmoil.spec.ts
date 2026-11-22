@@ -65,6 +65,7 @@ describe('MarsBot Turmoil — Setup', () => {
 
   it('Party Politics is in action deck on generation 2 (rulebook C, p.6)', () => {
     const {marsBot} = createTurmoilGame();
+    // Simulate research phase (builds gen 2 action deck)
     marsBot.actionDeck.buildResearch();
     const hasPartyPolitics = marsBot.actionDeck.cards.some(
       (card) => card.name === BonusCardName.PARTY_POLITICS,
@@ -79,14 +80,19 @@ describe('MarsBot Turmoil — Party Politics delegate selection (rulebook C, p.6
     const turmoil = Turmoil.getTurmoil(game);
     const marsBotPlayer = marsBot.player;
 
-    // A second MarsBot delegate in Scientists would lead it and make it dominant over the other parties,
-    // which hold one NEUTRAL delegate each.
+    // Scientists: give MarsBot 1 delegate. Others have 1 NEUTRAL each (to block the second priority for them).
+    // After +1 MarsBot in Scientists → MarsBot(2) > NEUTRAL(1 or less) → PL transition.
+    // Scientists also becomes dominant if all others have ≤ 1 delegate: we set that up.
     for (const name of [PartyName.MARS, PartyName.UNITY, PartyName.REDS, PartyName.GREENS]) {
       turmoil.sendDelegateToParty('NEUTRAL', name, game);
     }
     turmoil.sendDelegateToParty(marsBotPlayer, PartyName.SCIENTISTS, game);
+    // Force dominantParty to Mars First (not Scientists) so Scientists can "become" dominant
     turmoil.dominantParty = turmoil.getPartyByName(PartyName.MARS);
 
+    // Scientists: MarsBot(1) + any NEUTRAL from initGlobalEvent. Others ≤ 2 each.
+    // After +1: MarsBot(2) > NEUTRAL leader, AND Scientists(2+) > all others if they have ≤ 1.
+    // The first priority should fire for Scientists if it satisfies both conditions.
     const selected = turmoilHelper(game).selectParty();
     expect(selected).to.equal(PartyName.SCIENTISTS);
   });
@@ -96,12 +102,13 @@ describe('MarsBot Turmoil — Party Politics delegate selection (rulebook C, p.6
     const turmoil = Turmoil.getTurmoil(game);
     const marsBotPlayer = marsBot.player;
 
-    // Kelvinists stays dominant, so the first priority can't pick Scientists.
+    // Put lots of neutral delegates in Kelvinists so it stays dominant (the first priority can't fire for Scientists)
     for (let i = 0; i < 5; i++) {
       turmoil.sendDelegateToParty('NEUTRAL', PartyName.KELVINISTS, game);
     }
+    // Scientists: MarsBot has 1 delegate. After +1 MarsBot = 2 > NEUTRAL(1) → PL. Not dominant (Kelvinists dominates).
     turmoil.sendDelegateToParty(marsBotPlayer, PartyName.SCIENTISTS, game);
-    // A NEUTRAL delegate in each other party stops one MarsBot delegate from taking the lead there.
+    // Other non-Kelvinists parties need ≥1 neutral so the second priority doesn't fire for empty parties
     for (const name of [PartyName.MARS, PartyName.UNITY, PartyName.REDS, PartyName.GREENS]) {
       turmoil.sendDelegateToParty('NEUTRAL', name, game);
     }
@@ -115,19 +122,24 @@ describe('MarsBot Turmoil — Party Politics delegate selection (rulebook C, p.6
     const turmoil = Turmoil.getTurmoil(game);
     const marsBotPlayer = marsBot.player;
 
-    // A NEUTRAL delegate in each other party stops one MarsBot delegate from taking the lead there.
+    // Add 1 NEUTRAL to each non-Unity party so the second priority doesn't fire (MarsBot+1 ties NEUTRAL)
     for (const name of [PartyName.MARS, PartyName.SCIENTISTS, PartyName.KELVINISTS, PartyName.REDS, PartyName.GREENS]) {
       turmoil.sendDelegateToParty('NEUTRAL', name, game);
     }
+    // Unity: give MarsBot 3 delegates → MarsBot is leader (3 > NEUTRAL's ≤1)
     turmoil.sendDelegateToParty(marsBotPlayer, PartyName.UNITY, game);
     turmoil.sendDelegateToParty(marsBotPlayer, PartyName.UNITY, game);
     turmoil.sendDelegateToParty(marsBotPlayer, PartyName.UNITY, game);
     const unity = turmoil.getPartyByName(PartyName.UNITY);
     expect(unity.partyLeader).to.equal(marsBotPlayer);
 
-    // Unity is not dominant yet.
+    // Force a different party as dominant so Unity is NOT currently dominant.
+    // (wouldBecomeDominant returns false if the party is already dominant.)
     turmoil.dominantParty = turmoil.getPartyByName(PartyName.KELVINISTS);
 
+    // The first priority: wouldBecomePartyLeader returns false for Unity (MarsBot already leads). No fire.
+    // The second priority: non-Unity parties have NEUTRAL(1+), MarsBot+1=1, 1>1 false. No fire.
+    // The third priority: MarsBot IS leader in Unity AND Unity is not dominant AND +1 makes it dominant → FIRES.
     const selected = turmoilHelper(game).selectParty();
     expect(selected).to.equal(PartyName.UNITY);
   });
@@ -136,14 +148,15 @@ describe('MarsBot Turmoil — Party Politics delegate selection (rulebook C, p.6
     const {game, humanPlayer} = createTurmoilGame();
     const turmoil = Turmoil.getTurmoil(game);
 
-    // A NEUTRAL delegate in every party rules out the first two priorities.
+    // Put 1 NEUTRAL in each party to block the first two priorities (MarsBot+1=1 can't beat NEUTRAL(1))
     for (const name of Object.values(PartyName)) {
       turmoil.sendDelegateToParty('NEUTRAL', name, game);
     }
-    // The human has a delegate in every party but Greens.
+    // Human sends 1 delegate to each non-Greens party (5 total, within the 7-delegate reserve)
     for (const name of [PartyName.MARS, PartyName.SCIENTISTS, PartyName.UNITY, PartyName.KELVINISTS, PartyName.REDS]) {
       turmoil.sendDelegateToParty(humanPlayer, name, game);
     }
+    // Result: human has 0 in Greens (min), 1 in all others → the fourth priority picks Greens
 
     const selected = turmoilHelper(game).selectParty();
     expect(selected).to.equal(PartyName.GREENS);
@@ -154,9 +167,11 @@ describe('MarsBot Turmoil — Party Politics delegate selection (rulebook C, p.6
     const turmoil = Turmoil.getTurmoil(game);
     const marsBotPlayer = marsBot.player;
 
-    // The human has no delegates anywhere, so the fourth priority ties, and only Reds holds a MarsBot delegate.
+    // Human has same (0) in all parties → the fourth priority ties for all → the fifth priority
+    // MarsBot has 1 delegate in Reds → other parties have 0 for MarsBot
     turmoil.sendDelegateToParty(marsBotPlayer, PartyName.REDS, game);
 
+    // The fifth priority: MarsBot has 0 in all except Reds → pick a party with 0 MarsBot delegates
     const selected = turmoilHelper(game).selectParty();
     expect(selected).to.not.equal(PartyName.REDS);
     expect(selected).to.not.be.undefined;
@@ -165,6 +180,7 @@ describe('MarsBot Turmoil — Party Politics delegate selection (rulebook C, p.6
   it('final tiebreaker selects a valid party', () => {
     const {game} = createTurmoilGame();
 
+    // All parties have 0 human and 0 MarsBot delegates → the sixth priority
     const selected = turmoilHelper(game).selectParty();
     expect(selected).to.not.be.undefined;
     expect(Object.values(PartyName)).to.include(selected);
@@ -251,11 +267,15 @@ describe('updatePartyLeaderForMarsBot', () => {
     const turmoil = Turmoil.getTurmoil(game);
     const marsBotPlayer = marsBot.player;
 
+    // NEUTRAL already has 1 delegate in some party from initGlobalEvent
+    // Add 1 MarsBot delegate → MarsBot(1) ties NEUTRAL(1), no leadership change
     turmoil.sendDelegateToParty(marsBotPlayer, PartyName.MARS, game);
     const marsFirst = turmoil.getPartyByName(PartyName.MARS);
     const leaderBefore = marsFirst.partyLeader;
 
-    // A tie with a NEUTRAL delegate leaves the leader unchanged. In a party without one, MarsBot takes the lead.
+    // If NEUTRAL had 1 and MarsBot now has 1, no change (NEUTRAL remains leader)
+    // If NEUTRAL had 0, MarsBot becomes leader (first come first served from party init)
+    // We just verify that the function doesn't crash and returns something sensible
     expect(marsFirst.partyLeader).to.satisfy((leader: unknown) =>
       leader === marsBotPlayer || leader === leaderBefore,
     );
@@ -338,6 +358,7 @@ describe('MarsBot Turmoil — serialization', () => {
   it('MarsBot automa state serializes correctly with turmoil', () => {
     const {marsBot} = createTurmoilGame();
     const state = marsBot.serialize();
+    // Starting TR should be 10 (stored via player's TR in game state)
     expect(marsBot.player.terraformRating).to.equal(MARSBOT_STARTING_TR - 10);
     expect(state).to.not.be.undefined;
     expect(state.marsBotPlayerId).to.not.be.undefined;
@@ -349,10 +370,11 @@ describe('MarsBot Turmoil — Global Events solo resolution (rulebook C, p.7)', 
     const {game, humanPlayer} = createTurmoilGame();
     const revolution = new Revolution();
 
-    // Only the human player's score is checked against the threshold.
+    // In automa games it must use the solo branch: only the human player's
+    // score is checked against the threshold.
     const trBefore = humanPlayer.terraformRating;
     expect(() => revolution.bespokeResolve(game)).not.to.throw();
-    // No Earth tags and little influence, so the score stays below the threshold.
+    // Human has 0 Earth tags + influence ≤ 3 → no TR loss
     expect(humanPlayer.terraformRating).to.equal(trBefore);
   });
 
@@ -365,7 +387,7 @@ describe('MarsBot Turmoil — Global Events solo resolution (rulebook C, p.7)', 
     turmoil.chairman = humanPlayer;
     turmoil.dominantParty = turmoil.getPartyByName(PartyName.GREENS);
     turmoil.dominantParty.partyLeader = humanPlayer;
-    turmoil.dominantParty.delegates.add(humanPlayer, 4);
+    turmoil.dominantParty.delegates.add(humanPlayer, 4); // enough to be PL
     const trBefore = humanPlayer.terraformRating;
 
     humanPlayer.tagsForTest = {earth: 0};
@@ -412,6 +434,8 @@ describe('MarsBot Turmoil — Global Events solo resolution (rulebook C, p.7)', 
 
 describe('MarsBot Turmoil — Automatic skips (rulebook C, p.6-7)', () => {
   it('MarsBot does NOT lose TR during Turmoil TR Revision', () => {
+    // runTurmoilPhase() calls game.players.forEach(p => p.decreaseTerraformRating())
+    // MarsBot is NOT in game.players, so it never loses TR.
     const {game, marsBot} = createTurmoilGame();
     const turmoil = Turmoil.getTurmoil(game);
     const trBefore = marsBot.player.terraformRating;
@@ -424,19 +448,24 @@ describe('MarsBot Turmoil — Automatic skips (rulebook C, p.6-7)', () => {
   });
 
   it('MarsBot does NOT receive Ruling Party Bonus (Turmoil new government)', () => {
+    // Bonus.grant() calls game.playersInGenerationOrder.forEach(...grantForPlayer)
+    // MarsBot is NOT in playersInGenerationOrder, so it never receives ruling bonuses.
     const {game, marsBot} = createTurmoilGame();
     const marsBotPlayer = marsBot.player;
 
+    // Simulate the Mars First Bonus 1 (gain 1 MC per building tag) via .grant()
     const mcBefore = marsBotPlayer.stock.megacredits;
     MARS_FIRST_BONUS_1.grant(game);
     expect(marsBotPlayer.stock.megacredits).to.equal(mcBefore);
   });
 
   it('MarsBot does NOT receive Ruling Party Policy effect (onPolicyStart)', () => {
+    // Policy.onPolicyStart() iterates game.playersInGenerationOrder.
+    // MarsBot is NOT in that list, so policy effects never touch MarsBot.
     const {game, marsBot} = createTurmoilGame();
     const marsBotPlayer = marsBot.player;
 
-    // Mars First policy 3 raises each player's steel value by 1.
+    // Mars First Policy 3 (mp03): each player in playersInGenerationOrder gets +1 steel value.
     const steelValueBefore = marsBotPlayer.getSteelValue();
     MARS_FIRST_POLICY_3.onPolicyStart?.(game);
     expect(marsBotPlayer.getSteelValue()).to.equal(steelValueBefore);
@@ -461,11 +490,15 @@ describe('MarsBot Turmoil — Automatic skips (rulebook C, p.6-7)', () => {
 
 describe('MarsBot Turmoil — Chairman rules (rulebook C, p.7)', () => {
   it('MarsBot gains 1 TR when it becomes chairman', () => {
+    // setNewChairman() calls chairman.defer(() => chairman.increaseTerraformRating(1)).
+    // This deferred action fires when runAllActions is called. MarsBot is a real IPlayer
+    // so its TR is correctly incremented.
     const {game, marsBot} = createTurmoilGame();
     const turmoil = Turmoil.getTurmoil(game);
     const marsBotPlayer = marsBot.player;
 
     const trBefore = marsBotPlayer.terraformRating;
+    // Set MarsBot as chairman directly (no agenda change to avoid side effects)
     turmoil.setNewChairman(marsBotPlayer, game, /* setAgenda */ false, /* gainTR */ true);
     runAllActions(game);
 
@@ -477,7 +510,7 @@ describe('MarsBot Turmoil — Chairman rules (rulebook C, p.7)', () => {
     const turmoil = Turmoil.getTurmoil(game);
     const marsBotPlayer = marsBot.player;
 
-    // MarsBot leads Kelvinists, which is dominant.
+    // Make MarsBot party leader of Kelvinists with enough delegates to be dominant
     for (let i = 0; i < 3; i++) {
       turmoil.sendDelegateToParty(marsBotPlayer, PartyName.KELVINISTS, game);
     }
@@ -489,11 +522,16 @@ describe('MarsBot Turmoil — Chairman rules (rulebook C, p.7)', () => {
     turmoil.runTurmoilPhase(game);
     runAllActions(game);
 
+    // MarsBot should have gained +1 TR for becoming chairman (and NOT lost TR from step 1)
     expect(marsBotPlayer.terraformRating).to.equal(trBefore + 1);
     expect(turmoil.chairman).to.equal(marsBotPlayer);
   });
 
   it('MarsBot delegates from ruling party return to reserve (not lost) after New Government', () => {
+    // In the modern Turmoil code there is no separate lobby — setRulingParty() sends
+    // all non-leader delegates back to delegateReserve. MarsBot's delegates behave
+    // identically to human delegates in this respect (rulebook C, p.7: no lobby placement needed
+    // since delegates just return to reserve).
     const {game, marsBot} = createTurmoilGame();
     const turmoil = Turmoil.getTurmoil(game);
     const marsBotPlayer = marsBot.player;
@@ -505,10 +543,14 @@ describe('MarsBot Turmoil — Chairman rules (rulebook C, p.7)', () => {
     turmoil.dominantParty = reds;
 
     game.phase = Phase.SOLAR;
-    turmoil.setRulingParty(game);
+    turmoil.setRulingParty(game); // triggers delegate cleanup
     runAllActions(game);
 
-    // One MarsBot delegate leads Reds and becomes chairman. The other returns to the reserve.
+    // After ruling party change:
+    // - The party leader (1 MarsBot) becomes the new chairman (reserve unchanged for that one)
+    // - The remaining MarsBot delegates (1) go back to reserve
+    // - The OLD chairman (NEUTRAL) also returns to reserve
+    // So MarsBot reserve should be: reserveAfterPlacement + 1 (non-leader returned)
     expect(turmoil.delegateReserve.get(marsBotPlayer)).to.equal(reserveAfterPlacement + 1);
     expect(turmoil.chairman).to.equal(marsBotPlayer);
     expect(reds.delegates.size).to.equal(0);
@@ -516,6 +558,9 @@ describe('MarsBot Turmoil — Chairman rules (rulebook C, p.7)', () => {
   });
 
   it('MarsBot does NOT use the free lobby delegate action each generation', () => {
+    // Turmoil.getSendDelegateInput() is the free standard action for placing a lobby delegate.
+    // Since MarsBot is not in game.players and does not process standard actions,
+    // it never calls getSendDelegateInput(). usedFreeDelegateAction never includes MarsBot.
     const {game, marsBot} = createTurmoilGame();
     const turmoil = Turmoil.getTurmoil(game);
     const marsBotPlayer = marsBot.player;
@@ -607,6 +652,7 @@ describe('MarsBot Turmoil — Difficulty options (rulebook C, p.7)', () => {
       automaTurmoilTRReduction: 7,
       automaTurmoilSetupDelegates: 2,
     });
+    // Without Turmoil, starting TR is the base MARSBOT_STARTING_TR (no reduction)
     expect(game.automaHooks!.marsBot.player.terraformRating).to.equal(MARSBOT_STARTING_TR);
   });
 });
@@ -645,6 +691,7 @@ describe('MarsBot C37 Septem Tribus — Turmoil interaction (Rules-covered: C37)
     const septumTribus = getMarsBotCorp(CardName.SEPTUM_TRIBUS)!;
     marsBot.setCorpAndSetup(septumTribus);
 
+    // addBonusCardToBonusDeck shuffled B29 into bonusDeck.drawPile during corp setup
     const hasGrayEminence = marsBot.bonusDeck.drawPile.some(
       (c) => c.name === BonusCardName.GRAY_EMINENCE,
     );

@@ -372,7 +372,7 @@ describe('MarsBotScoring', () => {
     });
 
     it('fractional points rounded down', () => {
-      game.generation = 14; // 1 per 6 M€
+      game.generation = 14; // 1 per 6 MC
       marsBot.megacredits = 17;
       expect(makeScoring().calculate().mcToVP).to.eq(2); // floor(17/6) = 2
     });
@@ -473,7 +473,7 @@ describe('MarsBotScoring', () => {
     it('combines all VP sources', () => {
       botPlayer.setTerraformRating(25);
       marsBot.megacredits = 16;
-      game.generation = 12; // 1 VP per 8 M€
+      game.generation = 12; // 1 VP per 8 MC
 
       const spaces = game.board.getAvailableSpacesOnLand(botPlayer);
       game.simpleAddTile(botPlayer, spaces[10], {tileType: TileType.GREENERY});

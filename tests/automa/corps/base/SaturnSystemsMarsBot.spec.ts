@@ -50,7 +50,7 @@ describe('SaturnSystemsMarsBot', () => {
 
     const eventTrackBefore = marsBot.marsBotBoard.tracks[2].position; // Event = track 3
     corp.onProjectCardResolved!(marsBot, fakeCard('JovianCard', {tags: [Tag.JOVIAN], cost: 10}));
-    // At least 1, as an advance can trigger further ones.
+    // Event track should have advanced (may chain from starting tags advancement)
     expect(marsBot.marsBotBoard.tracks[2].position).to.be.gte(eventTrackBefore + 1);
   });
 

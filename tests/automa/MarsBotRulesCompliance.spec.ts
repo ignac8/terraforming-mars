@@ -194,7 +194,7 @@ describe('MarsBot Rules Compliance', () => {
       const {marsBot, resolver} = makeResolver(game, botPlayer, human, makeBoard(layout));
 
       resolver.resolveProjectCard(fakeCard({cost: 5, tags: [Tag.BUILDING], type: CardType.AUTOMATED}));
-      expect(marsBot.megacredits).to.eq(5);
+      expect(marsBot.megacredits).to.eq(5); // Failed action
     });
   });
 
@@ -206,8 +206,8 @@ describe('MarsBot Rules Compliance', () => {
       game.simpleAddTile(marsBot.player, spaces[15], {tileType: TileType.CITY});
 
       // Advance Track 7 to position where next action is greenery (pos 3 = greenery on Track 7)
-      marsBot.marsBotBoard.tracks[6].advance();
-      marsBot.marsBotBoard.tracks[6].advance();
+      marsBot.marsBotBoard.tracks[6].advance(); // pos 1
+      marsBot.marsBotBoard.tracks[6].advance(); // pos 2
 
       const greeneryBefore = game.board.getGreeneries(marsBot.player).length;
       marsBot.placeFinalGreeneries();
@@ -241,6 +241,7 @@ describe('MarsBot Rules Compliance', () => {
 
     it('gen 2: MarsBot goes first', () => {
       const {game, marsBot} = createAutomaGame();
+      // Simulate research phase toggle (which alternates goesFirst)
       marsBot.actionDeck.buildResearch();
       game.generation = 2;
       marsBot.goesFirst = !marsBot.goesFirst; // Simulating what gotoResearchPhase does
@@ -279,7 +280,7 @@ describe('MarsBot Rules Compliance', () => {
       marsBot.player.actionsTakenThisRound = 0;
 
       marsBot['hardModeFirstTurnMilestone']();
-      expect(game.claimedMilestones.length).to.eq(3);
+      expect(game.claimedMilestones.length).to.eq(3); // Now 3
       expect(marsBot.megacredits).to.eq(2); // 10 - 8
     });
 
@@ -292,7 +293,7 @@ describe('MarsBot Rules Compliance', () => {
       marsBot.player.actionsTakenThisRound = 0;
 
       marsBot['hardModeFirstTurnMilestone']();
-      expect(game.claimedMilestones.length).to.eq(2);
+      expect(game.claimedMilestones.length).to.eq(2); // No change
     });
   });
 
@@ -309,7 +310,7 @@ describe('MarsBot Rules Compliance', () => {
       const mcBefore = marsBot.player.megaCredits;
       marsBot.player.setTerraformRating(30);
       marsBot.runProductionPhase();
-      // Normal production would add TR to M€, but MarsBot skips
+      // Normal production would add TR to MC, but MarsBot skips
       expect(marsBot.player.megaCredits).to.eq(mcBefore);
     });
   });

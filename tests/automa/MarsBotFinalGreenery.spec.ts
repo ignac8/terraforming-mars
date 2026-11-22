@@ -196,8 +196,8 @@ describe('MarsBot final greenery', () => {
     });
   });
 
-  // Once the game has ended nothing chains: only the final greenery move itself advances a tracker, though
-  // gains still happen (BGG 3385156 and 3513998).
+  // Once the game has ended nothing chains: only the final greenery move itself advances a tracker
+  // (user decision, following BGG 3385156 and 3513998). Gains still happen.
   describe('no chains after the game has ended', () => {
     const ENERGY = 4;
     const PLANT = 6;

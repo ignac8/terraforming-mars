@@ -27,7 +27,8 @@ describe('Overachievement', () => {
   it('does NOT try awards when generation < 6', () => {
     const {game, marsBot} = createAutomaGame();
     game.generation = 4;
-    // MarsBot meets no milestone, and before generation 6 it does not try to fund an award.
+    // MarsBot can't claim any milestone (all at 0)
+    // Gen < 6 means no award attempt
     const b04 = createBonusCard(BonusCardName.OVERACHIEVEMENT);
 
     const awardsBefore = game.fundedAwards.length;

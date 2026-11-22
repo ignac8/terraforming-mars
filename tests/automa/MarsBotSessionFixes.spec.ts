@@ -132,10 +132,20 @@ describe('MarsBotSessionFixes', () => {
   });
 
   it('getMcPerVP returns correct values', () => {
-    // Base game: the rate runs from 8 M€ per VP up to generation 12 to 1 M€ per VP in generation 19.
+    // Base game: max gen = 20, table entries are {maxGeneration: 20 - mcPerVP, mcPerVP}
+    // Entries: (12,8), (13,7), (14,6), (15,5), (16,4), (17,3), (18,2), (19,1)
+    // getMcPerVP finds first entry where generation <= maxGeneration
+
+    // Generation 12: before conversion window closes → first entry (12, 8) matches
     expect(getMcPerVP(12, false, BoardName.THARSIS)).to.eq(8);
+
+    // Generation 5: still within window (5 <= 12) → returns 8
     expect(getMcPerVP(5, false, BoardName.THARSIS)).to.eq(8);
+
+    // Generation 19: last entry (19, 1) matches → returns 1
     expect(getMcPerVP(19, false, BoardName.THARSIS)).to.eq(1);
+
+    // Generation 20: past all entries (20 > 19) → returns undefined
     expect(getMcPerVP(20, false, BoardName.THARSIS)).to.eq(undefined);
   });
 
@@ -198,6 +208,7 @@ describe('MarsBotSessionFixes', () => {
     marsBot.marsBotBoard.tracks[0].advance();
     marsBot.megacredits = 15;
 
+    // Simulate MarsBot being the active player when saved
     game.activePlayer = marsBot.player;
     const serialized = game.serialize();
     expect(serialized.activePlayer).to.eq(marsBot.player.id);
@@ -315,6 +326,7 @@ describe('MarsBotSessionFixes', () => {
     const serialized = game.serialize();
     const restored = Game.deserialize(serialized);
     const readyLogs = restored.gameLog.filter((l) => l.message.includes('MarsBot is ready'));
+    // Should have exactly 1 from initial creation, not 2
     expect(readyLogs.length).to.eq(1);
   });
 
@@ -325,6 +337,7 @@ describe('MarsBotSessionFixes', () => {
 
     const serialized = game.serialize();
     const restored = Game.deserialize(serialized);
+    // Should still be empty, not rebuilt
     expect(restored.automaHooks!.marsBot.actionDeck.cards.length).to.eq(0);
   });
 
@@ -335,6 +348,7 @@ describe('MarsBotSessionFixes', () => {
     marsBot.marsBotBoard.tracks[0].advance();
     marsBot.marsBotBoard.tracks[0].advance();
     marsBot.marsBotBoard.tracks[1].advance();
+    // Regress track 0 from position 2 to 1
     marsBot.marsBotBoard.tracks[0].regress();
     marsBot.megacredits = 42;
     marsBot.goesFirst = true;
@@ -349,6 +363,7 @@ describe('MarsBotSessionFixes', () => {
     marsBot.colonyCubePositions = new Set(['1:7', '1:10', '4:8']);
     marsBot.hasColonyCubes = true;
 
+    // Set corp state (simulate Rulebook B)
     const {getAllMarsBotCorps} = require('../../src/server/automa/corps/MarsBotCorpRegistry');
     const allCorps = getAllMarsBotCorps();
     if (allCorps.length > 0) {
@@ -393,14 +408,16 @@ describe('MarsBotSessionFixes', () => {
 
   it('human is limited to 2 actions before MarsBot gets a turn', () => {
     const {game, marsBot} = createAutomaGame();
+    // MarsBot should not have passed yet (has cards in action deck)
     expect(game.hasPassedThisActionPhase(marsBot.player)).to.be.false;
+    // allOtherPlayersHavePassed should return false for human (MarsBot hasn't passed)
     expect(game.automaHooks!.allOtherPlayersHavePassed()).to.be.false;
   });
 
   it('allOtherPlayersHavePassed returns true when MarsBot has passed', () => {
     const {game, marsBot} = createAutomaGame();
     marsBot.actionDeck.cards = [];
-    marsBot.takeTurn();
+    marsBot.takeTurn(); // This should mark MarsBot as passed
     expect(game.hasPassedThisActionPhase(marsBot.player)).to.be.true;
     expect(game.automaHooks!.allOtherPlayersHavePassed()).to.be.true;
   });
@@ -410,10 +427,13 @@ describe('MarsBotSessionFixes', () => {
     const space = marsBot.turnResolver.tilePlacer.findNeuralInstanceSpace();
     if (space !== undefined) {
       const adj = game.board.getAdjacentSpaces(space);
+      // No adjacent space should be ocean-reserved
       for (const a of adj) {
         expect(a.spaceType).to.not.eq('ocean');
       }
+      // Not on edge
       expect(adj.length).to.eq(6);
+      // No adjacent tiles
       for (const a of adj) {
         expect(a.tile).to.be.undefined;
       }
@@ -468,18 +488,18 @@ describe('MarsBotSessionFixes', () => {
 
     const logsBefore = game.gameLog.length;
     marsBot.regressTrack(Resource.MEGACREDITS);
-    expect(game.gameLog.length).to.eq(logsBefore);
-    expect(marsBot.marsBotBoard.tracks[eventTrackIndex].position).to.eq(0);
+    expect(game.gameLog.length).to.eq(logsBefore); // No log added
+    expect(marsBot.marsBotBoard.tracks[eventTrackIndex].position).to.eq(0); // Still at 0
   });
 
   it('track regression at position > 0 logs and decrements', () => {
     const {game, marsBot} = createAutomaGame();
     const eventTrackIndex = marsBot.marsBotBoard.definitions.findIndex((d) => d.productions.includes(Resource.MEGACREDITS));
-    marsBot.marsBotBoard.tracks[eventTrackIndex].advance();
+    marsBot.marsBotBoard.tracks[eventTrackIndex].advance(); // Move to 1
 
     const logsBefore = game.gameLog.length;
     marsBot.regressTrack(Resource.MEGACREDITS);
-    expect(game.gameLog.length).to.eq(logsBefore + 1);
+    expect(game.gameLog.length).to.eq(logsBefore + 1); // Log added
     expect(marsBot.marsBotBoard.tracks[eventTrackIndex].position).to.eq(0);
   });
 
@@ -516,6 +536,7 @@ describe('MarsBotSessionFixes', () => {
     const action = new RemoveResourcesFromCard(human, undefined, 1, {source: 'opponents'});
     action.execute();
 
+    // Auto-executed since MarsBot MC is the only target
     expect(marsBot.megacredits).to.eq(9);
   });
 
@@ -523,6 +544,7 @@ describe('MarsBotSessionFixes', () => {
     const {human, marsBot} = createAutomaGame();
     marsBot.megacredits = 10;
 
+    // Give human a card with animals so there are card targets too
     const predators = new Predators();
     predators.resourceCount = 3;
     human.playedCards.push(predators);
@@ -530,6 +552,7 @@ describe('MarsBotSessionFixes', () => {
     const action = new RemoveResourcesFromCard(human, CardResource.ANIMAL, 1, {source: 'all'});
     const result = action.execute();
 
+    // Should offer OrOptions with both card selection and MarsBot MC
     expect(result).to.be.instanceOf(OrOptions);
   });
 
@@ -540,6 +563,7 @@ describe('MarsBotSessionFixes', () => {
     const action = new RemoveResourcesFromCard(human, undefined, 1, {source: 'self', blockable: false});
     const result = action.execute();
 
+    // No self-targets and MarsBot excluded for source=self
     expect(result).to.be.undefined;
   });
 
@@ -632,6 +656,7 @@ describe('MarsBotSessionFixes', () => {
 
     marsBot.player.stock.add(Resource.STEEL, -2, {log: true, from: {player: human}});
 
+    // LawSuit tracks removingPlayers
     expect(marsBot.player.removingPlayers).to.include(human.id);
   });
 
@@ -658,6 +683,7 @@ describe('MarsBotSessionFixes', () => {
     const landSpaces = game.board.getAvailableSpacesOnLand(marsBot.player);
 
     game.addCity(marsBot.player, landSpaces[0]);
+    // Pick a greenery space that isn't already occupied
     const greenerySpaces = game.board.getAvailableSpacesForGreenery(marsBot.player);
     game.addGreenery(marsBot.player, greenerySpaces[0], true);
 
@@ -695,6 +721,7 @@ describe('MarsBotSessionFixes', () => {
       expect(track.position).to.eq(0);
     }
 
+    // Decrease megacredits production by 2 (Mons Insurance)
     marsBot.player.production.add(Resource.MEGACREDITS, -2);
 
     const eventTrackIndex = marsBot.marsBotBoard.definitions.findIndex((d) => d.productions.includes(Resource.MEGACREDITS));
@@ -704,8 +731,9 @@ describe('MarsBotSessionFixes', () => {
   it('track regression from 1 stops at 0 for multi-step decrease', () => {
     const {marsBot} = createAutomaGame();
     const eventTrackIndex = marsBot.marsBotBoard.definitions.findIndex((d) => d.productions.includes(Resource.MEGACREDITS));
-    marsBot.marsBotBoard.tracks[eventTrackIndex].advance();
+    marsBot.marsBotBoard.tracks[eventTrackIndex].advance(); // Position 1
 
+    // Decrease by 2 — should regress once to 0, second step is no-op
     marsBot.player.production.add(Resource.MEGACREDITS, -2);
 
     expect(marsBot.marsBotBoard.tracks[eventTrackIndex].position).to.eq(0);
@@ -747,8 +775,10 @@ describe('MarsBotVenusNext', () => {
   it('floater track action increments floater count', () => {
     const {marsBot} = createVenusAutomaGame();
     expect(marsBot.floaters).to.eq(0);
+    // Advance Venus track to a position with a 'floater' action (position 1 in placeholder layout)
     const venusTrack = marsBot.marsBotBoard.tracks[7];
-    venusTrack.advance();
+    venusTrack.advance(); // position 0 -> 1, triggers 'floater' action via turn resolver
+    // Directly test via the action deck mechanism
     marsBot.floaters = 0;
     marsBot.turnResolver['resolveTrackAction']('floater', 7);
     expect(marsBot.floaters).to.eq(1);
@@ -831,7 +861,9 @@ describe('MarsBotVenusNext', () => {
     for (const m of game.milestones.slice(0, 3)) {
       game.claimedMilestones.push({player: marsBot.player, milestone: m});
     }
+    // handleResearchPhase calls actionDeck.buildResearch + handleFloaterExtraCard
     game.automaHooks!.handleResearchPhase();
+    // Non-draft: should have spent 5 floaters and drawn 1 extra card
     expect(marsBot.floaters).to.eq(5);
   });
 
@@ -924,6 +956,7 @@ describe('MarsBotVenusNext', () => {
     for (const m of game.milestones.slice(0, 3)) {
       game.claimedMilestones.push({player: marsBot.player, milestone: m});
     }
+    // Test canSpendFloatersForExtraCard directly (called in draft path)
     expect(game.automaHooks?.['canSpendFloatersForExtraCard']()).to.be.true;
     // Drafting is async, so only the non-draft path is checked end to end.
     game.automaHooks!.handleResearchPhase();
@@ -946,14 +979,17 @@ describe('MarsBotVenusNext', () => {
       game.claimedMilestones.push({player: marsBot.player, milestone: m});
     }
     game.automaHooks!.handleResearchPhase();
+    // Not enough floaters, should not spend
     expect(marsBot.floaters).to.eq(4);
   });
 
   it('Venus track cannot advance past layout length', () => {
     const {marsBot} = createVenusAutomaGame();
     const venusTrack = marsBot.marsBotBoard.tracks[7];
+    // Venus track has 13 positions (0-12)
     expect(venusTrack.definition.layout.length).to.eq(13);
 
+    // Advance to max (position 12)
     for (let i = 0; i < 12; i++) {
       expect(venusTrack.canAdvance()).to.be.true;
       venusTrack.advance();
@@ -1010,9 +1046,10 @@ describe('MarsBotVenusNext', () => {
       marsBot.marsBotBoard.tracks[i].advance();
       marsBot.marsBotBoard.tracks[i].advance();
     }
+    // Venus at 0, main tracks at 2
     const leastWithVenus = marsBot.marsBotBoard.getLeastAdvancedTrackIndex(false);
     const leastWithoutVenus = marsBot.marsBotBoard.getLeastAdvancedTrackIndex(true);
-    expect(leastWithVenus).to.eq(7);
-    expect(leastWithoutVenus).to.not.eq(7);
+    expect(leastWithVenus).to.eq(7); // Venus is least
+    expect(leastWithoutVenus).to.not.eq(7); // Excludes Venus
   });
 });

@@ -93,6 +93,7 @@ describe('MarsBot Prelude Support', () => {
 
     it('Wild tag with tie: topmost track (lowest index) wins', () => {
       const marsBotBoard = new MarsBotBoard(THARSIS_MARSBOT_BOARD);
+      // All tracks at 0 — least advanced is track 0 (topmost)
       const leastIndex = marsBotBoard.getLeastAdvancedTrackIndex();
       expect(leastIndex).to.eq(0);
     });
@@ -105,7 +106,7 @@ describe('MarsBot Prelude Support', () => {
       marsBotBoard.tracks[2].position = 3;
       marsBotBoard.tracks[4].position = 3;
       const leastIndex = marsBotBoard.getLeastAdvancedTrackIndex();
-      expect(leastIndex).to.eq(2);
+      expect(leastIndex).to.eq(2); // Track 2 is topmost of the tied ones
     });
   });
 
@@ -161,7 +162,7 @@ describe('MarsBot Prelude Support', () => {
       game.generation = 15;
       marsBot.megacredits = 9;
       const scoring = marsBot.getVictoryPoints();
-      expect(scoring.mcToVP).to.eq(3);
+      expect(scoring.mcToVP).to.eq(3); // 9 / 3 = 3
     });
 
     it('MC to VP at gen 17 with Prelude: 1 VP per 1 MC', () => {
@@ -169,7 +170,7 @@ describe('MarsBot Prelude Support', () => {
       game.generation = 17;
       marsBot.megacredits = 12;
       const scoring = marsBot.getVictoryPoints();
-      expect(scoring.mcToVP).to.eq(12);
+      expect(scoring.mcToVP).to.eq(12); // 12 / 1 = 12
     });
 
     it('instant win at gen 18 with Prelude: mcToVP is 0', () => {
@@ -177,7 +178,7 @@ describe('MarsBot Prelude Support', () => {
       game.generation = 18;
       marsBot.megacredits = 100;
       const scoring = marsBot.getVictoryPoints();
-      expect(scoring.mcToVP).to.eq(0);
+      expect(scoring.mcToVP).to.eq(0); // Instant win, no VP calculation
     });
 
     it('gen 18 is NOT instant win without Prelude', () => {
@@ -185,7 +186,7 @@ describe('MarsBot Prelude Support', () => {
       game.generation = 18;
       marsBot.megacredits = 8;
       const scoring = marsBot.getVictoryPoints();
-      expect(scoring.mcToVP).to.eq(4); // 1 VP per 2 M€ in generation 18
+      expect(scoring.mcToVP).to.eq(4); // 8 / 2 = 4 (gen 18 = 1 VP per 2 MC)
     });
   });
 });

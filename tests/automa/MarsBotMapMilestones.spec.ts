@@ -383,7 +383,7 @@ describe('MarsBot map milestones and awards', () => {
 
     it('loads a save with 4 milestones unchanged', () => {
       const serialized = createGame({boardName: BoardName.UTOPIA_PLANITIA}).game.serialize();
-      // An older save holds only the milestones MarsBot can play.
+      // A game created before the swap kept only the milestones MarsBot could play
       serialized.milestones = ['Land Specialist', 'Pioneer', 'Smith', 'Researcher'];
 
       const loaded = Game.deserialize(serialized);

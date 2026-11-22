@@ -112,6 +112,7 @@ describe('MarsBotShippingBoard', () => {
     });
 
     it('stores resources for Titan but no overflow check', () => {
+      // Add 7 to Titan; should NOT trigger track advance (exempt from the overflow check)
       marsBot.shippingBoard.add(ColonyName.TITAN, 7);
       expect(marsBot.shippingBoard.get(ColonyName.TITAN)).to.eq(7);
       const eventTrackIdx = marsBot.marsBotBoard.tagToTrack[Tag.EVENT]!;
@@ -168,7 +169,7 @@ describe('MarsBotShippingBoard', () => {
       marsBot.shippingBoard.add(ColonyName.CERES, 3);
       const buildingIdx = marsBot.marsBotBoard.tagToTrack[Tag.BUILDING]!;
       const before = marsBot.marsBotBoard.tracks[buildingIdx].position;
-      marsBot.shippingBoard.add(ColonyName.CERES, 2);
+      marsBot.shippingBoard.add(ColonyName.CERES, 2); // total = 5 → overflow
       expect(marsBot.marsBotBoard.tracks[buildingIdx].position).to.eq(before + 1);
       expect(marsBot.shippingBoard.get(ColonyName.CERES)).to.eq(0);
     });
@@ -184,7 +185,7 @@ describe('MarsBotShippingBoard', () => {
       const state = marsBot.serialize();
       expect(state.shippingBoard).to.not.be.undefined;
 
-      const marsBot2 = getMarsBot(game);
+      const marsBot2 = getMarsBot(game); // Fresh ref from same game
       marsBot2.shippingBoard = new MarsBotShippingBoard(marsBot2);
       marsBot2.restoreState(state);
 

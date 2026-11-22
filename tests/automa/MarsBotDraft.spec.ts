@@ -46,8 +46,10 @@ describe('MarsBot Draft Variant', () => {
       const {game, human} = createAutomaGameWithDraft();
       game.gotoResearchPhase();
 
+      // Human should be waiting for a SelectCard (draft round 1)
       const waitingFor = human.getWaitingFor();
       expect(waitingFor).to.not.be.undefined;
+      // The waitingFor should be a SelectCard with 4 cards
       expect(waitingFor).to.be.instanceOf(SelectCard);
     });
 
@@ -84,6 +86,7 @@ describe('MarsBot Draft Variant', () => {
         selectCard.cb([selectCard.cards[0]]);
       }
 
+      // After 4 rounds, human should be in buy phase (ChooseCards / SelectCard)
       const buyPhase = human.getWaitingFor();
       expect(buyPhase).to.not.be.undefined;
     });
@@ -97,7 +100,8 @@ describe('MarsBot Draft Variant', () => {
         selectCard.cb([selectCard.cards[0]]);
       }
 
-      // 4 drafted cards, 1 discarded, plus 1 bonus card.
+      // MarsBot should have built its action deck from the draft
+      // 4 drafted → discard 1 → 3 cards + 1 bonus = 4 total
       expect(marsBot.actionDeck.cards.length).to.eq(4);
     });
 

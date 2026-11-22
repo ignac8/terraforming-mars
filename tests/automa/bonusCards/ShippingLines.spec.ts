@@ -36,6 +36,7 @@ describe('ShippingLines', () => {
     const card = b19Card();
     marsBot.bonusDeck.drawPile.push(card);
     marsBot.actionDeck.playBonusCard(card);
+    // Should have spent 1 MC and gained 2 resources to Luna
     expect(marsBot.megacredits).to.eq(2);
     expect(marsBot.shippingBoard.get(ColonyName.LUNA)).to.eq(2);
     expect(luna.visitor).to.eq(marsBot.player.id);

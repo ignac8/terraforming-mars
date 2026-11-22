@@ -44,6 +44,7 @@ describe('PointLunaMarsBot', () => {
     const {marsBot} = createAutomaGame();
     const corp = getMarsBotCorp(CardName.POINT_LUNA)!;
     marsBot.setCorpAndSetup(corp);
+    // All tracks at some position after starting tags. White cube → least advanced.
     const board = marsBot.marsBotBoard;
     const leastBefore = board.tracks[board.getLeastAdvancedTrackIndex()].position;
     corp.onTrackCubeTrigger!(marsBot, 5, 1, 'white');

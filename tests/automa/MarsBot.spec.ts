@@ -101,10 +101,11 @@ describe('MarsBot', () => {
   describe('Track Operations', () => {
     it('regressTrack reduces track position', () => {
       const {marsBot} = createAutomaGame();
+      // Advance Track 1 to position 3
       const track = marsBot.marsBotBoard.tracks[0];
-      track.advance();
-      track.advance();
-      track.advance();
+      track.advance(); // 1
+      track.advance(); // 2
+      track.advance(); // 3
       expect(track.position).to.eq(3);
 
       marsBot.regressTrack(Resource.STEEL); // Steel maps to Track 1
@@ -175,6 +176,7 @@ describe('MarsBot', () => {
 
     it('game is over when Mars is terraformed', () => {
       const {game} = createAutomaGame();
+      // Set all global params to max
       setOxygenLevel(game, 14);
       setTemperature(game, 8);
       const oceanSpaces = game.board.getAvailableSpacesForOcean(game.players[0]);

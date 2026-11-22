@@ -112,14 +112,14 @@ describe('MarsBotCorpResolver', () => {
 
       const corp = createTestCorp({
         name: CardName.ECOLINE,
-        tags: [Tag.BUILDING, Tag.BUILDING],
+        tags: [Tag.BUILDING, Tag.BUILDING], // Track 1 should advance twice
       });
 
       const track1Before = marsBot.marsBotBoard.tracks[0].position;
       MarsBotCorpResolver.setupCorp(corp, marsBot);
       const track1After = marsBot.marsBotBoard.tracks[0].position;
 
-      // At least 2, as an advance can trigger further ones.
+      // Track 1 handles Building tag, so should advance at least 2 (may chain)
       expect(track1After).to.be.gte(track1Before + 2);
     });
 
@@ -178,6 +178,7 @@ describe('MarsBotCorpResolver', () => {
         },
       });
 
+      // Setup corp (places cubes)
       marsBot.corp = corp;
       marsBot.trackCubePositions.set('1:3', {trackIndex: 1, position: 3, cubeType: 'white'});
 

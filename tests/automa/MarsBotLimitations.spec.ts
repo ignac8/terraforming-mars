@@ -27,14 +27,17 @@ describe('MarsBot Limitations Fixed', () => {
       for (let i = 0; i < 3; i++) {
         marsBot.marsBotBoard.tracks[4].advance();
       }
+      // MarsBot value = 3 + 5 = 8
 
       // Human has 2 heat resources + 5 heat production = 7 for comparison
       human.heat = 2;
       human.production.override({heat: 5, megacredits: 0, steel: 0, titanium: 0, plants: 0, energy: 0});
 
+      // MarsBot is ahead (8 > 7), so it should fund Thermalist
       const thermalist = game.awards.find((a) => a.name === 'Thermalist')!;
       const marsBotVal = marsBot.awardValue(thermalist);
       expect(marsBotVal).to.eq(8);
+      // Human standard getScore = 2 (just heat), but for MarsBot comparison = 2 + 5 = 7
     });
 
     it('Thermalist comparison counts energy resources but not energy production (BGG 3350125)', () => {
@@ -54,6 +57,7 @@ describe('MarsBot Limitations Fixed', () => {
       for (let i = 0; i < 4; i++) {
         marsBot.marsBotBoard.tracks[1].advance();
       }
+      // MarsBot value = 4 + 5 = 9
 
       // Human has 3 steel + 2 titanium + 2 steel prod + 1 titanium prod = 8 for comparison
       human.steel = 3;

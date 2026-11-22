@@ -46,8 +46,8 @@ describe('MeteorShower', () => {
 
     const destroyed = marsBot.actionDeck.playBonusCard(b01);
 
-    expect(human.plants).to.eq(0);
-    expect(destroyed).to.be.false;
+    expect(human.plants).to.eq(0); // Lost 2 plants
+    expect(destroyed).to.be.false; // NOT destroyed (lost <3)
   });
 
   it('card IS destroyed when human loses >=3 plants', () => {
@@ -58,7 +58,7 @@ describe('MeteorShower', () => {
 
     const destroyed = marsBot.actionDeck.playBonusCard(b01);
 
-    expect(human.plants).to.eq(0);
+    expect(human.plants).to.eq(0); // Lost 5 plants
     expect(destroyed).to.be.true;
   });
 

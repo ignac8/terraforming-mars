@@ -198,7 +198,7 @@ describe('MarsBot Colonies — 2nd Trade Fleet Cube', () => {
     const state = marsBot.serialize();
     expect(state.hasSecondTradeFleet).to.be.true;
 
-    marsBot.hasSecondTradeFleet = false;
+    marsBot.hasSecondTradeFleet = false; // Reset
     marsBot.restoreState(state);
     expect(marsBot.hasSecondTradeFleet).to.be.true;
   });

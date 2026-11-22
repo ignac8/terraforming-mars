@@ -51,6 +51,7 @@ describe('OuterSystemFoothold', () => {
     marsBot.bonusDeck.discardPile.push(card); // Will be restored; deck starts fresh
     marsBot.bonusDeck.drawPile.push(card);
     const destroyed = marsBot.actionDeck.playBonusCard(card);
+    // Luna should have marsBot as a colony or shipping board got resources
     const hasColony = luna.colonies.includes(marsBot.player.id);
     if (hasColony) {
       expect(marsBot.shippingBoard.get(ColonyName.LUNA)).to.eq(2);
