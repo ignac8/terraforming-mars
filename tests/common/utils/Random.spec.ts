@@ -99,12 +99,16 @@ describe('Random', () => {
     });
   });
 
-  for (const run of [
-    {name: 'UnseededRandom', random: UnseededRandom.INSTANCE},
-    {name: 'ConstRandom', random: new ConstRandom(0.5)},
-  ]) {
-    it(`${run.name} cannot be serialized`, () => {
-      expect(() => run.random.serialize()).to.throw(`${run.name} cannot be serialized`);
-    });
-  }
+  it('round-trips a ConstRandom', () => {
+    const restored = deserializeRandom(new ConstRandom(0.25).serialize());
+
+    expect(restored).instanceOf(ConstRandom);
+    expect(restored.next()).eq(0.25);
+  });
+
+  it('restores an UnseededRandom as the unseeded generator', () => {
+    const restored = deserializeRandom(UnseededRandom.INSTANCE.serialize());
+
+    expect(restored).eq(UnseededRandom.INSTANCE);
+  });
 });

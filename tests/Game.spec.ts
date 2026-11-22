@@ -839,11 +839,13 @@ describe('Game', () => {
     expect(oceanSpace.tile!.tileType).to.eq(TileType.NEW_HOLLAND);
   });
 
-  it('runs on any random generator', () => {
+  it('saves and loads a game on any random generator', () => {
     const player = TestPlayer.BLUE.newPlayer();
     const game = Game.newInstance('gconst', [player], player, 'sconst', {}, new ConstRandom(0));
 
-    expect(game.rng).instanceOf(ConstRandom);
+    const restored = Game.deserialize(game.serialize());
+
+    expect(restored.rng).instanceOf(ConstRandom);
   });
 
   it('round-trips a strong random generator and continues the same sequence', () => {
