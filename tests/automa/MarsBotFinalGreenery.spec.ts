@@ -31,10 +31,6 @@ describe('MarsBot final greenery', () => {
     expect(game.isDoneWithFinalProduction()).is.true;
   }
 
-  function trackPositions(marsBot: MarsBot): Array<number> {
-    return marsBot.marsBotBoard.tracks.map((track) => track.position);
-  }
-
   it('does not trigger the Hellas south pole', () => {
     const {game, marsBot} = setup(BoardName.HELLAS);
     const southPole = game.board.spaces.find((sp) => sp.bonus.includes(SpaceBonus.OCEAN))!;
@@ -77,13 +73,13 @@ describe('MarsBot final greenery', () => {
       marsBot.shippingBoard.storage.set(ColonyName.LUNA, 4);
       marsBot.shippingBoard.storage.set(ColonyName.CERES, 4);
       endGame(game);
-      const tracks = trackPositions(marsBot);
+      const tracks = marsBot.marsBotBoard.tracks.map((track) => track.position);
 
       game.addGreenery(marsBot.player, msl, false);
 
       const colonyCounts = game.colonies.map((colony) => colony.colonies.length);
       expect(colonyCounts).deep.eq([0, 0]);
-      expect(trackPositions(marsBot)).deep.eq(tracks);
+      expect(marsBot.marsBotBoard.tracks.map((track) => track.position)).deep.eq(tracks);
       expect(marsBot.megacredits).to.eq(10);
     });
 
@@ -101,22 +97,22 @@ describe('MarsBot final greenery', () => {
 
     it('stops the Shipping Board overflowing', () => {
       endGame(game);
-      const tracks = trackPositions(marsBot);
+      const tracks = marsBot.marsBotBoard.tracks.map((track) => track.position);
 
       marsBot.shippingBoard.add(ColonyName.CERES, 5);
 
       expect(marsBot.shippingBoard.get(ColonyName.CERES)).to.eq(5);
-      expect(trackPositions(marsBot)).deep.eq(tracks);
+      expect(marsBot.marsBotBoard.tracks.map((track) => track.position)).deep.eq(tracks);
     });
 
     it('lets the Shipping Board overflow before the game is decided', () => {
       game.phase = Phase.ACTION;
-      const tracks = trackPositions(marsBot);
+      const tracks = marsBot.marsBotBoard.tracks.map((track) => track.position);
 
       marsBot.shippingBoard.add(ColonyName.CERES, 5);
 
       expect(marsBot.shippingBoard.get(ColonyName.CERES)).to.eq(0);
-      expect(trackPositions(marsBot)).not.deep.eq(tracks);
+      expect(marsBot.marsBotBoard.tracks.map((track) => track.position)).not.deep.eq(tracks);
     });
   });
 
@@ -217,7 +213,7 @@ describe('MarsBot final greenery', () => {
       return {
         game,
         marsBot,
-        tracks: () => trackPositions(marsBot),
+        tracks: () => marsBot.marsBotBoard.tracks.map((track) => track.position),
         played: marsBot.playedProjectCards.length,
         deck: game.projectDeck.size(),
         tr: marsBot.player.terraformRating,
@@ -265,10 +261,10 @@ describe('MarsBot final greenery', () => {
       .find((s) => game.board.getAdjacentSpaces(s).some((a) => a.tile !== undefined && a.player === marsBot.player))!;
     marsBot.setCorpState('scienceResources', 3);
     endGame(game);
-    const tracks = trackPositions(marsBot);
+    const tracks = marsBot.marsBotBoard.tracks.map((track) => track.position);
 
     game.addGreenery(human, next, false);
 
-    expect(trackPositions(marsBot)).deep.eq(tracks);
+    expect(marsBot.marsBotBoard.tracks.map((track) => track.position)).deep.eq(tracks);
   });
 });
