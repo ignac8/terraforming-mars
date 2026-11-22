@@ -1,7 +1,7 @@
 import {expect} from 'chai';
 import {testGame} from '../TestingUtils';
 import {sameState, stateHash} from '../../src/server/rewind/stateHash';
-import {SerializedAutomaState} from '../../src/server/SerializedGame';
+import {SerializedAutomaState, SerializedGame} from '../../src/server/SerializedGame';
 import {Asteroid} from '../../src/server/cards/base/Asteroid';
 import {MarsBotBonusCard} from '../../src/server/automa/bonusCards/MarsBotBonusCard';
 import {MarsBotBonusDeckCard} from '../../src/server/automa/MarsBotBonusDeck';
@@ -63,6 +63,22 @@ describe('stateHash', () => {
     expect(stateHash(b)).not.eq(stateHash(a));
     expect(sameState(a, b)).is.false;
   });
+
+  // Recorded replays hold the hash of their state before BonusCardName, with bonus cards by id.
+  const BEFORE_BONUS_CARD_NAME = '7ace729a0d6c9dd48e88a89e7b5aeddad85293308b3141f32be26cc2ac54035c';
+  for (const run of [
+    {form: 'name', bonusDeck: {drawPile: ['Meteor Shower', 'Asteroid'], discardPile: ['Research and Development']}},
+    {form: 'name with suffix', bonusDeck: {drawPile: ['Meteor Shower:automa', 'Asteroid'], discardPile: ['Research and Development:automa']}},
+    {form: 'id under the older keys', bonusDeckDrawPile: ['B01', 'Asteroid'], bonusDeckDiscardPile: ['B03']},
+  ]) {
+    it('hashes bonus cards as before BonusCardName: ' + run.form, () => {
+      const {form: _form, ...piles} = run;
+      const actionDeckCardNames = run.form === 'name' ? ['Mine', 'Invasive Species'] : ['Mine', 'B02'];
+      const d = {players: [], gameOptions: {automa: true}, gameLog: [], automaState: {actionDeckCardNames, ...piles}};
+
+      expect(stateHash(d as unknown as SerializedGame)).eq(BEFORE_BONUS_CARD_NAME);
+    });
+  }
 
   it('does not depend on key order, and notices a missing log line', () => {
     const [game] = testGame(1);

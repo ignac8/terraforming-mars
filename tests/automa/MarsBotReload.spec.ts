@@ -17,6 +17,13 @@ import {Tag} from '../../src/common/cards/Tag';
 import {loadSandboxGame} from '../../src/server/replay/sandbox';
 import {Thermalist} from '../../src/server/awards/Thermalist';
 import {getMarsBotCorp} from '../../src/server/automa/corps/MarsBotCorpRegistry';
+import {Mine} from '../../src/server/cards/base/Mine';
+import {Tardigrades} from '../../src/server/cards/base/Tardigrades';
+import {InvasiveSpecies} from '../../src/server/automa/bonusCards/InvasiveSpecies';
+import {InterfaceHyperlink} from '../../src/server/automa/bonusCards/InterfaceHyperlink';
+import {MeteorShower} from '../../src/server/automa/bonusCards/MeteorShower';
+import {ResearchAndDevelopment} from '../../src/server/automa/bonusCards/ResearchAndDevelopment';
+import {ExpeditedConstruction} from '../../src/server/automa/bonusCards/ExpeditedConstruction';
 
 function createAutomaGame(): {game: IGame, marsBot: MarsBot} {
   const [game] = testGame(1, {
@@ -337,6 +344,31 @@ describe('MarsBotReload', () => {
           ],
         },
       });
+    });
+  }
+
+  // Saves made before BonusCardName hold a bonus card by its id or by its name with an ':automa' suffix
+  for (const run of [
+    {
+      piles: 'bonus deck',
+      state: {bonusDeck: {drawPile: ['B30', 'Meteor Shower:automa', 'Asteroid'], discardPile: ['Research and Development:automa', 'B05', 'Tardigrades']}},
+    },
+    {
+      piles: 'older keys',
+      state: {bonusDeckDrawPile: ['B30', 'Meteor Shower:automa', 'Asteroid'], bonusDeckDiscardPile: ['Research and Development:automa', 'B05', 'Tardigrades']},
+    },
+  ]) {
+    it('loads the bonus cards of a save made before BonusCardName: ' + run.piles, () => {
+      const [game] = testGame(1, {automa: true, boardName: BoardName.THARSIS});
+      const marsBot = game.automaHooks!.marsBot;
+      const {bonusDeck: _bonusDeck, ...state} = marsBot.serialize();
+
+      marsBot.restoreState({...state, actionDeckCardNames: ['Mine', 'B02'], ...run.state} as SerializedAutomaState);
+
+      const cards = (pile: ReadonlyArray<object>) => pile.map((card) => card.constructor);
+      expect(cards(marsBot.actionDeck.cards)).deep.eq([Mine, InvasiveSpecies]);
+      expect(cards(marsBot.bonusDeck.drawPile)).deep.eq([InterfaceHyperlink, MeteorShower, Asteroid]);
+      expect(cards(marsBot.bonusDeck.discardPile)).deep.eq([ResearchAndDevelopment, ExpeditedConstruction, Tardigrades]);
     });
   }
 });

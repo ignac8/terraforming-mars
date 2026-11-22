@@ -44,18 +44,21 @@ describe('shuffleHiddenPiles in a MarsBot game', () => {
     expect(withPilesRestored).deep.eq(was);
   });
 
-  it('keeps Interface Hyperlink at the bottom of the bonus deck, where Tyco Magnetics puts it', () => {
-    // The deck draws from the end of the draw pile, so the bottom card is the first one.
-    d.automaState!.bonusDeck.drawPile.unshift(BonusCardName.INTERFACE_HYPERLINK);
-    const others = d.automaState!.bonusDeck.drawPile.slice(1);
+  // Saves made before BonusCardName hold the name with an ':automa' suffix
+  for (const bottom of [BonusCardName.INTERFACE_HYPERLINK, 'Interface Hyperlink:automa' as BonusCardName]) {
+    it('keeps Interface Hyperlink at the bottom of the bonus deck, where Tyco Magnetics puts it: ' + bottom, () => {
+      // The deck draws from the end of the draw pile, so the bottom card is the first one.
+      d.automaState!.bonusDeck.drawPile.unshift(bottom);
+      const others = d.automaState!.bonusDeck.drawPile.slice(1);
 
-    shuffleHiddenPiles(d, new SeededRandom(0.5));
+      shuffleHiddenPiles(d, new SeededRandom(0.5));
 
-    const pile = d.automaState!.bonusDeck.drawPile;
-    expect(pile[0]).eq(BonusCardName.INTERFACE_HYPERLINK);
-    expect(pile.slice(1)).has.members(others);
-    expect(pile.slice(1)).not.deep.eq(others);
-  });
+      const pile = d.automaState!.bonusDeck.drawPile;
+      expect(pile[0]).eq(bottom);
+      expect(pile.slice(1)).has.members(others);
+      expect(pile.slice(1)).not.deep.eq(others);
+    });
+  }
 
   it('reorders the bonus draw pile of an older save, which holds bonus cards by id', () => {
     const state = d.automaState!;
