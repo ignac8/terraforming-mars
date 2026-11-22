@@ -13,7 +13,7 @@ export class Minimalist implements IMilestone {
     return this.getScore(player) <= 2;
   }
 
-  public remaining(player: IPlayer): number {
+  public stepsToMeet(player: IPlayer): number {
     return Math.max(0, this.getScore(player) - 2);
   }
 }

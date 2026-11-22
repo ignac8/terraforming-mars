@@ -522,7 +522,7 @@ describe('MarsBot Deep Rules Tests', () => {
 
       const terraformer = game.milestones.find((m) => m.name === 'Terraformer')!;
 
-      expect(terraformer.remaining?.(human)).to.eq(1);
+      expect(terraformer.stepsToMeet?.(human)).to.eq(1);
     });
   });
 
