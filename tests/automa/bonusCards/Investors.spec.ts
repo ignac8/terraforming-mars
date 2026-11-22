@@ -29,7 +29,8 @@ describe('Investors', () => {
 
       new Investors().resolve(marsBot);
 
-      expect(marsBot.marsBotBoard.tracks.map((track) => track.position)).deep.eq(run.expected.after);
+      const positions = marsBot.marsBotBoard.tracks.map((track) => track.position);
+      expect(positions).deep.eq(run.expected.after);
       expect(calls).deep.eq(run.expected.calls);
     });
   }
@@ -41,7 +42,8 @@ describe('Investors', () => {
 
     marsBot.actionDeck.playBonusCard(createBonusCard(BonusCardId.B32_INVESTORS));
 
-    expect(marsBot.marsBotBoard.tracks.map((t) => t.position)).deep.eq([5, 3, 2, 4, 4, 5, 2]);
+    const positions = marsBot.marsBotBoard.tracks.map((track) => track.position);
+    expect(positions).deep.eq([5, 3, 2, 4, 4, 5, 2]);
     expect(marsBot.megacredits).to.eq(0);
   });
 
@@ -62,7 +64,8 @@ describe('Investors', () => {
 
     marsBot.actionDeck.playBonusCard(createBonusCard(BonusCardId.B32_INVESTORS));
 
-    expect(marsBot.marsBotBoard.tracks.map((t) => t.position)).deep.eq([3, 2, 1, 4, 2, 2, 3]);
+    const positions = marsBot.marsBotBoard.tracks.map((track) => track.position);
+    expect(positions).deep.eq([3, 2, 1, 4, 2, 2, 3]);
   });
 
   it('in an odd generation gains 1 M€ per space of the least-advanced track and moves nothing', () => {
@@ -72,7 +75,8 @@ describe('Investors', () => {
 
     marsBot.actionDeck.playBonusCard(createBonusCard(BonusCardId.B32_INVESTORS));
 
-    expect(marsBot.marsBotBoard.tracks.map((t) => t.position)).deep.eq([5, 3, 2, 4, 4, 6, 3]);
+    const positions = marsBot.marsBotBoard.tracks.map((track) => track.position);
+    expect(positions).deep.eq([5, 3, 2, 4, 4, 6, 3]);
     expect(marsBot.megacredits).to.eq(2);
   });
 

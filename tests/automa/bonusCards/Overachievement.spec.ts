@@ -27,18 +27,16 @@ describe('Overachievement', () => {
   it('does NOT try awards when generation < 6', () => {
     const {game, marsBot} = createAutomaGame();
     game.generation = 4;
-    // MarsBot can't claim any milestone (all at 0)
-    // Gen < 6 means no award attempt
-
+    // MarsBot meets no milestone, and before generation 6 it does not try to fund an award.
     const cards = createBaseBonusCards();
     const b04 = cards.find((c) => c.id === BonusCardId.B04_OVERACHIEVEMENT)!;
 
     const awardsBefore = game.fundedAwards.length;
     const destroyed = marsBot.actionDeck.playBonusCard(b04);
 
-    expect(game.fundedAwards.length).to.eq(awardsBefore); // No award funded
-    expect(marsBot.megacredits).to.eq(5); // Failed → 5 MC
-    expect(destroyed).to.be.false; // Not destroyed
+    expect(game.fundedAwards.length).to.eq(awardsBefore);
+    expect(marsBot.megacredits).to.eq(5); // The Failed Action
+    expect(destroyed).to.be.false;
   });
 
   it('funds the award MarsBot leads by the most', () => {
@@ -56,7 +54,8 @@ describe('Overachievement', () => {
 
     marsBot.actionDeck.playBonusCard(b04);
 
-    expect(game.fundedAwards.map((f) => f.award.name)).deep.eq(['Miner']);
+    const miner = game.awards.find((award) => award.name === 'Miner')!;
+    expect(game.fundedAwards).deep.eq([{player: marsBot.player, award: miner}]);
   });
 
   // Overachievement uses the claim tiebreakers (rulebook page 7)
@@ -74,8 +73,9 @@ describe('Overachievement', () => {
 
     const destroyed = marsBot.actionDeck.playBonusCard(b04);
 
+    const gardener = game.milestones.find((milestone) => milestone.name === 'Gardener')!;
     expect(destroyed).is.true;
-    expect(game.claimedMilestones.map((c) => c.milestone.name)).deep.eq(['Gardener']);
+    expect(game.claimedMilestones).deep.eq([{player: marsBot.player, milestone: gardener}]);
   });
 
   it('considers Hoverlord last among tied milestones', () => {
@@ -84,7 +84,8 @@ describe('Overachievement', () => {
 
     marsBot.actionDeck.playBonusCard(b04);
 
-    expect(game.claimedMilestones.map((c) => c.milestone.name)).deep.eq(['Terraformer']);
+    const terraformer = game.milestones.find((milestone) => milestone.name === 'Terraformer')!;
+    expect(game.claimedMilestones).deep.eq([{player: marsBot.player, milestone: terraformer}]);
   });
 
   it('stays out of the bonus deck after it resolves for Vitor', () => {
@@ -123,6 +124,7 @@ describe('Overachievement', () => {
 
     marsBot.actionDeck.playBonusCard(createBonusCard(BonusCardId.B04_OVERACHIEVEMENT));
 
-    expect(marsBot.bonusDeck.discardPile.map((c) => c.id)).includes(BonusCardId.B04_OVERACHIEVEMENT);
+    const discardedIds = marsBot.bonusDeck.discardPile.map((c) => c.id);
+    expect(discardedIds).includes(BonusCardId.B04_OVERACHIEVEMENT);
   });
 });

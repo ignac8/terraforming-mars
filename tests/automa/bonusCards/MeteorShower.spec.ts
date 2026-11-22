@@ -47,8 +47,8 @@ describe('MeteorShower', () => {
 
     const destroyed = marsBot.actionDeck.playBonusCard(b01);
 
-    expect(human.plants).to.eq(0); // Lost 2 plants
-    expect(destroyed).to.be.false; // NOT destroyed (lost <3)
+    expect(human.plants).to.eq(0);
+    expect(destroyed).to.be.false;
   });
 
   it('card IS destroyed when human loses >=3 plants', () => {
@@ -60,8 +60,8 @@ describe('MeteorShower', () => {
 
     const destroyed = marsBot.actionDeck.playBonusCard(b01);
 
-    expect(human.plants).to.eq(0); // Lost 5 plants
-    expect(destroyed).to.be.true; // Destroyed
+    expect(human.plants).to.eq(0);
+    expect(destroyed).to.be.true;
   });
 
   it('is blocked by Asteroid Deflection System', () => {
@@ -71,7 +71,7 @@ describe('MeteorShower', () => {
 
     const bonusCard = marsBot.bonusDeck.drawPile.find((c) => c.id === BonusCardId.B01_METEOR_SHOWER);
     if (bonusCard === undefined) {
-      // Card may have been drawn already; create a fresh one
+      // The card may already have been drawn, so there is nothing to check.
       return;
     }
     const plantsBefore = human.plants;

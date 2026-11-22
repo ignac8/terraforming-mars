@@ -75,8 +75,10 @@ describe('InterfaceHyperlink', () => {
 
       const destroyed = new InterfaceHyperlink().resolve(marsBot);
 
-      expect(played.map((card) => card.name)).deep.eq(run.expected.played);
-      expect(discardPile.slice(discardsBefore).map((card) => card.name)).deep.eq(run.expected.discarded);
+      const playedNames = played.map((card) => card.name);
+      const discardedNames = discardPile.slice(discardsBefore).map((card) => card.name);
+      expect(playedNames).deep.eq(run.expected.played);
+      expect(discardedNames).deep.eq(run.expected.discarded);
       expect(destroyed).is.true;
     });
   }
@@ -116,7 +118,8 @@ describe('InterfaceHyperlink', () => {
     expect(played).deep.eq([searchForLife, giantIceAsteroid]);
     expect(game.projectDeck.discardPile).to.include.members([tardigrades, asteroid]);
     expect(destroyed).is.true;
-    expect(marsBot.bonusDeck.discardPile.map((c) => c.id)).to.not.include(BonusCardId.B30_INTERFACE_HYPERLINK);
+    const discardedIds = marsBot.bonusDeck.discardPile.map((c) => c.id);
+    expect(discardedIds).to.not.include(BonusCardId.B30_INTERFACE_HYPERLINK);
   });
 
   it('breaks a cost tie toward the card with more tags', () => {
@@ -151,6 +154,7 @@ describe('InterfaceHyperlink', () => {
 
     expect(played).deep.eq([searchForLife, mine]);
     expect(destroyed).is.true;
-    expect(marsBot.bonusDeck.discardPile.map((c) => c.id)).to.not.include(BonusCardId.B30_INTERFACE_HYPERLINK);
+    const discardedIds = marsBot.bonusDeck.discardPile.map((c) => c.id);
+    expect(discardedIds).to.not.include(BonusCardId.B30_INTERFACE_HYPERLINK);
   });
 });

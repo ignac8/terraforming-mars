@@ -31,12 +31,13 @@ describe('ExpeditedConstruction', () => {
 
     const destroyed = new ExpeditedConstruction().resolve(marsBot);
 
-    expect(game.board.spaces.filter((space) => space.tile !== undefined)).is.empty;
+    const tiles = game.board.spaces.filter((space) => space.tile !== undefined);
+    expect(tiles).is.empty;
     expect(calls).is.empty;
     expect(destroyed).is.false;
   });
 
-  // 12 is the one space next to two of these oceans. It has no icons, and each ocean next to a city pays 2 M€
+  // Space 12 is next to all three oceans and has no icons, so the city earns 2 M€ per ocean
   it('places a city next to 2 greenery or ocean tiles, earns the M€ of the space and is destroyed', () => {
     const {game, human, marsBot} = createAutomaGame();
     for (const id of ['06', '07', '13'] as const) {
@@ -62,7 +63,8 @@ describe('ExpeditedConstruction', () => {
 
     const destroyed = marsBot.actionDeck.playBonusCard(card);
 
-    expect(game.board.spaces.filter((space) => space.tile !== undefined)).is.empty;
+    const tiles = game.board.spaces.filter((space) => space.tile !== undefined);
+    expect(tiles).is.empty;
     expect(marsBot.megacredits).eq(megacredits);
     expect(destroyed).is.false;
     expect(marsBot.bonusDeck.discardPile).includes(card);

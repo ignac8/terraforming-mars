@@ -105,17 +105,16 @@ describe('GovernmentIntervention', () => {
 
   it('even generation advances Martian parameter without TR', () => {
     const {game, marsBot} = createAutomaGame({venusNextExtension: true});
-    game.generation = 4; // even
+    game.generation = 4;
     const trBefore = marsBot.player.terraformRating;
     const card = createBonusCard(BonusCardId.B16_GOVERNMENT_INTERVENTION);
     marsBot.actionDeck.playBonusCard(card);
-    // TR should not have changed (reversed by withoutTRGain)
     expect(marsBot.player.terraformRating).to.eq(trBefore);
   });
 
   it('odd generation raises Venus without TR', () => {
     const {game, marsBot} = createAutomaGame({venusNextExtension: true});
-    game.generation = 3; // odd
+    game.generation = 3;
     const venusBefore = game.getVenusScaleLevel();
     const trBefore = marsBot.player.terraformRating;
     const card = createBonusCard(BonusCardId.B16_GOVERNMENT_INTERVENTION);
@@ -126,12 +125,11 @@ describe('GovernmentIntervention', () => {
 
   it('even gen with Venus complete still advances Martian parameter', () => {
     const {game, marsBot} = createAutomaGame({venusNextExtension: true});
-    game.generation = 3; // odd, but Venus complete → should use Martian branch
+    game.generation = 3;
     setVenusScaleLevel(game, 30);
     const venusBefore = game.getVenusScaleLevel();
     const card = createBonusCard(BonusCardId.B16_GOVERNMENT_INTERVENTION);
     marsBot.actionDeck.playBonusCard(card);
-    // Venus should not change (already maxed, used Martian branch instead)
     expect(game.getVenusScaleLevel()).to.eq(venusBefore);
   });
 

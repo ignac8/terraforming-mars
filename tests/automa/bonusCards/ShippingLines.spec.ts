@@ -37,7 +37,6 @@ describe('ShippingLines', () => {
     const card = b19Card();
     marsBot.bonusDeck.drawPile.push(card);
     marsBot.actionDeck.playBonusCard(card);
-    // Should have spent 1 MC and gained 2 resources to Luna
     expect(marsBot.megacredits).to.eq(2);
     expect(marsBot.shippingBoard.get(ColonyName.LUNA)).to.eq(2);
     expect(luna.visitor).to.eq(marsBot.player.id);
@@ -62,7 +61,7 @@ describe('ShippingLines', () => {
   it('C-17: no effect and no Failed Action if no tradeable colony', () => {
     const [game] = testGame(1, {automa: true, coloniesExtension: true, boardName: BoardName.THARSIS});
     const marsBot = getMarsBot(game);
-    game.colonies = []; // No colonies
+    game.colonies = [];
     marsBot.megacredits = 3;
     const card = b19Card();
     marsBot.bonusDeck.drawPile.push(card);

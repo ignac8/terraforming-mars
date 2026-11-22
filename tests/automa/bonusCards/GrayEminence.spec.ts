@@ -36,7 +36,8 @@ describe('GrayEminence', () => {
 
       new GrayEminence().resolve(marsBot);
 
-      expect(run.reserve - turmoil.delegateReserve.get(botPlayer)).eq(run.expected.placed);
+      const placed = run.reserve - turmoil.delegateReserve.get(botPlayer);
+      expect(placed).eq(run.expected.placed);
       expect(calls).deep.eq(run.expected.calls);
     });
   }
@@ -52,7 +53,8 @@ describe('GrayEminence', () => {
 
     new GrayEminence().resolve(marsBot);
 
-    expect(turmoil.parties.map((party) => party.delegates.get(botPlayer))).deep.eq([1, 1, 1, 1, 1, 1]);
+    const delegates = turmoil.parties.map((party) => party.delegates.get(botPlayer));
+    expect(delegates).deep.eq([1, 1, 1, 1, 1, 1]);
   });
 
   it('places 2 delegates, each in a party with the fewest MarsBot delegates', () => {
@@ -61,7 +63,8 @@ describe('GrayEminence', () => {
     expect(Math.max(...before)).to.eq(0);
     marsBot.actionDeck.playBonusCard(createBonusCard(BonusCardId.B29_GRAY_EMINENCE));
     const after = botDelegates(turmoil, marsBot);
-    expect(after.reduce((a, b) => a + b, 0)).to.eq(2);
+    const total = after.reduce((a, b) => a + b, 0);
+    expect(total).to.eq(2);
     expect(Math.max(...after)).to.eq(1);
   });
 
@@ -81,7 +84,8 @@ describe('GrayEminence', () => {
     const {marsBot, turmoil} = turmoilGame();
     turmoil.delegateReserve.remove(marsBot.player, turmoil.delegateReserve.get(marsBot.player) - 1);
     marsBot.actionDeck.playBonusCard(createBonusCard(BonusCardId.B29_GRAY_EMINENCE));
-    expect(botDelegates(turmoil, marsBot).reduce((a, b) => a + b, 0)).to.eq(1);
+    const total = botDelegates(turmoil, marsBot).reduce((a, b) => a + b, 0);
+    expect(total).to.eq(1);
     expect(marsBot.megacredits).to.eq(2);
   });
 });

@@ -51,7 +51,6 @@ describe('OuterSystemFoothold', () => {
     marsBot.bonusDeck.discardPile.push(card); // Will be restored; deck starts fresh
     marsBot.bonusDeck.drawPile.push(card);
     const destroyed = marsBot.actionDeck.playBonusCard(card);
-    // Luna should have marsBot as a colony or shipping board got resources
     const hasColony = luna.colonies.includes(marsBot.player.id);
     if (hasColony) {
       expect(marsBot.shippingBoard.get(ColonyName.LUNA)).to.eq(2);
@@ -64,15 +63,13 @@ describe('OuterSystemFoothold', () => {
     const marsBot = getMarsBot(game);
     game.colonies = [new Luna()];
 
-    // Put a filler bonus card in the deck so draw() can return something
+    // A filler card for the draw to find.
     const fillerCard = createBonusCard(BonusCardId.B03_RESEARCH_AND_DEVELOPMENT);
     marsBot.bonusDeck.drawPile = [fillerCard];
 
     const card = b18Card();
     marsBot.actionDeck.playBonusCard(card);
 
-    // The filler should have been discarded (not resolved, so deck megacredits unchanged)
-    // Since R&D would have changed megacredits, and it was just discarded, no change expected
     expect(marsBot.bonusDeck.discardPile).to.include(fillerCard);
   });
 
@@ -81,12 +78,11 @@ describe('OuterSystemFoothold', () => {
     const marsBot = getMarsBot(game);
     game.colonies = [new Luna()];
 
-    // Deck empty, discard has only B18 — after resolve, B18 should NOT be drawn
+    // Only B18 itself is in the discard pile, so the draw must not take it.
     const card = b18Card();
     marsBot.bonusDeck.drawPile = [];
     marsBot.bonusDeck.discardPile = [card];
+    // The test passes when the draw ends instead of looping.
     marsBot.actionDeck.playBonusCard(card);
-    // B18 should be back in discard but not have been drawn (no infinite loop)
-    // No crash = success
   });
 });

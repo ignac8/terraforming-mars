@@ -27,7 +27,8 @@ describe('PartyPolitics', () => {
 
       new PartyPolitics().resolve(marsBot);
 
-      expect(run.reserve - turmoil.delegateReserve.get(botPlayer)).eq(run.expected.placed);
+      const placed = run.reserve - turmoil.delegateReserve.get(botPlayer);
+      expect(placed).eq(run.expected.placed);
       expect(calls).deep.eq(run.expected.calls);
     });
   }
@@ -38,12 +39,11 @@ describe('PartyPolitics', () => {
     const marsBotPlayer = marsBot.player;
 
     const reserveBefore = turmoil.delegateReserve.get(marsBotPlayer);
-    // Trigger the Party Politics bonus card directly
     const card = createBonusCard(BonusCardId.B21_PARTY_POLITICS);
     marsBot.actionDeck.playBonusCard(card);
 
     const reserveAfter = turmoil.delegateReserve.get(marsBotPlayer);
-    // At least 1 delegate placed (possibly 2 if T-8 triggered)
+    // At least 1 delegate is placed, 2 when T-8 applies.
     expect(reserveAfter).to.be.lessThan(reserveBefore);
   });
 
@@ -52,12 +52,10 @@ describe('PartyPolitics', () => {
     const turmoil = Turmoil.getTurmoil(game);
     const marsBotPlayer = marsBot.player;
 
-    // Give MarsBot 5+ MC
     marsBot.megacredits = 5;
 
-    // Find a card whose cost is divisible by 3 and put it on top of project deck
+    // Finds a card whose cost is divisible by 3.
     const projectCard = game.projectDeck.draw(game)!;
-    // Find a card with cost divisible by 3
     let targetCard = projectCard;
     const searchLimit = 20;
     for (let i = 0; i < searchLimit && targetCard.cost % 3 !== 0; i++) {
@@ -70,16 +68,15 @@ describe('PartyPolitics', () => {
     }
 
     if (targetCard.cost % 3 === 0) {
-      // Put this card on top so it gets revealed for T-8 (draw() uses pop(), so push = top)
+      // The top of the project deck is the end of the draw pile, which T-8 reveals.
       game.projectDeck.drawPile.push(targetCard);
       const reserveBefore = turmoil.delegateReserve.get(marsBotPlayer);
       const card = createBonusCard(BonusCardId.B21_PARTY_POLITICS);
       marsBot.actionDeck.playBonusCard(card);
       const reserveAfter = turmoil.delegateReserve.get(marsBotPlayer);
-      // Should have placed 2 delegates
       expect(reserveBefore - reserveAfter).to.be.at.least(2);
     }
-    // If no divisible-by-3 card found, test is inconclusive (skip)
+    // Without a card whose cost is divisible by 3, nothing is checked.
   });
 
   it('stays out of the bonus deck after it resolves', () => {

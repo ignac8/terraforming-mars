@@ -98,10 +98,8 @@ describe('InvasiveSpecies', () => {
     expect(birds.resourceCount).eq(1);
   });
 
-  // Edge cases (rulebook page 6)
   it('MarsBot gains 5 MC even when human has no animals/microbes', () => {
     const {marsBot} = createAutomaGame();
-    // Human has no cards with resources
 
     const cards = createBaseBonusCards();
     const b02 = cards.find((c) => c.id === BonusCardId.B02_INVASIVE_SPECIES)!;
@@ -202,6 +200,7 @@ describe('InvasiveSpecies', () => {
     marsBot.actionDeck.playBonusCard(invasiveSpecies());
 
     expect(marsBot.megacredits).to.eq(2);
-    expect(marsBot.shippingBoard.storage.get(ColonyName.TITAN) ?? 0).to.eq(0);
+    const titanStorage = marsBot.shippingBoard.storage.get(ColonyName.TITAN) ?? 0;
+    expect(titanStorage).to.eq(0);
   });
 });

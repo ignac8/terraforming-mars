@@ -33,9 +33,7 @@ describe('Diversification', () => {
   it('advances least-advanced track', () => {
     const {marsBot} = createAutomaGame();
     const card = createBonusCard(BonusCardId.B28_DIVERSIFICATION);
-    // Advance track 1 to create a non-uniform state
     marsBot.marsBotBoard.tracks[0].position = 5;
-    // Least advanced should be one of the others (all at 0)
     const leastIdx = marsBot.marsBotBoard.getLeastAdvancedTrackIndex();
     const trackBefore = marsBot.marsBotBoard.tracks[leastIdx].position;
     marsBot.actionDeck.playBonusCard(card);

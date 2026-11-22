@@ -61,9 +61,11 @@ describe('LocalNeuralInstance', () => {
     const destroyed = marsBot.actionDeck.playBonusCard(neuralInstance());
 
     expect(marsBot.neuralInstanceSpace?.tile?.tileType).to.eq(TileType.NEURAL_INSTANCE);
-    expect(marsBot.megacredits).to.eq(new MarsBotTilePlacer(marsBot).getTotalPlacementMC(marsBot.neuralInstanceSpace!));
+    const placementMc = new MarsBotTilePlacer(marsBot).getTotalPlacementMC(marsBot.neuralInstanceSpace!);
+    expect(marsBot.megacredits).to.eq(placementMc);
     expect(destroyed).to.be.true;
-    expect(marsBot.bonusDeck.discardPile.map((c) => c.id)).does.not.include(BonusCardId.B07_LOCAL_NEURAL_INSTANCE);
+    const discardedIds = marsBot.bonusDeck.discardPile.map((c) => c.id);
+    expect(discardedIds).does.not.include(BonusCardId.B07_LOCAL_NEURAL_INSTANCE);
   });
 
   it('goes to the bonus discard pile when its tile cannot be placed', () => {
@@ -76,7 +78,8 @@ describe('LocalNeuralInstance', () => {
     expect(marsBot.neuralInstanceSpace).to.be.undefined;
     expect(marsBot.playedProjectCards).has.length(played + 1); // The project card it resolved instead
     expect(destroyed).to.be.false;
-    expect(marsBot.bonusDeck.discardPile.map((c) => c.id)).to.include(BonusCardId.B07_LOCAL_NEURAL_INSTANCE);
+    const discardedIds = marsBot.bonusDeck.discardPile.map((c) => c.id);
+    expect(discardedIds).to.include(BonusCardId.B07_LOCAL_NEURAL_INSTANCE);
   });
 
   it('records the project card in its fallback', () => {

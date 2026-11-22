@@ -74,7 +74,8 @@ describe('Lobbyists', () => {
 
       const destroyed = new Lobbyists().resolve(marsBot);
 
-      expect(game.board.getOceanSpaces().map((space) => space.id).sort()).deep.eq(run.expected.after);
+      const oceanIds = game.board.getOceanSpaces().map((space) => space.id).sort();
+      expect(oceanIds).deep.eq(run.expected.after);
       expect(calls).deep.eq(run.expected.calls);
       expect(destroyed).eq(run.expected.destroyed);
     });
@@ -93,14 +94,13 @@ describe('Lobbyists', () => {
   // Detailed options (rulebook pages 6-7)
   it('option (a): temp 1-2 from completion → raise 2 + destroy', () => {
     const {game, marsBot} = createAutomaGame();
-    // Temperature at +4 (2 steps from max +8)
     setTemperature(game, 4);
 
     const cards = createBaseBonusCards();
     const b06 = cards.find((c) => c.id === BonusCardId.B06_LOBBYISTS)!;
 
     const destroyed = marsBot.actionDeck.playBonusCard(b06);
-    expect(game.getTemperature()).to.eq(8); // Raised 2 steps (4°C)
+    expect(game.getTemperature()).to.eq(8);
     expect(destroyed).to.be.true;
   });
 
@@ -113,9 +113,8 @@ describe('Lobbyists', () => {
 
     const tempBefore = game.getTemperature();
     const destroyed = marsBot.actionDeck.playBonusCard(b06);
-    // None of a/b/c apply, so option d fires
     expect(game.getTemperature()).to.eq(tempBefore + 2);
-    expect(destroyed).to.be.false; // Option d does NOT destroy
+    expect(destroyed).to.be.false;
   });
 
   // Ocean placement tiebreakers (rulebook page 7)

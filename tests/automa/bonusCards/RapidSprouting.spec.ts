@@ -22,7 +22,8 @@ describe('RapidSprouting', () => {
 
       new RapidSprouting().resolve(marsBot);
 
-      expect({plants: corpState.get('plantResources'), calls}).deep.eq(run.expected);
+      expect(corpState.get('plantResources')).eq(run.expected.plants);
+      expect(calls).deep.eq(run.expected.calls);
     });
   }
 

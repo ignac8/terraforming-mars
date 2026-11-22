@@ -270,7 +270,8 @@ describe('CorporateCompetition', () => {
       const helped = new CorporateCompetition().tryHelperAction(bot.marsBot, run.award);
 
       const expected = board.getAvailableSpacesForGreenery(bot.botPlayer).filter(where[run.award]);
-      expect(bot.greenerySpaces.map((space) => space.id)).deep.eq(expected.map((space) => space.id));
+      const placedIds = bot.greenerySpaces.map((space) => space.id);
+      expect(placedIds).deep.eq(expected.map((space) => space.id));
       expect(helped).eq(run.expected);
     });
   }
@@ -348,19 +349,16 @@ describe('CorporateCompetition', () => {
     const cards = createBaseBonusCards();
     const b08 = cards.find((c) => c.id === BonusCardId.B08_CORPORATE_COMPETITION)!;
 
-    // With <5 MC, should draw another bonus card instead
+    // With less than 5 M€ it draws another bonus card. The test only checks that this does not throw.
     marsBot.actionDeck.playBonusCard(b08);
-    // MC should still be 3 (no deduction since it couldn't afford)
-    // It might have gained MC from the fallback bonus card resolution
   });
 
   it('deducts 5 MC on successful helper action', () => {
     const {game, human, marsBot} = createAutomaGame();
     marsBot.megacredits = 10;
 
-    // Fund an award so B08 has something to help with
     game.fundAward(human, game.awards.find((a) => a.name === 'Scientist')!);
-    // Advance track 4 so MarsBot has a score on Scientist
+    // The science track gives MarsBot a Scientist score.
     for (let i = 0; i < 5; i++) {
       marsBot.marsBotBoard.tracks[3].advance();
     }
@@ -370,10 +368,9 @@ describe('CorporateCompetition', () => {
 
     const mcBefore = marsBot.megacredits;
     marsBot.actionDeck.playBonusCard(b08);
-    // Helper for Scientist = advance track 4. Costs 5 MC.
-    // Track advance may trigger actions that grant additional MC, so just verify 5 was deducted
-    expect(marsBot.megacredits).to.be.lte(mcBefore - 5 + 10); // At most 10 MC gained from track actions
-    expect(marsBot.megacredits).to.be.lt(mcBefore); // Overall MC decreased
+    // The track advance can grant M€ of its own, up to 10.
+    expect(marsBot.megacredits).to.be.lte(mcBefore - 5 + 10);
+    expect(marsBot.megacredits).to.be.lt(mcBefore);
   });
 
   it('takes no more than MarsBot has when the helper itself cost M€ (colony cube, C-X3)', () => {
@@ -613,7 +610,8 @@ describe('CorporateCompetition', () => {
     game.simpleAddTile(marsBot.player, game.board.getSpaceOrThrow('40' as SpaceId), {tileType: TileType.CITY});
     game.simpleAddTile(human, game.board.getSpaceOrThrow('32' as SpaceId), {tileType: TileType.OCEAN});
     const space = placedGreenery(game, marsBot, 'Estate Dealer');
-    expect(game.board.getAdjacentSpaces(space!).some(Board.isOceanSpace)).is.true;
+    const nextToOcean = game.board.getAdjacentSpaces(space!).some(Board.isOceanSpace);
+    expect(nextToOcean).is.true;
   });
 
   it('Suburbian helper places its greenery on the edge of the map', () => {
@@ -629,11 +627,12 @@ describe('CorporateCompetition', () => {
     game.simpleAddTile(human, game.board.getSpaceOrThrow('06' as SpaceId), {tileType: TileType.OCEAN});
     const space = placedGreenery(game, marsBot, 'Highlander');
     expect(space).is.not.undefined;
-    expect(game.board.getAdjacentSpaces(space!).some(Board.isOceanSpace)).is.false;
+    const nextToOcean = game.board.getAdjacentSpaces(space!).some(Board.isOceanSpace);
+    expect(nextToOcean).is.false;
   });
 
   it('Highlander helper on Vastitas Borealis also keeps away from spaces reserved for an ocean', () => {
-    /** Fills every land space except those next to an ocean-reserved space, which the modular Highlander may still use. */
+    /** Fills every land space except those next to an ocean-reserved space, which the modular Highlander may use. */
     const fillAwayFromReservedOceans = (game: IGame, human: TestPlayer) => {
       const board = game.board;
       for (const space of board.getSpaces(SpaceType.LAND).filter((sp) => sp.tile === undefined)) {
@@ -666,14 +665,10 @@ describe('CorporateCompetition', () => {
   });
 
   it('draws another bonus card when it cannot resolve', () => {
-    // This tests that the chain works: B08 can't help → draws B03 (R&D) → resolves project card
-    // We verify the chain doesn't crash
+    // With no funded awards B08 draws another bonus card. The test only checks that this does not throw.
     const {marsBot} = createAutomaGame();
-    // B08 needs funded awards and 5+ MC to try helping
-    // With no funded awards, it should draw another bonus card
     const b08 = marsBot.bonusDeck.drawPile.find((c) => c.id === 'B08');
     if (b08) {
-      // Calling resolve should not crash even with no funded awards
       marsBot.actionDeck.playBonusCard(b08);
     }
   });
