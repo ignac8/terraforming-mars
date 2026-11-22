@@ -1,6 +1,5 @@
 import {expect} from 'chai';
-import {BonusCardId} from '@/common/automa/AutomaTypes';
-import {CardName} from '@/common/cards/CardName';
+import {BonusCardName} from '@/common/automa/BonusCardName';
 import {GlobalParameter} from '@/common/GlobalParameter';
 import {TileType} from '@/common/TileType';
 import {SpaceId} from '@/common/Types';
@@ -16,7 +15,7 @@ describe('LobbyistsVenus', () => {
     {temperature: -26, venus: 6, expected: {temperature: -22, venus: 6, destroyed: true, calls: []}},
     {temperature: -30, venus: 6, expected: {temperature: -30, venus: 10, destroyed: false, calls: []}},
     {temperature: -30, venus: 12, expected: {temperature: -30, venus: 16, destroyed: false, calls: []}},
-    {temperature: -30, venus: 2, expected: {temperature: -30, venus: 2, destroyed: false, calls: [`advanceFurthestParameter(${CardName.AUTOMA_LOBBYISTS_VENUS})`]}},
+    {temperature: -30, venus: 2, expected: {temperature: -30, venus: 2, destroyed: false, calls: [`advanceFurthestParameter(${BonusCardName.LOBBYISTS_VENUS})`]}},
   ] as const) {
     it('raises Venus 2 steps and is kept when 1 or 2 steps from a bonus, after the temperature branch: ' + JSON.stringify(run), () => {
       const [game, human, botPlayer] = testGame(2, {venusNextExtension: true});
@@ -64,7 +63,7 @@ describe('LobbyistsVenus', () => {
     setVenusScaleLevel(game, 12);
     setTemperature(game, 8); // maxed
     setOxygenLevel(game, 14); // maxed
-    const card = createBonusCard(BonusCardId.B15_LOBBYISTS_VENUS);
+    const card = createBonusCard(BonusCardName.LOBBYISTS_VENUS);
     marsBot.actionDeck.playBonusCard(card);
     expect(game.getVenusScaleLevel()).to.eq(16);
   });
@@ -74,7 +73,7 @@ describe('LobbyistsVenus', () => {
     setVenusScaleLevel(game, 26); // 2 steps from 30% max
     setTemperature(game, 8);
     setOxygenLevel(game, 14);
-    const card = createBonusCard(BonusCardId.B15_LOBBYISTS_VENUS);
+    const card = createBonusCard(BonusCardName.LOBBYISTS_VENUS);
     const destroyed = marsBot.actionDeck.playBonusCard(card);
     expect(game.getVenusScaleLevel()).to.eq(30);
     expect(destroyed).to.be.false;
@@ -84,7 +83,7 @@ describe('LobbyistsVenus', () => {
     const {game, marsBot} = createAutomaGame({venusNextExtension: true});
     // Temperature at -26 is 1 step from the heat bonus at -24.
     setTemperature(game, -26);
-    const card = createBonusCard(BonusCardId.B15_LOBBYISTS_VENUS);
+    const card = createBonusCard(BonusCardName.LOBBYISTS_VENUS);
     const destroyed = marsBot.actionDeck.playBonusCard(card);
     expect(game.getTemperature()).to.eq(-22);
     expect(destroyed).to.be.true;

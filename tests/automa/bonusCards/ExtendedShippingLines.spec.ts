@@ -1,11 +1,10 @@
 import {expect} from 'chai';
-import {CardName} from '@/common/cards/CardName';
 import {ExtendedShippingLines} from '@/server/automa/bonusCards/ExtendedShippingLines';
 import {recordingMarsBot} from '../corps/RecordingMarsBot';
-import {BonusCardId} from '@/common/automa/AutomaTypes';
+import {BonusCardName} from '@/common/automa/BonusCardName';
 import {BoardName} from '@/common/boards/BoardName';
 import {ColonyName} from '@/common/colonies/ColonyName';
-import {MarsBotBonusCard} from '@/server/automa/MarsBotBonusCard';
+import {MarsBotBonusCard} from '@/server/automa/bonusCards/MarsBotBonusCard';
 import {createBonusCard} from '@/server/automa/bonusCards/MarsBotBonusCards';
 import {Luna} from '@/server/colonies/Luna';
 import {testGame} from '../../TestGame';
@@ -13,16 +12,16 @@ import {getMarsBot} from '../corps/CorpGame';
 
 
 function b20Card(): MarsBotBonusCard {
-  return createBonusCard(BonusCardId.B20_EXTENDED_SHIPPING_LINES);
+  return createBonusCard(BonusCardName.EXTENDED_SHIPPING_LINES);
 }
 
 describe('ExtendedShippingLines', () => {
   it('trades with a colony', () => {
-    const traded: Array<CardName> = [];
-    const {marsBot} = recordingMarsBot({maybeTrade: (cardName) => traded.push(cardName)});
+    const traded: Array<BonusCardName> = [];
+    const {marsBot} = recordingMarsBot({maybeTrade: (bonusCardName) => traded.push(bonusCardName)});
 
     expect(new ExtendedShippingLines().resolve(marsBot)).is.false;
-    expect(traded).deep.eq([CardName.AUTOMA_EXTENDED_SHIPPING_LINES]);
+    expect(traded).deep.eq([BonusCardName.EXTENDED_SHIPPING_LINES]);
   });
 
   it('same trade logic as B19', () => {

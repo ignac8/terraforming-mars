@@ -1,10 +1,9 @@
 import {expect} from 'chai';
 import {TileType} from '@/common/TileType';
 import {SpaceId} from '@/common/Types';
-import {CardName} from '@/common/cards/CardName';
-import {BonusCardId} from '@/common/automa/AutomaTypes';
+import {BonusCardName} from '@/common/automa/BonusCardName';
 import {GlobalParameter} from '@/common/GlobalParameter';
-import {createBaseBonusCards} from '@/server/automa/bonusCards/MarsBotBonusCards';
+import {createBonusCard} from '@/server/automa/bonusCards/MarsBotBonusCards';
 import {Lobbyists} from '@/server/automa/bonusCards/Lobbyists';
 import {setOxygenLevel, setTemperature} from '../../TestingUtils';
 import {testGame} from '../../TestGame';
@@ -63,7 +62,7 @@ describe('Lobbyists', () => {
     // Spaces 07 (no bonus) and 43 (one plant) each touch two of these, and 43 covers more icons.
     // 43 pays 1 M€ for the plant icon and 2 M€ for each adjacent ocean.
     {oceans: ['06', '13', '34', '44'], expected: {after: ['06', '13', '34', '43', '44'], calls: ['gainMc(5)'], destroyed: true}},
-    {oceans: ['34'], expected: {after: ['34'], calls: [`advanceFurthestParameter(${CardName.AUTOMA_LOBBYISTS})`], destroyed: false}},
+    {oceans: ['34'], expected: {after: ['34'], calls: [`advanceFurthestParameter(${BonusCardName.LOBBYISTS})`], destroyed: false}},
   ] as const) {
     it('places an ocean only next to 2 oceans, and is then destroyed: ' + JSON.stringify(run), () => {
       const [game, human, botPlayer] = testGame(2);
@@ -87,7 +86,7 @@ describe('Lobbyists', () => {
 
     const destroyed = new Lobbyists().resolve(marsBot);
 
-    expect(calls).deep.eq([`advanceFurthestParameter(${CardName.AUTOMA_LOBBYISTS})`]);
+    expect(calls).deep.eq([`advanceFurthestParameter(${BonusCardName.LOBBYISTS})`]);
     expect(destroyed).is.false;
   });
 
@@ -96,8 +95,7 @@ describe('Lobbyists', () => {
     const {game, marsBot} = createAutomaGame();
     setTemperature(game, 4);
 
-    const cards = createBaseBonusCards();
-    const b06 = cards.find((c) => c.id === BonusCardId.B06_LOBBYISTS)!;
+    const b06 = createBonusCard(BonusCardName.LOBBYISTS);
 
     const destroyed = marsBot.actionDeck.playBonusCard(b06);
     expect(game.getTemperature()).to.eq(8);
@@ -108,8 +106,7 @@ describe('Lobbyists', () => {
     const {game, marsBot} = createAutomaGame();
     // From the start temperature has 19 steps left, oxygen 14 and oceans 9
 
-    const cards = createBaseBonusCards();
-    const b06 = cards.find((c) => c.id === BonusCardId.B06_LOBBYISTS)!;
+    const b06 = createBonusCard(BonusCardName.LOBBYISTS);
 
     const tempBefore = game.getTemperature();
     const destroyed = marsBot.actionDeck.playBonusCard(b06);
@@ -125,7 +122,7 @@ describe('Lobbyists', () => {
     for (const id of ['13', '06', '34', '44']) {
       game.simpleAddTile(human, game.board.getSpaceOrThrow(id as SpaceId), {tileType: TileType.OCEAN});
     }
-    const b06 = createBaseBonusCards().find((c) => c.id === BonusCardId.B06_LOBBYISTS)!;
+    const b06 = createBonusCard(BonusCardName.LOBBYISTS);
 
     marsBot.actionDeck.playBonusCard(b06);
 

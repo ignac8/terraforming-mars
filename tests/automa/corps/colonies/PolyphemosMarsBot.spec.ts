@@ -1,5 +1,5 @@
 import {expect} from 'chai';
-import {BonusCardId} from '@/common/automa/AutomaTypes';
+import {BonusCardName} from '@/common/automa/BonusCardName';
 import {CardName} from '@/common/cards/CardName';
 import {Tag} from '@/common/cards/Tag';
 import {createBonusCard} from '@/server/automa/bonusCards/MarsBotBonusCards';
@@ -40,7 +40,7 @@ describe('PolyphemosMarsBot', () => {
     const {game, marsBot} = createAutomaGame();
     const corp = getMarsBotCorp(CardName.POLYPHEMOS)!;
     const iceCapMelting = new IceCapMelting(); // Its Event tag only
-    const bonus = createBonusCard(BonusCardId.B03_RESEARCH_AND_DEVELOPMENT);
+    const bonus = createBonusCard(BonusCardName.RESEARCH_AND_DEVELOPMENT);
     marsBot.actionDeck.cards = [bonus, new Research(), iceCapMelting];
 
     corp.beforeActionPhase!(marsBot);
@@ -53,7 +53,7 @@ describe('PolyphemosMarsBot', () => {
   it('discards nothing when the action deck holds no project card', () => {
     const {marsBot} = createAutomaGame();
     const corp = getMarsBotCorp(CardName.POLYPHEMOS)!;
-    marsBot.actionDeck.cards = [createBonusCard(BonusCardId.B03_RESEARCH_AND_DEVELOPMENT)];
+    marsBot.actionDeck.cards = [createBonusCard(BonusCardName.RESEARCH_AND_DEVELOPMENT)];
 
     corp.beforeActionPhase!(marsBot);
 

@@ -1,8 +1,8 @@
 import {SerializedAutomaState} from '../SerializedGame';
 import {Random} from '../../common/utils/Random';
 import {inplaceShuffle} from '../utils/shuffle';
-import {BonusCardId} from '../../common/automa/AutomaTypes';
-import {CardName} from '../../common/cards/CardName';
+import {BonusCardName} from '../../common/automa/BonusCardName';
+import {bonusCardNameFromSave} from './legacyBonusCards';
 
 /**
  * Reorders the piles of MarsBot's that no player has seen: its action deck and its bonus deck's draw pile.
@@ -12,9 +12,9 @@ import {CardName} from '../../common/cards/CardName';
  */
 export function shuffleMarsBotHiddenPiles(state: SerializedAutomaState, random: Random): void {
   inplaceShuffle(state.actionDeckCardNames, random);
-  // Older saves hold the draw pile under its own key, bonus cards by id
+  // Older saves hold the draw pile under its own key, and bonus cards in older forms
   const pile: Array<string> = state.bonusDeck?.drawPile ?? state.bonusDeckDrawPile ?? [];
-  if (pile[0] === CardName.AUTOMA_INTERFACE_HYPERLINK || pile[0] === BonusCardId.B30_INTERFACE_HYPERLINK) {
+  if (pile.length > 0 && bonusCardNameFromSave(pile[0]) === BonusCardName.INTERFACE_HYPERLINK) {
     const rest = pile.slice(1);
     inplaceShuffle(rest, random);
     pile.splice(1, rest.length, ...rest);

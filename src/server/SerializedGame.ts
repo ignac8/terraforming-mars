@@ -5,6 +5,8 @@ import {SerializedFundedAward} from './awards/FundedAward';
 import {DeferredAction} from './deferredActions/DeferredAction';
 import {SerializedColony} from './SerializedColony';
 import {CubeType} from '../common/automa/AutomaTypes';
+import {BonusCardName} from '../common/automa/BonusCardName';
+import {CardName} from '../common/cards/CardName';
 import {SerializedPlayer} from './SerializedPlayer';
 import {SerializedTurmoil} from './turmoil/SerializedTurmoil';
 import {PlayerId, GameId, SpectatorId, SpaceId} from '../common/Types';
@@ -101,8 +103,10 @@ export type SerializedAutomaState = {
     megacredits: number;
     goesFirst: boolean;
     difficulty: 'easy' | 'normal' | 'hard' | 'brutal';
+    /** Saves made before BonusCardName hold bonus cards here by legacy id. */
     actionDeckCardNames: Array<string>;
-    bonusDeck: SerializedDeck;
+    /** Saves made before BonusCardName hold bonus cards here by name with an ':automa' suffix. */
+    bonusDeck: SerializedDeck<BonusCardName | CardName>;
     neuralInstanceSpaceId: string | undefined;
     playedProjectCardNames: Array<string>;
     /** The last generation whose Hard mode first-turn milestone check has run; older saves lack it. */

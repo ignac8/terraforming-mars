@@ -1,8 +1,7 @@
 import {expect} from 'chai';
-import {BonusCardId} from '@/common/automa/AutomaTypes';
+import {BonusCardName} from '@/common/automa/BonusCardName';
 import {BoardName} from '@/common/boards/BoardName';
 import {GlobalParameter} from '@/common/GlobalParameter';
-import {CardName} from '@/common/cards/CardName';
 import {Tag} from '@/common/cards/Tag';
 import {createBonusCard} from '@/server/automa/bonusCards/MarsBotBonusCards';
 import {MarsBotBoard} from '@/server/automa/MarsBotBoard';
@@ -34,7 +33,7 @@ describe('VenusianLobby', () => {
       expect(game.getVenusScaleLevel()).eq(run.expected);
       expect(calls).deep.eq([
         `maybeAdvanceTrack(${marsBotBoard.tagToTrack[Tag.VENUS]})`,
-        `advanceFurthestParameter(${CardName.AUTOMA_VENUSIAN_LOBBY})`,
+        `advanceFurthestParameter(${BonusCardName.VENUSIAN_LOBBY})`,
       ]);
     });
   }
@@ -55,7 +54,7 @@ describe('VenusianLobby', () => {
   it('raises Venus, advances the Venus track and raises the furthest parameter', () => {
     const [game] = testGame(1, {automa: true, venusNextExtension: true, boardName: BoardName.THARSIS});
     const marsBot = game.automaHooks!.marsBot;
-    marsBot.actionDeck.playBonusCard(createBonusCard(BonusCardId.B26_VENUSIAN_LOBBY));
+    marsBot.actionDeck.playBonusCard(createBonusCard(BonusCardName.VENUSIAN_LOBBY));
     expect(game.getVenusScaleLevel()).to.eq(2);
     expect(marsBot.marsBotBoard.tracks[7].position).to.eq(1);
     // Everything is at its start, and temperature has the most steps left (19, against 14 and 9)
@@ -69,7 +68,7 @@ describe('VenusianLobby', () => {
     const [game] = testGame(1, {automa: true, venusNextExtension: true, boardName: BoardName.THARSIS});
     const marsBot = game.automaHooks!.marsBot;
     maxTracks(marsBot);
-    marsBot.actionDeck.playBonusCard(createBonusCard(BonusCardId.B26_VENUSIAN_LOBBY));
+    marsBot.actionDeck.playBonusCard(createBonusCard(BonusCardName.VENUSIAN_LOBBY));
     expect(game.getVenusScaleLevel()).to.eq(2);
     expect(marsBot.megacredits).to.eq(0);
   });

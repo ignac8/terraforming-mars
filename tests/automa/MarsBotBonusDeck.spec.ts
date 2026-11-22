@@ -1,15 +1,14 @@
 import {expect} from 'chai';
-import {MarsBotBonusDeck} from '../../src/server/automa/MarsBotBonusDeck';
+import {BASE_BONUS_CARDS, MarsBotBonusDeck} from '../../src/server/automa/MarsBotBonusDeck';
 import {SeededRandom} from '../../src/common/utils/Random';
-import {createBaseBonusCards, createBonusCard} from '../../src/server/automa/bonusCards/MarsBotBonusCards';
-import {BonusCardId} from '../../src/common/automa/AutomaTypes';
-import {MarsBotBonusCard} from '../../src/server/automa/MarsBotBonusCard';
+import {createBonusCard} from '../../src/server/automa/bonusCards/MarsBotBonusCards';
+import {BonusCardName} from '../../src/common/automa/BonusCardName';
+import {MarsBotBonusCard} from '../../src/server/automa/bonusCards/MarsBotBonusCard';
 import {MeteorShower} from '../../src/server/automa/bonusCards/MeteorShower';
 import {testGame} from '../TestGame';
 import {recordingMarsBot} from './corps/RecordingMarsBot';
 import {Asteroid} from '../../src/server/cards/base/Asteroid';
 import {Tardigrades} from '../../src/server/cards/base/Tardigrades';
-import {CardName} from '../../src/common/cards/CardName';
 
 describe('MarsBotBonusDeck', () => {
   const logger = {log: () => {}};
@@ -30,8 +29,8 @@ describe('MarsBotBonusDeck', () => {
       venus: true,
       colonies: false,
       expected: {
-        removed: [BonusCardId.B06_LOBBYISTS],
-        added: [BonusCardId.B15_LOBBYISTS_VENUS],
+        removed: [BonusCardName.LOBBYISTS],
+        added: [BonusCardName.LOBBYISTS_VENUS],
       },
     },
     {
@@ -39,8 +38,8 @@ describe('MarsBotBonusDeck', () => {
       venus: false,
       colonies: true,
       expected: {
-        removed: [BonusCardId.B05_EXPEDITED_CONSTRUCTION],
-        added: [BonusCardId.B17_EXPEDITED_CONSTRUCTION_COLONIES, BonusCardId.B18_OUTER_SYSTEM_FOOTHOLD],
+        removed: [BonusCardName.EXPEDITED_CONSTRUCTION],
+        added: [BonusCardName.EXPEDITED_CONSTRUCTION_COLONIES, BonusCardName.OUTER_SYSTEM_FOOTHOLD],
       },
     },
     {
@@ -48,25 +47,23 @@ describe('MarsBotBonusDeck', () => {
       venus: true,
       colonies: true,
       expected: {
-        removed: [BonusCardId.B05_EXPEDITED_CONSTRUCTION, BonusCardId.B06_LOBBYISTS],
+        removed: [BonusCardName.EXPEDITED_CONSTRUCTION, BonusCardName.LOBBYISTS],
         added: [
-          BonusCardId.B15_LOBBYISTS_VENUS,
-          BonusCardId.B17_EXPEDITED_CONSTRUCTION_COLONIES,
-          BonusCardId.B18_OUTER_SYSTEM_FOOTHOLD,
+          BonusCardName.LOBBYISTS_VENUS,
+          BonusCardName.EXPEDITED_CONSTRUCTION_COLONIES,
+          BonusCardName.OUTER_SYSTEM_FOOTHOLD,
         ],
       },
     },
   ]) {
     it('swaps cards in the ' + run.expansions + ' deck', () => {
-      const expected = createBaseBonusCards()
-        .map((card) => card.id)
-        .filter((id) => !run.expected.removed.includes(id))
+      const expected = BASE_BONUS_CARDS
+        .filter((name) => !run.expected.removed.some((removed) => removed === name))
         .concat(run.expected.added);
 
       const expansionDeck = MarsBotBonusDeck.create(new SeededRandom(42), {venus: run.venus, colonies: run.colonies});
 
-      const drawnIds = expansionDeck.drawPile.map((card) => card.id);
-      expect(drawnIds).to.have.members(expected);
+      expect(expansionDeck.drawPile.map((card) => card.name)).to.have.members(expected);
       expect(expansionDeck.discardPile).to.be.empty;
     });
   }
@@ -76,7 +73,7 @@ describe('MarsBotBonusDeck', () => {
     const {marsBot} = recordingMarsBot({game, player: botPlayer, humanPlayer: human});
     human.plants = 4;
     const drawPile = MarsBotBonusDeck.create(new SeededRandom(42)).drawPile;
-    const meteorShower = drawPile.find((card): card is MarsBotBonusCard => card.id === BonusCardId.B01_METEOR_SHOWER);
+    const meteorShower = drawPile.find((card): card is MarsBotBonusCard => card.name === BonusCardName.METEOR_SHOWER);
 
     const destroyed = meteorShower?.resolve(marsBot);
 
@@ -97,21 +94,39 @@ describe('MarsBotBonusDeck', () => {
   });
 
   it('serialization round trip with expansion and corporation bonus cards', () => {
-    const ids = Object.values(BonusCardId).filter((id) => id >= BonusCardId.B15_LOBBYISTS_VENUS);
-    const expansionDeck = new MarsBotBonusDeck(ids.map((id) => createBonusCard(id)), [], new SeededRandom(42));
+    const names = [
+      BonusCardName.LOBBYISTS_VENUS,
+      BonusCardName.GOVERNMENT_INTERVENTION,
+      BonusCardName.EXPEDITED_CONSTRUCTION_COLONIES,
+      BonusCardName.OUTER_SYSTEM_FOOTHOLD,
+      BonusCardName.SHIPPING_LINES,
+      BonusCardName.EXTENDED_SHIPPING_LINES,
+      BonusCardName.PARTY_POLITICS,
+      BonusCardName.SETTLERS,
+      BonusCardName.RAPID_SPROUTING,
+      BonusCardName.SUPPLY_AND_DEMAND,
+      BonusCardName.DO_IT_RIGHT,
+      BonusCardName.VENUSIAN_LOBBY,
+      BonusCardName.BUILD_BUILD_BUILD,
+      BonusCardName.DIVERSIFICATION,
+      BonusCardName.GRAY_EMINENCE,
+      BonusCardName.INTERFACE_HYPERLINK,
+      BonusCardName.GOVERNMENT_SUBSIDY,
+      BonusCardName.INVESTORS,
+    ];
+    const expansionDeck = new MarsBotBonusDeck(names.map(createBonusCard), [], new SeededRandom(42));
     expansionDeck.discard(expansionDeck.draw(logger)!, expansionDeck.draw(logger)!);
 
     const restored = MarsBotBonusDeck.deserialize(expansionDeck.serialize(), new SeededRandom(42));
 
     expect(restored.drawPile).to.deep.eq(expansionDeck.drawPile);
     expect(restored.discardPile).to.deep.eq(expansionDeck.discardPile);
-    const restoredIds = [...restored.drawPile, ...restored.discardPile].map((card) => card.id);
-    expect(restoredIds).to.have.members(ids);
+    expect([...restored.drawPile, ...restored.discardPile].map((card) => card.name)).to.have.members(names);
   });
 
   it('serialization round trip with project cards', () => {
     const expansionDeck = MarsBotBonusDeck.create(new SeededRandom(42), {venus: true, colonies: true});
-    expansionDeck.drawPile.unshift(createBonusCard(BonusCardId.B30_INTERFACE_HYPERLINK));
+    expansionDeck.drawPile.unshift(createBonusCard(BonusCardName.INTERFACE_HYPERLINK));
     expansionDeck.drawPile.push(new Asteroid());
     expansionDeck.discard(expansionDeck.draw(logger)!, expansionDeck.draw(logger)!, new Tardigrades());
 
@@ -121,10 +136,10 @@ describe('MarsBotBonusDeck', () => {
     expect(restored.discardPile).to.deep.eq(expansionDeck.discardPile);
   });
 
-  it('createBonusCard creates a card with correct ID and name', () => {
-    const card = createBonusCard(BonusCardId.B23_RAPID_SPROUTING);
-    expect(card.id).to.eq(BonusCardId.B23_RAPID_SPROUTING);
-    expect(card.name).to.eq(CardName.AUTOMA_RAPID_SPROUTING);
+  it('createBonusCard creates the card of each name', () => {
+    for (const name of Object.values(BonusCardName)) {
+      expect(createBonusCard(name).name).to.eq(name);
+    }
   });
 
   it('draws a card', () => {

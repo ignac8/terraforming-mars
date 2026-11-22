@@ -3,6 +3,9 @@ import {testGame} from '../TestingUtils';
 import {sameState, stateHash} from '../../src/server/rewind/stateHash';
 import {SerializedAutomaState} from '../../src/server/SerializedGame';
 import {Asteroid} from '../../src/server/cards/base/Asteroid';
+import {MarsBotBonusCard} from '../../src/server/automa/bonusCards/MarsBotBonusCard';
+import {MarsBotBonusDeckCard} from '../../src/server/automa/MarsBotBonusDeck';
+import {LEGACY_BONUS_CARD_IDS} from '../../src/server/automa/legacyBonusCards';
 
 describe('stateHash', () => {
   it('ignores clocks, save ids and log timestamps', () => {
@@ -51,8 +54,9 @@ describe('stateHash', () => {
     const b = structuredClone(a);
     // Older saves hold the piles under their own keys, bonus cards by id
     delete (b.automaState as Partial<SerializedAutomaState>).bonusDeck;
-    b.automaState!.bonusDeckDrawPile = bonusDeck.drawPile.map((c) => c.id ?? c.name);
-    b.automaState!.bonusDeckDiscardPile = bonusDeck.discardPile.map((c) => c.id ?? c.name);
+    const legacyEntry = (c: MarsBotBonusDeckCard) => c instanceof MarsBotBonusCard ? LEGACY_BONUS_CARD_IDS[c.name] : c.name;
+    b.automaState!.bonusDeckDrawPile = bonusDeck.drawPile.map(legacyEntry);
+    b.automaState!.bonusDeckDiscardPile = bonusDeck.discardPile.map(legacyEntry);
     expect(stateHash(b)).eq(stateHash(a));
     expect(sameState(a, b)).is.true;
     a.automaState!.bonusDeck.drawPile.reverse();

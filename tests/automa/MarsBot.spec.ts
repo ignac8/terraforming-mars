@@ -1,4 +1,5 @@
 import {Resource} from '../../src/common/Resource';
+import {BonusCardName} from '../../src/common/automa/BonusCardName';
 import {expect} from 'chai';
 import {testGame} from '../TestGame';
 import {TestPlayer} from '../TestPlayer';
@@ -7,7 +8,6 @@ import {MarsBot} from '../../src/server/automa/MarsBot';
 import {BoardName} from '../../src/common/boards/BoardName';
 import {TileType} from '../../src/common/TileType';
 import {maxOutOceans, setOxygenLevel, setTemperature} from '../TestingUtils';
-import {CardName} from '../../src/common/cards/CardName';
 
 function createAutomaGame(difficulty: 'easy' | 'normal' | 'hard' | 'brutal' = 'normal'): {game: IGame, human: TestPlayer, marsBot: MarsBot} {
   const [game, human] = testGame(1, {
@@ -227,7 +227,7 @@ describe('MarsBot', () => {
         setOxygenLevel(game, run.oxygen);
         maxOutOceans(human, run.oceans);
 
-        marsBot.advanceFurthestParameter(CardName.AUTOMA_LOBBYISTS);
+        marsBot.advanceFurthestParameter(BonusCardName.LOBBYISTS);
 
         const parameters = {
           temperature: game.getTemperature(),
@@ -246,7 +246,7 @@ describe('MarsBot', () => {
         const {game, marsBot} = createAutomaGame();
         marsBot.interceptsParameterRaise = () => true;
 
-        marsBot.advanceFurthestParameter(CardName.AUTOMA_GOVERNMENT_INTERVENTION, run.allowCorpIntercept);
+        marsBot.advanceFurthestParameter(BonusCardName.GOVERNMENT_INTERVENTION, run.allowCorpIntercept);
 
         expect(game.getTemperature()).to.eq(run.expected);
       });

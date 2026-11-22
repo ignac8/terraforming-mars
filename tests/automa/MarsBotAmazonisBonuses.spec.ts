@@ -1,5 +1,5 @@
 import {expect} from 'chai';
-import {BonusCardId} from '@/common/automa/AutomaTypes';
+import {BonusCardName} from '@/common/automa/BonusCardName';
 import {BoardName} from '@/common/boards/BoardName';
 import {CardName} from '@/common/cards/CardName';
 import {Tag} from '@/common/cards/Tag';
@@ -52,7 +52,7 @@ describe('MarsBotAmazonisBonuses', () => {
       setTemperature(game, -14);
       const mc = marsBot.megacredits;
 
-      marsBot.resolveBonusCard(BonusCardId.B06_LOBBYISTS);
+      marsBot.resolveBonusCard(BonusCardName.LOBBYISTS);
 
       expect(game.getTemperature()).eq(-10);
       expect(marsBot.megacredits).eq(mc + 2);
@@ -69,7 +69,7 @@ describe('MarsBotAmazonisBonuses', () => {
       setVenusScaleLevel(game, 30);
       const mc = marsBot.megacredits;
 
-      marsBot.resolveBonusCard(BonusCardId.B16_GOVERNMENT_INTERVENTION);
+      marsBot.resolveBonusCard(BonusCardName.GOVERNMENT_INTERVENTION);
 
       expect(game.getTemperature()).eq(-12);
       expect(marsBot.megacredits).eq(mc);
@@ -94,7 +94,7 @@ describe('MarsBotAmazonisBonuses', () => {
       setOxygenLevel(game, 18);
       setVenusScaleLevel(game, 14);
 
-      marsBot.resolveBonusCard(BonusCardId.B15_LOBBYISTS_VENUS);
+      marsBot.resolveBonusCard(BonusCardName.LOBBYISTS_VENUS);
 
       expect(game.getVenusScaleLevel()).eq(18);
       expect(luna.colonies).deep.eq([marsBot.player.id]);
@@ -146,7 +146,7 @@ describe('MarsBotAmazonisBonuses', () => {
       const tr = marsBot.player.terraformRating;
       const mc = marsBot.megacredits;
 
-      marsBot.resolveBonusCard(BonusCardId.B16_GOVERNMENT_INTERVENTION);
+      marsBot.resolveBonusCard(BonusCardName.GOVERNMENT_INTERVENTION);
 
       const oceans = game.board.getOceanSpaces();
       expect(europa.colonies).deep.eq([marsBot.player.id]);
@@ -165,13 +165,13 @@ describe('MarsBotAmazonisBonuses', () => {
       setVenusScaleLevel(game, 14);
       const mc = marsBot.megacredits;
 
-      marsBot.resolveBonusCard(BonusCardId.B16_GOVERNMENT_INTERVENTION);
+      marsBot.resolveBonusCard(BonusCardName.GOVERNMENT_INTERVENTION);
 
       const logs = game.gameLog.map(formatMessage);
       expect(game.getVenusScaleLevel()).eq(16);
       expect(marsBot.megacredits).eq(mc);
       expect(logs).includes('MarsBot: no colony tile to build on, Failed Action');
-      const returnedLog = `MarsBot (Government Intervention:automa): returns ${marsBot.failedActionMc}:r:mc:`;
+      const returnedLog = `MarsBot (Government Intervention): returns ${marsBot.failedActionMc}:r:mc:`;
       expect(logs).includes(returnedLog);
     });
 

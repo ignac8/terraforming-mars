@@ -1,5 +1,5 @@
 import {expect} from 'chai';
-import {BonusCardId} from '@/common/automa/AutomaTypes';
+import {BonusCardName} from '@/common/automa/BonusCardName';
 import {BoardName} from '@/common/boards/BoardName';
 import {CardName} from '@/common/cards/CardName';
 import {getMarsBotCorp} from '@/server/automa/corps/MarsBotCorpRegistry';
@@ -114,7 +114,7 @@ describe('MarsBotAmazonisMaxima', () => {
       const {game, marsBot} = amazonisGame(true);
       setVenusScaleLevel(game, 30);
 
-      marsBot.resolveBonusCard(BonusCardId.B26_VENUSIAN_LOBBY);
+      marsBot.resolveBonusCard(BonusCardName.VENUSIAN_LOBBY);
 
       expect(game.getVenusScaleLevel()).eq(31);
     });
@@ -158,7 +158,7 @@ describe('MarsBotAmazonisMaxima', () => {
       setTemperature(game, 8);
       maxOutOceans(game.players[0], 9);
 
-      marsBot.advanceFurthestParameter(CardName.AUTOMA_LOBBYISTS);
+      marsBot.advanceFurthestParameter(BonusCardName.LOBBYISTS);
 
       expect(game.getOxygenLevel()).eq(15);
       expect(game.board.getOceanSpaces()).has.length(9);
@@ -170,7 +170,7 @@ describe('MarsBotAmazonisMaxima', () => {
       setTemperature(game, 8);
       maxOutOceans(game.players[0], 10);
 
-      marsBot.advanceFurthestParameter(CardName.AUTOMA_LOBBYISTS);
+      marsBot.advanceFurthestParameter(BonusCardName.LOBBYISTS);
 
       expect(game.getTemperature()).eq(10);
       expect(game.board.getOceanSpaces()).has.length(10);
@@ -182,7 +182,7 @@ describe('MarsBotAmazonisMaxima', () => {
       setTemperature(game, 14);
       maxOutOceans(game.players[0], 11);
 
-      expect(marsBot.advanceFurthestParameter(CardName.AUTOMA_LOBBYISTS)).is.false;
+      expect(marsBot.advanceFurthestParameter(BonusCardName.LOBBYISTS)).is.false;
     });
   });
 
@@ -192,7 +192,7 @@ describe('MarsBotAmazonisMaxima', () => {
       game.generation = 3;
       setVenusScaleLevel(game, 30);
 
-      marsBot.resolveBonusCard(BonusCardId.B16_GOVERNMENT_INTERVENTION);
+      marsBot.resolveBonusCard(BonusCardName.GOVERNMENT_INTERVENTION);
 
       expect(game.getVenusScaleLevel()).eq(31);
     });
@@ -205,7 +205,7 @@ describe('MarsBotAmazonisMaxima', () => {
       maxOutOceans(game.players[0], 11);
       setVenusScaleLevel(game, 30);
 
-      marsBot.resolveBonusCard(BonusCardId.B16_GOVERNMENT_INTERVENTION);
+      marsBot.resolveBonusCard(BonusCardName.GOVERNMENT_INTERVENTION);
 
       expect(game.getVenusScaleLevel()).eq(31);
     });
@@ -218,7 +218,7 @@ describe('MarsBotAmazonisMaxima', () => {
       maxOutOceans(game.players[0], 9);
       setVenusScaleLevel(game, 30);
 
-      marsBot.resolveBonusCard(BonusCardId.B16_GOVERNMENT_INTERVENTION);
+      marsBot.resolveBonusCard(BonusCardName.GOVERNMENT_INTERVENTION);
 
       expect(game.getOxygenLevel()).eq(15);
       expect(game.getVenusScaleLevel()).eq(30);
@@ -230,7 +230,7 @@ describe('MarsBotAmazonisMaxima', () => {
       const {game, marsBot} = amazonisGame();
       setTemperature(game, 12);
 
-      marsBot.resolveBonusCard(BonusCardId.B06_LOBBYISTS);
+      marsBot.resolveBonusCard(BonusCardName.LOBBYISTS);
 
       expect(game.getTemperature()).eq(14);
     });
@@ -240,7 +240,7 @@ describe('MarsBotAmazonisMaxima', () => {
       setTemperature(game, -10); // 5 steps from the ocean bonus, so the temperature branch stays off
       setOxygenLevel(game, 16);
 
-      marsBot.resolveBonusCard(BonusCardId.B06_LOBBYISTS);
+      marsBot.resolveBonusCard(BonusCardName.LOBBYISTS);
 
       expect(game.getOxygenLevel()).eq(18);
     });
@@ -251,7 +251,7 @@ describe('MarsBotAmazonisMaxima', () => {
       setOxygenLevel(game, 18); // at the maximum, so the oxygen branch stays off
       setVenusScaleLevel(game, 31);
 
-      marsBot.resolveBonusCard(BonusCardId.B15_LOBBYISTS_VENUS);
+      marsBot.resolveBonusCard(BonusCardName.LOBBYISTS_VENUS);
 
       expect(game.getVenusScaleLevel()).eq(33);
     });
@@ -260,7 +260,7 @@ describe('MarsBotAmazonisMaxima', () => {
       const {game, marsBot} = amazonisGame();
       setTemperature(game, -14);
 
-      marsBot.resolveBonusCard(BonusCardId.B06_LOBBYISTS);
+      marsBot.resolveBonusCard(BonusCardName.LOBBYISTS);
 
       expect(game.getTemperature()).eq(-10);
     });
@@ -269,7 +269,7 @@ describe('MarsBotAmazonisMaxima', () => {
       const {game, marsBot} = amazonisGame();
       setOxygenLevel(game, 5);
 
-      marsBot.resolveBonusCard(BonusCardId.B06_LOBBYISTS);
+      marsBot.resolveBonusCard(BonusCardName.LOBBYISTS);
 
       expect(game.getOxygenLevel()).eq(7);
     });
@@ -278,7 +278,7 @@ describe('MarsBotAmazonisMaxima', () => {
       const {game, marsBot} = amazonisGame();
       setOxygenLevel(game, 7);
 
-      marsBot.resolveBonusCard(BonusCardId.B06_LOBBYISTS);
+      marsBot.resolveBonusCard(BonusCardName.LOBBYISTS);
 
       expect(game.getOxygenLevel()).eq(7);
     });
@@ -289,7 +289,7 @@ describe('MarsBotAmazonisMaxima', () => {
       setOxygenLevel(game, 18); // at the maximum, so the oxygen branch stays off
       setVenusScaleLevel(game, 20);
 
-      marsBot.resolveBonusCard(BonusCardId.B15_LOBBYISTS_VENUS);
+      marsBot.resolveBonusCard(BonusCardName.LOBBYISTS_VENUS);
 
       expect(game.getVenusScaleLevel()).eq(24);
     });
@@ -300,7 +300,7 @@ describe('MarsBotAmazonisMaxima', () => {
       setOxygenLevel(game, 18); // at the maximum, so the oxygen branch stays off
       setVenusScaleLevel(game, 30); // 3 steps from 33%
 
-      marsBot.resolveBonusCard(BonusCardId.B15_LOBBYISTS_VENUS);
+      marsBot.resolveBonusCard(BonusCardName.LOBBYISTS_VENUS);
 
       expect(game.getVenusScaleLevel()).eq(30);
     });

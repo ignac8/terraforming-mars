@@ -1,6 +1,6 @@
 import {expect} from 'chai';
 import {TileType} from '@/common/TileType';
-import {BonusCardId} from '@/common/automa/AutomaTypes';
+import {BonusCardName} from '@/common/automa/BonusCardName';
 import {SpaceType} from '@/common/boards/SpaceType';
 import {CardName} from '@/common/cards/CardName';
 import {MAX_OXYGEN_LEVEL, MAX_TEMPERATURE} from '@/common/constants';
@@ -36,7 +36,7 @@ function interventionWithBuildingAt(position: number) {
 }
 
 function resolveIntervention(marsBot: MarsBot) {
-  marsBot.actionDeck.playBonusCard(createBonusCard(BonusCardId.B16_GOVERNMENT_INTERVENTION));
+  marsBot.actionDeck.playBonusCard(createBonusCard(BonusCardName.GOVERNMENT_INTERVENTION));
 }
 
 describe('LakefrontResortsMarsBot', () => {

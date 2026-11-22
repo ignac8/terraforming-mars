@@ -10,7 +10,7 @@ import {Visionary} from '../../src/server/awards/Visionary';
 import {Phase} from '../../src/common/Phase';
 import {Resource} from '../../src/common/Resource';
 import {getMcPerVP} from '../../src/server/automa/MarsBotScoring';
-import {BonusCardId} from '../../src/common/automa/AutomaTypes';
+import {BonusCardName} from '../../src/common/automa/BonusCardName';
 import {cast, inplaceRemove} from '../../src/common/utils/utils';
 import {GlobalParameter} from '../../src/common/GlobalParameter';
 import {Mayor} from '../../src/server/milestones/Mayor';
@@ -757,22 +757,22 @@ describe('MarsBotVenusNext', () => {
   it('B16 Government Intervention shuffled into action deck', () => {
     const {marsBot} = createVenusAutomaGame();
     marsBot.actionDeck.buildResearch();
-    const hasB16 = marsBot.actionDeck.cards.some((c) => 'id' in c && c.id === BonusCardId.B16_GOVERNMENT_INTERVENTION);
+    const hasB16 = marsBot.actionDeck.cards.some((c) => c.name === BonusCardName.GOVERNMENT_INTERVENTION);
     expect(hasB16).to.be.true;
   });
 
   it('non-Venus game does not have B16 in action deck', () => {
     const {marsBot} = createAutomaGame();
     marsBot.actionDeck.buildResearch();
-    const hasB16 = marsBot.actionDeck.cards.some((c) => 'id' in c && c.id === BonusCardId.B16_GOVERNMENT_INTERVENTION);
+    const hasB16 = marsBot.actionDeck.cards.some((c) => c.name === BonusCardName.GOVERNMENT_INTERVENTION);
     expect(hasB16).to.be.false;
   });
 
   it('Venus game replaces B06 with B15 in bonus deck', () => {
     const {marsBot} = createVenusAutomaGame();
     const allCards = [...marsBot.bonusDeck.drawPile, ...marsBot.bonusDeck.discardPile];
-    const hasB15 = allCards.some((c) => c.id === BonusCardId.B15_LOBBYISTS_VENUS);
-    const hasB06 = allCards.some((c) => c.id === BonusCardId.B06_LOBBYISTS);
+    const hasB15 = allCards.some((c) => c.name === BonusCardName.LOBBYISTS_VENUS);
+    const hasB06 = allCards.some((c) => c.name === BonusCardName.LOBBYISTS);
     expect(hasB15).to.be.true;
     expect(hasB06).to.be.false;
   });
@@ -780,8 +780,8 @@ describe('MarsBotVenusNext', () => {
   it('non-Venus game has B06 not B15 in bonus deck', () => {
     const {marsBot} = createAutomaGame();
     const allCards = [...marsBot.bonusDeck.drawPile, ...marsBot.bonusDeck.discardPile];
-    const hasB06 = allCards.some((c) => c.id === BonusCardId.B06_LOBBYISTS);
-    const hasB15 = allCards.some((c) => c.id === BonusCardId.B15_LOBBYISTS_VENUS);
+    const hasB06 = allCards.some((c) => c.name === BonusCardName.LOBBYISTS);
+    const hasB15 = allCards.some((c) => c.name === BonusCardName.LOBBYISTS_VENUS);
     expect(hasB06).to.be.true;
     expect(hasB15).to.be.false;
   });

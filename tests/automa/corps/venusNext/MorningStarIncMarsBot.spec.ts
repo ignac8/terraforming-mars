@@ -1,5 +1,5 @@
 import {expect} from 'chai';
-import {BonusCardId} from '@/common/automa/AutomaTypes';
+import {BonusCardName} from '@/common/automa/BonusCardName';
 import {BoardName} from '@/common/boards/BoardName';
 import {CardName} from '@/common/cards/CardName';
 import {IGame} from '@/server/IGame';
@@ -32,7 +32,7 @@ describe('MorningStarIncMarsBot', () => {
     new MorningStarIncMarsBot().setup(marsBot);
     new MorningStarIncMarsBot().onTrackCubeTrigger(marsBot, 7, 5, 'credit');
 
-    expect(calls).deep.eq(['removeBonusCard(B06)', 'removeBonusCard(B15)', 'addBonusCardToBonusDeck(B26)', 'gainMc(5)']);
+    expect(calls).deep.eq(['removeBonusCard(Lobbyists)', 'removeBonusCard(Lobbyists (Venus))', 'addBonusCardToBonusDeck(Venusian Lobby)', 'gainMc(5)']);
     const expectedCubes = [5, 6, 7, 8, 9, 11, 12].map((position) => `venus credit ${position}`);
     expect(trackCubes(new MorningStarIncMarsBot(), [...THARSIS_MARSBOT_BOARD, VENUS_MARSBOT_TRACK])).deep.eq(expectedCubes);
   });
@@ -66,10 +66,10 @@ describe('MorningStarIncMarsBot', () => {
     const {marsBot} = createVenusAutomaGame();
     const deck = marsBot['bonusDeck'];
     const cards = () => [...deck.drawPile, ...deck.discardPile, ...marsBot.actionDeck.cards];
-    const ids = () => cards().map((card) => (card as {id?: BonusCardId}).id);
-    expect(ids()).to.include(BonusCardId.B15_LOBBYISTS_VENUS);
+    const names = () => cards().map((card) => card.name);
+    expect(names()).to.include(BonusCardName.LOBBYISTS_VENUS);
     marsBot.setCorpAndSetup(getMarsBotCorp(CardName.MORNING_STAR_INC)!);
-    expect(ids()).to.not.include(BonusCardId.B15_LOBBYISTS_VENUS);
-    expect(ids()).to.include(BonusCardId.B26_VENUSIAN_LOBBY);
+    expect(names()).to.not.include(BonusCardName.LOBBYISTS_VENUS);
+    expect(names()).to.include(BonusCardName.VENUSIAN_LOBBY);
   });
 });

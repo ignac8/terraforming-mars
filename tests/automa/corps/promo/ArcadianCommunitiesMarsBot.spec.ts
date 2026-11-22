@@ -1,6 +1,6 @@
 import {expect} from 'chai';
 import {TileType} from '@/common/TileType';
-import {BonusCardId} from '@/common/automa/AutomaTypes';
+import {BonusCardName} from '@/common/automa/BonusCardName';
 import {BoardName} from '@/common/boards/BoardName';
 import {CardName} from '@/common/cards/CardName';
 import {cast} from '@/common/utils/utils';
@@ -26,8 +26,8 @@ describe('ArcadianCommunitiesMarsBot', () => {
 
     new ArcadianCommunitiesMarsBot().setup(marsBot);
 
-    expect(calls).deep.eq(['resolveBonusCard(B22)']);
-    expect(new ArcadianCommunitiesMarsBot().actionDeckBonusCard).eq(BonusCardId.B22_SETTLERS);
+    expect(calls).deep.eq(['resolveBonusCard(Settlers)']);
+    expect(new ArcadianCommunitiesMarsBot().actionDeckBonusCard).eq(BonusCardName.SETTLERS);
   });
 
   it('pays 3 M€ for the tile MarsBot puts on a space with its marker, and no one else', () => {
@@ -59,7 +59,7 @@ describe('ArcadianCommunitiesMarsBot', () => {
     expect(marsBot.corp).to.eq(corp);
     expect(marsBot.markerSpaceIds).has.length(1);
     expect(game.board.getGreeneries(marsBot.player)).is.empty;
-    const settlers = marsBot.actionDeck.cards.filter((c) => 'id' in c && c.id === BonusCardId.B22_SETTLERS);
+    const settlers = marsBot.actionDeck.cards.filter((c) => c.name === BonusCardName.SETTLERS);
     expect(settlers).has.length(1);
   });
 
@@ -72,7 +72,7 @@ describe('ArcadianCommunitiesMarsBot', () => {
     human.pickedCorporationCard = new EcoLine();
     const biofuels = new Biofuels();
     human.preludeCardsInHand = [biofuels];
-    const settlers = () => marsBot.actionDeck.cards.filter((c) => 'id' in c && c.id === BonusCardId.B22_SETTLERS);
+    const settlers = () => marsBot.actionDeck.cards.filter((c) => c.name === BonusCardName.SETTLERS);
 
     game.automaHooks!.handlePostCorporationSetup();
     expect(marsBot.beforeActionPhasePending).is.true;
@@ -101,7 +101,7 @@ describe('ArcadianCommunitiesMarsBot', () => {
     human.preludeCardsInHand = [headStart, biofuels];
     // Head Start's actions are dropped when there is nothing to do with them
     human.heat = 8;
-    const settlers = () => marsBot.actionDeck.cards.filter((c) => 'id' in c && c.id === BonusCardId.B22_SETTLERS);
+    const settlers = () => marsBot.actionDeck.cards.filter((c) => c.name === BonusCardName.SETTLERS);
 
     game.automaHooks!.handlePostCorporationSetup();
     human.takeAction();

@@ -1,5 +1,5 @@
 import {expect} from 'chai';
-import {BonusCardId} from '@/common/automa/AutomaTypes';
+import {BonusCardName} from '@/common/automa/BonusCardName';
 import {MarsBot} from '@/server/automa/MarsBot';
 import {createBonusCard} from '@/server/automa/bonusCards/MarsBotBonusCards';
 import {Investors} from '@/server/automa/bonusCards/Investors';
@@ -40,7 +40,7 @@ describe('Investors', () => {
     game.generation = 2;
     setTracks(marsBot, [5, 3, 1, 4, 4, 6, 2]);
 
-    marsBot.actionDeck.playBonusCard(createBonusCard(BonusCardId.B32_INVESTORS));
+    marsBot.actionDeck.playBonusCard(createBonusCard(BonusCardName.INVESTORS));
 
     const positions = marsBot.marsBotBoard.tracks.map((track) => track.position);
     expect(positions).deep.eq([5, 3, 2, 4, 4, 5, 2]);
@@ -52,7 +52,7 @@ describe('Investors', () => {
     game.generation = 2;
     setTracks(marsBot, [5, 3, 1, 4, 4, 6, 2]);
 
-    marsBot.actionDeck.playBonusCard(createBonusCard(BonusCardId.B32_INVESTORS));
+    marsBot.actionDeck.playBonusCard(createBonusCard(BonusCardName.INVESTORS));
 
     expect(marsBot.marsBotBoard.tracks[5].regressedPositions.has(6)).is.true;
   });
@@ -62,7 +62,7 @@ describe('Investors', () => {
     game.generation = 4;
     setTracks(marsBot, [4, 1, 1, 4, 2, 2, 3]);
 
-    marsBot.actionDeck.playBonusCard(createBonusCard(BonusCardId.B32_INVESTORS));
+    marsBot.actionDeck.playBonusCard(createBonusCard(BonusCardName.INVESTORS));
 
     const positions = marsBot.marsBotBoard.tracks.map((track) => track.position);
     expect(positions).deep.eq([3, 2, 1, 4, 2, 2, 3]);
@@ -73,7 +73,7 @@ describe('Investors', () => {
     game.generation = 3;
     setTracks(marsBot, [5, 3, 2, 4, 4, 6, 3]);
 
-    marsBot.actionDeck.playBonusCard(createBonusCard(BonusCardId.B32_INVESTORS));
+    marsBot.actionDeck.playBonusCard(createBonusCard(BonusCardName.INVESTORS));
 
     const positions = marsBot.marsBotBoard.tracks.map((track) => track.position);
     expect(positions).deep.eq([5, 3, 2, 4, 4, 6, 3]);
@@ -86,7 +86,7 @@ describe('Investors', () => {
     const {game, marsBot} = createAutomaGame();
     game.generation = 2;
     maxTracks(marsBot);
-    marsBot.actionDeck.playBonusCard(createBonusCard(BonusCardId.B32_INVESTORS));
+    marsBot.actionDeck.playBonusCard(createBonusCard(BonusCardName.INVESTORS));
     expect(marsBot.megacredits).to.eq(0);
     expect(marsBot.marsBotBoard.tracks[0].position).to.eq(17);
   });

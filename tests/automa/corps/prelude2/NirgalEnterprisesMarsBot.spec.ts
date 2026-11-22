@@ -13,7 +13,7 @@ describe('NirgalEnterprisesMarsBot', () => {
 
     new NirgalEnterprisesMarsBot().setup(marsBot);
 
-    expect(calls).deep.eq(['removeBonusCard(B04)']);
+    expect(calls).deep.eq(['removeBonusCard(Overachievement)']);
   });
 
   it('adds 2 to every award', () => {

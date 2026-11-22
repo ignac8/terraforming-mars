@@ -7,7 +7,7 @@ import {GameOptions} from '../../src/server/game/GameOptions';
 import {MarsBot} from '../../src/server/automa/MarsBot';
 import {marsBotAwardScore, marsBotCanClaimMilestone} from '../../src/server/automa/MarsBotMilestoneAwardEval';
 import {AutomaGameSetup} from '../../src/server/automa/AutomaGameSetup';
-import {BonusCardId} from '../../src/common/automa/AutomaTypes';
+import {BonusCardName} from '../../src/common/automa/BonusCardName';
 import {createBonusCard} from '../../src/server/automa/bonusCards/MarsBotBonusCards';
 import {BoardName} from '../../src/common/boards/BoardName';
 import {Tag} from '../../src/common/cards/Tag';
@@ -50,7 +50,7 @@ function setTrack(marsBot: MarsBot, tag: Tag, position: number): void {
 }
 
 /** Resolves a bonus card the way a turn does, from the action deck. */
-function resolveFromDeck(marsBot: MarsBot, id: BonusCardId): void {
+function resolveFromDeck(marsBot: MarsBot, id: BonusCardName): void {
   marsBot.actionDeck.playBonusCard(createBonusCard(id));
 }
 
@@ -185,7 +185,7 @@ describe('MarsBot map milestones and awards', () => {
       const {marsBot} = createGame({boardName: BoardName.UTOPIA_PLANITIA});
       expect(marsBot.destroyedBonusCards).to.eq(0);
 
-      resolveFromDeck(marsBot, BonusCardId.B07_LOCAL_NEURAL_INSTANCE);
+      resolveFromDeck(marsBot, BonusCardName.LOCAL_NEURAL_INSTANCE);
 
       expect(marsBot.destroyedBonusCards).to.eq(1);
     });
@@ -193,7 +193,7 @@ describe('MarsBot map milestones and awards', () => {
     it('does not count a bonus card a corporation resolves and removes in setup', () => {
       const {marsBot} = createGame({boardName: BoardName.UTOPIA_PLANITIA});
 
-      marsBot.resolveBonusCard(BonusCardId.B07_LOCAL_NEURAL_INSTANCE);
+      marsBot.resolveBonusCard(BonusCardName.LOCAL_NEURAL_INSTANCE);
 
       expect(marsBot.destroyedBonusCards).to.eq(0);
     });
@@ -201,7 +201,7 @@ describe('MarsBot map milestones and awards', () => {
     it('does not count a bonus card shuffled back into the bonus deck', () => {
       const {marsBot} = createGame({boardName: BoardName.UTOPIA_PLANITIA});
 
-      resolveFromDeck(marsBot, BonusCardId.B27_BUILD_BUILD_BUILD);
+      resolveFromDeck(marsBot, BonusCardName.BUILD_BUILD_BUILD);
 
       expect(marsBot.destroyedBonusCards).to.eq(0);
     });
@@ -209,7 +209,7 @@ describe('MarsBot map milestones and awards', () => {
     it('does not count a bonus card that stays in play', () => {
       const {marsBot} = createGame({boardName: BoardName.UTOPIA_PLANITIA});
 
-      resolveFromDeck(marsBot, BonusCardId.B02_INVASIVE_SPECIES);
+      resolveFromDeck(marsBot, BonusCardName.INVASIVE_SPECIES);
 
       expect(marsBot.destroyedBonusCards).to.eq(0);
     });

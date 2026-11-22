@@ -6,9 +6,10 @@ import {Game} from '../../../src/server/Game';
 import {IGame} from '../../../src/server/IGame';
 import {MarsBot} from '../../../src/server/automa/MarsBot';
 import {BoardName} from '../../../src/common/boards/BoardName';
-import {BonusCardId, MARSBOT_STARTING_TR} from '../../../src/common/automa/AutomaTypes';
+import {MARSBOT_STARTING_TR} from '../../../src/common/automa/AutomaTypes';
+import {BonusCardName} from '../../../src/common/automa/BonusCardName';
 import {DELEGATES_PER_PLAYER} from '../../../src/common/constants';
-import {MarsBotBonusCard} from '../../../src/server/automa/MarsBotBonusCard';
+import {MarsBotBonusDeckCard} from '../../../src/server/automa/MarsBotBonusDeck';
 import {Turmoil} from '../../../src/server/turmoil/Turmoil';
 import {PartyName} from '../../../src/common/turmoil/PartyName';
 import {Phase} from '../../../src/common/Phase';
@@ -52,7 +53,7 @@ describe('MarsBot Turmoil — Setup', () => {
   it('Party Politics (B21) is in the initial action deck (rulebook C, p.6)', () => {
     const {marsBot} = createTurmoilGame();
     const hasPartyPolitics = marsBot.actionDeck.cards.some(
-      (card) => !('cost' in card) && (card as MarsBotBonusCard).id === BonusCardId.B21_PARTY_POLITICS,
+      (card) => card.name === BonusCardName.PARTY_POLITICS,
     );
     expect(hasPartyPolitics).to.be.true;
   });
@@ -66,7 +67,7 @@ describe('MarsBot Turmoil — Setup', () => {
     const {marsBot} = createTurmoilGame();
     marsBot.actionDeck.buildResearch();
     const hasPartyPolitics = marsBot.actionDeck.cards.some(
-      (card) => !('cost' in card) && (card as MarsBotBonusCard).id === BonusCardId.B21_PARTY_POLITICS,
+      (card) => card.name === BonusCardName.PARTY_POLITICS,
     );
     expect(hasPartyPolitics).to.be.true;
   });
@@ -611,8 +612,8 @@ describe('MarsBot Turmoil — Difficulty options (rulebook C, p.7)', () => {
 });
 
 describe('MarsBot C37 Septem Tribus — Turmoil interaction (Rules-covered: C37)', () => {
-  function hasBonusCard(deck: ReadonlyArray<unknown>, bonusCardId: BonusCardId): boolean {
-    return deck.some((c) => !('cost' in (c as object)) && (c as MarsBotBonusCard).id === bonusCardId);
+  function hasBonusCard(deck: ReadonlyArray<MarsBotBonusDeckCard>, bonusCardName: BonusCardName): boolean {
+    return deck.some((c) => c.name === bonusCardName);
   }
 
   it('C37: B21 (Party Politics) is NOT in the initial action deck when Septem Tribus is active', () => {
@@ -620,7 +621,7 @@ describe('MarsBot C37 Septem Tribus — Turmoil interaction (Rules-covered: C37)
     const septumTribus = getMarsBotCorp(CardName.SEPTUM_TRIBUS)!;
     marsBot.setCorpAndSetup(septumTribus);
 
-    expect(hasBonusCard(marsBot.actionDeck.cards, BonusCardId.B21_PARTY_POLITICS)).to.be.false;
+    expect(hasBonusCard(marsBot.actionDeck.cards, BonusCardName.PARTY_POLITICS)).to.be.false;
   });
 
   it("C37: adds all delegates of an unused colour to MarsBot's reserve", () => {
@@ -645,7 +646,7 @@ describe('MarsBot C37 Septem Tribus — Turmoil interaction (Rules-covered: C37)
     marsBot.setCorpAndSetup(septumTribus);
 
     const hasGrayEminence = marsBot.bonusDeck.drawPile.some(
-      (c) => c.id === BonusCardId.B29_GRAY_EMINENCE,
+      (c) => c.name === BonusCardName.GRAY_EMINENCE,
     );
     expect(hasGrayEminence).to.be.true;
   });
@@ -656,7 +657,7 @@ describe('MarsBot C37 Septem Tribus — Turmoil interaction (Rules-covered: C37)
     marsBot.setCorpAndSetup(septumTribus);
     marsBot.actionDeck.buildResearch();
 
-    expect(hasBonusCard(marsBot.actionDeck.cards, BonusCardId.B21_PARTY_POLITICS)).to.be.false;
+    expect(hasBonusCard(marsBot.actionDeck.cards, BonusCardName.PARTY_POLITICS)).to.be.false;
   });
 
   it('C37: B29 (Gray Eminence) is in the gen-2 action deck exactly once', () => {
@@ -668,7 +669,7 @@ describe('MarsBot C37 Septem Tribus — Turmoil interaction (Rules-covered: C37)
     game.automaHooks!.handleBeforeActionPhase();
 
     // The generation effect adds it whether or not the bonus draw already did.
-    const grayEminences = marsBot.actionDeck.cards.filter((c) => hasBonusCard([c], BonusCardId.B29_GRAY_EMINENCE));
+    const grayEminences = marsBot.actionDeck.cards.filter((c) => hasBonusCard([c], BonusCardName.GRAY_EMINENCE));
     expect(grayEminences).to.have.length(1);
   });
 });

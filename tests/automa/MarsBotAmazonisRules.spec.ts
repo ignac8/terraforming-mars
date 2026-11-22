@@ -1,5 +1,6 @@
 import {expect} from 'chai';
-import {BonusCardId, MARSBOT_STARTING_TR} from '@/common/automa/AutomaTypes';
+import {MARSBOT_STARTING_TR} from '@/common/automa/AutomaTypes';
+import {BonusCardName} from '@/common/automa/BonusCardName';
 import {BoardName} from '@/common/boards/BoardName';
 import {SpaceType} from '@/common/boards/SpaceType';
 import {CardName} from '@/common/cards/CardName';
@@ -7,7 +8,7 @@ import {Tag} from '@/common/cards/Tag';
 import {AwardName} from '@/common/ma/AwardName';
 import {TileType} from '@/common/TileType';
 import {MarsBot} from '@/server/automa/MarsBot';
-import {createBaseBonusCards} from '@/server/automa/bonusCards/MarsBotBonusCards';
+import {createBonusCard} from '@/server/automa/bonusCards/MarsBotBonusCards';
 import {CorporateCompetition} from '@/server/automa/bonusCards/CorporateCompetition';
 import {getMarsBotCorp} from '@/server/automa/corps/MarsBotCorpRegistry';
 import {NirgalEnterprisesMarsBot} from '@/server/automa/corps/prelude2/NirgalEnterprisesMarsBot';
@@ -61,7 +62,7 @@ describe('MarsBotAmazonisRules', () => {
       for (const award of game.awards) {
         award.getScore = () => 0;
       }
-      const b04 = createBaseBonusCards().find((c) => c.id === BonusCardId.B04_OVERACHIEVEMENT)!;
+      const b04 = createBonusCard(BonusCardName.OVERACHIEVEMENT);
 
       marsBot.actionDeck.playBonusCard(b04);
 
@@ -170,7 +171,7 @@ describe('MarsBotAmazonisRules', () => {
       game.fundAward(human, award);
       award.getScore = () => 11;
       marsBot.awardValue = () => 10;
-      const b08 = createBaseBonusCards().find((c) => c.id === BonusCardId.B08_CORPORATE_COMPETITION)!;
+      const b08 = createBonusCard(BonusCardName.CORPORATE_COMPETITION);
       return {game, marsBot, b08};
     }
 

@@ -1,6 +1,6 @@
 import {expect} from 'chai';
+import {BonusCardName} from '@/common/automa/BonusCardName';
 import {TileType} from '@/common/TileType';
-import {BonusCardId} from '@/common/automa/AutomaTypes';
 import {SpaceType} from '@/common/boards/SpaceType';
 import {CardName} from '@/common/cards/CardName';
 import {IGame} from '@/server/IGame';
@@ -113,7 +113,7 @@ describe('BuildBuildBuild', () => {
     const greenery = quietSpace(game, marsBot.player);
     game.simpleAddTile(human, greenery, {tileType: TileType.GREENERY});
     marsBot.megacredits = 20;
-    const card = createBonusCard(BonusCardId.B27_BUILD_BUILD_BUILD);
+    const card = createBonusCard(BonusCardName.BUILD_BUILD_BUILD);
 
     marsBot.actionDeck.playBonusCard(card);
 
@@ -133,7 +133,7 @@ describe('BuildBuildBuild', () => {
     marsBot.playedProjectCards.push(nuclearZone);
     marsBot.megacredits = 10;
 
-    marsBot.actionDeck.playBonusCard(createBonusCard(BonusCardId.B27_BUILD_BUILD_BUILD));
+    marsBot.actionDeck.playBonusCard(createBonusCard(BonusCardName.BUILD_BUILD_BUILD));
 
     const space = game.board.getSpaceByTileCard(CardName.NUCLEAR_ZONE)!;
     expect(space.tile?.tileType).to.eq(TileType.NUCLEAR_ZONE);
@@ -149,7 +149,7 @@ describe('BuildBuildBuild', () => {
     game.simpleAddTile(human, quietSpace(game, marsBot.player), {tileType: TileType.CITY});
     marsBot.playedProjectCards.push(new Capital());
 
-    marsBot.actionDeck.playBonusCard(createBonusCard(BonusCardId.B27_BUILD_BUILD_BUILD));
+    marsBot.actionDeck.playBonusCard(createBonusCard(BonusCardName.BUILD_BUILD_BUILD));
 
     expect(game.board.getSpaceByTileCard(CardName.CAPITAL)).is.undefined;
     expect(marsBot.megacredits).to.eq(3);
@@ -157,7 +157,7 @@ describe('BuildBuildBuild', () => {
 
   it('c. with nothing to build, gains 3 M€ and shuffles the card back into the bonus deck', () => {
     const {game, marsBot} = createAutomaGame();
-    const card = createBonusCard(BonusCardId.B27_BUILD_BUILD_BUILD);
+    const card = createBonusCard(BonusCardName.BUILD_BUILD_BUILD);
 
     marsBot.actionDeck.playBonusCard(card);
 

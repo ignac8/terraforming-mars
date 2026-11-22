@@ -1,5 +1,5 @@
 import {expect} from 'chai';
-import {BonusCardId} from '@/common/automa/AutomaTypes';
+import {BonusCardName} from '@/common/automa/BonusCardName';
 import {createBonusCard} from '@/server/automa/bonusCards/MarsBotBonusCards';
 import {Turmoil} from '@/server/turmoil/Turmoil';
 import {PartyPolitics} from '@/server/automa/bonusCards/PartyPolitics';
@@ -7,7 +7,7 @@ import {fakeCard} from '../../TestingUtils';
 import {testGame} from '../../TestGame';
 import {createAutomaGame} from '../corps/CorpGame';
 import {recordingMarsBot} from '../corps/RecordingMarsBot';
-import {bonusDeckIds} from './BonusCardGame';
+import {bonusCardsInBonusDeck} from './BonusCardGame';
 
 describe('PartyPolitics', () => {
   for (const run of [
@@ -39,7 +39,7 @@ describe('PartyPolitics', () => {
     const marsBotPlayer = marsBot.player;
 
     const reserveBefore = turmoil.delegateReserve.get(marsBotPlayer);
-    const card = createBonusCard(BonusCardId.B21_PARTY_POLITICS);
+    const card = createBonusCard(BonusCardName.PARTY_POLITICS);
     marsBot.actionDeck.playBonusCard(card);
 
     const reserveAfter = turmoil.delegateReserve.get(marsBotPlayer);
@@ -50,8 +50,8 @@ describe('PartyPolitics', () => {
   it('stays out of the bonus deck after it resolves', () => {
     const {marsBot} = createAutomaGame({turmoilExtension: true});
 
-    marsBot.actionDeck.playBonusCard(createBonusCard(BonusCardId.B21_PARTY_POLITICS));
+    marsBot.actionDeck.playBonusCard(createBonusCard(BonusCardName.PARTY_POLITICS));
 
-    expect(bonusDeckIds(marsBot)).does.not.include(BonusCardId.B21_PARTY_POLITICS);
+    expect(bonusCardsInBonusDeck(marsBot)).does.not.include(BonusCardName.PARTY_POLITICS);
   });
 });

@@ -239,7 +239,7 @@ describe('MarsBot Deep Rules Tests', () => {
       const {game, marsBot} = createAutomaGame();
       // A destroyed card is simply never discarded (the resolver skips the discard),
       // so it can never be reshuffled back into the deck.
-      const removedId = marsBot.bonusDeck.draw(game)!.id;
+      const removed = marsBot.bonusDeck.draw(game)!.name;
 
       // Draw and discard everything else, forcing a reshuffle on the last draw.
       const remaining = marsBot.bonusDeck.drawPile.length;
@@ -252,11 +252,11 @@ describe('MarsBot Deep Rules Tests', () => {
         if (c === undefined) {
           break;
         }
-        reshuffled.push(c.id);
+        reshuffled.push(c.name);
         marsBot.bonusDeck.discard(c);
       }
 
-      expect(reshuffled).to.not.include(removedId);
+      expect(reshuffled).to.not.include(removed);
     });
   });
 

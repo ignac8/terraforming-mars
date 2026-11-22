@@ -1,7 +1,7 @@
 import {expect} from 'chai';
 import {Phase} from '@/common/Phase';
 import {TileType} from '@/common/TileType';
-import {BonusCardId} from '@/common/automa/AutomaTypes';
+import {BonusCardName} from '@/common/automa/BonusCardName';
 import {SpaceType} from '@/common/boards/SpaceType';
 import {CardName} from '@/common/cards/CardName';
 import {IGame} from '@/server/IGame';
@@ -67,7 +67,7 @@ describe('PhilaresMarsBot', () => {
 
     new PhilaresMarsBot().setup(marsBot);
 
-    const expectedCalls = ['placeGreenery()', 'removeBonusCard(B07)', 'resolveBonusCard(B07)', 'addBonusCardToBonusDeck(B27)'];
+    const expectedCalls = ['placeGreenery()', 'removeBonusCard(Local Neural Instance)', 'resolveBonusCard(Local Neural Instance)', 'addBonusCardToBonusDeck(Build, Build, Build)'];
     expect(calls).deep.eq(expectedCalls);
     expect(corpState.get('scienceResources')).eq(1);
   });
@@ -107,17 +107,17 @@ describe('PhilaresMarsBot', () => {
 
   it('setup places a greenery, resolves Local Neural Instance and removes it', () => {
     const {game, marsBot} = createAutomaGame();
-    marsBot.addBonusCardToActionDeck(BonusCardId.B07_LOCAL_NEURAL_INSTANCE);
+    marsBot.addBonusCardToActionDeck(BonusCardName.LOCAL_NEURAL_INSTANCE);
 
     marsBot.setCorpAndSetup(getMarsBotCorp(CardName.PHILARES)!);
 
     expect(game.board.getGreeneries(marsBot.player)).has.length(1);
     expect(marsBot.neuralInstanceSpace?.tile?.tileType).to.eq(TileType.NEURAL_INSTANCE);
     expect(marsBot.getCorpState('scienceResources')).to.eq(1);
-    const bonusIds = [...marsBot.bonusDeck.drawPile, ...marsBot.bonusDeck.discardPile].map((c) => c.id);
-    expect(bonusIds).does.not.include(BonusCardId.B07_LOCAL_NEURAL_INSTANCE);
-    expect(bonusIds).includes(BonusCardId.B27_BUILD_BUILD_BUILD);
-    const inActionDeck = marsBot.actionDeck.cards.some((card) => 'id' in card && card.id === BonusCardId.B07_LOCAL_NEURAL_INSTANCE);
+    const bonusIds = [...marsBot.bonusDeck.drawPile, ...marsBot.bonusDeck.discardPile].map((c) => c.name);
+    expect(bonusIds).does.not.include(BonusCardName.LOCAL_NEURAL_INSTANCE);
+    expect(bonusIds).includes(BonusCardName.BUILD_BUILD_BUILD);
+    const inActionDeck = marsBot.actionDeck.cards.some((card) => card.name === BonusCardName.LOCAL_NEURAL_INSTANCE);
     expect(inActionDeck).is.false;
   });
 

@@ -5,13 +5,15 @@ import {Resource} from '../../common/Resource';
 import {GlobalParameter} from '../../common/GlobalParameter';
 import {CardName} from '../../common/cards/CardName';
 import {newCard} from '../createCard';
-import {DifficultyLevel, BonusCardId, FAILED_ACTION_MC, FAILED_ACTION_MC_EASY, LAKEFRONT_OCEAN_BONUS, TrackDefinition, getAutomaMaxGeneration} from '../../common/automa/AutomaTypes';
+import {DifficultyLevel, FAILED_ACTION_MC, FAILED_ACTION_MC_EASY, LAKEFRONT_OCEAN_BONUS, TrackDefinition, getAutomaMaxGeneration} from '../../common/automa/AutomaTypes';
 import {marsBotMapRules} from '../../common/automa/MarsBotMapRules';
 import {Tag} from '../../common/cards/Tag';
 import {currentMcPerVP} from './MarsBotScoring';
 import {MarsBotBoard} from './MarsBotBoard';
 import {MarsBotModel} from '../../common/models/MarsBotModel';
-import {bonusCardDisplayName, createBonusCard} from './bonusCards/MarsBotBonusCards';
+import {BonusCardName} from '../../common/automa/BonusCardName';
+import {createBonusCard} from './bonusCards/MarsBotBonusCards';
+import {bonusCardNameFromSave} from './legacyBonusCards';
 import {MarsBotBonusDeck} from './MarsBotBonusDeck';
 import {MarsBotActionDeck} from './MarsBotActionDeck';
 import {MarsBotTilePlacer} from './MarsBotTilePlacer';
@@ -37,10 +39,9 @@ import {IAward} from '../awards/IAward';
 import {maybeTrade} from './colonies/MarsBotTrader';
 import {getClaimableMilestones, marsBotAwardScore, marsBotCanClaimMilestone, maybeClaimMilestone, maybeFundAward, selectMilestone} from './MarsBotMilestoneAwardEval';
 
-/** Converts an entry of an older save's bonus deck, which stores bonus cards by id, to a card name. */
-function bonusDeckCardName(idOrName: string): CardName {
-  const isId = Object.values(BonusCardId).includes(idOrName as BonusCardId);
-  return isId ? createBonusCard(idOrName as BonusCardId).name : idOrName as CardName;
+/** Reads a saved action deck or bonus deck entry, which holds a bonus card in any form a save has held it, or a project card. */
+function deckEntryFromSave(entry: string): BonusCardName | CardName {
+  return bonusCardNameFromSave(entry) ?? entry as CardName;
 }
 
 /**
@@ -276,7 +277,7 @@ export class MarsBot implements IMarsBot {
     return this.actionDeck.destroyedBonusCards;
   }
 
-  public get actionDeckBonusCard(): BonusCardId | undefined {
+  public get actionDeckBonusCard(): BonusCardName | undefined {
     return this.corp?.actionDeckBonusCard;
   }
 
@@ -423,7 +424,7 @@ export class MarsBot implements IMarsBot {
     this.game.log('MarsBot raises temperature ${0} step(s)', (b) => b.number(raised));
   }
 
-  public advanceFurthestParameter(cardName: CardName, allowCorpIntercept: boolean = true): boolean {
+  public advanceFurthestParameter(bonusCardName: BonusCardName, allowCorpIntercept: boolean = true): boolean {
     const game = this.game;
     const tempRemaining = (game.max.temperature - game.getTemperature()) / 2;
     const oxyRemaining = game.max.oxygen - game.getOxygenLevel();
@@ -472,7 +473,7 @@ export class MarsBot implements IMarsBot {
 
     for (const p of params) {
       if (p.action()) {
-        game.log(p.message, (b) => b.cardName(cardName));
+        game.log(p.message, (b) => b.bonusCardName(bonusCardName));
         return true;
       }
     }
@@ -499,7 +500,7 @@ export class MarsBot implements IMarsBot {
     const trGained = this.player.terraformRating - trBefore;
     if (trGained > 0) {
       this.player.decreaseTerraformRating(trGained);
-      this.game.log('MarsBot (${0}): returns ${1} TR', (b) => b.cardName(CardName.AUTOMA_GOVERNMENT_INTERVENTION).number(trGained));
+      this.game.log('MarsBot (${0}): returns ${1} TR', (b) => b.bonusCardName(BonusCardName.GOVERNMENT_INTERVENTION).number(trGained));
     }
   }
 
@@ -512,7 +513,7 @@ export class MarsBot implements IMarsBot {
     const returned = this.megacredits - (mcBefore + kept);
     if (returned > 0) {
       this.megacredits = mcBefore + kept;
-      this.game.log('MarsBot (${0}): returns ${1}:r:mc:', (b) => b.cardName(CardName.AUTOMA_GOVERNMENT_INTERVENTION).number(returned));
+      this.game.log('MarsBot (${0}): returns ${1}:r:mc:', (b) => b.bonusCardName(BonusCardName.GOVERNMENT_INTERVENTION).number(returned));
     }
   }
 
@@ -536,26 +537,26 @@ export class MarsBot implements IMarsBot {
     this.actionDeck.drawProjectCards(count);
   }
 
-  public addBonusCardToActionDeck(bonusCardId: BonusCardId): void {
-    const card = this.actionDeck.addBonusCard(bonusCardId);
+  public addBonusCardToActionDeck(bonusCardName: BonusCardName): void {
+    const card = this.actionDeck.addBonusCard(bonusCardName);
     if (card === undefined) {
       return;
     }
     const corp = this.corp;
     if (corp !== undefined) {
-      this.game.log('MarsBot (${0}): ${1} added to action deck', (b) => b.cardName(corp.name).cardName(card.name));
+      this.game.log('MarsBot (${0}): ${1} added to action deck', (b) => b.cardName(corp.name).bonusCardName(card.name));
     } else {
-      this.game.log('MarsBot: ${0} added to action deck', (b) => b.cardName(card.name));
+      this.game.log('MarsBot: ${0} added to action deck', (b) => b.bonusCardName(card.name));
     }
   }
 
-  public removeBonusCard(bonusCardId: BonusCardId): void {
-    this.actionDeck.removeBonusCard(bonusCardId);
+  public removeBonusCard(bonusCardName: BonusCardName): void {
+    this.actionDeck.removeBonusCard(bonusCardName);
   }
 
-  public resolveBonusCard(bonusCardId: BonusCardId): void {
-    const card = createBonusCard(bonusCardId);
-    this.game.log('MarsBot resolves bonus card: ${0}', (b) => b.rawString(bonusCardDisplayName(card)));
+  public resolveBonusCard(bonusCardName: BonusCardName): void {
+    const card = createBonusCard(bonusCardName);
+    this.game.log('MarsBot resolves bonus card: ${0}', (b) => b.bonusCardName(card.name));
     card.resolve(this);
   }
 
@@ -577,16 +578,16 @@ export class MarsBot implements IMarsBot {
     this.neuralInstanceSpace = space;
   }
 
-  public maybeTrade(cardName: CardName): void {
-    maybeTrade(this, cardName);
+  public maybeTrade(bonusCardName: BonusCardName): void {
+    maybeTrade(this, bonusCardName);
   }
 
-  public addBonusCardToBonusDeck(bonusCardId: BonusCardId): void {
-    this.actionDeck.addBonusCardToBonusDeck(bonusCardId);
+  public addBonusCardToBonusDeck(bonusCardName: BonusCardName): void {
+    this.actionDeck.addBonusCardToBonusDeck(bonusCardName);
   }
 
-  public addBonusCardToBottomOfBonusDeck(bonusCardId: BonusCardId): void {
-    this.actionDeck.addBonusCardToBottomOfBonusDeck(bonusCardId);
+  public addBonusCardToBottomOfBonusDeck(bonusCardName: BonusCardName): void {
+    this.actionDeck.addBonusCardToBottomOfBonusDeck(bonusCardName);
   }
 
   public getCorpState(key: string): number {
@@ -932,12 +933,12 @@ export class MarsBot implements IMarsBot {
       this.markerSpaceIds = [...state.markerSpaceIds];
     }
 
-    this.actionDeck.restore(state);
+    this.actionDeck.restore({...state, actionDeckCardNames: state.actionDeckCardNames?.map(deckEntryFromSave)});
 
-    const bonusDeck = MarsBotBonusDeck.deserialize(state.bonusDeck ?? {
-      // Older saves hold the piles under their own keys, bonus cards by id
-      drawPile: (state.bonusDeckDrawPile ?? []).map(bonusDeckCardName),
-      discardPile: (state.bonusDeckDiscardPile ?? []).map(bonusDeckCardName),
+    // Older saves hold the piles under their own keys
+    const bonusDeck = MarsBotBonusDeck.deserialize({
+      drawPile: (state.bonusDeck?.drawPile ?? state.bonusDeckDrawPile ?? []).map(deckEntryFromSave),
+      discardPile: (state.bonusDeck?.discardPile ?? state.bonusDeckDiscardPile ?? []).map(deckEntryFromSave),
     }, this.random);
     // Older saves put cards that return to the action deck in the bonus deck's piles once they resolved
     this.bonusDeck.drawPile = bonusDeck.drawPile.filter((c) => !this.actionDeck.returnsToActionDeck(c));

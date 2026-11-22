@@ -1,6 +1,6 @@
 import {expect} from 'chai';
 import {GlobalParameter} from '@/common/GlobalParameter';
-import {BonusCardId} from '@/common/automa/AutomaTypes';
+import {BonusCardName} from '@/common/automa/BonusCardName';
 import {BoardName} from '@/common/boards/BoardName';
 import {CardName} from '@/common/cards/CardName';
 import {createBonusCard} from '@/server/automa/bonusCards/MarsBotBonusCards';
@@ -99,7 +99,7 @@ describe('PristarMarsBot', () => {
   it('on a 2-step raise, Lobbyists temperature branch raises the second step', () => {
     const {game, marsBot, tr} = pristarGame();
     setTemperature(game, -28);
-    marsBot.resolveBonusCard(BonusCardId.B06_LOBBYISTS);
+    marsBot.resolveBonusCard(BonusCardName.LOBBYISTS);
     expect(game.getTemperature()).to.eq(-26);
     expect(marsBot.player.terraformRating).to.eq(tr + 2);
   });
@@ -107,7 +107,7 @@ describe('PristarMarsBot', () => {
   it('on a 2-step raise, Lobbyists (Venus) Venus branch raises the second step', () => {
     const {game, marsBot, tr} = pristarGame(true);
     setVenusScaleLevel(game, 4);
-    marsBot.resolveBonusCard(BonusCardId.B15_LOBBYISTS_VENUS);
+    marsBot.resolveBonusCard(BonusCardName.LOBBYISTS_VENUS);
     expect(game.getVenusScaleLevel()).to.eq(6);
     expect(marsBot.player.terraformRating).to.eq(tr + 2);
   });
@@ -141,7 +141,7 @@ describe('PristarMarsBot', () => {
     marsBot.setCorpAndSetup(getMarsBotCorp(CardName.PRISTAR)!);
     marsBot.corpSpecificState.set('whiteCubeOnCard', 1);
     game.generation = 2; // even generation → furthest-parameter branch
-    createBonusCard(BonusCardId.B16_GOVERNMENT_INTERVENTION).resolve(marsBot);
+    createBonusCard(BonusCardName.GOVERNMENT_INTERVENTION).resolve(marsBot);
     expect(marsBot.corpSpecificState.get('whiteCubeOnCard')).to.eq(1);
   });
 });

@@ -1,5 +1,5 @@
 import {expect} from 'chai';
-import {BonusCardId} from '@/common/automa/AutomaTypes';
+import {BonusCardName} from '@/common/automa/BonusCardName';
 import {createBonusCard} from '@/server/automa/bonusCards/MarsBotBonusCards';
 import {Diversification} from '@/server/automa/bonusCards/Diversification';
 import {createAutomaGame, resetCorpRegistry} from '../corps/CorpGame';
@@ -24,15 +24,15 @@ describe('Diversification', () => {
     const {marsBot} = createAutomaGame();
     marsBot.turnResolver.advanceTrack = () => true;
     marsBot.megacredits = 6;
-    marsBot.actionDeck.playBonusCard(createBonusCard(BonusCardId.B28_DIVERSIFICATION));
+    marsBot.actionDeck.playBonusCard(createBonusCard(BonusCardName.DIVERSIFICATION));
     expect(marsBot.megacredits).to.eq(2);
-    marsBot.actionDeck.playBonusCard(createBonusCard(BonusCardId.B28_DIVERSIFICATION));
+    marsBot.actionDeck.playBonusCard(createBonusCard(BonusCardName.DIVERSIFICATION));
     expect(marsBot.megacredits).to.eq(0);
   });
 
   it('advances least-advanced track', () => {
     const {marsBot} = createAutomaGame();
-    const card = createBonusCard(BonusCardId.B28_DIVERSIFICATION);
+    const card = createBonusCard(BonusCardName.DIVERSIFICATION);
     marsBot.marsBotBoard.tracks[0].position = 5;
     const leastIdx = marsBot.marsBotBoard.getLeastAdvancedTrackIndex();
     const trackBefore = marsBot.marsBotBoard.tracks[leastIdx].position;
@@ -46,7 +46,7 @@ describe('Diversification', () => {
     const {marsBot} = createAutomaGame();
     maxTracks(marsBot);
     marsBot.megacredits = 4;
-    marsBot.actionDeck.playBonusCard(createBonusCard(BonusCardId.B28_DIVERSIFICATION));
+    marsBot.actionDeck.playBonusCard(createBonusCard(BonusCardName.DIVERSIFICATION));
     expect(marsBot.megacredits).to.eq(0);
   });
 });

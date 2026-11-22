@@ -1,6 +1,6 @@
 import {expect} from 'chai';
-import {BonusCardId} from '@/common/automa/AutomaTypes';
-import {createBaseBonusCards, createBonusCard} from '@/server/automa/bonusCards/MarsBotBonusCards';
+import {BonusCardName} from '@/common/automa/BonusCardName';
+import {createBonusCard} from '@/server/automa/bonusCards/MarsBotBonusCards';
 import {ProtectedHabitats} from '@/server/cards/base/ProtectedHabitats';
 import {AsteroidDeflectionSystem} from '@/server/cards/promo/AsteroidDeflectionSystem';
 import {MeteorShower} from '@/server/automa/bonusCards/MeteorShower';
@@ -42,8 +42,7 @@ describe('MeteorShower', () => {
     const {human, marsBot} = createAutomaGame();
     human.plants = 2;
 
-    const cards = createBaseBonusCards();
-    const b01 = cards.find((c) => c.id === BonusCardId.B01_METEOR_SHOWER)!;
+    const b01 = createBonusCard(BonusCardName.METEOR_SHOWER);
 
     const destroyed = marsBot.actionDeck.playBonusCard(b01);
 
@@ -55,8 +54,7 @@ describe('MeteorShower', () => {
     const {human, marsBot} = createAutomaGame();
     human.plants = 5;
 
-    const cards = createBaseBonusCards();
-    const b01 = cards.find((c) => c.id === BonusCardId.B01_METEOR_SHOWER)!;
+    const b01 = createBonusCard(BonusCardName.METEOR_SHOWER);
 
     const destroyed = marsBot.actionDeck.playBonusCard(b01);
 
@@ -69,7 +67,7 @@ describe('MeteorShower', () => {
     human.plants = 10;
     human.playedCards.push(new AsteroidDeflectionSystem());
 
-    const destroyed = createBonusCard(BonusCardId.B01_METEOR_SHOWER).resolve(marsBot);
+    const destroyed = createBonusCard(BonusCardName.METEOR_SHOWER).resolve(marsBot);
 
     expect(human.plants).to.eq(10);
     expect(destroyed).is.true;

@@ -8,7 +8,7 @@ import {BoardName} from '../../src/common/boards/BoardName';
 import {GlobalParameter} from '../../src/common/GlobalParameter';
 import {Phase} from '../../src/common/Phase';
 import {createBonusCard} from '../../src/server/automa/bonusCards/MarsBotBonusCards';
-import {BonusCardId} from '../../src/common/automa/AutomaTypes';
+import {BonusCardName} from '../../src/common/automa/BonusCardName';
 import {CardName} from '../../src/common/cards/CardName';
 import {Asteroid} from '../../src/server/cards/base/Asteroid';
 import {Research} from '../../src/server/cards/base/Research';
@@ -173,7 +173,7 @@ describe('MarsBotReload', () => {
 
   it("keeps MarsBot's player markers across a reload", () => {
     const {game, marsBot} = createAutomaGame();
-    marsBot.actionDeck.playBonusCard(createBonusCard(BonusCardId.B22_SETTLERS));
+    marsBot.actionDeck.playBonusCard(createBonusCard(BonusCardName.SETTLERS));
     const [id] = marsBot.markerSpaceIds;
 
     const restored = Game.deserialize(game.serialize());
@@ -322,9 +322,21 @@ describe('MarsBotReload', () => {
       const actionDeckNames = marsBot.actionDeck.cards.map((card) => card.name);
       expect(playedNames).deep.eq(savedState.playedProjectCardNames);
       expect(marsBot.temperatureRaises).eq(1);
-      expect(actionDeckNames).deep.eq(['Black Polar Dust', 'Wave Power', 'Nuclear Zone', 'Invasive Species:automa']);
+      expect(actionDeckNames).deep.eq(['Black Polar Dust', 'Wave Power', 'Nuclear Zone', BonusCardName.INVASIVE_SPECIES]);
       expect(marsBot.destroyedBonusCards).eq(2);
-      expect(marsBot.serialize()).deep.eq(savedState);
+      expect(marsBot.serialize()).deep.eq({
+        ...savedState,
+        actionDeckCardNames: ['Black Polar Dust', 'Wave Power', 'Nuclear Zone', BonusCardName.INVASIVE_SPECIES],
+        bonusDeck: {
+          drawPile: [BonusCardName.METEOR_SHOWER],
+          discardPile: [
+            BonusCardName.RESEARCH_AND_DEVELOPMENT,
+            BonusCardName.EXPEDITED_CONSTRUCTION,
+            BonusCardName.OVERACHIEVEMENT,
+            BonusCardName.CORPORATE_COMPETITION,
+          ],
+        },
+      });
     });
   }
 });

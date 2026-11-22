@@ -1,6 +1,6 @@
 import {expect} from 'chai';
 import {TileType} from '@/common/TileType';
-import {BonusCardId} from '@/common/automa/AutomaTypes';
+import {BonusCardName} from '@/common/automa/BonusCardName';
 import {createBonusCard} from '@/server/automa/bonusCards/MarsBotBonusCards';
 import {ExpeditedConstruction} from '@/server/automa/bonusCards/ExpeditedConstruction';
 import {testGame} from '../../TestGame';
@@ -44,7 +44,7 @@ describe('ExpeditedConstruction', () => {
       game.simpleAddTile(human, game.board.getSpaceOrThrow(id), {tileType: TileType.OCEAN});
     }
     const megacredits = marsBot.megacredits;
-    const card = createBonusCard(BonusCardId.B05_EXPEDITED_CONSTRUCTION);
+    const card = createBonusCard(BonusCardName.EXPEDITED_CONSTRUCTION);
 
     const destroyed = marsBot.actionDeck.playBonusCard(card);
 
@@ -59,7 +59,7 @@ describe('ExpeditedConstruction', () => {
   it('takes no Failed Action and goes back to the bonus deck when no space is next to 2 such tiles', () => {
     const {game, marsBot} = createAutomaGame();
     const megacredits = marsBot.megacredits;
-    const card = createBonusCard(BonusCardId.B05_EXPEDITED_CONSTRUCTION);
+    const card = createBonusCard(BonusCardName.EXPEDITED_CONSTRUCTION);
 
     const destroyed = marsBot.actionDeck.playBonusCard(card);
 

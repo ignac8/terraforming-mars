@@ -1,30 +1,29 @@
 import {expect} from 'chai';
-import {CardName} from '@/common/cards/CardName';
 import {ShippingLines} from '@/server/automa/bonusCards/ShippingLines';
 import {recordingMarsBot} from '../corps/RecordingMarsBot';
-import {BonusCardId} from '@/common/automa/AutomaTypes';
+import {BonusCardName} from '@/common/automa/BonusCardName';
 import {BoardName} from '@/common/boards/BoardName';
 import {ColonyName} from '@/common/colonies/ColonyName';
-import {MarsBotBonusCard} from '@/server/automa/MarsBotBonusCard';
+import {MarsBotBonusCard} from '@/server/automa/bonusCards/MarsBotBonusCard';
 import {createBonusCard} from '@/server/automa/bonusCards/MarsBotBonusCards';
 import {Europa} from '@/server/colonies/Europa';
 import {Luna} from '@/server/colonies/Luna';
 import {testGame} from '../../TestGame';
 import {getMarsBot, createAutomaGame} from '../corps/CorpGame';
-import {bonusDeckIds} from './BonusCardGame';
+import {bonusCardsInBonusDeck} from './BonusCardGame';
 
 
 function b19Card(): MarsBotBonusCard {
-  return createBonusCard(BonusCardId.B19_SHIPPING_LINES);
+  return createBonusCard(BonusCardName.SHIPPING_LINES);
 }
 
 describe('ShippingLines', () => {
   it('trades with a colony', () => {
-    const traded: Array<CardName> = [];
-    const {marsBot} = recordingMarsBot({maybeTrade: (cardName) => traded.push(cardName)});
+    const traded: Array<BonusCardName> = [];
+    const {marsBot} = recordingMarsBot({maybeTrade: (bonusCardName) => traded.push(bonusCardName)});
 
     expect(new ShippingLines().resolve(marsBot)).is.false;
-    expect(traded).deep.eq([CardName.AUTOMA_SHIPPING_LINES]);
+    expect(traded).deep.eq([BonusCardName.SHIPPING_LINES]);
   });
 
   it('selects best colony and trades', () => {
@@ -87,10 +86,10 @@ describe('ShippingLines', () => {
   it('stays out of the bonus deck after it resolves, and so does Extended Shipping Lines', () => {
     const {marsBot} = createAutomaGame({coloniesExtension: true});
 
-    marsBot.actionDeck.playBonusCard(createBonusCard(BonusCardId.B19_SHIPPING_LINES));
-    marsBot.actionDeck.playBonusCard(createBonusCard(BonusCardId.B20_EXTENDED_SHIPPING_LINES));
+    marsBot.actionDeck.playBonusCard(createBonusCard(BonusCardName.SHIPPING_LINES));
+    marsBot.actionDeck.playBonusCard(createBonusCard(BonusCardName.EXTENDED_SHIPPING_LINES));
 
-    expect(bonusDeckIds(marsBot)).does.not.include(BonusCardId.B19_SHIPPING_LINES);
-    expect(bonusDeckIds(marsBot)).does.not.include(BonusCardId.B20_EXTENDED_SHIPPING_LINES);
+    expect(bonusCardsInBonusDeck(marsBot)).does.not.include(BonusCardName.SHIPPING_LINES);
+    expect(bonusCardsInBonusDeck(marsBot)).does.not.include(BonusCardName.EXTENDED_SHIPPING_LINES);
   });
 });

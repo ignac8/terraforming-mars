@@ -1,9 +1,7 @@
 import {createHash} from 'crypto';
 import {SerializedAutomaState, SerializedGame} from '../SerializedGame';
 import {GameOptions} from '../game/GameOptions';
-import {CardName} from '../../common/cards/CardName';
-import {BonusCardId} from '../../common/automa/AutomaTypes';
-import {createBonusCard} from '../automa/bonusCards/MarsBotBonusCards';
+import {LEGACY_BONUS_CARD_IDS, bonusCardNameFromSave} from '../automa/legacyBonusCards';
 
 type Json = string | number | boolean | null | undefined | ReadonlyArray<Json> | {readonly [key: string]: Json};
 
@@ -42,20 +40,25 @@ function comparable(d: SerializedGame): string {
   // Hashes recorded before automaOption was renamed to automa hold the old name, so the comparison keeps it.
   const {automa, ...options} = d.gameOptions as Partial<GameOptions> & {automaOption?: boolean};
   const gameOptions = {...options, automaOption: automa ?? options.automaOption};
-  const automaState = d.automaState === undefined ? undefined : withOldBonusDeckPiles(d.automaState);
+  const automaState = d.automaState === undefined ? undefined : withLegacyBonusCards(d.automaState);
   return canonical({...rest, gameOptions, automaState, players, gameLog: gameLog.length} as unknown as Json);
 }
 
+// Hashes recorded before BonusCardName hold bonus cards by their legacy id, so the comparison keeps that form.
+function legacyId(entry: string): string {
+  const name = bonusCardNameFromSave(entry);
+  return name === undefined ? entry : LEGACY_BONUS_CARD_IDS[name];
+}
+
 // Hashes recorded before MarsBot's bonus deck was saved like the other decks hold its piles under their
-// own keys, with bonus cards by id, so the comparison keeps that form.
-function withOldBonusDeckPiles(state: SerializedAutomaState): Omit<SerializedAutomaState, 'bonusDeck'> {
+// own keys, so the comparison keeps that form too.
+function withLegacyBonusCards(state: SerializedAutomaState): Omit<SerializedAutomaState, 'bonusDeck'> {
+  const actionDeckCardNames = state.actionDeckCardNames?.map(legacyId);
   if (state.bonusDeck === undefined) {
-    return state;
+    return {...state, actionDeckCardNames};
   }
-  const ids = new Map(Object.values(BonusCardId).map((id) => [createBonusCard(id).name, id]));
-  const toOldForm = (name: CardName) => ids.get(name) ?? name;
   const {bonusDeck, ...rest} = state;
-  return {...rest, bonusDeckDrawPile: bonusDeck.drawPile.map(toOldForm), bonusDeckDiscardPile: bonusDeck.discardPile.map(toOldForm)};
+  return {...rest, actionDeckCardNames, bonusDeckDrawPile: bonusDeck.drawPile.map(legacyId), bonusDeckDiscardPile: bonusDeck.discardPile.map(legacyId)};
 }
 
 /** sha256 (hex) of the game's state, leaving out what legitimately differs between a live game and a replay of it. */

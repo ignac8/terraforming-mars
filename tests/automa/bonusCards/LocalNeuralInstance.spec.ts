@@ -1,9 +1,9 @@
 import {expect} from 'chai';
 import {TileType} from '@/common/TileType';
-import {BonusCardId} from '@/common/automa/AutomaTypes';
+import {BonusCardName} from '@/common/automa/BonusCardName';
 import {SpaceType} from '@/common/boards/SpaceType';
 import {IMarsBot} from '@/server/automa/IMarsBot';
-import {createBaseBonusCards} from '@/server/automa/bonusCards/MarsBotBonusCards';
+import {createBonusCard} from '@/server/automa/bonusCards/MarsBotBonusCards';
 import {MarsBotTilePlacer} from '@/server/automa/MarsBotTilePlacer';
 import {LocalNeuralInstance} from '@/server/automa/bonusCards/LocalNeuralInstance';
 import {Space} from '@/server/boards/Space';
@@ -14,7 +14,7 @@ import {createAutomaGame} from '../corps/CorpGame';
 import {recordingMarsBot} from '../corps/RecordingMarsBot';
 
 function neuralInstance() {
-  return createBaseBonusCards().find((c) => c.id === BonusCardId.B07_LOCAL_NEURAL_INSTANCE)!;
+  return createBonusCard(BonusCardName.LOCAL_NEURAL_INSTANCE);
 }
 
 /** Covers the board with the player's greeneries until no space is left for the Neural Instance tile. */
@@ -64,8 +64,8 @@ describe('LocalNeuralInstance', () => {
     const placementMc = new MarsBotTilePlacer(marsBot).getTotalPlacementMC(marsBot.neuralInstanceSpace!);
     expect(marsBot.megacredits).to.eq(placementMc);
     expect(destroyed).to.be.true;
-    const discardedIds = marsBot.bonusDeck.discardPile.map((c) => c.id);
-    expect(discardedIds).does.not.include(BonusCardId.B07_LOCAL_NEURAL_INSTANCE);
+    const discardedIds = marsBot.bonusDeck.discardPile.map((c) => c.name);
+    expect(discardedIds).does.not.include(BonusCardName.LOCAL_NEURAL_INSTANCE);
   });
 
   it('goes to the bonus discard pile when its tile cannot be placed', () => {
@@ -78,14 +78,14 @@ describe('LocalNeuralInstance', () => {
     expect(marsBot.neuralInstanceSpace).to.be.undefined;
     expect(marsBot.playedProjectCards).has.length(played + 1); // The project card it resolved instead
     expect(destroyed).to.be.false;
-    const discardedIds = marsBot.bonusDeck.discardPile.map((c) => c.id);
-    expect(discardedIds).to.include(BonusCardId.B07_LOCAL_NEURAL_INSTANCE);
+    const discardedIds = marsBot.bonusDeck.discardPile.map((c) => c.name);
+    expect(discardedIds).to.include(BonusCardName.LOCAL_NEURAL_INSTANCE);
   });
 
   it('records the project card in its fallback', () => {
     const {marsBot} = createAutomaGame();
     leaveNoNeuralInstanceSpace(marsBot);
-    const b07 = createBaseBonusCards().find((c) => c.id === BonusCardId.B07_LOCAL_NEURAL_INSTANCE)!;
+    const b07 = createBonusCard(BonusCardName.LOCAL_NEURAL_INSTANCE);
 
     marsBot.actionDeck.playBonusCard(b07);
 

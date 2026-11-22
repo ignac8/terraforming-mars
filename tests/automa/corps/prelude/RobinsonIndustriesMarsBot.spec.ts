@@ -1,5 +1,5 @@
 import {expect} from 'chai';
-import {BonusCardId} from '@/common/automa/AutomaTypes';
+import {BonusCardName} from '@/common/automa/BonusCardName';
 import {CardName} from '@/common/cards/CardName';
 import {getMarsBotCorp} from '@/server/automa/corps/MarsBotCorpRegistry';
 import {RobinsonIndustriesMarsBot} from '@/server/automa/corps/prelude/RobinsonIndustriesMarsBot';
@@ -15,7 +15,7 @@ describe('RobinsonIndustriesMarsBot', () => {
     new RobinsonIndustriesMarsBot().setup(marsBot);
 
     expect(calls).deep.eq(['gainMc(10)']);
-    expect(new RobinsonIndustriesMarsBot().actionDeckBonusCard).eq(BonusCardId.B28_DIVERSIFICATION);
+    expect(new RobinsonIndustriesMarsBot().actionDeckBonusCard).eq(BonusCardName.DIVERSIFICATION);
   });
 
   it('gains 10 M€ on setup', () => {

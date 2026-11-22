@@ -1,7 +1,7 @@
 import {expect} from 'chai';
 import {TileType} from '@/common/TileType';
 import {SpaceId} from '@/common/Types';
-import {BonusCardId} from '@/common/automa/AutomaTypes';
+import {BonusCardName} from '@/common/automa/BonusCardName';
 import {BoardName} from '@/common/boards/BoardName';
 import {SpaceType} from '@/common/boards/SpaceType';
 import {CardName} from '@/common/cards/CardName';
@@ -12,7 +12,7 @@ import {IGame} from '@/server/IGame';
 import {IMarsBot} from '@/server/automa/IMarsBot';
 import {MarsBot} from '@/server/automa/MarsBot';
 import {MarsBotBoard} from '@/server/automa/MarsBotBoard';
-import {createBaseBonusCards, createBonusCard} from '@/server/automa/bonusCards/MarsBotBonusCards';
+import {createBonusCard} from '@/server/automa/bonusCards/MarsBotBonusCards';
 import {THARSIS_MARSBOT_BOARD} from '@/server/automa/boards/TharsisMarsBot';
 import {VENUS_MARSBOT_TRACK} from '@/server/automa/boards/VenusMarsBot';
 import {trackCubeKey} from '@/server/automa/corpTrackCubes';
@@ -83,7 +83,7 @@ function setup(margins: Record<string, number>) {
     award.getScore = () => 10 + margin;
   }
   marsBot.awardValue = () => 10;
-  const b08 = createBaseBonusCards().find((c) => c.id === BonusCardId.B08_CORPORATE_COMPETITION)!;
+  const b08 = createBonusCard(BonusCardName.CORPORATE_COMPETITION);
   return {game, human, marsBot, b08};
 }
 
@@ -352,8 +352,7 @@ describe('CorporateCompetition', () => {
       marsBot.marsBotBoard.tracks[3].advance();
     }
 
-    const cards = createBaseBonusCards();
-    const b08 = cards.find((c) => c.id === BonusCardId.B08_CORPORATE_COMPETITION)!;
+    const b08 = createBonusCard(BonusCardName.CORPORATE_COMPETITION);
 
     const mcBefore = marsBot.megacredits;
     marsBot.actionDeck.playBonusCard(b08);
@@ -376,7 +375,7 @@ describe('CorporateCompetition', () => {
     marsBot.marsBotBoard.tracks[1].position = 6;
     marsBot.megacredits = 5;
 
-    marsBot.actionDeck.playBonusCard(createBaseBonusCards().find((c) => c.id === BonusCardId.B08_CORPORATE_COMPETITION)!);
+    marsBot.actionDeck.playBonusCard(createBonusCard(BonusCardName.CORPORATE_COMPETITION));
 
     expect(marsBot.marsBotBoard.tracks[1].position).to.eq(7);
     expect(ceres.colonies).includes(marsBot.player.id);
@@ -426,7 +425,7 @@ describe('CorporateCompetition', () => {
     const {marsBot, b08} = setup({Scientist: 0});
     const tracks = marsBot.marsBotBoard.tracks;
     tracks[3].position = tracks[3].definition.layout.length - 1;
-    marsBot.bonusDeck.drawPile.push(createBonusCard(BonusCardId.B31_GOVERNMENT_SUBSIDY));
+    marsBot.bonusDeck.drawPile.push(createBonusCard(BonusCardName.GOVERNMENT_SUBSIDY));
     const tr = marsBot.player.terraformRating;
     marsBot.actionDeck.playBonusCard(b08);
     expect(marsBot.player.terraformRating).to.eq(tr + 1);
@@ -508,7 +507,7 @@ describe('CorporateCompetition', () => {
     stackDeck(game, new Mine(), new Algae());
     marsBot.megacredits = 5;
 
-    marsBot.actionDeck.playBonusCard(createBaseBonusCards().find((c) => c.id === BonusCardId.B08_CORPORATE_COMPETITION)!);
+    marsBot.actionDeck.playBonusCard(createBonusCard(BonusCardName.CORPORATE_COMPETITION));
 
     expect(marsBot.marsBotBoard.tracks[6].position).to.be.greaterThan(0);
     expect(marsBot.megacredits).eq(5);
@@ -520,11 +519,11 @@ describe('CorporateCompetition', () => {
     const marsBot = game.automaHooks!.marsBot;
     game.fundAward(human, game.awards.find((a) => a.name === 'Forecaster')!);
     stackDeck(game, new Mine(), new Algae());
-    marsBot.bonusDeck.drawPile.push(createBonusCard(BonusCardId.B31_GOVERNMENT_SUBSIDY));
+    marsBot.bonusDeck.drawPile.push(createBonusCard(BonusCardName.GOVERNMENT_SUBSIDY));
     marsBot.megacredits = 4;
     const tr = marsBot.player.terraformRating;
 
-    marsBot.actionDeck.playBonusCard(createBaseBonusCards().find((c) => c.id === BonusCardId.B08_CORPORATE_COMPETITION)!);
+    marsBot.actionDeck.playBonusCard(createBonusCard(BonusCardName.CORPORATE_COMPETITION));
 
     expect(marsBot.marsBotBoard.tracks[6].position).to.eq(0);
     expect(marsBot.player.terraformRating).to.eq(tr + 1);
@@ -536,7 +535,7 @@ describe('CorporateCompetition', () => {
     game.fundAward(human, game.awards.find((a) => a.name === 'Scientist')!);
     marsBot.megacredits = 4;
 
-    marsBot.actionDeck.playBonusCard(createBaseBonusCards().find((c) => c.id === BonusCardId.B08_CORPORATE_COMPETITION)!);
+    marsBot.actionDeck.playBonusCard(createBonusCard(BonusCardName.CORPORATE_COMPETITION));
 
     expect(marsBot.marsBotBoard.tracks[3].position).to.eq(0);
   });

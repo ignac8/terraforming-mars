@@ -1,8 +1,8 @@
 import {expect} from 'chai';
-import {BonusCardId} from '@/common/automa/AutomaTypes';
+import {BonusCardName} from '@/common/automa/BonusCardName';
 import {BoardName} from '@/common/boards/BoardName';
 import {ColonyName} from '@/common/colonies/ColonyName';
-import {createBaseBonusCards} from '@/server/automa/bonusCards/MarsBotBonusCards';
+import {createBonusCard} from '@/server/automa/bonusCards/MarsBotBonusCards';
 import {Ants} from '@/server/cards/base/Ants';
 import {Birds} from '@/server/cards/base/Birds';
 import {Fish} from '@/server/cards/base/Fish';
@@ -18,7 +18,7 @@ import {createAutomaGame} from '../corps/CorpGame';
 import {recordingMarsBot} from '../corps/RecordingMarsBot';
 
 function invasiveSpecies() {
-  return createBaseBonusCards().find((c) => c.id === BonusCardId.B02_INVASIVE_SPECIES)!;
+  return createBonusCard(BonusCardName.INVASIVE_SPECIES);
 }
 
 describe('InvasiveSpecies', () => {
@@ -101,8 +101,7 @@ describe('InvasiveSpecies', () => {
   it('MarsBot gains 5 MC even when human has no animals/microbes', () => {
     const {marsBot} = createAutomaGame();
 
-    const cards = createBaseBonusCards();
-    const b02 = cards.find((c) => c.id === BonusCardId.B02_INVASIVE_SPECIES)!;
+    const b02 = createBonusCard(BonusCardName.INVASIVE_SPECIES);
 
     marsBot.actionDeck.playBonusCard(b02);
     expect(marsBot.megacredits).to.eq(5);

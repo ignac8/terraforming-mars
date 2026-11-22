@@ -1,5 +1,5 @@
 import {expect} from 'chai';
-import {BonusCardId} from '@/common/automa/AutomaTypes';
+import {BonusCardName} from '@/common/automa/BonusCardName';
 import {createBonusCard} from '@/server/automa/bonusCards/MarsBotBonusCards';
 import {DoItRight} from '@/server/automa/bonusCards/DoItRight';
 import {setTemperature} from '../../TestingUtils';
@@ -31,14 +31,14 @@ describe('DoItRight', () => {
   it('raises the temperature 2 steps when it is 1 or 2 steps from a bonus', () => {
     const {game, marsBot} = createAutomaGame();
     setTemperature(game, -26);
-    marsBot.actionDeck.playBonusCard(createBonusCard(BonusCardId.B25_DO_IT_RIGHT));
+    marsBot.actionDeck.playBonusCard(createBonusCard(BonusCardName.DO_IT_RIGHT));
     expect(game.getTemperature()).to.eq(-22);
   });
 
   it('does nothing when no branch applies', () => {
     const {game, marsBot} = createAutomaGame();
     const tr = marsBot.player.terraformRating;
-    marsBot.actionDeck.playBonusCard(createBonusCard(BonusCardId.B25_DO_IT_RIGHT));
+    marsBot.actionDeck.playBonusCard(createBonusCard(BonusCardName.DO_IT_RIGHT));
     expect(game.getTemperature()).to.eq(-30);
     expect(game.getOxygenLevel()).to.eq(0);
     expect(marsBot.player.terraformRating).to.eq(tr);

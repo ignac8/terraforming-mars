@@ -7,7 +7,7 @@ import {BoardName} from '../../src/common/boards/BoardName';
 import {Resource} from '../../src/common/Resource';
 import {ProtectedHabitats} from '../../src/server/cards/base/ProtectedHabitats';
 import {SponsoredAcademies} from '../../src/server/cards/venusNext/SponsoredAcademies';
-import {BonusCardId} from '../../src/common/automa/AutomaTypes';
+import {BonusCardName} from '../../src/common/automa/BonusCardName';
 import {createBonusCard} from '../../src/server/automa/bonusCards/MarsBotBonusCards';
 import {Livestock} from '../../src/server/cards/base/Livestock';
 import {Tardigrades} from '../../src/server/cards/base/Tardigrades';
@@ -371,7 +371,7 @@ describe('MarsBot Resource Interaction (rules page 4-5)', () => {
       human.plants = 10;
       expect(new LawSuit().canPlay(human)).is.false;
 
-      createBonusCard(BonusCardId.B01_METEOR_SHOWER).resolve(marsBot);
+      createBonusCard(BonusCardName.METEOR_SHOWER).resolve(marsBot);
 
       expect(human.plants).eq(5);
       expect(new LawSuit().canPlay(human)).is.true;
@@ -383,7 +383,7 @@ describe('MarsBot Resource Interaction (rules page 4-5)', () => {
       human.playedCards.push(tardigrades);
       tardigrades.resourceCount = 4;
 
-      createBonusCard(BonusCardId.B02_INVASIVE_SPECIES).resolve(marsBot);
+      createBonusCard(BonusCardName.INVASIVE_SPECIES).resolve(marsBot);
 
       expect(tardigrades.resourceCount).eq(3);
       expect(new LawSuit().canPlay(human)).is.true;
@@ -394,7 +394,7 @@ describe('MarsBot Resource Interaction (rules page 4-5)', () => {
       human.plants = 10;
       human.playedCards.push(new ProtectedHabitats());
 
-      createBonusCard(BonusCardId.B01_METEOR_SHOWER).resolve(marsBot);
+      createBonusCard(BonusCardName.METEOR_SHOWER).resolve(marsBot);
 
       expect(human.plants).eq(10);
       expect(new LawSuit().canPlay(human)).is.false;

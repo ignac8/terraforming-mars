@@ -1,11 +1,10 @@
 import {expect} from 'chai';
 import {Resource} from '@/common/Resource';
-import {BonusCardId} from '@/common/automa/AutomaTypes';
+import {BonusCardName} from '@/common/automa/BonusCardName';
 import {CardName} from '@/common/cards/CardName';
 import {Game} from '@/server/Game';
 import {MarsBot} from '@/server/automa/MarsBot';
 import {createBonusCard} from '@/server/automa/bonusCards/MarsBotBonusCards';
-import {MarsBotBonusCard} from '@/server/automa/MarsBotBonusCard';
 import {getMarsBotCorp} from '@/server/automa/corps/MarsBotCorpRegistry';
 import {EcoLineMarsBot} from '@/server/automa/corps/base/EcoLineMarsBot';
 import {runAllActions} from '../../../TestingUtils';
@@ -14,7 +13,7 @@ import {createAutomaGame} from '../CorpGame';
 import {recordingMarsBot} from '../RecordingMarsBot';
 
 function rapidSprouting(marsBot: MarsBot): void {
-  marsBot.actionDeck.playBonusCard(createBonusCard(BonusCardId.B23_RAPID_SPROUTING));
+  marsBot.actionDeck.playBonusCard(createBonusCard(BonusCardName.RAPID_SPROUTING));
 }
 
 describe('EcoLineMarsBot', () => {
@@ -26,7 +25,7 @@ describe('EcoLineMarsBot', () => {
 
     new EcoLineMarsBot().beforeActionPhase(marsBot);
 
-    expect(calls).deep.eq(['addBonusCardToActionDeck(B23)']);
+    expect(calls).deep.eq(['addBonusCardToActionDeck(Rapid Sprouting)']);
   });
 
   // Corporation FAQ (rulebook B, p.4): the player may destroy or steal the plants on the corporation card
@@ -118,8 +117,8 @@ describe('EcoLineMarsBot', () => {
 
     const deckBefore = marsBot.actionDeck.cards.length;
     corp.beforeActionPhase!(marsBot);
-    const ids = marsBot.actionDeck.cards.map((card) => (card as MarsBotBonusCard).id);
+    const ids = marsBot.actionDeck.cards.map((card) => card.name);
     expect(marsBot.actionDeck.cards.length).to.eq(deckBefore + 1);
-    expect(ids).to.include(BonusCardId.B23_RAPID_SPROUTING);
+    expect(ids).to.include(BonusCardName.RAPID_SPROUTING);
   });
 });

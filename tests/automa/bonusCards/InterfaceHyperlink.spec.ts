@@ -1,5 +1,5 @@
 import {expect} from 'chai';
-import {BonusCardId} from '@/common/automa/AutomaTypes';
+import {BonusCardName} from '@/common/automa/BonusCardName';
 import {CardName} from '@/common/cards/CardName';
 import {Tag} from '@/common/cards/Tag';
 import {createBonusCard} from '@/server/automa/bonusCards/MarsBotBonusCards';
@@ -113,13 +113,13 @@ describe('InterfaceHyperlink', () => {
     const giantIceAsteroid = new GiantIceAsteroid();
     const {game, marsBot, played} = hyperlinkGame(4, [tardigrades, asteroid, giantIceAsteroid, searchForLife]);
 
-    const destroyed = marsBot.actionDeck.playBonusCard(createBonusCard(BonusCardId.B30_INTERFACE_HYPERLINK));
+    const destroyed = marsBot.actionDeck.playBonusCard(createBonusCard(BonusCardName.INTERFACE_HYPERLINK));
 
     expect(played).deep.eq([searchForLife, giantIceAsteroid]);
     expect(game.projectDeck.discardPile).to.include.members([tardigrades, asteroid]);
     expect(destroyed).is.true;
-    const discardedIds = marsBot.bonusDeck.discardPile.map((c) => c.id);
-    expect(discardedIds).to.not.include(BonusCardId.B30_INTERFACE_HYPERLINK);
+    const discardedIds = marsBot.bonusDeck.discardPile.map((c) => c.name);
+    expect(discardedIds).to.not.include(BonusCardName.INTERFACE_HYPERLINK);
   });
 
   it('breaks a cost tie toward the card with more tags', () => {
@@ -128,7 +128,7 @@ describe('InterfaceHyperlink', () => {
     const searchForLife = new SearchForLife();
     const {marsBot, played} = hyperlinkGame(3, [mine, powerPlant, searchForLife]);
 
-    marsBot.actionDeck.playBonusCard(createBonusCard(BonusCardId.B30_INTERFACE_HYPERLINK));
+    marsBot.actionDeck.playBonusCard(createBonusCard(BonusCardName.INTERFACE_HYPERLINK));
 
     expect(played).deep.eq([searchForLife, powerPlant]);
   });
@@ -140,7 +140,7 @@ describe('InterfaceHyperlink', () => {
     const searchForLife = new SearchForLife();
     const {marsBot, played} = hyperlinkGame(3, [building, twoWild, searchForLife]);
 
-    marsBot.actionDeck.playBonusCard(createBonusCard(BonusCardId.B30_INTERFACE_HYPERLINK));
+    marsBot.actionDeck.playBonusCard(createBonusCard(BonusCardName.INTERFACE_HYPERLINK));
 
     expect(played).deep.eq([searchForLife, twoWild]);
   });
@@ -150,11 +150,11 @@ describe('InterfaceHyperlink', () => {
     const searchForLife = new SearchForLife();
     const {marsBot, played} = hyperlinkGame(0, [mine, searchForLife]);
 
-    const destroyed = marsBot.actionDeck.playBonusCard(createBonusCard(BonusCardId.B30_INTERFACE_HYPERLINK));
+    const destroyed = marsBot.actionDeck.playBonusCard(createBonusCard(BonusCardName.INTERFACE_HYPERLINK));
 
     expect(played).deep.eq([searchForLife, mine]);
     expect(destroyed).is.true;
-    const discardedIds = marsBot.bonusDeck.discardPile.map((c) => c.id);
-    expect(discardedIds).to.not.include(BonusCardId.B30_INTERFACE_HYPERLINK);
+    const discardedIds = marsBot.bonusDeck.discardPile.map((c) => c.name);
+    expect(discardedIds).to.not.include(BonusCardName.INTERFACE_HYPERLINK);
   });
 });

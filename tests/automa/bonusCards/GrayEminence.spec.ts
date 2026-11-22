@@ -1,5 +1,5 @@
 import {expect} from 'chai';
-import {BonusCardId} from '@/common/automa/AutomaTypes';
+import {BonusCardName} from '@/common/automa/BonusCardName';
 import {BoardName} from '@/common/boards/BoardName';
 import {MarsBot} from '@/server/automa/MarsBot';
 import {createBonusCard} from '@/server/automa/bonusCards/MarsBotBonusCards';
@@ -61,7 +61,7 @@ describe('GrayEminence', () => {
     const {marsBot, turmoil} = turmoilGame();
     const before = botDelegates(turmoil, marsBot);
     expect(Math.max(...before)).to.eq(0);
-    marsBot.actionDeck.playBonusCard(createBonusCard(BonusCardId.B29_GRAY_EMINENCE));
+    marsBot.actionDeck.playBonusCard(createBonusCard(BonusCardName.GRAY_EMINENCE));
     const after = botDelegates(turmoil, marsBot);
     const total = after.reduce((a, b) => a + b, 0);
     expect(total).to.eq(2);
@@ -73,7 +73,7 @@ describe('GrayEminence', () => {
     game.projectDeck.drawPile.push(new Mine(), new Capital()); // Capital (26) first, then Mine (4)
     const discarded = game.projectDeck.discardPile.length;
 
-    marsBot.actionDeck.playBonusCard(createBonusCard(BonusCardId.B29_GRAY_EMINENCE));
+    marsBot.actionDeck.playBonusCard(createBonusCard(BonusCardName.GRAY_EMINENCE));
 
     // 26 counts to the 2nd of 6 tied parties; 4 counts to the 4th of the 5 left
     expect(botDelegates(turmoil, marsBot)).deep.eq([0, 1, 0, 0, 1, 0]);
@@ -83,7 +83,7 @@ describe('GrayEminence', () => {
   it('gains 2 M€ for each delegate it cannot place', () => {
     const {marsBot, turmoil} = turmoilGame();
     turmoil.delegateReserve.remove(marsBot.player, turmoil.delegateReserve.get(marsBot.player) - 1);
-    marsBot.actionDeck.playBonusCard(createBonusCard(BonusCardId.B29_GRAY_EMINENCE));
+    marsBot.actionDeck.playBonusCard(createBonusCard(BonusCardName.GRAY_EMINENCE));
     const total = botDelegates(turmoil, marsBot).reduce((a, b) => a + b, 0);
     expect(total).to.eq(1);
     expect(marsBot.megacredits).to.eq(2);

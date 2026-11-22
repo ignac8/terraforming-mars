@@ -1,13 +1,13 @@
 import {expect} from 'chai';
 import {TileType} from '@/common/TileType';
-import {BonusCardId} from '@/common/automa/AutomaTypes';
+import {BonusCardName} from '@/common/automa/BonusCardName';
 import {CardName} from '@/common/cards/CardName';
 import {createBonusCard} from '@/server/automa/bonusCards/MarsBotBonusCards';
 import {getMarsBotCorp} from '@/server/automa/corps/MarsBotCorpRegistry';
 import {RapidSprouting} from '@/server/automa/bonusCards/RapidSprouting';
 import {createAutomaGame, resetCorpRegistry} from '../corps/CorpGame';
 import {recordingMarsBot} from '../corps/RecordingMarsBot';
-import {bonusDeckIds} from './BonusCardGame';
+import {bonusCardsInBonusDeck} from './BonusCardGame';
 
 describe('RapidSprouting', () => {
   beforeEach(resetCorpRegistry);
@@ -40,11 +40,11 @@ describe('RapidSprouting', () => {
     const {game, marsBot} = createAutomaGame();
     const greeneries = () => game.board.getGreeneries(marsBot.player).length;
 
-    marsBot.actionDeck.playBonusCard(createBonusCard(BonusCardId.B23_RAPID_SPROUTING));
+    marsBot.actionDeck.playBonusCard(createBonusCard(BonusCardName.RAPID_SPROUTING));
     expect(greeneries()).to.eq(0);
     expect(marsBot.getCorpState('plantResources')).to.eq(1);
 
-    marsBot.actionDeck.playBonusCard(createBonusCard(BonusCardId.B23_RAPID_SPROUTING));
+    marsBot.actionDeck.playBonusCard(createBonusCard(BonusCardName.RAPID_SPROUTING));
     expect(greeneries()).to.eq(1);
     expect(game.getOxygenLevel()).to.eq(1);
     expect(marsBot.getCorpState('plantResources')).to.eq(0);
@@ -59,7 +59,7 @@ describe('RapidSprouting', () => {
       game.simpleAddTile(human, space, {tileType: TileType.GREENERY});
     }
 
-    marsBot.actionDeck.playBonusCard(createBonusCard(BonusCardId.B23_RAPID_SPROUTING));
+    marsBot.actionDeck.playBonusCard(createBonusCard(BonusCardName.RAPID_SPROUTING));
 
     expect(game.board.getGreeneries(marsBot.player)).is.empty;
     expect(marsBot.getCorpState('plantResources')).to.eq(0);
@@ -70,8 +70,8 @@ describe('RapidSprouting', () => {
     const {marsBot} = createAutomaGame();
     marsBot.setCorpAndSetup(getMarsBotCorp(CardName.ECOLINE)!);
 
-    marsBot.actionDeck.playBonusCard(createBonusCard(BonusCardId.B23_RAPID_SPROUTING));
+    marsBot.actionDeck.playBonusCard(createBonusCard(BonusCardName.RAPID_SPROUTING));
 
-    expect(bonusDeckIds(marsBot)).does.not.include(BonusCardId.B23_RAPID_SPROUTING);
+    expect(bonusCardsInBonusDeck(marsBot)).does.not.include(BonusCardName.RAPID_SPROUTING);
   });
 });

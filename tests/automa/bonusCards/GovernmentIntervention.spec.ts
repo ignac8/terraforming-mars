@@ -1,14 +1,13 @@
 import {expect} from 'chai';
-import {BonusCardId} from '@/common/automa/AutomaTypes';
+import {BonusCardName} from '@/common/automa/BonusCardName';
 import {BoardName} from '@/common/boards/BoardName';
-import {CardName} from '@/common/cards/CardName';
 import {createBonusCard} from '@/server/automa/bonusCards/MarsBotBonusCards';
 import {GovernmentIntervention} from '@/server/automa/bonusCards/GovernmentIntervention';
 import {testGame} from '../../TestGame';
 import {maxOutOceans, setOxygenLevel, setTemperature, setVenusScaleLevel} from '../../TestingUtils';
 import {createAutomaGame} from '../corps/CorpGame';
 import {recordingMarsBot} from '../corps/RecordingMarsBot';
-import {bonusDeckIds} from './BonusCardGame';
+import {bonusCardsInBonusDeck} from './BonusCardGame';
 
 function venusGame() {
   const [game] = testGame(1, {automa: true, venusNextExtension: true, boardName: BoardName.THARSIS});
@@ -17,7 +16,7 @@ function venusGame() {
   return {game, marsBot, hand: marsBot.player.cardsInHand.length, deck: game.projectDeck.drawPile.length};
 }
 
-const ADVANCE_FURTHEST = `advanceFurthestParameter(${CardName.AUTOMA_GOVERNMENT_INTERVENTION}, false)`;
+const ADVANCE_FURTHEST = `advanceFurthestParameter(${BonusCardName.GOVERNMENT_INTERVENTION}, false)`;
 
 describe('GovernmentIntervention', () => {
   // `advanced` is what raising the parameter furthest from completion returns: false once Mars is complete
@@ -56,7 +55,7 @@ describe('GovernmentIntervention', () => {
     const tr = marsBot.player.terraformRating;
     const mc = marsBot.megacredits;
 
-    marsBot.actionDeck.playBonusCard(createBonusCard(BonusCardId.B16_GOVERNMENT_INTERVENTION));
+    marsBot.actionDeck.playBonusCard(createBonusCard(BonusCardName.GOVERNMENT_INTERVENTION));
 
     expect(game.getTemperature()).to.eq(-24);
     expect(marsBot.player.terraformRating).to.eq(tr);
@@ -72,7 +71,7 @@ describe('GovernmentIntervention', () => {
     setTemperature(game, 8);
     const venus = game.getVenusScaleLevel();
 
-    marsBot.actionDeck.playBonusCard(createBonusCard(BonusCardId.B16_GOVERNMENT_INTERVENTION));
+    marsBot.actionDeck.playBonusCard(createBonusCard(BonusCardName.GOVERNMENT_INTERVENTION));
 
     expect(game.getVenusScaleLevel()).to.eq(venus + 2);
   });
@@ -86,7 +85,7 @@ describe('GovernmentIntervention', () => {
     maxOutOceans(game.players[0]);
     setTemperature(game, -10);
 
-    marsBot.actionDeck.playBonusCard(createBonusCard(BonusCardId.B16_GOVERNMENT_INTERVENTION));
+    marsBot.actionDeck.playBonusCard(createBonusCard(BonusCardName.GOVERNMENT_INTERVENTION));
 
     expect(game.getTemperature()).to.eq(-8);
     expect(game.getOxygenLevel()).to.eq(7);
@@ -96,7 +95,7 @@ describe('GovernmentIntervention', () => {
     const {game, marsBot, hand} = venusGame();
     game.generation = 3;
 
-    marsBot.actionDeck.playBonusCard(createBonusCard(BonusCardId.B16_GOVERNMENT_INTERVENTION));
+    marsBot.actionDeck.playBonusCard(createBonusCard(BonusCardName.GOVERNMENT_INTERVENTION));
 
     expect(game.getVenusScaleLevel()).to.eq(8);
     expect(marsBot.megacredits).to.eq(0);
@@ -107,7 +106,7 @@ describe('GovernmentIntervention', () => {
     const {game, marsBot} = createAutomaGame({venusNextExtension: true});
     game.generation = 4;
     const trBefore = marsBot.player.terraformRating;
-    const card = createBonusCard(BonusCardId.B16_GOVERNMENT_INTERVENTION);
+    const card = createBonusCard(BonusCardName.GOVERNMENT_INTERVENTION);
     marsBot.actionDeck.playBonusCard(card);
     expect(marsBot.player.terraformRating).to.eq(trBefore);
   });
@@ -117,7 +116,7 @@ describe('GovernmentIntervention', () => {
     game.generation = 3;
     const venusBefore = game.getVenusScaleLevel();
     const trBefore = marsBot.player.terraformRating;
-    const card = createBonusCard(BonusCardId.B16_GOVERNMENT_INTERVENTION);
+    const card = createBonusCard(BonusCardName.GOVERNMENT_INTERVENTION);
     marsBot.actionDeck.playBonusCard(card);
     expect(game.getVenusScaleLevel()).to.eq(venusBefore + 2);
     expect(marsBot.player.terraformRating).to.eq(trBefore);
@@ -128,7 +127,7 @@ describe('GovernmentIntervention', () => {
     game.generation = 3;
     setVenusScaleLevel(game, 30);
     const venusBefore = game.getVenusScaleLevel();
-    const card = createBonusCard(BonusCardId.B16_GOVERNMENT_INTERVENTION);
+    const card = createBonusCard(BonusCardName.GOVERNMENT_INTERVENTION);
     marsBot.actionDeck.playBonusCard(card);
     expect(game.getVenusScaleLevel()).to.eq(venusBefore);
   });
@@ -136,8 +135,8 @@ describe('GovernmentIntervention', () => {
   it('stays out of the bonus deck after it resolves', () => {
     const {marsBot} = createAutomaGame({venusNextExtension: true});
 
-    marsBot.actionDeck.playBonusCard(createBonusCard(BonusCardId.B16_GOVERNMENT_INTERVENTION));
+    marsBot.actionDeck.playBonusCard(createBonusCard(BonusCardName.GOVERNMENT_INTERVENTION));
 
-    expect(bonusDeckIds(marsBot)).does.not.include(BonusCardId.B16_GOVERNMENT_INTERVENTION);
+    expect(bonusCardsInBonusDeck(marsBot)).does.not.include(BonusCardName.GOVERNMENT_INTERVENTION);
   });
 });

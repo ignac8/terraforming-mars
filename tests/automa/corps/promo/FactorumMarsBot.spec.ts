@@ -1,6 +1,6 @@
 import {expect} from 'chai';
 import {Resource} from '@/common/Resource';
-import {BonusCardId} from '@/common/automa/AutomaTypes';
+import {BonusCardName} from '@/common/automa/BonusCardName';
 import {CardName} from '@/common/cards/CardName';
 import {getMarsBotCorp} from '@/server/automa/corps/MarsBotCorpRegistry';
 import {FactorumMarsBot} from '@/server/automa/corps/promo/FactorumMarsBot';
@@ -26,7 +26,7 @@ describe('FactorumMarsBot', () => {
 
     expect(trackCubes(new FactorumMarsBot())).deep.eq(expectedCubes);
     expect(new FactorumMarsBot().trackCubesTriggerEveryAdvance).is.true;
-    expect(new FactorumMarsBot().actionDeckBonusCard).eq(BonusCardId.B24_SUPPLY_AND_DEMAND);
+    expect(new FactorumMarsBot().actionDeckBonusCard).eq(BonusCardName.SUPPLY_AND_DEMAND);
   });
 
   it('stores 1 M€ on every advance of the building track, re-advances included', () => {

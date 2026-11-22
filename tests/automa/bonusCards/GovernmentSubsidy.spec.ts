@@ -1,5 +1,5 @@
 import {expect} from 'chai';
-import {BonusCardId} from '@/common/automa/AutomaTypes';
+import {BonusCardName} from '@/common/automa/BonusCardName';
 import {createBonusCard} from '@/server/automa/bonusCards/MarsBotBonusCards';
 import {GovernmentSubsidy} from '@/server/automa/bonusCards/GovernmentSubsidy';
 import {testGame} from '../../TestGame';
@@ -22,7 +22,7 @@ describe('GovernmentSubsidy', () => {
   it('raises TR 1 step', () => {
     const {marsBot} = createAutomaGame();
     const tr = marsBot.player.terraformRating;
-    marsBot.actionDeck.playBonusCard(createBonusCard(BonusCardId.B31_GOVERNMENT_SUBSIDY));
+    marsBot.actionDeck.playBonusCard(createBonusCard(BonusCardName.GOVERNMENT_SUBSIDY));
     expect(marsBot.player.terraformRating).to.eq(tr + 1);
     expect(marsBot.megacredits).to.eq(0);
   });
