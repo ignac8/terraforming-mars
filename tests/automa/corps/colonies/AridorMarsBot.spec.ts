@@ -17,13 +17,13 @@ import {TRACK, recordingMarsBot, trackCubes} from '../RecordingMarsBot';
 
 // The card names the tracks: "Jovian track #6" (white) and "city track #6" (black). Which row
 // carries those tags depends on the map.
-const boards: Array<[BoardName, number, number]> = [
-  [BoardName.THARSIS, 4, 5],
-  [BoardName.UTOPIA_PLANITIA, 4, 5],
-  [BoardName.HELLAS, 3, 5],
-  [BoardName.ELYSIUM, 3, 5],
-  [BoardName.TERRA_CIMMERIA_NOVA, 5, 3],
-  [BoardName.VASTITAS_BOREALIS_NOVA, 5, 4],
+const boards = [
+  {boardName: BoardName.THARSIS, jovian: 4, city: 5},
+  {boardName: BoardName.UTOPIA_PLANITIA, jovian: 4, city: 5},
+  {boardName: BoardName.HELLAS, jovian: 3, city: 5},
+  {boardName: BoardName.ELYSIUM, jovian: 3, city: 5},
+  {boardName: BoardName.TERRA_CIMMERIA_NOVA, jovian: 5, city: 3},
+  {boardName: BoardName.VASTITAS_BOREALIS_NOVA, jovian: 5, city: 4},
 ];
 
 function setUpAridor(boardName: BoardName): MarsBot {
@@ -174,35 +174,43 @@ describe('AridorMarsBot', () => {
     expect(marsBot.shippingBoard.get(luna.name)).to.eq(initialStorage + 2);
   });
 
-  for (const [boardName, jovian, city] of boards) {
-    const expected: Array<[number, number, CubeType]> = [
-      [0, 3, 'white'], [1, 3, 'white'], [3, 3, 'white'], [4, 3, 'white'], [jovian, 6, 'white'],
-      [5, 3, 'black'], [city, 6, 'black'], [6, 3, 'black'], [6, 6, 'black'],
+  for (const run of boards) {
+    const expected: Array<{trackIndex: number, position: number, cubeType: CubeType}> = [
+      {trackIndex: 0, position: 3, cubeType: 'white'},
+      {trackIndex: 1, position: 3, cubeType: 'white'},
+      {trackIndex: 3, position: 3, cubeType: 'white'},
+      {trackIndex: 4, position: 3, cubeType: 'white'},
+      {trackIndex: run.jovian, position: 6, cubeType: 'white'},
+      {trackIndex: 5, position: 3, cubeType: 'black'},
+      {trackIndex: run.city, position: 6, cubeType: 'black'},
+      {trackIndex: 6, position: 3, cubeType: 'black'},
+      {trackIndex: 6, position: 6, cubeType: 'black'},
     ];
 
-    it(`the Jovian and city cubes sit on the Jovian and city tracks of ${boardName}`, () => {
-      const marsBot = setUpAridor(boardName);
+    it(`the Jovian and city cubes sit on the Jovian and city tracks of ${run.boardName}`, () => {
+      const marsBot = setUpAridor(run.boardName);
 
-      expect(marsBot.marsBotBoard.definitions[jovian].tags).includes(Tag.JOVIAN);
-      expect(marsBot.marsBotBoard.definitions[city].tags).includes(Tag.CITY);
+      expect(marsBot.marsBotBoard.definitions[run.jovian].tags).includes(Tag.JOVIAN);
+      expect(marsBot.marsBotBoard.definitions[run.city].tags).includes(Tag.CITY);
       // Nine cubes on nine different spaces
-      const spaces = new Set(expected.map(([track, position]) => `${track}:${position}`));
+      const spaces = new Set(expected.map((cube) => `${cube.trackIndex}:${cube.position}`));
       expect(spaces.size).to.eq(9);
     });
 
-    for (const [trackIndex, position, cubeType] of expected) {
-      it('puts a cube on a Jovian or city track space: ' + JSON.stringify({boardName, trackIndex, position, cubeType}), () => {
-        const marsBot = setUpAridor(boardName);
+    for (const cube of expected) {
+      it('puts a cube on a Jovian or city track space: ' + JSON.stringify({boardName: run.boardName, ...cube}), () => {
+        const marsBot = setUpAridor(run.boardName);
 
-        expect(marsBot.hasCubeAt(trackIndex, position)?.cubeType, `track ${trackIndex} #${position}`).to.eq(cubeType);
+        const cubeType = marsBot.hasCubeAt(cube.trackIndex, cube.position)?.cubeType;
+        expect(cubeType, `track ${cube.trackIndex} #${cube.position}`).to.eq(cube.cubeType);
       });
     }
 
-    it(`the Jovian and city cubes advance the event track from the Jovian cube on ${boardName}`, () => {
-      const marsBot = setUpAridor(boardName);
+    it(`the Jovian and city cubes advance the event track from the Jovian cube on ${run.boardName}`, () => {
+      const marsBot = setUpAridor(run.boardName);
       const event = marsBot.marsBotBoard.tracks[TRACK.event].position;
 
-      MarsBotCorpResolver.onTrackAdvanced(marsBot, jovian, 6);
+      MarsBotCorpResolver.onTrackAdvanced(marsBot, run.jovian, 6);
 
       // The event track's icons can move it on further
       expect(marsBot.marsBotBoard.tracks[TRACK.event].position).to.be.above(event);
