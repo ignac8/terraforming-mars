@@ -29,12 +29,12 @@ describe('shuffleHiddenPiles in a MarsBot game', () => {
 
     const state = d.automaState!;
     const was = before.automaState!;
-    for (const [name, pile, old] of [
-      ['action deck', state.actionDeckCardNames, was.actionDeckCardNames],
-      ['bonus draw pile', state.bonusDeck.drawPile, was.bonusDeck.drawPile],
-    ] as const) {
-      expect(pile, name).has.members(old);
-      expect(pile, name).not.deep.eq(old);
+    for (const run of [
+      {name: 'action deck', pile: state.actionDeckCardNames, old: was.actionDeckCardNames},
+      {name: 'bonus draw pile', pile: state.bonusDeck.drawPile, old: was.bonusDeck.drawPile},
+    ]) {
+      expect(run.pile, run.name).has.members(run.old);
+      expect(run.pile, run.name).not.deep.eq(run.old);
     }
     const withPilesRestored = {
       ...state,

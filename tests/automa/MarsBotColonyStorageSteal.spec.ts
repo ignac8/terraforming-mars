@@ -215,27 +215,26 @@ describe('MarsBot colony storage as stock resources', () => {
       expect(human.popWaitingFor()).is.undefined;
     });
 
-    const resources: Array<[Resource, ColonyName]> = [
-      [Resource.MEGACREDITS, ColonyName.LUNA],
-      [Resource.STEEL, ColonyName.CERES],
-      [Resource.TITANIUM, ColonyName.TRITON],
-      [Resource.PLANTS, ColonyName.GANYMEDE],
-      [Resource.ENERGY, ColonyName.CALLISTO],
-      [Resource.HEAT, ColonyName.IO],
-    ];
-    for (const [resource, colony] of resources) {
-      it(`steals ${resource} from ${colony} storage`, () => {
+    for (const run of [
+      {resource: Resource.MEGACREDITS, colony: ColonyName.LUNA},
+      {resource: Resource.STEEL, colony: ColonyName.CERES},
+      {resource: Resource.TITANIUM, colony: ColonyName.TRITON},
+      {resource: Resource.PLANTS, colony: ColonyName.GANYMEDE},
+      {resource: Resource.ENERGY, colony: ColonyName.CALLISTO},
+      {resource: Resource.HEAT, colony: ColonyName.IO},
+    ]) {
+      it(`steals ${run.resource} from ${run.colony} storage`, () => {
         const {game, human, marsBot} = createAutomaGame();
         marsBot.megacredits = 10;
-        marsBot.shippingBoard.storage.set(colony, 4);
+        marsBot.shippingBoard.storage.set(run.colony, 4);
         human.stock.override(Units.EMPTY);
 
-        marsBot.player.stock.steal(resource, 2, human);
+        marsBot.player.stock.steal(run.resource, 2, human);
         takeFromStorage(game, human, 2);
 
-        expect(marsBot.shippingBoard.get(colony)).eq(2);
+        expect(marsBot.shippingBoard.get(run.colony)).eq(2);
         expect(marsBot.megacredits).eq(10);
-        expect(human.stock.get(resource)).eq(2);
+        expect(human.stock.get(run.resource)).eq(2);
       });
     }
 

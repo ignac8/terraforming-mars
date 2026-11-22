@@ -22,9 +22,13 @@ describe('PharmacyUnionMarsBot', () => {
     corp.onProjectCardResolved(marsBot, new Asteroid());
     expect(calls).deep.eq(['removeBonusCard(Meteor Shower)', 'addProjectCardsToBonusDeck(science, 1)', 'raiseTR(1)']);
 
-    for (const [card, megacredits] of [[new Asteroid(), 6], [new ArchaeBacteria(), 2], [new ArchaeBacteria(), 0]] as const) {
-      corp.onHumanCardPlayed(marsBot, card);
-      expect(marsBot.megacredits).eq(megacredits);
+    for (const run of [
+      {card: new Asteroid(), megacredits: 6},
+      {card: new ArchaeBacteria(), megacredits: 2},
+      {card: new ArchaeBacteria(), megacredits: 0},
+    ]) {
+      corp.onHumanCardPlayed(marsBot, run.card);
+      expect(marsBot.megacredits).eq(run.megacredits);
     }
   });
 

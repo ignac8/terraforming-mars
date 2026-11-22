@@ -86,15 +86,20 @@ describe('MarsBotAmazonisRules', () => {
   describe('Nirgal Enterprises', () => {
     const milestone = 'maybeClaimMilestone()';
     const award = 'maybeFundAward()';
-    for (const [generation, expected] of [
-      [1, []], [2, [milestone]], [6, [milestone]], [7, [award]], [10, [award]], [11, [milestone]],
-    ] as const) {
-      it(`claims a milestone in generations 2 to 6 and from 11, and funds an award in 7 to 10, generation ${generation}`, () => {
-        const {marsBot, calls} = recorder(BoardName.AMAZONIS_PLANITIA, generation);
+    for (const run of [
+      {generation: 1, expected: []},
+      {generation: 2, expected: [milestone]},
+      {generation: 6, expected: [milestone]},
+      {generation: 7, expected: [award]},
+      {generation: 10, expected: [award]},
+      {generation: 11, expected: [milestone]},
+    ]) {
+      it(`claims a milestone in generations 2 to 6 and from 11, and funds an award in 7 to 10, generation ${run.generation}`, () => {
+        const {marsBot, calls} = recorder(BoardName.AMAZONIS_PLANITIA, run.generation);
 
         new NirgalEnterprisesMarsBot().beforeActionPhase(marsBot);
 
-        expect(calls).deep.eq(expected);
+        expect(calls).deep.eq(run.expected);
       });
     }
 

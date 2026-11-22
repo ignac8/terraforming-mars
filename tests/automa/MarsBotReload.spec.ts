@@ -294,14 +294,14 @@ describe('MarsBotReload', () => {
   });
 
   // A replay or a rewind loads the save and expects the same random draws from there on.
-  for (const [label, expansions] of [
-    ['base', {}],
-    ['Venus', {venusNextExtension: true}],
-    ['Colonies', {coloniesExtension: true}],
-    ['Venus and Colonies', {venusNextExtension: true, coloniesExtension: true}],
-  ] as const) {
-    it(`leaves the random generator where the save left it (${label})`, () => {
-      const [game] = testGame(1, {automa: true, automaDifficulty: 'easy', boardName: BoardName.THARSIS, ...expansions});
+  for (const run of [
+    {label: 'base', expansions: {}},
+    {label: 'Venus', expansions: {venusNextExtension: true}},
+    {label: 'Colonies', expansions: {coloniesExtension: true}},
+    {label: 'Venus and Colonies', expansions: {venusNextExtension: true, coloniesExtension: true}},
+  ]) {
+    it(`leaves the random generator where the save left it (${run.label})`, () => {
+      const [game] = testGame(1, {automa: true, automaDifficulty: 'easy', boardName: BoardName.THARSIS, ...run.expansions});
       // Nothing is re-entered on load.
       game.phase = Phase.END;
 
