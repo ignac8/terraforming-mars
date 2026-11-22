@@ -348,7 +348,7 @@ export class MarsBotTurnResolver {
       this.marsBot.game.log('MarsBot gains ${0} floater(s)', (b) => b.number(count));
     } else if (this.marsBot.game.gameOptions.coloniesExtension && this.marsBot.game.colonies.some((colony) => colony.name === ColonyName.TITAN)) {
       this.marsBot.addFloaters(count);
-      this.marsBot.game.log('MarsBot gains ${0} floater token(s) in Titan storage (C-14)', (b) => b.number(count));
+      this.marsBot.game.log('MarsBot gains ${0} floater token(s) in Titan storage', (b) => b.number(count));
     }
   }
 

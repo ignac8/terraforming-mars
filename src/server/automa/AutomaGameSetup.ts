@@ -259,7 +259,7 @@ export class AutomaGameSetup {
     const trackIndex = parseInt(trackStr);
     const position = parseInt(posStr);
     marsBot.trackCubePositions.set(key, {trackIndex, position, cubeType: 'white'});
-    game.log('MarsBot: 2nd Trade Fleet cube placed on Energy track position ${0} (C-6)', (b) => b.number(position));
+    game.log('MarsBot: 2nd Trade Fleet cube placed on Energy track position ${0}', (b) => b.number(position));
   }
 
   /**
@@ -286,7 +286,7 @@ export class AutomaGameSetup {
     const randomIndex = rng.nextInt(parties.length);
     const party = parties[randomIndex];
     turmoil.sendDelegateToParty(marsBotPlayer, party.name, game);
-    game.log('MarsBot: extra setup delegate placed in ${0} (T-15)', (b) => b.partyName(party.name));
+    game.log('MarsBot: extra setup delegate placed in ${0}', (b) => b.partyName(party.name));
   }
 }
 

@@ -102,7 +102,7 @@ export class MarsBotCorpResolver {
         marsBot.tradeFleetCubeKey === trackCubeKey(trackIndex, position) &&
         !marsBot.hasSecondTradeFleet) {
       marsBot.hasSecondTradeFleet = true;
-      marsBot.game.log('MarsBot unlocks 2nd Trade Fleet: Extended Shipping Lines available next generation (C-27)');
+      marsBot.game.log('MarsBot unlocks 2nd Trade Fleet: Extended Shipping Lines available next generation');
     }
 
     return replacedIcon;

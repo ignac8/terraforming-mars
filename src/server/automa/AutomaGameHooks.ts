@@ -211,7 +211,7 @@ export class AutomaGameHooks {
     if (opts.coloniesExtension && !opts.venusNextExtension) {
       this.marsBot.shippingBoard.spend(ColonyName.TITAN, 5);
       this.marsBot.drawProjectCardsToActionDeck(1);
-      this.game.log('MarsBot spends 5 Titan floaters for an extra card (C-9)');
+      this.game.log('MarsBot spends 5 Titan floaters for an extra card');
     } else {
       this.marsBot.floaters -= 5;
       this.marsBot.drawProjectCardsToActionDeck(1);
@@ -632,16 +632,16 @@ export class AutomaGameHooks {
     }
     if (colony.name === ColonyName.EUROPA) {
       this.marsBot.gainMc(1);
-      this.game.log('MarsBot gains 1 MC as Europa colony bonus (C-24c)');
+      this.game.log('MarsBot gains 1 M€ as Europa colony bonus');
       return true;
     }
     // Titan storage only holds floaters without Venus Next. With Venus Next MarsBot gains a floater.
     if (colony.name === ColonyName.TITAN && this.game.gameOptions.venusNextExtension) {
       this.marsBot.floaters += 1;
-      this.game.log('MarsBot gains 1 floater as Titan colony bonus (C-21, C-23)');
+      this.game.log('MarsBot gains 1 floater as Titan colony bonus');
     } else {
       this.marsBot.shippingBoard.add(colony.name, 1);
-      this.game.log('MarsBot gains 1 resource to ${0} storage (C-21)', (b) => b.colony(colony));
+      this.game.log('MarsBot gains 1 resource to ${0} storage', (b) => b.colony(colony));
     }
     return true;
   }
