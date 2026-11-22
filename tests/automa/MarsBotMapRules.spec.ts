@@ -8,7 +8,9 @@ import {testGame} from '../TestGame';
 
 describe('MarsBotMapRules', () => {
   it('gives only Amazonis Planitia extra rules', () => {
-    expect(marsBotMapRules(BoardName.AMAZONIS_PLANITIA)).deep.eq({extraGenerations: 2, generationShift: 1, turmoilTRExtra: 1, tradeFleetCubeShift: 1});
+    const amazonisRules = {extraGenerations: 2, generationShift: 1, turmoilTRExtra: 1, tradeFleetCubeShift: 1};
+    const noExtraRules = {extraGenerations: 0, generationShift: 0, turmoilTRExtra: 0, tradeFleetCubeShift: 0};
+    expect(marsBotMapRules(BoardName.AMAZONIS_PLANITIA)).deep.eq(amazonisRules);
     for (const boardName of [
       BoardName.THARSIS,
       BoardName.HELLAS,
@@ -17,7 +19,7 @@ describe('MarsBotMapRules', () => {
       BoardName.VASTITAS_BOREALIS_NOVA,
       BoardName.TERRA_CIMMERIA_NOVA,
     ]) {
-      expect(marsBotMapRules(boardName), boardName).deep.eq({extraGenerations: 0, generationShift: 0, turmoilTRExtra: 0, tradeFleetCubeShift: 0});
+      expect(marsBotMapRules(boardName), boardName).deep.eq(noExtraRules);
     }
   });
 

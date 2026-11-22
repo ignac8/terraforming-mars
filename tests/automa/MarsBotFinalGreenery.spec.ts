@@ -31,6 +31,10 @@ describe('MarsBot final greenery', () => {
     expect(game.isDoneWithFinalProduction()).is.true;
   }
 
+  function trackPositions(marsBot: MarsBot): Array<number> {
+    return marsBot.marsBotBoard.tracks.map((track) => track.position);
+  }
+
   it('does not trigger the Hellas south pole', () => {
     const {game, marsBot} = setup(BoardName.HELLAS);
     const southPole = game.board.spaces.find((sp) => sp.bonus.includes(SpaceBonus.OCEAN))!;
@@ -73,12 +77,13 @@ describe('MarsBot final greenery', () => {
       marsBot.shippingBoard.storage.set(ColonyName.LUNA, 4);
       marsBot.shippingBoard.storage.set(ColonyName.CERES, 4);
       endGame(game);
-      const tracks = marsBot.marsBotBoard.tracks.map((track) => track.position);
+      const tracks = trackPositions(marsBot);
 
       game.addGreenery(marsBot.player, msl, false);
 
-      expect(game.colonies.map((colony) => colony.colonies.length)).deep.eq([0, 0]);
-      expect(marsBot.marsBotBoard.tracks.map((track) => track.position)).deep.eq(tracks);
+      const colonyCounts = game.colonies.map((colony) => colony.colonies.length);
+      expect(colonyCounts).deep.eq([0, 0]);
+      expect(trackPositions(marsBot)).deep.eq(tracks);
       expect(marsBot.megacredits).to.eq(10);
     });
 
@@ -96,22 +101,22 @@ describe('MarsBot final greenery', () => {
 
     it('stops the Shipping Board overflowing', () => {
       endGame(game);
-      const tracks = marsBot.marsBotBoard.tracks.map((track) => track.position);
+      const tracks = trackPositions(marsBot);
 
       marsBot.shippingBoard.add(ColonyName.CERES, 5);
 
       expect(marsBot.shippingBoard.get(ColonyName.CERES)).to.eq(5);
-      expect(marsBot.marsBotBoard.tracks.map((track) => track.position)).deep.eq(tracks);
+      expect(trackPositions(marsBot)).deep.eq(tracks);
     });
 
     it('lets the Shipping Board overflow before the game is decided', () => {
       game.phase = Phase.ACTION;
-      const tracks = marsBot.marsBotBoard.tracks.map((track) => track.position);
+      const tracks = trackPositions(marsBot);
 
       marsBot.shippingBoard.add(ColonyName.CERES, 5);
 
       expect(marsBot.shippingBoard.get(ColonyName.CERES)).to.eq(0);
-      expect(marsBot.marsBotBoard.tracks.map((track) => track.position)).not.deep.eq(tracks);
+      expect(trackPositions(marsBot)).not.deep.eq(tracks);
     });
   });
 
@@ -148,7 +153,7 @@ describe('MarsBot final greenery', () => {
       return {game, marsBot, mc, placementMc: () => placer.getTotalPlacementMC(placed!)};
     }
 
-    it('fires Teractor\'s Earth track cube', () => {
+    it("fires Teractor's Earth track cube", () => {
       const {marsBot, mc, placementMc} = finalGreenery(CardName.TERACTOR);
 
       marsBot.placeFinalGreeneries();
@@ -166,7 +171,7 @@ describe('MarsBot final greenery', () => {
       expect(marsBot.megacredits).to.eq(mc + placementMc());
     });
 
-    it('gains nothing from Helion\'s black cube with the temperature maxed', () => {
+    it("gains nothing from Helion's black cube with the temperature maxed", () => {
       const {game, marsBot, mc, placementMc} = finalGreenery(CardName.HELION);
       setTemperature(game, MAX_TEMPERATURE);
 
@@ -175,7 +180,7 @@ describe('MarsBot final greenery', () => {
       expect(marsBot.megacredits).to.eq(mc + placementMc());
     });
 
-    it('does not chain into Manutech\'s extra advance (BGG 3385156)', () => {
+    it("does not chain into Manutech's extra advance (BGG 3385156)", () => {
       const {marsBot} = finalGreenery(CardName.MANUTECH);
 
       marsBot.placeFinalGreeneries();
@@ -195,8 +200,8 @@ describe('MarsBot final greenery', () => {
     });
   });
 
-  // Once the game has ended nothing chains: only the final greenery move itself advances a tracker
-  // (user decision, following BGG 3385156 and 3513998). Gains still happen.
+  // Once the game has ended nothing chains: only the final greenery move itself advances a tracker, though
+  // gains still happen (BGG 3385156 and 3513998).
   describe('no chains after the game has ended', () => {
     const ENERGY = 4;
     const PLANT = 6;
@@ -212,7 +217,7 @@ describe('MarsBot final greenery', () => {
       return {
         game,
         marsBot,
-        tracks: () => marsBot.marsBotBoard.tracks.map((track) => track.position),
+        tracks: () => trackPositions(marsBot),
         played: marsBot.playedProjectCards.length,
         deck: game.projectDeck.size(),
         tr: marsBot.player.terraformRating,
@@ -220,7 +225,7 @@ describe('MarsBot final greenery', () => {
       };
     }
 
-    it('Thorgate\'s white cube draws no card but still raises the temperature', () => {
+    it("Thorgate's white cube draws no card but still raises the temperature", () => {
       const {game, marsBot, tracks, played, deck, tr, temperature} = finalGreeneryOn(CardName.THORGATE, ENERGY, 9);
       const expected = tracks();
       expected[ENERGY] = 10;
@@ -260,10 +265,10 @@ describe('MarsBot final greenery', () => {
       .find((s) => game.board.getAdjacentSpaces(s).some((a) => a.tile !== undefined && a.player === marsBot.player))!;
     marsBot.setCorpState('scienceResources', 3);
     endGame(game);
-    const tracks = marsBot.marsBotBoard.tracks.map((track) => track.position);
+    const tracks = trackPositions(marsBot);
 
     game.addGreenery(human, next, false);
 
-    expect(marsBot.marsBotBoard.tracks.map((track) => track.position)).deep.eq(tracks);
+    expect(trackPositions(marsBot)).deep.eq(tracks);
   });
 });

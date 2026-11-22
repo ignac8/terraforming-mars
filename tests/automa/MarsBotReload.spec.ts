@@ -50,8 +50,8 @@ describe('MarsBotReload', () => {
     expect(steps[GlobalParameter.OCEANS]).to.eq(0);
   });
 
-  // The bot player is rebuilt on load and saves hold no ocean bonus, so saves from before Lakefront set it load the same way
-  it('keeps Lakefront Resorts\' 3 M€ per adjacent ocean across a reload', () => {
+  // The bot player is rebuilt on load, and saves hold no ocean bonus.
+  it("keeps Lakefront Resorts' 3 M€ per adjacent ocean across a reload", () => {
     const {game, marsBot} = createAutomaGame();
     marsBot.setCorpAndSetup(getMarsBotCorp(CardName.LAKEFRONT_RESORTS)!);
     expect(marsBot.player.oceanBonus).to.eq(3);
@@ -171,7 +171,7 @@ describe('MarsBotReload', () => {
     expect(restoredSteps[GlobalParameter.VENUS]).eq(steps[GlobalParameter.VENUS]);
   });
 
-  it('keeps MarsBot\'s player markers across a reload', () => {
+  it("keeps MarsBot's player markers across a reload", () => {
     const {game, marsBot} = createAutomaGame();
     marsBot.actionDeck.playBonusCard(createBonusCard(BonusCardId.B22_SETTLERS));
     const [id] = marsBot.markerSpaceIds;
@@ -183,7 +183,7 @@ describe('MarsBotReload', () => {
     expect(restored.board.getSpaceOrThrow(id).player).to.eq(restoredBot.player);
   });
 
-  it('saves MarsBot\'s corporation before the player\'s first action', () => {
+  it("saves MarsBot's corporation before the player's first action", () => {
     const [game, human] = testGame(1, {
       automa: true,
       automaCorpOption: true,
@@ -217,21 +217,24 @@ describe('MarsBotReload', () => {
     const restored = Game.deserialize(game.serialize());
 
     const restoredBot = restored.automaHooks!.marsBot;
-    expect(restoredBot.playedProjectCards.map((c) => c.name)).deep.eq([CardName.ASTEROID]);
-    expect(restored.projectDeck.discardPile.map((c) => c.name)).does.not.include(CardName.ASTEROID);
+    const playedNames = restoredBot.playedProjectCards.map((card) => card.name);
+    const discardNames = restored.projectDeck.discardPile.map((card) => card.name);
+    expect(playedNames).deep.eq([CardName.ASTEROID]);
+    expect(discardNames).does.not.include(CardName.ASTEROID);
   });
 
   it('removes cards MarsBot played from the project discard pile in older saves', () => {
     const {game, marsBot} = createAutomaGame();
     const asteroid = new Asteroid();
     marsBot.resolveProjectCard(asteroid);
-    // Older saves also left the resolved card in the project discard pile
     game.projectDeck.discardPile.push(asteroid);
 
     const restored = Game.deserialize(game.serialize());
 
-    expect(restored.automaHooks!.marsBot.playedProjectCards.map((c) => c.name)).deep.eq([CardName.ASTEROID]);
-    expect(restored.projectDeck.discardPile.map((c) => c.name)).does.not.include(CardName.ASTEROID);
+    const playedNames = restored.automaHooks!.marsBot.playedProjectCards.map((card) => card.name);
+    const discardNames = restored.projectDeck.discardPile.map((card) => card.name);
+    expect(playedNames).deep.eq([CardName.ASTEROID]);
+    expect(discardNames).does.not.include(CardName.ASTEROID);
   });
 
   it('removes every card MarsBot played from the project piles in older saves', () => {
@@ -242,22 +245,24 @@ describe('MarsBotReload', () => {
 
     const restored = Game.deserialize(game.serialize());
 
-    const piles = [...restored.projectDeck.discardPile, ...restored.projectDeck.drawPile].map((c) => c.name);
-    expect(piles).does.not.include(CardName.ASTEROID);
-    expect(piles).does.not.include(CardName.RESEARCH);
+    const piles = [...restored.projectDeck.discardPile, ...restored.projectDeck.drawPile];
+    const pileNames = piles.map((card) => card.name);
+    expect(pileNames).does.not.include(CardName.ASTEROID);
+    expect(pileNames).does.not.include(CardName.RESEARCH);
   });
 
   it('removes cards MarsBot played from the project draw pile in older saves', () => {
     const {game, marsBot} = createAutomaGame();
     const asteroid = new Asteroid();
     marsBot.resolveProjectCard(asteroid);
-    // An older save may have reshuffled the resolved card into the draw pile
     game.projectDeck.drawPile.push(new Asteroid());
 
     const restored = Game.deserialize(game.serialize());
 
-    expect(restored.automaHooks!.marsBot.playedProjectCards.map((c) => c.name)).deep.eq([CardName.ASTEROID]);
-    expect(restored.projectDeck.drawPile.map((c) => c.name)).does.not.include(CardName.ASTEROID);
+    const playedNames = restored.automaHooks!.marsBot.playedProjectCards.map((card) => card.name);
+    const drawNames = restored.projectDeck.drawPile.map((card) => card.name);
+    expect(playedNames).deep.eq([CardName.ASTEROID]);
+    expect(drawNames).does.not.include(CardName.ASTEROID);
   });
 
   it('records the whole card when a corporation resolves only its first tag, and keeps it across a reload', () => {
@@ -293,12 +298,13 @@ describe('MarsBotReload', () => {
       // Nothing is re-entered on load.
       game.phase = Phase.END;
 
-      expect(loadSandboxGame(game.serialize()).rng.serialize()).deep.eq(game.rng.serialize());
-      expect(Game.deserialize(game.serialize()).rng.serialize()).deep.eq(game.rng.serialize());
+      const rng = game.rng.serialize();
+      expect(loadSandboxGame(game.serialize()).rng.serialize()).deep.eq(rng);
+      expect(Game.deserialize(game.serialize()).rng.serialize()).deep.eq(rng);
     });
   }
 
-  // MarsBot's part of a generation 6 save of a Hard game, written while the turn resolver held MarsBot's M€
+  // MarsBot's part of a generation 6 save of a Hard game.
   const savedState: SerializedAutomaState = JSON.parse('{"trackPositions":[4,4,4,4,3,4,4],"trackRegressedPositions":[[],[],[],[],[],[],[]],"megacredits":25,"goesFirst":true,"difficulty":"hard","actionDeckCardNames":["Black Polar Dust","Wave Power","Nuclear Zone","B02"],"bonusDeck":{"drawPile":["Meteor Shower:automa"],"discardPile":["Research and Development:automa","Expedited Construction:automa","Overachievement:automa","Corporate Competition:automa"]},"neuralInstanceSpaceId":"55","playedProjectCardNames":["Adaptation Technology","Martian Rails","Herbivores","Geothermal Power","Tundra Farming","Special Design","Earth Office","Release of Inert Gases","Vesta Shipyard","Cloud Seeding","Imported GHG","Birds","Business Network","Phobos Space Haven","Industrial Microbes","Mohole Area"],"firstTurnCheckedGeneration":5,"beforeActionPhasePending":false,"marsBotPlayerId":"p-game-id-marsbot","terraformRating":33,"globalParameterSteps":{"oceans":2,"oxygen":2,"temperature":3,"venus":0,"moon-habitat":0,"moon-mining":0,"moon-logistic":0},"vpByGeneration":[23,31,36,46,53],"temperatureRaises":1,"destroyedBonusCards":2}');
   for (const run of [
     {megacreditsKey: 'megacredits'},
@@ -312,10 +318,11 @@ describe('MarsBotReload', () => {
       marsBot.restoreState({...rest, [run.megacreditsKey]: megacredits} as SerializedAutomaState);
 
       expect(marsBot.megacredits).eq(25);
-      expect(marsBot.playedProjectCards.map((card) => card.name)).deep.eq(savedState.playedProjectCardNames);
+      const playedNames = marsBot.playedProjectCards.map((card) => card.name);
+      const actionDeckNames = marsBot.actionDeck.cards.map((card) => card.name);
+      expect(playedNames).deep.eq(savedState.playedProjectCardNames);
       expect(marsBot.temperatureRaises).eq(1);
-      expect(marsBot.actionDeck.cards.map((card) => card.name))
-        .deep.eq(['Black Polar Dust', 'Wave Power', 'Nuclear Zone', 'Invasive Species:automa']);
+      expect(actionDeckNames).deep.eq(['Black Polar Dust', 'Wave Power', 'Nuclear Zone', 'Invasive Species:automa']);
       expect(marsBot.destroyedBonusCards).eq(2);
       expect(marsBot.serialize()).deep.eq(savedState);
     });

@@ -43,13 +43,15 @@ describe('MarsBot boards', () => {
       for (const tag of MARS_TAGS) {
         it('puts every Mars tag on exactly one track: ' + tag, () => {
           const tracks = tracksOf(boardName);
-          expect(tracks.filter((t) => t.tags.includes(tag)), tag).has.length(1);
+          const carrying = tracks.filter((track) => track.tags.includes(tag));
+          expect(carrying, tag).has.length(1);
         });
       }
 
       it('keeps the Building, Space, Event, Science, Energy, Earth, Bio slot order', () => {
         const tracks = tracksOf(boardName);
-        expect(tracks.map((t) => t.tags[0])).deep.eq([Tag.BUILDING, Tag.SPACE, Tag.EVENT, Tag.SCIENCE, Tag.POWER, Tag.EARTH, Tag.PLANT]);
+        const slotOrder = [Tag.BUILDING, Tag.SPACE, Tag.EVENT, Tag.SCIENCE, Tag.POWER, Tag.EARTH, Tag.PLANT];
+        expect(tracks.map((track) => track.tags[0])).deep.eq(slotOrder);
       });
 
       it('only advances tracks that exist', () => {
@@ -64,7 +66,8 @@ describe('MarsBot boards', () => {
       });
 
       it('adds the Venus track with Venus Next', () => {
-        expect(AutomaGameSetup.getBoardData(boardName, true)).deep.eq([...tracksOf(boardName), VENUS_MARSBOT_TRACK]);
+        const withVenus = AutomaGameSetup.getBoardData(boardName, true);
+        expect(withVenus).deep.eq([...tracksOf(boardName), VENUS_MARSBOT_TRACK]);
       });
 
       it('sets up a game', () => {
@@ -100,7 +103,8 @@ describe('MarsBot boards', () => {
     {boardName: BoardName.AMAZONIS_PLANITIA, tag: Tag.ANIMAL, expected: 3},
   ] as const) {
     it('pairs tags on each map: ' + JSON.stringify(run), () => {
-      expect(tracksOf(run.boardName).findIndex((t) => t.tags.includes(run.tag))).eq(run.expected);
+      const index = tracksOf(run.boardName).findIndex((track) => track.tags.includes(run.tag));
+      expect(index).eq(run.expected);
     });
   }
 
@@ -141,8 +145,10 @@ describe('MarsBot boards', () => {
     for (const randomMA of [RandomMAOptionType.LIMITED, RandomMAOptionType.UNLIMITED, RandomMAOptionType.MANUAL]) {
       expect(modularMABlocksMarsBot(BoardName.AMAZONIS_PLANITIA, {modularMA: true, randomMA}), randomMA).is.true;
     }
-    expect(modularMABlocksMarsBot(BoardName.AMAZONIS_PLANITIA, {modularMA: true, randomMA: RandomMAOptionType.NONE})).is.false;
-    expect(modularMABlocksMarsBot(BoardName.AMAZONIS_PLANITIA, {modularMA: false, randomMA: RandomMAOptionType.LIMITED})).is.false;
+    const noRandomMA = {modularMA: true, randomMA: RandomMAOptionType.NONE};
+    const noModularMA = {modularMA: false, randomMA: RandomMAOptionType.LIMITED};
+    expect(modularMABlocksMarsBot(BoardName.AMAZONIS_PLANITIA, noRandomMA)).is.false;
+    expect(modularMABlocksMarsBot(BoardName.AMAZONIS_PLANITIA, noModularMA)).is.false;
   });
 
   it('plays Amazonis Planitia on its own board, with Animal on the Science track', () => {

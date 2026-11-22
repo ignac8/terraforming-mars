@@ -209,7 +209,8 @@ describe('MarsBotAmazonisRules', () => {
 
       expect(helper(marsBot, 'Desert Settler')).is.true;
 
-      expect(game.board.getGreeneries(marsBot.player).map((sp) => sp.y)).deep.eq([9]);
+      const greeneryRows = game.board.getGreeneries(marsBot.player).map((space) => space.y);
+      expect(greeneryRows).deep.eq([9]);
     });
 
     it('a funded Physicist makes Corporate Competition push the Space track, the upper of two tied tracks', () => {

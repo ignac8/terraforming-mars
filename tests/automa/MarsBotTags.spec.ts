@@ -15,9 +15,9 @@ describe('MarsBotTags', () => {
   describe('Tag counting uses track positions', () => {
     it('Building tag returns Track 1 position', () => {
       const {marsBot} = createAutomaGame();
-      marsBot.marsBotBoard.tracks[0].advance(); // pos 1
-      marsBot.marsBotBoard.tracks[0].advance(); // pos 2
-      marsBot.marsBotBoard.tracks[0].advance(); // pos 3
+      marsBot.marsBotBoard.tracks[0].advance();
+      marsBot.marsBotBoard.tracks[0].advance();
+      marsBot.marsBotBoard.tracks[0].advance();
       expect(marsBot.player.tags.count(Tag.BUILDING, 'raw')).to.eq(3);
     });
 
@@ -166,7 +166,7 @@ describe('MarsBotTags', () => {
 
     it('Event tag in countAllTags comes from track, not playedCards', () => {
       const {marsBot} = createAutomaGame();
-      // MarsBot has 0 played event cards but Track 3 at position 4
+      // MarsBot has played no event cards.
       for (let i = 0; i < 4; i++) {
         marsBot.marsBotBoard.tracks[2].advance();
       }
@@ -179,27 +179,24 @@ describe('MarsBotTags', () => {
   describe('Human player querying MarsBot tags (Toll Station scenario)', () => {
     it('opponent Space tags count uses MarsBot Track 2 position', () => {
       const {marsBot} = createAutomaGame();
-      // Advance Track 2 (Space) to position 5
       for (let i = 0; i < 5; i++) {
         marsBot.marsBotBoard.tracks[1].advance();
       }
 
-      // This simulates what Toll Station does: count opponent's Space tags
+      // Toll Station counts the opponent's Space tags.
       const opponentSpaceTags = marsBot.player.tags.count(Tag.SPACE, 'raw');
       expect(opponentSpaceTags).to.eq(5);
     });
 
     it('Galilean Waystation scenario: opponent Jovian tags', () => {
       const {marsBot} = createAutomaGame();
-      // Track 5 (Energy/Jovian) at position 8
       for (let i = 0; i < 8; i++) {
         marsBot.marsBotBoard.tracks[4].advance();
       }
 
-      // Galilean Waystation counts opponent's Jovian tags (but halved and rounded down)
+      // Galilean Waystation counts the opponent's Jovian tags, halved and rounded down.
       const opponentJovianTags = marsBot.player.tags.count(Tag.JOVIAN, 'raw');
       expect(opponentJovianTags).to.eq(8);
-      // The card would use floor(8/2) = 4
     });
   });
 
@@ -209,7 +206,7 @@ describe('MarsBotTags', () => {
       for (let i = 0; i < 3; i++) {
         marsBot.marsBotBoard.tracks[0].advance();
       }
-      // default mode adds wild tags, but MarsBot has 0 wild tags
+      // The default mode adds wild tags, and MarsBot has none.
       expect(marsBot.player.tags.count(Tag.BUILDING, 'default')).to.eq(3);
     });
   });

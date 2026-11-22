@@ -16,7 +16,6 @@ function createAutomaGame(difficulty: 'easy' | 'normal' | 'hard' | 'brutal' = 'n
     boardName: BoardName.THARSIS,
   });
 
-  // The game should have created a MarsBot
   expect(game.automaHooks?.marsBot).to.not.be.undefined;
 
   return {game, human, marsBot: game.automaHooks!.marsBot};
@@ -57,8 +56,7 @@ describe('MarsBot', () => {
 
     it('no neutral player cities in automa mode', () => {
       const {game} = createAutomaGame();
-      // In normal solo, neutral player places 2 cities + 2 forests
-      // In automa mode, that shouldn't happen
+      // The solo rules have the neutral player place 2 cities and 2 greeneries. Automa games skip that.
       const neutralTiles = game.board.spaces.filter((s) =>
         s.player !== undefined && s.player.name === 'neutral',
       );
@@ -83,7 +81,7 @@ describe('MarsBot', () => {
   describe('Turn Resolution', () => {
     it('MarsBot passes when action deck is empty', () => {
       const {game, marsBot} = createAutomaGame();
-      marsBot.actionDeck.cards = []; // Empty deck
+      marsBot.actionDeck.cards = [];
 
       const passedBefore = game.hasPassedThisActionPhase(marsBot.player);
       expect(passedBefore).to.be.false;
@@ -103,11 +101,10 @@ describe('MarsBot', () => {
   describe('Track Operations', () => {
     it('regressTrack reduces track position', () => {
       const {marsBot} = createAutomaGame();
-      // Advance Track 1 to position 3
       const track = marsBot.marsBotBoard.tracks[0];
-      track.advance(); // 1
-      track.advance(); // 2
-      track.advance(); // 3
+      track.advance();
+      track.advance();
+      track.advance();
       expect(track.position).to.eq(3);
 
       marsBot.regressTrack(Resource.STEEL); // Steel maps to Track 1
@@ -116,7 +113,6 @@ describe('MarsBot', () => {
 
     it('regressTrack maps production types correctly', () => {
       const {marsBot} = createAutomaGame();
-      // Advance all tracks to position 1
       for (let i = 0; i < 7; i++) {
         marsBot.marsBotBoard.tracks[i].advance();
       }
@@ -179,10 +175,8 @@ describe('MarsBot', () => {
 
     it('game is over when Mars is terraformed', () => {
       const {game} = createAutomaGame();
-      // Set all global params to max
       setOxygenLevel(game, 14);
       setTemperature(game, 8);
-      // Place 9 ocean tiles
       const oceanSpaces = game.board.getAvailableSpacesForOcean(game.players[0]);
       for (let i = 0; i < 9 && i < oceanSpaces.length; i++) {
         game.simpleAddTile(game.players[0], oceanSpaces[i], {tileType: TileType.OCEAN});
@@ -235,11 +229,12 @@ describe('MarsBot', () => {
 
         marsBot.advanceFurthestParameter(CardName.AUTOMA_LOBBYISTS);
 
-        expect({
+        const parameters = {
           temperature: game.getTemperature(),
           oxygen: game.getOxygenLevel(),
           oceans: game.board.getOceanSpaces().length,
-        }).deep.eq(run.expected);
+        };
+        expect(parameters).deep.eq(run.expected);
       });
     }
 
@@ -267,7 +262,8 @@ describe('MarsBot', () => {
 
         const placed = marsBot.maybePlaceGreenery((space) => accepted.includes(space.id));
 
-        expect(game.board.getGreeneries(marsBot.player).map((space) => space.id)).deep.eq(accepted);
+        const greeneryIds = game.board.getGreeneries(marsBot.player).map((space) => space.id);
+        expect(greeneryIds).deep.eq(accepted);
         expect(game.getOxygenLevel()).to.eq(run.expected.oxygen);
         expect(placed).to.eq(run.expected.placed);
       });

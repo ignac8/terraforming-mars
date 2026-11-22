@@ -80,7 +80,7 @@ describe('Rewinding a MarsBot game', () => {
     expect(restored.rng.serialize()).deep.eq(firstSeed);
   });
 
-  it('replays MarsBot\'s draft picks to a later move without a mismatch', async () => {
+  it("replays MarsBot's draft picks to a later move without a mismatch", async () => {
     const replayed = await rebuilds('replayed');
     const mismatches = await rebuilds('mismatch');
     const saved = structuredClone(rows()[convert]);
@@ -93,7 +93,7 @@ describe('Rewinding a MarsBot game', () => {
     expect(restored.automaHooks!.marsBot.serialize()).deep.eq(saved.automaState);
   });
 
-  it('brings back the moves an earlier rewind undid, MarsBot\'s draft picks with them', async () => {
+  it("brings back the moves an earlier rewind undid, MarsBot's draft picks with them", async () => {
     // The first rewind undid the draft and both conversions.
     const first = await rewindGame(game, player, research, 'same');
     const mismatches = await rebuilds('mismatch');
@@ -104,6 +104,7 @@ describe('Rewinding a MarsBot game', () => {
     expect(await rebuilds('mismatch')).eq(mismatches);
     expect(restored.getPlayerById(player.id).heat).eq(saved.players[0].heat);
     expect(restored.automaHooks!.marsBot.serialize()).deep.eq(saved.automaState);
-    expect(restored.gameLog[restored.gameLog.length - 1].message).eq('${0} brought back undone moves and rewound the game to generation ${1}');
+    const lastMessage = restored.gameLog[restored.gameLog.length - 1].message;
+    expect(lastMessage).eq('${0} brought back undone moves and rewound the game to generation ${1}');
   });
 });

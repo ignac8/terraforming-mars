@@ -19,7 +19,6 @@ describe('MarsBot Award Crash Fix', () => {
       const {game, human} = createAutomaGame();
       game.fundAward(human, game.awards[0]);
 
-      // This was crashing: players[1] is undefined because game.players only has human
       expect(() => calculateVictoryPoints(human)).to.not.throw();
     });
 
@@ -110,7 +109,6 @@ describe('MarsBot Award Crash Fix', () => {
     });
 
     it('AwardScorer returns 0 for MarsBot when no automa hooks', () => {
-      // Normal 2-player game — no automa
       const [game, p1, p2] = testGame(2);
       const award = game.awards[0];
       const scorer = new AwardScorer(game, award);
@@ -123,11 +121,9 @@ describe('MarsBot Award Crash Fix', () => {
   describe('Award VP correctly assigned with MarsBot', () => {
     it('human gets 5 VP for winning a funded award over MarsBot', () => {
       const {game, human, marsBot} = createAutomaGame();
-      // Fund Landlord
       const landlord = game.awards.find((a) => a.name === 'Landlord')!;
       game.fundAward(human, landlord);
 
-      // Human has 5 tiles, MarsBot has 1
       const spaces = game.board.getAvailableSpacesOnLand(human);
       for (let i = 0; i < 5; i++) {
         game.simpleAddTile(human, spaces[i], {tileType: TileType.GREENERY});
@@ -140,11 +136,9 @@ describe('MarsBot Award Crash Fix', () => {
 
     it('human gets 0 award VP for losing a funded award to MarsBot (no 2nd place in 2-player)', () => {
       const {game, human, marsBot} = createAutomaGame();
-      // Fund Scientist (track 4 based)
       const scientist = game.awards.find((a) => a.name === 'Scientist')!;
       game.fundAward(human, scientist);
 
-      // MarsBot track 4 at 10, human has 0 science tags
       for (let i = 0; i < 10; i++) {
         marsBot.marsBotBoard.tracks[3].advance();
       }

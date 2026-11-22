@@ -20,8 +20,6 @@ function createAutomaGame(difficulty: 'easy' | 'normal' | 'hard' | 'brutal' = 'n
 }
 
 describe('MarsBot Limitations Fixed', () => {
-  // ---- Fix 1: Award comparison with resources + production ----
-
   describe('Award comparison uses human resources + production (page 8)', () => {
     it('Thermalist comparison includes human heat production', () => {
       const {game, human, marsBot} = createAutomaGame();
@@ -29,17 +27,14 @@ describe('MarsBot Limitations Fixed', () => {
       for (let i = 0; i < 3; i++) {
         marsBot.marsBotBoard.tracks[4].advance();
       }
-      // MarsBot value = 3 + 5 = 8
 
       // Human has 2 heat resources + 5 heat production = 7 for comparison
       human.heat = 2;
       human.production.override({heat: 5, megacredits: 0, steel: 0, titanium: 0, plants: 0, energy: 0});
 
-      // MarsBot is ahead (8 > 7), so it should fund Thermalist
       const thermalist = game.awards.find((a) => a.name === 'Thermalist')!;
       const marsBotVal = marsBot.awardValue(thermalist);
       expect(marsBotVal).to.eq(8);
-      // Human standard getScore = 2 (just heat), but for MarsBot comparison = 2 + 5 = 7
     });
 
     it('Thermalist comparison counts energy resources but not energy production (BGG 3350125)', () => {
@@ -59,7 +54,6 @@ describe('MarsBot Limitations Fixed', () => {
       for (let i = 0; i < 4; i++) {
         marsBot.marsBotBoard.tracks[1].advance();
       }
-      // MarsBot value = 4 + 5 = 9
 
       // Human has 3 steel + 2 titanium + 2 steel prod + 1 titanium prod = 8 for comparison
       human.steel = 3;
@@ -78,12 +72,9 @@ describe('MarsBot Limitations Fixed', () => {
       game.simpleAddTile(human, spaces[5], {tileType: TileType.GREENERY});
 
       const landlord = game.awards.find((a) => a.name === 'Landlord')!;
-      // Standard getScore should work for Landlord
       expect(landlord.getScore(human)).to.eq(1);
     });
   });
-
-  // ---- Fix 2: Hard mode card VP ----
 
   describe('Hard mode card VP tracking', () => {
     it('played project cards are tracked', () => {
@@ -91,8 +82,6 @@ describe('MarsBot Limitations Fixed', () => {
       expect(marsBot.playedProjectCards.length).to.eq(0);
 
       marsBot.takeTurn();
-      // After one turn, at least 1 card should be played (if it was a project card)
-      // The first card might be a bonus card, so check >= 0
       expect(marsBot.playedProjectCards.length).to.be.gte(0);
     });
 
@@ -143,12 +132,9 @@ describe('MarsBot Limitations Fixed', () => {
     });
   });
 
-  // ---- Fix 3: Serialization/deserialization ----
-
   describe('MarsBot serialization', () => {
     it('serialize produces valid state', () => {
       const {marsBot} = createAutomaGame();
-      // Advance some tracks
       marsBot.marsBotBoard.tracks[0].advance();
       marsBot.marsBotBoard.tracks[0].advance();
       marsBot.marsBotBoard.tracks[2].advance();
@@ -220,7 +206,6 @@ describe('MarsBot Limitations Fixed', () => {
 
       const state = marsBot.serialize();
 
-      // Create a new game and restore
       const {marsBot: marsBot2} = createAutomaGame();
       expect(marsBot2.marsBotBoard.tracks[0].position).to.eq(0);
 
@@ -244,8 +229,6 @@ describe('MarsBot Limitations Fixed', () => {
       expect(marsBot2.marsBotBoard.tracks[1].regressedPositions.has(2)).to.be.true;
     });
   });
-
-  // ---- Game.ts serialize/deserialize includes automa ----
 
   describe('Game serialization includes automa state', () => {
     it('serialized game has automaState when automa enabled', () => {

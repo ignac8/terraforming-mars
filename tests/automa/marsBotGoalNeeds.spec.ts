@@ -48,12 +48,14 @@ describe('marsBotGoalNeeds', () => {
 
         it('matches the milestones the server accepts: ' + JSON.stringify(run), () => {
           const fromNeeds = milestoneNames.filter((name) => marsBotCanPlayGoal(marsBotMilestoneNeeds(name), game));
-          expect(fromNeeds).deep.eq(milestoneNames.filter((name) => AutomaGameSetup.supportsMilestone(name, options)));
+          const fromServer = milestoneNames.filter((name) => AutomaGameSetup.supportsMilestone(name, options));
+          expect(fromNeeds).deep.eq(fromServer);
         });
 
         it('matches the awards the server accepts: ' + JSON.stringify(run), () => {
           const fromNeeds = awardNames.filter((name) => marsBotCanPlayGoal(marsBotAwardNeeds(name), game));
-          expect(fromNeeds).deep.eq(awardNames.filter((name) => AutomaGameSetup.supportsAward(name, options)));
+          const fromServer = awardNames.filter((name) => AutomaGameSetup.supportsAward(name, options));
+          expect(fromNeeds).deep.eq(fromServer);
         });
       }
     }
@@ -64,6 +66,7 @@ describe('marsBotCanPlayGoal', () => {
   it('counts a map it needs as there when the map is drawn from several', () => {
     const game = {venus: false, turmoil: false, boards: [BoardName.THARSIS, BoardName.AMAZONIS_PLANITIA]};
     expect(marsBotCanPlayGoal(['amazonisPlanitia'], game)).is.true;
-    expect(marsBotCanPlayGoal(['amazonisPlanitia'], {...game, boards: [BoardName.THARSIS, BoardName.HELLAS]})).is.false;
+    const withoutAmazonis = {...game, boards: [BoardName.THARSIS, BoardName.HELLAS]};
+    expect(marsBotCanPlayGoal(['amazonisPlanitia'], withoutAmazonis)).is.false;
   });
 });

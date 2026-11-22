@@ -20,7 +20,7 @@ describe('shuffleHiddenPiles in a MarsBot game', () => {
     before = structuredClone(d);
   });
 
-  it('reorders MarsBot\'s action deck and bonus draw pile, and nothing else of MarsBot', () => {
+  it("reorders MarsBot's action deck and bonus draw pile, and nothing else of MarsBot", () => {
     expect(before.automaState!.actionDeckCardNames.length).greaterThan(1);
     expect(before.automaState!.bonusDeck.drawPile.length).greaterThan(1);
 
@@ -35,11 +35,12 @@ describe('shuffleHiddenPiles in a MarsBot game', () => {
       expect(pile, name).has.members(old);
       expect(pile, name).not.deep.eq(old);
     }
-    expect({
+    const withPilesRestored = {
       ...state,
       actionDeckCardNames: was.actionDeckCardNames,
       bonusDeck: {...state.bonusDeck, drawPile: was.bonusDeck.drawPile},
-    }).deep.eq(was);
+    };
+    expect(withPilesRestored).deep.eq(was);
   });
 
   it('keeps Interface Hyperlink at the bottom of the bonus deck, where Tyco Magnetics puts it', () => {

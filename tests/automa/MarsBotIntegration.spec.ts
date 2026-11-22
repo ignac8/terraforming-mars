@@ -131,7 +131,7 @@ describe('MarsBot Integration', () => {
       for (let i = 0; i < 4; i++) {
         marsBot.marsBotBoard.tracks[4].advance();
       }
-      // Galilean Waystation uses floor(jovianTags / 2) but we just verify the raw count
+      // Galilean Waystation halves this count, so only the raw count is checked here.
       expect(marsBot.player.tags.count(Tag.JOVIAN, 'raw')).to.eq(4);
     });
 
@@ -162,12 +162,10 @@ describe('MarsBot Integration', () => {
   describe('Milestone/Award model includes MarsBot scores', () => {
     it('award model includes MarsBot score', () => {
       const {game, marsBot} = createAutomaGame();
-      // Advance track 4 for Scientist award
       for (let i = 0; i < 6; i++) {
         marsBot.marsBotBoard.tracks[3].advance();
       }
 
-      // Import Server to get the model (indirect test via automaHooks)
       const award = game.awards.find((a) => a.name === 'Scientist');
       expect(award).to.not.be.undefined;
       const marsBotScore = marsBot.awardValue(award!);
@@ -180,7 +178,6 @@ describe('MarsBot Integration', () => {
       const {marsBot} = createAutomaGame();
       expect(marsBot.actionDeck.cards.length).to.eq(4);
 
-      // Take turn should not crash
       marsBot.takeTurn();
     });
 
@@ -221,7 +218,7 @@ describe('MarsBot Integration', () => {
       const {game, marsBot} = createAutomaGame();
       marsBot.player.setTerraformRating(30);
       marsBot.megacredits = 12;
-      game.generation = 14; // 1 VP per 6 MC
+      game.generation = 14; // 1 VP per 6 M€
       const spaces = game.board.getAvailableSpacesOnLand(marsBot.player);
       game.simpleAddTile(marsBot.player, spaces[5], {tileType: TileType.GREENERY});
       game.claimedMilestones.push({player: marsBot.player, milestone: game.milestones[0]});
@@ -231,7 +228,7 @@ describe('MarsBot Integration', () => {
       expect(vp.terraformRating).to.eq(30);
       expect(vp.greenery).to.eq(1);
       expect(vp.milestones).to.eq(5);
-      expect(vp.mcToVP).to.eq(2); // floor(12/6)
+      expect(vp.mcToVP).to.eq(2);
       expect(vp.total).to.eq(30 + 1 + 5 + 2);
     });
   });

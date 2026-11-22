@@ -16,7 +16,6 @@ describe('MarsBotGameCreation', () => {
         venusNextExtension: true,
         boardName: BoardName.THARSIS,
       });
-      // Venus is now supported for automa
       expect(game.gameOptions.venusNextExtension).to.be.true;
     });
 
@@ -60,7 +59,6 @@ describe('MarsBotGameCreation', () => {
         turmoilExtension: true,
         boardName: BoardName.THARSIS,
       });
-      // Turmoil is now supported for automa games
       expect(game.gameOptions.turmoilExtension).to.be.true;
     });
 

@@ -115,7 +115,8 @@ describe('MarsBotAmazonisBonuses', () => {
 
       game.increaseVenusScaleLevel(marsBot.player, 1);
 
-      expect(luna.colonies.length + ceres.colonies.length).eq(1);
+      const colonyCount = luna.colonies.length + ceres.colonies.length;
+      expect(colonyCount).eq(1);
       expect(venusTrack.position).eq(3);
       expect(game.getVenusScaleLevel()).eq(18);
       expect(marsBot.player.terraformRating).eq(tr + 2);
@@ -135,7 +136,7 @@ describe('MarsBotAmazonisBonuses', () => {
       expect(game.deferredActions.length).eq(0);
     });
 
-    it('takes back the M€ of the ocean a Europa colony places under Government Intervention, but not Aphrodite\'s', () => {
+    it("takes back the M€ of the ocean a Europa colony places under Government Intervention, but not Aphrodite's", () => {
       const {game, marsBot} = amazonisGame({colonies: true});
       const europa = new Europa();
       game.colonies = [europa];
@@ -170,7 +171,8 @@ describe('MarsBotAmazonisBonuses', () => {
       expect(game.getVenusScaleLevel()).eq(16);
       expect(marsBot.megacredits).eq(mc);
       expect(logs).includes('MarsBot: no colony tile to build on, Failed Action');
-      expect(logs).includes(`MarsBot (Government Intervention:automa): returns ${marsBot.failedActionMc}:r:mc:`);
+      const returnedLog = `MarsBot (Government Intervention:automa): returns ${marsBot.failedActionMc}:r:mc:`;
+      expect(logs).includes(returnedLog);
     });
 
     it('still asks a human where to build the colony', () => {

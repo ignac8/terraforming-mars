@@ -42,13 +42,10 @@ describe('MarsBot Draft Variant', () => {
   describe('Draft research phase', () => {
     it('draft presents SelectCard to human player', () => {
       const {game, human} = createAutomaGameWithDraft();
-      // Trigger research phase
       game.gotoResearchPhase();
 
-      // Human should be waiting for a SelectCard (draft round 1)
       const waitingFor = human.getWaitingFor();
       expect(waitingFor).to.not.be.undefined;
-      // The waitingFor should be a SelectCard with 4 cards
       expect(waitingFor).to.be.instanceOf(SelectCard);
     });
 
@@ -67,10 +64,8 @@ describe('MarsBot Draft Variant', () => {
       const round1 = human.getWaitingFor() as SelectCard<IProjectCard>;
       const firstCard = round1.cards[0];
 
-      // Simulate picking the first card
       round1.cb([firstCard]);
 
-      // Human should now be waiting for round 2 with 3 cards (from swapped pile)
       const round2 = human.getWaitingFor() as SelectCard<IProjectCard>;
       expect(round2).to.not.be.undefined;
       expect(round2.cards.length).to.eq(3);
@@ -80,7 +75,6 @@ describe('MarsBot Draft Variant', () => {
       const {game, human} = createAutomaGameWithDraft();
       game.gotoResearchPhase();
 
-      // Pick 4 cards across 4 rounds
       for (let round = 0; round < 4; round++) {
         const selectCard = human.getWaitingFor() as SelectCard<IProjectCard>;
         expect(selectCard).to.not.be.undefined;
@@ -88,7 +82,6 @@ describe('MarsBot Draft Variant', () => {
         selectCard.cb([selectCard.cards[0]]);
       }
 
-      // After 4 rounds, human should be in buy phase (ChooseCards / SelectCard)
       const buyPhase = human.getWaitingFor();
       expect(buyPhase).to.not.be.undefined;
     });
@@ -97,14 +90,12 @@ describe('MarsBot Draft Variant', () => {
       const {game, human, marsBot} = createAutomaGameWithDraft();
       game.gotoResearchPhase();
 
-      // Complete all 4 draft rounds
       for (let round = 0; round < 4; round++) {
         const selectCard = human.getWaitingFor() as SelectCard<IProjectCard>;
         selectCard.cb([selectCard.cards[0]]);
       }
 
-      // MarsBot should have built its action deck from the draft
-      // 4 drafted → discard 1 → 3 cards + 1 bonus = 4 total
+      // 4 drafted cards, 1 discarded, plus 1 bonus card.
       expect(marsBot.actionDeck.cards.length).to.eq(4);
     });
 
@@ -114,8 +105,6 @@ describe('MarsBot Draft Variant', () => {
 
       game.gotoResearchPhase();
 
-      // 8 cards drawn for the draft piles
-      // 1 card discarded by MarsBot back to discard pile
       const totalDrawn = deckSizeBefore - game.projectDeck.drawPile.length;
       expect(totalDrawn).to.eq(8);
     });
@@ -126,18 +115,16 @@ describe('MarsBot Draft Variant', () => {
 
       game.gotoResearchPhase();
 
-      // Complete draft
       for (let round = 0; round < 4; round++) {
         const selectCard = human.getWaitingFor() as SelectCard<IProjectCard>;
         selectCard.cb([selectCard.cards[0]]);
       }
 
-      // MarsBot discarded 1 card
       expect(game.projectDeck.discardPile.length).to.eq(discardBefore + 1);
     });
 
     // With a draft priority the player sees every card MarsBot keeps and the one it discards (rulebook B p.2, Nick BGG 3542834).
-    it('logs MarsBot\'s picks and discard when it has a draft priority', () => {
+    it("logs MarsBot's picks and discard when it has a draft priority", () => {
       const {game, human, marsBot} = createAutomaGameWithDraft();
       marsBot.setCorpAndSetup(getMarsBotCorp(CardName.SATURN_SYSTEMS)!);
       game.gameLog.length = 0;
@@ -149,12 +136,13 @@ describe('MarsBot Draft Variant', () => {
       }
 
       const messages = game.gameLog.map(formatMessage);
-      expect(messages.filter((m) => m.startsWith('MarsBot drafts '))).has.length(4);
+      const draftMessages = messages.filter((message) => message.startsWith('MarsBot drafts '));
+      expect(draftMessages).has.length(4);
       const discarded = game.projectDeck.discardPile[game.projectDeck.discardPile.length - 1];
       expect(messages).to.include(`MarsBot discards ${discarded.name} after the draft`);
     });
 
-    it('does not log MarsBot\'s picks without a draft priority', () => {
+    it("does not log MarsBot's picks without a draft priority", () => {
       const {game, human} = createAutomaGameWithDraft();
       game.gotoResearchPhase();
 
@@ -163,7 +151,9 @@ describe('MarsBot Draft Variant', () => {
         selectCard.cb([selectCard.cards[0]]);
       }
 
-      expect(game.gameLog.map(formatMessage).filter((m) => m.startsWith('MarsBot drafts '))).is.empty;
+      const messages = game.gameLog.map(formatMessage);
+      const draftMessages = messages.filter((message) => message.startsWith('MarsBot drafts '));
+      expect(draftMessages).is.empty;
     });
 
     it('swapped piles mean human sees different cards each round', () => {
@@ -174,11 +164,6 @@ describe('MarsBot Draft Variant', () => {
       (human.getWaitingFor() as SelectCard<IProjectCard>).cb([round1Cards[0]]);
 
       const round2Cards = [...(human.getWaitingFor() as SelectCard<IProjectCard>).cards];
-      // Round 2 cards come from MarsBot's original pile (swapped), so they should be different
-      // (There's a very small chance of overlap if the same card name appears twice, but extremely unlikely)
-      // At least some cards should differ (piles were swapped)
-      // This COULD be true if both piles had the same cards, but vanishingly unlikely
-      // Just verify the round progressed
       expect(round2Cards.length).to.eq(3);
     });
   });
@@ -188,7 +173,6 @@ describe('MarsBot Draft Variant', () => {
       const {game, marsBot} = createAutomaGameNoDraft();
       const cards = game.projectDeck.drawN(game, 4);
       marsBot.actionDeck.buildResearchFromDraft(cards);
-      // 4 drafted → discard 1 = 3 project + 1 bonus = 4
       expect(marsBot.actionDeck.cards.length).to.eq(4);
     });
 
@@ -204,8 +188,6 @@ describe('MarsBot Draft Variant', () => {
   describe('Draft disabled in automa mode', () => {
     it('standard draft phase is bypassed for automa', () => {
       const {game} = createAutomaGameWithDraft();
-      // When draft is enabled in automa, startGeneration goes to gotoResearchPhase
-      // (not gotoDraftPhase), verified by the fact that the game works without crash
       expect(game.gameOptions.draftVariant).to.be.true;
     });
   });

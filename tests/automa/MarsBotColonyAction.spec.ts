@@ -17,7 +17,8 @@ const COLONY_SPACE = 5;
 describe('MarsBot colony track action (Utopia Planitia)', () => {
   it('sits on space 5 of the Space track', () => {
     const [game] = testGame(1, {automa: true, boardName: BoardName.UTOPIA_PLANITIA});
-    expect(getMarsBot(game).marsBotBoard.tracks[SPACE_TRACK].definition.layout[COLONY_SPACE]).eq('colony');
+    const spaceTrack = getMarsBot(game).marsBotBoard.tracks[SPACE_TRACK];
+    expect(spaceTrack.definition.layout[COLONY_SPACE]).eq('colony');
   });
 
   it('builds a colony and gains 2 resources into its storage area', () => {

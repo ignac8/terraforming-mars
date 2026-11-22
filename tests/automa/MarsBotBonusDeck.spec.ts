@@ -65,7 +65,8 @@ describe('MarsBotBonusDeck', () => {
 
       const expansionDeck = MarsBotBonusDeck.create(new SeededRandom(42), {venus: run.venus, colonies: run.colonies});
 
-      expect(expansionDeck.drawPile.map((card) => card.id)).to.have.members(expected);
+      const drawnIds = expansionDeck.drawPile.map((card) => card.id);
+      expect(drawnIds).to.have.members(expected);
       expect(expansionDeck.discardPile).to.be.empty;
     });
   }
@@ -74,7 +75,8 @@ describe('MarsBotBonusDeck', () => {
     const [game, human, botPlayer] = testGame(2);
     const {marsBot} = recordingMarsBot({game, player: botPlayer, humanPlayer: human});
     human.plants = 4;
-    const meteorShower = MarsBotBonusDeck.create(new SeededRandom(42)).drawPile.find((card): card is MarsBotBonusCard => card.id === BonusCardId.B01_METEOR_SHOWER);
+    const drawPile = MarsBotBonusDeck.create(new SeededRandom(42)).drawPile;
+    const meteorShower = drawPile.find((card): card is MarsBotBonusCard => card.id === BonusCardId.B01_METEOR_SHOWER);
 
     const destroyed = meteorShower?.resolve(marsBot);
 
@@ -88,8 +90,10 @@ describe('MarsBotBonusDeck', () => {
     const restored = MarsBotBonusDeck.deserialize(deck.serialize(), new SeededRandom(42));
     expect(restored.drawPile).to.deep.eq(deck.drawPile);
     expect(restored.discardPile).to.deep.eq(deck.discardPile);
-    expect(restored.drawPile.map((card) => card.constructor)).deep.eq(deck.drawPile.map((card) => card.constructor));
-    expect(restored.discardPile.map((card) => card.constructor)).deep.eq(deck.discardPile.map((card) => card.constructor));
+    const restoredDrawClasses = restored.drawPile.map((card) => card.constructor);
+    const restoredDiscardClasses = restored.discardPile.map((card) => card.constructor);
+    expect(restoredDrawClasses).deep.eq(deck.drawPile.map((card) => card.constructor));
+    expect(restoredDiscardClasses).deep.eq(deck.discardPile.map((card) => card.constructor));
   });
 
   it('serialization round trip with expansion and corporation bonus cards', () => {
@@ -101,7 +105,8 @@ describe('MarsBotBonusDeck', () => {
 
     expect(restored.drawPile).to.deep.eq(expansionDeck.drawPile);
     expect(restored.discardPile).to.deep.eq(expansionDeck.discardPile);
-    expect([...restored.drawPile, ...restored.discardPile].map((card) => card.id)).to.have.members(ids);
+    const restoredIds = [...restored.drawPile, ...restored.discardPile].map((card) => card.id);
+    expect(restoredIds).to.have.members(ids);
   });
 
   it('serialization round trip with project cards', () => {
@@ -135,20 +140,17 @@ describe('MarsBotBonusDeck', () => {
   });
 
   it('reshuffles discard when draw pile empty', () => {
-    // Draw all 8 cards
     const cards = [];
     for (let i = 0; i < 8; i++) {
       cards.push(deck.draw(logger)!);
     }
     expect(deck.drawPile.length).to.eq(0);
 
-    // Discard all
     for (const c of cards) {
       deck.discard(c);
     }
     expect(deck.discardPile.length).to.eq(8);
 
-    // Drawing should reshuffle
     const card = deck.draw(logger);
     expect(card).to.not.be.undefined;
     expect(deck.discardPile.length).to.eq(0);

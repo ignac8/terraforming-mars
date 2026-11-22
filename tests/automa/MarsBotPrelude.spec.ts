@@ -58,7 +58,6 @@ describe('MarsBot Prelude Support', () => {
   describe('Recession removal', () => {
     it('Recession is removed from Prelude deck when automa + Prelude 2', () => {
       const {game} = createAutomaGame({prelude: true, prelude2: true});
-      // Check that Recession is not in any deck
       const allPreludeCards = [
         ...game.preludeDeck.drawPile,
         ...game.preludeDeck.discardPile,
@@ -84,32 +83,29 @@ describe('MarsBot Prelude Support', () => {
   describe('Wild tag handling', () => {
     it('Wild tag advances least-advanced track', () => {
       const marsBotBoard = new MarsBotBoard(THARSIS_MARSBOT_BOARD);
-      // Advance track 0 to position 3, leave others at 0
       marsBotBoard.tracks[0].position = 3;
       marsBotBoard.tracks[1].position = 2;
       marsBotBoard.tracks[2].position = 1;
-      // Tracks 3-6 are all at 0, so least-advanced is track 3 (first at 0, topmost)
+      // Tracks 3-6 are all at 0, so the topmost of them is track 3.
       const leastIndex = marsBotBoard.getLeastAdvancedTrackIndex();
       expect(leastIndex).to.eq(3);
     });
 
     it('Wild tag with tie: topmost track (lowest index) wins', () => {
       const marsBotBoard = new MarsBotBoard(THARSIS_MARSBOT_BOARD);
-      // All tracks at 0 — least advanced is track 0 (topmost)
       const leastIndex = marsBotBoard.getLeastAdvancedTrackIndex();
       expect(leastIndex).to.eq(0);
     });
 
     it('Wild tag with tie: picks lowest index among tied tracks', () => {
       const marsBotBoard = new MarsBotBoard(THARSIS_MARSBOT_BOARD);
-      // Set all tracks to 5, except tracks 2 and 4 at 3
       for (let i = 0; i < 7; i++) {
         marsBotBoard.tracks[i].position = 5;
       }
       marsBotBoard.tracks[2].position = 3;
       marsBotBoard.tracks[4].position = 3;
       const leastIndex = marsBotBoard.getLeastAdvancedTrackIndex();
-      expect(leastIndex).to.eq(2); // Track 2 is topmost of the tied ones
+      expect(leastIndex).to.eq(2);
     });
   });
 
@@ -165,7 +161,7 @@ describe('MarsBot Prelude Support', () => {
       game.generation = 15;
       marsBot.megacredits = 9;
       const scoring = marsBot.getVictoryPoints();
-      expect(scoring.mcToVP).to.eq(3); // 9 / 3 = 3
+      expect(scoring.mcToVP).to.eq(3);
     });
 
     it('MC to VP at gen 17 with Prelude: 1 VP per 1 MC', () => {
@@ -173,7 +169,7 @@ describe('MarsBot Prelude Support', () => {
       game.generation = 17;
       marsBot.megacredits = 12;
       const scoring = marsBot.getVictoryPoints();
-      expect(scoring.mcToVP).to.eq(12); // 12 / 1 = 12
+      expect(scoring.mcToVP).to.eq(12);
     });
 
     it('instant win at gen 18 with Prelude: mcToVP is 0', () => {
@@ -181,7 +177,7 @@ describe('MarsBot Prelude Support', () => {
       game.generation = 18;
       marsBot.megacredits = 100;
       const scoring = marsBot.getVictoryPoints();
-      expect(scoring.mcToVP).to.eq(0); // Instant win, no VP calculation
+      expect(scoring.mcToVP).to.eq(0);
     });
 
     it('gen 18 is NOT instant win without Prelude', () => {
@@ -189,7 +185,7 @@ describe('MarsBot Prelude Support', () => {
       game.generation = 18;
       marsBot.megacredits = 8;
       const scoring = marsBot.getVictoryPoints();
-      expect(scoring.mcToVP).to.eq(4); // 8 / 2 = 4 (gen 18 = 1 VP per 2 MC)
+      expect(scoring.mcToVP).to.eq(4); // 1 VP per 2 M€ in generation 18
     });
   });
 });

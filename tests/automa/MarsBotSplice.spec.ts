@@ -39,7 +39,7 @@ function passForThisGeneration(player: TestPlayer): void {
   player.process({type: 'or', index, response: {type: 'option'}});
 }
 
-describe('MarsBot and the player\'s Splice', () => {
+describe("MarsBot and the player's Splice", () => {
   let game: Game;
   let human: TestPlayer;
   let marsBot: MarsBot;
@@ -65,7 +65,7 @@ describe('MarsBot and the player\'s Splice', () => {
     expect(human.megaCredits).to.eq(2);
   });
 
-  it('pays 2 M€ for MarsBot\'s microbe starting tag', () => {
+  it("pays 2 M€ for MarsBot's microbe starting tag", () => {
     const recyclon = getAllMarsBotCorps().find((corp) => corp.name === CardName.RECYCLON)!;
     MarsBotCorpResolver.setupCorp(recyclon, marsBot);
     runAllActions(game);
@@ -73,7 +73,7 @@ describe('MarsBot and the player\'s Splice', () => {
     expect(human.megaCredits).to.eq(2);
   });
 
-  it('pays 2 M€ when Biologist advances MarsBot\'s microbe track', () => {
+  it("pays 2 M€ when Biologist advances MarsBot's microbe track", () => {
     expect(helperAction(marsBot, 'Biologist')).is.true;
     runAllActions(game);
 
@@ -81,7 +81,7 @@ describe('MarsBot and the player\'s Splice', () => {
     expect(marsBot.player.getWaitingFor()).is.undefined;
   });
 
-  it('pays 2 M€ when a track action advances MarsBot\'s microbe track', () => {
+  it("pays 2 M€ when a track action advances MarsBot's microbe track", () => {
     ({game, human, marsBot} = createAutomaGame(/* venusNextExtension */ true));
     human.playedCards.push(new Splice());
     const venusTrack = marsBot.marsBotBoard.tagToTrack[Tag.VENUS]!;
@@ -97,7 +97,7 @@ describe('MarsBot and the player\'s Splice', () => {
     expect(human.megaCredits).to.eq(2);
   });
 
-  it('pays nothing when Biologist finds MarsBot\'s microbe track at its end', () => {
+  it("pays nothing when Biologist finds MarsBot's microbe track at its end", () => {
     const microbeTrack = marsBot.marsBotBoard.tracks[marsBot.marsBotBoard.tagToTrack[Tag.MICROBE]!];
     microbeTrack.position = microbeTrack.definition.layout.length - 1;
 
@@ -145,7 +145,8 @@ describe('MarsBot and the player\'s Splice', () => {
     expect(restored.activePlayer).to.eq(restoredHuman);
     expect(restoredHuman.getWaitingFor()).is.not.undefined;
     const top = restoredBot.actionDeck.cards[0];
-    expect('name' in top && top.name).to.eq(CardName.SULPHUR_EATING_BACTERIA);
+    const topName = 'name' in top ? top.name : undefined;
+    expect(topName).to.eq(CardName.SULPHUR_EATING_BACTERIA);
 
     passForThisGeneration(restoredHuman);
     expect(restoredBot.player.getWaitingFor()).is.undefined;
@@ -153,8 +154,8 @@ describe('MarsBot and the player\'s Splice', () => {
   });
 });
 
-describe('MarsBot and the player\'s Pharmacy Union', () => {
-  it('adds a disease when Biologist advances MarsBot\'s microbe track', () => {
+describe("MarsBot and the player's Pharmacy Union", () => {
+  it("adds a disease when Biologist advances MarsBot's microbe track", () => {
     const {game, human, marsBot} = createAutomaGame();
     const pharmacyUnion = new PharmacyUnion();
     human.playedCards.push(pharmacyUnion);
@@ -190,7 +191,7 @@ describe('MarsBot and the player\'s Pharmacy Union', () => {
     expect(pharmacyUnion.resourceCount).to.eq(1);
   });
 
-  it('does not resolve MarsBot\'s own corp when a colony storage overflow advances a track (BGG 3535330)', () => {
+  it("does not resolve MarsBot's own corp when a colony storage overflow advances a track (BGG 3535330)", () => {
     const {marsBot} = createAutomaGame();
     marsBot.setCorpAndSetup(getMarsBotCorp(CardName.ARKLIGHT)!);
     const mc = marsBot.megacredits;
@@ -199,14 +200,15 @@ describe('MarsBot and the player\'s Pharmacy Union', () => {
 
     // Only the plant track's own icons pay M€, not Arklight's "plant or animal" effect
     const plantTrack = marsBot.marsBotBoard.tracks[marsBot.marsBotBoard.tagToTrack[Tag.PLANT]!];
+    const gained = marsBot.megacredits - mc;
     expect(plantTrack.position).is.greaterThan(0);
-    expect(marsBot.megacredits - mc).is.lessThan(2);
+    expect(gained).is.lessThan(2);
   });
 });
 
 // TDaver, BGG 3356105: an explicit Jovian advance triggers Saturn Systems, "a Jovian bump, yes,
 // but an Power bump ... wouldn't, even though the Jovian and the Power tag are tracked on the same row"
-describe('MarsBot track advances and the player\'s Saturn Systems', () => {
+describe("MarsBot track advances and the player's Saturn Systems", () => {
   it('Traveller advancing the Jovian track raises M€ production', () => {
     const {game, human, marsBot} = createAutomaGame();
     human.playedCards.push(new SaturnSystems());
@@ -214,7 +216,8 @@ describe('MarsBot track advances and the player\'s Saturn Systems', () => {
     helperAction(marsBot, 'Traveller'); // Tied at 0, so the upper track: Power/Jovian
     runAllActions(game);
 
-    expect(marsBot.marsBotBoard.tracks[marsBot.marsBotBoard.tagToTrack[Tag.JOVIAN]!].position).is.greaterThan(0);
+    const jovianTrack = marsBot.marsBotBoard.tracks[marsBot.marsBotBoard.tagToTrack[Tag.JOVIAN]!];
+    expect(jovianTrack.position).is.greaterThan(0);
     expect(human.production.megacredits).to.eq(1);
   });
 
@@ -238,7 +241,8 @@ describe('MarsBot track advances and the player\'s Saturn Systems', () => {
     helperAction(marsBot, 'Biologist');
     runAllActions(game);
 
-    expect(marsBot.marsBotBoard.tracks[marsBot.marsBotBoard.tagToTrack[Tag.POWER]!].position).is.greaterThan(0);
+    const powerTrack = marsBot.marsBotBoard.tracks[marsBot.marsBotBoard.tagToTrack[Tag.POWER]!];
+    expect(powerTrack.position).is.greaterThan(0);
     expect(human.production.megacredits).to.eq(0);
   });
 
