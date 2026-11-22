@@ -88,7 +88,7 @@ export const BASE_BONUS_CARDS: ReadonlyArray<BonusCardId> = [
   BonusCardId.B08_CORPORATE_COMPETITION,
 ];
 
-/** MC gained when MarsBot takes a failed action. */
+/** M€ MarsBot gains when it takes a Failed Action. */
 export const FAILED_ACTION_MC = 5;
 export const FAILED_ACTION_MC_EASY = 3;
 
@@ -100,7 +100,7 @@ export const MARSBOT_MAX_GENERATION_PRELUDE = 18;
 /** M€ MarsBot gets per adjacent ocean when its corporation is Lakefront Resorts. */
 export const LAKEFRONT_OCEAN_BONUS = 3;
 
-/** Get the max generation for an automa game on `boardName`. */
+/** Gets the max generation for an automa game on `boardName`. */
 export function getAutomaMaxGeneration(preludeExtension: boolean, boardName: BoardName): number {
   const standard = preludeExtension ? MARSBOT_MAX_GENERATION_PRELUDE : MARSBOT_MAX_GENERATION;
   return standard + marsBotMapRules(boardName).extraGenerations;

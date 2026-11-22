@@ -37,18 +37,17 @@ import {IAward} from '../awards/IAward';
 import {maybeTrade} from './colonies/MarsBotTrader';
 import {getClaimableMilestones, marsBotAwardScore, marsBotCanClaimMilestone, maybeClaimMilestone, maybeFundAward, selectMilestone} from './MarsBotMilestoneAwardEval';
 
-/** The name of a card in an older save's bonus deck, which stores bonus cards by id. */
+/** Converts an entry of an older save's bonus deck, which stores bonus cards by id, to a card name. */
 function bonusDeckCardName(idOrName: string): CardName {
   const isId = Object.values(BonusCardId).includes(idOrName as BonusCardId);
   return isId ? createBonusCard(idOrName as BonusCardId).name : idOrName as CardName;
 }
 
 /**
- * MarsBot: the automa manager. Owns the board, decks, and coordinates turns.
+ * The automa manager, which owns MarsBot's board and decks and runs its turns.
  *
- * This is NOT a Player subclass — MarsBot uses a real Player instance for
- * game engine compatibility (tile ownership, TR tracking) but drives it
- * externally via this manager.
+ * It is not a `Player` subclass. MarsBot uses a real `Player` instance for tile ownership and TR
+ * tracking, and this manager drives that player from outside.
  */
 export class MarsBot implements IMarsBot {
   public readonly marsBotBoard: MarsBotBoard;
@@ -59,10 +58,10 @@ export class MarsBot implements IMarsBot {
   /** The current generation's action deck, and the bonus cards MarsBot draws into it. */
   public readonly actionDeck: MarsBotActionDeck;
 
-  /** Space where the Neural Instance tile was placed (if any). */
+  /** The space holding MarsBot's Neural Instance tile. Undefined until it places one. */
   public neuralInstanceSpace: Space | undefined;
 
-  /** Whether MarsBot goes first this generation (alternates each gen, human first in gen 1). */
+  /** True when MarsBot goes first this generation. It alternates each generation, with the human first in generation 1. */
   public goesFirst: boolean = false;
 
   /**
@@ -74,30 +73,30 @@ export class MarsBot implements IMarsBot {
   /** The last generation whose first-turn milestone check (Hard mode) has run. */
   public firstTurnCheckedGeneration: number = 0;
 
-  /** Cards MarsBot has played (for Hard mode VP scoring). */
+  /** Project cards MarsBot has resolved, which Hard mode scores. */
   public playedProjectCards: Array<IProjectCard> = [];
 
-  /** Corporation card (Rulebook B). */
+  /** MarsBot's corporation (rulebook B). Undefined until it selects one. */
   public corp: MarsBotCorp | undefined;
 
   public megacredits: number = 0;
 
-  /** Track cube positions placed by the corporation. Key: "trackIndex:position". */
+  /** Cubes on MarsBot's tracks, from its corporation and the 2nd Trade Fleet, by key `trackIndex:position`. */
   public trackCubePositions: Map<string, MarsBotTrackCube> = new Map();
 
-  /** Cube positions that have already been triggered (won't re-trigger after regression). */
+  /** Keys of the cubes that have triggered. A cube does not trigger again after its track regresses. */
   public triggeredCubePositions: Set<string> = new Set();
 
   /** VP total per generation (for end-game chart). */
   public vpByGeneration: Array<number> = [];
 
-  /** Number of times MarsBot raised temperature (for Thawer milestone). */
+  /** Number of times MarsBot has raised the temperature (for the Thawer milestone). */
   public temperatureRaises: number = 0;
 
-  /** Whether colony cubes are placed (modular Pioneer/Constructor in game). */
+  /** True when colony cubes sit on MarsBot's tracks, with the modular Pioneer milestone or Constructor award in the game. */
   public hasColonyCubes: boolean = false;
 
-  /** Colony cube positions (set by AutomaGameSetup when modular Pioneer/Constructor in game). */
+  /** Keys of the colony cubes' positions, by `trackIndex:position`. */
   public colonyCubePositions: Set<string> = new Set();
 
   /** Corp-specific state (M€ on card, resources, cubes, etc.). */
@@ -107,9 +106,9 @@ export class MarsBot implements IMarsBot {
   public floaters: number = 0;
 
   /**
-   * Track-cube key for the 2nd Trade Fleet position (Colonies, C-6).
-   * Set in constructor when coloniesExtension is enabled; undefined otherwise. Saved with the
-   * game, because games from before the cube moved to the Energy track keep it on the Event track.
+   * Track-cube key of the 2nd Trade Fleet position (Colonies, C-6). Undefined without Colonies.
+   *
+   * Saved with the game, because a save can have the cube on the Event track.
    */
   public tradeFleetCubeKey: string | undefined = undefined;
 
@@ -121,7 +120,7 @@ export class MarsBot implements IMarsBot {
 
   /**
    * True while Government Intervention raises Venus: its global parameter bonuses and the colony the
-   * raise earns pay MarsBot no MC. Only set during that synchronous raise, so never saved.
+   * raise earns pay MarsBot no M€. Only set during that synchronous raise, so never saved.
    */
   public bonusMcBlocked: boolean = false;
 
@@ -166,11 +165,9 @@ export class MarsBot implements IMarsBot {
     this.actionDeck = new MarsBotActionDeck(this, random);
   }
 
-  // ---- Setup ----
-
   // ---- Action Phase ----
 
-  /** Execute one MarsBot action (called when it's MarsBot's turn). */
+  /** Takes one MarsBot action, on MarsBot's turn. */
   public takeTurn(): void {
     // Hard mode: the milestone check comes before the first turn of each generation resolves
     if (this.firstTurnCheckedGeneration !== this.game.generation) {
@@ -188,13 +185,14 @@ export class MarsBot implements IMarsBot {
     }
 
     this.actionDeck.playTopCard();
-
-    // Signal that MarsBot's turn is done
     this.game.playerIsFinishedTakingActions();
   }
 
-  /** Hard mode: on first turn of each gen, if 8 MC and meets milestone conditions, claim.
-   * MarsBot starts at 0 MC and accumulates from failed actions (5 MC each) and placement bonuses. */
+  /**
+   * Claims a milestone on the first turn of a generation in Hard mode, for 8 M€.
+   *
+   * It claims only when it has the M€ and can fill all the milestone slots that are still open.
+   */
   private hardModeFirstTurnMilestone(): void {
     if (this.megacredits < 8) {
       return;
@@ -207,7 +205,6 @@ export class MarsBot implements IMarsBot {
     const claimedCount = this.game.claimedMilestones.length;
     const canClaimCount = unclaimed.filter((m) => marsBotCanClaimMilestone(m, this)).length;
 
-    // MarsBot claims when it can fill all 3 milestone slots (needs 3 - claimedCount eligible).
     const shouldClaim = claimedCount < 3 && claimedCount + canClaimCount >= 3;
 
     if (shouldClaim) {
@@ -220,19 +217,18 @@ export class MarsBot implements IMarsBot {
     }
   }
 
-  /** Production phase: MarsBot skips production entirely. */
+  /** Runs MarsBot's production phase. It does not produce, so only its per-generation state resets. */
   public runProductionPhase(): void {
-    // MarsBot does not produce. Just reset per-generation state.
     this.player.actionsThisGeneration.clear();
   }
 
   // ---- Final Greenery ----
 
   /**
-   * Place final greenery tiles for MarsBot (tracks with greenery as next action).
+   * Places final greenery tiles for MarsBot, one for each track with greenery as its next action.
    *
    * The tracker moves onto the greenery and the corp's cubes there trigger (IC, Teractor, Helion's
-   * black cubes) unless automaFinalGreeneryNoCorpEffects is on (the designers leave it to the
+   * black cubes) unless `automaFinalGreeneryNoCorpEffects` is on (the designers leave it to the
    * players). Nothing chains from that space (BGG 3385156): the game has ended, so a
    * cube's own track advances and card draws do nothing (Thorgate keeps its temperature step,
    * Aridor's event track stays put). With no legal space the tracker stays and MarsBot takes a
@@ -250,7 +246,7 @@ export class MarsBot implements IMarsBot {
         this.turnResolver.failedAction();
         return;
       }
-      // Do NOT raise oxygen or award TR for final greenery
+      // A final greenery raises neither the oxygen nor the TR.
       this.game.addGreenery(this.player, space, false);
       this.gainMc(this.tilePlacer.getTotalPlacementMC(space));
       track.advance();
@@ -263,7 +259,7 @@ export class MarsBot implements IMarsBot {
 
   // ---- Corporation ----
 
-  /** Set the corporation and run its setup. */
+  /** Sets MarsBot's corporation and runs its setup. */
   public setCorpAndSetup(corp: MarsBotCorp): void {
     this.corp = corp;
     MarsBotCorpResolver.setupCorp(corp, this);
@@ -361,8 +357,8 @@ export class MarsBot implements IMarsBot {
   }
 
   /**
-   * Once the game has ended MarsBot draws and resolves no more cards, like its tracks advance no
-   * more (MarsBotTurnResolver.advanceTrack).
+   * Whether the game has ended, after which MarsBot draws and resolves no more cards, like its
+   * tracks advance no more (MarsBotTurnResolver.advanceTrack). Logs it when so.
    */
   private gameHasEnded(): boolean {
     if (!this.game.isDoneWithFinalProduction()) {
@@ -410,7 +406,7 @@ export class MarsBot implements IMarsBot {
     this.actionDeck.returnSetupBonusCardToBonusDeck();
   }
 
-  /** The steps resolve one at a time, so Pristar's cube cancels only the first (BGG 3431297, 3432237). */
+  /** Raises the temperature `steps` times. Pristar's cube cancels only the first, as the steps resolve one at a time (BGG 3431297, 3432237). */
   public raiseTemperature(steps: 1 | 2): void {
     // A corp effect is a reaction, not an action, so a maxed temperature is no Failed Action (Nick)
     if (this.game.getTemperature() >= this.game.max.temperature) {
@@ -640,7 +636,7 @@ export class MarsBot implements IMarsBot {
     this.corp?.onMcGained?.(this, amount);
   }
 
-  /** Ask the corp to intercept a parameter raise (Pristar). True means the raise is skipped. */
+  /** Asks the corp to cancel a raise of `parameter` (Pristar). True means the raise is skipped. */
   public interceptsParameterRaise(parameter: GlobalParameter): boolean {
     return this.corp?.interceptGlobalParameterRaise?.(this, parameter) ?? false;
   }
@@ -686,14 +682,15 @@ export class MarsBot implements IMarsBot {
     this.actionDeck.maybeDiscardProjectCardWithFewestTags();
   }
 
-  /** Check if a cube exists at a given track position. */
+  /** Returns the cube on space `position` of the track `trackIndex`, if there is one. */
   public hasCubeAt(trackIndex: number, position: number): MarsBotTrackCube | undefined {
     return this.trackCubePositions.get(trackCubeKey(trackIndex, position));
   }
 
   /**
-   * Games saved before the Trade Fleet cube moved to the Energy track have it on space 9 of the
-   * Event track, and don't record where it is. Keep using that cube so those games still unlock
+   * Keeps the 2nd Trade Fleet cube on the Event track for a save that doesn't record where it is.
+   *
+   * Those saves have it on space 9 of the Event track, so the game keeps using that cube to unlock
    * the 2nd Trade Fleet. Energy 9 can't settle it when the corporation is Helion, whose own white
    * cube sits there, so the Event track decides then.
    */
@@ -709,24 +706,24 @@ export class MarsBot implements IMarsBot {
     }
   }
 
-  /** Check if a cube at this position has already been triggered. */
+  /** Whether the cube at this position has already triggered. */
   public isCubeTriggered(trackIndex: number, position: number): boolean {
     return this.triggeredCubePositions.has(trackCubeKey(trackIndex, position));
   }
 
-  /** Mark a cube position as triggered. */
+  /** Marks the cube at this position as triggered. */
   public markCubeTriggered(trackIndex: number, position: number): void {
     this.triggeredCubePositions.add(trackCubeKey(trackIndex, position));
   }
 
   // ---- Scoring ----
 
-  /** Calculate MarsBot's final VP. */
+  /** Calculates MarsBot's final VP. */
   public getVictoryPoints(): MarsBotVPBreakdown {
     return new MarsBotScoring(this).calculate();
   }
 
-  /** Check if MarsBot instantly wins (gen 20, 18 with Prelude, two more on Amazonis Planitia). Never without a generation limit. */
+  /** Checks whether MarsBot instantly wins: at generation 20, 18 with Prelude, two more on Amazonis Planitia. Never without a generation limit. */
   public isInstantWin(): boolean {
     const opts = this.game.gameOptions;
     if (opts.automaNoGenerationLimit) {
@@ -737,7 +734,7 @@ export class MarsBot implements IMarsBot {
 
   // ---- Track Regression (human effects) ----
 
-  /** Regress a track when human decreases MarsBot's production. */
+  /** Regresses the track of `productionType` when the human decreases MarsBot's production of it. */
   public regressTrack(productionType: Resource): void {
     for (let i = 0; i < this.marsBotBoard.tracks.length; i++) {
       const trackDef = this.marsBotBoard.definitions[i];
@@ -753,7 +750,7 @@ export class MarsBot implements IMarsBot {
 
   // ---- Client Model ----
 
-  /** Build the model sent to the client for display. */
+  /** Builds the model sent to the client for display. */
   public toModel(): MarsBotModel {
     const vp = this.getVictoryPoints();
     const model: MarsBotModel = {
@@ -778,7 +775,7 @@ export class MarsBot implements IMarsBot {
     if (this.corp !== undefined) {
       model.corpName = this.corp.name as CardName;
       model.corpDescription = this.corp.description;
-      // Cube track indexes match model.tracks, which the panel iterates from 0.
+      // Cube track indexes match `model.tracks`, which the panel iterates from 0.
       model.trackCubes = Array.from(this.trackCubePositions.values()).map((c) => ({
         trackIndex: c.trackIndex, position: c.position, cubeType: c.cubeType,
       }));
@@ -789,7 +786,6 @@ export class MarsBot implements IMarsBot {
       model.mcPerVP = mcPerVP;
       model.mcVP = Math.floor(this.megacredits / mcPerVP);
     }
-    // C-18: Shipping Board storage (Colonies)
     if (opts.coloniesExtension && this.shippingBoard.storage.size > 0) {
       model.shippingBoard = this.shippingBoard.serialize();
     }
@@ -818,7 +814,7 @@ export class MarsBot implements IMarsBot {
     if (this.corp !== undefined) {
       state.corpId = this.corp.name;
     }
-    // Serialize cube positions whenever they exist (corp cubes AND trade fleet cube, C-6)
+    // Corp cubes and the trade fleet cube (C-6) both go in the cube positions.
     if (this.trackCubePositions.size > 0) {
       state.trackCubePositions = Array.from(this.trackCubePositions.values());
     }
@@ -856,17 +852,14 @@ export class MarsBot implements IMarsBot {
   }
 
   public restoreState(state: SerializedAutomaState): void {
-    // Restore track positions
     for (let i = 0; i < state.trackPositions.length && i < this.marsBotBoard.tracks.length; i++) {
       const track = this.marsBotBoard.tracks[i];
-      // Set position directly
       while (track.position < state.trackPositions[i]) {
-        track.advance(); // We advance without resolving actions since we're restoring state
+        track.advance(); // Advances without resolving the space, since this restores state
       }
       track.regressedPositions = new Set(state.trackRegressedPositions[i] || []);
     }
 
-    // Restore MC
     this.megacredits = state.megacredits ?? state.mcSupply ?? 0;
 
     // The bot player is rebuilt from scratch on load, so its scoring state lives here.
@@ -877,18 +870,15 @@ export class MarsBot implements IMarsBot {
       Object.assign(this.player.globalParameterSteps, state.globalParameterSteps);
     }
 
-    // Restore first player
     this.goesFirst = state.goesFirst;
     // Older saves lack it: assume the check for the current generation already ran
     this.firstTurnCheckedGeneration = state.firstTurnCheckedGeneration ?? this.game.generation;
     this.beforeActionPhasePending = state.beforeActionPhasePending ?? false;
 
-    // Restore neural instance
     if (state.neuralInstanceSpaceId) {
       this.neuralInstanceSpace = this.game.board.spaces.find((s) => s.id === state.neuralInstanceSpaceId);
     }
 
-    // Restore corporation state
     if (state.corpId !== undefined) {
       const corp = getMarsBotCorp(state.corpId as CardName);
       if (corp !== undefined) {
@@ -944,17 +934,15 @@ export class MarsBot implements IMarsBot {
 
     this.actionDeck.restore(state);
 
-    // Restore bonus deck (bonus cards + project cards a corporation put there) into the deck's own piles.
     const bonusDeck = MarsBotBonusDeck.deserialize(state.bonusDeck ?? {
       // Older saves hold the piles under their own keys, bonus cards by id
       drawPile: (state.bonusDeckDrawPile ?? []).map(bonusDeckCardName),
       discardPile: (state.bonusDeckDiscardPile ?? []).map(bonusDeckCardName),
     }, this.random);
-    // Older saves discarded these to the bonus deck after they resolved
+    // Older saves put cards that return to the action deck in the bonus deck's piles once they resolved
     this.bonusDeck.drawPile = bonusDeck.drawPile.filter((c) => !this.actionDeck.returnsToActionDeck(c));
     this.bonusDeck.discardPile = bonusDeck.discardPile.filter((c) => !this.actionDeck.returnsToActionDeck(c));
 
-    // Restore played project cards
     if (state.playedProjectCardNames !== undefined) {
       this.playedProjectCards = [];
       for (const name of state.playedProjectCardNames) {
@@ -971,7 +959,6 @@ export class MarsBot implements IMarsBot {
       }
     }
 
-    // Restore colony cube positions
     if (state.colonyCubePositions !== undefined) {
       this.colonyCubePositions = new Set(state.colonyCubePositions);
       this.hasColonyCubes = this.colonyCubePositions.size > 0;

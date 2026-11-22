@@ -28,8 +28,9 @@ import {MAManifest} from '../ma/MAManifest';
 import {trackCubeKey} from './corpTrackCubes';
 
 /**
- * Handles automa-specific game setup and provides hooks into the game lifecycle.
- * This is the ONLY automa class that Game.ts needs to know about.
+ * The automa-specific game setup, which also hands `Game` the hooks into its lifecycle.
+ *
+ * It is the only automa class that `Game` needs to know about.
  */
 export class AutomaGameSetup {
   /**
@@ -50,13 +51,13 @@ export class AutomaGameSetup {
    */
   public static setup(game: IGame, marsBotPlayer: IPlayer, humanPlayer: IPlayer, gameOptions: GameOptions, rng: Random, restoring: boolean): AutomaGameHooks {
     const boardData = AutomaGameSetup.getBoardData(AutomaGameSetup.marsBotBoardName(gameOptions), gameOptions.venusNextExtension);
-    // T-2/T-14: Turmoil reduces MarsBot's starting TR by 10 (rulebook default) or by 7 (harder variant), and
-    // by one more on Amazonis Planitia.
+    // T-2/T-14: Turmoil reduces MarsBot's starting TR by 10 (rulebook default) or by 7 (harder variant),
+    // and by one more on Amazonis Planitia.
     const turmoilTRReduction = (gameOptions.automaTurmoilTRReduction ?? 10) + marsBotMapRules(gameOptions.boardName).turmoilTRExtra;
     const startingTR = gameOptions.turmoilExtension ? MARSBOT_STARTING_TR - turmoilTRReduction : MARSBOT_STARTING_TR;
     marsBotPlayer.setTerraformRating(startingTR);
 
-    // Override stock/production to intercept resource removal and production decrease
+    // The overrides intercept resource removal and production decreases.
     const marsBotStock = new MarsBotStock(marsBotPlayer);
     const marsBotProduction = new MarsBotProduction(marsBotPlayer);
     const overridable = marsBotPlayer as {-readonly [K in 'stock' | 'production']: IPlayer[K]};
@@ -65,23 +66,21 @@ export class AutomaGameSetup {
 
     const marsBot = new MarsBot(game, marsBotPlayer, humanPlayer, boardData, gameOptions.automaDifficulty, rng, restoring);
 
-    // Wire MarsBot reference into overridden stock/production
     marsBotStock.setMarsBot(marsBot);
     marsBotProduction.setMarsBot(marsBot);
 
-    // Override tag counting to use track positions instead of played cards
+    // MarsBot counts tags from its track positions, not from played cards.
     marsBotPlayer.tags = new MarsBotTags(marsBotPlayer, marsBot.marsBotBoard);
 
-    // Add MarsBot to human's opponents so cards that target opponents can see MarsBot
+    // Cards that target opponents can then see MarsBot.
     (humanPlayer.opponents as Array<IPlayer>).push(marsBotPlayer);
 
-    // Only for new games, not deserialization
     if (!restoring) {
-      // T-1: Add MarsBot's 7 delegates to the reserve (Turmoil setup)
+      // T-1: MarsBot's 7 delegates go in the reserve.
       if (gameOptions.turmoilExtension && game.turmoil !== undefined) {
         game.turmoil.delegateReserve.add(marsBotPlayer, DELEGATES_PER_PLAYER);
         game.log('MarsBot: 7 delegates placed in reserve (Turmoil)');
-        // T-15: Extra delegates seeded at setup for increased difficulty
+        // T-15: Extra delegates seeded at setup raise the difficulty.
         const setupDelegates = gameOptions.automaTurmoilSetupDelegates ?? 0;
         for (let i = 0; i < setupDelegates; i++) {
           AutomaGameSetup.placeExtraSetupDelegate(game, marsBotPlayer, rng);
@@ -97,10 +96,8 @@ export class AutomaGameSetup {
     return new AutomaGameHooks(game, marsBot);
   }
 
-  /** Force-disable unsupported expansions for automa games. Mutates gameOptions in place. */
+  /** Turns off the expansions an automa game doesn't support, changing `gameOptions` in place. */
   public static sanitizeGameOptions(gameOptions: GameOptions): void {
-    // coloniesExtension is supported — do not force-disable
-    // turmoilExtension is supported — do not force-disable
     gameOptions.aresExtension = false;
     gameOptions.moonExpansion = false;
     gameOptions.pathfindersExpansion = false;
@@ -108,7 +105,7 @@ export class AutomaGameSetup {
     gameOptions.starWarsExpansion = false;
     gameOptions.underworldExpansion = false;
     gameOptions.communityCardsOption = false;
-    gameOptions.solarPhaseOption = false; // Venus Solar Phase Step 2 replaced by Government Intervention card
+    gameOptions.solarPhaseOption = false; // The Government Intervention card replaces Venus Solar Phase Step 2.
     // The alternate Venus board's bonuses and the Chairman's agenda choice would ask MarsBot to choose.
     gameOptions.altVenusBoard = false;
     gameOptions.politicalAgendasExtension = 'Standard';
@@ -170,7 +167,7 @@ export class AutomaGameSetup {
     return coveredByAutomaRules(name, awardManifest, MODULAR_AWARDS, gameOptions);
   }
 
-  /** Filter out cards not supported against MarsBot (e.g., Recession). */
+  /** Filters out the prelude cards not supported against MarsBot (Recession). */
   public static filterPreludeCards<T extends ICard>(cards: Array<T>, gameOptions: GameOptions): Array<T> {
     if (gameOptions.prelude2Expansion) {
       return cards.filter((c) => c.name !== CardName.RECESSION);
@@ -188,7 +185,7 @@ export class AutomaGameSetup {
     return gameOptions.modularMA ? BoardName.THARSIS : gameOptions.boardName;
   }
 
-  /** Get the MarsBot board data for the selected map, with the Venus track last when Venus is in play. */
+  /** Gets the MarsBot board data for `boardName`, with the Venus track last when Venus is in play. */
   public static getBoardData(boardName: BoardName, venusEnabled: boolean): ReadonlyArray<TrackDefinition> {
     const board = MARSBOT_BOARDS[boardName];
     if (board === undefined) {
@@ -209,9 +206,9 @@ export class AutomaGameSetup {
   }
 
   /**
-   * The modular Pioneer milestone and Constructor award place colony cubes on MarsBot's tracks.
-   * When MarsBot reaches these positions, it loses 5 MC and builds a colony (if Colonies enabled).
-   * Utopia Planitia's own Pioneer has no cubes.
+   * Places the colony cubes of the modular Pioneer milestone and Constructor award on MarsBot's tracks.
+   *
+   * When MarsBot reaches one, it loses 5 M€ and builds a colony. Utopia Planitia's own Pioneer has no cubes.
    */
   private static placeColonyCubes(game: IGame, marsBot: MarsBot): void {
     const hasModularPioneer = game.milestones.some((m) => m.name === 'Pioneer') &&
@@ -246,7 +243,8 @@ export class AutomaGameSetup {
   }
 
   /**
-   * C-6: Place the 2nd Trade Fleet cube on the Energy track: space 9, or 10 on Amazonis Planitia.
+   * Places the 2nd Trade Fleet cube on the Energy track: space 9, or 10 on Amazonis Planitia (C-6).
+   *
    * When triggered (C-27), MarsBot unlocks the 2nd trade fleet and Extended Shipping Lines.
    */
   private static place2ndTradeFleetCube(game: IGame, marsBot: MarsBot): void {
@@ -256,8 +254,7 @@ export class AutomaGameSetup {
     const key = marsBot.tradeFleetCubeKey;
     if (marsBot.trackCubePositions.has(key)) {
       return;
-    } // Already placed (shouldn't happen for new game)
-    // Parse trackIndex and position back from key
+    }
     const [trackStr, posStr] = key.split(':');
     const trackIndex = parseInt(trackStr);
     const position = parseInt(posStr);
@@ -266,21 +263,22 @@ export class AutomaGameSetup {
   }
 
   /**
-   * T-15: Reveal a project card (discard it) and place 1 MarsBot delegate at a random party.
-   * Called during setup once per delegate in automaTurmoilSetupDelegates (0 to 2).
+   * Reveals a project card, discarding it, and places 1 MarsBot delegate in a random party (T-15).
+   *
+   * Setup calls it once per delegate in `automaTurmoilSetupDelegates` (0 to 2).
    */
   private static placeExtraSetupDelegate(game: IGame, marsBotPlayer: IPlayer, rng: Random): void {
     const turmoil = game.turmoil;
     if (turmoil === undefined) {
       return;
     }
-    // Reveal a project card for randomness (T-15 rule: "flip a project deck card")
+    // T-15 says to "flip a project deck card" for the randomness.
     const card = game.projectDeck.draw(game);
     if (card !== undefined) {
       game.projectDeck.discardPile.push(card);
       game.log('MarsBot reveals ${0} to place a delegate', (b) => b.card(card, {cost: true}));
     }
-    // Place 1 MarsBot delegate in a random party (only if reserve is non-empty)
+    // Without a delegate left in the reserve there is nothing to place.
     if (!turmoil.delegateReserve.has(marsBotPlayer)) {
       return;
     }

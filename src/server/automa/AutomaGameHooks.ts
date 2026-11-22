@@ -26,12 +26,10 @@ import {CardResource} from '../../common/CardResource';
 import {Space} from '../boards/Space';
 
 /**
- * All automa (MarsBot) hooks into the Game lifecycle.
+ * The hooks that let MarsBot into the Game lifecycle.
  *
- * Game.ts holds this as `automaHooks?: AutomaGameHooks`.
- * Each method returns a boolean or value indicating whether the hook handled the call.
- * When `automaHooks` is undefined, the `?.` operator returns undefined/false and
- * the game proceeds with normal behavior.
+ * `Game` holds this as `automaHooks?: AutomaGameHooks`. A hook that can decline returns whether it
+ * handled the call. Without `automaHooks`, the game proceeds with its normal behavior.
  */
 export class AutomaGameHooks {
   /**
@@ -48,23 +46,23 @@ export class AutomaGameHooks {
 
   // ---- Solo mode overrides ----
 
-  /** Automa games are NOT solo mode (they behave as 2-player). */
+  /** False, since an automa game is not solo mode: it behaves as a 2-player game. */
   public isSoloMode(): boolean {
     return false;
   }
 
-  /** Automa: game goes up to generation 20 (18 with Prelude), two more on Amazonis Planitia. */
+  /** The last generation of the game: 20, 18 with Prelude, two more on Amazonis Planitia. */
   public lastSoloGeneration(): number {
     return this.getMaxGeneration();
   }
 
-  /** Get the max generation for this automa game. */
+  /** Gets the max generation for this automa game. */
   public getMaxGeneration(): number {
     const opts = this.game.gameOptions;
     return getAutomaMaxGeneration(opts.preludeExtension, opts.boardName);
   }
 
-  /** Automa: game ends when Mars is terraformed or, with a generation limit, at the max generation. */
+  /** Whether the game is over: Mars is terraformed or, with a generation limit, the max generation is reached. */
   public isGameOver(): boolean {
     if (this.hasGenerationLimit() && this.game.generation >= this.getMaxGeneration()) {
       return true;
@@ -80,8 +78,9 @@ export class AutomaGameHooks {
   // ---- Turn flow ----
 
   /**
-   * Handle MarsBot's turn when it's the active player.
-   * Returns true if handled (MarsBot took its turn), false if this is the human player.
+   * Takes MarsBot's turn when `player` is MarsBot.
+   *
+   * Returns false when `player` is the human.
    */
   public handleStartActions(player: IPlayer): boolean {
     if (player === this.marsBot.player) {
@@ -93,9 +92,9 @@ export class AutomaGameHooks {
   }
 
   /**
-   * Get the next player for turn alternation.
-   * Returns the player who should go next, or undefined if both have passed
-   * (meaning Game should proceed to production).
+   * Gets the player who goes next, alternating between the two.
+   *
+   * Returns undefined when both have passed, and the game proceeds to production.
    */
   public getNextPlayer(): IPlayer | undefined {
     const humanPlayer = this.game.players[0];
@@ -107,7 +106,6 @@ export class AutomaGameHooks {
       return undefined;
     }
 
-    // Alternate: if human just went, MarsBot goes next (and vice versa)
     if (this.game.activePlayer === humanPlayer && !marsBotPassed) {
       return marsBotPlayer;
     }
@@ -115,7 +113,7 @@ export class AutomaGameHooks {
       return humanPlayer;
     }
 
-    // One has passed, give turn to the other
+    // One has passed, so the other keeps the turn.
     if (!humanPassed) {
       return humanPlayer;
     }
@@ -126,75 +124,73 @@ export class AutomaGameHooks {
     return undefined;
   }
 
-  /** Whether MarsBot has passed (used by Player.allOtherPlayersHavePassed). */
+  /** Whether MarsBot has passed, for `Player.allOtherPlayersHavePassed`. */
   public allOtherPlayersHavePassed(): boolean {
     return this.game.hasPassedThisActionPhase(this.marsBot.player);
   }
 
-  /** Check if all players (including MarsBot) have passed. */
+  /** Returns false when MarsBot has not passed. Otherwise undefined, to let the normal check of the human players go on. */
   public allPlayersHavePassed(): boolean | undefined {
     if (!this.game.hasPassedThisActionPhase(this.marsBot.player)) {
       return false;
     }
-    return undefined; // Let normal logic continue checking human players
+    return undefined;
   }
 
-  /** Get the first player for the action phase (handles alternation). */
+  /** Gets MarsBot's player when it goes first in the action phase, otherwise undefined to use the normal first player. */
   public getFirstPlayerForActionPhase(): IPlayer | undefined {
     if (this.marsBot.goesFirst) {
       return this.marsBot.player;
     }
-    return undefined; // Use normal first player
+    return undefined;
   }
 
   // ---- Phase hooks ----
 
   /**
-   * Handle MarsBot's research phase.
-   * Returns true if the draft variant was handled (caller should NOT call runResearchPhase).
+   * Runs MarsBot's research phase.
+   *
+   * Returns true when the draft variant handled it, and the caller must not call `runResearchPhase`.
    */
   public handleResearchPhase(): boolean {
     if (this.game.generation > 1) {
       this.marsBot.goesFirst = !this.marsBot.goesFirst;
     }
 
-    // Corp round start effects
     this.marsBot.corp?.roundStart?.(this.marsBot);
 
     if (this.game.gameOptions.draftVariant) {
       this.handleDraftResearchPhase();
-      return true; // Draft handled — don't call runResearchPhase for human
+      return true;
     }
     this.marsBot.actionDeck.buildResearch();
     this.handleFloaterExtraCard();
     return false;
   }
 
-  /**
-   * Check if MarsBot can spend floaters for an extra card.
-   * Venus Next: requires Hoverlord to be unavailable and 5+ floaters.
-   * C-X2/C-9: With Colonies but without Venus Next, use the same rule but
-   *            Hoverlord is always considered unavailable (not in game).
-   */
   private draftResolver(): MarsBotDraftResolver {
     return new MarsBotDraftResolver(this.marsBot.marsBotBoard, (items) => inplaceShuffle(items, this.game.rng));
   }
 
+  /**
+   * Whether MarsBot can spend floaters for an extra card.
+   *
+   * With Venus Next it needs 5 floaters and Hoverlord unavailable. With Colonies and without Venus
+   * Next it needs 5 floaters in its Titan storage, and Hoverlord counts as unavailable because it is
+   * not in the game (C-X2, C-9).
+   */
   private canSpendFloatersForExtraCard(): boolean {
     const opts = this.game.gameOptions;
-    // C-9/C-X2: Colonies without Venus Next — floaters are in Titan storage
-    // Hoverlord is always unavailable; check if Titan storage has 5+ floaters
     if (opts.coloniesExtension && !opts.venusNextExtension) {
       return this.marsBot.shippingBoard.get(ColonyName.TITAN) >= 5;
     }
-    // Normal Venus Next rule
     if (!opts.venusNextExtension) {
       return false;
     }
     if (this.marsBot.floaters < 5) {
       return false;
     }
-    // Hoverlord must be unavailable: not in game, already claimed, or all milestone slots full
+    // Hoverlord is unavailable when it is not in the game, already claimed, or all milestone slots are full.
     const hoverlordInGame = this.game.milestones.some((m) => m.name === 'Hoverlord');
     if (!hoverlordInGame) {
       return true;
@@ -205,7 +201,7 @@ export class AutomaGameHooks {
     return this.game.claimedMilestones.some((cm) => cm.milestone.name === 'Hoverlord');
   }
 
-  /** Venus Next (non-draft): spend 5 floaters for 1 extra card from project deck. */
+  /** Spends 5 floaters for 1 extra card from the project deck, when MarsBot can and the draft variant is off. */
   private handleFloaterExtraCard(): void {
     if (!this.canSpendFloatersForExtraCard()) {
       return;
@@ -213,7 +209,6 @@ export class AutomaGameHooks {
 
     const opts = this.game.gameOptions;
     if (opts.coloniesExtension && !opts.venusNextExtension) {
-      // C-9/C-X2: Spend 5 from Titan storage (floaters) for extra card
       this.marsBot.shippingBoard.spend(ColonyName.TITAN, 5);
       this.marsBot.drawProjectCardsToActionDeck(1);
       this.game.log('MarsBot spends 5 Titan floaters for an extra card (C-9)');
@@ -231,13 +226,14 @@ export class AutomaGameHooks {
   }
 
   /**
-   * Automa draft rules (page 4):
-   * 1. Draw two piles of 4 cards
-   * 2. Human takes one pile, MarsBot gets the other
-   * 3. Pick 1 card from your pile to keep. MarsBot gets 1 random from its pile.
+   * Runs the draft variant of the research phase, by the automa draft rules (rulebook A, page 4).
+   *
+   * 1. Draw two piles of 4 cards.
+   * 2. The human takes one pile, MarsBot gets the other.
+   * 3. Each picks 1 card from their pile to keep. MarsBot picks at random from its pile.
    * 4. Swap piles. Repeat until both have 4 cards.
-   * 5. Shuffle MarsBot's 4, discard 1, add 1 bonus card → action deck (4 cards)
-   * 6. Human chooses which of their 4 to keep and pay for.
+   * 5. Shuffle MarsBot's 4, discard 1, add 1 bonus card to the action deck (4 cards).
+   * 6. The human chooses which of their 4 to keep and pay for.
    */
   private handleDraftResearchPhase(): void {
     const humanPlayer = this.game.players[0];
@@ -250,10 +246,9 @@ export class AutomaGameHooks {
     const marsBotKept: Array<IProjectCard> = [];
     const draftPriority = this.marsBot.corp?.draftPriority;
 
-    // Run all 4 draft rounds synchronously with human input chaining
     const runDraftRound = (round: number) => {
       if (round > 4) {
-        // Build MarsBot deck — Brutal keeps 4th card free; others spend 5 floaters to skip discard
+        // Brutal keeps the 4th card free. The others spend 5 floaters to skip the discard.
         const isBrutal = this.marsBot.difficulty === 'brutal';
         const canSpend = this.canSpendFloatersForExtraCard();
         const skipDiscard = isBrutal || canSpend;
@@ -274,20 +269,18 @@ export class AutomaGameHooks {
           }
         }
         this.marsBot.actionDeck.buildResearchFromDraft(finalMarsBotCards, skipDiscard || draftPriority !== undefined);
-        // Brutal: spend 5 floaters for a 5th card from project deck
+        // Brutal also spends 5 floaters for a 5th card.
         if (isBrutal && canSpend) {
           this.marsBot.spendFloaters(5);
           this.marsBot.drawProjectCardsToActionDeck(1);
           this.game.log('MarsBot (Brutal) spends 5 floaters for a 5th card');
           this.onFloatersSpentForExtraCard();
         }
-        // Human gets their 4 drafted cards → buy phase
         humanPlayer.draftedCards = humanKept;
         humanPlayer.runResearchPhase();
         return;
       }
 
-      // MarsBot picks 1 from its pile (priority-based if corp has draft priority, else random)
       if (marsBotPile.length > 0) {
         let picked: IProjectCard;
         if (draftPriority !== undefined) {
@@ -301,7 +294,6 @@ export class AutomaGameHooks {
         marsBotKept.push(picked);
       }
 
-      // Human picks 1 from their pile
       const selectCard = new SelectCard<IProjectCard>(
         `Draft round ${round}/4: Pick 1 card to keep`,
         'Keep',
@@ -311,12 +303,10 @@ export class AutomaGameHooks {
         humanKept.push(selected[0]);
         inplaceRemove(humanPile, selected[0]);
 
-        // Swap piles
         const temp = humanPile;
         humanPile = marsBotPile;
         marsBotPile = temp;
 
-        // Next round
         runDraftRound(round + 1);
         return undefined;
       });
@@ -328,9 +318,10 @@ export class AutomaGameHooks {
   }
 
   /**
-   * Called once the human has played their corporation in generation 1, before the first
-   * action phase starts (see handleBeforeActionPhase).
-   * Selects and sets up MarsBot's corporation if the corp option is enabled.
+   * Selects and sets up MarsBot's corporation, if the corp option is on.
+   *
+   * Called once the human has played their corporation in generation 1, before the first action phase
+   * starts (see `handleBeforeActionPhase`).
    */
   public handlePostCorporationSetup(): void {
     if (!this.game.gameOptions.automaCorpOption) {
@@ -370,10 +361,11 @@ export class AutomaGameHooks {
   }
 
   /**
-   * Called before the action phase each generation.
+   * Runs what MarsBot does before the action phase each generation.
+   *
    * In generation 1 MarsBot picks its corporation here: the first action saves the game, so a
    * corporation picked after that is lost when the server restarts before the next save.
-   * Later generations resolve the corporation's beforeActionPhase effect.
+   * Later generations resolve the corporation's `beforeActionPhase` effect.
    */
   public handleBeforeActionPhase(): void {
     if (this.game.generation <= 1) {
@@ -387,7 +379,7 @@ export class AutomaGameHooks {
     corp.beforeActionPhase?.(this.marsBot);
   }
 
-  /** Returns true if this player's production should be skipped (MarsBot). */
+  /** Runs MarsBot's production phase when `player` is MarsBot. Returns true when it did, and the game skips the normal production. */
   public handleProductionPhase(player: IPlayer): boolean {
     if (player === this.marsBot.player) {
       this.marsBot.runProductionPhase();
@@ -396,7 +388,7 @@ export class AutomaGameHooks {
     return false;
   }
 
-  /** Place MarsBot's final greenery tiles. */
+  /** Places MarsBot's final greenery tiles, unless `donePlayers` shows it has. */
   public handleFinalGreenery(donePlayers: Set<PlayerId>): void {
     if (!donePlayers.has(this.marsBot.player.id)) {
       this.marsBot.placeFinalGreeneries();
@@ -406,15 +398,12 @@ export class AutomaGameHooks {
 
   // ---- Bonus interception ----
 
-  /** Returns false if placement bonuses should be skipped for this player. */
+  /** Whether `player` gets placement bonuses: MarsBot never does. */
   public shouldGrantPlacementBonuses(player: IPlayer): boolean {
     return player !== this.marsBot.player;
   }
 
-  /**
-   * Handle temperature heat bonus for MarsBot (2 MC instead of heat production).
-   * Returns true if handled.
-   */
+  /** Pays MarsBot 2 M€ instead of the heat production of the temperature bonus. Returns true if handled. */
   public handleTemperatureHeatBonus(player: IPlayer): boolean {
     if (player === this.marsBot.player) {
       this.marsBot.gainMc(2);
@@ -425,7 +414,7 @@ export class AutomaGameHooks {
   }
 
   /**
-   * Pays MarsBot 2 MC instead of the plant production Amazonis Planitia prints at -12C, as for the
+   * Pays MarsBot 2 M€ instead of the plant production Amazonis Planitia prints at -12C, as for the
    * heat production bonuses on the temperature track. Returns true if handled.
    */
   public handleTemperaturePlantBonus(player: IPlayer): boolean {
@@ -438,9 +427,9 @@ export class AutomaGameHooks {
   }
 
   /**
-   * Pays MarsBot 2 MC instead of a card for a card bonus (Venus 8%, and oxygen 7% on Amazonis
+   * Pays MarsBot 2 M€ instead of a card for a card bonus (Venus 8%, and oxygen 7% on Amazonis
    * Planitia), as for the heat production bonus on the temperature track (BGG 3358342, 3424237,
-   * 3733436). Government Intervention pays no MC from bonuses. Returns true if handled.
+   * 3733436). Government Intervention pays no M€ from bonuses. Returns true if handled.
    */
   public handleVenusCardBonus(player: IPlayer): boolean {
     if (player !== this.marsBot.player) {
@@ -470,8 +459,8 @@ export class AutomaGameHooks {
   }
 
   /**
-   * Handle the temperature ocean bonus at 0C for MarsBot, which places the ocean
-   * itself rather than being asked for a space it could never choose.
+   * Places the ocean of the temperature bonus at 0C for MarsBot, which is not asked for a space it
+   * could never choose.
    *
    * Returns true if handled.
    */
@@ -479,15 +468,14 @@ export class AutomaGameHooks {
     if (player !== this.marsBot.player) {
       return false;
     }
-    // With no ocean left to place this is a Failed Action
+    // With no ocean left to place, this is a Failed Action.
     this.marsBot.placeOcean();
     return true;
   }
 
   /**
-   * Called when a raise earns a terraforming bonus that can't be resolved, such as the
-   * oxygen bonus step when the temperature is already at its maximum. MarsBot takes a
-   * Failed Action (rulebook A, p.9).
+   * Takes a Failed Action for MarsBot when a raise earns a terraforming bonus that can't be
+   * resolved, such as the oxygen bonus step when the temperature is already at its maximum (rulebook A, p.9).
    */
   public handleUnresolvableTerraformingBonus(player: IPlayer): void {
     if (player !== this.marsBot.player) {
@@ -499,7 +487,7 @@ export class AutomaGameHooks {
 
   // ---- Utility ----
 
-  /** Resolve the color for a passed player ID that might be MarsBot. */
+  /** Resolves the color of a passed player's ID, when it is MarsBot's. */
   public getPassedPlayerColor(playerId: PlayerId): Color | undefined {
     if (this.marsBot.player.id === playerId) {
       return this.marsBot.player.color;
@@ -524,22 +512,22 @@ export class AutomaGameHooks {
     return this.marsBot.player;
   }
 
-  /** Get MarsBot's score for a specific award (track-based). */
+  /** Gets MarsBot's score for `award`. */
   public getMarsBotAwardScore(award: IAward): number {
     return this.marsBot.awardValue(award);
   }
 
-  /** Get MarsBot's score for a specific milestone. */
+  /** Gets MarsBot's score for `milestone`. */
   public getMarsBotMilestoneScore(milestone: IMilestone): number {
     return milestone.getScore(this.marsBot.player);
   }
 
-  /** Check if MarsBot can claim a specific milestone. */
+  /** Checks whether MarsBot can claim `milestone`. */
   public canMarsBotClaimMilestone(milestone: IMilestone): boolean {
     return marsBotCanClaimMilestone(milestone, this.marsBot);
   }
 
-  /** Track MarsBot VP at end of each generation (for chart). */
+  /** Records MarsBot's VP at the end of a generation, for the end-game chart. */
   public updateVPForGeneration(): void {
     const vp = this.marsBot.getVictoryPoints();
     this.marsBot.vpByGeneration.push(vp.total);
@@ -559,7 +547,7 @@ export class AutomaGameHooks {
     }
   }
 
-  /** Check if MarsBot's M€ supply or colony storage is a valid target for card resource removal. */
+  /** Checks whether MarsBot's M€ supply or colony storage is a valid target for card resource removal. */
   public hasRemoveResourceTarget(player: IPlayer, source: string, resourceType?: CardResource): boolean {
     if (source === 'self') {
       return false;
@@ -599,14 +587,14 @@ export class AutomaGameHooks {
     return options;
   }
 
-  /** Deduct from MarsBot MC supply as if card resources were removed. */
+  /** Deducts from MarsBot's M€ supply as if card resources were removed. */
   private executeRemoveResource(player: IPlayer, count: number, cb: () => void): void {
     // The supply only: stock.deduct() would offer the colony storage areas too.
     (this.marsBot.player.stock as MarsBotStock).removeFromSupply(Resource.MEGACREDITS, count, -count, {log: true, from: {player}});
     cb();
   }
 
-  /** Remove resources from a colony storage area, losing any excess. */
+  /** Removes resources from a colony storage area, losing any excess. */
   private executeRemoveStorageResource(storage: ColonyName, count: number, cb: () => void): void {
     const removed = Math.min(count, this.marsBot.shippingBoard.get(storage));
     this.marsBot.shippingBoard.spend(storage, removed);
@@ -614,14 +602,14 @@ export class AutomaGameHooks {
     cb();
   }
 
-  /** Build the model sent to the client. */
+  /** Builds the model sent to the client. */
   public toModel(): MarsBotModel {
     return this.marsBot.toModel();
   }
 
   // ---- Corp effect hooks ----
 
-  /** Called when the human player plays a project card. Notifies MarsBot's corp. */
+  /** Notifies MarsBot's corp that the human played a project card. */
   public handleHumanCardPlayed(card: IProjectCard): void {
     const corp = this.marsBot.corp;
     if (corp?.onHumanCardPlayed === undefined) {
@@ -631,25 +619,23 @@ export class AutomaGameHooks {
   }
 
   /**
-   * C-21: When the player trades with a colony where MarsBot has a colony,
-   * intercept MarsBot's colony bonus and give 1 resource to shipping board instead
-   * of the printed tile bonus.
-   * C-24c: For Europa, give 1 MC to megacredits instead.
+   * Replaces MarsBot's colony bonus, when the player trades with a colony where MarsBot has a colony.
    *
-   * Returns true if MarsBot's colony bonus was handled (caller should skip normal flow).
+   * MarsBot gets 1 resource on its shipping board instead of the printed tile bonus (C-21), or 1 M€
+   * for Europa (C-24c).
+   *
+   * Returns true if MarsBot's colony bonus was handled, and the caller skips the normal flow.
    */
   public handleColonyBonus(colony: IColony, playerId: PlayerId): boolean {
     if (playerId !== this.marsBot.player.id) {
       return false;
     }
-    // C-24c: Europa → 1 MC to megacredits
     if (colony.name === ColonyName.EUROPA) {
       this.marsBot.gainMc(1);
       this.game.log('MarsBot gains 1 MC as Europa colony bonus (C-24c)');
       return true;
     }
-    // C-21: Other colonies → 1 resource to shipping board
-    // C-23: Titan storage only used without Venus Next; with Venus, gain 1 floater instead
+    // Titan storage only holds floaters without Venus Next (C-23). With Venus Next MarsBot gains a floater.
     if (colony.name === ColonyName.TITAN && this.game.gameOptions.venusNextExtension) {
       this.marsBot.floaters += 1;
       this.game.log('MarsBot gains 1 floater as Titan colony bonus (C-21, C-23)');
@@ -660,7 +646,7 @@ export class AutomaGameHooks {
     return true;
   }
 
-  /** Called when any player places a tile. Settles MarsBot's special hexes and notifies its corp. */
+  /** Settles MarsBot's special hexes and notifies its corp when any player places a tile. */
   public handleTilePlaced(player: IPlayer, tileType: TileType, space: Space): void {
     if (player === this.marsBot.player) {
       this.marsBot.turnResolver.tilePlacer.resolveSpecialHex(space);
@@ -673,8 +659,9 @@ export class AutomaGameHooks {
   }
 
   /**
-   * Called when `player` builds a colony. MarsBot notifies its corp itself after building, so only
-   * the human's colonies notify it here.
+   * Notifies MarsBot's corp that `player` built a colony.
+   *
+   * MarsBot notifies its corp itself after building, so only the human's colonies notify it here.
    */
   public handleColonyBuilt(player: IPlayer): void {
     if (player === this.marsBot.player) {
@@ -684,8 +671,8 @@ export class AutomaGameHooks {
   }
 
   /**
-   * Called once the Venus scale has risen by `steps`, for either player. Notifies MarsBot's corp, then
-   * builds the colony MarsBot's raise earned.
+   * Notifies MarsBot's corp that the Venus scale rose by `steps`, for either player, then builds the
+   * colony MarsBot's raise earned.
    *
    * When Government Intervention raised Venus, the colony pays MarsBot no M€ and the corp's payment
    * for the raise stays.
@@ -705,7 +692,7 @@ export class AutomaGameHooks {
 
   // ---- Card interaction hooks ----
 
-  /** St. Joseph: MarsBot spends 2 MC and advances least-advanced track. Returns true if handled. */
+  /** Has MarsBot pay 2 M€ and advance its least-advanced track for St. Joseph Cathedral. Returns true if handled. */
   public handleStJosephCathedral(spaceOwner: IPlayer): boolean {
     if (spaceOwner !== this.marsBot.player) {
       return false;
@@ -720,7 +707,7 @@ export class AutomaGameHooks {
     return true;
   }
 
-  /** Sponsored Academies: MarsBot gains 1 MC instead of drawing. Returns true if handled. */
+  /** Pays MarsBot 1 M€ instead of a card for Sponsored Academies. Returns true if handled. */
   public handleOpponentCardDraw(opponent: IPlayer): boolean {
     if (opponent !== this.marsBot.player) {
       return false;
@@ -730,7 +717,10 @@ export class AutomaGameHooks {
     return true;
   }
 
-  /** Galilean Waystation: behavior gives full MarsBot Jovian track, rulebook says half. Adjust after behavior runs. */
+  /**
+   * Cuts the M€ production Galilean Waystation gave `player` to half of MarsBot's Jovian track position,
+   * which the card's behavior gave in full.
+   */
   public adjustGalileanWaystation(player: IPlayer): void {
     const jovianTrackIndex = this.marsBot.marsBotBoard.tagToTrack[Tag.JOVIAN];
     if (jovianTrackIndex === undefined) {

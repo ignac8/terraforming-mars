@@ -57,7 +57,7 @@ export interface IMarsBot {
   spendFloaters(count: number): void;
 
   gainMc(amount: number): void;
-  /** Positive steps raise the bot's TR, negative steps lower it. */
+  /** Raises the bot's TR by `steps`, or lowers it when `steps` is negative. */
   raiseTR(steps: number): void;
   /** Advances a track and resolves the space it reaches. Does nothing once the game has ended. */
   advanceTrack(trackIndex: number): void;
@@ -85,7 +85,7 @@ export interface IMarsBot {
    * once the game has ended.
    */
   maybeDrawAndResolveProjectCard(): void;
-  /** Same as `maybeDrawAndResolveProjectCard`, but only the card's first tag resolves: the others are ignored. */
+  /** Draws and resolves a project card like `maybeDrawAndResolveProjectCard`, but only the card's first tag resolves. */
   maybeDrawAndResolveProjectCardFirstTagOnly(): void;
   /** Plays `card` for the bot: it goes to the played pile and its tags advance the bot's tracks. */
   resolveProjectCard(card: IProjectCard): void;
@@ -227,7 +227,7 @@ export interface IMarsBot {
    */
   maybeTrade(cardName: CardName): void;
 
-  /** Corp-specific counters, serialized with the bot. Missing keys read as 0. */
+  /** Reads a corp-specific counter, which is serialized with the bot. A missing key reads as 0. */
   getCorpState(key: string): number;
   setCorpState(key: string, value: number): void;
 }
