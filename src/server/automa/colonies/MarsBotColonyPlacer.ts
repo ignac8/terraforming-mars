@@ -6,7 +6,7 @@ import {comparing} from '../../../common/utils/Ordering';
 import {inplaceRemove, toName} from '../../../common/utils/utils';
 import {pickByRevealedCard} from '../MarsBotCardReveal';
 
-/** The colony tiles MarsBot can build on: active, not full, and without a colony of its own. */
+/** Lists the colony tiles MarsBot can build on: active, not full, and without a colony of its own. */
 export function eligibleColonies(marsBot: IMarsBot): Array<IColony> {
   return marsBot.game.colonies.filter((colony) => {
     if (!colony.isActive) {
