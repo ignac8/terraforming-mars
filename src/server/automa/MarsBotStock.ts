@@ -15,18 +15,18 @@ import {Priority} from '../deferredActions/Priority';
 import {message} from '../logs/MessageBuilder';
 
 /**
- * Override Stock for MarsBot's player.
+ * The stock of MarsBot's player, whose resources are its M€ supply.
  *
  * Per rules (page 4):
- * - "Remove" resources → remove from MarsBot's MC supply
- * - "Steal" resources → take from MarsBot's MC supply as if they were the resource type
+ * - "Remove" resources → remove from MarsBot's M€ supply
+ * - "Steal" resources → take from MarsBot's M€ supply as if they were the resource type
  *
- * All resource removals are converted to MC deductions from megacredits, except that the
- * matching colony storage area (Ceres steel, Triton titanium, Io heat, Callisto energy,
- * Ganymede plants, Luna M€) counts as that resource too (C-25). When a player removes or steals
- * and both the MC supply and that area hold something, the player chooses the source or splits.
- * Resource additions (from game engine bonuses) are ignored since MarsBot
- * doesn't use resources — MC is tracked separately in MarsBot.megacredits.
+ * A removal deducts M€ from `MarsBot.megacredits`, except that the matching colony storage area
+ * (Ceres steel, Triton titanium, Io heat, Callisto energy, Ganymede plants, Luna M€) counts as that
+ * resource too (C-25). When a player removes or steals and both the M€ supply and that area hold
+ * something, the player chooses the source or splits.
+ *
+ * Resource additions (from game engine bonuses) are ignored, since MarsBot doesn't use resources.
  */
 export class MarsBotStock extends Stock {
   private marsBotRef: MarsBot | undefined;
@@ -34,9 +34,9 @@ export class MarsBotStock extends Stock {
   public setMarsBot(marsBot: MarsBot): void {
     this.marsBotRef = marsBot;
 
-    // Per automa rules, all MarsBot resources are its MC supply, plus the colony storage area
+    // Per automa rules, all MarsBot resources are its M€ supply, plus the colony storage area
     // that holds the resource (C-25), plus for plants the ones on Ecoline's or Ecotec's card
-    // (rulebook B, p.4 FAQ). Cards check target.steel > 0 etc. to decide if stealing is possible,
+    // (rulebook B, p.4 FAQ). Cards check `target.steel > 0` etc. to decide if stealing is possible,
     // and cap the amount by it. MarsBot's scoring never reads these.
     const stock = this;
     for (const resource of ALL_RESOURCES) {
@@ -50,7 +50,7 @@ export class MarsBotStock extends Stock {
     }
   }
 
-  /** MarsBot's MC supply, which is what it spends. The resource getters add colony storage on top. */
+  /** MarsBot's M€ supply, which is what it spends, before the resource getters add colony storage on top. */
   private get supply(): number {
     return this.marsBotRef?.megacredits ?? 0;
   }
@@ -59,13 +59,13 @@ export class MarsBotStock extends Stock {
     return this.marsBotRef?.shippingBoard.get(COLONY_STORAGE_FOR_RESOURCE[resource]) ?? 0;
   }
 
-  /** MarsBot has megacredits, not separate resource pools. */
+  /** Tells whether MarsBot's M€ supply covers the total of `units`, since it has no separate resource pools. */
   public override has(units: Units): boolean {
     const total = Units.values(units).reduce((a, b) => a + b, 0);
     return (this.marsBotRef?.megacredits ?? 0) >= total;
   }
 
-  /** MarsBot can adjust if megacredits can cover the total cost. */
+  /** Tells whether MarsBot's M€ supply can cover the decreases in `units`. */
   public override canAdjust(units: Units): boolean {
     const cost = Units.values(units).reduce((sum, v) => sum + Math.min(0, v), 0);
     return (this.marsBotRef?.megacredits ?? 0) + cost >= 0;
@@ -93,8 +93,8 @@ export class MarsBotStock extends Stock {
           this.fireRemovalHooks(resource, -removed, taker);
         }
       };
-      // A player removing from MarsBot chooses between its MC supply and the matching colony
-      // storage area (C-25). Anything else (events, MarsBot itself) comes out of the MC supply.
+      // A player removing from MarsBot chooses between its M€ supply and the matching colony
+      // storage area (C-25). Anything else (events, MarsBot itself) comes out of the M€ supply.
       const fromStock = () => {
         if (taker !== undefined && this.storage(resource) > 0) {
           this.removeFromSources(resource, -amount, taker, amount, options, undefined);
@@ -110,14 +110,16 @@ export class MarsBotStock extends Stock {
         fromCard();
       }
     }
-    // Positive amounts (resource gains from placement bonuses etc.) are ignored
-    // MarsBot gets MC from MarsBot.megacredits via tile placement calculations
+    // Positive amounts (resource gains from placement bonuses etc.) are ignored: MarsBot's M€ come
+    // from `MarsBotTilePlacer`'s placement calculations.
   }
 
   /**
-   * Override steal: use megacredits instead of actual resource count.
-   * Per rules: "you may take the resources from MarsBot's MC supply
-   * as if they were the resource type you are stealing."
+   * Moves up to `qty` of `resource` from MarsBot to `thief`, taken from its M€ supply and the matching
+   * colony storage area as if they were that resource.
+   *
+   * Per rules (page 4), the thief takes the resources from MarsBot's M€ supply as if they were the
+   * resource type being stolen.
    */
   public override steal(resource: Resource, qty: number, thief: IPlayer, options?: {log?: boolean}): void {
     if (this.marsBotRef === undefined) {
@@ -156,7 +158,7 @@ export class MarsBotStock extends Stock {
     }
   }
 
-  /** Ecoline/Ecotec keep plants on their corporation card, which the player's cards can target. */
+  /** Counts the plants on Ecoline's or Ecotec's corporation card, which the player's cards can target. */
   private plantsOnCard(resource: Resource): number {
     return resource === Resource.PLANTS ? this.marsBotRef?.getCorpState('plantResources') ?? 0 : 0;
   }
@@ -165,7 +167,11 @@ export class MarsBotStock extends Stock {
     return this.plantsOnCard(resource) > 0;
   }
 
-  /** Takes up to `wanted` plants off the corporation card and returns how many it took. The excess is lost. */
+  /**
+   * Takes up to `wanted` plants off the corporation card.
+   *
+   * Returns how many it took. The excess is lost.
+   */
   private takePlantsFromCard(wanted: number): number {
     const marsBot = this.marsBotRef;
     if (marsBot === undefined) {
@@ -178,9 +184,11 @@ export class MarsBotStock extends Stock {
   }
 
   /**
-   * FAQ (rulebook B, p.4): the player may remove or steal the plants on Ecoline's or Ecotec's card,
-   * and the excess is lost. The player picks the card or the usual sources, never both: "you can
-   * remove either 2mc or that 1 plant" (TDaver, BGG 3341536).
+   * Lets `taker` choose between the plants on Ecoline's or Ecotec's card and the usual sources.
+   *
+   * FAQ (rulebook B, p.4): the player may remove or steal the plants on the card, and the excess is
+   * lost. The player picks the card or the usual sources, never both: "you can remove either 2mc or
+   * that 1 plant" (TDaver, BGG 3341536).
    */
   private choosePlantSource(taker: IPlayer, verb: 'Remove' | 'Steal', wanted: number, fromCard: () => void, fromStock: () => void): void {
     const colony = COLONY_STORAGE_FOR_RESOURCE[Resource.PLANTS];
@@ -204,12 +212,14 @@ export class MarsBotStock extends Stock {
   }
 
   /**
-   * Remove up to `wanted` of `resource` from MarsBot on behalf of `taker`, from the MC supply and
-   * the colony storage area that holds `resource`. The taker picks the source when it matters
-   * (BGG 3599965 and 3398852 allow either, and mixing within one removal). `hookAmount` is what
-   * Law Suit and Crash Site Cleanup are told was removed. `done` gets the amount that came from
-   * storage and the amount actually removed, once the choice is made. It may run later, after the
-   * taker answers, when another removal may have emptied the supply or the area since.
+   * Removes up to `wanted` of `resource` from MarsBot on behalf of `taker`, from the M€ supply and
+   * the colony storage area that holds `resource`.
+   *
+   * The taker picks the source when it matters (BGG 3599965 and 3398852 allow either, and mixing
+   * within one removal). `hookAmount` is what Law Suit and Crash Site Cleanup are told was removed.
+   * `done` gets the amount that came from storage and the amount actually removed, once the choice
+   * is made. It may run later, after the taker answers, when another removal may have emptied the
+   * supply or the area since.
    */
   private removeFromSources(
     resource: Resource,
@@ -250,9 +260,8 @@ export class MarsBotStock extends Stock {
   }
 
   /**
-   * Take `amount - fromStorage` out of the MC supply (never below 0), and `fromStorage` out of
-   * the colony storage area, then fire the hooks Stock.add() normally fires (bypassed by this
-   * override).
+   * Takes `amount - fromStorage` out of the M€ supply (never below 0) and `fromStorage` out of the
+   * colony storage area, then fires the hooks `Stock.add()` normally fires.
    */
   public removeFromSupply(
     resource: Resource,
@@ -294,10 +303,10 @@ export class MarsBotStock extends Stock {
 }
 
 /**
- * Override Production for MarsBot's player.
+ * The production of MarsBot's player, where a decrease regresses the matching track.
  *
  * Per rules (page 4-5): "Decrease" production → regress corresponding track.
- * Production increases are ignored (MarsBot doesn't produce).
+ * Production increases are ignored, since MarsBot doesn't produce.
  */
 export class MarsBotProduction extends Production {
   private marsBotRef: MarsBot | undefined;
@@ -305,7 +314,6 @@ export class MarsBotProduction extends Production {
   public setMarsBot(marsBot: MarsBot): void {
     this.marsBotRef = marsBot;
 
-    // Precompute resource -> track index mapping.
     const resourceToTrack = new Map<Resource, number>();
     for (let i = 0; i < marsBot.marsBotBoard.definitions.length; i++) {
       for (const res of marsBot.marsBotBoard.definitions[i].productions) {
@@ -313,9 +321,8 @@ export class MarsBotProduction extends Production {
       }
     }
 
-    // Report track position as production so canHaveProductionReduced() works correctly.
-    // Per automa rules, production decrease regresses the corresponding track.
-    // MarsBot is targetable only if the mapped track has room to regress (position > 0).
+    // A track's position reads as its production, so MarsBot is a legal target for a production
+    // decrease only while the matching track can regress (position > 0).
     for (const resource of ALL_RESOURCES) {
       const trackIndex = resourceToTrack.get(resource);
       Object.defineProperty(this, resource, {
@@ -337,11 +344,10 @@ export class MarsBotProduction extends Production {
     _options?: {log: boolean, from?: From, stealing?: boolean},
   ) {
     if (this.marsBotRef === undefined || amount >= 0) {
-      // Ignore production increases; before wiring, fall through
+      // Increases are ignored, and so is any change before `setMarsBot`
       return;
     }
 
-    // Production decrease → regress corresponding track
     for (let i = 0; i < -amount; i++) {
       this.marsBotRef.regressTrack(resource);
     }

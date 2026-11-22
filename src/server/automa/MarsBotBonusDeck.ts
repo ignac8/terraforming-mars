@@ -13,7 +13,7 @@ export class MarsBotBonusDeck extends Deck<MarsBotBonusDeckCard> {
   }
 
   /**
-   * Create the bonus deck for the expansions in play, shuffled.
+   * Creates the bonus deck for the expansions in play, shuffled.
    *
    * Venus Next replaces B06 (Lobbyists) with B15 (Lobbyists Venus). Colonies (C-2, C-3) replaces B05
    * (Expedited Construction) with B17 (Expedited Construction Colonies) and adds B18 (Outer System
@@ -42,7 +42,11 @@ export class MarsBotBonusDeck extends Deck<MarsBotBonusDeckCard> {
     return new MarsBotBonusDeck(deck, discarded, random);
   }
 
-  /** Find and remove a bonus card by ID from the draw pile. Returns the card or undefined. */
+  /**
+   * Removes the bonus card `bonusCardId` from the draw pile, or else the discard pile.
+   *
+   * Returns the card, or undefined when neither pile holds it.
+   */
   public findAndRemove(bonusCardId: BonusCardId): MarsBotBonusCard | undefined {
     for (const pile of [this.drawPile, this.discardPile]) {
       const card = pile.find((c): c is MarsBotBonusCard => c.id === bonusCardId);
@@ -54,7 +58,7 @@ export class MarsBotBonusDeck extends Deck<MarsBotBonusDeckCard> {
     return undefined;
   }
 
-  /** Remove a bonus card from the deck entirely by ID (does not return it). */
+  /** Removes the bonus card `bonusCardId` from both piles. */
   public removeById(bonusCardId: BonusCardId): void {
     this.drawPile = this.drawPile.filter((c) => c.id !== bonusCardId);
     this.discardPile = this.discardPile.filter((c) => c.id !== bonusCardId);

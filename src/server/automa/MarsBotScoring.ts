@@ -27,15 +27,13 @@ export interface MarsBotVPBreakdown {
   detailsAwards: Array<MADetail>;
 }
 
-/**
- * Calculates MarsBot's final score with automa-specific rules.
- */
+/** The calculation of MarsBot's final score, with its automa-specific rules. */
 export class MarsBotScoring {
   constructor(
     private readonly marsBot: IMarsBot,
   ) {}
 
-  /** Calculate MarsBot's complete VP breakdown. */
+  /** Calculates MarsBot's complete VP breakdown. */
   public calculate(): MarsBotVPBreakdown {
     const tr = this.marsBot.player.terraformRating;
     const milestoneResult = this.calculateMilestoneVP();
@@ -111,12 +109,12 @@ export class MarsBotScoring {
     return vp;
   }
 
+  /** Scores 1 VP for each space next to the Neural Instance that the human doesn't occupy, empty or MarsBot's. */
   private calculateNeuralInstanceVP(): number {
     if (this.marsBot.neuralInstanceSpace === undefined) {
       return 0;
     }
     const adj = this.marsBot.game.board.getAdjacentSpaces(this.marsBot.neuralInstanceSpace);
-    // 1 VP per adjacent space NOT occupied by human (empty or MarsBot-owned)
     return adj.filter((s) => s.player !== this.marsBot.humanPlayer).length;
   }
 
@@ -128,7 +126,7 @@ export class MarsBotScoring {
     return Math.floor(this.marsBot.megacredits / mcPerVP);
   }
 
-  /** Vermin: -1 VP per city when 10+ animals on Vermin card. Applies to ALL players. */
+  /** Scores -1 VP for each of MarsBot's cities while Vermin is in effect, with 10 or more animals on its card. */
   private calculateVerminPenalty(cities: ReadonlyArray<Space>): number {
     if (!this.marsBot.game.verminInEffect) {
       return 0;
@@ -136,7 +134,7 @@ export class MarsBotScoring {
     return -1 * cities.length;
   }
 
-  /** Hard/Brutal mode: 1 VP per card with a non-negative VP icon in MarsBot's played pile. */
+  /** On Hard and Brutal, scores 1 VP for each played project card whose printed VP icon isn't negative. */
   private calculateCardVP(): number {
     if (this.marsBot.difficulty !== 'hard' && this.marsBot.difficulty !== 'brutal') {
       return 0;
@@ -150,8 +148,8 @@ export class MarsBotScoring {
   }
 
   /**
-   * Optional (automaColonyVP): each resource MarsBot has left on its Colonies shipping board, and
-   * each of its floaters on the Venus board, is worth half a VP, rounded down.
+   * With the `automaColonyVP` option, scores 1 VP for each 2 resources MarsBot has left on its Colonies
+   * shipping board and floaters on the Venus board, rounded down.
    *
    * The rulebook doesn't score them; it is the designer's intent (TDaver, BGG 3408751, 3373832).
    */
@@ -162,7 +160,7 @@ export class MarsBotScoring {
     return Math.floor((sum(Array.from(this.marsBot.shippingBoard.storage.values())) + this.marsBot.floaters) / 2);
   }
 
-  /** T-13: 1 VP for each Party Leader or Chairman position MarsBot holds. */
+  /** Scores 1 VP for each Party Leader or Chairman position MarsBot holds (T-13). */
   private calculateTurmoilVP(): number {
     if (!this.marsBot.game.gameOptions.turmoilExtension || this.marsBot.game.turmoil === undefined) {
       return 0;
@@ -187,9 +185,9 @@ export function getMcPerVP(generation: number, preludeExtension: boolean, boardN
 }
 
 /**
- * MC per VP for the generation the game is in, or undefined once the generation limit is reached.
+ * M€ per VP for the generation the game is in, or undefined once the generation limit is reached.
  *
- * Without a generation limit the table's last row (1 MC per VP) applies from then on.
+ * Without a generation limit the table's last row (1 M€ per VP) applies from then on.
  */
 export function currentMcPerVP(game: IGame): number | undefined {
   const opts = game.gameOptions;
