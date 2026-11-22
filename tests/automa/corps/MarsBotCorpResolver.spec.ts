@@ -47,7 +47,9 @@ describe('MarsBotCorpResolver', () => {
   describe('selectCorp', () => {
     it('throws with empty registry', () => {
       const rng = new SeededRandom(42);
-      expect(() => MarsBotCorpResolver.selectCorp(CardName.ECOLINE, DEFAULT_GAME_OPTIONS, rng)).to.throw('No MarsBot corps registered');
+      const selectEcoline = () => MarsBotCorpResolver.selectCorp(CardName.ECOLINE, DEFAULT_GAME_OPTIONS, rng);
+
+      expect(selectEcoline).to.throw('No MarsBot corps registered');
     });
 
     it('selects a corp from registry', () => {
@@ -67,7 +69,6 @@ describe('MarsBotCorpResolver', () => {
       registerMarsBotCorp(corpB);
 
       const rng = new SeededRandom(42);
-      // Human has EcoLine, so MarsBot should get Other Corp
       const result = MarsBotCorpResolver.selectCorp(CardName.ECOLINE, DEFAULT_GAME_OPTIONS, rng);
       expect(result).to.not.be.undefined;
       expect(result!.name).to.eq(CardName.HELION);
@@ -78,7 +79,9 @@ describe('MarsBotCorpResolver', () => {
       registerMarsBotCorp(createTestCorp({name: CardName.APHRODITE, requiredExpansions: ['venus']}));
       const lastCorp = {next: () => 0.99, nextInt: (n: number) => n - 1};
 
-      expect(MarsBotCorpResolver.selectCorp(CardName.CREDICOR, DEFAULT_GAME_OPTIONS, lastCorp).name).to.eq(CardName.ECOLINE);
+      const corp = MarsBotCorpResolver.selectCorp(CardName.CREDICOR, DEFAULT_GAME_OPTIONS, lastCorp);
+
+      expect(corp.name).to.eq(CardName.ECOLINE);
     });
 
     it('draws a corp when any one of its expansions is in play', () => {
@@ -87,7 +90,9 @@ describe('MarsBotCorpResolver', () => {
       const lastCorp = {next: () => 0.99, nextInt: (n: number) => n - 1};
       const withColonies = {...DEFAULT_GAME_OPTIONS, expansions: {...DEFAULT_GAME_OPTIONS.expansions, colonies: true}};
 
-      expect(MarsBotCorpResolver.selectCorp(CardName.CREDICOR, withColonies, lastCorp).name).to.eq(CardName.CELESTIC);
+      const corp = MarsBotCorpResolver.selectCorp(CardName.CREDICOR, withColonies, lastCorp);
+
+      expect(corp.name).to.eq(CardName.CELESTIC);
     });
 
     it('throws when only corp matches human', () => {
@@ -95,7 +100,9 @@ describe('MarsBotCorpResolver', () => {
       registerMarsBotCorp(corpA);
 
       const rng = new SeededRandom(42);
-      expect(() => MarsBotCorpResolver.selectCorp(CardName.ECOLINE, DEFAULT_GAME_OPTIONS, rng)).to.throw('No MarsBot corps registered');
+      const selectEcoline = () => MarsBotCorpResolver.selectCorp(CardName.ECOLINE, DEFAULT_GAME_OPTIONS, rng);
+
+      expect(selectEcoline).to.throw('No MarsBot corps registered');
     });
   });
 
@@ -105,21 +112,21 @@ describe('MarsBotCorpResolver', () => {
 
       const corp = createTestCorp({
         name: CardName.ECOLINE,
-        tags: [Tag.BUILDING, Tag.BUILDING], // Track 1 should advance twice
+        tags: [Tag.BUILDING, Tag.BUILDING],
       });
 
       const track1Before = marsBot.marsBotBoard.tracks[0].position;
       MarsBotCorpResolver.setupCorp(corp, marsBot);
       const track1After = marsBot.marsBotBoard.tracks[0].position;
 
-      // Track 1 handles Building tag, so should advance at least 2 (may chain)
+      // At least 2, as an advance can trigger further ones.
       expect(track1After).to.be.gte(track1Before + 2);
     });
 
     it('places cubes on correct track positions', () => {
       const {marsBot} = createAutomaGame();
 
-      const cubes: MarsBotTrackCube[] = [
+      const cubes: Array<MarsBotTrackCube> = [
         {trackIndex: 0, position: 5, cubeType: 'white'},
         {trackIndex: 2, position: 10, cubeType: 'black'},
       ];
@@ -171,11 +178,9 @@ describe('MarsBotCorpResolver', () => {
         },
       });
 
-      // Setup corp (places cubes)
       marsBot.corp = corp;
       marsBot.trackCubePositions.set('1:3', {trackIndex: 1, position: 3, cubeType: 'white'});
 
-      // Simulate advancing to position 3
       MarsBotCorpResolver.onTrackAdvanced(marsBot, 1, 3);
 
       expect(triggered).to.be.true;
@@ -220,9 +225,9 @@ describe('MarsBotCorpResolver', () => {
       MarsBotCorpResolver.onTrackAdvanced(marsBot, 1, 3);
       expect(triggerCount).to.eq(1);
 
-      // Try to trigger again (e.g., after regression and re-advance)
+      // Trigger again, as after a regression and a re-advance.
       MarsBotCorpResolver.onTrackAdvanced(marsBot, 1, 3);
-      expect(triggerCount).to.eq(1); // Should not re-trigger
+      expect(triggerCount).to.eq(1);
     });
 
     it('hands the corp only its own cubes, not the rule cubes on the tracks', () => {
@@ -283,7 +288,6 @@ describe('MarsBotCorpResolver', () => {
       expect(serialized.trackCubePositions).to.have.length(1);
       expect(serialized.triggeredCubePositions).to.deep.eq(['1:7']);
 
-      // Create a fresh MarsBot and restore
       const {marsBot: marsBot2} = createAutomaGame();
       marsBot2.restoreState(serialized);
 
@@ -328,8 +332,10 @@ describe('MarsBotCorpResolver', () => {
       const corpB = createTestCorp({name: CardName.ECOLINE, description: 'second'});
       registerMarsBotCorp(corpB);
 
-      expect(getAllMarsBotCorps().filter((c) => c.name === CardName.ECOLINE)).to.have.length(1);
-      expect(getAllMarsBotCorps().find((c) => c.name === CardName.ECOLINE)?.description).to.eq('second');
+      const ecolines = getAllMarsBotCorps().filter((corp) => corp.name === CardName.ECOLINE);
+
+      expect(ecolines).to.have.length(1);
+      expect(ecolines[0].description).to.eq('second');
     });
   });
 

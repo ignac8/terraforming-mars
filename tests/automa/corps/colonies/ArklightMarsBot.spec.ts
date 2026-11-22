@@ -39,7 +39,9 @@ describe('ArklightMarsBot', () => {
   }
 
   it('has a white cube on every space of the plant track', () => {
-    expect(trackCubes(new ArklightMarsBot())).deep.eq(Array.from({length: 18}, (_, i) => `plant white ${i + 1}`));
+    const expectedCubes = Array.from({length: 18}, (_, i) => `plant white ${i + 1}`);
+
+    expect(trackCubes(new ArklightMarsBot())).deep.eq(expectedCubes);
   });
 
   it('earns 2 M€ per plant or animal tag, not per card', () => {

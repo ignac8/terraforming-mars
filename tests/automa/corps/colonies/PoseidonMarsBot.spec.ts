@@ -39,7 +39,6 @@ describe('PoseidonMarsBot', () => {
 
     marsBot.maybePlaceRandomColony();
 
-    // One of the two should have MarsBot's colony
     const hasLuna = luna.colonies.includes(marsBot.player.id);
     const hasCeres = ceres.colonies.includes(marsBot.player.id);
     expect(hasLuna || hasCeres).to.be.true;
@@ -66,16 +65,13 @@ describe('PoseidonMarsBot', () => {
     const luna = new Luna();
     game.colonies = [luna];
 
-    // Assign Poseidon corp so the effect fires
     marsBot.corp = AUTOMA_COLONIES_MANIFEST.corps[CardName.POSEIDON];
-
-    // Record the least-advanced track position before placement
-    const leastIdx = marsBot.marsBotBoard.tracks.reduce((minIdx, t, i, arr) => t.position < arr[minIdx].position ? i : minIdx, 0);
-    const beforePos = marsBot.marsBotBoard.tracks[leastIdx].position;
+    const tracks = marsBot.marsBotBoard.tracks;
+    const leastIdx = tracks.reduce((minIdx, track, i) => track.position < tracks[minIdx].position ? i : minIdx, 0);
+    const beforePos = tracks[leastIdx].position;
 
     marsBot.maybePlaceRandomColony();
 
-    // The least-advanced track should have advanced by 1
     const newLeastAdvancedPos = marsBot.marsBotBoard.tracks[leastIdx].position;
     expect(newLeastAdvancedPos).to.eq(beforePos + 1);
   });

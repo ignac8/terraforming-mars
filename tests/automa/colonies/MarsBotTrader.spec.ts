@@ -38,9 +38,18 @@ function getMarsBot(game: ReturnType<typeof testGame>[0]): MarsBot {
 describe('MarsBotTrader', () => {
   // The revealed card's cost picks among the tied tiles: (cost - 1) % 2, so cost 2 picks the second
   for (const run of [
-    {tiles: [{colonyName: ColonyName.LUNA, track: 5, botColony: false}, {colonyName: ColonyName.CERES, track: 3, botColony: false}], expected: ColonyName.LUNA},
-    {tiles: [{colonyName: ColonyName.LUNA, track: 4, botColony: true}, {colonyName: ColonyName.CERES, track: 4, botColony: false}], expected: ColonyName.LUNA},
-    {tiles: [{colonyName: ColonyName.LUNA, track: 4, botColony: false}, {colonyName: ColonyName.CERES, track: 4, botColony: false}], expected: ColonyName.CERES},
+    {
+      tiles: [{colonyName: ColonyName.LUNA, track: 5, botColony: false}, {colonyName: ColonyName.CERES, track: 3, botColony: false}],
+      expected: ColonyName.LUNA,
+    },
+    {
+      tiles: [{colonyName: ColonyName.LUNA, track: 4, botColony: true}, {colonyName: ColonyName.CERES, track: 4, botColony: false}],
+      expected: ColonyName.LUNA,
+    },
+    {
+      tiles: [{colonyName: ColonyName.LUNA, track: 4, botColony: false}, {colonyName: ColonyName.CERES, track: 4, botColony: false}],
+      expected: ColonyName.CERES,
+    },
   ] as const) {
     it('trades with the tile furthest along its track, then with its colony, then by a revealed card: ' + JSON.stringify(run), () => {
       const {game, botPlayer, marsBot} = setup();
@@ -60,7 +69,11 @@ describe('MarsBotTrader', () => {
     {colonyName: ColonyName.LUNA, botColony: false, expected: {stored: 2, tr: 0, calls: ['loseMc(1)']}},
     {colonyName: ColonyName.LUNA, botColony: true, expected: {stored: 3, tr: 0, calls: ['loseMc(1)']}},
     {colonyName: ColonyName.EUROPA, botColony: false, expected: {stored: 0, tr: 1, calls: ['loseMc(1)']}},
-    {colonyName: ColonyName.TITAN, botColony: false, expected: {stored: 0, tr: 0, calls: ['loseMc(1)', 'addFloaters(2)']}},
+    {
+      colonyName: ColonyName.TITAN,
+      botColony: false,
+      expected: {stored: 0, tr: 0, calls: ['loseMc(1)', 'addFloaters(2)']},
+    },
   ] as const) {
     it("pays 1 M€ and takes MarsBot's reward instead of the track's income: " + JSON.stringify(run), () => {
       const {botPlayer, marsBot, calls} = setup();
@@ -156,11 +169,9 @@ describe('MarsBotTrader', () => {
       ceres.trackPosition = 4;
       game.colonies = [luna, ceres];
 
-      // Ensure there is at least one card in the project deck
       expect(game.projectDeck.drawPile.length).to.be.greaterThan(0);
       const discardBefore = game.projectDeck.discardPile.length;
       const result = selectTradeColony(marsBot);
-      // Should have revealed one card (random tiebreak)
       expect(game.projectDeck.discardPile.length).to.eq(discardBefore + 1);
       expect(result).to.not.be.undefined;
     });
@@ -253,12 +264,10 @@ describe('MarsBotTrader', () => {
         const [game, player] = testGame(1, {automa: true, coloniesExtension: true, boardName: BoardName.THARSIS});
         const marsBot = getMarsBot(game);
         const ceres = new Ceres();
-        // Put human player's ID on Ceres
         ceres.colonies = [player.id];
         game.colonies = [ceres];
         const steelBefore = player.steel;
         tradeWithColony(marsBot, ceres);
-        // Ceres colony bonus = 1 steel
         expect(player.steel).to.be.greaterThan(steelBefore);
       });
 
@@ -268,7 +277,7 @@ describe('MarsBotTrader', () => {
         const luna = new Luna();
         luna.colonies = [marsBot.player.id];
         game.colonies = [luna];
-        // Only effect should be +3 to shipping board (not printed Luna bonus to MarsBot player)
+        // MarsBot gets the 3 resources on its shipping board and no printed Luna bonus.
         const storeBefore = marsBot.shippingBoard.get(ColonyName.LUNA);
         tradeWithColony(marsBot, luna);
         expect(marsBot.shippingBoard.get(ColonyName.LUNA)).to.eq(storeBefore + 3);
@@ -299,7 +308,7 @@ describe('MarsBotTrader', () => {
       const titanStoreBefore = marsBot.shippingBoard.get(ColonyName.TITAN);
       tradeWithColony(marsBot, titan);
       expect(marsBot.floaters).to.eq(floatersBefore + 2);
-      expect(marsBot.shippingBoard.get(ColonyName.TITAN)).to.eq(titanStoreBefore); // Titan storage unchanged
+      expect(marsBot.shippingBoard.get(ColonyName.TITAN)).to.eq(titanStoreBefore);
     });
 
     describe('Pluto special case (C-26)', () => {
@@ -310,7 +319,6 @@ describe('MarsBotTrader', () => {
         game.colonies = [pluto];
         const storeBefore = marsBot.shippingBoard.get(ColonyName.PLUTO);
         tradeWithColony(marsBot, pluto);
-        // 2 resources added to Pluto storage (not cards drawn)
         expect(marsBot.shippingBoard.get(ColonyName.PLUTO)).to.eq(storeBefore + 2);
       });
 
@@ -325,7 +333,6 @@ describe('MarsBotTrader', () => {
         game.colonies = [pluto];
         const scienceTrackIdx = marsBot.marsBotBoard.tagToTrack[Tag.SCIENCE]!;
         const before = marsBot.marsBotBoard.tracks[scienceTrackIdx].position;
-        // Add 5 to Pluto → overflow → advance Science track
         marsBot.shippingBoard.add(ColonyName.PLUTO, 5);
         expect(marsBot.marsBotBoard.tracks[scienceTrackIdx].position).to.be.greaterThan(before);
         expect(marsBot.shippingBoard.get(ColonyName.PLUTO)).to.eq(0);

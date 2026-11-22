@@ -62,7 +62,7 @@ describe('PlayerTradeHook (C-21, C-24c)', () => {
       const result = game.automaHooks!.handleColonyBonus(titan, marsBot.player.id);
       expect(result).to.be.true;
       expect(marsBot.floaters).to.eq(floatersBefore + 1);
-      expect(marsBot.shippingBoard.get(ColonyName.TITAN)).to.eq(titanStoreBefore); // Titan storage unchanged
+      expect(marsBot.shippingBoard.get(ColonyName.TITAN)).to.eq(titanStoreBefore);
     });
 
     it('C-24c: Europa colony bonus gives 1 MC to megacredits, not shipping board', () => {
@@ -75,7 +75,6 @@ describe('PlayerTradeHook (C-21, C-24c)', () => {
       const result = game.automaHooks!.handleColonyBonus(europa, marsBot.player.id);
       expect(result).to.be.true;
       expect(marsBot.megacredits).to.eq(mcBefore + 1);
-      // No storage change for Europa
       expect(marsBot.shippingBoard.get(ColonyName.EUROPA)).to.eq(0);
     });
   });
@@ -85,15 +84,13 @@ describe('PlayerTradeHook (C-21, C-24c)', () => {
       const [game, player] = testGame(1, {automa: true, coloniesExtension: true, boardName: BoardName.THARSIS});
       const marsBot = getMarsBot(game);
       const luna = new Luna();
-      luna.colonies = [marsBot.player.id]; // MarsBot has colony on Luna
+      luna.colonies = [marsBot.player.id];
       game.colonies = [luna];
 
       const storeBefore = marsBot.shippingBoard.get(ColonyName.LUNA);
 
-      // Player trades with Luna — GiveColonyBonus should give MarsBot 1 resource via C-21
       luna.trade(player, {usesTradeFleet: false, decreaseTrackAfterTrade: false, giveColonyBonuses: true});
 
-      // Process deferred actions
       game.deferredActions.runAll(() => {});
 
       expect(marsBot.shippingBoard.get(ColonyName.LUNA)).to.eq(storeBefore + 1);

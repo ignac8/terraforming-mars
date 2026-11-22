@@ -33,9 +33,10 @@ describe('ManutechMarsBot', () => {
   });
 
   it('puts a black cube on #5 and #12 of every track, Venus included', () => {
-    expect(trackCubes(new ManutechMarsBot(), [...THARSIS_MARSBOT_BOARD, VENUS_MARSBOT_TRACK])).to.have.members(
-      ['building', 'space', 'event', 'science', 'power', 'earth', 'plant', 'venus'].flatMap((tag) => [`${tag} black 5`, `${tag} black 12`]),
-    );
+    const tags = ['building', 'space', 'event', 'science', 'power', 'earth', 'plant', 'venus'];
+    const expected = tags.flatMap((tag) => [`${tag} black 5`, `${tag} black 12`]);
+
+    expect(trackCubes(new ManutechMarsBot(), [...THARSIS_MARSBOT_BOARD, VENUS_MARSBOT_TRACK])).to.have.members(expected);
   });
 
   it('has 16 black cubes, 2 on each of the 8 tracks, Venus included', () => {
@@ -57,7 +58,8 @@ describe('ManutechMarsBot', () => {
 
     marsBot.setCorpAndSetup(getMarsBotCorp(CardName.MANUTECH)!);
 
-    expect([...marsBot.trackCubePositions.values()].filter((c) => c.trackIndex === 7)).is.empty;
+    const venusCubes = [...marsBot.trackCubePositions.values()].filter((cube) => cube.trackIndex === 7);
+    expect(venusCubes).is.empty;
   });
 
   it('places its reminder cubes on the Venus track with Venus Next', () => {

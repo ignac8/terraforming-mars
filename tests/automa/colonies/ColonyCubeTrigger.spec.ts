@@ -12,7 +12,7 @@ function getMarsBot(game: ReturnType<typeof testGame>[0]): MarsBot {
   return (game.automaHooks as AutomaGameHooks).marsBot;
 }
 
-/** Set up a colony cube at (trackIndex, position) on the MarsBot. */
+/** Puts a colony cube at `position` of the track `trackIndex` on `marsBot`. */
 function registerColonyCube(marsBot: MarsBot, trackIndex: number, position: number): void {
   const key = `${trackIndex}:${position}`;
   marsBot.trackCubePositions.set(key, {trackIndex, position, cubeType: 'black'});
@@ -32,15 +32,12 @@ describe('ColonyCubeTrigger (C-X3)', () => {
     const mcBefore = marsBot.megacredits;
     MarsBotCorpResolver.onTrackAdvanced(marsBot, 7, 10);
 
-    // Should have deducted 5 MC
     expect(marsBot.megacredits).to.eq(Math.max(0, mcBefore - 5));
-    // Luna should now have marsBot's colony
     expect(luna.colonies).to.include(marsBot.player.id);
-    // And shippingBoard should have 2 resources
     expect(marsBot.shippingBoard.get(luna.name)).to.eq(2);
   });
 
-  it('is not one of the corp\'s cubes, so Point Luna\'s black cube effect stays off it', () => {
+  it("is not one of the corp's cubes, so Point Luna's black cube effect stays off it", () => {
     const [game] = testGame(1, {automa: true, coloniesExtension: true, boardName: BoardName.THARSIS});
     const marsBot = getMarsBot(game);
     const luna = new Luna();
@@ -58,14 +55,14 @@ describe('ColonyCubeTrigger (C-X3)', () => {
   it('failed action when no eligible colonies for colony cube', () => {
     const [game] = testGame(1, {automa: true, coloniesExtension: true, boardName: BoardName.THARSIS});
     const marsBot = getMarsBot(game);
-    game.colonies = []; // No eligible colonies
+    game.colonies = [];
 
     registerColonyCube(marsBot, 7, 10);
 
     const mcBefore = marsBot.megacredits;
     MarsBotCorpResolver.onTrackAdvanced(marsBot, 7, 10);
 
-    // 5 MC deducted, then Failed Action gives some MC back — net should exceed (mcBefore - 5)
+    // The colony costs 5 M€, then the Failed Action gives some back.
     expect(marsBot.megacredits).to.be.greaterThan(mcBefore - 5);
   });
 
@@ -75,14 +72,12 @@ describe('ColonyCubeTrigger (C-X3)', () => {
     const luna = new Luna();
     game.colonies = [luna];
 
-    // Colony cube at position 10, trigger at position 5 — no match
     registerColonyCube(marsBot, 7, 10);
-    // Also register position 5 in trackCubePositions but NOT in colonyCubePositions
+    // Position 5 holds a cube that is not a colony cube.
     marsBot.trackCubePositions.set('7:5', {trackIndex: 7, position: 5, cubeType: 'white'});
 
     MarsBotCorpResolver.onTrackAdvanced(marsBot, 7, 5);
 
-    // Colony should NOT be placed (cube at 7:5 is not a colony cube)
     expect(luna.colonies).to.not.include(marsBot.player.id);
   });
 
@@ -92,11 +87,9 @@ describe('ColonyCubeTrigger (C-X3)', () => {
     const luna = new Luna();
     game.colonies = [luna];
 
-    // No cube registered at 7:10
     const mcBefore = marsBot.megacredits;
     MarsBotCorpResolver.onTrackAdvanced(marsBot, 7, 10);
 
-    // Nothing should happen
     expect(marsBot.megacredits).to.eq(mcBefore);
     expect(luna.colonies).to.not.include(marsBot.player.id);
   });

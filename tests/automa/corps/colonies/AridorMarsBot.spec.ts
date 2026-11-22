@@ -50,10 +50,12 @@ describe('AridorMarsBot', () => {
     {boardName: BoardName.TERRA_CIMMERIA_NOVA, expected: {jovianTrack: 'earth', cityTrack: 'science'}},
   ] as const) {
     it('puts a white cube on #6 of the Jovian track and a black one on #6 of the city track: ' + JSON.stringify(run), () => {
-      expect(trackCubes(new AridorMarsBot(), MARSBOT_BOARDS[run.boardName]!)).to.have.members([
+      const expected = [
         'building white 3', 'space white 3', 'science white 3', 'power white 3', `${run.expected.jovianTrack} white 6`,
         'earth black 3', `${run.expected.cityTrack} black 6`, 'plant black 3', 'plant black 6',
-      ]);
+      ];
+
+      expect(trackCubes(new AridorMarsBot(), MARSBOT_BOARDS[run.boardName]!)).to.have.members(expected);
     });
   }
 
@@ -155,7 +157,7 @@ describe('AridorMarsBot', () => {
   it('maybePlaceRandomColony returns false when no eligible colonies', () => {
     const [game] = testGame(1, {automa: true, coloniesExtension: true, boardName: BoardName.THARSIS});
     const marsBot = getMarsBot(game);
-    game.colonies = []; // No colonies in game
+    game.colonies = [];
 
     const placed = marsBot.maybePlaceRandomColony();
     expect(placed).to.be.false;
@@ -183,8 +185,8 @@ describe('AridorMarsBot', () => {
 
       expect(marsBot.marsBotBoard.definitions[jovian].tags).includes(Tag.JOVIAN);
       expect(marsBot.marsBotBoard.definitions[city].tags).includes(Tag.CITY);
-      // Nine cubes on nine different spaces
-      expect(new Set(expected.map(([t, p]) => `${t}:${p}`)).size).to.eq(9);
+      const spaces = new Set(expected.map(([track, position]) => `${track}:${position}`));
+      expect(spaces.size).to.eq(9);
     });
 
     for (const [trackIndex, position, cubeType] of expected) {
@@ -218,7 +220,8 @@ describe('AridorMarsBot', () => {
   it('the Jovian and city cubes stay where a game saved before the fix had them', () => {
     const marsBot = setUpAridor(BoardName.HELLAS);
     const serialized = marsBot.game.serialize();
-    const jovianCube = serialized.automaState!.trackCubePositions!.find((c) => c.trackIndex === 3 && c.position === 6)!;
+    const cubes = serialized.automaState!.trackCubePositions!;
+    const jovianCube = cubes.find((cube) => cube.trackIndex === 3 && cube.position === 6)!;
     jovianCube.trackIndex = 4;
 
     const restored = getMarsBot(Game.deserialize(serialized));

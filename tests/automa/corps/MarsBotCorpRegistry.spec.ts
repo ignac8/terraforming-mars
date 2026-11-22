@@ -25,7 +25,8 @@ describe('MarsBotCorpRegistry', () => {
     expect(getMarsBotCorp(CardName.CREDICOR)!.name).to.eq(CardName.CREDICOR);
     expect(getMarsBotCorp(CardName.SATURN_SYSTEMS)!.name).to.eq(CardName.SATURN_SYSTEMS);
     expect(getMarsBotCorp(CardName.THARSIS_REPUBLIC)!.name).to.eq(CardName.THARSIS_REPUBLIC);
-    expect(getMarsBotCorp(CardName.UNITED_NATIONS_MARS_INITIATIVE)!.name).to.eq(CardName.UNITED_NATIONS_MARS_INITIATIVE);
+    const unitedNations = getMarsBotCorp(CardName.UNITED_NATIONS_MARS_INITIATIVE)!;
+    expect(unitedNations.name).to.eq(CardName.UNITED_NATIONS_MARS_INITIATIVE);
   });
 
   it('all 46 corps registered (12 base + 34 expansion)', () => {

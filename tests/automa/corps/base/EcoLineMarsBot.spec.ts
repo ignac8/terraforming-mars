@@ -118,7 +118,8 @@ describe('EcoLineMarsBot', () => {
 
     const deckBefore = marsBot.actionDeck.cards.length;
     corp.beforeActionPhase!(marsBot);
+    const ids = marsBot.actionDeck.cards.map((card) => (card as MarsBotBonusCard).id);
     expect(marsBot.actionDeck.cards.length).to.eq(deckBefore + 1);
-    expect(marsBot.actionDeck.cards.map((c) => (c as MarsBotBonusCard).id)).to.include(BonusCardId.B23_RAPID_SPROUTING);
+    expect(ids).to.include(BonusCardId.B23_RAPID_SPROUTING);
   });
 });

@@ -30,7 +30,7 @@ describe('FloaterHandling (C-8, C-9, C-14, C-X2)', () => {
       marsBot.turnResolver['resolveTrackAction']('floater', 0);
 
       expect(marsBot.shippingBoard.get(ColonyName.TITAN)).to.eq(titanBefore + 1);
-      expect(marsBot.floaters).to.eq(floatersBefore); // No change to floaters
+      expect(marsBot.floaters).to.eq(floatersBefore);
     });
 
     it('adds to Titan storage instead of floaters (2 floaters)', () => {
@@ -83,7 +83,7 @@ describe('FloaterHandling (C-8, C-9, C-14, C-X2)', () => {
       marsBot.turnResolver['resolveTrackAction']('floater', 0);
 
       expect(marsBot.floaters).to.eq(floatersBefore + 1);
-      expect(marsBot.shippingBoard.get(ColonyName.TITAN)).to.eq(titanBefore); // No Titan storage
+      expect(marsBot.shippingBoard.get(ColonyName.TITAN)).to.eq(titanBefore);
     });
   });
 
@@ -93,11 +93,9 @@ describe('FloaterHandling (C-8, C-9, C-14, C-X2)', () => {
       const marsBot = getMarsBot(game);
       marsBot.shippingBoard.add(ColonyName.TITAN, 5);
 
-      // Trigger research phase (gen 2+)
       game.generation = 2;
       game.automaHooks!.handleResearchPhase();
 
-      // 5 floaters should be spent
       expect(marsBot.shippingBoard.get(ColonyName.TITAN)).to.eq(0);
     });
 
@@ -108,7 +106,6 @@ describe('FloaterHandling (C-8, C-9, C-14, C-X2)', () => {
 
       game.generation = 2;
       game.automaHooks!.handleResearchPhase();
-      // No spending — Titan should remain at 3
       expect(marsBot.shippingBoard.get(ColonyName.TITAN)).to.eq(3);
     });
   });
@@ -117,12 +114,11 @@ describe('FloaterHandling (C-8, C-9, C-14, C-X2)', () => {
     it('deducts 5 from Titan storage when extra card is claimed', () => {
       const [game] = testGame(1, {automa: true, coloniesExtension: true, boardName: BoardName.THARSIS});
       const marsBot = getMarsBot(game);
-      marsBot.shippingBoard.add(ColonyName.TITAN, 7); // 7 floaters in Titan
+      marsBot.shippingBoard.add(ColonyName.TITAN, 7);
 
       game.generation = 2;
       game.automaHooks!.handleResearchPhase();
 
-      // 5 should be spent, leaving 2
       expect(marsBot.shippingBoard.get(ColonyName.TITAN)).to.eq(2);
     });
   });
@@ -205,12 +201,10 @@ describe('FloaterHandling (C-8, C-9, C-14, C-X2)', () => {
       const eventIdx = board.tagToTrack[Tag.EVENT]!;
       const before = board.tracks[eventIdx].position;
 
-      // Add 6 floaters to Titan (via floater track actions)
       for (let i = 0; i < 6; i++) {
         marsBot.turnResolver['resolveTrackAction']('floater', 0);
       }
 
-      // No track advancement should happen (Titan is exempt from C-12)
       expect(board.tracks[eventIdx].position).to.eq(before);
       expect(marsBot.shippingBoard.get(ColonyName.TITAN)).to.eq(6);
     });

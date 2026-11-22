@@ -42,11 +42,9 @@ describe('PalladinShippingMarsBot', () => {
     const corp = getMarsBotCorp(CardName.PALLADIN_SHIPPING)!;
     marsBot.setCorpAndSetup(corp);
 
-    // Collect 1 white cube
     corp.onTrackCubeTrigger!(marsBot, 1, 3, 'white');
     expect(marsBot.corpSpecificState.get('whiteCubesOnCard')).to.eq(1);
 
-    // Collect 1 black cube: should pair and raise temp
     corp.onTrackCubeTrigger!(marsBot, 2, 3, 'black');
     expect(marsBot.corpSpecificState.get('whiteCubesOnCard')).to.eq(0);
     expect(marsBot.corpSpecificState.get('blackCubesOnCard')).to.eq(0);

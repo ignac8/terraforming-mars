@@ -22,7 +22,11 @@ import {runAllActions} from '../../TestingUtils';
 
 export type AutomaGame = {game: IGame, human: TestPlayer, marsBot: MarsBot};
 
-/** A 1-player game on the Tharsis board with MarsBot at Normal difficulty. `options` overrides any game option. */
+/**
+ * Creates a 1-player game on the Tharsis board with MarsBot at Normal difficulty.
+ *
+ * `options` overrides any game option.
+ */
 export function createAutomaGame(options: Partial<TestGameOptions> = {}): AutomaGame {
   const [game, human] = testGame(1, {
     automa: true,
@@ -35,13 +39,15 @@ export function createAutomaGame(options: Partial<TestGameOptions> = {}): Automa
 }
 
 /**
- * A MarsBot on the board `tracks`, built for `game` without its setup: the game's own players stay as they are.
+ * Creates a MarsBot on the board `tracks` for `game` without running its setup.
+ *
+ * The game's own players stay as they are.
  */
 export function standaloneMarsBot(game: IGame, player: IPlayer, humanPlayer: IPlayer, tracks: ReadonlyArray<TrackDefinition>, difficulty: DifficultyLevel = 'normal'): MarsBot {
   return new MarsBot(game, player, humanPlayer, tracks, difficulty, new SeededRandom(0));
 }
 
-/** A Venus game in which MarsBot has run the setup of `corpName`, for the corporation FAQ (rulebook B, p.4). */
+/** Creates a Venus game in which MarsBot has run the setup of `corpName`, for the corporation FAQ (rulebook B, p.4). */
 export function createCorpFaqGame(corpName: CardName): AutomaGame {
   const [game, human] = testGame(1, {automa: true, venusNextExtension: true, boardName: BoardName.THARSIS});
   const marsBot = game.automaHooks!.marsBot;
@@ -50,8 +56,10 @@ export function createCorpFaqGame(corpName: CardName): AutomaGame {
 }
 
 /**
- * `corp` with its ongoing effect removed: what its card prints, and what it does at setup, at the start of a
- * generation and before the action phase.
+ * Copies `corp` without its ongoing effect.
+ *
+ * The copy keeps what the card prints, and what it does at setup, at the start of a generation and before the
+ * action phase.
  */
 export function withoutEffect(corp: MarsBotCorp): MarsBotCorp {
   return {
@@ -89,7 +97,7 @@ export function setupWithAndWithoutEffect(name: CardName) {
   return {withEffect: run(corp), without: run(withoutEffect(corp))};
 }
 
-/** The MarsBot of a game made with `automa: true`. */
+/** Returns the MarsBot of a game made with `automa: true`. */
 export function getMarsBot(game: ReturnType<typeof testGame>[0]): MarsBot {
   return (game.automaHooks as AutomaGameHooks).marsBot;
 }
@@ -101,7 +109,7 @@ export function chooseSource(game: IGame, human: TestPlayer, index: number): voi
   runAllActions(game);
 }
 
-/** A project card that has only the fields a corporation's effect reads: tags, cost, requirements and printed VP. */
+/** Creates a project card that has only the fields a corporation's effect reads: tags, cost, requirements and printed VP. */
 export function fakeCard(name: string, opts: {tags?: Array<Tag>, cost?: number, requirements?: boolean, victoryPoints?: number} = {}): IProjectCard {
   return {
     name: name as CardName,

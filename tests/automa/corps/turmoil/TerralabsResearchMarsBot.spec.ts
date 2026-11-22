@@ -44,7 +44,7 @@ describe('TerralabsResearchMarsBot', () => {
     marsBot.setCorpAndSetup(corp);
 
     const deckBefore = marsBot.actionDeck.cards.length;
-    corp.beforeActionPhase!(marsBot); // gen 1 → 1 card
+    corp.beforeActionPhase!(marsBot);
     expect(marsBot.actionDeck.cards.length).to.eq(deckBefore + 1);
   });
 });

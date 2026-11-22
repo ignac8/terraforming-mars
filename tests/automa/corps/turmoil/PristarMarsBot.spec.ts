@@ -11,8 +11,7 @@ import {setTemperature, setVenusScaleLevel} from '../../../TestingUtils';
 import {createAutomaGame, resetCorpRegistry} from '../CorpGame';
 import {recordingMarsBot} from '../RecordingMarsBot';
 
-// A 2-step raise resolves one step at a time, so Pristar's cube cancels only the first step
-// (BGG threads 3431297 and 3432237, TDaver)
+/** Creates a game where MarsBot has run the setup of Pristar and has its white cube on the card. */
 function pristarGame(venus: boolean = false) {
   const [game] = testGame(1, {automa: true, venusNextExtension: venus, boardName: BoardName.THARSIS});
   const marsBot = game.automaHooks!.marsBot;
@@ -78,6 +77,8 @@ describe('PristarMarsBot', () => {
     expect(marsBot.corpSpecificState.get('whiteCubeOnCard')).to.eq(1);
   });
 
+  // A 2-step raise resolves one step at a time, so Pristar's cube cancels only the first step
+  // (BGG threads 3431297 and 3432237, TDaver)
   it('on a 2-step raise, temperature2 icon raises the second step', () => {
     const {game, marsBot, tr, mc} = pristarGame();
     setTemperature(game, -30);

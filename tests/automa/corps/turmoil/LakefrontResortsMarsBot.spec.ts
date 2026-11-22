@@ -17,13 +17,14 @@ import {createAutomaGame, resetCorpRegistry} from '../CorpGame';
 import {TRACK, RecordingMarsBot, recordingMarsBot} from '../RecordingMarsBot';
 
 
-/** A recording bot whose player is MarsBot's player in an automa game. */
+/** Creates a recording bot whose player is MarsBot's player in an automa game. */
 function lakefrontBot(fields: Partial<IMarsBot> = {}): RecordingMarsBot {
   const [game] = testGame(1, {automa: true});
   return recordingMarsBot({game, player: game.marsBotPlayer, megacredits: 0, ...fields});
 }
 
-// Government Intervention places an ocean, whose Lakefront cube advances the building track
+// Creates a game with the building track at `position`, where Government Intervention places an ocean whose
+// Lakefront cube advances the building track.
 function interventionWithBuildingAt(position: number) {
   const {game, marsBot} = createAutomaGame();
   marsBot.setCorpAndSetup(getMarsBotCorp(CardName.LAKEFRONT_RESORTS)!);

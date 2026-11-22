@@ -33,8 +33,8 @@ describe('MorningStarIncMarsBot', () => {
     new MorningStarIncMarsBot().onTrackCubeTrigger(marsBot, 7, 5, 'credit');
 
     expect(calls).deep.eq(['removeBonusCard(B06)', 'removeBonusCard(B15)', 'addBonusCardToBonusDeck(B26)', 'gainMc(5)']);
-    expect(trackCubes(new MorningStarIncMarsBot(), [...THARSIS_MARSBOT_BOARD, VENUS_MARSBOT_TRACK]))
-      .deep.eq([5, 6, 7, 8, 9, 11, 12].map((position) => `venus credit ${position}`));
+    const expectedCubes = [5, 6, 7, 8, 9, 11, 12].map((position) => `venus credit ${position}`);
+    expect(trackCubes(new MorningStarIncMarsBot(), [...THARSIS_MARSBOT_BOARD, VENUS_MARSBOT_TRACK])).deep.eq(expectedCubes);
   });
 
   for (const position of [5, 6, 7, 8, 9, 11, 12]) {
@@ -65,7 +65,8 @@ describe('MorningStarIncMarsBot', () => {
   it('removes the Venus Next Lobbyists from the bonus deck', () => {
     const {marsBot} = createVenusAutomaGame();
     const deck = marsBot['bonusDeck'];
-    const ids = () => [...deck.drawPile, ...deck.discardPile, ...marsBot.actionDeck.cards].map((c) => (c as {id?: BonusCardId}).id);
+    const cards = () => [...deck.drawPile, ...deck.discardPile, ...marsBot.actionDeck.cards];
+    const ids = () => cards().map((card) => (card as {id?: BonusCardId}).id);
     expect(ids()).to.include(BonusCardId.B15_LOBBYISTS_VENUS);
     marsBot.setCorpAndSetup(getMarsBotCorp(CardName.MORNING_STAR_INC)!);
     expect(ids()).to.not.include(BonusCardId.B15_LOBBYISTS_VENUS);

@@ -45,7 +45,8 @@ describe('PolyphemosMarsBot', () => {
 
     corp.beforeActionPhase!(marsBot);
 
-    expect(marsBot.actionDeck.cards.map((c) => c.name)).to.deep.eq([bonus.name, CardName.RESEARCH]);
+    const names = marsBot.actionDeck.cards.map((card) => card.name);
+    expect(names).to.deep.eq([bonus.name, CardName.RESEARCH]);
     expect(game.projectDeck.discardPile).to.include(iceCapMelting);
   });
 

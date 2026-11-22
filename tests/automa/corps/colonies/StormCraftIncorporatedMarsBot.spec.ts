@@ -23,7 +23,7 @@ function createVenusGame(draftVariant: boolean): AutomaGame {
   const marsBot = game.automaHooks!.marsBot;
   marsBot.corp = getMarsBotCorp(CardName.STORMCRAFT_INCORPORATED)!;
   // Hoverlord gone, so MarsBot may spend its floaters on an extra card.
-  game.milestones = game.milestones.filter((m) => m.name !== 'Hoverlord');
+  game.milestones = game.milestones.filter((milestone) => milestone.name !== 'Hoverlord');
   marsBot.floaters = 5;
   return {game, human, marsBot};
 }

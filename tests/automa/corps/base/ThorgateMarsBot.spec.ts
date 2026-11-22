@@ -26,8 +26,9 @@ describe('ThorgateMarsBot', () => {
 
     new ThorgateMarsBot().onTrackCubeTrigger(marsBot, TRACK.power, 1, 'white');
 
+    const expectedCubes = [4, 6, 8, 10].map((position) => `power white ${position}`);
     expect(calls).deep.eq(['maybeDrawAndResolveProjectCardFirstTagOnly()', 'raiseTemperature(1)']);
-    expect(trackCubes(new ThorgateMarsBot())).deep.eq([4, 6, 8, 10].map((position) => `power white ${position}`));
+    expect(trackCubes(new ThorgateMarsBot())).deep.eq(expectedCubes);
   });
 
   it('has 4 white cubes on energy track', () => {
@@ -65,24 +66,26 @@ describe('ThorgateMarsBot', () => {
     // Science, Space, Power: "ignoring all except its first tag" leaves Science
     game.projectDeck.drawPile.push(new SolarWindPower());
     marsBot.marsBotBoard.tracks[3].position = 1; // Science 2 has no icon
-    const expected = marsBot.marsBotBoard.tracks.map((t) => t.position);
+    const expected = marsBot.marsBotBoard.tracks.map((track) => track.position);
     expected[3] = 2;
 
     marsBot.maybeDrawAndResolveProjectCardFirstTagOnly();
 
-    expect(marsBot.marsBotBoard.tracks.map((t) => t.position)).to.deep.eq(expected);
+    const positions = marsBot.marsBotBoard.tracks.map((track) => track.position);
+    expect(positions).to.deep.eq(expected);
   });
 
   it('resolves the first printed tag of an event, not its Event tag', () => {
     const {game, marsBot} = createAutomaGame();
     game.projectDeck.drawPile.push(new Asteroid());
     marsBot.marsBotBoard.tracks[1].position = 1; // Space 2 has no icon
-    const expected = marsBot.marsBotBoard.tracks.map((t) => t.position);
+    const expected = marsBot.marsBotBoard.tracks.map((track) => track.position);
     expected[1] = 2;
 
     marsBot.maybeDrawAndResolveProjectCardFirstTagOnly();
 
-    expect(marsBot.marsBotBoard.tracks.map((t) => t.position)).to.deep.eq(expected);
+    const positions = marsBot.marsBotBoard.tracks.map((track) => track.position);
+    expect(positions).to.deep.eq(expected);
   });
 
   it('logs the space it reached when the drawn card moves the same track on', () => {

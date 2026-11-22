@@ -20,7 +20,6 @@ describe('ActionDeckColonies (C-10, C-11)', () => {
     const [game] = testGame(1, {automa: true, coloniesExtension: true, boardName: BoardName.THARSIS});
     const marsBot = getMarsBot(game);
 
-    // Simulate gen 2
     game.generation = 2;
     marsBot.actionDeck.buildResearch();
 
@@ -31,7 +30,6 @@ describe('ActionDeckColonies (C-10, C-11)', () => {
     const [game] = testGame(1, {automa: true, coloniesExtension: true, boardName: BoardName.THARSIS});
     const marsBot = getMarsBot(game);
 
-    // Gen 1 (initial deck, no shipping lines)
     game.generation = 1;
     marsBot.actionDeck.buildResearch();
 

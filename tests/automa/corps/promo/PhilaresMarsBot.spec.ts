@@ -16,13 +16,17 @@ import {RecordingMarsBot, recordingMarsBot} from '../RecordingMarsBot';
 
 type Sides = RecordingMarsBot & {botPlayer: TestPlayer, human: TestPlayer};
 
-/** A recording bot on a 2-player game. `botPlayer` owns MarsBot's tiles. */
+/** Creates a recording bot on a 2-player game. `botPlayer` owns MarsBot's tiles. */
 function sides(): Sides {
   const [game, human, botPlayer] = testGame(2);
   return {...recordingMarsBot({game, player: botPlayer, humanPlayer: human}), botPlayer, human};
 }
 
-/** Puts `others` tiles of the other side and `own` of the placer's around an empty space, puts a tile on it and runs Philares. */
+/**
+ * Places a tile on an empty space and runs Philares.
+ *
+ * `others` tiles of the other side and `own` tiles of the placer are put around the space first.
+ */
 function placeTile({marsBot, botPlayer, human}: Sides, byMarsBot: boolean, tileType: TileType, others: number, own: number = 0): void {
   const [placer, other] = byMarsBot ? [botPlayer, human] : [human, botPlayer];
   const board = marsBot.game.board;
@@ -38,7 +42,7 @@ function placeTile({marsBot, botPlayer, human}: Sides, byMarsBot: boolean, tileT
   new PhilaresMarsBot().onTilePlaced(marsBot, byMarsBot, tileType, space);
 }
 
-/** An empty land space with no tile within two spaces of it. */
+/** Finds an empty land space with no tile within two spaces of it. */
 function quietSpace(game: IGame, marsBot: MarsBot): Space {
   const board = game.board;
   return board.getAvailableSpacesOnLand(marsBot.player).find((space) => {
@@ -63,7 +67,8 @@ describe('PhilaresMarsBot', () => {
 
     new PhilaresMarsBot().setup(marsBot);
 
-    expect(calls).deep.eq(['placeGreenery()', 'removeBonusCard(B07)', 'resolveBonusCard(B07)', 'addBonusCardToBonusDeck(B27)']);
+    const expectedCalls = ['placeGreenery()', 'removeBonusCard(B07)', 'resolveBonusCard(B07)', 'addBonusCardToBonusDeck(B27)'];
+    expect(calls).deep.eq(expectedCalls);
     expect(corpState.get('scienceResources')).eq(1);
   });
 
@@ -112,7 +117,8 @@ describe('PhilaresMarsBot', () => {
     const bonusIds = [...marsBot.bonusDeck.drawPile, ...marsBot.bonusDeck.discardPile].map((c) => c.id);
     expect(bonusIds).does.not.include(BonusCardId.B07_LOCAL_NEURAL_INSTANCE);
     expect(bonusIds).includes(BonusCardId.B27_BUILD_BUILD_BUILD);
-    expect(marsBot.actionDeck.cards.some((c) => 'id' in c && c.id === BonusCardId.B07_LOCAL_NEURAL_INSTANCE)).is.false;
+    const inActionDeck = marsBot.actionDeck.cards.some((card) => 'id' in card && card.id === BonusCardId.B07_LOCAL_NEURAL_INSTANCE);
+    expect(inActionDeck).is.false;
   });
 
   it('setup does not count Local Neural Instance as a destroyed bonus card', () => {

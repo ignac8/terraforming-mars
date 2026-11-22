@@ -8,9 +8,7 @@ import {MiningGuildMarsBot} from '@/server/automa/corps/base/MiningGuildMarsBot'
 import {createAutomaGame, resetCorpRegistry} from '../CorpGame';
 import {TRACK, recordingMarsBot} from '../RecordingMarsBot';
 
-
-// Our reading: the card ticks for every 10 M€ MarsBot gains (njshaw2, BGG 3553988), so what
-// is left of a gain after the card empties comes off the refilled card.
+/** Creates a MarsBot with Mining Guild, `mcOnCard` M€ on its card and the building track at `building`. */
 function miningGuild(mcOnCard: number, building: number) {
   const {marsBot} = createAutomaGame();
   marsBot.setCorpAndSetup(getMarsBotCorp(CardName.MINING_GUILD)!);
@@ -24,7 +22,8 @@ describe('MiningGuildMarsBot', () => {
 
   const corp = new MiningGuildMarsBot();
 
-  // The M€ MarsBot earns comes off the card, and MarsBot keeps it
+  // Our reading: the card ticks for every 10 M€ MarsBot gains (njshaw2, BGG 3553988), so what
+  // is left of a gain after the card empties comes off the refilled card. MarsBot keeps the M€ it earns.
   for (const run of [
     {gain: 5, expected: {card: 5, advances: 0}},
     {mcOnCard: 2, gain: 5, expected: {card: 7, advances: 1}},
@@ -41,8 +40,9 @@ describe('MiningGuildMarsBot', () => {
 
       corp.onMcGained(marsBot, run.gain);
 
+      const expectedCalls = Array(run.expected.advances).fill(`advanceTrack(${TRACK.building})`);
       expect(corpState.get('mcOnCard')).eq(run.expected.card);
-      expect(calls).deep.eq(Array(run.expected.advances).fill(`advanceTrack(${TRACK.building})`));
+      expect(calls).deep.eq(expectedCalls);
     });
   }
 
@@ -87,7 +87,6 @@ describe('MiningGuildMarsBot', () => {
     const corp = getMarsBotCorp(CardName.MINING_GUILD)!;
     marsBot.setCorpAndSetup(corp);
     marsBot.corpSpecificState.set('mcOnCard', 10);
-    // 5 MC earned: card counts down 10 → 5
     corp.onMcGained!(marsBot, 5);
     expect(marsBot.corpSpecificState.get('mcOnCard')).to.eq(5);
   });
@@ -118,7 +117,8 @@ describe('MiningGuildMarsBot', () => {
   // Our reading, like Philares (TDaver, BGG 3513998): nothing advances after the game has ended
   it('stops counting down once the game has ended, after the final production', () => {
     const marsBot = miningGuild(2, 2);
-    marsBot.game.generation = getAutomaMaxGeneration(marsBot.game.gameOptions.preludeExtension, marsBot.game.gameOptions.boardName);
+    const {preludeExtension, boardName} = marsBot.game.gameOptions;
+    marsBot.game.generation = getAutomaMaxGeneration(preludeExtension, boardName);
     marsBot.game.phase = Phase.PRODUCTION;
     expect(marsBot.game.isDoneWithFinalProduction()).is.true;
     const mc = marsBot.megacredits;

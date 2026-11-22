@@ -87,7 +87,7 @@ describe('MarsBot Colonies — 2nd Trade Fleet Cube (C-6, C-27)', () => {
     expect(game.getTemperature()).to.eq(temperature + 2);
   });
 
-  it('shares Energy 9 with Helion\'s white cube: the card replaces the temperature and the fleet unlocks', () => {
+  it("shares Energy 9 with Helion's white cube: the card replaces the temperature and the fleet unlocks", () => {
     const [game] = testGame(1, {automa: true, coloniesExtension: true, boardName: BoardName.THARSIS});
     const marsBot = getMarsBotFromGame(game);
     marsBot.setCorpAndSetup(getMarsBotCorp(CardName.HELION)!);
@@ -117,7 +117,7 @@ describe('MarsBot Colonies — 2nd Trade Fleet Cube (C-6, C-27)', () => {
     expect(marsBot.hasSecondTradeFleet).to.be.true;
   });
 
-  it('keeps the Event track cube of an old Helion save, where Energy 9 holds Helion\'s own cube', () => {
+  it("keeps the Event track cube of an old Helion save, where Energy 9 holds Helion's own cube", () => {
     const [game] = testGame(1, {automa: true, coloniesExtension: true, boardName: BoardName.THARSIS});
     const marsBot = getMarsBotFromGame(game);
     marsBot.setCorpAndSetup(getMarsBotCorp(CardName.HELION)!);
@@ -198,7 +198,7 @@ describe('MarsBot Colonies — 2nd Trade Fleet Cube (C-6, C-27)', () => {
     const state = marsBot.serialize();
     expect(state.hasSecondTradeFleet).to.be.true;
 
-    marsBot.hasSecondTradeFleet = false; // Reset
+    marsBot.hasSecondTradeFleet = false;
     marsBot.restoreState(state);
     expect(marsBot.hasSecondTradeFleet).to.be.true;
   });
@@ -215,6 +215,7 @@ describe('MarsBot Colonies — 2nd Trade Fleet Cube (C-6, C-27)', () => {
     const marsBot = getMarsBotFromGame(game);
     const state = marsBot.serialize();
     expect(state.trackCubePositions).to.not.be.undefined;
-    expect(state.trackCubePositions!.some((c) => c.position === 9 && c.cubeType === 'white')).to.be.true;
+    const hasWhiteCubeAt9 = state.trackCubePositions!.some((cube) => cube.position === 9 && cube.cubeType === 'white');
+    expect(hasWhiteCubeAt9).to.be.true;
   });
 });

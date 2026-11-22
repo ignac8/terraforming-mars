@@ -22,7 +22,14 @@ describe('NirgalEnterprisesMarsBot', () => {
 
   const milestone = 'maybeClaimMilestone()';
   const award = 'maybeFundAward()';
-  for (const [generation, expected] of [[1, []], [2, [milestone]], [5, [milestone]], [6, [award]], [9, [award]], [10, [milestone]]] as const) {
+  for (const [generation, expected] of [
+    [1, []],
+    [2, [milestone]],
+    [5, [milestone]],
+    [6, [award]],
+    [9, [award]],
+    [10, [milestone]],
+  ] as const) {
     it(`claims a milestone in generations 2 to 5 and from 10, and funds an award in 6 to 9, generation ${generation}`, () => {
       const {marsBot, calls} = recordingMarsBot();
       marsBot.game.generation = generation;
@@ -46,7 +53,7 @@ describe('NirgalEnterprisesMarsBot', () => {
   it('wins a funded award at final scoring with its +2', () => {
     const {game, human, marsBot} = createAutomaGame();
     marsBot.corp = getMarsBotCorp(CardName.NIRGAL_ENTERPRISES)!;
-    game.fundAward(human, game.awards.find((a) => a.name === 'Scientist')!);
+    game.fundAward(human, game.awards.find((award) => award.name === 'Scientist')!);
     human.tagsForTest = {science: 2};
 
     expect(marsBot.getVictoryPoints().awards).to.eq(5);
@@ -58,11 +65,11 @@ describe('NirgalEnterprisesMarsBot', () => {
       marsBot.corp = getMarsBotCorp(CardName.NIRGAL_ENTERPRISES)!;
       marsBot.marsBotBoard.tracks[0].position = 8; // 8 building tags: Builder
       game.generation = generation;
+      const builder = game.milestones.find((milestone) => milestone.name === 'Builder')!;
 
       marsBot.corp.beforeActionPhase!(marsBot);
 
-      expect(game.claimedMilestones.map((m) => [m.player, m.milestone.name]), `generation ${generation}`)
-        .to.deep.eq([[marsBot.player, 'Builder']]);
+      expect(game.claimedMilestones, `generation ${generation}`).to.deep.eq([{player: marsBot.player, milestone: builder}]);
       expect(game.fundedAwards, `generation ${generation}`).is.empty;
     });
   }
@@ -76,7 +83,8 @@ describe('NirgalEnterprisesMarsBot', () => {
 
       marsBot.corp.beforeActionPhase!(marsBot);
 
-      expect(game.fundedAwards.map((a) => a.player), `generation ${generation}`).to.deep.eq([marsBot.player]);
+      const funders = game.fundedAwards.map((funded) => funded.player);
+      expect(funders, `generation ${generation}`).to.deep.eq([marsBot.player]);
       expect(game.claimedMilestones, `generation ${generation}`).is.empty;
     });
   }

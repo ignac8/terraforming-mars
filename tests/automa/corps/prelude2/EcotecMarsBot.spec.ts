@@ -25,7 +25,9 @@ describe('EcotecMarsBot', () => {
   });
 
   it('has a white cube on every space of the plant track', () => {
-    expect(trackCubes(new EcotecMarsBot())).deep.eq(Array.from({length: 18}, (_, i) => `plant white ${i + 1}`));
+    const expectedCubes = Array.from({length: 18}, (_, i) => `plant white ${i + 1}`);
+
+    expect(trackCubes(new EcotecMarsBot())).deep.eq(expectedCubes);
   });
 
   it('starts with 2 plants from the Setup box and 1 from its starting plant tag', () => {
@@ -66,13 +68,11 @@ describe('EcotecMarsBot', () => {
     const {marsBot} = createAutomaGame();
     const corp = getMarsBotCorp(CardName.ECOTEC)!;
     marsBot.setCorpAndSetup(corp);
-    // Ecotec starts with 2 plant resources and 1 more from its starting plant tag
     expect(marsBot.corpSpecificState.get('plantResources')).to.eq(3);
     const mcBefore = marsBot.megacredits;
-    // Remove 4 plants — should take 3 from card, excess lost, NOT from MC supply
     marsBot.player.stock.add(Resource.PLANTS, -4);
     expect(marsBot.corpSpecificState.get('plantResources')).to.eq(0);
-    expect(marsBot.megacredits).to.eq(mcBefore); // No MC deducted
+    expect(marsBot.megacredits).to.eq(mcBefore);
   });
 
   it('non-plant removal still deducts from MC supply', () => {

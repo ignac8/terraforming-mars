@@ -30,7 +30,9 @@ describe('KuiperCooperativeMarsBot', () => {
 
   it('white cube raises temperature, black cube places ocean', () => {
     const corp = getMarsBotCorp(CardName.KUIPER_COOPERATIVE)!;
-    expect(corp.trackCubes!.filter((c) => c.cubeType === 'white').length).to.eq(3);
-    expect(corp.trackCubes!.filter((c) => c.cubeType === 'black').length).to.eq(3);
+    const whiteCubes = corp.trackCubes!.filter((cube) => cube.cubeType === 'white');
+    const blackCubes = corp.trackCubes!.filter((cube) => cube.cubeType === 'black');
+    expect(whiteCubes).to.have.length(3);
+    expect(blackCubes).to.have.length(3);
   });
 });
