@@ -62,7 +62,7 @@ import {AresSetup} from './ares/AresSetup';
 import {MoonData} from './moon/MoonData';
 import {MoonExpansion} from './moon/MoonExpansion';
 import {TurmoilHandler} from './turmoil/TurmoilHandler';
-import {GameRandom, SeededRandom, StrongRandom, UnseededRandom, deserializeRandom} from '../common/utils/Random';
+import {GameRandom, SeededRandom, UnseededRandom, deserializeRandom} from '../common/utils/Random';
 import {chooseMilestonesAndAwards} from './ma/MilestoneAwardSelector';
 import {BoardType} from './boards/BoardType';
 import {MultiSet} from 'mnemonist';
@@ -346,7 +346,7 @@ export class Game implements IGame, Logger {
     firstPlayer: IPlayer,
     spectatorId: SpectatorId,
     partialOptions: Partial<GameOptions> = {},
-    seed: number | StrongRandom = 0): Game {
+    rng: GameRandom = new SeededRandom(0)): Game {
     if (partialOptions.expansions === undefined) {
       partialOptions.expansions = {
         corpera: partialOptions.corporateEra ?? false,
@@ -379,7 +379,6 @@ export class Game implements IGame, Logger {
       throw new Error('Delta Project cannot be banned. It is given to all players as part of the Delta Project.');
     }
 
-    const rng = typeof seed === 'number' ? new SeededRandom(seed) : seed;
     const board = GameSetup.newBoard(gameOptions, rng);
     const gameCards = new GameCards(gameOptions);
 
@@ -2022,7 +2021,15 @@ export class Game implements IGame, Logger {
 
     const board = GameSetup.deserializeBoard(marsBotPlayer === undefined ? players : [...players, marsBotPlayer], gameOptions, d);
 
-    const rng = d.rng !== undefined ? deserializeRandom(d.rng) : new SeededRandom(d.seed ?? 0, d.currentSeed);
+    let rng: GameRandom;
+    if (d.rng !== undefined) {
+      rng = deserializeRandom(d.rng);
+    } else if (d.seed !== undefined) {
+      // TODO(ignac8): Remove the SeededRandom fallback for old saves after 2027-01-01.
+      rng = new SeededRandom(d.seed, d.currentSeed);
+    } else {
+      throw new Error(`Game ${d.id} has neither rng nor seed`);
+    }
 
     const projectDeck = ProjectDeck.deserialize(d.projectDeck, rng);
     const corporationDeck = CorporationDeck.deserialize(d.corporationDeck, rng);

@@ -86,6 +86,7 @@ import KeyboardShortcuts from '@/client/components/KeyboardShortcuts.vue';
 import {range} from '@/common/utils/utils';
 import {HomeMixin} from '@/client/mixins/HomeMixin';
 import {gameResultsUrl} from '@/client/utils/gameResultsUrl';
+import {setDocumentTitle} from '@/client/utils/documentTitle';
 
 export default defineComponent({
   name: 'SpectatorHome',
@@ -134,6 +135,9 @@ export default defineComponent({
     range(n: number): Array<number> {
       return range(n);
     },
+  },
+  mounted() {
+    setDocumentTitle(this.game.name);
   },
 });
 </script>

@@ -186,6 +186,7 @@ import {HomeMixin} from '@/client/mixins/HomeMixin';
 import {gameResultsUrl} from '@/client/utils/gameResultsUrl';
 import {passwordParam} from '@/client/utils/playerPassword';
 import {isPlayerId} from '@/common/Types';
+import {setDocumentTitle} from '@/client/utils/documentTitle';
 
 type PlayerHomeModel = {
   showHand: boolean;
@@ -373,6 +374,9 @@ export default defineComponent({
     isNotActive(cardModel: CardModel): boolean {
       return !getCardOrThrow(cardModel.name).hasAction;
     },
+  },
+  mounted() {
+    setDocumentTitle(this.game.name);
   },
 });
 

@@ -1,5 +1,4 @@
 import * as responses from '../server/responses';
-import {createStrongRandom} from '../utils/createStrongRandom';
 import {Handler} from './Handler';
 import {Context} from './IHandler';
 import {Database} from '../database/Database';
@@ -24,6 +23,7 @@ import {UnseededRandom} from '../../common/utils/Random';
 import {shuffleSeats} from '../incognito/shuffleSeats';
 import {Phase} from '../../common/Phase';
 import {isObject} from '@/common/utils/utils';
+import {StrongRandom} from '@/common/utils/Random';
 
 function parseQuotaConfig(struct: unknown): QuotaConfig {
   if (!isObject(struct)) {
@@ -249,7 +249,7 @@ export class ApiCreateGame extends Handler {
       if (source !== undefined) {
         game = Cloner.clone(gameId, players, firstPlayerIdx, source);
       } else {
-        game = Game.newInstance(gameId, players, players[firstPlayerIdx], spectatorId, gameOptions, createStrongRandom());
+        game = Game.newInstance(gameId, players, players[firstPlayerIdx], spectatorId, gameOptions, StrongRandom.newInstance());
       }
       ctx.gameLoader.add(game);
       // Only games that are actually created count against the quota.

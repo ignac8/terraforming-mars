@@ -1,6 +1,7 @@
 import {expect} from 'chai';
 import {Cloner} from '../../src/server/database/Cloner';
 import {Game} from '../../src/server/Game';
+import {SeededRandom} from '../../src/common/utils/Random';
 import {Player} from '../../src/server/Player';
 import {isJudgeId} from '../../src/common/Types';
 import {Turmoil} from '../../src/server/turmoil/Turmoil';
@@ -12,7 +13,7 @@ describe('Cloner', () => {
     const game = Game.newInstance(
       'g-old-game-id', [player], player, 'spectatorid', {
         turmoilExtension: true,
-      }, -5179823149812374);
+      }, new SeededRandom(-5179823149812374));
 
     const newPlayer = new Player('new-player1', 'red', false, 3, 'p-new-player1-id');
     const newGame = Cloner.clone('g-new-id', [newPlayer], 0, game.serialize());
@@ -41,7 +42,7 @@ describe('Cloner', () => {
     expect(player.playedCards, 'playedCards').deep.eq(newPlayerZero.playedCards);
     expect(player.draftedCards, 'draftedCards').deep.eq(newPlayerZero.draftedCards);
 
-    expect(game.rng.serialize()).deep.eq(newGame.rng.serialize());
+    expect(game.rng.serialize()).to.deep.eq(newGame.rng.serialize());
     expect(game.gameAge).eq(newGame.gameAge);
     expect(game.undoCount).eq(newGame.undoCount);
     expect(game.projectDeck.discardPile, 'discardPile').to.deep.eq(newGame.projectDeck.discardPile);
