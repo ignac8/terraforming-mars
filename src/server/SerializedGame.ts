@@ -34,7 +34,7 @@ export type SerializedGame = {
     board: SerializedBoard;
     ceoDeck: SerializedDeck;
     // TODO(ignac8): Remove after 2027-01-01, along with the SeededRandom fallback in Game.deserialize.
-    /** @deprecated pre-2026-11 saves only; superseded by `rng`. */
+    /** @deprecated superseded by `rng`; kept to load saves written before `rng` existed. */
     currentSeed?: number;
     claimedMilestones: Array<SerializedClaimedMilestone>;
     clonedGamedId?: string;
@@ -78,10 +78,10 @@ export type SerializedGame = {
     /** Written only for the game's current generation. */
     rewindRequestLimits?: RewindRequestLimits;
     // TODO(ignac8): Remove after 2027-01-01, along with the SeededRandom fallback in Game.deserialize.
-    /** @deprecated pre-2026-11 saves only; superseded by `rng`. */
+    /** @deprecated superseded by `rng`; kept to load saves written before `rng` existed. */
     seed?: number;
     // TODO(ignac8): Remove '?' after 2027-01-01
-    /** The game's random generator. Absent only in pre-2026-11 saves, which carry `seed`/`currentSeed`. */
+    /** The game's random generator. Absent only in saves written before `rng` existed, which carry `seed`/`currentSeed`. */
     rng?: SerializedRandom;
     someoneHasRemovedOtherPlayersPlants: boolean;
     spectatorId: SpectatorId;
