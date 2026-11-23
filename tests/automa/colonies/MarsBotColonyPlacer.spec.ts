@@ -2,7 +2,7 @@ import {expect} from 'chai';
 import {ColonyName} from '@/common/colonies/ColonyName';
 import {PartyName} from '@/common/turmoil/PartyName';
 import {MarsBotShippingBoard} from '@/server/automa/colonies/MarsBotShippingBoard';
-import {eligibleColonies, placeColony} from '@/server/automa/colonies/MarsBotColonyPlacer';
+import {placeColony, selectRandomColony} from '@/server/automa/colonies/MarsBotColonyPlacer';
 import {Poseidon} from '@/server/cards/colonies/Poseidon';
 import {ColonyDeserializer} from '@/server/colonies/ColonyDeserializer';
 import {Luna} from '@/server/colonies/Luna';
@@ -13,15 +13,14 @@ import {recordingMarsBot} from '../corps/RecordingMarsBot';
 import {fakeCard} from '../../TestingUtils';
 import {AutomaGameHooks} from '../../../src/server/automa/AutomaGameHooks';
 import {MarsBot} from '../../../src/server/automa/MarsBot';
-import {selectRandomColony} from '../../../src/server/automa/colonies/MarsBotColonyPlacer';
 import {Europa} from '../../../src/server/colonies/Europa';
 import {Titan} from '../../../src/server/colonies/Titan';
 import {Ceres} from '../../../src/server/colonies/Ceres';
 import {BoardName} from '../../../src/common/boards/BoardName';
 import {Tag} from '../../../src/common/cards/Tag';
 
-function setup(options: {turmoilExtension?: boolean} = {}) {
-  const [game, human, botPlayer] = testGame(2, {coloniesExtension: true, ...options});
+function setup() {
+  const [game, human, botPlayer] = testGame(2, {coloniesExtension: true});
   const notices: Array<string> = [];
   const {marsBot, calls} = recordingMarsBot({
     game,
@@ -38,31 +37,17 @@ function getMarsBot(game: ReturnType<typeof testGame>[0]): MarsBot {
 }
 
 describe('MarsBotColonyPlacer', () => {
-  for (const run of [
-    {isActive: true, colonies: [], expected: true},
-    {isActive: false, colonies: [], expected: false},
-    {isActive: true, colonies: ['human', 'human', 'human'], expected: false},
-    {isActive: true, colonies: ['bot'], expected: false},
-  ] as const) {
-    it('lists the tiles MarsBot can build on: ' + JSON.stringify(run), () => {
-      const {game, human, botPlayer, marsBot} = setup();
-      const luna = new Luna();
-      luna.isActive = run.isActive;
-      luna.colonies = run.colonies.map((owner) => owner === 'bot' ? botPlayer.id : human.id);
-      game.colonies = [luna];
-      const expected = run.expected ? [luna] : [];
-
-      expect(eligibleColonies(marsBot)).deep.eq(expected);
-    });
-  }
-
-  it('lists Europa while Reds rule, since MarsBot ignores the ruling policy', () => {
-    const {game, marsBot} = setup({turmoilExtension: true});
+  it('picks a tile MarsBot can build on, and ignores the ruling policy', () => {
+    const [game] = testGame(1, {automa: true, coloniesExtension: true, turmoilExtension: true});
+    const botPlayer = game.marsBotPlayer!;
+    const {marsBot} = recordingMarsBot({game, player: botPlayer});
+    const luna = new Luna();
+    luna.colonies = [botPlayer.id];
     const europa = new Europa();
-    game.colonies = [europa];
+    game.colonies = [luna, europa];
     setRulingParty(game, PartyName.REDS);
 
-    expect(eligibleColonies(marsBot)).deep.eq([europa]);
+    expect(selectRandomColony(marsBot)).eq(europa);
   });
 
   for (const run of [
@@ -95,47 +80,6 @@ describe('MarsBotColonyPlacer', () => {
     expect(luna.trackPosition).eq(2);
     expect(notices).deep.eq(['notifyColonyPlaced()']);
     expect(human.production.megacredits).eq(1);
-  });
-
-  describe('eligibleColonies', () => {
-    it('excludes inactive colonies', () => {
-      const [game] = testGame(1, {automa: true, coloniesExtension: true, boardName: BoardName.THARSIS});
-      const marsBot = getMarsBot(game);
-      const luna = new Luna();
-      luna.isActive = false;
-      game.colonies = [luna];
-      const eligible = eligibleColonies(marsBot);
-      expect(eligible.length).to.eq(0);
-    });
-
-    it('excludes full colonies', () => {
-      const [game] = testGame(1, {automa: true, coloniesExtension: true, boardName: BoardName.THARSIS});
-      const marsBot = getMarsBot(game);
-      const luna = new Luna();
-      luna.colonies = ['p1', 'p2', 'p3']; // MAX_COLONIES_PER_TILE = 3
-      game.colonies = [luna];
-      const eligible = eligibleColonies(marsBot);
-      expect(eligible.length).to.eq(0);
-    });
-
-    it('excludes colonies where MarsBot already has one', () => {
-      const [game] = testGame(1, {automa: true, coloniesExtension: true, boardName: BoardName.THARSIS});
-      const marsBot = getMarsBot(game);
-      const luna = new Luna();
-      luna.colonies = [marsBot.player.id];
-      game.colonies = [luna];
-      const eligible = eligibleColonies(marsBot);
-      expect(eligible.length).to.eq(0);
-    });
-
-    it('includes active, non-full colonies without MarsBot', () => {
-      const [game] = testGame(1, {automa: true, coloniesExtension: true, boardName: BoardName.THARSIS});
-      const marsBot = getMarsBot(game);
-      const luna = new Luna();
-      game.colonies = [luna];
-      const eligible = eligibleColonies(marsBot);
-      expect(eligible.length).to.eq(1);
-    });
   });
 
   describe('selectRandomColony', () => {
