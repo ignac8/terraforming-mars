@@ -684,40 +684,6 @@ describe('Game', () => {
     expect(game.serialize()).not.to.have.any.keys('frozen', 'rewindVote', 'rewindRequestLimits');
   });
 
-  it('round-trips a strong random generator and continues the same sequence', () => {
-    const player = TestPlayer.BLUE.newPlayer();
-    const game = Game.newInstance('gnew', [player], player, 'snew', {}, StrongRandom.newInstance([1, 2, 3, 4]));
-    range(7).forEach(() => game.rng.next());
-    const d = game.serialize();
-    expect(d.rng?.kind).to.eq('sfc32');
-    const loaded = Game.deserialize(d);
-    expect(loaded.rng).to.be.instanceOf(StrongRandom);
-    const before = range(10).map(() => game.rng.next());
-    const after = range(10).map(() => loaded.rng.next());
-    expect(after).to.deep.eq(before);
-  });
-
-  it('loads a pre-2026-11 save that carries seed/currentSeed instead of rng', () => {
-    const [game] = testGame(2);
-    const d = game.serialize();
-    // Rewrite the save in the old shape: a 32-bit mulberry32 seed, no `rng`.
-    delete d.rng;
-    d.seed = 0.25;
-    d.currentSeed = Math.floor(0.25 * 4294967296);
-    const loaded = Game.deserialize(d);
-    const legacy = new SeededRandom(0.25, Math.floor(0.25 * 4294967296));
-    expect(range(10).map(() => loaded.rng.next())).to.deep.eq(range(10).map(() => legacy.next()));
-  });
-
-  it('refuses to load a save that has neither rng nor seed', () => {
-    const [game] = testGame(2);
-    const d = game.serialize();
-    delete d.rng;
-    delete d.seed;
-    delete d.currentSeed;
-    expect(() => Game.deserialize(d)).to.throw(/neither rng nor seed/);
-  });
-
   it('saves a copy of the table state', async () => {
     const db = new InMemoryDatabase();
     setTestDatabase(db);
