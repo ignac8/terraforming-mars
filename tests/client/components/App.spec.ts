@@ -4,6 +4,7 @@ import {afterEach, vi} from 'vitest';
 import {defineAsyncComponent} from 'vue';
 import {globalConfig} from '@tests/client/components/getLocalVue';
 import App from '@/client/components/App.vue';
+import ReportProblemsBanner from '@/client/components/ReportProblemsBanner.vue';
 import {setTranslationsForTest, translateMessage} from '@/client/directives/i18n';
 import {PreferencesManager} from '@/client/utils/PreferencesManager';
 import {LogMessageDataType} from '@/common/logs/LogMessageDataType';
@@ -27,6 +28,34 @@ describe('App', () => {
     const wrapper = shallowMount(App, globalConfig);
     expect(wrapper.exists()).to.be.true;
   });
+
+  const reportProblemsPages = [
+    {name: 'main page', url: '/', phase: undefined, shown: true},
+    {name: 'create game page', url: '/new-game', phase: undefined, shown: true},
+    {name: 'end page', url: '/player?id=p1', phase: 'end', shown: true},
+    {name: 'game page', url: '/player?id=p1', phase: 'action', shown: false},
+  ];
+  for (const {name, url, phase, shown} of reportProblemsPages) {
+    it(`${shown ? 'shows' : 'hides'} the report problems banner on the ${name}`, async () => {
+      window.history.replaceState({}, '', url);
+      const player = {
+        id: 'p1',
+        color: 'red',
+        players: [{color: 'red', name: 'Alice'}],
+        game: {phase, gameAge: 1, undoCount: 0, gameOptions: {undoOption: false}},
+      };
+      vi.stubGlobal('fetch', vi.fn(async () => ({ok: true, status: 200, json: async () => player}) as Response));
+      const stub = {template: '<div class="stub-screen"></div>'};
+      const wrapper = shallowMount(App, {
+        ...globalConfig,
+        global: {...globalConfig.global, stubs: {StartScreen: stub, CreateGameForm: stub, GameEnd: stub, PlayerHome: stub}},
+      });
+      await flushPromises();
+
+      expect(wrapper.find('.stub-screen').exists()).is.true;
+      expect(wrapper.findComponent(ReportProblemsBanner).exists()).eq(shown);
+    });
+  }
 
   // Mounts the start screen with an import() that rejects with `err`.
   async function mountWithFailingStartScreen(err: Error) {

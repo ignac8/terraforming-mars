@@ -12,6 +12,7 @@
       </dialog>
     </section>
     <BannerStack :frozen="frozen" />
+    <ReportProblemsBanner v-if="showReportProblems" />
     <div class="main-container">
       <StartScreen v-if="screen === 'start-screen'" />
       <CreateGameForm
@@ -102,6 +103,7 @@ import dialogPolyfill from 'dialog-polyfill';
 import {setDocumentTitle} from '../utils/documentTitle';
 import {reloadForChunkError} from '@/client/utils/chunkReload';
 import BannerStack from '@/client/components/replay/BannerStack.vue';
+import ReportProblemsBanner from '@/client/components/ReportProblemsBanner.vue';
 import {localPlayerView} from '@/client/utils/localColors';
 import {translateFakeNames} from '@/client/utils/incognitoNames';
 
@@ -172,6 +174,7 @@ export default defineComponent({
   },
   components: {
     BannerStack,
+    ReportProblemsBanner,
     StartScreen,
     CreateGameForm,
     LoadGameForm,
@@ -190,6 +193,10 @@ export default defineComponent({
   computed: {
     participant(): ViewModel | undefined {
       return this.playerView ?? this.spectator;
+    },
+    /** The main, create game and end pages, but not the pages of a game being played. */
+    showReportProblems(): boolean {
+      return this.screen === 'start-screen' || this.screen === 'create-game-form' || this.screen === 'the-end';
     },
     /** The judge has frozen the game that this page shows live. A replay shows a past moment, which is never frozen. */
     frozen(): boolean {
