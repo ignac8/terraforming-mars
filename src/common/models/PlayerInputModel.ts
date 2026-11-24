@@ -90,7 +90,7 @@ export type SelectPaymentModel = BaseInputModel & {
 export type SelectPlayerModel = BaseInputModel & {
   type: 'player';
   players: ReadonlyArray<Color>;
-  /** Whether to show "(you)" after the choosing player's own name. */
+  /* True when the choosing player's own name is followed by "(you)". */
   markSelf?: boolean;
 }
 

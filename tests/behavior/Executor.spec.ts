@@ -592,7 +592,6 @@ describe('Executor', () => {
     runAllActions(game);
     const selectPlayer = cast(player.popWaitingFor(), SelectPlayer);
 
-    // The player comes last.
     expect(selectPlayer.players).deep.eq([player2, player3, player]);
 
     selectPlayer.cb(player3);
