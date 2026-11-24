@@ -7,7 +7,12 @@ import {InputError} from './InputError';
 import {incognitoMask, PLAYER_NOT_AVAILABLE, unmaskChoice} from '../incognito/IncognitoMask';
 
 export class SelectPlayer extends BasePlayerInput<IPlayer> {
-  constructor(public players: ReadonlyArray<IPlayer>, title: string | Message, buttonLabel: string = 'Save') {
+  constructor(
+    public players: ReadonlyArray<IPlayer>,
+    title: string | Message,
+    buttonLabel: string = 'Save',
+    private readonly markSelf: boolean = false,
+  ) {
     super('player', title);
     this.buttonLabel = buttonLabel;
   }
@@ -18,6 +23,7 @@ export class SelectPlayer extends BasePlayerInput<IPlayer> {
       buttonLabel: this.buttonLabel,
       type: 'player',
       players: this.players.map((player) => player.color),
+      markSelf: this.markSelf,
     };
   }
 
