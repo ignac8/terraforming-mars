@@ -229,6 +229,10 @@ Each can go up as its own PR, independent of the MarsBot chain:
   `saveGameResults` returns a promise, and `COMPRESS_COMPLETED_GAMES_DAYS` has a default. Its fake pool in
   `tests/database/PostgreSQL.spec.ts` also records the query parameters and takes a trim count, so five
   comment and scaffolding lines of the PR's spec are worded differently there.
+- Card owner labels below the card, and yourself last when removing resources from cards or decreasing
+  production, upstream as #8768 (`owner-labels`, 2026-11-24). Automa and tournament carry it too, plus the Polish
+  strings and a `SelectPlayer.spec.ts` case the PR leaves out. When it merges, automa conflicts on one line of
+  `SelectPlayer.vue`: keep the `fallbackName` row and the "(you)" span.
 
 ## Blocked (everything else)
 
