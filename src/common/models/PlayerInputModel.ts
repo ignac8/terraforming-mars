@@ -90,6 +90,8 @@ export type SelectPaymentModel = BaseInputModel & {
 export type SelectPlayerModel = BaseInputModel & {
   type: 'player';
   players: ReadonlyArray<Color>;
+  /** Whether to show "(you)" after the choosing player's own name. */
+  markSelf?: boolean;
 }
 
 export type SelectSpaceModel = BaseInputModel & {

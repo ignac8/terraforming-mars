@@ -125,6 +125,22 @@ describe('SelectPlayer', () => {
     });
   });
 
+  for (const markSelf of [true, false]) {
+    it(`${markSelf ? 'marks' : 'does not mark'} yourself when markSelf is ${markSelf}`, () => {
+      const playerInput: SelectPlayerModel = {type: 'player', title: '', buttonLabel: '', players: ['red', 'blue'], markSelf};
+      const wrapper = mount(SelectPlayer, {
+        ...globalConfig,
+        props: {
+          playerView: {players, thisPlayer: players[0]} as PlayerViewModel,
+          playerinput: playerInput,
+          onsave: () => {},
+        },
+      });
+
+      expect(wrapper.findAll('label').map((label) => label.text())).deep.eq(['beta', markSelf ? 'alpha (you)' : 'alpha']);
+    });
+  }
+
   async function clickInput(input: DOMWrapper<HTMLInputElement>) {
     const radio = input.element;
     radio.checked = true;
