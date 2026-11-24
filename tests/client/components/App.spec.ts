@@ -25,6 +25,9 @@ describe('App', () => {
   const reportProblemsPages = [
     {name: 'main page', url: '/', phase: undefined, shown: true},
     {name: 'create game page', url: '/new-game', phase: undefined, shown: true},
+    {name: 'game links page', url: '/game?id=g1', phase: undefined, shown: true},
+    {name: 'cards list', url: '/cards', phase: undefined, shown: true},
+    {name: 'help page', url: '/help', phase: undefined, shown: true},
     {name: 'end page', url: '/player?id=p1', phase: 'end', shown: true},
     {name: 'game page', url: '/player?id=p1', phase: 'action', shown: false},
   ];
@@ -41,7 +44,9 @@ describe('App', () => {
       const stub = {template: '<div class="stub-screen"></div>'};
       const wrapper = shallowMount(App, {
         ...globalConfig,
-        global: {...globalConfig.global, stubs: {StartScreen: stub, CreateGameForm: stub, GameEnd: stub, PlayerHome: stub}},
+        global: {...globalConfig.global, stubs: {
+          StartScreen: stub, CreateGameForm: stub, GameHome: stub, CardList: stub, Help: stub, GameEnd: stub, PlayerHome: stub,
+        }},
       });
       await flushPromises();
 

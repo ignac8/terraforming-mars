@@ -173,9 +173,19 @@ export default defineComponent({
     participant(): ViewModel | undefined {
       return this.playerView ?? this.spectator;
     },
-    /** The main, create game and end pages, but not the pages of a game being played. */
+    /** The pages that any player can reach, except the pages of a game being played. */
     showReportProblems(): boolean {
-      return this.screen === 'start-screen' || this.screen === 'create-game-form' || this.screen === 'the-end';
+      switch (this.screen) {
+      case 'start-screen':
+      case 'create-game-form':
+      case 'game-home':
+      case 'cards':
+      case 'help':
+      case 'the-end':
+        return true;
+      default:
+        return false;
+      }
     },
     /** A game with Player undo keeps its history on the game page, where a solo player rewinds it and a table votes on it. */
     hasHistory(): boolean {
