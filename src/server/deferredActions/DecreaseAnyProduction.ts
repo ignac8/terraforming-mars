@@ -5,6 +5,7 @@ import {DeferredAction} from './DeferredAction';
 import {Priority} from './Priority';
 import {Message} from '../../common/logs/Message';
 import {message} from '../logs/MessageBuilder';
+import {partition} from '../../common/utils/utils';
 
 export type Options = {
   count: number,
@@ -49,9 +50,8 @@ export class DecreaseAnyProduction extends DeferredAction<boolean> {
       if (targets.length > 0) {
         if (targets.length > 1 || targets[0] === this.player) {
           // A player rarely wants to decrease their own production, so they come last.
-          const self = targets.filter((p) => p === this.player);
-          const others = targets.filter((p) => p !== this.player);
-          return new SelectPlayer([...others, ...self], this.title, 'Decrease', /* markSelf= */ true)
+          const sorted = partition(targets, (p) => p !== this.player).flat();
+          return new SelectPlayer(sorted, this.title, 'Decrease', /* markSelf= */ true)
             .andThen((candidate) => {
               this.attack(candidate);
               return undefined;

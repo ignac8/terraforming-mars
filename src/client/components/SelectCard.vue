@@ -38,6 +38,7 @@ import {SelectCardModel} from '@/common/models/PlayerInputModel';
 import {sortActiveCards} from '@/client/utils/ActiveCardsSortingOrder';
 import {SelectCardResponse} from '@/common/inputs/InputResponse';
 import {Warning} from '@/common/cards/Warning';
+import {partition} from '@/common/utils/utils';
 
 type Owner = {
   name: string;
@@ -119,7 +120,7 @@ export default defineComponent({
           }
         });
         // A player rarely wants to remove resources from their own cards, so those come last.
-        cards = [...cards.filter((card) => !this.isOwnCard(card)), ...cards.filter((card) => this.isOwnCard(card))];
+        cards = partition(cards, (card) => !this.isOwnCard(card)).flat();
       }
       return cards;
     },

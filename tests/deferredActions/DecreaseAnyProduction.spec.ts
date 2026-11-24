@@ -69,7 +69,6 @@ describe('DecreaseAnyProduction', () => {
     const selectPlayer = cast(decreaseAnyProduction.execute(), SelectPlayer);
     runAllActions(game);
 
-    // The player comes last, and is marked as such.
     expect(selectPlayer.players).deep.eq([player2, player3, player]);
     expect(selectPlayer.toModel().markSelf).is.true;
 
