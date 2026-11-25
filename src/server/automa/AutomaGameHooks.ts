@@ -59,7 +59,7 @@ export class AutomaGameHooks {
   /** Gets the max generation for this automa game. */
   public getMaxGeneration(): number {
     const opts = this.game.gameOptions;
-    return getAutomaMaxGeneration(opts.preludeExtension, opts.boardName);
+    return getAutomaMaxGeneration(opts.expansions.prelude, opts.boardName);
   }
 
   /** Whether the game is over: Mars is terraformed or, with a generation limit, the max generation is reached. */
@@ -181,10 +181,10 @@ export class AutomaGameHooks {
    */
   private canSpendFloatersForExtraCard(): boolean {
     const opts = this.game.gameOptions;
-    if (opts.coloniesExtension && !opts.venusNextExtension) {
+    if (opts.expansions.colonies && !opts.expansions.venus) {
       return this.marsBot.shippingBoard.get(ColonyName.TITAN) >= 5;
     }
-    if (!opts.venusNextExtension) {
+    if (!opts.expansions.venus) {
       return false;
     }
     if (this.marsBot.floaters < 5) {
@@ -208,7 +208,7 @@ export class AutomaGameHooks {
     }
 
     const opts = this.game.gameOptions;
-    if (opts.coloniesExtension && !opts.venusNextExtension) {
+    if (opts.expansions.colonies && !opts.expansions.venus) {
       this.marsBot.shippingBoard.spend(ColonyName.TITAN, 5);
       this.marsBot.drawProjectCardsToActionDeck(1);
       this.game.log('MarsBot spends 5 Titan floaters for an extra card');
@@ -636,7 +636,7 @@ export class AutomaGameHooks {
       return true;
     }
     // Titan storage only holds floaters without Venus Next. With Venus Next MarsBot gains a floater.
-    if (colony.name === ColonyName.TITAN && this.game.gameOptions.venusNextExtension) {
+    if (colony.name === ColonyName.TITAN && this.game.gameOptions.expansions.venus) {
       this.marsBot.floaters += 1;
       this.game.log('MarsBot gains 1 floater as Titan colony bonus');
     } else {

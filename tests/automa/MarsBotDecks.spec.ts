@@ -1,5 +1,5 @@
 import {expect} from 'chai';
-import {testGame} from '../TestGame';
+import {testGame, TestGameOptions} from '../TestGame';
 import {Game} from '../../src/server/Game';
 import {IGame} from '../../src/server/IGame';
 import {MarsBot} from '../../src/server/automa/MarsBot';
@@ -10,7 +10,6 @@ import {LEGACY_BONUS_CARD_IDS} from '../../src/server/automa/legacyBonusCards';
 import {BonusCardName} from '../../src/common/automa/BonusCardName';
 import {BoardName} from '../../src/common/boards/BoardName';
 import {CardName} from '../../src/common/cards/CardName';
-import {GameOptions} from '../../src/server/game/GameOptions';
 import {SerializedAutomaState} from '../../src/server/SerializedGame';
 import {getMarsBotCorp} from '../../src/server/automa/corps/MarsBotCorpRegistry';
 import {MarsBotCorpResolver} from '../../src/server/automa/corps/MarsBotCorpResolver';
@@ -29,7 +28,7 @@ import {TestPlayer} from '../TestPlayer';
 import {bonusCardsInActionDeck, bonusCardsInBonusDeck} from './bonusCards/BonusCardGame';
 import {setMarsBotRandom} from './MarsBotRandom';
 
-function createAutomaGame(options: Partial<GameOptions> = {}): {game: IGame, human: TestPlayer, marsBot: MarsBot} {
+function createAutomaGame(options: Partial<TestGameOptions> = {}): {game: IGame, human: TestPlayer, marsBot: MarsBot} {
   const [game, human] = testGame(1, {automa: true, boardName: BoardName.THARSIS, ...options});
   return {game, human, marsBot: game.automaHooks!.marsBot};
 }
@@ -53,7 +52,7 @@ describe('MarsBot decks', () => {
   });
 
   it('drops generation cards from the bonus deck of an older save', () => {
-    const {game, marsBot} = createAutomaGame({venusNextExtension: true});
+    const {game, marsBot} = createAutomaGame({expansions: {venus: true}});
     marsBot.bonusDeck.discardPile.push(createBonusCard(BonusCardName.GOVERNMENT_INTERVENTION));
 
     const restored = Game.deserialize(game.serialize()).automaHooks!.marsBot;
@@ -98,7 +97,7 @@ describe('MarsBot decks', () => {
   });
 
   it('shuffles the setup bonus card back into the bonus deck for UNMI, keeping the expansion cards', () => {
-    const {marsBot} = createAutomaGame({venusNextExtension: true, turmoilExtension: true});
+    const {marsBot} = createAutomaGame({expansions: {venus: true, turmoil: true}});
     const expansionCards: Array<BonusCardName> = [BonusCardName.GOVERNMENT_INTERVENTION, BonusCardName.PARTY_POLITICS];
     const setupCard = marsBot.actionDeck.cards.find((c) => c instanceof MarsBotBonusCard && !expansionCards.includes(c.name))!;
     expect(setupCard).is.not.undefined;
@@ -282,7 +281,7 @@ describe('MarsBot decks', () => {
   });
 
   it('loads the bonus deck of an older save, which holds bonus cards by id, and plays on from it', () => {
-    const {game, marsBot} = createAutomaGame({venusNextExtension: true, coloniesExtension: true});
+    const {game, marsBot} = createAutomaGame({expansions: {venus: true, colonies: true}});
     const corporateCompetition = marsBot.bonusDeck.findAndRemove(BonusCardName.CORPORATE_COMPETITION)!;
     const invasiveSpecies = marsBot.bonusDeck.findAndRemove(BonusCardName.INVASIVE_SPECIES)!;
     marsBot.addBonusCardToBottomOfBonusDeck(BonusCardName.INTERFACE_HYPERLINK);

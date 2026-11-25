@@ -1,5 +1,5 @@
 import {expect} from 'chai';
-import {testGame} from '../TestGame';
+import {testGame, TestGameOptions} from '../TestGame';
 import {TestPlayer} from '../TestPlayer';
 import {Game} from '../../src/server/Game';
 import {IGame} from '../../src/server/IGame';
@@ -39,9 +39,9 @@ import {Founder} from '../../src/server/awards/modular/Founder';
 import {Traveller} from '../../src/server/awards/modular/Traveller';
 
 // The Milestones & Awards expansion plays against the Tharsis board and its own rules.
-const MODULAR: Partial<GameOptions> = {randomMA: RandomMAOptionType.UNLIMITED, modularMA: true};
+const MODULAR: Partial<TestGameOptions> = {randomMA: RandomMAOptionType.UNLIMITED, modularMA: true};
 
-function createGame(options: Partial<GameOptions>) {
+function createGame(options: Partial<TestGameOptions>) {
   const [game, human] = testGame(1, {automa: true, ...options});
   return {game, human, marsBot: game.automaHooks!.marsBot};
 }
@@ -99,7 +99,7 @@ describe('MarsBot map milestones and awards', () => {
     });
 
     it('Diversifier with Venus needs 7 of the 8 tracks at space 3', () => {
-      const {marsBot} = createGame({boardName: BoardName.HELLAS, venusNextExtension: true});
+      const {marsBot} = createGame({boardName: BoardName.HELLAS, expansions: {venus: true}});
       const tracks = marsBot.marsBotBoard.tracks;
       expect(tracks).has.length(8);
       tracks.forEach((track) => track.position = 3);
@@ -128,7 +128,7 @@ describe('MarsBot map milestones and awards', () => {
     });
 
     it('Planetologist adds the Earth and Venus tracks up to 5', () => {
-      const {marsBot} = createGame({boardName: BoardName.TERRA_CIMMERIA_NOVA, venusNextExtension: true});
+      const {marsBot} = createGame({boardName: BoardName.TERRA_CIMMERIA_NOVA, expansions: {venus: true}});
       setTrack(marsBot, Tag.EARTH, 3);
       setTrack(marsBot, Tag.VENUS, 1);
       expect(claims(new Planetologist(), marsBot)).is.false;
@@ -137,7 +137,7 @@ describe('MarsBot map milestones and awards', () => {
     });
 
     it('Planetologist with the modular milestones wants two tracks at space 3', () => {
-      const {marsBot} = createGame({boardName: BoardName.TERRA_CIMMERIA_NOVA, venusNextExtension: true, ...MODULAR});
+      const {marsBot} = createGame({boardName: BoardName.TERRA_CIMMERIA_NOVA, expansions: {venus: true}, ...MODULAR});
       setTrack(marsBot, Tag.EARTH, 4);
       setTrack(marsBot, Tag.VENUS, 2);
       expect(claims(new Planetologist(), marsBot)).is.false;
@@ -232,7 +232,7 @@ describe('MarsBot map milestones and awards', () => {
     });
 
     it('Trader (Tradesman) needs space 2 on the Energy, Earth and Venus tracks', () => {
-      const {marsBot} = createGame({boardName: BoardName.UTOPIA_PLANITIA, venusNextExtension: true});
+      const {marsBot} = createGame({boardName: BoardName.UTOPIA_PLANITIA, expansions: {venus: true}});
       setTrack(marsBot, Tag.POWER, 2);
       setTrack(marsBot, Tag.EARTH, 2);
       setTrack(marsBot, Tag.VENUS, 1);
@@ -333,7 +333,7 @@ describe('MarsBot map milestones and awards', () => {
     it('keeps Merchant without Venus Next, it needs no Venus track', () => {
       const names = (venus: boolean) => [new Merchant(), new Planetologist(), new Tradesman()]
         .map((m) => m.name)
-        .filter((name) => AutomaGameSetup.supportsMilestone(name, {venusNextExtension: venus} as GameOptions));
+        .filter((name) => AutomaGameSetup.supportsMilestone(name, {expansions: {venus}} as GameOptions));
       expect(names(false)).to.deep.eq(['Merchant']);
       expect(names(true)).to.deep.eq(['Merchant', 'Planetologist', 'Tradesman']);
     });
@@ -359,7 +359,7 @@ describe('MarsBot map milestones and awards', () => {
 
     for (const boardName of [BoardName.UTOPIA_PLANITIA, BoardName.TERRA_CIMMERIA_NOVA]) {
       it('swaps nothing with Venus Next: ' + boardName, () => {
-        const {game} = createGame({boardName, venusNextExtension: true});
+        const {game} = createGame({boardName, expansions: {venus: true}});
 
         const awardNames = game.awards.map((award) => award.name);
         const expectedMilestones = [...milestoneManifest.boards[boardName], 'Hoverlord'];
@@ -396,8 +396,8 @@ describe('MarsBot map milestones and awards', () => {
 
   // Our reading: random milestones and awards deal only those the automa rules support
   describe('random milestones and awards', () => {
-    const RANDOM_OPTIONS: Partial<GameOptions> = {
-      automa: true, randomMA: RandomMAOptionType.UNLIMITED, includeFanMA: true, venusNextExtension: true,
+    const RANDOM_OPTIONS: Partial<TestGameOptions> = {
+      automa: true, randomMA: RandomMAOptionType.UNLIMITED, includeFanMA: true, expansions: {venus: true},
     };
 
     it('keeps the ones the automa rules cover', () => {
@@ -426,7 +426,7 @@ describe('MarsBot map milestones and awards', () => {
       });
     }
 
-    const ALL_EXPANSIONS = {venusNextExtension: true, turmoilExtension: true} as GameOptions;
+    const ALL_EXPANSIONS = {expansions: {venus: true, turmoil: true}} as GameOptions;
 
     it('supports exactly the milestones and awards rulebook C gives MarsBot a rule for', () => {
       const milestones = (Object.keys(milestoneManifest.all) as Array<MilestoneName>)
@@ -508,7 +508,7 @@ describe('MarsBot map milestones and awards', () => {
 
   describe('Amazonis Planitia', () => {
     it("deals the map's own milestones and awards without swapping any", () => {
-      const {game} = createGame({boardName: BoardName.AMAZONIS_PLANITIA, turmoilExtension: true, coloniesExtension: true});
+      const {game} = createGame({boardName: BoardName.AMAZONIS_PLANITIA, expansions: {turmoil: true, colonies: true}});
       const milestones = game.milestones.map((milestone) => milestone.name);
       const awards = game.awards.map((award) => award.name);
 
@@ -523,7 +523,7 @@ describe('MarsBot map milestones and awards', () => {
     ]) {
       it('supports Merchant3, Innovator and Physicist only in a game on the map without the modular milestones: ' + JSON.stringify(run), () => {
         const options = {
-          boardName: run.boardName, modularMA: run.modularMA, venusNextExtension: true, turmoilExtension: true,
+          boardName: run.boardName, modularMA: run.modularMA, expansions: {venus: true, turmoil: true},
         } as GameOptions;
 
         expect(AutomaGameSetup.supportsMilestone('Merchant3', options)).eq(run.expected);

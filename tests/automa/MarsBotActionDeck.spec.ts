@@ -12,8 +12,7 @@ import {Algae} from '@/server/cards/base/Algae';
 import {Asteroid} from '@/server/cards/base/Asteroid';
 import {Mine} from '@/server/cards/base/Mine';
 import {IProjectCard} from '@/server/cards/IProjectCard';
-import {GameOptions} from '@/server/game/GameOptions';
-import {testGame} from '../TestGame';
+import {testGame, TestGameOptions} from '../TestGame';
 import {recordingMarsBot} from './corps/RecordingMarsBot';
 
 /** A bonus card that runs `effect` when it resolves, and returns `destroyed`. */
@@ -37,7 +36,7 @@ class TestBonusCard extends MarsBotBonusCard {
  *
  * A random insert goes on top, at index 0.
  */
-function setup(options: Partial<GameOptions> = {}, fields: Partial<IMarsBot> = {}) {
+function setup(options: Partial<TestGameOptions> = {}, fields: Partial<IMarsBot> = {}) {
   const [game, human, botPlayer] = testGame(2, options);
   const played: Array<string> = [];
   const {marsBot, corpState} = recordingMarsBot({
@@ -65,11 +64,11 @@ function projectCardCount(cards: ReadonlyArray<IProjectCard | MarsBotBonusCard>)
 
 describe('MarsBotActionDeck', () => {
   for (const run of [
-    {preludeExtension: false, expected: {projectCards: 3, bonusCards: [BonusCardName.METEOR_SHOWER]}},
-    {preludeExtension: true, expected: {projectCards: 6, bonusCards: [BonusCardName.METEOR_SHOWER]}},
+    {prelude: false, expected: {projectCards: 3, bonusCards: [BonusCardName.METEOR_SHOWER]}},
+    {prelude: true, expected: {projectCards: 6, bonusCards: [BonusCardName.METEOR_SHOWER]}},
   ]) {
     it('builds the first action deck from project cards and a bonus card: ' + JSON.stringify(run), () => {
-      const {marsBot, deck} = setup({preludeExtension: run.preludeExtension});
+      const {marsBot, deck} = setup({expansions: {prelude: run.prelude}});
       marsBot.bonusDeck.drawPile.push(new TestBonusCard(BonusCardName.METEOR_SHOWER));
 
       deck.buildInitial();
@@ -80,9 +79,9 @@ describe('MarsBotActionDeck', () => {
   }
 
   for (const run of [
-    {options: {venusNextExtension: true}, replacesPartyPolitics: false, expected: [BonusCardName.GOVERNMENT_INTERVENTION]},
-    {options: {turmoilExtension: true}, replacesPartyPolitics: false, expected: [BonusCardName.PARTY_POLITICS]},
-    {options: {turmoilExtension: true}, replacesPartyPolitics: true, expected: []},
+    {options: {expansions: {venus: true}}, replacesPartyPolitics: false, expected: [BonusCardName.GOVERNMENT_INTERVENTION]},
+    {options: {expansions: {turmoil: true}}, replacesPartyPolitics: false, expected: [BonusCardName.PARTY_POLITICS]},
+    {options: {expansions: {turmoil: true}}, replacesPartyPolitics: true, expected: []},
   ]) {
     it("adds the expansions' cards to the first action deck: " + JSON.stringify(run), () => {
       const {deck} = setup(run.options, {replacesPartyPolitics: run.replacesPartyPolitics});
@@ -104,12 +103,12 @@ describe('MarsBotActionDeck', () => {
   });
 
   for (const run of [
-    {options: {venusNextExtension: true}, generation: 2, fields: {}, expected: [BonusCardName.GOVERNMENT_INTERVENTION]},
-    {options: {turmoilExtension: true}, generation: 2, fields: {}, expected: [BonusCardName.PARTY_POLITICS]},
-    {options: {turmoilExtension: true}, generation: 2, fields: {replacesPartyPolitics: true}, expected: []},
-    {options: {coloniesExtension: true}, generation: 1, fields: {}, expected: []},
-    {options: {coloniesExtension: true}, generation: 2, fields: {}, expected: [BonusCardName.SHIPPING_LINES]},
-    {options: {coloniesExtension: true}, generation: 2, fields: {hasSecondTradeFleet: true},
+    {options: {expansions: {venus: true}}, generation: 2, fields: {}, expected: [BonusCardName.GOVERNMENT_INTERVENTION]},
+    {options: {expansions: {turmoil: true}}, generation: 2, fields: {}, expected: [BonusCardName.PARTY_POLITICS]},
+    {options: {expansions: {turmoil: true}}, generation: 2, fields: {replacesPartyPolitics: true}, expected: []},
+    {options: {expansions: {colonies: true}}, generation: 1, fields: {}, expected: []},
+    {options: {expansions: {colonies: true}}, generation: 2, fields: {}, expected: [BonusCardName.SHIPPING_LINES]},
+    {options: {expansions: {colonies: true}}, generation: 2, fields: {hasSecondTradeFleet: true},
       expected: [BonusCardName.SHIPPING_LINES, BonusCardName.EXTENDED_SHIPPING_LINES]},
   ]) {
     it("adds the expansions' cards to the next action deck: " + JSON.stringify(run), () => {
@@ -127,7 +126,7 @@ describe('MarsBotActionDeck', () => {
     {skipDiscard: true, expected: {projectCards: 4, discarded: 0}},
   ]) {
     it('builds the next action deck from the drafted cards, less one: ' + JSON.stringify(run), () => {
-      const {game, deck} = setup({turmoilExtension: true});
+      const {game, deck} = setup({expansions: {turmoil: true}});
       const discarded = game.projectDeck.discardPile.length;
 
       deck.buildResearchFromDraft([new Mine(), new Algae(), new Asteroid(), new Mine()], run.skipDiscard);

@@ -154,7 +154,7 @@ export class MarsBotScoring {
    * The rulebook doesn't score them; it is the designer's intent (TDaver, BGG 3408751, 3373832).
    */
   private calculateLeftoverResourcesVP(): number {
-    if (!this.marsBot.game.gameOptions.automaColonyVP || !this.marsBot.game.gameOptions.coloniesExtension) {
+    if (!this.marsBot.game.gameOptions.automaColonyVP || !this.marsBot.game.gameOptions.expansions.colonies) {
       return 0;
     }
     return Math.floor((sum(Array.from(this.marsBot.shippingBoard.storage.values())) + this.marsBot.floaters) / 2);
@@ -162,7 +162,7 @@ export class MarsBotScoring {
 
   /** Scores 1 VP for each Party Leader or Chairman position MarsBot holds (rulebook C, p.7). */
   private calculateTurmoilVP(): number {
-    if (!this.marsBot.game.gameOptions.turmoilExtension || this.marsBot.game.turmoil === undefined) {
+    if (!this.marsBot.game.gameOptions.expansions.turmoil || this.marsBot.game.turmoil === undefined) {
       return 0;
     }
     return Turmoil.getTurmoil(this.marsBot.game).getVictoryPoints(this.marsBot.player);
@@ -191,12 +191,12 @@ export function getMcPerVP(generation: number, preludeExtension: boolean, boardN
  */
 export function currentMcPerVP(game: IGame): number | undefined {
   const opts = game.gameOptions;
-  const maxGeneration = getAutomaMaxGeneration(opts.preludeExtension, opts.boardName);
+  const maxGeneration = getAutomaMaxGeneration(opts.expansions.prelude, opts.boardName);
   let generation = game.generation;
   if (opts.automaNoGenerationLimit) {
     generation = Math.min(generation, maxGeneration - 1);
   } else if (generation >= maxGeneration) {
     return undefined;
   }
-  return getMcPerVP(generation, opts.preludeExtension, opts.boardName);
+  return getMcPerVP(generation, opts.expansions.prelude, opts.boardName);
 }

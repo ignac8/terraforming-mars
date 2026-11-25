@@ -745,7 +745,7 @@ function createVenusAutomaGame(difficulty: 'normal' | 'hard' = 'normal'): {game:
     automa: true,
     automaDifficulty: difficulty,
     boardName: BoardName.THARSIS,
-    venusNextExtension: true,
+    expansions: {venus: true},
   });
   expect(game.automaHooks?.marsBot).to.not.be.undefined;
   return {game, human, marsBot: game.automaHooks!.marsBot};
@@ -759,7 +759,7 @@ describe('MarsBotVenusNext', () => {
 
   it('Venus game keeps Venus enabled', () => {
     const {game} = createVenusAutomaGame();
-    expect(game.gameOptions.venusNextExtension).to.be.true;
+    expect(game.gameOptions.expansions.venus).to.be.true;
   });
 
   it('Venus game disables solar phase', () => {
@@ -917,7 +917,7 @@ describe('MarsBotVenusNext', () => {
       automa: true,
       automaDifficulty: 'brutal',
       boardName: BoardName.THARSIS,
-      venusNextExtension: true,
+      expansions: {venus: true},
     });
     const marsBot = game.automaHooks!.marsBot;
     marsBot.floaters = 15;
@@ -935,7 +935,7 @@ describe('MarsBotVenusNext', () => {
       automa: true,
       automaDifficulty: 'brutal',
       boardName: BoardName.THARSIS,
-      venusNextExtension: true,
+      expansions: {venus: true},
     });
     const marsBot = game.automaHooks!.marsBot;
     // Brutal uses skipDiscard=true, keeps all 4 cards

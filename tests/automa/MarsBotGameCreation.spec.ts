@@ -13,19 +13,19 @@ describe('MarsBotGameCreation', () => {
     it('automa game keeps Venus Next on', () => {
       const [game] = testGame(1, {
         automa: true,
-        venusNextExtension: true,
+        expansions: {venus: true},
         boardName: BoardName.THARSIS,
       });
-      expect(game.gameOptions.venusNextExtension).to.be.true;
+      expect(game.gameOptions.expansions.venus).to.be.true;
     });
 
     it('automa game supports Colonies', () => {
       const [game] = testGame(1, {
         automa: true,
-        coloniesExtension: true,
+        expansions: {colonies: true},
         boardName: BoardName.THARSIS,
       });
-      expect(game.gameOptions.coloniesExtension).to.be.true;
+      expect(game.gameOptions.expansions.colonies).to.be.true;
       // 2-player setup = 5 colonies active (rulebook C, p.4)
       expect(game.colonies.length).to.eq(5);
     });
@@ -34,7 +34,7 @@ describe('MarsBotGameCreation', () => {
       const customColoniesList = [ColonyName.TITAN, ColonyName.ENCELADUS, ColonyName.MIRANDA, ColonyName.LUNA, ColonyName.CERES];
       const [game] = testGame(1, {
         automa: true,
-        coloniesExtension: true,
+        expansions: {colonies: true},
         customColoniesList,
         boardName: BoardName.THARSIS,
       });
@@ -47,7 +47,7 @@ describe('MarsBotGameCreation', () => {
 
     it('leaves Titan, Enceladus and Miranda inactive outside automa games', () => {
       const customColoniesList = [ColonyName.TITAN, ColonyName.ENCELADUS, ColonyName.MIRANDA, ColonyName.LUNA, ColonyName.CERES];
-      const [game] = testGame(2, {coloniesExtension: true, customColoniesList});
+      const [game] = testGame(2, {expansions: {colonies: true}, customColoniesList});
 
       const inactive = game.colonies.filter((c) => !c.isActive).map((c) => c.name);
       expect(inactive).to.have.members([ColonyName.TITAN, ColonyName.ENCELADUS, ColonyName.MIRANDA]);
@@ -56,19 +56,19 @@ describe('MarsBotGameCreation', () => {
     it('automa game supports Turmoil', () => {
       const [game] = testGame(1, {
         automa: true,
-        turmoilExtension: true,
+        expansions: {turmoil: true},
         boardName: BoardName.THARSIS,
       });
-      expect(game.gameOptions.turmoilExtension).to.be.true;
+      expect(game.gameOptions.expansions.turmoil).to.be.true;
     });
 
     it('automa game forces Ares off', () => {
       const [game] = testGame(1, {
         automa: true,
-        aresExtension: true,
+        expansions: {ares: true},
         boardName: BoardName.THARSIS,
       });
-      expect(game.gameOptions.aresExtension).to.be.false;
+      expect(game.gameOptions.expansions.ares).to.be.false;
     });
 
     // Rulebook A, p.11: "You may not use this corporation against MarsBot."
@@ -80,11 +80,11 @@ describe('MarsBotGameCreation', () => {
       ].map((card) => card.name);
       const [automaGame] = testGame(1, {
         automa: true,
-        promoCardsOption: true,
+        expansions: {promo: true},
         boardName: BoardName.THARSIS,
         skipInitialCardSelection: false,
       });
-      const [game] = testGame(2, {promoCardsOption: true, skipInitialCardSelection: false});
+      const [game] = testGame(2, {expansions: {promo: true}, skipInitialCardSelection: false});
 
       expect(corporations(automaGame)).to.not.include(CardName.MONS_INSURANCE);
       expect(corporations(game)).to.include(CardName.MONS_INSURANCE);
@@ -94,7 +94,7 @@ describe('MarsBotGameCreation', () => {
     it('automa game forces the alternate Venus board off', () => {
       const [game] = testGame(1, {
         automa: true,
-        venusNextExtension: true,
+        expansions: {venus: true},
         altVenusBoard: true,
         boardName: BoardName.THARSIS,
       });
@@ -104,7 +104,7 @@ describe('MarsBotGameCreation', () => {
     it('automa game uses the standard political agendas', () => {
       const [game] = testGame(1, {
         automa: true,
-        turmoilExtension: true,
+        expansions: {turmoil: true},
         politicalAgendasExtension: 'Chairman',
         boardName: BoardName.THARSIS,
       });
@@ -114,74 +114,73 @@ describe('MarsBotGameCreation', () => {
     it('automa game forces Moon off', () => {
       const [game] = testGame(1, {
         automa: true,
-        moonExpansion: true,
+        expansions: {moon: true},
         boardName: BoardName.THARSIS,
       });
-      expect(game.gameOptions.moonExpansion).to.be.false;
+      expect(game.gameOptions.expansions.moon).to.be.false;
     });
 
     it('automa game forces Pathfinders off', () => {
       const [game] = testGame(1, {
         automa: true,
-        pathfindersExpansion: true,
+        expansions: {pathfinders: true},
         boardName: BoardName.THARSIS,
       });
-      expect(game.gameOptions.pathfindersExpansion).to.be.false;
+      expect(game.gameOptions.expansions.pathfinders).to.be.false;
     });
 
     it('automa game forces CEOs off', () => {
       const [game] = testGame(1, {
         automa: true,
-        ceoExtension: true,
+        expansions: {ceo: true},
         boardName: BoardName.THARSIS,
       });
-      expect(game.gameOptions.ceoExtension).to.be.false;
+      expect(game.gameOptions.expansions.ceo).to.be.false;
     });
 
     it('automa game forces Star Wars off', () => {
       const [game] = testGame(1, {
         automa: true,
-        starWarsExpansion: true,
+        expansions: {starwars: true},
         boardName: BoardName.THARSIS,
       });
-      expect(game.gameOptions.starWarsExpansion).to.be.false;
+      expect(game.gameOptions.expansions.starwars).to.be.false;
     });
 
     it('automa game forces Underworld off', () => {
       const [game] = testGame(1, {
         automa: true,
-        underworldExpansion: true,
+        expansions: {underworld: true},
         boardName: BoardName.THARSIS,
       });
-      expect(game.gameOptions.underworldExpansion).to.be.false;
+      expect(game.gameOptions.expansions.underworld).to.be.false;
     });
 
     it('automa game allows Prelude', () => {
       const [game] = testGame(1, {
         automa: true,
-        preludeExtension: true,
+        expansions: {prelude: true},
         boardName: BoardName.THARSIS,
       });
-      expect(game.gameOptions.preludeExtension).to.be.true;
+      expect(game.gameOptions.expansions.prelude).to.be.true;
     });
 
     it('automa game allows Prelude 2', () => {
       const [game] = testGame(1, {
         automa: true,
-        preludeExtension: true,
-        prelude2Expansion: true,
+        expansions: {prelude: true, prelude2: true},
         boardName: BoardName.THARSIS,
       });
-      expect(game.gameOptions.prelude2Expansion).to.be.true;
+      expect(game.gameOptions.expansions.prelude2).to.be.true;
     });
 
     it('automa game allows Promo cards', () => {
       const [game] = testGame(1, {
         automa: true,
-        promoCardsOption: true,
+        expansions: {promo: true},
         boardName: BoardName.THARSIS,
       });
-      expect(game.gameOptions.promoCardsOption).to.be.true;
+      expect(game.gameOptions.expansions.promo).to.be.true;
     });
 
     for (const boardName of MARSBOT_BOARD_NAMES) {

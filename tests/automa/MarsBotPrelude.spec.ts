@@ -14,8 +14,7 @@ function createAutomaGame(opts: {prelude?: boolean, prelude2?: boolean, difficul
     automa: true,
     automaDifficulty: opts.difficulty ?? 'normal',
     boardName: BoardName.THARSIS,
-    preludeExtension: opts.prelude ?? false,
-    prelude2Expansion: opts.prelude2 ?? false,
+    expansions: {prelude: opts.prelude ?? false, prelude2: opts.prelude2 ?? false},
   });
   expect(game.automaHooks?.marsBot).to.not.be.undefined;
   return {game, human, marsBot: game.automaHooks!.marsBot};
@@ -68,8 +67,7 @@ describe('MarsBot Prelude Support', () => {
 
     it('Recession is NOT removed in non-automa games with Prelude 2', () => {
       const [game] = testGame(2, {
-        preludeExtension: true,
-        prelude2Expansion: true,
+        expansions: {prelude: true, prelude2: true},
       });
       const allPreludeCards = [
         ...game.preludeDeck.drawPile,

@@ -153,14 +153,14 @@ export class MarsBot implements IMarsBot {
       this.bonusDeck = new MarsBotBonusDeck([], [], random);
     } else {
       this.bonusDeck = MarsBotBonusDeck.create(random, {
-        venus: opts.venusNextExtension,
-        colonies: opts.coloniesExtension,
+        venus: opts.expansions.venus,
+        colonies: opts.expansions.colonies,
         boardName: opts.boardName,
         modularMA: opts.modularMA,
       });
     }
     // The 2nd Trade Fleet starts on space 9 of the Energy track (rulebook C, p.4), moved up by the map's shift
-    if (opts.coloniesExtension) {
+    if (opts.expansions.colonies) {
       const energyTrackIdx = this.marsBotBoard.tagToTrack[Tag.POWER];
       if (energyTrackIdx !== undefined) {
         this.tradeFleetCubeKey = trackCubeKey(energyTrackIdx, 9 + marsBotMapRules(opts.boardName).tradeFleetCubeShift);
@@ -630,7 +630,7 @@ export class MarsBot implements IMarsBot {
   /** True when MarsBot keeps its floaters in the Titan storage area: Colonies without Venus Next (rulebook C, p.4-5). */
   private usesTitanStorageForFloaters(): boolean {
     const opts = this.game.gameOptions;
-    return opts.coloniesExtension && !opts.venusNextExtension;
+    return opts.expansions.colonies && !opts.expansions.venus;
   }
 
   /** Adds M€ to MarsBot's supply and tells the corp about it (Mining Guild). */
@@ -735,7 +735,7 @@ export class MarsBot implements IMarsBot {
     if (opts.automaNoGenerationLimit) {
       return false;
     }
-    return this.game.generation >= getAutomaMaxGeneration(opts.preludeExtension, opts.boardName);
+    return this.game.generation >= getAutomaMaxGeneration(opts.expansions.prelude, opts.boardName);
   }
 
   // ---- Track Regression (human effects) ----
@@ -792,7 +792,7 @@ export class MarsBot implements IMarsBot {
       model.mcPerVP = mcPerVP;
       model.mcVP = Math.floor(this.megacredits / mcPerVP);
     }
-    if (opts.coloniesExtension && this.shippingBoard.storage.size > 0) {
+    if (opts.expansions.colonies && this.shippingBoard.storage.size > 0) {
       model.shippingBoard = this.shippingBoard.serialize();
     }
     return model;

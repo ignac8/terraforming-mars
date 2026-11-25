@@ -54,7 +54,7 @@ export class MarsBotActionDeck {
    */
   public buildInitial(): void {
     const game = this.marsBot.game;
-    const numProjectCards = (this.marsBot.difficulty === 'brutal' ? 4 : 3) + (game.gameOptions.preludeExtension ? 3 : 0);
+    const numProjectCards = (this.marsBot.difficulty === 'brutal' ? 4 : 3) + (game.gameOptions.expansions.prelude ? 3 : 0);
     const projectCards = game.projectDeck.drawN(game, numProjectCards);
     const bonusCard = this.marsBot.bonusDeck.draw(game);
     const deck: Array<IProjectCard | MarsBotBonusCard> = [...projectCards];
@@ -69,14 +69,14 @@ export class MarsBotActionDeck {
 
   /** Adds Government Intervention (B16) to `deck` when Venus Next is in play. */
   private addGovernmentIntervention(deck: Array<IProjectCard | MarsBotBonusCard>): void {
-    if (this.marsBot.game.gameOptions.venusNextExtension) {
+    if (this.marsBot.game.gameOptions.expansions.venus) {
       deck.push(createBonusCard(BonusCardName.GOVERNMENT_INTERVENTION));
     }
   }
 
   /** Adds Party Politics (B21) to `deck` with Turmoil, unless the corp puts its own card in its place (rulebook C, p.6). */
   private addPartyPolitics(deck: Array<IProjectCard | MarsBotBonusCard>): void {
-    if (!this.marsBot.game.gameOptions.turmoilExtension) {
+    if (!this.marsBot.game.gameOptions.expansions.turmoil) {
       return;
     }
     if (this.marsBot.replacesPartyPolitics) {
@@ -91,7 +91,7 @@ export class MarsBotActionDeck {
    * Extended Shipping Lines (B20) comes with it once the 2nd Trade Fleet is unlocked (rulebook C, p.4 and p.6).
    */
   private addShippingLines(deck: Array<IProjectCard | MarsBotBonusCard>): void {
-    if (!this.marsBot.game.gameOptions.coloniesExtension) {
+    if (!this.marsBot.game.gameOptions.expansions.colonies) {
       return;
     }
     if (this.marsBot.game.generation <= 1) {

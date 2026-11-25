@@ -50,11 +50,11 @@ export class AutomaGameSetup {
    * game would set up, like the delegates and the action deck.
    */
   public static setup(game: IGame, marsBotPlayer: IPlayer, humanPlayer: IPlayer, gameOptions: GameOptions, rng: Random, restoring: boolean): AutomaGameHooks {
-    const boardData = AutomaGameSetup.getBoardData(AutomaGameSetup.marsBotBoardName(gameOptions), gameOptions.venusNextExtension);
+    const boardData = AutomaGameSetup.getBoardData(AutomaGameSetup.marsBotBoardName(gameOptions), gameOptions.expansions.venus);
     // Turmoil reduces MarsBot's starting TR by 10 (rulebook C, p.6) or by 7, the harder variant (rulebook C, p.7),
     // and by one more on Amazonis Planitia.
     const turmoilTRReduction = (gameOptions.automaTurmoilTRReduction ?? 10) + marsBotMapRules(gameOptions.boardName).turmoilTRExtra;
-    const startingTR = gameOptions.turmoilExtension ? MARSBOT_STARTING_TR - turmoilTRReduction : MARSBOT_STARTING_TR;
+    const startingTR = gameOptions.expansions.turmoil ? MARSBOT_STARTING_TR - turmoilTRReduction : MARSBOT_STARTING_TR;
     marsBotPlayer.setTerraformRating(startingTR);
 
     // The overrides intercept resource removal and production decreases.
@@ -77,7 +77,7 @@ export class AutomaGameSetup {
 
     if (!restoring) {
       // MarsBot's 7 delegates go in the reserve (rulebook C, p.6).
-      if (gameOptions.turmoilExtension && game.turmoil !== undefined) {
+      if (gameOptions.expansions.turmoil && game.turmoil !== undefined) {
         game.turmoil.delegateReserve.add(marsBotPlayer, DELEGATES_PER_PLAYER);
         game.log('MarsBot: 7 delegates placed in reserve (Turmoil)');
         // Extra delegates seeded at setup raise the difficulty (rulebook C, p.7).
@@ -98,13 +98,16 @@ export class AutomaGameSetup {
 
   /** Turns off the expansions an automa game doesn't support, changing `gameOptions` in place. */
   public static sanitizeGameOptions(gameOptions: GameOptions): void {
-    gameOptions.aresExtension = false;
-    gameOptions.moonExpansion = false;
-    gameOptions.pathfindersExpansion = false;
-    gameOptions.ceoExtension = false;
-    gameOptions.starWarsExpansion = false;
-    gameOptions.underworldExpansion = false;
-    gameOptions.communityCardsOption = false;
+    gameOptions.expansions = {
+      ...gameOptions.expansions,
+      ares: false,
+      moon: false,
+      pathfinders: false,
+      ceo: false,
+      starwars: false,
+      underworld: false,
+      community: false,
+    };
     gameOptions.solarPhaseOption = false; // The Government Intervention card replaces Venus Solar Phase Step 2.
     // The alternate Venus board's bonuses and the Chairman's agenda choice would ask MarsBot to choose.
     gameOptions.altVenusBoard = false;
@@ -143,10 +146,10 @@ export class AutomaGameSetup {
    */
   public static supportsMilestone(name: MilestoneName, gameOptions: GameOptions): boolean {
     const unsupported: Array<MilestoneName> = [];
-    if (!gameOptions.venusNextExtension) {
+    if (!gameOptions.expansions.venus) {
       unsupported.push('Planetologist', 'Trader', 'Tradesman');
     }
-    if (!gameOptions.turmoilExtension) {
+    if (!gameOptions.expansions.turmoil) {
       unsupported.push('Lobbyist');
     }
     return coveredByAutomaRules(name, milestoneManifest, MODULAR_MILESTONES, gameOptions) && !unsupported.includes(name);
@@ -161,7 +164,7 @@ export class AutomaGameSetup {
    * (`replaceUnsupportedAgainstMarsBot`).
    */
   public static supportsAward(name: AwardName, gameOptions: GameOptions): boolean {
-    if (name === 'Venuphile' && !gameOptions.venusNextExtension) {
+    if (name === 'Venuphile' && !gameOptions.expansions.venus) {
       return false;
     }
     return coveredByAutomaRules(name, awardManifest, MODULAR_AWARDS, gameOptions);
@@ -169,7 +172,7 @@ export class AutomaGameSetup {
 
   /** Filters out the prelude cards not supported against MarsBot (Recession). */
   public static filterPreludeCards<T extends ICard>(cards: Array<T>, gameOptions: GameOptions): Array<T> {
-    if (gameOptions.prelude2Expansion) {
+    if (gameOptions.expansions.prelude2) {
       return cards.filter((c) => c.name !== CardName.RECESSION);
     }
     return cards;
@@ -248,7 +251,7 @@ export class AutomaGameSetup {
    * When triggered (rulebook C, p.6), MarsBot unlocks the 2nd trade fleet and Extended Shipping Lines.
    */
   private static place2ndTradeFleetCube(game: IGame, marsBot: MarsBot): void {
-    if (!game.gameOptions.coloniesExtension || marsBot.tradeFleetCubeKey === undefined) {
+    if (!game.gameOptions.expansions.colonies || marsBot.tradeFleetCubeKey === undefined) {
       return;
     }
     const key = marsBot.tradeFleetCubeKey;

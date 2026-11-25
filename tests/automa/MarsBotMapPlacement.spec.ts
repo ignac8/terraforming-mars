@@ -1,5 +1,5 @@
 import {expect} from 'chai';
-import {testGame} from '../TestGame';
+import {testGame, TestGameOptions} from '../TestGame';
 import {setTemperature} from '../TestingUtils';
 import {IGame} from '../../src/server/IGame';
 import {Space} from '../../src/server/boards/Space';
@@ -14,7 +14,6 @@ import {BoardName} from '../../src/common/boards/BoardName';
 import {SpaceBonus} from '../../src/common/boards/SpaceBonus';
 import {SpaceType} from '../../src/common/boards/SpaceType';
 import {TileType} from '../../src/common/TileType';
-import {GameOptions} from '../../src/server/game/GameOptions';
 import {RandomMAOptionType} from '../../src/common/ma/RandomMAOptionType';
 import {IMilestone} from '../../src/server/milestones/IMilestone';
 import {IAward} from '../../src/server/awards/IAward';
@@ -35,7 +34,7 @@ type Setup = {
 
 const COSTLY_BONUSES = [SpaceBonus.OCEAN, SpaceBonus.TEMPERATURE_4MC, SpaceBonus.COLONY, SpaceBonus.DELEGATE];
 
-function setup(boardName: BoardName, options: Partial<GameOptions> = {}): Setup {
+function setup(boardName: BoardName, options: Partial<TestGameOptions> = {}): Setup {
   const [game] = testGame(1, {automa: true, automaDifficulty: 'normal', boardName, ...options});
   const marsBot = (game.automaHooks as AutomaGameHooks).marsBot;
   return {game, marsBot, placer: marsBot.turnResolver.tilePlacer};
@@ -293,7 +292,7 @@ describe('MarsBot tile placement tiebreakers by map', () => {
 });
 
 describe('MarsBot tile placement with the Milestones & Awards expansion', () => {
-  const MODULAR: Partial<GameOptions> = {randomMA: RandomMAOptionType.UNLIMITED, modularMA: true};
+  const MODULAR: Partial<TestGameOptions> = {randomMA: RandomMAOptionType.UNLIMITED, modularMA: true};
 
   /**
    * Starts a game on `boardName`, Vastitas Borealis by default, played with the Tharsis aid and with exactly
@@ -477,7 +476,7 @@ describe('MarsBot special placement hexes', () => {
     let s: Setup;
     let msl: Space;
     beforeEach(() => {
-      s = setup(BoardName.TERRA_CIMMERIA_NOVA, {coloniesExtension: true});
+      s = setup(BoardName.TERRA_CIMMERIA_NOVA, {expansions: {colonies: true}});
       s.game.colonies = [new Luna(), new Ceres()];
       s.game.colonies.forEach((colony) => colony.isActive = true);
       msl = s.game.board.spaces.find((sp) => sp.bonus.includes(SpaceBonus.COLONY))!;
@@ -656,7 +655,7 @@ describe('MarsBot special placement hexes', () => {
     }
 
     it('is worth 1 M€ and a reward icon with Turmoil', () => {
-      const s = setup(BoardName.VASTITAS_BOREALIS_NOVA, {turmoilExtension: true});
+      const s = setup(BoardName.VASTITAS_BOREALIS_NOVA, {expansions: {turmoil: true}});
       const space = viking(s.game);
       const other = plainSpaces(s.game).find((sp) => hasIcons(0)(sp) && oceansNextTo(s.game, sp) === oceansNextTo(s.game, space) &&
         nextToVolcano(s.game, sp) === nextToVolcano(s.game, space))!;
@@ -666,7 +665,7 @@ describe('MarsBot special placement hexes', () => {
     });
 
     it('is available with Turmoil when MarsBot has no delegates left in reserve', () => {
-      const s = setup(BoardName.VASTITAS_BOREALIS_NOVA, {turmoilExtension: true});
+      const s = setup(BoardName.VASTITAS_BOREALIS_NOVA, {expansions: {turmoil: true}});
       const space = viking(s.game);
       const reserve = s.game.turmoil!.delegateReserve;
       while (reserve.count(s.marsBot.player) > 0) {

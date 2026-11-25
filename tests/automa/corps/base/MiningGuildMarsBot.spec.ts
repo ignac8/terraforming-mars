@@ -118,8 +118,8 @@ describe('MiningGuildMarsBot', () => {
   // Our reading, like Philares (TDaver, BGG 3513998): nothing advances after the game has ended
   it('stops counting down once the game has ended, after the final production', () => {
     const marsBot = miningGuild(2, 2);
-    const {preludeExtension, boardName} = marsBot.game.gameOptions;
-    marsBot.game.generation = getAutomaMaxGeneration(preludeExtension, boardName);
+    const {expansions, boardName} = marsBot.game.gameOptions;
+    marsBot.game.generation = getAutomaMaxGeneration(expansions.prelude, boardName);
     marsBot.game.phase = Phase.PRODUCTION;
     expect(marsBot.game.isDoneWithFinalProduction()).is.true;
     const mc = marsBot.megacredits;

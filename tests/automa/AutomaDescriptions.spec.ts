@@ -7,7 +7,7 @@ import {BoardName} from '../../src/common/boards/BoardName';
 import {AwardName} from '../../src/common/ma/AwardName';
 import {MilestoneName} from '../../src/common/ma/MilestoneName';
 
-const OPTIONS = {venusNextExtension: true, turmoilExtension: true} as GameOptions;
+const OPTIONS = {expansions: {venus: true, turmoil: true}} as GameOptions;
 const AMAZONIS_OPTIONS = {...OPTIONS, boardName: BoardName.AMAZONIS_PLANITIA, modularMA: false} as GameOptions;
 
 function supportedMilestones(options: GameOptions): Array<MilestoneName> {

@@ -240,14 +240,14 @@ export class MarsBotTurnResolver {
       return;
 
     case 'venus':
-      if (!this.marsBot.game.gameOptions.venusNextExtension) {
+      if (!this.marsBot.game.gameOptions.expansions.venus) {
         return;
       }
       this.raiseVenus(1);
       return;
 
     case 'venus2':
-      if (!this.marsBot.game.gameOptions.venusNextExtension) {
+      if (!this.marsBot.game.gameOptions.expansions.venus) {
         return;
       }
       this.raiseVenus(2);
@@ -344,10 +344,10 @@ export class MarsBotTurnResolver {
    * storage, where `addFloaters` puts them then. Otherwise they are ignored (rulebook C, p.4; Nick, BGG 3341542).
    */
   public gainFloaters(count: number): void {
-    if (this.marsBot.game.gameOptions.venusNextExtension) {
+    if (this.marsBot.game.gameOptions.expansions.venus) {
       this.marsBot.addFloaters(count);
       this.marsBot.game.log('MarsBot gains ${0} floater(s)', (b) => b.number(count));
-    } else if (this.marsBot.game.gameOptions.coloniesExtension && this.marsBot.game.colonies.some((colony) => colony.name === ColonyName.TITAN)) {
+    } else if (this.marsBot.game.gameOptions.expansions.colonies && this.marsBot.game.colonies.some((colony) => colony.name === ColonyName.TITAN)) {
       this.marsBot.addFloaters(count);
       this.marsBot.game.log('MarsBot gains ${0} floater token(s) in Titan storage', (b) => b.number(count));
     }
@@ -360,7 +360,7 @@ export class MarsBotTurnResolver {
    * Ignored without Colonies.
    */
   public placeColony(): void {
-    if (!this.marsBot.game.gameOptions.coloniesExtension) {
+    if (!this.marsBot.game.gameOptions.expansions.colonies) {
       return;
     }
     if (!this.marsBot.maybePlaceRandomColony()) {

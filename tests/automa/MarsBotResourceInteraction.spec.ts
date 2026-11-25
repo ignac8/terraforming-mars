@@ -283,7 +283,7 @@ describe('MarsBot Resource Interaction (rules page 4-5)', () => {
       it(name, () => {
         const [game, human] = testGame(1, {
           automa: true, automaDifficulty: 'normal', boardName: BoardName.THARSIS,
-          venusNextExtension: true, coloniesExtension: true, turmoilExtension: true, promoCardsOption: true, prelude2Expansion: true,
+          expansions: {venus: true, colonies: true, turmoil: true, promo: true, prelude2: true},
         });
         const marsBot = game.automaHooks!.marsBot;
         marsBot.megacredits = 20;

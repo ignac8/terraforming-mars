@@ -32,8 +32,11 @@ function goalNeeds(supported: (options: GameOptions) => boolean): ReadonlyArray<
 function gameWith(present: ReadonlyArray<MarsBotGoalNeed>): GameOptions {
   return {
     ...DEFAULT_GAME_OPTIONS,
-    venusNextExtension: present.includes('venus'),
-    turmoilExtension: present.includes('turmoil'),
+    expansions: {
+      ...DEFAULT_GAME_OPTIONS.expansions,
+      venus: present.includes('venus'),
+      turmoil: present.includes('turmoil'),
+    },
     boardName: present.includes('amazonisPlanitia') ? BoardName.AMAZONIS_PLANITIA : BoardName.THARSIS,
     modularMA: false,
   };

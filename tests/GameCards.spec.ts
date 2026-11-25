@@ -12,7 +12,7 @@ describe('GameCards', () => {
     // include corporate era
     const gameOptions: GameOptions = {
       ...DEFAULT_GAME_OPTIONS,
-      aresExtension: true,
+      expansions: {...DEFAULT_GAME_OPTIONS.expansions, ares: true},
     };
     const names = new GameCards(gameOptions).getProjectCards().map(toName);
     expect(names).to.contain(CardName.SOLAR_FARM);
@@ -22,7 +22,7 @@ describe('GameCards', () => {
   it('keeps the cards the Big Box promos replace when keepReplacedCards is on', () => {
     const gameOptions: GameOptions = {
       ...DEFAULT_GAME_OPTIONS,
-      promoCardsOption: true,
+      expansions: {...DEFAULT_GAME_OPTIONS.expansions, promo: true},
     };
     const replaced = [CardName.DEIMOS_DOWN, CardName.GREAT_DAM, CardName.MAGNETIC_FIELD_GENERATORS];
     const replacements = [CardName.DEIMOS_DOWN_PROMO, CardName.GREAT_DAM_PROMO, CardName.MAGNETIC_FIELD_GENERATORS_PROMO];
@@ -39,8 +39,7 @@ describe('GameCards', () => {
   it('keepReplacedCards does not keep cards a fan module replaces', () => {
     const gameOptions: GameOptions = {
       ...DEFAULT_GAME_OPTIONS,
-      promoCardsOption: true,
-      aresExtension: true,
+      expansions: {...DEFAULT_GAME_OPTIONS.expansions, promo: true, ares: true},
       keepReplacedCards: true,
     };
     const names = new GameCards(gameOptions).getProjectCards().map(toName);
@@ -56,13 +55,13 @@ describe('GameCards', () => {
     // include corporate era
     const gameOptions: GameOptions = {
       ...DEFAULT_GAME_OPTIONS,
-      corporateEra: true,
+      expansions: {...DEFAULT_GAME_OPTIONS.expansions, corpera: true},
     };
     expect(new GameCards(gameOptions).getProjectCards().length)
       .to.eq(208);
 
     // exclude corporate era
-    gameOptions.corporateEra = false;
+    gameOptions.expansions.corpera = false;
     expect(new GameCards(gameOptions).getProjectCards().length)
       .to.eq(137);
   });
@@ -70,9 +69,7 @@ describe('GameCards', () => {
   it('excludes expansion-specific preludes if those expansions are not selected ', () => {
     const gameOptions: GameOptions = {
       ...DEFAULT_GAME_OPTIONS,
-      corporateEra: true,
-      communityCardsOption: true,
-      aresExtension: false,
+      expansions: {...DEFAULT_GAME_OPTIONS.expansions, corpera: true, community: true, ares: false},
     };
 
     const preludeDeck = new GameCards(gameOptions).getPreludeCards();
@@ -87,8 +84,7 @@ describe('GameCards', () => {
   it('correctly removes the Merger prelude card if twoCorpsVariant is being used ', () => {
     const gameOptions: GameOptions = {
       ...DEFAULT_GAME_OPTIONS,
-      corporateEra: true,
-      preludeExtension: true,
+      expansions: {...DEFAULT_GAME_OPTIONS.expansions, corpera: true, prelude: true},
       twoCorpsVariant: true,
     };
 
@@ -99,10 +95,7 @@ describe('GameCards', () => {
   it('CEOs: Includes/Excludes specific CEOs if those expansions are/are not selected ', () => {
     const gameOptions: GameOptions = {
       ...DEFAULT_GAME_OPTIONS,
-      ceoExtension: true,
-      corporateEra: true,
-      preludeExtension: true,
-      moonExpansion: false,
+      expansions: {...DEFAULT_GAME_OPTIONS.expansions, ceo: true, corpera: true, prelude: true, moon: false},
     };
     const ceoNames = new GameCards(gameOptions).getCeoCards().map(toName);
     expect(ceoNames).to.contain(CardName.FLOYD); // Yes generic CEO
@@ -113,7 +106,7 @@ describe('GameCards', () => {
   it('correctly removes banned cards', () => {
     const gameOptions: GameOptions = {
       ...DEFAULT_GAME_OPTIONS,
-      corporateEra: true,
+      expansions: {...DEFAULT_GAME_OPTIONS.expansions, corpera: true},
       bannedCards: [CardName.SOLAR_WIND_POWER],
     };
     const names = new GameCards(gameOptions).getProjectCards().map(toName);
@@ -123,7 +116,7 @@ describe('GameCards', () => {
   it('correctly includes the included cards', () => {
     const gameOptions: GameOptions = {
       ...DEFAULT_GAME_OPTIONS,
-      corporateEra: true,
+      expansions: {...DEFAULT_GAME_OPTIONS.expansions, corpera: true},
       includedCards: [CardName.VENUSIAN_INSECTS],
     };
     const names = new GameCards(gameOptions).getProjectCards().map(toName);
@@ -133,7 +126,7 @@ describe('GameCards', () => {
   it('should not include the included cards in the standard projects', () => {
     const gameOptions: GameOptions = {
       ...DEFAULT_GAME_OPTIONS,
-      corporateEra: true,
+      expansions: {...DEFAULT_GAME_OPTIONS.expansions, corpera: true},
       includedCards: [CardName.VENUSIAN_INSECTS],
     };
     const names = new GameCards(gameOptions).getStandardProjects().map(toName);
@@ -143,7 +136,7 @@ describe('GameCards', () => {
   it('should not include the included cards in the preludes', () => {
     const gameOptions: GameOptions = {
       ...DEFAULT_GAME_OPTIONS,
-      corporateEra: true,
+      expansions: {...DEFAULT_GAME_OPTIONS.expansions, corpera: true},
       includedCards: [CardName.VENUSIAN_INSECTS],
     };
     const names = new GameCards(gameOptions).getPreludeCards().map(toName);
@@ -153,7 +146,7 @@ describe('GameCards', () => {
   it('should not include the included cards in the corporation cards', () => {
     const gameOptions: GameOptions = {
       ...DEFAULT_GAME_OPTIONS,
-      corporateEra: true,
+      expansions: {...DEFAULT_GAME_OPTIONS.expansions, corpera: true},
       includedCards: [CardName.VENUSIAN_INSECTS],
     };
     const names = new GameCards(gameOptions).getCorporationCards().map(toName);
@@ -163,7 +156,7 @@ describe('GameCards', () => {
   it('should not include corporation cards in the included cards', () => {
     const gameOptions: GameOptions = {
       ...DEFAULT_GAME_OPTIONS,
-      corporateEra: true,
+      expansions: {...DEFAULT_GAME_OPTIONS.expansions, corpera: true},
       includedCards: [CardName.POINT_LUNA],
     };
     const names = new GameCards(gameOptions).getProjectCards().map(toName);
@@ -173,7 +166,7 @@ describe('GameCards', () => {
   it('should not include prelude cards in the included cards', () => {
     const gameOptions: GameOptions = {
       ...DEFAULT_GAME_OPTIONS,
-      corporateEra: true,
+      expansions: {...DEFAULT_GAME_OPTIONS.expansions, corpera: true},
       includedCards: [CardName.DONATION],
     };
     const names = new GameCards(gameOptions).getProjectCards().map(toName);
@@ -183,7 +176,7 @@ describe('GameCards', () => {
   it('should not include standard projects in the included cards', () => {
     const gameOptions: GameOptions = {
       ...DEFAULT_GAME_OPTIONS,
-      corporateEra: true,
+      expansions: {...DEFAULT_GAME_OPTIONS.expansions, corpera: true},
       includedCards: [CardName.GREENERY_STANDARD_PROJECT],
     };
     expect(() => new GameCards(gameOptions).getProjectCards()).to.throw('Card [Greenery] not found');
@@ -206,7 +199,7 @@ describe('GameCards', () => {
   it('customCorporationsList restricts the corporation deck to only those corps', () => {
     const gameOptions: GameOptions = {
       ...DEFAULT_GAME_OPTIONS,
-      corporateEra: true,
+      expansions: {...DEFAULT_GAME_OPTIONS.expansions, corpera: true},
       customCorporationsList: [CardName.INVENTRIX, CardName.HELION, CardName.THARSIS_REPUBLIC],
     };
     const names = new GameCards(gameOptions).getCorporationCards().map(toName);
@@ -217,7 +210,7 @@ describe('GameCards', () => {
   it('customCorporationsList accepts an old card name on its own', () => {
     const gameOptions: GameOptions = {
       ...DEFAULT_GAME_OPTIONS,
-      corporateEra: true,
+      expansions: {...DEFAULT_GAME_OPTIONS.expansions, corpera: true},
       customCorporationsList: ['Thorgate' as CardName, CardName.HELION],
     };
     const names = new GameCards(gameOptions).getCorporationCards().map(toName);
@@ -228,8 +221,7 @@ describe('GameCards', () => {
   it('customCorporationsList includes corps from disabled expansions', () => {
     const gameOptions: GameOptions = {
       ...DEFAULT_GAME_OPTIONS,
-      corporateEra: true,
-      moonExpansion: false,
+      expansions: {...DEFAULT_GAME_OPTIONS.expansions, corpera: true, moon: false},
       customCorporationsList: [CardName.INVENTRIX, CardName.LUNA_TRADE_FEDERATION],
     };
     const names = new GameCards(gameOptions).getCorporationCards().map(toName);
@@ -240,7 +232,7 @@ describe('GameCards', () => {
   it('customPreludes restricts the prelude deck to only those preludes', () => {
     const gameOptions: GameOptions = {
       ...DEFAULT_GAME_OPTIONS,
-      preludeExtension: true,
+      expansions: {...DEFAULT_GAME_OPTIONS.expansions, prelude: true},
       customPreludes: [CardName.ALLIED_BANK, CardName.AQUIFER_TURBINES],
     };
     const names = new GameCards(gameOptions).getPreludeCards().map(toName);
@@ -251,12 +243,21 @@ describe('GameCards', () => {
   it('customCeos restricts the CEO deck to only those CEOs', () => {
     const gameOptions: GameOptions = {
       ...DEFAULT_GAME_OPTIONS,
-      ceoExtension: true,
+      expansions: {...DEFAULT_GAME_OPTIONS.expansions, ceo: true},
       customCeos: [CardName.FLOYD, CardName.HAL9000],
     };
     const names = new GameCards(gameOptions).getCeoCards().map(toName);
     expect(names).to.have.members([CardName.FLOYD, CardName.HAL9000]);
     expect(names).to.have.length(2);
+  });
+
+  it('keeps Delta Project out of the prelude deck', () => {
+    const gameOptions: GameOptions = {
+      ...DEFAULT_GAME_OPTIONS,
+      expansions: {...DEFAULT_GAME_OPTIONS.expansions, prelude: true, deltaProject: true},
+    };
+    const names = new GameCards(gameOptions).getPreludeCards().map(toName);
+    expect(names).to.not.contain(CardName.DELTA_PROJECT);
   });
 });
 

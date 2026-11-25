@@ -39,8 +39,7 @@ describe('marsBotGoalNeeds', () => {
         const run = {venus, turmoil, board};
         const options: GameOptions = {
           ...DEFAULT_GAME_OPTIONS,
-          venusNextExtension: venus,
-          turmoilExtension: turmoil,
+          expansions: {...DEFAULT_GAME_OPTIONS.expansions, venus, turmoil},
           boardName: board,
           modularMA: false,
         };

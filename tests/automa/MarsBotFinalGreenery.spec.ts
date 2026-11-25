@@ -1,5 +1,5 @@
 import {expect} from 'chai';
-import {testGame} from '../TestGame';
+import {testGame, TestGameOptions} from '../TestGame';
 import {IGame} from '../../src/server/IGame';
 import {MarsBot} from '../../src/server/automa/MarsBot';
 import {Luna} from '../../src/server/colonies/Luna';
@@ -9,7 +9,6 @@ import {BoardName} from '../../src/common/boards/BoardName';
 import {SpaceBonus} from '../../src/common/boards/SpaceBonus';
 import {Phase} from '../../src/common/Phase';
 import {FAILED_ACTION_MC, getAutomaMaxGeneration} from '../../src/common/automa/AutomaTypes';
-import {GameOptions} from '../../src/server/game/GameOptions';
 import {CardName} from '../../src/common/cards/CardName';
 import {getMarsBotCorp} from '../../src/server/automa/corps/MarsBotCorpRegistry';
 import {MAX_TEMPERATURE} from '../../src/common/constants';
@@ -19,14 +18,14 @@ import {Space} from '../../src/server/boards/Space';
 // Once the game is decided, the final greeneries are only worth their VP: the special hexes give
 // nothing, and nothing overflows on the Shipping Board.
 describe('MarsBot final greenery', () => {
-  function setup(boardName: BoardName, options: Partial<GameOptions> = {}): {game: IGame, marsBot: MarsBot} {
+  function setup(boardName: BoardName, options: Partial<TestGameOptions> = {}): {game: IGame, marsBot: MarsBot} {
     const [game] = testGame(1, {automa: true, automaDifficulty: 'normal', boardName, ...options});
     return {game, marsBot: game.automaHooks!.marsBot};
   }
 
   /** The state placeFinalGreeneries runs in: the last generation's production phase. */
   function endGame(game: IGame): void {
-    game.generation = getAutomaMaxGeneration(game.gameOptions.preludeExtension, game.gameOptions.boardName);
+    game.generation = getAutomaMaxGeneration(game.gameOptions.expansions.prelude, game.gameOptions.boardName);
     game.phase = Phase.PRODUCTION;
     expect(game.isDoneWithFinalProduction()).is.true;
   }
@@ -62,7 +61,7 @@ describe('MarsBot final greenery', () => {
     let game: IGame;
     let marsBot: MarsBot;
     beforeEach(() => {
-      ({game, marsBot} = setup(BoardName.TERRA_CIMMERIA_NOVA, {coloniesExtension: true}));
+      ({game, marsBot} = setup(BoardName.TERRA_CIMMERIA_NOVA, {expansions: {colonies: true}}));
       game.colonies = [new Luna(), new Ceres()];
       game.colonies.forEach((colony) => colony.isActive = true);
     });
@@ -134,7 +133,7 @@ describe('MarsBot final greenery', () => {
     // Tharsis Earth track: #12 is a greenery icon
     const EARTH = 5;
 
-    function finalGreenery(corp: CardName | undefined, options: Partial<GameOptions> = {}) {
+    function finalGreenery(corp: CardName | undefined, options: Partial<TestGameOptions> = {}) {
       const {game, marsBot} = setup(BoardName.THARSIS, options);
       if (corp !== undefined) {
         marsBot.setCorpAndSetup(getMarsBotCorp(corp)!);
@@ -204,7 +203,7 @@ describe('MarsBot final greenery', () => {
     const EVENT = 2;
 
     /** Every tracker at 0, so only `trackIndex` at `position` has a final greenery ahead (Tharsis). */
-    function finalGreeneryOn(corp: CardName, trackIndex: number, position: number, options: Partial<GameOptions> = {}) {
+    function finalGreeneryOn(corp: CardName, trackIndex: number, position: number, options: Partial<TestGameOptions> = {}) {
       const {game, marsBot} = setup(BoardName.THARSIS, options);
       marsBot.setCorpAndSetup(getMarsBotCorp(corp)!);
       marsBot.marsBotBoard.tracks.forEach((track) => track.position = 0);
@@ -238,7 +237,7 @@ describe('MarsBot final greenery', () => {
 
     for (const position of [2, 5]) {
       it(`Aridor's black cube at plant #${position + 1} does not advance the event track`, () => {
-        const {game, marsBot, tracks, tr} = finalGreeneryOn(CardName.ARIDOR, PLANT, position, {coloniesExtension: true});
+        const {game, marsBot, tracks, tr} = finalGreeneryOn(CardName.ARIDOR, PLANT, position, {expansions: {colonies: true}});
         const expected = tracks();
         expected[PLANT] = position + 1;
 
