@@ -21,9 +21,10 @@ export const GAME_MODULES = [
   'base',
   ...EXPANSIONS,
 ] as const;
-export type GameModule = typeof GAME_MODULES[number];
 
-export type Expansion = Exclude<GameModule, 'base'>;
+export type GameModule = typeof GAME_MODULES[number];
+export type Expansion = typeof EXPANSIONS[number];
+export type Expansions = Record<Expansion, boolean>;
 
 export const MODULE_NAMES = {
   base: 'Base',
@@ -43,7 +44,7 @@ export const MODULE_NAMES = {
   underworld: 'Underworld',
   deltaProject: 'Delta Project',
   tournament: 'Tournament',
-} satisfies Record<GameModule, string>;
+} as const satisfies Record<GameModule, string>;
 
 export const DEFAULT_EXPANSIONS = {
   corpera: true,
@@ -62,4 +63,4 @@ export const DEFAULT_EXPANSIONS = {
   underworld: false,
   deltaProject: false,
   tournament: false,
-} satisfies Record<Expansion, boolean>;
+} as const satisfies Expansions;

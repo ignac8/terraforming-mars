@@ -31,7 +31,7 @@ describe('ManutechTournament', () => {
   // Corporations are played at setup, where every player resolves their own choices at once. The
   // city goes on the shared board, so a second owner places only after the first has.
   it('A second owner places their city only after the first has', () => {
-    const [game, p1, p2] = testGame(2, {tournamentExpansion: true});
+    const [game, p1, p2] = testGame(2, {expansions: {tournament: true}});
     game.phase = Phase.RESEARCH;
 
     p1.playCorporationCard(new ManutechTournament());

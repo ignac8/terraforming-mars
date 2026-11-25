@@ -42,6 +42,7 @@ import {Timer} from '../src/common/Timer';
 import {FakeClock} from './common/FakeClock';
 import {InMemoryDatabase} from './testing/InMemoryDatabase';
 import {restoreTestDatabase, setTestDatabase} from './testing/setup';
+import {DEFAULT_EXPANSIONS} from '@/common/cards/GameModule';
 
 function playerWithRunningTimer(): [Player, FakeClock] {
   const player = new Player('blue', 'blue', false, 0, 'p-blue');
@@ -517,7 +518,7 @@ describe('Player', () => {
   it('Turmoil player action', () => {
     const player = TestPlayer.BLUE.newPlayer();
 
-    const game = Game.newInstance('gameid', [player], player, 'spectatorid', {turmoilExtension: true});
+    const game = Game.newInstance('gameid', [player], player, 'spectatorid', {expansions: {...DEFAULT_EXPANSIONS, turmoil: true}});
 
     const turmoil = game.turmoil!;
 

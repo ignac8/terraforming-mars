@@ -178,19 +178,14 @@ export class ApiCreateGame extends Handler {
 
       const gameOptions: GameOptions = {
         altVenusBoard: gameReq.altVenusBoard,
-        aresExtension: gameReq.expansions.ares,
         aresHazards: true, // Not a runtime option.
         aresExtremeVariant: gameReq.aresExtremeVariant,
         automa: false, // No create-game UI yet.
         bannedCards: gameReq.bannedCards,
         boardName: boardName,
-        ceoExtension: gameReq.expansions.ceo,
         clonedGamedId: gameReq.clonedGamedId,
-        coloniesExtension: gameReq.expansions.colonies,
-        communityCardsOption: gameReq.expansions.community,
         expansions: gameReq.expansions,
         ceosDraftVariant: gameReq.ceosDraftVariant,
-        corporateEra: gameReq.expansions.corpera,
         customCeos: gameReq.customCeos,
         customColoniesList: gameReq.customColoniesList,
         customCorporationsList: gameReq.customCorporationsList,
@@ -203,15 +198,10 @@ export class ApiCreateGame extends Handler {
         includeFanMA: gameReq.includeFanMA,
         initialDraftVariant: gameReq.initialDraft,
         modularMA: gameReq.modularMA,
-        moonExpansion: gameReq.expansions.moon,
         moonStandardProjectVariant: gameReq.moonStandardProjectVariant,
         moonStandardProjectVariant1: gameReq.moonStandardProjectVariant1,
-        pathfindersExpansion: gameReq.expansions.pathfinders,
         politicalAgendasExtension: gameReq.politicalAgendasExtension,
-        prelude2Expansion: gameReq.expansions.prelude2,
         preludeDraftVariant: gameReq.preludeDraftVariant,
-        preludeExtension: gameReq.expansions.prelude,
-        promoCardsOption: gameReq.expansions.promo,
         randomMA: gameReq.randomMA,
         removeNegativeGlobalEventsOption: gameReq.removeNegativeGlobalEventsOption,
         requiresMoonTrackCompletion: gameReq.requiresMoonTrackCompletion,
@@ -228,20 +218,14 @@ export class ApiCreateGame extends Handler {
         startingCeos: gameReq.startingCeos,
         startingCorporations: gameReq.startingCorporations,
         startingPreludes: gameReq.startingPreludes,
-        starWarsExpansion: gameReq.expansions.starwars,
-        turmoilExtension: gameReq.expansions.turmoil,
         twoCorpsVariant: gameReq.twoCorpsVariant,
-        underworldExpansion: gameReq.expansions.underworld,
-        deltaProjectExpansion: gameReq.expansions.deltaProject,
-        tournamentExpansion: tournament,
         judgeLink,
         // A judge can always rewind and freeze.
         judgeUndo: judgeLink,
         undoOption: gameReq.undoOption,
-        venusNextExtension: gameReq.expansions.venus,
       };
 
-      if (gameOptions.tournamentExpansion) {
+      if (gameOptions.expansions.tournament) {
         applyTournamentPreset(gameOptions);
       }
 

@@ -264,7 +264,7 @@ class InitialDraft extends Draft {
   override draw(_player: IPlayer) {
     // Tournament rules: the initial draft is a single pack of 10 cards
     // rather than two packs of 5.
-    const count = this.game.gameOptions.tournamentExpansion ? 10 : 5;
+    const count = this.game.gameOptions.expansions.tournament ? 10 : 5;
     return this.game.projectDeck.drawN(this.game, count, 'bottom');
   }
 
@@ -275,7 +275,7 @@ class InitialDraft extends Draft {
   override passDirection() {
     // Tournament rules: the whole initial draft passes one direction,
     // opposite to the generation-2 research draft.
-    if (this.game.gameOptions.tournamentExpansion) {
+    if (this.game.gameOptions.expansions.tournament) {
       return 'before';
     }
     return this.game.initialDraftIteration === 2 ? 'before' : 'after';
@@ -288,7 +288,7 @@ class InitialDraft extends Draft {
 
     // Tournament rules: all 10 cards were drafted in the first iteration,
     // so there is no second one.
-    if (this.game.gameOptions.tournamentExpansion && this.game.initialDraftIteration === 2) {
+    if (this.game.gameOptions.expansions.tournament && this.game.initialDraftIteration === 2) {
       this.game.initialDraftIteration = 3;
     }
 
@@ -301,9 +301,9 @@ class InitialDraft extends Draft {
         player.dealtProjectCards = player.draftedCards;
         player.draftedCards = [];
       }
-      if (this.game.gameOptions.preludeExtension && this.game.gameOptions.preludeDraftVariant) {
+      if (this.game.gameOptions.expansions.prelude && this.game.gameOptions.preludeDraftVariant) {
         newPreludeDraft(this.game).startDraft();
-      } else if (this.game.gameOptions.ceoExtension && this.game.gameOptions.ceosDraftVariant) {
+      } else if (this.game.gameOptions.expansions.ceo && this.game.gameOptions.ceosDraftVariant) {
         this.game.initialDraftIteration++;
         newCEOsDraft(this.game).startDraft();
       } else {
@@ -340,7 +340,7 @@ class PreludeDraft extends Draft {
       player.dealtPreludeCards = player.draftedCards as Array<IPreludeCard>;
       player.draftedCards = [];
     }
-    if (this.game.gameOptions.ceoExtension && this.game.gameOptions.ceosDraftVariant) {
+    if (this.game.gameOptions.expansions.ceo && this.game.gameOptions.ceosDraftVariant) {
       this.game.draftRound = 1;
       newCEOsDraft(this.game).startDraft();
     } else {

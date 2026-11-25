@@ -378,7 +378,7 @@ describe('draft picks in a replay', () => {
 
   describe('of the initial draft', () => {
     it('finds the cards handed over where the end of the draft put them', async () => {
-      [game, ...players] = testGame(2, {tournamentExpansion: true, initialDraftVariant: true, skipInitialCardSelection: false, judgeLink: true, judgeUndo: true});
+      [game, ...players] = testGame(2, {expansions: {tournament: true}, initialDraftVariant: true, skipInitialCardSelection: false, judgeLink: true, judgeUndo: true});
       // 9 rounds; the last card of each hand passes automatically.
       for (let i = 0; i < 9; i++) {
         round();

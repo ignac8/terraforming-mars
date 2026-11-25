@@ -470,8 +470,22 @@ export class Player implements IPlayer {
     monsInsurance?.payDebt(this, undefined);
   }
 
+  public resolveNeutralPlayerAttack(
+    title: string | Message,
+    options?: {buttonLabel?: string, onAttack?: () => void}): SelectOption | undefined {
+    const attack = () => {
+      options?.onAttack?.();
+      this.resolveInsuranceInSoloGame();
+      return undefined;
+    };
+    if (this.game.monsInsuranceOwner !== this) {
+      return attack();
+    }
+    return new SelectOption(title, options?.buttonLabel).andThen(attack);
+  }
+
   public getColoniesCount() {
-    if (!this.game.gameOptions.coloniesExtension) {
+    if (!this.game.gameOptions.expansions.colonies) {
       return 0;
     }
 
@@ -1625,7 +1639,7 @@ export class Player implements IPlayer {
       .setButtonLabel('Take action');
 
     // Tournament games list milestones further down, just above passing.
-    const claimableMilestones = this.game.gameOptions.tournamentExpansion ? [] : this.claimableMilestones();
+    const claimableMilestones = this.game.gameOptions.expansions.tournament ? [] : this.claimableMilestones();
     if (claimableMilestones.length > 0) {
       const milestoneOption = new OrOptions().setTitle('Claim a milestone');
       milestoneOption.options = claimableMilestones.map(
@@ -1732,7 +1746,7 @@ export class Player implements IPlayer {
     }
 
     // Claim a milestone, in tournament games
-    if (this.game.gameOptions.tournamentExpansion) {
+    if (this.game.gameOptions.expansions.tournament) {
       const milestoneOption = this.tournamentMilestoneOption();
       if (milestoneOption !== undefined) {
         action.options.push(milestoneOption);

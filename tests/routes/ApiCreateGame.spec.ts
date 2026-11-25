@@ -468,7 +468,7 @@ describe('ApiCreateGame', () => {
     expect(res.statusCode).eq(statusCode.ok);
     const model = JSON.parse(res.content) as SimpleGameModel;
     const game = await scaffolding.ctx.gameLoader.getGame(model.id);
-    expect(game!.gameOptions.tournamentExpansion).is.true;
+    expect(game!.gameOptions.expansions.tournament).is.true;
     expect(game!.players.map((p) => p.handicap)).deep.eq([0, 0]);
   });
 

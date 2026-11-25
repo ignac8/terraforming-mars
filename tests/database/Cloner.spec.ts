@@ -6,13 +6,14 @@ import {Player} from '../../src/server/Player';
 import {isJudgeId} from '../../src/common/Types';
 import {Turmoil} from '../../src/server/turmoil/Turmoil';
 import {DELEGATES_PER_PLAYER} from '../../src/common/constants';
+import {DEFAULT_EXPANSIONS} from '@/common/cards/GameModule';
 
 describe('Cloner', () => {
   it('solo game preserved', () => {
     const player = new Player('old-player1', 'yellow', true, 9, 'p-old-player1-id');
     const game = Game.newInstance(
       'g-old-game-id', [player], player, 'spectatorid', {
-        turmoilExtension: true,
+        expansions: {...DEFAULT_EXPANSIONS, turmoil: true},
       }, new SeededRandom(-5179823149812374));
 
     const newPlayer = new Player('new-player1', 'red', false, 3, 'p-new-player1-id');
@@ -108,7 +109,7 @@ describe('Cloner', () => {
     const game = Game.newInstance(
       'g-old-game-id', [player], player, 'spectatorid', {
         automa: true,
-        turmoilExtension: true,
+        expansions: {...DEFAULT_EXPANSIONS, turmoil: true},
       });
 
     const newPlayer = new Player('new-player1', 'red', false, 0, 'p-new-player1-id');

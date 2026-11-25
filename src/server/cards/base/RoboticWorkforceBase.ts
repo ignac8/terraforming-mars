@@ -30,7 +30,7 @@ export abstract class RoboticWorkforceBase extends Card {
 
   protected isCardApplicable(card: ICard, player: IPlayer, canAfford: boolean): boolean {
     // Tournament rules: corporation cards cannot be copied.
-    if (card.type === CardType.CORPORATION && player.game.gameOptions.tournamentExpansion) {
+    if (card.type === CardType.CORPORATION && player.game.gameOptions.expansions.tournament) {
       return false;
     }
 

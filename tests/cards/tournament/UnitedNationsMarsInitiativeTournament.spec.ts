@@ -167,7 +167,7 @@ describe('UnitedNationsMarsInitiativeTournament', () => {
   // owners must not place on the shared board at the same time: the first in turn order places all
   // three tiles, then the next one does.
   it('A second owner places their tiles only after the first has finished', () => {
-    const [game, p1, p2, p3] = testGame(3, {tournamentExpansion: true});
+    const [game, p1, p2, p3] = testGame(3, {expansions: {tournament: true}});
     game.phase = Phase.RESEARCH;
 
     p1.playCorporationCard(new UnitedNationsMarsInitiativeTournament());

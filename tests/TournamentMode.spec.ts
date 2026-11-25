@@ -47,7 +47,7 @@ function claimThroughInput(player: TestPlayer, milestoneName: string) {
 
 describe('TournamentMode', () => {
   it('Deals one shared pool of 5 tournament corporations to every player', () => {
-    const [/* game */, p1, p2, p3, p4] = testGame(4, {tournamentExpansion: true});
+    const [/* game */, p1, p2, p3, p4] = testGame(4, {expansions: {tournament: true}});
 
     const names = (cards: ReadonlyArray<{name: CardName}>) => cards.map(toName).sort();
     expect(p1.dealtCorporationCards).has.length(5);
@@ -60,7 +60,7 @@ describe('TournamentMode', () => {
   });
 
   it('Players get their own instances of the pool', () => {
-    const [/* game */, p1, p2] = testGame(2, {tournamentExpansion: true});
+    const [/* game */, p1, p2] = testGame(2, {expansions: {tournament: true}});
 
     for (const card of p1.dealtCorporationCards) {
       const other = p2.dealtCorporationCards.find((c) => c.name === card.name);
@@ -71,7 +71,7 @@ describe('TournamentMode', () => {
 
   it('customCorporationsList is ignored under tournament rules', () => {
     const [/* game */, p1, p2, p3] = testGame(3, {
-      tournamentExpansion: true,
+      expansions: {tournament: true},
       customCorporationsList: [CardName.TERACTOR_TOURNAMENT, CardName.ECOLINE_TOURNAMENT, CardName.PHOBOLOG],
     });
 
@@ -85,13 +85,13 @@ describe('TournamentMode', () => {
 
   it('A serialized tournament game keeps the undoOption it was created with', () => {
     // There is no load-time migration: running games keep their options.
-    const [game] = testGame(2, {tournamentExpansion: true, undoOption: true});
+    const [game] = testGame(2, {expansions: {tournament: true}, undoOption: true});
 
     expect(Game.deserialize(game.serialize()).gameOptions.undoOption).is.true;
   });
 
   it('Two players may play the same corporation', () => {
-    const [game, p1, p2] = testGame(2, {tournamentExpansion: true});
+    const [game, p1, p2] = testGame(2, {expansions: {tournament: true}});
     const first = new RecyclonTournament();
     const second = new RecyclonTournament();
 
@@ -106,7 +106,7 @@ describe('TournamentMode', () => {
   });
 
   it('Duplicate corporations survive serialization', () => {
-    const [game, p1, p2] = testGame(2, {tournamentExpansion: true});
+    const [game, p1, p2] = testGame(2, {expansions: {tournament: true}});
     const first = new RecyclonTournament();
     const second = new RecyclonTournament();
     p1.playCorporationCard(first);
@@ -125,7 +125,7 @@ describe('TournamentMode', () => {
   });
 
   it('Removes resources from the right duplicate corporation', () => {
-    const [game, remover, a, b] = testGame(3, {tournamentExpansion: true});
+    const [game, remover, a, b] = testGame(3, {expansions: {tournament: true}});
     const cardA = new RecyclonTournament();
     const cardB = new RecyclonTournament();
     a.playCorporationCard(cardA);
@@ -173,7 +173,7 @@ describe('TournamentMode', () => {
   });
 
   it('Robotic Workforce cannot copy corporations in tournament games', () => {
-    const [game, player] = testGame(2, {tournamentExpansion: true});
+    const [game, player] = testGame(2, {expansions: {tournament: true}});
     const roboticWorkforce = new RoboticWorkforce();
     const corporation = new CheungShingMARSTournament();
     player.playedCards.push(corporation);
@@ -192,7 +192,7 @@ describe('TournamentMode', () => {
   });
 
   it('Initial draft is a single pack of 10 cards', () => {
-    const [game, ...players] = testGame(3, {tournamentExpansion: true, initialDraftVariant: true, skipInitialCardSelection: false});
+    const [game, ...players] = testGame(3, {expansions: {tournament: true}, initialDraftVariant: true, skipInitialCardSelection: false});
 
     for (const player of players) {
       expect(cast(player.getWaitingFor(), SelectCard).cards).has.length(10);
@@ -214,7 +214,7 @@ describe('TournamentMode', () => {
   });
 
   it('Initial draft passes one direction under tournament rules', () => {
-    const [tournamentGame] = testGame(3, {tournamentExpansion: true, initialDraftVariant: true, skipInitialCardSelection: false});
+    const [tournamentGame] = testGame(3, {expansions: {tournament: true}, initialDraftVariant: true, skipInitialCardSelection: false});
     const draft = newInitialDraft(tournamentGame);
     expect(draft.passDirection()).to.eq('before');
     tournamentGame.initialDraftIteration = 2;
@@ -230,10 +230,6 @@ describe('TournamentMode', () => {
   it('applyTournamentPreset forces the regulation options', () => {
     const options: GameOptions = {
       ...DEFAULT_GAME_OPTIONS,
-      tournamentExpansion: true,
-      venusNextExtension: true,
-      preludeExtension: true,
-      corporateEra: false,
       draftVariant: false,
       initialDraftVariant: false,
       solarPhaseOption: true,
@@ -248,14 +244,11 @@ describe('TournamentMode', () => {
       customColoniesList: [ColonyName.EUROPA],
       customPreludes: [CardName.DONATION],
       customCeos: [CardName.FLOYD],
-      expansions: {...DEFAULT_GAME_OPTIONS.expansions, venus: true, prelude: true, tournament: true},
+      expansions: {...DEFAULT_GAME_OPTIONS.expansions, corpera: false, venus: true, prelude: true, tournament: true},
     };
 
     applyTournamentPreset(options);
 
-    expect(options.corporateEra).is.true;
-    expect(options.venusNextExtension).is.false;
-    expect(options.preludeExtension).is.false;
     expect(options.expansions.venus).is.false;
     expect(options.expansions.prelude).is.false;
     expect(options.expansions.corpera).is.true;
@@ -285,7 +278,6 @@ describe('TournamentMode', () => {
     };
     const options: GameOptions = {
       ...DEFAULT_GAME_OPTIONS,
-      tournamentExpansion: true,
       escapeVelocity,
       expansions: {...DEFAULT_GAME_OPTIONS.expansions, tournament: true},
     };
@@ -300,18 +292,16 @@ describe('TournamentMode', () => {
     // deliberately left to the game creator. A new key in neither list
     // fails here, so an upstream option cannot slip past the preset.
     const forced = [
-      'altVenusBoard', 'aresExtension', 'aresExtremeVariant', 'automa', 'bannedCards',
-      'ceoExtension', 'ceosDraftVariant', 'coloniesExtension', 'communityCardsOption',
-      'corporateEra', 'customCeos', 'customColoniesList', 'customCorporationsList',
-      'customMA', 'customPreludes', 'deltaProjectExpansion', 'draftVariant', 'expansions',
+      'altVenusBoard', 'aresExtremeVariant', 'automa', 'bannedCards',
+      'ceosDraftVariant', 'customCeos', 'customColoniesList', 'customCorporationsList',
+      'customMA', 'customPreludes', 'draftVariant', 'expansions',
       'fastModeOption', 'includeFanMA', 'includedCards', 'initialDraftVariant',
-      'modularMA', 'moonExpansion', 'moonStandardProjectVariant',
-      'moonStandardProjectVariant1', 'pathfindersExpansion', 'playerPasswords',
-      'politicalAgendasExtension', 'prelude2Expansion', 'preludeDraftVariant',
-      'preludeExtension', 'promoCardsOption', 'randomMA', 'requiresMoonTrackCompletion',
+      'modularMA', 'moonStandardProjectVariant',
+      'moonStandardProjectVariant1', 'playerPasswords',
+      'politicalAgendasExtension', 'preludeDraftVariant',
+      'randomMA', 'requiresMoonTrackCompletion',
       'requiresVenusTrackCompletion', 'showVP', 'shuffleMapOption',
-      'solarPhaseOption', 'starWarsExpansion', 'turmoilExtension', 'twoCorpsVariant',
-      'underworldExpansion', 'venusNextExtension',
+      'solarPhaseOption', 'twoCorpsVariant',
     ];
     const passthrough = [
       'aresHazards', // inert: Ares is forced off
@@ -327,14 +317,13 @@ describe('TournamentMode', () => {
       'startingCeos', // inert: CEOs are forced off
       'startingCorporations', // inert: tournament dealing always uses the pool size
       'startingPreludes', // inert: Prelude is forced off
-      'tournamentExpansion',
       'undoOption', // the creator's choice
     ];
     expect([...forced, ...passthrough].sort()).deep.eq(Object.keys(DEFAULT_GAME_OPTIONS).sort());
   });
 
   it('Offers every unclaimed milestone to a player who cannot claim any', () => {
-    const [game, player] = testGame(2, {tournamentExpansion: true});
+    const [game, player] = testGame(2, {expansions: {tournament: true}});
     player.megaCredits = 0;
 
     const option = milestoneOption(player);
@@ -343,7 +332,7 @@ describe('TournamentMode', () => {
   });
 
   it('Lists the milestone action just above passing', () => {
-    const [/* game */, player] = testGame(2, {tournamentExpansion: true});
+    const [/* game */, player] = testGame(2, {expansions: {tournament: true}});
 
     const titles = cast(player.getActions(), OrOptions).options.map((o) => o.title);
 
@@ -351,7 +340,7 @@ describe('TournamentMode', () => {
   });
 
   it('Never preselects the milestone action', () => {
-    const [/* game */, player] = testGame(2, {tournamentExpansion: true});
+    const [/* game */, player] = testGame(2, {expansions: {tournament: true}});
     player.setTerraformRating(35);
     player.megaCredits = 8;
 
@@ -359,7 +348,7 @@ describe('TournamentMode', () => {
   });
 
   it('Rejects a milestone the player does not qualify for', () => {
-    const [game, player] = testGame(2, {tournamentExpansion: true});
+    const [game, player] = testGame(2, {expansions: {tournament: true}});
     player.setTerraformRating(34);
     player.megaCredits = 20;
 
@@ -372,7 +361,7 @@ describe('TournamentMode', () => {
   });
 
   it('Rejects a milestone the player cannot afford', () => {
-    const [game, player] = testGame(2, {tournamentExpansion: true});
+    const [game, player] = testGame(2, {expansions: {tournament: true}});
     player.setTerraformRating(35);
     player.megaCredits = 7;
 
@@ -385,7 +374,7 @@ describe('TournamentMode', () => {
   });
 
   it('Claims a milestone the player qualifies for and can afford', () => {
-    const [game, player] = testGame(2, {tournamentExpansion: true});
+    const [game, player] = testGame(2, {expansions: {tournament: true}});
     player.setTerraformRating(35);
     player.megaCredits = 8;
 
@@ -398,7 +387,7 @@ describe('TournamentMode', () => {
   });
 
   it('Stops offering milestones once three are claimed', () => {
-    const [game, player, player2] = testGame(2, {tournamentExpansion: true});
+    const [game, player, player2] = testGame(2, {expansions: {tournament: true}});
     for (const milestone of game.milestones.slice(0, 3)) {
       game.claimedMilestones.push({player: player2, milestone});
     }
@@ -407,7 +396,7 @@ describe('TournamentMode', () => {
   });
 
   it('Hides which milestones a player could claim on the board', () => {
-    const [tournamentGame, player] = testGame(2, {tournamentExpansion: true});
+    const [tournamentGame, player] = testGame(2, {expansions: {tournament: true}});
     player.setTerraformRating(35);
     const terraformer = Server.getMilestones(tournamentGame).find((m) => m.name === 'Terraformer');
     expect(terraformer?.scores.find((s) => s.color === player.color)?.claimable).is.false;
@@ -446,7 +435,7 @@ describe('TournamentMode', () => {
     }
 
     it('in the first generation', () => {
-      const [game, p1, p2] = testGame(2, {tournamentExpansion: true, skipInitialCardSelection: false});
+      const [game, p1, p2] = testGame(2, {expansions: {tournament: true}, skipInitialCardSelection: false});
       const discardPileSize = game.projectDeck.discardPile.length;
 
       chooseInitialCards(p1, 3);
@@ -466,7 +455,7 @@ describe('TournamentMode', () => {
     });
 
     it('in later research phases, with the buy log held back', () => {
-      const [game, p1, p2] = testGame(2, {tournamentExpansion: true});
+      const [game, p1, p2] = testGame(2, {expansions: {tournament: true}});
       p1.megaCredits = 20;
       p2.megaCredits = 20;
       game.gotoResearchPhase();
@@ -504,7 +493,7 @@ describe('TournamentMode', () => {
     // The Planner milestone (Tharsis) scores a player's hand size, which getMilestones also sends
     // to opponents. Without the snapshot it would reveal how many cards a player just bought.
     it('not through the Planner milestone score', () => {
-      const [game, p1, p2] = testGame(2, {tournamentExpansion: true, judgeLink: true});
+      const [game, p1, p2] = testGame(2, {expansions: {tournament: true}, judgeLink: true});
       expect(game.milestones.map(toName)).contains('Planner');
       p1.megaCredits = 20;
       p2.megaCredits = 20;
@@ -527,7 +516,7 @@ describe('TournamentMode', () => {
     // Capitalist scores a player's M€. It is not on an official tournament board, but the same
     // code path must freeze an M€-based score, not just a hand-count one.
     it('nor the M€ a player spent, through the Capitalist milestone', () => {
-      const [game, p1, p2] = testGame(2, {tournamentExpansion: true});
+      const [game, p1, p2] = testGame(2, {expansions: {tournament: true}});
       game.milestones.push(new Capitalist());
       p1.megaCredits = 20;
       p2.megaCredits = 20;

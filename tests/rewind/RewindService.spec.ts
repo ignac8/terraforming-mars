@@ -33,6 +33,7 @@ import {MockRequest, MockResponse} from '../routes/HttpMocks';
 import {RouteTestScaffolding} from '../routes/RouteTestScaffolding';
 import {TestPlayer} from '../TestPlayer';
 import {testGame} from '../TestingUtils';
+import {TestGameOptions} from '../TestGame';
 
 let db: SnapshotDatabase;
 let game: IGame;
@@ -528,7 +529,7 @@ describe('RewindService whole table', () => {
   // A two-player game, played to the research phase of the generation after next. With the draft
   // variant it plays the second generation's draft too, and stops when the third generation's draft
   // starts: a pick logs nothing, so its moves are silent ones.
-  async function playTable(options: {draftVariant?: boolean, tournamentExpansion?: boolean, judgeUndo?: boolean} = {}) {
+  async function playTable(options: Partial<TestGameOptions> = {}) {
     clearReplayCache();
     db = new SnapshotDatabase();
     setTestDatabase(db);
@@ -963,7 +964,7 @@ describe('RewindService whole table', () => {
   });
 
   it('hides research purchases again after a rewind into a tournament research phase', async () => {
-    await playTable({tournamentExpansion: true});
+    await playTable({expansions: {tournament: true}});
     const hand = rows()[secondResearch].players.find((s) => s.id === player2.id)!.cardsInHand.length;
 
     const restored = await rewindTable(game, secondResearch, {cards: 'same', clocks: 'keep'}, judge);

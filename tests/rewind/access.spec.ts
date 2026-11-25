@@ -4,7 +4,7 @@ import {testGame} from '../TestingUtils';
 
 describe('who may rewind a tournament game with Player undo', () => {
   it('lets the players of a judged table vote and the judge rewind', () => {
-    const [game, player] = testGame(2, {tournamentExpansion: true, undoOption: true, judgeLink: true, judgeUndo: true});
+    const [game, player] = testGame(2, {expansions: {tournament: true}, undoOption: true, judgeLink: true, judgeUndo: true});
 
     expect(canVoteRewind(game, player.id)).is.true;
     expect(canBrowseHistory(game, player.id)).is.true;
@@ -14,7 +14,7 @@ describe('who may rewind a tournament game with Player undo', () => {
   });
 
   it('lets the solo player rewind, beside a judge', () => {
-    const [game, player] = testGame(1, {tournamentExpansion: true, undoOption: true, judgeLink: true, judgeUndo: true});
+    const [game, player] = testGame(1, {expansions: {tournament: true}, undoOption: true, judgeLink: true, judgeUndo: true});
 
     expect(canRewind(game, player.id)).is.true;
     expect(canVoteRewind(game, player.id)).is.false;
@@ -22,7 +22,7 @@ describe('who may rewind a tournament game with Player undo', () => {
   });
 
   it('keeps the vote of a table without a judge', () => {
-    const [game, player] = testGame(2, {tournamentExpansion: true, undoOption: true});
+    const [game, player] = testGame(2, {expansions: {tournament: true}, undoOption: true});
 
     expect(canVoteRewind(game, player.id)).is.true;
   });

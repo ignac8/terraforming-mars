@@ -117,8 +117,8 @@ export class Server {
     const dealer = game.turmoil?.globalEventDealer;
     return {
       corporations: sizes(game.corporationDeck),
-      preludes: options.preludeExtension ? sizes(game.preludeDeck) : undefined,
-      ceos: options.ceoExtension ? sizes(game.ceoDeck) : undefined,
+      preludes: options.expansions.prelude ? sizes(game.preludeDeck) : undefined,
+      ceos: options.expansions.ceo ? sizes(game.ceoDeck) : undefined,
       globalEvents: dealer === undefined ? undefined : sizes(dealer.deck),
     };
   }
@@ -268,7 +268,7 @@ export class Server {
           color: player.color,
           score: this.researchScore(milestone.getScore(player), RESEARCH_SENSITIVE_MILESTONES[milestone.name], player, snapshot, viewerId),
           // Tournament games leave spotting a claimable milestone to the players.
-          claimable: !game.gameOptions.tournamentExpansion && milestone.canClaim(player),
+          claimable: !game.gameOptions.expansions.tournament && milestone.canClaim(player),
         }));
       }
 
@@ -587,24 +587,7 @@ export class Server {
       bannedCards: options.bannedCards,
       draftVariant: options.draftVariant,
       escapeVelocity: options.escapeVelocity,
-      expansions: {
-        corpera: options.corporateEra,
-        promo: options.promoCardsOption,
-        venus: options.venusNextExtension,
-        colonies: options.coloniesExtension,
-        prelude: options.preludeExtension,
-        prelude2: options.prelude2Expansion,
-        turmoil: options.turmoilExtension,
-        community: options.communityCardsOption,
-        ares: options.aresExtension,
-        moon: options.moonExpansion,
-        pathfinders: options.pathfindersExpansion,
-        ceo: options.ceoExtension,
-        starwars: options.starWarsExpansion,
-        underworld: options.underworldExpansion,
-        deltaProject: options.deltaProjectExpansion,
-        tournament: options.tournamentExpansion,
-      },
+      expansions: options.expansions,
       fastModeOption: options.fastModeOption,
       includedCards: options.includedCards,
       includeFanMA: options.includeFanMA,
