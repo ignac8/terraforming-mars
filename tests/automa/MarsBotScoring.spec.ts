@@ -20,7 +20,7 @@ import {ColonyName} from '../../src/common/colonies/ColonyName';
 
 /** Builds a fake MarsBot on a 2-player game, scoring each award from `awardValues`. */
 function setup(fields: Partial<IMarsBot> = {}, awardValues: Record<string, number> = {}) {
-  const [game, human, botPlayer] = testGame(2, {turmoilExtension: true});
+  const [game, human, botPlayer] = testGame(2, {expansions: {turmoil: true}});
   const marsBot = fakeMarsBot({
     game,
     player: botPlayer,
@@ -146,7 +146,7 @@ describe('MarsBotScoring', () => {
     {generation: 18, preludeExtension: true, expected: undefined},
   ]) {
     it('reads the M€ per VP table: ' + JSON.stringify(run), () => {
-      const [game] = testGame(2, {preludeExtension: run.preludeExtension});
+      const [game] = testGame(2, {expansions: {prelude: run.preludeExtension}});
       game.generation = run.generation;
 
       expect(currentMcPerVP(game)).eq(run.expected);
@@ -409,8 +409,9 @@ describe('MarsBotScoring', () => {
   // TDaver, BGG 3408751 and 3373832: the resources MarsBot has left on the Colonies shipping board,
   // and its floaters on the Venus board, score half a VP each, rounded down
   describe('Leftover resources VP (automaColonyVP)', () => {
-    function leftoverGame(options: {automaColonyVP?: boolean, coloniesExtension?: boolean, venusNextExtension?: boolean} = {}) {
-      const [game] = testGame(1, {automa: true, coloniesExtension: true, ...options});
+    function leftoverGame(options: {automaColonyVP?: boolean, colonies?: boolean, venus?: boolean} = {}) {
+      const {colonies = true, venus = false, ...rest} = options;
+      const [game] = testGame(1, {automa: true, expansions: {colonies, venus}, ...rest});
       return {game, marsBot: game.automaHooks!.marsBot};
     }
 
@@ -431,7 +432,7 @@ describe('MarsBotScoring', () => {
     }
 
     it('counts the floaters on the Venus board too', () => {
-      const {marsBot} = leftoverGame({automaColonyVP: true, venusNextExtension: true});
+      const {marsBot} = leftoverGame({automaColonyVP: true, venus: true});
       marsBot.shippingBoard.storage.set(ColonyName.CERES, 2);
       marsBot.floaters = 3;
       expect(marsBot.getVictoryPoints().leftoverResourcesVP).to.eq(2);
@@ -463,7 +464,7 @@ describe('MarsBotScoring', () => {
     });
 
     it('scores nothing without Colonies', () => {
-      const {marsBot} = leftoverGame({automaColonyVP: true, coloniesExtension: false, venusNextExtension: true});
+      const {marsBot} = leftoverGame({automaColonyVP: true, colonies: false, venus: true});
       marsBot.floaters = 4;
       expect(marsBot.getVictoryPoints().leftoverResourcesVP).to.eq(0);
     });

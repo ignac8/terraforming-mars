@@ -25,7 +25,7 @@ describe('ExtendedShippingLines', () => {
   });
 
   it('same trade logic as B19', () => {
-    const [game] = testGame(1, {automa: true, coloniesExtension: true, boardName: BoardName.THARSIS});
+    const [game] = testGame(1, {automa: true, expansions: {colonies: true}, boardName: BoardName.THARSIS});
     const marsBot = getMarsBot(game);
     const luna = new Luna();
     luna.trackPosition = 3;
@@ -39,7 +39,7 @@ describe('ExtendedShippingLines', () => {
   });
 
   it('no effect and no Failed Action if all colonies visited', () => {
-    const [game] = testGame(1, {automa: true, coloniesExtension: true, boardName: BoardName.THARSIS});
+    const [game] = testGame(1, {automa: true, expansions: {colonies: true}, boardName: BoardName.THARSIS});
     const marsBot = getMarsBot(game);
     const luna = new Luna();
     luna.visitor = 'psome-player'; // Already traded

@@ -31,7 +31,7 @@ describe('MarsNomads', () => {
 
   beforeEach(() => {
     card = new MarsNomads();
-    [game, player, player2] = testGame(2, {aresExtension: true});
+    [game, player, player2] = testGame(2, {expansions: {ares: true}});
     board = game.board;
   });
 
@@ -75,7 +75,7 @@ describe('MarsNomads', () => {
     game.nomadSpace = space.id;
 
     const selectSpace = cast(card.action(player), SelectSpace);
-    expect(selectSpace.spaces.map((s) => s.id)).to.have.members(['19', '27']);
+    expect(selectSpace.spaces.map((s) => s.id)).to.have.members(['12', '18', '20', '26', '27']);
   });
 
   it('Nomads only moves to empty spaces', () => {
@@ -83,13 +83,13 @@ describe('MarsNomads', () => {
     const space = board.getAvailableSpacesOnLand(player)[12];
     game.nomadSpace = space.id;
 
-    const space19 = board.getSpaceOrThrow('19');
+    const space20 = board.getSpaceOrThrow('20');
 
-    expect(cast(card.action(player), SelectSpace).spaces).to.contain(space19);
+    expect(cast(card.action(player), SelectSpace).spaces).to.contain(space20);
 
-    game.simpleAddTile(player, space19, {tileType: TileType.GREENERY});
+    game.simpleAddTile(player, space20, {tileType: TileType.GREENERY});
 
-    expect(cast(card.action(player), SelectSpace).spaces).to.not.contain(space19);
+    expect(cast(card.action(player), SelectSpace).spaces).to.not.contain(space20);
   });
 
   it('Action does not gets adjacency bonus', () => {
@@ -171,7 +171,7 @@ describe('MarsNomads', () => {
     {bonus: SpaceBonus.TEMPERATURE_4MC, mc: 7, expected: true},
   ] as const) {
     it('Destination filter includes Reds TR tax' + JSON.stringify(run), () => {
-      const [game, player] = testGame(2, {turmoilExtension: true});
+      const [game, player] = testGame(2, {expansions: {turmoil: true}});
       const card = new MarsNomads();
       const board = game.board;
       setRulingParty(game, PartyName.REDS);
@@ -422,7 +422,7 @@ describe('MarsNomads', () => {
 
   describe('Compatible with Ares', () => {
     it('Hazards are selectable but grant nothing', () => {
-      const [game, player] = testGame(2, {aresExtension: true, aresHazards: true});
+      const [game, player] = testGame(2, {expansions: {ares: true}, aresHazards: true});
 
       const firstSpace = game.board.getSpaceOrThrow('05');
       const space = game.board.getSpaceOrThrow('04');
@@ -441,7 +441,7 @@ describe('MarsNomads', () => {
     });
 
     it('Moving onto a hazard does not trigger tile placement policies', () => {
-      const [game, player] = testGame(2, {aresExtension: true, aresHazards: true, turmoilExtension: true});
+      const [game, player] = testGame(2, {expansions: {ares: true, turmoil: true}, aresHazards: true});
       setRulingParty(game, PartyName.GREENS, 'gp02');
 
       const firstSpace = game.board.getSpaceOrThrow('05');

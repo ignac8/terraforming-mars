@@ -58,7 +58,7 @@ describe('Colony', () => {
 
   beforeEach(() => {
     [game, player, player2, player3, player4] = testGame(4, {
-      coloniesExtension: true,
+      expansions: {colonies: true},
       customColoniesList: [
         ColonyName.LUNA,
         ColonyName.PLUTO,
@@ -284,7 +284,7 @@ describe('Colony', () => {
   });
 
   it('Should let players build on Venus when Reds are in power.', () => {
-    [game, player, player2] = testGame(2, {coloniesExtension: true, venusNextExtension: true, turmoilExtension: true});
+    [game, player, player2] = testGame(2, {expansions: {colonies: true, venus: true, turmoil: true}});
     const venus = new Venus();
     game.colonies = [venus];
     game.colonies.push(venus);
@@ -304,7 +304,7 @@ describe('Colony', () => {
   });
 
   it('Should let players build on Europa when Reds are in power.', () => {
-    [game, player, player2] = testGame(2, {coloniesExtension: true, venusNextExtension: true, turmoilExtension: true});
+    [game, player, player2] = testGame(2, {expansions: {colonies: true, venus: true, turmoil: true}});
     const europa = new Europa();
     game.colonies = [europa];
     game.colonies.push(europa);

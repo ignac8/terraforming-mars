@@ -19,7 +19,7 @@ function b17Card(): MarsBotBonusCard {
 describe('ExpeditedConstructionColonies', () => {
   // Space 12 is next to all three oceans and has no icons, so the city earns 2 M€ per ocean
   it('places a city next to 2 greenery or ocean tiles and is destroyed', () => {
-    const [game, human, botPlayer] = testGame(2, {coloniesExtension: true});
+    const [game, human, botPlayer] = testGame(2, {expansions: {colonies: true}});
     const {marsBot, calls} = recordingMarsBot({game, player: botPlayer, humanPlayer: human, megacredits: 0});
     for (const id of ['06', '07', '13'] as const) {
       game.simpleAddTile(human, game.board.getSpaceOrThrow(id), {tileType: TileType.OCEAN});
@@ -39,7 +39,7 @@ describe('ExpeditedConstructionColonies', () => {
     {botColonies: 2, expected: []},
   ] as const) {
     it('without a city space, places a colony while MarsBot has at most 1 and is kept: ' + JSON.stringify(run), () => {
-      const [game, human, botPlayer] = testGame(2, {coloniesExtension: true});
+      const [game, human, botPlayer] = testGame(2, {expansions: {colonies: true}});
       const {marsBot, calls} = recordingMarsBot({game, player: botPlayer, humanPlayer: human, megacredits: 0});
       game.colonies = [new Luna(), new Ceres()];
       for (const colony of game.colonies.slice(0, run.botColonies)) {
@@ -54,7 +54,7 @@ describe('ExpeditedConstructionColonies', () => {
   }
 
   it('gains 2 resources if colony placed', () => {
-    const [game] = testGame(1, {automa: true, coloniesExtension: true, boardName: BoardName.THARSIS});
+    const [game] = testGame(1, {automa: true, expansions: {colonies: true}, boardName: BoardName.THARSIS});
     const marsBot = getMarsBot(game);
     const luna = new Luna();
     game.colonies = [luna];
@@ -67,7 +67,7 @@ describe('ExpeditedConstructionColonies', () => {
   });
 
   it('no effect if MarsBot already has 2+ colonies', () => {
-    const [game] = testGame(1, {automa: true, coloniesExtension: true, boardName: BoardName.THARSIS});
+    const [game] = testGame(1, {automa: true, expansions: {colonies: true}, boardName: BoardName.THARSIS});
     const marsBot = getMarsBot(game);
     const luna = new Luna();
     luna.colonies = [marsBot.player.id];

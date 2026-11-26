@@ -15,7 +15,7 @@ describe('Reds', () => {
   let game: IGame;
 
   beforeEach(() => {
-    [game, player, secondPlayer] = testGame(2, {turmoilExtension: true});
+    [game, player, secondPlayer] = testGame(2, {expansions: {turmoil: true}});
   });
 
   it('Ruling bonus 1: The player(s) with the lowest TR gains 1 TR', () => {
@@ -55,7 +55,7 @@ describe('Reds', () => {
   });
 
   it('Ruling bonus 1: Solo', () => {
-    const [game, player] = testGame(1, {turmoilExtension: true});
+    const [game, player] = testGame(1, {expansions: {turmoil: true}});
 
     player.setTerraformRating(20);
     REDS_BONUS_1.grant(game);
@@ -68,7 +68,7 @@ describe('Reds', () => {
   // MarsBot games use the 2-player rules (Nick, BGG 3594202): MarsBot's TR is compared,
   // but MarsBot itself ignores the ruling bonus (automa rulebook C).
   it('Ruling bonus 1: MarsBot\'s TR counts', () => {
-    const [game, human] = testGame(1, {automa: true, turmoilExtension: true});
+    const [game, human] = testGame(1, {automa: true, expansions: {turmoil: true}});
     const botPlayer = game.marsBotPlayer!;
 
     human.setTerraformRating(30);
@@ -84,7 +84,7 @@ describe('Reds', () => {
   });
 
   it('Ruling bonus 2: MarsBot\'s TR counts', () => {
-    const [game, human] = testGame(1, {automa: true, turmoilExtension: true});
+    const [game, human] = testGame(1, {automa: true, expansions: {turmoil: true}});
     const botPlayer = game.marsBotPlayer!;
 
     human.setTerraformRating(20);
@@ -122,7 +122,7 @@ describe('Reds', () => {
   });
 
   it('Ruling bonus 1 logs the TR gained: Solo', () => {
-    const [game, player] = testGame(1, {turmoilExtension: true});
+    const [game, player] = testGame(1, {expansions: {turmoil: true}});
     player.setTerraformRating(20);
 
     game.gameLog.length = 0;
@@ -134,7 +134,7 @@ describe('Reds', () => {
   });
 
   it('Ruling bonus 2 logs the TR lost: Solo', () => {
-    const [game, player] = testGame(1, {turmoilExtension: true});
+    const [game, player] = testGame(1, {expansions: {turmoil: true}});
     player.setTerraformRating(21);
 
     game.gameLog.length = 0;
@@ -146,7 +146,7 @@ describe('Reds', () => {
   });
 
   it('Ruling bonus 2: Solo', () => {
-    const [game, player] = testGame(1, {turmoilExtension: true});
+    const [game, player] = testGame(1, {expansions: {turmoil: true}});
 
     player.setTerraformRating(20);
     REDS_BONUS_2.grant(game);
@@ -158,7 +158,7 @@ describe('Reds', () => {
   });
 
   it('Ruling bonus 1: MarsBot\'s TR counts', () => {
-    const [game, human] = testGame(1, {automa: true, turmoilExtension: true});
+    const [game, human] = testGame(1, {automa: true, expansions: {turmoil: true}});
     const botPlayer = game.marsBotPlayer!;
 
     human.setTerraformRating(30);
@@ -174,7 +174,7 @@ describe('Reds', () => {
   });
 
   it('Ruling bonus 2: MarsBot\'s TR counts', () => {
-    const [game, human] = testGame(1, {automa: true, turmoilExtension: true});
+    const [game, human] = testGame(1, {automa: true, expansions: {turmoil: true}});
     const botPlayer = game.marsBotPlayer!;
 
     human.setTerraformRating(20);
@@ -199,7 +199,7 @@ describe('Reds', () => {
   });
 
   it('Ruling policy 1: MarsBot raises its TR without paying', () => {
-    const [game] = testGame(1, {automa: true, turmoilExtension: true});
+    const [game] = testGame(1, {automa: true, expansions: {turmoil: true}});
     const botPlayer = game.marsBotPlayer!;
     setRulingParty(game, PartyName.REDS, 'rp01');
 
@@ -237,7 +237,7 @@ describe('Reds', () => {
 
   it('Ruling policy 3: Pay 4 M€ to reduce a non-maxed global parameter 1 step: Moon', () => {
     // Reset the whole game infrastructure to include the Moon
-    [game, player, secondPlayer] = testGame(2, {turmoilExtension: true, moonExpansion: true});
+    [game, player, secondPlayer] = testGame(2, {expansions: {turmoil: true, moon: true}});
     setRulingParty(game, PartyName.REDS, 'rp03');
 
     const redsPolicy = REDS_POLICY_3;

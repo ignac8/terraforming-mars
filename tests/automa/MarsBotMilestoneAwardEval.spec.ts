@@ -99,7 +99,7 @@ describe('MarsBotMilestoneAwardEval', () => {
   ]) {
     const {milestone, ...inputs} = run;
     it(`counts the steps the player is from meeting ${milestone.name}: ${JSON.stringify(inputs)}`, () => {
-      const [/* game */, player] = testGame(2, {turmoilExtension: run.turmoil});
+      const [/* game */, player] = testGame(2, {expansions: {turmoil: run.turmoil}});
       for (let city = 0; city < run.cities; city++) {
         addCity(player);
       }

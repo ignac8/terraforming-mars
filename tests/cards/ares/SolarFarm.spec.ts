@@ -21,7 +21,7 @@ describe('SolarFarm', () => {
 
   beforeEach(() => {
     card = new SolarFarm();
-    [game, player] = testGame(2, {aresExtension: true, aresHazards: true});
+    [game, player] = testGame(2, {expansions: {ares: true}, aresHazards: true});
   });
 
   it('Play', () => {
@@ -58,7 +58,7 @@ describe('SolarFarm', () => {
 
   describe('on Amazonis Planitia', () => {
     beforeEach(() => {
-      [game, player] = testGame(2, {boardName: BoardName.AMAZONIS_PLANITIA, aresExtension: true, aresHazards: false});
+      [game, player] = testGame(2, {boardName: BoardName.AMAZONIS_PLANITIA, expansions: {ares: true}, aresHazards: false});
       player.playedCards.push(card);
     });
 

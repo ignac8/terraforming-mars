@@ -59,8 +59,8 @@ describe('MarsBotMapRules', () => {
   });
 
   describe('game', () => {
-    function setup(boardName: BoardName, preludeExtension: boolean) {
-      const [game] = testGame(1, {automa: true, boardName, preludeExtension});
+    function setup(boardName: BoardName, prelude: boolean) {
+      const [game] = testGame(1, {automa: true, boardName, expansions: {prelude}});
       return {game, marsBot: game.automaHooks!.marsBot};
     }
 
@@ -146,7 +146,7 @@ describe('MarsBotMapRules', () => {
       {boardName: BoardName.THARSIS, expected: 9},
     ] as const) {
       it('unlocks the 2nd Trade Fleet on its Energy track space: ' + JSON.stringify(run), () => {
-        const [game] = testGame(1, {automa: true, coloniesExtension: true, boardName: run.boardName});
+        const [game] = testGame(1, {automa: true, expansions: {colonies: true}, boardName: run.boardName});
         const marsBot = game.automaHooks!.marsBot;
         const energyTrack = marsBot.marsBotBoard.tagToTrack[Tag.POWER]!;
         const track = marsBot.marsBotBoard.tracks[energyTrack];

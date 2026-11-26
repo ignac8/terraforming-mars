@@ -311,7 +311,7 @@ describe('CorporateCompetition', () => {
   });
 
   it('takes no more than MarsBot has when the helper itself cost M€ (colony cube, rulebook C, p.14)', () => {
-    const [game, human] = testGame(1, {automa: true, coloniesExtension: true, boardName: BoardName.THARSIS});
+    const [game, human] = testGame(1, {automa: true, expansions: {colonies: true}, boardName: BoardName.THARSIS});
     const marsBot = game.automaHooks!.marsBot;
     const ceres = new Ceres();
     game.colonies = [ceres];

@@ -16,7 +16,7 @@ function getMarsBot(game: ReturnType<typeof testGame>[0]): MarsBot {
 describe('PlayerTradeHook', () => {
   describe('handleColonyBonus', () => {
     it('returns false for non-MarsBot player IDs', () => {
-      const [game] = testGame(1, {automa: true, coloniesExtension: true, boardName: BoardName.THARSIS});
+      const [game] = testGame(1, {automa: true, expansions: {colonies: true}, boardName: BoardName.THARSIS});
       const luna = new Luna();
       game.colonies = [luna];
       const result = game.automaHooks!.handleColonyBonus(luna, 'psome-other-player');
@@ -24,7 +24,7 @@ describe('PlayerTradeHook', () => {
     });
 
     it('adds 1 resource to shipping board when player trades with a colony MarsBot owns', () => {
-      const [game] = testGame(1, {automa: true, coloniesExtension: true, boardName: BoardName.THARSIS});
+      const [game] = testGame(1, {automa: true, expansions: {colonies: true}, boardName: BoardName.THARSIS});
       const marsBot = getMarsBot(game);
       const luna = new Luna();
       luna.colonies = [marsBot.player.id];
@@ -36,7 +36,7 @@ describe('PlayerTradeHook', () => {
     });
 
     it('adds 1 resource to Ceres storage', () => {
-      const [game] = testGame(1, {automa: true, coloniesExtension: true, boardName: BoardName.THARSIS});
+      const [game] = testGame(1, {automa: true, expansions: {colonies: true}, boardName: BoardName.THARSIS});
       const marsBot = getMarsBot(game);
       const ceres = new Ceres();
       ceres.colonies = [marsBot.player.id];
@@ -49,8 +49,7 @@ describe('PlayerTradeHook', () => {
     it('Titan colony bonus with Venus Next gives 1 floater, not Titan storage', () => {
       const [game] = testGame(1, {
         automa: true,
-        coloniesExtension: true,
-        venusNextExtension: true,
+        expansions: {colonies: true, venus: true},
         boardName: BoardName.THARSIS,
       });
       const marsBot = getMarsBot(game);
@@ -66,7 +65,7 @@ describe('PlayerTradeHook', () => {
     });
 
     it('Europa colony bonus gives 1 MC to megacredits, not shipping board', () => {
-      const [game] = testGame(1, {automa: true, coloniesExtension: true, boardName: BoardName.THARSIS});
+      const [game] = testGame(1, {automa: true, expansions: {colonies: true}, boardName: BoardName.THARSIS});
       const marsBot = getMarsBot(game);
       const europa = new Europa();
       europa.colonies = [marsBot.player.id];
@@ -81,7 +80,7 @@ describe('PlayerTradeHook', () => {
 
   describe('integration: player trading with a MarsBot colony', () => {
     it('MarsBot gets 1 resource when player trades with a colony MarsBot owns', () => {
-      const [game, player] = testGame(1, {automa: true, coloniesExtension: true, boardName: BoardName.THARSIS});
+      const [game, player] = testGame(1, {automa: true, expansions: {colonies: true}, boardName: BoardName.THARSIS});
       const marsBot = getMarsBot(game);
       const luna = new Luna();
       luna.colonies = [marsBot.player.id];
@@ -98,7 +97,7 @@ describe('PlayerTradeHook', () => {
     });
 
     it('finishes the trade when MarsBot is the only colony owner', () => {
-      const [game, player] = testGame(1, {automa: true, coloniesExtension: true, boardName: BoardName.THARSIS});
+      const [game, player] = testGame(1, {automa: true, expansions: {colonies: true}, boardName: BoardName.THARSIS});
       const marsBot = getMarsBot(game);
       const ceres = new Ceres();
       ceres.colonies = [marsBot.player.id];

@@ -16,7 +16,7 @@ function createVenusGame(draftVariant: boolean): AutomaGame {
   const [game, human] = testGame(1, {
     automa: true,
     automaDifficulty: 'normal',
-    venusNextExtension: true,
+    expansions: {venus: true},
     draftVariant,
     boardName: BoardName.THARSIS,
   });

@@ -8,7 +8,7 @@ import {Tag} from '../../src/common/cards/Tag';
 describe('Election', () => {
   it('resolve play', () => {
     const card = new Election();
-    const [game, player, player2, player3] = testGame(3, {turmoilExtension: true});
+    const [game, player, player2, player3] = testGame(3, {expansions: {turmoil: true}});
     const turmoil = game.turmoil!;
     turmoil.initGlobalEvent(game);
     player.tagsForTest = {building: 1};
@@ -33,7 +33,7 @@ describe('Election', () => {
 
   it('a tie for first place gives every tied player 2 TR and skips second place', () => {
     const card = new Election();
-    const [game, player, player2, player3] = testGame(3, {turmoilExtension: true});
+    const [game, player, player2, player3] = testGame(3, {expansions: {turmoil: true}});
     const turmoil = game.turmoil!;
     turmoil.initGlobalEvent(game);
     player.tagsForTest = {building: 3};
@@ -49,7 +49,7 @@ describe('Election', () => {
 
   it('with two players, second place gets 1 TR', () => {
     const card = new Election();
-    const [game, player, player2] = testGame(2, {turmoilExtension: true});
+    const [game, player, player2] = testGame(2, {expansions: {turmoil: true}});
     const turmoil = game.turmoil!;
     turmoil.initGlobalEvent(game);
     player.tagsForTest = {building: 2};
@@ -62,7 +62,7 @@ describe('Election', () => {
 
   it('solo play', () => {
     const card = new Election();
-    const [game, player] = testGame(1, {turmoilExtension: true});
+    const [game, player] = testGame(1, {expansions: {turmoil: true}});
     const turmoil = game.turmoil!;
     turmoil.initGlobalEvent(game);
     const fake = fakeCard({tags: [Tag.BUILDING, Tag.BUILDING, Tag.BUILDING, Tag.BUILDING]});

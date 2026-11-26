@@ -13,7 +13,7 @@ import {recordingMarsBot} from '../RecordingMarsBot';
 
 /** Creates a game where MarsBot has run the setup of Pristar and has its white cube on the card. */
 function pristarGame(venus: boolean = false) {
-  const [game] = testGame(1, {automa: true, venusNextExtension: venus, boardName: BoardName.THARSIS});
+  const [game] = testGame(1, {automa: true, expansions: {venus}, boardName: BoardName.THARSIS});
   const marsBot = game.automaHooks!.marsBot;
   marsBot.setCorpAndSetup(getMarsBotCorp(CardName.PRISTAR)!);
   marsBot.corpSpecificState.set('whiteCubeOnCard', 1);

@@ -16,7 +16,7 @@ function createVenusAutomaGame(): {game: IGame, marsBot: MarsBot} {
   const [game] = testGame(1, {
     automa: true,
     automaDifficulty: 'normal',
-    venusNextExtension: true,
+    expansions: {venus: true},
     boardName: BoardName.THARSIS,
   });
   return {game, marsBot: game.automaHooks!.marsBot};

@@ -10,7 +10,7 @@ import {recordingMarsBot} from '../corps/RecordingMarsBot';
 import {bonusCardsInBonusDeck} from './BonusCardGame';
 
 function venusGame() {
-  const [game] = testGame(1, {automa: true, venusNextExtension: true, boardName: BoardName.THARSIS});
+  const [game] = testGame(1, {automa: true, expansions: {venus: true}, boardName: BoardName.THARSIS});
   const marsBot = game.automaHooks!.marsBot;
   setVenusScaleLevel(game, 6);
   return {game, marsBot, hand: marsBot.player.cardsInHand.length, deck: game.projectDeck.drawPile.length};
@@ -27,7 +27,7 @@ describe('GovernmentIntervention', () => {
     {generation: 2, venus: 0, advanced: false, expected: {calls: ['withoutTRorMcGain()', ADVANCE_FURTHEST, 'withoutTRGain()'], venusAfter: 2}},
   ] as const) {
     it('raises a Martian parameter on an even generation or with Venus complete, else Venus, for no TR or M€: ' + JSON.stringify(run), () => {
-      const [game, human, botPlayer] = testGame(2, {venusNextExtension: true});
+      const [game, human, botPlayer] = testGame(2, {expansions: {venus: true}});
       const {marsBot, calls} = recordingMarsBot({
         game, player: botPlayer, humanPlayer: human, megacredits: 0, interceptsParameterRaise: () => false,
         advanceFurthestParameter: (cardName, allowCorpIntercept) => {
@@ -46,7 +46,7 @@ describe('GovernmentIntervention', () => {
   }
 
   it('gives MarsBot neither TR nor M€, even from a temperature bonus', () => {
-    const [game] = testGame(1, {automa: true, venusNextExtension: true, boardName: BoardName.THARSIS});
+    const [game] = testGame(1, {automa: true, expansions: {venus: true}, boardName: BoardName.THARSIS});
     const marsBot = game.automaHooks!.marsBot;
     game.generation = 2;
     setOxygenLevel(game, 14);
@@ -63,7 +63,7 @@ describe('GovernmentIntervention', () => {
   });
 
   it('raises Venus instead when every Martian parameter is complete on an even generation', () => {
-    const [game] = testGame(1, {automa: true, venusNextExtension: true, boardName: BoardName.THARSIS});
+    const [game] = testGame(1, {automa: true, expansions: {venus: true}, boardName: BoardName.THARSIS});
     const marsBot = game.automaHooks!.marsBot;
     game.generation = 2;
     setOxygenLevel(game, 14);
@@ -77,7 +77,7 @@ describe('GovernmentIntervention', () => {
   });
 
   it('advances the parameter with the most steps remaining, not the lowest fraction done', () => {
-    const [game] = testGame(1, {automa: true, venusNextExtension: true, boardName: BoardName.THARSIS});
+    const [game] = testGame(1, {automa: true, expansions: {venus: true}, boardName: BoardName.THARSIS});
     const marsBot = game.automaHooks!.marsBot;
     game.generation = 2;
     // Oxygen 7 is 50% done with 7 steps left, temperature -10 is 52% done with 9 steps left
@@ -103,7 +103,7 @@ describe('GovernmentIntervention', () => {
   });
 
   it('even generation advances Martian parameter without TR', () => {
-    const {game, marsBot} = createAutomaGame({venusNextExtension: true});
+    const {game, marsBot} = createAutomaGame({expansions: {venus: true}});
     game.generation = 4; // even
     const trBefore = marsBot.player.terraformRating;
     const card = createBonusCard(BonusCardName.GOVERNMENT_INTERVENTION);
@@ -113,7 +113,7 @@ describe('GovernmentIntervention', () => {
   });
 
   it('odd generation raises Venus without TR', () => {
-    const {game, marsBot} = createAutomaGame({venusNextExtension: true});
+    const {game, marsBot} = createAutomaGame({expansions: {venus: true}});
     game.generation = 3; // odd
     const venusBefore = game.getVenusScaleLevel();
     const trBefore = marsBot.player.terraformRating;
@@ -124,7 +124,7 @@ describe('GovernmentIntervention', () => {
   });
 
   it('even gen with Venus complete still advances Martian parameter', () => {
-    const {game, marsBot} = createAutomaGame({venusNextExtension: true});
+    const {game, marsBot} = createAutomaGame({expansions: {venus: true}});
     game.generation = 3; // odd, but Venus complete → should use Martian branch
     setVenusScaleLevel(game, 30);
     const venusBefore = game.getVenusScaleLevel();
@@ -135,7 +135,7 @@ describe('GovernmentIntervention', () => {
   });
 
   it('stays out of the bonus deck after it resolves', () => {
-    const {marsBot} = createAutomaGame({venusNextExtension: true});
+    const {marsBot} = createAutomaGame({expansions: {venus: true}});
 
     marsBot.actionDeck.playBonusCard(createBonusCard(BonusCardName.GOVERNMENT_INTERVENTION));
 

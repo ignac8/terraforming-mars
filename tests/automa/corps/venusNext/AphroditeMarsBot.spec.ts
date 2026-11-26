@@ -23,7 +23,7 @@ describe('AphroditeMarsBot', () => {
   });
 
   it('gains 2 M€ for every step Venus is raised', () => {
-    const [game, human] = testGame(1, {automa: true, venusNextExtension: true, boardName: BoardName.THARSIS});
+    const [game, human] = testGame(1, {automa: true, expansions: {venus: true}, boardName: BoardName.THARSIS});
     const marsBot = game.automaHooks!.marsBot;
     marsBot.setCorpAndSetup(getMarsBotCorp(CardName.APHRODITE)!);
     const mc = marsBot.megacredits;
@@ -36,7 +36,7 @@ describe('AphroditeMarsBot', () => {
   });
 
   it('gains nothing once Venus is maxed', () => {
-    const [game, human] = testGame(1, {automa: true, venusNextExtension: true, boardName: BoardName.THARSIS});
+    const [game, human] = testGame(1, {automa: true, expansions: {venus: true}, boardName: BoardName.THARSIS});
     const marsBot = game.automaHooks!.marsBot;
     marsBot.setCorpAndSetup(getMarsBotCorp(CardName.APHRODITE)!);
     setVenusScaleLevel(game, MAX_VENUS_SCALE);

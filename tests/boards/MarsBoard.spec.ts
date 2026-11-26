@@ -133,7 +133,7 @@ describe('MarsBoard', () => {
 
   it('Do not include land claimed hazard spaces for Arcadian Communities', () => {
     const card = new ArcadianCommunities();
-    const [/* game */, player] = testGame(2, {aresExtension: true, aresHazards: true});
+    const [/* game */, player] = testGame(2, {expansions: {ares: true}, aresHazards: true});
     player.playedCards.push(card);
     const board = player.game.board;
     const space = board.spaces.find(AresHandler.hasHazardTile);
@@ -164,7 +164,7 @@ describe('MarsBoard', () => {
   });
 
   it('A cube reserves its own space', () => {
-    const [game, player] = testGame(2, {pathfindersExpansion: true});
+    const [game, player] = testGame(2, {expansions: {pathfinders: true}});
     const board = game.board;
     const space = board.getSpaceOrThrow('15');
 
@@ -249,7 +249,7 @@ describe('MarsBoard', () => {
     });
 
     it('Reds tax adds to OCEAN cost', () => {
-      [game, player] = testGame(1, {turmoilExtension: true});
+      [game, player] = testGame(1, {expansions: {turmoil: true}});
       setRulingParty(game, PartyName.REDS);
       space = game.board.getSpaceOrThrow('15');
       space.bonus = [SpaceBonus.OCEAN];
@@ -262,7 +262,7 @@ describe('MarsBoard', () => {
     });
 
     it('Reds tax not applied when global parameter is maxed', () => {
-      [game, player] = testGame(1, {turmoilExtension: true});
+      [game, player] = testGame(1, {expansions: {turmoil: true}});
       setRulingParty(game, PartyName.REDS);
       space = game.board.getSpaceOrThrow('15');
       space.bonus = [SpaceBonus.TEMPERATURE_4MC];

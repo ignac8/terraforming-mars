@@ -147,7 +147,7 @@ describe('MarsBotAmazonisRules', () => {
       it(`starts MarsBot at ${run.expected} TR with reduction ${run.reduction} on ${run.boardName}`, () => {
         const [game] = testGame(1, {
           automa: true,
-          turmoilExtension: true,
+          expansions: {turmoil: true},
           boardName: run.boardName,
           automaTurmoilTRReduction: run.reduction,
         });

@@ -44,10 +44,7 @@ describe('shuffleHiddenPiles', () => {
   beforeEach(() => {
     const [game] = testGame(1, {
       boardName: BoardName.THARSIS,
-      turmoilExtension: true,
-      preludeExtension: true,
-      ceoExtension: true,
-      underworldExpansion: true,
+      expansions: {turmoil: true, prelude: true, ceo: true, underworld: true},
     });
     d = game.serialize();
     before = structuredClone(d);

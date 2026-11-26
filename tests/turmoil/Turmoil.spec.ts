@@ -51,7 +51,7 @@ describe('Turmoil', () => {
   let turmoil: Turmoil;
 
   beforeEach(() => {
-    [game, player, player2] = testGame(2, {turmoilExtension: true});
+    [game, player, player2] = testGame(2, {expansions: {turmoil: true}});
     game.phase = Phase.ACTION;
     turmoil = Turmoil.getTurmoil(game);
     // Eliminate the flaky cases where the current global event sends delegates to
@@ -367,7 +367,7 @@ describe('Turmoil', () => {
   it('canPlay: Reds tax applies by default when raising oxygen', () => {
   // Strip Mine raises the oxygen level two steps.
     const card = new StripMine();
-    const [game, player] = testGame(1, {turmoilExtension: true});
+    const [game, player] = testGame(1, {expansions: {turmoil: true}});
     const turmoil = Turmoil.getTurmoil(game);
     game.phase = Phase.ACTION;
     player.production.override({energy: 2}); // Card requirement.
@@ -404,7 +404,7 @@ describe('Turmoil', () => {
   it('canPlay: when paying reds tax for oxygen, include the cost for the 8% temperature bump.', () => {
   // Strip Mine raises the oxygen level two steps.
     const card = new StripMine();
-    const [game, player] = testGame(1, {turmoilExtension: true});
+    const [game, player] = testGame(1, {expansions: {turmoil: true}});
     const turmoil = Turmoil.getTurmoil(game);
     game.phase = Phase.ACTION;
     player.production.override({energy: 2}); // Card requirement.
@@ -425,7 +425,7 @@ describe('Turmoil', () => {
   it('canPlay: when paying reds tax for oxygen, include the cost for the 8% temperature bump, which triggers 0° ocean bump.', () => {
     // Strip Mine raises the oxygen level two steps.
     const card = new StripMine();
-    const [game, player] = testGame(1, {turmoilExtension: true});
+    const [game, player] = testGame(1, {expansions: {turmoil: true}});
     const turmoil = Turmoil.getTurmoil(game);
     game.phase = Phase.ACTION;
     player.production.override({energy: 2}); // Card requirement.
@@ -448,7 +448,7 @@ describe('Turmoil', () => {
   it('canPlay: reds tax applies by default when raising temperature', () => {
     // LavaFlows raises the temperature two steps.
     const card = new LavaFlows();
-    const [game, player] = testGame(1, {turmoilExtension: true});
+    const [game, player] = testGame(1, {expansions: {turmoil: true}});
     const turmoil = Turmoil.getTurmoil(game);
     game.phase = Phase.ACTION;
 
@@ -486,7 +486,7 @@ describe('Turmoil', () => {
   it('canPlay: when paying reds tax for temperature, include the cost for the 0° ocean bump.', () => {
     // LavaFlows raises the temperature two steps.
     const card = new LavaFlows();
-    const [game, player] = testGame(1, {turmoilExtension: true});
+    const [game, player] = testGame(1, {expansions: {turmoil: true}});
     const turmoil = Turmoil.getTurmoil(game);
     game.phase = Phase.ACTION;
 
@@ -506,7 +506,7 @@ describe('Turmoil', () => {
   it('canPlay: reds tax applies by default when placing oceans', () => {
     // ArtificialLake uses trSource.
     const card = new ArtificialLake();
-    const [game, player] = testGame(1, {turmoilExtension: true});
+    const [game, player] = testGame(1, {expansions: {turmoil: true}});
     const turmoil = Turmoil.getTurmoil(game);
     setTemperature(game, -6); // minimum requirement for the card.
     game.phase = Phase.ACTION;
@@ -533,7 +533,7 @@ describe('Turmoil', () => {
   it('canPlay: reds tax applies for multi-TR card', () => {
     // TowingAComet raises oxygen 1 step AND places 1 ocean, each costing 3 M€ reds tax.
     const card = new TowingAComet();
-    const [game, player] = testGame(1, {turmoilExtension: true});
+    const [game, player] = testGame(1, {expansions: {turmoil: true}});
     const turmoil = Turmoil.getTurmoil(game);
     game.phase = Phase.ACTION;
 
@@ -558,7 +558,7 @@ describe('Turmoil', () => {
   it('canPlay: reds tax applies by default when raising the venus scale.', () => {
     // GiantSolarShade raises venus three steps.
     const card = new GiantSolarShade();
-    const [game, player] = testGame(1, {turmoilExtension: true});
+    const [game, player] = testGame(1, {expansions: {turmoil: true}});
     const turmoil = Turmoil.getTurmoil(game);
     game.phase = Phase.ACTION;
 
@@ -596,7 +596,7 @@ describe('Turmoil', () => {
   it('canPlay: when paying reds tax for venus, include the cost for the 16% TR', () => {
     // GiantSolarShade raises venus three steps.
     const card = new GiantSolarShade();
-    const [game, player] = testGame(1, {turmoilExtension: true});
+    const [game, player] = testGame(1, {expansions: {turmoil: true}});
     const turmoil = Turmoil.getTurmoil(game);
     game.phase = Phase.ACTION;
 
@@ -616,7 +616,7 @@ describe('Turmoil', () => {
   it('canPlay: reds tax applies by default when raising moon habitat rate', () => {
     // Raises the colony rate two steps.
     const card = new WaterTreatmentComplex();
-    const [game, player] = testGame(1, {turmoilExtension: true, moonExpansion: true});
+    const [game, player] = testGame(1, {expansions: {turmoil: true, moon: true}});
     const turmoil = Turmoil.getTurmoil(game);
     const moonData = MoonExpansion.moonData(game);
     game.phase = Phase.ACTION;
@@ -657,7 +657,7 @@ describe('Turmoil', () => {
   it('canPlay: reds tax applies by default when raising moon mining rate', () => {
     // Raises the mining rate two steps.
     const card = new DarksideMeteorBombardment();
-    const [game, player] = testGame(1, {turmoilExtension: true, moonExpansion: true});
+    const [game, player] = testGame(1, {expansions: {turmoil: true, moon: true}});
     const turmoil = Turmoil.getTurmoil(game);
     const moonData = MoonExpansion.moonData(game);
     game.phase = Phase.ACTION;
@@ -694,7 +694,7 @@ describe('Turmoil', () => {
   it('canPlay: reds tax applies by default when raising moon logistic rate', () => {
     // Raises the logistic rate two steps.
     const card = new LunaStagingStation();
-    const [game, player] = testGame(1, {turmoilExtension: true, moonExpansion: true});
+    const [game, player] = testGame(1, {expansions: {turmoil: true, moon: true}});
     const turmoil = Turmoil.getTurmoil(game);
     const moonData = MoonExpansion.moonData(game);
     game.phase = Phase.ACTION;
@@ -733,7 +733,7 @@ describe('Turmoil', () => {
   });
 
   it('Reds: Cannot raise TR directly without the money to back it up', () => {
-    const [game, player] = testGame(1, {turmoilExtension: true, moonExpansion: true});
+    const [game, player] = testGame(1, {expansions: {turmoil: true, moon: true}});
     const turmoil = Turmoil.getTurmoil(game);
     game.phase = Phase.ACTION;
 

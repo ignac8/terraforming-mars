@@ -15,7 +15,7 @@ describe('Deimos', () => {
 
   beforeEach(() => {
     deimos = new Deimos();
-    [game, player] = testGame(2, {aresExtension: true});
+    [game, player] = testGame(2, {expansions: {ares: true}});
     game.board = EmptyBoard.newInstance();
     game.colonies.push(deimos);
   });

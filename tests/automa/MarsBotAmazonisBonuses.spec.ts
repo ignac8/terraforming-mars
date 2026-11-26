@@ -15,8 +15,7 @@ import {formatMessage, maxOutOceans, setOxygenLevel, setTemperature, setVenusSca
 function amazonisGame(options: {colonies: boolean}) {
   const [game, human] = testGame(1, {
     automa: true,
-    venusNextExtension: true,
-    coloniesExtension: options.colonies,
+    expansions: {venus: true, colonies: options.colonies},
     boardName: BoardName.AMAZONIS_PLANITIA,
   });
   const marsBot = game.automaHooks!.marsBot;

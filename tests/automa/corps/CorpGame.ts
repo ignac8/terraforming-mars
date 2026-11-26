@@ -49,7 +49,7 @@ export function standaloneMarsBot(game: IGame, player: IPlayer, humanPlayer: IPl
 
 /** Creates a Venus game in which MarsBot has run the setup of `corpName`, for the corporation FAQ (rulebook B, p.4). */
 export function createCorpFaqGame(corpName: CardName): AutomaGame {
-  const [game, human] = testGame(1, {automa: true, venusNextExtension: true, boardName: BoardName.THARSIS});
+  const [game, human] = testGame(1, {automa: true, expansions: {venus: true}, boardName: BoardName.THARSIS});
   const marsBot = game.automaHooks!.marsBot;
   marsBot.setCorpAndSetup(getMarsBotCorp(corpName)!);
   return {game, human, marsBot};

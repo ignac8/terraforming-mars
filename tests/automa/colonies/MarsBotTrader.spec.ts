@@ -20,7 +20,7 @@ import {Tag} from '../../../src/common/cards/Tag';
 import {BoardName} from '../../../src/common/boards/BoardName';
 
 function setup(options: {megacredits?: number} = {}) {
-  const [game, human, botPlayer] = testGame(2, {coloniesExtension: true});
+  const [game, human, botPlayer] = testGame(2, {expansions: {colonies: true}});
   const {marsBot, calls} = recordingMarsBot({
     game,
     player: botPlayer,
@@ -122,14 +122,14 @@ describe('MarsBotTrader', () => {
 
   describe('selectTradeColony', () => {
     it('returns undefined when no tradeable colonies', () => {
-      const [game] = testGame(1, {automa: true, coloniesExtension: true, boardName: BoardName.THARSIS});
+      const [game] = testGame(1, {automa: true, expansions: {colonies: true}, boardName: BoardName.THARSIS});
       const marsBot = getMarsBot(game);
       game.colonies = [];
       expect(selectTradeColony(marsBot)).to.be.undefined;
     });
 
     it('returns undefined when all colonies already visited (rulebook C, p.5)', () => {
-      const [game] = testGame(1, {automa: true, coloniesExtension: true, boardName: BoardName.THARSIS});
+      const [game] = testGame(1, {automa: true, expansions: {colonies: true}, boardName: BoardName.THARSIS});
       const marsBot = getMarsBot(game);
       const luna = new Luna();
       luna.visitor = 'psome-player';
@@ -138,7 +138,7 @@ describe('MarsBotTrader', () => {
     });
 
     it('selects the colony with the highest track position (rulebook C, p.5)', () => {
-      const [game] = testGame(1, {automa: true, coloniesExtension: true, boardName: BoardName.THARSIS});
+      const [game] = testGame(1, {automa: true, expansions: {colonies: true}, boardName: BoardName.THARSIS});
       const marsBot = getMarsBot(game);
       const luna = new Luna();
       luna.trackPosition = 3;
@@ -149,7 +149,7 @@ describe('MarsBotTrader', () => {
     });
 
     it('tiebreaks by preferring a colony where MarsBot has a presence (rulebook C, p.5)', () => {
-      const [game] = testGame(1, {automa: true, coloniesExtension: true, boardName: BoardName.THARSIS});
+      const [game] = testGame(1, {automa: true, expansions: {colonies: true}, boardName: BoardName.THARSIS});
       const marsBot = getMarsBot(game);
       const luna = new Luna();
       luna.trackPosition = 4;
@@ -161,7 +161,7 @@ describe('MarsBotTrader', () => {
     });
 
     it('uses random tiebreak when still tied after track position and colony presence (rulebook C, p.5)', () => {
-      const [game] = testGame(1, {automa: true, coloniesExtension: true, boardName: BoardName.THARSIS});
+      const [game] = testGame(1, {automa: true, expansions: {colonies: true}, boardName: BoardName.THARSIS});
       const marsBot = getMarsBot(game);
       const luna = new Luna();
       luna.trackPosition = 4;
@@ -178,7 +178,7 @@ describe('MarsBotTrader', () => {
     });
 
     it('excludes inactive colonies', () => {
-      const [game] = testGame(1, {automa: true, coloniesExtension: true, boardName: BoardName.THARSIS});
+      const [game] = testGame(1, {automa: true, expansions: {colonies: true}, boardName: BoardName.THARSIS});
       const marsBot = getMarsBot(game);
       const luna = new Luna();
       luna.isActive = false;
@@ -189,7 +189,7 @@ describe('MarsBotTrader', () => {
 
   describe('tradeWithColony', () => {
     it('deducts 1 MC from marsBot (rulebook C, p.5)', () => {
-      const [game] = testGame(1, {automa: true, coloniesExtension: true, boardName: BoardName.THARSIS});
+      const [game] = testGame(1, {automa: true, expansions: {colonies: true}, boardName: BoardName.THARSIS});
       const marsBot = getMarsBot(game);
       const luna = new Luna();
       game.colonies = [luna];
@@ -199,7 +199,7 @@ describe('MarsBotTrader', () => {
     });
 
     it('marks colony.visitor with MarsBot player id (rulebook C, p.5)', () => {
-      const [game] = testGame(1, {automa: true, coloniesExtension: true, boardName: BoardName.THARSIS});
+      const [game] = testGame(1, {automa: true, expansions: {colonies: true}, boardName: BoardName.THARSIS});
       const marsBot = getMarsBot(game);
       const luna = new Luna();
       game.colonies = [luna];
@@ -208,7 +208,7 @@ describe('MarsBotTrader', () => {
     });
 
     it('gains 2 resources to shipping board (rulebook C, p.5)', () => {
-      const [game] = testGame(1, {automa: true, coloniesExtension: true, boardName: BoardName.THARSIS});
+      const [game] = testGame(1, {automa: true, expansions: {colonies: true}, boardName: BoardName.THARSIS});
       const marsBot = getMarsBot(game);
       const luna = new Luna();
       game.colonies = [luna];
@@ -218,7 +218,7 @@ describe('MarsBotTrader', () => {
     });
 
     it('gains 3 resources when MarsBot has a colony there (rulebook C, p.5)', () => {
-      const [game] = testGame(1, {automa: true, coloniesExtension: true, boardName: BoardName.THARSIS});
+      const [game] = testGame(1, {automa: true, expansions: {colonies: true}, boardName: BoardName.THARSIS});
       const marsBot = getMarsBot(game);
       const luna = new Luna();
       luna.colonies = [marsBot.player.id];
@@ -229,7 +229,7 @@ describe('MarsBotTrader', () => {
     });
 
     it('resets track position to colonies.length after trade', () => {
-      const [game] = testGame(1, {automa: true, coloniesExtension: true, boardName: BoardName.THARSIS});
+      const [game] = testGame(1, {automa: true, expansions: {colonies: true}, boardName: BoardName.THARSIS});
       const marsBot = getMarsBot(game);
       const luna = new Luna();
       luna.trackPosition = 5;
@@ -241,7 +241,7 @@ describe('MarsBotTrader', () => {
 
     describe('Europa special case (rulebook C, p.5)', () => {
       it('raises TR 1 step instead of resources', () => {
-        const [game] = testGame(1, {automa: true, coloniesExtension: true, boardName: BoardName.THARSIS});
+        const [game] = testGame(1, {automa: true, expansions: {colonies: true}, boardName: BoardName.THARSIS});
         const marsBot = getMarsBot(game);
         const europa = new Europa();
         game.colonies = [europa];
@@ -251,7 +251,7 @@ describe('MarsBotTrader', () => {
       });
 
       it('does not add resources to Europa storage (rulebook C, p.5)', () => {
-        const [game] = testGame(1, {automa: true, coloniesExtension: true, boardName: BoardName.THARSIS});
+        const [game] = testGame(1, {automa: true, expansions: {colonies: true}, boardName: BoardName.THARSIS});
         const marsBot = getMarsBot(game);
         const europa = new Europa();
         game.colonies = [europa];
@@ -262,7 +262,7 @@ describe('MarsBotTrader', () => {
 
     describe('human colony bonus (rulebook C, p.5)', () => {
       it('gives colony bonus to human player when they have a colony on the tile', () => {
-        const [game, player] = testGame(1, {automa: true, coloniesExtension: true, boardName: BoardName.THARSIS});
+        const [game, player] = testGame(1, {automa: true, expansions: {colonies: true}, boardName: BoardName.THARSIS});
         const marsBot = getMarsBot(game);
         const ceres = new Ceres();
         ceres.colonies = [player.id];
@@ -274,7 +274,7 @@ describe('MarsBotTrader', () => {
       });
 
       it('does not give MarsBot the printed colony bonus (skip self)', () => {
-        const [game] = testGame(1, {automa: true, coloniesExtension: true, boardName: BoardName.THARSIS});
+        const [game] = testGame(1, {automa: true, expansions: {colonies: true}, boardName: BoardName.THARSIS});
         const marsBot = getMarsBot(game);
         const luna = new Luna();
         luna.colonies = [marsBot.player.id];
@@ -287,7 +287,7 @@ describe('MarsBotTrader', () => {
     });
 
     it('Titan without Venus: adds resources to Titan storage (rulebook C, p.5)', () => {
-      const [game] = testGame(1, {automa: true, coloniesExtension: true, boardName: BoardName.THARSIS});
+      const [game] = testGame(1, {automa: true, expansions: {colonies: true}, boardName: BoardName.THARSIS});
       const marsBot = getMarsBot(game);
       const titan = new Titan();
       game.colonies = [titan];
@@ -299,8 +299,7 @@ describe('MarsBotTrader', () => {
     it('Titan with Venus Next: adds floaters instead of Titan storage (rulebook C, p.5)', () => {
       const [game] = testGame(1, {
         automa: true,
-        coloniesExtension: true,
-        venusNextExtension: true,
+        expansions: {colonies: true, venus: true},
         boardName: BoardName.THARSIS,
       });
       const marsBot = getMarsBot(game);
@@ -315,7 +314,7 @@ describe('MarsBotTrader', () => {
 
     describe('Pluto special case (rulebook C, p.5)', () => {
       it('adds 2 resources to Pluto storage (MC-equivalent) instead of drawing cards', () => {
-        const [game] = testGame(1, {automa: true, coloniesExtension: true, boardName: BoardName.THARSIS});
+        const [game] = testGame(1, {automa: true, expansions: {colonies: true}, boardName: BoardName.THARSIS});
         const marsBot = getMarsBot(game);
         const pluto = new Pluto();
         game.colonies = [pluto];
@@ -329,7 +328,7 @@ describe('MarsBotTrader', () => {
       });
 
       it('Pluto overflow advances Science track (rulebook C, p.4-5)', () => {
-        const [game] = testGame(1, {automa: true, coloniesExtension: true, boardName: BoardName.THARSIS});
+        const [game] = testGame(1, {automa: true, expansions: {colonies: true}, boardName: BoardName.THARSIS});
         const marsBot = getMarsBot(game);
         const pluto = new Pluto();
         game.colonies = [pluto];

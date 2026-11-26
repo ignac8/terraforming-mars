@@ -23,8 +23,8 @@ import {CorporateCompetition} from '../../src/server/automa/bonusCards/Corporate
 import {runAllActions} from '../TestingUtils';
 import {cast} from '../../src/common/utils/utils';
 
-function createAutomaGame(venusNextExtension: boolean = false): {game: Game, human: TestPlayer, marsBot: MarsBot} {
-  const [game, human] = testGame(1, {automa: true, venusNextExtension, boardName: BoardName.THARSIS});
+function createAutomaGame(venus: boolean = false): {game: Game, human: TestPlayer, marsBot: MarsBot} {
+  const [game, human] = testGame(1, {automa: true, expansions: {venus}, boardName: BoardName.THARSIS});
   return {game: game as Game, human, marsBot: game.automaHooks!.marsBot};
 }
 
@@ -82,7 +82,7 @@ describe("MarsBot and the player's Splice", () => {
   });
 
   it("pays 2 M€ when a track action advances MarsBot's microbe track", () => {
-    ({game, human, marsBot} = createAutomaGame(/* venusNextExtension */ true));
+    ({game, human, marsBot} = createAutomaGame(/* venus */ true));
     human.playedCards.push(new Splice());
     const venusTrack = marsBot.marsBotBoard.tagToTrack[Tag.VENUS]!;
     // The next Venus track space shows the microbe icon.

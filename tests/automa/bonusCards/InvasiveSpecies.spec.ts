@@ -24,9 +24,9 @@ function invasiveSpecies() {
 describe('InvasiveSpecies', () => {
   for (const run of [
     {options: {}, titan: false, expected: ['gainMc(5)']},
-    {options: {venusNextExtension: true}, titan: false, expected: ['gainMc(2)', 'addFloaters(1)']},
-    {options: {coloniesExtension: true}, titan: true, expected: ['gainMc(2)', 'addFloaters(1)']},
-    {options: {coloniesExtension: true}, titan: false, expected: ['gainMc(2)']},
+    {options: {expansions: {venus: true}}, titan: false, expected: ['gainMc(2)', 'addFloaters(1)']},
+    {options: {expansions: {colonies: true}}, titan: true, expected: ['gainMc(2)', 'addFloaters(1)']},
+    {options: {expansions: {colonies: true}}, titan: false, expected: ['gainMc(2)']},
   ] as const) {
     it('gains 5 M€, or 2 M€ and a floater with Venus Next or Titan: ' + JSON.stringify(run), () => {
       const [game, human] = testGame(1, run.options);
@@ -168,7 +168,7 @@ describe('InvasiveSpecies', () => {
   });
 
   it('with Venus Next gains 2 M€ and 1 floater instead of 5 M€', () => {
-    const [game] = testGame(1, {automa: true, venusNextExtension: true, boardName: BoardName.THARSIS});
+    const [game] = testGame(1, {automa: true, expansions: {venus: true}, boardName: BoardName.THARSIS});
     const marsBot = game.automaHooks!.marsBot;
 
     marsBot.actionDeck.playBonusCard(invasiveSpecies());
@@ -179,7 +179,7 @@ describe('InvasiveSpecies', () => {
 
   it('with Colonies and no Venus Next puts the floater in Titan storage', () => {
     const [game] = testGame(1, {
-      automa: true, coloniesExtension: true, boardName: BoardName.THARSIS,
+      automa: true, expansions: {colonies: true}, boardName: BoardName.THARSIS,
       customColoniesList: [ColonyName.TITAN, ColonyName.CERES, ColonyName.LUNA, ColonyName.IO, ColonyName.GANYMEDE],
     });
     const marsBot = game.automaHooks!.marsBot;
@@ -193,7 +193,7 @@ describe('InvasiveSpecies', () => {
   // Nick, BGG 3341542: without Venus Next and Titan the floater is ignored; the card's 2 M€ stays
   it('with Colonies, no Venus Next and no Titan gains 2 M€ and ignores the floater', () => {
     const [game] = testGame(1, {
-      automa: true, coloniesExtension: true, boardName: BoardName.THARSIS,
+      automa: true, expansions: {colonies: true}, boardName: BoardName.THARSIS,
       customColoniesList: [ColonyName.CALLISTO, ColonyName.CERES, ColonyName.LUNA, ColonyName.IO, ColonyName.GANYMEDE],
     });
     const marsBot = game.automaHooks!.marsBot;

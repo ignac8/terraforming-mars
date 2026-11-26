@@ -8,7 +8,7 @@ import {maxOutOceans, setOxygenLevel, setTemperature, setVenusScaleLevel} from '
 import {resetCorpRegistry} from './corps/CorpGame';
 
 function amazonisGame(venus: boolean = false) {
-  const [game] = testGame(1, {automa: true, venusNextExtension: venus, boardName: BoardName.AMAZONIS_PLANITIA});
+  const [game] = testGame(1, {automa: true, expansions: {venus}, boardName: BoardName.AMAZONIS_PLANITIA});
   const marsBot = game.automaHooks!.marsBot;
   return {game, marsBot, resolver: marsBot.turnResolver};
 }

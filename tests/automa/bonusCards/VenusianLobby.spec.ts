@@ -21,7 +21,7 @@ describe('VenusianLobby', () => {
     {intercepted: true, expected: 0},
   ] as const) {
     it('raises Venus unless a corp cancels it, advances the Venus track and raises the furthest parameter: ' + JSON.stringify(run), () => {
-      const [game, human, botPlayer] = testGame(2, {venusNextExtension: true});
+      const [game, human, botPlayer] = testGame(2, {expansions: {venus: true}});
       const marsBotBoard = new MarsBotBoard([...THARSIS_MARSBOT_BOARD, VENUS_MARSBOT_TRACK]);
       const {marsBot, calls} = recordingMarsBot({
         game, player: botPlayer, humanPlayer: human, megacredits: 0, marsBotBoard,
@@ -52,7 +52,7 @@ describe('VenusianLobby', () => {
   });
 
   it('raises Venus, advances the Venus track and raises the furthest parameter', () => {
-    const [game] = testGame(1, {automa: true, venusNextExtension: true, boardName: BoardName.THARSIS});
+    const [game] = testGame(1, {automa: true, expansions: {venus: true}, boardName: BoardName.THARSIS});
     const marsBot = game.automaHooks!.marsBot;
     marsBot.actionDeck.playBonusCard(createBonusCard(BonusCardName.VENUSIAN_LOBBY));
     expect(game.getVenusScaleLevel()).to.eq(2);
@@ -65,7 +65,7 @@ describe('VenusianLobby', () => {
   // A bonus card that can't resolve takes no Failed Action (rulebook A p.5 B.a; BGG 3599965 and
   // 3623553, njshaw2). Project cards still do.
   it('takes no Failed Action when advancing a maxed track', () => {
-    const [game] = testGame(1, {automa: true, venusNextExtension: true, boardName: BoardName.THARSIS});
+    const [game] = testGame(1, {automa: true, expansions: {venus: true}, boardName: BoardName.THARSIS});
     const marsBot = game.automaHooks!.marsBot;
     maxTracks(marsBot);
     marsBot.actionDeck.playBonusCard(createBonusCard(BonusCardName.VENUSIAN_LOBBY));

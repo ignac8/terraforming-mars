@@ -15,7 +15,7 @@ import {TRACK, recordingMarsBot, trackCubes} from '../RecordingMarsBot';
 
 
 function createVenusGame(): MarsBot {
-  const [game] = testGame(1, {automa: true, venusNextExtension: true, boardName: BoardName.THARSIS});
+  const [game] = testGame(1, {automa: true, expansions: {venus: true}, boardName: BoardName.THARSIS});
   return game.automaHooks!.marsBot;
 }
 

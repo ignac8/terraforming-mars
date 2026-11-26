@@ -11,7 +11,7 @@ import {bonusCardsInActionDeck, bonusCardsInBonusDeck} from './BonusCardGame';
 
 // MarsBot meets Terraformer and Hoverlord; the player is 7 away from both.
 function setUpTie() {
-  const {game, human, marsBot} = createAutomaGame({venusNextExtension: true});
+  const {game, human, marsBot} = createAutomaGame({expansions: {venus: true}});
   const hoverlord = game.milestones.find((m) => m.name === 'Hoverlord')!;
   inplaceRemove(game.milestones, hoverlord);
   game.milestones.unshift(hoverlord); // leftmost

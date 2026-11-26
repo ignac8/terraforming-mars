@@ -31,7 +31,7 @@ function turmoilHelper(game: IGame): MarsBotTurmoilHelper {
 function createTurmoilGame(): {game: IGame, humanPlayer: TestPlayer, marsBot: MarsBot} {
   const [game, humanPlayer] = testGame(1, {
     automa: true,
-    turmoilExtension: true,
+    expansions: {turmoil: true},
     boardName: BoardName.THARSIS,
   });
   const marsBot = game.automaHooks!.marsBot;
@@ -587,7 +587,7 @@ describe('MarsBot Turmoil — Difficulty options (rulebook C, p.7)', () => {
   it('by default MarsBot starts at 10 TR (reduced by 10) with no seeded delegates', () => {
     const [game] = testGame(1, {
       automa: true,
-      turmoilExtension: true,
+      expansions: {turmoil: true},
       boardName: BoardName.THARSIS,
     });
     expect(game.automaHooks!.marsBot.player.terraformRating).to.equal(MARSBOT_STARTING_TR - 10);
@@ -599,7 +599,7 @@ describe('MarsBot Turmoil — Difficulty options (rulebook C, p.7)', () => {
   it('automaTurmoilTRReduction=7 → MarsBot starts at 13 TR and still seeds no delegates', () => {
     const [game] = testGame(1, {
       automa: true,
-      turmoilExtension: true,
+      expansions: {turmoil: true},
       boardName: BoardName.THARSIS,
       automaTurmoilTRReduction: 7,
     });
@@ -610,7 +610,7 @@ describe('MarsBot Turmoil — Difficulty options (rulebook C, p.7)', () => {
   it('automaTurmoilSetupDelegates=1 → 1 MarsBot delegate seeded, TR reduction unchanged', () => {
     const [game] = testGame(1, {
       automa: true,
-      turmoilExtension: true,
+      expansions: {turmoil: true},
       boardName: BoardName.THARSIS,
       automaTurmoilSetupDelegates: 1,
     });
@@ -623,7 +623,7 @@ describe('MarsBot Turmoil — Difficulty options (rulebook C, p.7)', () => {
   it('automaTurmoilSetupDelegates=2 → 2 MarsBot delegates seeded', () => {
     const [game] = testGame(1, {
       automa: true,
-      turmoilExtension: true,
+      expansions: {turmoil: true},
       boardName: BoardName.THARSIS,
       automaTurmoilSetupDelegates: 2,
     });
@@ -635,7 +635,7 @@ describe('MarsBot Turmoil — Difficulty options (rulebook C, p.7)', () => {
   it('both difficulty options combine: reduction 7 and 2 seeded delegates', () => {
     const [game] = testGame(1, {
       automa: true,
-      turmoilExtension: true,
+      expansions: {turmoil: true},
       boardName: BoardName.THARSIS,
       automaTurmoilTRReduction: 7,
       automaTurmoilSetupDelegates: 2,
@@ -647,7 +647,7 @@ describe('MarsBot Turmoil — Difficulty options (rulebook C, p.7)', () => {
   it('Turmoil difficulty options have no effect without turmoilExtension', () => {
     const [game] = testGame(1, {
       automa: true,
-      turmoilExtension: false,
+      expansions: {turmoil: false},
       boardName: BoardName.THARSIS,
       automaTurmoilTRReduction: 7,
       automaTurmoilSetupDelegates: 2,

@@ -71,7 +71,7 @@ describe('MarsBot boards', () => {
       });
 
       it('sets up a game', () => {
-        const [game] = testGame(1, {automa: true, boardName, venusNextExtension: true, coloniesExtension: true});
+        const [game] = testGame(1, {automa: true, boardName, expansions: {venus: true, colonies: true}});
         const marsBot = getMarsBot(game);
         expect(marsBot.marsBotBoard.tracks).has.length(8);
       });
@@ -117,7 +117,7 @@ describe('MarsBot boards', () => {
   });
 
   it('Enceladus microbes advance the Science track on Vastitas Borealis', () => {
-    const [game] = testGame(1, {automa: true, coloniesExtension: true, boardName: BoardName.VASTITAS_BOREALIS_NOVA});
+    const [game] = testGame(1, {automa: true, expansions: {colonies: true}, boardName: BoardName.VASTITAS_BOREALIS_NOVA});
     const marsBot = getMarsBot(game);
     const science = marsBot.marsBotBoard.tracks[3];
     const bio = marsBot.marsBotBoard.tracks[6];

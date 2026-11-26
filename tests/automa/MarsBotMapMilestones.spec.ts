@@ -439,7 +439,7 @@ describe('MarsBot map milestones and awards', () => {
         'Ecologist', 'Energizer', 'Engineer', 'Farmer', 'Fundraiser', 'Gardener', 'Generalist', 'Geologist',
         'Hoverlord', 'Hydrologist', 'Land Specialist', 'Landshaper', 'Legend', 'Legend4', 'Lobbyist', 'Mayor',
         'Merchant', 'Metallurgist', 'Philantropist', 'Pioneer', 'Planetologist', 'Planner',
-        'Polar Explorer', 'Producer', 'Researcher', 'Rim Settler', 'Smith', 'Spacefarer4', 'Specialist', 'Sponsor',
+        'Polar Explorer', 'Producer', 'Researcher', 'Rim Settler', 'Smith', 'Spacefarer', 'Specialist', 'Sponsor',
         'Tactician', 'Tactician4', 'Terraformer', 'Terran', 'Terran5', 'Thawer', 'Trader', 'Tradesman', 'Tycoon', 'Tycoon10',
         'V. Spacefarer',
       ]);

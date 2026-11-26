@@ -64,7 +64,7 @@ describe('ArcadianCommunitiesMarsBot', () => {
   });
 
   it('holds the before-action-phase box until the player has played their preludes', () => {
-    const [game, human] = testGame(1, {automa: true, automaCorpOption: true, preludeExtension: true, boardName: BoardName.THARSIS});
+    const [game, human] = testGame(1, {automa: true, automaCorpOption: true, expansions: {prelude: true}, boardName: BoardName.THARSIS});
     const marsBot = game.automaHooks!.marsBot;
     const corp = getMarsBotCorp(CardName.ARCADIAN_COMMUNITIES)!;
     clearMarsBotCorpRegistry();
@@ -90,7 +90,7 @@ describe('ArcadianCommunitiesMarsBot', () => {
   });
 
   it('resolves the before-action-phase box before the actions Head Start grants', () => {
-    const [game, human] = testGame(1, {automa: true, automaCorpOption: true, preludeExtension: true, boardName: BoardName.THARSIS});
+    const [game, human] = testGame(1, {automa: true, automaCorpOption: true, expansions: {prelude: true}, boardName: BoardName.THARSIS});
     const marsBot = game.automaHooks!.marsBot;
     const corp = getMarsBotCorp(CardName.ARCADIAN_COMMUNITIES)!;
     clearMarsBotCorpRegistry();

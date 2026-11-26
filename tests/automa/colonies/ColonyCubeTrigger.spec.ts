@@ -22,7 +22,7 @@ function registerColonyCube(marsBot: MarsBot, trackIndex: number, position: numb
 
 describe('ColonyCubeTrigger', () => {
   it('places a colony when colony cube is triggered', () => {
-    const [game] = testGame(1, {automa: true, coloniesExtension: true, boardName: BoardName.THARSIS});
+    const [game] = testGame(1, {automa: true, expansions: {colonies: true}, boardName: BoardName.THARSIS});
     const marsBot = getMarsBot(game);
     const luna = new Luna();
     game.colonies = [luna];
@@ -38,7 +38,7 @@ describe('ColonyCubeTrigger', () => {
   });
 
   it("is not one of the corp's cubes, so Point Luna's black cube effect stays off it", () => {
-    const [game] = testGame(1, {automa: true, coloniesExtension: true, boardName: BoardName.THARSIS});
+    const [game] = testGame(1, {automa: true, expansions: {colonies: true}, boardName: BoardName.THARSIS});
     const marsBot = getMarsBot(game);
     const luna = new Luna();
     game.colonies = [luna];
@@ -53,7 +53,7 @@ describe('ColonyCubeTrigger', () => {
   });
 
   it('failed action when no eligible colonies for colony cube', () => {
-    const [game] = testGame(1, {automa: true, coloniesExtension: true, boardName: BoardName.THARSIS});
+    const [game] = testGame(1, {automa: true, expansions: {colonies: true}, boardName: BoardName.THARSIS});
     const marsBot = getMarsBot(game);
     game.colonies = [];
 
@@ -67,7 +67,7 @@ describe('ColonyCubeTrigger', () => {
   });
 
   it('does not trigger colony placement when cube key does not match the triggered position', () => {
-    const [game] = testGame(1, {automa: true, coloniesExtension: true, boardName: BoardName.THARSIS});
+    const [game] = testGame(1, {automa: true, expansions: {colonies: true}, boardName: BoardName.THARSIS});
     const marsBot = getMarsBot(game);
     const luna = new Luna();
     game.colonies = [luna];
@@ -82,7 +82,7 @@ describe('ColonyCubeTrigger', () => {
   });
 
   it('does nothing (no cube) when triggered at a position with no cube', () => {
-    const [game] = testGame(1, {automa: true, coloniesExtension: true, boardName: BoardName.THARSIS});
+    const [game] = testGame(1, {automa: true, expansions: {colonies: true}, boardName: BoardName.THARSIS});
     const marsBot = getMarsBot(game);
     const luna = new Luna();
     game.colonies = [luna];

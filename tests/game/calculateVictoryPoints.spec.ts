@@ -29,7 +29,7 @@ describe('calculateVictoryPoints', () => {
   });
 
   it('lists Turmoil points first in the card details', () => {
-    const [game, player] = testGame(2, {turmoilExtension: true});
+    const [game, player] = testGame(2, {expansions: {turmoil: true}});
     player.playedCards.push(new BeamFromAThoriumAsteroid());
     Turmoil.getTurmoil(game).chairman = player;
     game.phase = Phase.END;

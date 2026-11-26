@@ -469,7 +469,7 @@ describe('MarsBot Deep Rules Tests', () => {
     });
 
     it('measures Terraformer against 26 with Turmoil', () => {
-      const [game, human] = testGame(1, {automa: true, boardName: BoardName.THARSIS, turmoilExtension: true});
+      const [game, human] = testGame(1, {automa: true, boardName: BoardName.THARSIS, expansions: {turmoil: true}});
       human.setTerraformRating(25);
 
       const terraformer = game.milestones.find((m) => m.name === 'Terraformer')!;
@@ -601,7 +601,7 @@ describe('MarsBot Deep Rules Tests', () => {
   // temperature track (BGG 3358342 TDaver, 3424237 and 3733436 njshaw2)
   describe('Venus 8% card bonus', () => {
     function venusGame() {
-      const [game] = testGame(1, {automa: true, venusNextExtension: true, boardName: BoardName.THARSIS});
+      const [game] = testGame(1, {automa: true, expansions: {venus: true}, boardName: BoardName.THARSIS});
       const marsBot = game.automaHooks!.marsBot;
       setVenusScaleLevel(game, 6);
       return {game, marsBot, hand: marsBot.player.cardsInHand.length, deck: game.projectDeck.drawPile.length};
