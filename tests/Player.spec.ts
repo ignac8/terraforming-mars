@@ -552,7 +552,7 @@ describe('Player', () => {
   });
 
   it('Prelude action cycle', () => {
-    const [game, player1, player2] = testGame(2, {preludeExtension: true});
+    const [game, player1, player2] = testGame(2, {expansions: {prelude: true}});
 
     // None of these preludes require additional user input, so they're good for this test.
     const alliedBanks = new AlliedBanks();
@@ -609,7 +609,7 @@ describe('Player', () => {
   });
 
   it('Prelude fizzle', () => {
-    const [game, player] = testGame(1, {preludeExtension: true});
+    const [game, player] = testGame(1, {expansions: {prelude: true}});
 
     const alliedBanks = new AlliedBanks();
     const loan = new Loan();
@@ -709,7 +709,7 @@ describe('Player', () => {
   });
 
   it('Increasing venus sets globalParameterSteps', () => {
-    const [game, player, player2] = testGame(2, {venusNextExtension: true, solarPhaseOption: true});
+    const [game, player, player2] = testGame(2, {expansions: {venus: true}, solarPhaseOption: true});
 
     game.phase = Phase.ACTION;
     game.increaseVenusScaleLevel(player, 1);
@@ -741,7 +741,7 @@ describe('Player', () => {
     }
 
     it('kp03 ruling: 6-heat option replaces 8-heat option', () => {
-      const [game, player] = testGame(1, {turmoilExtension: true});
+      const [game, player] = testGame(1, {expansions: {turmoil: true}});
       setRulingParty(game, PartyName.KELVINISTS, 'kp03');
       player.stock.add(Resource.HEAT, 10);
 
@@ -750,7 +750,7 @@ describe('Player', () => {
     });
 
     it('kp01 ruling: 8-heat option remains, 6-heat is not offered', () => {
-      const [game, player] = testGame(1, {turmoilExtension: true});
+      const [game, player] = testGame(1, {expansions: {turmoil: true}});
       setRulingParty(game, PartyName.KELVINISTS, 'kp01');
       player.stock.add(Resource.HEAT, 10);
 

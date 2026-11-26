@@ -39,7 +39,7 @@ import {restoreTestDatabase, setTestDatabase} from './testing/setup';
 import {InMemoryDatabase} from './testing/InMemoryDatabase';
 import {SnapshotDatabase} from './testing/SnapshotDatabase';
 import {BeginnerCorporation} from '../src/server/cards/corporation/BeginnerCorporation';
-import {Spacefarer} from '../src/server/milestones/terraCimmeria/Spacefarer';
+import {Spacefarer} from '@/server/milestones/modular/Spacefarer';
 import {Suburbian} from '../src/server/awards/modular/Suburbian';
 import {SpaceName} from '../src/common/boards/SpaceName';
 import {SpaceType} from '../src/common/boards/SpaceType';
@@ -176,7 +176,7 @@ describe('Game', () => {
   });
 
   it('Venus moves 1% per step above 30% on Amazonis Planitia', () => {
-    const [game, player] = testGame(2, {venusNextExtension: true, boardName: BoardName.AMAZONIS_PLANITIA});
+    const [game, player] = testGame(2, {expansions: {venus: true}, boardName: BoardName.AMAZONIS_PLANITIA});
     setVenusScaleLevel(game, 28);
 
     expect(game.increaseVenusScaleLevel(player, 2)).eq(2);
@@ -190,7 +190,7 @@ describe('Game', () => {
   });
 
   it('Venus decreases 1% per step above 30% on Amazonis Planitia', () => {
-    const [game, player] = testGame(2, {venusNextExtension: true, boardName: BoardName.AMAZONIS_PLANITIA});
+    const [game, player] = testGame(2, {expansions: {venus: true}, boardName: BoardName.AMAZONIS_PLANITIA});
     setVenusScaleLevel(game, 31);
 
     game.increaseVenusScaleLevel(player, -1);
@@ -313,7 +313,7 @@ describe('Game', () => {
   });
 
   it('Amazonis Planitia solo games with prelude take one more generation', () => {
-    const [game] = testGame(1, {boardName: BoardName.AMAZONIS_PLANITIA, preludeExtension: true});
+    const [game] = testGame(1, {boardName: BoardName.AMAZONIS_PLANITIA, expansions: {prelude: true}});
     expect(game.lastSoloGeneration()).eq(13);
   });
 
@@ -1343,16 +1343,16 @@ describe('Game', () => {
     });
 
     const serialized = game.serialize();
-    expect(serialized.milestones[0]).eq('T. Spacefarer');
-    expect(serialized.claimedMilestones[0].name).eq('T. Spacefarer');
+    expect(serialized.milestones[0]).eq('Spacefarer');
+    expect(serialized.claimedMilestones[0].name).eq('Spacefarer');
 
-    Reflect.set(serialized.milestones, 0, 'Spacefarer');
-    Reflect.set(serialized.claimedMilestones[0], 'name', 'Spacefarer');
+    Reflect.set(serialized.milestones, 0, 'Spacefarer4');
+    Reflect.set(serialized.claimedMilestones[0], 'name', 'Spacefarer4');
 
     const deserialized = Game.deserialize(serialized);
     expect(deserialized.milestones[0]).deep.eq(spacefarer);
     expect(deserialized.claimedMilestones).has.length(1);
-    expect(deserialized.claimedMilestones[0].milestone.name).eq('T. Spacefarer');
+    expect(deserialized.claimedMilestones[0].milestone.name).eq('Spacefarer');
     expect(deserialized.claimedMilestones[0].player.id).eq('p-blue-id');
   });
 
@@ -1661,7 +1661,7 @@ describe('Game', () => {
   ] as const) {
     it('Amazonis Planitia at 16% Venus ' + JSON.stringify(run), () => {
       // 2 players to remove an early-game solo action in the deferred actions queue.
-      const [game, player] = testGame(2, {boardName: BoardName.AMAZONIS_PLANITIA, venusNextExtension: true, coloniesExtension: run.colonies});
+      const [game, player] = testGame(2, {boardName: BoardName.AMAZONIS_PLANITIA, expansions: {venus: true, colonies: run.colonies}});
       game.phase = run.phase;
       setVenusScaleLevel(game, 14);
 

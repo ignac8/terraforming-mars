@@ -6,31 +6,7 @@ import {SelectInitialCards} from '../src/server/inputs/SelectInitialCards';
 import {Deck} from '../src/server/cards/Deck';
 import {DEFAULT_EXPANSIONS, Expansions} from '@/common/cards/GameModule';
 
-/** Per-expansion flags that predate `GameOptions.expansions`. */
-export type LegacyGameOptions = {
-  /** @deprecated Use `expansions.venus`. */
-  venusNextExtension: boolean;
-  /** @deprecated Use `expansions.colonies`. */
-  coloniesExtension: boolean;
-  /** @deprecated Use `expansions.prelude`. */
-  preludeExtension: boolean;
-  /** @deprecated Use `expansions.turmoil`. */
-  turmoilExtension: boolean;
-  /** @deprecated Use `expansions.ares`. */
-  aresExtension: boolean;
-  /** @deprecated Use `expansions.moon`. */
-  moonExpansion: boolean;
-  /** @deprecated Use `expansions.pathfinders`. */
-  pathfindersExpansion: boolean;
-  /** @deprecated Use `expansions.ceo`. */
-  ceoExtension: boolean;
-  /** @deprecated Use `expansions.starwars`. */
-  starWarsExpansion: boolean;
-  /** @deprecated Use `expansions.underworld`. */
-  underworldExpansion: boolean;
-};
-
-export type TestGameOptions = Omit<GameOptions, 'expansions'> & LegacyGameOptions & {
+export type TestGameOptions = Omit<GameOptions, 'expansions'> & {
   /** Expansions to override. The rest come from the legacy flags, or their defaults. */
   expansions: Partial<Expansions>;
   /* skip initial card selection */
@@ -68,27 +44,18 @@ export function testGame(count: number, customOptions?: Partial<TestGameOptions>
   const players = createPlayers(count, idSuffix);
 
   const {expansions, ...rest} = customOptions ?? {};
-  // if (copy.aresExtension === true && copy.aresHazards === undefined) {
-  //   copy.aresHazards = false;
-  // }
 
   const copy: Partial<GameOptions> = {
     ...rest,
     expansions: {
       ...DEFAULT_EXPANSIONS,
-      venus: rest.venusNextExtension ?? false,
-      colonies: rest.coloniesExtension ?? false,
-      prelude: rest.preludeExtension ?? false,
-      turmoil: rest.turmoilExtension ?? false,
-      ares: rest.aresExtension ?? false,
-      moon: rest.moonExpansion ?? false,
-      pathfinders: rest.pathfindersExpansion ?? false,
-      ceo: rest.ceoExtension ?? false,
-      starwars: rest.starWarsExpansion ?? false,
-      underworld: rest.underworldExpansion ?? false,
       ...expansions,
     },
   };
+
+  if (expansions?.ares === true && copy.aresHazards === undefined) {
+    copy.aresHazards = false;
+  }
 
   const shuffle = Deck.shuffle;
   try {

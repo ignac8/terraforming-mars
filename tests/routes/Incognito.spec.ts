@@ -145,8 +145,10 @@ describe('Incognito routes', () => {
     voteService.resetForTesting();
     clock.millis = Date.parse('2026-11-08T12:00:00Z');
     voteClock.source = clock;
+    const {expansions, ...rest} = options;
     [game, alice, bob, carol] = testGame(3, {
-      incognito: true, undoOption: true, judgeUndo: true, judgeLink: true, coloniesExtension: true, turmoilExtension: true, ...options,
+      incognito: true, undoOption: true, judgeUndo: true, judgeLink: true, ...rest,
+      expansions: {colonies: true, turmoil: true, ...expansions},
     });
     alice.name = ALICE;
     bob.name = BOB;
@@ -717,7 +719,7 @@ describe('Incognito routes', () => {
   });
 
   it('no player id but the viewer\'s own reaches a player or the spectator with Ares on', async () => {
-    await start({aresExtension: true});
+    await start({expansions: {ares: true}});
 
     const player = await call(ApiPlayer.INSTANCE, 'get', `/api/player?id=${alice.id}`);
     const spectator = await call(ApiSpectator.INSTANCE, 'get', `/api/spectator?id=${game.spectatorId}`);
@@ -811,7 +813,7 @@ describe('Incognito routes', () => {
     });
 
     it('no player id reaches the judge with Ares on', async () => {
-      await start({aresExtension: true});
+      await start({expansions: {ares: true}});
 
       const model = await judgeRequest(ApiJudge.INSTANCE, '/api/judge');
       const view = await judgeRequest(ApiReplayView.INSTANCE, '/api/replay/view', '&save=0&as=all');
